@@ -299,24 +299,191 @@ static PyMemberDef slice_members[] = {
     {0}
 };
 
+/* Helper function to convert a slice argument to a PyLong, and raise TypeError
+   with a suitable message on failure. */
+
+static PyObject*
+evaluate_slice_index(PyObject *v)
+{
+    if (PyIndex_Check(v)) {
+        return PyNumber_Index(v);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "slice indices must be integers or "
+                        "None or have an __index__ method");
+        return NULL;
+    }
+}
+
+/* Implementation of slice.indices. */
+
 static PyObject*
 slice_indices(PySliceObject* self, PyObject* len)
 {
-    Py_ssize_t ilen, start, stop, step, slicelength;
+    PyObject *start=NULL, *stop=NULL, *step=NULL;
+    PyObject *length=NULL, *upper=NULL, *lower=NULL, *zero=NULL;
+    int step_is_negative, cmp;
 
-    ilen = PyNumber_AsSsize_t(len, PyExc_OverflowError);
-
-    if (ilen == -1 && PyErr_Occurred()) {
+    zero = PyLong_FromLong(0L);
+    if (zero == NULL)
         return NULL;
+
+    /* Compute step and length as integers. */
+    length = PyNumber_Index(len);
+    if (length == NULL)
+        goto error;
+
+    if (self->step == Py_None)
+        step = PyLong_FromLong(1L);
+    else
+        step = evaluate_slice_index(self->step);
+    if (step == NULL)
+        goto error;
+
+    /* Raise ValueError for negative length or zero step. */
+    cmp = PyObject_RichCompareBool(length, zero, Py_LT);
+    if (cmp < 0) {
+        goto error;
+    }
+    if (cmp) {
+        PyErr_SetString(PyExc_ValueError,
+                        "length should not be negative");
+        goto error;
     }
 
-    if (PySlice_GetIndicesEx((PyObject*)self, ilen, &start, &stop,
-                             &step, &slicelength) < 0) {
-        return NULL;
+    cmp = PyObject_RichCompareBool(step, zero, Py_EQ);
+    if (cmp < 0) {
+        goto error;
+    }
+    if (cmp) {
+        PyErr_SetString(PyExc_ValueError,
+                        "slice step cannot be zero");
+        goto error;
     }
 
-    return Py_BuildValue("(nnn)", start, stop, step);
+    /* Find lower and upper bounds for start and stop. */
+    step_is_negative = PyObject_RichCompareBool(step, zero, Py_LT);
+    if (step_is_negative < 0) {
+        goto error;
+    }
+    if (step_is_negative) {
+        lower = PyLong_FromLong(-1L);
+        if (lower == NULL)
+            goto error;
+
+        upper = PyNumber_Add(length, lower);
+        if (upper == NULL)
+            goto error;
+    }
+    else {
+        lower = zero;
+        Py_INCREF(lower);
+        upper = length;
+        Py_INCREF(upper);
+    }
+
+    /* Compute start. */
+    if (self->start == Py_None) {
+        start = step_is_negative ? upper : lower;
+        Py_INCREF(start);
+    }
+    else {
+        start = evaluate_slice_index(self->start);
+        if (start == NULL)
+            goto error;
+
+        cmp = PyObject_RichCompareBool(start, zero, Py_LT);
+        if (cmp < 0)
+            goto error;
+        if (cmp) {
+            /* start += length */
+            PyObject *tmp = PyNumber_Add(start, length);
+            Py_DECREF(start);
+            start = tmp;
+            if (start == NULL)
+                goto error;
+
+            cmp = PyObject_RichCompareBool(start, lower, Py_LT);
+            if (cmp < 0)
+                goto error;
+            if (cmp) {
+                Py_INCREF(lower);
+                Py_DECREF(start);
+                start = lower;
+            }
+        }
+        else {
+            cmp = PyObject_RichCompareBool(start, upper, Py_GT);
+            if (cmp < 0)
+                goto error;
+            if (cmp) {
+                Py_INCREF(upper);
+                Py_DECREF(start);
+                start = upper;
+            }
+        }
+    }
+
+    /* Compute stop. */
+    if (self->stop == Py_None) {
+        stop = step_is_negative ? lower : upper;
+        Py_INCREF(stop);
+    }
+    else {
+        stop = evaluate_slice_index(self->stop);
+        if (stop == NULL)
+            goto error;
+
+        cmp = PyObject_RichCompareBool(stop, zero, Py_LT);
+        if (cmp < 0)
+            goto error;
+        if (cmp) {
+            /* stop += length */
+            PyObject *tmp = PyNumber_Add(stop, length);
+            Py_DECREF(stop);
+            stop = tmp;
+            if (stop == NULL)
+                goto error;
+
+            cmp = PyObject_RichCompareBool(stop, lower, Py_LT);
+            if (cmp < 0)
+                goto error;
+            if (cmp) {
+                Py_INCREF(lower);
+                Py_DECREF(stop);
+                stop = lower;
+            }
+        }
+        else {
+            cmp = PyObject_RichCompareBool(stop, upper, Py_GT);
+            if (cmp < 0)
+                goto error;
+            if (cmp) {
+                Py_INCREF(upper);
+                Py_DECREF(stop);
+                stop = upper;
+            }
+        }
+    }
+
+    Py_DECREF(upper);
+    Py_DECREF(lower);
+    Py_DECREF(length);
+    Py_DECREF(zero);
+    return Py_BuildValue("(NNN)", start, stop, step);
+
+  error:
+    Py_XDECREF(start);
+    Py_XDECREF(stop);
+    Py_XDECREF(step);
+    Py_XDECREF(upper);
+    Py_XDECREF(lower);
+    Py_XDECREF(length);
+    Py_XDECREF(zero);
+    return NULL;
 }
+
 
 PyDoc_STRVAR(slice_indices_doc,
 "S.indices(len) -> (start, stop, stride)\n\
