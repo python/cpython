@@ -113,6 +113,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #16409: The reporthook callback made by the legacy
+  urllib.request.urlretrieve API now properly supplies a constant non-zero
+  block_size as it did in Python 3.2 and 2.7.  This matches the behavior of
+  urllib.request.URLopener.retrieve.
+
 - Issue #16431: Use the type information when constructing a Decimal subtype
   from a Decimal argument.
 
