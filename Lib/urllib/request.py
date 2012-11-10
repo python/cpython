@@ -208,7 +208,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
                 size = int(headers["Content-Length"])
 
             if reporthook:
-                reporthook(blocknum, 0, size)
+                reporthook(blocknum, bs, size)
 
             while True:
                 block = fp.read(bs)
@@ -218,7 +218,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
                 tfp.write(block)
                 blocknum += 1
                 if reporthook:
-                    reporthook(blocknum, len(block), size)
+                    reporthook(blocknum, bs, size)
 
     if size >= 0 and read < size:
         raise ContentTooShortError(
