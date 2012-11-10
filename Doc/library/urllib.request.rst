@@ -1305,7 +1305,8 @@ some point in the future.
        *filename* is not given, the filename is the output of :func:`tempfile.mktemp`
        with a suffix that matches the suffix of the last path component of the input
        URL.  If *reporthook* is given, it must be a function accepting three numeric
-       parameters.  It will be called after each chunk of data is read from the
+       parameters: A chunk number, the maximum size chunks are read in and the total size of the download
+       (-1 if unknown).  It will be called once at the start and after each chunk of data is read from the
        network.  *reporthook* is ignored for local URLs.
 
        If the *url* uses the :file:`http:` scheme identifier, the optional *data*
