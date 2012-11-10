@@ -692,17 +692,29 @@ elif sys.platform != 'darwin':
 
 # TESTFN_UNDECODABLE is a filename (bytes type) that should *not* be able to be
 # decoded from the filesystem encoding (in strict mode). It can be None if we
-# cannot generate such filename.
+# cannot generate such filename (ex: the latin1 encoding can decode any byte
+# sequence). On UNIX, TESTFN_UNDECODABLE can be decoded by os.fsdecode() thanks
+# to the surrogateescape error handler (PEP 383), but not from the filesystem
+# encoding in strict mode.
 TESTFN_UNDECODABLE = None
-# b'\xff' is not decodable by os.fsdecode() with code page 932. Windows
-# accepts it to create a file or a directory, or don't accept to enter to
-# such directory (when the bytes name is used). So test b'\xe7' first: it is
-# not decodable from cp932.
-for name in (b'\xe7w\xf0', b'abc\xff'):
+for name in (
+    # b'\xff' is not decodable by os.fsdecode() with code page 932. Windows
+    # accepts it to create a file or a directory, or don't accept to enter to
+    # such directory (when the bytes name is used). So test b'\xe7' first: it is
+    # not decodable from cp932.
+    b'\xe7w\xf0',
+    # undecodable from ASCII, UTF-8
+    b'\xff',
+    # undecodable from iso8859-3, iso8859-6, iso8859-7, cp424, iso8859-8, cp856
+    # and cp857
+    b'\xae\xd5'
+    # undecodable from UTF-8 (UNIX and Mac OS X)
+    b'\xed\xb2\x80', b'\xed\xb4\x80',
+):
     try:
-        os.fsdecode(name)
+        name.decode(TESTFN_ENCODING)
     except UnicodeDecodeError:
-        TESTFN_UNDECODABLE = name
+        TESTFN_UNDECODABLE = os.fsencode(TESTFN) + name
         break
 
 if FS_NONASCII:
