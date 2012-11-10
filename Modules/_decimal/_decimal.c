@@ -1892,7 +1892,9 @@ numeric_as_ascii(const PyObject *u, int strip_ws)
     Py_ssize_t j, len;
     int d;
 
-    assert(PyUnicode_IS_READY(u));
+    if (PyUnicode_READY(u) == -1) {
+        return NULL;
+    }
 
     kind = PyUnicode_KIND(u);
     data = PyUnicode_DATA(u);

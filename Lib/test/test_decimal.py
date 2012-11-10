@@ -35,7 +35,7 @@ import locale
 from test.support import (run_unittest, run_doctest, is_resource_enabled,
                           requires_IEEE_754)
 from test.support import (check_warnings, import_fresh_module, TestFailed,
-                          run_with_locale)
+                          run_with_locale, cpython_only)
 import random
 import time
 import warnings
@@ -574,6 +574,15 @@ class ExplicitConstructionTest(unittest.TestCase):
             # embedded NUL
             self.assertRaises(InvalidOperation, Decimal, "12\u00003")
 
+    @cpython_only
+    def test_from_legacy_strings(self):
+        import _testcapi
+        Decimal = self.decimal.Decimal
+        context = self.decimal.Context()
+
+        s = _testcapi.unicode_legacy_string('9.999999')
+        self.assertEqual(str(Decimal(s)), '9.999999')
+        self.assertEqual(str(context.create_decimal(s)), '9.999999')
 
     def test_explicit_from_tuples(self):
         Decimal = self.decimal.Decimal
