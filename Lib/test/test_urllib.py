@@ -455,8 +455,8 @@ class urlretrieve_FileTests(unittest.TestCase):
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
             support.TESTFN, hooktester)
         self.assertEqual(len(report), 2)
-        self.assertEqual(report[0][1], 0)
-        self.assertEqual(report[1][1], 5)
+        self.assertEqual(report[0][2], 5)
+        self.assertEqual(report[1][2], 5)
 
     def test_reporthook_8193_bytes(self):
         # Test on 8193 byte file. Should call reporthook only 3 times (once
@@ -469,9 +469,10 @@ class urlretrieve_FileTests(unittest.TestCase):
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
             support.TESTFN, hooktester)
         self.assertEqual(len(report), 3)
-        self.assertEqual(report[0][1], 0)
+        self.assertEqual(report[0][2], 8193)
+        self.assertEqual(report[0][1], 8192)
         self.assertEqual(report[1][1], 8192)
-        self.assertEqual(report[2][1], 1)
+        self.assertEqual(report[2][1], 8192)
 
 
 class urlretrieve_HttpTests(unittest.TestCase, FakeHTTPMixin):
