@@ -10,9 +10,6 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
-- Issue #14396: Handle the odd rare case of waitpid returning 0 when not
-  expected in subprocess.Popen.wait().
-
 - Issue #9535: Fix pending signals that have been received but not yet
   handled by Python to not persist after os.fork() in the child process.
 
@@ -164,6 +161,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #14396: Handle the odd rare case of waitpid returning 0 when not
+  expected in subprocess.Popen.wait().
 
 - Issue #16411: Fix a bug where zlib.decompressobj().flush() might try to access
   previously-freed memory. Patch by Serhiy Storchaka.
