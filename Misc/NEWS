@@ -12,6 +12,8 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16453: Fix equality testing of dead weakref objects.
+
 - Issue #9535: Fix pending signals that have been received but not yet
   handled by Python to not persist after os.fork() in the child process.
 
