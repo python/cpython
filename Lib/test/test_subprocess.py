@@ -1189,22 +1189,15 @@ class POSIXProcessTestCase(BaseTestCase):
             self.fail("Exception raised by preexec_fn did not make it "
                       "to the parent process.")
 
-    @unittest.skipIf(not os.path.exists("/dev/zero"), "/dev/zero required.")
-    def test_preexec_errpipe_does_not_double_close_pipes(self):
-        """Issue16140: Don't double close pipes on preexec error."""
-        class SafeConstructorPopen(subprocess.Popen):
-            def __init__(self):
-                pass  # Do nothing so we can modify the instance for testing.
-            def RealPopen(self, *args, **kwargs):
-                subprocess.Popen.__init__(self, *args, **kwargs)
-        def raise_it():
-            raise RuntimeError("force the _execute_child() errpipe_data path.")
+    class _TestExecuteChildPopen(subprocess.Popen):
+        """Used to test behavior at the end of _execute_child."""
+        def __init__(self, testcase, *args, **kwargs):
+            self._testcase = testcase
+            subprocess.Popen.__init__(self, *args, **kwargs)
 
-        p = SafeConstructorPopen()
-
-        def _test_fds_execute_child_wrapper(*args, **kwargs):
+        def _execute_child(self, *args, **kwargs):
             try:
-                subprocess.Popen._execute_child(p, *args, **kwargs)
+                subprocess.Popen._execute_child(self, *args, **kwargs)
             finally:
                 # Open a bunch of file descriptors and verify that
                 # none of them are the same as the ones the Popen
@@ -1213,17 +1206,23 @@ class POSIXProcessTestCase(BaseTestCase):
                                for _ in range(8)]
                 try:
                     for fd in devzero_fds:
-                        self.assertNotIn(fd, (
-                                p.stdin.fileno(), p.stdout.fileno(),
-                                p.stderr.fileno()),
+                        self._testcase.assertNotIn(
+                                fd, (self.stdin.fileno(), self.stdout.fileno(),
+                                     self.stderr.fileno()),
                                 msg="At least one fd was closed early.")
                 finally:
                     map(os.close, devzero_fds)
 
-        p._execute_child = _test_fds_execute_child_wrapper
+    @unittest.skipIf(not os.path.exists("/dev/zero"), "/dev/zero required.")
+    def test_preexec_errpipe_does_not_double_close_pipes(self):
+        """Issue16140: Don't double close pipes on preexec error."""
+
+        def raise_it():
+            raise RuntimeError("force the _execute_child() errpipe_data path.")
 
         with self.assertRaises(RuntimeError):
-            p.RealPopen([sys.executable, "-c", "pass"],
+            self._TestExecuteChildPopen(
+                        self, [sys.executable, "-c", "pass"],
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, preexec_fn=raise_it)
 
