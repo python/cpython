@@ -1509,9 +1509,13 @@ class Popen(object):
                         raise TimeoutExpired(self.args, timeout)
                     delay = min(delay * 2, remaining, .05)
                     time.sleep(delay)
-            elif self.returncode is None:
-                (pid, sts) = self._try_wait(0)
-                self._handle_exitstatus(sts)
+            else:
+                while self.returncode is None:
+                    (pid, sts) = self._try_wait(0)
+                    # Check the pid and loop as waitpid has been known to return
+                    # 0 even without WNOHANG in odd situations.  issue14396.
+                    if pid == self.pid:
+                        self._handle_exitstatus(sts)
             return self.returncode
 
 
