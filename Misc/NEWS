@@ -116,6 +116,9 @@ Core and Builtins
 Library
 -------
 
+- The subprocess module now raises its own SubprocessError instead of a
+  RuntimeError in various error situations which should not normally happen.
+
 - Issue #16327: The subprocess module no longer leaks file descriptors
   used for stdin/stdout/stderr pipes to the child when fork() fails.
 

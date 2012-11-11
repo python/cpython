@@ -1042,9 +1042,9 @@ class Popen(object):
                 w9xpopen = os.path.join(os.path.dirname(sys.base_exec_prefix),
                                         "w9xpopen.exe")
                 if not os.path.exists(w9xpopen):
-                    raise RuntimeError("Cannot locate w9xpopen.exe, which is "
-                                       "needed for Popen to work with your "
-                                       "shell or platform.")
+                    raise SubprocessError(
+                            "Cannot locate w9xpopen.exe, which is needed for "
+                            "Popen to work with your shell or platform.")
             return w9xpopen
 
 
@@ -1414,12 +1414,12 @@ class Popen(object):
                 except ValueError:
                     warnings.warn(RuntimeWarning(
                             'Bad exception data: %r' % errpipe_data))
-                    exception_name = b'RuntimeError'
+                    exception_name = b'SubprocessError'
                     hex_errno = b'0'
                     err_msg = b'Unknown'
                 child_exception_type = getattr(
                         builtins, exception_name.decode('ascii'),
-                        RuntimeError)
+                        SubprocessError)
                 for fd in (p2cwrite, c2pread, errread):
                     if fd != -1:
                         os.close(fd)
@@ -1452,7 +1452,7 @@ class Popen(object):
                 self.returncode = _WEXITSTATUS(sts)
             else:
                 # Should never happen
-                raise RuntimeError("Unknown child exit status!")
+                raise SubprocessError("Unknown child exit status!")
 
 
         def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
