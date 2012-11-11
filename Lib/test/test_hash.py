@@ -45,6 +45,16 @@ class HashEqualityTestCase(unittest.TestCase):
         self.same_hash(int(1.23e300), float(1.23e300))
         self.same_hash(float(0.5), complex(0.5, 0.0))
 
+    def test_unaligned_buffers(self):
+        # The hash function for bytes-like objects shouldn't have
+        # alignment-dependent results (example in issue #16427).
+        b = b"123456789abcdefghijklmnopqrstuvwxyz" * 128
+        for i in range(16):
+            for j in range(16):
+                aligned = b[i:128+j]
+                unaligned = memoryview(b)[i:128+j]
+                self.assertEqual(hash(aligned), hash(unaligned))
+
 
 _default_hash = object.__hash__
 class DefaultHash(object): pass
