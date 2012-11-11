@@ -65,6 +65,18 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(actual, expected, msg)
 
 
+class PopenTestException(Exception):
+    pass
+
+
+class PopenExecuteChildRaises(subprocess.Popen):
+    """Popen subclass for testing cleanup of subprocess.PIPE filehandles when
+    _execute_child fails.
+    """
+    def _execute_child(self, *args, **kwargs):
+        raise PopenTestException("Forced Exception for Test")
+
+
 class ProcessTestCase(BaseTestCase):
 
     def test_call_seq(self):
@@ -839,6 +851,27 @@ class ProcessTestCase(BaseTestCase):
                 signal.alarm(1)
                 # communicate() will be interrupted by SIGALRM
                 process.communicate()
+
+
+    # This test is Linux-ish specific for simplicity to at least have
+    # some coverage.  It is not a platform specific bug.
+    @unittest.skipUnless(os.path.isdir('/proc/%d/fd' % os.getpid()),
+                         "Linux specific")
+    def test_failed_child_execute_fd_leak(self):
+        """Test for the fork() failure fd leak reported in issue16327."""
+        fd_directory = '/proc/%d/fd' % os.getpid()
+        fds_before_popen = os.listdir(fd_directory)
+        with self.assertRaises(PopenTestException):
+            PopenExecuteChildRaises(
+                    [sys.executable, '-c', 'pass'], stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # NOTE: This test doesn't verify that the real _execute_child
+        # does not close the file descriptors itself on the way out
+        # during an exception.  Code inspection has confirmed that.
+
+        fds_after_exception = os.listdir(fd_directory)
+        self.assertEqual(fds_before_popen, fds_after_exception)
 
 
 # context manager
