@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9535: Fix pending signals that have been received but not yet
+  handled by Python to not persist after os.fork() in the child process.
+
 - Issue #14794: Fix slice.indices to return correct results for huge values,
   rather than raising OverflowError.
 
