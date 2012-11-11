@@ -159,6 +159,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16411: Fix a bug where zlib.decompressobj().flush() might try to access
+  previously-freed memory. Patch by Serhiy Storchaka.
+
 - Issue #16357: fix calling accept() on a SSLSocket created through
   SSLContext.wrap_socket().  Original patch by Jeff McNeil.
 
