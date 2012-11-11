@@ -159,6 +159,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16357: fix calling accept() on a SSLSocket created through
+  SSLContext.wrap_socket().  Original patch by Jeff McNeil.
+
 - Issue #16350: zlib.Decompress.decompress() now accumulates data from
   successive calls after EOF in unused_data, instead of only saving the argument
   to the last call. Patch by Serhiy Storchaka.
