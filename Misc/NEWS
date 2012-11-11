@@ -140,6 +140,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16411: Fix a bug where zlib.decompressobj().flush() might try to access
+  previously-freed memory. Patch by Serhiy Storchaka.
+
 - Issue #16350: zlib.decompressobj().decompress() now accumulates data from
   successive calls after EOF in unused_data, instead of only saving the argument
   to the last call. decompressobj().flush() now correctly sets unused_data and
