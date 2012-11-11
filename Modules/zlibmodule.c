@@ -467,6 +467,49 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     return RetVal;
 }
 
+/* Helper for objdecompress() and unflush(). Saves any unconsumed input data in
+   self->unused_data or self->unconsumed_tail, as appropriate. */
+static int
+save_unconsumed_input(compobject *self, int err)
+{
+    if (err == Z_STREAM_END) {
+        /* The end of the compressed data has been reached. Store the leftover
+           input data in self->unused_data. */
+        if (self->zst.avail_in > 0) {
+            Py_ssize_t old_size = PyString_GET_SIZE(self->unused_data);
+            Py_ssize_t new_size;
+            PyObject *new_data;
+            if (self->zst.avail_in > PY_SSIZE_T_MAX - old_size) {
+                PyErr_NoMemory();
+                return -1;
+            }
+            new_size = old_size + self->zst.avail_in;
+            new_data = PyString_FromStringAndSize(NULL, new_size);
+            if (new_data == NULL)
+                return -1;
+            Py_MEMCPY(PyString_AS_STRING(new_data),
+                      PyString_AS_STRING(self->unused_data), old_size);
+            Py_MEMCPY(PyString_AS_STRING(new_data) + old_size,
+                      self->zst.next_in, self->zst.avail_in);
+            Py_DECREF(self->unused_data);
+            self->unused_data = new_data;
+            self->zst.avail_in = 0;
+        }
+    }
+    if (self->zst.avail_in > 0 || PyString_GET_SIZE(self->unconsumed_tail)) {
+        /* This code handles two distinct cases:
+           1. Output limit was reached. Save leftover input in unconsumed_tail.
+           2. All input data was consumed. Clear unconsumed_tail. */
+        PyObject *new_data = PyString_FromStringAndSize(
+                (char *)self->zst.next_in, self->zst.avail_in);
+        if (new_data == NULL)
+            return -1;
+        Py_DECREF(self->unconsumed_tail);
+        self->unconsumed_tail = new_data;
+    }
+    return 0;
+}
+
 PyDoc_STRVAR(decomp_decompress__doc__,
 "decompress(data, max_length) -- Return a string containing the decompressed\n"
 "version of the data.\n"
@@ -541,60 +584,20 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
         Py_END_ALLOW_THREADS
     }
 
-    if(max_length) {
-        /* Not all of the compressed data could be accommodated in a buffer of
-           the specified size. Return the unconsumed tail in an attribute. */
-        Py_DECREF(self->unconsumed_tail);
-        self->unconsumed_tail = PyString_FromStringAndSize((char *)self->zst.next_in,
-                                                           self->zst.avail_in);
-    }
-    else if (PyString_GET_SIZE(self->unconsumed_tail) > 0) {
-        /* All of the compressed data was consumed. Clear unconsumed_tail. */
-        Py_DECREF(self->unconsumed_tail);
-        self->unconsumed_tail = PyString_FromStringAndSize("", 0);
-    }
-    if(!self->unconsumed_tail) {
+    if (save_unconsumed_input(self, err) < 0) {
         Py_DECREF(RetVal);
         RetVal = NULL;
         goto error;
     }
 
-    /* The end of the compressed data has been reached, so set the
-       unused_data attribute to a string containing the remainder of the
-       data in the string.  Note that this is also a logical place to call
-       inflateEnd, but the old behaviour of only calling it on flush() is
-       preserved.
-    */
-    if (err == Z_STREAM_END) {
-        if (self->zst.avail_in > 0) {
-            /* Append the leftover data to the existing value of unused_data. */
-            Py_ssize_t old_size = PyString_GET_SIZE(self->unused_data);
-            Py_ssize_t new_size = old_size + self->zst.avail_in;
-            PyObject *new_data;
-            if (new_size <= old_size) {  /* Check for overflow. */
-                PyErr_NoMemory();
-                Py_DECREF(RetVal);
-                RetVal = NULL;
-                goto error;
-            }
-            new_data = PyString_FromStringAndSize(NULL, new_size);
-            if (new_data == NULL) {
-                Py_DECREF(RetVal);
-                RetVal = NULL;
-                goto error;
-            }
-            Py_MEMCPY(PyString_AS_STRING(new_data),
-                      PyString_AS_STRING(self->unused_data), old_size);
-            Py_MEMCPY(PyString_AS_STRING(new_data) + old_size,
-                      self->zst.next_in, self->zst.avail_in);
-            Py_DECREF(self->unused_data);
-            self->unused_data = new_data;
-        }
+    /* This is the logical place to call inflateEnd, but the old behaviour of
+       only calling it on flush() is preserved. */
+
+    if (err != Z_STREAM_END && err != Z_OK && err != Z_BUF_ERROR) {
         /* We will only get Z_BUF_ERROR if the output buffer was full
            but there wasn't more output when we tried again, so it is
            not an error condition.
         */
-    } else if (err != Z_OK && err != Z_BUF_ERROR) {
         zlib_error(self->zst, err, "while decompressing");
         Py_DECREF(RetVal);
         RetVal = NULL;
@@ -848,6 +851,12 @@ PyZlib_unflush(compobject *self, PyObject *args)
         Py_END_ALLOW_THREADS
     }
 
+    if (save_unconsumed_input(self, err) < 0) {
+        Py_DECREF(retval);
+        retval = NULL;
+        goto error;
+    }
+
     /* If flushmode is Z_FINISH, we also have to call deflateEnd() to free
        various data structures. Note we should only get Z_STREAM_END when
        flushmode is Z_FINISH */
@@ -861,6 +870,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
             goto error;
         }
     }
+
     _PyString_Resize(&retval, self->zst.total_out - start_total_out);
 
 error:
