@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #9535: Fix pending signals that have been received but not yet
+  handled by Python to not persist after os.fork() in the child process.
+
 - Issue #15001: fix segfault on "del sys.module['__main__']". Patch by Victor
   Stinner.
 
