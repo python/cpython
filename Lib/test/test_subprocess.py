@@ -754,7 +754,6 @@ class POSIXProcessTestCase(BaseTestCase):
     class _TestExecuteChildPopen(subprocess.Popen):
         """Used to test behavior at the end of _execute_child."""
         def __init__(self, testcase, *args, **kwargs):
-            # Do nothing so we can modify the instance for testing.
             self._testcase = testcase
             subprocess.Popen.__init__(self, *args, **kwargs)
 
