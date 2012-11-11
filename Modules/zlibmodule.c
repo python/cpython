@@ -81,7 +81,7 @@ zlib_error(z_stream zst, int err, char *msg)
 PyDoc_STRVAR(compressobj__doc__,
 "compressobj([level]) -- Return a compressor object.\n"
 "\n"
-"Optional arg level is the compression level, in 1-9.");
+"Optional arg level is the compression level, in 0-9.");
 
 PyDoc_STRVAR(decompressobj__doc__,
 "decompressobj([wbits]) -- Return a decompressor object.\n"
@@ -115,7 +115,7 @@ newcompobject(PyTypeObject *type)
 PyDoc_STRVAR(compress__doc__,
 "compress(string[, level]) -- Returned compressed string.\n"
 "\n"
-"Optional arg level is the compression level, in 1-9.");
+"Optional arg level is the compression level, in 0-9.");
 
 static PyObject *
 PyZlib_compress(PyObject *self, PyObject *args)
@@ -1135,7 +1135,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
-"compress(string[, level]) -- Compress string, with compression level in 1-9.\n"
+"compress(string[, level]) -- Compress string, with compression level in 0-9.\n"
 "compressobj([level]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"

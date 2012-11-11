@@ -51,19 +51,20 @@ The available exception and functions in this module are:
 
 .. function:: compress(data[, level])
 
-   Compresses the bytes in *data*, returning a bytes object containing compressed data.
-   *level* is an integer from ``1`` to ``9`` controlling the level of compression;
-   ``1`` is fastest and produces the least compression, ``9`` is slowest and
-   produces the most.  The default value is ``6``.  Raises the :exc:`error`
-   exception if any error occurs.
+   Compresses the bytes in *data*, returning a bytes object containing
+   compressed data.  *level* is an integer from ``0`` to ``9`` controlling the
+   level of compression; ``1`` is fastest and produces the least compression,
+   ``9`` is slowest and produces the most. ``0`` is no compression. The default
+   value is ``6``.  Raises the :exc:`error` exception if any error occurs.
 
 
 .. function:: compressobj([level])
 
    Returns a compression object, to be used for compressing data streams that won't
-   fit into memory at once.  *level* is an integer from ``1`` to ``9`` controlling
+   fit into memory at once.  *level* is an integer from ``0`` to ``9`` controlling
    the level of compression; ``1`` is fastest and produces the least compression,
-   ``9`` is slowest and produces the most.  The default value is ``6``.
+   ``9`` is slowest and produces the most.  ``0`` is no compression.  The default
+   value is ``6``.
 
 
 .. function:: crc32(data[, value])
