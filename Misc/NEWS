@@ -116,6 +116,9 @@ Core and Builtins
 Library
 -------
 
+- Remove a bare print to stdout from the subprocess module that could have
+  happened if the child process wrote garbage to its pre-exec error pipe.
+
 - The subprocess module now raises its own SubprocessError instead of a
   RuntimeError in various error situations which should not normally happen.
 
