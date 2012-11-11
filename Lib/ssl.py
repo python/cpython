@@ -491,16 +491,11 @@ class SSLSocket(socket):
         SSL channel, and the address of the remote client."""
 
         newsock, addr = socket.accept(self)
-        return (SSLSocket(sock=newsock,
-                          keyfile=self.keyfile, certfile=self.certfile,
-                          server_side=True,
-                          cert_reqs=self.cert_reqs,
-                          ssl_version=self.ssl_version,
-                          ca_certs=self.ca_certs,
-                          ciphers=self.ciphers,
-                          do_handshake_on_connect=
-                              self.do_handshake_on_connect),
-                addr)
+        newsock = self.context.wrap_socket(newsock,
+                    do_handshake_on_connect=self.do_handshake_on_connect,
+                    suppress_ragged_eofs=self.suppress_ragged_eofs,
+                    server_side=True)
+        return newsock, addr
 
     def __del__(self):
         # sys.stderr.write("__del__ on %s\n" % repr(self))

@@ -1610,6 +1610,42 @@ else:
                 t.join()
                 server.close()
 
+        def test_server_accept(self):
+            # Issue #16357: accept() on a SSLSocket created through
+            # SSLContext.wrap_socket().
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_verify_locations(CERTFILE)
+            context.load_cert_chain(CERTFILE)
+            server = socket.socket(socket.AF_INET)
+            host = "127.0.0.1"
+            port = support.bind_port(server)
+            server = context.wrap_socket(server, server_side=True)
+
+            evt = threading.Event()
+            remote = None
+            peer = None
+            def serve():
+                nonlocal remote, peer
+                server.listen(5)
+                # Block on the accept and wait on the connection to close.
+                evt.set()
+                remote, peer = server.accept()
+                remote.recv(1)
+
+            t = threading.Thread(target=serve)
+            t.start()
+            # Client wait until server setup and perform a connect.
+            evt.wait()
+            client = context.wrap_socket(socket.socket())
+            client.connect((host, port))
+            client_addr = client.getsockname()
+            client.close()
+            t.join()
+            # Sanity checks.
+            self.assertIsInstance(remote, ssl.SSLSocket)
+            self.assertEqual(peer, client_addr)
+
         def test_default_ciphers(self):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             try:
