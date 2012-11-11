@@ -160,9 +160,10 @@ class GzipFile(io.BufferedIOBase):
         A mode of 'r' is equivalent to one of 'rb', and similarly for 'w' and
         'wb', and 'a' and 'ab'.
 
-        The compresslevel argument is an integer from 1 to 9 controlling the
+        The compresslevel argument is an integer from 0 to 9 controlling the
         level of compression; 1 is fastest and produces the least compression,
-        and 9 is slowest and produces the most compression.  The default is 9.
+        and 9 is slowest and produces the most compression. 0 is no compression
+        at all. The default is 9.
 
         The mtime argument is an optional numeric timestamp to be written
         to the stream when compressing.  All gzip compressed streams
@@ -622,7 +623,7 @@ class GzipFile(io.BufferedIOBase):
 
 def compress(data, compresslevel=9):
     """Compress data in one shot and return the compressed string.
-    Optional argument is the compression level, in range of 1-9.
+    Optional argument is the compression level, in range of 0-9.
     """
     buf = io.BytesIO()
     with GzipFile(fileobj=buf, mode='wb', compresslevel=compresslevel) as f:
