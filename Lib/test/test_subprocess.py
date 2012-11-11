@@ -751,6 +751,53 @@ class POSIXProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdout.close)
         self.assertEqual(p.stdout.read(), "apple")
 
+    @unittest.skipIf(not os.path.exists("/dev/zero"), "/dev/zero required.")
+    def test_preexec_errpipe_does_not_double_close_pipes(self):
+        """Issue16140: Don't double close pipes on preexec error."""
+        class SafeConstructorPopen(subprocess.Popen):
+            def __init__(self):
+                pass  # Do nothing so we can modify the instance for testing.
+            def RealPopen(self, *args, **kwargs):
+                subprocess.Popen.__init__(self, *args, **kwargs)
+        def raise_it():
+            raise RuntimeError("force the _execute_child() errpipe_data path.")
+
+        p = SafeConstructorPopen()
+
+        def _test_fds_execute_child_wrapper(
+                args, executable, preexec_fn, close_fds, cwd, env,
+                universal_newlines, startupinfo, creationflags, shell,
+                p2cread, p2cwrite,
+                c2pread, c2pwrite,
+                errread, errwrite):
+            try:
+                subprocess.Popen._execute_child(
+                        p, args, executable, preexec_fn, close_fds,
+                        cwd, env, universal_newlines,
+                        startupinfo, creationflags, shell,
+                        p2cread, p2cwrite,
+                        c2pread, c2pwrite,
+                        errread, errwrite)
+            finally:
+                # Open a bunch of file descriptors and verify that
+                # none of them are the same as the ones the Popen
+                # instance is using for stdin/stdout/stderr.
+                devzero_fds = [os.open("/dev/zero", os.O_RDONLY)
+                               for _ in range(8)]
+                try:
+                    for fd in devzero_fds:
+                        self.assertNotIn(fd, (p2cwrite, c2pread, errread))
+                                         
+                finally:
+                    map(os.close, devzero_fds)
+
+        p._execute_child = _test_fds_execute_child_wrapper
+
+        with self.assertRaises(RuntimeError):
+            p.RealPopen([sys.executable, "-c", "pass"],
+                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, preexec_fn=raise_it)
+
     def test_args_string(self):
         # args is a string
         f, fname = mkstemp()
