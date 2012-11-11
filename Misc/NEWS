@@ -162,6 +162,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16140: The subprocess module no longer double closes its child
+  subprocess.PIPE parent file descriptors on child error prior to exec().
+
 - Remove a bare print to stdout from the subprocess module that could have
   happened if the child process wrote garbage to its pre-exec error pipe.
 

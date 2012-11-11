@@ -1378,9 +1378,6 @@ class Popen(object):
                 child_exception_type = getattr(
                         builtins, exception_name.decode('ascii'),
                         RuntimeError)
-                for fd in (p2cwrite, c2pread, errread):
-                    if fd != -1:
-                        os.close(fd)
                 err_msg = err_msg.decode(errors="surrogatepass")
                 if issubclass(child_exception_type, OSError) and hex_errno:
                     errno_num = int(hex_errno, 16)
