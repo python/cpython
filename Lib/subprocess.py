@@ -1303,7 +1303,7 @@ class Popen(object):
         def wait(self):
             """Wait for child process to terminate.  Returns returncode
             attribute."""
-            if self.returncode is None:
+            while self.returncode is None:
                 try:
                     pid, sts = _eintr_retry_call(os.waitpid, self.pid, 0)
                 except OSError as e:
@@ -1312,8 +1312,12 @@ class Popen(object):
                     # This happens if SIGCLD is set to be ignored or waiting
                     # for child processes has otherwise been disabled for our
                     # process.  This child is dead, we can't get the status.
+                    pid = self.pid
                     sts = 0
-                self._handle_exitstatus(sts)
+                # Check the pid and loop as waitpid has been known to return
+                # 0 even without WNOHANG in odd situations.  issue14396.
+                if pid == self.pid:
+                    self._handle_exitstatus(sts)
             return self.returncode
 
 
