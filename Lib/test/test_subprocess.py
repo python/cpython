@@ -1189,6 +1189,45 @@ class POSIXProcessTestCase(BaseTestCase):
             self.fail("Exception raised by preexec_fn did not make it "
                       "to the parent process.")
 
+    @unittest.skipIf(not os.path.exists("/dev/zero"), "/dev/zero required.")
+    def test_preexec_errpipe_does_not_double_close_pipes(self):
+        """Issue16140: Don't double close pipes on preexec error."""
+        class SafeConstructorPopen(subprocess.Popen):
+            def __init__(self):
+                pass  # Do nothing so we can modify the instance for testing.
+            def RealPopen(self, *args, **kwargs):
+                subprocess.Popen.__init__(self, *args, **kwargs)
+        def raise_it():
+            raise subprocess.SubprocessError(
+                    "force the _execute_child() errpipe_data path.")
+
+        p = SafeConstructorPopen()
+
+        def _test_fds_execute_child_wrapper(*args, **kwargs):
+            try:
+                subprocess.Popen._execute_child(p, *args, **kwargs)
+            finally:
+                # Open a bunch of file descriptors and verify that
+                # none of them are the same as the ones the Popen
+                # instance is using for stdin/stdout/stderr.
+                devzero_fds = [os.open("/dev/zero", os.O_RDONLY)
+                               for _ in range(8)]
+                try:
+                    for fd in devzero_fds:
+                        self.assertNotIn(fd, (
+                                p.stdin.fileno(), p.stdout.fileno(),
+                                p.stderr.fileno()),
+                                msg="At least one fd was closed early.")
+                finally:
+                    map(os.close, devzero_fds)
+
+        p._execute_child = _test_fds_execute_child_wrapper
+
+        with self.assertRaises(subprocess.SubprocessError):
+            p.RealPopen([sys.executable, "-c", "pass"],
+                        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE, preexec_fn=raise_it)
+
     def test_preexec_gc_module_failure(self):
         # This tests the code that disables garbage collection if the child
         # process will execute any Python.
