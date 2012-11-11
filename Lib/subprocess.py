@@ -671,12 +671,33 @@ class Popen(object):
          c2pread, c2pwrite,
          errread, errwrite) = self._get_handles(stdin, stdout, stderr)
 
-        self._execute_child(args, executable, preexec_fn, close_fds,
-                            cwd, env, universal_newlines,
-                            startupinfo, creationflags, shell,
-                            p2cread, p2cwrite,
-                            c2pread, c2pwrite,
-                            errread, errwrite)
+        try:
+            self._execute_child(args, executable, preexec_fn, close_fds,
+                                cwd, env, universal_newlines,
+                                startupinfo, creationflags, shell,
+                                p2cread, p2cwrite,
+                                c2pread, c2pwrite,
+                                errread, errwrite)
+        except Exception:
+            # Preserve original exception in case os.close raises.
+            exc_type, exc_value, exc_trace = sys.exc_info()
+
+            to_close = []
+            # Only close the pipes we created.
+            if stdin == PIPE:
+                to_close.extend((p2cread, p2cwrite))
+            if stdout == PIPE:
+                to_close.extend((c2pread, c2pwrite))
+            if stderr == PIPE:
+                to_close.extend((errread, errwrite))
+
+            for fd in to_close:
+                try:
+                    os.close(fd)
+                except EnvironmentError:
+                    pass
+
+            raise exc_type, exc_value, exc_trace
 
         if mswindows:
             if p2cwrite is not None:
