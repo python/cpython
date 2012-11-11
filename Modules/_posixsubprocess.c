@@ -497,7 +497,7 @@ error:
         /* We can't call strerror(saved_errno).  It is not async signal safe.
          * The parent process will look the error message up. */
     } else {
-        unused = write(errpipe_write, "RuntimeError:0:", 15);
+        unused = write(errpipe_write, "SubprocessError:0:", 18);
         unused = write(errpipe_write, err_msg, strlen(err_msg));
     }
     if (unused) return;  /* silly? yes! avoids gcc compiler warning. */

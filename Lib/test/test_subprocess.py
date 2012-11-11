@@ -1179,7 +1179,7 @@ class POSIXProcessTestCase(BaseTestCase):
         try:
             p = subprocess.Popen([sys.executable, "-c", ""],
                                  preexec_fn=raise_it)
-        except RuntimeError as e:
+        except subprocess.SubprocessError as e:
             self.assertTrue(
                     subprocess._posixsubprocess,
                     "Expected a ValueError from the preexec_fn")
@@ -1544,12 +1544,12 @@ class POSIXProcessTestCase(BaseTestCase):
             # Pure Python implementations keeps the message
             self.assertIsNone(subprocess._posixsubprocess)
             self.assertEqual(str(err), "surrogate:\uDCff")
-        except RuntimeError as err:
+        except subprocess.SubprocessError as err:
             # _posixsubprocess uses a default message
             self.assertIsNotNone(subprocess._posixsubprocess)
             self.assertEqual(str(err), "Exception occurred in preexec_fn.")
         else:
-            self.fail("Expected ValueError or RuntimeError")
+            self.fail("Expected ValueError or subprocess.SubprocessError")
 
     def test_undecodable_env(self):
         for key, value in (('test', 'abc\uDCFF'), ('test\uDCFF', '42')):
