@@ -33,6 +33,27 @@ def create_unbound_method():
     return C.method
 
 
+class Object:
+    def __init__(self, arg):
+        self.arg = arg
+    def __repr__(self):
+        return "<Object %r>" % self.arg
+    def __eq__(self, other):
+        if isinstance(other, Object):
+            return self.arg == other.arg
+        return NotImplemented
+    def __ne__(self, other):
+        if isinstance(other, Object):
+            return self.arg != other.arg
+        return NotImplemented
+    def __hash__(self):
+        return hash(self.arg)
+
+class RefCycle:
+    def __init__(self):
+        self.cycle = self
+
+
 class TestBase(unittest.TestCase):
 
     def setUp(self):
@@ -705,6 +726,54 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(b(), None)
         self.assertEqual(l, [a, b])
 
+    def test_equality(self):
+        # Alive weakrefs defer equality testing to their underlying object.
+        x = Object(1)
+        y = Object(1)
+        z = Object(2)
+        a = weakref.ref(x)
+        b = weakref.ref(y)
+        c = weakref.ref(z)
+        d = weakref.ref(x)
+        # Note how we directly test the operators here, to stress both
+        # __eq__ and __ne__.
+        self.assertTrue(a == b)
+        self.assertFalse(a != b)
+        self.assertFalse(a == c)
+        self.assertTrue(a != c)
+        self.assertTrue(a == d)
+        self.assertFalse(a != d)
+        del x, y, z
+        gc.collect()
+        for r in a, b, c:
+            # Sanity check
+            self.assertIs(r(), None)
+        # Dead weakrefs compare by identity: whether `a` and `d` are the
+        # same weakref object is an implementation detail, since they pointed
+        # to the same original object and didn't have a callback.
+        # (see issue #16453).
+        self.assertFalse(a == b)
+        self.assertTrue(a != b)
+        self.assertFalse(a == c)
+        self.assertTrue(a != c)
+        self.assertEqual(a == d, a is d)
+        self.assertEqual(a != d, a is not d)
+
+    def test_hashing(self):
+        # Alive weakrefs hash the same as the underlying object
+        x = Object(42)
+        y = Object(42)
+        a = weakref.ref(x)
+        b = weakref.ref(y)
+        self.assertEqual(hash(a), hash(42))
+        del x, y
+        gc.collect()
+        # Dead weakrefs:
+        # - retain their hash is they were hashed when alive;
+        # - otherwise, cannot be hashed.
+        self.assertEqual(hash(a), hash(42))
+        self.assertRaises(TypeError, hash, b)
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
@@ -807,17 +876,6 @@ class SubclassableWeakrefTestCase(TestBase):
         del r1 # Used to crash here
 
         self.assertEqual(self.cbcalled, 0)
-
-
-class Object:
-    def __init__(self, arg):
-        self.arg = arg
-    def __repr__(self):
-        return "<Object %r>" % self.arg
-
-class RefCycle:
-    def __init__(self):
-        self.cycle = self
 
 
 class MappingTestCase(TestBase):
