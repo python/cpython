@@ -195,9 +195,13 @@ weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
     }
     if (PyWeakref_GET_OBJECT(self) == Py_None
         || PyWeakref_GET_OBJECT(other) == Py_None) {
-        PyObject *res = self==other ? Py_True : Py_False;
-        Py_INCREF(res);
-        return res;
+        int res = (self == other);
+        if (op == Py_NE)
+            res = !res;
+        if (res)
+            Py_RETURN_TRUE;
+        else
+            Py_RETURN_FALSE;
     }
     return PyObject_RichCompare(PyWeakref_GET_OBJECT(self),
                                 PyWeakref_GET_OBJECT(other), op);
