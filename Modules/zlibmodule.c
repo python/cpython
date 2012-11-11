@@ -830,8 +830,8 @@ PyZlib_unflush(compobject *self, PyObject *args)
     ENTER_ZLIB
 
     start_total_out = self->zst.total_out;
-    self->zst.avail_in = PyBytes_GET_SIZE(self->unconsumed_tail);
-    self->zst.next_in = (Byte *)PyBytes_AS_STRING(self->unconsumed_tail);
+    self->zst.avail_in = PyString_GET_SIZE(self->unconsumed_tail);
+    self->zst.next_in = (Byte *)PyString_AS_STRING(self->unconsumed_tail);
     self->zst.avail_out = length;
     self->zst.next_out = (Byte *)PyString_AS_STRING(retval);
 
