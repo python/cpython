@@ -264,6 +264,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15677: Document that zlib and gzip accept a compression level of 0 to
+  mean 'no compression'. Patch by Brian Brazil.
+
 - Issue #8040: added a version switcher to the documentation.  Patch by
   Yury Selivanov.
 

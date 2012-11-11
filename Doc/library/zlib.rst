@@ -52,10 +52,10 @@ The available exception and functions in this module are:
 .. function:: compress(data[, level])
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
-   *level* is an integer from ``1`` to ``9`` controlling the level of compression;
+   *level* is an integer from ``0`` to ``9`` controlling the level of compression;
    ``1`` is fastest and produces the least compression, ``9`` is slowest and
-   produces the most.  The default value is ``6``.  Raises the :exc:`error`
-   exception if any error occurs.
+   produces the most.  ``0`` is no compression.  The default value is ``6``.
+   Raises the :exc:`error` exception if any error occurs.
 
 
 .. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
@@ -63,9 +63,10 @@ The available exception and functions in this module are:
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
-   *level* is the compression level -- an integer from ``1`` to ``9``. A value
+   *level* is the compression level -- an integer from ``0`` to ``9``. A value
    of ``1`` is fastest and produces the least compression, while a value of
-   ``9`` is slowest and produces the most. The default value is ``6``.
+   ``9`` is slowest and produces the most. ``0`` is no compression. The default
+   value is ``6``.
 
    *method* is the compression algorithm. Currently, the only supported value is
    ``DEFLATED``.

@@ -38,7 +38,7 @@ The module defines the following items:
    ``'w'``, or ``'wb'`` for binary mode, or ``'rt'``, ``'at'``, or ``'wt'`` for
    text mode. The default is ``'rb'``.
 
-   The *compresslevel* argument is an integer from 1 to 9, as for the
+   The *compresslevel* argument is an integer from 0 to 9, as for the
    :class:`GzipFile` constructor.
 
    For binary mode, this function is equivalent to the :class:`GzipFile`
@@ -80,9 +80,10 @@ The module defines the following items:
    in text mode, use :func:`.open` (or wrap your :class:`GzipFile` with an
    :class:`io.TextIOWrapper`).
 
-   The *compresslevel* argument is an integer from ``1`` to ``9`` controlling the
-   level of compression; ``1`` is fastest and produces the least compression, and
-   ``9`` is slowest and produces the most compression.  The default is ``9``.
+   The *compresslevel* argument is an integer from ``0`` to ``9`` controlling
+   the level of compression; ``1`` is fastest and produces the least
+   compression, and ``9`` is slowest and produces the most compression. ``0``
+   is no compression. The default is ``9``.
 
    The *mtime* argument is an optional numeric timestamp to be written to
    the stream when compressing.  All :program:`gzip` compressed streams are
