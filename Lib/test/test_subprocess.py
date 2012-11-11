@@ -787,7 +787,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 try:
                     for fd in devzero_fds:
                         self.assertNotIn(fd, (p2cwrite, c2pread, errread))
-                                         
+
                 finally:
                     map(os.close, devzero_fds)
 
