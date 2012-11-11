@@ -817,13 +817,27 @@ class Popen(object):
                                 errread, errwrite,
                                 restore_signals, start_new_session)
         except:
-            # Cleanup if the child failed starting
-            for f in filter(None, [self.stdin, self.stdout, self.stderr]):
+            # Cleanup if the child failed starting.
+            for f in filter(None, (self.stdin, self.stdout, self.stderr)):
                 try:
                     f.close()
                 except EnvironmentError:
-                    # Ignore EBADF or other errors
+                    pass  # Ignore EBADF or other errors.
+
+            # Make sure the child pipes are closed as well.
+            to_close = []
+            if stdin == PIPE:
+                to_close.append(p2cread)
+            if stdout == PIPE:
+                to_close.append(c2pwrite)
+            if stderr == PIPE:
+                to_close.append(errwrite)
+            for fd in to_close:
+                try:
+                    os.close(fd)
+                except EnvironmentError:
                     pass
+
             raise
 
 
