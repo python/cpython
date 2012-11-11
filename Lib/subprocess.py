@@ -1371,11 +1371,10 @@ class Popen(object):
                     exception_name, hex_errno, err_msg = (
                             errpipe_data.split(b':', 2))
                 except ValueError:
-                    warnings.warn(RuntimeWarning(
-                            'Bad exception data: %r' % errpipe_data))
                     exception_name = b'RuntimeError'
                     hex_errno = b'0'
-                    err_msg = b'Unknown'
+                    err_msg = (b'Bad exception data from child: ' +
+                               repr(errpipe_data))
                 child_exception_type = getattr(
                         builtins, exception_name.decode('ascii'),
                         RuntimeError)
