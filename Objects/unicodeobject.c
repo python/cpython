@@ -4691,7 +4691,10 @@ onError:
 #ifdef __APPLE__
 
 /* Simplified UTF-8 decoder using surrogateescape error handler,
-   used to decode the command line arguments on Mac OS X. */
+   used to decode the command line arguments on Mac OS X.
+
+   Return a pointer to a newly allocated wide character string (use
+   PyMem_Free() to free the memory), or NULL on memory allocation error. */
 
 wchar_t*
 _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
@@ -4702,10 +4705,8 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
 
     /* Note: size will always be longer than the resulting Unicode
        character count */
-    if (PY_SSIZE_T_MAX / sizeof(wchar_t) < (size + 1)) {
-        PyErr_NoMemory();
+    if (PY_SSIZE_T_MAX / sizeof(wchar_t) < (size + 1))
         return NULL;
-    }
     unicode = PyMem_Malloc((size + 1) * sizeof(wchar_t));
     if (!unicode)
         return NULL;

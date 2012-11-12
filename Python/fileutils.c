@@ -67,10 +67,12 @@ _Py_char2wchar(const char* arg, size_t *size)
 #ifdef __APPLE__
     wchar_t *wstr;
     wstr = _Py_DecodeUTF8_surrogateescape(arg, strlen(arg));
-    if (wstr == NULL)
-        return NULL;
-    if (size != NULL)
-        *size = wcslen(wstr);
+    if (size != NULL) {
+        if (wstr != NULL)
+            *size = wcslen(wstr);
+        else
+            *size = (size_t)-1;
+    }
     return wstr;
 #else
     wchar_t *res;
@@ -204,22 +206,25 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
     char *cpath;
 
     unicode = PyUnicode_FromWideChar(text, wcslen(text));
-    if (unicode == NULL) {
-        Py_DECREF(unicode);
+    if (unicode == NULL)
         return NULL;
-    }
 
     bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
     Py_DECREF(unicode);
     if (bytes == NULL) {
         PyErr_Clear();
+        if (error_pos != NULL)
+            *error_pos = (size_t)-1;
         return NULL;
     }
 
     len = PyBytes_GET_SIZE(bytes);
     cpath = PyMem_Malloc(len+1);
     if (cpath == NULL) {
+        PyErr_Clear();
         Py_DECREF(bytes);
+        if (error_pos != NULL)
+            *error_pos = (size_t)-1;
         return NULL;
     }
     memcpy(cpath, PyBytes_AsString(bytes), len + 1);
@@ -230,9 +235,6 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
     char *result = NULL, *bytes = NULL;
     size_t i, size, converted;
     wchar_t c, buf[2];
-
-    if (error_pos != NULL)
-        *error_pos = (size_t)-1;
 
     /* The function works in two steps:
        1. compute the length of the output buffer in bytes (size)
@@ -280,8 +282,11 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
 
         size += 1; /* nul byte at the end */
         result = PyMem_Malloc(size);
-        if (result == NULL)
+        if (result == NULL) {
+            if (error_pos != NULL)
+                *error_pos = (size_t)-1;
             return NULL;
+        }
         bytes = result;
     }
     return result;
