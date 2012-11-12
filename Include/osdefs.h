@@ -36,6 +36,14 @@ extern "C" {
 #endif
 
 /* Max pathname length */
+#ifdef __hpux
+#include <sys/param.h>
+#include <limits.h>
+#ifndef PATH_MAX
+#define PATH_MAX MAXPATHLEN
+#endif
+#endif
+
 #ifndef MAXPATHLEN
 #if defined(PATH_MAX) && PATH_MAX > 1024
 #define MAXPATHLEN PATH_MAX
