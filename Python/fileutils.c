@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "osdefs.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #endif
