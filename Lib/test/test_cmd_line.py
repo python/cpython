@@ -93,15 +93,15 @@ class CmdLineTest(unittest.TestCase):
         # All good if execution is successful
         assert_python_ok('-c', 'pass')
 
-    @unittest.skipIf(sys.getfilesystemencoding() == 'ascii',
-                     'need a filesystem encoding different than ASCII')
+    @unittest.skipUnless(test.support.FS_NONASCII, 'need support.FS_NONASCII')
     def test_non_ascii(self):
         # Test handling of non-ascii data
         if test.support.verbose:
             import locale
             print('locale encoding = %s, filesystem encoding = %s'
                   % (locale.getpreferredencoding(), sys.getfilesystemencoding()))
-        command = "assert(ord('\xe9') == 0xe9)"
+        command = ("assert(ord(%r) == %s)"
+                   % (test.support.FS_NONASCII, ord(test.support.FS_NONASCII)))
         assert_python_ok('-c', command)
 
     # On Windows, pass bytes to subprocess doesn't test how Python decodes the
