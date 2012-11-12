@@ -168,9 +168,9 @@ iteration of the loop::
 
     >>> for num in range(2, 10):
     ...     if num % 2 == 0:
-    ...         print("Found an even number", num)
+    ...         print "Found an even number", num
     ...         continue
-    ...     print("Found a number", num)
+    ...     print "Found a number", num
     Found an even number 2
     Found a number 3
     Found an even number 4
@@ -179,6 +179,7 @@ iteration of the loop::
     Found a number 7
     Found an even number 8
     Found a number 9
+
 
 .. _tut-pass:
 
