@@ -2112,10 +2112,9 @@ class OSErrorTests(unittest.TestCase):
         if hasattr(os, "truncate"):
             funcs.append((self.filenames, os.truncate, 0))
         if hasattr(os, "chflags"):
-            funcs.extend((
-                (self.filenames, os.chflags, 0),
-                (self.filenames, os.lchflags, 0),
-            ))
+            funcs.append((self.filenames, os.chflags, 0))
+        if hasattr(os, "lchflags"):
+            funcs.append((self.filenames, os.lchflags, 0))
         if hasattr(os, "chroot"):
             funcs.append((self.filenames, os.chroot,))
         if hasattr(os, "link"):
