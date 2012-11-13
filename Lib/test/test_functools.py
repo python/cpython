@@ -200,7 +200,7 @@ class TestPartialPy(BaseTestPy, TestPartial):
 
     def test_pickle(self):
         raise unittest.SkipTest("Python implementation of partial isn't picklable")
-    
+
     def test_repr(self):
         raise unittest.SkipTest("Python implementation of partial uses own repr")
 
