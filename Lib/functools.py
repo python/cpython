@@ -11,7 +11,10 @@
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial']
 
-from _functools import partial, reduce
+try:
+    from _functools import reduce
+except ImportError:
+    pass
 from collections import namedtuple
 try:
     from _thread import allocate_lock as Lock
@@ -132,6 +135,29 @@ def cmp_to_key(mycmp):
 
 try:
     from _functools import cmp_to_key
+except ImportError:
+    pass
+
+
+################################################################################
+### partial() argument application
+################################################################################
+
+def partial(func, *args, **keywords):
+    """new function with partial application of the given arguments
+    and keywords.
+    """
+    def newfunc(*fargs, **fkeywords):
+        newkeywords = keywords.copy()
+        newkeywords.update(fkeywords)
+        return func(*(args + fargs), **newkeywords)
+    newfunc.func = func
+    newfunc.args = args
+    newfunc.keywords = keywords
+    return newfunc
+
+try:
+    from _functools import partial
 except ImportError:
     pass
 
