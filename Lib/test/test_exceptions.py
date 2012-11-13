@@ -493,6 +493,7 @@ class ExceptionTests(unittest.TestCase):
             e.__context__ = None
             obj = None
             obj = wr()
+            gc_collect()
             self.assertTrue(obj is None, "%s" % obj)
 
         # Some complicated construct
@@ -509,6 +510,7 @@ class ExceptionTests(unittest.TestCase):
             except MyException:
                 pass
         obj = None
+        gc_collect()
         obj = wr()
         self.assertTrue(obj is None, "%s" % obj)
 
@@ -523,6 +525,7 @@ class ExceptionTests(unittest.TestCase):
         with Context():
             inner_raising_func()
         obj = None
+        gc_collect()
         obj = wr()
         self.assertTrue(obj is None, "%s" % obj)
 
