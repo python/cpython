@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16290: A float return value from the __complex__ special method is no
+  longer accepted in the complex() constructor.
+
 - Issue #16416: On Mac OS X, operating system data are now always
   encoded/decoded to/from UTF-8/surrogateescape, instead of the locale encoding
   (which may be ASCII if no locale environment variable is set), to avoid
