@@ -1,14 +1,22 @@
 """Do a minimal test of all the modules that aren't otherwise tested."""
-
-from test import support
+import importlib
 import sys
+from test import support
 import unittest
 
 class TestUntestedModules(unittest.TestCase):
-    def test_at_least_import_untested_modules(self):
+    def test_untested_modules_can_be_imported(self):
+        untested = ('bdb', 'encodings', 'formatter', 'getpass', 'imghdr',
+                    'keyword', 'macurl2path', 'nturl2path', 'tabnanny')
         with support.check_warnings(quiet=True):
-            import bdb
-            import cgitb
+            for name in untested:
+                try:
+                    support.import_module('test.test_{}'.format(name))
+                except unittest.SkipTest:
+                    importlib.import_module(name)
+                else:
+                    self.fail('{} has tests even though test_sundry claims '
+                              'otherwise'.format(name))
 
             import distutils.bcppcompiler
             import distutils.ccompiler
@@ -38,21 +46,9 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.command.sdist
             import distutils.command.upload
 
-            import encodings
-            import formatter
-            import getpass
             import html.entities
-            import imghdr
-            import keyword
-            import macurl2path
-            import mailcap
-            import nturl2path
-            import pstats
-            import py_compile
-            import sndhdr
-            import tabnanny
             try:
-                import tty     # not available on Windows
+                import tty  # Not available on Windows
             except ImportError:
                 if support.verbose:
                     print("skipping tty")
