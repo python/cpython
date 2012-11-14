@@ -1523,14 +1523,16 @@ available.  They are listed here in alphabetical order.
 .. function:: xrange(stop)
               xrange(start, stop[, step])
 
-   This function is very similar to :func:`range`, but returns an "xrange object"
+   This function is very similar to :func:`range`, but returns an :ref:`xrange
+   object <typesseq-xrange>`
    instead of a list.  This is an opaque sequence type which yields the same values
    as the corresponding list, without actually storing them all simultaneously.
    The advantage of :func:`xrange` over :func:`range` is minimal (since
    :func:`xrange` still has to create the values when asked for them) except when a
    very large range is used on a memory-starved machine or when all of the range's
    elements are never used (such as when the loop is usually terminated with
-   :keyword:`break`).
+   :keyword:`break`).  For more information on xrange objects, see
+   :ref:`typesseq-xrange` and :ref:`typesseq`.
 
    .. impl-detail::
 
