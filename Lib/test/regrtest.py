@@ -1210,8 +1210,7 @@ def runtest_inner(test, verbose, quiet,
             abstest = 'test.' + test
         with saved_test_environment(test, verbose, quiet) as environment:
             start_time = time.time()
-            the_package = __import__(abstest, globals(), locals(), [])
-            the_module = getattr(the_package, test)
+            the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
             # tests.  If not, use normal unittest test loading.
             test_runner = getattr(the_module, "test_main", None)
