@@ -7,7 +7,7 @@ import unittest
 from test.fork_wait import ForkWait
 from test.support import run_unittest, reap_children
 
-if not hassattr(os, 'fork'):
+if not hasattr(os, 'fork'):
     raise unittest.SkipTest("os.fork not defined")
 
 if not hasattr(os, 'wait3'):
