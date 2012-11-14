@@ -266,6 +266,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #16400: Update the description of which versions of a given package
+  PyPI displays.
+
 - Issue #15677: Document that zlib and gzip accept a compression level of 0 to
   mean 'no compression'. Patch by Brian Brazil.
 
