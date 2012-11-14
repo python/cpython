@@ -54,9 +54,11 @@ class EnvBuilder:
     behaviour when called upon to create a virtual environment.
 
     By default, the builder makes the system (global) site-packages dir
-    available to the created environment.
+    *un*available to the created environment.
 
-    By default, the creation process uses symlinks wherever possible.
+    If invoked using the Python -m option, the default is to use copying
+    on Windows platforms but symlinks elsewhere. If instantiated some
+    other way, the default is to *not* use symlinks.
 
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to created environments.
@@ -330,8 +332,9 @@ def create(env_dir, system_site_packages=False, clear=False, symlinks=False):
     """
     Create a virtual environment in a directory.
 
-    By default, makes the system (global) site-packages dir available to
-    the created environment.
+    By default, makes the system (global) site-packages dir *un*available to
+    the created environment, and uses copying rather than symlinking for files
+    obtained from the source Python installation.
 
     :param env_dir: The target directory to create an environment in.
     :param system_site_packages: If True, the system (global) site-packages
