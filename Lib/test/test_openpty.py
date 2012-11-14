@@ -4,7 +4,7 @@ import os, unittest
 from test.support import run_unittest
 
 if not hasattr(os, "openpty"):
-    raise unittest.SkipTest("No openpty() available.")
+    raise unittest.SkipTest("os.openpty() not available.")
 
 
 class OpenptyTest(unittest.TestCase):

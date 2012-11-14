@@ -6,7 +6,7 @@ from test.support import TESTFN, run_unittest
 try:
     select.poll
 except AttributeError:
-    raise unittest.SkipTest("select.poll not defined -- skipping test_poll")
+    raise unittest.SkipTest("select.poll not defined")
 
 
 def find_ready_matching(ready, flag):
