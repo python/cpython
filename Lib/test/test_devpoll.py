@@ -8,7 +8,7 @@ from test.support import TESTFN, run_unittest
 try:
     select.devpoll
 except AttributeError:
-    raise unittest.SkipTest("select.devpoll not defined -- skipping test_devpoll")
+    raise unittest.SkipTest("select.devpoll not defined")
 
 
 def find_ready_matching(ready, flag):
