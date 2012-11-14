@@ -43,9 +43,9 @@ the web interface. They may also designate other users as Owners or Maintainers.
 Maintainers may edit the package information, but not designate other Owners or
 Maintainers.
 
-By default PyPI will list all versions of a given package. To hide certain
-versions, the Hidden property should be set to yes. This must be edited through
-the web interface.
+By default PyPI displays only the newest version of a given package. The web
+interface lets one change this default behavior and manually select which
+versions to display and hide.
 
 
 .. _pypirc:
