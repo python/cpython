@@ -7,8 +7,9 @@ import pickle
 import weakref
 import errno
 
-from test.support import (TESTFN, unlink, run_unittest, captured_output,
-                          check_warnings, gc_collect, cpython_only, no_tracing)
+from test.support import (TESTFN, captured_output, check_impl_detail,
+                          check_warnings, cpython_only, gc_collect, run_unittest,
+                          no_tracing, unlink)
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -551,7 +552,9 @@ class ExceptionTests(unittest.TestCase):
             e.__context__ = None
             obj = None
             obj = wr()
-            gc_collect()
+            # guarantee no ref cycles on CPython (don't gc_collect)
+            if check_impl_detail(cpython=False):
+                gc_collect()
             self.assertTrue(obj is None, "%s" % obj)
 
         # Some complicated construct
@@ -568,7 +571,8 @@ class ExceptionTests(unittest.TestCase):
             except MyException:
                 pass
         obj = None
-        gc_collect()
+        if check_impl_detail(cpython=False):
+            gc_collect()
         obj = wr()
         self.assertTrue(obj is None, "%s" % obj)
 
@@ -583,7 +587,8 @@ class ExceptionTests(unittest.TestCase):
         with Context():
             inner_raising_func()
         obj = None
-        gc_collect()
+        if check_impl_detail(cpython=False):
+            gc_collect()
         obj = wr()
         self.assertTrue(obj is None, "%s" % obj)
 
