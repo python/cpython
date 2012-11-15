@@ -233,6 +233,7 @@ else:
                 self.returncode = None
                 self._handle = hp
                 self.sentinel = int(hp)
+                util.Finalize(self, _winapi.CloseHandle, (self.sentinel,))
 
                 # send information to child
                 Popen._tls.process_handle = int(hp)
