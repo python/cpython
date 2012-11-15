@@ -146,9 +146,10 @@ class FractionTest(unittest.TestCase):
         self.assertEqual((0, 1), _components(F(-0.0)))
         self.assertEqual((3602879701896397, 36028797018963968),
                          _components(F(0.1)))
-        self.assertRaises(TypeError, F, float('nan'))
-        self.assertRaises(TypeError, F, float('inf'))
-        self.assertRaises(TypeError, F, float('-inf'))
+        # bug 16469: error types should be consistent with float -> int
+        self.assertRaises(ValueError, F, float('nan'))
+        self.assertRaises(OverflowError, F, float('inf'))
+        self.assertRaises(OverflowError, F, float('-inf'))
 
     def testInitFromDecimal(self):
         self.assertEqual((11, 10),
@@ -157,10 +158,11 @@ class FractionTest(unittest.TestCase):
                          _components(F(Decimal('3.5e-2'))))
         self.assertEqual((0, 1),
                          _components(F(Decimal('.000e20'))))
-        self.assertRaises(TypeError, F, Decimal('nan'))
-        self.assertRaises(TypeError, F, Decimal('snan'))
-        self.assertRaises(TypeError, F, Decimal('inf'))
-        self.assertRaises(TypeError, F, Decimal('-inf'))
+        # bug 16469: error types should be consistent with decimal -> int
+        self.assertRaises(ValueError, F, Decimal('nan'))
+        self.assertRaises(ValueError, F, Decimal('snan'))
+        self.assertRaises(OverflowError, F, Decimal('inf'))
+        self.assertRaises(OverflowError, F, Decimal('-inf'))
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
@@ -248,14 +250,15 @@ class FractionTest(unittest.TestCase):
 
         inf = 1e1000
         nan = inf - inf
+        # bug 16469: error types should be consistent with float -> int
         self.assertRaisesMessage(
-            TypeError, "Cannot convert inf to Fraction.",
+            OverflowError, "Cannot convert inf to Fraction.",
             F.from_float, inf)
         self.assertRaisesMessage(
-            TypeError, "Cannot convert -inf to Fraction.",
+            OverflowError, "Cannot convert -inf to Fraction.",
             F.from_float, -inf)
         self.assertRaisesMessage(
-            TypeError, "Cannot convert nan to Fraction.",
+            ValueError, "Cannot convert nan to Fraction.",
             F.from_float, nan)
 
     def testFromDecimal(self):
@@ -268,17 +271,18 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(1 - F(1, 10**30),
                          F.from_decimal(Decimal("0." + "9" * 30)))
 
+        # bug 16469: error types should be consistent with decimal -> int
         self.assertRaisesMessage(
-            TypeError, "Cannot convert Infinity to Fraction.",
+            OverflowError, "Cannot convert Infinity to Fraction.",
             F.from_decimal, Decimal("inf"))
         self.assertRaisesMessage(
-            TypeError, "Cannot convert -Infinity to Fraction.",
+            OverflowError, "Cannot convert -Infinity to Fraction.",
             F.from_decimal, Decimal("-inf"))
         self.assertRaisesMessage(
-            TypeError, "Cannot convert NaN to Fraction.",
+            ValueError, "Cannot convert NaN to Fraction.",
             F.from_decimal, Decimal("nan"))
         self.assertRaisesMessage(
-            TypeError, "Cannot convert sNaN to Fraction.",
+            ValueError, "Cannot convert sNaN to Fraction.",
             F.from_decimal, Decimal("snan"))
 
     def testLimitDenominator(self):
