@@ -127,6 +127,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16481: multiprocessing no longer leaks process handles on Windows.
+
 - Issue #12428: Add a pure Python implementation of functools.partial().
   Patch by Brian Thorne.
 
