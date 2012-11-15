@@ -85,6 +85,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16481: multiprocessing no longer leaks process handles on Windows.
+
 - Issue #16140: The subprocess module no longer double closes its child
   subprocess.PIPE parent file descriptors on child error prior to exec().
 
