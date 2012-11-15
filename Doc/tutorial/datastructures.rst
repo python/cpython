@@ -229,8 +229,6 @@ Don't use this example's definition of :func:`sum`: since summing numbers is
 such a common need, a built-in function ``sum(sequence)`` is already provided,
 and works exactly like this.
 
-.. versionadded:: 2.3
-
 
 List Comprehensions
 -------------------
