@@ -370,12 +370,6 @@ Build
 - Issue #15819: Make sure we can build Python out-of-tree from a read-only
   source directory.  (Somewhat related to issue #9860.)
 
-Tools/Demos
------------
-
-- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
-  Patch by Serhiy Storchaka.
-
 Documentation
 -------------
 
@@ -414,10 +408,17 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #9893: Removed the Misc/Vim directory.
+
+- Removed the Misc/TextMate directory.
+
 - Issue #16245: Add the Tools/scripts/parse_html5_entities.py script to parse
   the list of HTML5 entities and update the html.entities.html5 dictionary.
 
 - Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
+
+- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
+  Patch by Serhiy Storchaka.
 
 
 What's New in Python 3.3.0?
