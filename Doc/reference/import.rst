@@ -44,9 +44,9 @@ described in the sections below.
 
 .. versionchanged:: 3.3
    The import system has been updated to fully implement the second phase
-   of PEP 302. There is no longer any implicit import machinery - the full
+   of :pep:`302`. There is no longer any implicit import machinery - the full
    import system is exposed through :data:`sys.meta_path`. In addition,
-   native namespace package support has been implemented (see PEP 420).
+   native namespace package support has been implemented (see :pep:`420`).
 
 
 :mod:`importlib`
@@ -219,9 +219,9 @@ whatever strategy it knows about. Objects that implement both of these
 interfaces are referred to as :term:`importers <importer>` - they return
 themselves when they find that they can load the requested module.
 
-Python includes a number of default finders and importers.  One
-knows how to locate frozen modules, and another knows how to locate
-built-in modules.  A third default finder searches an :term:`import path`
+Python includes a number of default finders and importers.  The first one
+knows how to locate built-in modules, and the second knows how to locate
+frozen modules.  A third default finder searches an :term:`import path`
 for modules.  The :term:`import path` is a list of locations that may
 name file system paths or zip files.  It can also be extended to search
 for any locatable resource, such as those identified by URLs.
