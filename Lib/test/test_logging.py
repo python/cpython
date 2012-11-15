@@ -2389,6 +2389,32 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    # As config0, but with properties
+    config14 = {
+        'version': 1,
+        'formatters': {
+            'form1' : {
+                'format' : '%(levelname)s ++ %(message)s',
+            },
+        },
+        'handlers' : {
+            'hand1' : {
+                'class' : 'logging.StreamHandler',
+                'formatter' : 'form1',
+                'level' : 'NOTSET',
+                'stream'  : 'ext://sys.stdout',
+                '.': {
+                    'foo': 'bar',
+                    'terminator': '!\n',
+                }
+            },
+        },
+        'root' : {
+            'level' : 'WARNING',
+            'handlers' : ['hand1'],
+        },
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -2624,6 +2650,15 @@ class ConfigDictTest(BaseTest):
 
     def test_config13_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config13)
+
+    def test_config14_ok(self):
+        with captured_stdout() as output:
+            self.apply_config(self.config14)
+            h = logging._handlers['hand1']
+            self.assertEqual(h.foo, 'bar')
+            self.assertEqual(h.terminator, '!\n')
+            logging.warning('Exclamation')
+            self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
 
     @unittest.skipUnless(threading, 'listen() needs threading to work')
     def setup_via_listener(self, text, verify=None):

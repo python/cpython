@@ -710,6 +710,7 @@ class DictConfigurator(BaseConfigurator):
                 'address' in config:
                 config['address'] = self.as_tuple(config['address'])
             factory = klass
+        props = config.pop('.', None)
         kwargs = dict([(k, config[k]) for k in config if valid_ident(k)])
         try:
             result = factory(**kwargs)
@@ -728,6 +729,9 @@ class DictConfigurator(BaseConfigurator):
             result.setLevel(logging._checkLevel(level))
         if filters:
             self.add_filters(result, filters)
+        if props:
+            for name, value in props.items():
+                setattr(result, name, value)
         return result
 
     def add_handlers(self, logger, handlers):
