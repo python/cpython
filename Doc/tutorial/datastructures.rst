@@ -418,7 +418,7 @@ with no duplicate elements.  Basic uses include membership testing and
 eliminating duplicate entries.  Set objects also support mathematical operations
 like union, intersection, difference, and symmetric difference.
 
-Curly braces or the :func:`set` function can be used to create sets.  Note: To
+Curly braces or the :func:`set` function can be used to create sets.  Note: to
 create an empty set you have to use ``set()``, not ``{}``; the latter creates an
 empty dictionary, a data structure that we discuss in the next section.
 
@@ -447,12 +447,12 @@ Here is a brief demonstration::
    >>> a ^ b                              # letters in a or b but not both
    {'r', 'd', 'b', 'm', 'z', 'l'}
 
-Like :ref:`for lists <tut-listcomps>`, there is a set comprehension syntax::
+Similarly to :ref:`list comprehensions <tut-listcomps>`, set comprehensions
+are also supported::
 
    >>> a = {x for x in 'abracadabra' if x not in 'abc'}
    >>> a
    {'r', 'd'}
-
 
 
 .. _tut-dictionaries:
