@@ -1088,6 +1088,15 @@ _Py_double_round(double x, int ndigits) {
     PyObject *result = NULL;
     _Py_SET_53BIT_PRECISION_HEADER;
 
+    /* Easy path for the common case ndigits == 0. */
+    if (ndigits == 0) {
+        rounded = round(x);
+        if (fabs(rounded - x) == 0.5)
+            /* halfway between two integers; use round-away-from-zero */
+            rounded = x + (x > 0.0 ? 0.5 : -0.5);
+        return PyFloat_FromDouble(rounded);
+    }
+
     /* The basic idea is very simple: convert and round the double to a
        decimal string using _Py_dg_dtoa, then convert that decimal string
        back to a double with _Py_dg_strtod.  There's one minor difficulty:
