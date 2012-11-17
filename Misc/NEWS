@@ -376,6 +376,9 @@ Build
 Documentation
 -------------
 
+- Issue #16489: Make it clearer that importlib.find_loader() needs parent
+  packages to be explicitly imported.
+
 - Issue #16400: Update the description of which versions of a given package
   PyPI displays.
 

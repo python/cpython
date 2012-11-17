@@ -55,7 +55,9 @@ def find_loader(name, path=None):
     value of 'path' given to the finders. None is returned if no loader could
     be found.
 
-    Dotted names do not have their parent packages implicitly imported.
+    Dotted names do not have their parent packages implicitly imported. You will
+    most likely need to explicitly import all parent packages in the proper
+    order for a submodule to get the correct loader.
 
     """
     try:
