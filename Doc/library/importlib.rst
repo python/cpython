@@ -94,11 +94,10 @@ Functions
    :exc:`ValueError` is raised). Otherwise a search using :attr:`sys.meta_path`
    is done. ``None`` is returned if no loader is found.
 
-   A dotted name does not have its parent's implicitly imported. If that is
-   desired (although not nessarily required to find the loader, it will most
-   likely be needed if the loader actually is used to load the module), then
-   you will have to import the packages containing the module prior to calling
-   this function.
+   A dotted name does not have its parent's implicitly imported as that requires
+   loading them and that may not be desired. To properly import a submodule you
+   will need to import all parent packages of the submodule and use the correct
+   argument to *path*.
 
 .. function:: invalidate_caches()
 
