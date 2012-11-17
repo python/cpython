@@ -29,6 +29,9 @@ special characters used in shell-style wildcards are:
 | ``[!seq]`` | matches any character not in *seq* |
 +------------+------------------------------------+
 
+For a literal match, wrap the meta-characters in brackets.
+For example, ``'[?]'`` matches the character ``'?'``.
+
 .. index:: module: glob
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
@@ -75,8 +78,6 @@ patterns.
 .. function:: translate(pattern)
 
    Return the shell-style *pattern* converted to a regular expression.
-
-   Be aware there is no way to quote meta-characters.
 
    Example:
 
