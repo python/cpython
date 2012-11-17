@@ -261,9 +261,9 @@ class Wave_read:
     #
 
     def _read_fmt_chunk(self, chunk):
-        wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack('<hhllh', chunk.read(14))
+        wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack('<HHLLH', chunk.read(14))
         if wFormatTag == WAVE_FORMAT_PCM:
-            sampwidth = struct.unpack('<h', chunk.read(2))[0]
+            sampwidth = struct.unpack('<H', chunk.read(2))[0]
             self._sampwidth = (sampwidth + 7) // 8
         else:
             raise Error, 'unknown format: %r' % (wFormatTag,)
@@ -466,14 +466,14 @@ class Wave_write:
             self._nframes = initlength / (self._nchannels * self._sampwidth)
         self._datalength = self._nframes * self._nchannels * self._sampwidth
         self._form_length_pos = self._file.tell()
-        self._file.write(struct.pack('<l4s4slhhllhh4s',
+        self._file.write(struct.pack('<L4s4sLHHLLHH4s',
             36 + self._datalength, 'WAVE', 'fmt ', 16,
             WAVE_FORMAT_PCM, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
             self._sampwidth * 8, 'data'))
         self._data_length_pos = self._file.tell()
-        self._file.write(struct.pack('<l', self._datalength))
+        self._file.write(struct.pack('<L', self._datalength))
         self._headerwritten = True
 
     def _patchheader(self):
@@ -482,9 +482,9 @@ class Wave_write:
             return
         curpos = self._file.tell()
         self._file.seek(self._form_length_pos, 0)
-        self._file.write(struct.pack('<l', 36 + self._datawritten))
+        self._file.write(struct.pack('<L', 36 + self._datawritten))
         self._file.seek(self._data_length_pos, 0)
-        self._file.write(struct.pack('<l', self._datawritten))
+        self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
 
