@@ -188,6 +188,9 @@ Library
 - Issue #16220: wsgiref now always calls close() on an iterable response.
   Patch by Brent Tubbs.
 
+- Issue #16461: Wave library should be able to deal with 4GB wav files,
+  and sample rate of 44100 Hz.
+
 - Issue #16176: Properly identify Windows 8 via platform.platform()
 
 - Issue #15756: subprocess.poll() now properly handles errno.ECHILD to
