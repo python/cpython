@@ -44,7 +44,7 @@
 
 This article explains the new features in Python 3.3, compared to 3.2.
 Python 3.3 was released on September 29, 2012.  For full details,
-see the :source:`Misc/NEWS` file.
+see the `changelog <http://docs.python.org/3.3/whatsnew/changelog.html>`_.
 
 .. seealso::
 
