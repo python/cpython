@@ -1391,7 +1391,6 @@ class ZipFile:
             zinfo.compress_size = len(data)    # Compressed size
         else:
             zinfo.compress_size = zinfo.file_size
-        zinfo.header_offset = self.fp.tell()    # Start of header data
         self.fp.write(zinfo.FileHeader())
         self.fp.write(data)
         self.fp.flush()
