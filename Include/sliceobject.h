@@ -34,6 +34,9 @@ PyAPI_FUNC(PyObject *) PySlice_New(PyObject* start, PyObject* stop,
                                   PyObject* step);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) _PySlice_FromIndices(Py_ssize_t start, Py_ssize_t stop);
+PyAPI_FUNC(int) _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
+                                 PyObject **start_ptr, PyObject **stop_ptr,
+                                 PyObject **step_ptr);
 #endif
 PyAPI_FUNC(int) PySlice_GetIndices(PyObject *r, Py_ssize_t length,
                                   Py_ssize_t *start, Py_ssize_t *stop, Py_ssize_t *step);
