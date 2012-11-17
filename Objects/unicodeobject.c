@@ -4127,12 +4127,36 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
             /* Apply mapping */
             if (PyInt_Check(x)) {
                 long value = PyInt_AS_LONG(x);
-                if (value < 0 || value > 65535) {
+                if (value < 0 || value > 0x10FFFF) {
                     PyErr_SetString(PyExc_TypeError,
-                                    "character mapping must be in range(65536)");
+                                    "character mapping must be in range(0x110000)");
                     Py_DECREF(x);
                     goto onError;
                 }
+
+#ifndef Py_UNICODE_WIDE
+                if (value > 0xFFFF) {
+                    /* see the code for 1-n mapping below */
+                    if (extrachars < 2) {
+                        /* resize first */
+                        Py_ssize_t oldpos = p - PyUnicode_AS_UNICODE(v);
+                        Py_ssize_t needed = 10 - extrachars;
+                        extrachars += needed;
+                        /* XXX overflow detection missing */
+                        if (_PyUnicode_Resize(&v,
+                                              PyUnicode_GET_SIZE(v) + needed) < 0) {
+                            Py_DECREF(x);
+                            goto onError;
+                        }
+                        p = PyUnicode_AS_UNICODE(v) + oldpos;
+                    }
+                    value -= 0x10000;
+                    *p++ = 0xD800 | (value >> 10);
+                    *p++ = 0xDC00 | (value & 0x3FF);
+                    extrachars -= 2;
+                }
+                else
+#endif
                 *p++ = (Py_UNICODE)value;
             }
             else if (x == Py_None) {
