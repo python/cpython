@@ -127,6 +127,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14631: Add a new :class:`weakref.WeakMethod` to simulate weak
+  references to bound methods.
+
 - Issue #16469: Fix exceptions from float -> Fraction and Decimal -> Fraction
   conversions for special values to be consistent with those for float -> int
   and Decimal -> int.  Patch by Alexey Kachayev.
