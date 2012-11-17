@@ -47,6 +47,11 @@ class Object:
         return NotImplemented
     def __hash__(self):
         return hash(self.arg)
+    def some_method(self):
+        return 4
+    def other_method(self):
+        return 5
+
 
 class RefCycle:
     def __init__(self):
@@ -880,6 +885,140 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertEqual(self.cbcalled, 0)
 
 
+class WeakMethodTestCase(unittest.TestCase):
+
+    def _subclass(self):
+        """Return a Object subclass overriding `some_method`."""
+        class C(Object):
+            def some_method(self):
+                return 6
+        return C
+
+    def test_alive(self):
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        self.assertIsInstance(r, weakref.ReferenceType)
+        self.assertIsInstance(r(), type(o.some_method))
+        self.assertIs(r().__self__, o)
+        self.assertIs(r().__func__, o.some_method.__func__)
+        self.assertEqual(r()(), 4)
+
+    def test_object_dead(self):
+        o = Object(1)
+        r = weakref.WeakMethod(o.some_method)
+        del o
+        gc.collect()
+        self.assertIs(r(), None)
+
+    def test_method_dead(self):
+        C = self._subclass()
+        o = C(1)
+        r = weakref.WeakMethod(o.some_method)
+        del C.some_method
+        gc.collect()
+        self.assertIs(r(), None)
+
+    def test_callback_when_object_dead(self):
+        # Test callback behaviour when object dies first.
+        C = self._subclass()
+        calls = []
+        def cb(arg):
+            calls.append(arg)
+        o = C(1)
+        r = weakref.WeakMethod(o.some_method, cb)
+        del o
+        gc.collect()
+        self.assertEqual(calls, [r])
+        # Callback is only called once.
+        C.some_method = Object.some_method
+        gc.collect()
+        self.assertEqual(calls, [r])
+
+    def test_callback_when_method_dead(self):
+        # Test callback behaviour when method dies first.
+        C = self._subclass()
+        calls = []
+        def cb(arg):
+            calls.append(arg)
+        o = C(1)
+        r = weakref.WeakMethod(o.some_method, cb)
+        del C.some_method
+        gc.collect()
+        self.assertEqual(calls, [r])
+        # Callback is only called once.
+        del o
+        gc.collect()
+        self.assertEqual(calls, [r])
+
+    @support.cpython_only
+    def test_no_cycles(self):
+        # A WeakMethod doesn't create any reference cycle to itself.
+        o = Object(1)
+        def cb(_):
+            pass
+        r = weakref.WeakMethod(o.some_method, cb)
+        wr = weakref.ref(r)
+        del r
+        self.assertIs(wr(), None)
+
+    def test_equality(self):
+        def _eq(a, b):
+            self.assertTrue(a == b)
+            self.assertFalse(a != b)
+        def _ne(a, b):
+            self.assertTrue(a != b)
+            self.assertFalse(a == b)
+        x = Object(1)
+        y = Object(1)
+        a = weakref.WeakMethod(x.some_method)
+        b = weakref.WeakMethod(y.some_method)
+        c = weakref.WeakMethod(x.other_method)
+        d = weakref.WeakMethod(y.other_method)
+        # Objects equal, same method
+        _eq(a, b)
+        _eq(c, d)
+        # Objects equal, different method
+        _ne(a, c)
+        _ne(a, d)
+        _ne(b, c)
+        _ne(b, d)
+        # Objects unequal, same or different method
+        z = Object(2)
+        e = weakref.WeakMethod(z.some_method)
+        f = weakref.WeakMethod(z.other_method)
+        _ne(a, e)
+        _ne(a, f)
+        _ne(b, e)
+        _ne(b, f)
+        del x, y, z
+        gc.collect()
+        # Dead WeakMethods compare by identity
+        refs = a, b, c, d, e, f
+        for q in refs:
+            for r in refs:
+                self.assertEqual(q == r, q is r)
+                self.assertEqual(q != r, q is not r)
+
+    def test_hashing(self):
+        # Alive WeakMethods are hashable if the underlying object is
+        # hashable.
+        x = Object(1)
+        y = Object(1)
+        a = weakref.WeakMethod(x.some_method)
+        b = weakref.WeakMethod(y.some_method)
+        c = weakref.WeakMethod(y.other_method)
+        # Since WeakMethod objects are equal, the hashes should be equal.
+        self.assertEqual(hash(a), hash(b))
+        ha = hash(a)
+        # Dead WeakMethods retain their old hash value
+        del x, y
+        gc.collect()
+        self.assertEqual(hash(a), ha)
+        self.assertEqual(hash(b), ha)
+        # If it wasn't hashed when alive, a dead WeakMethod cannot be hashed.
+        self.assertRaises(TypeError, hash, c)
+
+
 class MappingTestCase(TestBase):
 
     COUNT = 10
@@ -1455,6 +1594,7 @@ __test__ = {'libreftest' : libreftest}
 def test_main():
     support.run_unittest(
         ReferencesTestCase,
+        WeakMethodTestCase,
         MappingTestCase,
         WeakValueDictionaryTestCase,
         WeakKeyDictionaryTestCase,

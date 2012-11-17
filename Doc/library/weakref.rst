@@ -192,6 +192,35 @@ These method have the same issues as the and :meth:`keyrefs` method of
    discarded when no strong reference to it exists any more.
 
 
+.. class:: WeakMethod(method)
+
+   A custom :class:`ref` subclass which simulates a weak reference to a bound
+   method (i.e., a method defined on a class and looked up on an instance).
+   Since a bound method is ephemeral, a standard weak reference cannot keep
+   hold of it.  :class:`WeakMethod` has special code to recreate the bound
+   method until either the object or the original function dies::
+
+      >>> class C:
+      ...     def method(self):
+      ...         print("method called!")
+      ...
+      >>> c = C()
+      >>> r = weakref.ref(c.method)
+      >>> r()
+      >>> r = weakref.WeakMethod(c.method)
+      >>> r()
+      <bound method C.method of <__main__.C object at 0x7fc859830220>>
+      >>> r()()
+      method called!
+      >>> del c
+      >>> gc.collect()
+      0
+      >>> r()
+      >>>
+
+   .. versionadded:: 3.4
+
+
 .. data:: ReferenceType
 
    The type object for weak references objects.
