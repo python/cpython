@@ -282,16 +282,21 @@ defines.  It returns a sorted list of strings::
    >>> import fibo, sys
    >>> dir(fibo)
    ['__name__', 'fib', 'fib2']
-   >>> dir(sys)
-   ['__displayhook__', '__doc__', '__excepthook__', '__name__', '__stderr__',
-    '__stdin__', '__stdout__', '_getframe', 'api_version', 'argv',
-    'builtin_module_names', 'byteorder', 'callstats', 'copyright',
-    'displayhook', 'exc_clear', 'exc_info', 'exc_type', 'excepthook',
-    'exec_prefix', 'executable', 'exit', 'getdefaultencoding', 'getdlopenflags',
-    'getrecursionlimit', 'getrefcount', 'hexversion', 'maxint', 'maxunicode',
-    'meta_path', 'modules', 'path', 'path_hooks', 'path_importer_cache',
-    'platform', 'prefix', 'ps1', 'ps2', 'setcheckinterval', 'setdlopenflags',
-    'setprofile', 'setrecursionlimit', 'settrace', 'stderr', 'stdin', 'stdout',
+   >>> dir(sys)  # doctest: +NORMALIZE_WHITESPACE
+   ['__displayhook__', '__doc__', '__excepthook__', '__name__', '__package__',
+    '__stderr__', '__stdin__', '__stdout__', '_clear_type_cache',
+    '_current_frames', '_getframe', '_mercurial', 'api_version', 'argv',
+    'builtin_module_names', 'byteorder', 'call_tracing', 'callstats',
+    'copyright', 'displayhook', 'dont_write_bytecode', 'exc_clear', 'exc_info',
+    'exc_traceback', 'exc_type', 'exc_value', 'excepthook', 'exec_prefix',
+    'executable', 'exit', 'flags', 'float_info', 'float_repr_style',
+    'getcheckinterval', 'getdefaultencoding', 'getdlopenflags',
+    'getfilesystemencoding', 'getobjects', 'getprofile', 'getrecursionlimit',
+    'getrefcount', 'getsizeof', 'gettotalrefcount', 'gettrace', 'hexversion',
+    'long_info', 'maxint', 'maxsize', 'maxunicode', 'meta_path', 'modules',
+    'path', 'path_hooks', 'path_importer_cache', 'platform', 'prefix', 'ps1',
+    'py3kwarning', 'setcheckinterval', 'setdlopenflags', 'setprofile',
+    'setrecursionlimit', 'settrace', 'stderr', 'stdin', 'stdout', 'subversion',
     'version', 'version_info', 'warnoptions']
 
 Without arguments, :func:`dir` lists the names you have defined currently::
@@ -300,7 +305,7 @@ Without arguments, :func:`dir` lists the names you have defined currently::
    >>> import fibo
    >>> fib = fibo.fib
    >>> dir()
-   ['__builtins__', '__doc__', '__file__', '__name__', 'a', 'fib', 'fibo', 'sys']
+   ['__builtins__', '__name__', '__package__', 'a', 'fib', 'fibo', 'sys']
 
 Note that it lists all types of names: variables, modules, functions, etc.
 
@@ -311,10 +316,11 @@ want a list of those, they are defined in the standard module
 :mod:`__builtin__`::
 
    >>> import __builtin__
-   >>> dir(__builtin__)
-   ['ArithmeticError', 'AssertionError', 'AttributeError', 'DeprecationWarning',
-    'EOFError', 'Ellipsis', 'EnvironmentError', 'Exception', 'False',
-    'FloatingPointError', 'FutureWarning', 'IOError', 'ImportError',
+   >>> dir(__builtin__)  # doctest: +NORMALIZE_WHITESPACE
+   ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException',
+    'BufferError', 'BytesWarning', 'DeprecationWarning', 'EOFError',
+    'Ellipsis', 'EnvironmentError', 'Exception', 'False', 'FloatingPointError',
+    'FutureWarning', 'GeneratorExit', 'IOError', 'ImportError', 'ImportWarning',
     'IndentationError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
     'LookupError', 'MemoryError', 'NameError', 'None', 'NotImplemented',
     'NotImplementedError', 'OSError', 'OverflowError',
@@ -323,18 +329,19 @@ want a list of those, they are defined in the standard module
     'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'True',
     'TypeError', 'UnboundLocalError', 'UnicodeDecodeError',
     'UnicodeEncodeError', 'UnicodeError', 'UnicodeTranslateError',
-    'UserWarning', 'ValueError', 'Warning', 'WindowsError',
+    'UnicodeWarning', 'UserWarning', 'ValueError', 'Warning',
     'ZeroDivisionError', '_', '__debug__', '__doc__', '__import__',
-    '__name__', 'abs', 'apply', 'basestring', 'bool', 'buffer',
-    'callable', 'chr', 'classmethod', 'cmp', 'coerce', 'compile',
-    'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod',
-    'enumerate', 'eval', 'execfile', 'exit', 'file', 'filter', 'float',
-    'frozenset', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex',
-    'id', 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter',
-    'len', 'license', 'list', 'locals', 'long', 'map', 'max', 'memoryview',
-    'min', 'object', 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range',
-    'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round', 'set',
-    'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
+    '__name__', '__package__', 'abs', 'all', 'any', 'apply', 'basestring',
+    'bin', 'bool', 'buffer', 'bytearray', 'bytes', 'callable', 'chr',
+    'classmethod', 'cmp', 'coerce', 'compile', 'complex', 'copyright',
+    'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval',
+    'execfile', 'exit', 'file', 'filter', 'float', 'format', 'frozenset',
+    'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id', 'input',
+    'int', 'intern', 'isinstance', 'issubclass', 'iter', 'len', 'license',
+    'list', 'locals', 'long', 'map', 'max', 'memoryview', 'min', 'next',
+    'object', 'oct', 'open', 'ord', 'pow', 'print', 'property', 'quit',
+    'range', 'raw_input', 'reduce', 'reload', 'repr', 'reversed', 'round',
+    'set', 'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super',
     'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange', 'zip']
 
 
