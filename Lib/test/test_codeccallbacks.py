@@ -717,7 +717,7 @@ class CodecCallbackTest(unittest.TestCase):
                 raise ValueError
         self.assertRaises(UnicodeError, codecs.charmap_decode, "\xff", "strict", {0xff: None})
         self.assertRaises(ValueError, codecs.charmap_decode, "\xff", "strict", D())
-        self.assertRaises(TypeError, codecs.charmap_decode, "\xff", "strict", {0xff: sys.maxunicode+1})
+        self.assertRaises(TypeError, codecs.charmap_decode, "\xff", "strict", {0xff: 0x110000})
 
     def test_encodehelper(self):
         # enhance coverage of:
