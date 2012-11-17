@@ -229,6 +229,7 @@ Don't use this example's definition of :func:`sum`: since summing numbers is
 such a common need, a built-in function ``sum(sequence)`` is already provided,
 and works exactly like this.
 
+.. _tut-listcomps:
 
 List Comprehensions
 -------------------
@@ -485,6 +486,10 @@ with no duplicate elements.  Basic uses include membership testing and
 eliminating duplicate entries.  Set objects also support mathematical operations
 like union, intersection, difference, and symmetric difference.
 
+Curly braces or the :func:`set` function can be used to create sets.  Note: to
+create an empty set you have to use ``set()``, not ``{}``; the latter creates an
+empty dictionary, a data structure that we discuss in the next section.
+
 Here is a brief demonstration::
 
    >>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
@@ -510,6 +515,13 @@ Here is a brief demonstration::
    set(['a', 'c'])
    >>> a ^ b                              # letters in a or b but not both
    set(['r', 'd', 'b', 'm', 'z', 'l'])
+
+Similarly to :ref:`list comprehensions <tut-listcomps>`, set comprehensions
+are also supported::
+
+   >>> a = {x for x in 'abracadabra' if x not in 'abc'}
+   >>> a
+   set(['r', 'd'])
 
 
 .. _tut-dictionaries:
@@ -562,18 +574,17 @@ Here is a small example using a dictionary::
    >>> 'guido' in tel
    True
 
-The :func:`dict` constructor builds dictionaries directly from lists of
-key-value pairs stored as tuples.  When the pairs form a pattern, list
-comprehensions can compactly specify the key-value list. ::
+The :func:`dict` constructor builds dictionaries directly from sequences of
+key-value pairs::
 
    >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
    {'sape': 4139, 'jack': 4098, 'guido': 4127}
-   >>> dict([(x, x**2) for x in (2, 4, 6)])     # use a list comprehension
-   {2: 4, 4: 16, 6: 36}
 
-Later in the tutorial, we will learn about Generator Expressions which are even
-better suited for the task of supplying key-values pairs to the :func:`dict`
-constructor.
+In addition, dict comprehensions can be used to create dictionaries from
+arbitrary key and value expressions::
+
+   >>> {x: x**2 for x in (2, 4, 6)}
+   {2: 4, 4: 16, 6: 36}
 
 When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
