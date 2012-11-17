@@ -10118,6 +10118,7 @@ replace(PyObject *self, PyObject *str1,
                 /* widen self and buf1 */
                 rkind = kind2;
                 if (release1) PyMem_Free(buf1);
+                release1 = 0;
                 sbuf = _PyUnicode_AsKind(self, rkind);
                 if (!sbuf) goto error;
                 srelease = 1;
@@ -10179,6 +10180,7 @@ replace(PyObject *self, PyObject *str1,
             if (!sbuf) goto error;
             srelease = 1;
             if (release1) PyMem_Free(buf1);
+            release1 = 0;
             buf1 = _PyUnicode_AsKind(str1, rkind);
             if (!buf1) goto error;
             release1 = 1;

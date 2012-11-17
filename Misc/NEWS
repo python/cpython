@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16215: Fix potential double memory free in str.replace().  Patch
+  by Serhiy Storchaka.
+
 - Issue #16453: Fix equality testing of dead weakref objects.
 
 - Issue #9535: Fix pending signals that have been received but not yet
