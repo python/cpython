@@ -300,9 +300,7 @@ def getsitepackages(prefixes=None):
             continue
         seen.add(prefix)
 
-        if sys.platform == 'riscos':
-            sitepackages.append(os.path.join(prefix, "Lib", "site-packages"))
-        elif os.sep == '/':
+        if os.sep == '/':
             sitepackages.append(os.path.join(prefix, "lib",
                                         "python" + sys.version[:3],
                                         "site-packages"))

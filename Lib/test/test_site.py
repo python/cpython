@@ -222,11 +222,7 @@ class HelperFunctionsTests(unittest.TestCase):
         site.PREFIXES = ['xoxo']
         dirs = site.getsitepackages()
 
-        if sys.platform == 'riscos':
-            self.assertEqual(len(dirs), 1)
-            wanted = os.path.join('xoxo', 'Lib', 'site-packages')
-            self.assertEqual(dirs[0], wanted)
-        elif (sys.platform == "darwin" and
+        if (sys.platform == "darwin" and
             sysconfig.get_config_var("PYTHONFRAMEWORK")):
             # OS X framework builds
             site.PREFIXES = ['Python.framework']
