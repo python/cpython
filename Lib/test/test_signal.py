@@ -15,9 +15,6 @@ try:
 except ImportError:
     threading = None
 
-if sys.platform == 'riscos':
-    raise unittest.SkipTest("Can't test signal on %s" % sys.platform)
-
 
 class HandlerBCalled(Exception):
     pass

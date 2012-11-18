@@ -191,7 +191,6 @@ def _getuserbase():
     def joinuser(*args):
         return os.path.expanduser(os.path.join(*args))
 
-    # what about 'riscos' ?
     if os.name == "nt":
         base = os.environ.get("APPDATA") or "~"
         if env_base:
