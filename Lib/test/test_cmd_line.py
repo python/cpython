@@ -6,7 +6,8 @@ import test.test_support
 import sys
 import unittest
 from test.script_helper import (
-    assert_python_ok, spawn_python, kill_python, python_exit_code
+    assert_python_ok, assert_python_failure, spawn_python, kill_python,
+    python_exit_code
 )
 
 
@@ -115,6 +116,14 @@ class CmdLineTest(unittest.TestCase):
             print >>script, "del sys.modules['__main__']"
         assert_python_ok(filename)
 
+
+    def test_unknown_options(self):
+        # Add "without='-E'" to prevent _assert_python append env_vars -E
+        # which changes the output of stderr
+        rc, out, err = assert_python_failure('-z', without='-E')
+        self.assertIn(b'Unknown option', err)
+        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
+        self.assertEqual(b'', out)
 
 def test_main():
     test.test_support.run_unittest(CmdLineTest)
