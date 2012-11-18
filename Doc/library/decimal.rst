@@ -387,7 +387,7 @@ Decimal objects
 
    The integer division operator ``//`` behaves analogously, returning the
    integer part of the true quotient (truncating towards zero) rather than its
-   floor, so as to preseve the usual identity ``x == (x // y) * y + x % y``::
+   floor, so as to preserve the usual identity ``x == (x // y) * y + x % y``::
 
       >>> -7 // 4
       -2
