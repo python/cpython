@@ -365,6 +365,29 @@ Decimal objects
    compared, sorted, and coerced to another type (such as :class:`float` or
    :class:`int`).
 
+   There are some small differences between arithmetic on Decimal objects and
+   arithmetic on integers and floats.  When the remainder operator ``%`` is
+   applied to Decimal objects, the sign of the result is the sign of the
+   *dividend* rather than the sign of the divisor::
+
+      >>> (-7) % 4
+      1
+      >>> Decimal(-7) % Decimal(4)
+      Decimal('-3')
+
+   The integer division operator ``//`` behaves analogously, returning the
+   integer part of the true quotient (truncating towards zero) rather than its
+   floor, so as to preseve the usual identity ``x == (x // y) * y + x % y``::
+
+      >>> -7 // 4
+      -2
+      >>> Decimal(-7) // Decimal(4)
+      Decimal('-1')
+
+   The ``%`` and ``//`` operators implement the ``remainder`` and
+   ``divide-integer`` operations (respectively) as described in the
+   specification.
+
    Decimal objects cannot generally be combined with floats or
    instances of :class:`fractions.Fraction` in arithmetic operations:
    an attempt to add a :class:`Decimal` to a :class:`float`, for
