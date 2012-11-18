@@ -41,7 +41,7 @@ static char *opt_ptr = "";
 
 void _PyOS_ResetGetOpt(void)
 {
-    _PyOS_opterr = 1;
+    _PyOS_opterr = 0;   /* prevent printing the error in 2nd loop in main.c */
     _PyOS_optind = 1;
     _PyOS_optarg = NULL;
     opt_ptr = "";
@@ -86,17 +86,19 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
         opt_ptr = &argv[_PyOS_optind++][1];
     }
 
-    if ( (option = *opt_ptr++) == '\0')
+    if ((option = *opt_ptr++) == '\0')
         return -1;
 
     if (option == 'J') {
-        fprintf(stderr, "-J is reserved for Jython\n");
+        if (_PyOS_opterr)
+            fprintf(stderr, "-J is reserved for Jython\n");
         return '_';
     }
 
     if (option == 'X') {
-        fprintf(stderr,
-          "-X is reserved for implementation-specific arguments\n");
+        if (_PyOS_opterr)
+            fprintf(stderr,
+                "-X is reserved for implementation-specific arguments\n");
         return '_';
     }
 
@@ -117,7 +119,7 @@ int _PyOS_GetOpt(int argc, char **argv, char *optstring)
             if (_PyOS_optind >= argc) {
                 if (_PyOS_opterr)
                     fprintf(stderr,
-                "Argument expected for the -%c option\n", option);
+                        "Argument expected for the -%c option\n", option);
                 return '_';
             }
 
