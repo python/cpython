@@ -1676,7 +1676,8 @@ bypass these functions without concerns about missing something important.
    ``function(*args, **keywords)``.
 
    .. deprecated:: 2.3
-      Use the extended call syntax with ``*args`` and ``**keywords`` instead.
+      Use ``function(*args, **keywords)`` instead of
+      ``apply(function, args, keywords)`` (see :ref:`tut-unpacking-arguments`).
 
 
 .. function:: buffer(object[, offset[, size]])
