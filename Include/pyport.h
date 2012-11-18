@@ -646,7 +646,7 @@ extern char * _getpty(int *, int, mode_t, int);
 /* On QNX 6, struct termio must be declared by including sys/termio.h
    if TCGETA, TCSETA, TCSETAW, or TCSETAF are used.  sys/termio.h must
    be included before termios.h or it will generate an error. */
-#ifdef HAVE_SYS_TERMIO_H
+#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
 #include <sys/termio.h>
 #endif
 
