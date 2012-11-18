@@ -148,6 +148,11 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         code_object = self.loader.get_code(self.name)
         self.verify_code(code_object)
 
+    def test_compile_source(self):
+        # Verify the compiled code object.
+        code = self.loader.compile_source(self.loader.source, self.path)
+        self.verify_code(code)
+
     def test_load_module(self):
         # Loading a module should set __name__, __loader__, __package__,
         # __path__ (for packages), __file__, and __cached__.
@@ -395,12 +400,10 @@ class AbstractMethodImplTests(unittest.TestCase):
 
 def test_main():
     from test.support import run_unittest
-    run_unittest(SkipWritingBytecodeTests, RegeneratedBytecodeTests,
-                    BadBytecodeFailureTests, MissingPathsTests,
-                    SourceOnlyLoaderTests,
-                    SourceLoaderBytecodeTests,
-                    SourceLoaderGetSourceTests,
-                    AbstractMethodImplTests)
+    run_unittest(SourceOnlyLoaderTests,
+                 SourceLoaderBytecodeTests,
+                 SourceLoaderGetSourceTests,
+                 AbstractMethodImplTests)
 
 
 if __name__ == '__main__':
