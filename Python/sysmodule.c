@@ -1349,9 +1349,6 @@ static PyStructSequence_Field flags_fields[] = {
     {"no_site",                 "-S"},
     {"ignore_environment",      "-E"},
     {"verbose",                 "-v"},
-#ifdef RISCOS
-    {"riscos_wimp",             "???"},
-#endif
     /* {"unbuffered",                   "-u"}, */
     /* {"skip_first",                   "-x"}, */
     {"bytes_warning",           "-b"},
@@ -1364,11 +1361,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-#ifdef RISCOS
-    13
-#else
     12
-#endif
 };
 
 static PyObject*
@@ -1393,9 +1386,6 @@ make_flags(void)
     SetFlag(Py_NoSiteFlag);
     SetFlag(Py_IgnoreEnvironmentFlag);
     SetFlag(Py_VerboseFlag);
-#ifdef RISCOS
-    SetFlag(Py_RISCOSWimpFlag);
-#endif
     /* SetFlag(saw_unbuffered_flag); */
     /* SetFlag(skipfirstline); */
     SetFlag(Py_BytesWarningFlag);
