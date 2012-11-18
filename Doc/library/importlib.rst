@@ -364,10 +364,12 @@ ABC hierarchy::
     * :meth:`ResourceLoader.get_data`
     * :meth:`ExecutionLoader.get_filename`
           Should only return the path to the source file; sourceless
-          loading is not supported.
+          loading is not supported (see :class:`SourcelessLoader` if that
+          functionality is required)
 
     The abstract methods defined by this class are to add optional bytecode
-    file support. Not implementing these optional methods causes the loader to
+    file support. Not implementing these optional methods (or causing them to
+    raise :exc:`NotImplementedError`) causes the loader to
     only work with source code. Implementing the methods allows the loader to
     work with source *and* bytecode files; it does not allow for *sourceless*
     loading where only bytecode is provided.  Bytecode files are an
@@ -406,6 +408,17 @@ ABC hierarchy::
 
         When writing to the path fails because the path is read-only
         (:attr:`errno.EACCES`), do not propagate the exception.
+
+    .. method:: compile_source(data, path)
+
+        Create a code object from Python source.
+
+        The *data* argument can be whatever the :func:`compile` function
+        supports (i.e. string or bytes). The *path* argument should be
+        the "path" to where the source code originated from, which can be an
+        abstract concept (e.g. location in a zip file).
+
+        .. versionadded:: 3.4
 
     .. method:: get_code(fullname)
 
