@@ -7,7 +7,8 @@ import os
 import sys
 import subprocess
 import tempfile
-from test.script_helper import spawn_python, kill_python, assert_python_ok, assert_python_failure
+from test.script_helper import (spawn_python, kill_python, assert_python_ok,
+    assert_python_failure)
 
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
@@ -386,6 +387,12 @@ class CmdLineTest(unittest.TestCase):
             print("del sys.modules['__main__']", file=script)
         assert_python_ok(filename)
 
+
+    def test_unknown_options(self):
+        rc, out, err = assert_python_failure('-z', __cleanenv=True)
+        self.assertIn(b'Unknown option', err)
+        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
+        self.assertEqual(b'', out)
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
