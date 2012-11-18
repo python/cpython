@@ -341,6 +341,11 @@ Dialects support the following attributes:
    The default is :const:`False`.
 
 
+.. attribute:: Dialect.strict
+
+   When ``True``, raise exception :exc:`Error` on bad CSV input.
+   The default is ``False``.
+
 Reader Objects
 --------------
 
