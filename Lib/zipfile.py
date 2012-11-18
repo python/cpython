@@ -461,6 +461,28 @@ class _ZipDecrypter:
         self._UpdateKeys(c)
         return c
 
+
+compressor_names = {
+    0: 'store',
+    1: 'shrink',
+    2: 'reduce',
+    3: 'reduce',
+    4: 'reduce',
+    5: 'reduce',
+    6: 'implode',
+    7: 'tokenize',
+    8: 'deflate',
+    9: 'deflate64',
+    10: 'implode',
+    12: 'bzip2',
+    14: 'lzma',
+    18: 'terse',
+    19: 'lz77',
+    97: 'wavpack',
+    98: 'ppmd',
+}
+
+
 class ZipExtFile(io.BufferedIOBase):
     """File-like object for reading an archive member.
        Is returned by ZipFile.open().
@@ -487,6 +509,12 @@ class ZipExtFile(io.BufferedIOBase):
 
         if self._compress_type == ZIP_DEFLATED:
             self._decompressor = zlib.decompressobj(-15)
+        elif self._compress_type != ZIP_STORED:
+            descr = compressor_names.get(self._compress_type)
+            if descr:
+                raise NotImplementedError("compression type %d (%s)" % (self._compress_type, descr))
+            else:
+                raise NotImplementedError("compression type %d" % (self._compress_type,))
         self._unconsumed = ''
 
         self._readbuffer = ''
