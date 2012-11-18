@@ -8,7 +8,7 @@ from test.support import run_unittest, import_module
 thread = import_module('_thread')
 import time
 
-if (sys.platform[:3] == 'win') or (sys.platform=='riscos'):
+if (sys.platform[:3] == 'win'):
     raise unittest.SkipTest("Can't test signal on %s" % sys.platform)
 
 process_pid = os.getpid()
