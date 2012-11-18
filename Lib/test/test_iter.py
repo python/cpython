@@ -908,6 +908,21 @@ class TestCase(unittest.TestCase):
         except TypeError:
             pass
 
+    def test_extending_list_with_iterator_does_not_segfault(self):
+        # The code to extend a list with an iterator has a fair
+        # amount of nontrivial logic in terms of guessing how
+        # much memory to allocate in advance, "stealing" refs,
+        # and then shrinking at the end.  This is a basic smoke
+        # test for that scenario.
+        def gen():
+            for i in range(500):
+                yield i
+        lst = [0] * 500
+        for i in range(240):
+            lst.pop(0)
+        lst.extend(gen())
+        self.assertEqual(len(lst), 760)
+
 
 def test_main():
     run_unittest(TestCase)
