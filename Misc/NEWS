@@ -423,6 +423,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #10966: Remove the concept of unexpected skipped tests.
+
 - Issue #9893: Removed the Misc/Vim directory.
 
 - Removed the Misc/TextMate directory.

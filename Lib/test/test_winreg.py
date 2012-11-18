@@ -8,7 +8,7 @@ threading = support.import_module("threading")
 from platform import machine
 
 # Do this first so test will be skipped if module doesn't exist
-support.import_module('winreg')
+support.import_module('winreg', required_on=['win'])
 # Now import everything
 from winreg import *
 
