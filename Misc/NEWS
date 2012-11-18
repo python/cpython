@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16306: Fix multiple error messages when unknown command line
+  parameters where passed to the interpreter.  Patch by Hieu Nguyen.
+
 - Issue #15379: Fix passing of non-BMP characters as integers for the charmap
   decoder (already working as unicode strings).  Patch by Serhiy Storchaka.
 
