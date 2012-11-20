@@ -167,6 +167,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1160: Fix compiling large regular expressions on UCS2 builds.
+  Patch by Serhiy Storchaka.
+
 - Issue #14313: zipfile now raises NotImplementedError when the compression
   type is unknown.
 

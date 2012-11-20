@@ -419,6 +419,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("([\u2222\u2223])",
                                   "\u2222", re.UNICODE).group(1), "\u2222")
 
+    def test_big_codesize(self):
+        # Issue #1160
+        r = re.compile('|'.join(('%d'%x for x in range(10000))))
+        self.assertIsNotNone(r.match('1000'))
+        self.assertIsNotNone(r.match('9999'))
+
     def test_anyall(self):
         self.assertEqual(re.match("a.b", "a\nb", re.DOTALL).group(0),
                          "a\nb")

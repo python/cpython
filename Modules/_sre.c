@@ -2695,6 +2695,13 @@ _compile(PyObject* self_, PyObject* args)
     for (i = 0; i < n; i++) {
         PyObject *o = PyList_GET_ITEM(code, i);
         unsigned long value = PyLong_AsUnsignedLong(o);
+        if (value == (unsigned long)-1 && PyErr_Occurred()) {
+            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "regular expression code size limit exceeded");
+            }
+            break;
+        }
         self->code[i] = (SRE_CODE) value;
         if ((unsigned long) self->code[i] != value) {
             PyErr_SetString(PyExc_OverflowError,
@@ -3065,10 +3072,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-#ifdef Py_UNICODE_WIDE
                 if (max > 65535)
                     FAIL;
-#endif
                 if (!_validate_inner(code, code+skip-4, groups))
                     FAIL;
                 code += skip-4;
@@ -3086,10 +3091,8 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-#ifdef Py_UNICODE_WIDE
                 if (max > 65535)
                     FAIL;
-#endif
                 if (!_validate_inner(code, code+skip-3, groups))
                     FAIL;
                 code += skip-3;
