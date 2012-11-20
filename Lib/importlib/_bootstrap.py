@@ -1287,6 +1287,8 @@ class PathFinder:
         #  the list of paths that will become its __path__
         namespace_path = []
         for entry in path:
+            if not isinstance(entry, (str, bytes)):
+                continue
             finder = cls._path_importer_cache(entry)
             if finder is not None:
                 if hasattr(finder, 'find_loader'):
