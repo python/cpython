@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16514: Fix regression causing a traceback when sys.path[0] is None
+  (actually, any non-string or non-bytes type).
+
 - Issue #16505: Remove unused Py_TPFLAGS_INT_SUBCLASS.
 
 - Issue #16306: Fix multiple error messages when unknown command line
