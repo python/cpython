@@ -783,7 +783,9 @@ always available.
    current directory first.  Notice that the script directory is inserted *before*
    the entries inserted as a result of :envvar:`PYTHONPATH`.
 
-   A program is free to modify this list for its own purposes.
+   A program is free to modify this list for its own purposes.  Only strings
+   and bytes should be added to :data:`sys.path`; all other data types are
+   ignored during import.
 
 
    .. seealso::

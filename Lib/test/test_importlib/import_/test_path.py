@@ -1,15 +1,14 @@
 from importlib import _bootstrap
 from importlib import machinery
+from importlib import import_module
 from .. import util
 from . import util as import_util
-import imp
 import os
 import sys
-import tempfile
-from test import support
-from types import MethodType
+from types import ModuleType
 import unittest
 import warnings
+import zipimport
 
 
 class FinderTests(unittest.TestCase):
@@ -88,6 +87,24 @@ class FinderTests(unittest.TestCase):
             loader = machinery.PathFinder.find_module(module)
             self.assertIs(loader, importer)
             self.assertIn(os.curdir, sys.path_importer_cache)
+
+    def test_None_on_sys_path(self):
+        # Putting None in sys.path[0] caused an import regression from Python
+        # 3.2: http://bugs.python.org/issue16514
+        new_path = sys.path[:]
+        new_path.insert(0, None)
+        new_path_importer_cache = sys.path_importer_cache.copy()
+        new_path_importer_cache.pop(None, None)
+        new_path_hooks = [zipimport.zipimporter,
+                          _bootstrap.FileFinder.path_hook(
+                              *_bootstrap._get_supported_file_loaders())]
+        with util.uncache('email'):
+            with util.import_state(meta_path=sys.meta_path[:],
+                                   path=new_path,
+                                   path_importer_cache=new_path_importer_cache,
+                                   path_hooks=new_path_hooks):
+                module = import_module('email')
+                self.assertIsInstance(module, ModuleType)
 
 
 def test_main():
