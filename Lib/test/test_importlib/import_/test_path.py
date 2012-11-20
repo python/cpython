@@ -98,13 +98,18 @@ class FinderTests(unittest.TestCase):
         new_path_hooks = [zipimport.zipimporter,
                           _bootstrap.FileFinder.path_hook(
                               *_bootstrap._get_supported_file_loaders())]
-        with util.uncache('email'):
+        missing = object()
+        email = sys.modules.pop('email', missing)
+        try:
             with util.import_state(meta_path=sys.meta_path[:],
                                    path=new_path,
                                    path_importer_cache=new_path_importer_cache,
                                    path_hooks=new_path_hooks):
                 module = import_module('email')
                 self.assertIsInstance(module, ModuleType)
+        finally:
+            if email is not missing:
+                sys.modules['email'] = email
 
 
 def test_main():
