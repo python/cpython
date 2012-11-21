@@ -1,5 +1,10 @@
 .. highlightlang:: c
 
+.. index::
+   single: buffer protocol
+   single: buffer interface; (see buffer protocol)
+   single: buffer object; (see buffer protocol)
+
 .. _bufferobjects:
 
 Buffer Protocol
@@ -8,9 +13,6 @@ Buffer Protocol
 .. sectionauthor:: Greg Stein <gstein@lyra.org>
 .. sectionauthor:: Benjamin Peterson
 
-
-.. index::
-   single: buffer interface
 
 Certain objects available in Python wrap access to an underlying memory
 array or *buffer*.  Such objects include the built-in :class:`bytes` and
@@ -23,8 +25,8 @@ characteristic of being backed by a possibly large memory buffer.  It is
 then desireable, in some situations, to access that buffer directly and
 without intermediate copying.
 
-Python provides such a facility at the C level in the form of the *buffer
-protocol*.  This protocol has two sides:
+Python provides such a facility at the C level in the form of the :ref:`buffer
+protocol <bufferobjects>`.  This protocol has two sides:
 
 .. index:: single: PyBufferProcs
 
