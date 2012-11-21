@@ -58,7 +58,7 @@ class OrderedDict(dict):
             root = self.__root
             last = root[PREV]
             last[NEXT] = root[PREV] = self.__map[key] = [last, root, key]
-        dict_setitem(self, key, value)
+        return dict_setitem(self, key, value)
 
     def __delitem__(self, key, PREV=0, NEXT=1, dict_delitem=dict.__delitem__):
         'od.__delitem__(y) <==> del od[y]'
