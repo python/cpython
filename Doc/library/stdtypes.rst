@@ -794,6 +794,9 @@ More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
 
 
+.. index::
+   single: string; sequence types
+
 .. _typesseq:
 
 Sequence Types --- :class:`str`, :class:`bytes`, :class:`bytearray`, :class:`list`, :class:`tuple`, :class:`range`
@@ -804,17 +807,20 @@ byte arrays (:class:`bytearray` objects), lists, tuples, and range objects.  For
 other containers see the built in :class:`dict` and :class:`set` classes, and
 the :mod:`collections` module.
 
-
 .. index::
    object: sequence
-   object: string
    object: bytes
    object: bytearray
    object: tuple
    object: list
    object: range
+   object: string
+   single: string
+   single: str() (built-in function); (see also string)
 
-Strings contain Unicode characters.  Their literals are written in single or
+Textual data in Python is handled with :class:`str` objects, or :dfn:`strings`.
+Strings are immutable :ref:`sequences <typesseq>` of Unicode code points.
+String literals are written in single or
 double quotes: ``'xyzzy'``, ``"frobozz"``.  See :ref:`strings` for more about
 string literals.  In addition to the functionality described here, there are
 also string-specific methods described in the :ref:`string-methods` section.
