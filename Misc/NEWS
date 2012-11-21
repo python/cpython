@@ -395,6 +395,8 @@ Build
 Documentation
 -------------
 
+- Issue #13538: Improve str() and object.__str__() documentation.
+
 - Issue #16489: Make it clearer that importlib.find_loader() needs parent
   packages to be explicitly imported.
 
