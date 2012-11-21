@@ -62,6 +62,7 @@ __all__ = [
     'REPORT_NDIFF',
     'REPORT_ONLY_FIRST_FAILURE',
     'REPORTING_FLAGS',
+    'FAIL_FAST',
     # 1. Utility Functions
     # 2. Example & DocTest
     'Example',
@@ -150,11 +151,13 @@ REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
 REPORT_NDIFF = register_optionflag('REPORT_NDIFF')
 REPORT_ONLY_FIRST_FAILURE = register_optionflag('REPORT_ONLY_FIRST_FAILURE')
+FAIL_FAST = register_optionflag('FAIL_FAST')
 
 REPORTING_FLAGS = (REPORT_UDIFF |
                    REPORT_CDIFF |
                    REPORT_NDIFF |
-                   REPORT_ONLY_FIRST_FAILURE)
+                   REPORT_ONLY_FIRST_FAILURE |
+                   FAIL_FAST)
 
 # Special string markers for use in `want` strings:
 BLANKLINE_MARKER = '<BLANKLINE>'
@@ -1341,6 +1344,9 @@ class DocTestRunner:
                 failures += 1
             else:
                 assert False, ("unknown outcome", outcome)
+
+            if failures and self.optionflags & FAIL_FAST:
+                break
 
         # Restore the option flags (in case they were modified)
         self.optionflags = original_optionflags
