@@ -91,8 +91,6 @@ class OrderedDict(dict):
 
     def clear(self):
         'od.clear() -> None.  Remove all items from od.'
-        for node in self.__map.itervalues():
-            del node[:]
         root = self.__root
         root[:] = [root, root, None]
         self.__map.clear()
