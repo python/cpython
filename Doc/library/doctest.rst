@@ -633,6 +633,16 @@ The second group of options controls how test failures are reported:
    the output is suppressed.
 
 
+.. data:: FAIL_FAST
+
+   When specified, exit after the first failing example and don't attempt to run
+   the remaining examples. Thus, the number of failures reported will always be 1.
+   This flag may be useful during debugging, since examples after the first
+   failure won't even produce debugging output.
+
+   .. versionadded:: 3.4
+
+
 .. data:: REPORTING_FLAGS
 
    A bitmask or'ing together all the reporting flags above.
