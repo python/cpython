@@ -793,7 +793,6 @@ builtin_exec(PyObject *self, PyObject *args)
 {
     PyObject *v;
     PyObject *prog, *globals = Py_None, *locals = Py_None;
-    int plain = 0;
 
     if (!PyArg_UnpackTuple(args, "exec", 1, 3, &prog, &globals, &locals))
         return NULL;
@@ -802,7 +801,6 @@ builtin_exec(PyObject *self, PyObject *args)
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
             locals = PyEval_GetLocals();
-            plain = 1;
         }
         if (!globals || !locals) {
             PyErr_SetString(PyExc_SystemError,
