@@ -138,6 +138,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16522: added FAIL_FAST flag to doctest.
+
 - Issue #15627: Add the importlib.abc.SourceLoader.compile_source() method.
 
 - Issue #16408: Fix file descriptors not being closed in error conditions

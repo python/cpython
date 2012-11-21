@@ -1409,8 +1409,40 @@ However, output from `report_start` is not suppressed:
         2
     TestResults(failed=3, attempted=5)
 
-For the purposes of REPORT_ONLY_FIRST_FAILURE, unexpected exceptions
-count as failures:
+The FAIL_FAST flag causes the runner to exit after the first failing example,
+so subsequent examples are not even attempted:
+
+    >>> flags = doctest.FAIL_FAST
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line 5, in f
+    Failed example:
+        print(2) # first failure
+    Expected:
+        200
+    Got:
+        2
+    TestResults(failed=1, attempted=2)
+
+Specifying both FAIL_FAST and REPORT_ONLY_FIRST_FAILURE is equivalent to
+FAIL_FAST only:
+
+    >>> flags = doctest.FAIL_FAST | doctest.REPORT_ONLY_FIRST_FAILURE
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line 5, in f
+    Failed example:
+        print(2) # first failure
+    Expected:
+        200
+    Got:
+        2
+    TestResults(failed=1, attempted=2)
+
+For the purposes of both REPORT_ONLY_FIRST_FAILURE and FAIL_FAST, unexpected
+exceptions count as failures:
 
     >>> def f(x):
     ...     r'''
@@ -1437,6 +1469,17 @@ count as failures:
         ...
         ValueError: 2
     TestResults(failed=3, attempted=5)
+    >>> flags = doctest.FAIL_FAST
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line 5, in f
+    Failed example:
+        raise ValueError(2) # first failure
+    Exception raised:
+        ...
+        ValueError: 2
+    TestResults(failed=1, attempted=2)
 
 New option flags can also be registered, via register_optionflag().  Here
 we reach into doctest's internals a bit.
