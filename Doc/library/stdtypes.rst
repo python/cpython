@@ -1346,19 +1346,18 @@ range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
    The :attr:`start`, :attr:`stop` and :attr:`step` attributes.
 
 
+.. index::
+   single: string; text sequence type
+   single: str() (built-in function); (see also string)
+   object: string
+
 .. _textseq:
 
 Text Sequence Type --- :class:`str`
 ===================================
 
-.. index::
-   object: string
-   object: bytes
-   object: bytearray
-   object: io.StringIO
-
-
-Textual data in Python is handled with ``str`` objects, which are immutable
+Textual data in Python is handled with :class:`str` objects, or :dfn:`strings`.
+Strings are immutable
 :ref:`sequences <typesseq>` of Unicode code points.  String literals are
 written in a variety of ways:
 
@@ -1382,6 +1381,9 @@ function :func:`str`.
 
 Since there is no separate "character" type, indexing a string produces
 strings of length 1. That is, for a non-empty string *s*, ``s[0] == s[0:1]``.
+
+.. index::
+   object: io.StringIO
 
 There is also no mutable string type, but :meth:`str.join` or
 :class:`io.StringIO` can be used to efficiently construct strings from
@@ -2064,6 +2066,9 @@ that ``'\0'`` is the end of the string.
    longer replaced by ``%g`` conversions.
 
 
+.. index::
+   single: buffer protocol; binary sequence types
+
 .. _binaryseq:
 
 Binary Sequence Types --- :class:`bytes`, :class:`bytearray`, :class:`memoryview`
@@ -2077,8 +2082,8 @@ Binary Sequence Types --- :class:`bytes`, :class:`bytearray`, :class:`memoryview
 
 The core built-in types for manipulating binary data are :class:`bytes` and
 :class:`bytearray`. They are supported by :class:`memoryview` which uses
-the buffer protocol to access the memory of other binary objects without
-needing to make a copy.
+the :ref:`buffer protocol <bufferobjects>` to access the memory of other
+binary objects without needing to make a copy.
 
 The :mod:`array` module supports efficient storage of basic data types like
 32-bit integers and IEEE754 double-precision floating values.
