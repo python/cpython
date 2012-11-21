@@ -528,7 +528,7 @@ are always available.  They are listed here in alphabetical order.
    is used by most built-in types: :ref:`formatspec`.
 
    The default *format_spec* is an empty string which usually gives the same
-   effect as calling ``str(value)``.
+   effect as calling :func:`str(value) <str>`.
 
    A call to ``format(value, format_spec)`` is translated to
    ``type(value).__format__(format_spec)`` which bypasses the instance
@@ -1246,38 +1246,51 @@ are always available.  They are listed here in alphabetical order.
    For more information on static methods, consult the documentation on the
    standard type hierarchy in :ref:`types`.
 
+   .. index::
+      single: string; str() (built-in function)
+
 
 .. function:: str(object='')
-              str(object[, encoding[, errors]])
+              str(object=b'', encoding='utf-8', errors='strict')
 
-   Return a string version of an object, using one of the following modes:
+   Return a :ref:`string <typesseq>` version of *object*.  If *object* is not
+   provided, returns the empty string.  Otherwise, the behavior of ``str()``
+   depends on whether *encoding* or *errors* is given, as follows.
 
-   If *encoding* and/or *errors* are given, :func:`str` will decode the
-   *object* which can either be a byte string or a character buffer using
-   the codec for *encoding*. The *encoding* parameter is a string giving
-   the name of an encoding; if the encoding is not known, :exc:`LookupError`
-   is raised.  Error handling is done according to *errors*; this specifies the
-   treatment of characters which are invalid in the input encoding. If
-   *errors* is ``'strict'`` (the default), a :exc:`ValueError` is raised on
-   errors, while a value of ``'ignore'`` causes errors to be silently ignored,
-   and a value of ``'replace'`` causes the official Unicode replacement character,
-   U+FFFD, to be used to replace input characters which cannot be decoded.
-   See also the :mod:`codecs` module.
+   If neither *encoding* nor *errors* is given, ``str(object)`` returns
+   :meth:`object.__str__() <object.__str__>`, which is the "informal" or nicely
+   printable string representation of *object*.  For string objects, this is
+   the string itself.  If *object* does not have a :meth:`~object.__str__`
+   method, then :func:`str` falls back to returning
+   :meth:`repr(object) <repr>`.
 
-   When only *object* is given, this returns its nicely printable representation.
-   For strings, this is the string itself.  The difference with ``repr(object)``
-   is that ``str(object)`` does not always attempt to return a string that is
-   acceptable to :func:`eval`; its goal is to return a printable string.
-   With no arguments, this returns the empty string.
+   .. index::
+      single: buffer protocol; str() (built-in function)
+      single: bytes; str() (built-in function)
 
-   Objects can specify what ``str(object)`` returns by defining a :meth:`__str__`
-   special method.
+   If at least one of *encoding* or *errors* is given, *object* should be a
+   :class:`bytes` or :class:`bytearray` object, or more generally any object
+   that supports the :ref:`buffer protocol <bufferobjects>`.  In this case, if
+   *object* is a :class:`bytes` (or :class:`bytearray`) object, then
+   ``str(bytes, encoding, errors)`` is equivalent to
+   :meth:`bytes.decode(encoding, errors) <bytes.decode>`.  Otherwise, the bytes
+   object underlying the buffer object is obtained before calling
+   :meth:`bytes.decode`.  See the :ref:`typesseq` section, the
+   :ref:`typememoryview` section, and :ref:`bufferobjects` for information on
+   buffer objects.
 
-   For more information on strings see :ref:`typesseq` which describes sequence
-   functionality (strings are sequences), and also the string-specific methods
-   described in the :ref:`string-methods` section. To output formatted strings,
-   see the :ref:`string-formatting` section. In addition see the
-   :ref:`stringservices` section.
+   Passing a :class:`bytes` object to :func:`str` without the *encoding*
+   or *errors* arguments falls under the first case of returning the informal
+   string representation (see also the :option:`-b` command-line option to
+   Python).  For example::
+
+      >>> str(b'Zoot!')
+      "b'Zoot!'"
+
+   ``str`` is a built-in :term:`type`.  For more information on the string
+   type and its methods, see the :ref:`typesseq` and :ref:`string-methods`
+   sections.  To output formatted strings, see the :ref:`string-formatting`
+   section.  In addition, see the :ref:`stringservices` section.
 
 
 .. function:: sum(iterable[, start])

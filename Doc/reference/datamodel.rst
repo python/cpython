@@ -1124,10 +1124,11 @@ Basic customization
       modules are still available at the time when the :meth:`__del__` method is
       called.
 
+      .. index::
+         single: repr() (built-in function); __repr__() (object method)
+
 
 .. method:: object.__repr__(self)
-
-   .. index:: builtin: repr
 
    Called by the :func:`repr` built-in function to compute the "official" string
    representation of an object.  If at all possible, this should look like a
@@ -1141,18 +1142,25 @@ Basic customization
    This is typically used for debugging, so it is important that the representation
    is information-rich and unambiguous.
 
+   .. index::
+      single: string; __str__() (object method)
+      single: format() (built-in function); __str__() (object method)
+      single: print() (built-in function); __str__() (object method)
+
 
 .. method:: object.__str__(self)
 
-   .. index::
-      builtin: str
-      builtin: print
+   Called by :func:`str(object) <str>` and the built-in functions
+   :func:`format` and :func:`print` to compute the "informal" or nicely
+   printable string representation of an object.  The return value must be a
+   :ref:`string <textseq>` object.
 
-   Called by the :func:`str` built-in function and by the :func:`print` function
-   to compute the "informal" string representation of an object.  This differs
-   from :meth:`__repr__` in that it does not have to be a valid Python
-   expression: a more convenient or concise representation may be used instead.
-   The return value must be a string object.
+   This method differs from :meth:`object.__repr__` in that there is no
+   expectation that :meth:`__str__` return a valid Python expression: a more
+   convenient or concise representation can be used.
+
+   The default implementation defined by the built-in type :class:`object`
+   calls :meth:`object.__repr__`.
 
    .. XXX what about subclasses of string?
 

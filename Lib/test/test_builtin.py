@@ -1184,6 +1184,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, setattr, sys, 1, 'spam')
         self.assertRaises(TypeError, setattr)
 
+    # test_str(): see test_unicode.py and test_bytes.py for str() tests.
 
     def test_sum(self):
         self.assertEqual(sum([]), 0)

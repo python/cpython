@@ -1100,6 +1100,26 @@ class UnicodeTest(string_tests.CommonTest,
 
         self.assertRaises(TypeError, str, 42, 42, 42)
 
+    def test_constructor_keyword_args(self):
+        """Pass various keyword argument combinations to the constructor."""
+        # The object argument can be passed as a keyword.
+        self.assertEqual(str(object='foo'), 'foo')
+        self.assertEqual(str(object=b'foo', encoding='utf-8'), 'foo')
+        # The errors argument without encoding triggers "decode" mode.
+        self.assertEqual(str(b'foo', errors='strict'), 'foo')  # not "b'foo'"
+        self.assertEqual(str(object=b'foo', errors='strict'), 'foo')
+
+    def test_constructor_defaults(self):
+        """Check the constructor argument defaults."""
+        # The object argument defaults to '' or b''.
+        self.assertEqual(str(), '')
+        self.assertEqual(str(errors='strict'), '')
+        utf8_cent = '¢'.encode('utf-8')
+        # The encoding argument defaults to utf-8.
+        self.assertEqual(str(utf8_cent, errors='strict'), '¢')
+        # The errors argument defaults to strict.
+        self.assertRaises(UnicodeDecodeError, str, utf8_cent, encoding='ascii')
+
     def test_codecs_utf7(self):
         utfTests = [
             ('A\u2262\u0391.', b'A+ImIDkQ.'),             # RFC2152 example
