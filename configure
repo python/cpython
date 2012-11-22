@@ -11620,6 +11620,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <string.h>
@@ -14833,6 +14834,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stdio.h>
 #include<stdlib.h>
 int main() {
     size_t len = -1;
