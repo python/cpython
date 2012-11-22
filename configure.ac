@@ -3119,6 +3119,7 @@ then
   AC_MSG_CHECKING(getaddrinfo bug)
   AC_CACHE_VAL(ac_cv_buggy_getaddrinfo,
   AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+#include <stdio.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <string.h>
@@ -4447,6 +4448,7 @@ AC_CHECK_TYPE(socklen_t,,
 AC_MSG_CHECKING(for broken mbstowcs)
 AC_CACHE_VAL(ac_cv_broken_mbstowcs,
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include<stdlib.h>
 int main() {
     size_t len = -1;
