@@ -10881,6 +10881,7 @@ else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <string.h>
