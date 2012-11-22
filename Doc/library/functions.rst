@@ -937,32 +937,14 @@ are always available.  They are listed here in alphabetical order.
    :mod:`os.open` as *opener* results in functionality similar to passing
    ``None``).
 
-   The following example is an alternative implementation for opening files
-   for exclusive writing.  If we did not have support for the ``'x'`` mode,
-   we could implement it with this opener::
-
-      >>> import os
-      >>> def open_exclusive(path, mode):
-      ...     return os.open(path, mode | os.O_CREAT | os.O_EXCL)
-      ...
-      >>> filename = 'spam.txt'
-      >>> fp = open(filename, 'w', opener=open_exclusive)
-      >>> fp2 = open(filename, 'w', opener=open_exclusive)
-      Traceback (most recent call last):
-        ...
-      FileExistsError: [Errno 17] File exists: 'spam.txt'
-
-   This other example uses the :ref:`dir_fd` parameter of the
+   The following example uses the :ref:`dir_fd <dir_fd>` parameter of the
    :func:`os.open` function to open a file relative to a given directory::
 
       >>> import os
-      >>> def open_relative(dirname):
-      ...     dir_fd = os.open(dirname, os.O_RDONLY)
-      ...     def opener(path, flags):
-      ...         return os.open(path, flags, dir_fd=dir_fd)
-      ...     return opener, dir_fd
+      >>> dir_fd = os.open('somedir', os.O_RDONLY)
+      >>> def opener(path, flags):
+      ...     return os.open(path, flags, dir_fd=dir_fd)
       ...
-      >>> opener, dir_fd = open_relative('somedir')
       >>> with open('spamspam.txt', 'w', opener=opener) as f:
       ...     print('This will be written to somedir/spamspam.txt', file=f)
       ...
