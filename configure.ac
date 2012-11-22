@@ -3074,6 +3074,7 @@ then
   AC_MSG_CHECKING(getaddrinfo bug)
   AC_CACHE_VAL(ac_cv_buggy_getaddrinfo,
   AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+#include <stdio.h>
 #include <sys/types.h>
 #include <netdb.h>
 #include <string.h>
