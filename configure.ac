@@ -1345,6 +1345,7 @@ fi
 AC_MSG_CHECKING(whether pthreads are available without options)
 AC_CACHE_VAL(ac_cv_pthread_is_default,
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1379,6 +1380,7 @@ AC_CACHE_VAL(ac_cv_kpthread,
 [ac_save_cc="$CC"
 CC="$CC -Kpthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1407,6 +1409,7 @@ AC_CACHE_VAL(ac_cv_kthread,
 [ac_save_cc="$CC"
 CC="$CC -Kthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -1435,6 +1438,7 @@ AC_CACHE_VAL(ac_cv_thread,
 [ac_save_cc="$CC"
 CC="$CC -pthread"
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#include <stdio.h>
 #include <pthread.h>
 
 void* routine(void* p){return NULL;}
@@ -2356,7 +2360,9 @@ yes
     _libs=$LIBS
     LIBS="$LIBS -lpthread"
     AC_MSG_CHECKING([for pthread_create in -lpthread])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <pthread.h>
 
 void * start_routine (void *arg) { exit (0); }]], [[
 pthread_create (NULL, NULL, start_routine, NULL)]])],[
@@ -2422,7 +2428,9 @@ if test "$posix_threads" = "yes"; then
 
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
       AC_CACHE_VAL(ac_cv_pthread_system_supported,
-      [AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <pthread.h>
+      [AC_RUN_IFELSE([AC_LANG_SOURCE([[
+      #include <stdio.h>
+      #include <pthread.h>
       void *foo(void *parm) {
         return NULL;
       }
