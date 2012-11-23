@@ -259,7 +259,14 @@ class POP3:
         if self.file is not None:
             self.file.close()
         if self.sock is not None:
-            self.sock.close()
+            try:
+                self.sock.shutdown(socket.SHUT_RDWR)
+            except socket.error as e:
+                # The server might already have closed the connection
+                if e.errno != errno.ENOTCONN:
+                    raise
+            finally:
+                self.sock.close()
         self.file = self.sock = None
 
     #__del__ = quit
