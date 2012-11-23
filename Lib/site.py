@@ -484,15 +484,13 @@ def venv(known_paths):
         executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
-    executable_dir, executable_name = os.path.split(executable)
-    site_prefix = os.path.dirname(executable_dir)
+    exe_dir, _ = os.path.split(os.path.abspath(executable))
+    site_prefix = os.path.dirname(exe_dir)
     sys._home = None
-    if sys.platform == 'win32':
-        executable_name = os.path.splitext(executable_name)[0]
     conf_basename = 'pyvenv.cfg'
     candidate_confs = [
         conffile for conffile in (
-            os.path.join(executable_dir, conf_basename),
+            os.path.join(exe_dir, conf_basename),
             os.path.join(site_prefix, conf_basename)
             )
         if os.path.isfile(conffile)
