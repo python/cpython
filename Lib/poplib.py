@@ -15,6 +15,12 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 import re, socket
 
+try:
+    import ssl
+    HAVE_SSL = True
+except ImportError:
+    HAVE_SSL = False
+
 __all__ = ["POP3","error_proto"]
 
 # Exception raised when an error or invalid response is received:
@@ -56,6 +62,7 @@ class POP3:
             TOP msg n               top(msg, n)
             UIDL [msg]              uidl(msg = None)
             CAPA                    capa()
+            STLS                    stls()
 
     Raises one exception: 'error_proto'.
 
@@ -82,6 +89,7 @@ class POP3:
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.host = host
         self.port = port
+        self._tls_established = False
         self.sock = self._create_socket(timeout)
         self.file = self.sock.makefile('rb')
         self._debugging = 0
@@ -352,21 +360,42 @@ class POP3:
             raise error_proto('-ERR CAPA not supported by server')
         return caps
 
-try:
-    import ssl
-except ImportError:
-    pass
-else:
+
+    def stls(self, context=None):
+        """Start a TLS session on the active connection as specified in RFC 2595.
+
+                context - a ssl.SSLContext
+        """
+        if not HAVE_SSL:
+            raise error_proto('-ERR TLS support missing')
+        if self._tls_established:
+            raise error_proto('-ERR TLS session already established')
+        caps = self.capa()
+        if not 'STLS' in caps:
+            raise error_proto('-ERR STLS not supported by server')
+        if context is None:
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.options |= ssl.OP_NO_SSLv2
+        resp = self._shortcmd('STLS')
+        self.sock = context.wrap_socket(self.sock)
+        self.file = self.sock.makefile('rb')
+        self._tls_established = True
+        return resp
+
+
+if HAVE_SSL:
 
     class POP3_SSL(POP3):
         """POP3 client class over SSL connection
 
-        Instantiate with: POP3_SSL(hostname, port=995, keyfile=None, certfile=None)
+        Instantiate with: POP3_SSL(hostname, port=995, keyfile=None, certfile=None,
+                                   context=None)
 
                hostname - the hostname of the pop3 over ssl server
                port - port number
                keyfile - PEM formatted file that countains your private key
                certfile - PEM formatted certificate chain file
+               context - a ssl.SSLContext
 
         See the methods of the parent class POP3 for more documentation.
         """
@@ -391,6 +420,13 @@ else:
             else:
                 sock = ssl.wrap_socket(sock, self.keyfile, self.certfile)
             return sock
+
+        def stls(self, keyfile=None, certfile=None, context=None):
+            """The method unconditionally raises an exception since the
+            STLS command doesn't make any sense on an already established
+            SSL/TLS session.
+            """
+            raise error_proto('-ERR TLS session already established')
 
     __all__.append("POP3_SSL")
 
