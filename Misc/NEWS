@@ -138,6 +138,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4473: Add a POP3.capa() method to query the capabilities advertised
+  by the POP3 server.  Patch by Lorenzo Catucci.
+
 - Issue #4473: Ensure the socket is shutdown cleanly in POP3.close().
   Patch by Lorenzo Catucci.
 
