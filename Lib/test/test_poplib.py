@@ -33,6 +33,8 @@ line3\r\n\
 
 class DummyPOP3Handler(asynchat.async_chat):
 
+    CAPAS = {'UIDL': [], 'IMPLEMENTATION': ['python-testlib-pop-server']}
+
     def __init__(self, conn):
         asynchat.async_chat.__init__(self, conn)
         self.set_terminator(b"\r\n")
@@ -111,6 +113,16 @@ class DummyPOP3Handler(asynchat.async_chat):
     def cmd_quit(self, arg):
         self.push('+OK closing.')
         self.close_when_done()
+
+    def cmd_capa(self, arg):
+        self.push('+OK Capability list follows')
+        if self.CAPAS:
+            for cap, params in self.CAPAS.items():
+                _ln = [cap]
+                if params:
+                    _ln.extend(params)
+                self.push(' '.join(_ln))
+        self.push('.')
 
 
 class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
@@ -231,6 +243,10 @@ class TestPOP3Class(TestCase):
     def test_uidl(self):
         self.client.uidl()
         self.client.uidl('foo')
+
+    def test_capa(self):
+        capa = self.client.capa()
+        self.assertTrue('IMPLEMENTATION' in capa.keys())
 
     def test_quit(self):
         resp = self.client.quit()

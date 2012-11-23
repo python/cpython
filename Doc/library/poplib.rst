@@ -97,6 +97,14 @@ An :class:`POP3` instance has the following methods:
    Returns the greeting string sent by the POP3 server.
 
 
+.. method:: POP3.capa()
+
+   Query the server's capabilities as specified in :rfc:`2449`.
+   Returns a dictionary in the form ``{'name': ['param'...]}``.
+
+   .. versionadded:: 3.4
+
+
 .. method:: POP3.user(username)
 
    Send user command, response should indicate that a password is required.
