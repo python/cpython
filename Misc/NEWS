@@ -138,6 +138,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4473: Ensure the socket is shutdown cleanly in POP3.close().
+  Patch by Lorenzo Catucci.
+
 - Issue #16522: added FAIL_FAST flag to doctest.
 
 - Issue #15627: Add the importlib.abc.SourceLoader.compile_source() method.
