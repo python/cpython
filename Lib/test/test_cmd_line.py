@@ -97,10 +97,6 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(test.support.FS_NONASCII, 'need support.FS_NONASCII')
     def test_non_ascii(self):
         # Test handling of non-ascii data
-        if test.support.verbose:
-            import locale
-            print('locale encoding = %s, filesystem encoding = %s'
-                  % (locale.getpreferredencoding(), sys.getfilesystemencoding()))
         command = ("assert(ord(%r) == %s)"
                    % (test.support.FS_NONASCII, ord(test.support.FS_NONASCII)))
         assert_python_ok('-c', command)
