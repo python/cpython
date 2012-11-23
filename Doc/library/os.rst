@@ -2226,7 +2226,7 @@ written in Python, such as a mail server's external command delivery program.
    with :const:`P_NOWAIT` return suitable process handles.
 
 
-.. function:: wait3([options])
+.. function:: wait3(options)
 
    Similar to :func:`waitpid`, except no process id argument is given and a
    3-element tuple containing the child's process id, exit status indication, and
