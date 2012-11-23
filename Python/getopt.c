@@ -45,7 +45,7 @@ static wchar_t *opt_ptr = L"";
 
 void _PyOS_ResetGetOpt(void)
 {
-    _PyOS_opterr = 0;  /* prevent printing the error in 2nd loop in main.c */
+    _PyOS_opterr = 1;
     _PyOS_optind = 1;
     _PyOS_optarg = NULL;
     opt_ptr = L"";
