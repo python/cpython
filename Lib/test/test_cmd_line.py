@@ -116,14 +116,24 @@ class CmdLineTest(unittest.TestCase):
             print >>script, "del sys.modules['__main__']"
         assert_python_ok(filename)
 
-
     def test_unknown_options(self):
-        # Add "without='-E'" to prevent _assert_python append env_vars -E
-        # which changes the output of stderr
-        rc, out, err = assert_python_failure('-z', without='-E')
-        self.assertIn(b'Unknown option', err)
+        rc, out, err = assert_python_failure('-E', '-z')
+        self.assertIn(b'Unknown option: -z', err)
         self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
         self.assertEqual(b'', out)
+        # Add "without='-E'" to prevent _assert_python to append -E
+        # to env_vars and change the output of stderr
+        rc, out, err = assert_python_failure('-z', without='-E')
+        self.assertIn(b'Unknown option: -z', err)
+        self.assertEqual(err.splitlines().count(b'Unknown option: -z'), 1)
+        self.assertEqual(b'', out)
+        rc, out, err = assert_python_failure('-a', '-z', without='-E')
+        self.assertIn(b'Unknown option: -a', err)
+        # only the first unknown option is reported
+        self.assertNotIn(b'Unknown option: -z', err)
+        self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
+        self.assertEqual(b'', out)
+
 
 def test_main():
     test.test_support.run_unittest(CmdLineTest)
