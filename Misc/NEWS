@@ -138,6 +138,15 @@ Core and Builtins
 Library
 -------
 
+- Issue #4473: Add a POP3.stls() to switch a clear-text POP3 session into
+  an encrypted POP3 session, on supported servers.  Patch by Lorenzo Catucci.
+
+- Issue #4473: Add a POP3.capa() method to query the capabilities advertised
+  by the POP3 server.  Patch by Lorenzo Catucci.
+
+- Issue #4473: Ensure the socket is shutdown cleanly in POP3.close().
+  Patch by Lorenzo Catucci.
+
 - Issue #16522: added FAIL_FAST flag to doctest.
 
 - Issue #15627: Add the importlib.abc.SourceLoader.compile_source() method.
