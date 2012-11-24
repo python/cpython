@@ -1579,7 +1579,7 @@ save_long(PicklerObject *self, PyObject *obj)
          * byte at the start, and cut it back later if possible.
          */
         nbytes = (nbits >> 3) + 1;
-        if (nbytes > INT_MAX) {
+        if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
                             "long too large to pickle");
             goto error;
