@@ -103,7 +103,8 @@ from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
     urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     splittype, splithost, splitport, splituser, splitpasswd,
-    splitattr, splitquery, splitvalue, splittag, to_bytes, urlunparse)
+    splitattr, splitquery, splitvalue, splittag, to_bytes,
+    unquote_to_bytes, urlunparse)
 from urllib.response import addinfourl, addclosehook
 
 # check for SSL
@@ -121,7 +122,7 @@ __all__ = [
     'HTTPPasswordMgr', 'HTTPPasswordMgrWithDefaultRealm',
     'AbstractBasicAuthHandler', 'HTTPBasicAuthHandler', 'ProxyBasicAuthHandler',
     'AbstractDigestAuthHandler', 'HTTPDigestAuthHandler', 'ProxyDigestAuthHandler',
-    'HTTPHandler', 'FileHandler', 'FTPHandler', 'CacheFTPHandler',
+    'HTTPHandler', 'FileHandler', 'FTPHandler', 'CacheFTPHandler', 'DataHandler',
     'UnknownHandler', 'HTTPErrorProcessor',
     # Functions
     'urlopen', 'install_opener', 'build_opener',
@@ -535,7 +536,8 @@ def build_opener(*handlers):
     opener = OpenerDirector()
     default_classes = [ProxyHandler, UnknownHandler, HTTPHandler,
                        HTTPDefaultErrorHandler, HTTPRedirectHandler,
-                       FTPHandler, FileHandler, HTTPErrorProcessor]
+                       FTPHandler, FileHandler, HTTPErrorProcessor,
+                       DataHandler]
     if hasattr(http.client, "HTTPSConnection"):
         default_classes.append(HTTPSHandler)
     skip = set()
@@ -1540,6 +1542,36 @@ class CacheFTPHandler(FTPHandler):
             conn.close()
         self.cache.clear()
         self.timeout.clear()
+
+class DataHandler(BaseHandler):
+    def data_open(self, req):
+        # data URLs as specified in RFC 2397.
+        #
+        # ignores POSTed data
+        #
+        # syntax:
+        # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
+        # mediatype := [ type "/" subtype ] *( ";" parameter )
+        # data      := *urlchar
+        # parameter := attribute "=" value
+        url = req.full_url
+
+        scheme, data = url.split(":",1)
+        mediatype, data = data.split(",",1)
+
+        # even base64 encoded data URLs might be quoted so unquote in any case:
+        data = unquote_to_bytes(data)
+        if mediatype.endswith(";base64"):
+            data = base64.decodebytes(data)
+            mediatype = mediatype[:-7]
+
+        if not mediatype:
+            mediatype = "text/plain;charset=US-ASCII"
+
+        headers = email.message_from_string("Content-type: %s\nContent-length: %d\n" %
+            (mediatype, len(data)))
+
+        return addinfourl(io.BytesIO(data), headers, url)
 
 
 # Code move from the old urllib module
