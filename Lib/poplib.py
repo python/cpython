@@ -13,7 +13,9 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 # Imports
 
-import re, socket
+import errno
+import re
+import socket
 
 try:
     import ssl
