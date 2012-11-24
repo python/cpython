@@ -121,7 +121,7 @@ The :mod:`urllib.request` module defines the following functions:
    instances of them or subclasses of them: :class:`ProxyHandler`,
    :class:`UnknownHandler`, :class:`HTTPHandler`, :class:`HTTPDefaultErrorHandler`,
    :class:`HTTPRedirectHandler`, :class:`FTPHandler`, :class:`FileHandler`,
-   :class:`HTTPErrorProcessor`.
+   :class:`HTTPErrorProcessor`, :class:`DataHandler`.
 
    If the Python installation has SSL support (i.e., if the :mod:`ssl` module
    can be imported), :class:`HTTPSHandler` will also be added.
@@ -346,6 +346,11 @@ The following classes are provided:
 
    Open local files.
 
+.. class:: DataHandler()
+
+   Open data URLs.
+
+   .. versionadded:: 3.4
 
 .. class:: FTPHandler()
 
@@ -972,6 +977,21 @@ FileHandler Objects
       hostname is given, an :exc:`URLError` is raised.
 
 
+.. _data-handler-objects:
+
+DataHandler Objects
+-------------------
+
+.. method:: DataHandler.data_open(req)
+
+   Read a data URL. This kind of URL contains the content encoded in the URL
+   itself. The data URL syntax is specified in :rfc:`2397`. This implementation
+   ignores white spaces in base64 encoded data URLs so the URL may be wrapped
+   in whatever source file it comes from. But even though some browsers don't
+   mind about a missing padding at the end of a base64 encoded data URL, this
+   implementation will raise an :exc:`ValueError` in that case.
+
+
 .. _ftp-handler-objects:
 
 FTPHandler Objects
@@ -1374,7 +1394,9 @@ some point in the future.
      pair: FTP; protocol
 
 * Currently, only the following protocols are supported: HTTP (versions 0.9 and
-  1.0), FTP, and local files.
+  1.0), FTP, local files, and data URLs.
+
+  .. versionchanged:: 3.4 Added support for data URLs.
 
 * The caching feature of :func:`urlretrieve` has been disabled until someone
   finds the time to hack proper processing of Expiration time headers.

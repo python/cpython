@@ -337,6 +337,79 @@ Content-Type: text/html; charset=iso-8859-1
         with support.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
 
+class urlopen_DataTests(unittest.TestCase):
+    """Test urlopen() opening a data URL."""
+
+    def setUp(self):
+        # text containing URL special- and unicode-characters
+        self.text = "test data URLs :;,%=& \u00f6 \u00c4 "
+        # 2x1 pixel RGB PNG image with one black and one white pixel
+        self.image = (
+            b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x02\x00\x00\x00'
+            b'\x01\x08\x02\x00\x00\x00{@\xe8\xdd\x00\x00\x00\x01sRGB\x00\xae'
+            b'\xce\x1c\xe9\x00\x00\x00\x0fIDAT\x08\xd7c```\xf8\xff\xff?\x00'
+            b'\x06\x01\x02\xfe\no/\x1e\x00\x00\x00\x00IEND\xaeB`\x82')
+
+        self.text_url = (
+            "data:text/plain;charset=UTF-8,test%20data%20URLs%20%3A%3B%2C%25%3"
+            "D%26%20%C3%B6%20%C3%84%20")
+        self.text_url_base64 = (
+            "data:text/plain;charset=ISO-8859-1;base64,dGVzdCBkYXRhIFVSTHMgOjs"
+            "sJT0mIPYgxCA%3D")
+        # base64 encoded data URL that contains ignorable spaces,
+        # such as "\n", " ", "%0A", and "%20".
+        self.image_url = (
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7\n"
+            "QOjdAAAAAXNSR0IArs4c6QAAAA9JREFUCNdj%0AYGBg%2BP//PwAGAQL%2BCm8 "
+            "vHgAAAABJRU5ErkJggg%3D%3D%0A%20")
+
+        self.text_url_resp = urllib.request.urlopen(self.text_url)
+        self.text_url_base64_resp = urllib.request.urlopen(
+            self.text_url_base64)
+        self.image_url_resp = urllib.request.urlopen(self.image_url)
+
+    def test_interface(self):
+        # Make sure object returned by urlopen() has the specified methods
+        for attr in ("read", "readline", "readlines",
+                     "close", "info", "geturl", "getcode", "__iter__"):
+            self.assertTrue(hasattr(self.text_url_resp, attr),
+                         "object returned by urlopen() lacks %s attribute" %
+                         attr)
+
+    def test_info(self):
+        self.assertIsInstance(self.text_url_resp.info(), email.message.Message)
+        self.assertEqual(self.text_url_base64_resp.info().get_params(),
+            [('text/plain', ''), ('charset', 'ISO-8859-1')])
+        self.assertEqual(self.image_url_resp.info()['content-length'],
+            str(len(self.image)))
+        self.assertEqual(urllib.request.urlopen("data:,").info().get_params(),
+            [('text/plain', ''), ('charset', 'US-ASCII')])
+
+    def test_geturl(self):
+        self.assertEqual(self.text_url_resp.geturl(), self.text_url)
+        self.assertEqual(self.text_url_base64_resp.geturl(),
+            self.text_url_base64)
+        self.assertEqual(self.image_url_resp.geturl(), self.image_url)
+
+    def test_read_text(self):
+        self.assertEqual(self.text_url_resp.read().decode(
+            dict(self.text_url_resp.info().get_params())['charset']), self.text)
+
+    def test_read_text_base64(self):
+        self.assertEqual(self.text_url_base64_resp.read().decode(
+            dict(self.text_url_base64_resp.info().get_params())['charset']),
+            self.text)
+
+    def test_read_image(self):
+        self.assertEqual(self.image_url_resp.read(), self.image)
+
+    def test_missing_comma(self):
+        self.assertRaises(ValueError,urllib.request.urlopen,'data:text/plain')
+
+    def test_invalid_base64_data(self):
+        # missing padding character
+        self.assertRaises(ValueError,urllib.request.urlopen,'data:;base64,Cg=')
+
 class urlretrieve_FileTests(unittest.TestCase):
     """Test urllib.urlretrieve() on local files"""
 
@@ -1313,6 +1386,7 @@ def test_main():
     support.run_unittest(
         urlopen_FileTests,
         urlopen_HttpTests,
+        urlopen_DataTests,
         urlretrieve_FileTests,
         urlretrieve_HttpTests,
         ProxyTests,
