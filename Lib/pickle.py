@@ -265,7 +265,7 @@ class _Pickler:
             if i < 256:
                 return BINPUT + bytes([i])
             else:
-                return LONG_BINPUT + pack("<i", i)
+                return LONG_BINPUT + pack("<I", i)
 
         return PUT + repr(i).encode("ascii") + b'\n'
 
@@ -275,7 +275,7 @@ class _Pickler:
             if i < 256:
                 return BINGET + bytes([i])
             else:
-                return LONG_BINGET + pack("<i", i)
+                return LONG_BINGET + pack("<I", i)
 
         return GET + repr(i).encode("ascii") + b'\n'
 
@@ -497,7 +497,7 @@ class _Pickler:
         if n < 256:
             self.write(SHORT_BINBYTES + bytes([n]) + bytes(obj))
         else:
-            self.write(BINBYTES + pack("<i", n) + bytes(obj))
+            self.write(BINBYTES + pack("<I", n) + bytes(obj))
         self.memoize(obj)
     dispatch[bytes] = save_bytes
 
@@ -505,7 +505,7 @@ class _Pickler:
         if self.bin:
             encoded = obj.encode('utf-8', 'surrogatepass')
             n = len(encoded)
-            self.write(BINUNICODE + pack("<i", n) + encoded)
+            self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
             obj = obj.replace("\\", "\\u005c")
             obj = obj.replace("\n", "\\u000a")
@@ -925,6 +925,9 @@ class _Unpickler:
 
     def load_long4(self):
         n = mloads(b'i' + self.read(4))
+        if n < 0:
+            # Corrupt or hostile pickle -- we never write one like this
+            raise UnpicklingError("LONG pickle has negative byte count");
         data = self.read(n)
         self.append(decode_long(data))
     dispatch[LONG4[0]] = load_long4
@@ -953,14 +956,19 @@ class _Unpickler:
     dispatch[STRING[0]] = load_string
 
     def load_binstring(self):
+        # Deprecated BINSTRING uses signed 32-bit length
         len = mloads(b'i' + self.read(4))
+        if len < 0:
+            raise UnpicklingError("BINSTRING pickle has negative byte count");
         data = self.read(len)
         value = str(data, self.encoding, self.errors)
         self.append(value)
     dispatch[BINSTRING[0]] = load_binstring
 
-    def load_binbytes(self):
-        len = mloads(b'i' + self.read(4))
+    def load_binbytes(self, unpack=struct.unpack, maxsize=sys.maxsize):
+        len, = unpack('<I', self.read(4))
+        if len > maxsize:
+            raise UnpicklingError("BINBYTES exceeds system's maximum size of %d bytes" % maxsize);
         self.append(self.read(len))
     dispatch[BINBYTES[0]] = load_binbytes
 
@@ -968,8 +976,10 @@ class _Unpickler:
         self.append(str(self.readline()[:-1], 'raw-unicode-escape'))
     dispatch[UNICODE[0]] = load_unicode
 
-    def load_binunicode(self):
-        len = mloads(b'i' + self.read(4))
+    def load_binunicode(self, unpack=struct.unpack, maxsize=sys.maxsize):
+        len, = unpack('<I', self.read(4))
+        if len > maxsize:
+            raise UnpicklingError("BINUNICODE exceeds system's maximum size of %d bytes" % maxsize);
         self.append(str(self.read(len), 'utf-8', 'surrogatepass'))
     dispatch[BINUNICODE[0]] = load_binunicode
 
@@ -1100,6 +1110,9 @@ class _Unpickler:
             return
         key = _inverted_registry.get(code)
         if not key:
+            if code <= 0: # note that 0 is forbidden
+                # Corrupt or hostile pickle.
+                raise UnpicklingError("EXT specifies code <= 0");
             raise ValueError("unregistered extension code %d" % code)
         obj = self.find_class(*key)
         _extension_cache[code] = obj
@@ -1153,8 +1166,8 @@ class _Unpickler:
         self.append(self.memo[i])
     dispatch[BINGET[0]] = load_binget
 
-    def load_long_binget(self):
-        i = mloads(b'i' + self.read(4))
+    def load_long_binget(self, unpack=struct.unpack):
+        i, = unpack('<I', self.read(4))
         self.append(self.memo[i])
     dispatch[LONG_BINGET[0]] = load_long_binget
 
@@ -1172,9 +1185,9 @@ class _Unpickler:
         self.memo[i] = self.stack[-1]
     dispatch[BINPUT[0]] = load_binput
 
-    def load_long_binput(self):
-        i = mloads(b'i' + self.read(4))
-        if i < 0:
+    def load_long_binput(self, unpack=struct.unpack, maxsize=sys.maxsize):
+        i, = unpack('<I', self.read(4))
+        if i > maxsize:
             raise ValueError("negative LONG_BINPUT argument")
         self.memo[i] = self.stack[-1]
     dispatch[LONG_BINPUT[0]] = load_long_binput

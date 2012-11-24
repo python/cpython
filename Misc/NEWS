@@ -167,6 +167,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12848: The pure Python pickle implementation now treats object
+  lengths as unsigned 32-bit integers, like the C implementation does.
+  Patch by Serhiy Storchaka.
+
 - Issue #1160: Fix compiling large regular expressions on UCS2 builds.
   Patch by Serhiy Storchaka.
 
