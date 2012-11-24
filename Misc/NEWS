@@ -138,6 +138,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16423: urllib.request now has support for ``data:`` URLs.  Patch by
+  Mathias Panzenböck.
+
 - Issue #4473: Add a POP3.stls() to switch a clear-text POP3 session into
   an encrypted POP3 session, on supported servers.  Patch by Lorenzo Catucci.
 
