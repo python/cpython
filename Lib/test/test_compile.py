@@ -61,6 +61,34 @@ class TestSpecifics(unittest.TestCase):
         except SyntaxError:
             pass
 
+    def test_exec_functional_style(self):
+        # Exec'ing a tuple of length 2 works.
+        g = {'b': 2}
+        exec("a = b + 1", g)
+        self.assertEqual(g['a'], 3)
+
+        # As does exec'ing a tuple of length 3.
+        l = {'b': 3}
+        g = {'b': 5, 'c': 7}
+        exec("a = b + c", g, l)
+        self.assertNotIn('a', g)
+        self.assertEqual(l['a'], 10)
+
+        # Tuples not of length 2 or 3 are invalid.
+        with self.assertRaises(TypeError):
+            exec("a = b + 1",)
+
+        with self.assertRaises(TypeError):
+            exec("a = b + 1", {}, {}, {})
+
+        # Can't mix and match the two calling forms.
+        g = {'a': 3, 'b': 4}
+        l = {}
+        with self.assertRaises(TypeError):
+            exec("a = b + 1", g) in g
+        with self.assertRaises(TypeError):
+            exec("a = b + 1", g, l) in g, l
+
     def test_exec_with_general_mapping_for_locals(self):
 
         class M:
