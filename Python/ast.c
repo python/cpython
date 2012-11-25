@@ -930,7 +930,7 @@ ast_for_decorated(struct compiling *c, const node *n)
       return NULL;
 
     assert(TYPE(CHILD(n, 1)) == funcdef ||
-	   TYPE(CHILD(n, 1)) == classdef);
+           TYPE(CHILD(n, 1)) == classdef);
 
     if (TYPE(CHILD(n, 1)) == funcdef) {
       thing = ast_for_funcdef(c, CHILD(n, 1), decorator_seq);
@@ -1744,14 +1744,19 @@ ast_for_factor(struct compiling *c, const node *n)
         NCH(ppower) == 1 &&
         TYPE((patom = CHILD(ppower, 0))) == atom &&
         TYPE((pnum = CHILD(patom, 0))) == NUMBER) {
+        PyObject *pynum;
         char *s = PyObject_MALLOC(strlen(STR(pnum)) + 2);
         if (s == NULL)
             return NULL;
         s[0] = '-';
         strcpy(s + 1, STR(pnum));
-        PyObject_FREE(STR(pnum));
-        STR(pnum) = s;
-        return ast_for_atom(c, patom);
+        pynum = parsenumber(c, s);
+        PyObject_FREE(s);
+        if (!pynum)
+            return NULL;
+
+        PyArena_AddPyObject(c->c_arena, pynum);
+        return Num(pynum, LINENO(n), n->n_col_offset, c->c_arena);
     }
 
     expression = ast_for_expr(c, CHILD(n, 1));
@@ -3292,8 +3297,8 @@ ast_for_stmt(struct compiling *c, const node *n)
                 return ast_for_funcdef(c, ch, NULL);
             case classdef:
                 return ast_for_classdef(c, ch, NULL);
-	    case decorated:
-	        return ast_for_decorated(c, ch);
+            case decorated:
+                return ast_for_decorated(c, ch);
             default:
                 PyErr_Format(PyExc_SystemError,
                              "unhandled small_stmt: TYPE=%d NCH=%d\n",
@@ -3382,8 +3387,8 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
                 /* check for integer overflow */
                 if (len > PY_SIZE_MAX / 6)
                         return NULL;
-		/* "<C3><A4>" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
-		   "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
+                /* "<C3><A4>" (2 bytes) may become "\U000000E4" (10 bytes), or 1:5
+                   "\ä" (3 bytes) may become "\u005c\U000000E4" (16 bytes), or ~1:6 */
                 u = PyString_FromStringAndSize((char *)NULL, len * 6);
                 if (u == NULL)
                         return NULL;
@@ -3413,8 +3418,8 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
                                         sprintf(p, "\\U%02x%02x%02x%02x",
                                                 r[i + 0] & 0xFF,
                                                 r[i + 1] & 0xFF,
-						r[i + 2] & 0xFF,
-						r[i + 3] & 0xFF);
+                                                r[i + 2] & 0xFF,
+                                                r[i + 3] & 0xFF);
                                         p += 10;
                                 }
                                 Py_DECREF(w);
