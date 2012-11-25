@@ -1802,6 +1802,11 @@ expr_ty
 YieldFrom(expr_ty value, int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
+        if (!value) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field value is required for YieldFrom");
+                return NULL;
+        }
         p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
         if (!p)
                 return NULL;
@@ -5431,7 +5436,8 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         Py_XDECREF(tmp);
                         tmp = NULL;
                 } else {
-                        value = NULL;
+                        PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from YieldFrom");
+                        return 1;
                 }
                 *out = YieldFrom(value, lineno, col_offset, arena);
                 if (*out == NULL) goto failed;
