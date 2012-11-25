@@ -399,6 +399,14 @@ class AST_Tests(unittest.TestCase):
             compile(m, "<test>", "exec")
         self.assertIn("string must be of type str", str(cm.exception))
 
+    def test_empty_yield_from(self):
+        # Issue 16546: yield from value is not optional.
+        empty_yield_from = ast.parse("def f():\n yield from g()")
+        empty_yield_from.body[0].body[0].value.value = None
+        with self.assertRaises(ValueError) as cm:
+            compile(empty_yield_from, "<test>", "exec")
+        self.assertIn("field value is required", str(cm.exception))
+
 
 class ASTHelpers_Test(unittest.TestCase):
 
