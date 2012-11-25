@@ -41,7 +41,7 @@ from socketserver import ThreadingTCPServer, StreamRequestHandler
 import struct
 import sys
 import tempfile
-from test.support import captured_stdout, run_with_locale, run_unittest
+from test.support import captured_stdout, run_with_locale, run_unittest, patch
 from test.support import TestHandler, Matcher
 import textwrap
 import time
@@ -2367,6 +2367,162 @@ class HandlerTest(BaseTest):
                     os.unlink(fn)
 
 
+class BasicConfigTest(unittest.TestCase):
+
+    """Test suite for logging.basicConfig."""
+
+    def setUp(self):
+        super(BasicConfigTest, self).setUp()
+        self.handlers = logging.root.handlers
+        self.saved_handlers = logging._handlers.copy()
+        self.saved_handler_list = logging._handlerList[:]
+        self.original_logging_level = logging.root.level
+        self.addCleanup(self.cleanup)
+        logging.root.handlers = []
+
+    def tearDown(self):
+        for h in logging.root.handlers[:]:
+            logging.root.removeHandler(h)
+            h.close()
+        super(BasicConfigTest, self).tearDown()
+
+    def cleanup(self):
+        setattr(logging.root, 'handlers', self.handlers)
+        logging._handlers.clear()
+        logging._handlers.update(self.saved_handlers)
+        logging._handlerList[:] = self.saved_handler_list
+        logging.root.level = self.original_logging_level
+
+    def test_no_kwargs(self):
+        logging.basicConfig()
+
+        # handler defaults to a StreamHandler to sys.stderr
+        self.assertEqual(len(logging.root.handlers), 1)
+        handler = logging.root.handlers[0]
+        self.assertIsInstance(handler, logging.StreamHandler)
+        self.assertEqual(handler.stream, sys.stderr)
+
+        formatter = handler.formatter
+        # format defaults to logging.BASIC_FORMAT
+        self.assertEqual(formatter._style._fmt, logging.BASIC_FORMAT)
+        # datefmt defaults to None
+        self.assertIsNone(formatter.datefmt)
+        # style defaults to %
+        self.assertIsInstance(formatter._style, logging.PercentStyle)
+
+        # level is not explicitly set
+        self.assertEqual(logging.root.level, self.original_logging_level)
+
+    def test_filename(self):
+        logging.basicConfig(filename='test.log')
+
+        self.assertEqual(len(logging.root.handlers), 1)
+        handler = logging.root.handlers[0]
+        self.assertIsInstance(handler, logging.FileHandler)
+
+        expected = logging.FileHandler('test.log', 'a')
+        self.addCleanup(expected.close)
+        self.assertEqual(handler.stream.mode, expected.stream.mode)
+        self.assertEqual(handler.stream.name, expected.stream.name)
+
+    def test_filemode(self):
+        logging.basicConfig(filename='test.log', filemode='wb')
+
+        handler = logging.root.handlers[0]
+        expected = logging.FileHandler('test.log', 'wb')
+        self.addCleanup(expected.close)
+        self.assertEqual(handler.stream.mode, expected.stream.mode)
+
+    def test_stream(self):
+        stream = io.StringIO()
+        self.addCleanup(stream.close)
+        logging.basicConfig(stream=stream)
+
+        self.assertEqual(len(logging.root.handlers), 1)
+        handler = logging.root.handlers[0]
+        self.assertIsInstance(handler, logging.StreamHandler)
+        self.assertEqual(handler.stream, stream)
+
+    def test_format(self):
+        logging.basicConfig(format='foo')
+
+        formatter = logging.root.handlers[0].formatter
+        self.assertEqual(formatter._style._fmt, 'foo')
+
+    def test_datefmt(self):
+        logging.basicConfig(datefmt='bar')
+
+        formatter = logging.root.handlers[0].formatter
+        self.assertEqual(formatter.datefmt, 'bar')
+
+    def test_style(self):
+        logging.basicConfig(style='$')
+
+        formatter = logging.root.handlers[0].formatter
+        self.assertIsInstance(formatter._style, logging.StringTemplateStyle)
+
+    def test_level(self):
+        old_level = logging.root.level
+        self.addCleanup(logging.root.setLevel, old_level)
+
+        logging.basicConfig(level=57)
+        self.assertEqual(logging.root.level, 57)
+        # Test that second call has no effect
+        logging.basicConfig(level=58)
+        self.assertEqual(logging.root.level, 57)
+
+    def test_handlers(self):
+        handlers = [
+            logging.StreamHandler(),
+            logging.StreamHandler(sys.stdout),
+            logging.StreamHandler(),
+        ]
+        f = logging.Formatter()
+        handlers[2].setFormatter(f)
+        self.assertRaises(ValueError, logging.basicConfig, level=logging.DEBUG,
+                          format='%(asctime)s %(message)s', handlers=handlers)
+
+    def _test_log(self, method, level=None):
+        # logging.root has no handlers so basicConfig should be called
+        called = []
+
+        old_basic_config = logging.basicConfig
+        def my_basic_config(*a, **kw):
+            old_basic_config()
+            old_level = logging.root.level
+            logging.root.setLevel(100)  # avoid having messages in stderr
+            self.addCleanup(logging.root.setLevel, old_level)
+            called.append((a, kw))
+
+        patch(self, logging, 'basicConfig', my_basic_config)
+
+        log_method = getattr(logging, method)
+        if level is not None:
+            log_method(level, "test me")
+        else:
+            log_method("test me")
+
+        # basicConfig was called with no arguments
+        self.assertEqual(called, [((), {})])
+
+    def test_log(self):
+        self._test_log('log', logging.WARNING)
+
+    def test_debug(self):
+        self._test_log('debug')
+
+    def test_info(self):
+        self._test_log('info')
+
+    def test_warning(self):
+        self._test_log('warning')
+
+    def test_error(self):
+        self._test_log('error')
+
+    def test_critical(self):
+        self._test_log('critical')
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -2380,7 +2536,7 @@ def test_main():
                  LogRecordFactoryTest, ChildLoggerTest, QueueHandlerTest,
                  RotatingFileHandlerTest,
                  LastResortTest,
-                 TimedRotatingFileHandlerTest, HandlerTest,
+                 TimedRotatingFileHandlerTest, HandlerTest, BasicConfigTest,
                 )
 
 if __name__ == "__main__":
