@@ -250,6 +250,9 @@ Library
 Tests
 -----
 
+- Issue #16559: Add more tests for the json module, including some from the
+  official test suite at json.org.  Patch by Serhiy Storchaka.
+
 - Issue #16115: Add some tests for the executable argument to
   subprocess.Popen().  Initial patch by Kushal Das.
 
