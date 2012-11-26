@@ -1,13 +1,13 @@
 from json.tests import PyTest, CTest
 
-# Fri Dec 30 18:57:26 2005
+# 2007-10-05
 JSONDOCS = [
     # http://json.org/JSON_checker/test/fail1.json
     '"A JSON payload should be an object or array, not a string."',
     # http://json.org/JSON_checker/test/fail2.json
     '["Unclosed array"',
     # http://json.org/JSON_checker/test/fail3.json
-    '{unquoted_key: "keys must be quoted}',
+    '{unquoted_key: "keys must be quoted"}',
     # http://json.org/JSON_checker/test/fail4.json
     '["extra comma",]',
     # http://json.org/JSON_checker/test/fail5.json
@@ -33,7 +33,7 @@ JSONDOCS = [
     # http://json.org/JSON_checker/test/fail15.json
     '["Illegal backslash escape: \\x15"]',
     # http://json.org/JSON_checker/test/fail16.json
-    '["Illegal backslash escape: \\\'"]',
+    '[\\naked]',
     # http://json.org/JSON_checker/test/fail17.json
     '["Illegal backslash escape: \\017"]',
     # http://json.org/JSON_checker/test/fail18.json
@@ -50,6 +50,24 @@ JSONDOCS = [
     '["Bad value", truth]',
     # http://json.org/JSON_checker/test/fail24.json
     "['single quote']",
+    # http://json.org/JSON_checker/test/fail25.json
+    '["\ttab\tcharacter\tin\tstring\t"]',
+    # http://json.org/JSON_checker/test/fail26.json
+    '["tab\\   character\\   in\\  string\\  "]',
+    # http://json.org/JSON_checker/test/fail27.json
+    '["line\nbreak"]',
+    # http://json.org/JSON_checker/test/fail28.json
+    '["line\\\nbreak"]',
+    # http://json.org/JSON_checker/test/fail29.json
+    '[0e]',
+    # http://json.org/JSON_checker/test/fail30.json
+    '[0e+]',
+    # http://json.org/JSON_checker/test/fail31.json
+    '[0e+-1]',
+    # http://json.org/JSON_checker/test/fail32.json
+    '{"Comma instead if closing brace": true,',
+    # http://json.org/JSON_checker/test/fail33.json
+    '["mismatch"}',
     # http://code.google.com/p/simplejson/issues/detail?id=3
     u'["A\u001FZ control characters in string"]',
 ]

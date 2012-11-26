@@ -518,6 +518,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #16559: Add more tests for the json module, including some from the
+  official test suite at json.org.  Patch by Serhiy Storchaka.
+
 - Issue #16274: Fix test_asyncore on Solaris.  Patch by Giampaolo Rodola'.
 
 - Issue #15040: Close files in mailbox tests for PyPy compatibility.
