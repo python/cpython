@@ -17,7 +17,7 @@ JSON = r'''
         "real": -9876.543210,
         "e": 0.123456789e-12,
         "E": 1.234567890E+34,
-        "":  23456789012E666,
+        "":  23456789012E66,
         "zero": 0,
         "one": 1,
         "space": " ",
@@ -28,6 +28,7 @@ JSON = r'''
         "alpha": "abcdefghijklmnopqrstuvwyz",
         "ALPHA": "ABCDEFGHIJKLMNOPQRSTUVWYZ",
         "digit": "0123456789",
+        "0123456789": "digit",
         "special": "`1~!@#$%^&*()_+-={':[,]}|;.</>?",
         "hex": "\u0123\u4567\u89AB\uCDEF\uabcd\uef4A",
         "true": true,
@@ -43,8 +44,7 @@ JSON = r'''
 
 ,
 
-4 , 5        ,          6           ,7        ],
-        "compact": [1,2,3,4,5,6,7],
+4 , 5        ,          6           ,7        ],"compact":[1,2,3,4,5,6,7],
         "jsontext": "{\"object with 1 member\":[\"array with 1 element\"]}",
         "quotes": "&#34; \u0022 %22 0x22 034 &#x22;",
         "\/\\\"\uCAFE\uBABE\uAB98\uFCDE\ubcda\uef4A\b\f\n\r\t`1~!@#$%^&*()_+-=[]{}|;:',./<>?"
@@ -55,9 +55,11 @@ JSON = r'''
 99.44
 ,
 
-1066
-
-
+1066,
+1e1,
+0.1e1,
+1e-1,
+1e00,2e+00,2e-00
 ,"rosebud"]
 '''
 
@@ -67,12 +69,6 @@ class TestPass1(object):
         res = self.loads(JSON)
         out = self.dumps(res)
         self.assertEqual(res, self.loads(out))
-        try:
-            self.dumps(res, allow_nan=False)
-        except ValueError:
-            pass
-        else:
-            self.fail("23456789012E666 should be out of range")
 
 
 class TestPyPass1(TestPass1, PyTest): pass
