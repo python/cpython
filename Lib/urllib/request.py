@@ -266,18 +266,37 @@ class Request:
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
         self.full_url = unwrap(url)
         self.full_url, self.fragment = splittag(self.full_url)
-        self.data = data
         self.headers = {}
+        self.unredirected_hdrs = {}
+        self._data = None
+        self.data = data
         self._tunnel_host = None
         for key, value in headers.items():
             self.add_header(key, value)
-        self.unredirected_hdrs = {}
         if origin_req_host is None:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
         self.method = method
         self._parse()
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        if data != self._data:
+            self._data = data
+            # issue 16464
+            # if we change data we need to remove content-length header
+            # (cause it's most probably calculated for previous value)
+            if self.has_header("Content-length"):
+                self.remove_header("Content-length")
+
+    @data.deleter
+    def data(self):
+        self._data = None
 
     def _parse(self):
         self.type, rest = splittype(self.full_url)
@@ -373,6 +392,10 @@ class Request:
         return self.headers.get(
             header_name,
             self.unredirected_hdrs.get(header_name, default))
+
+    def remove_header(self, header_name):
+        self.headers.pop(header_name, None)
+        self.unredirected_hdrs.pop(header_name, None)
 
     def header_items(self):
         hdrs = self.unredirected_hdrs.copy()
