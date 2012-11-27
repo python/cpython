@@ -507,6 +507,9 @@ Library
 Extension Modules
 -----------------
 
+- Fix the leak of a dict in the time module when used in an embedded
+  interpreter that is repeatedly initialized and shutdown and reinitialized.
+
 - Issue #12268: File readline, readlines and read or readall methods
   no longer lose data when an underlying read system call is interrupted
   within an io module object.  IOError is no longer raised due to a read
