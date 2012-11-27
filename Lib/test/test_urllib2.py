@@ -124,6 +124,19 @@ def test_request_headers_methods():
     >>> r.get_header("Not-there", "default")
     'default'
 
+    Method r.remove_header should remove items both from r.headers and
+    r.unredirected_hdrs dictionaries
+
+    >>> r.remove_header("Spam-eggs")
+    >>> r.has_header("Spam-eggs")
+    False
+    >>> r.add_unredirected_header("Unredirected-spam", "Eggs")
+    >>> r.has_header("Unredirected-spam")
+    True
+    >>> r.remove_header("Unredirected-spam")
+    >>> r.has_header("Unredirected-spam")
+    False
+
     """
 
 
@@ -1432,6 +1445,20 @@ class MiscTests(unittest.TestCase):
         self.opener_has_handler(o, MyHTTPHandler)
         self.opener_has_handler(o, MyOtherHTTPHandler)
 
+    def test_issue16464(self):
+        opener = urllib.request.build_opener()
+        request = urllib.request.Request("http://www.python.org/~jeremy/")
+        self.assertEqual(None, request.data)
+
+        opener.open(request, "1".encode("us-ascii"))
+        self.assertEqual(b"1", request.data)
+        self.assertEqual("1", request.get_header("Content-length"))
+
+        opener.open(request, "1234567890".encode("us-ascii"))
+        self.assertEqual(b"1234567890", request.data)
+        self.assertEqual("10", request.get_header("Content-length"))
+
+
     def opener_has_handler(self, opener, handler_class):
         self.assertTrue(any(h.__class__ == handler_class
                             for h in opener.handlers))
@@ -1454,6 +1481,16 @@ class RequestTests(unittest.TestCase):
         self.get.data = "spam"
         self.assertTrue(self.get.data)
         self.assertEqual("POST", self.get.get_method())
+
+    # issue 16464
+    # if we change data we need to remove content-length header
+    # (cause it's most probably calculated for previous value)
+    def test_setting_data_should_remove_content_length(self):
+        self.assertFalse("Content-length" in self.get.unredirected_hdrs)
+        self.get.add_unredirected_header("Content-length", 42)
+        self.assertEqual(42, self.get.unredirected_hdrs["Content-length"])
+        self.get.data = "spam"
+        self.assertFalse("Content-length" in self.get.unredirected_hdrs)
 
     def test_get_full_url(self):
         self.assertEqual("http://www.python.org/~jeremy/",

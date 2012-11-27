@@ -408,6 +408,10 @@ request.
 
    The entity body for the request, or None if not specified.
 
+   .. versionchanged:: 3.4
+      Changing value of :attr:`Request.data` now deletes "Content-Length"
+      header if it was previously set or calculated.
+
 .. attribute:: Request.unverifiable
 
    boolean, indicates whether the request is unverifiable as defined
@@ -454,6 +458,12 @@ request.
 
    Return whether the instance has the named header (checks both regular and
    unredirected).
+
+
+.. method:: Request.remove_header(header)
+
+   Remove named header from the request instance (both from regular and
+   unredirected headers).
 
 
 .. method:: Request.get_full_url()
