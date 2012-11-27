@@ -132,7 +132,7 @@ string formatting behaviors using the same implementation as the built-in
       This function does the actual work of formatting.  It is exposed as a
       separate function for cases where you want to pass in a predefined
       dictionary of arguments, rather than unpacking and repacking the
-      dictionary as individual arguments using the ``*args`` and ``**kwds``
+      dictionary as individual arguments using the ``*args`` and ``**kwargs``
       syntax.  :meth:`vformat` does the work of breaking up the format string
       into character data and replacement fields.  It calls the various
       methods described below.
