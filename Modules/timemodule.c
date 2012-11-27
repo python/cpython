@@ -63,7 +63,7 @@ static int floatsleep(double);
 static double floattime(void);
 
 /* For Y2K check */
-static PyObject *moddict;
+static PyObject *moddict = NULL;
 
 static PyObject *
 time_time(PyObject *self, PyObject *unused)
@@ -941,6 +941,11 @@ PyInit_time(void)
     /* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
     p = Py_GETENV("PYTHONY2K");
     PyModule_AddIntConstant(m, "accept2dyear", (long) (!p || !*p));
+    /* If an embedded interpreter is shutdown and reinitialized the old
+       moddict was not decrefed on shutdown and the next import of this
+       module leads to a leak.  Conditionally decref here to prevent that.
+    */
+    Py_XDECREF(moddict);
     /* Squirrel away the module's dictionary for the y2k check */
     moddict = PyModule_GetDict(m);
     Py_INCREF(moddict);

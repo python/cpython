@@ -620,6 +620,9 @@ Library
 Extension Modules
 -----------------
 
+- Fix the leak of a dict in the time module when used in an embedded
+  interpreter that is repeatedly initialized and shutdown and reinitialized.
+
 - Issue #16012: Fix a regression in pyexpat. The parser's UseForeignDTD()
   method doesn't require an argument again.
 
