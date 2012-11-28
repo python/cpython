@@ -418,6 +418,8 @@ Build
 Documentation
 -------------
 
+- Issue #15990: Improve argument/parameter documentation.
+
 - Issue #16209: Move the documentation for the str built-in function to a new
   str class entry in the "Text Sequence Type" section.
 
