@@ -32,6 +32,8 @@ class TestIndent:
         d1 = self.dumps(h)
         d2 = self.dumps(h, indent=2, sort_keys=True, separators=(',', ': '))
         d3 = self.dumps(h, indent='\t', sort_keys=True, separators=(',', ': '))
+        d4 = self.dumps(h, indent=2, sort_keys=True)
+        d5 = self.dumps(h, indent='\t', sort_keys=True)
 
         h1 = self.loads(d1)
         h2 = self.loads(d2)
@@ -42,6 +44,8 @@ class TestIndent:
         self.assertEqual(h3, h)
         self.assertEqual(d2, expect.expandtabs(2))
         self.assertEqual(d3, expect)
+        self.assertEqual(d4, d2)
+        self.assertEqual(d5, d3)
 
     def test_indent0(self):
         h = {3: 1}
