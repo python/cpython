@@ -1,9 +1,6 @@
 """Implementation of JSONDecoder
 """
-import binascii
 import re
-import sys
-import struct
 
 from json import scanner
 try:
@@ -15,14 +12,9 @@ __all__ = ['JSONDecoder']
 
 FLAGS = re.VERBOSE | re.MULTILINE | re.DOTALL
 
-def _floatconstants():
-    _BYTES = binascii.unhexlify(b'7FF80000000000007FF0000000000000')
-    if sys.byteorder != 'big':
-        _BYTES = _BYTES[:8][::-1] + _BYTES[8:][::-1]
-    nan, inf = struct.unpack('dd', _BYTES)
-    return nan, inf, -inf
-
-NaN, PosInf, NegInf = _floatconstants()
+NaN = float('nan')
+PosInf = float('inf')
+NegInf = float('-inf')
 
 
 def linecol(doc, pos):
