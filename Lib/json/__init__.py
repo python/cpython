@@ -148,9 +148,10 @@ def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
     level of 0 will only insert newlines. ``None`` is the most compact
     representation.
 
-    If ``separators`` is an ``(item_separator, dict_separator)`` tuple
-    then it will be used instead of the default ``(', ', ': ')`` separators.
-    ``(',', ':')`` is the most compact JSON representation.
+    If specified, ``separators`` should be an ``(item_separator, key_separator)``
+    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
+    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
+    you should specify ``(',', ':')`` to eliminate whitespace.
 
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
@@ -209,9 +210,10 @@ def dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     level of 0 will only insert newlines. ``None`` is the most compact
     representation.
 
-    If ``separators`` is an ``(item_separator, dict_separator)`` tuple
-    then it will be used instead of the default ``(', ', ': ')`` separators.
-    ``(',', ':')`` is the most compact JSON representation.
+    If specified, ``separators`` should be an ``(item_separator, key_separator)``
+    tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
+    ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
+    you should specify ``(',', ':')`` to eliminate whitespace.
 
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.

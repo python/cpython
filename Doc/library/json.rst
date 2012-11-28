@@ -155,9 +155,13 @@ Basic Usage
    .. versionchanged:: 3.2
       Allow strings for *indent* in addition to integers.
 
-   If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
-   will be used instead of the default ``(', ', ': ')`` separators.  ``(',',
-   ':')`` is the most compact JSON representation.
+   If specified, *separators* should be an ``(item_separator, key_separator)``
+   tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
+   ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
+   you should specify ``(',', ':')`` to eliminate whitespace.
+
+   .. versionchanged:: 3.4
+      Use ``(',', ': ')`` as default if *indent* is not ``None``.
 
    *default(obj)* is a function that should return a serializable version of
    *obj* or raise :exc:`TypeError`.  The default simply raises :exc:`TypeError`.
@@ -394,8 +398,12 @@ Encoders and Decoders
       Allow strings for *indent* in addition to integers.
 
    If specified, *separators* should be an ``(item_separator, key_separator)``
-   tuple.  The default is ``(', ', ': ')``.  To get the most compact JSON
-   representation, you should specify ``(',', ':')`` to eliminate whitespace.
+   tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
+   ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
+   you should specify ``(',', ':')`` to eliminate whitespace.
+
+   .. versionchanged:: 3.4
+      Use ``(',', ': ')`` as default if *indent* is not ``None``.
 
    If specified, *default* is a function that gets called for objects that can't
    otherwise be serialized.  It should return a JSON encodable version of the
