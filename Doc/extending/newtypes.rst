@@ -982,12 +982,12 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
    }
 
 
+.. index::
+   single: string; object representation
+   builtin: repr
+
 Object Presentation
 -------------------
-
-.. index::
-   builtin: repr
-   builtin: str
 
 In Python, there are two ways to generate a textual representation of an object:
 the :func:`repr` function, and the :func:`str` function.  (The :func:`print`
