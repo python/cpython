@@ -5792,7 +5792,14 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_olimit_ok" >&5
 $as_echo "$ac_cv_olimit_ok" >&6; }
   if test $ac_cv_olimit_ok = yes; then
-    BASECFLAGS="$BASECFLAGS -Olimit 1500"
+    case $ac_sys_system in
+        # Issue #16534: On HP-UX ac_cv_olimit_ok=yes is a false positive.
+        HP-UX*)
+            ;;
+        *)
+            BASECFLAGS="$BASECFLAGS -Olimit 1500"
+            ;;
+    esac
   fi
 fi
 
