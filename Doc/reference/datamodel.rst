@@ -274,11 +274,13 @@ Sequences
 
       The following types are immutable sequences:
 
+      .. index::
+         single: string; immutable sequences
+
       Strings
          .. index::
             builtin: chr
             builtin: ord
-            builtin: str
             single: character
             single: integer
             single: Unicode
@@ -1188,13 +1190,13 @@ Basic customization
    Called by :func:`bytes` to compute a byte-string representation of an
    object. This should return a ``bytes`` object.
 
+   .. index::
+      single: string; __format__() (object method)
+      pair: string; conversion
+      builtin: print
+
 
 .. method:: object.__format__(self, format_spec)
-
-   .. index::
-      pair: string; conversion
-      builtin: str
-      builtin: print
 
    Called by the :func:`format` built-in function (and by extension, the
    :meth:`str.format` method of class :class:`str`) to produce a "formatted"
