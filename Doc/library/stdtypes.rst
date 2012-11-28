@@ -1348,7 +1348,7 @@ range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
 
 .. index::
    single: string; text sequence type
-   single: str() (built-in function); (see also string)
+   single: str (built-in class); (see also string)
    object: string
 
 .. _textseq:
@@ -1376,8 +1376,8 @@ See :ref:`strings` for more about the various forms of string literal,
 including supported escape sequences, and the ``r`` ("raw") prefix that
 disables most escape sequence processing.
 
-Strings may also be created from other objects with the built-in
-function :func:`str`.
+Strings may also be created from other objects using the :class:`str`
+constructor.
 
 Since there is no separate "character" type, indexing a string produces
 strings of length 1. That is, for a non-empty string *s*, ``s[0] == s[0:1]``.
@@ -1394,13 +1394,61 @@ multiple fragments.
    once again permitted on string literals. It has no effect on the meaning
    of string literals and cannot be combined with the ``r`` prefix.
 
+
+.. index::
+   single: string; str (built-in class)
+
+.. class:: str(object='')
+           str(object=b'', encoding='utf-8', errors='strict')
+
+   Return a :ref:`string <textseq>` version of *object*.  If *object* is not
+   provided, returns the empty string.  Otherwise, the behavior of ``str()``
+   depends on whether *encoding* or *errors* is given, as follows.
+
+   If neither *encoding* nor *errors* is given, ``str(object)`` returns
+   :meth:`object.__str__() <object.__str__>`, which is the "informal" or nicely
+   printable string representation of *object*.  For string objects, this is
+   the string itself.  If *object* does not have a :meth:`~object.__str__`
+   method, then :func:`str` falls back to returning
+   :meth:`repr(object) <repr>`.
+
+   .. index::
+      single: buffer protocol; str (built-in class)
+      single: bytes; str (built-in class)
+
+   If at least one of *encoding* or *errors* is given, *object* should be a
+   :class:`bytes` or :class:`bytearray` object, or more generally any object
+   that supports the :ref:`buffer protocol <bufferobjects>`.  In this case, if
+   *object* is a :class:`bytes` (or :class:`bytearray`) object, then
+   ``str(bytes, encoding, errors)`` is equivalent to
+   :meth:`bytes.decode(encoding, errors) <bytes.decode>`.  Otherwise, the bytes
+   object underlying the buffer object is obtained before calling
+   :meth:`bytes.decode`.  See :ref:`binaryseq` and
+   :ref:`bufferobjects` for information on buffer objects.
+
+   Passing a :class:`bytes` object to :func:`str` without the *encoding*
+   or *errors* arguments falls under the first case of returning the informal
+   string representation (see also the :option:`-b` command-line option to
+   Python).  For example::
+
+      >>> str(b'Zoot!')
+      "b'Zoot!'"
+
+   For more information on the ``str`` class and its methods, see
+   :ref:`textseq` and the :ref:`string-methods` section below.  To output
+   formatted strings, see the :ref:`string-formatting` section.  In addition,
+   see the :ref:`stringservices` section.
+
+
+.. index::
+   pair: string; methods
+
 .. _string-methods:
 
 String Methods
 --------------
 
 .. index::
-   pair: string; methods
    module: re
 
 Strings implement all of the :ref:`common <typesseq-common>` sequence

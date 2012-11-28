@@ -160,10 +160,10 @@ Object Protocol
    a string similar to that returned by :c:func:`PyObject_Repr` in Python 2.
    Called by the :func:`ascii` built-in function.
 
+   .. index:: string; PyObject_Str (C function)
+
 
 .. c:function:: PyObject* PyObject_Str(PyObject *o)
-
-   .. index:: builtin: str
 
    Compute a string representation of object *o*.  Returns the string
    representation on success, *NULL* on failure.  This is the equivalent of the
