@@ -37,8 +37,8 @@ Compact encoding::
 Pretty printing::
 
     >>> import json
-    >>> s = json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4)
-    >>> print '\n'.join([l.rstrip() for l in  s.splitlines()])
+    >>> print json.dumps({'4': 5, '6': 7}, sort_keys=True,
+    ...                  indent=4, separators=(',', ': '))
     {
         "4": 5,
         "6": 7
@@ -150,7 +150,9 @@ def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
     If ``indent`` is a non-negative integer, then JSON array elements and
     object members will be pretty-printed with that indent level. An indent
     level of 0 will only insert newlines. ``None`` is the most compact
-    representation.
+    representation.  Since the default item separator is ``', '``,  the
+    output might include trailing whitespace when ``indent`` is specified.
+    You can use ``separators=(',', ': ')`` to avoid this.
 
     If ``separators`` is an ``(item_separator, dict_separator)`` tuple
     then it will be used instead of the default ``(', ', ': ')`` separators.
@@ -212,7 +214,9 @@ def dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     If ``indent`` is a non-negative integer, then JSON array elements and
     object members will be pretty-printed with that indent level. An indent
     level of 0 will only insert newlines. ``None`` is the most compact
-    representation.
+    representation.  Since the default item separator is ``', '``,  the
+    output might include trailing whitespace when ``indent`` is specified.
+    You can use ``separators=(',', ': ')`` to avoid this.
 
     If ``separators`` is an ``(item_separator, dict_separator)`` tuple
     then it will be used instead of the default ``(', ', ': ')`` separators.
