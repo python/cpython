@@ -42,7 +42,8 @@ Compact encoding::
 Pretty printing::
 
     >>> import json
-    >>> print(json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4))
+    >>> print(json.dumps({'4': 5, '6': 7}, sort_keys=True,
+    ...                  indent=4, separators=(',', ': ')))
     {
         "4": 5,
         "6": 7
@@ -154,6 +155,12 @@ Basic Usage
 
    .. versionchanged:: 3.2
       Allow strings for *indent* in addition to integers.
+
+   .. note::
+
+      Since the default item separator is ``', '``,  the output might include
+      trailing whitespace when *indent* is specified.  You can use
+      ``separators=(',', ': ')`` to avoid this.
 
    If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
    will be used instead of the default ``(', ', ': ')`` separators.  ``(',',
@@ -392,6 +399,12 @@ Encoders and Decoders
 
    .. versionchanged:: 3.2
       Allow strings for *indent* in addition to integers.
+
+   .. note::
+
+      Since the default item separator is ``', '``,  the output might include
+      trailing whitespace when *indent* is specified.  You can use
+      ``separators=(',', ': ')`` to avoid this.
 
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')``.  To get the most compact JSON
