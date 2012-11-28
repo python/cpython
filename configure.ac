@@ -1203,7 +1203,14 @@ else
   CC="$ac_save_cc"])
   AC_MSG_RESULT($ac_cv_olimit_ok)
   if test $ac_cv_olimit_ok = yes; then
-    BASECFLAGS="$BASECFLAGS -Olimit 1500"
+    case $ac_sys_system in
+        # Issue #16534: On HP-UX ac_cv_olimit_ok=yes is a false positive.
+        HP-UX*)
+            ;;
+        *)
+            BASECFLAGS="$BASECFLAGS -Olimit 1500"
+            ;;
+    esac
   fi
 fi
 
