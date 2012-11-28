@@ -14,7 +14,7 @@ are always available.  They are listed here in alphabetical order.
 :func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
 :func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
 :func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      :func:`str`
+:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
 :func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
 :func:`bytearray`    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
 :func:`bytes`        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
@@ -34,6 +34,7 @@ are always available.  They are listed here in alphabetical order.
 .. |func-memoryview| replace:: ``memoryview()``
 .. |func-set| replace:: ``set()``
 .. |func-list| replace:: ``list()``
+.. |func-str| replace:: ``str()``
 .. |func-tuple| replace:: ``tuple()``
 .. |func-range| replace:: ``range()``
 
@@ -521,12 +522,12 @@ are always available.  They are listed here in alphabetical order.
 
    The float type is described in :ref:`typesnumeric`.
 
+   .. index::
+      single: __format__
+      single: string; format() (built-in function)
+
 
 .. function:: format(value[, format_spec])
-
-   .. index::
-      pair: str; format
-      single: __format__
 
    Convert a *value* to a "formatted" representation, as controlled by
    *format_spec*.  The interpretation of *format_spec* will depend on the type
@@ -1238,44 +1239,12 @@ are always available.  They are listed here in alphabetical order.
 .. _func-str:
 .. function:: str(object='')
               str(object=b'', encoding='utf-8', errors='strict')
+   :noindex:
 
-   Return a :ref:`string <textseq>` version of *object*.  If *object* is not
-   provided, returns the empty string.  Otherwise, the behavior of ``str()``
-   depends on whether *encoding* or *errors* is given, as follows.
+   Return a :class:`str` version of *object*.  See :func:`str` for details.
 
-   If neither *encoding* nor *errors* is given, ``str(object)`` returns
-   :meth:`object.__str__() <object.__str__>`, which is the "informal" or nicely
-   printable string representation of *object*.  For string objects, this is
-   the string itself.  If *object* does not have a :meth:`~object.__str__`
-   method, then :func:`str` falls back to returning
-   :meth:`repr(object) <repr>`.
-
-   .. index::
-      single: buffer protocol; str() (built-in function)
-      single: bytes; str() (built-in function)
-
-   If at least one of *encoding* or *errors* is given, *object* should be a
-   :class:`bytes` or :class:`bytearray` object, or more generally any object
-   that supports the :ref:`buffer protocol <bufferobjects>`.  In this case, if
-   *object* is a :class:`bytes` (or :class:`bytearray`) object, then
-   ``str(bytes, encoding, errors)`` is equivalent to
-   :meth:`bytes.decode(encoding, errors) <bytes.decode>`.  Otherwise, the bytes
-   object underlying the buffer object is obtained before calling
-   :meth:`bytes.decode`.  See :ref:`binaryseq` and
-   :ref:`bufferobjects` for information on buffer objects.
-
-   Passing a :class:`bytes` object to :func:`str` without the *encoding*
-   or *errors* arguments falls under the first case of returning the informal
-   string representation (see also the :option:`-b` command-line option to
-   Python).  For example::
-
-      >>> str(b'Zoot!')
-      "b'Zoot!'"
-
-   ``str`` is a built-in :term:`type`.  For more information on the string
-   type and its methods, see the :ref:`textseq` and :ref:`string-methods`
-   sections.  To output formatted strings, see the :ref:`string-formatting`
-   section.  In addition, see the :ref:`stringservices` section.
+   ``str`` is the built-in string :term:`class`.  For general information
+   about strings, see :ref:`textseq`.
 
 
 .. function:: sum(iterable[, start])

@@ -292,6 +292,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #16209: Move the documentation for the str built-in function to a new
+  str class entry in the "Text Sequence Type" section.
+
 - Issue #13538: Improve str() and object.__str__() documentation.
 
 - Issue #16489: Make it clearer that importlib.find_loader() requires any and
