@@ -735,15 +735,18 @@ Locale Encoding
 The current locale encoding can be used to decode text from the operating
 system.
 
-.. c:function:: PyObject* PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len, int surrogateescape)
+.. c:function:: PyObject* PyUnicode_DecodeLocaleAndSize(const char *str, \
+                                                        Py_ssize_t len, \
+                                                        const char *errors)
 
-   Decode a string from the current locale encoding. The decoder is strict if
-   *surrogateescape* is equal to zero, otherwise it uses the
-   ``'surrogateescape'`` error handler (:pep:`383`) to escape undecodable
-   bytes. If a byte sequence can be decoded as a surrogate character and
-   *surrogateescape* is not equal to zero, the byte sequence is escaped using
-   the ``'surrogateescape'`` error handler instead of being decoded.  *str*
-   must end with a null character but cannot contain embedded null characters.
+   Decode a string from the current locale encoding. The supported
+   error handlers are ``"strict"`` and ``"surrogateescape"``
+   (:pep:`383`). The decoder uses ``"strict"`` error handler if
+   *errors* is ``NULL``. If a byte sequence can be decoded as a
+   surrogate character and *errors* is not ``"strict"``, then the byte
+   sequence is escaped using the ``"surrogateescape"`` error handler
+   instead of being decoded. *str* must end with a null character but
+   cannot contain embedded null characters.
 
    .. seealso::
 
@@ -754,7 +757,7 @@ system.
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, int surrogateescape)
+.. c:function:: PyObject* PyUnicode_DecodeLocale(const char *str, const char *errors)
 
    Similar to :c:func:`PyUnicode_DecodeLocaleAndSize`, but compute the string
    length using :c:func:`strlen`.
@@ -762,12 +765,13 @@ system.
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, int surrogateescape)
+.. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
-   Encode a Unicode object to the current locale encoding. The encoder is
-   strict if *surrogateescape* is equal to zero, otherwise it uses the
-   ``'surrogateescape'`` error handler (:pep:`383`). Return a :class:`bytes`
-   object. *str* cannot contain embedded null characters.
+   Encode a Unicode object to the current locale encoding. The
+   supported error handlers are ``"strict"`` and ``"surrogateescape"``
+   (:pep:`383`). The encoder uses ``"strict"`` error handler if
+   *errors* is ``NULL``. Return a :class:`bytes` object. *str* cannot
+   contain embedded null characters.
 
    .. seealso::
 
@@ -813,7 +817,7 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
 .. c:function:: PyObject* PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
    Decode a string using :c:data:`Py_FileSystemDefaultEncoding` and the
-   ``'surrogateescape'`` error handler, or ``'strict'`` on Windows.
+   ``"surrogateescape"`` error handler, or ``"strict"`` on Windows.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -826,13 +830,13 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
       :c:func:`PyUnicode_DecodeLocaleAndSize`.
 
    .. versionchanged:: 3.2
-      Use ``'strict'`` error handler on Windows.
+      Use ``"strict"`` error handler on Windows.
 
 
 .. c:function:: PyObject* PyUnicode_DecodeFSDefault(const char *s)
 
    Decode a null-terminated string using :c:data:`Py_FileSystemDefaultEncoding`
-   and the ``'surrogateescape'`` error handler, or ``'strict'`` on Windows.
+   and the ``"surrogateescape"`` error handler, or ``"strict"`` on Windows.
 
    If :c:data:`Py_FileSystemDefaultEncoding` is not set, fall back to the
    locale encoding.
@@ -840,13 +844,13 @@ used, passing :c:func:`PyUnicode_FSDecoder` as the conversion function:
    Use :c:func:`PyUnicode_DecodeFSDefaultAndSize` if you know the string length.
 
    .. versionchanged:: 3.2
-      Use ``'strict'`` error handler on Windows.
+      Use ``"strict"`` error handler on Windows.
 
 
 .. c:function:: PyObject* PyUnicode_EncodeFSDefault(PyObject *unicode)
 
    Encode a Unicode object to :c:data:`Py_FileSystemDefaultEncoding` with the
-   ``'surrogateescape'`` error handler, or ``'strict'`` on Windows, and return
+   ``"surrogateescape"`` error handler, or ``"strict"`` on Windows, and return
    :class:`bytes`. Note that the resulting :class:`bytes` object may contain
    null bytes.
 
