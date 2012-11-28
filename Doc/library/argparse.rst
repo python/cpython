@@ -1444,6 +1444,21 @@ be achieved by specifying the ``namespace=`` keyword argument::
    'BAR'
 
 
+Converting the namespace to a dict
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It's possible to convert a namespace to a :class:`dict` by using the built-in
+function :func:`vars` in this fashion::
+
+    args = parser.parse_args()
+    argdict = vars(args)
+
+This makes it easy to introspect the namespace or to pass the command-line
+arguments to a function taking a bunch of keyword arguments::
+
+    somefunction(**vars(parser.parse_args()))
+
+
 Other utilities
 ---------------
 
