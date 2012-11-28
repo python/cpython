@@ -39,8 +39,7 @@ Compact encoding::
 Pretty printing::
 
     >>> import json
-    >>> s = json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4)
-    >>> print('\n'.join([l.rstrip() for l in  s.splitlines()]))
+    >>> print(json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4))
     {
         "4": 5,
         "6": 7
