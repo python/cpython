@@ -43,7 +43,8 @@ Compact encoding::
 Pretty printing::
 
     >>> import json
-    >>> print json.dumps({'4': 5, '6': 7}, sort_keys=True, indent=4)
+    >>> print json.dumps({'4': 5, '6': 7}, sort_keys=True,
+    ...                  indent=4, separators=(',', ': '))
     {
         "4": 5,
         "6": 7
@@ -152,6 +153,12 @@ Basic Usage
    members will be pretty-printed with that indent level.  An indent level of 0,
    or negative, will only insert newlines.  ``None`` (the default) selects the
    most compact representation.
+
+   .. note::
+
+      Since the default item separator is ``', '``,  the output might include
+      trailing whitespace when *indent* is specified.  You can use
+      ``separators=(',', ': ')`` to avoid this.
 
    If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
    will be used instead of the default ``(', ', ': ')`` separators.  ``(',',
@@ -409,6 +416,12 @@ Encoders and Decoders
    array elements and object members will be pretty-printed with that indent
    level.  An indent level of 0 will only insert newlines.  ``None`` is the most
    compact representation.
+
+   .. note::
+
+      Since the default item separator is ``', '``,  the output might include
+      trailing whitespace when *indent* is specified.  You can use
+      ``separators=(',', ': ')`` to avoid this.
 
    If specified, *separators* should be an ``(item_separator, key_separator)``
    tuple.  The default is ``(', ', ': ')``.  To get the most compact JSON
