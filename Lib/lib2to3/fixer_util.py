@@ -165,7 +165,7 @@ def parenthesize(node):
 
 
 consuming_calls = set(["sorted", "list", "set", "any", "all", "tuple", "sum",
-                       "min", "max"])
+                       "min", "max", "enumerate"])
 
 def attr_chain(obj, attr):
     """Follow an attribute chain.
@@ -192,14 +192,14 @@ p0 = """for_stmt< 'for' any 'in' node=any ':' any* >
 p1 = """
 power<
     ( 'iter' | 'list' | 'tuple' | 'sorted' | 'set' | 'sum' |
-      'any' | 'all' | (any* trailer< '.' 'join' >) )
+      'any' | 'all' | 'enumerate' | (any* trailer< '.' 'join' >) )
     trailer< '(' node=any ')' >
     any*
 >
 """
 p2 = """
 power<
-    'sorted'
+    ( 'sorted' | 'enumerate' )
     trailer< '(' arglist<node=any any*> ')' >
     any*
 >
@@ -207,14 +207,14 @@ power<
 pats_built = False
 def in_special_context(node):
     """ Returns true if node is in an environment where all that is required
-        of it is being itterable (ie, it doesn't matter if it returns a list
-        or an itterator).
+        of it is being iterable (ie, it doesn't matter if it returns a list
+        or an iterator).
         See test_map_nochange in test_fixers.py for some examples and tests.
         """
     global p0, p1, p2, pats_built
     if not pats_built:
-        p1 = patcomp.compile_pattern(p1)
         p0 = patcomp.compile_pattern(p0)
+        p1 = patcomp.compile_pattern(p1)
         p2 = patcomp.compile_pattern(p2)
         pats_built = True
     patterns = [p0, p1, p2]
