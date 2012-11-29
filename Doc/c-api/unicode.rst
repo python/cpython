@@ -742,10 +742,7 @@ system.
    Decode a string from the current locale encoding. The supported
    error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The decoder uses ``"strict"`` error handler if
-   *errors* is ``NULL``. If a byte sequence can be decoded as a
-   surrogate character and *errors* is not ``"strict"``, then the byte
-   sequence is escaped using the ``"surrogateescape"`` error handler
-   instead of being decoded. *str* must end with a null character but
+   *errors* is ``NULL``.  *str* must end with a null character but
    cannot contain embedded null characters.
 
    .. seealso::
