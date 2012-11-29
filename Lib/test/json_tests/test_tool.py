@@ -19,19 +19,19 @@ class TestTool(unittest.TestCase):
     [
         [
             "blorpie"
-        ], 
+        ],
         [
             "whoops"
-        ], 
-        [], 
-        "d-shtaeou", 
-        "d-nthiouh", 
-        "i-vhbjkhnth", 
+        ],
+        [],
+        "d-shtaeou",
+        "d-nthiouh",
+        "i-vhbjkhnth",
         {
             "nifty": 87
-        }, 
+        },
         {
-            "field": "yes", 
+            "field": "yes",
             "morefield": false
         }
     ]
