@@ -140,6 +140,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16333: use (",", ": ") as default separator when indent is specified
+  to avoid trailing whitespace.  Patch by Serhiy Storchaka.
+
 - Issue #16549: Make json.tool work again on Python 3 and add tests.
   Initial patch by Berker Peksag and Serhiy Storchaka.
 
