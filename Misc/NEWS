@@ -154,6 +154,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16573: In 2to3, treat enumerate() like a consuming call, so superfluous
+  list() calls aren't added to filter(), map(), and zip() which are directly
+  passed enumerate().
+
 - Issue #16476: Fix json.tool to avoid including trailing whitespace.
 
 - Issue #1160: Fix compiling large regular expressions on UCS2 builds.
