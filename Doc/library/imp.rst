@@ -237,6 +237,17 @@ around for backward compatibility:
    using shared libraries is highly system dependent, and not all systems support
    it.)
 
+   .. impl-detail::
+
+    The import internals identify extension modules by filename, so doing
+    ``foo = load_dynamic("foo", "mod.so")`` and
+    ``bar = load_dynamic("bar", "mod.so")`` will result in both foo and bar
+    referring to the same module, regardless of whether or not
+    ``mod.so`` exports an ``initbar`` function. On systems which
+    support them, symlinks can be used to import multiple modules from
+    the same shared library, as each reference to the module will use
+    a different file name.
+
 
 .. function:: load_source(name, pathname[, file])
 
