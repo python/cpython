@@ -31,7 +31,8 @@ def main():
         except ValueError, e:
             raise SystemExit(e)
     with outfile:
-        json.dump(obj, outfile, sort_keys=True, indent=4)
+        json.dump(obj, outfile, sort_keys=True,
+                  indent=4, separators=(',', ': '))
         outfile.write('\n')
 
 
