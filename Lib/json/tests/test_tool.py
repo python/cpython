@@ -42,7 +42,7 @@ class TestTool(unittest.TestCase):
                 (sys.executable, '-m', 'json.tool'),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         out, err = proc.communicate(self.data.encode())
-        self.assertEqual(out, self.expect.encode())
+        self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, None)
 
     def _create_infile(self):
@@ -55,7 +55,7 @@ class TestTool(unittest.TestCase):
     def test_infile_stdout(self):
         infile = self._create_infile()
         rc, out, err = assert_python_ok('-m', 'json.tool', infile)
-        self.assertEqual(out, self.expect.encode())
+        self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
 
     def test_infile_outfile(self):
