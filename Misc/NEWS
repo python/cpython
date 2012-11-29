@@ -140,6 +140,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16549: Make json.tool work again on Python 3 and add tests.
+  Initial patch by Berker Peksag and Serhiy Storchaka.
+
 - Issue #12848: The pure Python pickle implementation now treats object
   lengths as unsigned 32-bit integers, like the C implementation does.
   Patch by Serhiy Storchaka.
