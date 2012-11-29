@@ -521,6 +521,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #16549: Add tests for json.tools.  Initial patch by Berker Peksag
+  and Serhiy Storchaka.
+
 - Issue #16559: Add more tests for the json module, including some from the
   official test suite at json.org.  Patch by Serhiy Storchaka.
 
