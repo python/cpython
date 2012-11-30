@@ -110,8 +110,10 @@ class PosixPathTest(unittest.TestCase):
                 ),
                 True
             )
-            # If we don't have links, assume that os.stat doesn't return resonable
-            # inode information and thus, that samefile() doesn't work
+
+            # If we don't have links, assume that os.stat doesn't return
+            # reasonable inode information and thus, that samefile() doesn't
+            # work.
             if hasattr(os, "symlink"):
                 os.symlink(
                     test_support.TESTFN + "1",
@@ -152,18 +154,17 @@ class PosixPathTest(unittest.TestCase):
                 True
             )
             # If we don't have links, assume that os.stat() doesn't return resonable
-            # inode information and thus, that samefile() doesn't work
+            # inode information and thus, that samestat() doesn't work
             if hasattr(os, "symlink"):
-                if hasattr(os, "symlink"):
-                    os.symlink(test_support.TESTFN + "1", test_support.TESTFN + "2")
-                    self.assertIs(
-                        posixpath.samestat(
-                            os.stat(test_support.TESTFN + "1"),
-                            os.stat(test_support.TESTFN + "2")
-                        ),
-                        True
-                    )
-                    os.remove(test_support.TESTFN + "2")
+                os.symlink(test_support.TESTFN + "1", test_support.TESTFN + "2")
+                self.assertIs(
+                    posixpath.samestat(
+                        os.stat(test_support.TESTFN + "1"),
+                        os.stat(test_support.TESTFN + "2")
+                    ),
+                    True
+                )
+                os.remove(test_support.TESTFN + "2")
                 f = open(test_support.TESTFN + "2", "wb")
                 f.write("bar")
                 f.close()
