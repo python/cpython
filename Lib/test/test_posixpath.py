@@ -153,8 +153,9 @@ class PosixPathTest(unittest.TestCase):
                 ),
                 True
             )
-            # If we don't have links, assume that os.stat() doesn't return resonable
-            # inode information and thus, that samestat() doesn't work
+            # If we don't have links, assume that os.stat() doesn't return
+            # reasonable inode information and thus, that samestat() doesn't
+            # work.
             if hasattr(os, "symlink"):
                 os.symlink(test_support.TESTFN + "1", test_support.TESTFN + "2")
                 self.assertIs(
