@@ -594,6 +594,8 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #15990: Improve argument/parameter documentation.
+
 - Issue #16400: Update the description of which versions of a given package
   PyPI displays.
 
