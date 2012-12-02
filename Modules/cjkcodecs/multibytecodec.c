@@ -316,7 +316,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
         goto errorexit;
 
     if (!PyTuple_Check(retobj) || PyTuple_GET_SIZE(retobj) != 2 ||
-        !PyUnicode_Check((tobj = PyTuple_GET_ITEM(retobj, 0))) ||
+        (!PyUnicode_Check((tobj = PyTuple_GET_ITEM(retobj, 0))) && !PyBytes_Check(tobj)) ||
         !PyLong_Check(PyTuple_GET_ITEM(retobj, 1))) {
         PyErr_SetString(PyExc_TypeError,
                         "encoding error handler must return "
@@ -324,7 +324,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
         goto errorexit;
     }
 
-    {
+    if (PyUnicode_Check(tobj)) {
         const Py_UNICODE *uraw = PyUnicode_AS_UNICODE(tobj);
 
         retstr = multibytecodec_encode(codec, state, &uraw,
@@ -332,6 +332,10 @@ multibytecodec_encerror(MultibyteCodec *codec,
                         MBENC_FLUSH);
         if (retstr == NULL)
             goto errorexit;
+    }
+    else {
+        Py_INCREF(tobj);
+        retstr = tobj;
     }
 
     assert(PyBytes_Check(retstr));
