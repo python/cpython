@@ -145,6 +145,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10182: The re module doesn't truncate indices to 32 bits anymore.
+  Patch by Serhiy Storchaka.
+
 - Issue #16333: use (",", ": ") as default separator when indent is specified
   to avoid trailing whitespace.  Patch by Serhiy Storchaka.
 
