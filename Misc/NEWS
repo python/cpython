@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16562: Optimize dict equality testing.  Patch by Serhiy Storchaka.
+
 - Issue #16588: Silence unused-but-set warnings in Python/thread_pthread
 
 - Issue #16592: stringlib_bytes_join doesn't raise MemoryError on allocation

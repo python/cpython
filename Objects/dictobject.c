@@ -2114,13 +2114,18 @@ dict_equal(PyDictObject *a, PyDictObject *b)
         if (aval != NULL) {
             int cmp;
             PyObject *bval;
+            PyObject **vaddr;
             PyObject *key = ep->me_key;
             /* temporarily bump aval's refcount to ensure it stays
                alive until we're done with it */
             Py_INCREF(aval);
             /* ditto for key */
             Py_INCREF(key);
-            bval = PyDict_GetItemWithError((PyObject *)b, key);
+            /* reuse the known hash value */
+            if ((b->ma_keys->dk_lookup)(b, key, ep->me_hash, &vaddr) == NULL)
+                bval = NULL;
+            else
+                bval = *vaddr;
             Py_DECREF(key);
             if (bval == NULL) {
                 Py_DECREF(aval);
