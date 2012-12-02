@@ -1,4 +1,4 @@
-from test.support import verbose, run_unittest, gc_collect
+from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G
 import io
 import re
 from re import Scanner
@@ -948,6 +948,21 @@ class ReTests(unittest.TestCase):
         self.assertIs(same_pattern, pattern)
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
+
+    # The huge memuse is because of re.sub() using a list and a join()
+    # to create the replacement result.
+    @bigmemtest(size=_2G, memuse=20)
+    def test_large(self, size):
+        # Issue #10182: indices were 32-bit-truncated.
+        s = 'a' * size
+        m = re.search('$', s)
+        self.assertIsNotNone(m)
+        self.assertEqual(m.start(), size)
+        self.assertEqual(m.end(), size)
+        r, n = re.subn('', '', s)
+        self.assertEqual(r, s)
+        self.assertEqual(n, size + 1)
+
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
