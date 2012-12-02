@@ -1638,10 +1638,30 @@ AC_TYPE_PID_T
 AC_DEFINE_UNQUOTED([RETSIGTYPE],[void],[assume C89 semantics that RETSIGTYPE is always void])
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
+
+# There are two separate checks for each of the exact-width integer types we
+# need.  First we check whether the type is available using the usual
+# AC_CHECK_TYPE macro with the default includes (which includes <inttypes.h>
+# and <stdint.h> where available).  We then also use the special type checks of
+# the form AC_TYPE_UINT32_T, which in the case that uint32_t is not available
+# directly, #define's uint32_t to be a suitable type.
+
+AC_CHECK_TYPE(uint32_t,
+  AC_DEFINE(HAVE_UINT32_T, 1, [Define if your compiler provides uint32_t.]),,)
 AC_TYPE_UINT32_T
+
+AC_CHECK_TYPE(uint64_t,
+  AC_DEFINE(HAVE_UINT64_T, 1, [Define if your compiler provides uint64_t.]),,)
 AC_TYPE_UINT64_T
+
+AC_CHECK_TYPE(int32_t,
+  AC_DEFINE(HAVE_INT32_T, 1, [Define if your compiler provides int32_t.]),,)
 AC_TYPE_INT32_T
+
+AC_CHECK_TYPE(int64_t,
+  AC_DEFINE(HAVE_INT64_T, 1, [Define if your compiler provides int64_t.]),,)
 AC_TYPE_INT64_T
+
 AC_CHECK_TYPE(ssize_t,
   AC_DEFINE(HAVE_SSIZE_T, 1, [Define if your compiler provides ssize_t]),,)
 AC_CHECK_TYPE(__uint128_t,
