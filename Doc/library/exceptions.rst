@@ -387,6 +387,30 @@ The following exceptions are the exceptions that are actually raised.
    Raised when a Unicode-related encoding or decoding error occurs.  It is a
    subclass of :exc:`ValueError`.
 
+   :exc:`UnicodeError` has attributes that describe the encoding or decoding
+   error.  For example, ``err.object[err.start:err.end]`` gives the particular
+   invalid input that the codec failed on.
+
+   .. attribute:: encoding
+
+       The name of the encoding that raised the error.
+
+   .. attribute:: reason
+
+       A string describing the specific codec error.
+
+   .. attribute:: object
+
+       The object the codec was attempting to encode or decode.
+
+   .. attribute:: start
+
+       The first index of invalid data in :attr:`object`.
+
+   .. attribute:: end
+
+       The index after the last invalid data in :attr:`object`.
+
    .. versionadded:: 2.0
 
 
