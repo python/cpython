@@ -43,6 +43,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
         buffers = PyMem_NEW(Py_buffer, seqlen);
         if (buffers == NULL) {
             Py_DECREF(seq);
+            PyErr_NoMemory();
             return NULL;
         }
     }
