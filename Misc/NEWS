@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16592: stringlib_bytes_join doesn't raise MemoryError on allocation
+  failure.
+
 - Issue #16546: Fix: ast.YieldFrom argument is now mandatory.
 
 - Issue #16514: Fix regression causing a traceback when sys.path[0] is None
