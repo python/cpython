@@ -113,7 +113,7 @@ class TestBase:
             return (ret, exc.end)
         codecs.register_error("test.cjktest", myreplace)
 
-        for ret in ([1, 2, 3], [], None, object(), b'string', b''):
+        for ret in ([1, 2, 3], [], None, object()):
             self.assertRaises(TypeError, self.encode, self.unmappedunicode,
                               'test.cjktest')
 
