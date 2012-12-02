@@ -108,6 +108,13 @@ class TestBase:
         self.assertEqual(self.encode(sin,
                                     "test.xmlcharnamereplace")[0], sout)
 
+    def test_callback_returns_bytes(self):
+        def myreplace(exc):
+            return (b"1234", exc.end)
+        codecs.register_error("test.cjktest", myreplace)
+        enc = self.encode("abc" + self.unmappedunicode + "def", "test.cjktest")[0]
+        self.assertEqual(enc, b"abc1234def")
+
     def test_callback_wrong_objects(self):
         def myreplace(exc):
             return (ret, exc.end)
