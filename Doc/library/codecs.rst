@@ -155,13 +155,16 @@ functions which use :func:`lookup` for the codec lookup:
    when *name* is specified as the errors parameter.
 
    For encoding *error_handler* will be called with a :exc:`UnicodeEncodeError`
-   instance, which contains information about the location of the error. The error
-   handler must either raise this or a different exception or return a tuple with a
-   replacement for the unencodable part of the input and a position where encoding
-   should continue. The encoder will encode the replacement and continue encoding
-   the original input at the specified position. Negative position values will be
-   treated as being relative to the end of the input string. If the resulting
-   position is out of bound an :exc:`IndexError` will be raised.
+   instance, which contains information about the location of the error. The
+   error handler must either raise this or a different exception or return a
+   tuple with a replacement for the unencodable part of the input and a position
+   where encoding should continue. The replacement may be either :class:`str` or
+   :class:`bytes`.  If the replacement is bytes, the encoder will simply copy
+   them into the output buffer. If the replacement is a string, the encoder will
+   encode the replacement.  Encoding continues on original input at the
+   specified position. Negative position values will be treated as being
+   relative to the end of the input string. If the resulting position is out of
+   bound an :exc:`IndexError` will be raised.
 
    Decoding and translating works similar, except :exc:`UnicodeDecodeError` or
    :exc:`UnicodeTranslateError` will be passed to the handler and that the
