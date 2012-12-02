@@ -45,6 +45,10 @@ class Test_MultibyteCodec(unittest.TestCase):
         self.assertRaises(IndexError, dec,
                           b'apple\x92ham\x93spam', 'test.cjktest')
 
+    def test_errorhandler_returns_bytes(self):
+        enc = "\u30fb\udc80".encode('gb18030', 'surrogateescape')
+        self.assertEqual(enc, b'\x819\xa79\x80')
+
     def test_codingspec(self):
         try:
             for enc in ALL_CJKENCODINGS:
