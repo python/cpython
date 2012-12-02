@@ -6755,6 +6755,21 @@ $as_echo "#define gid_t int" >>confdefs.h
 
 fi
 
+
+# There are two separate checks for each of the exact-width integer types we
+# need.  First we check whether the type is available using the usual
+# AC_CHECK_TYPE macro with the default includes (which includes <inttypes.h>
+# and <stdint.h> where available).  We then also use the special type checks of
+# the form AC_TYPE_UINT32_T, which in the case that uint32_t is not available
+# directly, #define's uint32_t to be a suitable type.
+
+ac_fn_c_check_type "$LINENO" "uint32_t" "ac_cv_type_uint32_t" "$ac_includes_default"
+if test "x$ac_cv_type_uint32_t" = xyes; then :
+
+$as_echo "#define HAVE_UINT32_T 1" >>confdefs.h
+
+fi
+
 ac_fn_c_find_uintX_t "$LINENO" "32" "ac_cv_c_uint32_t"
 case $ac_cv_c_uint32_t in #(
   no|yes) ;; #(
@@ -6768,6 +6783,14 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
   esac
+
+
+ac_fn_c_check_type "$LINENO" "uint64_t" "ac_cv_type_uint64_t" "$ac_includes_default"
+if test "x$ac_cv_type_uint64_t" = xyes; then :
+
+$as_echo "#define HAVE_UINT64_T 1" >>confdefs.h
+
+fi
 
 ac_fn_c_find_uintX_t "$LINENO" "64" "ac_cv_c_uint64_t"
 case $ac_cv_c_uint64_t in #(
@@ -6783,6 +6806,14 @@ _ACEOF
 ;;
   esac
 
+
+ac_fn_c_check_type "$LINENO" "int32_t" "ac_cv_type_int32_t" "$ac_includes_default"
+if test "x$ac_cv_type_int32_t" = xyes; then :
+
+$as_echo "#define HAVE_INT32_T 1" >>confdefs.h
+
+fi
+
 ac_fn_c_find_intX_t "$LINENO" "32" "ac_cv_c_int32_t"
 case $ac_cv_c_int32_t in #(
   no|yes) ;; #(
@@ -6794,6 +6825,14 @@ _ACEOF
 ;;
 esac
 
+
+ac_fn_c_check_type "$LINENO" "int64_t" "ac_cv_type_int64_t" "$ac_includes_default"
+if test "x$ac_cv_type_int64_t" = xyes; then :
+
+$as_echo "#define HAVE_INT64_T 1" >>confdefs.h
+
+fi
+
 ac_fn_c_find_intX_t "$LINENO" "64" "ac_cv_c_int64_t"
 case $ac_cv_c_int64_t in #(
   no|yes) ;; #(
@@ -6804,6 +6843,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 ;;
 esac
+
 
 ac_fn_c_check_type "$LINENO" "ssize_t" "ac_cv_type_ssize_t" "$ac_includes_default"
 if test "x$ac_cv_type_ssize_t" = xyes; then :
