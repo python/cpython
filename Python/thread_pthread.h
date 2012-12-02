@@ -303,6 +303,7 @@ PyThread_free_lock(PyThread_type_lock lock)
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     if (!thelock)
@@ -335,6 +336,7 @@ PyThread_acquire_lock_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds,
     int status, error = 0;
     struct timespec ts;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_acquire_lock_timed(%p, %lld, %d) called\n",
              lock, microseconds, intr_flag));
 
@@ -385,6 +387,7 @@ PyThread_release_lock(PyThread_type_lock lock)
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = sem_post(thelock);

@@ -12,6 +12,8 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16588: Silence unused-but-set warnings in Python/thread_pthread
+
 - Issue #16546: Fix: ast.YieldFrom argument is now mandatory.
 
 - Issue #16514: Fix regression causing a traceback when sys.path[0] is None
