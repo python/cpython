@@ -320,7 +320,7 @@ multibytecodec_encerror(MultibyteCodec *codec,
         !PyLong_Check(PyTuple_GET_ITEM(retobj, 1))) {
         PyErr_SetString(PyExc_TypeError,
                         "encoding error handler must return "
-                        "(unicode, int) tuple");
+                        "(str, int) tuple");
         goto errorexit;
     }
 
@@ -439,7 +439,7 @@ multibytecodec_decerror(MultibyteCodec *codec,
         !PyLong_Check(PyTuple_GET_ITEM(retobj, 1))) {
         PyErr_SetString(PyExc_TypeError,
                         "decoding error handler must return "
-                        "(unicode, int) tuple");
+                        "(str, int) tuple");
         goto errorexit;
     }
 
@@ -760,7 +760,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
             return NULL;
         else if (!PyUnicode_Check(unistr)) {
             PyErr_SetString(PyExc_TypeError,
-                "couldn't convert the object to unicode.");
+                "couldn't convert the object to str.");
             Py_DECREF(ucvt);
             return NULL;
         }
