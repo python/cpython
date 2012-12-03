@@ -169,7 +169,9 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
     if (unicode == NULL)
         return NULL;
 
-    bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
+    bytes = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+                                 PyUnicode_GET_SIZE(unicode),
+                                 "surrogateescape");
     Py_DECREF(unicode);
     if (bytes == NULL) {
         PyErr_Clear();
