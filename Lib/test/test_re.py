@@ -949,10 +949,17 @@ class ReTests(unittest.TestCase):
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
 
+    @bigmemtest(size=_2G, memuse=1)
+    def test_large_search(self, size):
+        # Issue #10182: indices were 32-bit-truncated.
+        s = 'a' * size
+        m = re.search('$', s)
+        self.assertIsNotNone(m)
+
     # The huge memuse is because of re.sub() using a list and a join()
     # to create the replacement result.
-    @bigmemtest(size=_2G, memuse=20)
-    def test_large(self, size):
+    @bigmemtest(size=_2G, memuse=16 + 2)
+    def test_large_subn(self, size):
         # Issue #10182: indices were 32-bit-truncated.
         s = 'a' * size
         m = re.search('$', s)
