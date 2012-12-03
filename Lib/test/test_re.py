@@ -863,6 +863,8 @@ class ReTests(unittest.TestCase):
         s = 'a' * size
         m = re.search('$', s)
         self.assertIsNotNone(m)
+        self.assertEqual(m.start(), size)
+        self.assertEqual(m.end(), size)
 
     # The huge memuse is because of re.sub() using a list and a join()
     # to create the replacement result.
@@ -870,10 +872,6 @@ class ReTests(unittest.TestCase):
     def test_large_subn(self, size):
         # Issue #10182: indices were 32-bit-truncated.
         s = 'a' * size
-        m = re.search('$', s)
-        self.assertIsNotNone(m)
-        self.assertEqual(m.start(), size)
-        self.assertEqual(m.end(), size)
         r, n = re.subn('', '', s)
         self.assertEqual(r, s)
         self.assertEqual(n, size + 1)
