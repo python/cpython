@@ -8,6 +8,10 @@
 #include <langinfo.h>
 #endif
 
+#ifdef __APPLE__
+extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
+#endif
+
 PyObject *
 _Py_device_encoding(int fd)
 {
@@ -60,6 +64,17 @@ _Py_device_encoding(int fd)
 wchar_t*
 _Py_char2wchar(const char* arg, size_t *size)
 {
+#ifdef __APPLE__
+    wchar_t *wstr;
+    wstr = _Py_DecodeUTF8_surrogateescape(arg, strlen(arg));
+    if (size != NULL) {
+        if (wstr != NULL)
+            *size = wcslen(wstr);
+        else
+            *size = (size_t)-1;
+    }
+    return wstr;
+#else
     wchar_t *res;
 #ifdef HAVE_BROKEN_MBSTOWCS
     /* Some platforms have a broken implementation of
@@ -145,7 +160,7 @@ _Py_char2wchar(const char* arg, size_t *size)
         argsize -= converted;
         out++;
     }
-#else
+#else   /* HAVE_MBRTOWC */
     /* Cannot use C locale for escaping; manually escape as if charset
        is ASCII (i.e. escape all bytes > 128. This will still roundtrip
        correctly in the locale's charset, which must be an ASCII superset. */
@@ -160,7 +175,7 @@ _Py_char2wchar(const char* arg, size_t *size)
         else
             *out++ = 0xdc00 + *in++;
     *out = 0;
-#endif
+#endif   /* HAVE_MBRTOWC */
     if (size != NULL)
         *size = out - res;
     return res;
@@ -168,6 +183,7 @@ oom:
     if (size != NULL)
         *size = (size_t)-1;
     return NULL;
+#endif   /* __APPLE__ */
 }
 
 /* Encode a (wide) character string to the locale encoding with the
@@ -184,13 +200,41 @@ oom:
 char*
 _Py_wchar2char(const wchar_t *text, size_t *error_pos)
 {
+#ifdef __APPLE__
+    Py_ssize_t len;
+    PyObject *unicode, *bytes = NULL;
+    char *cpath;
+
+    unicode = PyUnicode_FromWideChar(text, wcslen(text));
+    if (unicode == NULL)
+        return NULL;
+
+    bytes = _PyUnicode_AsUTF8String(unicode, "surrogateescape");
+    Py_DECREF(unicode);
+    if (bytes == NULL) {
+        PyErr_Clear();
+        if (error_pos != NULL)
+            *error_pos = (size_t)-1;
+        return NULL;
+    }
+
+    len = PyBytes_GET_SIZE(bytes);
+    cpath = PyMem_Malloc(len+1);
+    if (cpath == NULL) {
+        PyErr_Clear();
+        Py_DECREF(bytes);
+        if (error_pos != NULL)
+            *error_pos = (size_t)-1;
+        return NULL;
+    }
+    memcpy(cpath, PyBytes_AsString(bytes), len + 1);
+    Py_DECREF(bytes);
+    return cpath;
+#else   /* __APPLE__ */
     const size_t len = wcslen(text);
     char *result = NULL, *bytes = NULL;
     size_t i, size, converted;
     wchar_t c, buf[2];
-
-    if (error_pos != NULL)
-        *error_pos = (size_t)-1;
 
     /* The function works in two steps:
        1. compute the length of the output buffer in bytes (size)
@@ -238,11 +282,15 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
 
         size += 1; /* nul byte at the end */
         result = PyMem_Malloc(size);
-        if (result == NULL)
+        if (result == NULL) {
+            if (error_pos != NULL)
+                *error_pos = (size_t)-1;
             return NULL;
+        }
         bytes = result;
     }
     return result;
+#endif   /* __APPLE__ */
 }
 
 /* In principle, this should use HAVE__WSTAT, and _wstat

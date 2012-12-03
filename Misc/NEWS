@@ -12,6 +12,12 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16416: On Mac OS X, operating system data are now always
+  encoded/decoded to/from UTF-8/surrogateescape, instead of the locale encoding
+  (which may be ASCII if no locale environment variable is set), to avoid
+  inconsistencies with os.fsencode() and os.fsdecode() functions which are
+  already using UTF-8/surrogateescape.
+
 - Issue #16588: Silence unused-but-set warnings in Python/thread_pthread
 
 - Issue #16546: Fix: ast.YieldFrom argument is now mandatory.
