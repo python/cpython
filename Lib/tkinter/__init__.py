@@ -1421,8 +1421,8 @@ class CallWrapper:
             if self.subst:
                 args = self.subst(*args)
             return self.func(*args)
-        except SystemExit as msg:
-            raise SystemExit(msg)
+        except SystemExit:
+            raise
         except:
             self.widget._report_exception()
 
