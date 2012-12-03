@@ -7,6 +7,9 @@ import string
 import traceback
 from weakref import proxy
 
+from test.test_bigmem import character_size
+
+
 # Misc tests from Tim Peters' re.doc
 
 # WARNING: Don't change details in these tests if you don't know
@@ -854,10 +857,17 @@ class ReTests(unittest.TestCase):
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
 
+    @bigmemtest(size=_2G, memuse=character_size)
+    def test_large_search(self, size):
+        # Issue #10182: indices were 32-bit-truncated.
+        s = 'a' * size
+        m = re.search('$', s)
+        self.assertIsNotNone(m)
+
     # The huge memuse is because of re.sub() using a list and a join()
     # to create the replacement result.
-    @bigmemtest(size=_2G, memuse=20)
-    def test_large(self, size):
+    @bigmemtest(size=_2G, memuse=16 + 2 * character_size)
+    def test_large_subn(self, size):
         # Issue #10182: indices were 32-bit-truncated.
         s = 'a' * size
         m = re.search('$', s)
