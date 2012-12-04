@@ -1742,7 +1742,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_DecodeLocale(
 /* Encode a Unicode object to the current locale encoding. The encoder is
    strict is *surrogateescape* is equal to zero, otherwise the
    "surrogateescape" error handler is used. Return a bytes object. The string
-   cannot contain embedded null characters.. */
+   cannot contain embedded null characters. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeLocale(
     PyObject *unicode,
