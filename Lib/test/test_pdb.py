@@ -664,6 +664,33 @@ class PdbTestCase(unittest.TestCase):
             any('main.py(5)foo()->None' in l for l in stdout.splitlines()),
             'Fail to step into the caller after a return')
 
+    def test_issue13210(self):
+        # invoking "continue" on a non-main thread triggered an exception
+        # inside signal.signal
+
+        with open(support.TESTFN, 'wb') as f:
+            f.write(textwrap.dedent("""
+                import threading
+                import pdb
+
+                def start_pdb():
+                    pdb.Pdb().set_trace()
+                    x = 1
+                    y = 1
+
+                t = threading.Thread(target=start_pdb)
+                t.start()""").encode('ascii'))
+        cmd = [sys.executable, '-u', support.TESTFN]
+        proc = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            )
+        self.addCleanup(proc.stdout.close)
+        stdout, stderr = proc.communicate(b'cont\n')
+        self.assertNotIn('Error', stdout.decode(),
+                         "Got an error running test script under PDB")
+
     def tearDown(self):
         support.unlink(support.TESTFN)
 
