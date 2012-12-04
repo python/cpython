@@ -104,6 +104,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13120: Allow to call pdb.set_trace() from thread.
+  Patch by Ilya Sandler.
+
 - Issue #16585: Make CJK encoders support error handlers that return bytes per
   PEP 383.
 

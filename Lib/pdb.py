@@ -1031,8 +1031,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Continue execution, only stop when a breakpoint is encountered.
         """
         if not self.nosigint:
-            self._previous_sigint_handler = \
-                signal.signal(signal.SIGINT, self.sigint_handler)
+            try:
+                self._previous_sigint_handler = \
+                    signal.signal(signal.SIGINT, self.sigint_handler)
+            except ValueError:
+                # ValueError happens when do_continue() is invoked from
+                # a non-main thread in which case we just continue without
+                # SIGINT set. Would printing a message here (once) make
+                # sense?
+                pass
         self.set_continue()
         return 1
     do_c = do_cont = do_continue
