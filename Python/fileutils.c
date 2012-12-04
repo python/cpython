@@ -5,6 +5,7 @@
 #endif
 
 #ifdef HAVE_LANGINFO_H
+#include <locale.h>
 #include <langinfo.h>
 #endif
 
@@ -42,7 +43,182 @@ _Py_device_encoding(int fd)
     Py_RETURN_NONE;
 }
 
-#ifdef HAVE_STAT
+#if !defined(__APPLE__) && !defined(MS_WINDOWS)
+extern int _Py_normalize_encoding(const char *, char *, size_t);
+
+/* Workaround FreeBSD and OpenIndiana locale encoding issue with the C locale.
+   On these operating systems, nl_langinfo(CODESET) announces an alias of the
+   ASCII encoding, whereas mbstowcs() and wcstombs() functions use the
+   ISO-8859-1 encoding. The problem is that os.fsencode() and os.fsdecode() use
+   locale.getpreferredencoding() codec. For example, if command line arguments
+   are decoded by mbstowcs() and encoded back by os.fsencode(), we get a
+   UnicodeEncodeError instead of retrieving the original byte string.
+
+   The workaround is enabled if setlocale(LC_CTYPE, NULL) returns "C",
+   nl_langinfo(CODESET) announces "ascii" (or an alias to ASCII), and at least
+   one byte in range 0x80-0xff can be decoded from the locale encoding. The
+   workaround is also enabled on error, for example if getting the locale
+   failed.
+
+   Values of locale_is_ascii:
+
+       1: the workaround is used: _Py_wchar2char() uses
+          encode_ascii_surrogateescape() and _Py_char2wchar() uses
+          decode_ascii_surrogateescape()
+       0: the workaround is not used: _Py_wchar2char() uses wcstombs() and
+          _Py_char2wchar() uses mbstowcs()
+      -1: unknown, need to call check_force_ascii() to get the value
+*/
+static int force_ascii = -1;
+
+static int
+check_force_ascii(void)
+{
+    char *loc;
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+    char *codeset, **alias;
+    char encoding[100];
+    int is_ascii;
+    unsigned int i;
+    char* ascii_aliases[] = {
+        "ascii",
+        "646",
+        "ansi-x3.4-1968",
+        "ansi-x3-4-1968",
+        "ansi-x3.4-1986",
+        "cp367",
+        "csascii",
+        "ibm367",
+        "iso646-us",
+        "iso-646.irv-1991",
+        "iso-ir-6",
+        "us",
+        "us-ascii",
+        NULL
+    };
+#endif
+
+    loc = setlocale(LC_CTYPE, NULL);
+    if (loc == NULL)
+        goto error;
+    if (strcmp(loc, "C") != 0) {
+        /* the LC_CTYPE locale is different than C */
+        return 0;
+    }
+
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+    codeset = nl_langinfo(CODESET);
+    if (!codeset || codeset[0] == '\0') {
+        /* CODESET is not set or empty */
+        goto error;
+    }
+    if (!_Py_normalize_encoding(codeset, encoding, sizeof(encoding)))
+        goto error;
+
+    is_ascii = 0;
+    for (alias=ascii_aliases; *alias != NULL; alias++) {
+        if (strcmp(encoding, *alias) == 0) {
+            is_ascii = 1;
+            break;
+        }
+    }
+    if (!is_ascii) {
+        /* nl_langinfo(CODESET) is not "ascii" or an alias of ASCII */
+        return 0;
+    }
+
+    for (i=0x80; i<0xff; i++) {
+        unsigned char ch;
+        wchar_t wch;
+        size_t res;
+
+        ch = (unsigned char)i;
+        res = mbstowcs(&wch, (char*)&ch, 1);
+        if (res != (size_t)-1) {
+            /* decoding a non-ASCII character from the locale encoding succeed:
+               the locale encoding is not ASCII, force ASCII */
+            return 1;
+        }
+    }
+    /* None of the bytes in the range 0x80-0xff can be decoded from the locale
+       encoding: the locale encoding is really ASCII */
+    return 0;
+#else
+    /* nl_langinfo(CODESET) is not available: always force ASCII */
+    return 1;
+#endif
+
+error:
+    /* if an error occured, force the ASCII encoding */
+    return 1;
+}
+
+static char*
+encode_ascii_surrogateescape(const wchar_t *text, size_t *error_pos)
+{
+    char *result = NULL, *out;
+    size_t len, i;
+    wchar_t ch;
+
+    if (error_pos != NULL)
+        *error_pos = (size_t)-1;
+
+    len = wcslen(text);
+
+    result = PyMem_Malloc(len + 1);  /* +1 for NUL byte */
+    if (result == NULL)
+        return NULL;
+
+    out = result;
+    for (i=0; i<len; i++) {
+        ch = text[i];
+
+        if (ch <= 0x7f) {
+            /* ASCII character */
+            *out++ = (char)ch;
+        }
+        else if (0xdc80 <= ch && ch <= 0xdcff) {
+            /* UTF-8b surrogate */
+            *out++ = (char)(ch - 0xdc00);
+        }
+        else {
+            if (error_pos != NULL)
+                *error_pos = i;
+            PyMem_Free(result);
+            return NULL;
+        }
+    }
+    *out = '\0';
+    return result;
+}
+#endif   /* !defined(__APPLE__) && !defined(MS_WINDOWS) */
+
+#if !defined(__APPLE__) && (!defined(MS_WINDOWS) || !defined(HAVE_MBRTOWC))
+static wchar_t*
+decode_ascii_surrogateescape(const char *arg, size_t *size)
+{
+    wchar_t *res;
+    unsigned char *in;
+    wchar_t *out;
+
+    res = PyMem_Malloc((strlen(arg)+1)*sizeof(wchar_t));
+    if (!res)
+        return NULL;
+
+    in = (unsigned char*)arg;
+    out = res;
+    while(*in)
+        if(*in < 128)
+            *out++ = *in++;
+        else
+            *out++ = 0xdc00 + *in++;
+    *out = 0;
+    if (size != NULL)
+        *size = out - res;
+    return res;
+}
+#endif
+
 
 /* Decode a byte string from the locale encoding with the
    surrogateescape error handler (undecodable bytes are decoded as characters
@@ -76,20 +252,35 @@ _Py_char2wchar(const char* arg, size_t *size)
     return wstr;
 #else
     wchar_t *res;
-#ifdef HAVE_BROKEN_MBSTOWCS
-    /* Some platforms have a broken implementation of
-     * mbstowcs which does not count the characters that
-     * would result from conversion.  Use an upper bound.
-     */
-    size_t argsize = strlen(arg);
-#else
-    size_t argsize = mbstowcs(NULL, arg, 0);
-#endif
+    size_t argsize;
     size_t count;
     unsigned char *in;
     wchar_t *out;
 #ifdef HAVE_MBRTOWC
     mbstate_t mbs;
+#endif
+
+#ifndef MS_WINDOWS
+    if (force_ascii == -1)
+        force_ascii = check_force_ascii();
+
+    if (force_ascii) {
+        /* force ASCII encoding to workaround mbstowcs() issue */
+        res = decode_ascii_surrogateescape(arg, size);
+        if (res == NULL)
+            goto oom;
+        return res;
+    }
+#endif
+
+#ifdef HAVE_BROKEN_MBSTOWCS
+    /* Some platforms have a broken implementation of
+     * mbstowcs which does not count the characters that
+     * would result from conversion.  Use an upper bound.
+     */
+    argsize = strlen(arg);
+#else
+    argsize = mbstowcs(NULL, arg, 0);
 #endif
     if (argsize != (size_t)-1) {
         res = (wchar_t *)PyMem_Malloc((argsize+1)*sizeof(wchar_t));
@@ -160,24 +351,16 @@ _Py_char2wchar(const char* arg, size_t *size)
         argsize -= converted;
         out++;
     }
+    if (size != NULL)
+        *size = out - res;
 #else   /* HAVE_MBRTOWC */
     /* Cannot use C locale for escaping; manually escape as if charset
        is ASCII (i.e. escape all bytes > 128. This will still roundtrip
        correctly in the locale's charset, which must be an ASCII superset. */
-    res = PyMem_Malloc((strlen(arg)+1)*sizeof(wchar_t));
-    if (!res)
+    res = decode_ascii_surrogateescape(arg, size);
+    if (res == NULL)
         goto oom;
-    in = (unsigned char*)arg;
-    out = res;
-    while(*in)
-        if(*in < 128)
-            *out++ = *in++;
-        else
-            *out++ = 0xdc00 + *in++;
-    *out = 0;
 #endif   /* HAVE_MBRTOWC */
-    if (size != NULL)
-        *size = out - res;
     return res;
 oom:
     if (size != NULL)
@@ -236,6 +419,14 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
     size_t i, size, converted;
     wchar_t c, buf[2];
 
+#ifndef MS_WINDOWS
+    if (force_ascii == -1)
+        force_ascii = check_force_ascii();
+
+    if (force_ascii)
+        return encode_ascii_surrogateescape(text, error_pos);
+#endif
+
     /* The function works in two steps:
        1. compute the length of the output buffer in bytes (size)
        2. outputs the bytes */
@@ -276,7 +467,7 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
             }
         }
         if (result != NULL) {
-            *bytes = 0;
+            *bytes = '\0';
             break;
         }
 
@@ -320,6 +511,8 @@ _Py_wstat(const wchar_t* path, struct stat *buf)
 }
 #endif
 
+#ifdef HAVE_STAT
+
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
 
@@ -351,6 +544,8 @@ _Py_stat(PyObject *path, struct stat *statbuf)
     return ret;
 #endif
 }
+
+#endif
 
 /* Open a file. Use _wfopen() on Windows, encode the path to the locale
    encoding and use fopen() otherwise. */
@@ -533,4 +728,3 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
 #endif
 }
 
-#endif

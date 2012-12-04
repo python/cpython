@@ -2863,10 +2863,10 @@ PyUnicode_FromEncodedObject(register PyObject *obj,
 /* Convert encoding to lower case and replace '_' with '-' in order to
    catch e.g. UTF_8. Return 0 on error (encoding is longer than lower_len-1),
    1 on success. */
-static int
-normalize_encoding(const char *encoding,
-                   char *lower,
-                   size_t lower_len)
+int
+_Py_normalize_encoding(const char *encoding,
+                       char *lower,
+                       size_t lower_len)
 {
     const char *e;
     char *l;
@@ -2908,7 +2908,7 @@ PyUnicode_Decode(const char *s,
     char lower[11];  /* Enough for any encoding shortcut */
 
     /* Shortcuts for common default encodings */
-    if (normalize_encoding(encoding, lower, sizeof(lower))) {
+    if (_Py_normalize_encoding(encoding, lower, sizeof(lower))) {
         if ((strcmp(lower, "utf-8") == 0) ||
             (strcmp(lower, "utf8") == 0))
             return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
@@ -3110,7 +3110,8 @@ locale_error_handler(const char *errors, int *surrogateescape)
         *surrogateescape = 0;
         return 0;
     }
-    if (strcmp(errors, "surrogateescape") == 0) {
+    if (errors == "surrogateescape"
+        || strcmp(errors, "surrogateescape") == 0) {
         *surrogateescape = 1;
         return 0;
     }
@@ -3148,7 +3149,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
     }
 
     if (surrogateescape) {
-        /* locale encoding with surrogateescape */
+        /* "surrogateescape" error handler */
         char *str;
 
         str = _Py_wchar2char(wstr, &error_pos);
@@ -3168,6 +3169,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
         PyMem_Free(str);
     }
     else {
+        /* strict mode */
         size_t len, len2;
 
         len = wcstombs(NULL, wstr, 0);
@@ -3273,7 +3275,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     /* Shortcuts for common default encodings */
-    if (normalize_encoding(encoding, lower, sizeof(lower))) {
+    if (_Py_normalize_encoding(encoding, lower, sizeof(lower))) {
         if ((strcmp(lower, "utf-8") == 0) ||
             (strcmp(lower, "utf8") == 0))
         {
@@ -3413,8 +3415,8 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
         return NULL;
     }
 
-    if (surrogateescape)
-    {
+    if (surrogateescape) {
+        /* "surrogateescape" error handler */
         wstr = _Py_char2wchar(str, &wlen);
         if (wstr == NULL) {
             if (wlen == (size_t)-1)
@@ -3428,6 +3430,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
         PyMem_Free(wstr);
     }
     else {
+        /* strict mode */
 #ifndef HAVE_BROKEN_MBSTOWCS
         wlen = mbstowcs(NULL, str, 0);
 #else
@@ -3447,7 +3450,6 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
                 return PyErr_NoMemory();
         }
 
-        /* This shouldn't fail now */
         wlen2 = mbstowcs(wstr, str, wlen+1);
         if (wlen2 == (size_t)-1) {
             if (wstr != smallbuf)
