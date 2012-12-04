@@ -3110,8 +3110,7 @@ locale_error_handler(const char *errors, int *surrogateescape)
         *surrogateescape = 0;
         return 0;
     }
-    if (errors == "surrogateescape"
-        || strcmp(errors, "surrogateescape") == 0) {
+    if (strcmp(errors, "surrogateescape") == 0) {
         *surrogateescape = 1;
         return 0;
     }
@@ -13438,7 +13437,6 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
 
     PyObject *v;
 
-    arg->ch = FORMAT_READ(ctx);
     if (arg->ch == '(') {
         /* Get argument value from a dictionary. Example: "%(name)s". */
         Py_ssize_t keystart;
@@ -13487,7 +13485,6 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
     }
 
     /* Parse flags. Example: "%+i" => flags=F_SIGN. */
-    arg->flags = 0;
     while (--ctx->fmtcnt >= 0) {
         arg->ch = FORMAT_READ(ctx);
         ctx->fmtpos++;
@@ -13502,7 +13499,6 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
     }
 
     /* Parse width. Example: "%10s" => width=10 */
-    arg->width = -1;
     if (arg->ch == '*') {
         v = unicode_format_getnextarg(ctx);
         if (v == NULL)
@@ -13544,7 +13540,6 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
     }
 
     /* Parse precision. Example: "%.3f" => prec=3 */
-    arg->prec = -1;
     if (arg->ch == '.') {
         arg->prec = 0;
         if (--ctx->fmtcnt >= 0) {
@@ -13613,9 +13608,12 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
    - "e", "E", "f", "F", "g", "G": float
    - "c": int or str (1 character)
 
+   When possible, the output is written directly into the Unicode writer
+   (ctx->writer). A string is created when padding is required.
+
    Return 0 if the argument has been formatted into *p_str,
           1 if the argument has been written into ctx->writer,
-          -1 on error. */
+         -1 on error. */
 static int
 unicode_format_arg_format(struct unicode_formatter_t *ctx,
                           struct unicode_format_arg_t *arg,
@@ -13639,10 +13637,8 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
     if (v == NULL)
         return -1;
 
-    arg->sign = 0;
 
     switch (arg->ch) {
-
     case 's':
     case 'r':
     case 'a':
@@ -13893,6 +13889,13 @@ unicode_format_arg(struct unicode_formatter_t *ctx)
     struct unicode_format_arg_t arg;
     PyObject *str;
     int ret;
+
+    arg.ch = PyUnicode_READ(ctx->fmtkind, ctx->fmtdata, ctx->fmtpos);
+    arg.flags = 0;
+    arg.width = -1;
+    arg.prec = -1;
+    arg.sign = 0;
+    str = NULL;
 
     ret = unicode_format_arg_parse(ctx, &arg);
     if (ret == -1)
