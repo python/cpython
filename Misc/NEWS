@@ -175,6 +175,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13120: Allow to call pdb.set_trace() from thread.
+  Patch by Ilya Sandler.
+
 - Issue #10182: The re module doesn't truncate indices to 32 bits anymore.
   Patch by Serhiy Storchaka.
 
