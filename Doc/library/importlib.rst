@@ -409,7 +409,7 @@ ABC hierarchy::
         When writing to the path fails because the path is read-only
         (:attr:`errno.EACCES`), do not propagate the exception.
 
-    .. method:: compile_source(data, path)
+    .. method:: source_to_code(data, path)
 
         Create a code object from Python source.
 
