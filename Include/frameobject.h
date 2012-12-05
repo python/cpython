@@ -33,8 +33,8 @@ typedef struct _frame {
            frame (which shouldn't be impacted when the generator "yields"
            from an except handler).
            These three fields exist exactly for that, and are unused for
-           non-generator frames. See the SAVE_EXC_STATE and SWAP_EXC_STATE
-           macros in ceval.c for details of their use. */
+           non-generator frames. See the save_exc_state and swap_exc_state
+           functions in ceval.c for details of their use. */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
 
     PyThreadState *f_tstate;
