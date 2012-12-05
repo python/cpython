@@ -148,9 +148,9 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         code_object = self.loader.get_code(self.name)
         self.verify_code(code_object)
 
-    def test_compile_source(self):
+    def test_source_to_code(self):
         # Verify the compiled code object.
-        code = self.loader.compile_source(self.loader.source, self.path)
+        code = self.loader.source_to_code(self.loader.source, self.path)
         self.verify_code(code)
 
     def test_load_module(self):

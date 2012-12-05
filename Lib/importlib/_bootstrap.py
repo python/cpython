@@ -931,7 +931,7 @@ class SourceLoader(_LoaderBasics):
             raise ImportError("Failed to decode source file",
                               name=fullname) from exc
 
-    def compile_source(self, data, path):
+    def source_to_code(self, data, path):
         """Return the code object compiled from source.
 
         The 'data' argument can be any object type that compile() supports.
@@ -984,7 +984,7 @@ class SourceLoader(_LoaderBasics):
                             raise ImportError(msg.format(bytecode_path),
                                               name=fullname, path=bytecode_path)
         source_bytes = self.get_data(source_path)
-        code_object = self.compile_source(source_bytes, source_path)
+        code_object = self.source_to_code(source_bytes, source_path)
         _verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
             source_mtime is not None):
