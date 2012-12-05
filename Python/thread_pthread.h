@@ -284,6 +284,7 @@ PyThread_free_lock(PyThread_type_lock lock)
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     if (!thelock)
@@ -314,6 +315,7 @@ PyThread_acquire_lock(PyThread_type_lock lock, int waitflag)
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
 
     do {
@@ -341,6 +343,7 @@ PyThread_release_lock(PyThread_type_lock lock)
     sem_t *thelock = (sem_t *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = sem_post(thelock);

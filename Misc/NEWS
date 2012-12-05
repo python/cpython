@@ -55,6 +55,8 @@ Core and Builtins
   HTTP servers and reduce memory usage. It's actually a backport of a Python
   3.2 fix. Thanks to Adrien Kunysz.
 
+- Issue #16588: Silence unused-but-set warnings in Python/thread_pthread
+
 - Issue #13992: The trashcan mechanism is now thread-safe.  This eliminates
   sporadic crashes in multi-thread programs when several long deallocator
   chains ran concurrently and involved subclasses of built-in container
