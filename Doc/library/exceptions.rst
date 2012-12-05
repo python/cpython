@@ -522,7 +522,7 @@ depending on the system error code.
 .. exception:: InterruptedError
 
    Raised when a system call is interrupted by an incoming signal.
-   Corresponds to :c:data:`errno` ``EEINTR``.
+   Corresponds to :c:data:`errno` ``EINTR``.
 
 .. exception:: IsADirectoryError
 
