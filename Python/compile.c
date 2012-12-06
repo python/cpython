@@ -2635,6 +2635,10 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     if (!mangled)
         return 0;
 
+    assert(PyUnicode_CompareWithASCIIString(name, "None") &&
+           PyUnicode_CompareWithASCIIString(name, "True") &&
+           PyUnicode_CompareWithASCIIString(name, "False"));
+
     op = 0;
     optype = OP_NAME;
     scope = PyST_GetScope(c->u->u_ste, mangled);
