@@ -185,6 +185,25 @@ interface to a buffered raw stream (:class:`BufferedIOBase`). Finally,
 Argument names are not part of the specification, and only the arguments of
 :func:`open` are intended to be used as keyword arguments.
 
+The following table summarizes the ABCs provided by the :mod:`io` module:
+
+=========================  ==================  ========================  ==================================================
+ABC                        Inherits            Stub Methods              Mixin Methods and Properties
+=========================  ==================  ========================  ==================================================
+:class:`IOBase`                                ``fileno``, ``seek``,     ``close``, ``closed``, ``__enter__``,
+                                               and ``truncate``          ``__exit__``, ``flush``, ``isatty``, ``__iter__``,
+                                                                         ``__next__``, ``readable``, ``readline``,
+                                                                         ``readlines``, ``seekable``, ``tell``,
+                                                                         ``writable``, and ``writelines``
+:class:`RawIOBase`         :class:`IOBase`     ``readinto`` and          Inherited :class:`IOBase` methods, ``read``,
+                                               ``write``                 and ``readall``
+:class:`BufferedIOBase`    :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``readinto``
+                                               ``read1``, and ``write``
+:class:`TextIOBase`        :class:`IOBase`     ``detach``, ``read``,     Inherited :class:`IOBase` methods, ``encoding``,
+                                               ``readline``, and         ``errors``, and ``newlines``
+                                               ``write``
+=========================  ==================  ========================  ==================================================
+
 
 I/O Base Classes
 ^^^^^^^^^^^^^^^^
