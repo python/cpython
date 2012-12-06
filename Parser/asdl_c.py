@@ -820,6 +820,7 @@ static PyObject* ast2obj_object(void *o)
     Py_INCREF((PyObject*)o);
     return (PyObject*)o;
 }
+#define ast2obj_singleton ast2obj_object
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 #define ast2obj_bytes ast2obj_object
@@ -830,6 +831,17 @@ static PyObject* ast2obj_int(long b)
 }
 
 /* Conversion Python -> AST */
+
+static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
+{
+    if (obj != Py_None && obj != Py_True && obj != Py_False) {
+        PyErr_SetString(PyExc_ValueError,
+                        "AST singleton must be True, False, or None");
+        return 1;
+    }
+    *out = obj;
+    return 0;
+}
 
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {

@@ -307,6 +307,9 @@ class Unparser:
     def _Name(self, t):
         self.write(t.id)
 
+    def _NameConstant(self, t):
+        self.write(repr(t.value))
+
     def _Num(self, t):
         # Substitute overflowing decimal literal for AST infinities.
         self.write(repr(t.n).replace("inf", INFSTR))

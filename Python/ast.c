@@ -282,6 +282,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_exprs(exp->v.Tuple.elts, ctx, 0);
     /* These last cases don't have any checking. */
     case Name_kind:
+    case NameConstant_kind:
     case Ellipsis_kind:
         return 1;
     default:
@@ -903,7 +904,7 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             break;
         case Name_kind:
             if (ctx == Store) {
-                if (forbidden_name(c, e->v.Name.id, n, 1))
+                if (forbidden_name(c, e->v.Name.id, n, 0))
                     return 0; /* forbidden_name() calls ast_error() */
             }
             e->v.Name.ctx = ctx;
@@ -954,6 +955,9 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
         case Str_kind:
         case Bytes_kind:
             expr_name = "literal";
+            break;
+        case NameConstant_kind:
+            expr_name = "keyword";
             break;
         case Ellipsis_kind:
             expr_name = "Ellipsis";
@@ -1819,11 +1823,21 @@ ast_for_atom(struct compiling *c, const node *n)
 
     switch (TYPE(ch)) {
     case NAME: {
-        /* All names start in Load context, but may later be
-           changed. */
-        PyObject *name = NEW_IDENTIFIER(ch);
+        PyObject *name;
+        const char *s = STR(ch);
+        size_t len = strlen(s);
+        if (len >= 4 && len <= 5) {
+            if (!strcmp(s, "None"))
+                return NameConstant(Py_None, LINENO(n), n->n_col_offset, c->c_arena);
+            if (!strcmp(s, "True"))
+                return NameConstant(Py_True, LINENO(n), n->n_col_offset, c->c_arena);
+            if (!strcmp(s, "False"))
+                return NameConstant(Py_False, LINENO(n), n->n_col_offset, c->c_arena);
+        }
+        name = new_identifier(s, c);
         if (!name)
             return NULL;
+        /* All names start in Load context, but may later be changed. */
         return Name(name, Load, LINENO(n), n->n_col_offset, c->c_arena);
     }
     case STRING: {
