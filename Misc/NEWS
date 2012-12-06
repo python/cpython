@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16619: Create NameConstant AST class to represent None, True, and False
+  literals. As a result, these constants are never loaded at runtime from
+  builtins.
+
 - Issue #16455: On FreeBSD and Solaris, if the locale is C, the
   ASCII/surrogateescape codec is now used, instead of the locale encoding, to
   decode the command line arguments. This change fixes inconsistencies with

@@ -33,7 +33,7 @@ SyntaxError: invalid syntax
 
 >>> None = 1
 Traceback (most recent call last):
-SyntaxError: assignment to keyword
+SyntaxError: can't assign to keyword
 
 It's a syntax error to assign to the empty tuple.  Why isn't it an
 error to assign to the empty list?  It will always raise some error at
@@ -233,7 +233,7 @@ Traceback (most recent call last):
 SyntaxError: can't assign to generator expression
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: assignment to keyword
+SyntaxError: can't assign to keyword
 >>> f() += 1
 Traceback (most recent call last):
 SyntaxError: can't assign to function call

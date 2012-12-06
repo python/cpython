@@ -3194,12 +3194,18 @@ expr_constant(struct compiler *c, expr_ty e)
     case Name_kind:
         /* optimize away names that can't be reassigned */
         id = PyUnicode_AsUTF8(e->v.Name.id);
-        if (strcmp(id, "True") == 0) return 1;
-        if (strcmp(id, "False") == 0) return 0;
-        if (strcmp(id, "None") == 0) return 0;
-        if (strcmp(id, "__debug__") == 0)
-            return ! c->c_optimize;
-        /* fall through */
+        if (id && strcmp(id, "__debug__") == 0)
+            return !c->c_optimize;
+        return -1;
+    case NameConstant_kind: {
+        PyObject *o = e->v.NameConstant.value;
+        if (o == Py_None)
+            return 0;
+        else if (o == Py_True)
+            return 1;
+        else if (o == Py_False)
+            return 0;
+    }
     default:
         return -1;
     }
@@ -3374,6 +3380,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         break;
     case Ellipsis_kind:
         ADDOP_O(c, LOAD_CONST, Py_Ellipsis, consts);
+        break;
+    case NameConstant_kind:
+        ADDOP_O(c, LOAD_CONST, e->v.NameConstant.value, consts);
         break;
     /* The following exprs can be assignment targets. */
     case Attribute_kind:

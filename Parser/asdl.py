@@ -222,7 +222,7 @@ class ASDLParser(spark.GenericParser, object):
         " field ::= Id ? "
         return Field(type[0], opt=True)
 
-builtin_types = ("identifier", "string", "bytes", "int", "object")
+builtin_types = ("identifier", "string", "bytes", "int", "object", "singleton")
 
 # below is a collection of classes to capture the AST of an AST :-)
 # not sure if any of the methods are useful yet, but I'm adding them
