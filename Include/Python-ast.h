@@ -182,8 +182,9 @@ enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   SetComp_kind=9, DictComp_kind=10, GeneratorExp_kind=11,
                   Yield_kind=12, YieldFrom_kind=13, Compare_kind=14,
                   Call_kind=15, Num_kind=16, Str_kind=17, Bytes_kind=18,
-                  Ellipsis_kind=19, Attribute_kind=20, Subscript_kind=21,
-                  Starred_kind=22, Name_kind=23, List_kind=24, Tuple_kind=25};
+                  NameConstant_kind=19, Ellipsis_kind=20, Attribute_kind=21,
+                  Subscript_kind=22, Starred_kind=23, Name_kind=24,
+                  List_kind=25, Tuple_kind=26};
 struct _expr {
         enum _expr_kind kind;
         union {
@@ -277,6 +278,10 @@ struct _expr {
                 struct {
                         bytes s;
                 } Bytes;
+                
+                struct {
+                        singleton value;
+                } NameConstant;
                 
                 struct {
                         expr_ty value;
@@ -509,6 +514,9 @@ expr_ty _Py_Num(object n, int lineno, int col_offset, PyArena *arena);
 expr_ty _Py_Str(string s, int lineno, int col_offset, PyArena *arena);
 #define Bytes(a0, a1, a2, a3) _Py_Bytes(a0, a1, a2, a3)
 expr_ty _Py_Bytes(bytes s, int lineno, int col_offset, PyArena *arena);
+#define NameConstant(a0, a1, a2, a3) _Py_NameConstant(a0, a1, a2, a3)
+expr_ty _Py_NameConstant(singleton value, int lineno, int col_offset, PyArena
+                         *arena);
 #define Ellipsis(a0, a1, a2) _Py_Ellipsis(a0, a1, a2)
 expr_ty _Py_Ellipsis(int lineno, int col_offset, PyArena *arena);
 #define Attribute(a0, a1, a2, a3, a4, a5) _Py_Attribute(a0, a1, a2, a3, a4, a5)

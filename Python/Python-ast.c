@@ -271,6 +271,10 @@ static PyTypeObject *Bytes_type;
 static char *Bytes_fields[]={
         "s",
 };
+static PyTypeObject *NameConstant_type;
+static char *NameConstant_fields[]={
+        "value",
+};
 static PyTypeObject *Ellipsis_type;
 static PyTypeObject *Attribute_type;
 _Py_IDENTIFIER(attr);
@@ -673,6 +677,7 @@ static PyObject* ast2obj_object(void *o)
     Py_INCREF((PyObject*)o);
     return (PyObject*)o;
 }
+#define ast2obj_singleton ast2obj_object
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 #define ast2obj_bytes ast2obj_object
@@ -683,6 +688,17 @@ static PyObject* ast2obj_int(long b)
 }
 
 /* Conversion Python -> AST */
+
+static int obj2ast_singleton(PyObject *obj, PyObject** out, PyArena* arena)
+{
+    if (obj != Py_None && obj != Py_True && obj != Py_False) {
+        PyErr_SetString(PyExc_ValueError,
+                        "AST singleton must be True, False, or None");
+        return 1;
+    }
+    *out = obj;
+    return 0;
+}
 
 static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
@@ -860,6 +876,9 @@ static int init_types(void)
         if (!Str_type) return 0;
         Bytes_type = make_type("Bytes", expr_type, Bytes_fields, 1);
         if (!Bytes_type) return 0;
+        NameConstant_type = make_type("NameConstant", expr_type,
+                                      NameConstant_fields, 1);
+        if (!NameConstant_type) return 0;
         Ellipsis_type = make_type("Ellipsis", expr_type, NULL, 0);
         if (!Ellipsis_type) return 0;
         Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
@@ -1921,6 +1940,25 @@ Bytes(bytes s, int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
+NameConstant(singleton value, int lineno, int col_offset, PyArena *arena)
+{
+        expr_ty p;
+        if (!value) {
+                PyErr_SetString(PyExc_ValueError,
+                                "field value is required for NameConstant");
+                return NULL;
+        }
+        p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+        if (!p)
+                return NULL;
+        p->kind = NameConstant_kind;
+        p->v.NameConstant.value = value;
+        p->lineno = lineno;
+        p->col_offset = col_offset;
+        return p;
+}
+
+expr_ty
 Ellipsis(int lineno, int col_offset, PyArena *arena)
 {
         expr_ty p;
@@ -2028,6 +2066,7 @@ Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
      *arena)
 {
         expr_ty p;
+        assert(PyUnicode_CompareWithASCIIString(id, "True") && PyUnicode_CompareWithASCIIString(id, "False") && PyUnicode_CompareWithASCIIString(id, "None"));
         if (!id) {
                 PyErr_SetString(PyExc_ValueError,
                                 "field id is required for Name");
@@ -2945,6 +2984,15 @@ ast2obj_expr(void* _o)
                 value = ast2obj_bytes(o->v.Bytes.s);
                 if (!value) goto failed;
                 if (_PyObject_SetAttrId(result, &PyId_s, value) == -1)
+                        goto failed;
+                Py_DECREF(value);
+                break;
+        case NameConstant_kind:
+                result = PyType_GenericNew(NameConstant_type, NULL, NULL);
+                if (!result) goto failed;
+                value = ast2obj_singleton(o->v.NameConstant.value);
+                if (!value) goto failed;
+                if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
                         goto failed;
                 Py_DECREF(value);
                 break;
@@ -5688,6 +5736,29 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 if (*out == NULL) goto failed;
                 return 0;
         }
+        isinstance = PyObject_IsInstance(obj, (PyObject*)NameConstant_type);
+        if (isinstance == -1) {
+                return 1;
+        }
+        if (isinstance) {
+                singleton value;
+
+                if (_PyObject_HasAttrId(obj, &PyId_value)) {
+                        int res;
+                        tmp = _PyObject_GetAttrId(obj, &PyId_value);
+                        if (tmp == NULL) goto failed;
+                        res = obj2ast_singleton(tmp, &value, arena);
+                        if (res != 0) goto failed;
+                        Py_XDECREF(tmp);
+                        tmp = NULL;
+                } else {
+                        PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from NameConstant");
+                        return 1;
+                }
+                *out = NameConstant(value, lineno, col_offset, arena);
+                if (*out == NULL) goto failed;
+                return 0;
+        }
         isinstance = PyObject_IsInstance(obj, (PyObject*)Ellipsis_type);
         if (isinstance == -1) {
                 return 1;
@@ -7008,6 +7079,8 @@ PyInit__ast(void)
             NULL;
         if (PyDict_SetItemString(d, "Bytes", (PyObject*)Bytes_type) < 0) return
             NULL;
+        if (PyDict_SetItemString(d, "NameConstant",
+            (PyObject*)NameConstant_type) < 0) return NULL;
         if (PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
             return NULL;
         if (PyDict_SetItemString(d, "Attribute", (PyObject*)Attribute_type) <
