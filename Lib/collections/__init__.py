@@ -228,8 +228,7 @@ class OrderedDict(dict):
 
         '''
         if isinstance(other, OrderedDict):
-            return len(self)==len(other) and \
-                   all(map(_eq, self.items(), other.items()))
+            return dict.__eq__(self, other) and all(map(_eq, self, other))
         return dict.__eq__(self, other)
 
 
