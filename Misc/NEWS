@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16495: Remove extraneous NULL encoding check from bytes_decode().
+
 - Issue #16619: Create NameConstant AST class to represent None, True, and False
   literals. As a result, these constants are never loaded at runtime from
   builtins.

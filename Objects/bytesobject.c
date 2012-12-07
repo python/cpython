@@ -2236,8 +2236,6 @@ bytes_decode(PyObject *self, PyObject *args, PyObject *kwargs)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode", kwlist, &encoding, &errors))
         return NULL;
-    if (encoding == NULL)
-        encoding = PyUnicode_GetDefaultEncoding();
     return PyUnicode_FromEncodedObject(self, encoding, errors);
 }
 
