@@ -57,7 +57,6 @@ another rational number, or from a string.
       Fraction(0, 1)
       >>> Fraction('3/7')
       Fraction(3, 7)
-      [40794 refs]
       >>> Fraction(' -3/7 ')
       Fraction(-3, 7)
       >>> Fraction('1.414213 \t\n')
