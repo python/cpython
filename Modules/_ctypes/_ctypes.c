@@ -2442,7 +2442,7 @@ PyCData_clear(CDataObject *self)
     assert(dict); /* Cannot be NULL for CDataObject instances */
     Py_CLEAR(self->b_objects);
     if ((self->b_needsfree)
-        && ((size_t)dict->size > sizeof(self->b_value)))
+        && _CDataObject_HasExternalBuffer(self))
         PyMem_Free(self->b_ptr);
     self->b_ptr = NULL;
     Py_CLEAR(self->b_base);
