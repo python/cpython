@@ -688,7 +688,7 @@ using a :keyword:`for` statement::
    for char in "123":
        print char
    for line in open("myfile.txt"):
-       print line
+       print line,
 
 This style of access is clear, concise, and convenient.  The use of iterators
 pervades and unifies Python.  Behind the scenes, the :keyword:`for` statement
