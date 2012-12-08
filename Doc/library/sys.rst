@@ -739,7 +739,7 @@ always available.
    For other systems, the values are:
 
    ====================== ===========================
-   System                 :data:`platform` value
+   System                 ``platform`` value
    ====================== ===========================
    Linux (2.x *and* 3.x)  ``'linux2'``
    Windows                ``'win32'``

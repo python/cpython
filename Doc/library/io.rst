@@ -236,7 +236,7 @@ I/O Base Classes
    Note that calling any method (even inquiries) on a closed stream is
    undefined.  Implementations may raise :exc:`IOError` in this case.
 
-   IOBase (and its subclasses) support the iterator protocol, meaning that an
+   IOBase (and its subclasses) supports the iterator protocol, meaning that an
    :class:`IOBase` object can be iterated over yielding the lines in a stream.
    Lines are defined slightly differently depending on whether the stream is
    a binary stream (yielding bytes), or a text stream (yielding character
