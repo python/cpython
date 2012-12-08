@@ -322,6 +322,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #16267: Better document the 3.3+ approach to combining
+  @abstractmethod with @staticmethod, @classmethod and @property
+
 - Issue #15209: Clarify exception chaining description in exceptions module
   documentation
 
