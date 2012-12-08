@@ -1,21 +1,18 @@
-# Copyright 2006 Georg Brandl.
-# Licensed to PSF under a Contributor Agreement.
+"""Fixer for reload().
 
-"""Fixer for intern().
-
-intern(s) -> sys.intern(s)"""
+reload(s) -> imp.reload(s)"""
 
 # Local imports
 from .. import fixer_base
 from ..fixer_util import ImportAndCall, touch_import
 
 
-class FixIntern(fixer_base.BaseFix):
+class FixReload(fixer_base.BaseFix):
     BM_compatible = True
     order = "pre"
 
     PATTERN = """
-    power< 'intern'
+    power< 'reload'
            trailer< lpar='('
                     ( not(arglist | argument<any '=' any>) obj=any
                       | obj=arglist<(not argument<any '=' any>) any ','> )
@@ -25,7 +22,7 @@ class FixIntern(fixer_base.BaseFix):
     """
 
     def transform(self, node, results):
-        names = ('sys', 'intern')
+        names = ('imp', 'reload')
         new = ImportAndCall(node, results, names)
-        touch_import(None, 'sys', node)
+        touch_import(None, 'imp', node)
         return new

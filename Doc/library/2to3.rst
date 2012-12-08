@@ -343,6 +343,10 @@ and off individually.  They are described here in more detail.
 
    Handles the move of :func:`reduce` to :func:`functools.reduce`.
 
+.. 2to3fixer:: reload
+
+   Converts :func:`reload` to :func:`imp.reload`.
+
 .. 2to3fixer:: renames
 
    Changes :data:`sys.maxint` to :data:`sys.maxsize`.
