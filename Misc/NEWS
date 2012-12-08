@@ -10,6 +10,10 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #16602: When a weakref's target was part of a long deallocation
+  chain, the object could remain reachable through its weakref even though
+  its refcount had dropped to zero.
+
 - Issue #16416: On Mac OS X, operating system data are now always
   encoded/decoded to/from UTF-8/surrogateescape, instead of the locale encoding
   (which may be ASCII if no locale environment variable is set), to avoid
