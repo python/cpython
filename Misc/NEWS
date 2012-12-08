@@ -460,6 +460,9 @@ Build
 Documentation
 -------------
 
+- Issue #15209: Clarify exception chaining description in exceptions module
+  documentation
+
 - Issue #15990: Improve argument/parameter documentation.
 
 - Issue #16209: Move the documentation for the str built-in function to a new
