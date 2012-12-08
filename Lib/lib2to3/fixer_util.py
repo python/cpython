@@ -129,6 +129,29 @@ def FromImport(package_name, name_leafs):
     imp = Node(syms.import_from, children)
     return imp
 
+def ImportAndCall(node, results, names):
+    """Returns an import statement and calls a method
+    of the module:
+
+    import module
+    module.name()"""
+    obj = results["obj"].clone()
+    if obj.type == syms.arglist:
+        newarglist = obj.clone()
+    else:
+        newarglist = Node(syms.arglist, [obj.clone()])
+    after = results["after"]
+    if after:
+        after = [n.clone() for n in after]
+    new = Node(syms.power,
+               Attr(Name(names[0]), Name(names[1])) +
+               [Node(syms.trailer,
+                     [results["lpar"].clone(),
+                      newarglist,
+                      results["rpar"].clone()])] + after)
+    new.prefix = node.prefix
+    return new
+
 
 ###########################################################
 ### Determine whether a node represents a given literal
