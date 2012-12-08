@@ -66,7 +66,17 @@ PyAPI_FUNC(Py_ssize_t) _PyWeakref_GetWeakrefCount(PyWeakReference *head);
 
 PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
 
-#define PyWeakref_GET_OBJECT(ref) (((PyWeakReference *)(ref))->wr_object)
+/* Explanation for the Py_REFCNT() check: when a weakref's target is part
+   of a long chain of deallocations which triggers the trashcan mechanism,
+   clearing the weakrefs can be delayed long after the target's refcount
+   has dropped to zero.  In the meantime, code accessing the weakref will
+   be able to "see" the target object even though it is supposed to be
+   unreachable.  See issue #16602. */
+
+#define PyWeakref_GET_OBJECT(ref)                           \
+    (Py_REFCNT(((PyWeakReference *)(ref))->wr_object) > 0   \
+     ? ((PyWeakReference *)(ref))->wr_object                \
+     : Py_None)
 
 
 #ifdef __cplusplus

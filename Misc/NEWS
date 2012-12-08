@@ -9,6 +9,10 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16602: When a weakref's target was part of a long deallocation
+  chain, the object could remain reachable through its weakref even though
+  its refcount had dropped to zero.
+
 - Issue #9011: Fix hacky AST code that modified the CST when compiling
   a negated numeric literal.
 
