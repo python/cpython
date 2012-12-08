@@ -175,6 +175,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16628: Fix a memory leak in ctypes.resize().
+
 - Issue #13120: Allow to call pdb.set_trace() from thread.
   Patch by Ilya Sandler.
 
