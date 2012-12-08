@@ -776,6 +776,27 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(hash(a), hash(42))
         self.assertRaises(TypeError, hash, b)
 
+    def test_trashcan_16602(self):
+        # Issue #16602: when a weakref's target was part of a long
+        # deallocation chain, the trashcan mechanism could delay clearing
+        # of the weakref and make the target object visible from outside
+        # code even though its refcount had dropped to 0.  A crash ensued.
+        class C:
+            def __init__(self, parent):
+                if not parent:
+                    return
+                wself = weakref.ref(self)
+                def cb(wparent):
+                    o = wself()
+                self.wparent = weakref.ref(parent, cb)
+
+        d = weakref.WeakKeyDictionary()
+        root = c = C(None)
+        for n in range(100):
+            d[c] = c = C(c)
+        del root
+        gc.collect()
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
