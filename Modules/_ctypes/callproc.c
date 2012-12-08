@@ -1658,7 +1658,7 @@ resize(PyObject *self, PyObject *args)
         obj->b_size = size;
         goto done;
     }
-    if (obj->b_size <= sizeof(obj->b_value)) {
+    if (!_CDataObject_HasExternalBuffer(obj)) {
         /* We are currently using the objects default buffer, but it
            isn't large enough any more. */
         void *ptr = PyMem_Malloc(size);
