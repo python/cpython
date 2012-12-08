@@ -39,17 +39,23 @@ When raising (or re-raising) an exception in an :keyword:`except` clause
 new exception is not handled the traceback that is eventually displayed will
 include the originating exception(s) and the final exception.
 
-This implicit exception chain can be made explicit by using :keyword:`from` with
-:keyword:`raise`.  The single argument to :keyword:`from` must be an exception
-or ``None``. It will be set as :attr:`__cause__` on the raised exception.
-Setting :attr:`__cause__` implicitly sets the :attr:`__suppress_context__` to
-``True``. If :attr:`__cause__` is an exception, it will be displayed. If
-:attr:`__cause__` is present or :attr:`__suppress_context__` has a true value,
-:attr:`__context__` will not be displayed.
+When raising a new exception (rather than using to bare ``raise`` to re-raise
+the exception currently being handled), the implicit exception chain can be
+made explicit by using :keyword:`from` with :keyword:`raise`.  The single
+argument to :keyword:`from` must be an exception or ``None``. It will be set
+as :attr:`__cause__` on the raised exception. Setting :attr:`__cause__`
+also implicitly sets the :attr:`__suppress_context__` attribute to
+``True``.
 
-In either case, the default exception handling code will not display any of the
-remaining links in the :attr:`__context__` chain if :attr:`__cause__` has been
-set.
+The default traceback display code shows these chained exceptions in
+addition to the traceback for the exception itself. An explicitly chained
+exception in :attr:`__cause__` is always shown when present. An implicitly
+chained exception in :attr:`__context__` is shown only if :attr:`__cause__`
+is not set and :attr:`__suppress_context__` is false.
+
+In either case, the exception itself is always shown after any chained
+exceptions so that the final line of the traceback always shows the last
+exception that was raised.
 
 
 Base classes
