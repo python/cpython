@@ -47,11 +47,6 @@ class PyPIRCCommand(Command):
             f.write(DEFAULT_PYPIRC % (username, password))
         finally:
             f.close()
-        try:
-            os.chmod(rc, 0600)
-        except OSError:
-            # should do something better here
-            pass
 
     def _read_pypirc(self):
         """Reads the .pypirc file."""
