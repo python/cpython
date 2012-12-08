@@ -397,7 +397,7 @@ succeeded or failed. Look at the following example, which tries to open a file
 and print its contents to the screen. ::
 
    for line in open("myfile.txt"):
-       print line
+       print line,
 
 The problem with this code is that it leaves the file open for an indeterminate
 amount of time after the code has finished executing. This is not an issue in
@@ -407,7 +407,7 @@ ensures they are always cleaned up promptly and correctly. ::
 
    with open("myfile.txt") as f:
        for line in f:
-           print line
+           print line,
 
 After the statement is executed, the file *f* is always closed, even if a
 problem was encountered while processing the lines. Other objects which provide
