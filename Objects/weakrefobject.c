@@ -52,9 +52,8 @@ clear_weakref(PyWeakReference *self)
 {
     PyObject *callback = self->wr_callback;
 
-    if (PyWeakref_GET_OBJECT(self) != Py_None) {
-        PyWeakReference **list = GET_WEAKREFS_LISTPTR(
-            PyWeakref_GET_OBJECT(self));
+    if (self->wr_object != Py_None) {
+        PyWeakReference **list = GET_WEAKREFS_LISTPTR(self->wr_object);
 
         if (*list == self)
             /* If 'self' is the end of the list (and thus self->wr_next == NULL)

@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16602: When a weakref's target was part of a long deallocation
+  chain, the object could remain reachable through its weakref even though
+  its refcount had dropped to zero.
+
 - Issue #16495: Remove extraneous NULL encoding check from bytes_decode().
 
 - Issue #16619: Create NameConstant AST class to represent None, True, and False
