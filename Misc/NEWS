@@ -156,6 +156,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16628: Fix a memory leak in ctypes.resize().
+
 - Issue #10182: The re module doesn't truncate indices to 32 bits anymore.
   Patch by Serhiy Storchaka.
 
