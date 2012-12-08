@@ -503,6 +503,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #11797: Add a 2to3 fixer that maps reload() to imp.reload().
+
 - Issue #10966: Remove the concept of unexpected skipped tests.
 
 - Issue #9893: Removed the Misc/Vim directory.
