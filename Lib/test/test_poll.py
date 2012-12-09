@@ -67,13 +67,11 @@ class PollTests(unittest.TestCase):
 
         self.assertEqual(bufs, [MSG] * NUM_PIPES)
 
-    def poll_unit_tests(self):
+    def test_poll_unit_tests(self):
         # returns NVAL for invalid file descriptor
-        FD = 42
-        try:
-            os.close(FD)
-        except OSError:
-            pass
+        FD, w = os.pipe()
+        os.close(FD)
+        os.close(w)
         p = select.poll()
         p.register(FD)
         r = p.poll()
