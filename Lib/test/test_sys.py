@@ -6,6 +6,7 @@ import textwrap
 import warnings
 import operator
 import codecs
+import gc
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -610,6 +611,29 @@ class SysModuleTest(unittest.TestCase):
         args = ['-c', 'import sys; sys._debugmallocstats()']
         ret, out, err = assert_python_ok(*args)
         self.assertIn(b"free PyDictObjects", err)
+
+    @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
+                         "sys.getallocatedblocks unavailable on this build")
+    def test_getallocatedblocks(self):
+        # Some sanity checks
+        a = sys.getallocatedblocks()
+        self.assertIs(type(a), int)
+        self.assertGreater(a, 0)
+        try:
+            # While we could imagine a Python session where the number of
+            # multiple buffer objects would exceed the sharing of references,
+            # it is unlikely to happen in a normal test run.
+            self.assertLess(a, sys.gettotalrefcount())
+        except AttributeError:
+            # gettotalrefcount() not available
+            pass
+        gc.collect()
+        b = sys.getallocatedblocks()
+        self.assertLessEqual(b, a)
+        gc.collect()
+        c = sys.getallocatedblocks()
+        self.assertIn(c, range(b - 50, b + 50))
+
 
 class SizeofTest(unittest.TestCase):
 

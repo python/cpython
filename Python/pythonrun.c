@@ -38,9 +38,10 @@
 #ifndef Py_REF_DEBUG
 #define PRINT_TOTAL_REFS()
 #else /* Py_REF_DEBUG */
-#define PRINT_TOTAL_REFS() fprintf(stderr,                              \
-                   "[%" PY_FORMAT_SIZE_T "d refs]\n",                   \
-                   _Py_GetRefTotal())
+#define PRINT_TOTAL_REFS() fprintf(stderr,                   \
+                   "[%" PY_FORMAT_SIZE_T "d refs, "          \
+                   "%" PY_FORMAT_SIZE_T "d blocks]\n",       \
+                   _Py_GetRefTotal(), _Py_GetAllocatedBlocks())
 #endif
 
 #ifdef __cplusplus
