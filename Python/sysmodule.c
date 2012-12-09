@@ -894,6 +894,19 @@ one higher than you might expect, because it includes the (temporary)\n\
 reference as an argument to getrefcount()."
 );
 
+static PyObject *
+sys_getallocatedblocks(PyObject *self)
+{
+    return PyLong_FromSsize_t(_Py_GetAllocatedBlocks());
+}
+
+PyDoc_STRVAR(getallocatedblocks_doc,
+"getallocatedblocks() -> integer\n\
+\n\
+Return the number of memory blocks currently allocated, regardless of their\n\
+size."
+);
+
 #ifdef COUNT_ALLOCS
 static PyObject *
 sys_getcounts(PyObject *self)
@@ -1062,6 +1075,8 @@ static PyMethodDef sys_methods[] = {
     {"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS,
      getdlopenflags_doc},
 #endif
+    {"getallocatedblocks", (PyCFunction)sys_getallocatedblocks, METH_NOARGS,
+      getallocatedblocks_doc},
 #ifdef COUNT_ALLOCS
     {"getcounts",       (PyCFunction)sys_getcounts, METH_NOARGS},
 #endif

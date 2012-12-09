@@ -98,6 +98,8 @@ PyAPI_FUNC(void *) PyObject_Malloc(size_t);
 PyAPI_FUNC(void *) PyObject_Realloc(void *, size_t);
 PyAPI_FUNC(void) PyObject_Free(void *);
 
+/* This function returns the number of allocated memory blocks, regardless of size */
+PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 
 /* Macros */
 #ifdef WITH_PYMALLOC
