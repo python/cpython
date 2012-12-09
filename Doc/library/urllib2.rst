@@ -121,7 +121,10 @@ The following exceptions are raised as appropriate:
       This numeric value corresponds to a value found in the dictionary of
       codes as found in :attr:`BaseHTTPServer.BaseHTTPRequestHandler.responses`.
 
+   .. attribute:: reason
 
+      The reason for this error.  It can be a message string or another exception
+      instance.
 
 The following classes are provided:
 
