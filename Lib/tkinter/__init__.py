@@ -146,8 +146,12 @@ def _tkerror(err):
     """Internal function."""
     pass
 
-def _exit(code='0'):
+def _exit(code=0):
     """Internal function. Calling it will throw the exception SystemExit."""
+    try:
+        code = int(code)
+    except ValueError:
+        pass
     raise SystemExit(code)
 
 _varnum = 0
