@@ -194,6 +194,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         self.assertEqual(headers['Content-length'], '290')
         self.assertTrue('tarek' in req.data)
 
+    @unittest.skipUnless(docutils is not None, 'needs docutils')
     def test_strict(self):
         # testing the script option
         # when on, the register command stops if
@@ -205,13 +206,6 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.strict = 1
         self.assertRaises(DistutilsSetupError, cmd.run)
-
-        # we don't test the reSt feature if docutils
-        # is not installed
-        try:
-            import docutils
-        except ImportError:
-            return
 
         # metadata are OK but long_description is broken
         metadata = {'url': 'xxx', 'author': 'xxx',
