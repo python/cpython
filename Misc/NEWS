@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16248: Disable code execution from the user's home directory by
+  tkinter when the -E flag is passed to Python.  Patch by Zachary Ware.
+
 - Issue #13390: New function :func:`sys.getallocatedblocks()` returns the
   number of memory blocks currently allocated.
 
