@@ -615,7 +615,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             sys.exit(2)
         from queue import Queue
         from subprocess import Popen, PIPE
-        debug_output_pat = re.compile(r"\[\d+ refs\]$")
+        debug_output_pat = re.compile(r"\[\d+ refs, \d+ blocks\]$")
         output = Queue()
         pending = MultiprocessTests(tests)
         opt_args = support.args_from_interpreter_flags()
@@ -1320,33 +1320,50 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
             del sys.modules[the_module.__name__]
             exec('import ' + the_module.__name__)
 
-    deltas = []
     nwarmup, ntracked, fname = huntrleaks
     fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
+    rc_deltas = [0] * repcount
+    alloc_deltas = [0] * repcount
+
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
     sys.stderr.flush()
-    dash_R_cleanup(fs, ps, pic, zdc, abcs)
     for i in range(repcount):
-        rc_before = sys.gettotalrefcount()
         run_the_test()
+        alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, abcs)
         sys.stderr.write('.')
         sys.stderr.flush()
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
-        rc_after = sys.gettotalrefcount()
         if i >= nwarmup:
-            deltas.append(rc_after - rc_before)
+            rc_deltas[i] = rc_after - rc_before
+            alloc_deltas[i] = alloc_after - alloc_before
+        alloc_before, rc_before = alloc_after, rc_after
     print(file=sys.stderr)
-    if any(deltas):
-        msg = '%s leaked %s references, sum=%s' % (test, deltas, sum(deltas))
-        print(msg, file=sys.stderr)
-        sys.stderr.flush()
-        with open(fname, "a") as refrep:
-            print(msg, file=refrep)
-            refrep.flush()
-        return True
-    return False
+    # These checkers return False on success, True on failure
+    def check_rc_deltas(deltas):
+        return any(deltas)
+    def check_alloc_deltas(deltas):
+        # At least 1/3rd of 0s
+        if 3 * deltas.count(0) < len(deltas):
+            return True
+        # Nothing else than 1s, 0s and -1s
+        if not set(deltas) <= {1,0,-1}:
+            return True
+        return False
+    failed = False
+    for deltas, item_name, checker in [
+        (rc_deltas, 'references', check_rc_deltas),
+        (alloc_deltas, 'memory blocks', check_alloc_deltas)]:
+        if checker(deltas):
+            msg = '%s leaked %s %s, sum=%s' % (
+                test, deltas[nwarmup:], item_name, sum(deltas))
+            print(msg, file=sys.stderr)
+            sys.stderr.flush()
+            with open(fname, "a") as refrep:
+                print(msg, file=refrep)
+                refrep.flush()
+            failed = True
+    return failed
 
 def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     import gc, copyreg
@@ -1412,8 +1429,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     else:
         ctypes._reset_cache()
 
-    # Collect cyclic trash.
+    # Collect cyclic trash and read memory statistics immediately after.
+    func1 = sys.getallocatedblocks
+    func2 = sys.gettotalrefcount
     gc.collect()
+    return func1(), func2()
 
 def warm_caches():
     # char cache

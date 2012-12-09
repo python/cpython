@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13390: New function :func:`sys.getallocatedblocks()` returns the
+  number of memory blocks currently allocated.
+
 - Issue #16628: Fix a memory leak in ctypes.resize().
 
 - Issue #13614: Fix setup.py register failure with invalid rst in description.
@@ -432,6 +435,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #13390: The ``-R`` option to regrtest now also checks for memory
+  allocation leaks, using :func:`sys.getallocatedblocks()`.
 
 - Issue #16559: Add more tests for the json module, including some from the
   official test suite at json.org.  Patch by Serhiy Storchaka.
