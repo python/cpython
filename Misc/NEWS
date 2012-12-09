@@ -158,6 +158,9 @@ Library
 
 - Issue #16628: Fix a memory leak in ctypes.resize().
 
+- Issue #13614: Fix setup.py register failure with invalid rst in description.
+  Patch by Julien Courteau and Pierre Paul Lefebvre.
+
 - Issue #10182: The re module doesn't truncate indices to 32 bits anymore.
   Patch by Serhiy Storchaka.
 

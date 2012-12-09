@@ -1,6 +1,5 @@
 # -*- encoding: utf8 -*-
 """Tests for distutils.command.register."""
-import sys
 import os
 import unittest
 import getpass
@@ -11,11 +10,14 @@ from test.test_support import check_warnings, run_unittest
 
 from distutils.command import register as register_module
 from distutils.command.register import register
-from distutils.core import Distribution
 from distutils.errors import DistutilsSetupError
 
-from distutils.tests import support
-from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
+from distutils.tests.test_config import PyPIRCCommandTestCase
+
+try:
+    import docutils
+except ImportError:
+    docutils = None
 
 PYPIRC_NOPASSWORD = """\
 [distutils]
@@ -263,6 +265,21 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             cmd.run()
         finally:
             del register_module.raw_input
+
+    @unittest.skipUnless(docutils is not None, 'needs docutils')
+    def test_register_invalid_long_description(self):
+        description = ':funkie:`str`'  # mimic Sphinx-specific markup
+        metadata = {'url': 'xxx', 'author': 'xxx',
+                    'author_email': 'xxx',
+                    'name': 'xxx', 'version': 'xxx',
+                    'long_description': description}
+        cmd = self._get_cmd(metadata)
+        cmd.ensure_finalized()
+        cmd.strict = True
+        inputs = RawInputs('2', 'tarek', 'tarek@ziade.org')
+        register_module.raw_input = inputs
+        self.addCleanup(delattr, register_module, 'raw_input')
+        self.assertRaises(DistutilsSetupError, cmd.run)
 
     def test_check_metadata_deprecated(self):
         # makes sure make_metadata is deprecated
