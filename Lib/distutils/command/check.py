@@ -26,6 +26,9 @@ try:
 
         def system_message(self, level, message, *children, **kwargs):
             self.messages.append((level, message, children, kwargs))
+            return nodes.system_message(message, level=level,
+                                        type=self.levels[level],
+                                        *children, **kwargs)
 
     HAS_DOCUTILS = True
 except ImportError:
