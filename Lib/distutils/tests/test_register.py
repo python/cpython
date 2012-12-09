@@ -1,5 +1,4 @@
 """Tests for distutils.command.register."""
-import sys
 import os
 import unittest
 import getpass
@@ -10,11 +9,14 @@ from test.support import check_warnings, run_unittest
 
 from distutils.command import register as register_module
 from distutils.command.register import register
-from distutils.core import Distribution
 from distutils.errors import DistutilsSetupError
 
-from distutils.tests import support
-from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
+from distutils.tests.test_config import PyPIRCCommandTestCase
+
+try:
+    import docutils
+except ImportError:
+    docutils = None
 
 PYPIRC_NOPASSWORD = """\
 [distutils]
@@ -193,6 +195,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         self.assertEqual(headers['Content-length'], '290')
         self.assertTrue((b'tarek') in req.data)
 
+    @unittest.skipUnless(docutils is not None, 'needs docutils')
     def test_strict(self):
         # testing the script option
         # when on, the register command stops if
@@ -204,13 +207,6 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.strict = 1
         self.assertRaises(DistutilsSetupError, cmd.run)
-
-        # we don't test the reSt feature if docutils
-        # is not installed
-        try:
-            import docutils
-        except ImportError:
-            return
 
         # metadata are OK but long_description is broken
         metadata = {'url': 'xxx', 'author': 'xxx',
@@ -264,6 +260,22 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             cmd.run()
         finally:
             del register_module.input
+
+    @unittest.skipUnless(docutils is not None, 'needs docutils')
+    def test_register_invalid_long_description(self):
+        description = ':funkie:`str`'  # mimic Sphinx-specific markup
+        metadata = {'url': 'xxx', 'author': 'xxx',
+                    'author_email': 'xxx',
+                    'name': 'xxx', 'version': 'xxx',
+                    'long_description': description}
+        cmd = self._get_cmd(metadata)
+        cmd.ensure_finalized()
+        cmd.strict = True
+        inputs = Inputs('2', 'tarek', 'tarek@ziade.org')
+        register_module.input = inputs
+        self.addCleanup(delattr, register_module, 'input')
+
+        self.assertRaises(DistutilsSetupError, cmd.run)
 
     def test_check_metadata_deprecated(self):
         # makes sure make_metadata is deprecated

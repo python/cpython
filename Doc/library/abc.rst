@@ -129,7 +129,7 @@ This module provides the following class:
 
 The :mod:`abc` module also provides the following decorators:
 
-.. decorator:: abstractmethod(function)
+.. decorator:: abstractmethod
 
    A decorator indicating abstract methods.
 
@@ -203,7 +203,7 @@ The :mod:`abc` module also provides the following decorators:
       multiple-inheritance.
 
 
-.. decorator:: abstractclassmethod(function)
+.. decorator:: abstractclassmethod
 
    A subclass of the built-in :func:`classmethod`, indicating an abstract
    classmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -224,7 +224,7 @@ The :mod:`abc` module also provides the following decorators:
        :func:`abstractmethod`, making this decorator redundant.
 
 
-.. decorator:: abstractstaticmethod(function)
+.. decorator:: abstractstaticmethod
 
    A subclass of the built-in :func:`staticmethod`, indicating an abstract
    staticmethod. Otherwise it is similar to :func:`abstractmethod`.
