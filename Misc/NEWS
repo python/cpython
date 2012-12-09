@@ -181,6 +181,15 @@ Library
 
 - Issue #16628: Fix a memory leak in ctypes.resize().
 
+- Issue #13614: Fix setup.py register failure with invalid rst in description.
+  Patch by Julien Courteau and Pierre Paul Lefebvre.
+
+- Issue #13512: Create ~/.pypirc securely (CVE-2011-4944).  Initial patch by
+  Philip Jenvey, tested by Mageia and Debian.
+
+- Issue #7719: Make distutils ignore ``.nfs*`` files instead of choking later
+  on.  Initial patch by SilentGhost and Jeff Ramnani.
+
 - Issue #13120: Allow to call pdb.set_trace() from thread.
   Patch by Ilya Sandler.
 

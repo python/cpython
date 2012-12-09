@@ -126,7 +126,7 @@ This module provides the following class:
 
 It also provides the following decorators:
 
-.. decorator:: abstractmethod(function)
+.. decorator:: abstractmethod
 
    A decorator indicating abstract methods.
 
@@ -161,7 +161,7 @@ It also provides the following decorators:
       multiple-inheritance.
 
 
-.. decorator:: abstractclassmethod(function)
+.. decorator:: abstractclassmethod
 
    A subclass of the built-in :func:`classmethod`, indicating an abstract
    classmethod. Otherwise it is similar to :func:`abstractmethod`.
@@ -176,7 +176,7 @@ It also provides the following decorators:
    .. versionadded:: 3.2
 
 
-.. decorator:: abstractstaticmethod(function)
+.. decorator:: abstractstaticmethod
 
    A subclass of the built-in :func:`staticmethod`, indicating an abstract
    staticmethod. Otherwise it is similar to :func:`abstractmethod`.
