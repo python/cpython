@@ -39,19 +39,27 @@ When raising (or re-raising) an exception in an :keyword:`except` clause
 new exception is not handled the traceback that is eventually displayed will
 include the originating exception(s) and the final exception.
 
-When raising a new exception (rather than using to bare ``raise`` to re-raise
-the exception currently being handled), the implicit exception chain can be
-made explicit by using :keyword:`from` with :keyword:`raise`.  The single
-argument to :keyword:`from` must be an exception or ``None``. It will be set
-as :attr:`__cause__` on the raised exception. Setting :attr:`__cause__`
-also implicitly sets the :attr:`__suppress_context__` attribute to
-``True``.
+When raising a new exception (rather than using a bare ``raise`` to re-raise
+the exception currently being handled), the implicit exception context can be
+supplemented with an explicit cause by using :keyword:`from` with
+:keyword:`raise`::
+
+   raise new_exc from original_exc
+
+The expression following :keyword:`from` must be an exception or ``None``. It
+will be set as :attr:`__cause__` on the raised exception. Setting
+:attr:`__cause__` also implicitly sets the :attr:`__suppress_context__`
+attribute to ``True``, so that using ``raise new_exc from None``
+effectively replaces the old exception with the new one for display
+purposes (e.g. converting :exc:`KeyError` to :exc:`AttributeError`, while
+leaving the old exception available in :attr:`__context__` for introspection
+when debugging.
 
 The default traceback display code shows these chained exceptions in
 addition to the traceback for the exception itself. An explicitly chained
 exception in :attr:`__cause__` is always shown when present. An implicitly
 chained exception in :attr:`__context__` is shown only if :attr:`__cause__`
-is not set and :attr:`__suppress_context__` is false.
+is :const:`None` and :attr:`__suppress_context__` is false.
 
 In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last
