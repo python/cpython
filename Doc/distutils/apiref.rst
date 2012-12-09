@@ -992,6 +992,12 @@ directories.
    destination of the symlink will be copied.  *update* and *verbose* are the same
    as for :func:`copy_file`.
 
+   Files in *src* that begin with :file:`.nfs` are skipped (more information on
+   these files is available in answer D2 of the `NFS FAQ page
+   <http://nfs.sourceforge.net/#section_d>`_.
+
+   .. versionchanged:: 3.3.1
+      NFS files are ignored.
 
 .. function:: remove_tree(directory[, verbose=0, dry_run=0])
 

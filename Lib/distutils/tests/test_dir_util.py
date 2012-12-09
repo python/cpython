@@ -76,7 +76,6 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
         remove_tree(self.root_target, verbose=0)
 
-
     def test_copy_tree_verbosity(self):
 
         mkpath(self.target, verbose=0)
@@ -88,15 +87,27 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
 
         mkpath(self.target, verbose=0)
         a_file = os.path.join(self.target, 'ok.txt')
-        f = open(a_file, 'w')
-        try:
+        with open(a_file, 'w') as f:
             f.write('some content')
-        finally:
-            f.close()
 
         wanted = ['copying %s -> %s' % (a_file, self.target2)]
         copy_tree(self.target, self.target2, verbose=1)
         self.assertEqual(self._logs, wanted)
+
+        remove_tree(self.root_target, verbose=0)
+        remove_tree(self.target2, verbose=0)
+
+    def test_copy_tree_skips_nfs_temp_files(self):
+        mkpath(self.target, verbose=0)
+
+        a_file = os.path.join(self.target, 'ok.txt')
+        nfs_file = os.path.join(self.target, '.nfs123abc')
+        for f in a_file, nfs_file:
+            with open(f, 'w') as fh:
+                fh.write('some content')
+
+        copy_tree(self.target, self.target2)
+        self.assertEqual(os.listdir(self.target2), ['ok.txt'])
 
         remove_tree(self.root_target, verbose=0)
         remove_tree(self.target2, verbose=0)
