@@ -833,7 +833,7 @@ always available.
    For other systems, the values are:
 
    ================ ===========================
-   System           :data:`platform` value
+   System           ``platform`` value
    ================ ===========================
    Linux            ``'linux'``
    Windows          ``'win32'``
