@@ -4,7 +4,6 @@ Provides the PyPIRCCommand class, the base class for the command classes
 that uses .pypirc in the distutils.command package.
 """
 import os
-import sys
 from configparser import ConfigParser
 
 from distutils.cmd import Command
@@ -43,16 +42,8 @@ class PyPIRCCommand(Command):
     def _store_pypirc(self, username, password):
         """Creates a default .pypirc file."""
         rc = self._get_rc_file()
-        f = open(rc, 'w')
-        try:
+        with os.fdopen(os.open(rc, os.O_CREAT | os.O_WRONLY, 0o600), 'w') as f:
             f.write(DEFAULT_PYPIRC % (username, password))
-        finally:
-            f.close()
-        try:
-            os.chmod(rc, 0o600)
-        except OSError:
-            # should do something better here
-            pass
 
     def _read_pypirc(self):
         """Reads the .pypirc file."""
