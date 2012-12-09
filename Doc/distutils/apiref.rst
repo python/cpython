@@ -991,6 +991,9 @@ directories.
    these files is available in answer D2 of the `NFS FAQ page
    <http://nfs.sourceforge.net/#section_d>`_.
 
+   .. versionchanged:: 2.7.4
+      NFS files are ignored.
+
 
 .. function:: remove_tree(directory[, verbose=0, dry_run=0])
 
