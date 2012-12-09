@@ -41,6 +41,10 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
       to a value found in the dictionary of codes as found in
       :attr:`http.server.BaseHTTPRequestHandler.responses`.
 
+   .. attribute:: reason
+
+      This is usually a string explaining the reason for this error.
+
 .. exception:: ContentTooShortError(msg, content)
 
    This exception is raised when the :func:`urlretrieve` function detects that
