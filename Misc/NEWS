@@ -179,6 +179,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16248: Disable code execution from the user's home directory by
+  tkinter when the -E flag is passed to Python.  Patch by Zachary Ware.
+
 - Issue #16628: Fix a memory leak in ctypes.resize().
 
 - Issue #13614: Fix setup.py register failure with invalid rst in description.
