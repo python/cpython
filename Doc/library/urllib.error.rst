@@ -45,6 +45,13 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
 
       This is usually a string explaining the reason for this error.
 
+   .. attribute:: headers
+
+      The HTTP response headers for the HTTP request that cause the
+      :exc:`HTTPError`.
+
+      .. versionadded:: 3.4
+
 .. exception:: ContentTooShortError(msg, content)
 
    This exception is raised when the :func:`urlretrieve` function detects that
