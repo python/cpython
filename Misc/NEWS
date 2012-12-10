@@ -685,6 +685,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #15872: Add tests for a 3.3 regression which caused the new fd-based
+  shutil.rmtree not ignore all errors. Also add a test ensuring that rmtree
+  fails when being called on a symlink. Patch by Serhiy Storchaka.
+
 - Issue #16559: Add more tests for the json module, including some from the
   official test suite at json.org.  Patch by Serhiy Storchaka.
 
