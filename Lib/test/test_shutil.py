@@ -171,7 +171,7 @@ class TestShutil(unittest.TestCase):
         filename = os.path.join(tmpdir, "tstfile")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
-        if os.name == 'nt':
+        if cm.exception.filename.endswith('*.*'):
             rm_name = os.path.join(filename, '*.*')
         else:
             rm_name = filename
