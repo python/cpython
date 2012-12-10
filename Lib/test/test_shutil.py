@@ -172,7 +172,11 @@ class TestShutil(unittest.TestCase):
         filename = os.path.join(tmpdir, "tstfile")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
-        self.assertEqual(cm.exception.filename, filename)
+        if os.name == 'nt':
+            rm_name = os.path.join(filename, '*.*')
+        else:
+            rm_name = filename
+        self.assertEqual(cm.exception.filename, rm_name)
         self.assertTrue(os.path.exists(filename))
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
