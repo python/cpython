@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15701: Add a .headers attribute to urllib.error.HTTPError. Patch
+  contributed by Berker Peksag.
+
 - Issue #15872: Fix 3.3 regression introduced by the new fd-based shutil.rmtree
   that caused it to not ignore certain errors when ignore_errors was set.
   Patch by Alessandro Moura and Serhiy Storchaka.
