@@ -211,7 +211,7 @@ def main():
     def test_builtins():
         # if first line of a possibly multiline compiled docstring changes,
         # must change corresponding test string
-        test('int',  "int(x[, base]) -> integer")
+        test('int',  "int(x=0) -> integer")
         test('Int',  Int.__doc__)
         test('types.MethodType', "method(function, instance)")
         test('list', "list() -> new empty list")
