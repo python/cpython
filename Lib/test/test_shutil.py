@@ -172,7 +172,11 @@ class TestShutil(unittest.TestCase):
         filename = os.path.join(tmpdir, "tstfile")
         with self.assertRaises(NotADirectoryError) as cm:
             shutil.rmtree(filename)
-        self.assertEqual(cm.exception.filename, filename)
+        if cm.exception.filename.endswith('*.*'):
+            rm_name = os.path.join(filename, '*.*')
+        else:
+            rm_name = filename
+        self.assertEqual(cm.exception.filename, rm_name)
         self.assertTrue(os.path.exists(filename))
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -185,11 +189,11 @@ class TestShutil(unittest.TestCase):
         self.assertIs(errors[0][0], os.listdir)
         self.assertEqual(errors[0][1], filename)
         self.assertIsInstance(errors[0][2][1], NotADirectoryError)
-        self.assertEqual(errors[0][2][1].filename, filename)
+        self.assertEqual(errors[0][2][1].filename, rm_name)
         self.assertIs(errors[1][0], os.rmdir)
         self.assertEqual(errors[1][1], filename)
         self.assertIsInstance(errors[1][2][1], NotADirectoryError)
-        self.assertEqual(errors[1][2][1].filename, filename)
+        self.assertEqual(errors[1][2][1].filename, rm_name)
 
     # See bug #1071513 for why we don't run this on cygwin
     # and bug #1076467 for why we don't run this as root.
