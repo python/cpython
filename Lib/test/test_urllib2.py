@@ -1539,11 +1539,15 @@ def test_HTTPError_interface():
     interface even though HTTPError is a subclass of URLError.
 
     >>> msg = 'something bad happened'
-    >>> url = code = hdrs = fp = None
+    >>> url = code = fp = None
+    >>> hdrs = 'Content-Length: 42'
     >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
     >>> assert hasattr(err, 'reason')
     >>> err.reason
     'something bad happened'
+    >>> assert hasattr(err, 'headers')
+    >>> err.headers
+    'Content-Length: 42'
     """
 
 def test_main(verbose=None):

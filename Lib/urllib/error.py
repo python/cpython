@@ -61,6 +61,14 @@ class HTTPError(URLError, urllib.response.addinfourl):
     def reason(self):
         return self.msg
 
+    @property
+    def headers(self):
+        return self.hdrs
+
+    @headers.setter
+    def headers(self, headers):
+        self.hdrs = headers
+
 # exception raised when downloaded size does not match content-length
 class ContentTooShortError(URLError):
     def __init__(self, message, content):
