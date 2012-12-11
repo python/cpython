@@ -145,7 +145,7 @@ Used in:  PY_LONG_LONG
 #endif
 
 /* Prime multiplier used in string and various other hashes. */
-#define _PyHASH_MULTIPLIER 1000003  /* 0xf4243 */
+#define _PyHASH_MULTIPLIER 1000003UL  /* 0xf4243 */
 
 /* Parameters used for the numeric hash implementation.  See notes for
    _PyHash_Double in Objects/object.c.  Numeric hashes are based on
