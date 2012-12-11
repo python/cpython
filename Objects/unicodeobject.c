@@ -10885,7 +10885,7 @@ static Py_hash_t
 unicode_hash(PyObject *self)
 {
     Py_ssize_t len;
-    Py_uhash_t x;
+    Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
 
 #ifdef Py_DEBUG
     assert(_Py_HashSecret_Initialized);
