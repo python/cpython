@@ -1522,7 +1522,7 @@ array_fromunicode(arrayobject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "u#:fromunicode", &ustr, &n))
         return NULL;
     typecode = self->ob_descr->typecode;
-    if ((typecode != 'u')) {
+    if (typecode != 'u') {
         PyErr_SetString(PyExc_ValueError,
             "fromunicode() may only be called on "
             "unicode type arrays");
@@ -1554,7 +1554,7 @@ array_tounicode(arrayobject *self, PyObject *unused)
 {
     char typecode;
     typecode = self->ob_descr->typecode;
-    if ((typecode != 'u')) {
+    if (typecode != 'u') {
         PyErr_SetString(PyExc_ValueError,
              "tounicode() may only be called on unicode type arrays");
         return NULL;
@@ -2174,10 +2174,11 @@ array_repr(arrayobject *a)
     if (len == 0) {
         return PyUnicode_FromFormat("array('%c')", (int)typecode);
     }
-    if (typecode == 'u')
+    if (typecode == 'u') {
         v = array_tounicode(a, NULL);
-    else
+    } else {
         v = array_tolist(a, NULL);
+    }
 
     s = PyUnicode_FromFormat("array('%c', %R)", (int)typecode, v);
     Py_DECREF(v);
