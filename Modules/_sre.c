@@ -427,7 +427,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
             }
             else {
                 /* <CHARSET> <bitmap> (32 bits per code word) */
-                if (ch < 256 && (set[ch >> 5] & (1 << (ch & 31))))
+                if (ch < 256 && (set[ch >> 5] & (1u << (ch & 31))))
                     return ok;
                 set += 8;
             }
@@ -466,7 +466,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
                     block = -1;
                 set += 64;
                 if (block >=0 &&
-                    (set[block*8 + ((ch & 255)>>5)] & (1 << (ch & 31))))
+                    (set[block*8 + ((ch & 255)>>5)] & (1u << (ch & 31))))
                     return ok;
                 set += count*8;
             }
