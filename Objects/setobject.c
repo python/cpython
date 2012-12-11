@@ -77,7 +77,7 @@ NULL if the rich comparison returns an error.
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, register Py_hash_t hash)
 {
-    register Py_ssize_t i;
+    register size_t i;  /* Unsigned for defined overflow behavior. */
     register size_t perturb;
     register setentry *freeslot;
     register size_t mask = so->mask;
@@ -159,7 +159,7 @@ set_lookkey(PySetObject *so, PyObject *key, register Py_hash_t hash)
 static setentry *
 set_lookkey_unicode(PySetObject *so, PyObject *key, register Py_hash_t hash)
 {
-    register Py_ssize_t i;
+    register size_t i;  /* Unsigned for defined overflow behavior. */
     register size_t perturb;
     register setentry *freeslot;
     register size_t mask = so->mask;
@@ -768,7 +768,7 @@ static Py_hash_t
 frozenset_hash(PyObject *self)
 {
     PySetObject *so = (PySetObject *)self;
-    Py_hash_t h, hash = 1927868237L;
+    Py_uhash_t h, hash = 1927868237UL;
     setentry *entry;
     Py_ssize_t pos = 0;
 
@@ -783,11 +783,11 @@ frozenset_hash(PyObject *self)
            hashes so that many distinct combinations collapse to only
            a handful of distinct hash values. */
         h = entry->hash;
-        hash ^= (h ^ (h << 16) ^ 89869747L)  * 3644798167u;
+        hash ^= (h ^ (h << 16) ^ 89869747UL)  * 3644798167UL;
     }
-    hash = hash * 69069L + 907133923L;
+    hash = hash * 69069UL + 907133923UL;
     if (hash == -1)
-        hash = 590923713L;
+        hash = 590923713UL;
     so->hash = hash;
     return hash;
 }
