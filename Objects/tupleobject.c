@@ -315,7 +315,8 @@ error:
 static Py_hash_t
 tuplehash(PyTupleObject *v)
 {
-    register Py_uhash_t x, y;  /* Unsigned for defined overflow behavior. */
+    register Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
+    register Py_hash_t y;
     register Py_ssize_t len = Py_SIZE(v);
     register PyObject **p;
     Py_uhash_t mult = _PyHASH_MULTIPLIER;
