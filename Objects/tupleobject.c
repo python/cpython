@@ -327,12 +327,12 @@ error:
 static Py_hash_t
 tuplehash(PyTupleObject *v)
 {
-    register Py_uhash_t x;
+    register Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
     register Py_hash_t y;
     register Py_ssize_t len = Py_SIZE(v);
     register PyObject **p;
     Py_uhash_t mult = _PyHASH_MULTIPLIER;
-    x = 0x345678;
+    x = 0x345678UL;
     p = v->ob_item;
     while (--len >= 0) {
         y = PyObject_Hash(*p++);
@@ -340,9 +340,9 @@ tuplehash(PyTupleObject *v)
             return -1;
         x = (x ^ y) * mult;
         /* the cast might truncate len; that doesn't change hash stability */
-        mult += (Py_hash_t)(82520L + len + len);
+        mult += (Py_hash_t)(82520UL + len + len);
     }
-    x += 97531L;
+    x += 97531UL;
     if (x == (Py_uhash_t)-1)
         x = -2;
     return x;
