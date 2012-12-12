@@ -507,8 +507,8 @@ class PyBuildExt(build_ext):
                 ]
             inc_dirs = self.compiler.include_dirs + ['/usr/include']
         else:
-            lib_dirs = []
-            inc_dirs = []
+            lib_dirs = self.compiler.library_dirs[:]
+            inc_dirs = self.compiler.include_dirs[:]
         exts = []
         missing = []
 
