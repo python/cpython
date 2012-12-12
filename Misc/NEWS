@@ -467,6 +467,9 @@ Tests
 Build
 -----
 
+- Cross compiling needs host and build settings. configure no longer
+  creates a broken PYTHON_FOR_BUILD variable when --build is missing.
+
 - Fix cross compiling issue in setup.py, ensure that lib_dirs and inc_dirs are
   defined in cross compiling mode, too.
 
