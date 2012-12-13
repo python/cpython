@@ -657,7 +657,7 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
         goto finally;
     }
 
-    str = source_as_string(cmd, "compile", "string, bytes, AST or code", &cf);
+    str = source_as_string(cmd, "compile", "string, bytes or AST", &cf);
     if (str == NULL)
         goto error;
 
