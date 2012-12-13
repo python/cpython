@@ -5971,6 +5971,9 @@ PyInit__socket(void)
 #ifdef  MSG_MCAST
     PyModule_AddIntConstant(m, "MSG_MCAST", MSG_MCAST);
 #endif
+#ifdef MSG_FASTOPEN
+    PyModule_AddIntConstant(m, "MSG_FASTOPEN", MSG_FASTOPEN);
+#endif
 
     /* Protocol level and numbers, usable for [gs]etsockopt */
 #ifdef  SOL_SOCKET
@@ -6401,7 +6404,9 @@ PyInit__socket(void)
 #ifdef  TCP_QUICKACK
     PyModule_AddIntConstant(m, "TCP_QUICKACK", TCP_QUICKACK);
 #endif
-
+#ifdef  TCP_FASTOPEN
+    PyModule_AddIntConstant(m, "TCP_FASTOPEN", TCP_FASTOPEN);
+#endif
 
     /* IPX options */
 #ifdef  IPX_TYPE
