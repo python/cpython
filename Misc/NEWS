@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Expose the TCP_FASTOPEN and MSG_FASTOPEN flags in socket when they're
+  available.
+
 - Issue #15701: Add a .headers attribute to urllib.error.HTTPError. Patch
   contributed by Berker Peksag.
 
