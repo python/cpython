@@ -3238,6 +3238,39 @@ then
 (it is also a good idea to do 'make clean' before compiling)" "$LINENO" 5
 fi
 
+if test "$MACHDEP" = "irix6" && test "$CC" != "gcc"; then
+    # Normally, MIPSpro CC treats #error directives as warnings, which means
+    # a successful exit code is returned (0).  This is a problem because IRIX
+    # has a bunch of system headers with this guard at the top:
+    #
+    #  #ifndef __c99
+    #  #error This header file is to be used only for c99 mode compilations
+    #  #else
+    #
+    # When autoconf tests for such a header, like stdint.h, this happens:
+    #
+    #  configure:4619: cc -c   conftest.c >&5
+    #  cc-1035 cc: WARNING File = /usr/include/stdint.h, Line = 5
+    #    #error directive:  This header file is to be used only for c99 mode
+    #            compilations
+    #
+    #    #error This header file is to be used only for c99 mode compilations
+    #     ^
+    #
+    #  configure:4619: $? = 0
+    #  configure:4619: result: yes
+    #
+    # Therefore, we use `-diag_error 1035` to have the compiler treat the
+    # warning as an error, which causes cc to return a non-zero result,
+    # which autoconf can interpret correctly.
+    CFLAGS="$CFLAGS -diag_error 1035"
+    # Whilst we're here, we might as well make sure CXX defaults to something
+    # sensible if we're not using gcc.
+    if test -z "$CXX"; then
+        CXX="CC"
+    fi
+fi
+
 # If the user set CFLAGS, use this instead of the automatically
 # determined setting
 preset_cflags="$CFLAGS"
