@@ -647,17 +647,10 @@ class PosixTester(unittest.TestCase):
     @unittest.skipUnless(hasattr(pwd, 'getpwuid'), "test needs pwd.getpwuid()")
     @unittest.skipUnless(hasattr(os, 'getuid'), "test needs os.getuid()")
     def test_getgrouplist(self):
-        with os.popen('id -G') as idg:
-            groups = idg.read().strip()
-            ret = idg.close()
+        user = pwd.getpwuid(os.getuid())[0]
+        group = pwd.getpwuid(os.getuid())[3]
+        self.assertIn(group, posix.getgrouplist(user, group))
 
-        if ret is not None or not groups:
-            raise unittest.SkipTest("need working 'id -G'")
-
-        self.assertEqual(
-            set([int(x) for x in groups.split()]),
-            set(posix.getgrouplist(pwd.getpwuid(os.getuid())[0],
-                pwd.getpwuid(os.getuid())[3])))
 
     @unittest.skipUnless(hasattr(os, 'getegid'), "test needs os.getegid()")
     def test_getgroups(self):
