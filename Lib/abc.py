@@ -226,3 +226,9 @@ class ABCMeta(type):
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
         return False
+
+class ABC(metaclass=ABCMeta):
+    """Helper class that provides a standard way to create an ABC using
+    inheritance.
+    """
+    pass

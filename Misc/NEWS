@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Add abc.ABC class to use inheritance rather than a direct invocation of
+  ABCMeta metaclass. Patch by Bruno Dupuis.
+
 - Expose the TCP_FASTOPEN and MSG_FASTOPEN flags in socket when they're
   available.
 

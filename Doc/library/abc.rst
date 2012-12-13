@@ -12,9 +12,9 @@
 --------------
 
 This module provides the infrastructure for defining :term:`abstract base
-classes <abstract base class>` (ABCs) in Python, as outlined in :pep:`3119`; see the PEP for why this
-was added to Python. (See also :pep:`3141` and the :mod:`numbers` module
-regarding a type hierarchy for numbers based on ABCs.)
+classes <abstract base class>` (ABCs) in Python, as outlined in :pep:`3119`;
+see the PEP for why this was added to Python. (See also :pep:`3141` and the
+:mod:`numbers` module regarding a type hierarchy for numbers based on ABCs.)
 
 The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition the
@@ -23,7 +23,7 @@ a class or instance provides a particular interface, for example, is it
 hashable or a mapping.
 
 
-This module provides the following class:
+This module provides the following classes:
 
 .. class:: ABCMeta
 
@@ -126,6 +126,16 @@ This module provides the following class:
    :meth:`__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.
 
+
+.. class:: ABC
+
+   A helper class that has :class:`ABCMeta` as metaclass. :class:`ABC` is the
+   standard class to inherit from in order to create an abstract base class,
+   avoiding sometimes confusing metaclass usage.
+
+   Note that :class:`ABC` type is still :class:`ABCMeta`, therefore inheriting
+   from :class:`ABC` requires usual precautions regarding metaclasses usage
+   as multiple inheritance may lead to metaclass conflicts.
 
 The :mod:`abc` module also provides the following decorators:
 
