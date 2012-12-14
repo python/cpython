@@ -147,12 +147,12 @@ class dircmp:
             ok = 1
             try:
                 a_stat = os.stat(a_path)
-            except os.error as why:
+            except OSError as why:
                 # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = 0
             try:
                 b_stat = os.stat(b_path)
-            except os.error as why:
+            except OSError as why:
                 # print('Can\'t stat', b_path, ':', why.args[1])
                 ok = 0
 
@@ -268,7 +268,7 @@ def cmpfiles(a, b, common, shallow=True):
 def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
-    except os.error:
+    except OSError:
         return 2
 
 
