@@ -452,12 +452,12 @@ PyImport_GetMagicTag(void)
 
 /* Magic for extension modules (built-in as well as dynamically
    loaded).  To prevent initializing an extension module more than
-   once, we keep a static dictionary 'extensions' keyed by module name
-   (for built-in modules) or by filename (for dynamically loaded
-   modules), containing these modules.  A copy of the module's
-   dictionary is stored by calling _PyImport_FixupExtensionObject()
-   immediately after the module initialization function succeeds.  A
-   copy can be retrieved from there by calling
+   once, we keep a static dictionary 'extensions' keyed by the tuple
+   (module name, module name)  (for built-in modules) or by
+   (filename, module name) (for dynamically loaded modules), containing these
+   modules.  A copy of the module's dictionary is stored by calling
+   _PyImport_FixupExtensionObject() immediately after the module initialization
+   function succeeds.  A copy can be retrieved from there by calling
    _PyImport_FindExtensionObject().
 
    Modules which do support multiple initialization set their m_size
@@ -470,7 +470,7 @@ int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename)
 {
-    PyObject *modules, *dict;
+    PyObject *modules, *dict, *filename_name;
     struct PyModuleDef *def;
     if (extensions == NULL) {
         extensions = PyDict_New();
@@ -508,7 +508,11 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         if (def->m_base.m_copy == NULL)
             return -1;
     }
-    PyDict_SetItem(extensions, filename, (PyObject*)def);
+    filename_name = PyTuple_Pack(2,filename, name);
+    if (filename_name == NULL)
+        return -1;
+    if (PyDict_SetItem(extensions, filename_name, (PyObject*)def) < 0)
+        return -1;
     return 0;
 }
 
@@ -528,11 +532,14 @@ _PyImport_FixupBuiltin(PyObject *mod, char *name)
 PyObject *
 _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
 {
-    PyObject *mod, *mdict;
+    PyObject *mod, *mdict, *filename_name;
     PyModuleDef* def;
     if (extensions == NULL)
         return NULL;
-    def = (PyModuleDef*)PyDict_GetItem(extensions, filename);
+    filename_name = PyTuple_Pack(2,filename, name);
+    if (filename_name == NULL)
+        return NULL;
+    def = (PyModuleDef*)PyDict_GetItem(extensions, filename_name);
     if (def == NULL)
         return NULL;
     if (def->m_size == -1) {

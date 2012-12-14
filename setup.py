@@ -594,6 +594,8 @@ class PyBuildExt(build_ext):
                                depends=['testcapi_long.h']) )
         # Python PEP-3118 (buffer protocol) test module
         exts.append( Extension('_testbuffer', ['_testbuffer.c']) )
+        # Test loading multiple modules from one compiled file (http://bugs.python.org/issue16421)
+        exts.append( Extension('_testimportmultiple', ['_testimportmultiple.c']) )
         # profiler (_lsprof is for cProfile.py)
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
