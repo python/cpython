@@ -274,7 +274,7 @@ unicodedata_category(PyObject *self, PyObject *args)
 PyDoc_STRVAR(unicodedata_bidirectional__doc__,
 "bidirectional(unichr)\n\
 \n\
-Returns the bidirectional category assigned to the Unicode character\n\
+Returns the bidirectional class assigned to the Unicode character\n\
 unichr as string. If no such value is defined, an empty string is\n\
 returned.");
 
