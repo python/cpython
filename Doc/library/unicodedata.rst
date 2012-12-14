@@ -66,7 +66,7 @@ It defines the following functions:
 
 .. function:: bidirectional(unichr)
 
-   Returns the bidirectional category assigned to the Unicode character *unichr* as
+   Returns the bidirectional class assigned to the Unicode character *unichr* as
    string. If no such value is defined, an empty string is returned.
 
 
