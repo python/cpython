@@ -66,7 +66,7 @@ following functions:
 
 .. function:: bidirectional(chr)
 
-   Returns the bidirectional category assigned to the character *chr* as
+   Returns the bidirectional class assigned to the character *chr* as
    string. If no such value is defined, an empty string is returned.
 
 
