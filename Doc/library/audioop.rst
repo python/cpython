@@ -162,12 +162,6 @@ The module defines the following variables and functions:
    hardware, among others.
 
 
-.. function:: minmax(fragment, width)
-
-   Return a tuple consisting of the minimum and maximum values of all samples in
-   the sound fragment.
-
-
 .. function:: max(fragment, width)
 
    Return the maximum of the *absolute value* of all samples in a fragment.
@@ -176,6 +170,12 @@ The module defines the following variables and functions:
 .. function:: maxpp(fragment, width)
 
    Return the maximum peak-peak value in the sound fragment.
+
+
+.. function:: minmax(fragment, width)
+
+   Return a tuple consisting of the minimum and maximum values of all samples in
+   the sound fragment.
 
 
 .. function:: mul(fragment, width, factor)
