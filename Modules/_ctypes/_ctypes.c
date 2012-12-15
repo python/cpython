@@ -2526,8 +2526,6 @@ PyCData_traverse(CDataObject *self, visitproc visit, void *arg)
 static int
 PyCData_clear(CDataObject *self)
 {
-    StgDictObject *dict = PyObject_stgdict((PyObject *)self);
-    assert(dict); /* Cannot be NULL for CDataObject instances */
     Py_CLEAR(self->b_objects);
     if ((self->b_needsfree)
         && _CDataObject_HasExternalBuffer(self))
