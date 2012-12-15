@@ -87,6 +87,13 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(TypeError, select.epoll, ['foo'])
         self.assertRaises(TypeError, select.epoll, {})
 
+    def test_context_manager(self):
+        with select.epoll(16) as ep:
+            self.assertGreater(ep.fileno(), 0)
+            self.assertFalse(ep.closed)
+        self.assertTrue(ep.closed)
+        self.assertRaises(ValueError, ep.fileno)
+
     def test_add(self):
         server, client = self._connected_pair()
 

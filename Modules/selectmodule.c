@@ -1394,6 +1394,24 @@ Wait for events on the epoll file descriptor for a maximum time of timeout\n\
 in seconds (as float). -1 makes poll wait indefinitely.\n\
 Up to maxevents are returned to the caller.");
 
+static PyObject *
+pyepoll_enter(pyEpoll_Object *self, PyObject *args)
+{
+    if (self->epfd < 0)
+        return pyepoll_err_closed();
+
+    Py_INCREF(self);
+    return (PyObject *)self;
+}
+
+static PyObject *
+pyepoll_exit(PyObject *self, PyObject *args)
+{
+    _Py_IDENTIFIER(close);
+
+    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+}
+
 static PyMethodDef pyepoll_methods[] = {
     {"fromfd",          (PyCFunction)pyepoll_fromfd,
      METH_VARARGS | METH_CLASS, pyepoll_fromfd_doc},
@@ -1409,6 +1427,10 @@ static PyMethodDef pyepoll_methods[] = {
      METH_VARARGS | METH_KEYWORDS,      pyepoll_unregister_doc},
     {"poll",            (PyCFunction)pyepoll_poll,
      METH_VARARGS | METH_KEYWORDS,      pyepoll_poll_doc},
+    {"__enter__",           (PyCFunction)pyepoll_enter,     METH_NOARGS,
+     NULL},
+    {"__exit__",           (PyCFunction)pyepoll_exit,     METH_VARARGS,
+     NULL},
     {NULL,      NULL},
 };
 
