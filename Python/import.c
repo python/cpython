@@ -470,8 +470,9 @@ int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename)
 {
-    PyObject *modules, *dict, *filename_name;
+    PyObject *modules, *dict, *key;
     struct PyModuleDef *def;
+    int res;
     if (extensions == NULL) {
         extensions = PyDict_New();
         if (extensions == NULL)
@@ -508,10 +509,12 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
         if (def->m_base.m_copy == NULL)
             return -1;
     }
-    filename_name = PyTuple_Pack(2,filename, name);
-    if (filename_name == NULL)
+    key = PyTuple_Pack(2, filename, name);
+    if (key == NULL)
         return -1;
-    if (PyDict_SetItem(extensions, filename_name, (PyObject*)def) < 0)
+    res = PyDict_SetItem(extensions, key, (PyObject *)def);
+    Py_DECREF(key);
+    if (res < 0)
         return -1;
     return 0;
 }
@@ -532,14 +535,15 @@ _PyImport_FixupBuiltin(PyObject *mod, char *name)
 PyObject *
 _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
 {
-    PyObject *mod, *mdict, *filename_name;
+    PyObject *mod, *mdict, *key;
     PyModuleDef* def;
     if (extensions == NULL)
         return NULL;
-    filename_name = PyTuple_Pack(2,filename, name);
-    if (filename_name == NULL)
+    key = PyTuple_Pack(2, filename, name);
+    if (key == NULL)
         return NULL;
-    def = (PyModuleDef*)PyDict_GetItem(extensions, filename_name);
+    def = (PyModuleDef *)PyDict_GetItem(extensions, key);
+    Py_DECREF(key);
     if (def == NULL)
         return NULL;
     if (def->m_size == -1) {
