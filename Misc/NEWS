@@ -167,6 +167,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11175: argparse.FileType now accepts encoding and errors
+  arguments. Patch by Lucas Maystre.
+
 - Issue #16488: epoll() objects now support the `with` statement.  Patch
   by Serhiy Storchaka.
 

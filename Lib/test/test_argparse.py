@@ -14,6 +14,7 @@ import argparse
 from io import StringIO
 
 from test import support
+from unittest import mock
 class StdIOBuffer(StringIO):
     pass
 
@@ -1421,6 +1422,19 @@ class TestFileTypeRepr(TestCase):
         type = argparse.FileType('wb', 1)
         self.assertEqual("FileType('wb', 1)", repr(type))
 
+    def test_r_latin(self):
+        type = argparse.FileType('r', encoding='latin_1')
+        self.assertEqual("FileType('r', encoding='latin_1')", repr(type))
+
+    def test_w_big5_ignore(self):
+        type = argparse.FileType('w', encoding='big5', errors='ignore')
+        self.assertEqual("FileType('w', encoding='big5', errors='ignore')",
+                         repr(type))
+
+    def test_r_1_replace(self):
+        type = argparse.FileType('r', 1, errors='replace')
+        self.assertEqual("FileType('r', 1, errors='replace')", repr(type))
+
 
 class RFile(object):
     seen = {}
@@ -1555,6 +1569,24 @@ class TestFileTypeWB(TempDirMixin, ParserTestCase):
         ('bar -x foo', NS(x=WFile('foo'), spam=WFile('bar'))),
         ('-x - -', NS(x=sys.stdout, spam=sys.stdout)),
     ]
+
+
+class TestFileTypeOpenArgs(TestCase):
+    """Test that open (the builtin) is correctly called"""
+
+    def test_open_args(self):
+        FT = argparse.FileType
+        cases = [
+            (FT('rb'), ('rb', -1, None, None)),
+            (FT('w', 1), ('w', 1, None, None)),
+            (FT('w', errors='replace'), ('w', -1, None, 'replace')),
+            (FT('wb', encoding='big5'), ('wb', -1, 'big5', None)),
+            (FT('w', 0, 'l1', 'strict'), ('w', 0, 'l1', 'strict')),
+        ]
+        with mock.patch('builtins.open') as m:
+            for type, args in cases:
+                type('foo')
+                m.assert_called_with('foo', *args)
 
 
 class TestTypeCallable(ParserTestCase):
