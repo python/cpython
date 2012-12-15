@@ -108,6 +108,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15783: Except for the number methods, the C version of decimal now
+  supports all None default values present in decimal.py. These values were
+  largely undocumented.
+
 - Issue #16298: In HTTPResponse.read(), close the socket when there is no
   Content-Length and the incoming stream is finished.  Patch by Eran
   Rundstein.

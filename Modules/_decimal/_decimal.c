@@ -1486,7 +1486,10 @@ static PyGetSetDef context_getsets [] =
     }
 
 #define CONTEXT_CHECK_VA(obj) \
-    if (!PyDecContext_Check(obj)) {                 \
+    if (obj == Py_None) {                           \
+        CURRENT_CONTEXT(obj);                       \
+    }                                               \
+    else if (!PyDecContext_Check(obj)) {            \
         PyErr_SetString(PyExc_TypeError,            \
             "optional argument must be a context"); \
         return NULL;                                \
@@ -1715,18 +1718,25 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
  * owns one reference to the global (outer) context and one
  * to the local (inner) context. */
 static PyObject *
-ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args)
+ctxmanager_new(PyTypeObject *type UNUSED, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"ctx", NULL};
     PyDecContextManagerObject *self;
-    PyObject *local;
+    PyObject *local = Py_None;
     PyObject *global;
 
     CURRENT_CONTEXT(global);
-    local = global;
-    if (!PyArg_ParseTuple(args, "|O", &local)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &local)) {
         return NULL;
     }
-    CONTEXT_CHECK_VA(local);
+    if (local == Py_None) {
+        local = global;
+    }
+    else if (!PyDecContext_Check(local)) {
+        PyErr_SetString(PyExc_TypeError,
+            "optional argument must be a context");
+        return NULL;
+    }
 
     self = PyObject_New(PyDecContextManagerObject,
                         &PyDecContextManager_Type);
@@ -2749,9 +2759,8 @@ dec_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"value", "context", NULL};
     PyObject *v = NULL;
-    PyObject *context;
+    PyObject *context = Py_None;
 
-    CURRENT_CONTEXT(context);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
                                      &v, &context)) {
         return NULL;
@@ -3315,20 +3324,23 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
-    PyObject *context;
+    PyObject *rounding = Py_None;
+    PyObject *context = Py_None;
     uint32_t status = 0;
     mpd_context_t workctx;
-    int round = -1;
 
-    CURRENT_CONTEXT(context);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
-                                     &round, &context)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
+                                     &rounding, &context)) {
         return NULL;
     }
     CONTEXT_CHECK_VA(context);
 
     workctx = *CTX(context);
-    if (round >= 0) {
+    if (rounding != Py_None) {
+        int round = getround(rounding);
+        if (round < 0) {
+            return NULL;
+        }
         if (!mpd_qsetround(&workctx, round)) {
             return type_error_ptr(invalid_rounding_err);
         }
@@ -3353,20 +3365,23 @@ PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
-    PyObject *context;
+    PyObject *rounding = Py_None;
+    PyObject *context = Py_None;
     uint32_t status = 0;
     mpd_context_t workctx;
-    int round = -1;
 
-    CURRENT_CONTEXT(context);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iO", kwlist,
-                                     &round, &context)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
+                                     &rounding, &context)) {
         return NULL;
     }
     CONTEXT_CHECK_VA(context);
 
     workctx = *CTX(context);
-    if (round >= 0) {
+    if (rounding != Py_None) {
+        int round = getround(rounding);
+        if (round < 0) {
+            return NULL;
+        }
         if (!mpd_qsetround(&workctx, round)) {
             return type_error_ptr(invalid_rounding_err);
         }
@@ -3633,9 +3648,8 @@ static PyObject *                                                         \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 {                                                                         \
     static char *kwlist[] = {"context", NULL};                            \
-    PyObject *context;                                                    \
+    PyObject *context = Py_None;                                          \
                                                                           \
-    CURRENT_CONTEXT(context);                                             \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,            \
                                      &context)) {                         \
         return NULL;                                                      \
@@ -3652,10 +3666,9 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
 {                                                              \
     static char *kwlist[] = {"context", NULL};                 \
     PyObject *result;                                          \
-    PyObject *context;                                         \
+    PyObject *context = Py_None;                               \
     uint32_t status = 0;                                       \
                                                                \
-    CURRENT_CONTEXT(context);                                  \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, \
                                      &context)) {              \
         return NULL;                                           \
@@ -3675,49 +3688,18 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
     return result;                                             \
 }
 
-/* Unary function with an optional context arg. The actual MPDFUNC
-   only takes a status parameter. */
-#define Dec_UnaryFuncVA_NO_CTX(MPDFUNC) \
-static PyObject *                                              \
-dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
-{                                                              \
-    static char *kwlist[] = {"context", NULL};                 \
-    PyObject *result;                                          \
-    PyObject *context;                                         \
-    uint32_t status = 0;                                       \
-                                                               \
-    CURRENT_CONTEXT(context);                                  \
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, \
-                                     &context)) {              \
-        return NULL;                                           \
-    }                                                          \
-    CONTEXT_CHECK_VA(context);                                 \
-                                                               \
-    if ((result = dec_alloc()) == NULL) {                      \
-        return NULL;                                           \
-    }                                                          \
-                                                               \
-    MPDFUNC(MPD(result), MPD(self), &status);                  \
-    if (dec_addstatus(context, status)) {                      \
-        Py_DECREF(result);                                     \
-        return NULL;                                           \
-    }                                                          \
-                                                               \
-    return result;                                             \
-}
-
 /* Binary function with an optional context arg. */
 #define Dec_BinaryFuncVA(MPDFUNC) \
 static PyObject *                                                \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)    \
 {                                                                \
     static char *kwlist[] = {"other", "context", NULL};          \
-    PyObject *other, *context;                                   \
+    PyObject *other;                                             \
     PyObject *a, *b;                                             \
     PyObject *result;                                            \
+    PyObject *context = Py_None;                                 \
     uint32_t status = 0;                                         \
                                                                  \
-    CURRENT_CONTEXT(context);                                    \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,  \
                                      &other, &context)) {        \
         return NULL;                                             \
@@ -3750,11 +3732,11 @@ static PyObject *                                               \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 {                                                               \
     static char *kwlist[] = {"other", "context", NULL};         \
-    PyObject *other, *context;                                  \
+    PyObject *context = Py_None;                                \
+    PyObject *other;                                            \
     PyObject *a, *b;                                            \
     PyObject *result;                                           \
                                                                 \
-    CURRENT_CONTEXT(context);                                   \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist, \
                                      &other, &context)) {       \
         return NULL;                                            \
@@ -3781,12 +3763,12 @@ static PyObject *                                                        \
 dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)            \
 {                                                                        \
     static char *kwlist[] = {"other", "third", "context", NULL};         \
-    PyObject *other, *third, *context;                                   \
+    PyObject *other, *third;                                             \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
+    PyObject *context = Py_None;                                         \
     uint32_t status = 0;                                                 \
                                                                          \
-    CURRENT_CONTEXT(context);                                            \
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O", kwlist,         \
                                      &other, &third, &context)) {        \
         return NULL;                                                     \
@@ -4019,9 +4001,45 @@ dec_mpd_radix(PyObject *self UNUSED, PyObject *dummy UNUSED)
     return result;
 }
 
-/* Unary functions, optional context arg for conversion errors */
-Dec_UnaryFuncVA_NO_CTX(mpd_qcopy_abs)
-Dec_UnaryFuncVA_NO_CTX(mpd_qcopy_negate)
+static PyObject *
+dec_mpd_qcopy_abs(PyObject *self, PyObject *dummy UNUSED)
+{
+    PyObject *result;
+    uint32_t status = 0;
+
+    if ((result = dec_alloc()) == NULL) {
+        return NULL;
+    }
+
+    mpd_qcopy_abs(MPD(result), MPD(self), &status);
+    if (status & MPD_Malloc_error) {
+        Py_DECREF(result);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    return result;
+}
+
+static PyObject *
+dec_mpd_qcopy_negate(PyObject *self, PyObject *dummy UNUSED)
+{
+    PyObject *result;
+    uint32_t status = 0;
+
+    if ((result = dec_alloc()) == NULL) {
+        return NULL;
+    }
+
+    mpd_qcopy_negate(MPD(result), MPD(self), &status);
+    if (status & MPD_Malloc_error) {
+        Py_DECREF(result);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    return result;
+}
 
 /* Unary functions, optional context arg */
 Dec_UnaryFuncVA(mpd_qinvert)
@@ -4031,10 +4049,9 @@ static PyObject *
 dec_mpd_class(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"context", NULL};
-    PyObject *context;
+    PyObject *context = Py_None;
     const char *cp;
 
-    CURRENT_CONTEXT(context);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
                                      &context)) {
         return NULL;
@@ -4050,11 +4067,10 @@ dec_mpd_to_eng(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"context", NULL};
     PyObject *result;
-    PyObject *context;
+    PyObject *context = Py_None;
     mpd_ssize_t size;
     char *s;
 
-    CURRENT_CONTEXT(context);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
                                      &context)) {
         return NULL;
@@ -4081,12 +4097,12 @@ static PyObject *
 dec_mpd_qcopy_sign(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"other", "context", NULL};
-    PyObject *other, *context;
+    PyObject *other;
     PyObject *a, *b;
     PyObject *result;
+    PyObject *context = Py_None;
     uint32_t status = 0;
 
-    CURRENT_CONTEXT(context);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
                                      &other, &context)) {
         return NULL;
@@ -4116,11 +4132,11 @@ static PyObject *
 dec_mpd_same_quantum(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"other", "context", NULL};
-    PyObject *other, *context;
+    PyObject *other;
     PyObject *a, *b;
     PyObject *result;
+    PyObject *context = Py_None;
 
-    CURRENT_CONTEXT(context);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
                                      &other, &context)) {
         return NULL;
@@ -4148,22 +4164,25 @@ static PyObject *
 dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"exp", "rounding", "context", NULL};
-    PyObject *w, *context;
-    PyObject *a, *b;
+    PyObject *rounding = Py_None;
+    PyObject *context = Py_None;
+    PyObject *w, *a, *b;
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
-    int round = -1;
 
-    CURRENT_CONTEXT(context);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|iO", kwlist,
-                                     &w, &round, &context)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO", kwlist,
+                                     &w, &rounding, &context)) {
         return NULL;
     }
     CONTEXT_CHECK_VA(context);
 
     workctx = *CTX(context);
-    if (round >= 0) {
+    if (rounding != Py_None) {
+        int round = getround(rounding);
+        if (round < 0) {
+            return NULL;
+        }
         if (!mpd_qsetround(&workctx, round)) {
             return type_error_ptr(invalid_rounding_err);
         }
@@ -4585,8 +4604,8 @@ static PyMethodDef dec_methods [] =
   { "radix", dec_mpd_radix, METH_NOARGS, doc_radix },
 
   /* Unary functions, optional context arg for conversion errors */
-  { "copy_abs", (PyCFunction)dec_mpd_qcopy_abs, METH_VARARGS|METH_KEYWORDS, doc_copy_abs },
-  { "copy_negate", (PyCFunction)dec_mpd_qcopy_negate, METH_VARARGS|METH_KEYWORDS, doc_copy_negate },
+  { "copy_abs", dec_mpd_qcopy_abs, METH_NOARGS, doc_copy_abs },
+  { "copy_negate", dec_mpd_qcopy_negate, METH_NOARGS, doc_copy_negate },
 
   /* Unary functions, optional context arg */
   { "logb", (PyCFunction)dec_mpd_qlogb, METH_VARARGS|METH_KEYWORDS, doc_logb },
@@ -4916,7 +4935,7 @@ static PyObject *
 ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"a", "b", "modulo", NULL};
-    PyObject *base, *exp, *mod = NULL;
+    PyObject *base, *exp, *mod = Py_None;
     PyObject *a, *b, *c = NULL;
     PyObject *result;
     uint32_t status = 0;
@@ -4928,7 +4947,7 @@ ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
 
     CONVERT_BINOP_RAISE(&a, &b, base, exp, context);
 
-    if (mod != NULL) {
+    if (mod != Py_None) {
         if (!convert_op(TYPE_ERR, &c, mod, context)) {
             Py_DECREF(a);
             Py_DECREF(b);
@@ -5361,7 +5380,7 @@ static PyMethodDef _decimal_methods [] =
 {
   { "getcontext", (PyCFunction)PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
   { "setcontext", (PyCFunction)PyDec_SetCurrentContext, METH_O, doc_setcontext},
-  { "localcontext", (PyCFunction)ctxmanager_new, METH_VARARGS, doc_localcontext},
+  { "localcontext", (PyCFunction)ctxmanager_new, METH_VARARGS|METH_KEYWORDS, doc_localcontext},
 #ifdef EXTRA_FUNCTIONALITY
   { "IEEEContext", (PyCFunction)ieee_context, METH_O, doc_ieee_context},
 #endif
