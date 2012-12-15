@@ -511,6 +511,10 @@ class HTTPResponse(io.RawIOBase):
             self.length -= len(s)
             if not self.length:
                 self.close()
+        else:
+            if not s:
+                self.close()
+
         return s
 
     def _read_chunked(self, amt):
