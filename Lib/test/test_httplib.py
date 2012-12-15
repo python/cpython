@@ -175,7 +175,7 @@ class BasicTest(TestCase):
         self.assertEqual(repr(exc), '''BadStatusLine("\'\'",)''')
 
     def test_partial_reads(self):
-        # if we have a lenght, the system knows when to close itself
+        # if we have a length, the system knows when to close itself
         # same behaviour than when we read the whole thing with read()
         body = "HTTP/1.1 200 Ok\r\nContent-Length: 4\r\n\r\nText"
         sock = FakeSocket(body)
@@ -184,6 +184,19 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(2), b'Te')
         self.assertFalse(resp.isclosed())
         self.assertEqual(resp.read(2), b'xt')
+        self.assertTrue(resp.isclosed())
+
+    def test_partial_reads_no_content_length(self):
+        # when no length is present, the socket should be gracefully closed when
+        # all data was read
+        body = "HTTP/1.1 200 Ok\r\n\r\nText"
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.read(2), b'Te')
+        self.assertFalse(resp.isclosed())
+        self.assertEqual(resp.read(2), b'xt')
+        self.assertEqual(resp.read(1), b'')
         self.assertTrue(resp.isclosed())
 
     def test_host_port(self):
