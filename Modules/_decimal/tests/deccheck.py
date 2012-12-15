@@ -36,6 +36,7 @@ from copy import copy
 from collections import defaultdict
 from test.support import import_fresh_module
 from randdec import randfloat, all_unary, all_binary, all_ternary
+from randdec import unary_optarg, binary_optarg, ternary_optarg
 from formathelper import rand_format, rand_locale
 
 C = import_fresh_module('decimal', fresh=['_decimal'])
@@ -834,6 +835,17 @@ def test_unary(method, prec, exp_range, restricted_range, itr, stat):
         except VerifyError as err:
             log(err)
 
+    if not method.startswith('__'):
+        for op in unary_optarg(prec, exp_range, itr):
+            t = TestSet(method, op)
+            try:
+                if not convert(t):
+                    continue
+                callfuncs(t)
+                verify(t, stat)
+            except VerifyError as err:
+                log(err)
+
 def test_binary(method, prec, exp_range, restricted_range, itr, stat):
     """Iterate a binary function through many test cases."""
     if method in BinaryRestricted:
@@ -848,6 +860,17 @@ def test_binary(method, prec, exp_range, restricted_range, itr, stat):
         except VerifyError as err:
             log(err)
 
+    if not method.startswith('__'):
+        for op in binary_optarg(prec, exp_range, itr):
+            t = TestSet(method, op)
+            try:
+                if not convert(t):
+                    continue
+                callfuncs(t)
+                verify(t, stat)
+            except VerifyError as err:
+                log(err)
+
 def test_ternary(method, prec, exp_range, restricted_range, itr, stat):
     """Iterate a ternary function through many test cases."""
     if method in TernaryRestricted:
@@ -861,6 +884,17 @@ def test_ternary(method, prec, exp_range, restricted_range, itr, stat):
             verify(t, stat)
         except VerifyError as err:
             log(err)
+
+    if not method.startswith('__'):
+        for op in ternary_optarg(prec, exp_range, itr):
+            t = TestSet(method, op)
+            try:
+                if not convert(t):
+                    continue
+                callfuncs(t)
+                verify(t, stat)
+            except VerifyError as err:
+                log(err)
 
 def test_format(method, prec, exp_range, restricted_range, itr, stat):
     """Iterate the __format__ method through many test cases."""

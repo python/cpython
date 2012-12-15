@@ -167,6 +167,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15783: Except for the number methods, the C version of decimal now
+  supports all None default values present in decimal.py. These values were
+  largely undocumented.
+
 - Issue #11175: argparse.FileType now accepts encoding and errors
   arguments. Patch by Lucas Maystre.
 
