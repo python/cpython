@@ -167,6 +167,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16298: In HTTPResponse.read(), close the socket when there is no
+  Content-Length and the incoming stream is finished.  Patch by Eran
+  Rundstein.
+
 - Add abc.ABC class to use inheritance rather than a direct invocation of
   ABCMeta metaclass. Patch by Bruno Dupuis.
 
