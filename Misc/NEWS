@@ -160,6 +160,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16298: In HTTPResponse.read(), close the socket when there is no
+  Content-Length and the incoming stream is finished.  Patch by Eran
+  Rundstein.
+
 - Issue #16248: Disable code execution from the user's home directory by
   tkinter when the -E flag is passed to Python.  Patch by Zachary Ware.
 
