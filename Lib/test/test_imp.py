@@ -223,11 +223,11 @@ class ImportTests(unittest.TestCase):
         fileobj, pathname, description = imp.find_module(m)
         fileobj.close()
         mod0 = imp.load_dynamic(m, pathname)
-        mod1 = imp.load_dynamic('foo', pathname)
-        mod2 = imp.load_dynamic('bar', pathname)
+        mod1 = imp.load_dynamic('_testimportmultiple_foo', pathname)
+        mod2 = imp.load_dynamic('_testimportmultiple_bar', pathname)
         self.assertEqual(mod0.__name__, m)
-        self.assertEqual(mod1.__name__, 'foo')
-        self.assertEqual(mod2.__name__, 'bar')
+        self.assertEqual(mod1.__name__, '_testimportmultiple_foo')
+        self.assertEqual(mod2.__name__, '_testimportmultiple_bar')
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
