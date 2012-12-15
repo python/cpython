@@ -536,6 +536,9 @@ class HTTPResponse(io.RawIOBase):
             self.length -= n
             if not self.length:
                 self.close()
+        else:
+            if not n:
+                self.close()
         return n
 
     def _read_next_chunk_size(self):
