@@ -527,6 +527,11 @@ def all_unary(prec, exp_range, itr):
     for _ in range(100):
         yield (randtuple(prec, exp_range),)
 
+def unary_optarg(prec, exp_range, itr):
+    for _ in range(100):
+        yield randdec(prec, exp_range), None
+        yield randdec(prec, exp_range), None, None
+
 def all_binary(prec, exp_range, itr):
     for a, b in bin_close_to_pow10(prec, exp_range, itr):
         yield a, b
@@ -543,6 +548,11 @@ def all_binary(prec, exp_range, itr):
     for _ in range(100):
         yield randdec(prec, exp_range), randdec(prec, exp_range)
 
+def binary_optarg(prec, exp_range, itr):
+    for _ in range(100):
+        yield randdec(prec, exp_range), randdec(prec, exp_range), None
+        yield randdec(prec, exp_range), randdec(prec, exp_range), None, None
+
 def all_ternary(prec, exp_range, itr):
     for a, b, c in tern_close_numbers(prec, exp_range, -exp_range, itr):
         yield a, b, c
@@ -557,3 +567,11 @@ def all_ternary(prec, exp_range, itr):
         b = randdec(prec, 2*exp_range)
         c = randdec(prec, 2*exp_range)
         yield a, b, c
+
+def ternary_optarg(prec, exp_range, itr):
+    for _ in range(100):
+        a = randdec(prec, 2*exp_range)
+        b = randdec(prec, 2*exp_range)
+        c = randdec(prec, 2*exp_range)
+        yield a, b, c, None
+        yield a, b, c, None, None
