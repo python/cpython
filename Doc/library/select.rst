@@ -47,10 +47,13 @@ The module defines the following:
    to :const:`EPOLL_CLOEXEC`, which causes the epoll descriptor to be closed
    automatically when :func:`os.execve` is called. See section
    :ref:`epoll-objects` below for the methods supported by epolling objects.
-
+   They also support the :keyword:`with` statement.
 
    .. versionchanged:: 3.3
       Added the *flags* parameter.
+
+   .. versionchanged:: 3.4
+      Support for the :keyword:`with` statement was added.
 
 
 .. function:: poll()
