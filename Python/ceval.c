@@ -2162,9 +2162,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             else {
                 v = PyObject_GetItem(locals, name);
                 if (v == NULL && PyErr_Occurred()) {
-                    if (!PyErr_ExceptionMatches(
-                                    PyExc_KeyError))
-                        break;
+                    if (!PyErr_ExceptionMatches(PyExc_KeyError))
+                        goto error;
                     PyErr_Clear();
                 }
             }
