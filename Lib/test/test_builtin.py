@@ -462,6 +462,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, eval, ())
         self.assertRaises(SyntaxError, eval, bom[:2] + b'a')
 
+        class X:
+            def __getitem__(self, key):
+                raise ValueError
+        self.assertRaises(ValueError, eval, "foo", {}, X())
+
     def test_general_eval(self):
         # Tests that general mappings can be used for the locals argument
 
