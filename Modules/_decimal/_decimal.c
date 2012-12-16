@@ -1241,50 +1241,53 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
       "prec", "rounding", "Emin", "Emax", "capitals", "clamp",
       "flags", "traps", NULL
     };
-    PyObject *rounding = NULL;
-    PyObject *traps = NULL;
-    PyObject *status = NULL;
-    mpd_context_t *ctx, t;
-    int capitals = 1;
+    PyObject *prec = Py_None;
+    PyObject *rounding = Py_None;
+    PyObject *emin = Py_None;
+    PyObject *emax = Py_None;
+    PyObject *capitals = Py_None;
+    PyObject *clamp = Py_None;
+    PyObject *status = Py_None;
+    PyObject *traps = Py_None;
     int ret;
 
     assert(PyTuple_Check(args));
-    ctx = CTX(self);
 
-    t = *ctx;
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds,
-            "|nOnniiOO", kwlist,
-            &t.prec, &rounding, &t.emin, &t.emax, &capitals, &t.clamp,
-            &status, &traps
+            "|OOOOOOOO", kwlist,
+            &prec, &rounding, &emin, &emax, &capitals, &clamp, &status, &traps
          )) {
         return -1;
     }
-    if (rounding != NULL) {
-        t.round = getround(rounding);
-        if (t.round < 0) {
+
+    if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
+        return -1;
+    }
+    if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
+        return -1;
+    }
+    if (emax != Py_None && context_setemax(self, emax, NULL) < 0) {
+        return -1;
+    }
+    if (capitals != Py_None && context_setcapitals(self, capitals, NULL) < 0) {
+        return -1;
+    }
+    if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
+       return -1;
+    }
+
+    if (rounding != Py_None) {
+        int x = getround(rounding);
+        if (x < 0) {
             return -1;
+        }
+        if (!mpd_qsetround(CTX(self), x)) {
+            return type_error_int(invalid_rounding_err);
         }
     }
 
-    if (!mpd_qsetprec(ctx, t.prec) ||
-        !mpd_qsetemin(ctx, t.emin) ||
-        !mpd_qsetemax(ctx, t.emax) ||
-        !mpd_qsetclamp(ctx, t.clamp)) {
-        return value_error_int("invalid context");
-    }
-    if (!mpd_qsetround(ctx, t.round) ||
-        !mpd_qsettraps(ctx, t.traps) ||
-        !mpd_qsetstatus(ctx, t.status)) {
-        return type_error_int("invalid context");
-    }
-
-    if (capitals != 0 && capitals != 1) {
-        return value_error_int("invalid context");
-    }
-    CtxCaps(self) = capitals;
-
-    if (traps != NULL) {
+    if (traps != Py_None) {
         if (PyList_Check(traps)) {
             ret = context_settraps_list(self, traps);
         }
@@ -1300,7 +1303,7 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
             return ret;
         }
     }
-    if (status != NULL) {
+    if (status != Py_None) {
         if (PyList_Check(status)) {
             ret = context_setstatus_list(self, status);
         }
