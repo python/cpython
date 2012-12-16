@@ -3,6 +3,7 @@ from test.support import run_unittest, TESTFN, skip_unless_symlink, can_symlink
 import glob
 import os
 import shutil
+import sys
 
 
 class GlobTests(unittest.TestCase):
@@ -109,6 +110,18 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2')])
         eq(self.glob('sym1'), [self.norm('sym1')])
         eq(self.glob('sym2'), [self.norm('sym2')])
+
+    @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
+    def test_glob_magic_in_drive(self):
+        eq = self.assertSequencesEqual_noorder
+        eq(glob.glob('*:'), [])
+        eq(glob.glob(b'*:'), [])
+        eq(glob.glob('?:'), [])
+        eq(glob.glob(b'?:'), [])
+        eq(glob.glob('\\\\?\\c:\\'), ['\\\\?\\c:\\'])
+        eq(glob.glob(b'\\\\?\\c:\\'), [b'\\\\?\\c:\\'])
+        eq(glob.glob('\\\\*\\*\\'), [])
+        eq(glob.glob(b'\\\\*\\*\\'), [])
 
 
 def test_main():
