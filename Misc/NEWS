@@ -108,6 +108,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16626: Fix infinite recursion in glob.glob() on Windows when the
+  pattern contains a wildcard in the drive or UNC path.  Patch by Serhiy
+  Storchaka.
+
 - Issue #15783: Except for the number methods, the C version of decimal now
   supports all None default values present in decimal.py. These values were
   largely undocumented.
