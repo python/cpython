@@ -40,7 +40,7 @@ Core and Builtins
 - Issue #9535: Fix pending signals that have been received but not yet
   handled by Python to not persist after os.fork() in the child process.
 
-- Issue #15001: fix segfault on "del sys.module['__main__']". Patch by Victor
+- Issue #15001: fix segfault on "del sys.modules['__main__']". Patch by Victor
   Stinner.
 
 - Issue #8271: the utf-8 decoder now outputs the correct number of U+FFFD
@@ -305,6 +305,9 @@ Library
 
 Tests
 -----
+
+- Issue #16664: Add regression tests for glob's behaviour concerning entries
+  starting with a ".".  Patch by Sebastian Kreft.
 
 - Issue #16559: Add more tests for the json module, including some from the
   official test suite at json.org.  Patch by Serhiy Storchaka.
