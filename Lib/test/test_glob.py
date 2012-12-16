@@ -97,12 +97,35 @@ class GlobTests(unittest.TestCase):
                                                    os.path.join('aab', 'F')]))
 
     def test_glob_directory_with_trailing_slash(self):
-        # We are verifying that when there is wildcard pattern which
-        # ends with os.sep doesn't blow up.
-        res = glob.glob(self.tempdir + '*' + os.sep)
-        self.assertEqual(len(res), 1)
+        # Patterns ending with a slash shouldn't match non-dirs
+        res = glob.glob(os.path.join(self.tempdir, 'Z*Z') + os.sep)
+        self.assertEqual(res, [])
+        res = glob.glob(os.path.join(self.tempdir, 'ZZZ') + os.sep)
+        self.assertEqual(res, [])
+        # When there is wildcard pattern which ends with os.sep, glob()
+        # doesn't blow up.
+        res = glob.glob(os.path.join(self.tempdir, 'aa*') + os.sep)
+        self.assertEqual(len(res), 2)
         # either of these results are reasonable
-        self.assertIn(res[0], [self.tempdir, self.tempdir + os.sep])
+        self.assertIn(set(res), [
+                      {self.norm('aaa'), self.norm('aab')},
+                      {self.norm('aaa') + os.sep, self.norm('aab') + os.sep},
+                      ])
+
+    def test_glob_bytes_directory_with_trailing_slash(self):
+        # Same as test_glob_directory_with_trailing_slash, but with a
+        # bytes argument.
+        res = glob.glob(os.fsencode(os.path.join(self.tempdir, 'Z*Z') + os.sep))
+        self.assertEqual(res, [])
+        res = glob.glob(os.fsencode(os.path.join(self.tempdir, 'ZZZ') + os.sep))
+        self.assertEqual(res, [])
+        res = glob.glob(os.fsencode(os.path.join(self.tempdir, 'aa*') + os.sep))
+        self.assertEqual(len(res), 2)
+        # either of these results are reasonable
+        self.assertIn({os.fsdecode(x) for x in res}, [
+                      {self.norm('aaa'), self.norm('aab')},
+                      {self.norm('aaa') + os.sep, self.norm('aab') + os.sep},
+                      ])
 
     @skip_unless_symlink
     def test_glob_broken_symlinks(self):
