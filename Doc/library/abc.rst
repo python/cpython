@@ -129,13 +129,16 @@ This module provides the following classes:
 
 .. class:: ABC
 
-   A helper class that has :class:`ABCMeta` as metaclass. :class:`ABC` is the
-   standard class to inherit from in order to create an abstract base class,
+   A helper class that has :class:`ABCMeta` as its metaclass.  With this class,
+   an abstract base class can be created by simply deriving from :class:`ABC`,
    avoiding sometimes confusing metaclass usage.
 
-   Note that :class:`ABC` type is still :class:`ABCMeta`, therefore inheriting
-   from :class:`ABC` requires usual precautions regarding metaclasses usage
-   as multiple inheritance may lead to metaclass conflicts.
+   Note that the type of :class:`ABC` is still :class:`ABCMeta`, therefore
+   inheriting from :class:`ABC` requires the usual precautions regarding metaclass
+   usage, as multiple inheritance may lead to metaclass conflicts.
+
+   .. versionadded:: 3.4
+
 
 The :mod:`abc` module also provides the following decorators:
 
