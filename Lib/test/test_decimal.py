@@ -2718,6 +2718,27 @@ class PyPythonAPItests(PythonAPItests):
 
 class ContextAPItests(unittest.TestCase):
 
+    def test_none_args(self):
+        Context = self.decimal.Context
+        InvalidOperation = self.decimal.InvalidOperation
+        DivisionByZero = self.decimal.DivisionByZero
+        Overflow = self.decimal.Overflow
+        ROUND_HALF_EVEN = self.decimal.ROUND_HALF_EVEN
+
+        c1 = Context()
+        c2 = Context(prec=None, rounding=None, Emax=None, Emin=None,
+                     capitals=None, clamp=None, flags=None, traps=None)
+        for c in [c1, c2]:
+            self.assertEqual(c.prec, 28)
+            self.assertEqual(c.rounding, ROUND_HALF_EVEN)
+            self.assertEqual(c.Emax, 999999)
+            self.assertEqual(c.Emin, -999999)
+            self.assertEqual(c.capitals, 1)
+            self.assertEqual(c.clamp, 0)
+            assert_signals(self, c, 'flags', [])
+            assert_signals(self, c, 'traps', [InvalidOperation, DivisionByZero,
+                                              Overflow])
+
     def test_pickle(self):
 
         Context = self.decimal.Context
