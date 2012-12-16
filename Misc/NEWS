@@ -548,6 +548,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #16664: Add regression tests for glob's behaviour concerning entries
+  starting with a ".".  Patch by Sebastian Kreft.
+
 - Issue #15747: ZFS always returns EOPNOTSUPP when attempting to set the
   UF_IMMUTABLE flag (via either chflags or lchflags); refactor affected
   tests in test_posix.py to account for this.
