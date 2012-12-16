@@ -67,7 +67,7 @@ Core and Builtins
 - Issue #14794: Fix slice.indices to return correct results for huge values,
   rather than raising OverflowError.
 
-- Issue #15001: fix segfault on "del sys.module['__main__']". Patch by Victor
+- Issue #15001: fix segfault on "del sys.modules['__main__']". Patch by Victor
   Stinner.
 
 - Issue #8271: the utf-8 decoder now outputs the correct number of U+FFFD
@@ -469,6 +469,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #16664: Add regression tests for glob's behaviour concerning entries
+  starting with a ".".  Patch by Sebastian Kreft.
 
 - Issue #13390: The ``-R`` option to regrtest now also checks for memory
   allocation leaks, using :func:`sys.getallocatedblocks()`.
