@@ -689,6 +689,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #16664: Add regression tests for glob's behaviour concerning entries
+  starting with a ".".  Patch by Sebastian Kreft.
+
 - Issue #15872: Add tests for a 3.3 regression which caused the new fd-based
   shutil.rmtree not ignore all errors. Also add a test ensuring that rmtree
   fails when being called on a symlink. Patch by Serhiy Storchaka.

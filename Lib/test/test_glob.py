@@ -4,6 +4,7 @@ import glob
 import os
 import shutil
 
+
 class GlobTests(unittest.TestCase):
 
     def norm(self, *parts):
@@ -18,9 +19,11 @@ class GlobTests(unittest.TestCase):
         f.close()
 
     def setUp(self):
-        self.tempdir = TESTFN+"_dir"
+        self.tempdir = TESTFN + "_dir"
         self.mktemp('a', 'D')
         self.mktemp('aab', 'F')
+        self.mktemp('.aa', 'G')
+        self.mktemp('.bb', 'H')
         self.mktemp('aaa', 'zzzF')
         self.mktemp('ZZZ')
         self.mktemp('a', 'bcd', 'EF')
@@ -66,6 +69,8 @@ class GlobTests(unittest.TestCase):
         eq = self.assertSequencesEqual_noorder
         eq(self.glob('a*'), map(self.norm, ['a', 'aab', 'aaa']))
         eq(self.glob('*a'), map(self.norm, ['a', 'aaa']))
+        eq(self.glob('.*'), map(self.norm, ['.aa', '.bb']))
+        eq(self.glob('?aa'), map(self.norm, ['aaa']))
         eq(self.glob('aa?'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('aa[ab]'), map(self.norm, ['aaa', 'aab']))
         eq(self.glob('*q'), [])
