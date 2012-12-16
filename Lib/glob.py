@@ -62,7 +62,7 @@ def glob1(dirname, pattern):
     return fnmatch.filter(names, pattern)
 
 def glob0(dirname, basename):
-    if basename == '':
+    if not basename:
         # `os.path.split()` returns an empty basename for paths ending with a
         # directory separator.  'q*x/' should match only directories.
         if os.path.isdir(dirname):
