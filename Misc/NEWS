@@ -626,6 +626,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #14901: Update portions of the Windows FAQ.
+  Patch by Ashish Nitin Patil.
+
 - Issue #15990: Improve argument/parameter documentation.
 
 - Issue #16400: Update the description of which versions of a given package
