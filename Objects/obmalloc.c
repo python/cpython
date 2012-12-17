@@ -1316,6 +1316,13 @@ PyObject_Free(void *p)
 {
     PyMem_FREE(p);
 }
+
+Py_ssize_t
+_Py_GetAllocatedBlocks(void)
+{
+    return 0;
+}
+
 #endif /* WITH_PYMALLOC */
 
 #ifdef PYMALLOC_DEBUG

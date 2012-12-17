@@ -396,15 +396,16 @@ always available.
 .. function:: getallocatedblocks()
 
    Return the number of memory blocks currently allocated by the interpreter,
-   regardless of their size.  This function is mainly useful for debugging
-   small memory leaks.  Because of the interpreter's internal caches, the
-   result can vary from call to call; you may have to call
-   :func:`_clear_type_cache()` to get more predictable results.
+   regardless of their size.  This function is mainly useful for tracking
+   and debugging memory leaks.  Because of the interpreter's internal
+   caches, the result can vary from call to call; you may have to call
+   :func:`_clear_type_cache()` and :func:`gc.collect()` to get more
+   predictable results.
+
+   If a Python build or implementation cannot reasonably compute this
+   information, :func:`getallocatedblocks()` is allowed to return 0 instead.
 
    .. versionadded:: 3.4
-
-   .. impl-detail::
-      Not all Python implementations may be able to return this information.
 
 
 .. function:: getcheckinterval()
