@@ -32,7 +32,7 @@ class SelectTestCase(unittest.TestCase):
             fp.close()
             try:
                 select.select([fd], [], [], 0)
-            except select.error as err:
+            except OSError as err:
                 self.assertEqual(err.errno, errno.EBADF)
             else:
                 self.fail("exception not raised")

@@ -773,7 +773,7 @@ if threading:
             """
             try:
                 asyncore.loop(poll_interval, map=self.sockmap)
-            except select.error:
+            except OSError:
                 # On FreeBSD 8, closing the server repeatably
                 # raises this error. We swallow it if the
                 # server has been closed.
