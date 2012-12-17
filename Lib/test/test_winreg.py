@@ -97,7 +97,7 @@ class BaseWinregTests(unittest.TestCase):
             QueryInfoKey(int_sub_key)
             self.fail("It appears the CloseKey() function does "
                       "not close the actual key!")
-        except EnvironmentError:
+        except OSError:
             pass
         # ... and close that key that way :-)
         int_key = int(key)
@@ -106,7 +106,7 @@ class BaseWinregTests(unittest.TestCase):
             QueryInfoKey(int_key)
             self.fail("It appears the key.Close() function "
                       "does not close the actual key!")
-        except EnvironmentError:
+        except OSError:
             pass
 
     def _read_test_data(self, root_key, subkeystr="sub_key", OpenKey=OpenKey):
@@ -123,7 +123,7 @@ class BaseWinregTests(unittest.TestCase):
             while 1:
                 try:
                     data = EnumValue(sub_key, index)
-                except EnvironmentError:
+                except OSError:
                     break
                 self.assertEqual(data in test_data, True,
                                  "Didn't read back the correct test data")
@@ -144,7 +144,7 @@ class BaseWinregTests(unittest.TestCase):
         try:
             EnumKey(key, 1)
             self.fail("Was able to get a second key when I only have one!")
-        except EnvironmentError:
+        except OSError:
             pass
 
         key.Close()
@@ -168,7 +168,7 @@ class BaseWinregTests(unittest.TestCase):
             # Shouldnt be able to delete it twice!
             DeleteKey(key, subkeystr)
             self.fail("Deleting the key twice succeeded")
-        except EnvironmentError:
+        except OSError:
             pass
         key.Close()
         DeleteKey(root_key, test_key_name)

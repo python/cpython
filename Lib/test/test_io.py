@@ -2825,7 +2825,7 @@ class MiscIOTest(unittest.TestCase):
             for fd in fds:
                 try:
                     os.close(fd)
-                except EnvironmentError as e:
+                except OSError as e:
                     if e.errno != errno.EBADF:
                         raise
         self.addCleanup(cleanup_fds)

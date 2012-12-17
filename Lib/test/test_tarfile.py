@@ -342,7 +342,7 @@ class MiscReadTest(CommonReadTest):
             tar.extract("ustar/regtype", TEMPDIR)
             try:
                 tar.extract("ustar/lnktype", TEMPDIR)
-            except EnvironmentError as e:
+            except OSError as e:
                 if e.errno == errno.ENOENT:
                     self.fail("hardlink not extracted properly")
 
@@ -352,7 +352,7 @@ class MiscReadTest(CommonReadTest):
 
             try:
                 tar.extract("ustar/symtype", TEMPDIR)
-            except EnvironmentError as e:
+            except OSError as e:
                 if e.errno == errno.ENOENT:
                     self.fail("symlink not extracted properly")
 

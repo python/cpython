@@ -2022,7 +2022,7 @@ class TarFile(object):
         try:
             self._extract_member(tarinfo, os.path.join(path, tarinfo.name),
                                  set_attrs=set_attrs)
-        except EnvironmentError as e:
+        except OSError as e:
             if self.errorlevel > 0:
                 raise
             else:
@@ -2212,7 +2212,7 @@ class TarFile(object):
                     os.lchown(targetpath, u, g)
                 else:
                     os.chown(targetpath, u, g)
-            except EnvironmentError as e:
+            except OSError as e:
                 raise ExtractError("could not change owner")
 
     def chmod(self, tarinfo, targetpath):
@@ -2221,7 +2221,7 @@ class TarFile(object):
         if hasattr(os, 'chmod'):
             try:
                 os.chmod(targetpath, tarinfo.mode)
-            except EnvironmentError as e:
+            except OSError as e:
                 raise ExtractError("could not change mode")
 
     def utime(self, tarinfo, targetpath):
@@ -2231,7 +2231,7 @@ class TarFile(object):
             return
         try:
             os.utime(targetpath, (tarinfo.mtime, tarinfo.mtime))
-        except EnvironmentError as e:
+        except OSError as e:
             raise ExtractError("could not change modification time")
 
     #--------------------------------------------------------------------------

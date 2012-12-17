@@ -47,7 +47,7 @@ def unix_getpass(prompt='Password: ', stream=None):
         input = tty
         if not stream:
             stream = tty
-    except EnvironmentError as e:
+    except OSError as e:
         # If that fails, see if stdin can be controlled.
         try:
             fd = sys.stdin.fileno()

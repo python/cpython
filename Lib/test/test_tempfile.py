@@ -149,7 +149,7 @@ class TestRandomNameSequence(BaseTestCase):
                 # via any bugs above
                 try:
                     os.kill(pid, signal.SIGKILL)
-                except EnvironmentError:
+                except OSError:
                     pass
             os.close(read_fd)
             os.close(write_fd)
