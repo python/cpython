@@ -396,8 +396,6 @@ if mswindows:
         hStdOutput = None
         hStdError = None
         wShowWindow = 0
-    class pywintypes:
-        error = IOError
 else:
     import select
     _has_poll = hasattr(select, 'poll')
@@ -1102,12 +1100,6 @@ class Popen(object):
                                          env,
                                          cwd,
                                          startupinfo)
-            except pywintypes.error as e:
-                # Translate pywintypes.error to WindowsError, which is
-                # a subclass of OSError.  FIXME: We should really
-                # translate errno using _sys_errlist (or similar), but
-                # how can this be done from Python?
-                raise WindowsError(*e.args)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
                 # handles that only the child should have open.  You need
