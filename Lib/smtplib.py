@@ -920,13 +920,13 @@ class LMTP(SMTP):
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.file = None
             self.sock.connect(host)
-        except socket.error as msg:
+        except socket.error:
             if self.debuglevel > 0:
                 print('connect fail:', host, file=stderr)
             if self.sock:
                 self.sock.close()
             self.sock = None
-            raise socket.error(msg)
+            raise
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
             print('connect:', msg, file=stderr)
