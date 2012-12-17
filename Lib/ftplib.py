@@ -284,20 +284,24 @@ class FTP:
 
     def makeport(self):
         '''Create a new socket and send a PORT command for it.'''
-        msg = "getaddrinfo returns an empty list"
+        err = None
         sock = None
         for res in socket.getaddrinfo(None, 0, self.af, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
             af, socktype, proto, canonname, sa = res
             try:
                 sock = socket.socket(af, socktype, proto)
                 sock.bind(sa)
-            except socket.error as msg:
+            except socket.error as err:
                 if sock:
                     sock.close()
                 sock = None
                 continue
             break
-        if not sock:
+        if sock is None:
+            if err is not None:
+                raise err
+            else:
+                raise socket.error("getaddrinfo returns an empty list")
             raise socket.error(msg)
         sock.listen(1)
         port = sock.getsockname()[1] # Get proper port
