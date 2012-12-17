@@ -819,7 +819,7 @@ class Popen(object):
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
                 try:
                     f.close()
-                except EnvironmentError:
+                except OSError:
                     pass  # Ignore EBADF or other errors.
 
             # Make sure the child pipes are closed as well.
@@ -833,7 +833,7 @@ class Popen(object):
             for fd in to_close:
                 try:
                     os.close(fd)
-                except EnvironmentError:
+                except OSError:
                     pass
 
             raise

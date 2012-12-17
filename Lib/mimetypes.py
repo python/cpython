@@ -243,7 +243,7 @@ class MimeTypes:
             while True:
                 try:
                     ctype = _winreg.EnumKey(mimedb, i)
-                except EnvironmentError:
+                except OSError:
                     break
                 else:
                     yield ctype
@@ -256,7 +256,7 @@ class MimeTypes:
                     with _winreg.OpenKey(mimedb, ctype) as key:
                         suffix, datatype = _winreg.QueryValueEx(key,
                                                                 'Extension')
-                except EnvironmentError:
+                except OSError:
                     continue
                 if datatype != _winreg.REG_SZ:
                     continue

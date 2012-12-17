@@ -232,7 +232,7 @@ def urlcleanup():
     for temp_file in _url_tempfiles:
         try:
             os.unlink(temp_file)
-        except EnvironmentError:
+        except OSError:
             pass
 
     del _url_tempfiles[:]

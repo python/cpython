@@ -39,20 +39,20 @@ __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "ignore_patterns", "chown", "which"]
            # disk_usage is added later, if available on the platform
 
-class Error(EnvironmentError):
+class Error(OSError):
     pass
 
 class SameFileError(Error):
     """Raised when source and destination are the same file."""
 
-class SpecialFileError(EnvironmentError):
+class SpecialFileError(OSError):
     """Raised when trying to do a kind of operation (e.g. copying) which is
     not supported on a special file (e.g. a named pipe)"""
 
-class ExecError(EnvironmentError):
+class ExecError(OSError):
     """Raised when a command could not be executed"""
 
-class ReadError(EnvironmentError):
+class ReadError(OSError):
     """Raised when an archive cannot be read"""
 
 class RegistryError(Exception):
@@ -329,7 +329,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
         # continue with other files
         except Error as err:
             errors.extend(err.args[0])
-        except EnvironmentError as why:
+        except OSError as why:
             errors.append((srcname, dstname, str(why)))
     try:
         copystat(src, dst)

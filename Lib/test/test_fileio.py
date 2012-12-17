@@ -285,7 +285,7 @@ class OtherFileTests(unittest.TestCase):
             if sys.platform != "win32":
                 try:
                     f = _FileIO("/dev/tty", "a")
-                except EnvironmentError:
+                except OSError:
                     # When run in a cron job there just aren't any
                     # ttys, so skip the test.  This also handles other
                     # OS'es that don't support /dev/tty.
