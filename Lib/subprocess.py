@@ -1614,7 +1614,7 @@ class Popen(object):
                     raise TimeoutExpired(self.args, orig_timeout)
                 try:
                     ready = poller.poll(timeout)
-                except select.error as e:
+                except OSError as e:
                     if e.args[0] == errno.EINTR:
                         continue
                     raise
@@ -1682,7 +1682,7 @@ class Popen(object):
                     (rlist, wlist, xlist) = \
                         select.select(self._read_set, self._write_set, [],
                                       timeout)
-                except select.error as e:
+                except OSError as e:
                     if e.args[0] == errno.EINTR:
                         continue
                     raise
