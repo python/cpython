@@ -1442,7 +1442,7 @@ Example:
 instantiated directly.  You need to derive a concrete subclass, and (at least)
 supply implementations of the standard :class:`tzinfo` methods needed by the
 :class:`.datetime` methods you use.  The :mod:`datetime` module supplies
-a simple concrete subclass of :class:`tzinfo` :class:`timezone` which can reprsent
+a simple concrete subclass of :class:`tzinfo` :class:`timezone` which can represent
 timezones with fixed offset from UTC such as UTC itself or North American EST and
 EDT.
 
