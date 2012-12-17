@@ -7,6 +7,7 @@ import warnings
 import operator
 import codecs
 import gc
+import sysconfig
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
@@ -616,9 +617,13 @@ class SysModuleTest(unittest.TestCase):
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
         # Some sanity checks
+        with_pymalloc = sysconfig.get_config_var('WITH_PYMALLOC')
         a = sys.getallocatedblocks()
         self.assertIs(type(a), int)
-        self.assertGreater(a, 0)
+        if with_pymalloc:
+            self.assertGreater(a, 0)
+        else:
+            self.assertEqual(a, 0)
         try:
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
