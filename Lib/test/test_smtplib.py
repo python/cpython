@@ -542,9 +542,9 @@ class NonConnectingTests(unittest.TestCase):
 
     def testNonnumericPort(self):
         # check that non-numeric port raises socket.error
-        self.assertRaises(mock_socket.error, smtplib.SMTP,
+        self.assertRaises(OSError, smtplib.SMTP,
                           "localhost", "bogus")
-        self.assertRaises(mock_socket.error, smtplib.SMTP,
+        self.assertRaises(OSError, smtplib.SMTP,
                           "localhost:bogus")
 
 

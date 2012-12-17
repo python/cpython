@@ -140,12 +140,8 @@ def gethostbyname(name):
     return ""
 
 
-class gaierror(Exception):
-    pass
-
-
-class error(Exception):
-    pass
+gaierror = socket_module.gaierror
+error = socket_module.error
 
 
 # Constants
