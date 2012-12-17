@@ -524,12 +524,6 @@ class DebuggingServerTests(unittest.TestCase):
 
 class NonConnectingTests(unittest.TestCase):
 
-    def setUp(self):
-        smtplib.socket = mock_socket
-
-    def tearDown(self):
-        smtplib.socket = socket
-
     def testNotConnected(self):
         # Test various operations on an unconnected SMTP object that
         # should raise exceptions (at present the attempt in SMTP.send
