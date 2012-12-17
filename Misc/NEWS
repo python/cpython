@@ -529,6 +529,9 @@ Build
 Documentation
 -------------
 
+- Issue #14901: Update portions of the Windows FAQ.
+  Patch by Ashish Nitin Patil.
+
 - Issue #16267: Better document the 3.3+ approach to combining
   @abstractmethod with @staticmethod, @classmethod and @property
 
