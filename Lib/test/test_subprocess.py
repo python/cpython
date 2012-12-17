@@ -925,8 +925,7 @@ class ProcessTestCase(BaseTestCase):
         # value for that limit, but Windows has 2048, so we loop
         # 1024 times (each call leaked two fds).
         for i in range(1024):
-            # Windows raises IOError.  Others raise OSError.
-            with self.assertRaises(EnvironmentError) as c:
+            with self.assertRaises(OSError) as c:
                 subprocess.Popen(['nonexisting_i_hope'],
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
@@ -1874,7 +1873,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
         time.sleep(0.2)
-        with self.assertRaises(EnvironmentError) as c:
+        with self.assertRaises(OSError) as c:
             with subprocess.Popen(['nonexisting_i_hope'],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
@@ -2155,7 +2154,7 @@ class ContextManagerTests(BaseTestCase):
             self.assertEqual(proc.returncode, 1)
 
     def test_invalid_args(self):
-        with self.assertRaises(EnvironmentError) as c:
+        with self.assertRaises(OSError) as c:
             with subprocess.Popen(['nonexisting_i_hope'],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:

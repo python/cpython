@@ -33,7 +33,7 @@ def exit_subprocess():
 def ignoring_eintr(__func, *args, **kwargs):
     try:
         return __func(*args, **kwargs)
-    except EnvironmentError as e:
+    except OSError as e:
         if e.errno != errno.EINTR:
             raise
         return None

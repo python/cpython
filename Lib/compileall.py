@@ -209,7 +209,7 @@ def main():
             with (sys.stdin if args.flist=='-' else open(args.flist)) as f:
                 for line in f:
                     compile_dests.append(line.strip())
-        except EnvironmentError:
+        except OSError:
             print("Error reading file list {}".format(args.flist))
             return False
 

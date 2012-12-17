@@ -216,7 +216,7 @@ class OtherNetworkTests(unittest.TestCase):
                 debug(url)
                 try:
                     f = urlopen(url, req, TIMEOUT)
-                except EnvironmentError as err:
+                except OSError as err:
                     debug(err)
                     if expected_err:
                         msg = ("Didn't get expected error(s) %s for %s %s, got %s: %s" %
