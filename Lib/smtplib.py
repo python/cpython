@@ -818,13 +818,13 @@ class LMTP(SMTP):
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self.sock.connect(host)
-        except socket.error, msg:
+        except socket.error:
             if self.debuglevel > 0:
                 print>>stderr, 'connect fail:', host
             if self.sock:
                 self.sock.close()
             self.sock = None
-            raise socket.error, msg
+            raise
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
             print>>stderr, "connect:", msg
