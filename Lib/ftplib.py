@@ -295,7 +295,8 @@ class FTP:
             try:
                 sock = socket.socket(af, socktype, proto)
                 sock.bind(sa)
-            except socket.error as err:
+            except socket.error as _:
+                err = _
                 if sock:
                     sock.close()
                 sock = None
