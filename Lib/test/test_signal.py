@@ -299,10 +299,10 @@ class WakeupSignalTests(unittest.TestCase):
             # We attempt to get a signal during the select call
             try:
                 select.select([read], [], [], TIMEOUT_FULL)
-            except select.error:
+            except OSError:
                 pass
             else:
-                raise Exception("select.error not raised")
+                raise Exception("OSError not raised")
             after_time = time.time()
             dt = after_time - before_time
             if dt >= TIMEOUT_HALF:
