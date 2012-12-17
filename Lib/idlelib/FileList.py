@@ -103,7 +103,7 @@ class FileList:
         if not os.path.isabs(filename):
             try:
                 pwd = os.getcwd()
-            except os.error:
+            except OSError:
                 pass
             else:
                 filename = os.path.join(pwd, filename)

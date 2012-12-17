@@ -166,7 +166,7 @@ class FileDialog:
         dir, pat = self.get_filter()
         try:
             names = os.listdir(dir)
-        except os.error:
+        except OSError:
             self.master.bell()
             return
         self.directory = dir
@@ -209,7 +209,7 @@ class FileDialog:
         if not os.path.isabs(dir):
             try:
                 pwd = os.getcwd()
-            except os.error:
+            except OSError:
                 pwd = None
             if pwd:
                 dir = os.path.join(pwd, dir)

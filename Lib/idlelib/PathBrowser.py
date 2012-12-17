@@ -45,7 +45,7 @@ class DirBrowserTreeItem(TreeItem):
     def GetSubList(self):
         try:
             names = os.listdir(self.dir or os.curdir)
-        except os.error:
+        except OSError:
             return []
         packages = []
         for name in names:
