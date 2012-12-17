@@ -167,6 +167,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16646: ftplib.FTP.makeport() might lose socket error details.
+  (patch by Serhiy Storchaka)
+
 - Issue #16626: Fix infinite recursion in glob.glob() on Windows when the
   pattern contains a wildcard in the drive or UNC path.  Patch by Serhiy
   Storchaka.
