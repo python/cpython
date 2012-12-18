@@ -68,6 +68,7 @@ class Finder:
         # Simulate some thread-unsafe behaviour. If calls to find_module()
         # are properly serialized, `x` will end up the same as `numcalls`.
         # Otherwise not.
+        assert imp.lock_held()
         with self.lock:
             self.numcalls += 1
         x = self.x
