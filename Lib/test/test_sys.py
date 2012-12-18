@@ -623,7 +623,10 @@ class SysModuleTest(unittest.TestCase):
         if with_pymalloc:
             self.assertGreater(a, 0)
         else:
-            self.assertEqual(a, 0)
+            # When WITH_PYMALLOC isn't available, we don't know anything
+            # about the underlying implementation: the function might
+            # return 0 or something greater.
+            self.assertGreaterEqual(a, 0)
         try:
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
