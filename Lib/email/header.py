@@ -280,7 +280,7 @@ class Header:
             else:
                 s = s.decode(input_charset, errors)
         # Ensure that the bytes we're storing can be decoded to the output
-        # character set, otherwise an early error is thrown.
+        # character set, otherwise an early error is raised.
         output_charset = charset.output_codec or 'us-ascii'
         if output_charset != _charset.UNKNOWN8BIT:
             try:

@@ -873,7 +873,7 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(data, mode="w") as zipf:
             zipf.writestr("foo.txt", "O, for a Muse of Fire!")
 
-        # This is correct; calling .read on a closed ZipFile should throw
+        # This is correct; calling .read on a closed ZipFile should raise
         # a RuntimeError, and so should calling .testzip.  An earlier
         # version of .testzip would swallow this exception (and any other)
         # and report that the first file in the archive was corrupt.

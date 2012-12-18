@@ -415,7 +415,7 @@ class SourceLoader(_LoaderBasics):
                 source_mtime is not None):
             # If e.g. Jython ever implements imp.cache_from_source to have
             # their own cached file format, this block of code will most likely
-            # throw an exception.
+            # raise an exception.
             data = bytearray(imp.get_magic())
             data.extend(marshal._w_long(source_mtime))
             data.extend(marshal.dumps(code_object))
