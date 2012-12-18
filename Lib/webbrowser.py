@@ -418,7 +418,7 @@ class Grail(BaseBrowser):
             # need to PING each one until we find one that's live
             try:
                 s.connect(fn)
-            except socket.error:
+            except OSError:
                 # no good; attempt to clean it out, but don't fail:
                 try:
                     os.unlink(fn)

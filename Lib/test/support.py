@@ -496,7 +496,7 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     the SO_REUSEADDR socket option having different semantics on Windows versus
     Unix/Linux.  On Unix, you can't have two AF_INET SOCK_STREAM sockets bind,
     listen and then accept connections on identical host/ports.  An EADDRINUSE
-    socket.error will be raised at some point (depending on the platform and
+    OSError will be raised at some point (depending on the platform and
     the order bind and listen were called on each socket).
 
     However, on Windows, if SO_REUSEADDR is set on the sockets, no EADDRINUSE
@@ -570,7 +570,7 @@ def _is_ipv6_enabled():
             sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             sock.bind(('::1', 0))
             return True
-        except (socket.error, socket.gaierror):
+        except OSError:
             pass
         finally:
             if sock:
@@ -1098,7 +1098,7 @@ class TransientResource(object):
 # with the Internet connection manifest themselves as exceptions.
 # XXX deprecate these and use transient_internet() instead
 time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
-socket_peer_reset = TransientResource(socket.error, errno=errno.ECONNRESET)
+socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
 
 

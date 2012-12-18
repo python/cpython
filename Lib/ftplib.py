@@ -123,7 +123,7 @@ class FTP:
         if self.sock is not None:
             try:
                 self.quit()
-            except (socket.error, EOFError):
+            except (OSError, EOFError):
                 pass
             finally:
                 if self.sock is not None:
@@ -295,7 +295,7 @@ class FTP:
             try:
                 sock = socket.socket(af, socktype, proto)
                 sock.bind(sa)
-            except socket.error as _:
+            except OSError as _:
                 err = _
                 if sock:
                     sock.close()
@@ -306,8 +306,8 @@ class FTP:
             if err is not None:
                 raise err
             else:
-                raise socket.error("getaddrinfo returns an empty list")
-            raise socket.error(msg)
+                raise OSError("getaddrinfo returns an empty list")
+            raise OSError(msg)
         sock.listen(1)
         port = sock.getsockname()[1] # Get proper port
         host = self.sock.getsockname()[0] # Get proper host

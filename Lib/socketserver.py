@@ -299,7 +299,7 @@ class BaseServer:
         """
         try:
             request, client_address = self.get_request()
-        except socket.error:
+        except OSError:
             return
         if self.verify_request(request, client_address):
             try:
@@ -479,7 +479,7 @@ class TCPServer(BaseServer):
             #explicitly shutdown.  socket.close() merely releases
             #the socket and waits for GC to perform the actual close.
             request.shutdown(socket.SHUT_WR)
-        except socket.error:
+        except OSError:
             pass #some platforms may raise ENOTCONN here
         self.close_request(request)
 

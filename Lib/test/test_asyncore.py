@@ -756,7 +756,7 @@ class BaseTestAPI(unittest.TestCase):
         s2 = asyncore.dispatcher()
         s2.create_socket(self.family)
         # EADDRINUSE indicates the socket was correctly bound
-        self.assertRaises(socket.error, s2.bind, (self.addr[0], port))
+        self.assertRaises(OSError, s2.bind, (self.addr[0], port))
 
     def test_set_reuse_addr(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:
@@ -764,7 +764,7 @@ class BaseTestAPI(unittest.TestCase):
         sock = socket.socket(self.family)
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        except socket.error:
+        except OSError:
             unittest.skip("SO_REUSEADDR not supported on this platform")
         else:
             # if SO_REUSEADDR succeeded for sock we expect asyncore
@@ -797,7 +797,7 @@ class BaseTestAPI(unittest.TestCase):
                          struct.pack('ii', 1, 0))
             try:
                 s.connect(server.address)
-            except socket.error:
+            except OSError:
                 pass
             finally:
                 s.close()

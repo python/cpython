@@ -199,7 +199,7 @@ class SocketIO(object):
             raise
         except KeyboardInterrupt:
             raise
-        except socket.error:
+        except OSError:
             raise
         except Exception as ex:
             return ("CALLEXC", ex)
@@ -340,7 +340,7 @@ class SocketIO(object):
                 n = self.sock.send(s[:BUFSIZE])
             except (AttributeError, TypeError):
                 raise IOError("socket no longer exists")
-            except socket.error:
+            except OSError:
                 raise
             else:
                 s = s[n:]
@@ -357,7 +357,7 @@ class SocketIO(object):
                 return None
             try:
                 s = self.sock.recv(BUFSIZE)
-            except socket.error:
+            except OSError:
                 raise EOFError
             if len(s) == 0:
                 raise EOFError
@@ -537,7 +537,7 @@ class RPCClient(SocketIO):
             SocketIO.__init__(self, working_sock)
         else:
             print("** Invalid host: ", address, file=sys.__stderr__)
-            raise socket.error
+            raise OSError
 
     def get_remote_proxy(self, oid):
         return RPCProxy(self, oid)

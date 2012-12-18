@@ -94,7 +94,7 @@ class TestKQueue(unittest.TestCase):
         client.setblocking(False)
         try:
             client.connect(('127.0.0.1', serverSocket.getsockname()[1]))
-        except socket.error as e:
+        except OSError as e:
             self.assertEqual(e.args[0], errno.EINPROGRESS)
         else:
             #raise AssertionError("Connect should have raised EINPROGRESS")

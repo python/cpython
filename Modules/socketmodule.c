@@ -15,7 +15,7 @@ Limitations:
 
 Module interface:
 
-- socket.error: exception raised for socket specific errors
+- socket.error: exception raised for socket specific errors, alias for OSError
 - socket.gaierror: exception raised for getaddrinfo/getnameinfo errors,
     a subclass of socket.error
 - socket.herror: exception raised for gethostby* errors,
