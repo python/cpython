@@ -356,24 +356,24 @@ def _rmtree_unsafe(path, onerror):
     names = []
     try:
         names = os.listdir(path)
-    except os.error:
+    except OSError:
         onerror(os.listdir, path, sys.exc_info())
     for name in names:
         fullname = os.path.join(path, name)
         try:
             mode = os.lstat(fullname).st_mode
-        except os.error:
+        except OSError:
             mode = 0
         if stat.S_ISDIR(mode):
             _rmtree_unsafe(fullname, onerror)
         else:
             try:
                 os.unlink(fullname)
-            except os.error:
+            except OSError:
                 onerror(os.unlink, fullname, sys.exc_info())
     try:
         os.rmdir(path)
-    except os.error:
+    except OSError:
         onerror(os.rmdir, path, sys.exc_info())
 
 # Version using fd-based APIs to protect against races
@@ -464,7 +464,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
                 _rmtree_safe_fd(fd, path, onerror)
                 try:
                     os.rmdir(path)
-                except os.error:
+                except OSError:
                     onerror(os.rmdir, path, sys.exc_info())
             else:
                 try:

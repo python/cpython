@@ -188,7 +188,7 @@ class TestCandidateTempdirList(BaseTestCase):
 
             try:
                 dirname = os.getcwd()
-            except (AttributeError, os.error):
+            except (AttributeError, OSError):
                 dirname = os.curdir
 
             self.assertIn(dirname, cand)
@@ -924,7 +924,7 @@ class TestTemporaryDirectory(BaseTestCase):
         # (noted as part of Issue #10188)
         with tempfile.TemporaryDirectory() as nonexistent:
             pass
-        with self.assertRaises(os.error):
+        with self.assertRaises(OSError):
             tempfile.TemporaryDirectory(dir=nonexistent)
 
     def test_explicit_cleanup(self):

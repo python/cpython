@@ -228,7 +228,7 @@ class ModuleFinder:
         for dir in m.__path__:
             try:
                 names = os.listdir(dir)
-            except os.error:
+            except OSError:
                 self.msg(2, "can't list directory", dir)
                 continue
             for name in names:

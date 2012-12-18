@@ -100,12 +100,12 @@ class _Database(collections.MutableMapping):
 
         try:
             self._os.unlink(self._bakfile)
-        except self._os.error:
+        except OSError:
             pass
 
         try:
             self._os.rename(self._dirfile, self._bakfile)
-        except self._os.error:
+        except OSError:
             pass
 
         f = self._io.open(self._dirfile, 'w', encoding="Latin-1")

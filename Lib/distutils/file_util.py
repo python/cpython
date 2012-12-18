@@ -27,26 +27,26 @@ def _copy_file_contents(src, dst, buffer_size=16*1024):
     try:
         try:
             fsrc = open(src, 'rb')
-        except os.error as e:
+        except OSError as e:
             raise DistutilsFileError("could not open '%s': %s" % (src, e.strerror))
 
         if os.path.exists(dst):
             try:
                 os.unlink(dst)
-            except os.error as e:
+            except OSError as e:
                 raise DistutilsFileError(
                       "could not delete '%s': %s" % (dst, e.strerror))
 
         try:
             fdst = open(dst, 'wb')
-        except os.error as e:
+        except OSError as e:
             raise DistutilsFileError(
                   "could not create '%s': %s" % (dst, e.strerror))
 
         while True:
             try:
                 buf = fsrc.read(buffer_size)
-            except os.error as e:
+            except OSError as e:
                 raise DistutilsFileError(
                       "could not read from '%s': %s" % (src, e.strerror))
 
@@ -55,7 +55,7 @@ def _copy_file_contents(src, dst, buffer_size=16*1024):
 
             try:
                 fdst.write(buf)
-            except os.error as e:
+            except OSError as e:
                 raise DistutilsFileError(
                       "could not write to '%s': %s" % (dst, e.strerror))
     finally:
@@ -193,7 +193,7 @@ def move_file (src, dst,
     copy_it = False
     try:
         os.rename(src, dst)
-    except os.error as e:
+    except OSError as e:
         (num, msg) = e
         if num == errno.EXDEV:
             copy_it = True
@@ -205,11 +205,11 @@ def move_file (src, dst,
         copy_file(src, dst, verbose=verbose)
         try:
             os.unlink(src)
-        except os.error as e:
+        except OSError as e:
             (num, msg) = e
             try:
                 os.unlink(dst)
-            except os.error:
+            except OSError:
                 pass
             raise DistutilsFileError(
                   "couldn't move '%s' to '%s' by copy/delete: "

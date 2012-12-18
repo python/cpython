@@ -665,7 +665,6 @@ class TemporaryDirectory(object):
     _islink = staticmethod(_os.path.islink)
     _remove = staticmethod(_os.remove)
     _rmdir = staticmethod(_os.rmdir)
-    _os_error = OSError
     _warn = _warnings.warn
 
     def _rmtree(self, path):
@@ -675,16 +674,16 @@ class TemporaryDirectory(object):
             fullname = self._path_join(path, name)
             try:
                 isdir = self._isdir(fullname) and not self._islink(fullname)
-            except self._os_error:
+            except OSError:
                 isdir = False
             if isdir:
                 self._rmtree(fullname)
             else:
                 try:
                     self._remove(fullname)
-                except self._os_error:
+                except OSError:
                     pass
         try:
             self._rmdir(path)
-        except self._os_error:
+        except OSError:
             pass

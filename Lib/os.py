@@ -338,7 +338,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     By default errors from the os.listdir() call are ignored.  If
     optional arg 'onerror' is specified, it should be a function; it
-    will be called with one argument, an os.error instance.  It can
+    will be called with one argument, an OSError instance.  It can
     report the error to continue with the walk, or raise the exception
     to abort the walk.  Note that the filename is available as the
     filename attribute of the exception object.

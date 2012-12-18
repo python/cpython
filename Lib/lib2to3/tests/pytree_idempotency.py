@@ -53,7 +53,7 @@ def main():
     for dir in sys.path:
         try:
             names = os.listdir(dir)
-        except os.error:
+        except OSError:
             continue
         print("Scanning", dir, "...", file=sys.stderr)
         for name in names:
