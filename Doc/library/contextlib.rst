@@ -184,7 +184,7 @@ Functions and classes provided:
           files = [stack.enter_context(open(fname)) for fname in filenames]
           # All opened files will automatically be closed at the end of
           # the with statement, even if attempts to open files later
-          # in the list throw an exception
+          # in the list raise an exception
 
    Each instance maintains a stack of registered callbacks that are called in
    reverse order when the instance is closed (either explicitly or implicitly

@@ -149,7 +149,7 @@ def _tkerror(err):
     pass
 
 def _exit(code=0):
-    """Internal function. Calling it will throw the exception SystemExit."""
+    """Internal function. Calling it will raise the exception SystemExit."""
     try:
         code = int(code)
     except ValueError:

@@ -253,7 +253,7 @@ behave slightly differently from real Capsules.  Specifically:
 
   * :c:func:`PyCapsule_GetName` always returns NULL.
 
-  * :c:func:`PyCapsule_SetName` always throws an exception and
+  * :c:func:`PyCapsule_SetName` always raises an exception and
     returns failure.  (Since there's no way to store a name
     in a CObject, noisy failure of :c:func:`PyCapsule_SetName`
     was deemed preferable to silent failure here.  If this is
