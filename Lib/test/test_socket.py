@@ -3305,7 +3305,14 @@ class RecvmsgSCTPStreamTest(RecvmsgTests, RecvmsgGenericStreamTests,
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class RecvmsgIntoSCTPStreamTest(RecvmsgIntoTests, RecvmsgGenericStreamTests,
                                 SendrecvmsgSCTPStreamTestBase):
-    pass
+
+    def testRecvmsgEOF(self):
+        try:
+            super(RecvmsgIntoSCTPStreamTest, self).testRecvmsgEOF()
+        except OSError as e:
+            if e.errno != errno.ENOTCONN:
+                raise
+            self.skipTest("sporadic ENOTCONN (kernel issue?) - see issue #13876")
 
 
 class SendrecvmsgUnixStreamTestBase(SendrecvmsgConnectedBase,
