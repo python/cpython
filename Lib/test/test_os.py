@@ -214,33 +214,33 @@ class StatAttributeTests(unittest.TestCase):
 
         try:
             result[200]
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except IndexError:
             pass
 
         # Make sure that assignment fails
         try:
             result.st_mode = 1
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except (AttributeError, TypeError):
             pass
 
         try:
             result.st_rdev = 1
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except (AttributeError, TypeError):
             pass
 
         try:
             result.parrot = 1
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except AttributeError:
             pass
 
         # Use the stat_result constructor with a too-short tuple.
         try:
             result2 = os.stat_result((10,))
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except TypeError:
             pass
 
@@ -274,20 +274,20 @@ class StatAttributeTests(unittest.TestCase):
         # Make sure that assignment really fails
         try:
             result.f_bfree = 1
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except TypeError:
             pass
 
         try:
             result.parrot = 1
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except AttributeError:
             pass
 
         # Use the constructor with a too-short tuple.
         try:
             result2 = os.statvfs_result((10,))
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except TypeError:
             pass
 

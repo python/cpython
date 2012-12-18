@@ -100,7 +100,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertEqual(response.getheader("Content-type"), "text/html")
 
-        # Server throws an exception if we don't start to read the data
+        # Server raises an exception if we don't start to read the data
         response.read()
 
     def test_invalid_get_response(self):

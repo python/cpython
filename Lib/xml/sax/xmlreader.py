@@ -68,7 +68,7 @@ class XMLReader:
 
         SAX parsers are not required to provide localization for errors
         and warnings; if they cannot support the requested locale,
-        however, they must throw a SAX exception. Applications may
+        however, they must raise a SAX exception. Applications may
         request a locale change in the middle of a parse."""
         raise SAXNotSupportedException("Locale support not implemented")
 

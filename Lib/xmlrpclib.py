@@ -945,7 +945,7 @@ class _MultiCallMethod:
 
 class MultiCallIterator:
     """Iterates over the results of a multicall. Exceptions are
-    thrown in response to xmlrpc faults."""
+    raised in response to xmlrpc faults."""
 
     def __init__(self, results):
         self.results = results
