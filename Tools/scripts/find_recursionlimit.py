@@ -92,7 +92,7 @@ def test_cpickle(_cache={}):
 def test_compiler_recursion():
     # The compiler uses a scaling factor to support additional levels
     # of recursion. This is a sanity check of that scaling to ensure
-    # it still throws RuntimeError even at higher recursion limits
+    # it still raises RuntimeError even at higher recursion limits
     compile("()" * (10 * sys.getrecursionlimit()), "<single>", "single")
 
 def check_limit(n, test_func_name):

@@ -75,7 +75,7 @@ There's also a subclass for secure connections:
    :class:`ssl.SSLContext` object which allows bundling SSL configuration
    options, certificates and private keys into a single (potentially long-lived)
    structure. Note that the *keyfile*/*certfile* parameters are mutually exclusive with *ssl_context*,
-   a :class:`ValueError` is thrown if *keyfile*/*certfile* is provided along with *ssl_context*.
+   a :class:`ValueError` is raised if *keyfile*/*certfile* is provided along with *ssl_context*.
 
    .. versionchanged:: 3.3
       *ssl_context* parameter added.

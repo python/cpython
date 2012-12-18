@@ -245,7 +245,7 @@ class LocalWinregTests(BaseWinregTests):
 
     def test_changing_value(self):
         # Issue2810: A race condition in 2.6 and 3.1 may cause
-        # EnumValue or QueryValue to throw "WindowsError: More data is
+        # EnumValue or QueryValue to raise "WindowsError: More data is
         # available"
         done = False
 
@@ -291,7 +291,7 @@ class LocalWinregTests(BaseWinregTests):
 
     def test_dynamic_key(self):
         # Issue2810, when the value is dynamically generated, these
-        # throw "WindowsError: More data is available" in 2.6 and 3.1
+        # raise "WindowsError: More data is available" in 2.6 and 3.1
         try:
             EnumValue(HKEY_PERFORMANCE_DATA, 0)
         except OSError as e:

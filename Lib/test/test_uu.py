@@ -80,7 +80,7 @@ class UUTest(unittest.TestCase):
         out = io.BytesIO()
         try:
             uu.decode(inp, out)
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except uu.Error as e:
             self.assertEqual(str(e), "Truncated input file")
 
@@ -89,7 +89,7 @@ class UUTest(unittest.TestCase):
         out = io.BytesIO()
         try:
             uu.decode(inp, out)
-            self.fail("No exception thrown")
+            self.fail("No exception raised")
         except uu.Error as e:
             self.assertEqual(str(e), "No valid begin line found in input file")
 
