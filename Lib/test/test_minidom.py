@@ -1085,7 +1085,7 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(doc.toxml('iso-8859-15'),
             b'<?xml version="1.0" encoding="iso-8859-15"?><foo>\xa4</foo>')
 
-        # Verify that character decoding errors throw exceptions instead
+        # Verify that character decoding errors raise exceptions instead
         # of crashing
         self.assertRaises(UnicodeDecodeError, parseString,
                 b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')

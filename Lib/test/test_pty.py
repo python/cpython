@@ -152,7 +152,7 @@ class PtyTest(unittest.TestCase):
             # platform-dependent amount of data is written to its fd.  On
             # Linux 2.6, it's 4000 bytes and the child won't block, but on OS
             # X even the small writes in the child above will block it.  Also
-            # on Linux, the read() will throw an OSError (input/output error)
+            # on Linux, the read() will raise an OSError (input/output error)
             # when it tries to read past the end of the buffer but the child's
             # already exited, so catch and discard those exceptions.  It's not
             # worth checking for EIO.

@@ -39,7 +39,7 @@ class HandlingFromlist(unittest.TestCase):
 
     If a package is being imported, then what is listed in fromlist may be
     treated as a module to be imported [module]. But once again, even if
-    something in fromlist does not exist as a module, no error is thrown
+    something in fromlist does not exist as a module, no error is raised
     [no module]. And this extends to what is contained in __all__ when '*' is
     imported [using *]. And '*' does not need to be the only name in the
     fromlist [using * with others].
