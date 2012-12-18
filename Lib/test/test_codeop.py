@@ -50,7 +50,7 @@ class CodeopTests(unittest.TestCase):
         '''succeed iff str is the start of an invalid piece of code'''
         try:
             compile_command(str,symbol=symbol)
-            self.fail("No exception thrown for invalid code")
+            self.fail("No exception raised for invalid code")
         except SyntaxError:
             self.assertTrue(is_syntax)
         except OverflowError:

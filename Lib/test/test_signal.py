@@ -109,7 +109,7 @@ class InterProcessSignalTests(unittest.TestCase):
             # This wait should be interrupted by the signal's exception.
             self.wait(child)
             time.sleep(1)  # Give the signal time to be delivered.
-            self.fail('HandlerBCalled exception not thrown')
+            self.fail('HandlerBCalled exception not raised')
         except HandlerBCalled:
             self.assertTrue(self.b_called)
             self.assertFalse(self.a_called)
@@ -148,7 +148,7 @@ class InterProcessSignalTests(unittest.TestCase):
         # test-running process from all the signals. It then
         # communicates with that child process over a pipe and
         # re-raises information about any exceptions the child
-        # throws. The real work happens in self.run_test().
+        # raises. The real work happens in self.run_test().
         os_done_r, os_done_w = os.pipe()
         with closing(os.fdopen(os_done_r)) as done_r, \
              closing(os.fdopen(os_done_w, 'w')) as done_w:

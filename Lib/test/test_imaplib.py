@@ -79,7 +79,7 @@ class SimpleIMAPHandler(SocketServer.StreamRequestHandler):
                         return
                     line += part
                 except IOError:
-                    # ..but SSLSockets throw exceptions.
+                    # ..but SSLSockets raise exceptions.
                     return
                 if line.endswith('\r\n'):
                     break

@@ -294,7 +294,7 @@ class XmlgenTest(unittest.TestCase):
     def test_5027_1(self):
         # The xml prefix (as in xml:lang below) is reserved and bound by
         # definition to http://www.w3.org/XML/1998/namespace.  XMLGenerator had
-        # a bug whereby a KeyError is thrown because this namespace is missing
+        # a bug whereby a KeyError is raised because this namespace is missing
         # from a dictionary.
         #
         # This test demonstrates the bug by parsing a document.
@@ -320,7 +320,7 @@ class XmlgenTest(unittest.TestCase):
     def test_5027_2(self):
         # The xml prefix (as in xml:lang below) is reserved and bound by
         # definition to http://www.w3.org/XML/1998/namespace.  XMLGenerator had
-        # a bug whereby a KeyError is thrown because this namespace is missing
+        # a bug whereby a KeyError is raised because this namespace is missing
         # from a dictionary.
         #
         # This test demonstrates the bug by direct manipulation of the

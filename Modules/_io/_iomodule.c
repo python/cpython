@@ -59,7 +59,7 @@ PyDoc_STRVAR(module_doc,
 "At the top of the I/O hierarchy is the abstract base class IOBase. It\n"
 "defines the basic interface to a stream. Note, however, that there is no\n"
 "separation between reading and writing to streams; implementations are\n"
-"allowed to throw an IOError if they do not support a given operation.\n"
+"allowed to raise an IOError if they do not support a given operation.\n"
 "\n"
 "Extending IOBase is RawIOBase which deals simply with the reading and\n"
 "writing of raw bytes to a stream. FileIO subclasses RawIOBase to provide\n"

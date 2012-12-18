@@ -106,7 +106,7 @@ class TimeTestCase(unittest.TestCase):
 
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
-        # throwing an exception.
+        # raising an exception.
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
                           'j', 'm', 'M', 'p', 'S',
