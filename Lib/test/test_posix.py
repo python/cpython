@@ -824,7 +824,7 @@ class PosixTester(unittest.TestCase):
             posix.rename(support.TESTFN + 'ren', support.TESTFN)
             raise
         else:
-            posix.stat(support.TESTFN) # should not throw exception
+            posix.stat(support.TESTFN) # should not raise exception
         finally:
             posix.close(f)
 
@@ -842,7 +842,7 @@ class PosixTester(unittest.TestCase):
     def test_unlink_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         support.create_empty_file(support.TESTFN + 'del')
-        posix.stat(support.TESTFN + 'del') # should not throw exception
+        posix.stat(support.TESTFN + 'del') # should not raise exception
         try:
             posix.unlink(support.TESTFN + 'del', dir_fd=f)
         except:
