@@ -135,8 +135,8 @@ def manage_socket(address):
         try:
             server = MyRPCServer(address, MyHandler)
             break
-        except socket.error as err:
-            print("IDLE Subprocess: socket error: " + err.args[1] +
+        except OSError as err:
+            print("IDLE Subprocess: OSError: " + err.args[1] +
                   ", retrying....", file=sys.__stderr__)
             socket_error = err
     else:

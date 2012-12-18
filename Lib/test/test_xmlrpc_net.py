@@ -18,7 +18,7 @@ class CurrentTimeTest(unittest.TestCase):
         server = xmlrpclib.ServerProxy("http://time.xmlrpc.com/RPC2")
         try:
             t0 = server.currentTime.getCurrentTime()
-        except socket.error as e:
+        except OSError as e:
             self.skipTest("network error: %s" % e)
             return
 
@@ -42,7 +42,7 @@ class CurrentTimeTest(unittest.TestCase):
         server = xmlrpclib.ServerProxy("http://buildbot.python.org/all/xmlrpc/")
         try:
             builders = server.getAllBuilders()
-        except socket.error as e:
+        except OSError as e:
             self.skipTest("network error: %s" % e)
             return
         self.addCleanup(lambda: server('close')())

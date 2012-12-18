@@ -213,15 +213,15 @@ class BasicSocketTests(unittest.TestCase):
 
     def test_wrapped_unconnected(self):
         # Methods on an unconnected SSLSocket propagate the original
-        # socket.error raise by the underlying socket object.
+        # OSError raise by the underlying socket object.
         s = socket.socket(socket.AF_INET)
         ss = ssl.wrap_socket(s)
-        self.assertRaises(socket.error, ss.recv, 1)
-        self.assertRaises(socket.error, ss.recv_into, bytearray(b'x'))
-        self.assertRaises(socket.error, ss.recvfrom, 1)
-        self.assertRaises(socket.error, ss.recvfrom_into, bytearray(b'x'), 1)
-        self.assertRaises(socket.error, ss.send, b'x')
-        self.assertRaises(socket.error, ss.sendto, b'x', ('0.0.0.0', 0))
+        self.assertRaises(OSError, ss.recv, 1)
+        self.assertRaises(OSError, ss.recv_into, bytearray(b'x'))
+        self.assertRaises(OSError, ss.recvfrom, 1)
+        self.assertRaises(OSError, ss.recvfrom_into, bytearray(b'x'), 1)
+        self.assertRaises(OSError, ss.send, b'x')
+        self.assertRaises(OSError, ss.sendto, b'x', ('0.0.0.0', 0))
 
     def test_timeout(self):
         # Issue #8524: when creating an SSL socket, the timeout of the
@@ -1012,7 +1012,7 @@ else:
                                 sys.stdout.write(" server: read %r (%s), sending back %r (%s)...\n"
                                                  % (msg, ctype, msg.lower(), ctype))
                             self.write(msg.lower())
-                    except socket.error:
+                    except OSError:
                         if self.server.chatty:
                             handle_error("Test server failure:\n")
                         self.close()
@@ -1122,7 +1122,7 @@ else:
                         return self.handle_close()
                     except ssl.SSLError:
                         raise
-                    except socket.error as err:
+                    except OSError as err:
                         if err.args[0] == errno.ECONNABORTED:
                             return self.handle_close()
                     else:
@@ -1226,9 +1226,9 @@ else:
             except ssl.SSLError as x:
                 if support.verbose:
                     sys.stdout.write("\nSSLError is %s\n" % x.args[1])
-            except socket.error as x:
+            except OSError as x:
                 if support.verbose:
-                    sys.stdout.write("\nsocket.error is %s\n" % x.args[1])
+                    sys.stdout.write("\nOSError is %s\n" % x.args[1])
             except IOError as x:
                 if x.errno != errno.ENOENT:
                     raise
@@ -1313,7 +1313,7 @@ else:
         except ssl.SSLError:
             if expect_success:
                 raise
-        except socket.error as e:
+        except OSError as e:
             if expect_success or e.errno != errno.ECONNRESET:
                 raise
         else:
@@ -1458,7 +1458,7 @@ else:
             if hasattr(ssl, 'PROTOCOL_SSLv2'):
                 try:
                     try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_SSLv2, True)
-                except (ssl.SSLError, socket.error) as x:
+                except OSError as x:
                     # this fails on some older versions of OpenSSL (0.9.7l, for instance)
                     if support.verbose:
                         sys.stdout.write(
@@ -1844,7 +1844,7 @@ else:
                                     chatty=False) as server:
                 with socket.socket() as sock:
                     s = context.wrap_socket(sock)
-                    with self.assertRaises((OSError, ssl.SSLError)):
+                    with self.assertRaises(OSError):
                         s.connect((HOST, server.port))
             self.assertIn("no shared cipher", str(server.conn_errors[0]))
 

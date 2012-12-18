@@ -569,7 +569,7 @@ class HandlerTest(BaseTest):
                 self.assertEqual(h.facility, h.LOG_USER)
                 self.assertTrue(h.unixsocket)
                 h.close()
-            except socket.error: # syslogd might not be available
+            except OSError: # syslogd might not be available
                 pass
         for method in ('GET', 'POST', 'PUT'):
             if method == 'PUT':
@@ -679,7 +679,7 @@ if threading:
             self.num_bytes = 0
             try:
                 self.peer = conn.getpeername()
-            except socket.error as err:
+            except OSError as err:
                 # a race condition  may occur if the other end is closing
                 # before we can get the peername
                 self.close()
@@ -880,7 +880,7 @@ if threading:
                 sock, addr = self.socket.accept()
                 if self.sslctx:
                     sock = self.sslctx.wrap_socket(sock, server_side=True)
-            except socket.error as e:
+            except OSError as e:
                 # socket errors are silenced by the caller, print them here
                 sys.stderr.write("Got an error:\n%s\n" % e)
                 raise
@@ -946,7 +946,7 @@ if threading:
                     if data:
                         try:
                             super(DelegatingUDPRequestHandler, self).finish()
-                        except socket.error:
+                        except OSError:
                             if not self.server._closed:
                                 raise
 

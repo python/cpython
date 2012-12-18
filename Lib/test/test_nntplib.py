@@ -264,7 +264,7 @@ class NetworkedNNTPTestsMixin:
                 return False
             try:
                 server.help()
-            except (socket.error, EOFError):
+            except (OSError, EOFError):
                 return False
             return True
 

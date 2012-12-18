@@ -1275,7 +1275,7 @@ class AbstractHTTPHandler(BaseHandler):
 
         try:
             h.request(req.get_method(), req.selector, req.data, headers)
-        except socket.error as err: # timeout error
+        except OSError as err: # timeout error
             h.close()
             raise URLError(err)
         else:
@@ -1480,7 +1480,7 @@ class FTPHandler(BaseHandler):
 
         try:
             host = socket.gethostbyname(host)
-        except socket.error as msg:
+        except OSError as msg:
             raise URLError(msg)
         path, attrs = splitattr(req.selector)
         dirs = path.split('/')
@@ -1721,7 +1721,7 @@ class URLopener:
                 return getattr(self, name)(url, data)
         except (HTTPError, URLError):
             raise
-        except socket.error as msg:
+        except OSError as msg:
             raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
 
     def open_unknown(self, fullurl, data=None):
@@ -2487,7 +2487,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
                 try:
                     hostIP = socket.gethostbyname(hostonly)
                     hostIP = ip2num(hostIP)
-                except socket.error:
+                except OSError:
                     continue
 
             base = ip2num(m.group(1))
@@ -2614,13 +2614,13 @@ elif os.name == 'nt':
             addr = socket.gethostbyname(rawHost)
             if addr != rawHost:
                 host.append(addr)
-        except socket.error:
+        except OSError:
             pass
         try:
             fqdn = socket.getfqdn(rawHost)
             if fqdn != rawHost:
                 host.append(fqdn)
-        except socket.error:
+        except OSError:
             pass
         # make a check value list from the registry entry: replace the
         # '<local>' string by the localhost entry and the corresponding

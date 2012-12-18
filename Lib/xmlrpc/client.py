@@ -1130,8 +1130,9 @@ class Transport:
         for i in (0, 1):
             try:
                 return self.single_request(host, handler, request_body, verbose)
-            except socket.error as e:
-                if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED, errno.EPIPE):
+            except OSError as e:
+                if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED,
+                                        errno.EPIPE):
                     raise
             except http.client.BadStatusLine: #close after we sent request
                 if i:

@@ -359,7 +359,7 @@ class _NNTPBase:
         if is_connected():
             try:
                 self.quit()
-            except (socket.error, EOFError):
+            except (OSError, EOFError):
                 pass
             finally:
                 if is_connected():

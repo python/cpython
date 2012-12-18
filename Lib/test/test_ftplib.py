@@ -321,7 +321,7 @@ if ssl is not None:
                 elif err.args[0] == ssl.SSL_ERROR_EOF:
                     return self.handle_close()
                 raise
-            except socket.error as err:
+            except OSError as err:
                 if err.args[0] == errno.ECONNABORTED:
                     return self.handle_close()
             else:
@@ -335,7 +335,7 @@ if ssl is not None:
                 if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
                                    ssl.SSL_ERROR_WANT_WRITE):
                     return
-            except socket.error as err:
+            except OSError as err:
                 # Any "socket error" corresponds to a SSL_ERROR_SYSCALL return
                 # from OpenSSL's SSL_shutdown(), corresponding to a
                 # closed socket condition. See also:
@@ -676,7 +676,7 @@ class TestFTPClass(TestCase):
                 return False
             try:
                 self.client.sendcmd('noop')
-            except (socket.error, EOFError):
+            except (OSError, EOFError):
                 return False
             return True
 

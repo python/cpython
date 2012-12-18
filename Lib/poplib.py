@@ -272,7 +272,7 @@ class POP3:
         if self.sock is not None:
             try:
                 self.sock.shutdown(socket.SHUT_RDWR)
-            except socket.error as e:
+            except OSError as e:
                 # The server might already have closed the connection
                 if e.errno != errno.ENOTCONN:
                     raise

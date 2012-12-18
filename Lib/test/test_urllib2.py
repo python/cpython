@@ -344,7 +344,7 @@ class MockHTTPClass:
             self.data = body
         if self.raise_on_endheaders:
             import socket
-            raise socket.error()
+            raise OSError()
     def getresponse(self):
         return MockHTTPResponse(MockFile(), {}, 200, "OK")
 
@@ -845,7 +845,7 @@ class HandlerTests(unittest.TestCase):
                               ("Foo", "bar"), ("Spam", "eggs")])
             self.assertEqual(http.data, data)
 
-        # check socket.error converted to URLError
+        # check OSError converted to URLError
         http.raise_on_endheaders = True
         self.assertRaises(urllib.error.URLError, h.do_open, http, req)
 
