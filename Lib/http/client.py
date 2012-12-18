@@ -791,8 +791,8 @@ class HTTPConnection:
 
         if code != 200:
             self.close()
-            raise socket.error("Tunnel connection failed: %d %s" % (code,
-                                                                    message.strip()))
+            raise OSError("Tunnel connection failed: %d %s" % (code,
+                                                               message.strip()))
         while True:
             line = response.fp.readline(_MAXLINE + 1)
             if len(line) > _MAXLINE:

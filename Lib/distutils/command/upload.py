@@ -186,7 +186,7 @@ class upload(PyPIRCCommand):
             http.putheader('Authorization', auth)
             http.endheaders()
             http.send(body)
-        except socket.error as e:
+        except OSError as e:
             self.announce(str(e), log.ERROR)
             return
 

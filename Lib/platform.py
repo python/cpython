@@ -882,7 +882,7 @@ def _node(default=''):
         return default
     try:
         return socket.gethostname()
-    except socket.error:
+    except OSError:
         # Still not working...
         return default
 

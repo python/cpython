@@ -45,7 +45,7 @@ class EPipeSocket(FakeSocket):
 
     def sendall(self, data):
         if self.pipe_trigger in data:
-            raise socket.error(errno.EPIPE, "gotcha")
+            raise OSError(errno.EPIPE, "gotcha")
         self.data += data
 
     def close(self):
@@ -515,7 +515,7 @@ class BasicTest(TestCase):
             b"Content-Length")
         conn = client.HTTPConnection("example.com")
         conn.sock = sock
-        self.assertRaises(socket.error,
+        self.assertRaises(OSError,
                           lambda: conn.request("PUT", "/url", "body"))
         resp = conn.getresponse()
         self.assertEqual(401, resp.status)

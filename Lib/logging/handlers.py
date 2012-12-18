@@ -514,7 +514,7 @@ class SocketHandler(logging.Handler):
             try:
                 self.sock = self.makeSocket()
                 self.retryTime = None # next time, no delay before trying
-            except socket.error:
+            except OSError:
                 #Creation failed, so set the retry time and return.
                 if self.retryTime is None:
                     self.retryPeriod = self.retryStart
@@ -539,7 +539,7 @@ class SocketHandler(logging.Handler):
         if self.sock:
             try:
                 self.sock.sendall(s)
-            except socket.error: #pragma: no cover
+            except OSError: #pragma: no cover
                 self.sock.close()
                 self.sock = None  # so we can call createSocket next time
 
@@ -775,7 +775,7 @@ class SysLogHandler(logging.Handler):
         self.socket = socket.socket(socket.AF_UNIX, self.socktype)
         try:
             self.socket.connect(address)
-        except socket.error:
+        except OSError:
             self.socket.close()
             raise
 
@@ -842,7 +842,7 @@ class SysLogHandler(logging.Handler):
             if self.unixsocket:
                 try:
                     self.socket.send(msg)
-                except socket.error:
+                except OSError:
                     self._connect_unixsocket(self.address)
                     self.socket.send(msg)
             elif self.socktype == socket.SOCK_DGRAM:

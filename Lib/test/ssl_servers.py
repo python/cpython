@@ -35,7 +35,7 @@ class HTTPSServer(_HTTPServer):
         try:
             sock, addr = self.socket.accept()
             sslconn = self.context.wrap_socket(sock, server_side=True)
-        except socket.error as e:
+        except OSError as e:
             # socket errors are silenced by the caller, print them here
             if support.verbose:
                 sys.stderr.write("Got an error:\n%s\n" % e)

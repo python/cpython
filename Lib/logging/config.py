@@ -844,7 +844,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                                 traceback.print_exc()
                     if self.server.ready:
                         self.server.ready.set()
-            except socket.error as e:
+            except OSError as e:
                 if not isinstance(e.args, tuple):
                     raise
                 else:

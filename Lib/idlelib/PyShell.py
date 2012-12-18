@@ -393,7 +393,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             try:
                 self.rpcclt = MyRPCClient(addr)
                 break
-            except socket.error as err:
+            except OSError as err:
                 pass
         else:
             self.display_port_binding_error()

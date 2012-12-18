@@ -109,11 +109,13 @@ else:
     _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
 
 from socket import getnameinfo as _getnameinfo
-from socket import error as socket_error
 from socket import socket, AF_INET, SOCK_STREAM, create_connection
 import base64        # for DER-to-PEM translation
 import traceback
 import errno
+
+
+socket_error = OSError  # keep that public name in module namespace
 
 if _ssl.HAS_TLS_UNIQUE:
     CHANNEL_BINDING_TYPES = ['tls-unique']
@@ -279,7 +281,7 @@ class SSLSocket(socket):
             # see if it's connected
             try:
                 sock.getpeername()
-            except socket_error as e:
+            except OSError as e:
                 if e.errno != errno.ENOTCONN:
                     raise
             else:
@@ -305,7 +307,7 @@ class SSLSocket(socket):
                         raise ValueError("do_handshake_on_connect should not be specified for non-blocking sockets")
                     self.do_handshake()
 
-            except socket_error as x:
+            except OSError as x:
                 self.close()
                 raise x
 
@@ -533,7 +535,7 @@ class SSLSocket(socket):
                     self.do_handshake()
                 self._connected = True
             return rc
-        except socket_error:
+        except OSError:
             self._sslobj = None
             raise
 

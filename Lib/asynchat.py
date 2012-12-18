@@ -114,7 +114,7 @@ class async_chat (asyncore.dispatcher):
 
         try:
             data = self.recv (self.ac_in_buffer_size)
-        except socket.error as why:
+        except OSError as why:
             self.handle_error()
             return
 
@@ -243,7 +243,7 @@ class async_chat (asyncore.dispatcher):
             # send the data
             try:
                 num_sent = self.send(data)
-            except socket.error:
+            except OSError:
                 self.handle_error()
                 return
 

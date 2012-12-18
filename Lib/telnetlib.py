@@ -273,7 +273,7 @@ class Telnet:
         """Write a string to the socket, doubling any IAC characters.
 
         Can block if the connection is blocked.  May raise
-        socket.error if the connection is closed.
+        OSError if the connection is closed.
 
         """
         if IAC in buffer:
