@@ -72,7 +72,7 @@ class Finder:
         with self.lock:
             self.numcalls += 1
         x = self.x
-        time.sleep(0.1)
+        time.sleep(0.01)
         self.x = x + 1
 
 class FlushingFinder:
@@ -117,7 +117,7 @@ class ThreadedImportTests(unittest.TestCase):
                 t = threading.Thread(target=task,
                                      args=(N, done, done_tasks, errors,))
                 t.start()
-            done.wait(60)
+            self.assertTrue(done.wait(60))
             self.assertFalse(errors)
             if verbose:
                 print("OK.")
