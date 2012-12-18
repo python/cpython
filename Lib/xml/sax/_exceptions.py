@@ -12,7 +12,7 @@ class SAXException(Exception):
     the application: you can subclass it to provide additional
     functionality, or to add localization. Note that although you will
     receive a SAXException as the argument to the handlers in the
-    ErrorHandler interface, you are not actually required to throw
+    ErrorHandler interface, you are not actually required to raise
     the exception; instead, you can simply read the information in
     it."""
 
@@ -50,7 +50,7 @@ class SAXParseException(SAXException):
     the original XML document. Note that although the application will
     receive a SAXParseException as the argument to the handlers in the
     ErrorHandler interface, the application is not actually required
-    to throw the exception; instead, it can simply read the
+    to raise the exception; instead, it can simply read the
     information in it and take a different action.
 
     Since this exception is a subclass of SAXException, it inherits
@@ -62,7 +62,7 @@ class SAXParseException(SAXException):
         self._locator = locator
 
         # We need to cache this stuff at construction time.
-        # If this exception is thrown, the objects through which we must
+        # If this exception is raised, the objects through which we must
         # traverse to get this information may be deleted by the time
         # it gets caught.
         self._systemId = self._locator.getSystemId()

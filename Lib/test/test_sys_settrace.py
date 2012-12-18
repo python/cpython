@@ -418,7 +418,7 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
                 except ValueError:
                     pass
                 else:
-                    self.fail("exception not thrown!")
+                    self.fail("exception not raised!")
         except RuntimeError:
             self.fail("recursion counter not reset")
 
