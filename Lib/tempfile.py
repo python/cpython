@@ -621,7 +621,7 @@ class TemporaryDirectory(object):
 
     def __init__(self, suffix="", prefix=template, dir=None):
         self._closed = False
-        self.name = None # Handle mkdtemp throwing an exception
+        self.name = None # Handle mkdtemp raising an exception
         self.name = mkdtemp(suffix, prefix, dir)
 
     def __repr__(self):

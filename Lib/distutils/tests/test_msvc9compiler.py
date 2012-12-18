@@ -104,7 +104,7 @@ class msvc9compilerTestCase(support.TempdirManager,
                             unittest.TestCase):
 
     def test_no_compiler(self):
-        # makes sure query_vcvarsall throws
+        # makes sure query_vcvarsall raises
         # a DistutilsPlatformError if the compiler
         # is not found
         from distutils.msvc9compiler import query_vcvarsall
