@@ -1251,7 +1251,7 @@ class Logger(Filterer):
         all the handlers of this logger to handle the record.
         """
         if _srcfile:
-            #IronPython doesn't track Python frames, so findCaller throws an
+            #IronPython doesn't track Python frames, so findCaller raises an
             #exception on some versions of IronPython. We trap it here so that
             #IronPython can use logging.
             try:

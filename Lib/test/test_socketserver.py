@@ -58,7 +58,7 @@ if HAVE_UNIX_SOCKETS:
 def simple_subprocess(testcase):
     pid = os.fork()
     if pid == 0:
-        # Don't throw an exception; it would be caught by the test harness.
+        # Don't raise an exception; it would be caught by the test harness.
         os._exit(72)
     yield None
     pid2, status = os.waitpid(pid, 0)
