@@ -200,7 +200,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         buffering = DEFAULT_BUFFER_SIZE
         try:
             bs = os.fstat(raw.fileno()).st_blksize
-        except (os.error, AttributeError):
+        except (OSError, AttributeError):
             pass
         else:
             if bs > 1:

@@ -532,7 +532,7 @@ class ForkingMixIn:
             # children.
             try:
                 pid, status = os.waitpid(0, 0)
-            except os.error:
+            except OSError:
                 pid = None
             if pid not in self.active_children: continue
             self.active_children.remove(pid)
@@ -545,7 +545,7 @@ class ForkingMixIn:
         for child in self.active_children:
             try:
                 pid, status = os.waitpid(child, os.WNOHANG)
-            except os.error:
+            except OSError:
                 pid = None
             if not pid: continue
             try:

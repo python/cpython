@@ -124,7 +124,7 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1,
               "cannot copy tree '%s': not a directory" % src)
     try:
         names = os.listdir(src)
-    except os.error as e:
+    except OSError as e:
         (errno, errstr) = e
         if dry_run:
             names = []

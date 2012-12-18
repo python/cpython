@@ -111,7 +111,7 @@ if sys.platform != 'win32':
             if self.returncode is None:
                 try:
                     pid, sts = os.waitpid(self.pid, flag)
-                except os.error:
+                except OSError:
                     # Child process not yet created. See #1731717
                     # e.errno == errno.ECHILD == 10
                     return None

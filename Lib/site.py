@@ -196,7 +196,7 @@ def addsitedir(sitedir, known_paths=None):
         known_paths.add(sitedircase)
     try:
         names = os.listdir(sitedir)
-    except os.error:
+    except OSError:
         return
     names = [name for name in names if name.endswith(".pth")]
     for name in sorted(names):

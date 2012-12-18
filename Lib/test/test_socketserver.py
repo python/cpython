@@ -82,7 +82,7 @@ class SocketServerTest(unittest.TestCase):
         for fn in self.test_files:
             try:
                 os.remove(fn)
-            except os.error:
+            except OSError:
                 pass
         self.test_files[:] = []
 

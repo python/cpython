@@ -316,7 +316,7 @@ def linux_distribution(distname='', version='', id='',
     """
     try:
         etc = os.listdir('/etc')
-    except os.error:
+    except OSError:
         # Probably not a Unix system
         return distname,version,id
     etc.sort()
@@ -424,10 +424,10 @@ def _syscmd_ver(system='', release='', version='',
             pipe = popen(cmd)
             info = pipe.read()
             if pipe.close():
-                raise os.error('command failed')
+                raise OSError('command failed')
             # XXX How can I suppress shell errors from being written
             #     to stderr ?
-        except os.error as why:
+        except OSError as why:
             #print 'Command %s failed: %s' % (cmd,why)
             continue
         except IOError as why:
@@ -906,7 +906,7 @@ def _syscmd_uname(option,default=''):
         return default
     try:
         f = os.popen('uname %s 2> %s' % (option, DEV_NULL))
-    except (AttributeError,os.error):
+    except (AttributeError, OSError):
         return default
     output = f.read().strip()
     rc = f.close()
@@ -932,7 +932,7 @@ def _syscmd_file(target,default=''):
         proc = subprocess.Popen(['file', target],
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    except (AttributeError,os.error):
+    except (AttributeError, OSError):
         return default
     output = proc.communicate()[0].decode('latin-1')
     rc = proc.wait()

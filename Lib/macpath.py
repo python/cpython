@@ -127,7 +127,7 @@ def lexists(path):
 
     try:
         st = os.lstat(path)
-    except os.error:
+    except OSError:
         return False
     return True
 

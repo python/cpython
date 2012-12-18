@@ -59,7 +59,7 @@ def checkcache(filename=None):
             continue   # no-op for files loaded via a __loader__
         try:
             stat = os.stat(fullname)
-        except os.error:
+        except OSError:
             del cache[filename]
             continue
         if size != stat.st_size or mtime != stat.st_mtime:
@@ -118,7 +118,7 @@ def updatecache(filename, module_globals=None):
             try:
                 stat = os.stat(fullname)
                 break
-            except os.error:
+            except OSError:
                 pass
         else:
             return []

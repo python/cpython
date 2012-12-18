@@ -38,7 +38,7 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
         print('Listing {!r}...'.format(dir))
     try:
         names = os.listdir(dir)
-    except os.error:
+    except OSError:
         print("Can't list {!r}".format(dir))
         names = []
     names.sort()

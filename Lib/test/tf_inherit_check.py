@@ -11,7 +11,7 @@ try:
 
     try:
         os.write(fd, b"blat")
-    except os.error:
+    except OSError:
         # Success -- could not write to fd.
         sys.exit(0)
     else:
