@@ -290,7 +290,7 @@ def _exit_function(info=info, debug=debug, _run_finalizers=_run_finalizers,
 
         if current_process() is not None:
             # We check if the current process is None here because if
-            # it's None, any call to ``active_children()`` will throw
+            # it's None, any call to ``active_children()`` will raise
             # an AttributeError (active_children winds up trying to
             # get attributes from util._current_process).  One
             # situation where this can happen is if someone has

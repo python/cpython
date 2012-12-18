@@ -1178,7 +1178,7 @@ if HAVE_SSL:
                 ssl_context - a SSLContext object that contains your certificate chain
                               and private key (default: None)
                 Note: if ssl_context is provided, then parameters keyfile or
-                certfile should not be set otherwise ValueError is thrown.
+                certfile should not be set otherwise ValueError is raised.
 
         for more documentation see the docstring of the parent class IMAP4.
         """

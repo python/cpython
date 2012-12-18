@@ -1171,7 +1171,7 @@ Querying the size of a terminal
    output) specifies which file descriptor should be queried.
 
    If the file descriptor is not connected to a terminal, an :exc:`OSError`
-   is thrown.
+   is raised.
 
    :func:`shutil.get_terminal_size` is the high-level function which
    should normally be used, ``os.get_terminal_size`` is the low-level
@@ -1945,7 +1945,7 @@ features:
    :mod:`os` module permit use of their *dir_fd* parameter.  Different platforms
    provide different functionality, and an option that might work on one might
    be unsupported on another.  For consistency's sakes, functions that support
-   *dir_fd* always allow specifying the parameter, but will throw an exception
+   *dir_fd* always allow specifying the parameter, but will raise an exception
    if the functionality is not actually available.
 
    To check whether a particular function permits use of its *dir_fd*
@@ -1986,7 +1986,7 @@ features:
    descriptor.  Different platforms provide different functionality, and an
    option that might work on one might be unsupported on another.  For
    consistency's sakes, functions that support *fd* always allow specifying
-   the parameter, but will throw an exception if the functionality is not
+   the parameter, but will raise an exception if the functionality is not
    actually available.
 
    To check whether a particular function permits specifying an open file
@@ -2007,7 +2007,7 @@ features:
    platforms provide different functionality, and an option that might work on
    one might be unsupported on another.  For consistency's sakes, functions that
    support *follow_symlinks* always allow specifying the parameter, but will
-   throw an exception if the functionality is not actually available.
+   raise an exception if the functionality is not actually available.
 
    To check whether a particular function permits use of its *follow_symlinks*
    parameter, use the ``in`` operator on ``supports_follow_symlinks``.  As an
