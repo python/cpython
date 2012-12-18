@@ -169,6 +169,7 @@ _PyImport_AcquireLock(void)
         PyThread_acquire_lock(import_lock, 1);
         PyEval_RestoreThread(tstate);
     }
+    assert(import_lock_level == 0);
     import_lock_thread = me;
     import_lock_level = 1;
 }
@@ -182,6 +183,7 @@ _PyImport_ReleaseLock(void)
     if (import_lock_thread != me)
         return -1;
     import_lock_level--;
+    assert(import_lock_level >= 0);
     if (import_lock_level == 0) {
         import_lock_thread = -1;
         PyThread_release_lock(import_lock);
