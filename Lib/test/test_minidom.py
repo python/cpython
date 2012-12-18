@@ -1073,7 +1073,7 @@ class MinidomTest(unittest.TestCase):
             '<?xml version="1.0" encoding="utf-16"?>'
             '<foo>\u20ac</foo>'.encode('utf-16'))
 
-        # Verify that character decoding errors throw exceptions instead
+        # Verify that character decoding errors raise exceptions instead
         # of crashing
         self.assertRaises(UnicodeDecodeError, parseString,
                 b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')

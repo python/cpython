@@ -385,7 +385,7 @@ class dispatcher:
             else:
                 return data
         except socket.error as why:
-            # winsock sometimes throws ENOTCONN
+            # winsock sometimes raises ENOTCONN
             if why.args[0] in _DISCONNECTED:
                 self.handle_close()
                 return b''
