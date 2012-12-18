@@ -57,17 +57,17 @@ def _open_terminal():
         try:
             tty_name, master_fd = sgi._getpty(os.O_RDWR, 0o666, 0)
         except IOError as msg:
-            raise os.error(msg)
+            raise OSError(msg)
         return master_fd, tty_name
     for x in 'pqrstuvwxyzPQRST':
         for y in '0123456789abcdef':
             pty_name = '/dev/pty' + x + y
             try:
                 fd = os.open(pty_name, os.O_RDWR)
-            except os.error:
+            except OSError:
                 continue
             return (fd, '/dev/tty' + x + y)
-    raise os.error('out of pty devices')
+    raise OSError('out of pty devices')
 
 def slave_open(tty_name):
     """slave_open(tty_name) -> slave_fd

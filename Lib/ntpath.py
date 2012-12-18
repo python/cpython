@@ -321,7 +321,7 @@ def islink(path):
     """
     try:
         st = os.lstat(path)
-    except (os.error, AttributeError):
+    except (OSError, AttributeError):
         return False
     return stat.S_ISLNK(st.st_mode)
 
@@ -331,7 +331,7 @@ def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
         st = os.lstat(path)
-    except (os.error, WindowsError):
+    except (OSError, WindowsError):
         return False
     return True
 

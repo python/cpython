@@ -35,7 +35,7 @@ def randfloats(n):
                 if fp:
                     try:
                         os.unlink(fn)
-                    except os.error:
+                    except OSError:
                         pass
         except IOError as msg:
             print("can't write", fn, ":", msg)

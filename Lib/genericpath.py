@@ -16,7 +16,7 @@ def exists(path):
     """Test whether a path exists.  Returns False for broken symbolic links"""
     try:
         os.stat(path)
-    except os.error:
+    except OSError:
         return False
     return True
 
@@ -27,7 +27,7 @@ def isfile(path):
     """Test whether a path is a regular file"""
     try:
         st = os.stat(path)
-    except os.error:
+    except OSError:
         return False
     return stat.S_ISREG(st.st_mode)
 
@@ -39,7 +39,7 @@ def isdir(s):
     """Return true if the pathname refers to an existing directory."""
     try:
         st = os.stat(s)
-    except os.error:
+    except OSError:
         return False
     return stat.S_ISDIR(st.st_mode)
 

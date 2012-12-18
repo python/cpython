@@ -324,8 +324,10 @@ class FileInput:
                 if self._inplace:
                     self._backupfilename = (
                         self._filename + (self._backup or ".bak"))
-                    try: os.unlink(self._backupfilename)
-                    except os.error: pass
+                    try:
+                        os.unlink(self._backupfilename)
+                    except OSError:
+                        pass
                     # The next few lines may raise IOError
                     os.rename(self._filename, self._backupfilename)
                     self._file = open(self._backupfilename, self._mode)

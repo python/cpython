@@ -534,12 +534,12 @@ class RefactoringTool(object):
         """
         try:
             f = _open_with_encoding(filename, "w", encoding=encoding)
-        except os.error as err:
+        except OSError as err:
             self.log_error("Can't create %s: %s", filename, err)
             return
         try:
             f.write(_to_system_newlines(new_text))
-        except os.error as err:
+        except OSError as err:
             self.log_error("Can't write %s: %s", filename, err)
         finally:
             f.close()

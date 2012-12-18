@@ -732,7 +732,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """
         try:
             list = os.listdir(path)
-        except os.error:
+        except OSError:
             self.send_error(404, "No permission to list directory")
             return None
         list.sort(key=lambda a: a.lower())
@@ -1123,7 +1123,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
             try:
                 try:
                     os.setuid(nobody)
-                except os.error:
+                except OSError:
                     pass
                 os.dup2(self.rfile.fileno(), 0)
                 os.dup2(self.wfile.fileno(), 1)
