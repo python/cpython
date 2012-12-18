@@ -209,7 +209,7 @@ using curses, but curses is a fairly large module to learn.
            try:
                c = sys.stdin.read(1)
                print("Got character", repr(c))
-           except IOError:
+           except OSError:
                pass
    finally:
        termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
@@ -222,7 +222,7 @@ using curses, but curses is a fairly large module to learn.
    :func:`termios.tcsetattr` turns off stdin's echoing and disables canonical
    mode.  :func:`fcntl.fnctl` is used to obtain stdin's file descriptor flags
    and modify them for non-blocking mode.  Since reading stdin when it is empty
-   results in an :exc:`IOError`, this error is caught and ignored.
+   results in an :exc:`OSError`, this error is caught and ignored.
 
 
 Threads
