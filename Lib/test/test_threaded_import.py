@@ -7,6 +7,7 @@
 
 import os
 import imp
+import importlib
 import sys
 import time
 import shutil
@@ -190,6 +191,7 @@ class ThreadedImportTests(unittest.TestCase):
                 f.write(contents.encode('utf-8'))
             self.addCleanup(forget, name)
 
+        importlib.invalidate_caches()
         results = []
         def import_ab():
             import A
@@ -220,6 +222,7 @@ class ThreadedImportTests(unittest.TestCase):
             f.write(code.encode('utf-8'))
         self.addCleanup(unlink, filename)
         self.addCleanup(forget, TESTFN)
+        importlib.invalidate_caches()
         __import__(TESTFN)
 
 
