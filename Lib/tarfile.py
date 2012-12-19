@@ -56,9 +56,9 @@ except ImportError:
 # os.symlink on Windows prior to 6.0 raises NotImplementedError
 symlink_exception = (AttributeError, NotImplementedError)
 try:
-    # WindowsError (1314) will be raised if the caller does not hold the
+    # OSError (winerror=1314) will be raised if the caller does not hold the
     # SeCreateSymbolicLinkPrivilege privilege
-    symlink_exception += (WindowsError,)
+    symlink_exception += (OSError,)
 except NameError:
     pass
 

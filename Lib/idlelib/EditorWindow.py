@@ -536,7 +536,7 @@ class EditorWindow(object):
         if sys.platform[:3] == 'win':
             try:
                 os.startfile(self.help_url)
-            except WindowsError as why:
+            except OSError as why:
                 tkMessageBox.showerror(title='Document Start Failure',
                     message=str(why), parent=self.text)
         else:
@@ -845,7 +845,7 @@ class EditorWindow(object):
             if sys.platform[:3] == 'win':
                 try:
                     os.startfile(helpfile)
-                except WindowsError as why:
+                except OSError as why:
                     tkMessageBox.showerror(title='Document Start Failure',
                         message=str(why), parent=self.text)
             else:

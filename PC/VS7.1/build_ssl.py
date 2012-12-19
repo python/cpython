@@ -62,7 +62,7 @@ def find_best_ssl_dir(sources):
             # note: do not abspath s; the build will fail if any
             # higher up directory name has spaces in it.
             fnames = os.listdir(s)
-        except os.error:
+        except OSError:
             fnames = []
         for fname in fnames:
             fqn = os.path.join(s, fname)

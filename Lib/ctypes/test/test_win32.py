@@ -40,7 +40,7 @@ if sys.platform == "win32":
                 # Call functions with invalid arguments, and make sure
                 # that access violations are trapped and raise an
                 # exception.
-                self.assertRaises(WindowsError, windll.kernel32.GetModuleHandleA, 32)
+                self.assertRaises(OSError, windll.kernel32.GetModuleHandleA, 32)
 
         def test_noargs(self):
             # This is a special case on win32 x64

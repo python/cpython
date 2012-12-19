@@ -31,7 +31,7 @@ class Test(unittest.TestCase):
         pass
     else:
         def test_oledll(self):
-            self.assertRaises(WindowsError,
+            self.assertRaises(OSError,
                                   oledll.oleaut32.CreateTypeLib2,
                                   0, None, None)
 
