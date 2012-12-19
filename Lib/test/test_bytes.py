@@ -701,6 +701,12 @@ class BytesTest(BaseBytesTest):
             def __bytes__(self):
                 return None
         self.assertRaises(TypeError, bytes, A())
+        class A:
+            def __bytes__(self):
+                return b'a'
+            def __index__(self):
+                return 42
+        self.assertEqual(bytes(A()), b'a')
 
     # Test PyBytes_FromFormat()
     def test_from_format(self):
