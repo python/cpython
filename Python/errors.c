@@ -588,7 +588,7 @@ PyObject *PyErr_SetExcFromWindowsErr(PyObject *exc, int ierr)
 
 PyObject *PyErr_SetFromWindowsErr(int ierr)
 {
-    return PyErr_SetExcFromWindowsErrWithFilename(PyExc_WindowsError,
+    return PyErr_SetExcFromWindowsErrWithFilename(PyExc_OSError,
                                                   ierr, NULL);
 }
 PyObject *PyErr_SetFromWindowsErrWithFilename(
@@ -597,7 +597,7 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 {
     PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
     PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
-                                                  PyExc_WindowsError,
+                                                  PyExc_OSError,
                                                   ierr, name);
     Py_XDECREF(name);
     return result;
@@ -611,7 +611,7 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
                      PyUnicode_FromUnicode(filename, wcslen(filename)) :
              NULL;
     PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObject(
-                                                  PyExc_WindowsError,
+                                                  PyExc_OSError,
                                                   ierr, name);
     Py_XDECREF(name);
     return result;

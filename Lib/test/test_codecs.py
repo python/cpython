@@ -2035,8 +2035,8 @@ class CodePageTest(unittest.TestCase):
     def test_invalid_code_page(self):
         self.assertRaises(ValueError, codecs.code_page_encode, -1, 'a')
         self.assertRaises(ValueError, codecs.code_page_decode, -1, b'a')
-        self.assertRaises(WindowsError, codecs.code_page_encode, 123, 'a')
-        self.assertRaises(WindowsError, codecs.code_page_decode, 123, b'a')
+        self.assertRaises(OSError, codecs.code_page_encode, 123, 'a')
+        self.assertRaises(OSError, codecs.code_page_decode, 123, b'a')
 
     def test_code_page_name(self):
         self.assertRaisesRegex(UnicodeEncodeError, 'cp932',

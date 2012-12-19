@@ -331,7 +331,7 @@ def lexists(path):
     """Test whether a path exists.  Returns True for broken symbolic links"""
     try:
         st = os.lstat(path)
-    except (OSError, WindowsError):
+    except OSError:
         return False
     return True
 
@@ -584,7 +584,7 @@ else:  # use native Windows method on Windows
         if path: # Empty path must return current working directory.
             try:
                 path = _getfullpathname(path)
-            except WindowsError:
+            except OSError:
                 pass # Bad path - return unchanged.
         elif isinstance(path, bytes):
             path = os.getcwdb()

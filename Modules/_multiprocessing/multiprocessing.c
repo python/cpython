@@ -21,12 +21,12 @@ _PyMp_SetError(PyObject *Type, int num)
 #ifdef MS_WINDOWS
     case MP_STANDARD_ERROR:
         if (Type == NULL)
-            Type = PyExc_WindowsError;
+            Type = PyExc_OSError;
         PyErr_SetExcFromWindowsErr(Type, 0);
         break;
     case MP_SOCKET_ERROR:
         if (Type == NULL)
-            Type = PyExc_WindowsError;
+            Type = PyExc_OSError;
         PyErr_SetExcFromWindowsErr(Type, WSAGetLastError());
         break;
 #else /* !MS_WINDOWS */

@@ -581,7 +581,7 @@ def win32_ver(release='',version='',csd='',ptype=''):
                     # Discard any type that isn't REG_SZ
                     if type == REG_SZ and name.find("Server") != -1:
                         product_type = VER_NT_SERVER
-                except WindowsError:
+                except OSError:
                     # Use default of VER_NT_WORKSTATION
                     pass
 

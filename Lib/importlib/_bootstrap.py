@@ -755,7 +755,7 @@ class WindowsRegistryFinder:
     def _open_registry(cls, key):
         try:
             return _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, key)
-        except WindowsError:
+        except OSError:
             return _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key)
 
     @classmethod
@@ -769,7 +769,7 @@ class WindowsRegistryFinder:
         try:
             with cls._open_registry(key) as hkey:
                 filepath = _winreg.QueryValue(hkey, "")
-        except WindowsError:
+        except OSError:
             return None
         return filepath
 

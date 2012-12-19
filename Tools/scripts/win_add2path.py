@@ -30,7 +30,7 @@ def modify():
     with winreg.CreateKey(HKCU, ENV) as key:
         try:
             envpath = winreg.QueryValueEx(key, PATH)[0]
-        except WindowsError:
+        except OSError:
             envpath = DEFAULT
 
         paths = [envpath]

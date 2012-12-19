@@ -534,7 +534,7 @@ if sys.platform[:3] == "win":
         def open(self, url, new=0, autoraise=True):
             try:
                 os.startfile(url)
-            except WindowsError:
+            except OSError:
                 # [Error 22] No application is associated with the specified
                 # file for this operation: '<URL>'
                 return False
