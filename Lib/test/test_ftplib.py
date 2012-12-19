@@ -896,39 +896,40 @@ class TestTimeouts(TestCase):
     def setUp(self):
         self.evt = threading.Event()
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(10)
+        self.sock.settimeout(20)
         self.port = support.bind_port(self.sock)
-        threading.Thread(target=self.server, args=(self.evt,self.sock)).start()
+        self.server_thread = threading.Thread(target=self.server)
+        self.server_thread.start()
         # Wait for the server to be ready.
         self.evt.wait()
         self.evt.clear()
+        self.old_port = ftplib.FTP.port
         ftplib.FTP.port = self.port
 
     def tearDown(self):
-        self.evt.wait()
-        self.sock.close()
+        ftplib.FTP.port = self.old_port
+        self.server_thread.join()
 
-    def server(self, evt, serv):
+    def server(self):
         # This method sets the evt 3 times:
         #  1) when the connection is ready to be accepted.
         #  2) when it is safe for the caller to close the connection
         #  3) when we have closed the socket
-        serv.listen(5)
+        self.sock.listen(5)
         # (1) Signal the caller that we are ready to accept the connection.
-        evt.set()
+        self.evt.set()
         try:
-            conn, addr = serv.accept()
+            conn, addr = self.sock.accept()
         except socket.timeout:
             pass
         else:
-            conn.send(b"1 Hola mundo\n")
+            conn.sendall(b"1 Hola mundo\n")
+            conn.shutdown(socket.SHUT_WR)
             # (2) Signal the caller that it is safe to close the socket.
-            evt.set()
+            self.evt.set()
             conn.close()
         finally:
-            serv.close()
-            # (3) Signal the caller that we are done.
-            evt.set()
+            self.sock.close()
 
     def testTimeoutDefault(self):
         # default -- use global socket timeout
