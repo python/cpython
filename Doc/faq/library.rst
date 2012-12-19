@@ -224,6 +224,10 @@ using curses, but curses is a fairly large module to learn.
    and modify them for non-blocking mode.  Since reading stdin when it is empty
    results in an :exc:`OSError`, this error is caught and ignored.
 
+   .. versionchanged:: 3.3
+      *sys.stdin.read* used to raise :exc:`IOError`. Starting from Python 3.3
+      :exc:`IOError` is alias for :exc:`OSError`.
+
 
 Threads
 =======
