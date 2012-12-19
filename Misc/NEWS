@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16722: In the bytes() constructor, try to call __bytes__ on the
+  argument before __index__.
+
 - Issue #16602: When a weakref's target was part of a long deallocation
   chain, the object could remain reachable through its weakref even though
   its refcount had dropped to zero.
