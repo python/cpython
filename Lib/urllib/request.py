@@ -2573,7 +2573,7 @@ elif os.name == 'nt':
                         proxies['https'] = 'https://%s' % proxyServer
                         proxies['ftp'] = 'ftp://%s' % proxyServer
             internetSettings.Close()
-        except (WindowsError, ValueError, TypeError):
+        except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an
             # unexpected format.
             # proxies already set up to be empty so nothing to do
@@ -2603,7 +2603,7 @@ elif os.name == 'nt':
             proxyOverride = str(winreg.QueryValueEx(internetSettings,
                                                      'ProxyOverride')[0])
             # ^^^^ Returned as Unicode but problems if not converted to ASCII
-        except WindowsError:
+        except OSError:
             return 0
         if not proxyEnable or not proxyOverride:
             return 0

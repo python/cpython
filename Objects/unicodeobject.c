@@ -6589,8 +6589,8 @@ decode_code_page_flags(UINT code_page)
  * Decode a byte string from a Windows code page into unicode object in strict
  * mode.
  *
- * Returns consumed size if succeed, returns -2 on decode error, or raise a
- * WindowsError and returns -1 on other error.
+ * Returns consumed size if succeed, returns -2 on decode error, or raise an
+ * OSError and returns -1 on other error.
  */
 static int
 decode_code_page_strict(UINT code_page,
@@ -6641,7 +6641,7 @@ error:
  * Decode a byte string from a code page into unicode object with an error
  * handler.
  *
- * Returns consumed size if succeed, or raise a WindowsError or
+ * Returns consumed size if succeed, or raise an OSError or
  * UnicodeDecodeError exception and returns -1 on error.
  */
 static int
@@ -6897,7 +6897,7 @@ encode_code_page_flags(UINT code_page, const char *errors)
  * mode.
  *
  * Returns consumed characters if succeed, returns -2 on encode error, or raise
- * a WindowsError and returns -1 on other error.
+ * an OSError and returns -1 on other error.
  */
 static int
 encode_code_page_strict(UINT code_page, PyObject **outbytes,
@@ -6993,7 +6993,7 @@ error:
  * Encode a Unicode string to a Windows code page into a byte string using a
  * error handler.
  *
- * Returns consumed characters if succeed, or raise a WindowsError and returns
+ * Returns consumed characters if succeed, or raise an OSError and returns
  * -1 on other error.
  */
 static int

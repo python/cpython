@@ -658,7 +658,7 @@ class MmapTests(unittest.TestCase):
             m = mmap.mmap(f.fileno(), 0)
             f.close()
             try:
-                m.resize(0) # will raise WindowsError
+                m.resize(0) # will raise OSError
             except:
                 pass
             try:

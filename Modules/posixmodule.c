@@ -1041,7 +1041,7 @@ win32_error_object(char* function, PyObject* filename)
     errno = GetLastError();
     if (filename)
         return PyErr_SetExcFromWindowsErrWithFilenameObject(
-                    PyExc_WindowsError,
+                    PyExc_OSError,
                     errno,
                     filename);
     else

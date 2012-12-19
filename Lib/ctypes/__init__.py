@@ -395,7 +395,7 @@ if _os.name in ("nt", "ce"):
         _type_ = "l"
         # _check_retval_ is called with the function's result when it
         # is used as restype.  It checks for the FAILED bit, and
-        # raises a WindowsError if it is set.
+        # raises an OSError if it is set.
         #
         # The _check_retval_ method is implemented in C, so that the
         # method definition itself is not included in the traceback
@@ -407,7 +407,7 @@ if _os.name in ("nt", "ce"):
     class OleDLL(CDLL):
         """This class represents a dll exporting functions using the
         Windows stdcall calling convention, and returning HRESULT.
-        HRESULT error values are automatically raised as WindowsError
+        HRESULT error values are automatically raised as OSError
         exceptions.
         """
         _func_flags_ = _FUNCFLAG_STDCALL
@@ -456,7 +456,7 @@ if _os.name in ("nt", "ce"):
             code = GetLastError()
         if descr is None:
             descr = FormatError(code).strip()
-        return WindowsError(None, descr, None, code)
+        return OSError(None, descr, None, code)
 
 if sizeof(c_uint) == sizeof(c_void_p):
     c_size_t = c_uint

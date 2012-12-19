@@ -676,7 +676,7 @@ if sys.platform == 'win32':
                     0, _winapi.NULL, _winapi.OPEN_EXISTING,
                     _winapi.FILE_FLAG_OVERLAPPED, _winapi.NULL
                     )
-            except WindowsError as e:
+            except OSError as e:
                 if e.winerror not in (_winapi.ERROR_SEM_TIMEOUT,
                                       _winapi.ERROR_PIPE_BUSY) or _check_timeout(t):
                     raise

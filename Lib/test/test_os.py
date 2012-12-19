@@ -468,9 +468,9 @@ class StatAttributeTests(unittest.TestCase):
             # Verify that an open file can be stat'ed
             try:
                 os.stat(r"c:\pagefile.sys")
-            except WindowsError as e:
-                if e.errno == 2: # file does not exist; cannot run test
-                    return
+            except FileNotFoundError:
+                pass # file does not exist; cannot run test
+            except OSError as e:
                 self.fail("Could not stat pagefile.sys")
 
         @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
@@ -1042,27 +1042,27 @@ class ExecTests(unittest.TestCase):
 
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
-        self.assertRaises(WindowsError, os.rename, support.TESTFN, support.TESTFN+".bak")
+        self.assertRaises(OSError, os.rename, support.TESTFN, support.TESTFN+".bak")
 
     def test_remove(self):
-        self.assertRaises(WindowsError, os.remove, support.TESTFN)
+        self.assertRaises(OSError, os.remove, support.TESTFN)
 
     def test_chdir(self):
-        self.assertRaises(WindowsError, os.chdir, support.TESTFN)
+        self.assertRaises(OSError, os.chdir, support.TESTFN)
 
     def test_mkdir(self):
         f = open(support.TESTFN, "w")
         try:
-            self.assertRaises(WindowsError, os.mkdir, support.TESTFN)
+            self.assertRaises(OSError, os.mkdir, support.TESTFN)
         finally:
             f.close()
             os.unlink(support.TESTFN)
 
     def test_utime(self):
-        self.assertRaises(WindowsError, os.utime, support.TESTFN, None)
+        self.assertRaises(OSError, os.utime, support.TESTFN, None)
 
     def test_chmod(self):
-        self.assertRaises(WindowsError, os.chmod, support.TESTFN, 0)
+        self.assertRaises(OSError, os.chmod, support.TESTFN, 0)
 
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdopen", "fdatasync", "fstat",

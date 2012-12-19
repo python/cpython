@@ -393,11 +393,10 @@ provided by this module. ::
                errors.extend(err.args[0])
        try:
            copystat(src, dst)
-       except WindowsError:
-           # can't copy file access times on Windows
-           pass
        except OSError as why:
-           errors.extend((src, dst, str(why)))
+           # can't copy file access times on Windows
+           if why.winerror is None:
+               errors.extend((src, dst, str(why)))
        if errors:
            raise Error(errors)
 
