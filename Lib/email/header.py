@@ -103,7 +103,7 @@ def decode_header(header):
                         dec = email.base64mime.decode(encoded)
                     except binascii.Error:
                         # Turn this into a higher level exception.  BAW: Right
-                        # now we raise the lower level exception away but
+                        # now we throw the lower level exception away but
                         # when/if we get exception chaining, we'll preserve it.
                         raise HeaderParseError
                 if dec is None:
