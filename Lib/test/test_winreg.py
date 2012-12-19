@@ -277,7 +277,7 @@ class LocalWinregTests(BaseWinregTests):
 
     def test_long_key(self):
         # Issue2810, in 2.6 and 3.1 when the key name was exactly 256
-        # characters, EnumKey threw "WindowsError: More data is
+        # characters, EnumKey raised "WindowsError: More data is
         # available"
         name = 'x'*256
         try:
