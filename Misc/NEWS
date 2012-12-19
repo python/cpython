@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16722: In the bytes() constructor, try to call __bytes__ on the
+  argument before __index__.
+
 - Issue #16421: loading multiple modules from one shared object is now
   handled correctly (previously, the first module loaded from that file
   was silently returned). Patch by Václav Šmilauer.
