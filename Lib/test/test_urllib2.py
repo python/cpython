@@ -1252,7 +1252,7 @@ class HandlerTests(unittest.TestCase):
                               )
 
     def test_basic_and_digest_auth_handlers(self):
-        # HTTPDigestAuthHandler threw an exception if it couldn't handle a 40*
+        # HTTPDigestAuthHandler raised an exception if it couldn't handle a 40*
         # response (http://python.org/sf/1479302), where it should instead
         # return None to allow another handler (especially
         # HTTPBasicAuthHandler) to handle the response.
