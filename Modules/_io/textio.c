@@ -2442,14 +2442,26 @@ textiowrapper_close(textio *self, PyObject *args)
         Py_RETURN_NONE; /* stream already closed */
     }
     else {
+        PyObject *exc = NULL, *val, *tb;
         res = PyObject_CallMethod((PyObject *)self, "flush", NULL);
-        if (res == NULL) {
-            return NULL;
-        }
+        if (res == NULL)
+            PyErr_Fetch(&exc, &val, &tb);
         else
             Py_DECREF(res);
 
-        return PyObject_CallMethod(self->buffer, "close", NULL);
+        res = PyObject_CallMethod(self->buffer, "close", NULL);
+        if (exc != NULL) {
+            if (res != NULL) {
+                Py_CLEAR(res);
+                PyErr_Restore(exc, val, tb);
+            }
+            else {
+                Py_DECREF(exc);
+                Py_XDECREF(val);
+                Py_XDECREF(tb);
+            }
+        }
+        return res;
     }
 }
 
