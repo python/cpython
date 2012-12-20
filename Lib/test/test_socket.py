@@ -644,9 +644,10 @@ class GeneralModuleTests(unittest.TestCase):
         if SUPPORTS_IPV6:
             socket.getaddrinfo('::1', 80)
         # port can be a string service name such as "http", a numeric
-        # port number or None
+        # port number (int or long), or None
         socket.getaddrinfo(HOST, "http")
         socket.getaddrinfo(HOST, 80)
+        socket.getaddrinfo(HOST, 80L)
         socket.getaddrinfo(HOST, None)
         # test family and socktype filters
         infos = socket.getaddrinfo(HOST, None, socket.AF_INET)

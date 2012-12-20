@@ -4090,15 +4090,19 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
     }
-    if (PyInt_Check(pobj)) {
-        PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", PyInt_AsLong(pobj));
+    if (PyInt_Check(pobj) || PyLong_Check(pobj)) {
+        long value = PyLong_AsLong(pobj);
+        if (value == -1 && PyErr_Occurred())
+            return NULL;
+        PyOS_snprintf(pbuf, sizeof(pbuf), "%ld", value);
         pptr = pbuf;
     } else if (PyString_Check(pobj)) {
         pptr = PyString_AsString(pobj);
     } else if (pobj == Py_None) {
         pptr = (char *)NULL;
     } else {
-        PyErr_SetString(socket_error, "Int or String expected");
+        PyErr_SetString(socket_error,
+                        "getaddrinfo() argument 2 must be integer or string");
         goto err;
     }
     memset(&hints, 0, sizeof(hints));
