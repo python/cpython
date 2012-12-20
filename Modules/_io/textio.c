@@ -2554,6 +2554,7 @@ textiowrapper_close(textio *self, PyObject *args)
         Py_RETURN_NONE; /* stream already closed */
     }
     else {
+        PyObject *exc = NULL, *val, *tb;
         if (self->deallocating) {
             res = _PyObject_CallMethodId(self->buffer, &PyId__dealloc_warn, "O", self);
             if (res)
@@ -2562,13 +2563,28 @@ textiowrapper_close(textio *self, PyObject *args)
                 PyErr_Clear();
         }
         res = _PyObject_CallMethodId((PyObject *)self, &PyId_flush, NULL);
-        if (res == NULL) {
-            return NULL;
-        }
+        if (res == NULL)
+            PyErr_Fetch(&exc, &val, &tb);
         else
             Py_DECREF(res);
 
-        return _PyObject_CallMethodId(self->buffer, &PyId_close, NULL);
+        res = _PyObject_CallMethodId(self->buffer, &PyId_close, NULL);
+        if (exc != NULL) {
+            if (res != NULL) {
+                Py_CLEAR(res);
+                PyErr_Restore(exc, val, tb);
+            }
+            else {
+                PyObject *val2;
+                Py_DECREF(exc);
+                Py_XDECREF(tb);
+                PyErr_Fetch(&exc, &val2, &tb);
+                PyErr_NormalizeException(&exc, &val2, &tb);
+                PyException_SetContext(val2, val);
+                PyErr_Restore(exc, val2, tb);
+            }
+        }
+        return res;
     }
 }
 
