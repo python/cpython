@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16597: Make BufferedIO.close call close() on the underlying stream if
+  invoking flush() fails.
+
 - Issue #16722: In the bytes() constructor, try to call __bytes__ on the
   argument before __index__.
 

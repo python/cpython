@@ -603,6 +603,7 @@ class IOTest(unittest.TestCase):
             raise IOError()
         f.flush = bad_flush
         self.assertRaises(IOError, f.close) # exception not swallowed
+        self.assertTrue(f.closed)
 
     def test_multi_close(self):
         f = self.open(support.TESTFN, "wb", buffering=0)
@@ -780,6 +781,22 @@ class CommonBufferedTests:
         raw.flush = bad_flush
         b = self.tp(raw)
         self.assertRaises(IOError, b.close) # exception not swallowed
+        self.assertTrue(b.closed)
+
+    def test_close_error_on_close(self):
+        raw = self.MockRawIO()
+        def bad_flush():
+            raise IOError('flush')
+        def bad_close():
+            raise IOError('close')
+        raw.close = bad_close
+        b = self.tp(raw)
+        b.flush = bad_flush
+        with self.assertRaises(IOError) as err: # exception not swallowed
+            b.close()
+        self.assertEqual(err.exception.args, ('close',))
+        self.assertEqual(err.exception.__context__.args, ('flush',))
+        self.assertFalse(b.closed)
 
     def test_multi_close(self):
         raw = self.MockRawIO()
@@ -1295,6 +1312,16 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
     def test_max_buffer_size_removal(self):
         with self.assertRaises(TypeError):
             self.tp(self.MockRawIO(), 8, 12)
+
+    def test_write_error_on_close(self):
+        raw = self.MockRawIO()
+        def bad_write(b):
+            raise IOError()
+        raw.write = bad_write
+        b = self.tp(raw)
+        b.write(b'spam')
+        self.assertRaises(IOError, b.close) # exception not swallowed
+        self.assertTrue(b.closed)
 
 
 class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
@@ -2465,6 +2492,7 @@ class TextIOWrapperTest(unittest.TestCase):
             raise IOError()
         txt.flush = bad_flush
         self.assertRaises(IOError, txt.close) # exception not swallowed
+        self.assertTrue(txt.closed)
 
     def test_multi_close(self):
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
