@@ -45,7 +45,7 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 
 .. note::
 
-   Feeding string objects is to :meth:`update` is not supported, as hashes work
+   Feeding string objects into :meth:`update` is not supported, as hashes work
    on bytes, not on characters.
 
 .. index:: single: OpenSSL; (use in module hashlib)
