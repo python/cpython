@@ -3484,7 +3484,7 @@ PyDec_Round(PyObject *dec, PyObject *args)
     }
 }
 
-PyObject *DecimalTuple = NULL;
+static PyObject *DecimalTuple = NULL;
 /* Return the DecimalTuple representation of a PyDecObject. */
 static PyObject *
 PyDec_AsTuple(PyObject *dec, PyObject *dummy UNUSED)
