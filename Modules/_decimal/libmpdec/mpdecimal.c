@@ -107,7 +107,7 @@ static inline void _mpd_qpow_uint(mpd_t *result, const mpd_t *base,
                                   mpd_uint_t exp, uint8_t resultsign,
                                   const mpd_context_t *ctx, uint32_t *status);
 
-mpd_uint_t mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n);
+static mpd_uint_t mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n);
 
 
 /******************************************************************************/
@@ -2301,7 +2301,7 @@ _mpd_get_rnd(const mpd_uint_t *data, mpd_ssize_t len, int use_msd)
  * It is the caller's responsibility to ensure that the coefficient is big
  * enough. The function cannot fail.
  */
-mpd_uint_t
+static mpd_uint_t
 mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n)
 {
     mpd_uint_t rnd;
@@ -5123,7 +5123,7 @@ _karatsuba_rec(mpd_uint_t *c, const mpd_uint_t *a, const mpd_uint_t *b,
  * to the result or NULL in case of failure (malloc error).
  * Conditions: ulen >= vlen, ulen >= 4
  */
-mpd_uint_t *
+static mpd_uint_t *
 _mpd_kmul(const mpd_uint_t *u, const mpd_uint_t *v,
           mpd_size_t ulen, mpd_size_t vlen,
           mpd_size_t *rsize)
@@ -5208,7 +5208,7 @@ _mpd_set_control87(unsigned short cw)
 }
 #endif
 
-unsigned int
+static unsigned int
 mpd_set_fenv(void)
 {
     unsigned int cw;
@@ -5228,7 +5228,7 @@ mpd_set_fenv(void)
     return cw;
 }
 
-void
+static void
 mpd_restore_fenv(unsigned int cw)
 {
 #ifdef _MSC_VER
@@ -5246,7 +5246,7 @@ mpd_restore_fenv(unsigned int cw)
  * Multiply u and v, using the fast number theoretic transform. Returns
  * a pointer to the result or NULL in case of failure (malloc error).
  */
-mpd_uint_t *
+static mpd_uint_t *
 _mpd_fntmul(const mpd_uint_t *u, const mpd_uint_t *v,
             mpd_size_t ulen, mpd_size_t vlen,
             mpd_size_t *rsize)
@@ -5432,7 +5432,7 @@ _karatsuba_rec_fnt(mpd_uint_t *c, const mpd_uint_t *a, const mpd_uint_t *b,
  * base case. Returns a pointer to the result or NULL in case of failure
  * (malloc error). Conditions: ulen >= vlen, ulen >= 4.
  */
-mpd_uint_t *
+static mpd_uint_t *
 _mpd_kmul_fnt(const mpd_uint_t *u, const mpd_uint_t *v,
               mpd_size_t ulen, mpd_size_t vlen,
               mpd_size_t *rsize)
