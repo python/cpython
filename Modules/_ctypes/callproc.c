@@ -817,11 +817,11 @@ static int _call_function_pointer(int flags,
         space[0] = errno;
         errno = temp;
     }
-    Py_XDECREF(error_object);
 #ifdef WITH_THREAD
     if ((flags & FUNCFLAG_PYTHONAPI) == 0)
         Py_BLOCK_THREADS
 #endif
+    Py_XDECREF(error_object);
 #ifdef MS_WIN32
 #ifndef DONT_USE_SEH
     if (dwExceptionCode) {
