@@ -168,9 +168,9 @@ init_genrand(RandomObject *self, unsigned long s)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 static PyObject *
-init_by_array(RandomObject *self, unsigned long init_key[], unsigned long key_length)
+init_by_array(RandomObject *self, unsigned long init_key[], size_t key_length)
 {
-    unsigned int i, j, k;       /* was signed in the original code. RDH 12/16/2002 */
+    size_t i, j, k;       /* was signed in the original code. RDH 12/16/2002 */
     unsigned long *mt;
 
     mt = self->state;
@@ -207,14 +207,11 @@ static PyObject *
 random_seed(RandomObject *self, PyObject *args)
 {
     PyObject *result = NULL;            /* guilty until proved innocent */
-    PyObject *masklower = NULL;
-    PyObject *thirtytwo = NULL;
     PyObject *n = NULL;
-    unsigned long *new_key, *key = NULL;
-    unsigned long keymax;               /* # of allocated slots in key */
-    unsigned long keyused;              /* # of used slots in key */
-    int err;
-
+    unsigned long *key = NULL;
+    unsigned char *key_as_bytes = NULL;
+    size_t bits, keyused, i;
+    int res;
     PyObject *arg = NULL;
 
     if (!PyArg_UnpackTuple(args, "seed", 0, 1, &arg))
@@ -243,69 +240,43 @@ random_seed(RandomObject *self, PyObject *args)
     if (n == NULL)
         goto Done;
 
-    /* Now split n into 32-bit chunks, from the right.  Each piece is
-     * stored into key, which has a capacity of keymax chunks, of which
-     * keyused are filled.  Alas, the repeated shifting makes this a
-     * quadratic-time algorithm; we'd really like to use
-     * _PyLong_AsByteArray here, but then we'd have to break into the
-     * long representation to figure out how big an array was needed
-     * in advance.
-     */
-    keymax = 8;         /* arbitrary; grows later if needed */
-    keyused = 0;
-    key = (unsigned long *)PyMem_Malloc(keymax * sizeof(*key));
-    if (key == NULL)
+    /* Now split n into 32-bit chunks, from the right. */
+    bits = _PyLong_NumBits(n);
+    if (bits == (size_t)-1 && PyErr_Occurred())
         goto Done;
 
-    masklower = PyLong_FromUnsignedLong(0xffffffffU);
-    if (masklower == NULL)
-        goto Done;
-    thirtytwo = PyLong_FromLong(32L);
-    if (thirtytwo == NULL)
-        goto Done;
-    while ((err=PyObject_IsTrue(n))) {
-        PyObject *newn;
-        PyObject *pychunk;
-        unsigned long chunk;
+    /* Figure out how many 32-bit chunks this gives us. */
+    keyused = bits == 0 ? 1 : (bits - 1) / 32 + 1;
 
-        if (err == -1)
-            goto Done;
-        pychunk = PyNumber_And(n, masklower);
-        if (pychunk == NULL)
-            goto Done;
-        chunk = PyLong_AsUnsignedLong(pychunk);
-        Py_DECREF(pychunk);
-        if (chunk == (unsigned long)-1 && PyErr_Occurred())
-            goto Done;
-        newn = PyNumber_Rshift(n, thirtytwo);
-        if (newn == NULL)
-            goto Done;
-        Py_DECREF(n);
-        n = newn;
-        if (keyused >= keymax) {
-            unsigned long bigger = keymax << 1;
-            if ((bigger >> 1) != keymax ||
-                bigger > PY_SSIZE_T_MAX / sizeof(*key)) {
-                PyErr_NoMemory();
-                goto Done;
-            }
-            new_key = (unsigned long *)PyMem_Realloc(key,
-                                    bigger * sizeof(*key));
-            if (new_key == NULL)
-                goto Done;
-            key = new_key;
-            keymax = bigger;
-        }
-        assert(keyused < keymax);
-        key[keyused++] = chunk;
+    /* Convert seed to byte sequence. */
+    key_as_bytes = (unsigned char *)PyMem_Malloc((size_t)4 * keyused);
+    if (key_as_bytes == NULL)
+        goto Done;
+    res = _PyLong_AsByteArray((PyLongObject *)n,
+                              key_as_bytes, keyused * 4,
+                              1,  /* little-endian */
+                              0); /* unsigned */
+    if (res == -1) {
+        PyMem_Free(key_as_bytes);
+        goto Done;
     }
 
-    if (keyused == 0)
-        key[keyused++] = 0UL;
+    /* Fill array of unsigned longs from byte sequence. */
+    key = (unsigned long *)PyMem_Malloc(sizeof(unsigned long) * keyused);
+    if (key == NULL) {
+        PyMem_Free(key_as_bytes);
+        goto Done;
+    }
+    for (i = 0; i < keyused; i++) {
+        key[i] =
+            ((unsigned long)key_as_bytes[4*i + 0] << 0) +
+            ((unsigned long)key_as_bytes[4*i + 1] << 8) +
+            ((unsigned long)key_as_bytes[4*i + 2] << 16) +
+            ((unsigned long)key_as_bytes[4*i + 3] << 24);
+    }
+    PyMem_Free(key_as_bytes);
     result = init_by_array(self, key, keyused);
 Done:
-    Py_XDECREF(masklower);
-    Py_XDECREF(thirtytwo);
     Py_XDECREF(n);
     PyMem_Free(key);
     return result;
