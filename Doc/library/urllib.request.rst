@@ -465,6 +465,8 @@ request.
    Remove named header from the request instance (both from regular and
    unredirected headers).
 
+   .. versionadded:: 3.4
+
 
 .. method:: Request.get_full_url()
 
