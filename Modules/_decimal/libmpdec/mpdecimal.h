@@ -70,7 +70,8 @@ extern "C" {
   #else
     #define UNUSED
   #endif
-  #if defined(__GNUC__) && __GNUC__ >= 4 && !defined(__INTEL_COMPILER)
+  #if (defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)) && \
+      defined(__GNUC__) && __GNUC__ >= 4 && !defined(__INTEL_COMPILER)
     #define MPD_PRAGMA(x) _Pragma(x)
     #define MPD_HIDE_SYMBOLS_START "GCC visibility push(hidden)"
     #define MPD_HIDE_SYMBOLS_END "GCC visibility pop"
