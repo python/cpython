@@ -51,6 +51,9 @@ extern "C" {
   #ifndef UNUSED
     #define UNUSED
   #endif
+  #define MPD_PRAGMA(x)
+  #define MPD_HIDE_SYMBOLS_START
+  #define MPD_HIDE_SYMBOLS_END
   #define EXTINLINE extern inline
 #else
   #ifdef HAVE_STDINT_H
