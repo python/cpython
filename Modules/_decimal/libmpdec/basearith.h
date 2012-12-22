@@ -35,6 +35,10 @@
 #include "typearith.h"
 
 
+/* Internal header file: all symbols have local scope in the DSO */
+MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
+
+
 mpd_uint_t _mpd_baseadd(mpd_uint_t *w, const mpd_uint_t *u, const mpd_uint_t *v,
                         mpd_size_t m, mpd_size_t n);
 void _mpd_baseaddto(mpd_uint_t *w, const mpd_uint_t *u, mpd_size_t n);
@@ -207,6 +211,9 @@ _mpd_isallnine(const mpd_uint_t *data, mpd_ssize_t len)
     }
     return 1;
 }
+
+
+MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
 #endif /* BASEARITH_H */
