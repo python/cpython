@@ -34,6 +34,10 @@
 #include "mpdecimal.h"
 
 
+/* Internal header file: all symbols have local scope in the DSO */
+MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
+
+
 /* transform parameters */
 struct fnt_params {
     int modnum;
@@ -64,6 +68,9 @@ std_setmodulus(int modnum, mpd_uint_t *umod)
     *umod =  mpd_moduli[modnum];
 }
 #endif
+
+
+MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
 #endif

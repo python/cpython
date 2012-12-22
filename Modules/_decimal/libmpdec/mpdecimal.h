@@ -67,8 +67,22 @@ extern "C" {
   #else
     #define UNUSED
   #endif
+  #if defined(__GNUC__) && __GNUC__ >= 4 && !defined(__INTEL_COMPILER)
+    #define MPD_PRAGMA(x) _Pragma(x)
+    #define MPD_HIDE_SYMBOLS_START "GCC visibility push(hidden)"
+    #define MPD_HIDE_SYMBOLS_END "GCC visibility pop"
+  #else
+    #define MPD_PRAGMA(x)
+    #define MPD_HIDE_SYMBOLS_START
+    #define MPD_HIDE_SYMBOLS_END
+  #endif
   #define EXTINLINE
 #endif
+
+
+/* This header file is internal for the purpose of building _decimal.so.
+ * All symbols should have local scope in the DSO. */
+MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
 
 
 #if !defined(LEGACY_COMPILER)
@@ -787,6 +801,9 @@ void mpd_minalloc(mpd_t *result);
 
 int mpd_resize(mpd_t *result, mpd_ssize_t size, mpd_context_t *ctx);
 int mpd_resize_zero(mpd_t *result, mpd_ssize_t size, mpd_context_t *ctx);
+
+
+MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
 #ifdef __cplusplus
