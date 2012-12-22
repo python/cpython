@@ -84,6 +84,8 @@ In order to run Python flawlessly, you might have to change certain environment
 settings in Windows.
 
 
+.. _setting-envvars:
+
 Excursus: Setting environment variables
 ---------------------------------------
 
