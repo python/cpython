@@ -393,14 +393,18 @@ inspection of exception attributes::
       PEP written and implemented by Antoine Pitrou
 
 
+.. index::
+   single: yield; yield from (in What's New)
+
 .. _pep-380:
 
 PEP 380: Syntax for Delegating to a Subgenerator
 ================================================
 
-PEP 380 adds the ``yield from`` expression, allowing a generator to delegate
+PEP 380 adds the ``yield from`` expression, allowing a :term:`generator` to
+delegate
 part of its operations to another generator. This allows a section of code
-containing 'yield' to be factored out and placed in another generator.
+containing :keyword:`yield` to be factored out and placed in another generator.
 Additionally, the subgenerator is allowed to return with a value, and the
 value is made available to the delegating generator.
 
@@ -421,15 +425,15 @@ However, unlike an ordinary loop, ``yield from`` allows subgenerators to
 receive sent and thrown values directly from the calling scope, and
 return a final value to the outer generator::
 
-    >>> def accumulate(start=0):
-    ...     tally = start
+    >>> def accumulate():
+    ...     tally = 0
     ...     while 1:
     ...         next = yield
     ...         if next is None:
     ...             return tally
     ...         tally += next
     ...
-    >>> def gather_tallies(tallies, start=0):
+    >>> def gather_tallies(tallies):
     ...     while 1:
     ...         tally = yield from accumulate()
     ...         tallies.append(tally)
@@ -437,7 +441,7 @@ return a final value to the outer generator::
     >>> tallies = []
     >>> acc = gather_tallies(tallies)
     >>> next(acc) # Ensure the accumulator is ready to accept values
-    >>> for i in range(10):
+    >>> for i in range(4):
     ...     acc.send(i)
     ...
     >>> acc.send(None) # Finish the first tally
@@ -446,7 +450,7 @@ return a final value to the outer generator::
     ...
     >>> acc.send(None) # Finish the second tally
     >>> tallies
-    [45, 10]
+    [6, 10]
 
 The main principle driving this change is to allow even generators that are
 designed to be used with the ``send`` and ``throw`` methods to be split into
