@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14470: Remove w9xpopen support per PEP 11.
+
 - Issue #9856: Replace deprecation warning with raising TypeError
   in object.__format__. Patch by Florent Xicluna.
 
