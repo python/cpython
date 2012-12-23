@@ -196,6 +196,18 @@ a/module.py
                                 from . import bar
 """]
 
+relative_import_test_4 = [
+    "a.module",
+    ["a", "a.module"],
+    [],
+    [],
+    """\
+a/__init__.py
+                                def foo(): pass
+a/module.py
+                                from . import *
+"""]
+
 
 def open_file(path):
     dirname = os.path.dirname(path)
@@ -272,6 +284,9 @@ class ModuleFinderTest(unittest.TestCase):
 
     def test_relative_imports_3(self):
         self._do_test(relative_import_test_3)
+
+    def test_relative_imports_4(self):
+        self._do_test(relative_import_test_4)
 
 
 def test_main():
