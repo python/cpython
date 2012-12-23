@@ -3654,16 +3654,9 @@ object_format(PyObject *self, PyObject *args)
         /* Issue 7994: If we're converting to a string, we
            should reject format specifications */
         if (PyUnicode_GET_LENGTH(format_spec) > 0) {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             "object.__format__ with a non-empty format "
-                             "string is deprecated", 1) < 0) {
-              goto done;
-            }
-            /* Eventually this will become an error:
-               PyErr_Format(PyExc_TypeError,
+            PyErr_SetString(PyExc_TypeError,
                "non-empty format string passed to object.__format__");
-               goto done;
-            */
+            goto done;
         }
 
         result = PyObject_Format(self_as_str, format_spec);
@@ -4288,13 +4281,11 @@ PyType_Ready(PyTypeObject *type)
     /* Warn for a type that implements tp_compare (now known as
        tp_reserved) but not tp_richcompare. */
     if (type->tp_reserved && !type->tp_richcompare) {
-        int error;
-        error = PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+        PyErr_Format(PyExc_TypeError,
             "Type %.100s defines tp_reserved (formerly tp_compare) "
             "but not tp_richcompare. Comparisons may not behave as intended.",
             type->tp_name);
-        if (error == -1)
-            goto error;
+        goto error;
     }
 
     /* All done -- set the ready flag */
