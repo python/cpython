@@ -1177,6 +1177,8 @@ class BuiltinTest(unittest.TestCase):
         # Check stdin/stdout error handler is used when invoking GNU readline
         self.check_input_tty("prompté", b"quux\xe9", "ascii")
 
+    # test_int(): see test_int.py for tests of built-in function int().
+
     def test_repr(self):
         self.assertEqual(repr(''), '\'\'')
         self.assertEqual(repr(0), '0')
