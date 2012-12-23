@@ -1,6 +1,7 @@
 import sys
 
 import unittest
+from test import test_support
 from test.test_support import run_unittest, have_unicode
 import math
 
@@ -314,6 +315,59 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(float(2**54+6)), 2**54+8)
         self.assertEqual(int(float(2**54+10)), 2**54+8)
         self.assertEqual(int(float(2**54+11)), 2**54+12)
+
+    def test_no_args(self):
+        self.assertEquals(int(), 0)
+
+    def test_keyword_args(self):
+        # Test invoking int() using keyword arguments.
+        self.assertEquals(int(x=1.2), 1)
+        self.assertEquals(int('100', base=2), 4)
+        self.assertEquals(int(x='100', base=2), 4)
+
+    def test_valid_non_numeric_input_types_for_x(self):
+        # Test possible valid non-numeric types for x, including subclasses
+        # of the allowed built-in types.
+        class CustomStr(str): pass
+        values = ['100', CustomStr('100')]
+
+        if have_unicode:
+            class CustomUnicode(unicode): pass
+            values += [unicode('100'), CustomUnicode(unicode('100'))]
+
+        for x in values:
+            msg = 'x has value %s and type %s' % (x, type(x).__name__)
+            try:
+                self.assertEquals(int(x), 100, msg=msg)
+                self.assertEquals(int(x, 2), 4, msg=msg)
+            except TypeError, err:
+                raise AssertionError('For %s got TypeError: %s' %
+                                     (type(x).__name__, err))
+
+    def test_error_on_string_float_for_x(self):
+        self.assertRaises(ValueError, int, '1.2')
+
+    def test_error_on_bytearray_for_x(self):
+        self.assertRaises(TypeError, int, bytearray('100'), 2)
+
+    def test_error_on_invalid_int_bases(self):
+        for base in [-1, 1, 1000]:
+            self.assertRaises(ValueError, int, '100', base)
+
+    def test_error_on_string_base(self):
+        self.assertRaises(TypeError, int, 100, base='foo')
+        # Include the following because in contrast CPython raises no error
+        # for bad integer bases when x is not given.
+        self.assertRaises(TypeError, int, base='foo')
+
+    # For example, PyPy 1.9.0 raised TypeError for these cases because it
+    # expects x to be a string if base is given.
+    @test_support.cpython_only
+    def test_int_base_without_x_returns_0(self):
+        self.assertEquals(int(base=6), 0)
+        # Even invalid bases don't raise an exception.
+        self.assertEquals(int(base=1), 0)
+        self.assertEquals(int(base=1000), 0)
 
     def test_intconversion(self):
         # Test __int__()
