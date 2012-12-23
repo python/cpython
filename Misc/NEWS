@@ -165,6 +165,8 @@ Library
 - Issue #16597: In buffered and text IO, call close() on the underlying stream
   if invoking flush() fails.
 
+- Issue #15701: Fix HTTPError info method call to return the headers information.
+
 - Issue #16646: ftplib.FTP.makeport() might lose socket error details.
   (patch by Serhiy Storchaka)
 
