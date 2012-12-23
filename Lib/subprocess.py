@@ -1029,23 +1029,6 @@ class Popen(object):
             return Handle(h)
 
 
-        def _find_w9xpopen(self):
-            """Find and return absolut path to w9xpopen.exe"""
-            w9xpopen = os.path.join(
-                            os.path.dirname(_winapi.GetModuleFileName(0)),
-                                    "w9xpopen.exe")
-            if not os.path.exists(w9xpopen):
-                # Eeek - file-not-found - possibly an embedding
-                # situation - see if we can locate it in sys.exec_prefix
-                w9xpopen = os.path.join(os.path.dirname(sys.base_exec_prefix),
-                                        "w9xpopen.exe")
-                if not os.path.exists(w9xpopen):
-                    raise SubprocessError(
-                            "Cannot locate w9xpopen.exe, which is needed for "
-                            "Popen to work with your shell or platform.")
-            return w9xpopen
-
-
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
@@ -1074,21 +1057,6 @@ class Popen(object):
                 startupinfo.wShowWindow = _winapi.SW_HIDE
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
-                if (_winapi.GetVersion() >= 0x80000000 or
-                        os.path.basename(comspec).lower() == "command.com"):
-                    # Win9x, or using command.com on NT. We need to
-                    # use the w9xpopen intermediate program. For more
-                    # information, see KB Q150956
-                    # (http://web.archive.org/web/20011105084002/http://support.microsoft.com/support/kb/articles/Q150/9/56.asp)
-                    w9xpopen = self._find_w9xpopen()
-                    args = '"%s" %s' % (w9xpopen, args)
-                    # Not passing CREATE_NEW_CONSOLE has been known to
-                    # cause random failures on win9x.  Specifically a
-                    # dialog: "Your program accessed mem currently in
-                    # use at xxx" and a hopeful warning about the
-                    # stability of your system.  Cost is Ctrl+C won't
-                    # kill children.
-                    creationflags |= _winapi.CREATE_NEW_CONSOLE
 
             # Start the process
             try:

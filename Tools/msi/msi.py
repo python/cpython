@@ -956,8 +956,6 @@ def add_files(db):
     # Add all executables, icons, text files into the TARGETDIR component
     root = PyDirectory(db, cab, None, srcdir, "TARGETDIR", "SourceDir")
     default_feature.set_current()
-    if not msilib.Win64:
-        root.add_file("%s/w9xpopen.exe" % PCBUILD)
     root.add_file("README.txt", src="README")
     root.add_file("NEWS.txt", src="Misc/NEWS")
     generate_license()
