@@ -63,7 +63,7 @@ extern "C" {
     #include <inttypes.h>
   #endif
   #ifndef __GNUC_STDC_INLINE__
-    #define __GNUC_STDC_INLINE__
+    #define __GNUC_STDC_INLINE__ 1
   #endif
   #if defined(__GNUC__) && !defined(__INTEL_COMPILER)
     #define UNUSED __attribute__((unused))
