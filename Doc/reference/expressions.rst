@@ -320,7 +320,8 @@ Yield expressions
    yield_atom: "(" `yield_expression` ")"
    yield_expression: "yield" [`expression_list` | "from" `expression`]
 
-The :keyword:`yield` expression is only used when defining a generator function,
+The :keyword:`yield` expression is only used when defining a :term:`generator`
+function,
 and can only be used in the body of a function definition.  Using a
 :keyword:`yield` expression in a function definition is sufficient to cause that
 definition to create a generator function instead of a normal function.
@@ -438,6 +439,12 @@ is already executing raises a :exc:`ValueError` exception.
    other exception, it is propagated to the caller.  :meth:`close` does nothing
    if the generator has already exited due to an exception or normal exit.
 
+
+.. index:: single: yield; examples
+
+Examples
+^^^^^^^^
+
 Here is a simple example that demonstrates the behavior of generators and
 generator functions::
 
@@ -464,6 +471,9 @@ generator functions::
    TypeError('spam',)
    >>> generator.close()
    Don't forget to clean up when 'close()' is called.
+
+For examples using ``yield from``, see :ref:`pep-380` in "What's New in
+Python."
 
 
 .. seealso::
