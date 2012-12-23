@@ -114,6 +114,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16752: Add a missing import to modulefinder. Patch by Berker Peksag.
+
 - Issue #16646: ftplib.FTP.makeport() might lose socket error details.
   (patch by Serhiy Storchaka)
 
