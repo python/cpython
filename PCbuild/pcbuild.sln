@@ -14,8 +14,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythoncore", "pythoncore.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythonw", "pythonw.vcxproj", "{F4229CC3-873C-49AE-9729-DD308ED4CD4A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "w9xpopen", "w9xpopen.vcxproj", "{E9E0A1F6-0009-4E8C-B8F8-1B8F5D49A058}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_buildinfo", "make_buildinfo.vcxproj", "{C73F0EC1-358B-4177-940F-0846AC8B04CD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "winsound", "winsound.vcxproj", "{28B5D777-DDF2-4B6B-B34F-31D938813856}"
