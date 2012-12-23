@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9856: Replace deprecation warinigs with raising TypeError
+  in object.__format__. Patch by Florent Xicluna.
+
 - Issue #16597: In buffered and text IO, call close() on the underlying stream
   if invoking flush() fails.
 

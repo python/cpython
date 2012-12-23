@@ -543,6 +543,10 @@ are always available.  They are listed here in alphabetical order.
    :exc:`TypeError` exception is raised if the method is not found or if either
    the *format_spec* or the return value are not strings.
 
+   .. versionadded:: 3.4
+      ``object().__format__(format_spec)`` raises :exc:`TypeError`
+      if *format_spec* is not empty string.
+
 
 .. _func-frozenset:
 .. function:: frozenset([iterable])
