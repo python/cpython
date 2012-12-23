@@ -1495,18 +1495,34 @@ class RequestTests(unittest.TestCase):
         req = Request(url)
         self.assertEqual(req.get_full_url(), url)
 
-def test_HTTPError_interface():
-    """
-    Issue 13211 reveals that HTTPError didn't implement the URLError
-    interface even though HTTPError is a subclass of URLError.
+    def test_HTTPError_interface(self):
+        """
+        Issue 13211 reveals that HTTPError didn't implement the URLError
+        interface even though HTTPError is a subclass of URLError.
 
-    >>> msg = 'something bad happened'
-    >>> url = code = hdrs = fp = None
-    >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-    >>> assert hasattr(err, 'reason')
-    >>> err.reason
-    'something bad happened'
-    """
+        >>> msg = 'something bad happened'
+        >>> url = code = hdrs = fp = None
+        >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
+        >>> assert hasattr(err, 'reason')
+        >>> err.reason
+        'something bad happened'
+        """
+
+    def test_HTTPError_interface_call(self):
+        """
+        Issue 15701 - HTTPError interface has info method available from URLError
+        """
+        err = urllib.request.HTTPError(msg="something bad happened", url=None,
+                                code=None, hdrs='Content-Length:42', fp=None)
+        self.assertTrue(hasattr(err, 'reason'))
+        assert hasattr(err, 'reason')
+        assert hasattr(err, 'info')
+        assert callable(err.info)
+        try:
+            err.info()
+        except AttributeError:
+            self.fail('err.info call failed.')
+        self.assertEqual(err.info(), "Content-Length:42")
 
 def test_main(verbose=None):
     from test import test_urllib2
