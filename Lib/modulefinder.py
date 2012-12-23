@@ -2,6 +2,7 @@
 
 import dis
 import imp
+import importlib.machinery
 import marshal
 import os
 import sys
