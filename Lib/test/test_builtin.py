@@ -680,6 +680,8 @@ class BuiltinTest(unittest.TestCase):
 
     # Test input() later, together with raw_input
 
+    # test_int(): see test_int.py for int() tests.
+
     def test_intern(self):
         self.assertRaises(TypeError, intern)
         # This fails if the test is run twice with a constant string,
