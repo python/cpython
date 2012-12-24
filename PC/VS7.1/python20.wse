@@ -1702,11 +1702,6 @@ item: Install File
   Destination=%MAINDIR%\pythonw.exe
   Flags=0000000000000010
 end
-item: Install File
-  Source=.\w9xpopen.exe
-  Destination=%MAINDIR%\w9xpopen.exe
-  Flags=0000000000000010
-end
 item: Remark
 end
 item: Remark
