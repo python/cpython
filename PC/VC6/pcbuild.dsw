@@ -114,7 +114,6 @@ Package=<4>
     Project_Dep_Name python
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name w9xpopen
     End Project Dependency
 }}}
 
@@ -262,19 +261,7 @@ Package=<4>
     End Project Dependency
 }}}
 
-###############################################################################
-
-Project: "w9xpopen"=".\w9xpopen.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
+##############################################################################
 
 Project: "winsound"=".\winsound.dsp" - Package Owner=<4>
 
