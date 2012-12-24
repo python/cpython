@@ -5,6 +5,7 @@ import os
 import py_compile
 import random
 import stat
+import struct
 import sys
 import unittest
 import textwrap
@@ -349,6 +350,46 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
             remove_files(TESTFN)
+
+    def test_pyc_mtime(self):
+        # Test for issue #13863: .pyc timestamp sometimes incorrect on Windows.
+        sys.path.insert(0, os.curdir)
+        try:
+            # Jan 1, 2012; Jul 1, 2012.
+            mtimes = 1325376000, 1341100800
+
+            # Different names to avoid running into import caching.
+            tails = "spam", "eggs"
+            for mtime, tail in zip(mtimes, tails):
+                module = TESTFN + tail
+                source = module + ".py"
+                compiled = source + ('c' if __debug__ else 'o')
+
+                # Create a new Python file with the given mtime.
+                with open(source, 'w') as f:
+                    f.write("# Just testing\nx=1, 2, 3\n")
+                os.utime(source, (mtime, mtime))
+
+                # Generate the .pyc/o file; if it couldn't be created
+                # for some reason, skip the test.
+                m = __import__(module)
+                if not os.path.exists(compiled):
+                    unlink(source)
+                    self.skipTest("Couldn't create .pyc/.pyo file.")
+
+                # Actual modification time of .py file.
+                mtime1 = int(os.stat(source).st_mtime) & 0xffffffff
+
+                # mtime that was encoded in the .pyc file.
+                with open(compiled, 'rb') as f:
+                    mtime2 = struct.unpack('<L', f.read(8)[4:])[0]
+
+                unlink(compiled)
+                unlink(source)
+
+                self.assertEqual(mtime1, mtime2)
+        finally:
+            sys.path.pop(0)
 
 
 class PycRewritingTests(unittest.TestCase):
