@@ -446,9 +446,42 @@ class UrlParseTestCase(unittest.TestCase):
         p1 = urlparse.urlsplit('tel:+31-641044153')
         self.assertEqual(p1.scheme, 'tel')
         self.assertEqual(p1.path, '+31-641044153')
+
         p2 = urlparse.urlsplit('tel:+31641044153')
         self.assertEqual(p2.scheme, 'tel')
         self.assertEqual(p2.path, '+31641044153')
+
+        # Assert for urlparse
+        p1 = urlparse.urlparse('tel:+31-641044153')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '+31-641044153')
+
+        p2 = urlparse.urlparse('tel:+31641044153')
+        self.assertEqual(p2.scheme, 'tel')
+        self.assertEqual(p2.path, '+31641044153')
+
+
+    def test_telurl_params(self):
+        p1 = urlparse.urlparse('tel:123-4;phone-context=+1-650-516')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '123-4')
+        self.assertEqual(p1.params, 'phone-context=+1-650-516')
+
+        p1 = urlparse.urlparse('tel:+1-201-555-0123')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '+1-201-555-0123')
+        self.assertEqual(p1.params, '')
+
+        p1 = urlparse.urlparse('tel:7042;phone-context=example.com')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '7042')
+        self.assertEqual(p1.params, 'phone-context=example.com')
+
+        p1 = urlparse.urlparse('tel:863-1234;phone-context=+1-914-555')
+        self.assertEqual(p1.scheme, 'tel')
+        self.assertEqual(p1.path, '863-1234')
+        self.assertEqual(p1.params, 'phone-context=+1-914-555')
+
 
     def test_attributes_bad_port(self):
         """Check handling of non-integer ports."""
