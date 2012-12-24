@@ -42,7 +42,7 @@ uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet',
                'svn', 'svn+ssh', 'sftp','nfs','git', 'git+ssh']
 uses_params = ['ftp', 'hdl', 'prospero', 'http', 'imap',
                'https', 'shttp', 'rtsp', 'rtspu', 'sip', 'sips',
-               'mms', '', 'sftp']
+               'mms', '', 'sftp', 'tel']
 
 # These are not actually used anymore, but should stay for backwards
 # compatibility.  (They are undocumented, but have a public-looking name.)
