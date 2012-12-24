@@ -114,6 +114,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16511: Use default IDLE width and height if config param is not valid.
+  Patch Serhiy Storchaka.
+
 - Issue #16443: Add docstrings to regular expression match objects.
   Patch by Anton Kasyanov.
 
