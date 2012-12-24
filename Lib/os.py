@@ -275,7 +275,7 @@ def removedirs(name):
     while head and tail:
         try:
             rmdir(head)
-        except OSrror:
+        except OSError:
             break
         head, tail = path.split(head)
 
