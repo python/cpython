@@ -29,7 +29,7 @@ def main():
             filename = os.path.join(dir, prog)
             try:
                 st = os.stat(filename)
-            except os.error:
+            except OSError:
                 continue
             if not S_ISREG(st[ST_MODE]):
                 msg(filename + ': not a disk file')

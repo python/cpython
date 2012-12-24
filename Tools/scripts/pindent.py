@@ -427,7 +427,7 @@ def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     # end if
     import os
     try: os.rename(filename, filename + '~')
-    except os.error: pass
+    except OSError: pass
     # end try
     f = open(filename, 'w')
     f.write(result)
@@ -442,7 +442,7 @@ def delete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = E
     # end if
     import os
     try: os.rename(filename, filename + '~')
-    except os.error: pass
+    except OSError: pass
     # end try
     f = open(filename, 'w')
     f.write(result)
@@ -457,7 +457,7 @@ def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     # end if
     import os
     try: os.rename(filename, filename + '~')
-    except os.error: pass
+    except OSError: pass
     # end try
     f = open(filename, 'w')
     f.write(result)

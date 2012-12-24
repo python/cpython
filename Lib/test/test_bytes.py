@@ -773,7 +773,7 @@ class ByteArrayTest(BaseBytesTest):
         finally:
             try:
                 os.remove(tfn)
-            except os.error:
+            except OSError:
                 pass
 
     def test_reverse(self):

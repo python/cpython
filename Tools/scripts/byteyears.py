@@ -43,7 +43,7 @@ def main():
     for filename in sys.argv[1:]:
         try:
             st = statfunc(filename)
-        except os.error as msg:
+        except OSError as msg:
             sys.stderr.write("can't stat %r: %r\n" % (filename, msg))
             status = 1
             st = ()

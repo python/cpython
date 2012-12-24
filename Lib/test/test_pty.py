@@ -187,7 +187,7 @@ class PtyTest(unittest.TestCase):
             ##debug("Reading from master_fd now that the child has exited")
             ##try:
             ##    s1 = os.read(master_fd, 1024)
-            ##except os.error:
+            ##except OSError:
             ##    pass
             ##else:
             ##    raise TestFailed("Read from master_fd did not raise exception")

@@ -24,7 +24,7 @@ def main():
     for dirname in sys.path:
         try:
             names = os.listdir(dirname)
-        except os.error:
+        except OSError:
             print('Cannot list directory', repr(dirname))
             continue
         if not silent:
@@ -34,7 +34,7 @@ def main():
                 name = os.path.join(dirname, name)
                 try:
                     st = os.stat(name)
-                except os.error:
+                except OSError:
                     print('Cannot stat', repr(name))
                     continue
                 if verbose:
