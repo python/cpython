@@ -311,7 +311,7 @@ def main():
         try:
             os.mkdir(odir)
             print("Created output directory", odir)
-        except os.error as msg:
+        except OSError as msg:
             usage('%s: mkdir failed (%s)' % (odir, str(msg)))
     base = ''
     if odir:

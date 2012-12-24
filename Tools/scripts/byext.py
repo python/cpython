@@ -25,7 +25,7 @@ class Stats:
         self.addstats("<dir>", "dirs", 1)
         try:
             names = os.listdir(dir)
-        except os.error as err:
+        except OSError as err:
             sys.stderr.write("Can't list %s: %s\n" % (dir, err))
             self.addstats("<dir>", "unlistable", 1)
             return

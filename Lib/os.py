@@ -275,7 +275,7 @@ def removedirs(name):
     while head and tail:
         try:
             rmdir(head)
-        except error:
+        except OSrror:
             break
         head, tail = path.split(head)
 
@@ -302,7 +302,7 @@ def renames(old, new):
     if head and tail:
         try:
             removedirs(head)
-        except error:
+        except OSError:
             pass
 
 __all__.extend(["makedirs", "removedirs", "renames"])
@@ -372,10 +372,10 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     # minor reason when (say) a thousand readable directories are still
     # left to visit.  That logic is copied here.
     try:
-        # Note that listdir and error are globals in this module due
+        # Note that listdir is global in this module due
         # to earlier import-*.
         names = listdir(top)
-    except error as err:
+    except OSError as err:
         if onerror is not None:
             onerror(err)
         return
@@ -477,7 +477,7 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
             try:
                 orig_st = stat(name, dir_fd=topfd, follow_symlinks=follow_symlinks)
                 dirfd = open(name, O_RDONLY, dir_fd=topfd)
-            except error as err:
+            except OSError as err:
                 if onerror is not None:
                     onerror(err)
                 return
@@ -572,7 +572,7 @@ def _execvpe(file, args, env=None):
         fullname = path.join(dir, file)
         try:
             exec_func(fullname, *argrest)
-        except error as e:
+        except OSError as e:
             last_exc = e
             tb = sys.exc_info()[2]
             if (e.errno != errno.ENOENT and e.errno != errno.ENOTDIR
@@ -830,7 +830,7 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
                 elif WIFEXITED(sts):
                     return WEXITSTATUS(sts)
                 else:
-                    raise error("Not stopped, signaled or exited???")
+                    raise OSError("Not stopped, signaled or exited???")
 
     def spawnv(mode, file, args):
         """spawnv(mode, file, args) -> integer

@@ -78,7 +78,7 @@ def process(slave, master):
         print("creating slave directory", slave)
         try:
             os.mkdir(slave)
-        except os.error as msg:
+        except OSError as msg:
             print("can't make slave directory", slave, ":", msg)
             return
         else:

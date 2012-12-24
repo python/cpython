@@ -73,7 +73,7 @@ def recursedown(dirname):
     bad = 0
     try:
         names = os.listdir(dirname)
-    except os.error as msg:
+    except OSError as msg:
         err('%s: cannot list directory: %r\n' % (dirname, msg))
         return 1
     names.sort()
@@ -131,24 +131,24 @@ def fix(filename):
         mtime = statbuf.st_mtime
         atime = statbuf.st_atime
         os.chmod(tempname, statbuf[ST_MODE] & 0o7777)
-    except os.error as msg:
+    except OSError as msg:
         err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~
     try:
         os.rename(filename, filename + '~')
-    except os.error as msg:
+    except OSError as msg:
         err('%s: warning: backup failed (%r)\n' % (filename, msg))
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)
-    except os.error as msg:
+    except OSError as msg:
         err('%s: rename failed (%r)\n' % (filename, msg))
         return 1
     if preserve_timestamps:
         if atime and mtime:
             try:
                 os.utime(filename, (atime, mtime))
-            except os.error as msg:
+            except OSError as msg:
                 err('%s: reset of timestamp failed (%r)\n' % (filename, msg))
                 return 1
     # Return succes

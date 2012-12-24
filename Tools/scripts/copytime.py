@@ -13,12 +13,12 @@ def main():
     file1, file2 = sys.argv[1], sys.argv[2]
     try:
         stat1 = os.stat(file1)
-    except os.error:
+    except OSError:
         sys.stderr.write(file1 + ': cannot stat\n')
         sys.exit(1)
     try:
         os.utime(file2, (stat1[ST_ATIME], stat1[ST_MTIME]))
-    except os.error:
+    except OSError:
         sys.stderr.write(file2 + ': cannot change time\n')
         sys.exit(2)
 
