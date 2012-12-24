@@ -111,7 +111,6 @@ Source: *.ico; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
 
 Source: python.exe; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
 Source: pythonw.exe; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
-Source: w9xpopen.exe; DestDir: {app}; CopyMode: alwaysoverwrite; Components: main
 
 
 Source: DLLs\tcl83.dll; DestDir: {app}\DLLs; CopyMode: alwaysoverwrite; Components: tk
