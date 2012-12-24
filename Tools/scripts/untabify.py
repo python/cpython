@@ -39,11 +39,11 @@ def process(filename, tabsize, verbose=True):
     backup = filename + "~"
     try:
         os.unlink(backup)
-    except os.error:
+    except OSError:
         pass
     try:
         os.rename(filename, backup)
-    except os.error:
+    except OSError:
         pass
     with open(filename, "w", encoding=encoding) as f:
         f.write(newtext)

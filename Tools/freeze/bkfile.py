@@ -7,11 +7,11 @@ class _BkFile:
         self.__backup = file + '~'
         try:
             os.unlink(self.__backup)
-        except os.error:
+        except OSError:
             pass
         try:
             os.rename(file, self.__backup)
-        except os.error:
+        except OSError:
             self.__backup = None
         self.__file = _orig_open(file, mode, bufsize)
         self.closed = self.__file.closed

@@ -97,7 +97,7 @@ def recursedown(dirname):
     bad = 0
     try:
         names = os.listdir(dirname)
-    except os.error as msg:
+    except OSError as msg:
         err(dirname + ': cannot list directory: ' + str(msg) + '\n')
         return 1
     names.sort()
@@ -175,17 +175,17 @@ def fix(filename):
     try:
         statbuf = os.stat(filename)
         os.chmod(tempname, statbuf[ST_MODE] & 0o7777)
-    except os.error as msg:
+    except OSError as msg:
         err(tempname + ': warning: chmod failed (' + str(msg) + ')\n')
     # Then make a backup of the original file as filename~
     try:
         os.rename(filename, filename + '~')
-    except os.error as msg:
+    except OSError as msg:
         err(filename + ': warning: backup failed (' + str(msg) + ')\n')
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)
-    except os.error as msg:
+    except OSError as msg:
         err(filename + ': rename failed (' + str(msg) + ')\n')
         return 1
     # Return success

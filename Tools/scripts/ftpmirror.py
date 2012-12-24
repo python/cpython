@@ -108,7 +108,7 @@ def mirrorsubdir(f, localdir):
         if verbose: print('Creating local directory', repr(localdir))
         try:
             makedir(localdir)
-        except os.error as msg:
+        except OSError as msg:
             print("Failed to establish local directory", repr(localdir))
             return
     infofilename = os.path.join(localdir, '.mirrorinfo')
@@ -183,7 +183,7 @@ def mirrorsubdir(f, localdir):
                 continue
         try:
             os.unlink(tempname)
-        except os.error:
+        except OSError:
             pass
         if mode[0] == 'l':
             if verbose:
@@ -218,11 +218,11 @@ def mirrorsubdir(f, localdir):
                 fp1.close()
         try:
             os.unlink(fullname)
-        except os.error:
+        except OSError:
             pass            # Ignore the error
         try:
             os.rename(tempname, fullname)
-        except os.error as msg:
+        except OSError as msg:
             print("Can't rename %r to %r: %s" % (tempname, fullname, msg))
             continue
         info[filename] = infostuff
@@ -255,7 +255,7 @@ def mirrorsubdir(f, localdir):
     try:
         if not localdir: names = os.listdir(os.curdir)
         else: names = os.listdir(localdir)
-    except os.error:
+    except OSError:
         names = []
     for name in names:
         if name[0] == '.' or name in info or name in subdirs:
@@ -312,7 +312,7 @@ def remove(fullname):
     if os.path.isdir(fullname) and not os.path.islink(fullname):
         try:
             names = os.listdir(fullname)
-        except os.error:
+        except OSError:
             names = []
         ok = 1
         for name in names:
@@ -322,13 +322,13 @@ def remove(fullname):
             return 0
         try:
             os.rmdir(fullname)
-        except os.error as msg:
+        except OSError as msg:
             print("Can't remove local directory %r: %s" % (fullname, msg))
             return 0
     else:
         try:
             os.unlink(fullname)
-        except os.error as msg:
+        except OSError as msg:
             print("Can't remove local file %r: %s" % (fullname, msg))
             return 0
     return 1
@@ -386,7 +386,7 @@ def writedict(dict, filename):
     backup = os.path.join(dir, fname + '~')
     try:
         os.unlink(backup)
-    except os.error:
+    except OSError:
         pass
     fp = open(tempname, 'w')
     fp.write('{\n')
@@ -396,7 +396,7 @@ def writedict(dict, filename):
     fp.close()
     try:
         os.rename(filename, backup)
-    except os.error:
+    except OSError:
         pass
     os.rename(tempname, filename)
 

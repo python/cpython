@@ -36,7 +36,7 @@ def visit(prog, dirname, names):
             linkto = os.readlink(name)
             if prog.search(linkto) is not None:
                 print(name, '->', linkto)
-        except os.error:
+        except OSError:
             pass
 
 if __name__ == '__main__':
