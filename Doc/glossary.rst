@@ -245,8 +245,9 @@ Glossary
 
    function
       A series of statements which returns some value to a caller. It can also
-      be passed zero or more arguments which may be used in the execution of
-      the body. See also :term:`argument` and :term:`method`.
+      be passed zero or more :term:`arguments <argument>` which may be used in
+      the execution of the body. See also :term:`parameter`, :term:`method`,
+      and the :ref:`function` section.
 
    __future__
       A pseudo-module which programmers can use to enable new language features
