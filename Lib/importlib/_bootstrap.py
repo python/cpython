@@ -915,7 +915,7 @@ class SourceLoader(_LoaderBasics):
         path = self.get_filename(fullname)
         try:
             source_bytes = self.get_data(path)
-        except IOError as exc:
+        except OSError as exc:
             raise ImportError("source not available through get_data()",
                               name=fullname) from exc
         readsource = _io.BytesIO(source_bytes).readline
@@ -961,7 +961,7 @@ class SourceLoader(_LoaderBasics):
                 source_mtime = int(st['mtime'])
                 try:
                     data = self.get_data(bytecode_path)
-                except IOError:
+                except OSError:
                     pass
                 else:
                     try:

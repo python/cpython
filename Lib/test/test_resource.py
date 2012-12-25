@@ -61,7 +61,7 @@ class ResourceTest(unittest.TestCase):
                         for i in range(5):
                             time.sleep(.1)
                             f.flush()
-                    except IOError:
+                    except OSError:
                         if not limit_set:
                             raise
                     if limit_set:

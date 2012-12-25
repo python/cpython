@@ -244,7 +244,7 @@ class GNUTranslations(NullTranslations):
             version, msgcount, masteridx, transidx = unpack('>4I', buf[4:20])
             ii = '>II'
         else:
-            raise IOError(0, 'Bad magic number', filename)
+            raise OSError(0, 'Bad magic number', filename)
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
         for i in range(0, msgcount):
@@ -256,7 +256,7 @@ class GNUTranslations(NullTranslations):
                 msg = buf[moff:mend]
                 tmsg = buf[toff:tend]
             else:
-                raise IOError(0, 'File is corrupt', filename)
+                raise OSError(0, 'File is corrupt', filename)
             # See if we're looking at GNU .mo conventions for metadata
             if mlen == 0:
                 # Catalog description
@@ -398,7 +398,7 @@ def translation(domain, localedir=None, languages=None,
     if not mofiles:
         if fallback:
             return NullTranslations()
-        raise IOError(ENOENT, 'No translation file found for domain', domain)
+        raise OSError(ENOENT, 'No translation file found for domain', domain)
     # Avoid opening, reading, and parsing the .mo file after it's been done
     # once.
     result = None
@@ -460,7 +460,7 @@ def dgettext(domain, message):
     try:
         t = translation(domain, _localedirs.get(domain, None),
                         codeset=_localecodesets.get(domain))
-    except IOError:
+    except OSError:
         return message
     return t.gettext(message)
 
@@ -468,7 +468,7 @@ def ldgettext(domain, message):
     try:
         t = translation(domain, _localedirs.get(domain, None),
                         codeset=_localecodesets.get(domain))
-    except IOError:
+    except OSError:
         return message
     return t.lgettext(message)
 
@@ -476,7 +476,7 @@ def dngettext(domain, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None),
                         codeset=_localecodesets.get(domain))
-    except IOError:
+    except OSError:
         if n == 1:
             return msgid1
         else:
@@ -487,7 +487,7 @@ def ldngettext(domain, msgid1, msgid2, n):
     try:
         t = translation(domain, _localedirs.get(domain, None),
                         codeset=_localecodesets.get(domain))
-    except IOError:
+    except OSError:
         if n == 1:
             return msgid1
         else:

@@ -70,7 +70,7 @@ class Chunk:
         self.size_read = 0
         try:
             self.offset = self.file.tell()
-        except (AttributeError, IOError):
+        except (AttributeError, OSError):
             self.seekable = False
         else:
             self.seekable = True
@@ -102,7 +102,7 @@ class Chunk:
         if self.closed:
             raise ValueError("I/O operation on closed file")
         if not self.seekable:
-            raise IOError("cannot seek")
+            raise OSError("cannot seek")
         if whence == 1:
             pos = pos + self.size_read
         elif whence == 2:
@@ -158,7 +158,7 @@ class Chunk:
                 self.file.seek(n, 1)
                 self.size_read = self.size_read + n
                 return
-            except IOError:
+            except OSError:
                 pass
         while self.size_read < self.chunksize:
             n = min(8192, self.chunksize - self.size_read)

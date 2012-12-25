@@ -459,7 +459,7 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
             self.assertRaises(error, z.load_module, 'abc')
             self.assertRaises(error, z.get_code, 'abc')
-            self.assertRaises(IOError, z.get_data, 'abc')
+            self.assertRaises(OSError, z.get_data, 'abc')
             self.assertRaises(error, z.get_source, 'abc')
             self.assertRaises(error, z.is_package, 'abc')
         finally:

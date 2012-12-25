@@ -264,13 +264,13 @@ def copyfileobj(src, dst, length=None):
     for b in range(blocks):
         buf = src.read(BUFSIZE)
         if len(buf) < BUFSIZE:
-            raise IOError("end of file reached")
+            raise OSError("end of file reached")
         dst.write(buf)
 
     if remainder != 0:
         buf = src.read(remainder)
         if len(buf) < remainder:
-            raise IOError("end of file reached")
+            raise OSError("end of file reached")
         dst.write(buf)
     return
 
@@ -399,7 +399,7 @@ class _Stream:
                 if mode == "r":
                     self.dbuf = b""
                     self.cmp = bz2.BZ2Decompressor()
-                    self.exception = IOError
+                    self.exception = OSError
                 else:
                     self.cmp = bz2.BZ2Compressor()
 
@@ -1631,7 +1631,7 @@ class TarFile(object):
         try:
             fileobj = gzip.GzipFile(name, mode + "b", compresslevel, fileobj)
             t = cls.taropen(name, mode, fileobj, **kwargs)
-        except IOError:
+        except OSError:
             if not extfileobj and fileobj is not None:
                 fileobj.close()
             if fileobj is None:
@@ -1662,7 +1662,7 @@ class TarFile(object):
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
-        except (IOError, EOFError):
+        except (OSError, EOFError):
             fileobj.close()
             raise ReadError("not a bzip2 file")
         t._extfileobj = False
@@ -2322,9 +2322,9 @@ class TarFile(object):
            corresponds to TarFile's mode.
         """
         if self.closed:
-            raise IOError("%s is closed" % self.__class__.__name__)
+            raise OSError("%s is closed" % self.__class__.__name__)
         if mode is not None and self.mode not in mode:
-            raise IOError("bad operation for mode %r" % self.mode)
+            raise OSError("bad operation for mode %r" % self.mode)
 
     def _find_link_target(self, tarinfo):
         """Find the target member of a symlink or hardlink member in the

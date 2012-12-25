@@ -550,7 +550,7 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(st.st_flags | stat.UF_IMMUTABLE, new_st.st_flags)
             try:
                 fd = open(target_file, 'w+')
-            except IOError as e:
+            except OSError as e:
                 self.assertEqual(e.errno, errno.EPERM)
         finally:
             posix.chflags(target_file, st.st_flags)

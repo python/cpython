@@ -11,7 +11,7 @@ The return tuple contains the following items, in this order:
 - number of bits/sample, or 'U' for U-LAW, or 'A' for A-LAW
 
 If the file doesn't have a recognizable type, it returns None.
-If the file can't be opened, IOError is raised.
+If the file can't be opened, OSError is raised.
 
 To compute the total time, divide the number of frames by the
 sampling rate (a frame contains a sample for each channel).
@@ -230,7 +230,7 @@ def testall(list, recursive, toplevel):
             sys.stdout.flush()
             try:
                 print(what(filename))
-            except IOError:
+            except OSError:
                 print('*** not found ***')
 
 if __name__ == '__main__':

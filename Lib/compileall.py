@@ -106,7 +106,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
                         actual = chandle.read(8)
                     if expect == actual:
                         return success
-                except IOError:
+                except OSError:
                     pass
             if not quiet:
                 print('Compiling {!r}...'.format(fullname))
@@ -124,7 +124,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=False,
                 msg = msg.decode(sys.stdout.encoding)
                 print(msg)
                 success = 0
-            except (SyntaxError, UnicodeError, IOError) as e:
+            except (SyntaxError, UnicodeError, OSError) as e:
                 if quiet:
                     print('*** Error compiling {!r}...'.format(fullname))
                 else:

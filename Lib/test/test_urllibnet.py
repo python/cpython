@@ -121,7 +121,7 @@ class urlopenNetworkTests(unittest.TestCase):
         else:
             # This happens with some overzealous DNS providers such as OpenDNS
             self.skipTest("%r should not resolve for test to work" % bogus_domain)
-        self.assertRaises(IOError,
+        self.assertRaises(OSError,
                           # SF patch 809915:  In Sep 2003, VeriSign started
                           # highjacking invalid .com and .net addresses to
                           # boost traffic to their own site.  This test

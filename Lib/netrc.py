@@ -25,7 +25,7 @@ class netrc:
             try:
                 file = os.path.join(os.environ['HOME'], ".netrc")
             except KeyError:
-                raise IOError("Could not find .netrc: $HOME is not set")
+                raise OSError("Could not find .netrc: $HOME is not set")
         self.hosts = {}
         self.macros = {}
         with open(file) as fp:

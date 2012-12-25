@@ -80,7 +80,7 @@ def initlog(*allargs):
     if logfile and not logfp:
         try:
             logfp = open(logfile, "a")
-        except IOError:
+        except OSError:
             pass
     if not logfp:
         log = nolog

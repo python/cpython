@@ -59,7 +59,7 @@ class SourceLoaderMock(SourceOnlyLoaderMock):
         elif path == self.bytecode_path:
             return self.bytecode
         else:
-            raise IOError
+            raise OSError
 
     def path_stats(self, path):
         assert path == self.path
@@ -125,12 +125,12 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
 
     def test_get_source(self):
         # Verify the source code is returned as a string.
-        # If an IOError is raised by get_data then raise ImportError.
+        # If an OSError is raised by get_data then raise ImportError.
         expected_source = self.loader.source.decode('utf-8')
         self.assertEqual(self.loader.get_source(self.name), expected_source)
-        def raise_IOError(path):
-            raise IOError
-        self.loader.get_data = raise_IOError
+        def raise_OSError(path):
+            raise OSError
+        self.loader.get_data = raise_OSError
         with self.assertRaises(ImportError) as cm:
             self.loader.get_source(self.name)
         self.assertEqual(cm.exception.name, self.name)
@@ -216,7 +216,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         # If no bytecode exists then move on to the source.
         self.loader.bytecode_path = "<does not exist>"
         # Sanity check
-        with self.assertRaises(IOError):
+        with self.assertRaises(OSError):
             bytecode_path = imp.cache_from_source(self.path)
             self.loader.get_data(bytecode_path)
         code_object = self.loader.get_code(self.name)
@@ -265,7 +265,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
             self.loader.__class__.set_data = original_set_data
 
     def test_set_data_raises_exceptions(self):
-        # Raising NotImplementedError or IOError is okay for set_data.
+        # Raising NotImplementedError or OSError is okay for set_data.
         def raise_exception(exc):
             def closure(*args, **kwargs):
                 raise exc

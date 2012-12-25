@@ -91,7 +91,7 @@ def updatecache(filename, module_globals=None):
             if name and get_source:
                 try:
                     data = get_source(name)
-                except (ImportError, IOError):
+                except (ImportError, OSError):
                     pass
                 else:
                     if data is None:
@@ -125,7 +125,7 @@ def updatecache(filename, module_globals=None):
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
-    except IOError:
+    except OSError:
         return []
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'

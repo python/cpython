@@ -153,7 +153,7 @@ def addpackage(sitedir, name, known_paths):
     fullname = os.path.join(sitedir, name)
     try:
         f = open(fullname, "r")
-    except IOError:
+    except OSError:
         return
     with f:
         for n, line in enumerate(f):
@@ -388,7 +388,7 @@ class _Printer(object):
                     data = fp.read()
                     fp.close()
                     break
-                except IOError:
+                except OSError:
                     pass
             if data:
                 break

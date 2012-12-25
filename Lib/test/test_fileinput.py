@@ -275,8 +275,8 @@ class FileInputTests(unittest.TestCase):
         try:
             t1 = writeTmp(1, [""])
             with FileInput(files=t1) as fi:
-                raise IOError
-        except IOError:
+                raise OSError
+        except OSError:
             self.assertEqual(fi._files, ())
         finally:
             remove_tempfiles(t1)

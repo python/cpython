@@ -61,7 +61,7 @@ class error_proto(Error): pass          # response does not begin with [1-5]
 
 # All exceptions (hopefully) that may be raised here and that aren't
 # (always) programming errors on our side
-all_errors = (Error, IOError, EOFError)
+all_errors = (Error, OSError, EOFError)
 
 
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
@@ -826,7 +826,7 @@ else:
             return resp
 
     __all__.append('FTP_TLS')
-    all_errors = (Error, IOError, EOFError, ssl.SSLError)
+    all_errors = (Error, OSError, EOFError, ssl.SSLError)
 
 
 _150_re = None
@@ -958,7 +958,7 @@ class Netrc:
                 filename = os.path.join(os.environ["HOME"],
                                         ".netrc")
             else:
-                raise IOError("specify file to load or set $HOME")
+                raise OSError("specify file to load or set $HOME")
         self.__hosts = {}
         self.__macros = {}
         fp = open(filename, "r")
@@ -1074,7 +1074,7 @@ def test():
     userid = passwd = acct = ''
     try:
         netrc = Netrc(rcfile)
-    except IOError:
+    except OSError:
         if rcfile is not None:
             sys.stderr.write("Could not open account file"
                              " -- using anonymous login.")

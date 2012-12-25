@@ -422,7 +422,7 @@ class Grail(BaseBrowser):
                 # no good; attempt to clean it out, but don't fail:
                 try:
                     os.unlink(fn)
-                except IOError:
+                except OSError:
                     pass
             else:
                 return s

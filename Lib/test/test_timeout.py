@@ -194,7 +194,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
             sock.connect((whitehole))
         except socket.timeout:
             pass
-        except IOError as err:
+        except OSError as err:
             if err.errno == errno.ECONNREFUSED:
                 skip = False
         finally:

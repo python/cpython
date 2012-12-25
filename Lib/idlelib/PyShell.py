@@ -58,7 +58,7 @@ else:
         try:
             file.write(warnings.formatwarning(message, category, filename,
                                               lineno, line=line))
-        except IOError:
+        except OSError:
             pass  ## file (probably __stderr__) is invalid, warning dropped.
     warnings.showwarning = idle_showwarning
     def idle_formatwarning(message, category, filename, lineno, line=None):
@@ -211,7 +211,7 @@ class PyShellEditorWindow(EditorWindow):
         try:
             with open(self.breakpointPath, "r") as fp:
                 lines = fp.readlines()
-        except IOError:
+        except OSError:
             lines = []
         try:
             with open(self.breakpointPath, "w") as new_file:
@@ -222,7 +222,7 @@ class PyShellEditorWindow(EditorWindow):
                 breaks = self.breakpoints
                 if breaks:
                     new_file.write(filename + '=' + str(breaks) + '\n')
-        except IOError as err:
+        except OSError as err:
             if not getattr(self.root, "breakpoint_error_displayed", False):
                 self.root.breakpoint_error_displayed = True
                 tkMessageBox.showerror(title='IDLE Error',
@@ -528,7 +528,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return
         try:
             response = clt.pollresponse(self.active_seq, wait=0.05)
-        except (EOFError, IOError, KeyboardInterrupt):
+        except (EOFError, OSError, KeyboardInterrupt):
             # lost connection or subprocess terminated itself, restart
             # [the KBI is from rpc.SocketIO.handle_EOF()]
             if self.tkconsole.closing:

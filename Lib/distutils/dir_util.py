@@ -198,7 +198,7 @@ def remove_tree(directory, verbose=1, dry_run=0):
             abspath = os.path.abspath(cmd[1])
             if abspath in _path_created:
                 del _path_created[abspath]
-        except (IOError, OSError) as exc:
+        except OSError as exc:
             log.warn(grok_environment_error(
                     exc, "error removing %s: " % directory))
 

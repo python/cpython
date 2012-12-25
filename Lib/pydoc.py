@@ -223,7 +223,7 @@ def synopsis(filename, cache={}):
     if lastupdate is None or lastupdate < mtime:
         try:
             file = tokenize.open(filename)
-        except IOError:
+        except OSError:
             # module can't be opened, so skip it
             return None
         binary_suffixes = importlib.machinery.BYTECODE_SUFFIXES[:]
@@ -1419,7 +1419,7 @@ def pipepager(text, cmd):
     try:
         pipe.write(text)
         pipe.close()
-    except IOError:
+    except OSError:
         pass # Ignore broken pipes caused by quitting the pager program.
 
 def tempfilepager(text, cmd):

@@ -522,7 +522,7 @@ class TestUrlopen(unittest.TestCase):
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
-        self.assertRaises(IOError,
+        self.assertRaises(OSError,
                           # Given that both VeriSign and various ISPs have in
                           # the past or are presently hijacking various invalid
                           # domain name requests in an attempt to boost traffic

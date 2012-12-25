@@ -1097,9 +1097,9 @@ class TransientResource(object):
 # Context managers that raise ResourceDenied when various issues
 # with the Internet connection manifest themselves as exceptions.
 # XXX deprecate these and use transient_internet() instead
-time_out = TransientResource(IOError, errno=errno.ETIMEDOUT)
+time_out = TransientResource(OSError, errno=errno.ETIMEDOUT)
 socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
-ioerror_peer_reset = TransientResource(IOError, errno=errno.ECONNRESET)
+ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
 @contextlib.contextmanager
@@ -1145,17 +1145,17 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         if timeout is not None:
             socket.setdefaulttimeout(timeout)
         yield
-    except IOError as err:
+    except OSError as err:
         # urllib can wrap original socket errors multiple times (!), we must
         # unwrap to get at the original error.
         while True:
             a = err.args
-            if len(a) >= 1 and isinstance(a[0], IOError):
+            if len(a) >= 1 and isinstance(a[0], OSError):
                 err = a[0]
             # The error can also be wrapped as args[1]:
             #    except socket.error as msg:
-            #        raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
-            elif len(a) >= 2 and isinstance(a[1], IOError):
+            #        raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
+            elif len(a) >= 2 and isinstance(a[1], OSError):
                 err = a[1]
             else:
                 break
