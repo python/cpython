@@ -173,7 +173,7 @@ def main(args=None):
             except PyCompileError as error:
                 rv = 1
                 sys.stderr.write("%s\n" % error.msg)
-            except IOError as error:
+            except OSError as error:
                 rv = 1
                 sys.stderr.write("%s\n" % error)
     else:

@@ -929,7 +929,7 @@ class OtherTests(unittest.TestCase):
         try:
             with zipfile.ZipFile(TESTFN, 'a') as zf:
                 zf.writestr(filename, content)
-        except IOError:
+        except OSError:
             self.fail('Could not append data to a non-existent zip file.')
 
         self.assertTrue(os.path.exists(TESTFN))
@@ -995,7 +995,7 @@ class OtherTests(unittest.TestCase):
         chk = zipfile.is_zipfile(fp)
         self.assertTrue(chk)
 
-    def test_non_existent_file_raises_IOError(self):
+    def test_non_existent_file_raises_OSError(self):
         # make sure we don't raise an AttributeError when a partially-constructed
         # ZipFile instance is finalized; this tests for regression on SF tracker
         # bug #403871.
@@ -1007,7 +1007,7 @@ class OtherTests(unittest.TestCase):
         # it is ignored, but the user should be sufficiently annoyed by
         # the message on the output that regression will be noticed
         # quickly.
-        self.assertRaises(IOError, zipfile.ZipFile, TESTFN)
+        self.assertRaises(OSError, zipfile.ZipFile, TESTFN)
 
     def test_empty_file_raises_BadZipFile(self):
         f = open(TESTFN, 'w')
@@ -1281,7 +1281,7 @@ class OtherTests(unittest.TestCase):
     def test_open_empty_file(self):
         # Issue 1710703: Check that opening a file with less than 22 bytes
         # raises a BadZipFile exception (rather than the previously unhelpful
-        # IOError)
+        # OSError)
         f = open(TESTFN, 'w')
         f.close()
         self.assertRaises(zipfile.BadZipFile, zipfile.ZipFile, TESTFN, 'r')

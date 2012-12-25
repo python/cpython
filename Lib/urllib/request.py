@@ -18,7 +18,7 @@ urlopen(url, data=None) -- Basic usage is the same as original
 urllib.  pass the url and optionally data to post to an HTTP URL, and
 get a file-like object back.  One difference is that you can also pass
 a Request instance instead of URL.  Raises a URLError (subclass of
-IOError); for HTTP errors, raises an HTTPError, which can also be
+OSError); for HTTP errors, raises an HTTPError, which can also be
 treated as a valid response.
 
 build_opener -- Function that creates a new OpenerDirector instance.
@@ -1722,17 +1722,17 @@ class URLopener:
         except (HTTPError, URLError):
             raise
         except OSError as msg:
-            raise IOError('socket error', msg).with_traceback(sys.exc_info()[2])
+            raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
 
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
         type, url = splittype(fullurl)
-        raise IOError('url error', 'unknown url type', type)
+        raise OSError('url error', 'unknown url type', type)
 
     def open_unknown_proxy(self, proxy, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
         type, url = splittype(fullurl)
-        raise IOError('url error', 'invalid proxy for %s' % type, proxy)
+        raise OSError('url error', 'invalid proxy for %s' % type, proxy)
 
     # External interface
     def retrieve(self, url, filename=None, reporthook=None, data=None):
@@ -1748,7 +1748,7 @@ class URLopener:
                 hdrs = fp.info()
                 fp.close()
                 return url2pathname(splithost(url1)[1]), hdrs
-            except IOError as msg:
+            except OSError as msg:
                 pass
         fp = self.open(url, data)
         try:
@@ -1841,7 +1841,7 @@ class URLopener:
                 if proxy_bypass(realhost):
                     host = realhost
 
-        if not host: raise IOError('http error', 'no host given')
+        if not host: raise OSError('http error', 'no host given')
 
         if proxy_passwd:
             proxy_passwd = unquote(proxy_passwd)
@@ -1914,7 +1914,7 @@ class URLopener:
         return self.http_error_default(url, fp, errcode, errmsg, headers)
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
-        """Default error handler: close the connection and raise IOError."""
+        """Default error handler: close the connection and raise OSError."""
         fp.close()
         raise HTTPError(url, errcode, errmsg, headers, None)
 
@@ -2041,7 +2041,7 @@ class URLopener:
         try:
             [type, data] = url.split(',', 1)
         except ValueError:
-            raise IOError('data error', 'bad data URL')
+            raise OSError('data error', 'bad data URL')
         if not type:
             type = 'text/plain;charset=US-ASCII'
         semi = type.rfind(';')

@@ -114,7 +114,7 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
                         # Naked sockets return empty strings..
                         return
                     line += part
-                except IOError:
+                except OSError:
                     # ..but SSLSockets raise exceptions.
                     return
                 if line.endswith(b'\r\n'):

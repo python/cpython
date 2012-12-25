@@ -2019,7 +2019,7 @@ class _TestManagerRestart(BaseTestCase):
             address=addr, authkey=authkey, serializer=SERIALIZER)
         try:
             manager.start()
-        except IOError as e:
+        except OSError as e:
             if e.errno != errno.EADDRINUSE:
                 raise
             # Retry after some time, in case the old socket was lingering
@@ -2132,9 +2132,9 @@ class _TestConnection(BaseTestCase):
             self.assertEqual(reader.writable, False)
             self.assertEqual(writer.readable, False)
             self.assertEqual(writer.writable, True)
-            self.assertRaises(IOError, reader.send, 2)
-            self.assertRaises(IOError, writer.recv)
-            self.assertRaises(IOError, writer.poll)
+            self.assertRaises(OSError, reader.send, 2)
+            self.assertRaises(OSError, writer.recv)
+            self.assertRaises(OSError, writer.poll)
 
     def test_spawn_close(self):
         # We test that a pipe connection can be closed by parent
@@ -2296,8 +2296,8 @@ class _TestConnection(BaseTestCase):
         if self.TYPE == 'processes':
             self.assertTrue(a.closed)
             self.assertTrue(b.closed)
-            self.assertRaises(IOError, a.recv)
-            self.assertRaises(IOError, b.recv)
+            self.assertRaises(OSError, a.recv)
+            self.assertRaises(OSError, b.recv)
 
 class _TestListener(BaseTestCase):
 
@@ -2318,7 +2318,7 @@ class _TestListener(BaseTestCase):
                     self.assertEqual(d.recv(), 1729)
 
         if self.TYPE == 'processes':
-            self.assertRaises(IOError, l.accept)
+            self.assertRaises(OSError, l.accept)
 
 class _TestListenerClient(BaseTestCase):
 
@@ -2866,12 +2866,12 @@ class TestInvalidHandle(unittest.TestCase):
     def test_invalid_handles(self):
         conn = multiprocessing.connection.Connection(44977608)
         try:
-            self.assertRaises((ValueError, IOError), conn.poll)
+            self.assertRaises((ValueError, OSError), conn.poll)
         finally:
             # Hack private attribute _handle to avoid printing an error
             # in conn.__del__
             conn._handle = None
-        self.assertRaises((ValueError, IOError),
+        self.assertRaises((ValueError, OSError),
                           multiprocessing.connection.Connection, -1)
 
 #

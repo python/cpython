@@ -167,7 +167,7 @@ class Server(object):
         while True:
             try:
                 c = self.listener.accept()
-            except (OSError, IOError):
+            except OSError:
                 continue
             t = threading.Thread(target=self.handle_request, args=(c,))
             t.daemon = True

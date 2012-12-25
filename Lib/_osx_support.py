@@ -94,7 +94,7 @@ def _get_system_version():
         _SYSTEM_VERSION = ''
         try:
             f = open('/System/Library/CoreServices/SystemVersion.plist')
-        except IOError:
+        except OSError:
             # We're on a plain darwin box, fall back to the default
             # behaviour.
             pass

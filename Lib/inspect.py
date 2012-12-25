@@ -545,13 +545,13 @@ def findsource(object):
 
     The argument may be a module, class, method, function, traceback, frame,
     or code object.  The source code is returned as a list of all the lines
-    in the file and the line number indexes a line in that list.  An IOError
+    in the file and the line number indexes a line in that list.  An OSError
     is raised if the source code cannot be retrieved."""
 
     file = getfile(object)
     sourcefile = getsourcefile(object)
     if not sourcefile and file[0] + file[-1] != '<>':
-        raise IOError('source code not available')
+        raise OSError('source code not available')
     file = sourcefile if sourcefile else file
 
     module = getmodule(object, file)
@@ -560,7 +560,7 @@ def findsource(object):
     else:
         lines = linecache.getlines(file)
     if not lines:
-        raise IOError('could not get source code')
+        raise OSError('could not get source code')
 
     if ismodule(object):
         return lines, 0
@@ -586,7 +586,7 @@ def findsource(object):
             candidates.sort()
             return lines, candidates[0][1]
         else:
-            raise IOError('could not find class definition')
+            raise OSError('could not find class definition')
 
     if ismethod(object):
         object = object.__func__
@@ -598,14 +598,14 @@ def findsource(object):
         object = object.f_code
     if iscode(object):
         if not hasattr(object, 'co_firstlineno'):
-            raise IOError('could not find function definition')
+            raise OSError('could not find function definition')
         lnum = object.co_firstlineno - 1
         pat = re.compile(r'^(\s*def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
         while lnum > 0:
             if pat.match(lines[lnum]): break
             lnum = lnum - 1
         return lines, lnum
-    raise IOError('could not find code object')
+    raise OSError('could not find code object')
 
 def getcomments(object):
     """Get lines of comments immediately preceding an object's source code.
@@ -614,7 +614,7 @@ def getcomments(object):
     """
     try:
         lines, lnum = findsource(object)
-    except (IOError, TypeError):
+    except (OSError, TypeError):
         return None
 
     if ismodule(object):
@@ -710,7 +710,7 @@ def getsourcelines(object):
     The argument may be a module, class, method, function, traceback, frame,
     or code object.  The source code is returned as a list of the lines
     corresponding to the object and the line number indicates where in the
-    original source file the first line of code was found.  An IOError is
+    original source file the first line of code was found.  An OSError is
     raised if the source code cannot be retrieved."""
     lines, lnum = findsource(object)
 
@@ -722,7 +722,7 @@ def getsource(object):
 
     The argument may be a module, class, method, function, traceback, frame,
     or code object.  The source code is returned as a single string.  An
-    IOError is raised if the source code cannot be retrieved."""
+    OSError is raised if the source code cannot be retrieved."""
     lines, lnum = getsourcelines(object)
     return ''.join(lines)
 
@@ -1122,7 +1122,7 @@ def getframeinfo(frame, context=1):
         start = lineno - 1 - context//2
         try:
             lines, lnum = findsource(frame)
-        except IOError:
+        except OSError:
             lines = index = None
         else:
             start = max(start, 1)

@@ -2066,7 +2066,6 @@ Name(identifier id, expr_context_ty ctx, int lineno, int col_offset, PyArena
      *arena)
 {
         expr_ty p;
-        assert(PyUnicode_CompareWithASCIIString(id, "True") && PyUnicode_CompareWithASCIIString(id, "False") && PyUnicode_CompareWithASCIIString(id, "None"));
         if (!id) {
                 PyErr_SetString(PyExc_ValueError,
                                 "field id is required for Name");

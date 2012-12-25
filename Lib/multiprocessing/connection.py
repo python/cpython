@@ -132,22 +132,22 @@ class _ConnectionBase:
 
     def _check_closed(self):
         if self._handle is None:
-            raise IOError("handle is closed")
+            raise OSError("handle is closed")
 
     def _check_readable(self):
         if not self._readable:
-            raise IOError("connection is write-only")
+            raise OSError("connection is write-only")
 
     def _check_writable(self):
         if not self._writable:
-            raise IOError("connection is read-only")
+            raise OSError("connection is read-only")
 
     def _bad_message_length(self):
         if self._writable:
             self._readable = False
         else:
             self.close()
-        raise IOError("bad message length")
+        raise OSError("bad message length")
 
     @property
     def closed(self):
@@ -317,7 +317,7 @@ if _winapi:
                             return f
                         elif err == _winapi.ERROR_MORE_DATA:
                             return self._get_more_data(ov, maxsize)
-                except IOError as e:
+                except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError
                     else:
@@ -383,7 +383,7 @@ class Connection(_ConnectionBase):
                 if remaining == size:
                     raise EOFError
                 else:
-                    raise IOError("got end of file during message")
+                    raise OSError("got end of file during message")
             buf.write(chunk)
             remaining -= n
         return buf
@@ -443,7 +443,7 @@ class Listener(object):
         Returns a `Connection` object.
         '''
         if self._listener is None:
-            raise IOError('listener is closed')
+            raise OSError('listener is closed')
         c = self._listener.accept()
         if self._authkey:
             deliver_challenge(c, self._authkey)

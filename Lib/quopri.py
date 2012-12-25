@@ -223,7 +223,7 @@ def main():
         else:
             try:
                 fp = open(file, "rb")
-            except IOError as msg:
+            except OSError as msg:
                 sys.stderr.write("%s: can't open (%s)\n" % (file, msg))
                 sts = 1
                 continue

@@ -92,7 +92,7 @@ def find_function(funcname, filename):
     cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
     try:
         fp = open(filename)
-    except IOError:
+    except OSError:
         return None
     # consumer of this info expects the first line to be 1
     lineno = 1
@@ -170,12 +170,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             try:
                 with open(os.path.join(envHome, ".pdbrc")) as rcFile:
                     self.rcLines.extend(rcFile)
-            except IOError:
+            except OSError:
                 pass
         try:
             with open(".pdbrc") as rcFile:
                 self.rcLines.extend(rcFile)
-        except IOError:
+        except OSError:
             pass
 
         self.commands = {} # associates a command list to breakpoint numbers
@@ -1241,7 +1241,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         breaklist = self.get_file_breaks(filename)
         try:
             lines, lineno = getsourcelines(self.curframe)
-        except IOError as err:
+        except OSError as err:
             self.error(err)
             return
         self._print_lines(lines, lineno, breaklist, self.curframe)
@@ -1257,7 +1257,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         try:
             lines, lineno = getsourcelines(obj)
-        except (IOError, TypeError) as err:
+        except (OSError, TypeError) as err:
             self.error(err)
             return
         self._print_lines(lines, lineno)

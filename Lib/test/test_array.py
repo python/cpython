@@ -355,12 +355,12 @@ class BaseTest(unittest.TestCase):
             support.unlink(support.TESTFN)
 
     def test_fromfile_ioerror(self):
-        # Issue #5395: Check if fromfile raises a proper IOError
+        # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
         f = open(support.TESTFN, 'wb')
         try:
-            self.assertRaises(IOError, a.fromfile, f, len(self.example))
+            self.assertRaises(OSError, a.fromfile, f, len(self.example))
         finally:
             f.close()
             support.unlink(support.TESTFN)

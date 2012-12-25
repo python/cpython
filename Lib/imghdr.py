@@ -149,7 +149,7 @@ def testall(list, recursive, toplevel):
             sys.stdout.flush()
             try:
                 print(what(filename))
-            except IOError:
+            except OSError:
                 print('*** not found ***')
 
 if __name__ == '__main__':

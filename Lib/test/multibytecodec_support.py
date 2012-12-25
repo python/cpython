@@ -282,7 +282,7 @@ class TestBase_Mapping(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kw)
         try:
             self.open_mapping_file().close() # test it to report the error early
-        except (IOError, HTTPException):
+        except (OSError, HTTPException):
             self.skipTest("Could not retrieve "+self.mapfileurl)
 
     def open_mapping_file(self):

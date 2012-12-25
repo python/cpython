@@ -30,7 +30,7 @@ pertaining to the last line read; nextfile() has no effect.
 
 All files are opened in text mode by default, you can override this by
 setting the mode parameter to input() or FileInput.__init__().
-If an I/O error occurs during opening or reading a file, the IOError
+If an I/O error occurs during opening or reading a file, the OSError
 exception is raised.
 
 If sys.stdin is used more than once, the second and further use will
@@ -328,7 +328,7 @@ class FileInput:
                         os.unlink(self._backupfilename)
                     except OSError:
                         pass
-                    # The next few lines may raise IOError
+                    # The next few lines may raise OSError
                     os.rename(self._filename, self._backupfilename)
                     self._file = open(self._backupfilename, self._mode)
                     try:
@@ -350,7 +350,7 @@ class FileInput:
                     self._savestdout = sys.stdout
                     sys.stdout = self._output
                 else:
-                    # This may raise IOError
+                    # This may raise OSError
                     if self._openhook:
                         self._file = self._openhook(self._filename, self._mode)
                     else:

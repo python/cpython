@@ -612,7 +612,7 @@ if __name__ == '__main__':
             if line:
                 try:
                     self.stats = Stats(line)
-                except IOError as err:
+                except OSError as err:
                     print(err.args[1], file=self.stream)
                     return
                 except Exception as err:

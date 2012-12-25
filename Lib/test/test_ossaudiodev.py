@@ -44,7 +44,7 @@ class OSSAudioDevTests(unittest.TestCase):
     def play_sound_file(self, data, rate, ssize, nchannels):
         try:
             dsp = ossaudiodev.open('w')
-        except IOError as msg:
+        except OSError as msg:
             if msg.args[0] in (errno.EACCES, errno.ENOENT,
                                errno.ENODEV, errno.EBUSY):
                 raise unittest.SkipTest(msg)
@@ -190,7 +190,7 @@ class OSSAudioDevTests(unittest.TestCase):
 def test_main():
     try:
         dsp = ossaudiodev.open('w')
-    except (ossaudiodev.error, IOError) as msg:
+    except (ossaudiodev.error, OSError) as msg:
         if msg.args[0] in (errno.EACCES, errno.ENOENT,
                            errno.ENODEV, errno.EBUSY):
             raise unittest.SkipTest(msg)

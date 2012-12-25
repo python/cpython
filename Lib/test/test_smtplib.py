@@ -222,7 +222,7 @@ class DebuggingServerTests(unittest.TestCase):
             self.assertEqual(smtp.source_address, ('127.0.0.1', port))
             self.assertEqual(smtp.local_hostname, 'localhost')
             smtp.quit()
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.EADDRINUSE:
                 self.skipTest("couldn't bind to port %d" % port)
             raise

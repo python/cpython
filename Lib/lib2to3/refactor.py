@@ -326,7 +326,7 @@ class RefactoringTool(object):
         """
         try:
             f = open(filename, "rb")
-        except IOError as err:
+        except OSError as err:
             self.log_error("Can't open %s: %s", filename, err)
             return None, None
         try:

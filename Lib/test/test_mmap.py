@@ -684,11 +684,11 @@ class MmapTests(unittest.TestCase):
         self.assertTrue(m.closed)
 
     def test_context_manager_exception(self):
-        # Test that the IOError gets passed through
+        # Test that the OSError gets passed through
         with self.assertRaises(Exception) as exc:
             with mmap.mmap(-1, 10) as m:
-                raise IOError
-        self.assertIsInstance(exc.exception, IOError,
+                raise OSError
+        self.assertIsInstance(exc.exception, OSError,
                               "wrong exception raised in context manager")
         self.assertTrue(m.closed, "context manager failed")
 
@@ -709,7 +709,7 @@ class LargeMmapTests(unittest.TestCase):
             f.seek(num_zeroes)
             f.write(tail)
             f.flush()
-        except (IOError, OverflowError):
+        except (OSError, OverflowError):
             f.close()
             raise unittest.SkipTest("filesystem does not have largefile support")
         return f

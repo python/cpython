@@ -28,7 +28,7 @@ class ForkWait(unittest.TestCase):
             self.alive[id] = os.getpid()
             try:
                 time.sleep(SHORTSLEEP)
-            except IOError:
+            except OSError:
                 pass
 
     def wait_impl(self, cpid):

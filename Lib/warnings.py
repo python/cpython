@@ -16,7 +16,7 @@ def showwarning(message, category, filename, lineno, file=None, line=None):
         file = sys.stderr
     try:
         file.write(formatwarning(message, category, filename, lineno, line))
-    except IOError:
+    except OSError:
         pass # the file (probably stderr) is invalid - this warning gets lost.
 
 def formatwarning(message, category, filename, lineno, line=None):

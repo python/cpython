@@ -136,12 +136,12 @@ class Test_Csv(unittest.TestCase):
                 return 10;
             def __getitem__(self, i):
                 if i > 2:
-                    raise IOError
-        self.assertRaises(IOError, self._write_test, BadList(), '')
+                    raise OSError
+        self.assertRaises(OSError, self._write_test, BadList(), '')
         class BadItem:
             def __str__(self):
-                raise IOError
-        self.assertRaises(IOError, self._write_test, [BadItem()], '')
+                raise OSError
+        self.assertRaises(OSError, self._write_test, [BadItem()], '')
 
     def test_write_bigfield(self):
         # This exercises the buffer realloc functionality
@@ -186,9 +186,9 @@ class Test_Csv(unittest.TestCase):
     def test_writerows(self):
         class BrokenFile:
             def write(self, buf):
-                raise IOError
+                raise OSError
         writer = csv.writer(BrokenFile())
-        self.assertRaises(IOError, writer.writerows, [['a']])
+        self.assertRaises(OSError, writer.writerows, [['a']])
 
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.writer(fileobj)

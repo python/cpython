@@ -34,7 +34,7 @@ BlockingIOError = BlockingIOError
 def open(file, mode="r", buffering=-1, encoding=None, errors=None,
          newline=None, closefd=True, opener=None):
 
-    r"""Open file and return a stream.  Raise IOError upon failure.
+    r"""Open file and return a stream.  Raise OSError upon failure.
 
     file is either a text or byte string giving the name (and the path
     if the file isn't in the current working directory) of the file to
@@ -254,7 +254,7 @@ class OpenWrapper:
 try:
     UnsupportedOperation = io.UnsupportedOperation
 except AttributeError:
-    class UnsupportedOperation(ValueError, IOError):
+    class UnsupportedOperation(ValueError, OSError):
         pass
 
 
@@ -278,7 +278,7 @@ class IOBase(metaclass=abc.ABCMeta):
     readinto) needed. Text I/O classes work with str data.
 
     Note that calling any method (even inquiries) on a closed stream is
-    undefined. Implementations may raise IOError in this case.
+    undefined. Implementations may raise OSError in this case.
 
     IOBase (and its subclasses) support the iterator protocol, meaning
     that an IOBase object can be iterated over yielding the lines in a
@@ -294,7 +294,7 @@ class IOBase(metaclass=abc.ABCMeta):
     ### Internal ###
 
     def _unsupported(self, name):
-        """Internal: raise an IOError exception for unsupported operations."""
+        """Internal: raise an OSError exception for unsupported operations."""
         raise UnsupportedOperation("%s.%s() not supported" %
                                    (self.__class__.__name__, name))
 
@@ -441,7 +441,7 @@ class IOBase(metaclass=abc.ABCMeta):
     def fileno(self):
         """Returns underlying file descriptor (an int) if one exists.
 
-        An IOError is raised if the IO object does not use a file descriptor.
+        An OSError is raised if the IO object does not use a file descriptor.
         """
         self._unsupported("fileno")
 
@@ -699,13 +699,13 @@ class _BufferedIOMixin(BufferedIOBase):
     def seek(self, pos, whence=0):
         new_position = self.raw.seek(pos, whence)
         if new_position < 0:
-            raise IOError("seek() returned an invalid position")
+            raise OSError("seek() returned an invalid position")
         return new_position
 
     def tell(self):
         pos = self.raw.tell()
         if pos < 0:
-            raise IOError("tell() returned an invalid position")
+            raise OSError("tell() returned an invalid position")
         return pos
 
     def truncate(self, pos=None):
@@ -927,7 +927,7 @@ class BufferedReader(_BufferedIOMixin):
         """Create a new buffered reader using the given readable raw IO object.
         """
         if not raw.readable():
-            raise IOError('"raw" argument must be readable.')
+            raise OSError('"raw" argument must be readable.')
 
         _BufferedIOMixin.__init__(self, raw)
         if buffer_size <= 0:
@@ -1074,7 +1074,7 @@ class BufferedWriter(_BufferedIOMixin):
 
     def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
         if not raw.writable():
-            raise IOError('"raw" argument must be writable.')
+            raise OSError('"raw" argument must be writable.')
 
         _BufferedIOMixin.__init__(self, raw)
         if buffer_size <= 0:
@@ -1138,7 +1138,7 @@ class BufferedWriter(_BufferedIOMixin):
                     errno.EAGAIN,
                     "write could not complete without blocking", 0)
             if n > len(self._write_buf) or n < 0:
-                raise IOError("write() returned incorrect number of bytes")
+                raise OSError("write() returned incorrect number of bytes")
             del self._write_buf[:n]
 
     def tell(self):
@@ -1174,10 +1174,10 @@ class BufferedRWPair(BufferedIOBase):
         The arguments are two RawIO instances.
         """
         if not reader.readable():
-            raise IOError('"reader" argument must be readable.')
+            raise OSError('"reader" argument must be readable.')
 
         if not writer.writable():
-            raise IOError('"writer" argument must be writable.')
+            raise OSError('"writer" argument must be writable.')
 
         self.reader = BufferedReader(reader, buffer_size)
         self.writer = BufferedWriter(writer, buffer_size)
@@ -1248,7 +1248,7 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         with self._read_lock:
             self._reset_read_buf()
         if pos < 0:
-            raise IOError("seek() returned invalid position")
+            raise OSError("seek() returned invalid position")
         return pos
 
     def tell(self):
@@ -1727,7 +1727,7 @@ class TextIOWrapper(TextIOBase):
         if not self._seekable:
             raise UnsupportedOperation("underlying stream is not seekable")
         if not self._telling:
-            raise IOError("telling position disabled by next() call")
+            raise OSError("telling position disabled by next() call")
         self.flush()
         position = self.buffer.tell()
         decoder = self._decoder
@@ -1814,7 +1814,7 @@ class TextIOWrapper(TextIOBase):
                 chars_decoded += len(decoder.decode(b'', final=True))
                 need_eof = 1
                 if chars_decoded < chars_to_skip:
-                    raise IOError("can't reconstruct logical file position")
+                    raise OSError("can't reconstruct logical file position")
 
             # The returned cookie corresponds to the last safe start point.
             return self._pack_cookie(
@@ -1891,7 +1891,7 @@ class TextIOWrapper(TextIOBase):
 
             # Skip chars_to_skip of the decoded characters.
             if len(self._decoded_chars) < chars_to_skip:
-                raise IOError("can't restore logical file position")
+                raise OSError("can't restore logical file position")
             self._decoded_chars_used = chars_to_skip
 
         # Finally, reset the encoder (merely useful for proper BOM handling)

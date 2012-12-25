@@ -896,7 +896,7 @@ class Handler(Filterer):
                     # couldn't find the right stack frame, for some reason
                     sys.stderr.write('Logged from file %s, line %s\n' % (
                                      record.filename, record.lineno))
-            except IOError: #pragma: no cover
+            except OSError: #pragma: no cover
                 pass    # see issue 5971
             finally:
                 del t, v, tb
@@ -1838,7 +1838,7 @@ def shutdown(handlerList=_handlerList):
                     h.acquire()
                     h.flush()
                     h.close()
-                except (IOError, ValueError):
+                except (OSError, ValueError):
                     # Ignore errors which might be caused
                     # because handlers have been closed but
                     # references to them are still around at
