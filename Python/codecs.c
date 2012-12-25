@@ -1026,7 +1026,7 @@ static int _PyCodecRegistry_Init(void)
 
     if (interp->codec_error_registry) {
         for (i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
-            PyObject *func = PyCFunction_New(&methods[i].def, NULL);
+            PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
             int res;
             if (!func)
                 Py_FatalError("can't initialize codec error registry");

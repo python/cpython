@@ -115,7 +115,7 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
                      ((PyTypeObject *)type)->tp_name);
         return NULL;
     }
-    return PyCFunction_New(descr->d_method, type);
+    return PyCFunction_NewEx(descr->d_method, type, NULL);
 }
 
 static PyObject *
@@ -125,7 +125,7 @@ method_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 
     if (descr_check((PyDescrObject *)descr, obj, &res))
         return res;
-    return PyCFunction_New(descr->d_method, obj);
+    return PyCFunction_NewEx(descr->d_method, obj, NULL);
 }
 
 static PyObject *
@@ -239,7 +239,7 @@ methoddescr_call(PyMethodDescrObject *descr, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    func = PyCFunction_New(descr->d_method, self);
+    func = PyCFunction_NewEx(descr->d_method, self, NULL);
     if (func == NULL)
         return NULL;
     args = PyTuple_GetSlice(args, 1, argc);
@@ -292,7 +292,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
         return NULL;
     }
 
-    func = PyCFunction_New(descr->d_method, self);
+    func = PyCFunction_NewEx(descr->d_method, self, NULL);
     if (func == NULL)
         return NULL;
     args = PyTuple_GetSlice(args, 1, argc);
