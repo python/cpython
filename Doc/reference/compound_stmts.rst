@@ -407,6 +407,9 @@ is equivalent to ::
       statement.
 
 
+.. index::
+   single: parameter; function definition
+
 .. _function:
 .. _def:
 
@@ -467,12 +470,15 @@ is equivalent to::
    def func(): pass
    func = f1(arg)(f2(func))
 
-.. index:: triple: default; parameter; value
+.. index::
+   triple: default; parameter; value
+   single: argument; function definition
 
-When one or more top-level parameters have the form *parameter* ``=``
-*expression*, the function is said to have "default parameter values."  For a
-parameter with a default value, the corresponding argument may be omitted from a
-call, in which case the parameter's default value is substituted.  If a
+When one or more top-level :term:`parameters <parameter>` have the form
+*parameter* ``=`` *expression*, the function is said to have "default parameter
+values."  For a parameter with a default value, the corresponding
+:term:`argument` may be omitted from a call, in which
+case the parameter's default value is substituted.  If a
 parameter has a default value, all following parameters must also have a default
 value --- this is a syntactic restriction that is not expressed by the grammar.
 
