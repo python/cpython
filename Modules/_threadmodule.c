@@ -741,7 +741,7 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     wr = PyWeakref_NewRef((PyObject *) self, NULL);
     if (wr == NULL)
         goto err;
-    self->wr_callback = PyCFunction_New(&wr_callback_def, wr);
+    self->wr_callback = PyCFunction_NewEx(&wr_callback_def, wr, NULL);
     Py_DECREF(wr);
     if (self->wr_callback == NULL)
         goto err;

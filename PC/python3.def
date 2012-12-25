@@ -38,6 +38,7 @@ EXPORTS
   PyCFunction_GetFlags=python34.PyCFunction_GetFlags
   PyCFunction_GetFunction=python34.PyCFunction_GetFunction
   PyCFunction_GetSelf=python34.PyCFunction_GetSelf
+  PyCFunction_New=python34.PyCFunction_New
   PyCFunction_NewEx=python34.PyCFunction_NewEx
   PyCFunction_Type=python34.PyCFunction_Type DATA
   PyCallIter_New=python34.PyCallIter_New
