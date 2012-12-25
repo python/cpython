@@ -123,7 +123,7 @@ def load_grammar(gt="Grammar.txt", gp=None,
             logger.info("Writing grammar tables to %s", gp)
             try:
                 g.dump(gp)
-            except IOError as e:
+            except OSError as e:
                 logger.info("Writing failed:"+str(e))
     else:
         g = grammar.Grammar()

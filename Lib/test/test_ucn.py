@@ -172,7 +172,7 @@ class UnicodeNamesTest(unittest.TestCase):
         try:
             testdata = support.open_urlresource(url, encoding="utf-8",
                                                 check=check_version)
-        except (IOError, HTTPException):
+        except (OSError, HTTPException):
             self.skipTest("Could not retrieve " + url)
         self.addCleanup(testdata.close)
         for line in testdata:

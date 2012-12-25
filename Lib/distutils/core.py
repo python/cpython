@@ -148,7 +148,7 @@ def setup (**attrs):
             dist.run_commands()
         except KeyboardInterrupt:
             raise SystemExit("interrupted")
-        except (IOError, OSError) as exc:
+        except OSError as exc:
             error = grok_environment_error(exc)
 
             if DEBUG:

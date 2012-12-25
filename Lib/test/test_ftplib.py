@@ -482,7 +482,7 @@ class TestFTPClass(TestCase):
 
     def test_all_errors(self):
         exceptions = (ftplib.error_reply, ftplib.error_temp, ftplib.error_perm,
-                      ftplib.error_proto, ftplib.Error, IOError, EOFError)
+                      ftplib.error_proto, ftplib.Error, OSError, EOFError)
         for x in exceptions:
             try:
                 raise x('exception not included in all_errors set')
@@ -721,7 +721,7 @@ class TestFTPClass(TestCase):
                                 source_address=(HOST, port))
             self.assertEqual(self.client.sock.getsockname()[1], port)
             self.client.quit()
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.EADDRINUSE:
                 self.skipTest("couldn't bind to port %d" % port)
             raise
@@ -732,7 +732,7 @@ class TestFTPClass(TestCase):
         try:
             with self.client.transfercmd('list') as sock:
                 self.assertEqual(sock.getsockname()[1], port)
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.EADDRINUSE:
                 self.skipTest("couldn't bind to port %d" % port)
             raise

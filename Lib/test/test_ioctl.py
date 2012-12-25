@@ -8,7 +8,7 @@ get_attribute(termios, 'TIOCGPGRP') #Can't run tests without this feature
 
 try:
     tty = open("/dev/tty", "rb")
-except IOError:
+except OSError:
     raise unittest.SkipTest("Unable to open /dev/tty")
 else:
     # Skip if another process is in foreground

@@ -3723,7 +3723,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         # First read raises a timeout
         self.assertRaises(socket.timeout, self.read_file.read, 1)
         # Second read is disallowed
-        with self.assertRaises(IOError) as ctx:
+        with self.assertRaises(OSError) as ctx:
             self.read_file.read(1)
         self.assertIn("cannot read from timed out object", str(ctx.exception))
 

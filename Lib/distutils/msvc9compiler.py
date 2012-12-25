@@ -729,7 +729,7 @@ class MSVCCompiler(CCompiler) :
                 return manifest_file
             finally:
                 manifest_f.close()
-        except IOError:
+        except OSError:
             pass
 
     # -- Miscellaneous methods -----------------------------------------

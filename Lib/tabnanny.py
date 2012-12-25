@@ -95,7 +95,7 @@ def check(file):
 
     try:
         f = tokenize.open(file)
-    except IOError as msg:
+    except OSError as msg:
         errprint("%r: I/O Error: %s" % (file, msg))
         return
 

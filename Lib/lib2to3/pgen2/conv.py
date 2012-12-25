@@ -60,7 +60,7 @@ class Converter(grammar.Grammar):
         """
         try:
             f = open(filename)
-        except IOError as err:
+        except OSError as err:
             print("Can't open %s: %s" % (filename, err))
             return False
         self.symbol2number = {}
@@ -111,7 +111,7 @@ class Converter(grammar.Grammar):
         """
         try:
             f = open(filename)
-        except IOError as err:
+        except OSError as err:
             print("Can't open %s: %s" % (filename, err))
             return False
         # The code below essentially uses f's iterator-ness!

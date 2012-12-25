@@ -164,7 +164,7 @@ class CloseFailureIO(MockRawIO):
     def close(self):
         if not self.closed:
             self.closed = 1
-            raise IOError
+            raise OSError
 
 class CCloseFailureIO(CloseFailureIO, io.RawIOBase):
     pass
@@ -600,9 +600,9 @@ class IOTest(unittest.TestCase):
     def test_flush_error_on_close(self):
         f = self.open(support.TESTFN, "wb", buffering=0)
         def bad_flush():
-            raise IOError()
+            raise OSError()
         f.flush = bad_flush
-        self.assertRaises(IOError, f.close) # exception not swallowed
+        self.assertRaises(OSError, f.close) # exception not swallowed
         self.assertTrue(f.closed)
 
     def test_multi_close(self):
@@ -761,7 +761,7 @@ class CommonBufferedTests:
         if s:
             # The destructor *may* have printed an unraisable error, check it
             self.assertEqual(len(s.splitlines()), 1)
-            self.assertTrue(s.startswith("Exception IOError: "), s)
+            self.assertTrue(s.startswith("Exception OSError: "), s)
             self.assertTrue(s.endswith(" ignored"), s)
 
     def test_repr(self):
@@ -777,22 +777,22 @@ class CommonBufferedTests:
     def test_flush_error_on_close(self):
         raw = self.MockRawIO()
         def bad_flush():
-            raise IOError()
+            raise OSError()
         raw.flush = bad_flush
         b = self.tp(raw)
-        self.assertRaises(IOError, b.close) # exception not swallowed
+        self.assertRaises(OSError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
 
     def test_close_error_on_close(self):
         raw = self.MockRawIO()
         def bad_flush():
-            raise IOError('flush')
+            raise OSError('flush')
         def bad_close():
-            raise IOError('close')
+            raise OSError('close')
         raw.close = bad_close
         b = self.tp(raw)
         b.flush = bad_flush
-        with self.assertRaises(IOError) as err: # exception not swallowed
+        with self.assertRaises(OSError) as err: # exception not swallowed
             b.close()
         self.assertEqual(err.exception.args, ('close',))
         self.assertEqual(err.exception.__context__.args, ('flush',))
@@ -1014,8 +1014,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
     def test_misbehaved_io(self):
         rawio = self.MisbehavedRawIO((b"abc", b"d", b"efg"))
         bufio = self.tp(rawio)
-        self.assertRaises(IOError, bufio.seek, 0)
-        self.assertRaises(IOError, bufio.tell)
+        self.assertRaises(OSError, bufio.seek, 0)
+        self.assertRaises(OSError, bufio.tell)
 
     def test_no_extraneous_read(self):
         # Issue #9550; when the raw IO object has satisfied the read request,
@@ -1066,7 +1066,7 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         bufio = self.tp(rawio)
         # _pyio.BufferedReader seems to implement reading different, so that
         # checking this is not so easy.
-        self.assertRaises(IOError, bufio.read, 10)
+        self.assertRaises(OSError, bufio.read, 10)
 
     def test_garbage_collection(self):
         # C BufferedReader objects are collected.
@@ -1313,9 +1313,9 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
     def test_misbehaved_io(self):
         rawio = self.MisbehavedRawIO()
         bufio = self.tp(rawio, 5)
-        self.assertRaises(IOError, bufio.seek, 0)
-        self.assertRaises(IOError, bufio.tell)
-        self.assertRaises(IOError, bufio.write, b"abcdef")
+        self.assertRaises(OSError, bufio.seek, 0)
+        self.assertRaises(OSError, bufio.tell)
+        self.assertRaises(OSError, bufio.write, b"abcdef")
 
     def test_max_buffer_size_removal(self):
         with self.assertRaises(TypeError):
@@ -1324,11 +1324,11 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
     def test_write_error_on_close(self):
         raw = self.MockRawIO()
         def bad_write(b):
-            raise IOError()
+            raise OSError()
         raw.write = bad_write
         b = self.tp(raw)
         b.write(b'spam')
-        self.assertRaises(IOError, b.close) # exception not swallowed
+        self.assertRaises(OSError, b.close) # exception not swallowed
         self.assertTrue(b.closed)
 
 
@@ -1393,14 +1393,14 @@ class BufferedRWPairTest(unittest.TestCase):
             def readable(self):
                 return False
 
-        self.assertRaises(IOError, self.tp, NotReadable(), self.MockRawIO())
+        self.assertRaises(OSError, self.tp, NotReadable(), self.MockRawIO())
 
     def test_constructor_with_not_writeable(self):
         class NotWriteable(MockRawIO):
             def writable(self):
                 return False
 
-        self.assertRaises(IOError, self.tp, self.MockRawIO(), NotWriteable())
+        self.assertRaises(OSError, self.tp, self.MockRawIO(), NotWriteable())
 
     def test_read(self):
         pair = self.tp(self.BytesIO(b"abcdef"), self.MockRawIO())
@@ -2146,7 +2146,7 @@ class TextIOWrapperTest(unittest.TestCase):
         if s:
             # The destructor *may* have printed an unraisable error, check it
             self.assertEqual(len(s.splitlines()), 1)
-            self.assertTrue(s.startswith("Exception IOError: "), s)
+            self.assertTrue(s.startswith("Exception OSError: "), s)
             self.assertTrue(s.endswith(" ignored"), s)
 
     # Systematic tests of the text I/O API
@@ -2218,7 +2218,7 @@ class TextIOWrapperTest(unittest.TestCase):
         f.seek(0)
         for line in f:
             self.assertEqual(line, "\xff\n")
-            self.assertRaises(IOError, f.tell)
+            self.assertRaises(OSError, f.tell)
         self.assertEqual(f.tell(), p2)
         f.close()
 
@@ -2322,7 +2322,7 @@ class TextIOWrapperTest(unittest.TestCase):
             def readable(self):
                 return False
         txt = self.TextIOWrapper(UnReadable())
-        self.assertRaises(IOError, txt.read)
+        self.assertRaises(OSError, txt.read)
 
     def test_read_one_by_one(self):
         txt = self.TextIOWrapper(self.BytesIO(b"AA\r\nBB"))
@@ -2497,9 +2497,9 @@ class TextIOWrapperTest(unittest.TestCase):
     def test_flush_error_on_close(self):
         txt = self.TextIOWrapper(self.BytesIO(self.testdata), encoding="ascii")
         def bad_flush():
-            raise IOError()
+            raise OSError()
         txt.flush = bad_flush
-        self.assertRaises(IOError, txt.close) # exception not swallowed
+        self.assertRaises(OSError, txt.close) # exception not swallowed
         self.assertTrue(txt.closed)
 
     def test_multi_close(self):
@@ -3032,7 +3032,7 @@ class SignalsTest(unittest.TestCase):
             # buffer, and block again.
             try:
                 wio.close()
-            except IOError as e:
+            except OSError as e:
                 if e.errno != errno.EBADF:
                     raise
 
@@ -3160,7 +3160,7 @@ class SignalsTest(unittest.TestCase):
             # buffer, and could block (in case of failure).
             try:
                 wio.close()
-            except IOError as e:
+            except OSError as e:
                 if e.errno != errno.EBADF:
                     raise
 

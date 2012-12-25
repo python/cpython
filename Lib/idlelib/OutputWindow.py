@@ -106,7 +106,7 @@ class OutputWindow(EditorWindow):
                     f = open(filename, "r")
                     f.close()
                     break
-                except IOError:
+                except OSError:
                     continue
         else:
             return None

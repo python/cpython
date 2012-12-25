@@ -489,7 +489,7 @@ class StructTest(unittest.TestCase):
     def test_bool(self):
         class ExplodingBool(object):
             def __bool__(self):
-                raise IOError
+                raise OSError
         for prefix in tuple("<>!=")+('',):
             false = (), [], [], '', 0
             true = [1], 'test', 5, -1, 0xffffffff+1, 0xffffffff/2
@@ -520,10 +520,10 @@ class StructTest(unittest.TestCase):
 
             try:
                 struct.pack(prefix + '?', ExplodingBool())
-            except IOError:
+            except OSError:
                 pass
             else:
-                self.fail("Expected IOError: struct.pack(%r, "
+                self.fail("Expected OSError: struct.pack(%r, "
                           "ExplodingBool())" % (prefix + '?'))
 
         for c in [b'\x01', b'\x7f', b'\xff', b'\x0f', b'\xf0']:

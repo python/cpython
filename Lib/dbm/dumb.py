@@ -29,7 +29,7 @@ __all__ = ["error", "open"]
 
 _BLOCKSIZE = 512
 
-error = IOError
+error = OSError
 
 class _Database(collections.MutableMapping):
 
@@ -67,7 +67,7 @@ class _Database(collections.MutableMapping):
         # Mod by Jack: create data file if needed
         try:
             f = _io.open(self._datfile, 'r', encoding="Latin-1")
-        except IOError:
+        except OSError:
             f = _io.open(self._datfile, 'w', encoding="Latin-1")
             self._chmod(self._datfile)
         f.close()
@@ -78,7 +78,7 @@ class _Database(collections.MutableMapping):
         self._index = {}
         try:
             f = _io.open(self._dirfile, 'r', encoding="Latin-1")
-        except IOError:
+        except OSError:
             pass
         else:
             for line in f:

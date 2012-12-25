@@ -27,7 +27,7 @@ def openfile(filename):
 # Prevent this test from running in the Python distro
 try:
     openfile('crispin-torture.txt')
-except IOError:
+except OSError:
     raise TestSkipped
 
 

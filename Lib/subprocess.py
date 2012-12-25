@@ -897,7 +897,7 @@ class Popen(object):
                 if input:
                     try:
                         self.stdin.write(input)
-                    except IOError as e:
+                    except OSError as e:
                         if e.errno != errno.EPIPE and e.errno != errno.EINVAL:
                             raise
                 self.stdin.close()
@@ -1152,7 +1152,7 @@ class Popen(object):
                 if input is not None:
                     try:
                         self.stdin.write(input)
-                    except IOError as e:
+                    except OSError as e:
                         if e.errno != errno.EPIPE:
                             raise
                 self.stdin.close()

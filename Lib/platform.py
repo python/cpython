@@ -430,9 +430,6 @@ def _syscmd_ver(system='', release='', version='',
         except OSError as why:
             #print 'Command %s failed: %s' % (cmd,why)
             continue
-        except IOError as why:
-            #print 'Command %s failed: %s' % (cmd,why)
-            continue
         else:
             break
     else:

@@ -78,8 +78,8 @@ def worker(inqueue, outqueue, initializer=None, initargs=(), maxtasks=None):
     while maxtasks is None or (maxtasks and completed < maxtasks):
         try:
             task = get()
-        except (EOFError, IOError):
-            debug('worker got EOFError or IOError -- exiting')
+        except (EOFError, OSError):
+            debug('worker got EOFError or OSError -- exiting')
             break
 
         if task is None:
@@ -349,7 +349,7 @@ class Pool(object):
                     break
                 try:
                     put(task)
-                except IOError:
+                except OSError:
                     debug('could not put task on queue')
                     break
             else:
@@ -371,8 +371,8 @@ class Pool(object):
             debug('task handler sending sentinel to workers')
             for p in pool:
                 put(None)
-        except IOError:
-            debug('task handler got IOError when sending sentinels')
+        except OSError:
+            debug('task handler got OSError when sending sentinels')
 
         debug('task handler exiting')
 
@@ -383,8 +383,8 @@ class Pool(object):
         while 1:
             try:
                 task = get()
-            except (IOError, EOFError):
-                debug('result handler got EOFError/IOError -- exiting')
+            except (OSError, EOFError):
+                debug('result handler got EOFError/OSError -- exiting')
                 return
 
             if thread._state:
@@ -405,8 +405,8 @@ class Pool(object):
         while cache and thread._state != TERMINATE:
             try:
                 task = get()
-            except (IOError, EOFError):
-                debug('result handler got EOFError/IOError -- exiting')
+            except (OSError, EOFError):
+                debug('result handler got EOFError/OSError -- exiting')
                 return
 
             if task is None:
@@ -428,7 +428,7 @@ class Pool(object):
                     if not outqueue._reader.poll():
                         break
                     get()
-            except (IOError, EOFError):
+            except (OSError, EOFError):
                 pass
 
         debug('result handler exiting: len(cache)=%s, thread._state=%s',

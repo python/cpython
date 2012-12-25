@@ -56,7 +56,7 @@ def _open_terminal():
     else:
         try:
             tty_name, master_fd = sgi._getpty(os.O_RDWR, 0o666, 0)
-        except IOError as msg:
+        except OSError as msg:
             raise OSError(msg)
         return master_fd, tty_name
     for x in 'pqrstuvwxyzPQRST':
@@ -83,7 +83,7 @@ def slave_open(tty_name):
     try:
         ioctl(result, I_PUSH, "ptem")
         ioctl(result, I_PUSH, "ldterm")
-    except IOError:
+    except OSError:
         pass
     return result
 
@@ -173,7 +173,7 @@ def spawn(argv, master_read=_read, stdin_read=_read):
         restore = 0
     try:
         _copy(master_fd, master_read, stdin_read)
-    except (IOError, OSError):
+    except OSError:
         if restore:
             tty.tcsetattr(STDIN_FILENO, tty.TCSAFLUSH, mode)
 

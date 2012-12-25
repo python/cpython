@@ -407,7 +407,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
             os.chmod(bytecode_path,
                         stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
             try:
-                # Should not raise IOError!
+                # Should not raise OSError!
                 self.import_(mapping['_temp'], '_temp')
             finally:
                 # Make writable for eventual clean-up.

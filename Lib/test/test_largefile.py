@@ -14,7 +14,7 @@ try:
     import signal
     # The default handler for SIGXFSZ is to abort the process.
     # By ignoring it, system calls exceeding the file size resource
-    # limit will raise IOError instead of crashing the interpreter.
+    # limit will raise OSError instead of crashing the interpreter.
     oldhandler = signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
 except (ImportError, AttributeError):
     pass
@@ -162,7 +162,7 @@ def test_main():
             # flush, too!
             f.write(b'x')
             f.flush()
-        except (IOError, OverflowError):
+        except (OSError, OverflowError):
             f.close()
             unlink(TESTFN)
             raise unittest.SkipTest("filesystem does not have largefile support")

@@ -246,15 +246,15 @@ class BasicSocketTests(unittest.TestCase):
         s = ssl.wrap_socket(sock, server_side=True, certfile=CERTFILE)
         self.assertRaisesRegex(ValueError, "can't connect in server-side mode",
                                 s.connect, (HOST, 8080))
-        with self.assertRaises(IOError) as cm:
+        with self.assertRaises(OSError) as cm:
             with socket.socket() as sock:
                 ssl.wrap_socket(sock, certfile=WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaises(IOError) as cm:
+        with self.assertRaises(OSError) as cm:
             with socket.socket() as sock:
                 ssl.wrap_socket(sock, certfile=CERTFILE, keyfile=WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        with self.assertRaises(IOError) as cm:
+        with self.assertRaises(OSError) as cm:
             with socket.socket() as sock:
                 ssl.wrap_socket(sock, certfile=WRONGCERT, keyfile=WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
@@ -442,7 +442,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_cert_chain(CERTFILE)
         ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
         self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
-        with self.assertRaises(IOError) as cm:
+        with self.assertRaises(OSError) as cm:
             ctx.load_cert_chain(WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
@@ -527,7 +527,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(cafile=BYTES_CERTFILE, capath=None)
         self.assertRaises(TypeError, ctx.load_verify_locations)
         self.assertRaises(TypeError, ctx.load_verify_locations, None, None)
-        with self.assertRaises(IOError) as cm:
+        with self.assertRaises(OSError) as cm:
             ctx.load_verify_locations(WRONGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
@@ -1229,11 +1229,11 @@ else:
             except OSError as x:
                 if support.verbose:
                     sys.stdout.write("\nOSError is %s\n" % x.args[1])
-            except IOError as x:
+            except OSError as x:
                 if x.errno != errno.ENOENT:
                     raise
                 if support.verbose:
-                    sys.stdout.write("\IOError is %s\n" % str(x))
+                    sys.stdout.write("\OSError is %s\n" % str(x))
             else:
                 raise AssertionError("Use of invalid cert should have failed!")
 
@@ -1387,7 +1387,7 @@ else:
                                        "badkey.pem"))
 
         def test_rude_shutdown(self):
-            """A brutal shutdown of an SSL server should raise an IOError
+            """A brutal shutdown of an SSL server should raise an OSError
             in the client when attempting handshake.
             """
             listener_ready = threading.Event()
@@ -1415,7 +1415,7 @@ else:
                     listener_gone.wait()
                     try:
                         ssl_sock = ssl.wrap_socket(c)
-                    except IOError:
+                    except OSError:
                         pass
                     else:
                         self.fail('connecting to closed SSL socket should have failed')

@@ -1167,7 +1167,7 @@ class FileType(object):
         try:
             return open(string, self._mode, self._bufsize, self._encoding,
                         self._errors)
-        except IOError as e:
+        except OSError as e:
             message = _("can't open '%s': %s")
             raise ArgumentTypeError(message % (string, e))
 
@@ -2020,7 +2020,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                         new_arg_strings.extend(arg_strings)
                     finally:
                         args_file.close()
-                except IOError:
+                except OSError:
                     err = _sys.exc_info()[1]
                     self.error(str(err))
 

@@ -93,7 +93,7 @@ def _main():
         outFileName = args[1]
     try:
         fp = open(inFileName)
-    except IOError as err:
+    except OSError as err:
         sys.stdout.write("I/O error: %s\n" % str(err))
         sys.exit(1)
     lines = fp.read().split("\n")
@@ -112,7 +112,7 @@ def _main():
     # load the output skeleton from the target:
     try:
         fp = open(outFileName)
-    except IOError as err:
+    except OSError as err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(2)
     format = fp.read().split("\n")
@@ -129,7 +129,7 @@ def _main():
     format[start:end] = lines
     try:
         fp = open(outFileName, 'w')
-    except IOError as err:
+    except OSError as err:
         sys.stderr.write("I/O error: %s\n" % str(err))
         sys.exit(4)
     fp.write("\n".join(format))

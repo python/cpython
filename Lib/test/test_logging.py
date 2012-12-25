@@ -3183,13 +3183,13 @@ class ShutdownTest(BaseTest):
         self.assertEqual('0 - release', self.called[-1])
 
     def test_with_ioerror_in_acquire(self):
-        self._test_with_failure_in_method('acquire', IOError)
+        self._test_with_failure_in_method('acquire', OSError)
 
     def test_with_ioerror_in_flush(self):
-        self._test_with_failure_in_method('flush', IOError)
+        self._test_with_failure_in_method('flush', OSError)
 
     def test_with_ioerror_in_close(self):
-        self._test_with_failure_in_method('close', IOError)
+        self._test_with_failure_in_method('close', OSError)
 
     def test_with_valueerror_in_acquire(self):
         self._test_with_failure_in_method('acquire', ValueError)

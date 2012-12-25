@@ -401,14 +401,14 @@ class TestBuggyCases(GetSourceBase):
             unicodedata.__file__[-4:] in (".pyc", ".pyo"),
         "unicodedata is not an external binary module")
     def test_findsource_binary(self):
-        self.assertRaises(IOError, inspect.getsource, unicodedata)
-        self.assertRaises(IOError, inspect.findsource, unicodedata)
+        self.assertRaises(OSError, inspect.getsource, unicodedata)
+        self.assertRaises(OSError, inspect.findsource, unicodedata)
 
     def test_findsource_code_in_linecache(self):
         lines = ["x=1"]
         co = compile(lines[0], "_dynamically_created_file", "exec")
-        self.assertRaises(IOError, inspect.findsource, co)
-        self.assertRaises(IOError, inspect.getsource, co)
+        self.assertRaises(OSError, inspect.findsource, co)
+        self.assertRaises(OSError, inspect.getsource, co)
         linecache.cache[co.co_filename] = (1, None, lines, co.co_filename)
         try:
             self.assertEqual(inspect.findsource(co), (lines,0))

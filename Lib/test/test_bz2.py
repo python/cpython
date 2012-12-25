@@ -253,8 +253,8 @@ class BZ2FileTest(BaseTest):
             bz2f.write(b"abc")
 
         with BZ2File(self.filename, "r") as bz2f:
-            self.assertRaises(IOError, bz2f.write, b"a")
-            self.assertRaises(IOError, bz2f.writelines, [b"a"])
+            self.assertRaises(OSError, bz2f.write, b"a")
+            self.assertRaises(OSError, bz2f.writelines, [b"a"])
 
     def testAppend(self):
         with BZ2File(self.filename, "w") as bz2f:
@@ -429,7 +429,7 @@ class BZ2FileTest(BaseTest):
             del o
 
     def testOpenNonexistent(self):
-        self.assertRaises(IOError, BZ2File, "/non/existent")
+        self.assertRaises(OSError, BZ2File, "/non/existent")
 
     def testReadlinesNoNewline(self):
         # Issue #1191043: readlines() fails on a file containing no newline.

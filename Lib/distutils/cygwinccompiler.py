@@ -359,7 +359,7 @@ def check_config_h():
                 return CONFIG_H_NOTOK, "'%s' does not mention '__GNUC__'" % fn
         finally:
             config_h.close()
-    except IOError as exc:
+    except OSError as exc:
         return (CONFIG_H_UNCERTAIN,
                 "couldn't read '%s': %s" % (fn, exc.strerror))
 

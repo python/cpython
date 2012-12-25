@@ -506,7 +506,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             next_test = fp.read().strip()
             tests = [next_test]
             fp.close()
-        except IOError:
+        except OSError:
             pass
 
     if fromfile:

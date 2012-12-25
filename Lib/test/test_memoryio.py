@@ -520,12 +520,12 @@ class TextIOTestMixin:
     def test_relative_seek(self):
         memio = self.ioclass()
 
-        self.assertRaises(IOError, memio.seek, -1, 1)
-        self.assertRaises(IOError, memio.seek, 3, 1)
-        self.assertRaises(IOError, memio.seek, -3, 1)
-        self.assertRaises(IOError, memio.seek, -1, 2)
-        self.assertRaises(IOError, memio.seek, 1, 1)
-        self.assertRaises(IOError, memio.seek, 1, 2)
+        self.assertRaises(OSError, memio.seek, -1, 1)
+        self.assertRaises(OSError, memio.seek, 3, 1)
+        self.assertRaises(OSError, memio.seek, -3, 1)
+        self.assertRaises(OSError, memio.seek, -1, 2)
+        self.assertRaises(OSError, memio.seek, 1, 1)
+        self.assertRaises(OSError, memio.seek, 1, 2)
 
     def test_textio_properties(self):
         memio = self.ioclass()

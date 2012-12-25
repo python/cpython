@@ -74,7 +74,7 @@ class build_scripts(Command):
             # script.
             try:
                 f = open(script, "rb")
-            except IOError:
+            except OSError:
                 if not self.dry_run:
                     raise
                 f = None

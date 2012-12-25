@@ -711,7 +711,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         ctype = self.guess_type(path)
         try:
             f = open(path, 'rb')
-        except IOError:
+        except OSError:
             self.send_error(404, "File not found")
             return None
         self.send_response(200)

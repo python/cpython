@@ -1730,8 +1730,8 @@ class CookieJar:
         return "<%s[%s]>" % (self.__class__, ", ".join(r))
 
 
-# derives from IOError for backwards-compatibility with Python 2.4.0
-class LoadError(IOError): pass
+# derives from OSError for backwards-compatibility with Python 2.4.0
+class LoadError(OSError): pass
 
 class FileCookieJar(CookieJar):
     """CookieJar that can be loaded from and saved to a file."""
@@ -1771,7 +1771,7 @@ class FileCookieJar(CookieJar):
                ignore_discard=False, ignore_expires=False):
         """Clear all cookies and reload cookies from a saved file.
 
-        Raises LoadError (or IOError) if reversion is not successful; the
+        Raises LoadError (or OSError) if reversion is not successful; the
         object's state will not be altered if this happens.
 
         """
@@ -1786,7 +1786,7 @@ class FileCookieJar(CookieJar):
             self._cookies = {}
             try:
                 self.load(filename, ignore_discard, ignore_expires)
-            except (LoadError, IOError):
+            except OSError:
                 self._cookies = old_state
                 raise
 
@@ -1937,8 +1937,7 @@ class LWPCookieJar(FileCookieJar):
                     if not ignore_expires and c.is_expired(now):
                         continue
                     self.set_cookie(c)
-
-        except IOError:
+        except OSError:
             raise
         except Exception:
             _warn_unhandled_exception()
@@ -2044,7 +2043,7 @@ class MozillaCookieJar(FileCookieJar):
                     continue
                 self.set_cookie(c)
 
-        except IOError:
+        except OSError:
             raise
         except Exception:
             _warn_unhandled_exception()

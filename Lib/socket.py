@@ -291,7 +291,7 @@ class SocketIO(io.RawIOBase):
         self._checkClosed()
         self._checkReadable()
         if self._timeout_occurred:
-            raise IOError("cannot read from timed out object")
+            raise OSError("cannot read from timed out object")
         while True:
             try:
                 return self._sock.recv_into(b)

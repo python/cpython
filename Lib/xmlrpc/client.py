@@ -1045,7 +1045,7 @@ def gzip_decode(data):
     gzf = gzip.GzipFile(mode="rb", fileobj=f)
     try:
         decoded = gzf.read()
-    except IOError:
+    except OSError:
         raise ValueError("invalid data")
     f.close()
     gzf.close()
@@ -1386,7 +1386,7 @@ class ServerProxy:
         # get the url
         type, uri = urllib.parse.splittype(uri)
         if type not in ("http", "https"):
-            raise IOError("unsupported XML-RPC protocol")
+            raise OSError("unsupported XML-RPC protocol")
         self.__host, self.__handler = urllib.parse.splithost(uri)
         if not self.__handler:
             self.__handler = "/RPC2"
