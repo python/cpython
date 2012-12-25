@@ -1339,8 +1339,8 @@ their suffixes::
 
 .. _operator-summary:
 
-Summary
-=======
+Operator precedence
+===================
 
 .. index:: pair: operator; precedence
 
@@ -1363,9 +1363,9 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`and`                                | Boolean AND                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`not` *x*                            | Boolean NOT                         |
+| :keyword:`not` ``x``                          | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`in`, :keyword:`not` :keyword:`in`,  | Comparisons, including membership   |
+| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
 | :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests,           |
 | ``<=``, ``>``, ``>=``, ``<>``, ``!=``, ``==`` |                                     |
 +-----------------------------------------------+-------------------------------------+
@@ -1391,7 +1391,7 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | ``(expressions...)``,                         | Binding or tuple display,           |
 | ``[expressions...]``,                         | list display,                       |
-| ``{key:datum...}``,                           | dictionary display,                 |
+| ``{key: value...}``,                          | dictionary display,                 |
 | ```expressions...```                          | string conversion                   |
 +-----------------------------------------------+-------------------------------------+
 
