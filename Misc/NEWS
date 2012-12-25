@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #15422: Get rid of PyCFunction_New macro. Use PyCFunction_NewEx
+  function (PyCFunction_New func is still present for backward compatibility).
+
 - Issue #16672: Improve performance tracing performance
 
 - Issue #14470: Remove w9xpopen support per PEP 11.
