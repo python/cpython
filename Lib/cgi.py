@@ -37,7 +37,6 @@ __version__ = "2.6"
 from operator import attrgetter
 import sys
 import os
-import urllib
 import UserDict
 import urlparse
 
