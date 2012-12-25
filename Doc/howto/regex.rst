@@ -359,9 +359,9 @@ for a complete listing.
 +------------------+-----------------------------------------------+
 
 :meth:`match` and :meth:`search` return ``None`` if no match can be found.  If
-they're successful, a ``MatchObject`` instance is returned, containing
-information about the match: where it starts and ends, the substring it matched,
-and more.
+they're successful, a :ref:`match object <match-objects>` instance is returned,
+containing information about the match: where it starts and ends, the substring
+it matched, and more.
 
 You can learn about this by interactively experimenting with the :mod:`re`
 module.  If you have Tkinter available, you may also want to look at
@@ -392,16 +392,16 @@ interpreter to print no output.  You can explicitly print the result of
    None
 
 Now, let's try it on a string that it should match, such as ``tempo``.  In this
-case, :meth:`match` will return a :class:`MatchObject`, so you should store the
-result in a variable for later use. ::
+case, :meth:`match` will return a :ref:`match object <match-objects>`, so you
+should store the result in a variable for later use. ::
 
    >>> m = p.match('tempo')
    >>> m  #doctest: +ELLIPSIS
    <_sre.SRE_Match object at 0x...>
 
-Now you can query the :class:`MatchObject` for information about the matching
-string.   :class:`MatchObject` instances also have several methods and
-attributes; the most important ones are:
+Now you can query the :ref:`match object <match-objects>` for information
+about the matching string.  :ref:`match object <match-objects>` instances
+also have several methods and attributes; the most important ones are:
 
 +------------------+--------------------------------------------+
 | Method/Attribute | Purpose                                    |
@@ -442,8 +442,9 @@ case. ::
    >>> m.span()
    (4, 11)
 
-In actual programs, the most common style is to store the :class:`MatchObject`
-in a variable, and then check if it was ``None``.  This usually looks like::
+In actual programs, the most common style is to store the
+:ref:`match object <match-objects>` in a variable, and then check if it was
+``None``.  This usually looks like::
 
    p = re.compile( ... )
    m = p.match( 'string goes here' )
@@ -460,8 +461,8 @@ Two pattern methods return all of the matches for a pattern.
    ['12', '11', '10']
 
 :meth:`findall` has to create the entire list before it can be returned as the
-result.  The :meth:`finditer` method returns a sequence of :class:`MatchObject`
-instances as an :term:`iterator`. [#]_ ::
+result.  The :meth:`finditer` method returns a sequence of
+:ref:`match object <match-objects>` instances as an :term:`iterator`. [#]_ ::
 
    >>> iterator = p.finditer('12 drummers drumming, 11 ... 10 ...')
    >>> iterator  #doctest: +ELLIPSIS
@@ -482,7 +483,7 @@ You don't have to create a pattern object and call its methods; the
 :func:`search`, :func:`findall`, :func:`sub`, and so forth.  These functions
 take the same arguments as the corresponding pattern method, with
 the RE string added as the first argument, and still return either ``None`` or a
-:class:`MatchObject` instance. ::
+:ref:`match object <match-objects>` instance. ::
 
    >>> print re.match(r'From\s+', 'Fromage amk')
    None
@@ -791,9 +792,9 @@ Groups indicated with ``'('``, ``')'`` also capture the starting and ending
 index of the text that they match; this can be retrieved by passing an argument
 to :meth:`group`, :meth:`start`, :meth:`end`, and :meth:`span`.  Groups are
 numbered starting with 0.  Group 0 is always present; it's the whole RE, so
-:class:`MatchObject` methods all have group 0 as their default argument.  Later
-we'll see how to express groups that don't capture the span of text that they
-match. ::
+:ref:`match object <match-objects>` methods all have group 0 as their default
+argument.  Later we'll see how to express groups that don't capture the span
+of text that they match. ::
 
    >>> p = re.compile('(a)b')
    >>> m = p.match('ab')
@@ -913,10 +914,10 @@ numbers, groups can be referenced by a name.
 The syntax for a named group is one of the Python-specific extensions:
 ``(?P<name>...)``.  *name* is, obviously, the name of the group.  Named groups
 also behave exactly like capturing groups, and additionally associate a name
-with a group.  The :class:`MatchObject` methods that deal with capturing groups
-all accept either integers that refer to the group by number or strings that
-contain the desired group's name.  Named groups are still given numbers, so you
-can retrieve information about a group in two ways::
+with a group.  The :ref:`match object <match-objects>` methods that deal with
+capturing groups all accept either integers that refer to the group by number
+or strings that contain the desired group's name.  Named groups are still
+given numbers, so you can retrieve information about a group in two ways::
 
    >>> p = re.compile(r'(?P<word>\b\w+\b)')
    >>> m = p.search( '(((( Lots of punctuation )))' )
@@ -1180,11 +1181,11 @@ three variations of the replacement string. ::
 
 *replacement* can also be a function, which gives you even more control.  If
 *replacement* is a function, the function is called for every non-overlapping
-occurrence of *pattern*.  On each call, the function is  passed a
-:class:`MatchObject` argument for the match and can use this information to
-compute the desired replacement string and return it.
+occurrence of *pattern*.  On each call, the function is passed a
+:ref:`match object <match-objects>` argument for the match and can use this
+information to compute the desired replacement string and return it.
 
-In the following example, the replacement function translates  decimals into
+In the following example, the replacement function translates decimals into
 hexadecimal::
 
    >>> def hexrepl(match):
