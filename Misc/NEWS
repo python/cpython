@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16772: The int() constructor's second argument (base) no longer
+  accepts non integer values.  Consistent with the behavior in Python 2.
+
 - Issue #15422: Get rid of PyCFunction_New macro. Use PyCFunction_NewEx
   function (PyCFunction_New func is still present for backward compatibility).
 
