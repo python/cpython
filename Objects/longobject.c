@@ -4260,6 +4260,11 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return PyLong_FromLong(0L);
     if (obase == NULL)
         return PyNumber_Long(x);
+    if (!PyLong_Check(obase)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "int() arg 2 must be an integer.");
+        return NULL;
+    }
 
     base = PyLong_AsLongAndOverflow(obase, &overflow);
     if (base == -1 && PyErr_Occurred())
