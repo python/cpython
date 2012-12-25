@@ -905,6 +905,50 @@ class MakedirTests(unittest.TestCase):
 
         os.removedirs(path)
 
+
+class RemoveDirsTests(unittest.TestCase):
+    def setUp(self):
+        os.makedirs(support.TESTFN)
+
+    def tearDown(self):
+        support.rmtree(support.TESTFN)
+
+    def test_remove_all(self):
+        dira = os.path.join(support.TESTFN, 'dira')
+        os.mkdir(dira)
+        dirb = os.path.join(dira, 'dirb')
+        os.mkdir(dirb)
+        os.removedirs(dirb)
+        self.assertFalse(os.path.exists(dirb))
+        self.assertFalse(os.path.exists(dira))
+        self.assertFalse(os.path.exists(support.TESTFN))
+
+    def test_remove_partial(self):
+        dira = os.path.join(support.TESTFN, 'dira')
+        os.mkdir(dira)
+        dirb = os.path.join(dira, 'dirb')
+        os.mkdir(dirb)
+        with open(os.path.join(dira, 'file.txt'), 'w') as f:
+            f.write('text')
+        os.removedirs(dirb)
+        self.assertFalse(os.path.exists(dirb))
+        self.assertTrue(os.path.exists(dira))
+        self.assertTrue(os.path.exists(support.TESTFN))
+
+    def test_remove_nothing(self):
+        dira = os.path.join(support.TESTFN, 'dira')
+        os.mkdir(dira)
+        dirb = os.path.join(dira, 'dirb')
+        os.mkdir(dirb)
+        with open(os.path.join(dirb, 'file.txt'), 'w') as f:
+            f.write('text')
+        with self.assertRaises(OSError):
+            os.removedirs(dirb)
+        self.assertTrue(os.path.exists(dirb))
+        self.assertTrue(os.path.exists(dira))
+        self.assertTrue(os.path.exists(support.TESTFN))
+
+
 class DevNullTests(unittest.TestCase):
     def test_devnull(self):
         with open(os.devnull, 'wb') as f:
@@ -912,6 +956,7 @@ class DevNullTests(unittest.TestCase):
             f.close()
         with open(os.devnull, 'rb') as f:
             self.assertEqual(f.read(), b'')
+
 
 class URandomTests(unittest.TestCase):
     def test_urandom_length(self):
@@ -2078,6 +2123,7 @@ def test_main():
         ExtendedAttributeTests,
         Win32DeprecatedBytesAPI,
         TermsizeTests,
+        RemoveDirsTests,
     )
 
 if __name__ == "__main__":
