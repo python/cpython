@@ -2546,7 +2546,7 @@ PyDoc_STRVAR(pattern_match_doc,
 PyDoc_STRVAR(pattern_search_doc,
 "search(string[, pos[, endpos]]) --> match object or None.\n\
     Scan through string looking for a match, and return a corresponding\n\
-    MatchObject instance. Return None if no position in the string matches.");
+    match object instance. Return None if no position in the string matches.");
 
 PyDoc_STRVAR(pattern_split_doc,
 "split(string[, maxsplit = 0])  --> list.\n\
