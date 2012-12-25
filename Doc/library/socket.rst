@@ -230,7 +230,7 @@ The module :mod:`socket` exports the following constants and functions:
       *source_address* was added.
 
 
-.. function:: getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0)
+.. function:: getaddrinfo(host, port[, family[, socktype[, proto[, flags]]]])
 
    Translate the *host*/*port* argument into a sequence of 5-tuples that contain
    all the necessary arguments for creating a socket connected to that service.
@@ -240,12 +240,12 @@ The module :mod:`socket` exports the following constants and functions:
    and *port*, you can pass ``NULL`` to the underlying C API.
 
    The *family*, *socktype* and *proto* arguments can be optionally specified
-   in order to narrow the list of addresses returned.  Passing zero as a
-   value for each of these arguments selects the full range of results.
+   in order to narrow the list of addresses returned.  By default, their value
+   is ``0``, meaning that the full range of results is selected.
    The *flags* argument can be one or several of the ``AI_*`` constants,
-   and will influence how results are computed and returned.
-   For example, :const:`AI_NUMERICHOST` will disable domain name resolution
-   and will raise an error if *host* is a domain name.
+   and will influence how results are computed and returned.  Its default value
+   is ``0``.  For example, :const:`AI_NUMERICHOST` will disable domain name
+   resolution and will raise an error if *host* is a domain name.
 
    The function returns a list of 5-tuples with the following structure:
 
