@@ -37,7 +37,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    behavior will be used.
 
    For normal use, you should only require the initialization/connect,
-   :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
+   :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
+   An example is included below.
 
    The :class:`SMTP` class supports the :keyword:`with` statement.  When used
    like this, the SMTP ``QUIT`` command is issued automatically when the
