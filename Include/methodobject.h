@@ -46,7 +46,7 @@ struct PyMethodDef {
 };
 typedef struct PyMethodDef PyMethodDef;
 
-PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
+#define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
 PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *, 
                                          PyObject *);
 
