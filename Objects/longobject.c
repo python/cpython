@@ -4072,7 +4072,7 @@ v_complement(digit *z, digit *a, Py_ssize_t m)
 
 static PyObject *
 long_bitwise(PyLongObject *a,
-             int op,  /* '&', '|', '^' */
+             char op,  /* '&', '|', '^' */
              PyLongObject *b)
 {
     int nega, negb, negz;
