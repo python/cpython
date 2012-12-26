@@ -205,13 +205,19 @@ class GenericTest(unittest.TestCase):
             os.remove(test_fn)
 
     @support.skip_unless_symlink
-    def test_samefile_on_links(self):
+    def test_samefile_on_symlink(self):
+        self._test_samefile_on_link_func(os.symlink)
+
+    def test_samefile_on_link(self):
+        self._test_samefile_on_link_func(os.link)
+
+    def _test_samefile_on_link_func(self, func):
         try:
             test_fn1 = support.TESTFN + "1"
             test_fn2 = support.TESTFN + "2"
             self._create_file(test_fn1)
 
-            os.symlink(test_fn1, test_fn2)
+            func(test_fn1, test_fn2)
             self.assertTrue(self.pathmodule.samefile(test_fn1, test_fn2))
             os.remove(test_fn2)
 
@@ -232,13 +238,19 @@ class GenericTest(unittest.TestCase):
             os.remove(test_fn)
 
     @support.skip_unless_symlink
-    def test_samestat_on_links(self):
+    def test_samestat_on_symlink(self):
+        self._test_samestat_on_link_func(os.symlink)
+
+    def test_samestat_on_link(self):
+        self._test_samestat_on_link_func(os.link)
+
+    def _test_samestat_on_link_func(self, func):
         try:
             test_fn1 = support.TESTFN + "1"
             test_fn2 = support.TESTFN + "2"
             self._create_file(test_fn1)
             test_fns = (test_fn1, test_fn2)
-            os.symlink(*test_fns)
+            func(*test_fns)
             stats = map(os.stat, test_fns)
             self.assertTrue(self.pathmodule.samestat(*stats))
             os.remove(test_fn2)
