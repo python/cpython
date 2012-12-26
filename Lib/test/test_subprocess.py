@@ -2154,14 +2154,11 @@ class ContextManagerTests(BaseTestCase):
             self.assertEqual(proc.returncode, 1)
 
     def test_invalid_args(self):
-        with self.assertRaises(EnvironmentError) as c:
+        with self.assertRaises(FileNotFoundError) as c:
             with subprocess.Popen(['nonexisting_i_hope'],
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
                 pass
-
-            if c.exception.errno != errno.ENOENT:  # ignore "no such file"
-                raise c.exception
 
 
 def test_main():
