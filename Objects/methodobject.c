@@ -13,6 +13,9 @@ static int numfree = 0;
 #define PyCFunction_MAXFREELIST 256
 #endif
 
+/* undefine macro trampoline to PyCFunction_NewEx */
+#undef PyCFunction_New
+
 PyObject *
 PyCFunction_New(PyMethodDef *ml, PyObject *self)
 {
