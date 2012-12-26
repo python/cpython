@@ -17,7 +17,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "ismount", "expanduser","expandvars","normpath","abspath",
            "splitunc","curdir","pardir","sep","pathsep","defpath","altsep",
            "extsep","devnull","realpath","supports_unicode_filenames","relpath",
-           "samefile", "sameopenfile",]
+           "samefile", "sameopenfile", "samestat",]
 
 # strings representing various path-related bits and pieces
 # These are primarily for export; internally, they are hardcoded.
