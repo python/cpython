@@ -32,7 +32,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    setting will be used).
 
    For normal use, you should only require the initialization/connect,
-   :meth:`sendmail`, and :meth:`quit` methods.  An example is included below.
+   :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
+   An example is included below.
 
 
 .. class:: SMTP_SSL(host='', port=0, local_hostname=None, keyfile=None, certfile=None[, timeout])
