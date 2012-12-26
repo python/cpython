@@ -652,23 +652,6 @@ except (AttributeError, ImportError):
     def _getfinalpathname(f):
         return normcase(abspath(f))
 
-def samefile(f1, f2):
-    "Test whether two pathnames reference the same actual file"
-    return _getfinalpathname(f1) == _getfinalpathname(f2)
-
-
-try:
-    from nt import _getfileinformation
-except ImportError:
-    # On other operating systems, just return the fd and see that
-    # it compares equal in sameopenfile.
-    def _getfileinformation(fd):
-        return fd
-
-def sameopenfile(f1, f2):
-    """Test whether two file objects reference the same file"""
-    return _getfileinformation(f1) == _getfileinformation(f2)
-
 
 try:
     # The genericpath.isdir implementation uses os.stat and checks the mode
