@@ -2023,8 +2023,7 @@ class ContextManagerTests(BaseTestCase):
                                   stderr=subprocess.PIPE) as proc:
                 pass
 
-            if c.exception.errno != errno.ENOENT:  # ignore "no such file"
-                raise c.exception
+        self.assertEqual(c.exception.errno, errno.ENOENT)
 
 
 def test_main():
