@@ -240,6 +240,30 @@ class IntTestCases(unittest.TestCase):
         self.assertEquals(int(base=1000), 0)
         self.assertEquals(int(base='foo'), 0)
 
+    def test_int_base_limits(self):
+        """Testing the supported limits of the int() base parameter."""
+        self.assertEqual(int('0', 5), 0)
+        with self.assertRaises(ValueError):
+            int('0', 1)
+        with self.assertRaises(ValueError):
+            int('0', 37)
+        with self.assertRaises(ValueError):
+            int('0', -909)  # An old magic value base from Python 2.
+        with self.assertRaises(ValueError):
+            int('0', base=0-(2**234))
+        with self.assertRaises(ValueError):
+            int('0', base=2**234)
+        # Bases 2 through 36 are supported.
+        for base in range(2,37):
+            self.assertEqual(int('0', base=base), 0)
+
+    def test_int_base_bad_types(self):
+        """Not integer types are not valid bases; issue16772."""
+        with self.assertRaises(TypeError):
+            int('0', 5.5)
+        with self.assertRaises(TypeError):
+            int('0', 5.0)
+
     def test_non_numeric_input_types(self):
         # Test possible non-numeric types for the argument x, including
         # subclasses of the explicitly documented accepted types.
