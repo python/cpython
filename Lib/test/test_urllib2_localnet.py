@@ -352,6 +352,8 @@ class TestUrlopen(unittest.TestCase):
 
     def setUp(self):
         super(TestUrlopen, self).setUp()
+        # Ignore proxies for localhost tests.
+        os.environ['NO_PROXY'] = '*'
         self.server = None
 
     def tearDown(self):
