@@ -186,6 +186,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16702: test_urllib2_localnet tests now correctly ignores proxies for
+  localhost tests.
+
 - Issue #16511: Use default IDLE width and height if config param is not valid.
   Patch Serhiy Storchaka.
 
