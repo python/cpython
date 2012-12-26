@@ -102,7 +102,7 @@ An :class:`POP3` instance has the following methods:
 .. method:: POP3.pass_(password)
 
    Send password, response includes message count and mailbox size. Note: the
-   mailbox on the server is locked until :meth:`quit` is called.
+   mailbox on the server is locked until :meth:`~poplib.quit` is called.
 
 
 .. method:: POP3.apop(user, secret)

@@ -370,10 +370,10 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 .. method:: FTP.close()
 
    Close the connection unilaterally.  This should not be applied to an already
-   closed connection such as after a successful call to :meth:`quit`.  After this
-   call the :class:`FTP` instance should not be used any more (after a call to
-   :meth:`close` or :meth:`quit` you cannot reopen the connection by issuing
-   another :meth:`login` method).
+   closed connection such as after a successful call to :meth:`~FTP.quit`.
+   After this call the :class:`FTP` instance should not be used any more (after
+   a call to :meth:`close` or :meth:`~FTP.quit` you cannot reopen the
+   connection by issuing another :meth:`login` method).
 
 
 FTP_TLS Objects
