@@ -244,14 +244,13 @@ applications should use string objects to access all files.
    On Unix, this is determined by the device number and i-node number and raises an
    exception if a :func:`os.stat` call on either pathname fails.
 
-   On Windows, two files are the same if they resolve to the same final path
-   name using the Windows API call GetFinalPathNameByHandle. This function
-   raises an exception if handles cannot be obtained to either file.
-
    Availability: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
+
+   .. versionchanged:: 3.4
+      Windows now uses the same implementation as all other platforms.
 
 
 .. function:: sameopenfile(fp1, fp2)
@@ -271,7 +270,10 @@ applications should use string objects to access all files.
    :func:`stat`.  This function implements the underlying comparison used by
    :func:`samefile` and :func:`sameopenfile`.
 
-   Availability: Unix.
+   Availability: Unix, Windows.
+
+   .. versionchanged:: 3.4
+      Added Windows support.
 
 
 .. function:: split(path)

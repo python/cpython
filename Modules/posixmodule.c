@@ -1249,6 +1249,8 @@ attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, stru
     memset(result, 0, sizeof(*result));
     result->st_mode = attributes_to_mode(info->dwFileAttributes);
     result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
+    result->st_dev = info->dwVolumeSerialNumber;
+    result->st_rdev = result->st_dev;
     FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
     FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
@@ -3502,31 +3504,6 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     return result;
 
 } /* end of posix__getfinalpathname */
-
-static PyObject *
-posix__getfileinformation(PyObject *self, PyObject *args)
-{
-    HANDLE hFile;
-    BY_HANDLE_FILE_INFORMATION info;
-    int fd;
-
-    if (!PyArg_ParseTuple(args, "i:_getfileinformation", &fd))
-        return NULL;
-
-    if (!_PyVerify_fd(fd))
-        return posix_error();
-
-    hFile = (HANDLE)_get_osfhandle(fd);
-    if (hFile == INVALID_HANDLE_VALUE)
-        return posix_error();
-
-    if (!GetFileInformationByHandle(hFile, &info))
-        return PyErr_SetFromWindowsErr(0);
-
-    return Py_BuildValue("iii", info.dwVolumeSerialNumber,
-                                info.nFileIndexHigh,
-                                info.nFileIndexLow);
-}
 
 PyDoc_STRVAR(posix__isdir__doc__,
 "Return true if the pathname refers to an existing directory.");
@@ -10606,7 +10583,6 @@ static PyMethodDef posix_methods[] = {
 #ifdef MS_WINDOWS
     {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
-    {"_getfileinformation",     posix__getfileinformation, METH_VARARGS, NULL},
     {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
     {"_getdiskusage",           win32__getdiskusage, METH_VARARGS, win32__getdiskusage__doc__},
 #endif
