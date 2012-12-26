@@ -4247,8 +4247,7 @@ static PyObject *
 long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *obase = NULL, *x = NULL;
-    long base;
-    int overflow;
+    Py_ssize_t base;
     static char *kwlist[] = {"x", "base", 0};
 
     if (type != &PyLong_Type)
@@ -4266,10 +4265,10 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    base = PyLong_AsLongAndOverflow(obase, &overflow);
+    base = PyNumber_AsSsize_t(obase, NULL);
     if (base == -1 && PyErr_Occurred())
         return NULL;
-    if (overflow || (base != 0 && base < 2) || base > 36) {
+    if ((base != 0 && base < 2) || base > 36) {
         PyErr_SetString(PyExc_ValueError,
                         "int() arg 2 must be >= 2 and <= 36");
         return NULL;
