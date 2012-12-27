@@ -12,6 +12,10 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
+  when retreiving a REG_DWORD value. This corrects functions like
+  winreg.QueryValueEx that may have been returning truncated values.
+
 - Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
   when passed a REG_DWORD value. Fixes OverflowError in winreg.SetValueEx.
 
