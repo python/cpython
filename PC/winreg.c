@@ -785,7 +785,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 memcpy(*retDataBuf, &zero, sizeof(DWORD));
             }
             else {
-                DWORD d = PyLong_AsLong(value);
+                DWORD d = PyLong_AsUnsignedLong(value);
                 memcpy(*retDataBuf, &d, sizeof(DWORD));
             }
             break;
