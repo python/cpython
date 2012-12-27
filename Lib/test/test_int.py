@@ -347,8 +347,8 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
         for x in values:
             msg = 'x has value %s and type %s' % (x, type(x).__name__)
             try:
-                self.assertEquals(int(x), 100, msg=msg)
-                self.assertEquals(int(x, 2), 4, msg=msg)
+                self.assertEqual(int(x), 100, msg=msg)
+                self.assertEqual(int(x, 2), 4, msg=msg)
             except TypeError, err:
                 raise AssertionError('For %s got TypeError: %s' %
                                      (type(x).__name__, err))
@@ -373,10 +373,10 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
     # expects x to be a string if base is given.
     @test_support.cpython_only
     def test_int_base_without_x_returns_0(self):
-        self.assertEquals(int(base=6), 0)
+        self.assertEqual(int(base=6), 0)
         # Even invalid bases don't raise an exception.
-        self.assertEquals(int(base=1), 0)
-        self.assertEquals(int(base=1000), 0)
+        self.assertEqual(int(base=1), 0)
+        self.assertEqual(int(base=1000), 0)
 
     @test_support.cpython_only
     def test_small_ints(self):

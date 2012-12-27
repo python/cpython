@@ -14,7 +14,7 @@ class MutexTest(unittest.TestCase):
             m.lock(called_by_mutex2, "eggs")
 
         def called_by_mutex2(some_data):
-            self.assertEquals(some_data, "eggs")
+            self.assertEqual(some_data, "eggs")
             self.assertTrue(m.test(), "mutex not held")
             self.assertTrue(ready_for_2,
                          "called_by_mutex2 called too soon")
