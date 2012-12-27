@@ -1621,7 +1621,7 @@ class IndentSearcher(object):
                 tokens = _tokenize.generate_tokens(self.readline)
                 for token in tokens:
                     self.tokeneater(*token)
-            except _tokenize.TokenError:
+            except (_tokenize.TokenError, SyntaxError):
                 # since we cut off the tokenizer early, we can trigger
                 # spurious errors
                 pass
