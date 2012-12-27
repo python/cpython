@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
+  when passed a REG_DWORD value. Fixes OverflowError in winreg.SetValueEx.
+
 - Issue #11939: Set the st_dev attribute of stat_result to allow Windows to
   take advantage of the os.path.samefile/sameopenfile/samestat implementations
   used by other platforms.
