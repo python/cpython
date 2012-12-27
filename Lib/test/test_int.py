@@ -226,23 +226,23 @@ class IntTestCases(unittest.TestCase):
         self.assertIs(int(b'-1'), -1)
 
     def test_no_args(self):
-        self.assertEquals(int(), 0)
+        self.assertEqual(int(), 0)
 
     def test_keyword_args(self):
         # Test invoking int() using keyword arguments.
-        self.assertEquals(int(x=1.2), 1)
-        self.assertEquals(int('100', base=2), 4)
-        self.assertEquals(int(x='100', base=2), 4)
+        self.assertEqual(int(x=1.2), 1)
+        self.assertEqual(int('100', base=2), 4)
+        self.assertEqual(int(x='100', base=2), 4)
 
     # For example, PyPy 1.9.0 raised TypeError for these cases because it
     # expects x to be a string if base is given.
     @support.cpython_only
     def test_base_arg_with_no_x_arg(self):
-        self.assertEquals(int(base=6), 0)
+        self.assertEqual(int(base=6), 0)
         # Even invalid bases don't raise an exception.
-        self.assertEquals(int(base=1), 0)
-        self.assertEquals(int(base=1000), 0)
-        self.assertEquals(int(base='foo'), 0)
+        self.assertEqual(int(base=1), 0)
+        self.assertEqual(int(base=1000), 0)
+        self.assertEqual(int(base='foo'), 0)
 
     def test_non_numeric_input_types(self):
         # Test possible non-numeric types for the argument x, including
@@ -259,8 +259,8 @@ class IntTestCases(unittest.TestCase):
 
         for x in values:
             msg = 'x has type %s' % type(x).__name__
-            self.assertEquals(int(x), 100, msg=msg)
-            self.assertEquals(int(x, 2), 4, msg=msg)
+            self.assertEqual(int(x), 100, msg=msg)
+            self.assertEqual(int(x, 2), 4, msg=msg)
 
     def test_string_float(self):
         self.assertRaises(ValueError, int, '1.2')

@@ -80,7 +80,7 @@ class HandlingFromlist(unittest.TestCase):
             with util.import_state(meta_path=[importer]):
                 with self.assertRaises(ImportError) as exc:
                     import_util.import_('pkg', fromlist=['mod'])
-                self.assertEquals('i_do_not_exist', exc.exception.name)
+                self.assertEqual('i_do_not_exist', exc.exception.name)
 
     def test_empty_string(self):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
