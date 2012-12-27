@@ -45,7 +45,25 @@ if have_unicode:
         (unichr(0x200), ValueError),
 ]
 
-class IntTestCases(unittest.TestCase):
+class IntLongCommonTests(object):
+
+    """Mixin of test cases to share between both test_int and test_long."""
+
+    # Change to int or long in the TestCase subclass.
+    ntype = None
+
+    def test_no_args(self):
+        self.assertEqual(self.ntype(), 0)
+
+    def test_keyword_args(self):
+        # Test invoking constructor using keyword arguments.
+        self.assertEqual(self.ntype(x=1.2), 1)
+        self.assertEqual(self.ntype('100', base=2), 4)
+        self.assertEqual(self.ntype(x='100', base=2), 4)
+
+class IntTestCases(IntLongCommonTests, unittest.TestCase):
+
+    ntype = int
 
     def test_basic(self):
         self.assertEqual(int(314), 314)
@@ -315,15 +333,6 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(float(2**54+6)), 2**54+8)
         self.assertEqual(int(float(2**54+10)), 2**54+8)
         self.assertEqual(int(float(2**54+11)), 2**54+12)
-
-    def test_no_args(self):
-        self.assertEquals(int(), 0)
-
-    def test_keyword_args(self):
-        # Test invoking int() using keyword arguments.
-        self.assertEquals(int(x=1.2), 1)
-        self.assertEquals(int('100', base=2), 4)
-        self.assertEquals(int(x='100', base=2), 4)
 
     def test_valid_non_numeric_input_types_for_x(self):
         # Test possible valid non-numeric types for x, including subclasses
