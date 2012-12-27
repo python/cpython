@@ -1,9 +1,14 @@
-import unittest
-from test.test_support import run_unittest, TESTFN
 import glob
 import os
 import shutil
 import sys
+import unittest
+
+from test.test_support import run_unittest, TESTFN
+
+
+def fsdecode(s):
+    return unicode(s, sys.getfilesystemencoding())
 
 
 class GlobTests(unittest.TestCase):
@@ -31,7 +36,8 @@ class GlobTests(unittest.TestCase):
         self.mktemp('a', 'bcd', 'efg', 'ha')
         if hasattr(os, 'symlink'):
             os.symlink(self.norm('broken'), self.norm('sym1'))
-            os.symlink(self.norm('broken'), self.norm('sym2'))
+            os.symlink('broken', self.norm('sym2'))
+            os.symlink(os.path.join('a', 'bcd'), self.norm('sym3'))
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
@@ -44,10 +50,16 @@ class GlobTests(unittest.TestCase):
         p = os.path.join(self.tempdir, pattern)
         res = glob.glob(p)
         self.assertEqual(list(glob.iglob(p)), res)
+        ures = [fsdecode(x) for x in res]
+        self.assertEqual(glob.glob(fsdecode(p)), ures)
+        self.assertEqual(list(glob.iglob(fsdecode(p))), ures)
         return res
 
     def assertSequencesEqual_noorder(self, l1, l2):
+        l1 = list(l1)
+        l2 = list(l2)
         self.assertEqual(set(l1), set(l2))
+        self.assertEqual(sorted(l1), sorted(l2))
 
     def test_glob_literal(self):
         eq = self.assertSequencesEqual_noorder
@@ -56,15 +68,19 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('aab'), [self.norm('aab')])
         eq(self.glob('zymurgy'), [])
 
+        res = glob.glob('*')
+        self.assertEqual({type(r) for r in res}, {str})
+        res = glob.glob(os.path.join(os.curdir, '*'))
+        self.assertEqual({type(r) for r in res}, {str})
+
         # test return types are unicode, but only if os.listdir
         # returns unicode filenames
-        uniset = set([unicode])
-        tmp = os.listdir(u'.')
-        if set(type(x) for x in tmp) == uniset:
-            u1 = glob.glob(u'*')
-            u2 = glob.glob(u'./*')
-            self.assertEqual(set(type(r) for r in u1), uniset)
-            self.assertEqual(set(type(r) for r in u2), uniset)
+        tmp = os.listdir(fsdecode(os.curdir))
+        if {type(x) for x in tmp} == {unicode}:
+            res = glob.glob(u'*')
+            self.assertEqual({type(r) for r in res}, {unicode})
+            res = glob.glob(os.path.join(fsdecode(os.curdir), u'*'))
+            self.assertEqual({type(r) for r in res}, {unicode})
 
     def test_glob_one_directory(self):
         eq = self.assertSequencesEqual_noorder
@@ -93,23 +109,60 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('*', '*a'), [])
         eq(self.glob('a', '*', '*', '*a'),
            [self.norm('a', 'bcd', 'efg', 'ha')])
-        eq(self.glob('?a?', '*F'), map(self.norm, [os.path.join('aaa', 'zzzF'),
-                                                   os.path.join('aab', 'F')]))
+        eq(self.glob('?a?', '*F'), [self.norm('aaa', 'zzzF'),
+                                    self.norm('aab', 'F')])
 
     def test_glob_directory_with_trailing_slash(self):
-        # We are verifying that when there is wildcard pattern which
-        # ends with os.sep doesn't blow up.
-        res = glob.glob(self.tempdir + '*' + os.sep)
-        self.assertEqual(len(res), 1)
-        # either of these results are reasonable
-        self.assertIn(res[0], [self.tempdir, self.tempdir + os.sep])
+        # Patterns ending with a slash shouldn't match non-dirs
+        res = glob.glob(self.norm('Z*Z') + os.sep)
+        self.assertEqual(res, [])
+        res = glob.glob(self.norm('ZZZ') + os.sep)
+        self.assertEqual(res, [])
+        # When there is a wildcard pattern which ends with os.sep, glob()
+        # doesn't blow up.
+        res = glob.glob(self.norm('aa*') + os.sep)
+        self.assertEqual(len(res), 2)
+        # either of these results is reasonable
+        self.assertIn(set(res), [
+                      {self.norm('aaa'), self.norm('aab')},
+                      {self.norm('aaa') + os.sep, self.norm('aab') + os.sep},
+                      ])
 
+    def test_glob_unicode_directory_with_trailing_slash(self):
+        # Same as test_glob_directory_with_trailing_slash, but with an
+        # unicode argument.
+        res = glob.glob(fsdecode(self.norm('Z*Z') + os.sep))
+        self.assertEqual(res, [])
+        res = glob.glob(fsdecode(self.norm('ZZZ') + os.sep))
+        self.assertEqual(res, [])
+        res = glob.glob(fsdecode(self.norm('aa*') + os.sep))
+        self.assertEqual(len(res), 2)
+        # either of these results is reasonable
+        self.assertIn(set(res), [
+                      {fsdecode(self.norm('aaa')), fsdecode(self.norm('aab'))},
+                      {fsdecode(self.norm('aaa') + os.sep),
+                       fsdecode(self.norm('aab') + os.sep)},
+                      ])
+
+    @unittest.skipUnless(hasattr(os, 'symlink'), "Requires symlink support")
+    def test_glob_symlinks(self):
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('sym3'), [self.norm('sym3')])
+        eq(self.glob('sym3', '*'), [self.norm('sym3', 'EF'),
+                                    self.norm('sym3', 'efg')])
+        self.assertIn(self.glob('sym3' + os.sep),
+                      [[self.norm('sym3')], [self.norm('sym3') + os.sep]])
+        eq(self.glob('*', '*F'),
+           [self.norm('aaa', 'zzzF'), self.norm('aab', 'F'),
+            self.norm('sym3', 'EF')])
+
+    @unittest.skipUnless(hasattr(os, 'symlink'), "Requires symlink support")
     def test_glob_broken_symlinks(self):
-        if hasattr(os, 'symlink'):
-            eq = self.assertSequencesEqual_noorder
-            eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2')])
-            eq(self.glob('sym1'), [self.norm('sym1')])
-            eq(self.glob('sym2'), [self.norm('sym2')])
+        eq = self.assertSequencesEqual_noorder
+        eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2'),
+                               self.norm('sym3')])
+        eq(self.glob('sym1'), [self.norm('sym1')])
+        eq(self.glob('sym2'), [self.norm('sym2')])
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
     def test_glob_magic_in_drive(self):

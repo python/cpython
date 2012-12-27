@@ -574,6 +574,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #16618: Add more regression tests for glob.
+  Patch by Serhiy Storchaka.
+
 - Issue #16664: Add regression tests for glob's behaviour concerning entries
   starting with a ".".  Patch by Sebastian Kreft.
 
