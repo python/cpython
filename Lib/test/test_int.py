@@ -380,11 +380,11 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
 
     @test_support.cpython_only
     def test_small_ints(self):
-        self.assertTrue(int('10') is 10)
-        self.assertTrue(int('-1') is -1)
+        self.assertIs(int('10'), 10)
+        self.assertIs(int('-1'), -1)
         if have_unicode:
-            self.assertTrue(int(u'10') is 10)
-            self.assertTrue(int(u'-1') is -1)
+            self.assertIs(int(u'10'), 10)
+            self.assertIs(int(u'-1'), -1)
 
     def test_intconversion(self):
         # Test __int__()
