@@ -378,6 +378,14 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
         self.assertEquals(int(base=1), 0)
         self.assertEquals(int(base=1000), 0)
 
+    @test_support.cpython_only
+    def test_small_ints(self):
+        self.assertTrue(int('10') is 10)
+        self.assertTrue(int('-1') is -1)
+        if have_unicode:
+            self.assertTrue(int(u'10') is 10)
+            self.assertTrue(int(u'-1') is -1)
+
     def test_intconversion(self):
         # Test __int__()
         class ClassicMissingMethods:
