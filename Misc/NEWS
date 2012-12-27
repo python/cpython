@@ -9,6 +9,10 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
+  when passed a REG_DWORD value. Fixes ValueError in winreg.SetValueEx when
+  given a long.
+
 - Issue #13863: Work around buggy 'fstat' implementation on Windows / NTFS that
   lead to incorrect timestamps (off by one hour) being stored in .pyc files on
   some systems.
