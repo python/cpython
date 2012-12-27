@@ -323,6 +323,18 @@ class LocalWinregTests(BaseWinregTests):
         finally:
             DeleteKey(HKEY_CURRENT_USER, test_key_name)
 
+    def test_setvalueex_value_range(self):
+        # Test for Issue #14420, accept proper ranges for SetValueEx.
+        # Py2Reg, which gets called by SetValueEx, was using PyLong_AsLong,
+        # thus raising OverflowError. The implementation now uses
+        # PyLong_AsUnsignedLong to match DWORD's size.
+        try:
+            with CreateKey(HKEY_CURRENT_USER, test_key_name) as ck:
+                self.assertNotEqual(ck.handle, 0)
+                SetValueEx(ck, "test_name", None, REG_DWORD, 0x80000000)
+        finally:
+            DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
 
 @unittest.skipUnless(REMOTE_NAME, "Skipping remote registry tests")
 class RemoteWinregTests(BaseWinregTests):
