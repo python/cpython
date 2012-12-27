@@ -193,6 +193,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
+  Roger Serwy.
+
 - Issue #16618: Make glob.glob match consistently across strings and bytes
   regarding leading dots.  Patch by Serhiy Storchaka.
 
