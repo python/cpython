@@ -918,9 +918,9 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
     switch (typ) {
         case REG_DWORD:
             if (retDataSize == 0)
-                obData = Py_BuildValue("i", 0);
+                obData = Py_BuildValue("k", 0);
             else
-                obData = Py_BuildValue("i",
+                obData = Py_BuildValue("k",
                                        *(int *)retDataBuf);
             break;
         case REG_SZ:
