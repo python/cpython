@@ -753,7 +753,8 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
     Py_ssize_t i,j;
     switch (typ) {
         case REG_DWORD:
-            if (value != Py_None && !PyInt_Check(value))
+            if (value != Py_None &&
+                !(PyInt_Check(value) || PyLong_Check(value)))
                 return FALSE;
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
             if (*retDataBuf==NULL){
@@ -765,10 +766,10 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 DWORD zero = 0;
                 memcpy(*retDataBuf, &zero, sizeof(DWORD));
             }
-            else
-                memcpy(*retDataBuf,
-                       &PyInt_AS_LONG((PyIntObject *)value),
-                       sizeof(DWORD));
+            else {
+                DWORD d = PyLong_AsUnsignedLong(value);
+                memcpy(*retDataBuf, &d, sizeof(DWORD));
+            }
             break;
         case REG_SZ:
         case REG_EXPAND_SZ:
