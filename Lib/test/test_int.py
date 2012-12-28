@@ -226,6 +226,14 @@ class IntTestCases(unittest.TestCase):
         self.assertIs(int(b'10'), 10)
         self.assertIs(int(b'-1'), -1)
 
+    def test_keyword_args(self):
+        # Test invoking int() using keyword arguments.
+        self.assertEqual(int(x=1.2), 1)
+        self.assertEqual(int('100', base=2), 4)
+        self.assertEqual(int(x='100', base=2), 4)
+        self.assertRaises(TypeError, int, base=10)
+        self.assertRaises(TypeError, int, base=0)
+
     def test_intconversion(self):
         # Test __int__()
         class ClassicMissingMethods:
