@@ -60,6 +60,8 @@ class IntLongCommonTests(object):
         self.assertEqual(self.ntype(x=1.2), 1)
         self.assertEqual(self.ntype('100', base=2), 4)
         self.assertEqual(self.ntype(x='100', base=2), 4)
+        self.assertRaises(TypeError, self.ntype, base=10)
+        self.assertRaises(TypeError, self.ntype, base=0)
 
 class IntTestCases(IntLongCommonTests, unittest.TestCase):
 
@@ -365,18 +367,6 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
 
     def test_error_on_string_base(self):
         self.assertRaises(TypeError, int, 100, base='foo')
-        # Include the following because in contrast CPython raises no error
-        # for bad integer bases when x is not given.
-        self.assertRaises(TypeError, int, base='foo')
-
-    # For example, PyPy 1.9.0 raised TypeError for these cases because it
-    # expects x to be a string if base is given.
-    @test_support.cpython_only
-    def test_int_base_without_x_returns_0(self):
-        self.assertEqual(int(base=6), 0)
-        # Even invalid bases don't raise an exception.
-        self.assertEqual(int(base=1), 0)
-        self.assertEqual(int(base=1000), 0)
 
     @test_support.cpython_only
     def test_small_ints(self):
