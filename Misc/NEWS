@@ -585,6 +585,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #15324: Fix regrtest parsing of --fromfile and --randomize options.
+
 - Issue #16618: Add more regression tests for glob.
   Patch by Serhiy Storchaka.
 
