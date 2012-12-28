@@ -313,17 +313,19 @@ class SSLSocket(socket):
                                     self.cert_reqs, self.ssl_version,
                                     self.ca_certs, self.ciphers)
         try:
-            socket.connect(self, addr)
-            if self.do_handshake_on_connect:
-                self.do_handshake()
-        except socket_error as e:
             if return_errno:
-                return e.errno
+                rc = socket.connect_ex(self, addr)
             else:
-                self._sslobj = None
-                raise e
-        self._connected = True
-        return 0
+                rc = None
+                socket.connect(self, addr)
+            if not rc:
+                if self.do_handshake_on_connect:
+                    self.do_handshake()
+                self._connected = True
+            return rc
+        except socket_error:
+            self._sslobj = None
+            raise
 
     def connect(self, addr):
         """Connects to remote ADDR, and then wraps the connection in
