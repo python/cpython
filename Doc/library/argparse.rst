@@ -1459,7 +1459,7 @@ Sub-commands
    different functions which require different kinds of command-line arguments.
    :class:`ArgumentParser` supports the creation of such sub-commands with the
    :meth:`add_subparsers` method.  The :meth:`add_subparsers` method is normally
-   called with no arguments and returns an special action object.  This object
+   called with no arguments and returns a special action object.  This object
    has a single method, :meth:`~ArgumentParser.add_parser`, which takes a
    command name and any :class:`ArgumentParser` constructor arguments, and
    returns an :class:`ArgumentParser` object that can be modified as usual.
