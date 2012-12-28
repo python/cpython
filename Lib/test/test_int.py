@@ -233,16 +233,8 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int(x=1.2), 1)
         self.assertEqual(int('100', base=2), 4)
         self.assertEqual(int(x='100', base=2), 4)
-
-    # For example, PyPy 1.9.0 raised TypeError for these cases because it
-    # expects x to be a string if base is given.
-    @support.cpython_only
-    def test_base_arg_with_no_x_arg(self):
-        self.assertEqual(int(base=6), 0)
-        # Even invalid bases don't raise an exception.
-        self.assertEqual(int(base=1), 0)
-        self.assertEqual(int(base=1000), 0)
-        self.assertEqual(int(base='foo'), 0)
+        self.assertRaises(TypeError, int, base=10)
+        self.assertRaises(TypeError, int, base=0)
 
     def test_non_numeric_input_types(self):
         # Test possible non-numeric types for the argument x, including
