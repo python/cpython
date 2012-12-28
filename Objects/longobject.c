@@ -3987,8 +3987,14 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:long", kwlist,
                                      &x, &base))
         return NULL;
-    if (x == NULL)
+    if (x == NULL) {
+        if (base != -909) {
+            PyErr_SetString(PyExc_TypeError,
+                            "long() missing string argument");
+            return NULL;
+        }
         return PyLong_FromLong(0L);
+    }
     if (base == -909)
         return PyNumber_Long(x);
     else if (PyString_Check(x)) {
