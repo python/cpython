@@ -534,6 +534,9 @@ Tests
 - Issue #10646: Tests rearranged for os.samefile/samestat to check for not
   just symlinks but also hard links.
 
+- Issue #15324: Fix regrtest parsing of --fromfile, --match, and --randomize
+  options.
+
 - Issue #16664: Add regression tests for glob's behaviour concerning entries
   starting with a ".".  Patch by Sebastian Kreft.
 
