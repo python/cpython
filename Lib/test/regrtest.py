@@ -1,11 +1,18 @@
 #! /usr/bin/env python3
 
 """
-Usage:
+Script to run Python regression tests.
 
+Run this script with -h or --help for documentation.
+"""
+
+USAGE = """\
 python -m test [options] [test_name1 [test_name2 ...]]
 python path/to/Lib/test/regrtest.py [options] [test_name1 [test_name2 ...]]
+"""
 
+DESCRIPTION = """\
+Run Python regression tests.
 
 If no arguments or options are provided, finds all files matching
 the pattern "test_*" in the Lib/test subdirectory and runs
@@ -15,63 +22,10 @@ For more rigorous testing, it is useful to use the following
 command line:
 
 python -E -Wd -m test [options] [test_name1 ...]
+"""
 
-
-Options:
-
--h/--help       -- print this text and exit
---timeout TIMEOUT
-                -- dump the traceback and exit if a test takes more
-                   than TIMEOUT seconds; disabled if TIMEOUT is negative
-                   or equals to zero
---wait          -- wait for user input, e.g., allow a debugger to be attached
-
-Verbosity
-
--v/--verbose    -- run tests in verbose mode with output to stdout
--w/--verbose2   -- re-run failed tests in verbose mode
--W/--verbose3   -- display test output on failure
--d/--debug      -- print traceback for failed tests
--q/--quiet      -- no output unless one or more tests fail
--o/--slow       -- print the slowest 10 tests
-   --header     -- print header with interpreter info
-
-Selecting tests
-
--r/--randomize  -- randomize test execution order (see below)
-   --randseed   -- pass a random seed to reproduce a previous random run
--f/--fromfile   -- read names of tests to run from a file (see below)
--x/--exclude    -- arguments are tests to *exclude*
--s/--single     -- single step through a set of tests (see below)
--m/--match PAT  -- match test cases and methods with glob pattern PAT
--G/--failfast   -- fail as soon as a test fails (only with -v or -W)
--u/--use RES1,RES2,...
-                -- specify which special resource intensive tests to run
--M/--memlimit LIMIT
-                -- run very large memory-consuming tests
-   --testdir DIR
-                -- execute test files in the specified directory (instead
-                   of the Python stdlib test suite)
-
-Special runs
-
--l/--findleaks  -- if GC is available detect tests that leak memory
--L/--runleaks   -- run the leaks(1) command just before exit
--R/--huntrleaks RUNCOUNTS
-                -- search for reference leaks (needs debug build, v. slow)
--j/--multiprocess PROCESSES
-                -- run PROCESSES processes at once
--T/--coverage   -- turn on code coverage tracing using the trace module
--D/--coverdir DIRECTORY
-                -- Directory where coverage files are put
--N/--nocoverdir -- Put coverage files alongside modules
--t/--threshold THRESHOLD
-                -- call gc.set_threshold(THRESHOLD)
--n/--nowindows  -- suppress error message boxes on Windows
--F/--forever    -- run the specified tests in a loop, until an error happens
-
-
-Additional Option Details:
+EPILOG = """\
+Additional option details:
 
 -r randomizes test execution order. You can use --randseed=int to provide a
 int seed value for the randomizer; this is useful for reproducing troublesome
@@ -168,9 +122,9 @@ option '-uall,-gui'.
 # We import importlib *ASAP* in order to test #15386
 import importlib
 
+import argparse
 import builtins
 import faulthandler
-import getopt
 import io
 import json
 import logging
@@ -248,10 +202,138 @@ RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
 
 TEMPDIR = os.path.abspath(tempfile.gettempdir())
 
-def usage(msg):
-    print(msg, file=sys.stderr)
-    print("Use --help for usage", file=sys.stderr)
-    sys.exit(2)
+def _create_parser():
+    # Set prog to prevent the uninformative "__main__.py" from displaying in
+    # error messages when using "python -m test ...".
+    parser = argparse.ArgumentParser(prog='regrtest.py',
+                                     usage=USAGE,
+                                     description=DESCRIPTION,
+                                     epilog=EPILOG,
+                                     add_help=False,
+                                     formatter_class=
+                                       argparse.RawDescriptionHelpFormatter)
+
+    # Arguments with this clause added to its help are described further in
+    # the epilog's "Additional option details" section.
+    more_details = '  See the section at bottom for more details.'
+
+    group = parser.add_argument_group('General options')
+    # We add help explicitly to control what argument group it renders under.
+    group.add_argument('-h', '--help', action='help',
+                       help='show this help message and exit')
+    group.add_argument('--timeout', metavar='TIMEOUT',
+                        help='dump the traceback and exit if a test takes '
+                             'more than TIMEOUT seconds; disabled if TIMEOUT '
+                             'is negative or equals to zero')
+    group.add_argument('--wait', action='store_true', help='wait for user '
+                        'input, e.g., allow a debugger to be attached')
+    group.add_argument('--slaveargs', metavar='ARGS')
+    group.add_argument('-S', '--start', metavar='START', help='the name of '
+                        'the test at which to start.' + more_details)
+
+    group = parser.add_argument_group('Verbosity')
+    group.add_argument('-v', '--verbose', action='store_true',
+                       help='run tests in verbose mode with output to stdout')
+    group.add_argument('-w', '--verbose2', action='store_true',
+                       help='re-run failed tests in verbose mode')
+    group.add_argument('-W', '--verbose3', action='store_true',
+                       help='display test output on failure')
+    group.add_argument('-d', '--debug', action='store_true',
+                       help='print traceback for failed tests')
+    group.add_argument('-q', '--quiet', action='store_true',
+                       help='no output unless one or more tests fail')
+    group.add_argument('-o', '--slow', action='store_true',
+                       help='print the slowest 10 tests')
+    group.add_argument('--header', action='store_true',
+                       help='print header with interpreter info')
+
+    group = parser.add_argument_group('Selecting tests')
+    group.add_argument('-r', '--randomize', action='store_true',
+                       help='randomize test execution order.' + more_details)
+    group.add_argument('--randseed', metavar='SEED', help='pass a random seed '
+                       'to reproduce a previous random run')
+    group.add_argument('-f', '--fromfile', metavar='FILE', help='read names '
+                       'of tests to run from a file.' + more_details)
+    group.add_argument('-x', '--exclude', action='store_true',
+                       help='arguments are tests to *exclude*')
+    group.add_argument('-s', '--single', action='store_true', help='single '
+                       'step through a set of tests.' + more_details)
+    group.add_argument('-m', '--match', metavar='PAT', help='match test cases '
+                       'and methods with glob pattern PAT')
+    group.add_argument('-G', '--failfast', action='store_true', help='fail as '
+                       'soon as a test fails (only with -v or -W)')
+    group.add_argument('-u', '--use', metavar='RES1,RES2,...', help='specify '
+                       'which special resource intensive tests to run.' +
+                       more_details)
+    group.add_argument('-M', '--memlimit', metavar='LIMIT', help='run very '
+                       'large memory-consuming tests.' + more_details)
+    group.add_argument('--testdir', metavar='DIR',
+                       help='execute test files in the specified directory '
+                            '(instead of the Python stdlib test suite)')
+
+    group = parser.add_argument_group('Special runs')
+    group.add_argument('-l', '--findleaks', action='store_true', help='if GC '
+                       'is available detect tests that leak memory')
+    group.add_argument('-L', '--runleaks', action='store_true',
+                       help='run the leaks(1) command just before exit.' +
+                       more_details)
+    group.add_argument('-R', '--huntrleaks', metavar='RUNCOUNTS',
+                       help='search for reference leaks (needs debug build, '
+                            'very slow).' + more_details)
+    group.add_argument('-j', '--multiprocess', metavar='PROCESSES',
+                       help='run PROCESSES processes at once')
+    group.add_argument('-T', '--coverage', action='store_true', help='turn on '
+                       'code coverage tracing using the trace module')
+    group.add_argument('-D', '--coverdir', metavar='DIR',
+                       help='directory where coverage files are put')
+    group.add_argument('-N', '--nocoverdir', action='store_true',
+                       help='put coverage files alongside modules')
+    group.add_argument('-t', '--threshold', metavar='THRESHOLD',
+                       help='call gc.set_threshold(THRESHOLD)')
+    group.add_argument('-n', '--nowindows', action='store_true',
+                       help='suppress error message boxes on Windows')
+    group.add_argument('-F', '--forever', action='store_true',
+                       help='run the specified tests in a loop, until an '
+                            'error happens')
+
+    parser.add_argument('args', nargs=argparse.REMAINDER,
+                        help=argparse.SUPPRESS)
+
+    return parser
+
+def _convert_namespace_to_getopt(ns):
+    """Convert an argparse.Namespace object to a getopt-style (opts, args)."""
+    opts = []
+    args_dict = vars(ns)
+    for key in sorted(args_dict.keys()):
+        if key == 'args':
+            continue
+        val = args_dict[key]
+        # Don't continue if val equals '' because this means an option
+        # accepting a value was provided the empty string.  Such values should
+        # show up in the returned opts list.
+        if val is None or val is False:
+            continue
+        if val is True:
+            # Then an option with action store_true was passed. getopt
+            # includes these with value '' in the opts list.
+            val = ''
+        opts.append(('--' + key, val))
+    return opts, ns.args
+
+# This function has a getopt-style return value because regrtest.main()
+# was originally written using getopt.
+# TODO: switch this to return an argparse.Namespace instance.
+def _parse_args(args=None):
+    """Parse arguments, and return a getopt-style (opts, args).
+
+    This method mimics the return value of getopt.getopt().  In addition,
+    the (option, value) pairs in opts are sorted by option and use the long
+    option string.
+    """
+    parser = _create_parser()
+    ns = parser.parse_args(args=args)
+    return _convert_namespace_to_getopt(ns)
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False,
@@ -298,17 +380,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     replace_stdout()
 
     support.record_original_stdout(sys.stdout)
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsoS:rf:lu:t:TD:NLR:FdwWM:nj:Gm:',
-            ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
-             'exclude', 'single', 'slow', 'randomize', 'fromfile=', 'findleaks',
-             'use=', 'threshold=', 'coverdir=', 'nocoverdir',
-             'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
-             'multiprocess=', 'coverage', 'slaveargs=', 'forever', 'debug',
-             'start=', 'nowindows', 'header', 'testdir=', 'timeout=', 'wait',
-             'failfast', 'match='])
-    except getopt.error as msg:
-        usage(msg)
+
+    opts, args = _parse_args()
 
     # Defaults
     if random_seed is None:
@@ -319,10 +392,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     start = None
     timeout = None
     for o, a in opts:
-        if o in ('-h', '--help'):
-            print(__doc__)
-            return
-        elif o in ('-v', '--verbose'):
+        if o in ('-v', '--verbose'):
             verbose += 1
         elif o in ('-w', '--verbose2'):
             verbose2 = True

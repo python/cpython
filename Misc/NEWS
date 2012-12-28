@@ -534,6 +534,8 @@ Tests
 - Issue #10646: Tests rearranged for os.samefile/samestat to check for not
   just symlinks but also hard links.
 
+- Issue #15302: Switch regrtest from using getopt to using argparse.
+
 - Issue #15324: Fix regrtest parsing of --fromfile, --match, and --randomize
   options.
 
