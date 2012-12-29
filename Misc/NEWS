@@ -124,6 +124,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16641: Fix default values of sched.scheduler.enter arguments were
+  modifiable.
+
 - Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
   Roger Serwy.
 
