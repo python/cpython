@@ -128,27 +128,29 @@ class scheduler:
         """
         # localize variable access to minimize overhead
         # and to improve thread safety
-        with self._lock:
-            q = self._queue
-            delayfunc = self.delayfunc
-            timefunc = self.timefunc
-            pop = heapq.heappop
-            while q:
-                time, priority, action, argument, kwargs = checked_event = q[0]
+        lock = self._lock
+        q = self._queue
+        delayfunc = self.delayfunc
+        timefunc = self.timefunc
+        pop = heapq.heappop
+        while True:
+            with lock:
+                if not q:
+                    break
+                time, priority, action, argument, kwargs = q[0]
                 now = timefunc()
-                if now < time:
-                    if not blocking:
-                        return time - now
-                    delayfunc(time - now)
+                if time > now:
+                    delay = True
                 else:
-                    event = pop(q)
-                    # Verify that the event was not removed or altered
-                    # by another thread after we last looked at q[0].
-                    if event is checked_event:
-                        action(*argument, **kwargs)
-                        delayfunc(0)   # Let other threads run
-                    else:
-                        heapq.heappush(q, event)
+                    delay = False
+                    pop(q)
+            if delay:
+                if not blocking:
+                    return time - now
+                delayfunc(time - now)
+            else:
+                action(*argument, **kwargs)
+                delayfunc(0)   # Let other threads run
 
     @property
     def queue(self):
