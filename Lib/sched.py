@@ -50,6 +50,8 @@ class Event(namedtuple('Event', 'time, priority, action, argument, kwargs')):
     def __gt__(s, o): return (s.time, s.priority) >  (o.time, o.priority)
     def __ge__(s, o): return (s.time, s.priority) >= (o.time, o.priority)
 
+_sentinel = object()
+
 class scheduler:
 
     def __init__(self, timefunc=_time, delayfunc=time.sleep):
@@ -60,19 +62,21 @@ class scheduler:
         self.timefunc = timefunc
         self.delayfunc = delayfunc
 
-    def enterabs(self, time, priority, action, argument=[], kwargs={}):
+    def enterabs(self, time, priority, action, argument=(), kwargs=_sentinel):
         """Enter a new event in the queue at an absolute time.
 
         Returns an ID for the event which can be used to remove it,
         if necessary.
 
         """
+        if kwargs is _sentinel:
+            kwargs = {}
         with self._lock:
             event = Event(time, priority, action, argument, kwargs)
             heapq.heappush(self._queue, event)
             return event # The ID
 
-    def enter(self, delay, priority, action, argument=[], kwargs={}):
+    def enter(self, delay, priority, action, argument=(), kwargs=_sentinel):
         """A variant that specifies the time as a relative time.
 
         This is actually the more commonly used interface.
