@@ -492,7 +492,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
     Py_ssize_t i;
 
     /* adjust end */
-    if (maxcount < end - ptr && maxcount != 65535)
+    if (maxcount < (end - ptr) / state->charsize && maxcount != 65535)
         end = ptr + maxcount*state->charsize;
 
     switch (pattern[0]) {
@@ -583,7 +583,7 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
     Py_ssize_t i;
 
     /* check minimal length */
-    if (pattern[3] && (end - ptr) < pattern[3])
+    if (pattern[3] && (end - ptr)/state->charsize < pattern[3])
         return 0;
 
     /* check known prefix */
@@ -801,7 +801,7 @@ entrance:
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
         if (ctx->pattern[3] && (end - ctx->ptr)/state->charsize < ctx->pattern[3]) {
             TRACE(("reject (got %d chars, need %d)\n",
-                   (end - ctx->ptr), ctx->pattern[3]));
+                   (end - ctx->ptr)/state->charsize, ctx->pattern[3]));
             RETURN_FAILURE;
         }
         ctx->pattern += ctx->pattern[1] + 1;
@@ -1329,9 +1329,10 @@ entrance:
                         RETURN_FAILURE;
                     while (p < e) {
                         if (ctx->ptr >= end ||
-                            state->lower(SRE_CHARGET(state, ctx->ptr, 0)) != state->lower(*p))
+                            state->lower(SRE_CHARGET(state, ctx->ptr, 0)) !=
+                            state->lower(SRE_CHARGET(state, p, 0)))
                             RETURN_FAILURE;
-                        p++;
+                        p += state->charsize;
                         ctx->ptr += state->charsize;
                     }
                 }
