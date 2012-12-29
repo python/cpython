@@ -968,6 +968,11 @@ class ReTests(unittest.TestCase):
         self.assertEqual(r, s)
         self.assertEqual(n, size + 1)
 
+    def test_bug_16688(self):
+        # Issue 16688: Backreferences make case-insensitive regex fail on
+        # non-ASCII strings.
+        self.assertEqual(re.findall(r"(?i)(a)\1", "aa \u0100"), ['a'])
+        self.assertEqual(re.match(r"(?s).{1,3}", "\u0100\u0100").span(), (0, 2))
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR

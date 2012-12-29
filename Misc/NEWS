@@ -200,6 +200,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16688: Fix backreferences did make case-insensitive regex fail on
+  non-ASCII strings. Patch by Matthew Barnett.
+
 - Issue #16486: Make aifc files work with 'with' as context managers.
 
 - Issue #16485: Fix file descriptor not being closed if file header patching
