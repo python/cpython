@@ -4,7 +4,10 @@ import sched
 import time
 import unittest
 from test import support
-
+try:
+    import threading
+except ImportError:
+    threading = None
 
 class TestCase(unittest.TestCase):
 
@@ -24,6 +27,20 @@ class TestCase(unittest.TestCase):
         for x in [0.05, 0.04, 0.03, 0.02, 0.01]:
             z = scheduler.enterabs(x, 1, fun, (x,))
         scheduler.run()
+        self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def test_enter_concurrent(self):
+        l = []
+        fun = lambda x: l.append(x)
+        scheduler = sched.scheduler(time.time, time.sleep)
+        scheduler.enter(0.03, 1, fun, (0.03,))
+        t = threading.Thread(target=scheduler.run)
+        t.start()
+        for x in [0.05, 0.04, 0.02, 0.01]:
+            z = scheduler.enter(x, 1, fun, (x,))
+        scheduler.run()
+        t.join()
         self.assertEqual(l, [0.01, 0.02, 0.03, 0.04, 0.05])
 
     def test_priority(self):
@@ -48,6 +65,24 @@ class TestCase(unittest.TestCase):
         scheduler.cancel(event1)
         scheduler.cancel(event5)
         scheduler.run()
+        self.assertEqual(l, [0.02, 0.03, 0.04])
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def test_cancel_concurrent(self):
+        l = []
+        fun = lambda x: l.append(x)
+        scheduler = sched.scheduler(time.time, time.sleep)
+        now = time.time()
+        event1 = scheduler.enterabs(now + 0.01, 1, fun, (0.01,))
+        event2 = scheduler.enterabs(now + 0.02, 1, fun, (0.02,))
+        event3 = scheduler.enterabs(now + 0.03, 1, fun, (0.03,))
+        event4 = scheduler.enterabs(now + 0.04, 1, fun, (0.04,))
+        event5 = scheduler.enterabs(now + 0.05, 1, fun, (0.05,))
+        t = threading.Thread(target=scheduler.run)
+        t.start()
+        scheduler.cancel(event1)
+        scheduler.cancel(event5)
+        t.join()
         self.assertEqual(l, [0.02, 0.03, 0.04])
 
     def test_empty(self):

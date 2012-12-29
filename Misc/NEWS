@@ -200,6 +200,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16165: Fix sched.scheduler.run() method was block a scheduler for
+  other threads.
+
 - Issue #16641: Fix default values of sched.scheduler.enter arguments were
   modifiable.
 
