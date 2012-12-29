@@ -189,6 +189,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16485: Fix file descriptor not being closed if file header patching
+  fails on closing of aifc file.
+
 - Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
   Roger Serwy.
 
