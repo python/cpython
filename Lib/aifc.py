@@ -334,6 +334,12 @@ class Aifc_read:
         # else, assume it is an open file object already
         self.initfp(f)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     #
     # User visible methods.
     #
@@ -551,6 +557,12 @@ class Aifc_write:
         self._aifc = 1      # AIFF-C is default
 
     def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
         self.close()
 
     #
