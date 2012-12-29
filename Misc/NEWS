@@ -200,6 +200,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16640: Run less code under a lock in sched module.
+
 - Issue #16165: Fix sched.scheduler.run() method was block a scheduler for
   other threads.
 
