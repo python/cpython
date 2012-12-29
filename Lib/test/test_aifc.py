@@ -112,6 +112,13 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(testfile.closed, False)
         f.close()
         self.assertEqual(testfile.closed, True)
+        testfile = open(TESTFN, 'wb')
+        fout = aifc.open(testfile, 'wb')
+        self.assertFalse(testfile.closed)
+        with self.assertRaises(aifc.Error):
+            fout.close()
+        self.assertTrue(testfile.closed)
+        fout.close() # do nothing
 
     def test_write_header_comptype_sampwidth(self):
         for comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
@@ -286,11 +293,13 @@ class AIFCLowLevelTest(unittest.TestCase):
     def test_write_header_raises(self):
         fout = aifc.open(io.BytesIO(), 'wb')
         self.assertRaises(aifc.Error, fout.close)
+        fout = aifc.open(io.BytesIO(), 'wb')
         fout.setnchannels(1)
         self.assertRaises(aifc.Error, fout.close)
+        fout = aifc.open(io.BytesIO(), 'wb')
+        fout.setnchannels(1)
         fout.setsampwidth(1)
         self.assertRaises(aifc.Error, fout.close)
-        fout.initfp(None)
 
     def test_write_header_comptype_raises(self):
         for comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
