@@ -692,7 +692,9 @@ class Aifc_write:
             self._patchheader()
 
     def close(self):
-        if self._file:
+        if self._file is None:
+            return
+        try:
             self._ensure_header_written(0)
             if self._datawritten & 1:
                 # quick pad to even size
@@ -703,10 +705,12 @@ class Aifc_write:
                   self._datalength != self._datawritten or \
                   self._marklength:
                 self._patchheader()
+        finally:
             # Prevent ref cycles
             self._convert = None
-            self._file.close()
+            f = self._file
             self._file = None
+            f.close()
 
     #
     # Internal methods.
