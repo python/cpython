@@ -13,12 +13,12 @@ also be used to integrate scheduling with STDWIN events; the delay
 function is allowed to modify the queue.  Time can be expressed as
 integers or floating point numbers, as long as it is consistent.
 
-Events are specified by tuples (time, priority, action, argument).
+Events are specified by tuples (time, priority, action, argument, kwargs).
 As in UNIX, lower priority numbers mean higher priority; in this
 way the queue can be maintained as a priority queue.  Execution of the
 event means calling the action function, passing it the argument
 sequence in "argument" (remember that in Python, multiple function
-arguments are be packed in a sequence).
+arguments are be packed in a sequence) and keyword parameters in "kwargs".
 The action function may be an instance method so it
 has another way to reference private data (besides global variables).
 """
@@ -151,7 +151,7 @@ class scheduler:
         """An ordered list of upcoming events.
 
         Events are named tuples with fields for:
-            time, priority, action, arguments
+            time, priority, action, arguments, kwargs
 
         """
         # Use heapq to sort the queue rather than using 'sorted(self._queue)'.
