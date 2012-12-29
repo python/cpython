@@ -51,6 +51,10 @@ Module :mod:`aifc` defines the following function:
    used for writing, the file object should be seekable, unless you know ahead of
    time how many samples you are going to write in total and use
    :meth:`writeframesraw` and :meth:`setnframes`.
+   Objects returned by :func:`.open` also supports the :keyword:`with` statement.
+
+.. versionchanged:: 3.4
+   Support for the :keyword:`with` statement was added.
 
 Objects returned by :func:`.open` when a file is opened for reading have the
 following methods:
