@@ -43,6 +43,18 @@ class AIFCTest(unittest.TestCase):
             (2, 2, 48000, 14400, b'NONE', b'not compressed'),
             )
 
+    def test_context_manager(self):
+        with open(self.sndfilepath, 'rb') as testfile:
+            with aifc.open(testfile) as f:
+                pass
+            self.assertEqual(testfile.closed, True)
+        with open(TESTFN, 'wb') as testfile:
+            with self.assertRaises(aifc.Error):
+                with aifc.open(testfile, 'wb') as fout:
+                    pass
+            self.assertEqual(testfile.closed, True)
+            fout.close() # do nothing
+
     def test_read(self):
         f = self.f = aifc.open(self.sndfilepath)
         self.assertEqual(f.readframes(0), b'')
