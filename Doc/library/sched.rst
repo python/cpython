@@ -27,6 +27,7 @@ scheduler:
 
    .. versionchanged:: 3.3
       *timefunc* and *delayfunc* parameters are optional.
+
    .. versionchanged:: 3.3
       :class:`scheduler` class can be safely used in multi-threaded
       environments.
@@ -129,4 +130,4 @@ Scheduler Objects
 
    Read-only attribute returning a list of upcoming events in the order they
    will be run.  Each event is shown as a :term:`named tuple` with the
-   following fields:  time, priority, action, argument.
+   following fields:  time, priority, action, argument, kwargs.
