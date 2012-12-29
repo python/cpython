@@ -71,10 +71,10 @@ class scheduler:
         """
         if kwargs is _sentinel:
             kwargs = {}
+        event = Event(time, priority, action, argument, kwargs)
         with self._lock:
-            event = Event(time, priority, action, argument, kwargs)
             heapq.heappush(self._queue, event)
-            return event # The ID
+        return event # The ID
 
     def enter(self, delay, priority, action, argument=(), kwargs=_sentinel):
         """A variant that specifies the time as a relative time.
@@ -82,9 +82,8 @@ class scheduler:
         This is actually the more commonly used interface.
 
         """
-        with self._lock:
-            time = self.timefunc() + delay
-            return self.enterabs(time, priority, action, argument, kwargs)
+        time = self.timefunc() + delay
+        return self.enterabs(time, priority, action, argument, kwargs)
 
     def cancel(self, event):
         """Remove an event from the queue.
@@ -165,4 +164,4 @@ class scheduler:
         # the actual order they would be retrieved.
         with self._lock:
             events = self._queue[:]
-            return map(heapq.heappop, [events]*len(events))
+        return map(heapq.heappop, [events]*len(events))
