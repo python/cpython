@@ -5,7 +5,7 @@ the package, and perhaps a particular module inside it.
 
    import curses
    from curses import textpad
-   curses.initwin()
+   curses.initscr()
    ...
 
 """
