@@ -343,8 +343,8 @@ void
 _PyCFunction_DebugMallocStats(FILE *out)
 {
     _PyDebugAllocatorStats(out,
-                           "free PyCFunction",
-                           numfree, sizeof(PyCFunction));
+                           "free PyCFunctionObjects",
+                           numfree, sizeof(PyCFunctionObject));
 }
 
 /* PyCFunction_New() is now just a macro that calls PyCFunction_NewEx(),
