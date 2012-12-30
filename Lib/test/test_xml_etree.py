@@ -16,6 +16,7 @@
 
 import html
 import io
+import pickle
 import sys
 import unittest
 import weakref
@@ -1767,6 +1768,20 @@ class BasicElementTest(unittest.TestCase):
         del e
         self.assertEqual(flag, True)
         self.assertEqual(wref(), None)
+
+    def test_pickle(self):
+        # For now this test only works for the Python version of ET,
+        # so set sys.modules accordingly because pickle uses __import__
+        # to load the __module__ of the class.
+        if pyET:
+            sys.modules['xml.etree.ElementTree'] = pyET
+        else:
+            raise unittest.SkipTest('only for the Python version')
+        e1 = ET.Element('foo', bar=42)
+        s = pickle.dumps(e1)
+        e2 = pickle.loads(s)
+        self.assertEqual(e2.tag, 'foo')
+        self.assertEqual(e2.attrib['bar'], 42)
 
 
 class ElementTreeTest(unittest.TestCase):
