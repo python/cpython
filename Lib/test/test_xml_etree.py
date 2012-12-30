@@ -2420,8 +2420,11 @@ class KeywordArgsTest(unittest.TestCase):
 
 # --------------------------------------------------------------------
 
-@unittest.skipUnless(pyET, 'only for the Python version')
 class NoAcceleratorTest(unittest.TestCase):
+    def setUp(self):
+        if not pyET:
+            raise SkipTest('only for the Python version')
+
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
         self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
