@@ -2127,6 +2127,7 @@ class _TestConnection(BaseTestCase):
         self.assertTimingAlmostEqual(poll.elapsed, TIMEOUT1)
 
         conn.send(None)
+        time.sleep(.1)
 
         self.assertEqual(poll(TIMEOUT1), True)
         self.assertTimingAlmostEqual(poll.elapsed, 0)
@@ -3232,6 +3233,7 @@ class TestWait(unittest.TestCase):
         from multiprocessing.connection import wait
 
         expected = 3
+        sorted_ = lambda l: sorted(l, key=lambda x: isinstance(x, int))
         sem = multiprocessing.Semaphore(0)
         a, b = multiprocessing.Pipe()
         p = multiprocessing.Process(target=self.signal_and_sleep,
@@ -3255,7 +3257,7 @@ class TestWait(unittest.TestCase):
         res = wait([a, p.sentinel, b], 20)
         delta = time.time() - start
 
-        self.assertEqual(res, [p.sentinel, b])
+        self.assertEqual(sorted_(res), sorted_([p.sentinel, b]))
         self.assertLess(delta, 0.4)
 
         b.send(None)
@@ -3264,7 +3266,7 @@ class TestWait(unittest.TestCase):
         res = wait([a, p.sentinel, b], 20)
         delta = time.time() - start
 
-        self.assertEqual(res, [a, p.sentinel, b])
+        self.assertEqual(sorted_(res), sorted_([a, p.sentinel, b]))
         self.assertLess(delta, 0.4)
 
         p.terminate()
