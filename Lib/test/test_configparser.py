@@ -770,6 +770,33 @@ boolean {0[0]} NO
         with self.assertRaises(configparser.NoSectionError):
             cf.items("no such section")
 
+    def test_popitem(self):
+        cf = self.fromstring("""
+            [section1]
+            name1 {0[0]} value1
+            [section2]
+            name2 {0[0]} value2
+            [section3]
+            name3 {0[0]} value3
+        """.format(self.delimiters), defaults={"default": "<default>"})
+        self.assertEqual(cf.popitem()[0], 'section1')
+        self.assertEqual(cf.popitem()[0], 'section2')
+        self.assertEqual(cf.popitem()[0], 'section3')
+        with self.assertRaises(KeyError):
+            cf.popitem()
+
+    def test_clear(self):
+        cf = self.newconfig({"foo": "Bar"})
+        self.assertEqual(
+            cf.get(self.default_section, "Foo"), "Bar",
+            "could not locate option, expecting case-insensitive option names")
+        cf['zing'] = {'option1': 'value1', 'option2': 'value2'}
+        self.assertEqual(cf.sections(), ['zing'])
+        self.assertEqual(set(cf['zing'].keys()), {'option1', 'option2', 'foo'})
+        cf.clear()
+        self.assertEqual(set(cf.sections()), set())
+        self.assertEqual(set(cf[self.default_section].keys()), {'foo'})
+
 
 class StrictTestCase(BasicTestCase):
     config_class = configparser.RawConfigParser

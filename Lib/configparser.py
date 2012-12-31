@@ -852,6 +852,19 @@ class RawConfigParser(MutableMapping):
             value_getter = lambda option: d[option]
         return [(option, value_getter(option)) for option in d.keys()]
 
+    def popitem(self):
+        """Remove a section from the parser and return it as
+        a (section_name, section_proxy) tuple. If no section is present, raise
+        KeyError.
+
+        The section DEFAULT is never returned because it cannot be removed.
+        """
+        for key in self.sections():
+            value = self[key]
+            del self[key]
+            return key, value
+        raise KeyError
+
     def optionxform(self, optionstr):
         return optionstr.lower()
 
