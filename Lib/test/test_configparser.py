@@ -797,6 +797,34 @@ boolean {0[0]} NO
         self.assertEqual(set(cf.sections()), set())
         self.assertEqual(set(cf[self.default_section].keys()), {'foo'})
 
+    def test_setitem(self):
+        cf = self.fromstring("""
+            [section1]
+            name1 {0[0]} value1
+            [section2]
+            name2 {0[0]} value2
+            [section3]
+            name3 {0[0]} value3
+        """.format(self.delimiters), defaults={"nameD": "valueD"})
+        self.assertEqual(set(cf['section1'].keys()), {'name1', 'named'})
+        self.assertEqual(set(cf['section2'].keys()), {'name2', 'named'})
+        self.assertEqual(set(cf['section3'].keys()), {'name3', 'named'})
+        self.assertEqual(cf['section1']['name1'], 'value1')
+        self.assertEqual(cf['section2']['name2'], 'value2')
+        self.assertEqual(cf['section3']['name3'], 'value3')
+        cf['section2'] = {'name22': 'value22'}
+        self.assertEqual(set(cf['section2'].keys()), {'name22', 'named'})
+        self.assertEqual(cf['section2']['name22'], 'value22')
+        self.assertNotIn('name2', cf['section2'])
+        cf['section3'] = {}
+        self.assertEqual(set(cf['section3'].keys()), {'named'})
+        self.assertNotIn('name3', cf['section3'])
+        cf[self.default_section] = {}
+        self.assertEqual(set(cf[self.default_section].keys()), set())
+        self.assertEqual(set(cf['section1'].keys()), {'name1'})
+        self.assertEqual(set(cf['section2'].keys()), {'name22'})
+        self.assertEqual(set(cf['section3'].keys()), set())
+
 
 class StrictTestCase(BasicTestCase):
     config_class = configparser.RawConfigParser
