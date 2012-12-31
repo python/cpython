@@ -99,10 +99,9 @@ ConfigParser -- responsible for parsing a list of
         yes, on for True).  Returns False or True.
 
     items(section=_UNSET, raw=False, vars=None)
-        If section is given, return a list of tuples with (section_name,
-        section_proxy) for each section, including DEFAULTSECT. Otherwise,
-        return a list of tuples with (name, value) for each option
-        in the section.
+        If section is given, return a list of tuples with (name, value) for
+        each option in the section. Otherwise, return a list of tuples with
+        (section_name, section_proxy) for each section, including DEFAULTSECT.
 
     remove_section(section)
         Remove the given file section and all its options.
