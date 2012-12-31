@@ -389,7 +389,13 @@ However, there are a few differences that should be taken into account:
   the default value to be visible again.  Trying to delete a default value
   causes a ``KeyError``.
 
-* Trying to delete the ``DEFAULTSECT`` raises ``ValueError``.
+* ``DEFAULTSECT`` cannot be removed from the parser:
+
+  * trying to delete it raises ``ValueError``,
+
+  * ``parser.clear()`` leaves it intact,
+
+  * ``parser.popitem()`` never returns it.
 
 * ``parser.get(section, option, **kwargs)`` - the second argument is **not**
   a fallback value. Note however that the section-level ``get()`` methods are
