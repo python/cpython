@@ -1184,13 +1184,13 @@ win32_wchdir(LPCWSTR path)
 #define HAVE_STAT_NSEC 1
 
 struct win32_stat{
-    int st_dev;
+    unsigned long st_dev;
     __int64 st_ino;
     unsigned short st_mode;
     int st_nlink;
     int st_uid;
     int st_gid;
-    int st_rdev;
+    unsigned long st_rdev;
     __int64 st_size;
     time_t st_atime;
     int st_atime_nsec;
