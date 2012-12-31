@@ -519,7 +519,7 @@ class TestPEP380Operation(unittest.TestCase):
             next(gi)
             for x in range(3):
                 y = gi.send(42)
-                trace.append("Should not have yielded:", y)
+                trace.append("Should not have yielded: %s" % (y,))
         except AttributeError as e:
             self.assertIn("send", e.args[0])
         else:
