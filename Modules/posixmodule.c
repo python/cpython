@@ -6463,18 +6463,22 @@ Perform a statvfs system call on the given path.");
 static PyObject *
 posix_statvfs(PyObject *self, PyObject *args)
 {
+    PyObject *opath, *result = NULL;
     char *path;
     int res;
     struct statvfs st;
-    if (!PyArg_ParseTuple(args, "s:statvfs", &path))
+    if (!PyArg_ParseTuple(args, "O&:statvfs", PyUnicode_FSConverter, &opath))
         return NULL;
+    path = PyBytes_AS_STRING(opath);
     Py_BEGIN_ALLOW_THREADS
     res = statvfs(path, &st);
     Py_END_ALLOW_THREADS
     if (res != 0)
-        return posix_error_with_filename(path);
+        return posix_error_with_allocated_filename(opath);
 
-    return _pystatvfs_fromstructstatvfs(st);
+    result = _pystatvfs_fromstructstatvfs(st);
+    Py_DECREF(opath);
+    return result;
 }
 #endif /* HAVE_STATVFS */
 
