@@ -667,17 +667,18 @@ upper bound and stride, respectively, substituting ``None`` for missing
 expressions.
 
 
+.. index::
+   object: callable
+   single: call
+   single: argument; call semantics
+
 .. _calls:
 
 Calls
 -----
 
-.. index:: single: call
-
-.. index:: object: callable
-
-A call calls a callable object (e.g., a function) with a possibly empty series
-of arguments:
+A call calls a callable object (e.g., a :term:`function`) with a possibly empty
+series of :term:`arguments <argument>`:
 
 .. productionlist::
    call: `primary` "(" [`argument_list` [","]
@@ -696,12 +697,15 @@ of arguments:
 A trailing comma may be present after the positional and keyword arguments but
 does not affect the semantics.
 
+.. index::
+   single: parameter; call semantics
+
 The primary must evaluate to a callable object (user-defined functions, built-in
 functions, methods of built-in objects, class objects, methods of class
 instances, and certain class instances themselves are callable; extensions may
 define additional callable object types).  All argument expressions are
 evaluated before the call is attempted.  Please refer to section :ref:`function`
-for the syntax of formal parameter lists.
+for the syntax of formal :term:`parameter` lists.
 
 If keyword arguments are present, they are first converted to positional
 arguments, as follows.  First, a list of unfilled slots is created for the
@@ -1339,8 +1343,8 @@ their suffixes::
 
 .. _operator-summary:
 
-Summary
-=======
+Operator precedence
+===================
 
 .. index:: pair: operator; precedence
 
@@ -1363,9 +1367,9 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`and`                                | Boolean AND                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`not` *x*                            | Boolean NOT                         |
+| :keyword:`not` ``x``                          | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
-| :keyword:`in`, :keyword:`not` :keyword:`in`,  | Comparisons, including membership   |
+| :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
 | :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests,           |
 | ``<=``, ``>``, ``>=``, ``<>``, ``!=``, ``==`` |                                     |
 +-----------------------------------------------+-------------------------------------+
@@ -1391,7 +1395,7 @@ groups from right to left).
 +-----------------------------------------------+-------------------------------------+
 | ``(expressions...)``,                         | Binding or tuple display,           |
 | ``[expressions...]``,                         | list display,                       |
-| ``{key:datum...}``,                           | dictionary display,                 |
+| ``{key: value...}``,                          | dictionary display,                 |
 | ```expressions...```                          | string conversion                   |
 +-----------------------------------------------+-------------------------------------+
 

@@ -1059,8 +1059,14 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:int", kwlist,
                                      &x, &base))
         return NULL;
-    if (x == NULL)
+    if (x == NULL) {
+        if (base != -909) {
+            PyErr_SetString(PyExc_TypeError,
+                            "int() missing string argument");
+            return NULL;
+        }
         return PyInt_FromLong(0L);
+    }
     if (base == -909)
         return PyNumber_Int(x);
     if (PyString_Check(x)) {

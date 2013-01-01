@@ -1,9 +1,10 @@
 import unittest
-from test import test_support
 import sys
 
 import random
 import math
+
+from test import test_int, test_support
 
 # Used for lazy formatting of failure messages
 class Frm(object):
@@ -78,8 +79,9 @@ if test_support.have_unicode:
         (unichr(0x200), ValueError),
 ]
 
+class LongTest(test_int.IntLongCommonTests, unittest.TestCase):
 
-class LongTest(unittest.TestCase):
+    ntype = long
 
     # Get quasi-random long consisting of ndigits digits (in base BASE).
     # quasi == the most-significant digit will not be 0, and the number

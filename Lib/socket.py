@@ -319,8 +319,8 @@ class _fileobject(object):
         self._wbuf.append(data)
         self._wbuf_len += len(data)
         if (self._wbufsize == 0 or
-            self._wbufsize == 1 and '\n' in data or
-            self._wbuf_len >= self._wbufsize):
+            (self._wbufsize == 1 and '\n' in data) or
+            (self._wbufsize > 1 and self._wbuf_len >= self._wbufsize)):
             self.flush()
 
     def writelines(self, list):

@@ -732,22 +732,28 @@ class Aifc_write:
             self._patchheader()
 
     def close(self):
-        self._ensure_header_written(0)
-        if self._datawritten & 1:
-            # quick pad to even size
-            self._file.write(chr(0))
-            self._datawritten = self._datawritten + 1
-        self._writemarkers()
-        if self._nframeswritten != self._nframes or \
-              self._datalength != self._datawritten or \
-              self._marklength:
-            self._patchheader()
-        if self._comp:
-            self._comp.CloseCompressor()
-            self._comp = None
-        # Prevent ref cycles
-        self._convert = None
-        self._file.close()
+        if self._file is None:
+            return
+        try:
+            self._ensure_header_written(0)
+            if self._datawritten & 1:
+                # quick pad to even size
+                self._file.write(chr(0))
+                self._datawritten = self._datawritten + 1
+            self._writemarkers()
+            if self._nframeswritten != self._nframes or \
+                  self._datalength != self._datawritten or \
+                  self._marklength:
+                self._patchheader()
+            if self._comp:
+                self._comp.CloseCompressor()
+                self._comp = None
+        finally:
+            # Prevent ref cycles
+            self._convert = None
+            f = self._file
+            self._file = None
+            f.close()
 
     #
     # Internal methods.

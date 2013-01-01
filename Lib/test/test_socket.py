@@ -962,8 +962,8 @@ class FileObjectClassTestCase(SocketConnectedTest):
     def tearDown(self):
         self.serv_file.close()
         self.assertTrue(self.serv_file.closed)
-        self.serv_file = None
         SocketConnectedTest.tearDown(self)
+        self.serv_file = None
 
     def clientSetUp(self):
         SocketConnectedTest.clientSetUp(self)
@@ -1150,6 +1150,64 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 class LineBufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     bufsize = 1 # Default-buffered for reading; line-buffered for writing
+
+    class SocketMemo(object):
+        """A wrapper to keep track of sent data, needed to examine write behaviour"""
+        def __init__(self, sock):
+            self._sock = sock
+            self.sent = []
+
+        def send(self, data, flags=0):
+            n = self._sock.send(data, flags)
+            self.sent.append(data[:n])
+            return n
+
+        def sendall(self, data, flags=0):
+            self._sock.sendall(data, flags)
+            self.sent.append(data)
+
+        def __getattr__(self, attr):
+            return getattr(self._sock, attr)
+
+        def getsent(self):
+            return [e.tobytes() if isinstance(e, memoryview) else e for e in self.sent]
+
+    def setUp(self):
+        FileObjectClassTestCase.setUp(self)
+        self.serv_file._sock = self.SocketMemo(self.serv_file._sock)
+
+    def testLinebufferedWrite(self):
+        # Write two lines, in small chunks
+        msg = MSG.strip()
+        print >> self.serv_file, msg,
+        print >> self.serv_file, msg
+
+        # second line:
+        print >> self.serv_file, msg,
+        print >> self.serv_file, msg,
+        print >> self.serv_file, msg
+
+        # third line
+        print >> self.serv_file, ''
+
+        self.serv_file.flush()
+
+        msg1 = "%s %s\n"%(msg, msg)
+        msg2 =  "%s %s %s\n"%(msg, msg, msg)
+        msg3 =  "\n"
+        self.assertEqual(self.serv_file._sock.getsent(), [msg1, msg2, msg3])
+
+    def _testLinebufferedWrite(self):
+        msg = MSG.strip()
+        msg1 = "%s %s\n"%(msg, msg)
+        msg2 =  "%s %s %s\n"%(msg, msg, msg)
+        msg3 =  "\n"
+        l1 = self.cli_file.readline()
+        self.assertEqual(l1, msg1)
+        l2 = self.cli_file.readline()
+        self.assertEqual(l2, msg2)
+        l3 = self.cli_file.readline()
+        self.assertEqual(l3, msg3)
 
 
 class SmallBufferedFileObjectClassTestCase(FileObjectClassTestCase):

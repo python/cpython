@@ -173,6 +173,9 @@ class HTTPError(URLError, addinfourl):
     def reason(self):
         return self.msg
 
+    def info(self):
+        return self.hdrs
+
 # copied from cookielib.py
 _cut_port_re = re.compile(r":\d+$")
 def request_host(request):
