@@ -200,6 +200,17 @@ Core and Builtins
 Library
 -------
 
+- Issue #16820: In configparser, `parser.popitem()` no longer raises ValueError.
+  This makes `parser.clean()` work correctly.
+
+- Issue #16820: In configparser, ``parser['section'] = {}`` now preserves
+  section order within the parser. This makes `parser.update()` preserve section
+  order as well.
+
+- Issue #16820: In configparser, ``parser['DEFAULT'] = {}`` now correctly
+  clears previous values stored in the default section. Same goes for
+  ``parser.update({'DEFAULT': {}})``.
+
 - Issue #16819: IDLE method completion now correctly works for bytes literals.
 
 - Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
@@ -1050,6 +1061,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #14590: configparser now correctly strips inline comments when delimiter
+  occurs earlier without preceding space.
 
 - Issue #15424: Add a `__sizeof__()` implementation for array objects.  Patch by
   Ludwig Hähne.
