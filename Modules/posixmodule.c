@@ -1955,8 +1955,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
     PyStructSequence_SET_ITEM(v, 2,
                               PyLong_FromLongLong((PY_LONG_LONG)st->st_dev));
 #else
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromUnsignedLong(st->st_dev));
+    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long)st->st_dev));
 #endif
     PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
     PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong((long)st->st_uid));
