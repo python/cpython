@@ -532,7 +532,7 @@ class dispatcher_with_send(dispatcher):
 
     def initiate_send(self):
         num_sent = 0
-        num_sent = dispatcher.send(self, self.out_buffer[:512])
+        num_sent = dispatcher.send(self, self.out_buffer[:65536])
         self.out_buffer = self.out_buffer[num_sent:]
 
     def handle_write(self):
