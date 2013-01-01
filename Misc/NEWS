@@ -9,6 +9,21 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16761: Calling ``int()`` and ``long()`` with *base* argument only
+  now raises TypeError.
+
+- Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
+  when retreiving a REG_DWORD value. This corrects functions like
+  winreg.QueryValueEx that may have been returning truncated values.
+
+- Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
+  when passed a REG_DWORD value. Fixes ValueError in winreg.SetValueEx when
+  given a long.
+
+- Issue #13863: Work around buggy 'fstat' implementation on Windows / NTFS that
+  lead to incorrect timestamps (off by one hour) being stored in .pyc files on
+  some systems.
+
 - Issue #16602: When a weakref's target was part of a long deallocation
   chain, the object could remain reachable through its weakref even though
   its refcount had dropped to zero.
@@ -160,10 +175,31 @@ Core and Builtins
 Library
 -------
 
+- Issue 10527: make multiprocessing use poll() instead of select() if available.
+
+- Issue #16485: Fix file descriptor not being closed if file header patching
+  fails on closing of aifc file.
+
+- Issue #12065: connect_ex() on an SSL socket now returns the original errno
+  when the socket's timeout expires (it used to return None).
+
+- Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
+  Roger Serwy.
+
+- Issue #16702: test_urllib2_localnet tests now correctly ignores proxies for
+  localhost tests.
+
+- Issue #16713: Fix the parsing of tel url with params using urlparse module.
+
+- Issue #16443: Add docstrings to regular expression match objects.
+  Patch by Anton Kasyanov.
+
 - Issue #8853: Allow port to be of type long for socket.getaddrinfo().
 
 - Issue #16597: In buffered and text IO, call close() on the underlying stream
   if invoking flush() fails.
+
+- Issue #15701: Fix HTTPError info method call to return the headers information.
 
 - Issue #16646: ftplib.FTP.makeport() might lose socket error details.
   (patch by Serhiy Storchaka)
@@ -394,6 +430,9 @@ Library
 - Issue #12157: Make pool.map() empty iterables correctly.  Initial
   patch by mouad.
 
+- Issue #14958: Change IDLE systax highlighting to recognize all string and byte
+  literals currently supported in Python 2.7.
+
 - Issue #14962: Update text coloring in IDLE shell window after changing
   options.  Patch by Roger Serwy.
 
@@ -559,6 +598,11 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #15324: Fix regrtest parsing of --fromfile and --randomize options.
+
+- Issue #16618: Add more regression tests for glob.
+  Patch by Serhiy Storchaka.
 
 - Issue #16664: Add regression tests for glob's behaviour concerning entries
   starting with a ".".  Patch by Sebastian Kreft.

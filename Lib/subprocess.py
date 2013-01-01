@@ -1292,7 +1292,7 @@ class Popen(object):
 
 
         def _internal_poll(self, _deadstate=None, _waitpid=os.waitpid,
-                _WNOHANG=os.WNOHANG, _os_error=os.error):
+                _WNOHANG=os.WNOHANG, _os_error=os.error, _ECHILD=errno.ECHILD):
             """Check if child process has terminated.  Returns returncode
             attribute.
 
@@ -1308,7 +1308,7 @@ class Popen(object):
                 except _os_error as e:
                     if _deadstate is not None:
                         self.returncode = _deadstate
-                    if e.errno == errno.ECHILD:
+                    if e.errno == _ECHILD:
                         # This happens if SIGCLD is set to be ignored or
                         # waiting for child processes has otherwise been
                         # disabled for our process.  This child is dead, we

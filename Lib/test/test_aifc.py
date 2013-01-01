@@ -106,6 +106,13 @@ class AIFCTest(unittest.TestCase):
         self.assertEqual(testfile.closed, False)
         f.close()
         self.assertEqual(testfile.closed, True)
+        testfile = open(TESTFN, 'wb')
+        fout = aifc.open(testfile, 'wb')
+        self.assertFalse(testfile.closed)
+        with self.assertRaises(aifc.Error):
+            fout.close()
+        self.assertTrue(testfile.closed)
+        fout.close() # do nothing
 
 
 class AIFCLowLevelTest(unittest.TestCase):

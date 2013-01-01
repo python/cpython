@@ -32,7 +32,8 @@ class FormatParagraph:
         self.editwin = None
 
     def format_paragraph_event(self, event):
-        maxformatwidth = int(idleConf.GetOption('main','FormatParagraph','paragraph'))
+        maxformatwidth = int(idleConf.GetOption('main','FormatParagraph',
+                                                'paragraph', type='int'))
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()
         if first and last:

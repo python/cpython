@@ -297,26 +297,21 @@ class MiscReadTest(CommonReadTest):
 
     def test_extract_hardlink(self):
         # Test hardlink extraction (e.g. bug #857297).
-        tar = tarfile.open(tarname, errorlevel=1, encoding="iso8859-1")
+        with tarfile.open(tarname, errorlevel=1, encoding="iso8859-1") as tar:
+            tar.extract("ustar/regtype", TEMPDIR)
+            self.addCleanup(os.remove, os.path.join(TEMPDIR, "ustar/regtype"))
 
-        tar.extract("ustar/regtype", TEMPDIR)
-        try:
             tar.extract("ustar/lnktype", TEMPDIR)
-        except EnvironmentError, e:
-            if e.errno == errno.ENOENT:
-                self.fail("hardlink not extracted properly")
+            self.addCleanup(os.remove, os.path.join(TEMPDIR, "ustar/lnktype"))
+            with open(os.path.join(TEMPDIR, "ustar/lnktype"), "rb") as f:
+                data = f.read()
+            self.assertEqual(md5sum(data), md5_regtype)
 
-        data = open(os.path.join(TEMPDIR, "ustar/lnktype"), "rb").read()
-        self.assertEqual(md5sum(data), md5_regtype)
-
-        try:
             tar.extract("ustar/symtype", TEMPDIR)
-        except EnvironmentError, e:
-            if e.errno == errno.ENOENT:
-                self.fail("symlink not extracted properly")
-
-        data = open(os.path.join(TEMPDIR, "ustar/symtype"), "rb").read()
-        self.assertEqual(md5sum(data), md5_regtype)
+            self.addCleanup(os.remove, os.path.join(TEMPDIR, "ustar/symtype"))
+            with open(os.path.join(TEMPDIR, "ustar/symtype"), "rb") as f:
+                data = f.read()
+            self.assertEqual(md5sum(data), md5_regtype)
 
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
@@ -858,7 +853,7 @@ class WriteTest(WriteTestBase):
 
             tar = tarfile.open(tmpname, "r")
             for t in tar:
-                self.assert_(t.name == "." or t.name.startswith("./"))
+                self.assertTrue(t.name == "." or t.name.startswith("./"))
             tar.close()
         finally:
             os.chdir(cwd)

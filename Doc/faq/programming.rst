@@ -469,6 +469,10 @@ In the unlikely case that you care about Python versions older than 2.0, use
        apply(g, (x,)+args, kwargs)
 
 
+.. index::
+   single: argument; difference from parameter
+   single: parameter; difference from argument
+
 .. _faq-argument-vs-parameter:
 
 What is the difference between arguments and parameters?
