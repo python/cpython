@@ -200,7 +200,10 @@ Core and Builtins
 Library
 -------
 
-- Issue 10527: make multiprocessing use poll() instead of select() if available.
+- Issue #16787: Increase asyncore and asynchat default output buffers size, to
+  decrease CPU usage and increase throughput.
+
+- Issue #10527: make multiprocessing use poll() instead of select() if available.
 
 - Issue #16688: Fix backreferences did make case-insensitive regex fail on
   non-ASCII strings. Patch by Matthew Barnett.
