@@ -962,8 +962,8 @@ class RawConfigParser(MutableMapping):
         # no update method in configparser is atomic in this implementation.
         if key == self.default_section:
             self._defaults.clear()
-        else:
-            self.remove_section(key)
+        elif key in self._sections:
+            self._sections[key].clear()
         self.read_dict({key: value})
 
     def __delitem__(self, key):
