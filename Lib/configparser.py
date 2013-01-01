@@ -959,7 +959,8 @@ class RawConfigParser(MutableMapping):
 
         # XXX this is not atomic if read_dict fails at any point. Then again,
         # no update method in configparser is atomic in this implementation.
-        self.remove_section(key)
+        if key in self._sections:
+            self._sections[key].clear()
         self.read_dict({key: value})
 
     def __delitem__(self, key):
