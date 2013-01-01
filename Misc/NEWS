@@ -200,6 +200,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16819: IDLE method completion now correctly works for bytes literals.
+
 - Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
 
 - Issue #16787: Increase asyncore and asynchat default output buffers size, to
