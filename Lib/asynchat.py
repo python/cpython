@@ -56,8 +56,8 @@ class async_chat (asyncore.dispatcher):
 
     # these are overridable defaults
 
-    ac_in_buffer_size       = 4096
-    ac_out_buffer_size      = 4096
+    ac_in_buffer_size       = 65536
+    ac_out_buffer_size      = 65536
 
     # we don't want to enable the use of encoding by default, because that is a
     # sign of an application bug that we don't want to pass silently
