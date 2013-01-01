@@ -124,6 +124,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
+
 - Issue 10527: make multiprocessing use poll() instead of select() if available.
 
 - Issue #16688: Fix backreferences did make case-insensitive regex fail on
