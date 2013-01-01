@@ -380,7 +380,7 @@ class Misc:
         background, highlightColor, selectForeground,
         disabledForeground, insertBackground, troughColor."""
         self.tk.call(('tk_setPalette',)
-              + _flatten(args) + _flatten(kw.items()))
+              + _flatten(args) + _flatten(list(kw.items())))
     def tk_menuBar(self, *args):
         """Do not use. Needed in Tk 3.6 and earlier."""
         pass # obsolete since Tk 4.0
