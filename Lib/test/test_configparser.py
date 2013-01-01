@@ -812,18 +812,22 @@ boolean {0[0]} NO
         self.assertEqual(cf['section1']['name1'], 'value1')
         self.assertEqual(cf['section2']['name2'], 'value2')
         self.assertEqual(cf['section3']['name3'], 'value3')
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
         cf['section2'] = {'name22': 'value22'}
         self.assertEqual(set(cf['section2'].keys()), {'name22', 'named'})
         self.assertEqual(cf['section2']['name22'], 'value22')
         self.assertNotIn('name2', cf['section2'])
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
         cf['section3'] = {}
         self.assertEqual(set(cf['section3'].keys()), {'named'})
         self.assertNotIn('name3', cf['section3'])
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
         cf[self.default_section] = {}
         self.assertEqual(set(cf[self.default_section].keys()), set())
         self.assertEqual(set(cf['section1'].keys()), {'name1'})
         self.assertEqual(set(cf['section2'].keys()), {'name22'})
         self.assertEqual(set(cf['section3'].keys()), set())
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
 
 
 class StrictTestCase(BasicTestCase):
