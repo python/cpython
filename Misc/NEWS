@@ -189,6 +189,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #16820: In configparser, `parser.popitem()` no longer raises ValueError.
+  This makes `parser.clean()` work correctly.
+
+- Issue #16820: In configparser, ``parser['section'] = {}`` now preserves
+  section order within the parser. This makes `parser.update()` preserve section
+  order as well.
+
 - Issue #9644: Fix the encoding used by os.statvfs(): use the filesystem
   encoding with the surrogateescape error handler, instead of UTF-8 in strict
   mode.
