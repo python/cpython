@@ -246,9 +246,9 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_uint32, 32)]
         x = X()
         x.a = 10
-        self.assertEquals(x.a, 10)
+        self.assertEqual(x.a, 10)
         x.a = 0xFDCBA987
-        self.assertEquals(x.a, 0xFDCBA987)
+        self.assertEqual(x.a, 0xFDCBA987)
 
     @unittest.skipUnless(hasattr(ctypes, "c_uint64"), "c_int64 is required")
     def test_uint64(self):
@@ -256,9 +256,9 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_uint64, 64)]
         x = X()
         x.a = 10
-        self.assertEquals(x.a, 10)
+        self.assertEqual(x.a, 10)
         x.a = 0xFEDCBA9876543211
-        self.assertEquals(x.a, 0xFEDCBA9876543211)
+        self.assertEqual(x.a, 0xFEDCBA9876543211)
 
 if __name__ == "__main__":
     unittest.main()
