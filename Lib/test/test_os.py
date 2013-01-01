@@ -1057,6 +1057,15 @@ if sys.platform != 'win32':
                 f = open(os.path.join(self.dir, fn), 'rb')
                 f.close()
 
+        @unittest.skipUnless(hasattr(os, 'statvfs'),
+                             "need os.statvfs()")
+        def test_statvfs(self):
+            # issue #9645
+            for fn in self.unicodefn:
+                # should not fail with file not found error
+                fullname = os.path.join(self.dir, fn)
+                os.statvfs(fullname)
+
         def test_stat(self):
             for fn in self.unicodefn:
                 os.stat(os.path.join(self.dir, fn))
