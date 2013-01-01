@@ -8,10 +8,6 @@
 # subpackage 'multiprocessing.dummy' has the same API but is a simple
 # wrapper for 'threading'.
 #
-# Try calling `multiprocessing.doc.main()` to read the html
-# documentation in a webbrowser.
-#
-#
 # Copyright (c) 2006-2008, R Oudkerk
 # Licensed to PSF under a Contributor Agreement.
 #
@@ -26,8 +22,6 @@ __all__ = [
     'Event', 'Barrier', 'Queue', 'SimpleQueue', 'JoinableQueue', 'Pool',
     'Value', 'Array', 'RawValue', 'RawArray', 'SUBDEBUG', 'SUBWARNING',
     ]
-
-__author__ = 'R. Oudkerk (r.m.oudkerk@gmail.com)'
 
 #
 # Imports
