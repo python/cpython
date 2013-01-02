@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16839: Fix a segfault when calling unicode() on a classic class early
+  in interpreter initialization.
+
 - Issue #16761: Calling ``int()`` and ``long()`` with *base* argument only
   now raises TypeError.
 
