@@ -474,7 +474,7 @@ PyObject_Unicode(PyObject *v)
     PyObject *func;
     PyObject *str;
     int unicode_method_found = 0;
-    static PyObject *unicodestr;
+    static PyObject *unicodestr = NULL;
 
     if (v == NULL) {
         res = PyString_FromString("<NULL>");
@@ -491,6 +491,11 @@ PyObject_Unicode(PyObject *v)
     if (PyInstance_Check(v)) {
         /* We're an instance of a classic class */
         /* Try __unicode__ from the instance -- alas we have no type */
+        if (!unicodestr) {
+            unicodestr = PyString_InternFromString("__unicode__");
+            if (!unicodestr)
+                return NULL;
+        }
         func = PyObject_GetAttr(v, unicodestr);
         if (func != NULL) {
             unicode_method_found = 1;
