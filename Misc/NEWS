@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16828: Fix error incorrectly raised by bz2.compress(''). Initial patch
+  by Martin Packman.
+
 - Issue #16541: tk_setPalette() now works with keyword arguments.
 
 - Issue #16820: In configparser, `parser.popitem()` no longer raises ValueError.
