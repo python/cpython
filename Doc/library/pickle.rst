@@ -352,8 +352,9 @@ The following types can be pickled:
 
 * classes that are defined at the top level of a module
 
-* instances of such classes whose :attr:`__dict__` or :meth:`__setstate__` is
-  picklable  (see section :ref:`pickle-protocol` for details)
+* instances of such classes whose :attr:`__dict__` or the result of calling
+  :meth:`__getstate__` is picklable  (see section :ref:`pickle-protocol` for
+  details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -364,8 +365,8 @@ raised in this case. You can carefully raise this limit with
 
 Note that functions (built-in and user-defined) are pickled by "fully qualified"
 name reference, not by value.  This means that only the function name is
-pickled, along with the name of the module the function is defined in.  Neither the
-function's code, nor any of its function attributes are pickled.  Thus the
+pickled, along with the name of the module the function is defined in.  Neither
+the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
 must contain the named object, otherwise an exception will be raised. [#]_
 
