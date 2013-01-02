@@ -145,34 +145,24 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
     result = PyBytes_FromStringAndSize(NULL, SMALLCHUNK);
     if (result == NULL)
         return NULL;
+
     c->bzs.next_in = data;
-    /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
-       Do compression in chunks of no more than UINT_MAX bytes each. */
-    c->bzs.avail_in = MIN(len, UINT_MAX);
-    len -= c->bzs.avail_in;
+    c->bzs.avail_in = 0;
     c->bzs.next_out = PyBytes_AS_STRING(result);
     c->bzs.avail_out = PyBytes_GET_SIZE(result);
     for (;;) {
         char *this_out;
         int bzerror;
 
-        Py_BEGIN_ALLOW_THREADS
-        this_out = c->bzs.next_out;
-        bzerror = BZ2_bzCompress(&c->bzs, action);
-        data_size += c->bzs.next_out - this_out;
-        Py_END_ALLOW_THREADS
-        if (catch_bz2_error(bzerror))
-            goto error;
-
+        /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
+           Do compression in chunks of no more than UINT_MAX bytes each. */
         if (c->bzs.avail_in == 0 && len > 0) {
             c->bzs.avail_in = MIN(len, UINT_MAX);
             len -= c->bzs.avail_in;
         }
 
-        /* In regular compression mode, stop when input data is exhausted.
-           In flushing mode, stop when all buffered data has been flushed. */
-        if ((action == BZ_RUN && c->bzs.avail_in == 0) ||
-            (action == BZ_FINISH && bzerror == BZ_STREAM_END))
+        /* In regular compression mode, stop when input data is exhausted. */
+        if (action == BZ_RUN && c->bzs.avail_in == 0)
             break;
 
         if (c->bzs.avail_out == 0) {
@@ -185,6 +175,18 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
             }
             c->bzs.avail_out = MIN(buffer_left, UINT_MAX);
         }
+
+        Py_BEGIN_ALLOW_THREADS
+        this_out = c->bzs.next_out;
+        bzerror = BZ2_bzCompress(&c->bzs, action);
+        data_size += c->bzs.next_out - this_out;
+        Py_END_ALLOW_THREADS
+        if (catch_bz2_error(bzerror))
+            goto error;
+
+        /* In flushing mode, stop when all buffered data has been flushed. */
+        if (action == BZ_FINISH && bzerror == BZ_STREAM_END)
+            break;
     }
     if (data_size != PyBytes_GET_SIZE(result))
         if (_PyBytes_Resize(&result, data_size) < 0)

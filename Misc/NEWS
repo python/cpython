@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16828: Fix error incorrectly raised by bz2.compress(b'') and
+  bz2.BZ2Compressor.compress(b''). Initial patch by Martin Packman.
+
 - Issue #16833: In http.client.HTTPConnection, do not concatenate the request
   headers and body when the payload exceeds 16 KB, since it can consume more
   memory for no benefit.  Patch by Benno Leslie.
