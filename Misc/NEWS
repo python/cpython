@@ -10,8 +10,7 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #16761: Calling ``int()`` with *base* argument only now raises
-  TypeError.
+- Issue #16761: Calling int() with base argument only now raises TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
   when retreiving a REG_DWORD value. This corrects functions like
@@ -222,20 +221,20 @@ Library
 
 - Issue #10527: make multiprocessing use poll() instead of select() if available.
 
-- Issue #16688: Fix backreferences did make case-insensitive regex fail on
-  non-ASCII strings. Patch by Matthew Barnett.
+- Issue #16688: Now regexes contained backreferences correctly work with
+  non-ASCII strings.  Patch by Matthew Barnett.
 
-- Issue #16486: Make aifc files work with 'with' as context managers.
+- Issue #16486: Make aifc files act as context managers.
 
-- Issue #16485: Fix file descriptor not being closed if file header patching
-  fails on closing of aifc file.
+- Issue #16485: Now file descriptors are closed if file header patching failed
+  on closing an aifc file.
 
 - Issue #16640: Run less code under a lock in sched module.
 
-- Issue #16165: Fix sched.scheduler.run() method was block a scheduler for
-  other threads.
+- Issue #16165: sched.scheduler.run() no longer blocks a scheduler for other
+  threads.
 
-- Issue #16641: Fix default values of sched.scheduler.enter arguments were
+- Issue #16641: Default values of sched.scheduler.enter() are no longer
   modifiable.
 
 - Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
