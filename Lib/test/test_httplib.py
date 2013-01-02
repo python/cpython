@@ -27,8 +27,10 @@ class FakeSocket:
         self.text = text
         self.fileclass = fileclass
         self.data = b''
+        self.sendall_calls = 0
 
     def sendall(self, data):
+        self.sendall_calls += 1
         self.data += data
 
     def makefile(self, mode, bufsize=None):
@@ -557,6 +559,28 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), b'')
         self.assertTrue(resp.isclosed())
+
+    def test_delayed_ack_opt(self):
+        # Test that Nagle/delayed_ack optimistaion works correctly.
+
+        # For small payloads, it should coalesce the body with
+        # headers, resulting in a single sendall() call
+        conn = client.HTTPConnection('example.com')
+        sock = FakeSocket(None)
+        conn.sock = sock
+        body = b'x' * (conn.mss - 1)
+        conn.request('POST', '/', body)
+        self.assertEqual(sock.sendall_calls, 1)
+
+        # For large payloads, it should send the headers and
+        # then the body, resulting in more than one sendall()
+        # call
+        conn = client.HTTPConnection('example.com')
+        sock = FakeSocket(None)
+        conn.sock = sock
+        body = b'x' * conn.mss
+        conn.request('POST', '/', body)
+        self.assertGreater(sock.sendall_calls, 1)
 
 class OfflineTest(TestCase):
     def test_responses(self):
