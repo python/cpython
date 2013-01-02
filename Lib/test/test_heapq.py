@@ -2,6 +2,7 @@
 
 import sys
 import random
+import unittest
 
 from test import support
 from unittest import TestCase, skipUnless
@@ -25,8 +26,7 @@ class TestModules(TestCase):
             self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq')
 
 
-class TestHeap(TestCase):
-    module = None
+class TestHeap:
 
     def test_push_pop(self):
         # 1) Push 256 random numbers and pop them off, verifying all's OK.
@@ -214,12 +214,12 @@ class TestHeap(TestCase):
         self.assertRaises(TypeError, data, LE)
 
 
-class TestHeapPython(TestHeap):
+class TestHeapPython(TestHeap, TestCase):
     module = py_heapq
 
 
 @skipUnless(c_heapq, 'requires _heapq')
-class TestHeapC(TestHeap):
+class TestHeapC(TestHeap, TestCase):
     module = c_heapq
 
 
@@ -319,8 +319,7 @@ def L(seqn):
     return chain(map(lambda x:x, R(Ig(G(seqn)))))
 
 
-class TestErrorHandling(TestCase):
-    module = None
+class TestErrorHandling:
 
     def test_non_sequence(self):
         for f in (self.module.heapify, self.module.heappop):
@@ -371,31 +370,13 @@ class TestErrorHandling(TestCase):
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))
 
 
-class TestErrorHandlingPython(TestErrorHandling):
+class TestErrorHandlingPython(TestErrorHandling, TestCase):
     module = py_heapq
 
 @skipUnless(c_heapq, 'requires _heapq')
-class TestErrorHandlingC(TestErrorHandling):
+class TestErrorHandlingC(TestErrorHandling, TestCase):
     module = c_heapq
 
 
-#==============================================================================
-
-
-def test_main(verbose=None):
-    test_classes = [TestModules, TestHeapPython, TestHeapC,
-                    TestErrorHandlingPython, TestErrorHandlingC]
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()
