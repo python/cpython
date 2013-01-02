@@ -4490,9 +4490,9 @@ PyString_Format(PyObject *format, PyObject *args)
                     else {
                         iobj = PyNumber_Int(v);
                         if (iobj==NULL) {
-			    PyErr_Clear();
-			    iobj = PyNumber_Long(v);
-			}
+                            PyErr_Clear();
+                            iobj = PyNumber_Long(v);
+                        }
                     }
                     if (iobj!=NULL) {
                         if (PyInt_Check(iobj)) {
