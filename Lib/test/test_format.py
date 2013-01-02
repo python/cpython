@@ -234,6 +234,16 @@ class FormatTest(unittest.TestCase):
         testformat('%g', 1.1, '1.1')
         testformat('%#g', 1.1, '1.10000')
 
+        # Regression test for http://bugs.python.org/issue15516.
+        class IntFails(object):
+            def __int__(self):
+                raise TestFailed
+            def __long__(self):
+                return 0
+
+        fst = IntFails()
+        testformat("%x", fst, '0')
+
         # Test exception for unknown format characters
         if verbose:
             print 'Testing exceptions'
