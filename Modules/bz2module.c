@@ -1979,7 +1979,7 @@ bz2_compress(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    action = BZ_RUN;
+    action = input_left > 0 ? BZ_RUN : BZ_FINISH;
 
     for (;;) {
         char *saved_next_out;
