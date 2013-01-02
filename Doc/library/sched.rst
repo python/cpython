@@ -70,10 +70,8 @@ Scheduler Objects
    *priority*.
 
    Executing the event means executing ``action(*argument, **kwargs)``.
-   Optional *argument* argument must be a sequence holding the parameters
-   for *action* if any used.
-   Optional *kwargs* argument must be a dictionary holding the keyword
-   parameters for *action* if any used.
+   *argument* is a sequence holding the positional arguments for *action*.
+   *kwargs* is a dictionary holding the keyword arguments for *action*.
 
    Return value is an event which may be used for later cancellation of the event
    (see :meth:`cancel`).
