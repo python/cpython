@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #15516: Fix a bug in PyString_FromFormat where it failed to properly
+  ignore errors from a __int__() method.
+
 - Issue #16839: Fix a segfault when calling unicode() on a classic class early
   in interpreter initialization.
 
