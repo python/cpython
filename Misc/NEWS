@@ -189,6 +189,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16541: tk_setPalette() now works with keyword arguments.
+
 - Issue #16820: In configparser, `parser.popitem()` no longer raises ValueError.
   This makes `parser.clean()` work correctly.
 
