@@ -9,8 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
-- Issue #16761: Calling ``int()`` and ``long()`` with *base* argument only
-  now raises TypeError.
+- Issue #16761: Calling int() and long() with base argument only now raises
+  TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
   when retreiving a REG_DWORD value. This corrects functions like
@@ -181,8 +181,8 @@ Library
 
 - Issue 10527: make multiprocessing use poll() instead of select() if available.
 
-- Issue #16485: Fix file descriptor not being closed if file header patching
-  fails on closing of aifc file.
+- Issue #16485: Now file descriptors are closed if file header patching failed
+  on closing an aifc file.
 
 - Issue #12065: connect_ex() on an SSL socket now returns the original errno
   when the socket's timeout expires (it used to return None).
