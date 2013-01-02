@@ -719,6 +719,14 @@ class HTTPConnection:
     default_port = HTTP_PORT
     auto_open = 1
     debuglevel = 0
+    # TCP Maximum Segment Size (MSS) is determined by the TCP stack on
+    # a per-connection basis.  There is no simple and efficient
+    # platform independent mechanism for determining the MSS, so
+    # instead a reasonable estimate is chosen.  The getsockopt()
+    # interface using the TCP_MAXSEG parameter may be a suitable
+    # approach on some operating systems. A value of 16KiB is chosen
+    # as a reasonable estimate of the maximum MSS.
+    mss = 16384
 
     def __init__(self, host, port=None, strict=_strict_sentinel,
                  timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
@@ -886,8 +894,11 @@ class HTTPConnection:
         del self._buffer[:]
         # If msg and message_body are sent in a single send() call,
         # it will avoid performance problems caused by the interaction
-        # between delayed ack and the Nagle algorithm.
-        if isinstance(message_body, bytes):
+        # between delayed ack and the Nagle algorithm. However,
+        # there is no performance gain if the message is larger
+        # than MSS (and there is a memory penalty for the message
+        # copy).
+        if isinstance(message_body, bytes) and len(message_body) < self.mss:
             msg += message_body
             message_body = None
         self.send(msg)
