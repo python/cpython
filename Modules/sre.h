@@ -15,7 +15,11 @@
 
 /* size of a code word (must be unsigned short or larger, and
    large enough to hold a UCS4 character) */
+#ifdef Py_USING_UNICODE
 #define SRE_CODE Py_UCS4
+#else
+#define SRE_CODE unsigned long
+#endif
 
 typedef struct {
     PyObject_VAR_HEAD

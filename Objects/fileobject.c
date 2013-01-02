@@ -1816,7 +1816,6 @@ file_write(PyFileObject *f, PyObject *args)
         n = pbuf.len;
     }
     else {
-        const char *encoding, *errors;
         PyObject *text;
         if (!PyArg_ParseTuple(args, "O", &text))
             return NULL;
@@ -1824,7 +1823,9 @@ file_write(PyFileObject *f, PyObject *args)
         if (PyString_Check(text)) {
             s = PyString_AS_STRING(text);
             n = PyString_GET_SIZE(text);
+#ifdef Py_USING_UNICODE
         } else if (PyUnicode_Check(text)) {
+            const char *encoding, *errors;
             if (f->f_encoding != Py_None)
                 encoding = PyString_AS_STRING(f->f_encoding);
             else
@@ -1838,6 +1839,7 @@ file_write(PyFileObject *f, PyObject *args)
                 return NULL;
             s = PyString_AS_STRING(encoded);
             n = PyString_GET_SIZE(encoded);
+#endif
         } else {
             if (PyObject_AsCharBuffer(text, &s, &n))
                 return NULL;
