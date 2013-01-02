@@ -381,6 +381,8 @@ Library
 Tests
 -----
 
+- Issue #16748: test_heapq now works with unittest test discovery.
+
 - Issue #15324: Fix regrtest parsing of --fromfile, --match, and --randomize
   options.
 
