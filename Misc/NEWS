@@ -571,6 +571,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #16748: test_heapq now works with unittest test discovery.
+
 - Issue #10646: Tests rearranged for os.samefile/samestat to check for not
   just symlinks but also hard links.
 
