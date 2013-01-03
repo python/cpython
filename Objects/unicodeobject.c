@@ -8935,7 +8935,7 @@ tailmatch(PyObject *self,
 
     if (PyUnicode_READY(self) == -1 ||
         PyUnicode_READY(substring) == -1)
-        return 0;
+        return -1;
 
     if (PyUnicode_GET_LENGTH(substring) == 0)
         return 1;
@@ -8973,7 +8973,6 @@ tailmatch(PyObject *self,
             /* We do not need to compare 0 and len(substring)-1 because
                the if statement above ensured already that they are equal
                when we end up here. */
-            /* TODO: honor direction and do a forward or backwards search */
             for (i = 1; i < end_sub; ++i) {
                 if (PyUnicode_READ(kind_self, data_self, offset + i) !=
                     PyUnicode_READ(kind_sub, data_sub, i))
@@ -12597,6 +12596,8 @@ unicode_startswith(PyObject *self,
                 return NULL;
             result = tailmatch(self, substring, start, end, -1);
             Py_DECREF(substring);
+            if (result == -1)
+                return NULL;
             if (result) {
                 Py_RETURN_TRUE;
             }
@@ -12613,6 +12614,8 @@ unicode_startswith(PyObject *self,
     }
     result = tailmatch(self, substring, start, end, -1);
     Py_DECREF(substring);
+    if (result == -1)
+        return NULL;
     return PyBool_FromLong(result);
 }
 
@@ -12646,6 +12649,8 @@ unicode_endswith(PyObject *self,
                 return NULL;
             result = tailmatch(self, substring, start, end, +1);
             Py_DECREF(substring);
+            if (result == -1)
+                return NULL;
             if (result) {
                 Py_RETURN_TRUE;
             }
@@ -12660,6 +12665,8 @@ unicode_endswith(PyObject *self,
         return NULL;
     }
     result = tailmatch(self, substring, start, end, +1);
+    if (result == -1)
+        return NULL;
     Py_DECREF(substring);
     return PyBool_FromLong(result);
 }
