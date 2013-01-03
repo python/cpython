@@ -1434,8 +1434,8 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 /* Convert encoding to lower case and replace '_' with '-' in order to
    catch e.g. UTF_8. Return 0 on error (encoding is longer than lower_len-1),
    1 on success. */
-static int
-normalize_encoding(const char *encoding,
+int
+_Py_normalize_encoding(const char *encoding,
                    char *lower,
                    size_t lower_len)
 {
@@ -1477,7 +1477,7 @@ PyObject *PyUnicode_Decode(const char *s,
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
-    if (normalize_encoding(encoding, lower, sizeof(lower))) {
+    if (_Py_normalize_encoding(encoding, lower, sizeof(lower))) {
         if (strcmp(lower, "utf-8") == 0)
             return PyUnicode_DecodeUTF8(s, size, errors);
         else if ((strcmp(lower, "latin-1") == 0) ||
@@ -1695,7 +1695,7 @@ PyObject *PyUnicode_AsEncodedString(PyObject *unicode,
         encoding = PyUnicode_GetDefaultEncoding();
 
     /* Shortcuts for common default encodings */
-    if (normalize_encoding(encoding, lower, sizeof(lower))) {
+    if (_Py_normalize_encoding(encoding, lower, sizeof(lower))) {
         if (strcmp(lower, "utf-8") == 0)
             return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
                                         PyUnicode_GET_SIZE(unicode),
