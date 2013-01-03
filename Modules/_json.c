@@ -237,6 +237,16 @@ raise_errmsg(char *msg, PyObject *s, Py_ssize_t end)
     }
 }
 
+static void
+raise_stop_iteration(Py_ssize_t idx)
+{
+    PyObject *value = PyLong_FromSsize_t(idx);
+    if (value != NULL) {
+        PyErr_SetObject(PyExc_StopIteration, value);
+        Py_DECREF(value);
+    }
+}
+
 static PyObject *
 _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     /* return (rval, idx) tuple, stealing reference to rval */
@@ -306,7 +316,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     buf = PyUnicode_DATA(pystr);
     kind = PyUnicode_KIND(pystr);
 
-    if (end < 0 || len <= end) {
+    if (end < 0 || len < end) {
         PyErr_SetString(PyExc_ValueError, "end is out of bounds");
         goto bail;
     }
@@ -604,12 +614,12 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind,str, idx))) idx++;
 
     /* only loop if the object is non-empty */
-    if (idx <= end_idx && PyUnicode_READ(kind, str, idx) != '}') {
-        while (idx <= end_idx) {
+    if (idx > end_idx || PyUnicode_READ(kind, str, idx) != '}') {
+        while (1) {
             PyObject *memokey;
 
             /* read key */
-            if (PyUnicode_READ(kind, str, idx) != '"') {
+            if (idx > end_idx || PyUnicode_READ(kind, str, idx) != '"') {
                 raise_errmsg("Expecting property name enclosed in double quotes", pystr, idx);
                 goto bail;
             }
@@ -666,11 +676,9 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
             /* bail if the object is closed or we didn't get the , delimiter */
-            if (idx > end_idx) break;
-            if (PyUnicode_READ(kind, str, idx) == '}') {
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == '}')
                 break;
-            }
-            else if (PyUnicode_READ(kind, str, idx) != ',') {
+            if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ',') {
                 raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
@@ -679,12 +687,6 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             /* skip whitespace after , delimiter */
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
         }
-    }
-
-    /* verify that idx < end_idx, str[idx] should be '}' */
-    if (idx > end_idx || PyUnicode_READ(kind, str, idx) != '}') {
-        raise_errmsg("Expecting object", pystr, end_idx);
-        goto bail;
     }
 
     *next_idx_ptr = idx + 1;
@@ -738,8 +740,8 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
     while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
     /* only loop if the array is non-empty */
-    if (idx <= end_idx && PyUnicode_READ(kind, str, idx) != ']') {
-        while (idx <= end_idx) {
+    if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ']') {
+        while (1) {
 
             /* read any JSON term  */
             val = scan_once_unicode(s, pystr, idx, &next_idx);
@@ -756,11 +758,9 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
             while (idx <= end_idx && IS_WHITESPACE(PyUnicode_READ(kind, str, idx))) idx++;
 
             /* bail if the array is closed or we didn't get the , delimiter */
-            if (idx > end_idx) break;
-            if (PyUnicode_READ(kind, str, idx) == ']') {
+            if (idx <= end_idx && PyUnicode_READ(kind, str, idx) == ']')
                 break;
-            }
-            else if (PyUnicode_READ(kind, str, idx) != ',') {
+            if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ',') {
                 raise_errmsg("Expecting ',' delimiter", pystr, idx);
                 goto bail;
             }
@@ -773,7 +773,7 @@ _parse_array_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssi
 
     /* verify that idx < end_idx, PyUnicode_READ(kind, str, idx) should be ']' */
     if (idx > end_idx || PyUnicode_READ(kind, str, idx) != ']') {
-        raise_errmsg("Expecting object", pystr, end_idx);
+        raise_errmsg("Expecting value", pystr, end_idx);
         goto bail;
     }
     *next_idx_ptr = idx + 1;
@@ -841,7 +841,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     if (PyUnicode_READ(kind, str, idx) == '-') {
         idx++;
         if (idx > end_idx) {
-            PyErr_SetNone(PyExc_StopIteration);
+            raise_stop_iteration(start);
             return NULL;
         }
     }
@@ -857,7 +857,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
     }
     /* no integer digits, error */
     else {
-        PyErr_SetNone(PyExc_StopIteration);
+        raise_stop_iteration(start);
         return NULL;
     }
 
@@ -950,7 +950,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     length = PyUnicode_GET_LENGTH(pystr);
 
     if (idx >= length) {
-        PyErr_SetNone(PyExc_StopIteration);
+        raise_stop_iteration(idx);
         return NULL;
     }
 

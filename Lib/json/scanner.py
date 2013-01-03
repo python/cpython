@@ -29,7 +29,7 @@ def py_make_scanner(context):
         try:
             nextchar = string[idx]
         except IndexError:
-            raise StopIteration
+            raise StopIteration(idx)
 
         if nextchar == '"':
             return parse_string(string, idx + 1, strict)
@@ -60,7 +60,7 @@ def py_make_scanner(context):
         elif nextchar == '-' and string[idx:idx + 9] == '-Infinity':
             return parse_constant('-Infinity'), idx + 9
         else:
-            raise StopIteration
+            raise StopIteration(idx)
 
     def scan_once(string, idx):
         try:
