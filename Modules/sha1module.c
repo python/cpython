@@ -376,7 +376,9 @@ SHA1_hexdigest(SHA1object *self, PyObject *unused)
         c = (digest[i] & 0xf);
         hex_digest[j++] = Py_hexdigits[c];
     }
+#ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(retval, 1));
+#endif
     return retval;
 }
 
