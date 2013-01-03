@@ -41,6 +41,7 @@ import errno
 import time
 import tempfile
 import itertools
+import select
 
 import _multiprocessing
 from multiprocessing import current_process, AuthenticationError
