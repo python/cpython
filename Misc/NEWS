@@ -9,6 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16367: Fix FileIO.readall() on Windows for files larger than 2 GB.
+
 - Issue #15516: Fix a bug in PyString_FromFormat where it failed to properly
   ignore errors from a __int__() method.
 
