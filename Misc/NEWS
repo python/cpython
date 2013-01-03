@@ -12,6 +12,8 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16367: Fix FileIO.readall() on Windows for files larger than 2 GB.
+
 - Issue #16455: On FreeBSD and Solaris, if the locale is C, the
   ASCII/surrogateescape codec is now used, instead of the locale encoding, to
   decode the command line arguments. This change fixes inconsistencies with
