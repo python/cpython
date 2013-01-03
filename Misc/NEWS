@@ -201,6 +201,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16009: JSON error messages now provide more information.
+
 - Issue #16828: Fix error incorrectly raised by bz2.compress(b'') and
   bz2.BZ2Compressor.compress(b''). Initial patch by Martin Packman.
 

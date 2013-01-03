@@ -188,8 +188,8 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
 
         try:
             value, end = scan_once(s, end)
-        except StopIteration:
-            raise ValueError(errmsg("Expecting object", s, end))
+        except StopIteration as err:
+            raise ValueError(errmsg("Expecting value", s, err.value)) from None
         pairs_append((key, value))
         try:
             nextchar = s[end]
@@ -232,8 +232,8 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
     while True:
         try:
             value, end = scan_once(s, end)
-        except StopIteration:
-            raise ValueError(errmsg("Expecting object", s, end))
+        except StopIteration as err:
+            raise ValueError(errmsg("Expecting value", s, err.value)) from None
         _append(value)
         nextchar = s[end:end + 1]
         if nextchar in _ws:
@@ -243,7 +243,7 @@ def JSONArray(s_and_end, scan_once, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
         if nextchar == ']':
             break
         elif nextchar != ',':
-            raise ValueError(errmsg("Expecting ',' delimiter", s, end))
+            raise ValueError(errmsg("Expecting ',' delimiter", s, end - 1))
         try:
             if s[end] in _ws:
                 end += 1
@@ -358,6 +358,6 @@ class JSONDecoder(object):
         """
         try:
             obj, end = self.scan_once(s, idx)
-        except StopIteration:
-            raise ValueError("No JSON object could be decoded")
+        except StopIteration as err:
+            raise ValueError(errmsg("Expecting value", s, err.value)) from None
         return obj, end
