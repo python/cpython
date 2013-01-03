@@ -523,6 +523,49 @@ else:
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
+# FS_NONASCII: non-ASCII character encodable by os.fsencode(),
+# or None if there is no such character.
+FS_NONASCII = None
+for character in (
+    # First try printable and common characters to have a readable filename.
+    # For each character, the encoding list are just example of encodings able
+    # to encode the character (the list is not exhaustive).
+
+    # U+00E6 (Latin Small Letter Ae): cp1252, iso-8859-1
+    '\u00E6',
+    # U+0130 (Latin Capital Letter I With Dot Above): cp1254, iso8859_3
+    '\u0130',
+    # U+0141 (Latin Capital Letter L With Stroke): cp1250, cp1257
+    '\u0141',
+    # U+03C6 (Greek Small Letter Phi): cp1253
+    '\u03C6',
+    # U+041A (Cyrillic Capital Letter Ka): cp1251
+    '\u041A',
+    # U+05D0 (Hebrew Letter Alef): Encodable to cp424
+    '\u05D0',
+    # U+060C (Arabic Comma): cp864, cp1006, iso8859_6, mac_arabic
+    '\u060C',
+    # U+062A (Arabic Letter Teh): cp720
+    '\u062A',
+    # U+0E01 (Thai Character Ko Kai): cp874
+    '\u0E01',
+
+    # Then try more "special" characters. "special" because they may be
+    # interpreted or displayed differently depending on the exact locale
+    # encoding and the font.
+
+    # U+00A0 (No-Break Space)
+    '\u00A0',
+    # U+20AC (Euro Sign)
+    '\u20AC',
+):
+    try:
+        os.fsdecode(os.fsencode(character))
+    except UnicodeError:
+        pass
+    else:
+        FS_NONASCII = character
+        break
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN + "-\xe0\xf2\u0258\u0141\u011f"
@@ -566,6 +609,41 @@ elif sys.platform != 'darwin':
         # File system encoding (eg. ISO-8859-* encodings) can encode
         # the byte 0xff. Skip some unicode filename tests.
         pass
+
+# TESTFN_UNDECODABLE is a filename (bytes type) that should *not* be able to be
+# decoded from the filesystem encoding (in strict mode). It can be None if we
+# cannot generate such filename (ex: the latin1 encoding can decode any byte
+# sequence). On UNIX, TESTFN_UNDECODABLE can be decoded by os.fsdecode() thanks
+# to the surrogateescape error handler (PEP 383), but not from the filesystem
+# encoding in strict mode.
+TESTFN_UNDECODABLE = None
+for name in (
+    # b'\xff' is not decodable by os.fsdecode() with code page 932. Windows
+    # accepts it to create a file or a directory, or don't accept to enter to
+    # such directory (when the bytes name is used). So test b'\xe7' first: it is
+    # not decodable from cp932.
+    b'\xe7w\xf0',
+    # undecodable from ASCII, UTF-8
+    b'\xff',
+    # undecodable from iso8859-3, iso8859-6, iso8859-7, cp424, iso8859-8, cp856
+    # and cp857
+    b'\xae\xd5'
+    # undecodable from UTF-8 (UNIX and Mac OS X)
+    b'\xed\xb2\x80', b'\xed\xb4\x80',
+    # undecodable from shift_jis, cp869, cp874, cp932, cp1250, cp1251, cp1252,
+    # cp1253, cp1254, cp1255, cp1257, cp1258
+    b'\x81\x98',
+):
+    try:
+        name.decode(TESTFN_ENCODING)
+    except UnicodeDecodeError:
+        TESTFN_UNDECODABLE = os.fsencode(TESTFN) + name
+        break
+
+if FS_NONASCII:
+    TESTFN_NONASCII = TESTFN + '-' + FS_NONASCII
+else:
+    TESTFN_NONASCII = None
 
 # Save the initial cwd
 SAVEDCWD = os.getcwd()
