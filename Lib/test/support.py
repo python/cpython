@@ -710,6 +710,9 @@ for name in (
     b'\xae\xd5'
     # undecodable from UTF-8 (UNIX and Mac OS X)
     b'\xed\xb2\x80', b'\xed\xb4\x80',
+    # undecodable from shift_jis, cp869, cp874, cp932, cp1250, cp1251, cp1252,
+    # cp1253, cp1254, cp1255, cp1257, cp1258
+    b'\x81\x98',
 ):
     try:
         name.decode(TESTFN_ENCODING)

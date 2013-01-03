@@ -308,17 +308,18 @@ class CommonTest(GenericTest):
                 for path in ('', 'fuu', 'f\xf9\xf9', '/fuu', 'U:\\'):
                     self.assertIsInstance(abspath(path), str)
 
-    @unittest.skipIf(sys.platform == 'darwin',
-        "Mac OS X denies the creation of a directory with an invalid utf8 name")
     def test_nonascii_abspath(self):
-        name = b'\xe7w\xf0'
-        if sys.platform == 'win32':
-            try:
-                os.fsdecode(name)
-            except UnicodeDecodeError:
-                self.skipTest("the filename %a is not decodable "
-                              "from the ANSI code page %s"
-                              % (name, sys.getfilesystemencoding()))
+        if (support.TESTFN_UNDECODABLE
+        # Mac OS X denies the creation of a directory with an invalid
+        # UTF-8 name. Windows allows to create a directory with an
+        # arbitrary bytes name, but fails to enter this directory
+        # (when the bytes name is used).
+        and sys.platform not in ('win32', 'darwin')):
+            name = support.TESTFN_UNDECODABLE
+        elif support.TESTFN_NONASCII:
+            name = support.TESTFN_NONASCII
+        else:
+            self.skipTest("need support.TESTFN_NONASCII")
 
         # Test non-ASCII, non-UTF8 bytes in the path.
         with warnings.catch_warnings():
