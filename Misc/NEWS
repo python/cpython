@@ -12,6 +12,12 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16455: On FreeBSD and Solaris, if the locale is C, the
+  ASCII/surrogateescape codec is now used, instead of the locale encoding, to
+  decode the command line arguments. This change fixes inconsistencies with
+  os.fsencode() and os.fsdecode() because these operating systems announces an
+  ASCII locale encoding, whereas the ISO-8859-1 encoding is used in practice.
+
 - Issue #16761: Calling int() with base argument only now raises TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
