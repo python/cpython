@@ -318,13 +318,10 @@ connections and dispatches the incoming connections to a handler::
 
         def handle_accept(self):
             pair = self.accept()
-            if pair is None:
-                pass
-            else:
+            if pair is not None:
                 sock, addr = pair
                 print 'Incoming connection from %s' % repr(addr)
                 handler = EchoHandler(sock)
 
     server = EchoServer('localhost', 8080)
     asyncore.loop()
-
