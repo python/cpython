@@ -246,7 +246,9 @@ ascii_escape_unicode(PyObject *pystr)
         }
     }
     output[chars++] = '"';
+#ifdef Py_DEBUG
     assert(_PyUnicode_CheckConsistency(rval, 1));
+#endif
     return rval;
 }
 
