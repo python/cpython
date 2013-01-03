@@ -1013,6 +1013,8 @@ if sys.platform != 'win32':
         def setUp(self):
             if support.TESTFN_UNENCODABLE:
                 self.dir = support.TESTFN_UNENCODABLE
+            elif support.TESTFN_NONASCII:
+                self.dir = support.TESTFN_NONASCII
             else:
                 self.dir = support.TESTFN
             self.bdir = os.fsencode(self.dir)
@@ -1027,6 +1029,8 @@ if sys.platform != 'win32':
             add_filename(support.TESTFN_UNICODE)
             if support.TESTFN_UNENCODABLE:
                 add_filename(support.TESTFN_UNENCODABLE)
+            if support.TESTFN_NONASCII:
+                add_filename(support.TESTFN_NONASCII)
             if not bytesfn:
                 self.skipTest("couldn't create any non-ascii filename")
 
