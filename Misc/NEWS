@@ -4501,6 +4501,10 @@ Tools/Demos
 Extension Modules
 -----------------
 
+- Issue #16847: Fixed improper use of _PyUnicode_CheckConsistency() in
+  non-pydebug builds. Several extension modules now compile cleanly when
+  assert()s are enabled in standard builds (-DDEBUG flag).
+
 - Issue #13840: The error message produced by ctypes.create_string_buffer
   when given a Unicode string has been fixed.
 
