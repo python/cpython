@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16367: Fix FileIO.readall() on Windows for files larger than 2 GB.
+
 - Issue #16761: Calling int() with base argument only now raises TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
