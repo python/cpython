@@ -57,6 +57,8 @@ except ImportError:
 _allocate_lock = _thread.allocate_lock
 
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL
+if hasattr(_os, 'O_CLOEXEC'):
+    _text_openflags |= _os.O_CLOEXEC
 if hasattr(_os, 'O_NOINHERIT'):
     _text_openflags |= _os.O_NOINHERIT
 if hasattr(_os, 'O_NOFOLLOW'):

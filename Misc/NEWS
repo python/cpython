@@ -204,6 +204,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16860: In tempfile, use O_CLOEXEC when available to set the
+  close-on-exec flag atomically.
+
 - Issue #16674: random.getrandbits() is now 20-40% faster for small integers.
 
 - Issue #16009: JSON error messages now provide more information.
