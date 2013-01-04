@@ -2,7 +2,7 @@
 Argparse Tutorial
 *****************
 
-:author: Tshepang Lekhonkhobe <tshepang@gmail.com>
+:author: Tshepang Lekhonkhobe
 
 .. _argparse-tutorial:
 
