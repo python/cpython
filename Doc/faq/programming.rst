@@ -313,6 +313,10 @@ calling another function by using ``*`` and ``**``::
        g(x, *args, **kwargs)
 
 
+.. index::
+   single: argument; difference from parameter
+   single: parameter; difference from argument
+
 .. _faq-argument-vs-parameter:
 
 What is the difference between arguments and parameters?

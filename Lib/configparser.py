@@ -99,10 +99,9 @@ ConfigParser -- responsible for parsing a list of
         yes, on for True).  Returns False or True.
 
     items(section=_UNSET, raw=False, vars=None)
-        If section is given, return a list of tuples with (section_name,
-        section_proxy) for each section, including DEFAULTSECT. Otherwise,
-        return a list of tuples with (name, value) for each option
-        in the section.
+        If section is given, return a list of tuples with (name, value) for
+        each option in the section. Otherwise, return a list of tuples with
+        (section_name, section_proxy) for each section, including DEFAULTSECT.
 
     remove_section(section)
         Remove the given file section and all its options.
@@ -852,6 +851,19 @@ class RawConfigParser(MutableMapping):
             value_getter = lambda option: d[option]
         return [(option, value_getter(option)) for option in d.keys()]
 
+    def popitem(self):
+        """Remove a section from the parser and return it as
+        a (section_name, section_proxy) tuple. If no section is present, raise
+        KeyError.
+
+        The section DEFAULT is never returned because it cannot be removed.
+        """
+        for key in self.sections():
+            value = self[key]
+            del self[key]
+            return key, value
+        raise KeyError
+
     def optionxform(self, optionstr):
         return optionstr.lower()
 
@@ -947,7 +959,8 @@ class RawConfigParser(MutableMapping):
 
         # XXX this is not atomic if read_dict fails at any point. Then again,
         # no update method in configparser is atomic in this implementation.
-        self.remove_section(key)
+        if key in self._sections:
+            self._sections[key].clear()
         self.read_dict({key: value})
 
     def __delitem__(self, key):
