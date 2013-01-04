@@ -10548,7 +10548,7 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         return;
     }
     left = *p_left;
-    if (right == NULL || !PyUnicode_Check(left)) {
+    if (right == NULL || left == NULL || !PyUnicode_Check(left)) {
         if (!PyErr_Occurred())
             PyErr_BadInternalCall();
         goto error;

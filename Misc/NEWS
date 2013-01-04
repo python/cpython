@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16856: Fix a segmentation fault from calling repr() on a dict with
+  a key whose repr raise an exception.
+
 - Issue #16367: Fix FileIO.readall() on Windows for files larger than 2 GB.
 
 - Issue #16761: Calling int() with base argument only now raises TypeError.
