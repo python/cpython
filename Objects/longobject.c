@@ -4130,8 +4130,14 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:int", kwlist,
                                      &x, &obase))
         return NULL;
-    if (x == NULL)
+    if (x == NULL) {
+        if (obase != NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "int() missing string argument");
+            return NULL;
+        }
         return PyLong_FromLong(0L);
+    }
     if (obase == NULL)
         return PyNumber_Long(x);
 
@@ -4140,7 +4146,7 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     if (overflow || (base != 0 && base < 2) || base > 36) {
         PyErr_SetString(PyExc_ValueError,
-                        "int() arg 2 must be >= 2 and <= 36");
+                        "int() base must be >= 2 and <= 36");
         return NULL;
     }
 

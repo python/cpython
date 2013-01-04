@@ -770,6 +770,59 @@ boolean {0[0]} NO
         with self.assertRaises(configparser.NoSectionError):
             cf.items("no such section")
 
+    def test_popitem(self):
+        cf = self.fromstring("""
+            [section1]
+            name1 {0[0]} value1
+            [section2]
+            name2 {0[0]} value2
+            [section3]
+            name3 {0[0]} value3
+        """.format(self.delimiters), defaults={"default": "<default>"})
+        self.assertEqual(cf.popitem()[0], 'section1')
+        self.assertEqual(cf.popitem()[0], 'section2')
+        self.assertEqual(cf.popitem()[0], 'section3')
+        with self.assertRaises(KeyError):
+            cf.popitem()
+
+    def test_clear(self):
+        cf = self.newconfig({"foo": "Bar"})
+        self.assertEqual(
+            cf.get(self.default_section, "Foo"), "Bar",
+            "could not locate option, expecting case-insensitive option names")
+        cf['zing'] = {'option1': 'value1', 'option2': 'value2'}
+        self.assertEqual(cf.sections(), ['zing'])
+        self.assertEqual(set(cf['zing'].keys()), {'option1', 'option2', 'foo'})
+        cf.clear()
+        self.assertEqual(set(cf.sections()), set())
+        self.assertEqual(set(cf[self.default_section].keys()), {'foo'})
+
+    def test_setitem(self):
+        cf = self.fromstring("""
+            [section1]
+            name1 {0[0]} value1
+            [section2]
+            name2 {0[0]} value2
+            [section3]
+            name3 {0[0]} value3
+        """.format(self.delimiters), defaults={"nameD": "valueD"})
+        self.assertEqual(set(cf['section1'].keys()), {'name1', 'named'})
+        self.assertEqual(set(cf['section2'].keys()), {'name2', 'named'})
+        self.assertEqual(set(cf['section3'].keys()), {'name3', 'named'})
+        self.assertEqual(cf['section1']['name1'], 'value1')
+        self.assertEqual(cf['section2']['name2'], 'value2')
+        self.assertEqual(cf['section3']['name3'], 'value3')
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
+        cf['section2'] = {'name22': 'value22'}
+        self.assertEqual(set(cf['section2'].keys()), {'name22', 'named'})
+        self.assertEqual(cf['section2']['name22'], 'value22')
+        self.assertNotIn('name2', cf['section2'])
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
+        cf['section3'] = {}
+        self.assertEqual(set(cf['section3'].keys()), {'named'})
+        self.assertNotIn('name3', cf['section3'])
+        self.assertEqual(cf.sections(), ['section1', 'section2', 'section3'])
+
 
 class StrictTestCase(BasicTestCase):
     config_class = configparser.RawConfigParser

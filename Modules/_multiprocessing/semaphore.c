@@ -197,6 +197,13 @@ semlock_release(SemLockObject *self, PyObject *args)
 #define SEM_GETVALUE(sem, pval) sem_getvalue(sem, pval)
 #define SEM_UNLINK(name) sem_unlink(name)
 
+/* OS X 10.4 defines SEM_FAILED as -1 instead of (sem_t *)-1;  this gives
+   compiler warnings, and (potentially) undefined behaviour. */
+#ifdef __APPLE__
+#  undef SEM_FAILED
+#  define SEM_FAILED ((sem_t *)-1)
+#endif
+
 #ifndef HAVE_SEM_UNLINK
 #  define sem_unlink(name) 0
 #endif

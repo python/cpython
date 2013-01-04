@@ -558,7 +558,7 @@ fileio_readall(fileio *self)
 {
     PyObject *result;
     Py_ssize_t total = 0;
-    int n;
+    Py_ssize_t n;
 
     if (self->fd < 0)
         return err_closed();
@@ -591,9 +591,18 @@ fileio_readall(fileio *self)
         }
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
+        n = newsize - total;
+#if defined(MS_WIN64) || defined(MS_WINDOWS)
+        if (n > INT_MAX)
+            n = INT_MAX;
         n = read(self->fd,
                  PyBytes_AS_STRING(result) + total,
-                 newsize - total);
+                 (int)n);
+#else
+        n = read(self->fd,
+                 PyBytes_AS_STRING(result) + total,
+                 n);
+#endif
         Py_END_ALLOW_THREADS
         if (n == 0)
             break;

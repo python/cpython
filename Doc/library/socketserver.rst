@@ -299,8 +299,8 @@ request.
 .. method:: RequestHandler.finish()
 
    Called after the :meth:`handle` method to perform any clean-up actions
-   required.  The default implementation does nothing.  If :meth:`setup` or
-   :meth:`handle` raise an exception, this function will not be called.
+   required.  The default implementation does nothing.  If :meth:`setup`
+   raises an exception, this function will not be called.
 
 
 .. method:: RequestHandler.handle()
