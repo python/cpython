@@ -785,7 +785,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 memcpy(*retDataBuf, &zero, sizeof(DWORD));
             }
             else {
-                DWORD d = PyLong_AsLong(value);
+                DWORD d = PyLong_AsUnsignedLong(value);
                 memcpy(*retDataBuf, &d, sizeof(DWORD));
             }
             break;
@@ -900,9 +900,9 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
     switch (typ) {
         case REG_DWORD:
             if (retDataSize == 0)
-                obData = PyLong_FromLong(0);
+                obData = PyLong_FromUnsignedLong(0);
             else
-                obData = PyLong_FromLong(*(int *)retDataBuf);
+                obData = PyLong_FromUnsignedLong(*(int *)retDataBuf);
             break;
         case REG_SZ:
         case REG_EXPAND_SZ:

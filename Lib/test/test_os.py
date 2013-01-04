@@ -634,6 +634,50 @@ class MakedirTests(unittest.TestCase):
 
         os.removedirs(path)
 
+
+class RemoveDirsTests(unittest.TestCase):
+    def setUp(self):
+        os.makedirs(support.TESTFN)
+
+    def tearDown(self):
+        support.rmtree(support.TESTFN)
+
+    def test_remove_all(self):
+        dira = os.path.join(support.TESTFN, 'dira')
+        os.mkdir(dira)
+        dirb = os.path.join(dira, 'dirb')
+        os.mkdir(dirb)
+        os.removedirs(dirb)
+        self.assertFalse(os.path.exists(dirb))
+        self.assertFalse(os.path.exists(dira))
+        self.assertFalse(os.path.exists(support.TESTFN))
+
+    def test_remove_partial(self):
+        dira = os.path.join(support.TESTFN, 'dira')
+        os.mkdir(dira)
+        dirb = os.path.join(dira, 'dirb')
+        os.mkdir(dirb)
+        with open(os.path.join(dira, 'file.txt'), 'w') as f:
+            f.write('text')
+        os.removedirs(dirb)
+        self.assertFalse(os.path.exists(dirb))
+        self.assertTrue(os.path.exists(dira))
+        self.assertTrue(os.path.exists(support.TESTFN))
+
+    def test_remove_nothing(self):
+        dira = os.path.join(support.TESTFN, 'dira')
+        os.mkdir(dira)
+        dirb = os.path.join(dira, 'dirb')
+        os.mkdir(dirb)
+        with open(os.path.join(dirb, 'file.txt'), 'w') as f:
+            f.write('text')
+        with self.assertRaises(OSError):
+            os.removedirs(dirb)
+        self.assertTrue(os.path.exists(dirb))
+        self.assertTrue(os.path.exists(dira))
+        self.assertTrue(os.path.exists(support.TESTFN))
+
+
 class DevNullTests(unittest.TestCase):
     def test_devnull(self):
         with open(os.devnull, 'wb') as f:
@@ -641,6 +685,7 @@ class DevNullTests(unittest.TestCase):
             f.close()
         with open(os.devnull, 'rb') as f:
             self.assertEqual(f.read(), b'')
+
 
 class URandomTests(unittest.TestCase):
     def test_urandom_length(self):
@@ -968,6 +1013,8 @@ if sys.platform != 'win32':
         def setUp(self):
             if support.TESTFN_UNENCODABLE:
                 self.dir = support.TESTFN_UNENCODABLE
+            elif support.TESTFN_NONASCII:
+                self.dir = support.TESTFN_NONASCII
             else:
                 self.dir = support.TESTFN
             self.bdir = os.fsencode(self.dir)
@@ -982,6 +1029,8 @@ if sys.platform != 'win32':
             add_filename(support.TESTFN_UNICODE)
             if support.TESTFN_UNENCODABLE:
                 add_filename(support.TESTFN_UNENCODABLE)
+            if support.TESTFN_NONASCII:
+                add_filename(support.TESTFN_NONASCII)
             if not bytesfn:
                 self.skipTest("couldn't create any non-ascii filename")
 
@@ -1011,6 +1060,15 @@ if sys.platform != 'win32':
             for fn in self.unicodefn:
                 f = open(os.path.join(self.dir, fn), 'rb')
                 f.close()
+
+        @unittest.skipUnless(hasattr(os, 'statvfs'),
+                             "need os.statvfs()")
+        def test_statvfs(self):
+            # issue #9645
+            for fn in self.unicodefn:
+                # should not fail with file not found error
+                fullname = os.path.join(self.dir, fn)
+                os.statvfs(fullname)
 
         def test_stat(self):
             for fn in self.unicodefn:
@@ -1310,6 +1368,7 @@ def test_main():
         PidTests,
         LoginTests,
         LinkTests,
+        RemoveDirsTests,
     )
 
 if __name__ == "__main__":

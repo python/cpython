@@ -170,13 +170,15 @@ class EditorWindow(object):
                 'recent-files.lst')
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
-        self.width = idleConf.GetOption('main','EditorWindow','width')
+        self.width = idleConf.GetOption('main', 'EditorWindow',
+                                        'width', type='int')
         text_options = {
                 'name': 'text',
                 'padx': 5,
                 'wrap': 'none',
                 'width': self.width,
-                'height': idleConf.GetOption('main', 'EditorWindow', 'height')}
+                'height': idleConf.GetOption('main', 'EditorWindow',
+                                             'height', type='int')}
         if TkVersion >= 8.5:
             # Starting with tk 8.5 we have to set the new tabstyle option
             # to 'wordprocessor' to achieve the same display of tabs as in
@@ -253,7 +255,8 @@ class EditorWindow(object):
         if idleConf.GetOption('main', 'EditorWindow', 'font-bold', type='bool'):
             fontWeight='bold'
         text.config(font=(idleConf.GetOption('main', 'EditorWindow', 'font'),
-                          idleConf.GetOption('main', 'EditorWindow', 'font-size'),
+                          idleConf.GetOption('main', 'EditorWindow',
+                                             'font-size', type='int'),
                           fontWeight))
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
@@ -268,7 +271,8 @@ class EditorWindow(object):
         # Although use-spaces=0 can be configured manually in config-main.def,
         # configuration of tabs v. spaces is not supported in the configuration
         # dialog.  IDLE promotes the preferred Python indentation: use spaces!
-        usespaces = idleConf.GetOption('main', 'Indent', 'use-spaces', type='bool')
+        usespaces = idleConf.GetOption('main', 'Indent',
+                                       'use-spaces', type='bool')
         self.usetabs = not usespaces
 
         # tabwidth is the display width of a literal tab character.
@@ -382,9 +386,11 @@ class EditorWindow(object):
             self.text.tag_remove("sel", "1.0", "end")
         else:
             if not self.text.index("sel.first"):
-                self.text.mark_set("my_anchor", "insert")  # there was no previous selection
+                # there was no previous selection
+                self.text.mark_set("my_anchor", "insert")
             else:
-                if self.text.compare(self.text.index("sel.first"), "<", self.text.index("insert")):
+                if self.text.compare(self.text.index("sel.first"), "<",
+                                     self.text.index("insert")):
                     self.text.mark_set("my_anchor", "sel.first") # extend back
                 else:
                     self.text.mark_set("my_anchor", "sel.last") # extend forward
@@ -766,7 +772,8 @@ class EditorWindow(object):
         if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
             fontWeight='bold'
         self.text.config(font=(idleConf.GetOption('main','EditorWindow','font'),
-                idleConf.GetOption('main','EditorWindow','font-size'),
+                idleConf.GetOption('main','EditorWindow','font-size',
+                                   type='int'),
                 fontWeight))
 
     def RemoveKeybindings(self):
@@ -1611,7 +1618,7 @@ class IndentSearcher(object):
                 tokens = _tokenize.generate_tokens(self.readline)
                 for token in tokens:
                     self.tokeneater(*token)
-            except _tokenize.TokenError:
+            except (_tokenize.TokenError, SyntaxError):
                 # since we cut off the tokenizer early, we can trigger
                 # spurious errors
                 pass

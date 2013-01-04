@@ -1,6 +1,7 @@
 import sys
 
 import unittest
+from test import support
 from test.support import run_unittest
 
 L = [
@@ -99,10 +100,6 @@ class IntTestCases(unittest.TestCase):
 
         self.assertRaises(ValueError, int, "0b", 2)
         self.assertRaises(ValueError, int, "0b", 0)
-
-        # Bug #3236: Return small longs from PyLong_FromString
-        self.assertTrue(int("10") is 10)
-        self.assertTrue(int("-1") is -1)
 
         # SF bug 1334662: int(string, base) wrong answers
         # Various representations of 2**32 evaluated to 0
@@ -220,6 +217,22 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('2qhxjlj', 34), 4294967297)
         self.assertEqual(int('2br45qc', 35), 4294967297)
         self.assertEqual(int('1z141z5', 36), 4294967297)
+
+    @support.cpython_only
+    def test_small_ints(self):
+        # Bug #3236: Return small longs from PyLong_FromString
+        self.assertIs(int('10'), 10)
+        self.assertIs(int('-1'), -1)
+        self.assertIs(int(b'10'), 10)
+        self.assertIs(int(b'-1'), -1)
+
+    def test_keyword_args(self):
+        # Test invoking int() using keyword arguments.
+        self.assertEqual(int(x=1.2), 1)
+        self.assertEqual(int('100', base=2), 4)
+        self.assertEqual(int(x='100', base=2), 4)
+        self.assertRaises(TypeError, int, base=10)
+        self.assertRaises(TypeError, int, base=0)
 
     def test_intconversion(self):
         # Test __int__()

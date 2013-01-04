@@ -328,31 +328,21 @@ class MiscReadTest(CommonReadTest):
     @support.skip_unless_symlink
     def test_extract_hardlink(self):
         # Test hardlink extraction (e.g. bug #857297).
-        tar = tarfile.open(tarname, errorlevel=1, encoding="iso8859-1")
-
-        try:
+        with tarfile.open(tarname, errorlevel=1, encoding="iso8859-1") as tar:
             tar.extract("ustar/regtype", TEMPDIR)
-            try:
-                tar.extract("ustar/lnktype", TEMPDIR)
-            except EnvironmentError as e:
-                if e.errno == errno.ENOENT:
-                    self.fail("hardlink not extracted properly")
+            self.addCleanup(os.remove, os.path.join(TEMPDIR, "ustar/regtype"))
 
+            tar.extract("ustar/lnktype", TEMPDIR)
+            self.addCleanup(os.remove, os.path.join(TEMPDIR, "ustar/lnktype"))
             with open(os.path.join(TEMPDIR, "ustar/lnktype"), "rb") as f:
                 data = f.read()
             self.assertEqual(md5sum(data), md5_regtype)
 
-            try:
-                tar.extract("ustar/symtype", TEMPDIR)
-            except EnvironmentError as e:
-                if e.errno == errno.ENOENT:
-                    self.fail("symlink not extracted properly")
-
+            tar.extract("ustar/symtype", TEMPDIR)
+            self.addCleanup(os.remove, os.path.join(TEMPDIR, "ustar/symtype"))
             with open(os.path.join(TEMPDIR, "ustar/symtype"), "rb") as f:
                 data = f.read()
             self.assertEqual(md5sum(data), md5_regtype)
-        finally:
-            tar.close()
 
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions

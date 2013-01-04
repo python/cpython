@@ -700,7 +700,12 @@ class StreamRequestHandler(BaseRequestHandler):
 
     def finish(self):
         if not self.wfile.closed:
-            self.wfile.flush()
+            try:
+                self.wfile.flush()
+            except socket.error:
+                # An final socket error may have occurred here, such as
+                # the local error ECONNABORTED.
+                pass
         self.wfile.close()
         self.rfile.close()
 

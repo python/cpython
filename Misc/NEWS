@@ -10,6 +10,23 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #16367: Fix FileIO.readall() on Windows for files larger than 2 GB.
+
+- Issue #16455: On FreeBSD and Solaris, if the locale is C, the
+  ASCII/surrogateescape codec is now used, instead of the locale encoding, to
+  decode the command line arguments. This change fixes inconsistencies with
+  os.fsencode() and os.fsdecode() because these operating systems announces an
+  ASCII locale encoding, whereas the ISO-8859-1 encoding is used in practice.
+
+- Issue #16761: Calling int() with base argument only now raises TypeError.
+
+- Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
+  when retreiving a REG_DWORD value. This corrects functions like
+  winreg.QueryValueEx that may have been returning truncated values.
+
+- Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
+  when passed a REG_DWORD value. Fixes OverflowError in winreg.SetValueEx.
+
 - Issue #16602: When a weakref's target was part of a long deallocation
   chain, the object could remain reachable through its weakref even though
   its refcount had dropped to zero.
@@ -178,6 +195,51 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #16828: Fix error incorrectly raised by bz2.compress(''). Patch by
+  Martin Packman.
+
+- Issue #16541: tk_setPalette() now works with keyword arguments.
+
+- Issue #16820: In configparser, `parser.popitem()` no longer raises ValueError.
+  This makes `parser.clean()` work correctly.
+
+- Issue #16820: In configparser, ``parser['section'] = {}`` now preserves
+  section order within the parser. This makes `parser.update()` preserve section
+  order as well.
+
+- Issue #9644: Fix the encoding used by os.statvfs(): use the filesystem
+  encoding with the surrogateescape error handler, instead of UTF-8 in strict
+  mode.
+
+- Issue #16819: IDLE method completion now correctly works for bytes literals.
+
+- Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
+
+- Issue 10527: make multiprocessing use poll() instead of select() if available.
+
+- Issue #16485: Now file descriptors are closed if file header patching failed
+  on closing an aifc file.
+
+- Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
+  Roger Serwy.
+
+- Issue #16618: Make glob.glob match consistently across strings and bytes
+  regarding leading dots.  Patch by Serhiy Storchaka.
+
+- Issue #16702: test_urllib2_localnet tests now correctly ignores proxies for
+  localhost tests.
+
+- Issue #16511: Use default IDLE width and height if config param is not valid.
+  Patch Serhiy Storchaka.
+
+- Issue #16713: Parsing of 'tel' urls using urlparse separates params from
+  path.
+
+- Issue #16443: Add docstrings to regular expression match objects.
+  Patch by Anton Kasyanov.
+
+- Issue #15701: Fix HTTPError info method call to return the headers information.
 
 - Issue #16646: ftplib.FTP.makeport() might lose socket error details.
   (patch by Serhiy Storchaka)
@@ -695,6 +757,9 @@ Extension Modules
 
 Tests
 -----
+
+- Issue #15324: Fix regrtest parsing of --fromfile, --match, and --randomize
+  options.
 
 - Issue #16664: Add regression tests for glob's behaviour concerning entries
   starting with a ".".  Patch by Sebastian Kreft.

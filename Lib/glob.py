@@ -58,8 +58,8 @@ def glob1(dirname, pattern):
         names = os.listdir(dirname)
     except os.error:
         return []
-    if pattern[0] != '.':
-        names = [x for x in names if x[0] != '.']
+    if not _ishidden(pattern):
+        names = [x for x in names if not _ishidden(x)]
     return fnmatch.filter(names, pattern)
 
 def glob0(dirname, basename):
@@ -83,3 +83,6 @@ def has_magic(s):
     else:
         match = magic_check.search(s)
     return match is not None
+
+def _ishidden(path):
+    return path[0] in ('.', b'.'[0])

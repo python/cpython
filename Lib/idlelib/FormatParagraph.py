@@ -32,7 +32,8 @@ class FormatParagraph:
         self.editwin = None
 
     def format_paragraph_event(self, event):
-        maxformatwidth = int(idleConf.GetOption('main','FormatParagraph','paragraph'))
+        maxformatwidth = int(idleConf.GetOption('main', 'FormatParagraph',
+                                                'paragraph', type='int'))
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()
         if first and last:
@@ -46,7 +47,8 @@ class FormatParagraph:
             lines = data.split("\n")
             lines = map(lambda st, l=len(comment_header): st[l:], lines)
             data = "\n".join(lines)
-            # Reformat to maxformatwidth chars or a 20 char width, whichever is greater.
+            # Reformat to maxformatwidth chars or a 20 char width,
+            # whichever is greater.
             format_width = max(maxformatwidth - len(comment_header), 20)
             newdata = reformat_paragraph(data, format_width)
             # re-split and re-insert the comment header.
