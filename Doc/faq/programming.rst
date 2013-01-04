@@ -206,6 +206,58 @@ an imported module.  This clutter would defeat the usefulness of the ``global``
 declaration for identifying side-effects.
 
 
+Why do lambdas defined in a loop with different values all return the same result?
+----------------------------------------------------------------------------------
+
+Assume you use a for loop to define a few different lambdas (or even plain
+functions), e.g.::
+
+   squares = []
+   for x in range(5):
+      squares.append(lambda: x**2)
+
+This gives you a list that contains 5 lambdas that calculate ``x**2``.  You
+might expect that, when called, they would return, respectively, ``0``, ``1``,
+``4``, ``9``, and ``16``.  However, when you actually try you will see that
+they all return ``16``::
+
+   >>> squares[2]()
+   16
+   >>> squares[4]()
+   16
+
+This happens because ``x`` is not local to the lambdas, but is defined in
+the outer scope, and it is accessed when the lambda is called --- not when it
+is defined.  At the end of the loop, the value of ``x`` is ``4``, so all the
+functions now return ``4**2``, i.e. ``16``.  You can also verify this by
+changing the value of ``x`` and see how the results of the lambdas change::
+
+   >>> x = 8
+   >>> squares[2]()
+   64
+
+In order to avoid this, you need to save the values in variables local to the
+lambdas, so that they don't rely on the value of the global ``x``::
+
+   squares = []
+   for x in range(5):
+      squares.append(lambda n=x: n**2)
+
+Here, ``n=x`` creates a new variable ``n`` local to the lambda and computed
+when the lambda is defined so that it has the same value that ``x`` had at
+that point in the loop.  This means that the value of ``n`` will be ``0``
+in the first lambda, ``1`` in the second, ``2`` in the third, and so on.
+Therefore each lambda will now return the correct result::
+
+   >>> squares[2]()
+   4
+   >>> squares[4]()
+   16
+
+Note that this behaviour is not peculiar to lambdas, but applies to regular
+functions too.
+
+
 How do I share global variables across modules?
 ------------------------------------------------
 

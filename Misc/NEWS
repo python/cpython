@@ -655,6 +655,9 @@ Build
 Documentation
 -------------
 
+- Issue #13094: add "Why do lambdas defined in a loop with different values
+  all return the same result?" programming FAQ.
+
 - Issue #14901: Update portions of the Windows FAQ.
   Patch by Ashish Nitin Patil.
 
