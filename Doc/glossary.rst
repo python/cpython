@@ -378,17 +378,17 @@ Glossary
       slowly.  See also :term:`interactive`.
 
    iterable
-      An object capable of returning its members one at a
-      time. Examples of iterables include all sequence types (such as
-      :class:`list`, :class:`str`, and :class:`tuple`) and some non-sequence
-      types like :class:`dict` and :class:`file` and objects of any classes you
-      define with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables
-      can be used in a :keyword:`for` loop and in many other places where a
-      sequence is needed (:func:`zip`, :func:`map`, ...).  When an iterable
-      object is passed as an argument to the built-in function :func:`iter`, it
-      returns an iterator for the object.  This iterator is good for one pass
-      over the set of values.  When using iterables, it is usually not necessary
-      to call :func:`iter` or deal with iterator objects yourself.  The ``for``
+      An object capable of returning its members one at a time. Examples of
+      iterables include all sequence types (such as :class:`list`, :class:`str`,
+      and :class:`tuple`) and some non-sequence types like :class:`dict`
+      and :class:`file` and objects of any classes you define
+      with an :meth:`__iter__` or :meth:`__getitem__` method.  Iterables can be
+      used in a :keyword:`for` loop and in many other places where a sequence is
+      needed (:func:`zip`, :func:`map`, ...).  When an iterable object is passed
+      as an argument to the built-in function :func:`iter`, it returns an
+      iterator for the object.  This iterator is good for one pass over the set
+      of values.  When using iterables, it is usually not necessary to call
+      :func:`iter` or deal with iterator objects yourself.  The ``for``
       statement does that automatically for you, creating a temporary unnamed
       variable to hold the iterator for the duration of the loop.  See also
       :term:`iterator`, :term:`sequence`, and :term:`generator`.
