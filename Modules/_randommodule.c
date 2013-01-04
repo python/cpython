@@ -360,6 +360,9 @@ random_getrandbits(RandomObject *self, PyObject *args)
         return NULL;
     }
 
+    if (k <= 32)  /* Fast path */
+        return PyLong_FromUnsignedLong(genrand_int32(self) >> (32 - k));
+
     bytes = ((k - 1) / 32 + 1) * 4;
     bytearray = (unsigned char *)PyMem_Malloc(bytes);
     if (bytearray == NULL) {
