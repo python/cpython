@@ -204,6 +204,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8109: The ssl module now has support for server-side SNI, thanks
+  to a :meth:`SSLContext.set_servername_callback` method.  Patch by Daniel
+  Black.
+
 - Issue #16860: In tempfile, use O_CLOEXEC when available to set the
   close-on-exec flag atomically.
 
