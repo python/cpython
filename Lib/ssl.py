@@ -52,6 +52,37 @@ PROTOCOL_SSLv2
 PROTOCOL_SSLv3
 PROTOCOL_SSLv23
 PROTOCOL_TLSv1
+
+The following constants identify various SSL alert message descriptions as per
+http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6
+
+ALERT_DESCRIPTION_CLOSE_NOTIFY
+ALERT_DESCRIPTION_UNEXPECTED_MESSAGE
+ALERT_DESCRIPTION_BAD_RECORD_MAC
+ALERT_DESCRIPTION_RECORD_OVERFLOW
+ALERT_DESCRIPTION_DECOMPRESSION_FAILURE
+ALERT_DESCRIPTION_HANDSHAKE_FAILURE
+ALERT_DESCRIPTION_BAD_CERTIFICATE
+ALERT_DESCRIPTION_UNSUPPORTED_CERTIFICATE
+ALERT_DESCRIPTION_CERTIFICATE_REVOKED
+ALERT_DESCRIPTION_CERTIFICATE_EXPIRED
+ALERT_DESCRIPTION_CERTIFICATE_UNKNOWN
+ALERT_DESCRIPTION_ILLEGAL_PARAMETER
+ALERT_DESCRIPTION_UNKNOWN_CA
+ALERT_DESCRIPTION_ACCESS_DENIED
+ALERT_DESCRIPTION_DECODE_ERROR
+ALERT_DESCRIPTION_DECRYPT_ERROR
+ALERT_DESCRIPTION_PROTOCOL_VERSION
+ALERT_DESCRIPTION_INSUFFICIENT_SECURITY
+ALERT_DESCRIPTION_INTERNAL_ERROR
+ALERT_DESCRIPTION_USER_CANCELLED
+ALERT_DESCRIPTION_NO_RENEGOTIATION
+ALERT_DESCRIPTION_UNSUPPORTED_EXTENSION
+ALERT_DESCRIPTION_CERTIFICATE_UNOBTAINABLE
+ALERT_DESCRIPTION_UNRECOGNIZED_NAME
+ALERT_DESCRIPTION_BAD_CERTIFICATE_STATUS_RESPONSE
+ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
+ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 """
 
 import textwrap
@@ -66,34 +97,23 @@ from _ssl import (
     SSLSyscallError, SSLEOFError,
     )
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
-from _ssl import (
-    OP_ALL, OP_NO_SSLv2, OP_NO_SSLv3, OP_NO_TLSv1,
-    OP_CIPHER_SERVER_PREFERENCE, OP_SINGLE_DH_USE
-    )
-try:
-    from _ssl import OP_NO_COMPRESSION
-except ImportError:
-    pass
-try:
-    from _ssl import OP_SINGLE_ECDH_USE
-except ImportError:
-    pass
 from _ssl import RAND_status, RAND_egd, RAND_add, RAND_bytes, RAND_pseudo_bytes
-from _ssl import (
-    SSL_ERROR_ZERO_RETURN,
-    SSL_ERROR_WANT_READ,
-    SSL_ERROR_WANT_WRITE,
-    SSL_ERROR_WANT_X509_LOOKUP,
-    SSL_ERROR_SYSCALL,
-    SSL_ERROR_SSL,
-    SSL_ERROR_WANT_CONNECT,
-    SSL_ERROR_EOF,
-    SSL_ERROR_INVALID_ERROR_CODE,
-    )
+
+def _import_symbols(prefix):
+    for n in dir(_ssl):
+        if n.startswith(prefix):
+            globals()[n] = getattr(_ssl, n)
+
+_import_symbols('OP_')
+_import_symbols('ALERT_DESCRIPTION_')
+_import_symbols('SSL_ERROR_')
+
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN
+
 from _ssl import (PROTOCOL_SSLv3, PROTOCOL_SSLv23,
                   PROTOCOL_TLSv1)
 from _ssl import _OPENSSL_API_VERSION
+
 
 _PROTOCOL_NAMES = {
     PROTOCOL_TLSv1: "TLSv1",
@@ -190,7 +210,7 @@ class SSLContext(_SSLContext):
     """An SSLContext holds various SSL-related configuration options and
     data, such as certificates and possibly a private key."""
 
-    __slots__ = ('protocol',)
+    __slots__ = ('protocol', '__weakref__')
 
     def __new__(cls, protocol, *args, **kwargs):
         self = _SSLContext.__new__(cls, protocol)
@@ -238,7 +258,7 @@ class SSLSocket(socket):
                  _context=None):
 
         if _context:
-            self.context = _context
+            self._context = _context
         else:
             if server_side and not certfile:
                 raise ValueError("certfile must be specified for server-side "
@@ -247,16 +267,16 @@ class SSLSocket(socket):
                 raise ValueError("certfile must be specified")
             if certfile and not keyfile:
                 keyfile = certfile
-            self.context = SSLContext(ssl_version)
-            self.context.verify_mode = cert_reqs
+            self._context = SSLContext(ssl_version)
+            self._context.verify_mode = cert_reqs
             if ca_certs:
-                self.context.load_verify_locations(ca_certs)
+                self._context.load_verify_locations(ca_certs)
             if certfile:
-                self.context.load_cert_chain(certfile, keyfile)
+                self._context.load_cert_chain(certfile, keyfile)
             if npn_protocols:
-                self.context.set_npn_protocols(npn_protocols)
+                self._context.set_npn_protocols(npn_protocols)
             if ciphers:
-                self.context.set_ciphers(ciphers)
+                self._context.set_ciphers(ciphers)
             self.keyfile = keyfile
             self.certfile = certfile
             self.cert_reqs = cert_reqs
@@ -298,7 +318,7 @@ class SSLSocket(socket):
         if connected:
             # create the SSL object
             try:
-                self._sslobj = self.context._wrap_socket(self, server_side,
+                self._sslobj = self._context._wrap_socket(self, server_side,
                                                          server_hostname)
                 if do_handshake_on_connect:
                     timeout = self.gettimeout()
@@ -310,6 +330,14 @@ class SSLSocket(socket):
             except OSError as x:
                 self.close()
                 raise x
+    @property
+    def context(self):
+        return self._context
+
+    @context.setter
+    def context(self, ctx):
+        self._context = ctx
+        self._sslobj.context = ctx
 
     def dup(self):
         raise NotImplemented("Can't dup() %s instances" %
