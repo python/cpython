@@ -1031,13 +1031,16 @@ element_iterfind(ElementObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject*
-element_get(ElementObject* self, PyObject* args)
+element_get(ElementObject* self, PyObject* args, PyObject* kwds)
 {
     PyObject* value;
+    static char* kwlist[] = {"key", "default", 0};
 
     PyObject* key;
     PyObject* default_value = Py_None;
-    if (!PyArg_ParseTuple(args, "O|O:get", &key, &default_value))
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:get", kwlist, &key,
+                                     &default_value))
         return NULL;
 
     if (!self->extra || self->extra->attrib == Py_None)
@@ -1085,10 +1088,12 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext);
 
 
 static PyObject *
-element_iter(ElementObject *self, PyObject *args)
+element_iter(ElementObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject* tag = Py_None;
-    if (!PyArg_ParseTuple(args, "|O:iter", &tag))
+    static char* kwlist[] = {"tag", 0};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:iter", kwlist, &tag))
         return NULL;
 
     return create_elementiter(self, tag, 0);
@@ -1555,7 +1560,7 @@ static PyMethodDef element_methods[] = {
 
     {"clear", (PyCFunction) element_clearmethod, METH_VARARGS},
 
-    {"get", (PyCFunction) element_get, METH_VARARGS},
+    {"get", (PyCFunction) element_get, METH_VARARGS | METH_KEYWORDS},
     {"set", (PyCFunction) element_set, METH_VARARGS},
 
     {"find", (PyCFunction) element_find, METH_VARARGS | METH_KEYWORDS},
@@ -1567,11 +1572,11 @@ static PyMethodDef element_methods[] = {
     {"insert", (PyCFunction) element_insert, METH_VARARGS},
     {"remove", (PyCFunction) element_remove, METH_VARARGS},
 
-    {"iter", (PyCFunction) element_iter, METH_VARARGS},
+    {"iter", (PyCFunction) element_iter, METH_VARARGS | METH_KEYWORDS},
     {"itertext", (PyCFunction) element_itertext, METH_VARARGS},
     {"iterfind", (PyCFunction) element_iterfind, METH_VARARGS | METH_KEYWORDS},
 
-    {"getiterator", (PyCFunction) element_iter, METH_VARARGS},
+    {"getiterator", (PyCFunction) element_iter, METH_VARARGS | METH_KEYWORDS},
     {"getchildren", (PyCFunction) element_getchildren, METH_VARARGS},
 
     {"items", (PyCFunction) element_items, METH_VARARGS},
@@ -3461,7 +3466,7 @@ static PyTypeObject XMLParser_Type = {
 /* python module interface */
 
 static PyMethodDef _functions[] = {
-    {"SubElement", (PyCFunction) subelement, METH_VARARGS|METH_KEYWORDS},
+    {"SubElement", (PyCFunction) subelement, METH_VARARGS | METH_KEYWORDS},
     {NULL, NULL}
 };
 
