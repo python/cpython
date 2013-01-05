@@ -345,9 +345,6 @@ support for C.
 
 Answer 2: Fortunately, there is `Stackless Python <http://www.stackless.com>`_,
 which has a completely redesigned interpreter loop that avoids the C stack.
-It's still experimental but looks very promising.  Although it is binary
-compatible with standard Python, it's still unclear whether Stackless will make
-it into the core -- maybe it's just too revolutionary.
 
 
 Why can't lambda forms contain statements?
