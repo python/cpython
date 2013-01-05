@@ -225,7 +225,7 @@ The major reason is history. Functions were used for those operations that were
 generic for a group of types and which were intended to work even for objects
 that didn't have methods at all (e.g. tuples).  It is also convenient to have a
 function that can readily be applied to an amorphous collection of objects when
-you use the functional features of Python (``map()``, ``apply()`` et al).
+you use the functional features of Python (``map()``, ``zip()`` et al).
 
 In fact, implementing ``len()``, ``max()``, ``min()`` as a built-in function is
 actually less code than implementing them as methods for each type.  One can
@@ -757,7 +757,7 @@ of each call to the function, and return the cached value if the same value is
 requested again.  This is called "memoizing", and can be implemented like this::
 
    # Callers will never provide a third parameter for this function.
-   def expensive (arg1, arg2, _cache={}):
+   def expensive(arg1, arg2, _cache={}):
        if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
@@ -782,7 +782,7 @@ languages.  For example::
 
    try:
         ...
-        if (condition): raise label()  # goto label
+        if condition: raise label()  # goto label
         ...
    except label:  # where to goto
         pass
