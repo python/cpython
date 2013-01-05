@@ -728,7 +728,7 @@ function calls.  Many feel that exceptions can conveniently emulate all
 reasonable uses of the "go" or "goto" constructs of C, Fortran, and other
 languages.  For example::
 
-   class label: pass  # declare a label
+   class label(Exception): pass  # declare a label
 
    try:
         ...
