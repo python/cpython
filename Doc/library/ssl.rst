@@ -533,6 +533,19 @@ Constants
 
    .. versionadded:: 3.2
 
+.. data:: ALERT_DESCRIPTION_HANDSHAKE_FAILURE
+          ALERT_DESCRIPTION_INTERNAL_ERROR
+          ALERT_DESCRIPTION_*
+
+   Alert Descriptions from :rfc:`5246` and others. The `IANA TLS Alert Registry
+   <http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6>`_
+   contains this list and references to the RFCs where their meaning is defined.
+
+   Used as the return value of the callback function in
+   :meth:`SSLContext.set_servername_callback`.
+
+   .. versionadded:: 3.4
+
 
 SSL Sockets
 -----------
@@ -779,6 +792,55 @@ to speed up repeated connections from the same clients.
    False.
 
    .. versionadded:: 3.3
+
+.. method:: SSLContext.set_servername_callback(server_name_callback)
+
+   Register a callback function that will be called after the TLS Client Hello
+   handshake message has been received by the SSL/TLS server when the TLS client
+   specifies a server name indication. The server name indication mechanism
+   is specified in :rfc:`6066` section 3 - Server Name Indication.
+
+   Only one callback can be set per ``SSLContext``.  If *server_name_callback*
+   is ``None`` then the callback is disabled. Calling this function a
+   subsequent time will disable the previously registered callback.
+
+   The callback function, *server_name_callback*, will be called with three
+   arguments; the first being the :class:`ssl.SSLSocket`, the second is a string
+   that represents the server name that the client is intending to communicate
+   and the third argument is the original :class:`SSLContext`. The server name
+   argument is the IDNA decoded server name.
+
+   A typical use of this callback is to change the :class:`ssl.SSLSocket`'s
+   :attr:`SSLSocket.context` attribute to a new object of type
+   :class:`SSLContext` representing a certificate chain that matches the server
+   name.
+
+   Due to the early negotiation phase of the TLS connection, only limited
+   methods and attributes are usable like
+   :meth:`SSLSocket.selected_npn_protocol` and :attr:`SSLSocket.context`.
+   :meth:`SSLSocket.getpeercert`, :meth:`SSLSocket.getpeercert`,
+   :meth:`SSLSocket.cipher` and :meth:`SSLSocket.compress` methods require that
+   the TLS connection has progressed beyond the TLS Client Hello and therefore
+   will not contain return meaningful values nor can they be called safely.
+
+   The *server_name_callback* function must return ``None`` to allow the
+   the TLS negotiation to continue.  If a TLS failure is required, a constant
+   :const:`ALERT_DESCRIPTION_* <ALERT_DESCRIPTION_INTERNAL_ERROR>` can be
+   returned.  Other return values will result in a TLS fatal error with
+   :const:`ALERT_DESCRIPTION_INTERNAL_ERROR`.
+
+   If there is a IDNA decoding error on the server name, the TLS connection
+   will terminate with an :const:`ALERT_DESCRIPTION_INTERNAL_ERROR` fatal TLS
+   alert message to the client.
+
+   If an exception is raised from the *server_name_callback* function the TLS
+   connection will terminate with a fatal TLS alert message
+   :const:`ALERT_DESCRIPTION_HANDSHAKE_FAILURE`.
+
+   This method will raise :exc:`NotImplementedError` if the OpenSSL library
+   had OPENSSL_NO_TLSEXT defined when it was built.
+
+   .. versionadded:: 3.4
 
 .. method:: SSLContext.load_dh_params(dhfile)
 
@@ -1313,3 +1375,12 @@ use the ``openssl ciphers`` command on your system.
 
    `RFC 4366: Transport Layer Security (TLS) Extensions <http://www.ietf.org/rfc/rfc4366>`_
        Blake-Wilson et. al.
+
+   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <http://www.ietf.org/rfc/rfc5246>`_
+       T. Dierks et. al.
+
+   `RFC 6066: Transport Layer Security (TLS) Extensions <http://www.ietf.org/rfc/rfc6066>`_
+       D. Eastlake
+
+   `IANA TLS: Transport Layer Security (TLS) Parameters <http://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
+       IANA
