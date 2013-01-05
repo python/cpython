@@ -1769,6 +1769,11 @@ class BasicElementTest(unittest.TestCase):
         self.assertEqual(flag, True)
         self.assertEqual(wref(), None)
 
+    def test_get_keyword_args(self):
+        e1 = ET.Element('foo' , x=1, y=2, z=3)
+        self.assertEqual(e1.get('x', default=7), 1)
+        self.assertEqual(e1.get('w', default=7), 7)
+
     def test_pickle(self):
         # For now this test only works for the Python version of ET,
         # so set sys.modules accordingly because pickle uses __import__
@@ -1896,6 +1901,11 @@ class ElementIterTest(unittest.TestCase):
 
         self.assertEqual(self._ilist(doc, 'room'), ['room'] * 3)
         self.assertEqual(self._ilist(doc, 'house'), ['house'] * 2)
+
+        # test that iter also accepts 'tag' as a keyword arg
+        self.assertEqual(
+            summarize_list(doc.iter(tag='room')),
+            ['room'] * 3)
 
         # make sure both tag=None and tag='*' return all tags
         all_tags = ['document', 'house', 'room', 'room',
