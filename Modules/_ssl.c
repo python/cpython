@@ -2400,7 +2400,7 @@ _servername_callback(SSL *s, int *al, void *args)
         /* remove race condition in this the call back while if removing the
          * callback is in progress */
         PyGILState_Release(gstate);
-        return ret;
+        return SSL_TLSEXT_ERR_OK;
     }
 
     ssl = SSL_get_app_data(s);
