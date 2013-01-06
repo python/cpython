@@ -633,6 +633,8 @@ Tests
 Build
 -----
 
+- Issue #16320: Remove redundant Makefile dependencies for strings and bytes.
+
 - Cross compiling needs host and build settings. configure no longer
   creates a broken PYTHON_FOR_BUILD variable when --build is missing.
 
