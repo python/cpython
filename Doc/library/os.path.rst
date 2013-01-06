@@ -17,6 +17,11 @@ path names. Vice versa, using bytes objects cannot represent all file
 names on Windows (in the standard ``mbcs`` encoding), hence Windows
 applications should use string objects to access all files.
 
+Unlike a unix shell, Python does not do any *automatic* path expansions.
+Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
+explicitly when an application desires shell-like path expansion.  (See also
+the :mod:`glob` module.)
+
 .. note::
 
    All of these functions accept either only bytes or only string objects as
