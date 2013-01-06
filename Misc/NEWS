@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16881: Fix Py_ARRAY_LENGTH macro for GCC < 3.1.
+
 - Issue #16856: Fix a segmentation fault from calling repr() on a dict with
   a key whose repr raise an exception.
 
