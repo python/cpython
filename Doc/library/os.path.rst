@@ -16,6 +16,11 @@ write files see :func:`open`, and for accessing the filesystem see the
    :func:`splitunc` and :func:`ismount` do handle them correctly.
 
 
+Unlike a unix shell, Python does not do any *automatic* path expansions.
+Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
+explicitly when an application desires shell-like path expansion.  (See also
+the :mod:`glob` module.)
+
 .. note::
 
    Since different operating systems have different path name conventions, there
