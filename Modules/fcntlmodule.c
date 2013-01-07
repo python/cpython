@@ -461,6 +461,9 @@ all_ins(PyObject* d)
 #ifdef F_DUPFD
     if (ins(d, "F_DUPFD", (long)F_DUPFD)) return -1;
 #endif
+#ifdef F_DUPFD_CLOEXEC
+    if (ins(d, "F_DUPFD_CLOEXEC", (long)F_DUPFD_CLOEXEC)) return -1;
+#endif
 #ifdef F_GETFD
     if (ins(d, "F_GETFD", (long)F_GETFD)) return -1;
 #endif
