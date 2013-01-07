@@ -206,6 +206,8 @@ Core and Builtins
 Library
 -------
 
+- fcntl: add F_DUPFD_CLOEXEC constant, available on Linux 2.6.24+.
+
 - Issue #15972: Fix error messages when os functions expecting a file name or
   file descriptor receive the incorrect type.
 
