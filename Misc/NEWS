@@ -206,6 +206,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15972: Fix error messages when os functions expecting a file name or
+  file descriptor receive the incorrect type.
+
 - Issue #8109: The ssl module now has support for server-side SNI, thanks
   to a :meth:`SSLContext.set_servername_callback` method.  Patch by Daniel
   Black.
