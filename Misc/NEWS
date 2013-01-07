@@ -136,6 +136,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15972: Fix error messages when os functions expecting a file name or
+  file descriptor receive the incorrect type.
+
 - Issue #16828: Fix error incorrectly raised by bz2.compress(b'') and
   bz2.BZ2Compressor.compress(b''). Initial patch by Martin Packman.
 

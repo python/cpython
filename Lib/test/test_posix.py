@@ -358,12 +358,28 @@ class PosixTester(unittest.TestCase):
             try:
                 self.assertTrue(posix.fstat(fp.fileno()))
                 self.assertTrue(posix.stat(fp.fileno()))
+
+                self.assertRaisesRegex(TypeError,
+                        'should be string, bytes or integer, not',
+                        posix.stat, float(fp.fileno()))
             finally:
                 fp.close()
 
     def test_stat(self):
         if hasattr(posix, 'stat'):
             self.assertTrue(posix.stat(support.TESTFN))
+            self.assertTrue(posix.stat(os.fsencode(support.TESTFN)))
+            self.assertTrue(posix.stat(bytearray(os.fsencode(support.TESTFN))))
+
+            self.assertRaisesRegex(TypeError,
+                    'can\'t specify None for path argument',
+                    posix.stat, None)
+            self.assertRaisesRegex(TypeError,
+                    'should be string, bytes or integer, not',
+                    posix.stat, list(support.TESTFN))
+            self.assertRaisesRegex(TypeError,
+                    'should be string, bytes or integer, not',
+                    posix.stat, list(os.fsencode(support.TESTFN)))
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
     def test_mkfifo(self):
@@ -714,6 +730,14 @@ class PosixTester(unittest.TestCase):
             s1 = posix.stat(support.TESTFN)
             s2 = posix.stat(support.TESTFN, dir_fd=f)
             self.assertEqual(s1, s2)
+            s2 = posix.stat(support.TESTFN, dir_fd=None)
+            self.assertEqual(s1, s2)
+            self.assertRaisesRegex(TypeError, 'should be integer, not',
+                    posix.stat, support.TESTFN, dir_fd=posix.getcwd())
+            self.assertRaisesRegex(TypeError, 'should be integer, not',
+                    posix.stat, support.TESTFN, dir_fd=float(f))
+            self.assertRaises(OverflowError,
+                    posix.stat, support.TESTFN, dir_fd=10**20)
         finally:
             posix.close(f)
 
