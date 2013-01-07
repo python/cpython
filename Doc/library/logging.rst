@@ -948,14 +948,14 @@ functions.
    Logs a message with level *level* on the root logger. The other arguments are
    interpreted as for :func:`debug`.
 
-   PLEASE NOTE: The above module-level functions which delegate to the root
-   logger should *not* be used in threads, in versions of Python earlier than
-   2.7.1 and 3.2, unless at least one handler has been added to the root
-   logger *before* the threads are started. These convenience functions call
-   :func:`basicConfig` to ensure that at least one handler is available; in
-   earlier versions of Python, this can (under rare circumstances) lead to
-   handlers being added multiple times to the root logger, which can in turn
-   lead to multiple messages for the same event.
+   .. note:: The above module-level functions which delegate to the root
+      logger should *not* be used in threads, in versions of Python earlier
+      than 2.7.1 and 3.2, unless at least one handler has been added to the
+      root logger *before* the threads are started. These convenience functions
+      call :func:`basicConfig` to ensure that at least one handler is
+      available; in earlier versions of Python, this can (under rare
+      circumstances) lead to handlers being added multiple times to the root
+      logger, which can in turn lead to multiple messages for the same event.
 
 .. function:: disable(lvl)
 
@@ -1011,12 +1011,12 @@ functions.
    This function does nothing if the root logger already has handlers
    configured for it.
 
-   PLEASE NOTE: This function should be called from the main thread
-   before other threads are started. In versions of Python prior to
-   2.7.1 and 3.2, if this function is called from multiple threads,
-   it is possible (in rare circumstances) that a handler will be added
-   to the root logger more than once, leading to unexpected results
-   such as messages being duplicated in the log.
+   .. note:: This function should be called from the main thread
+      before other threads are started. In versions of Python prior to
+      2.7.1 and 3.2, if this function is called from multiple threads,
+      it is possible (in rare circumstances) that a handler will be added
+      to the root logger more than once, leading to unexpected results
+      such as messages being duplicated in the log.
 
    The following keyword arguments are supported.
 
@@ -1114,6 +1114,21 @@ functions.
               :func:`traceback.print_stack`, showing the call hierarchy.
       :kwargs: Additional keyword arguments.
 
+
+Module-Level Attributes
+-----------------------
+
+.. attribute:: lastResort
+
+   A "handler of last resort" is available through this attribute. This
+   is a :class:`StreamHandler` writing to ``sys.stderr`` with a level of
+   ``WARNING``, and is used to handle logging events in the absence of any
+   logging configuration. The end result is to just print the message to
+   ``sys.stderr``. This replaces the earlier error message saying that
+   "no handlers could be found for logger XYZ". If you need the earlier
+   behaviour for some reason, ``lastResort`` can be set to ``None``.
+
+   .. versionadded:: 3.2
 
 Integration with the warnings module
 ------------------------------------
