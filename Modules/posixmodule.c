@@ -427,26 +427,24 @@ win32_warn_bytes_api()
 #endif
 
 static int
-_fd_converter(PyObject *o, int *p, int default_value) {
-    long long_value;
-    if (o == Py_None) {
-        *p = default_value;
-        return 1;
-    }
-    if (PyFloat_Check(o)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "integer argument expected, got float" );
+_fd_converter(PyObject *o, int *p, const char *allowed)
+{
+    int overflow;
+    long long_value = PyLong_AsLongAndOverflow(o, &overflow);
+    if (PyFloat_Check(o) ||
+        (long_value == -1 && !overflow && PyErr_Occurred())) {
+        PyErr_Clear();
+        PyErr_Format(PyExc_TypeError,
+                        "argument should be %s, not %.200s",
+                        allowed, Py_TYPE(o)->tp_name);
         return 0;
     }
-    long_value = PyLong_AsLong(o);
-    if (long_value == -1 && PyErr_Occurred())
-        return 0;
-    if (long_value > INT_MAX) {
+    if (overflow > 0 || long_value > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "signed integer is greater than maximum");
         return 0;
     }
-    if (long_value < INT_MIN) {
+    if (overflow < 0 || long_value < INT_MIN) {
         PyErr_SetString(PyExc_OverflowError,
                         "signed integer is less than minimum");
         return 0;
@@ -456,8 +454,13 @@ _fd_converter(PyObject *o, int *p, int default_value) {
 }
 
 static int
-dir_fd_converter(PyObject *o, void *p) {
-    return _fd_converter(o, (int *)p, DEFAULT_DIR_FD);
+dir_fd_converter(PyObject *o, void *p)
+{
+    if (o == Py_None) {
+        *(int *)p = DEFAULT_DIR_FD;
+        return 1;
+    }
+    return _fd_converter(o, (int *)p, "integer");
 }
 
 
@@ -634,17 +637,16 @@ path_converter(PyObject *o, void *p) {
     }
     else {
         PyErr_Clear();
-        bytes = PyBytes_FromObject(o);
+        if (PyObject_CheckBuffer(o))
+            bytes = PyBytes_FromObject(o);
+        else
+            bytes = NULL;
         if (!bytes) {
             PyErr_Clear();
             if (path->allow_fd) {
                 int fd;
-                /*
-                 * note: _fd_converter always permits None.
-                 * but we've already done our None check.
-                 * so o cannot be None at this point.
-                 */
-                int result = _fd_converter(o, &fd, -1);
+                int result = _fd_converter(o, &fd,
+                        "string, bytes or integer");
                 if (result) {
                     path->wide = NULL;
                     path->narrow = NULL;
@@ -705,15 +707,17 @@ argument_unavailable_error(char *function_name, char *argument_name) {
 }
 
 static int
-dir_fd_unavailable(PyObject *o, void *p) {
-    int *dir_fd = (int *)p;
-    int return_value = _fd_converter(o, dir_fd, DEFAULT_DIR_FD);
-    if (!return_value)
+dir_fd_unavailable(PyObject *o, void *p)
+{
+    int dir_fd;
+    if (!dir_fd_converter(o, &dir_fd))
         return 0;
-    if (*dir_fd == DEFAULT_DIR_FD)
-        return 1;
-    argument_unavailable_error(NULL, "dir_fd");
-    return 0;
+    if (dir_fd != DEFAULT_DIR_FD) {
+        argument_unavailable_error(NULL, "dir_fd");
+        return 0;
+    }
+    *(int *)p = dir_fd;
+    return 1;
 }
 
 static int
