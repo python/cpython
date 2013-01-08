@@ -2565,8 +2565,11 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
 
         /* UTF-16 code pair: */
         if (e - q < 2) {
+            q -= 2;
+            if (consumed)
+                break;
             errmsg = "unexpected end of data";
-            startinpos = (((const char *)q)-2)-starts;
+            startinpos = ((const char *)q)-starts;
             endinpos = ((const char *)e)-starts;
             goto utf16Error;
         }
