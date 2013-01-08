@@ -601,6 +601,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
+
 - Issue #16748: test_heapq now works with unittest test discovery.
 
 - Issue #10646: Tests rearranged for os.samefile/samestat to check for not
