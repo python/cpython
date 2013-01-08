@@ -757,13 +757,14 @@ should have the desired effect. If an organisation produces a number of
 libraries, then the logger name specified can be 'orgname.foo' rather than
 just 'foo'.
 
-**PLEASE NOTE:** It is strongly advised that you *do not add any handlers other
-than* :class:`~logging.NullHandler` *to your library's loggers*. This is
-because the configuration of handlers is the prerogative of the application
-developer who uses your library. The application developer knows their target
-audience and what handlers are most appropriate for their application: if you
-add handlers 'under the hood', you might well interfere with their ability to
-carry out unit tests and deliver logs which suit their requirements.
+.. note:: It is strongly advised that you *do not add any handlers other
+   than* :class:`~logging.NullHandler` *to your library's loggers*. This is
+   because the configuration of handlers is the prerogative of the application
+   developer who uses your library. The application developer knows their
+   target audience and what handlers are most appropriate for their
+   application: if you add handlers 'under the hood', you might well interfere
+   with their ability to carry out unit tests and deliver logs which suit their
+   requirements.
 
 
 Logging Levels
@@ -940,10 +941,10 @@ The default implementation of :meth:`handleError` in :class:`Handler` checks
 to see if a module-level variable, :data:`raiseExceptions`, is set. If set, a
 traceback is printed to :data:`sys.stderr`. If not set, the exception is swallowed.
 
-**Note:** The default value of :data:`raiseExceptions` is ``True``. This is because
-during development, you typically want to be notified of any exceptions that
-occur. It's advised that you set :data:`raiseExceptions` to ``False`` for production
-usage.
+.. note:: The default value of :data:`raiseExceptions` is ``True``. This is
+   because during development, you typically want to be notified of any
+   exceptions that occur. It's advised that you set :data:`raiseExceptions` to
+   ``False`` for production usage.
 
 .. currentmodule:: logging
 
