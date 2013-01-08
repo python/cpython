@@ -202,16 +202,20 @@ RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
 
 TEMPDIR = os.path.abspath(tempfile.gettempdir())
 
+class _ArgParser(argparse.ArgumentParser):
+
+    def error(self, message):
+        super().error(message + "\nPass -h or --help for complete help.")
+
 def _create_parser():
     # Set prog to prevent the uninformative "__main__.py" from displaying in
     # error messages when using "python -m test ...".
-    parser = argparse.ArgumentParser(prog='regrtest.py',
-                                     usage=USAGE,
-                                     description=DESCRIPTION,
-                                     epilog=EPILOG,
-                                     add_help=False,
-                                     formatter_class=
-                                       argparse.RawDescriptionHelpFormatter)
+    parser = _ArgParser(prog='regrtest.py',
+                        usage=USAGE,
+                        description=DESCRIPTION,
+                        epilog=EPILOG,
+                        add_help=False,
+                        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # Arguments with this clause added to its help are described further in
     # the epilog's "Additional option details" section.
@@ -301,8 +305,18 @@ def _create_parser():
 
     return parser
 
+# TODO: remove this function as described in issue #16799, for example.
+# We use this function since regrtest.main() was originally written to use
+# getopt for parsing.
 def _convert_namespace_to_getopt(ns):
-    """Convert an argparse.Namespace object to a getopt-style (opts, args)."""
+    """Convert an argparse.Namespace object to a getopt-style opts list.
+
+    The return value of this function mimics the first element of
+    getopt.getopt()'s (opts, args) return value.  In addition, the (option,
+    value) pairs in the opts list are sorted by option and use the long
+    option string.  The args part of (opts, args) can be mimicked by the
+    args attribute of the Namespace object we are using in regrtest.
+    """
     opts = []
     args_dict = vars(ns)
     for key in sorted(args_dict.keys()):
@@ -319,21 +333,7 @@ def _convert_namespace_to_getopt(ns):
             # includes these with value '' in the opts list.
             val = ''
         opts.append(('--' + key, val))
-    return opts, ns.args
-
-# This function has a getopt-style return value because regrtest.main()
-# was originally written using getopt.
-# TODO: switch this to return an argparse.Namespace instance.
-def _parse_args(args=None):
-    """Parse arguments, and return a getopt-style (opts, args).
-
-    This method mimics the return value of getopt.getopt().  In addition,
-    the (option, value) pairs in opts are sorted by option and use the long
-    option string.
-    """
-    parser = _create_parser()
-    ns = parser.parse_args(args=args)
-    return _convert_namespace_to_getopt(ns)
+    return opts
 
 
 def main(tests=None, testdir=None, verbose=0, quiet=False,
@@ -381,7 +381,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
 
-    opts, args = _parse_args()
+    parser = _create_parser()
+    ns = parser.parse_args()
+    opts = _convert_namespace_to_getopt(ns)
+    args = ns.args
+    usage = parser.error
 
     # Defaults
     if random_seed is None:
