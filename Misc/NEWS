@@ -658,6 +658,8 @@ Tests
 Build
 -----
 
+- Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
+
 - Issue #15923: fix a mistake in asdl_c.py that resulted in a TypeError after
   2801bf875a24 (see #15801).
 
