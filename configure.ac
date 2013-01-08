@@ -2346,22 +2346,12 @@ AC_ARG_ENABLE(ipv6,
 
 [
 dnl the check does not work on cross compilation case...
-  AC_RUN_IFELSE([AC_LANG_SOURCE([[ /* AF_INET6 available check */
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* AF_INET6 available check */
 #include <sys/types.h>
-#include <sys/socket.h>
-main()
-{
- if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
-   exit(1);
- else
-   exit(0);
-}
-]])],[
+#include <sys/socket.h>]],
+[[int domain = AF_INET6;]])],[
   AC_MSG_RESULT(yes)
   ipv6=yes
-],[
-  AC_MSG_RESULT(no)
-  ipv6=no
 ],[
   AC_MSG_RESULT(no)
   ipv6=no

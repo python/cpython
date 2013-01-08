@@ -9103,28 +9103,20 @@ $as_echo "yes" >&6; }
   esac
 else
 
-  if test "$cross_compiling" = yes; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  ipv6=no
-
-else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
  /* AF_INET6 available check */
 #include <sys/types.h>
 #include <sys/socket.h>
-main()
+int
+main ()
 {
- if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
-   exit(1);
- else
-   exit(0);
+int domain = AF_INET6;
+  ;
+  return 0;
 }
-
 _ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
+if ac_fn_c_try_compile "$LINENO"; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
@@ -9137,10 +9129,7 @@ $as_echo "no" >&6; }
   ipv6=no
 
 fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 if test "$ipv6" = "yes"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if RFC2553 API is available" >&5
