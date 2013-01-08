@@ -958,8 +958,8 @@ functions.
    registered using this function, levels should be positive integers and they
    should increase in increasing order of severity.
 
-   NOTE: If you are thinking of defining your own levels, please see the section
-   on :ref:`custom-levels`.
+   .. note:: If you are thinking of defining your own levels, please see the
+      section on :ref:`custom-levels`.
 
 .. function:: getLevelName(lvl)
 
