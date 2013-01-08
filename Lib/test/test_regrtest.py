@@ -23,10 +23,14 @@ def old_parse_args(args):
 
 class ParseArgsTestCase(unittest.TestCase):
 
-    """Test that regrtest._parse_args() matches the prior getopt behavior."""
+    """Test that regrtest's parsing code matches the prior getopt behavior."""
 
     def _parse_args(self, args):
-        return regrtest._parse_args(args=args)
+        # This is the same logic as that used in regrtest.main()
+        parser = regrtest._create_parser()
+        ns = parser.parse_args(args=args)
+        opts = regrtest._convert_namespace_to_getopt(ns)
+        return opts, ns.args
 
     def _check_args(self, args, expected=None):
         """
