@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #11461: Fix the incremental UTF-16 decoder. Original patch by
+  Amaury Forgeot d'Arc.
+
 - Issue #16881: Fix Py_ARRAY_LENGTH macro for GCC < 3.1.
 
 - Issue #16856: Fix a segmentation fault from calling repr() on a dict with
