@@ -3182,7 +3182,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     /* On narrow builds we split characters outside the BMP into two
        codepoints => count how much extra space we need. */
 #ifndef Py_UNICODE_WIDE
-    for (qq = q; qq < e; qq += 4)
+    for (qq = q; e - qq >= 4; qq += 4)
         if (qq[iorder[2]] != 0 || qq[iorder[3]] != 0)
             pairs++;
 #endif
