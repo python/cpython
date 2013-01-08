@@ -800,14 +800,14 @@ functions.
    Logs a message with level *level* on the root logger. The other arguments are
    interpreted as for :func:`debug`.
 
-   PLEASE NOTE: The above module-level functions which delegate to the root
-   logger should *not* be used in threads, in versions of Python earlier than
-   2.7.1 and 3.2, unless at least one handler has been added to the root
-   logger *before* the threads are started. These convenience functions call
-   :func:`basicConfig` to ensure that at least one handler is available; in
-   earlier versions of Python, this can (under rare circumstances) lead to
-   handlers being added multiple times to the root logger, which can in turn
-   lead to multiple messages for the same event.
+   .. note:: The above module-level functions which delegate to the root
+      logger should *not* be used in threads, in versions of Python earlier
+      than 2.7.1 and 3.2, unless at least one handler has been added to the
+      root logger *before* the threads are started. These convenience functions
+      call :func:`basicConfig` to ensure that at least one handler is
+      available; in earlier versions of Python, this can (under rare
+      circumstances) lead to handlers being added multiple times to the root
+      logger, which can in turn lead to multiple messages for the same event.
 
 .. function:: disable(lvl)
 
@@ -830,8 +830,8 @@ functions.
    registered using this function, levels should be positive integers and they
    should increase in increasing order of severity.
 
-   NOTE: If you are thinking of defining your own levels, please see the section
-   on :ref:`custom-levels`.
+   .. note:: If you are thinking of defining your own levels, please see the
+      section on :ref:`custom-levels`.
 
 .. function:: getLevelName(lvl)
 
@@ -866,12 +866,12 @@ functions.
    .. versionchanged:: 2.4
       Formerly, :func:`basicConfig` did not take any keyword arguments.
 
-   PLEASE NOTE: This function should be called from the main thread
-   before other threads are started. In versions of Python prior to
-   2.7.1 and 3.2, if this function is called from multiple threads,
-   it is possible (in rare circumstances) that a handler will be added
-   to the root logger more than once, leading to unexpected results
-   such as messages being duplicated in the log.
+   .. note:: This function should be called from the main thread before other
+      threads are started. In versions of Python prior to 2.7.1 and 3.2, if
+      this function is called from multiple threads, it is possible (in rare
+      circumstances) that a handler will be added to the root logger more than
+      once, leading to unexpected results such as messages being duplicated in
+      the log.
 
    The following keyword arguments are supported.
 
