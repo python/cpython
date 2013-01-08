@@ -281,7 +281,7 @@ class UTF32Test(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u0100\uffff",
+            u"\x00\xff\u0100\uffff\U00010000",
             [
                 u"", # first byte of BOM read
                 u"", # second byte of BOM read
@@ -303,6 +303,10 @@ class UTF32Test(ReadTest):
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff\U00010000",
             ]
         )
 
@@ -331,7 +335,7 @@ class UTF32LETest(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u0100\uffff",
+            u"\x00\xff\u0100\uffff\U00010000",
             [
                 u"",
                 u"",
@@ -349,6 +353,10 @@ class UTF32LETest(ReadTest):
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff\U00010000",
             ]
         )
 
@@ -371,7 +379,7 @@ class UTF32BETest(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u0100\uffff",
+            u"\x00\xff\u0100\uffff\U00010000",
             [
                 u"",
                 u"",
@@ -389,6 +397,10 @@ class UTF32BETest(ReadTest):
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff\U00010000",
             ]
         )
 
@@ -439,7 +451,7 @@ class UTF16Test(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u0100\uffff",
+            u"\x00\xff\u0100\uffff\U00010000",
             [
                 u"", # first byte of BOM read
                 u"", # second byte of BOM read => byteorder known
@@ -451,6 +463,10 @@ class UTF16Test(ReadTest):
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff\U00010000",
             ]
         )
 
@@ -481,7 +497,7 @@ class UTF16LETest(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u0100\uffff",
+            u"\x00\xff\u0100\uffff\U00010000",
             [
                 u"",
                 u"\x00",
@@ -491,6 +507,10 @@ class UTF16LETest(ReadTest):
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff\U00010000",
             ]
         )
 
@@ -514,7 +534,7 @@ class UTF16BETest(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u0100\uffff",
+            u"\x00\xff\u0100\uffff\U00010000",
             [
                 u"",
                 u"\x00",
@@ -524,6 +544,10 @@ class UTF16BETest(ReadTest):
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100",
                 u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff",
+                u"\x00\xff\u0100\uffff\U00010000",
             ]
         )
 
@@ -547,7 +571,7 @@ class UTF8Test(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\x00\xff\u07ff\u0800\uffff",
+            u"\x00\xff\u07ff\u0800\uffff\U00010000",
             [
                 u"\x00",
                 u"\x00",
@@ -560,6 +584,10 @@ class UTF8Test(ReadTest):
                 u"\x00\xff\u07ff\u0800",
                 u"\x00\xff\u07ff\u0800",
                 u"\x00\xff\u07ff\u0800\uffff",
+                u"\x00\xff\u07ff\u0800\uffff",
+                u"\x00\xff\u07ff\u0800\uffff",
+                u"\x00\xff\u07ff\u0800\uffff",
+                u"\x00\xff\u07ff\u0800\uffff\U00010000",
             ]
         )
 
@@ -619,7 +647,7 @@ class UTF8SigTest(ReadTest):
 
     def test_partial(self):
         self.check_partial(
-            u"\ufeff\x00\xff\u07ff\u0800\uffff",
+            u"\ufeff\x00\xff\u07ff\u0800\uffff\U00010000",
             [
                 u"",
                 u"",
@@ -638,6 +666,10 @@ class UTF8SigTest(ReadTest):
                 u"\ufeff\x00\xff\u07ff\u0800",
                 u"\ufeff\x00\xff\u07ff\u0800",
                 u"\ufeff\x00\xff\u07ff\u0800\uffff",
+                u"\ufeff\x00\xff\u07ff\u0800\uffff",
+                u"\ufeff\x00\xff\u07ff\u0800\uffff",
+                u"\ufeff\x00\xff\u07ff\u0800\uffff",
+                u"\ufeff\x00\xff\u07ff\u0800\uffff\U00010000",
             ]
         )
 

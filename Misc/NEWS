@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #11461: Fix the incremental UTF-16 decoder. Original patch by
+  Amaury Forgeot d'Arc.
+
 - Issue #16367: Fix FileIO.readall() on Windows for files larger than 2 GB.
 
 - Issue #15516: Fix a bug in PyString_FromFormat where it failed to properly
