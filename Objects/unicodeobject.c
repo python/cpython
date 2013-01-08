@@ -5159,8 +5159,11 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             /* The remaining input chars are ignored if the callback
                chooses to skip the input */
         case 1:
+            q -= 2;
+            if (consumed)
+                goto End;
             errmsg = "unexpected end of data";
-            startinpos = ((const char *)q) - 2 - starts;
+            startinpos = ((const char *)q) - starts;
             endinpos = ((const char *)e) - starts;
             break;
         case 2:
