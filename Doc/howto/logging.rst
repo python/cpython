@@ -970,10 +970,10 @@ The default implementation of :meth:`handleError` in :class:`Handler` checks
 to see if a module-level variable, :data:`raiseExceptions`, is set. If set, a
 traceback is printed to :data:`sys.stderr`. If not set, the exception is swallowed.
 
-**Note:** The default value of :data:`raiseExceptions` is ``True``. This is because
-during development, you typically want to be notified of any exceptions that
-occur. It's advised that you set :data:`raiseExceptions` to ``False`` for production
-usage.
+.. note:: The default value of :data:`raiseExceptions` is ``True``. This is
+   because during development, you typically want to be notified of any
+   exceptions that occur. It's advised that you set :data:`raiseExceptions` to
+   ``False`` for production usage.
 
 .. currentmodule:: logging
 
