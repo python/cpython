@@ -429,6 +429,8 @@ Tests
 Build
 -----
 
+- Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
+
 - Cross compiling needs host and build settings. configure no longer
   creates a broken PYTHON_FOR_BUILD variable when --build is missing.
 
