@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16906: Fix a logic error that prevented most static strings from being
+  cleared.
+
 - Issue #11461: Fix the incremental UTF-16 decoder. Original patch by
   Amaury Forgeot d'Arc.
 
