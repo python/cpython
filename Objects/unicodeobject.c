@@ -1822,12 +1822,15 @@ _PyUnicode_FromId(_Py_Identifier *id)
 void
 _PyUnicode_ClearStaticStrings()
 {
-    _Py_Identifier *i;
-    for (i = static_strings; i; i = i->next) {
-        Py_DECREF(i->object);
-        i->object = NULL;
-        i->next = NULL;
+    _Py_Identifier *tmp, *s = static_strings;
+    while (s) {
+        Py_DECREF(s->object);
+        s->object = NULL;
+        tmp = s->next;
+        s->next = NULL;
+        s = tmp;
     }
+    static_strings = NULL;
 }
 
 /* Internal function, doesn't check maximum character */
