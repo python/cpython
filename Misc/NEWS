@@ -139,6 +139,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16491: IDLE now prints chained exception tracebacks.
+
 - Issue #15972: Fix error messages when os functions expecting a file name or
   file descriptor receive the incorrect type.
 
