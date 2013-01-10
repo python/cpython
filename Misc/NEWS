@@ -408,6 +408,9 @@ Library
 Tests
 -----
 
+- Issue #16852: test_genericpath, test_posixpath, test_ntpath, and test_macpath
+  now work with unittest test discovery.  Patch by Zachary Ware.
+
 - Issue #16748: test_heapq now works with unittest test discovery.
 
 - Issue #15324: Fix regrtest parsing of --fromfile, --match, and --randomize
