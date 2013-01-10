@@ -2017,7 +2017,9 @@ elementiter_next(ElementIterObject *it)
                     PyObject_RichCompareBool(it->root_element->tag,
                                              it->sought_tag, Py_EQ) == 1) {
                     if (it->gettext) {
-                        PyObject *text = JOIN_OBJ(it->root_element->text);
+                        PyObject *text = element_get_text(it->root_element);
+                        if (!text)
+                            return NULL;
                         if (PyObject_IsTrue(text)) {
                             Py_INCREF(text);
                             return text;
@@ -2047,7 +2049,9 @@ elementiter_next(ElementIterObject *it)
             }
 
             if (it->gettext) {
-                PyObject *text = JOIN_OBJ(child->text);
+                PyObject *text = element_get_text(child);
+                if (!text)
+                    return NULL;
                 if (PyObject_IsTrue(text)) {
                     Py_INCREF(text);
                     return text;
@@ -2062,8 +2066,15 @@ elementiter_next(ElementIterObject *it)
                 continue;
         }
         else {
-            PyObject *tail = it->gettext ? JOIN_OBJ(cur_parent->tail) : Py_None;            
+            PyObject *tail;
             ParentLocator *next = it->parent_stack->next;
+            if (it->gettext) {
+                tail = element_get_tail(cur_parent);
+                if (!tail)
+                    return NULL;
+            }
+            else
+                tail = Py_None;
             Py_XDECREF(it->parent_stack->parent);
             PyObject_Free(it->parent_stack);
             it->parent_stack = next;
