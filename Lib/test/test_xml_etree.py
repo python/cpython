@@ -16,14 +16,20 @@
 
 import html
 import io
+import operator
 import pickle
 import sys
 import unittest
 import weakref
 
+from itertools import product
 from test import support
 from test.support import TESTFN, findfile, unlink, import_fresh_module, gc_collect
 
+# pyET is the pure-Python implementation.
+# 
+# ET is pyET in test_xml_etree and is the C accelerated version in
+# test_xml_etree_c.
 pyET = None
 ET = None
 
@@ -170,6 +176,38 @@ def check_element(element):
         check_string(element.tail)
     for elem in element:
         check_element(elem)
+
+class ElementTestCase:
+    @classmethod
+    def setUpClass(cls):
+        cls.modules = {pyET, ET}
+
+    def pickleRoundTrip(self, obj, name, dumper, loader):
+        save_m = sys.modules[name]
+        try:
+            sys.modules[name] = dumper
+            temp = pickle.dumps(obj)
+            sys.modules[name] = loader
+            result = pickle.loads(temp)
+        except pickle.PicklingError as pe:
+            # pyET must be second, because pyET may be (equal to) ET.
+            human = dict([(ET, "cET"), (pyET, "pyET")])
+            raise support.TestFailed("Failed to round-trip %r from %r to %r"
+                                     % (obj,
+                                        human.get(dumper, dumper),
+                                        human.get(loader, loader))) from pe
+        finally:
+            sys.modules[name] = save_m
+        return result
+
+    def assertEqualElements(self, alice, bob):
+        self.assertIsInstance(alice, (ET.Element, pyET.Element))
+        self.assertIsInstance(bob, (ET.Element, pyET.Element))
+        self.assertEqual(len(list(alice)), len(list(bob)))
+        for x, y in zip(alice, bob):
+            self.assertEqualElements(x, y)
+        properties = operator.attrgetter('tag', 'tail', 'text', 'attrib')
+        self.assertEqual(properties(alice), properties(bob))
 
 # --------------------------------------------------------------------
 # element tree tests
@@ -1715,7 +1753,7 @@ def check_issue10777():
 # --------------------------------------------------------------------
 
 
-class BasicElementTest(unittest.TestCase):
+class BasicElementTest(ElementTestCase, unittest.TestCase):
     def test_augmentation_type_errors(self):
         e = ET.Element('joe')
         self.assertRaises(TypeError, e.append, 'b')
@@ -1775,19 +1813,22 @@ class BasicElementTest(unittest.TestCase):
         self.assertEqual(e1.get('w', default=7), 7)
 
     def test_pickle(self):
-        # For now this test only works for the Python version of ET,
-        # so set sys.modules accordingly because pickle uses __import__
-        # to load the __module__ of the class.
-        if pyET:
-            sys.modules['xml.etree.ElementTree'] = pyET
-        else:
-            raise unittest.SkipTest('only for the Python version')
-        e1 = ET.Element('foo', bar=42)
-        s = pickle.dumps(e1)
-        e2 = pickle.loads(s)
-        self.assertEqual(e2.tag, 'foo')
-        self.assertEqual(e2.attrib['bar'], 42)
+        # issue #16076: the C implementation wasn't pickleable.
+        for dumper, loader in product(self.modules, repeat=2):
+            e = dumper.Element('foo', bar=42)
+            e.text = "text goes here"
+            e.tail = "opposite of head"
+            dumper.SubElement(e, 'child').append(dumper.Element('grandchild'))
+            e.append(dumper.Element('child'))
+            e.findall('.//grandchild')[0].set('attr', 'other value')
 
+            e2 = self.pickleRoundTrip(e, 'xml.etree.ElementTree',
+                                      dumper, loader)
+
+            self.assertEqual(e2.tag, 'foo')
+            self.assertEqual(e2.attrib['bar'], 42)
+            self.assertEqual(len(e2), 2)
+            self.assertEqualElements(e, e2)
 
 class ElementTreeTest(unittest.TestCase):
     def test_istype(self):
@@ -2433,7 +2474,7 @@ class KeywordArgsTest(unittest.TestCase):
 class NoAcceleratorTest(unittest.TestCase):
     def setUp(self):
         if not pyET:
-            raise SkipTest('only for the Python version')
+            raise unittest.SkipTest('only for the Python version')
 
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
@@ -2486,10 +2527,10 @@ class CleanContext(object):
 def test_main(module=None):
     # When invoked without a module, runs the Python ET tests by loading pyET.
     # Otherwise, uses the given module as the ET.
+    global pyET
+    pyET = import_fresh_module('xml.etree.ElementTree',
+                               blocked=['_elementtree'])
     if module is None:
-        global pyET
-        pyET = import_fresh_module('xml.etree.ElementTree',
-                                   blocked=['_elementtree'])
         module = pyET
 
     global ET
@@ -2509,7 +2550,7 @@ def test_main(module=None):
     # These tests will only run for the pure-Python version that doesn't import
     # _elementtree. We can't use skipUnless here, because pyET is filled in only
     # after the module is loaded.
-    if pyET:
+    if pyET is not ET:
         test_classes.extend([
             NoAcceleratorTest,
             ])
@@ -2518,7 +2559,7 @@ def test_main(module=None):
         support.run_unittest(*test_classes)
 
         # XXX the C module should give the same warnings as the Python module
-        with CleanContext(quiet=(module is not pyET)):
+        with CleanContext(quiet=(pyET is not ET)):
             support.run_doctest(sys.modules[__name__], verbosity=True)
     finally:
         # don't interfere with subsequent tests
