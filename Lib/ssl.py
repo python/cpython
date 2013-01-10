@@ -574,10 +574,6 @@ class SSLSocket(socket):
             return None
         return self._sslobj.tls_unique_cb()
 
-    def __del__(self):
-        # sys.stderr.write("__del__ on %s\n" % repr(self))
-        self._real_close()
-
 
 def wrap_socket(sock, keyfile=None, certfile=None,
                 server_side=False, cert_reqs=CERT_NONE,
