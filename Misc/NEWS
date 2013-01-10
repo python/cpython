@@ -142,6 +142,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15545: Fix regression in sqlite3's iterdump method where it was
+  failing if the connection used a row factory (such as sqlite3.Row) that
+  produced unsortable objects. (Regression was introduced by fix for 9750).
+
 - Issue #16491: IDLE now prints chained exception tracebacks.
 
 - Issue #15972: Fix error messages when os functions expecting a file name or
