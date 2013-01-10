@@ -408,6 +408,9 @@ Library
 Tests
 -----
 
+- Issue #16905: test_warnings now works with unittest test discovery.
+  Initial patch by Berker Peksag.
+
 - Issue #16898: test_bufio now works with unittest test discovery.
   Patch by Zachary Ware.
 
