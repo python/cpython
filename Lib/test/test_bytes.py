@@ -38,7 +38,7 @@ class Indexable:
         return self.value
 
 
-class BaseBytesTest(unittest.TestCase):
+class BaseBytesTest:
 
     def test_basics(self):
         b = self.type2test()
@@ -682,7 +682,7 @@ class BaseBytesTest(unittest.TestCase):
                                 x, None, None, None)
 
 
-class BytesTest(BaseBytesTest):
+class BytesTest(BaseBytesTest, unittest.TestCase):
     type2test = bytes
 
     def test_buffer_is_readonly(self):
@@ -730,7 +730,7 @@ class BytesTest(BaseBytesTest):
                          b's:cstr')
 
 
-class ByteArrayTest(BaseBytesTest):
+class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
 
     def test_nohash(self):
@@ -1293,16 +1293,16 @@ class FixedStringTest(test.string_tests.BaseTest):
     def test_lower(self):
         pass
 
-class ByteArrayAsStringTest(FixedStringTest):
+class ByteArrayAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytearray
     contains_bytes = True
 
-class BytesAsStringTest(FixedStringTest):
+class BytesAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytes
     contains_bytes = True
 
 
-class SubclassTest(unittest.TestCase):
+class SubclassTest:
 
     def test_basic(self):
         self.assertTrue(issubclass(self.subclass2test, self.type2test))
@@ -1374,7 +1374,7 @@ class ByteArraySubclass(bytearray):
 class BytesSubclass(bytes):
     pass
 
-class ByteArraySubclassTest(SubclassTest):
+class ByteArraySubclassTest(SubclassTest, unittest.TestCase):
     type2test = bytearray
     subclass2test = ByteArraySubclass
 
@@ -1389,16 +1389,10 @@ class ByteArraySubclassTest(SubclassTest):
         self.assertEqual(x, b"abcd")
 
 
-class BytesSubclassTest(SubclassTest):
+class BytesSubclassTest(SubclassTest, unittest.TestCase):
     type2test = bytes
     subclass2test = BytesSubclass
 
 
-def test_main():
-    test.support.run_unittest(
-        BytesTest, AssortedBytesTest, BytesAsStringTest,
-        ByteArrayTest, ByteArrayAsStringTest, BytesSubclassTest,
-        ByteArraySubclassTest, BytearrayPEP3137Test)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -33,7 +33,8 @@ codecs.register(search_function)
 
 class UnicodeTest(string_tests.CommonTest,
         string_tests.MixinStrUnicodeUserStringTest,
-        string_tests.MixinStrUnicodeTest):
+        string_tests.MixinStrUnicodeTest,
+        unittest.TestCase):
 
     type2test = str
 
@@ -2218,8 +2219,5 @@ class StringModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, _string.formatter_field_name_split, 1)
 
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
