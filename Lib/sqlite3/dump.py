@@ -25,9 +25,10 @@ def _iterdump(connection):
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" == 'table'
+            ORDER BY "name"
         """
     schema_res = cu.execute(q)
-    for table_name, type, sql in sorted(schema_res.fetchall()):
+    for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
             yield('DELETE FROM "sqlite_sequence";')
         elif table_name == 'sqlite_stat1':
