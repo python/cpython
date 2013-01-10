@@ -614,6 +614,9 @@ Tests
 
 - Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
 
+- Issue #16852: test_genericpath, test_posixpath, test_ntpath, and test_macpath
+  now work with unittest test discovery.  Patch by Zachary Ware.
+
 - Issue #16748: test_heapq now works with unittest test discovery.
 
 - Issue #10646: Tests rearranged for os.samefile/samestat to check for not
