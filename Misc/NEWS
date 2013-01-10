@@ -348,6 +348,8 @@ Library
 - Issue #16089: Allow ElementTree.TreeBuilder to work again with a non-Element
   element_factory (fixes a regression in SimpleTAL).
 
+- Issue #16913: Fix Element.itertext()'s handling of text with XML entities.
+
 - Issue #16034: Fix performance regressions in the new `bz2.BZ2File`
   implementation.  Initial patch by Serhiy Storchaka.
 
