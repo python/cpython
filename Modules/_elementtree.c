@@ -814,6 +814,176 @@ element_sizeof(PyObject* _self, PyObject* args)
     return PyLong_FromSsize_t(result);
 }
 
+/* dict keys for getstate/setstate. */
+#define PICKLED_TAG "tag"
+#define PICKLED_CHILDREN "_children"
+#define PICKLED_ATTRIB "attrib"
+#define PICKLED_TAIL "tail"
+#define PICKLED_TEXT "text"
+
+/* __getstate__ returns a fabricated instance dict as in the pure-Python
+ * Element implementation, for interoperability/interchangeability.  This
+ * makes the pure-Python implementation details an API, but (a) there aren't
+ * any unnecessary structures there; and (b) it buys compatibility with 3.2
+ * pickles.  See issue #16076.
+ */
+static PyObject *
+element_getstate(ElementObject *self)
+{
+    int i, noattrib;
+    PyObject *instancedict = NULL, *children;
+
+    /* Build a list of children. */
+    children = PyList_New(self->extra ? self->extra->length : 0);
+    if (!children)
+        return NULL;
+    for (i = 0; i < PyList_GET_SIZE(children); i++) {
+        PyObject *child = self->extra->children[i];
+        Py_INCREF(child);
+        PyList_SET_ITEM(children, i, child);
+    }
+
+    /* Construct the state object. */
+    noattrib = (self->extra == NULL || self->extra->attrib == Py_None);
+    if (noattrib)
+        instancedict = Py_BuildValue("{sOsOs{}sOsO}",
+                                     PICKLED_TAG, self->tag,
+                                     PICKLED_CHILDREN, children,
+                                     PICKLED_ATTRIB,
+                                     PICKLED_TEXT, self->text,
+                                     PICKLED_TAIL, self->tail);
+    else
+        instancedict = Py_BuildValue("{sOsOsOsOsO}",
+                                     PICKLED_TAG, self->tag,
+                                     PICKLED_CHILDREN, children,
+                                     PICKLED_ATTRIB, self->extra->attrib,
+                                     PICKLED_TEXT, self->text,
+                                     PICKLED_TAIL, self->tail);
+    if (instancedict)
+        return instancedict;
+    else {
+        for (i = 0; i < PyList_GET_SIZE(children); i++)
+            Py_DECREF(PyList_GET_ITEM(children, i));
+        Py_DECREF(children);
+
+        return NULL;
+    }
+}
+
+static PyObject *
+element_setstate_from_attributes(ElementObject *self,
+                                 PyObject *tag,
+                                 PyObject *attrib,
+                                 PyObject *text,
+                                 PyObject *tail,
+                                 PyObject *children)
+{
+    Py_ssize_t i, nchildren;
+
+    if (!tag) {
+        PyErr_SetString(PyExc_TypeError, "tag may not be NULL");
+        return NULL;
+    }
+    if (!text) {
+        Py_INCREF(Py_None);
+        text = Py_None;
+    }
+    if (!tail) {
+        Py_INCREF(Py_None);
+        tail = Py_None;
+    }
+
+    Py_CLEAR(self->tag);
+    self->tag = tag;
+    Py_INCREF(self->tag);
+
+    Py_CLEAR(self->text);
+    self->text = text;
+    Py_INCREF(self->text);
+
+    Py_CLEAR(self->tail);
+    self->tail = tail;
+    Py_INCREF(self->tail);
+
+    /* Handle ATTRIB and CHILDREN. */
+    if (!children && !attrib)
+        Py_RETURN_NONE;
+
+    /* Compute 'nchildren'. */
+    if (children) {
+        if (!PyList_Check(children)) {
+            PyErr_SetString(PyExc_TypeError, "'_children' is not a list");
+            return NULL;
+        }
+        nchildren = PyList_Size(children);
+    }
+    else {
+        nchildren = 0;
+    }
+
+    /* Allocate 'extra'. */
+    if (element_resize(self, nchildren)) {
+        return NULL;
+    }
+    assert(self->extra && self->extra->allocated >= nchildren);
+
+    /* Copy children */
+    for (i = 0; i < nchildren; i++) {
+        self->extra->children[i] = PyList_GET_ITEM(children, i);
+        Py_INCREF(self->extra->children[i]);
+    }
+
+    self->extra->length = nchildren;
+    self->extra->allocated = nchildren;
+
+    /* Stash attrib. */
+    if (attrib) {
+        Py_CLEAR(self->extra->attrib);
+        self->extra->attrib = attrib;
+        Py_INCREF(attrib);
+    }
+
+    Py_RETURN_NONE;
+}
+
+/* __setstate__ for Element instance from the Python implementation.
+ * 'state' should be the instance dict.
+ */
+static PyObject *
+element_setstate_from_Python(ElementObject *self, PyObject *state)
+{
+    static char *kwlist[] = {PICKLED_TAG, PICKLED_ATTRIB, PICKLED_TEXT,
+                             PICKLED_TAIL, PICKLED_CHILDREN, 0};
+    PyObject *args;
+    PyObject *tag, *attrib, *text, *tail, *children;
+    int error;
+
+    /* More instance dict members than we know to handle? */
+    tag = attrib = text = tail = children = NULL;
+    args = PyTuple_New(0);
+    error = ! PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
+                                          &attrib, &text, &tail, &children);
+    Py_DECREF(args);
+    if (error)
+        return NULL;
+    else
+        return element_setstate_from_attributes(self, tag, attrib, text,
+                                                tail, children);
+}
+
+static PyObject *
+element_setstate(ElementObject *self, PyObject *state)
+{
+    if (!PyDict_CheckExact(state)) {
+        PyErr_Format(PyExc_TypeError,
+                     "Don't know how to unpickle \"%.200R\" as an Element",
+                     state);
+        return NULL;
+    }
+    else
+        return element_setstate_from_Python(self, state);
+}
+
 LOCAL(int)
 checkpath(PyObject* tag)
 {
@@ -1587,6 +1757,8 @@ static PyMethodDef element_methods[] = {
     {"__copy__", (PyCFunction) element_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction) element_deepcopy, METH_VARARGS},
     {"__sizeof__", element_sizeof, METH_NOARGS},
+    {"__getstate__", (PyCFunction)element_getstate, METH_NOARGS},
+    {"__setstate__", (PyCFunction)element_setstate, METH_O},
 
     {NULL, NULL}
 };
@@ -1691,7 +1863,7 @@ static PyMappingMethods element_as_mapping = {
 
 static PyTypeObject Element_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "Element", sizeof(ElementObject), 0,
+    "xml.etree.ElementTree.Element", sizeof(ElementObject), 0,
     /* methods */
     (destructor)element_dealloc,                    /* tp_dealloc */
     0,                                              /* tp_print */
@@ -1913,6 +2085,8 @@ elementiter_next(ElementIterObject *it)
 
 static PyTypeObject ElementIter_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
+    /* Using the module's name since the pure-Python implementation does not
+       have such a type. */
     "_elementtree._element_iterator",           /* tp_name */
     sizeof(ElementIterObject),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -2458,7 +2632,7 @@ static PyMethodDef treebuilder_methods[] = {
 
 static PyTypeObject TreeBuilder_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "TreeBuilder", sizeof(TreeBuilderObject), 0,
+    "xml.etree.ElementTree.TreeBuilder", sizeof(TreeBuilderObject), 0,
     /* methods */
     (destructor)treebuilder_dealloc,                /* tp_dealloc */
     0,                                              /* tp_print */
@@ -3420,7 +3594,7 @@ xmlparser_getattro(XMLParserObject* self, PyObject* nameobj)
 
 static PyTypeObject XMLParser_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "XMLParser", sizeof(XMLParserObject), 0,
+    "xml.etree.ElementTree.XMLParser", sizeof(XMLParserObject), 0,
     /* methods */
     (destructor)xmlparser_dealloc,                  /* tp_dealloc */
     0,                                              /* tp_print */
