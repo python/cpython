@@ -408,6 +408,9 @@ Library
 Tests
 -----
 
+- Issue #16898: test_bufio now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #16888: test_array now works with unittest test discovery.
   Patch by Zachary Ware.
 

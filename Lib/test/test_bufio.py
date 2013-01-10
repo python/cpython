@@ -11,7 +11,7 @@ import _pyio as pyio # Python implementation.
 lengths = list(range(1, 257)) + [512, 1000, 1024, 2048, 4096, 8192, 10000,
                                  16384, 32768, 65536, 1000000]
 
-class BufferSizeTest(unittest.TestCase):
+class BufferSizeTest:
     def try_one(self, s):
         # Write s + "\n" + s to file, then open it and ensure that successive
         # .readline()s deliver what we wrote.
@@ -62,15 +62,12 @@ class BufferSizeTest(unittest.TestCase):
         self.drive_one(bytes(1000))
 
 
-class CBufferSizeTest(BufferSizeTest):
+class CBufferSizeTest(BufferSizeTest, unittest.TestCase):
     open = io.open
 
-class PyBufferSizeTest(BufferSizeTest):
+class PyBufferSizeTest(BufferSizeTest, unittest.TestCase):
     open = staticmethod(pyio.open)
 
 
-def test_main():
-    support.run_unittest(CBufferSizeTest, PyBufferSizeTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
