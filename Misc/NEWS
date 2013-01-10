@@ -345,10 +345,15 @@ Library
 
 - Issue #16169: Fix ctypes.WinError()'s confusion between errno and winerror.
 
+- Issue #16076: Made _elementtree.Element pickleable in a way that is compatible
+  with the Python Element. Pickling/unpickling of xml.etree.ElementTree.Element
+  works again - this was a temporary regression from 3.2 where the by-default
+  imported _elementtree had no pickling capability.
+
 - Issue #16089: Allow ElementTree.TreeBuilder to work again with a non-Element
   element_factory (fixes a regression in SimpleTAL).
 
-- Issue #16913: Fix Element.itertext()'s handling of text with XML entities.
+- Issue #16913: Fix Element.itertext()'s handling of text with XML entities.,
 
 - Issue #16034: Fix performance regressions in the new `bz2.BZ2File`
   implementation.  Initial patch by Serhiy Storchaka.
