@@ -257,13 +257,9 @@ class TestNtpath(unittest.TestCase):
                     ntpath.sameopenfile(-1, -1)
 
 
-class NtCommonTest(test_genericpath.CommonTest):
+class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
     attributes = ['relpath', 'splitunc']
-
-
-def test_main():
-    support.run_unittest(TestNtpath, NtCommonTest)
 
 
 if __name__ == "__main__":

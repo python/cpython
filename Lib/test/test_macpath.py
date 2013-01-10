@@ -115,13 +115,9 @@ class MacPathTestCase(unittest.TestCase):
         self.assertEqual(normpath(b"a:b:"), b"a:b")
 
 
-class MacCommonTest(test_genericpath.CommonTest):
+class MacCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = macpath
 
 
-def test_main():
-    support.run_unittest(MacPathTestCase, MacCommonTest)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

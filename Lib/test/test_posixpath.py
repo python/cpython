@@ -524,14 +524,10 @@ class PosixPathTest(unittest.TestCase):
             self.assertTrue(posixpath.sameopenfile(a.fileno(), b.fileno()))
 
 
-class PosixCommonTest(test_genericpath.CommonTest):
+class PosixCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = posixpath
     attributes = ['relpath', 'samefile', 'sameopenfile', 'samestat']
 
 
-def test_main():
-    support.run_unittest(PosixPathTest, PosixCommonTest)
-
-
 if __name__=="__main__":
-    test_main()
+    unittest.main()
