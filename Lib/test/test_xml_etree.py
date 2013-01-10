@@ -27,7 +27,7 @@ from test import support
 from test.support import TESTFN, findfile, unlink, import_fresh_module, gc_collect
 
 # pyET is the pure-Python implementation.
-# 
+#
 # ET is pyET in test_xml_etree and is the C accelerated version in
 # test_xml_etree_c.
 pyET = None
