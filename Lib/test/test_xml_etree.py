@@ -1904,6 +1904,10 @@ class ElementIterTest(unittest.TestCase):
         tree = ET.ElementTree(None)
         self.assertRaises(AttributeError, tree.iter)
 
+        # Issue #16913
+        doc = ET.XML("<root>a&amp;<sub>b&amp;</sub>c&amp;</root>")
+        self.assertEqual(''.join(doc.itertext()), 'a&b&c&')
+
     def test_corners(self):
         # single root, no subelements
         a = ET.Element('a')
