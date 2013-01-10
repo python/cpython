@@ -17,9 +17,7 @@ def safe_rmdir(dirname):
         pass
 
 
-class GenericTest(unittest.TestCase):
-    # The path module to be tested
-    pathmodule = genericpath
+class GenericTest:
     common_attributes = ['commonprefix', 'getsize', 'getatime', 'getctime',
                          'getmtime', 'exists', 'isdir', 'isfile']
     attributes = []
@@ -270,13 +268,17 @@ class GenericTest(unittest.TestCase):
             self.assertTrue(self.pathmodule.sameopenfile(
                                 a.fileno(), b.fileno()))
 
+class TestGenericTest(GenericTest, unittest.TestCase):
+    # Issue 16852: GenericTest can't inherit from unittest.TestCase
+    # for test discovery purposes; CommonTest inherits from GenericTest
+    # and is only meant to be inherited by others.
+    pathmodule = genericpath
+
 
 # Following TestCase is not supposed to be run from test_genericpath.
 # It is inherited by other test modules (macpath, ntpath, posixpath).
 
 class CommonTest(GenericTest):
-    # The path module to be tested
-    pathmodule = None
     common_attributes = GenericTest.common_attributes + [
         # Properties
         'curdir', 'pardir', 'extsep', 'sep',
@@ -407,9 +409,5 @@ class CommonTest(GenericTest):
                 self.test_abspath()
 
 
-def test_main():
-    support.run_unittest(GenericTest)
-
-
 if __name__=="__main__":
-    test_main()
+    unittest.main()
