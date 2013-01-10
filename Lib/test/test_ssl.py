@@ -374,6 +374,14 @@ class BasicSocketTests(unittest.TestCase):
         ss = ssl.wrap_socket(s, server_side=True, certfile=CERTFILE)
         self.assertIsNone(ss.get_channel_binding("tls-unique"))
 
+    def test_dealloc_warn(self):
+        ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
+        r = repr(ss)
+        with self.assertWarns(ResourceWarning) as cm:
+            ss = None
+            support.gc_collect()
+        self.assertIn(r, str(cm.warning.args[0]))
+
 class ContextTests(unittest.TestCase):
 
     @skip_if_broken_ubuntu_ssl
