@@ -142,6 +142,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16900: Issue a ResourceWarning when an ssl socket is left unclosed.
+
 - Issue #15545: Fix regression in sqlite3's iterdump method where it was
   failing if the connection used a row factory (such as sqlite3.Row) that
   produced unsortable objects. (Regression was introduced by fix for 9750).
