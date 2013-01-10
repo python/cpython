@@ -513,7 +513,7 @@ class BaseClient(BaseTestHandler):
         pass
 
 
-class BaseTestAPI(unittest.TestCase):
+class BaseTestAPI:
 
     def tearDown(self):
         asyncore.close_all()
@@ -821,34 +821,26 @@ class TestAPI_UseUnixSockets(BaseTestAPI):
         unlink(self.addr)
         BaseTestAPI.tearDown(self)
 
-class TestAPI_UseIPv4Select(TestAPI_UseIPv4Sockets):
+class TestAPI_UseIPv4Select(TestAPI_UseIPv4Sockets, unittest.TestCase):
     use_poll = False
 
 @unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
-class TestAPI_UseIPv4Poll(TestAPI_UseIPv4Sockets):
+class TestAPI_UseIPv4Poll(TestAPI_UseIPv4Sockets, unittest.TestCase):
     use_poll = True
 
-class TestAPI_UseIPv6Select(TestAPI_UseIPv6Sockets):
+class TestAPI_UseIPv6Select(TestAPI_UseIPv6Sockets, unittest.TestCase):
     use_poll = False
 
 @unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
-class TestAPI_UseIPv6Poll(TestAPI_UseIPv6Sockets):
+class TestAPI_UseIPv6Poll(TestAPI_UseIPv6Sockets, unittest.TestCase):
     use_poll = True
 
-class TestAPI_UseUnixSocketsSelect(TestAPI_UseUnixSockets):
+class TestAPI_UseUnixSocketsSelect(TestAPI_UseUnixSockets, unittest.TestCase):
     use_poll = False
 
 @unittest.skipUnless(hasattr(select, 'poll'), 'select.poll required')
-class TestAPI_UseUnixSocketsPoll(TestAPI_UseUnixSockets):
+class TestAPI_UseUnixSocketsPoll(TestAPI_UseUnixSockets, unittest.TestCase):
     use_poll = True
-
-def test_main():
-    tests = [HelperFunctionTests, DispatcherTests, DispatcherWithSendTests,
-            DispatcherWithSendTests_UsePoll, FileWrapperTest,
-            TestAPI_UseIPv4Select, TestAPI_UseIPv4Poll, TestAPI_UseIPv6Select,
-            TestAPI_UseIPv6Poll, TestAPI_UseUnixSocketsSelect,
-            TestAPI_UseUnixSocketsPoll]
-    run_unittest(*tests)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
