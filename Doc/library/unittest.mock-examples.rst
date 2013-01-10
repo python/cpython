@@ -372,8 +372,8 @@ You can stack up multiple patch decorators using this pattern:
     ...     @patch('package.module.ClassName1')
     ...     @patch('package.module.ClassName2')
     ...     def test_something(self, MockClass2, MockClass1):
-    ...         self.assertTrue(package.module.ClassName1 is MockClass1)
-    ...         self.assertTrue(package.module.ClassName2 is MockClass2)
+    ...         self.assertIs(package.module.ClassName1, MockClass1)
+    ...         self.assertIs(package.module.ClassName2, MockClass2)
     ...
     >>> MyTest('test_something').test_something()
 
@@ -595,10 +595,10 @@ with `test`:
     ... class MyTest(TestCase):
     ...
     ...     def test_one(self, MockSomeClass):
-    ...         self.assertTrue(mymodule.SomeClass is MockSomeClass)
+    ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
     ...
     ...     def test_two(self, MockSomeClass):
-    ...         self.assertTrue(mymodule.SomeClass is MockSomeClass)
+    ...         self.assertIs(mymodule.SomeClass, MockSomeClass)
     ...
     ...     def not_a_test(self):
     ...         return 'something'
@@ -617,7 +617,7 @@ These allow you to move the patching into your `setUp` and `tearDown` methods.
     ...         self.mock_foo = self.patcher.start()
     ...
     ...     def test_foo(self):
-    ...         self.assertTrue(mymodule.foo is self.mock_foo)
+    ...         self.assertIs(mymodule.foo, self.mock_foo)
     ...
     ...     def tearDown(self):
     ...         self.patcher.stop()
@@ -636,7 +636,7 @@ exception is raised in the setUp then tearDown is not called.
     ...         self.mock_foo = patcher.start()
     ...
     ...     def test_foo(self):
-    ...         self.assertTrue(mymodule.foo is self.mock_foo)
+    ...         self.assertIs(mymodule.foo, self.mock_foo)
     ...
     >>> MyTest('test_foo').run()
 
