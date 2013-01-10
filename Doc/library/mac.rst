@@ -12,7 +12,10 @@ Mac-specific Python programming.
 
 .. note::
 
-   These modules are deprecated and have been removed in Python 3.x.
+   Most of the OS X APIs that these modules use are deprecated or removed
+   in recent versions of OS X.  Many are not available when Python is
+   executing in 64-bit mode.  These modules have been removed in
+   Python 3.  You should avoid using them in Python 2.
 
 
 .. toctree::

@@ -5,7 +5,7 @@
 Mac OS Toolbox Modules
 **********************
 
-There are a set of modules that provide interfaces to various Mac OS toolboxes.
+These are a set of modules that provide interfaces to various legacy Mac OS toolboxes.
 If applicable the module will define a number of Python objects for the various
 structures declared by the toolbox, and operations will be implemented as
 methods of the object.  Other operations will be implemented as functions in the
@@ -24,7 +24,10 @@ framework and Qt is in the QuickTime framework. The normal use pattern is ::
 
 .. note::
 
-   The Carbon modules have been removed in Python 3.
+   Most of the OS X APIs that these modules use are deprecated or removed
+   in recent versions of OS X.  Many are not available when Python is
+   executing in 64-bit mode.  The Carbon modules have been removed in
+   Python 3.  You should avoid using them in Python 2.
 
 
 :mod:`Carbon.AE` --- Apple Events
