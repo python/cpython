@@ -1636,7 +1636,7 @@ static PyObject*pattern_scanner(PatternObject*, PyObject*);
 static PyObject *
 sre_codesize(PyObject* self, PyObject *unused)
 {
-    return PyLong_FromSize_t(sizeof(SRE_CODE));
+    return PyInt_FromSize_t(sizeof(SRE_CODE));
 }
 
 static PyObject *
@@ -3389,7 +3389,7 @@ match_start(MatchObject* self, PyObject* args)
     }
 
     /* mark is -1 if group is undefined */
-    return PyLong_FromSsize_t(self->mark[index*2]);
+    return PyInt_FromSsize_t(self->mark[index*2]);
 }
 
 static PyObject*
@@ -3412,7 +3412,7 @@ match_end(MatchObject* self, PyObject* args)
     }
 
     /* mark is -1 if group is undefined */
-    return PyLong_FromSsize_t(self->mark[index*2+1]);
+    return PyInt_FromSsize_t(self->mark[index*2+1]);
 }
 
 LOCAL(PyObject*)
@@ -3602,7 +3602,7 @@ static PyObject *
 match_lastindex_get(MatchObject *self)
 {
     if (self->lastindex >= 0)
-        return PyLong_FromSsize_t(self->lastindex);
+        return PyInt_FromSsize_t(self->lastindex);
     Py_INCREF(Py_None);
     return Py_None;
 }
