@@ -3,8 +3,9 @@
 
 #include "Python.h"
 
+#include <Carbon/Carbon.h>
 
-#ifndef __LP64__
+#if !defined(__LP64__) && !defined(MAC_OS_X_VERSION_10_7)
 
 #include "pymactoolbox.h"
 
@@ -16,7 +17,6 @@
     }} while(0)
 
 
-#include <Carbon/Carbon.h>
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GrafObj_New(GrafPtr);
@@ -6548,7 +6548,7 @@ static PyObject *Qd_RawBitMap(PyObject *_self, PyObject *_args)
 #endif /* __LP64__ */
 
 static PyMethodDef Qd_methods[] = {
-#ifndef __LP64__
+#if !defined(__LP64__) && !defined(MAC_OS_X_VERSION_10_7)
     {"GetPort", (PyCFunction)Qd_GetPort, 1,
      PyDoc_STR("() -> (GrafPtr port)")},
     {"GrafDevice", (PyCFunction)Qd_GrafDevice, 1,
@@ -7088,7 +7088,7 @@ static PyMethodDef Qd_methods[] = {
 };
 
 
-#ifndef __LP64__
+#if !defined(__LP64__) && !defined(MAC_OS_X_VERSION_10_7)
 
 /* Like BMObj_New, but the original bitmap data structure is copied (and
 ** released when the object is released)
@@ -7112,7 +7112,7 @@ PyObject *BMObj_NewCopied(BitMapPtr itself)
 void init_Qd(void)
 {
     PyObject *m;
-#ifndef __LP64__
+#if !defined(__LP64__) && !defined(MAC_OS_X_VERSION_10_7)
     PyObject *d;
 
 
@@ -7127,7 +7127,7 @@ void init_Qd(void)
 #endif /* __LP64__ */
 
     m = Py_InitModule("_Qd", Qd_methods);
-#ifndef __LP64__
+#if !defined(__LP64__) && !defined(MAC_OS_X_VERSION_10_7)
     d = PyModule_GetDict(m);
     Qd_Error = PyMac_GetOSErrException();
     if (Qd_Error == NULL ||
