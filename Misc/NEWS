@@ -600,6 +600,12 @@ Library
 - Issue #16441: Avoid excessive memory usage working with large gzip
   files using the gzip module.
 
+- Issue #15782: Prevent compile errors of OS X Carbon modules _Fm, _Qd, and
+  _Qdoffs when compiling with an SDK of 10.7 or later.  The OS X APIs they
+  wrap have long been deprecated and have now been removed with 10.7.
+  These modules were already empty for 64-bit builds and have been removed
+  in Python 3.
+
 Extension Modules
 -----------------
 
