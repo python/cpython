@@ -614,6 +614,9 @@ Tests
 
 - Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
 
+- Issue #16910: test_bytes, test_unicode, and test_userstring now work with
+  unittest test discovery.  Patch by Zachary Ware.
+
 - Issue #16905: test_warnings now works with unittest test discovery.
   Initial patch by Berker Peksag.
 
