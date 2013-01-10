@@ -40,7 +40,7 @@ def warnings_state(module):
         module.filters = original_filters
 
 
-class BaseTest(unittest.TestCase):
+class BaseTest:
 
     """Basic bookkeeping required for testing."""
 
@@ -63,7 +63,7 @@ class BaseTest(unittest.TestCase):
         super(BaseTest, self).tearDown()
 
 
-class FilterTests(object):
+class FilterTests(BaseTest):
 
     """Testing the filtering functionality."""
 
@@ -186,14 +186,14 @@ class FilterTests(object):
             self.assertEqual(str(w[-1].message), text)
             self.assertTrue(w[-1].category is UserWarning)
 
-class CFilterTests(BaseTest, FilterTests):
+class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
-class PyFilterTests(BaseTest, FilterTests):
+class PyFilterTests(FilterTests, unittest.TestCase):
     module = py_warnings
 
 
-class WarnTests(unittest.TestCase):
+class WarnTests(BaseTest):
 
     """Test warnings.warn() and warnings.warn_explicit()."""
 
@@ -360,7 +360,7 @@ class WarnTests(unittest.TestCase):
             self.module.warn(BadStrWarning())
 
 
-class CWarnTests(BaseTest, WarnTests):
+class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings
 
     # As an early adopter, we sanity check the
@@ -369,7 +369,7 @@ class CWarnTests(BaseTest, WarnTests):
         self.assertFalse(original_warnings is self.module)
         self.assertFalse(hasattr(self.module.warn, '__code__'))
 
-class PyWarnTests(BaseTest, WarnTests):
+class PyWarnTests(WarnTests, unittest.TestCase):
     module = py_warnings
 
     # As an early adopter, we sanity check the
@@ -379,7 +379,7 @@ class PyWarnTests(BaseTest, WarnTests):
         self.assertTrue(hasattr(self.module.warn, '__code__'))
 
 
-class WCmdLineTests(unittest.TestCase):
+class WCmdLineTests(BaseTest):
 
     def test_improper_input(self):
         # Uses the private _setoption() function to test the parsing
@@ -410,14 +410,14 @@ class WCmdLineTests(unittest.TestCase):
         self.assertFalse(out.strip())
         self.assertNotIn(b'RuntimeWarning', err)
 
-class CWCmdLineTests(BaseTest, WCmdLineTests):
+class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
     module = c_warnings
 
-class PyWCmdLineTests(BaseTest, WCmdLineTests):
+class PyWCmdLineTests(WCmdLineTests, unittest.TestCase):
     module = py_warnings
 
 
-class _WarningsTests(BaseTest):
+class _WarningsTests(BaseTest, unittest.TestCase):
 
     """Tests specific to the _warnings module."""
 
@@ -557,7 +557,7 @@ class _WarningsTests(BaseTest):
             globals_dict['__file__'] = oldfile
 
 
-class WarningsDisplayTests(unittest.TestCase):
+class WarningsDisplayTests(BaseTest):
 
     """Test the displaying of warnings and the ability to overload functions
     related to displaying warnings."""
@@ -601,10 +601,10 @@ class WarningsDisplayTests(unittest.TestCase):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
-class CWarningsDisplayTests(BaseTest, WarningsDisplayTests):
+class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = c_warnings
 
-class PyWarningsDisplayTests(BaseTest, WarningsDisplayTests):
+class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
 
 
@@ -710,10 +710,10 @@ class CatchWarningTests(BaseTest):
             with support.check_warnings(('foo', RuntimeWarning)):
                 wmod.warn("foo")
 
-class CCatchWarningTests(CatchWarningTests):
+class CCatchWarningTests(CatchWarningTests, unittest.TestCase):
     module = c_warnings
 
-class PyCatchWarningTests(CatchWarningTests):
+class PyCatchWarningTests(CatchWarningTests, unittest.TestCase):
     module = py_warnings
 
 
@@ -762,10 +762,10 @@ class EnvironmentVariableTests(BaseTest):
                 "['ignore:DeprecaciónWarning']".encode('utf-8'))
         self.assertEqual(p.wait(), 0)
 
-class CEnvironmentVariableTests(EnvironmentVariableTests):
+class CEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = c_warnings
 
-class PyEnvironmentVariableTests(EnvironmentVariableTests):
+class PyEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = py_warnings
 
 
@@ -788,20 +788,12 @@ class BootstrapTest(unittest.TestCase):
                 env=env)
             self.assertEqual(retcode, 0)
 
-def test_main():
+
+def setUpModule():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
-    support.run_unittest(
-        CFilterTests, PyFilterTests,
-        CWarnTests, PyWarnTests,
-        CWCmdLineTests, PyWCmdLineTests,
-        _WarningsTests,
-        CWarningsDisplayTests, PyWarningsDisplayTests,
-        CCatchWarningTests, PyCatchWarningTests,
-        CEnvironmentVariableTests, PyEnvironmentVariableTests,
-        BootstrapTest,
-    )
 
+tearDownModule = setUpModule
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
