@@ -212,6 +212,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15545: Fix regression in sqlite3's iterdump method where it was
+  failing if the connection used a row factory (such as sqlite3.Row) that
+  produced unsortable objects. (Regression was introduced by fix for 9750).
+
 - Issue #16876: Optimize epoll.poll() by keeping a per-instance epoll events
   buffer instead of allocating a new one at each poll().
 
