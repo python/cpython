@@ -803,7 +803,7 @@ class UTF8SigTest(ReadTest):
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
-        self.assertEqual(codecs.escape_decode(""), ("", 0))
+        self.assertEqual(codecs.escape_decode(""), (b"", 0))
 
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
@@ -1905,6 +1905,7 @@ def test_main():
         UTF16BETest,
         UTF8Test,
         UTF8SigTest,
+        EscapeDecodeTest,
         UTF7Test,
         UTF16ExTest,
         ReadBufferTest,
