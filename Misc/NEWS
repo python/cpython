@@ -421,6 +421,9 @@ Library
 Tests
 -----
 
+- Issue #16919: test_crypt now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #16910: test_bytes, test_unicode, and test_userstring now work with
   unittest test discovery.  Patch by Zachary Ware.
 
