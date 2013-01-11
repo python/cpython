@@ -235,7 +235,7 @@ def _class_escape(source, escape):
     if code:
         return code
     code = CATEGORIES.get(escape)
-    if code:
+    if code and code[0] == IN:
         return code
     try:
         c = escape[1:2]
