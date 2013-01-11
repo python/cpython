@@ -74,7 +74,7 @@ class MixInCheckStateHandling:
             part2 = d.encode(u[i:], True)
             self.assertEqual(s, part1+part2)
 
-class ReadTest(unittest.TestCase, MixInCheckStateHandling):
+class ReadTest(MixInCheckStateHandling):
     def check_partial(self, input, partialresults):
         # get a StreamReader for the encoding and feed the bytestring version
         # of input to the reader byte by byte. Read everything available from
@@ -294,7 +294,7 @@ class ReadTest(unittest.TestCase, MixInCheckStateHandling):
         self.assertEqual(reader.readline(), s5)
         self.assertEqual(reader.readline(), "")
 
-class UTF32Test(ReadTest):
+class UTF32Test(ReadTest, unittest.TestCase):
     encoding = "utf-32"
 
     spamle = (b'\xff\xfe\x00\x00'
@@ -385,7 +385,7 @@ class UTF32Test(ReadTest):
         self.assertEqual('\U00010000' * 1024,
                          codecs.utf_32_decode(encoded_be)[0])
 
-class UTF32LETest(ReadTest):
+class UTF32LETest(ReadTest, unittest.TestCase):
     encoding = "utf-32-le"
 
     def test_partial(self):
@@ -429,7 +429,7 @@ class UTF32LETest(ReadTest):
         self.assertEqual('\U00010000' * 1024,
                          codecs.utf_32_le_decode(encoded)[0])
 
-class UTF32BETest(ReadTest):
+class UTF32BETest(ReadTest, unittest.TestCase):
     encoding = "utf-32-be"
 
     def test_partial(self):
@@ -474,7 +474,7 @@ class UTF32BETest(ReadTest):
                          codecs.utf_32_be_decode(encoded)[0])
 
 
-class UTF16Test(ReadTest):
+class UTF16Test(ReadTest, unittest.TestCase):
     encoding = "utf-16"
 
     spamle = b'\xff\xfes\x00p\x00a\x00m\x00s\x00p\x00a\x00m\x00'
@@ -554,7 +554,7 @@ class UTF16Test(ReadTest):
         with codecs.open(support.TESTFN, 'U', encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
 
-class UTF16LETest(ReadTest):
+class UTF16LETest(ReadTest, unittest.TestCase):
     encoding = "utf-16-le"
 
     def test_partial(self):
@@ -597,7 +597,7 @@ class UTF16LETest(ReadTest):
         self.assertEqual(b'\x00\xd8\x03\xde'.decode(self.encoding),
                          "\U00010203")
 
-class UTF16BETest(ReadTest):
+class UTF16BETest(ReadTest, unittest.TestCase):
     encoding = "utf-16-be"
 
     def test_partial(self):
@@ -640,7 +640,7 @@ class UTF16BETest(ReadTest):
         self.assertEqual(b'\xd8\x00\xde\x03'.decode(self.encoding),
                          "\U00010203")
 
-class UTF8Test(ReadTest):
+class UTF8Test(ReadTest, unittest.TestCase):
     encoding = "utf-8"
 
     def test_partial(self):
@@ -701,7 +701,7 @@ class UTF8Test(ReadTest):
 
 @unittest.skipUnless(sys.platform == 'win32',
                      'cp65001 is a Windows-only codec')
-class CP65001Test(ReadTest):
+class CP65001Test(ReadTest, unittest.TestCase):
     encoding = "cp65001"
 
     def test_encode(self):
@@ -800,7 +800,7 @@ class CP65001Test(ReadTest):
 
 
 
-class UTF7Test(ReadTest):
+class UTF7Test(ReadTest, unittest.TestCase):
     encoding = "utf-7"
 
     def test_partial(self):
@@ -839,7 +839,7 @@ class ReadBufferTest(unittest.TestCase):
         self.assertRaises(TypeError, codecs.readbuffer_encode)
         self.assertRaises(TypeError, codecs.readbuffer_encode, 42)
 
-class UTF8SigTest(ReadTest):
+class UTF8SigTest(ReadTest, unittest.TestCase):
     encoding = "utf-8-sig"
 
     def test_partial(self):
@@ -925,7 +925,7 @@ class UTF8SigTest(ReadTest):
 
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
-        self.assertEqual(codecs.escape_decode(""), ("", 0))
+        self.assertEqual(codecs.escape_decode(""), (b"", 0))
 
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
@@ -2207,38 +2207,5 @@ class CodePageTest(unittest.TestCase):
         self.assertEqual(decoded, ('abc', 3))
 
 
-def test_main():
-    support.run_unittest(
-        UTF32Test,
-        UTF32LETest,
-        UTF32BETest,
-        UTF16Test,
-        UTF16LETest,
-        UTF16BETest,
-        UTF8Test,
-        UTF8SigTest,
-        CP65001Test,
-        UTF7Test,
-        UTF16ExTest,
-        ReadBufferTest,
-        RecodingTest,
-        PunycodeTest,
-        UnicodeInternalTest,
-        NameprepTest,
-        IDNACodecTest,
-        CodecsModuleTest,
-        StreamReaderTest,
-        EncodedFileTest,
-        BasicUnicodeTest,
-        CharmapTest,
-        WithStmtTest,
-        TypesTest,
-        SurrogateEscapeTest,
-        BomTest,
-        TransformCodecTest,
-        CodePageTest,
-    )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
