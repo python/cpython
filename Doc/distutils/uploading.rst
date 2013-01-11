@@ -27,21 +27,21 @@ and if the password was entered in the prompt, :command:`upload` will reuse the
 entered password. This is useful if you do not want to store a clear text
 password in the :file:`$HOME/.pypirc` file.
 
-You can specify another PyPI server with the :option:`--repository=*url*` option::
+You can specify another PyPI server with the ``--repository=url`` option::
 
     python setup.py sdist bdist_wininst upload -r http://example.com/pypi
 
 See section :ref:`pypirc` for more on defining several servers.
 
-You can use the :option:`--sign` option to tell :command:`upload` to sign each
+You can use the ``--sign`` option to tell :command:`upload` to sign each
 uploaded file using GPG (GNU Privacy Guard).  The  :program:`gpg` program must
 be available for execution on the system :envvar:`PATH`.  You can also specify
-which key to use for signing using the :option:`--identity=*name*` option.
+which key to use for signing using the ``--identity=name`` option.
 
-Other :command:`upload` options include :option:`--repository=<url>` or
-:option:`--repository=<section>` where *url* is the url of the server and
+Other :command:`upload` options include ``--repository=url`` or
+``--repository=section`` where *url* is the url of the server and
 *section* the name of the section in :file:`$HOME/.pypirc`, and
-:option:`--show-response` (which displays the full response text from the PyPI
+``--show-response`` (which displays the full response text from the PyPI
 server for help in debugging upload problems).
 
 PyPI package display
