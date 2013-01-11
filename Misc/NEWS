@@ -621,6 +621,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #15539: Added regression tests for Tools/scripts/pindent.py.
+
 - Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
 
 - Issue #16925: test_configparser now works with unittest test discovery.
@@ -776,6 +778,11 @@ Documentation
 
 Tools/Demos
 -----------
+
+- Issue #15539: Fix a number of bugs in Tools/scripts/pindent.py.  Now
+  pindent.py works with a "with" statement.  pindent.py no longer produces
+  improper indentation.  pindent.py now works with continued lines broken after
+  "class" or "def" keywords and with continuations at the start of line.
 
 - Issue #11797: Add a 2to3 fixer that maps reload() to imp.reload().
 
