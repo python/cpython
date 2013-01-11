@@ -109,6 +109,28 @@ Module functions and constants
 ------------------------------
 
 
+.. data:: version
+
+   The version number of this module, as a string. This is not the version of
+   the SQLite library.
+
+
+.. data:: version_info
+
+   The version number of this module, as a tuple of integers. This is not the
+   version of the SQLite library.
+
+
+.. data:: sqlite_version
+
+   The version number of the run-time SQLite library, as a string.
+
+
+.. data:: sqlite_version_info
+
+   The version number of the run-time SQLite library, as a tuple of integers.
+
+
 .. data:: PARSE_DECLTYPES
 
    This constant is meant to be used with the *detect_types* parameter of the
