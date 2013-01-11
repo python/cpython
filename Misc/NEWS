@@ -12,6 +12,11 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #16730: importlib.machinery.FileFinder now no longers raises an
+  exception when trying to populate its cache and it finds out the directory is
+  unreadable or has turned into a file. Reported and diagnosed by
+  David Pritchard.
+
 - Issue #16906: Fix a logic error that prevented most static strings from being
   cleared.
 
