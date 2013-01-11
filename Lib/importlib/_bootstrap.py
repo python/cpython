@@ -623,6 +623,71 @@ def _find_module_shim(self, fullname):
     return loader
 
 
+def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
+    """Validate the header of the passed-in bytecode against source_stats (if
+    given) and returning the bytecode that can be compiled by compile().
+
+    All other arguments are used to enhance error reporting.
+
+    ImportError is raised when the magic number is incorrect or the bytecode is
+    found to be stale. EOFError is raised when the data is found to be
+    truncated.
+
+    """
+    exc_details = {}
+    if name is not None:
+        exc_details['name'] = name
+    else:
+        # To prevent having to make all messages have a conditional name.
+        name = 'bytecode'
+    if path is not None:
+        exc_details['path'] = path
+    magic = data[:4]
+    raw_timestamp = data[4:8]
+    raw_size = data[8:12]
+    if magic != _MAGIC_BYTES:
+        msg = 'bad magic number in {!r}: {!r}'.format(name, magic)
+        raise ImportError(msg, **exc_details)
+    elif len(raw_timestamp) != 4:
+        message = 'bad timestamp in {!r}'.format(name)
+        _verbose_message(message)
+        raise EOFError(message)
+    elif len(raw_size) != 4:
+        message = 'bad size in {!r}'.format(name)
+        _verbose_message(message)
+        raise EOFError(message)
+    if source_stats is not None:
+        try:
+            source_mtime = int(source_stats['mtime'])
+        except KeyError:
+            pass
+        else:
+            if _r_long(raw_timestamp) != source_mtime:
+                message = 'bytecode is stale for {!r}'.format(name)
+                _verbose_message(message)
+                raise ImportError(message, **exc_details)
+        try:
+            source_size = source_stats['size'] & 0xFFFFFFFF
+        except KeyError:
+            pass
+        else:
+            if _r_long(raw_size) != source_size:
+                raise ImportError("bytecode is stale for {!r}".format(name),
+                                  **exc_details)
+    return data[12:]
+
+
+def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
+    """Compile bytecode as returned by _validate_bytecode_header()."""
+    code = marshal.loads(data)
+    if isinstance(code, _code_type):
+        _verbose_message('code object from {!r}', bytecode_path)
+        if source_path is not None:
+            _imp._fix_co_filename(code, source_path)
+        return code
+    else:
+        raise ImportError("Non-code object in {!r}".format(bytecode_path),
+                          name=name, path=bytecode_path)
 
 
 # Loaders #####################################################################
@@ -801,51 +866,6 @@ class _LoaderBasics:
         tail_name = fullname.rpartition('.')[2]
         return filename_base == '__init__' and tail_name != '__init__'
 
-    def _bytes_from_bytecode(self, fullname, data, bytecode_path, source_stats):
-        """Return the marshalled bytes from bytecode, verifying the magic
-        number, timestamp and source size along the way.
-
-        If source_stats is None then skip the timestamp check.
-
-        """
-        magic = data[:4]
-        raw_timestamp = data[4:8]
-        raw_size = data[8:12]
-        if magic != _MAGIC_BYTES:
-            msg = 'bad magic number in {!r}: {!r}'.format(fullname, magic)
-            raise ImportError(msg, name=fullname, path=bytecode_path)
-        elif len(raw_timestamp) != 4:
-            message = 'bad timestamp in {}'.format(fullname)
-            _verbose_message(message)
-            raise EOFError(message)
-        elif len(raw_size) != 4:
-            message = 'bad size in {}'.format(fullname)
-            _verbose_message(message)
-            raise EOFError(message)
-        if source_stats is not None:
-            try:
-                source_mtime = int(source_stats['mtime'])
-            except KeyError:
-                pass
-            else:
-                if _r_long(raw_timestamp) != source_mtime:
-                    message = 'bytecode is stale for {}'.format(fullname)
-                    _verbose_message(message)
-                    raise ImportError(message, name=fullname,
-                                      path=bytecode_path)
-            try:
-                source_size = source_stats['size'] & 0xFFFFFFFF
-            except KeyError:
-                pass
-            else:
-                if _r_long(raw_size) != source_size:
-                    raise ImportError(
-                        "bytecode is stale for {}".format(fullname),
-                        name=fullname, path=bytecode_path)
-        # Can't return the code object as errors from marshal loading need to
-        # propagate even when source is available.
-        return data[12:]
-
     @module_for_loader
     def _load_module(self, module, *, sourceless=False):
         """Helper for load_module able to handle either source or sourceless
@@ -965,24 +985,17 @@ class SourceLoader(_LoaderBasics):
                     pass
                 else:
                     try:
-                        bytes_data = self._bytes_from_bytecode(fullname, data,
-                                                               bytecode_path,
-                                                               st)
+                        bytes_data = _validate_bytecode_header(data,
+                                source_stats=st, name=fullname,
+                                path=bytecode_path)
                     except (ImportError, EOFError):
                         pass
                     else:
                         _verbose_message('{} matches {}', bytecode_path,
                                         source_path)
-                        found = marshal.loads(bytes_data)
-                        if isinstance(found, _code_type):
-                            _imp._fix_co_filename(found, source_path)
-                            _verbose_message('code object from {}',
-                                            bytecode_path)
-                            return found
-                        else:
-                            msg = "Non-code object in {}"
-                            raise ImportError(msg.format(bytecode_path),
-                                              name=fullname, path=bytecode_path)
+                        return _compile_bytecode(bytes_data, name=fullname,
+                                                 bytecode_path=bytecode_path,
+                                                 source_path=source_path)
         source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
         _verbose_message('code object from {}', source_path)
@@ -1098,14 +1111,8 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
     def get_code(self, fullname):
         path = self.get_filename(fullname)
         data = self.get_data(path)
-        bytes_data = self._bytes_from_bytecode(fullname, data, path, None)
-        found = marshal.loads(bytes_data)
-        if isinstance(found, _code_type):
-            _verbose_message('code object from {!r}', path)
-            return found
-        else:
-            raise ImportError("Non-code object in {}".format(path),
-                              name=fullname, path=path)
+        bytes_data = _validate_bytecode_header(data, name=fullname, path=path)
+        return _compile_bytecode(bytes_data, name=fullname, bytecode_path=path)
 
     def get_source(self, fullname):
         """Return None as there is no source code."""
