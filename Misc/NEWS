@@ -421,6 +421,9 @@ Library
 Tests
 -----
 
+- Issue #16925: test_configparser now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #16918: test_codecs now works with unittest test discovery.
   Patch by Zachary Ware.
 
