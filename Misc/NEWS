@@ -217,6 +217,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15031: Refactor some .pyc management code to cut down on code
+  duplication. Thanks to Ronan Lamy for the report and taking an initial stab
+  at the problem.
+
 - Issue #16900: Issue a ResourceWarning when an ssl socket is left unclosed.
 
 - Issue #13899: \A, \Z, and \B now correctly match the A, Z, and B literals
