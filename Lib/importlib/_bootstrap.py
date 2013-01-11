@@ -1401,8 +1401,9 @@ class FileFinder:
         path = self.path
         try:
             contents = _os.listdir(path)
-        except FileNotFoundError:
-            # Directory has been removed since last import
+        except (FileNotFoundError, PermissionError, NotADirectoryError):
+            # Directory has either been removed, turned into a file, or made
+            # unreadable.
             contents = []
         # We store two cached versions, to handle runtime changes of the
         # PYTHONCASEOK environment variable.
