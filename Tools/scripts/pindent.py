@@ -79,8 +79,9 @@
 # Defaults
 STEPSIZE = 8
 TABSIZE = 8
-EXPANDTABS = 0
+EXPANDTABS = False
 
+import io
 import re
 import sys
 
@@ -89,7 +90,8 @@ next['if'] = next['elif'] = 'elif', 'else', 'end'
 next['while'] = next['for'] = 'else', 'end'
 next['try'] = 'except', 'finally'
 next['except'] = 'except', 'else', 'finally', 'end'
-next['else'] = next['finally'] = next['def'] = next['class'] = 'end'
+next['else'] = next['finally'] = next['with'] = \
+    next['def'] = next['class'] = 'end'
 next['end'] = ()
 start = 'if', 'while', 'for', 'try', 'with', 'def', 'class'
 
@@ -105,11 +107,11 @@ class PythonIndenter:
         self.expandtabs = expandtabs
         self._write = fpo.write
         self.kwprog = re.compile(
-                r'^\s*(?P<kw>[a-z]+)'
-                r'(\s+(?P<id>[a-zA-Z_]\w*))?'
+                r'^(?:\s|\\\n)*(?P<kw>[a-z]+)'
+                r'((?:\s|\\\n)+(?P<id>[a-zA-Z_]\w*))?'
                 r'[^\w]')
         self.endprog = re.compile(
-                r'^\s*#?\s*end\s+(?P<kw>[a-z]+)'
+                r'^(?:\s|\\\n)*#?\s*end\s+(?P<kw>[a-z]+)'
                 r'(\s+(?P<id>[a-zA-Z_]\w*))?'
                 r'[^\w]')
         self.wsprog = re.compile(r'^[ \t]*')
@@ -125,7 +127,7 @@ class PythonIndenter:
 
     def readline(self):
         line = self.fpi.readline()
-        if line: self.lineno = self.lineno + 1
+        if line: self.lineno += 1
         # end if
         return line
     # end def readline
@@ -143,27 +145,24 @@ class PythonIndenter:
             line2 = self.readline()
             if not line2: break
             # end if
-            line = line + line2
+            line += line2
         # end while
         return line
     # end def getline
 
-    def putline(self, line, indent = None):
-        if indent is None:
-            self.write(line)
-            return
-        # end if
+    def putline(self, line, indent):
         tabs, spaces = divmod(indent*self.indentsize, self.tabsize)
-        i = 0
-        m = self.wsprog.match(line)
-        if m: i = m.end()
+        i = self.wsprog.match(line).end()
+        line = line[i:]
+        if line[:1] not in ('\n', '\r', ''):
+            line = '\t'*tabs + ' '*spaces + line
         # end if
-        self.write('\t'*tabs + ' '*spaces + line[i:])
+        self.write(line)
     # end def putline
 
     def reformat(self):
         stack = []
-        while 1:
+        while True:
             line = self.getline()
             if not line: break      # EOF
             # end if
@@ -173,10 +172,9 @@ class PythonIndenter:
                 kw2 = m.group('kw')
                 if not stack:
                     self.error('unexpected end')
-                elif stack[-1][0] != kw2:
+                elif stack.pop()[0] != kw2:
                     self.error('unmatched end')
                 # end if
-                del stack[-1:]
                 self.putline(line, len(stack))
                 continue
             # end if
@@ -208,23 +206,23 @@ class PythonIndenter:
     def delete(self):
         begin_counter = 0
         end_counter = 0
-        while 1:
+        while True:
             line = self.getline()
             if not line: break      # EOF
             # end if
             m = self.endprog.match(line)
             if m:
-                end_counter = end_counter + 1
+                end_counter += 1
                 continue
             # end if
             m = self.kwprog.match(line)
             if m:
                 kw = m.group('kw')
                 if kw in start:
-                    begin_counter = begin_counter + 1
+                    begin_counter += 1
                 # end if
             # end if
-            self.putline(line)
+            self.write(line)
         # end while
         if begin_counter - end_counter < 0:
             sys.stderr.write('Warning: input contained more end tags than expected\n')
@@ -234,17 +232,12 @@ class PythonIndenter:
     # end def delete
 
     def complete(self):
-        self.indentsize = 1
         stack = []
         todo = []
-        thisid = ''
-        current, firstkw, lastkw, topid = 0, '', '', ''
-        while 1:
+        currentws = thisid = firstkw = lastkw = topid = ''
+        while True:
             line = self.getline()
-            i = 0
-            m = self.wsprog.match(line)
-            if m: i = m.end()
-            # end if
+            i = self.wsprog.match(line).end()
             m = self.endprog.match(line)
             if m:
                 thiskw = 'end'
@@ -269,7 +262,9 @@ class PythonIndenter:
                     thiskw = ''
                 # end if
             # end if
-            indent = len(line[:i].expandtabs(self.tabsize))
+            indentws = line[:i]
+            indent = len(indentws.expandtabs(self.tabsize))
+            current = len(currentws.expandtabs(self.tabsize))
             while indent < current:
                 if firstkw:
                     if topid:
@@ -278,11 +273,11 @@ class PythonIndenter:
                     else:
                         s = '# end %s\n' % firstkw
                     # end if
-                    self.putline(s, current)
+                    self.write(currentws + s)
                     firstkw = lastkw = ''
                 # end if
-                current, firstkw, lastkw, topid = stack[-1]
-                del stack[-1]
+                currentws, firstkw, lastkw, topid = stack.pop()
+                current = len(currentws.expandtabs(self.tabsize))
             # end while
             if indent == current and firstkw:
                 if thiskw == 'end':
@@ -297,18 +292,18 @@ class PythonIndenter:
                     else:
                         s = '# end %s\n' % firstkw
                     # end if
-                    self.putline(s, current)
+                    self.write(currentws + s)
                     firstkw = lastkw = topid = ''
                 # end if
             # end if
             if indent > current:
-                stack.append((current, firstkw, lastkw, topid))
+                stack.append((currentws, firstkw, lastkw, topid))
                 if thiskw and thiskw not in start:
                     # error
                     thiskw = ''
                 # end if
-                current, firstkw, lastkw, topid = \
-                         indent, thiskw, thiskw, thisid
+                currentws, firstkw, lastkw, topid = \
+                          indentws, thiskw, thiskw, thisid
             # end if
             if thiskw:
                 if thiskw in start:
@@ -326,7 +321,6 @@ class PythonIndenter:
             self.write(line)
         # end while
     # end def complete
-
 # end class PythonIndenter
 
 # Simplified user interface
@@ -352,76 +346,34 @@ def reformat_filter(input = sys.stdin, output = sys.stdout,
     pi.reformat()
 # end def reformat_filter
 
-class StringReader:
-    def __init__(self, buf):
-        self.buf = buf
-        self.pos = 0
-        self.len = len(self.buf)
-    # end def __init__
-    def read(self, n = 0):
-        if n <= 0:
-            n = self.len - self.pos
-        else:
-            n = min(n, self.len - self.pos)
-        # end if
-        r = self.buf[self.pos : self.pos + n]
-        self.pos = self.pos + n
-        return r
-    # end def read
-    def readline(self):
-        i = self.buf.find('\n', self.pos)
-        return self.read(i + 1 - self.pos)
-    # end def readline
-    def readlines(self):
-        lines = []
-        line = self.readline()
-        while line:
-            lines.append(line)
-            line = self.readline()
-        # end while
-        return lines
-    # end def readlines
-    # seek/tell etc. are left as an exercise for the reader
-# end class StringReader
-
-class StringWriter:
-    def __init__(self):
-        self.buf = ''
-    # end def __init__
-    def write(self, s):
-        self.buf = self.buf + s
-    # end def write
-    def getvalue(self):
-        return self.buf
-    # end def getvalue
-# end class StringWriter
-
 def complete_string(source, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
-    input = StringReader(source)
-    output = StringWriter()
+    input = io.StringIO(source)
+    output = io.StringIO()
     pi = PythonIndenter(input, output, stepsize, tabsize, expandtabs)
     pi.complete()
     return output.getvalue()
 # end def complete_string
 
 def delete_string(source, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
-    input = StringReader(source)
-    output = StringWriter()
+    input = io.StringIO(source)
+    output = io.StringIO()
     pi = PythonIndenter(input, output, stepsize, tabsize, expandtabs)
     pi.delete()
     return output.getvalue()
 # end def delete_string
 
 def reformat_string(source, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
-    input = StringReader(source)
-    output = StringWriter()
+    input = io.StringIO(source)
+    output = io.StringIO()
     pi = PythonIndenter(input, output, stepsize, tabsize, expandtabs)
     pi.reformat()
     return output.getvalue()
 # end def reformat_string
 
 def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
-    source = open(filename, 'r').read()
+    with open(filename, 'r') as f:
+        source = f.read()
+    # end with
     result = complete_string(source, stepsize, tabsize, expandtabs)
     if source == result: return 0
     # end if
@@ -429,14 +381,16 @@ def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     try: os.rename(filename, filename + '~')
     except os.error: pass
     # end try
-    f = open(filename, 'w')
-    f.write(result)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(result)
+    # end with
     return 1
 # end def complete_file
 
 def delete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
-    source = open(filename, 'r').read()
+    with open(filename, 'r') as f:
+        source = f.read()
+    # end with
     result = delete_string(source, stepsize, tabsize, expandtabs)
     if source == result: return 0
     # end if
@@ -444,14 +398,16 @@ def delete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = E
     try: os.rename(filename, filename + '~')
     except os.error: pass
     # end try
-    f = open(filename, 'w')
-    f.write(result)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(result)
+    # end with
     return 1
 # end def delete_file
 
 def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
-    source = open(filename, 'r').read()
+    with open(filename, 'r') as f:
+        source = f.read()
+    # end with
     result = reformat_string(source, stepsize, tabsize, expandtabs)
     if source == result: return 0
     # end if
@@ -459,9 +415,9 @@ def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     try: os.rename(filename, filename + '~')
     except os.error: pass
     # end try
-    f = open(filename, 'w')
-    f.write(result)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(result)
+    # end with
     return 1
 # end def reformat_file
 
@@ -474,7 +430,7 @@ usage: pindent (-c|-d|-r) [-s stepsize] [-t tabsize] [-e] [file] ...
 -r         : reformat a completed program (use #end directives)
 -s stepsize: indentation step (default %(STEPSIZE)d)
 -t tabsize : the worth in spaces of a tab (default %(TABSIZE)d)
--e         : expand TABs into spaces (defailt OFF)
+-e         : expand TABs into spaces (default OFF)
 [file] ... : files are changed in place, with backups in file~
 If no files are specified or a single - is given,
 the program acts as a filter (reads stdin, writes stdout).
@@ -517,7 +473,7 @@ def test():
         elif o == '-t':
             tabsize = int(a)
         elif o == '-e':
-            expandtabs = 1
+            expandtabs = True
         # end if
     # end for
     if not action:
