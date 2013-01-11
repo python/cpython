@@ -76,13 +76,18 @@ The class can be used to simulate nested scopes and is useful in templating.
         be modified to change which mappings are searched.  The list should
         always contain at least one mapping.
 
-    .. method:: new_child()
+    .. method:: new_child(m=None)
 
-        Returns a new :class:`ChainMap` containing a new :class:`dict` followed by
-        all of the maps in the current instance.  A call to ``d.new_child()`` is
-        equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
+        Returns a new :class:`ChainMap` containing a new map followed by
+        all of the maps in the current instance.  If ``m`` is specified,
+        it becomes the new map at the front of the list of mappings; if not
+        specified, an empty dict is used, so that a call to ``d.new_child()``
+        is equivalent to: ``ChainMap({}, *d.maps)``.  This method is used for
         creating subcontexts that can be updated without altering values in any
         of the parent mappings.
+
+        .. versionchanged:: 3.4
+           The optional ``m`` parameter was added.
 
     .. attribute:: parents
 
