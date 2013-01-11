@@ -82,6 +82,8 @@ Number-theoretic and representation functions
 
 
 .. function:: fsum(iterable)
+.. testsetup::
+        >>> from math import fsum
 
    Return an accurate floating point sum of values in the iterable.  Avoids
    loss of precision by tracking multiple intermediate partial sums::
