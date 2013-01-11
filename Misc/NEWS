@@ -186,6 +186,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13899: \A, \Z, and \B now correctly match the A, Z, and B literals
+  when used inside character classes (e.g. '[\A]').  Patch by Matthew Barnett.
+
 - Issue #15109: Fix regression in sqlite3's iterdump method where it would
   die with an encoding error if the database contained string values
   containing non-ASCII.  (Regression was introduced by fix for 9750).
