@@ -424,6 +424,8 @@ Library
 Tests
 -----
 
+- Issue #15539: Added regression tests for Tools/scripts/pindent.py.
+
 - Issue #16925: test_configparser now works with unittest test discovery.
   Patch by Zachary Ware.
 
@@ -570,6 +572,11 @@ Documentation
 
 Tools/Demos
 -----------
+
+- Issue #15539: Fix a number of bugs in Tools/scripts/pindent.py.  Now
+  pindent.py works with a "with" statement.  pindent.py no longer produces
+  improper indentation.  pindent.py now works with continued lines broken after
+  "class" or "def" keywords and with continuations at the start of line.
 
 - Issue #15378: Fix Tools/unicode/comparecodecs.py.  Patch by Serhiy Storchaka.
 
