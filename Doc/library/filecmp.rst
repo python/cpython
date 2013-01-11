@@ -54,9 +54,9 @@ The :mod:`filecmp` module defines the following functions:
 Example::
 
    >>> import filecmp
-   >>> filecmp.cmp('undoc.rst', 'undoc.rst')
+   >>> filecmp.cmp('undoc.rst', 'undoc.rst') # doctest: +SKIP
    True
-   >>> filecmp.cmp('undoc.rst', 'index.rst')
+   >>> filecmp.cmp('undoc.rst', 'index.rst') # doctest: +SKIP
    False
 
 
@@ -191,6 +191,6 @@ recursively through two directories to show common different files::
     ...     for sub_dcmp in dcmp.subdirs.values():
     ...         print_diff_files(sub_dcmp)
     ...
-    >>> dcmp = dircmp('dir1', 'dir2')
-    >>> print_diff_files(dcmp)
+    >>> dcmp = dircmp('dir1', 'dir2') # doctest: +SKIP
+    >>> print_diff_files(dcmp) # doctest: +SKIP
 
