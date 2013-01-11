@@ -1136,7 +1136,7 @@ setting the ``help`` value to ``argparse.SUPPRESS``::
 metavar
 ^^^^^^^
 
-When :class:`ArgumentParser` generates help messages, it need some way to refer
+When :class:`ArgumentParser` generates help messages, it needs some way to refer
 to each expected argument.  By default, ArgumentParser objects use the dest_
 value as the "name" of each object.  By default, for positional argument
 actions, the dest_ value is used directly, and for optional argument actions,
