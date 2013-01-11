@@ -121,16 +121,15 @@ class urlopenNetworkTests(unittest.TestCase):
         else:
             # This happens with some overzealous DNS providers such as OpenDNS
             self.skipTest("%r should not resolve for test to work" % bogus_domain)
-        self.assertRaises(OSError,
-                          # SF patch 809915:  In Sep 2003, VeriSign started
-                          # highjacking invalid .com and .net addresses to
-                          # boost traffic to their own site.  This test
-                          # started failing then.  One hopes the .invalid
-                          # domain will be spared to serve its defined
-                          # purpose.
-                          # urllib.urlopen, "http://www.sadflkjsasadf.com/")
-                          urllib.request.urlopen,
-                          "http://sadflkjsasf.i.nvali.d/")
+        failure_explanation = ('opening an invalid URL did not raise OSError; '
+                               'can be caused by a broken DNS server '
+                               '(e.g. returns 404 or hijacks page)')
+        with self.assertRaises(OSError, msg=failure_explanation):
+            # SF patch 809915:  In Sep 2003, VeriSign started highjacking
+            # invalid .com and .net addresses to boost traffic to their own
+            # site.  This test started failing then.  One hopes the .invalid
+            # domain will be spared to serve its defined purpose.
+            urllib.request.urlopen("http://sadflkjsasf.i.nvali.d/")
 
 
 class urlretrieveNetworkTests(unittest.TestCase):
