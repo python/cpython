@@ -6,6 +6,9 @@ import errno
 import imp
 import os
 import py_compile
+import stat
+import sys
+import tempfile
 from test.support import make_legacy_pyc
 import unittest
 import warnings
@@ -146,6 +149,38 @@ class FinderTests(abc.FinderTests):
             finder = self.get_finder(mapping['.root'])
             self.assertIsNotNone(finder.find_module(mod))
         self.assertIsNone(finder.find_module(mod))
+
+    @unittest.skipUnless(sys.platform != 'win32',
+            'os.chmod() does not support the needed arguments under Windows')
+    def test_no_read_directory(self):
+        # Issue #16730
+        tempdir = tempfile.TemporaryDirectory()
+        original_mode = os.stat(tempdir.name).st_mode
+        def cleanup(tempdir):
+            """Cleanup function for the temporary directory.
+
+            Since we muck with the permissions, we want to set them back to
+            their original values to make sure the directory can be properly
+            cleaned up.
+
+            """
+            os.chmod(tempdir.name, original_mode)
+            # If this is not explicitly called then the __del__ method is used,
+            # but since already mucking around might as well explicitly clean
+            # up.
+            tempdir.__exit__(None, None, None)
+        self.addCleanup(cleanup, tempdir)
+        os.chmod(tempdir.name, stat.S_IWUSR | stat.S_IXUSR)
+        finder = self.get_finder(tempdir.name)
+        self.assertEqual((None, []), finder.find_loader('doesnotexist'))
+
+    def test_ignore_file(self):
+        # If a directory got changed to a file from underneath us, then don't
+        # worry about looking for submodules.
+        with tempfile.NamedTemporaryFile() as file_obj:
+            finder = self.get_finder(file_obj.name)
+            self.assertEqual((None, []), finder.find_loader('doesnotexist'))
+
 
 def test_main():
     from test.support import run_unittest
