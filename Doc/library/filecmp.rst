@@ -176,6 +176,6 @@ recursively through two directories to show common different files::
     ...     for sub_dcmp in dcmp.subdirs.values():
     ...         print_diff_files(sub_dcmp)
     ...
-    >>> dcmp = dircmp('dir1', 'dir2')
-    >>> print_diff_files(dcmp)
+    >>> dcmp = dircmp('dir1', 'dir2') # doctest: +SKIP
+    >>> print_diff_files(dcmp) # doctest: +SKIP
 
