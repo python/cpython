@@ -174,8 +174,9 @@ def main():
 
     # Test suite run and passed.
     if python_files or c_files:
+        end = " and check for refleaks?" if c_files else "?"
         print
-        print "Did you run the test suite?"
+        print "Did you run the test suite" + end
 
 
 if __name__ == '__main__':
