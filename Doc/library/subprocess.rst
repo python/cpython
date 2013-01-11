@@ -826,8 +826,6 @@ The :mod:`subprocess` module exposes the following constants.
    The new process has a new console, instead of inheriting its parent's
    console (the default).
 
-   This flag is always set when :class:`Popen` is created with ``shell=True``.
-
 .. data:: CREATE_NEW_PROCESS_GROUP
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
