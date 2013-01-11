@@ -1,7 +1,11 @@
 from test import support
 import unittest
 
-crypt = support.import_module('crypt')
+def setUpModule():
+    # this import will raise unittest.SkipTest if _crypt doesn't exist,
+    # so it has to be done in setUpModule for test discovery to work
+    global crypt
+    crypt = support.import_module('crypt')
 
 class CryptTestCase(unittest.TestCase):
 
@@ -29,8 +33,5 @@ class CryptTestCase(unittest.TestCase):
         self.assertTrue(len(crypt.methods) >= 1)
         self.assertEqual(crypt.METHOD_CRYPT, crypt.methods[-1])
 
-def test_main():
-    support.run_unittest(CryptTestCase)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
