@@ -47,9 +47,9 @@ class CollationTests(unittest.TestCase):
         except sqlite.ProgrammingError as e:
             pass
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 1),
+                     'old SQLite versions crash on this test')
     def CheckCollationIsUsed(self):
-        if sqlite.version_info < (3, 2, 1):  # old SQLite versions crash on this test
-            return
         def mycoll(x, y):
             # reverse order
             return -((x > y) - (x < y))
