@@ -949,6 +949,12 @@ class ReTests(unittest.TestCase):
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
 
+    def test_bug_13899(self):
+        # Issue #13899: re pattern r"[\A]" should work like "A" but matches
+        # nothing. Ditto B and Z.
+        self.assertEqual(re.findall(r'[\A\B\b\C\Z]', 'AB\bCZ'),
+                         ['A', 'B', '\b', 'C', 'Z'])
+
     @bigmemtest(size=_2G, memuse=1)
     def test_large_search(self, size):
         # Issue #10182: indices were 32-bit-truncated.
