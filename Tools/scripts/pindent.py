@@ -76,6 +76,8 @@
 # - realign comments
 # - optionally do much more thorough reformatting, a la C indent
 
+from __future__ import print_function
+
 # Defaults
 STEPSIZE = 8
 TABSIZE = 8
@@ -370,6 +372,23 @@ def reformat_string(source, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     return output.getvalue()
 # end def reformat_string
 
+def make_backup(filename):
+    import os, os.path
+    backup = filename + '~'
+    if os.path.lexists(backup):
+        try:
+            os.remove(backup)
+        except os.error:
+            print("Can't remove backup %r" % (backup,), file=sys.stderr)
+        # end try
+    # end if
+    try:
+        os.rename(filename, backup)
+    except os.error:
+        print("Can't rename %r to %r" % (filename, backup), file=sys.stderr)
+    # end try
+# end def make_backup
+
 def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = EXPANDTABS):
     with open(filename, 'r') as f:
         source = f.read()
@@ -377,10 +396,7 @@ def complete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     result = complete_string(source, stepsize, tabsize, expandtabs)
     if source == result: return 0
     # end if
-    import os
-    try: os.rename(filename, filename + '~')
-    except os.error: pass
-    # end try
+    make_backup(filename)
     with open(filename, 'w') as f:
         f.write(result)
     # end with
@@ -394,10 +410,7 @@ def delete_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs = E
     result = delete_string(source, stepsize, tabsize, expandtabs)
     if source == result: return 0
     # end if
-    import os
-    try: os.rename(filename, filename + '~')
-    except os.error: pass
-    # end try
+    make_backup(filename)
     with open(filename, 'w') as f:
         f.write(result)
     # end with
@@ -411,10 +424,7 @@ def reformat_file(filename, stepsize = STEPSIZE, tabsize = TABSIZE, expandtabs =
     result = reformat_string(source, stepsize, tabsize, expandtabs)
     if source == result: return 0
     # end if
-    import os
-    try: os.rename(filename, filename + '~')
-    except os.error: pass
-    # end try
+    make_backup(filename)
     with open(filename, 'w') as f:
         f.write(result)
     # end with
