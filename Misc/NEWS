@@ -186,6 +186,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15109: Fix regression in sqlite3's iterdump method where it would
+  die with an encoding error if the database contained string values
+  containing non-ASCII.  (Regression was introduced by fix for 9750).
+
 - Issue #15545: Fix regression in sqlite3's iterdump method where it was
   failing if the connection used a row factory (such as sqlite3.Row) that
   produced unsortable objects. (Regression was introduced by fix for 9750).
