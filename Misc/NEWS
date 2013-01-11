@@ -634,6 +634,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #15539: Added regression tests for Tools/scripts/pindent.py.
+
 - Issue #15324: Fix regrtest parsing of --fromfile and --randomize options.
 
 - Issue #16618: Add more regression tests for glob.
@@ -708,6 +710,11 @@ Build
 
 Tools/Demos
 -----------
+
+- Issue #15539: Fix a number of bugs in Tools/scripts/pindent.py.  Now
+  pindent.py works with a "with" statement.  pindent.py no longer produces
+  improper indentation.  pindent.py now works with continued lines broken after
+  "class" or "def" keywords and with continuations at the start of line.
 
 - Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
   Patch by Serhiy Storchaka.
