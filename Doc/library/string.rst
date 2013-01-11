@@ -717,7 +717,7 @@ Here is an example of how to use a Template:
    >>> Template('Give $who $100').substitute(d)
    Traceback (most recent call last):
    [...]
-   ValueError: Invalid placeholder in string: line 1, col 10
+   ValueError: Invalid placeholder in string: line 1, col 11
    >>> Template('$who likes $what').substitute(d)
    Traceback (most recent call last):
    [...]
