@@ -434,6 +434,8 @@ Library
 Tests
 -----
 
+- Issue #16923: Fix ResourceWarnings in test_ssl.
+
 - Issue #15539: Added regression tests for Tools/scripts/pindent.py.
 
 - Issue #16925: test_configparser now works with unittest test discovery.
