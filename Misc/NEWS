@@ -147,6 +147,8 @@ Core and Builtins
 Library
 -------
 
+- SSLContext.load_dh_params() now properly closes the input file.
+
 - Issue #16829: IDLE printing no longer fails if there are spaces or other
   special characters in the file path.
 
