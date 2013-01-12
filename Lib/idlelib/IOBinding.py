@@ -7,6 +7,7 @@
 
 import os
 import types
+import pipes
 import sys
 import codecs
 import tempfile
@@ -503,7 +504,7 @@ class IOBinding:
         else: #no printing for this platform
             printPlatform = False
         if printPlatform:  #we can try to print for this platform
-            command = command % filename
+            command = command % pipes.quote(filename)
             pipe = os.popen(command, "r")
             # things can get ugly on NT if there is no printer available.
             output = pipe.read().strip()
