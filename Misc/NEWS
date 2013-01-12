@@ -233,9 +233,6 @@ Library
   failing if the connection used a row factory (such as sqlite3.Row) that
   produced unsortable objects. (Regression was introduced by fix for 9750).
 
-- Issue #16876: Optimize epoll.poll() by keeping a per-instance epoll events
-  buffer instead of allocating a new one at each poll().
-
 - Issue #16491: IDLE now prints chained exception tracebacks.
 
 - fcntl: add F_DUPFD_CLOEXEC constant, available on Linux 2.6.24+.
