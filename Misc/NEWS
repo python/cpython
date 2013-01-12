@@ -1387,6 +1387,10 @@ Documentation
 - Issue #15250: Document that `filecmp.dircmp()` compares files shallowly. Patch
   contributed by Chris Jerdonek.
 
+- Issue #15442: Expose the default list of directories ignored by
+  `filecmp.dircmp()` as a module attribute, and expand the list to more modern
+  values.
+
 Tests
 -----
 

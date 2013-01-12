@@ -1,4 +1,3 @@
-
 import os, filecmp, shutil, tempfile
 import unittest
 from test import support
@@ -46,9 +45,14 @@ class DirCompareTestCase(unittest.TestCase):
         self.dir = os.path.join(tmpdir, 'dir')
         self.dir_same = os.path.join(tmpdir, 'dir-same')
         self.dir_diff = os.path.join(tmpdir, 'dir-diff')
+
+        # Another dir is created under dir_same, but it has a name from the
+        # ignored list so it should not affect testing results.
+        self.dir_ignored = os.path.join(self.dir_same, '.hg')
+
         self.caseinsensitive = os.path.normcase('A') == os.path.normcase('a')
         data = 'Contents of file go here.\n'
-        for dir in [self.dir, self.dir_same, self.dir_diff]:
+        for dir in (self.dir, self.dir_same, self.dir_diff, self.dir_ignored):
             shutil.rmtree(dir, True)
             os.mkdir(dir)
             if self.caseinsensitive and dir is self.dir_same:
@@ -64,9 +68,11 @@ class DirCompareTestCase(unittest.TestCase):
         output.close()
 
     def tearDown(self):
-        shutil.rmtree(self.dir)
-        shutil.rmtree(self.dir_same)
-        shutil.rmtree(self.dir_diff)
+        for dir in (self.dir, self.dir_same, self.dir_diff):
+            shutil.rmtree(dir)
+
+    def test_default_ignores(self):
+        self.assertIn('.hg', filecmp.DEFAULT_IGNORES)
 
     def test_cmpfiles(self):
         self.assertTrue(filecmp.cmpfiles(self.dir, self.dir, ['file']) ==
