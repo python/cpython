@@ -1386,14 +1386,6 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         for obj in abc.__subclasses__() + [abc]:
             abcs[obj] = obj._abc_registry.copy()
 
-    if indirect_test:
-        def run_the_test():
-            indirect_test()
-    else:
-        def run_the_test():
-            del sys.modules[the_module.__name__]
-            exec('import ' + the_module.__name__)
-
     nwarmup, ntracked, fname = huntrleaks
     fname = os.path.join(support.SAVEDCWD, fname)
     repcount = nwarmup + ntracked
@@ -1404,7 +1396,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
     sys.stderr.flush()
     for i in range(repcount):
-        run_the_test()
+        indirect_test()
         alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, abcs)
         sys.stderr.write('.')
         sys.stderr.flush()
