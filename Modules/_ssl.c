@@ -2177,6 +2177,7 @@ load_dh_params(PySSLContext *self, PyObject *filepath)
     errno = 0;
     PySSL_BEGIN_ALLOW_THREADS
     dh = PEM_read_DHparams(f, NULL, NULL, NULL);
+    fclose(f);
     PySSL_END_ALLOW_THREADS
     if (dh == NULL) {
         if (errno != 0) {
