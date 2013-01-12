@@ -2166,7 +2166,7 @@ def test_main(verbose=False):
 
     if _have_threads:
         thread_info = support.threading_setup()
-        if thread_info and support.is_resource_enabled('network'):
+        if thread_info:
             tests.append(ThreadedTests)
 
     try:
