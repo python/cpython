@@ -329,128 +329,6 @@ def cdata():
     '<tag>hello</tag>'
     """
 
-def find():
-    """
-    Test find methods (including xpath syntax).
-
-    >>> elem = ET.XML(SAMPLE_XML)
-    >>> elem.find("tag").tag
-    'tag'
-    >>> ET.ElementTree(elem).find("tag").tag
-    'tag'
-    >>> elem.find("section/tag").tag
-    'tag'
-    >>> elem.find("./tag").tag
-    'tag'
-    >>> ET.ElementTree(elem).find("./tag").tag
-    'tag'
-    >>> ET.ElementTree(elem).find("/tag").tag
-    'tag'
-    >>> elem[2] = ET.XML(SAMPLE_SECTION)
-    >>> elem.find("section/nexttag").tag
-    'nexttag'
-    >>> ET.ElementTree(elem).find("section/tag").tag
-    'tag'
-    >>> ET.ElementTree(elem).find("tog")
-    >>> ET.ElementTree(elem).find("tog/foo")
-    >>> elem.findtext("tag")
-    'text'
-    >>> elem.findtext("section/nexttag")
-    ''
-    >>> elem.findtext("section/nexttag", "default")
-    ''
-    >>> elem.findtext("tog")
-    >>> elem.findtext("tog", "default")
-    'default'
-    >>> ET.ElementTree(elem).findtext("tag")
-    'text'
-    >>> ET.ElementTree(elem).findtext("tog/foo")
-    >>> ET.ElementTree(elem).findtext("tog/foo", "default")
-    'default'
-    >>> ET.ElementTree(elem).findtext("./tag")
-    'text'
-    >>> ET.ElementTree(elem).findtext("/tag")
-    'text'
-    >>> elem.findtext("section/tag")
-    'subtext'
-    >>> ET.ElementTree(elem).findtext("section/tag")
-    'subtext'
-    >>> summarize_list(elem.findall("."))
-    ['body']
-    >>> summarize_list(elem.findall("tag"))
-    ['tag', 'tag']
-    >>> summarize_list(elem.findall("tog"))
-    []
-    >>> summarize_list(elem.findall("tog/foo"))
-    []
-    >>> summarize_list(elem.findall("*"))
-    ['tag', 'tag', 'section']
-    >>> summarize_list(elem.findall(".//tag"))
-    ['tag', 'tag', 'tag', 'tag']
-    >>> summarize_list(elem.findall("section/tag"))
-    ['tag']
-    >>> summarize_list(elem.findall("section//tag"))
-    ['tag', 'tag']
-    >>> summarize_list(elem.findall("section/*"))
-    ['tag', 'nexttag', 'nextsection']
-    >>> summarize_list(elem.findall("section//*"))
-    ['tag', 'nexttag', 'nextsection', 'tag']
-    >>> summarize_list(elem.findall("section/.//*"))
-    ['tag', 'nexttag', 'nextsection', 'tag']
-    >>> summarize_list(elem.findall("*/*"))
-    ['tag', 'nexttag', 'nextsection']
-    >>> summarize_list(elem.findall("*//*"))
-    ['tag', 'nexttag', 'nextsection', 'tag']
-    >>> summarize_list(elem.findall("*/tag"))
-    ['tag']
-    >>> summarize_list(elem.findall("*/./tag"))
-    ['tag']
-    >>> summarize_list(elem.findall("./tag"))
-    ['tag', 'tag']
-    >>> summarize_list(elem.findall(".//tag"))
-    ['tag', 'tag', 'tag', 'tag']
-    >>> summarize_list(elem.findall("././tag"))
-    ['tag', 'tag']
-    >>> summarize_list(elem.findall(".//tag[@class]"))
-    ['tag', 'tag', 'tag']
-    >>> summarize_list(elem.findall(".//tag[@class='a']"))
-    ['tag']
-    >>> summarize_list(elem.findall(".//tag[@class='b']"))
-    ['tag', 'tag']
-    >>> summarize_list(elem.findall(".//tag[@id]"))
-    ['tag']
-    >>> summarize_list(elem.findall(".//section[tag]"))
-    ['section']
-    >>> summarize_list(elem.findall(".//section[element]"))
-    []
-    >>> summarize_list(elem.findall("../tag"))
-    []
-    >>> summarize_list(elem.findall("section/../tag"))
-    ['tag', 'tag']
-    >>> summarize_list(ET.ElementTree(elem).findall("./tag"))
-    ['tag', 'tag']
-
-    Following example is invalid in 1.2.
-    A leading '*' is assumed in 1.3.
-
-    >>> elem.findall("section//") == elem.findall("section//*")
-    True
-
-    ET's Path module handles this case incorrectly; this gives
-    a warning in 1.3, and the behaviour will be modified in 1.4.
-
-    >>> summarize_list(ET.ElementTree(elem).findall("/tag"))
-    ['tag', 'tag']
-
-    >>> elem = ET.XML(SAMPLE_XML_NS)
-    >>> summarize_list(elem.findall("tag"))
-    []
-    >>> summarize_list(elem.findall("{http://effbot.org/ns}tag"))
-    ['{http://effbot.org/ns}tag', '{http://effbot.org/ns}tag']
-    >>> summarize_list(elem.findall(".//{http://effbot.org/ns}tag"))
-    ['{http://effbot.org/ns}tag', '{http://effbot.org/ns}tag', '{http://effbot.org/ns}tag']
-    """
-
 def file_init():
     """
     >>> import io
@@ -467,16 +345,6 @@ def file_init():
     'element'
     >>> tree.find("element/../empty-element").tag
     'empty-element'
-    """
-
-def bad_find():
-    """
-    Check bad or unsupported path expressions.
-
-    >>> elem = ET.XML(SAMPLE_XML)
-    >>> elem.findall("/tag")
-    Traceback (most recent call last):
-    SyntaxError: cannot use absolute path on element
     """
 
 def path_cache():
@@ -1883,6 +1751,98 @@ class ElementTreeTest(unittest.TestCase):
                                        method='html')
                 self.assertEqual(serialized, expected)
 
+
+class ElementFindTest(unittest.TestCase):
+    def test_find_simple(self):
+        e = ET.XML(SAMPLE_XML)
+        self.assertEqual(e.find('tag').tag, 'tag')
+        self.assertEqual(e.find('section/tag').tag, 'tag')
+        self.assertEqual(e.find('./tag').tag, 'tag')
+
+        e[2] = ET.XML(SAMPLE_SECTION)
+        self.assertEqual(e.find('section/nexttag').tag, 'nexttag')
+
+        self.assertEqual(e.findtext('./tag'), 'text')
+        self.assertEqual(e.findtext('section/tag'), 'subtext')
+
+        # section/nexttag is found but has no text
+        self.assertEqual(e.findtext('section/nexttag'), '')
+        self.assertEqual(e.findtext('section/nexttag', 'default'), '')
+
+        # tog doesn't exist and 'default' kicks in
+        self.assertIsNone(e.findtext('tog'))
+        self.assertEqual(e.findtext('tog', 'default'), 'default')
+
+    def test_findall(self):
+        e = ET.XML(SAMPLE_XML)
+        e[2] = ET.XML(SAMPLE_SECTION)
+        self.assertEqual(summarize_list(e.findall('.')), ['body'])
+        self.assertEqual(summarize_list(e.findall('tag')), ['tag', 'tag'])
+        self.assertEqual(summarize_list(e.findall('tog')), [])
+        self.assertEqual(summarize_list(e.findall('tog/foo')), [])
+        self.assertEqual(summarize_list(e.findall('*')),
+            ['tag', 'tag', 'section'])
+        self.assertEqual(summarize_list(e.findall('.//tag')),
+            ['tag'] * 4)
+        self.assertEqual(summarize_list(e.findall('section/tag')), ['tag'])
+        self.assertEqual(summarize_list(e.findall('section//tag')), ['tag'] * 2)
+        self.assertEqual(summarize_list(e.findall('section/*')),
+            ['tag', 'nexttag', 'nextsection'])
+        self.assertEqual(summarize_list(e.findall('section//*')),
+            ['tag', 'nexttag', 'nextsection', 'tag'])
+        self.assertEqual(summarize_list(e.findall('section/.//*')),
+            ['tag', 'nexttag', 'nextsection', 'tag'])
+        self.assertEqual(summarize_list(e.findall('*/*')),
+            ['tag', 'nexttag', 'nextsection'])
+        self.assertEqual(summarize_list(e.findall('*//*')),
+            ['tag', 'nexttag', 'nextsection', 'tag'])
+        self.assertEqual(summarize_list(e.findall('*/tag')), ['tag'])
+        self.assertEqual(summarize_list(e.findall('*/./tag')), ['tag'])
+        self.assertEqual(summarize_list(e.findall('./tag')), ['tag'] * 2)
+        self.assertEqual(summarize_list(e.findall('././tag')), ['tag'] * 2)
+
+        self.assertEqual(summarize_list(e.findall('.//tag[@class]')),
+            ['tag'] * 3)
+        self.assertEqual(summarize_list(e.findall('.//tag[@class="a"]')),
+            ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//tag[@class="b"]')),
+            ['tag'] * 2)
+        self.assertEqual(summarize_list(e.findall('.//tag[@id]')),
+            ['tag'])
+        self.assertEqual(summarize_list(e.findall('.//section[tag]')),
+            ['section'])
+        self.assertEqual(summarize_list(e.findall('.//section[element]')), [])
+        self.assertEqual(summarize_list(e.findall('../tag')), [])
+        self.assertEqual(summarize_list(e.findall('section/../tag')),
+            ['tag'] * 2)
+        self.assertEqual(e.findall('section//'), e.findall('section//*'))
+
+    def test_test_find_with_ns(self):
+        e = ET.XML(SAMPLE_XML_NS)
+        self.assertEqual(summarize_list(e.findall('tag')), [])
+        self.assertEqual(
+            summarize_list(e.findall("{http://effbot.org/ns}tag")),
+            ['{http://effbot.org/ns}tag'] * 2)
+        self.assertEqual(
+            summarize_list(e.findall(".//{http://effbot.org/ns}tag")),
+            ['{http://effbot.org/ns}tag'] * 3)
+
+    def test_bad_find(self):
+        e = ET.XML(SAMPLE_XML)
+        with self.assertRaisesRegex(SyntaxError, 'cannot use absolute path'):
+            e.findall('/tag')
+        
+    def test_find_through_ElementTree(self):
+        e = ET.XML(SAMPLE_XML)
+        self.assertEqual(ET.ElementTree(e).find('tag').tag, 'tag')
+        self.assertEqual(ET.ElementTree(e).findtext('tag'), 'text')
+        self.assertEqual(summarize_list(ET.ElementTree(e).findall('tag')),
+            ['tag'] * 2)
+        # this produces a warning
+        self.assertEqual(summarize_list(ET.ElementTree(e).findall('//tag')),
+            ['tag'] * 3)
+        
+
 class ElementIterTest(unittest.TestCase):
     def _ilist(self, elem, tag=None):
         return summarize_list(elem.iter(tag))
@@ -2547,6 +2507,7 @@ def test_main(module=None):
         ParseErrorTest,
         XincludeTest,
         ElementTreeTest,
+        ElementFindTest,
         ElementIterTest,
         TreeBuilderTest,
         ]
@@ -2560,10 +2521,9 @@ def test_main(module=None):
             ])
 
     try:
-        support.run_unittest(*test_classes)
-
         # XXX the C module should give the same warnings as the Python module
         with CleanContext(quiet=(pyET is not ET)):
+            support.run_unittest(*test_classes)
             support.run_doctest(sys.modules[__name__], verbosity=True)
     finally:
         # don't interfere with subsequent tests
