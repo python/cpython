@@ -147,6 +147,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16829: IDLE printing no longer fails if there are spaces or other
+  special characters in the file path.
+
 - Issue #16900: Issue a ResourceWarning when an ssl socket is left unclosed.
 
 - Issue #13899: \A, \Z, and \B now correctly match the A, Z, and B literals
