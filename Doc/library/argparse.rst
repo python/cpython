@@ -1506,8 +1506,8 @@ Sub-commands
 
      positional arguments:
        {a,b}   sub-command help
-     a     a help
-     b     b help
+         a     a help
+         b     b help
 
      optional arguments:
        -h, --help  show this help message and exit
