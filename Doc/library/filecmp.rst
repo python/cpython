@@ -55,10 +55,10 @@ The :class:`dircmp` class
 
 .. class:: dircmp(a, b, ignore=None, hide=None)
 
-   Construct a new directory comparison object, to compare the directories *a* and
-   *b*. *ignore* is a list of names to ignore, and defaults to ``['RCS', 'CVS',
-   'tags']``. *hide* is a list of names to hide, and defaults to ``[os.curdir,
-   os.pardir]``.
+   Construct a new directory comparison object, to compare the directories *a*
+   and *b*. *ignore* is a list of names to ignore, and defaults to
+   :attr:`filecmp.DEFAULT_IGNORES`. *hide* is a list of names to hide, and
+   defaults to ``[os.curdir, os.pardir]``.
 
    The :class:`dircmp` class compares files by doing *shallow* comparisons
    as described for :func:`filecmp.cmp`.
@@ -163,6 +163,12 @@ The :class:`dircmp` class
 
       A dictionary mapping names in :attr:`common_dirs` to :class:`dircmp`
       objects.
+
+.. attribute:: DEFAULT_IGNORES
+
+   .. versionadded:: 3.3
+
+   List of directories ignored by :class:`dircmp` by default.
 
 
 Here is a simplified example of using the ``subdirs`` attribute to search
