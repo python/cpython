@@ -1831,7 +1831,7 @@ class ElementFindTest(unittest.TestCase):
         e = ET.XML(SAMPLE_XML)
         with self.assertRaisesRegex(SyntaxError, 'cannot use absolute path'):
             e.findall('/tag')
-        
+
     def test_find_through_ElementTree(self):
         e = ET.XML(SAMPLE_XML)
         self.assertEqual(ET.ElementTree(e).find('tag').tag, 'tag')
@@ -1841,7 +1841,7 @@ class ElementFindTest(unittest.TestCase):
         # this produces a warning
         self.assertEqual(summarize_list(ET.ElementTree(e).findall('//tag')),
             ['tag'] * 3)
-        
+
 
 class ElementIterTest(unittest.TestCase):
     def _ilist(self, elem, tag=None):
