@@ -859,8 +859,10 @@ element_getstate(ElementObject *self)
                                      PICKLED_ATTRIB, self->extra->attrib,
                                      PICKLED_TEXT, self->text,
                                      PICKLED_TAIL, self->tail);
-    if (instancedict)
+    if (instancedict) {
+        Py_DECREF(children);
         return instancedict;
+    }
     else {
         for (i = 0; i < PyList_GET_SIZE(children); i++)
             Py_DECREF(PyList_GET_ITEM(children, i));
@@ -884,25 +886,17 @@ element_setstate_from_attributes(ElementObject *self,
         PyErr_SetString(PyExc_TypeError, "tag may not be NULL");
         return NULL;
     }
-    if (!text) {
-        Py_INCREF(Py_None);
-        text = Py_None;
-    }
-    if (!tail) {
-        Py_INCREF(Py_None);
-        tail = Py_None;
-    }
 
     Py_CLEAR(self->tag);
     self->tag = tag;
     Py_INCREF(self->tag);
 
     Py_CLEAR(self->text);
-    self->text = text;
+    self->text = text ? text : Py_None;
     Py_INCREF(self->text);
 
     Py_CLEAR(self->tail);
-    self->tail = tail;
+    self->tail = tail ? tail : Py_None;
     Py_INCREF(self->tail);
 
     /* Handle ATTRIB and CHILDREN. */
