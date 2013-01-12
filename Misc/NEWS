@@ -635,6 +635,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #16923: Fix ResourceWarnings in test_ssl.
+
 - Issue #15539: Added regression tests for Tools/scripts/pindent.py.
 
 - Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
