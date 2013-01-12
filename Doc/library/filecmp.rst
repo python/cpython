@@ -166,7 +166,7 @@ The :class:`dircmp` class
 
 .. attribute:: DEFAULT_IGNORES
 
-   .. versionadded:: 3.3
+   .. versionadded:: 3.4
 
    List of directories ignored by :class:`dircmp` by default.
 
