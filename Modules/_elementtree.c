@@ -950,19 +950,22 @@ element_setstate_from_Python(ElementObject *self, PyObject *state)
                              PICKLED_TAIL, PICKLED_CHILDREN, 0};
     PyObject *args;
     PyObject *tag, *attrib, *text, *tail, *children;
-    int error;
+    PyObject *retval;
 
-    /* More instance dict members than we know to handle? */
     tag = attrib = text = tail = children = NULL;
     args = PyTuple_New(0);
-    error = ! PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
-                                          &attrib, &text, &tail, &children);
-    Py_DECREF(args);
-    if (error)
+    if (!args)
         return NULL;
+
+    if (PyArg_ParseTupleAndKeywords(args, state, "|$OOOOO", kwlist, &tag,
+                                    &attrib, &text, &tail, &children))
+        retval = element_setstate_from_attributes(self, tag, attrib, text,
+                                                  tail, children);
     else
-        return element_setstate_from_attributes(self, tag, attrib, text,
-                                                tail, children);
+        retval = NULL;
+
+    Py_DECREF(args);
+    return retval;
 }
 
 static PyObject *
