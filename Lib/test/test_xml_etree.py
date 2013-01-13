@@ -352,6 +352,8 @@ def find():
     'subtext'
     >>> ET.ElementTree(elem).findtext("section/tag")
     'subtext'
+    >>> ET.XML('<root><empty /></root>').findtext('empty')
+    ''
     >>> summarize_list(elem.findall("."))
     ['body']
     >>> summarize_list(elem.findall("tag"))
