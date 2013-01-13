@@ -785,16 +785,16 @@ class ElementTree:
               default_namespace=None,
               method=None, *,
               short_empty_elements=True):
-        """Write the element tree to a file, as XML. 'file_or_filename' is a
-           file name or a file object opened for writing. 'encoding' is the
-           output encoding (default is US-ASCII). 'xml_declaration' controls
-           if an XML declaration should be added to the output. Use False
-           for never, True for always, None for only if not US-ASCII or
-           UTF-8 or Unicode (default is None). 'method' is either "xml"
-           (default), "html", "text" or "c14n".
+        """Write the element tree to a file, as XML.  'file_or_filename' is a
+           file name or a file object opened for writing.
+           'encoding' is the output encoding (default is US-ASCII).
+           'xml_declaration' controls if an XML declaration should be added
+           to the output.  Use False for never, True for always, None for only
+           if not US-ASCII or UTF-8 or Unicode (default is None).
            'default_namespace' sets the default XML namespace (for "xmlns").
+           'method' is either "xml" (default), "html", "text" or "c14n".
            The keyword-only 'short_empty_elements' parameter controls the
-           formatting of elements that contain no content. If True (default),
+           formatting of elements that contain no content.  If True (default),
            they are emitted as a single self-closed tag, otherwise they are
            emitted as a pair of start/end tags.
 
