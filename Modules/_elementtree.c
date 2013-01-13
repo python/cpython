@@ -1129,7 +1129,7 @@ element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
 
             PyObject* text = element_get_text(item);
             if (text == Py_None)
-                return PyBytes_FromString("");
+                return PyUnicode_New(0, 0);
             Py_XINCREF(text);
             return text;
         }
