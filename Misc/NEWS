@@ -559,6 +559,10 @@ Library
 - Issue #16123: IDLE - deprecate running without a subprocess.
   Patch by Roger Serwy.
 
+- Issue #14377: ElementTree.write and some of the module-level functions have
+  a new parameter - *short_empty_elements*. It controls how elements with no
+  contents are emitted.
+
 - Issue #16089: Allow ElementTree.TreeBuilder to work again with a non-Element
   element_factory (fixes a regression in SimpleTAL).
 
