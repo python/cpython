@@ -779,26 +779,26 @@ class ElementTree:
                 )
         return self._root.iterfind(path, namespaces)
 
-    ##
-    # Writes the element tree to a file, as XML.
-    #
-    # @def write(file, **options)
-    # @param file A file name, or a file object opened for writing.
-    # @param **options Options, given as keyword arguments.
-    # @keyparam encoding Optional output encoding (default is US-ASCII).
-    #     Use "unicode" to return a Unicode string.
-    # @keyparam method Optional output method ("xml", "html", "text" or
-    #     "c14n"; default is "xml").
-    # @keyparam xml_declaration Controls if an XML declaration should
-    #     be added to the file.  Use False for never, True for always,
-    #     None for only if not US-ASCII or UTF-8 or Unicode.  None is default.
-
     def write(self, file_or_filename,
               encoding=None,
               xml_declaration=None,
               default_namespace=None,
               method=None, *,
               short_empty_elements=True):
+        """Write the element tree to a file, as XML. 'file_or_filename' is a
+           file name or a file object opened for writing. 'encoding' is the
+           output encoding (default is US-ASCII). 'xml_declaration' controls
+           if an XML declaration should be added to the output. Use False
+           for never, True for always, None for only if not US-ASCII or
+           UTF-8 or Unicode (default is None). 'method' is either "xml"
+           (default), "html", "text" or "c14n".
+           'default_namespace' sets the default XML namespace (for "xmlns").
+           The keyword-only 'short_empty_elements' parameter controls the
+           formatting of elements that contain no content. If True (default),
+           they are emitted as a single self-closed tag, otherwise they are
+           emitted as a pair of start/end tags.
+
+        """
         if not method:
             method = "xml"
         elif method not in _serialize:
