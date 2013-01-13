@@ -2383,6 +2383,17 @@ class _TestListenerClient(BaseTestCase):
         p.join()
         l.close()
 
+    def test_issue16955(self):
+        for fam in self.connection.families:
+            l = self.connection.Listener(family=fam)
+            c = self.connection.Client(l.address)
+            a = l.accept()
+            a.send_bytes(b"hello")
+            self.assertTrue(c.poll(1))
+            a.close()
+            c.close()
+            l.close()
+
 class _TestPoll(unittest.TestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
