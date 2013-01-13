@@ -1773,6 +1773,9 @@ class ElementFindTest(unittest.TestCase):
         self.assertIsNone(e.findtext('tog'))
         self.assertEqual(e.findtext('tog', 'default'), 'default')
 
+        # Issue #16922
+        self.assertEqual(ET.XML('<tag><empty /></tag>').findtext('empty'), '')
+
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
         e[2] = ET.XML(SAMPLE_SECTION)
