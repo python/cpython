@@ -405,7 +405,7 @@ class Connection(_ConnectionBase):
         return self._recv(size)
 
     def _poll(self, timeout):
-        r = wait([self._handle], timeout)
+        r = wait([self], timeout)
         return bool(r)
 
 
