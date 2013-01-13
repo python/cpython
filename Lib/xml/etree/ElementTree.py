@@ -802,11 +802,12 @@ class ElementTree:
     # @param **options Options, given as keyword arguments.
     # @keyparam encoding Optional output encoding (default is US-ASCII).
     #     Use "unicode" to return a Unicode string.
-    # @keyparam method Optional output method ("xml", "html", "text" or
-    #     "c14n"; default is "xml").
     # @keyparam xml_declaration Controls if an XML declaration should
     #     be added to the file.  Use False for never, True for always,
     #     None for only if not US-ASCII or UTF-8 or Unicode.  None is default.
+    # @keyparam default_namespace Sets the default XML namespace (for "xmlns").
+    # @keyparam method Optional output method ("xml", "html", "text" or
+    #     "c14n"; default is "xml").
 
     def write(self, file_or_filename,
               # keyword arguments
