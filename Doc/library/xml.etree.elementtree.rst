@@ -767,13 +767,15 @@ ElementTree Objects
       root element.
 
 
-   .. method:: write(file, encoding="us-ascii", xml_declaration=None, method="xml")
+   .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
+                     default_namespace=None, method="xml")
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       file object opened for writing.  *encoding* [1]_ is the output encoding
       (default is US-ASCII).  *xml_declaration* controls if an XML declaration
       should be added to the file.  Use False for never, True for always, None
-      for only if not US-ASCII or UTF-8 (default is None).  *method* is either
+      for only if not US-ASCII or UTF-8 (default is None).  *default_namespace*
+      sets the default XML namespace (for "xmlns").  *method* is either
       ``"xml"``, ``"html"`` or ``"text"`` (default is ``"xml"``).  Returns an
       encoded string.
 
