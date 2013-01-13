@@ -930,17 +930,17 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.sched_getparam, -1)
         param = posix.sched_getparam(0)
         self.assertIsInstance(param.sched_priority, int)
-        try:
-            posix.sched_setscheduler(0, mine, param)
-        except OSError as e:
-            if e.errno != errno.EPERM:
-                raise
 
-        # POSIX states that calling sched_setparam() on a process with a
-        # scheduling policy other than SCHED_FIFO or SCHED_RR is
-        # implementation-defined: FreeBSD returns EINVAL.
-        if not sys.platform.startswith('freebsd'):
-            posix.sched_setparam(0, param)
+        # POSIX states that calling sched_setparam() or sched_setscheduler() on
+        # a process with a scheduling policy other than SCHED_FIFO or SCHED_RR
+        # is implementation-defined: NetBSD and FreeBSD can return EINVAL.
+        if not sys.platform.startswith(('freebsd', 'netbsd')):
+            try:
+                posix.sched_setscheduler(0, mine, param)
+                posix.sched_setparam(0, param)
+            except OSError as e:
+                if e.errno != errno.EPERM:
+                    raise
             self.assertRaises(OSError, posix.sched_setparam, -1, param)
 
         self.assertRaises(OSError, posix.sched_setscheduler, -1, mine, param)
