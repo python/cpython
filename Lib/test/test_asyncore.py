@@ -738,6 +738,7 @@ class BaseTestAPI(unittest.TestCase):
         server = TCPServer()
         t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1, count=500))
         t.start()
+        self.addCleanup(t.join)
 
         for x in range(20):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
