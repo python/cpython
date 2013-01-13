@@ -588,7 +588,7 @@ deque_remove(dequeobject *deque, PyObject *value)
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
-static int
+static void
 deque_clear(dequeobject *deque)
 {
     PyObject *item;
@@ -601,7 +601,6 @@ deque_clear(dequeobject *deque)
     assert(deque->leftblock == deque->rightblock &&
            deque->leftindex - 1 == deque->rightindex &&
            deque->len == 0);
-    return 0;
 }
 
 static PyObject *
@@ -704,10 +703,7 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
 static PyObject *
 deque_clearmethod(dequeobject *deque)
 {
-    int rv;
-
-    rv = deque_clear(deque);
-    assert (rv != -1);
+    deque_clear(deque);
     Py_RETURN_NONE;
 }
 
