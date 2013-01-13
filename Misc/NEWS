@@ -217,6 +217,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16955: Fix the poll() method for multiprocessing's socket
+  connections on Windows.
+
 - SSLContext.load_dh_params() now properly closes the input file.
 
 - Issue #16829: IDLE printing no longer fails if there are spaces or other
