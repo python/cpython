@@ -310,7 +310,7 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 /* Helper function for extracting the attrib dictionary from a keywords dict.
  * This is required by some constructors/functions in this module that can
- * either accept attrib as a keyword argument or all attributes splashed 
+ * either accept attrib as a keyword argument or all attributes splashed
  * directly into *kwds.
  * If there is no 'attrib' keyword, return an empty dict.
  */
@@ -1977,7 +1977,7 @@ static PyObject *
 elementiter_next(ElementIterObject *it)
 {
     /* Sub-element iterator.
-     * 
+     *
      * A short note on gettext: this function serves both the iter() and
      * itertext() methods to avoid code duplication. However, there are a few
      * small differences in the way these iterations work. Namely:
@@ -3039,7 +3039,7 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
     }
 }
 
-static void 
+static void
 expat_start_doctype_handler(XMLParserObject *self,
                             const XML_Char *doctype_name,
                             const XML_Char *sysid,
@@ -3244,7 +3244,7 @@ xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
     self_xp->handle_doctype = PyObject_GetAttrString(target, "doctype");
 
     PyErr_Clear();
-    
+
     /* configure parser */
     EXPAT(SetUserData)(self_xp->parser, self_xp);
     EXPAT(SetElementHandler)(
