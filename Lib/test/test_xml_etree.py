@@ -2380,6 +2380,18 @@ class IOTest(unittest.TestCase):
             ET.tostring(root, 'utf-16'),
             b''.join(ET.tostringlist(root, 'utf-16')))
 
+    def test_short_empty_elements(self):
+        root = ET.fromstring('<tag>a<x />b<y></y>c</tag>')
+        self.assertEqual(
+            ET.tostring(root, 'unicode'),
+            '<tag>a<x />b<y />c</tag>')
+        self.assertEqual(
+            ET.tostring(root, 'unicode', short_empty_elements=True),
+            '<tag>a<x />b<y />c</tag>')
+        self.assertEqual(
+            ET.tostring(root, 'unicode', short_empty_elements=False),
+            '<tag>a<x></x>b<y></y>c</tag>')
+
 
 class ParseErrorTest(unittest.TestCase):
     def test_subclass(self):
