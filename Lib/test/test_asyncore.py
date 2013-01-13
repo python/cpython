@@ -789,7 +789,7 @@ class BaseTestAPI:
             t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
                                                               count=500))
             t.start()
-
+            self.addCleanup(t.join)
 
             s = socket.socket(self.family, socket.SOCK_STREAM)
             s.settimeout(.2)
