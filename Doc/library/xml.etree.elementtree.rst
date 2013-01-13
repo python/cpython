@@ -428,7 +428,7 @@ Functions
    arguments.  Returns an element instance.
 
 
-.. function:: tostring(element, encoding="us-ascii", method="xml", *, \
+.. function:: tostring(element, encoding="us-ascii", method="xml", *,\
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -443,7 +443,7 @@ Functions
       The *short_empty_elements* parameter.
 
 
-.. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
+.. function:: tostringlist(element, encoding="us-ascii", method="xml", *,\
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -751,8 +751,9 @@ ElementTree Objects
       section root element.
 
 
-   .. method:: write(file, encoding="us-ascii", xml_declaration=None, \
-                     method="xml", *, short_empty_elements=True)
+   .. method:: write(file, encoding="us-ascii", xml_declaration=None,\
+                     default_namespace=None, method="xml", *,\
+                     short_empty_elements=True)
 
       Writes the element tree to a file, as XML.  *file* is a file name, or a
       :term:`file object` opened for writing.  *encoding* [1]_ is the output
@@ -761,7 +762,8 @@ ElementTree Objects
       file.  Use ``False`` for never, ``True`` for always, ``None``
       for only if not US-ASCII or UTF-8 or Unicode (default is ``None``).
       *method* is either ``"xml"``, ``"html"`` or ``"text"`` (default is
-      ``"xml"``).
+      ``"xml"``). *default_namespace* sets the default XML namespace (for
+      "xmlns").
       The keyword-only *short_empty_elements* parameter controls the formatting
       of elements that contain no content.  If *True* (the default), they are
       emitted as a single self-closed tag, otherwise they are emitted as a pair
