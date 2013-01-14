@@ -8,6 +8,10 @@
 
 #include "multiprocessing.h"
 
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+#  include "poll.h"
+#endif
+
 #ifdef MS_WINDOWS
 #  define WRITE(h, buffer, length) send((SOCKET)h, buffer, length, 0)
 #  define READ(h, buffer, length) recv((SOCKET)h, buffer, length, 0)
@@ -158,6 +162,34 @@ conn_recv_string(ConnectionObject *conn, char *buffer,
 static int
 conn_poll(ConnectionObject *conn, double timeout, PyThreadState *_save)
 {
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
+    int res;
+    struct pollfd p;
+
+    p.fd = (int)conn->handle;
+    p.events = POLLIN | POLLPRI;
+    p.revents = 0;
+
+    if (timeout < 0) {
+        res = poll(&p, 1, -1);
+    } else {
+        res = poll(&p, 1, (int)(timeout * 1000 + 0.5));
+    }
+
+    if (res < 0) {
+        return MP_SOCKET_ERROR;
+    } else if (p.revents & (POLLNVAL|POLLERR)) {
+        Py_BLOCK_THREADS
+        PyErr_SetString(PyExc_IOError, "poll() gave POLLNVAL or POLLERR");
+        Py_UNBLOCK_THREADS
+        return MP_EXCEPTION_HAS_BEEN_SET;
+    } else if (p.revents != 0) {
+        return TRUE;
+    } else {
+        assert(res == 0);
+        return FALSE;
+    }
+#else
     int res;
     fd_set rfds;
 
@@ -193,6 +225,7 @@ conn_poll(ConnectionObject *conn, double timeout, PyThreadState *_save)
         assert(res == 0);
         return FALSE;
     }
+#endif
 }
 
 /*
