@@ -1,6 +1,8 @@
 What's New in IDLE 3.4.0?
 =========================
 
+- Issue #5066: Update IDLE docs. Patch by Todd Rovito.
+
 - Issue #16226: Fix IDLE Path Browser crash.
   (Patch by Roger Serwy)
 
