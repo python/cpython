@@ -13521,7 +13521,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                             "* wants int");
             return -1;
         }
-        arg->width = PyLong_AsLong(v);
+        arg->width = PyLong_AsSsize_t(v);
         if (arg->width == -1 && PyErr_Occurred())
             return -1;
         if (arg->width < 0) {
@@ -13568,7 +13568,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                                 "* wants int");
                 return -1;
             }
-            arg->prec = PyLong_AsLong(v);
+            arg->prec = _PyLong_AsInt(v);
             if (arg->prec == -1 && PyErr_Occurred())
                 return -1;
             if (arg->prec < 0)

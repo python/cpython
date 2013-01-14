@@ -2013,7 +2013,7 @@ For IP sockets, the address info is a pair (hostaddr, port).");
 static PyObject *
 sock_setblocking(PySocketSockObject *s, PyObject *arg)
 {
-    int block;
+    long block;
 
     block = PyLong_AsLong(arg);
     if (block == -1 && PyErr_Occurred())
@@ -2495,7 +2495,7 @@ sock_listen(PySocketSockObject *s, PyObject *arg)
     int backlog;
     int res;
 
-    backlog = PyLong_AsLong(arg);
+    backlog = _PyLong_AsInt(arg);
     if (backlog == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -3647,7 +3647,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     int how;
     int res;
 
-    how = PyLong_AsLong(arg);
+    how = _PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS

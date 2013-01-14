@@ -8,6 +8,7 @@ import unittest
 from array import array
 from weakref import proxy
 from functools import wraps
+import _testcapi
 
 from test.support import TESTFN, check_warnings, run_unittest, make_bad_fd
 from collections import UserList
@@ -347,6 +348,9 @@ class OtherFileTests(unittest.TestCase):
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(OSError, msvcrt.get_osfhandle, make_bad_fd())
+        # Issue 15989
+        self.assertRaises(TypeError, _FileIO, _testcapi.INT_MAX + 1)
+        self.assertRaises(TypeError, _FileIO, _testcapi.INT_MIN - 1)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument

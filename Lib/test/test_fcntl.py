@@ -3,6 +3,7 @@
 import os
 import struct
 import sys
+import _testcapi
 import unittest
 from test.support import verbose, TESTFN, unlink, run_unittest, import_module
 
@@ -68,6 +69,26 @@ class TestFcntl(unittest.TestCase):
         rv = fcntl.fcntl(self.f, fcntl.F_SETFL, os.O_NONBLOCK)
         rv = fcntl.fcntl(self.f, fcntl.F_SETLKW, lockdata)
         self.f.close()
+
+    def test_fcntl_bad_file(self):
+        class F:
+            def __init__(self, fn):
+                self.fn = fn
+            def fileno(self):
+                return self.fn
+        self.assertRaises(ValueError, fcntl.fcntl, -1, fcntl.F_SETFL, os.O_NONBLOCK)
+        self.assertRaises(ValueError, fcntl.fcntl, F(-1), fcntl.F_SETFL, os.O_NONBLOCK)
+        self.assertRaises(TypeError, fcntl.fcntl, 'spam', fcntl.F_SETFL, os.O_NONBLOCK)
+        self.assertRaises(TypeError, fcntl.fcntl, F('spam'), fcntl.F_SETFL, os.O_NONBLOCK)
+        # Issue 15989
+        self.assertRaises(OverflowError, fcntl.fcntl, _testcapi.INT_MAX + 1,
+                                                      fcntl.F_SETFL, os.O_NONBLOCK)
+        self.assertRaises(OverflowError, fcntl.fcntl, F(_testcapi.INT_MAX + 1),
+                                                      fcntl.F_SETFL, os.O_NONBLOCK)
+        self.assertRaises(OverflowError, fcntl.fcntl, _testcapi.INT_MIN - 1,
+                                                      fcntl.F_SETFL, os.O_NONBLOCK)
+        self.assertRaises(OverflowError, fcntl.fcntl, F(_testcapi.INT_MIN - 1),
+                                                      fcntl.F_SETFL, os.O_NONBLOCK)
 
     def test_fcntl_64_bit(self):
         # Issue #1309352: fcntl shouldn't fail when the third arg fits in a

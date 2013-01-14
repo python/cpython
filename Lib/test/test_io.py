@@ -32,6 +32,7 @@ import time
 import unittest
 import warnings
 import weakref
+import _testcapi
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
@@ -1969,6 +1970,14 @@ class TextIOWrapperTest(unittest.TestCase):
         finally:
             os.environ.clear()
             os.environ.update(old_environ)
+
+    # Issue 15989
+    def test_device_encoding(self):
+        b = self.BytesIO()
+        b.fileno = lambda: _testcapi.INT_MAX + 1
+        self.assertRaises(OverflowError, self.TextIOWrapper, b)
+        b.fileno = lambda: _testcapi.UINT_MAX + 1
+        self.assertRaises(OverflowError, self.TextIOWrapper, b)
 
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
