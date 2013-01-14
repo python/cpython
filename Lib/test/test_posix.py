@@ -17,6 +17,7 @@ import stat
 import tempfile
 import unittest
 import warnings
+import _testcapi
 
 _DUMMY_SYMLINK = os.path.join(tempfile.gettempdir(),
                               support.TESTFN + '-dummy-symlink')
@@ -536,6 +537,10 @@ class PosixTester(unittest.TestCase):
             os.write(w, b'x' * support.PIPE_MAX_SIZE)
         except OSError:
             pass
+
+        # Issue 15989
+        self.assertRaises(OverflowError, os.pipe2, _testcapi.INT_MAX + 1)
+        self.assertRaises(OverflowError, os.pipe2, _testcapi.UINT_MAX + 1)
 
     def test_utime(self):
         if hasattr(posix, 'utime'):

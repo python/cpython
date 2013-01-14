@@ -1262,11 +1262,17 @@ class GeneralModuleTests(unittest.TestCase):
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
                 self.assertRaises(TypeError, pickle.dumps, sock, protocol)
 
-    def test_listen_backlog0(self):
+    def test_listen_backlog(self):
+        for backlog in 0, -1:
+            srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            srv.bind((HOST, 0))
+            srv.listen(backlog)
+            srv.close()
+
+        # Issue 15989
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.bind((HOST, 0))
-        # backlog = 0
-        srv.listen(0)
+        self.assertRaises(OverflowError, srv.listen, _testcapi.INT_MAX + 1)
         srv.close()
 
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
@@ -1582,6 +1588,11 @@ class BasicTCPTest(SocketConnectedTest):
 
     def _testShutdown(self):
         self.serv_conn.send(MSG)
+        # Issue 15989
+        self.assertRaises(OverflowError, self.serv_conn.shutdown,
+                          _testcapi.INT_MAX + 1)
+        self.assertRaises(OverflowError, self.serv_conn.shutdown,
+                          2 + (_testcapi.UINT_MAX + 1))
         self.serv_conn.shutdown(2)
 
     def testDetach(self):
@@ -3563,6 +3574,11 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
             pass
         end = time.time()
         self.assertTrue((end - start) < 1.0, "Error setting non-blocking mode.")
+        # Issue 15989
+        self.assertRaises(OverflowError, self.serv.setblocking,
+                          _testcapi.INT_MAX + 1)
+        self.assertRaises(OverflowError, self.serv.setblocking,
+                          _testcapi.UINT_MAX + 1)
 
     def _testSetBlocking(self):
         pass

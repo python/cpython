@@ -244,7 +244,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    fd = PyLong_AsLong(nameobj);
+    fd = _PyLong_AsInt(nameobj);
     if (fd < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -382,7 +382,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
                 goto error;
             }
 
-            self->fd = PyLong_AsLong(fdobj);
+            self->fd = _PyLong_AsInt(fdobj);
             Py_DECREF(fdobj);
             if (self->fd == -1) {
                 goto error;
