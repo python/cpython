@@ -509,27 +509,6 @@ if sys.platform != 'win32':
         return c1, c2
 
 else:
-    if hasattr(select, 'poll'):
-        def _poll(fds, timeout):
-            if timeout is not None:
-                timeout = int(timeout) * 1000  # timeout is in milliseconds
-            fd_map = {}
-            pollster = select.poll()
-            for fd in fds:
-                pollster.register(fd, select.POLLIN)
-                if hasattr(fd, 'fileno'):
-                    fd_map[fd.fileno()] = fd
-                else:
-                    fd_map[fd] = fd
-            ls = []
-            for fd, event in pollster.poll(timeout):
-                if event & select.POLLNVAL:
-                    raise ValueError('invalid file descriptor %i' % fd)
-                ls.append(fd_map[fd])
-            return ls
-    else:
-        def _poll(fds, timeout):
-            return select.select(fds, [], [], timeout)[0]
 
     def Pipe(duplex=True):
         '''
@@ -883,6 +862,29 @@ if sys.platform == 'win32':
 
 else:
 
+    if hasattr(select, 'poll'):
+        def _poll(fds, timeout):
+            if timeout is not None:
+                timeout = int(timeout) * 1000  # timeout is in milliseconds
+            fd_map = {}
+            pollster = select.poll()
+            for fd in fds:
+                pollster.register(fd, select.POLLIN)
+                if hasattr(fd, 'fileno'):
+                    fd_map[fd.fileno()] = fd
+                else:
+                    fd_map[fd] = fd
+            ls = []
+            for fd, event in pollster.poll(timeout):
+                if event & select.POLLNVAL:
+                    raise ValueError('invalid file descriptor %i' % fd)
+                ls.append(fd_map[fd])
+            return ls
+    else:
+        def _poll(fds, timeout):
+            return select.select(fds, [], [], timeout)[0]
+
+
     def wait(object_list, timeout=None):
         '''
         Wait till an object in object_list is ready/readable.
@@ -891,12 +893,12 @@ else:
         '''
         if timeout is not None:
             if timeout <= 0:
-                return select.select(object_list, [], [], 0)[0]
+                return _poll(object_list, 0)
             else:
                 deadline = time.time() + timeout
         while True:
             try:
-                return select.select(object_list, [], [], timeout)[0]
+                return _poll(object_list, timeout)
             except OSError as e:
                 if e.errno != errno.EINTR:
                     raise
