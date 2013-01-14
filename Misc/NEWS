@@ -217,6 +217,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9720: zipfile now writes correct local headers for files larger than
+  4 GiB.
+
 - Issue #5066: Update IDLE docs. Patch by Todd Rovito.
 
 - Issue #16955: Fix the poll() method for multiprocessing's socket
