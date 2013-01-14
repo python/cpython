@@ -3263,7 +3263,7 @@ class TestWait(unittest.TestCase):
         from multiprocessing.connection import wait
 
         expected = 3
-        sorted_ = lambda l: sorted(l, key=lambda x: isinstance(x, int))
+        sorted_ = lambda l: sorted(l, key=lambda x: id(x))
         sem = multiprocessing.Semaphore(0)
         a, b = multiprocessing.Pipe()
         p = multiprocessing.Process(target=self.signal_and_sleep,
