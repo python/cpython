@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9720: zipfile now writes correct local headers for files larger than
+  4 GiB.
+
 - Issue #16829: IDLE printing no longer fails if there are spaces or other
   special characters in the file path.
 
