@@ -3566,7 +3566,10 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def testSetBlocking(self):
         # Testing whether set blocking works
-        self.serv.setblocking(0)
+        self.serv.setblocking(True)
+        self.assertIsNone(self.serv.gettimeout())
+        self.serv.setblocking(False)
+        self.assertEqual(self.serv.gettimeout(), 0.0)
         start = time.time()
         try:
             self.serv.accept()
@@ -3575,10 +3578,9 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         end = time.time()
         self.assertTrue((end - start) < 1.0, "Error setting non-blocking mode.")
         # Issue 15989
-        self.assertRaises(OverflowError, self.serv.setblocking,
-                          _testcapi.INT_MAX + 1)
-        self.assertRaises(OverflowError, self.serv.setblocking,
-                          _testcapi.UINT_MAX + 1)
+        if _testcapi.UINT_MAX < _testcapi.ULONG_MAX:
+            self.serv.setblocking(_testcapi.UINT_MAX + 1)
+            self.assertIsNone(self.serv.gettimeout())
 
     def _testSetBlocking(self):
         pass
