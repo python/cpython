@@ -150,6 +150,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15861: tkinter now correctly works with lists and tuples containing
+  strings with whitespaces, backslashes or unbalanced braces.
+
 - Issue #10527: Use poll() instead of select() for multiprocessing pipes.
 
 - Issue #9720: zipfile now writes correct local headers for files larger than
