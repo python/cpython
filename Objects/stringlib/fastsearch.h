@@ -38,25 +38,18 @@ STRINGLIB(fastsearch_memchr_1char)(const STRINGLIB_CHAR* s, Py_ssize_t n,
                                    STRINGLIB_CHAR ch, unsigned char needle,
                                    Py_ssize_t maxcount, int mode)
 {
-    void *candidate;
-    const STRINGLIB_CHAR *found;
-
-#define DO_MEMCHR(memchr, s, needle, nchars) do { \
-    candidate = memchr((const void *) (s), (needle), (nchars) * sizeof(STRINGLIB_CHAR)); \
-    found = (const STRINGLIB_CHAR *) _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR)); \
-    } while (0)
-
     if (mode == FAST_SEARCH) {
         const STRINGLIB_CHAR *ptr = s;
         const STRINGLIB_CHAR *e = s + n;
         while (ptr < e) {
-            DO_MEMCHR(memchr, ptr, needle, e - ptr);
-            if (found == NULL)
+            void *candidate = memchr((const void *) ptr, needle, (e - ptr) * sizeof(STRINGLIB_CHAR));
+            if (candidate == NULL)
                 return -1;
-            if (sizeof(STRINGLIB_CHAR) == 1 || *found == ch)
-                return (found - s);
+            ptr = (const STRINGLIB_CHAR *) _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
+            if (sizeof(STRINGLIB_CHAR) == 1 || *ptr == ch)
+                return (ptr - s);
             /* False positive */
-            ptr = found + 1;
+            ptr++;
         }
         return -1;
     }
@@ -66,9 +59,11 @@ STRINGLIB(fastsearch_memchr_1char)(const STRINGLIB_CHAR* s, Py_ssize_t n,
        faster than our hand-written loop in FASTSEARCH below */
     else if (mode == FAST_RSEARCH) {
         while (n > 0) {
-            DO_MEMCHR(memrchr, s, needle, n);
-            if (found == NULL)
+            const STRINGLIB_CHAR *found;
+            void *candidate = memrchr((const void *) s, needle, n * sizeof(STRINGLIB_CHAR));
+            if (candidate == NULL)
                 return -1;
+            found = (const STRINGLIB_CHAR *) _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
             n = found - s;
             if (sizeof(STRINGLIB_CHAR) == 1 || *found == ch)
                 return n;
