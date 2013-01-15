@@ -60,7 +60,7 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
    workaround is also enabled on error, for example if getting the locale
    failed.
 
-   Values of locale_is_ascii:
+   Values of force_ascii:
 
        1: the workaround is used: _Py_wchar2char() uses
           encode_ascii_surrogateescape() and _Py_char2wchar() uses
