@@ -7393,15 +7393,18 @@ Error:
                 if (PyErr_ExceptionMatches(PyExc_LookupError)) {
                     /* No mapping found means: mapping is undefined. */
                     PyErr_Clear();
-                    x = Py_None;
-                    Py_INCREF(x);
+                    goto Undefined;
                 } else
                     goto onError;
             }
 
             /* Apply mapping */
+            if (x == Py_None)
+                goto Undefined;
             if (PyLong_Check(x)) {
                 long value = PyLong_AS_LONG(x);
+                if (value == 0xFFFE)
+                    goto Undefined;
                 if (value < 0 || value > MAX_UNICODE) {
                     PyErr_Format(PyExc_TypeError,
                                  "character mapping must be in range(0x%lx)",
@@ -7415,25 +7418,23 @@ Error:
                 PyUnicode_WRITE(writer.kind, writer.data, writer.pos, value);
                 writer.pos++;
             }
-            else if (x == Py_None) {
-                /* undefined mapping */
-                startinpos = s-starts;
-                endinpos = startinpos+1;
-                if (unicode_decode_call_errorhandler_writer(
-                        errors, &errorHandler,
-                        "charmap", "character maps to <undefined>",
-                        &starts, &e, &startinpos, &endinpos, &exc, &s,
-                        &writer)) {
-                    Py_DECREF(x);
-                    goto onError;
-                }
-                Py_DECREF(x);
-                continue;
-            }
             else if (PyUnicode_Check(x)) {
-                writer.overallocate = 1;
-                if (_PyUnicodeWriter_WriteStr(&writer, x) == -1)
+                if (PyUnicode_READY(x) == -1)
                     goto onError;
+                if (PyUnicode_GET_LENGTH(x) == 1) {
+                    Py_UCS4 value = PyUnicode_READ_CHAR(x, 0);
+                    if (value == 0xFFFE)
+                        goto Undefined;
+                    if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1)
+                        goto onError;
+                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, value);
+                    writer.pos++;
+                }
+                else {
+                    writer.overallocate = 1;
+                    if (_PyUnicodeWriter_WriteStr(&writer, x) == -1)
+                        goto onError;
+                }
             }
             else {
                 /* wrong return value */
@@ -7444,6 +7445,19 @@ Error:
             }
             Py_DECREF(x);
             ++s;
+            continue;
+Undefined:
+            /* undefined mapping */
+            Py_XDECREF(x);
+            startinpos = s-starts;
+            endinpos = startinpos+1;
+            if (unicode_decode_call_errorhandler_writer(
+                    errors, &errorHandler,
+                    "charmap", "character maps to <undefined>",
+                    &starts, &e, &startinpos, &endinpos, &exc, &s,
+                    &writer)) {
+                goto onError;
+            }
         }
     }
     Py_XDECREF(errorHandler);
