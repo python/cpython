@@ -4121,15 +4121,18 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
                 if (PyErr_ExceptionMatches(PyExc_LookupError)) {
                     /* No mapping found means: mapping is undefined. */
                     PyErr_Clear();
-                    x = Py_None;
-                    Py_INCREF(x);
+                    goto Undefined;
                 } else
                     goto onError;
             }
 
             /* Apply mapping */
+            if (x == Py_None)
+                goto Undefined;
             if (PyInt_Check(x)) {
                 long value = PyInt_AS_LONG(x);
+                if (value == 0xFFFE)
+                    goto Undefined;
                 if (value < 0 || value > 0x10FFFF) {
                     PyErr_SetString(PyExc_TypeError,
                                     "character mapping must be in range(0x110000)");
@@ -4162,29 +4165,16 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 #endif
                 *p++ = (Py_UNICODE)value;
             }
-            else if (x == Py_None) {
-                /* undefined mapping */
-                outpos = p-PyUnicode_AS_UNICODE(v);
-                startinpos = s-starts;
-                endinpos = startinpos+1;
-                if (unicode_decode_call_errorhandler(
-                        errors, &errorHandler,
-                        "charmap", "character maps to <undefined>",
-                        starts, size, &startinpos, &endinpos, &exc, &s,
-                        &v, &outpos, &p)) {
-                    Py_DECREF(x);
-                    goto onError;
-                }
-                Py_DECREF(x);
-                continue;
-            }
             else if (PyUnicode_Check(x)) {
                 Py_ssize_t targetsize = PyUnicode_GET_SIZE(x);
 
-                if (targetsize == 1)
+                if (targetsize == 1) {
                     /* 1-1 mapping */
-                    *p++ = *PyUnicode_AS_UNICODE(x);
-
+                    Py_UNICODE value = *PyUnicode_AS_UNICODE(x);
+                    if (value == 0xFFFE)
+                        goto Undefined;
+                    *p++ = value;
+                }
                 else if (targetsize > 1) {
                     /* 1-n mapping */
                     if (targetsize > extrachars) {
@@ -4218,6 +4208,20 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
             }
             Py_DECREF(x);
             ++s;
+            continue;
+Undefined:
+            /* undefined mapping */
+            Py_XDECREF(x);
+            outpos = p-PyUnicode_AS_UNICODE(v);
+            startinpos = s-starts;
+            endinpos = startinpos+1;
+            if (unicode_decode_call_errorhandler(
+                    errors, &errorHandler,
+                    "charmap", "character maps to <undefined>",
+                    starts, size, &startinpos, &endinpos, &exc, &s,
+                    &v, &outpos, &p)) {
+                goto onError;
+            }
         }
     }
     if (p - PyUnicode_AS_UNICODE(v) < PyUnicode_GET_SIZE(v))
