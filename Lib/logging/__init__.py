@@ -711,7 +711,8 @@ def _removeHandlerRef(wr):
     # This function can be called during module teardown, when globals are
     # set to None. If _acquireLock is None, assume this is the case and do
     # nothing.
-    if _acquireLock is not None:
+    if (_acquireLock is not None and _handlerList is not None and
+        _releaseLock is not None):
         _acquireLock()
         try:
             if wr in _handlerList:
