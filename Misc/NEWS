@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #14850: Now a chamap decoder treates U+FFFE as "undefined mapping"
+  in any mapping, not only in a string.
+
 - Issue #16730: importlib.machinery.FileFinder now no longers raises an
   exception when trying to populate its cache and it finds out the directory is
   unreadable or has turned into a file. Reported and diagnosed by

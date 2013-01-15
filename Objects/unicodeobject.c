@@ -7511,15 +7511,18 @@ Error:
                 if (PyErr_ExceptionMatches(PyExc_LookupError)) {
                     /* No mapping found means: mapping is undefined. */
                     PyErr_Clear();
-                    x = Py_None;
-                    Py_INCREF(x);
+                    goto Undefined;
                 } else
                     goto onError;
             }
 
             /* Apply mapping */
+            if (x == Py_None)
+                goto Undefined;
             if (PyLong_Check(x)) {
                 long value = PyLong_AS_LONG(x);
+                if (value == 0xFFFE)
+                    goto Undefined;
                 if (value < 0 || value > MAX_UNICODE) {
                     PyErr_Format(PyExc_TypeError,
                                  "character mapping must be in range(0x%lx)",
@@ -7530,21 +7533,6 @@ Error:
                 if (unicode_putchar(&v, &outpos, value) < 0)
                     goto onError;
             }
-            else if (x == Py_None) {
-                /* undefined mapping */
-                startinpos = s-starts;
-                endinpos = startinpos+1;
-                if (unicode_decode_call_errorhandler(
-                        errors, &errorHandler,
-                        "charmap", "character maps to <undefined>",
-                        &starts, &e, &startinpos, &endinpos, &exc, &s,
-                        &v, &outpos)) {
-                    Py_DECREF(x);
-                    goto onError;
-                }
-                Py_DECREF(x);
-                continue;
-            }
             else if (PyUnicode_Check(x)) {
                 Py_ssize_t targetsize;
 
@@ -7554,8 +7542,10 @@ Error:
 
                 if (targetsize == 1) {
                     /* 1-1 mapping */
-                    if (unicode_putchar(&v, &outpos,
-                                        PyUnicode_READ_CHAR(x, 0)) < 0)
+                    Py_UCS4 value = PyUnicode_READ_CHAR(x, 0);
+                    if (value == 0xFFFE)
+                        goto Undefined;
+                    if (unicode_putchar(&v, &outpos, value) < 0)
                         goto onError;
                 }
                 else if (targetsize > 1) {
@@ -7590,6 +7580,19 @@ Error:
             }
             Py_DECREF(x);
             ++s;
+            continue;
+Undefined:
+            /* undefined mapping */
+            Py_XDECREF(x);
+            startinpos = s-starts;
+            endinpos = startinpos+1;
+            if (unicode_decode_call_errorhandler(
+                    errors, &errorHandler,
+                    "charmap", "character maps to <undefined>",
+                    &starts, &e, &startinpos, &endinpos, &exc, &s,
+                    &v, &outpos)) {
+                goto onError;
+            }
         }
     }
     if (unicode_resize(&v, outpos) < 0)
