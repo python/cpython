@@ -1737,6 +1737,10 @@ class CharmapTest(unittest.TestCase):
             codecs.charmap_decode, b"\x00\x01\x02", "strict", "ab"
         )
 
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict", "ab\ufffe"
+        )
+
         self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "replace", "ab"),
             ("ab\ufffd", 3)
@@ -1793,6 +1797,17 @@ class CharmapTest(unittest.TestCase):
                                    {0: 'a', 1: 'b'}
         )
 
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict",
+                                   {0: 'a', 1: 'b', 2: None}
+        )
+
+        # Issue #14850
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict",
+                                   {0: 'a', 1: 'b', 2: '\ufffe'}
+        )
+
         self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "replace",
                                   {0: 'a', 1: 'b'}),
@@ -1802,6 +1817,13 @@ class CharmapTest(unittest.TestCase):
         self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "replace",
                                   {0: 'a', 1: 'b', 2: None}),
+            ("ab\ufffd", 3)
+        )
+
+        # Issue #14850
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "replace",
+                                  {0: 'a', 1: 'b', 2: '\ufffe'}),
             ("ab\ufffd", 3)
         )
 
@@ -1814,6 +1836,13 @@ class CharmapTest(unittest.TestCase):
         self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "ignore",
                                   {0: 'a', 1: 'b', 2: None}),
+            ("ab", 3)
+        )
+
+        # Issue #14850
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "ignore",
+                                  {0: 'a', 1: 'b', 2: '\ufffe'}),
             ("ab", 3)
         )
 
@@ -1857,6 +1886,11 @@ class CharmapTest(unittest.TestCase):
                                    {0: a, 1: b},
         )
 
+        self.assertRaises(UnicodeDecodeError,
+            codecs.charmap_decode, b"\x00\x01\x02", "strict",
+                                   {0: a, 1: b, 2: 0xFFFE},
+        )
+
         self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "replace",
                                   {0: a, 1: b}),
@@ -1864,8 +1898,20 @@ class CharmapTest(unittest.TestCase):
         )
 
         self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "replace",
+                                  {0: a, 1: b, 2: 0xFFFE}),
+            ("ab\ufffd", 3)
+        )
+
+        self.assertEqual(
             codecs.charmap_decode(b"\x00\x01\x02", "ignore",
                                   {0: a, 1: b}),
+            ("ab", 3)
+        )
+
+        self.assertEqual(
+            codecs.charmap_decode(b"\x00\x01\x02", "ignore",
+                                  {0: a, 1: b, 2: 0xFFFE}),
             ("ab", 3)
         )
 
