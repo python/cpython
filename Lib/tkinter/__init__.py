@@ -39,6 +39,7 @@ if sys.platform == "win32":
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
 from tkinter.constants import *
+import re
 
 wantobjects = 1
 
@@ -49,6 +50,34 @@ READABLE = _tkinter.READABLE
 WRITABLE = _tkinter.WRITABLE
 EXCEPTION = _tkinter.EXCEPTION
 
+
+_magic_re = re.compile(r'([\\{}])')
+_space_re = re.compile(r'([\s])', re.ASCII)
+
+def _join(value):
+    """Internal function."""
+    return ' '.join(map(_stringify, value))
+
+def _stringify(value):
+    """Internal function."""
+    if isinstance(value, (list, tuple)):
+        if len(value) == 1:
+            value = _stringify(value[0])
+            if value[0] == '{':
+                value = '{%s}' % value
+        else:
+            value = '{%s}' % _join(value)
+    else:
+        value = str(value)
+        if not value:
+            value = '{}'
+        elif _magic_re.search(value):
+            # add '\' before special characters and spaces
+            value = _magic_re.sub(r'\\\1', value)
+            value = _space_re.sub(r'\\\1', value)
+        elif value[0] == '"' or _space_re.search(value):
+            value = '{%s}' % value
+    return value
 
 def _flatten(seq):
     """Internal function."""
@@ -1075,7 +1104,7 @@ class Misc:
                         if isinstance(item, int):
                             nv.append(str(item))
                         elif isinstance(item, str):
-                            nv.append(('{%s}' if ' ' in item else '%s') % item)
+                            nv.append(_stringify(item))
                         else:
                             break
                     else:
