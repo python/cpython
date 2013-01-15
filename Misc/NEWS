@@ -147,6 +147,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #10527: Use poll() instead of select() for multiprocessing pipes.
+
 - Issue #9720: zipfile now writes correct local headers for files larger than
   4 GiB.
 
