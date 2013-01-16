@@ -251,7 +251,7 @@ Proof.
 
   apply Qlt_le_trans with (y := 1).
   qreduce ((2 # 1) ^ (-62) + (2 # 1) ^ (-126)).
-  
+
   rewrite Qlt_mult_by_z with (z := 85070591730234615865843651857942052864 # 18446744073709551617).
   ring_simplify.
 

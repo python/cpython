@@ -23,7 +23,7 @@ Convolution in pseudo-code:
     y = fnt(b)                          # forward transform of b
     z = pairwise multiply x[i] and y[i]
     result = inv_fnt(z)                 # backward transform of z.
- 
+
 
 Extending the maximum transform length (Chinese Remainder Theorem):
 -------------------------------------------------------------------

@@ -93,7 +93,7 @@ ext_submod(mpd_uint_t a, mpd_uint_t b, mpd_uint_t m)
     return d;
 }
 
-/* 
+/*
  * Reduce double word modulo m.
  * Restrictions: m != 0
  * ACL2 proof: umodarith.lisp: section dw-reduce
