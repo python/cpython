@@ -78,14 +78,20 @@ def assert_signals(cls, context, attr, expected):
     d = getattr(context, attr)
     cls.assertTrue(all(d[s] if s in expected else not d[s] for s in d))
 
-RoundingModes = {
-  C: (C.ROUND_UP, C.ROUND_DOWN, C.ROUND_CEILING, C.ROUND_FLOOR,
-      C.ROUND_HALF_UP, C.ROUND_HALF_DOWN, C.ROUND_HALF_EVEN,
-      C.ROUND_05UP) if C else None,
-  P: (P.ROUND_UP, P.ROUND_DOWN, P.ROUND_CEILING, P.ROUND_FLOOR,
-      P.ROUND_HALF_UP, P.ROUND_HALF_DOWN, P.ROUND_HALF_EVEN,
-      P.ROUND_05UP)
-}
+ROUND_UP = P.ROUND_UP
+ROUND_DOWN = P.ROUND_DOWN
+ROUND_CEILING = P.ROUND_CEILING
+ROUND_FLOOR = P.ROUND_FLOOR
+ROUND_HALF_UP = P.ROUND_HALF_UP
+ROUND_HALF_DOWN = P.ROUND_HALF_DOWN
+ROUND_HALF_EVEN = P.ROUND_HALF_EVEN
+ROUND_05UP = P.ROUND_05UP
+
+RoundingModes = [
+  ROUND_UP, ROUND_DOWN, ROUND_CEILING, ROUND_FLOOR,
+  ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN,
+  ROUND_05UP
+]
 
 # Tests are built around these assumed context defaults.
 # test_main() restores the original context.
@@ -96,7 +102,7 @@ ORIGINAL_CONTEXT = {
 def init(m):
     if not m: return
     DefaultTestContext = m.Context(
-       prec=9, rounding=m.ROUND_HALF_EVEN, traps=dict.fromkeys(Signals[m], 0)
+       prec=9, rounding=ROUND_HALF_EVEN, traps=dict.fromkeys(Signals[m], 0)
     )
     m.setcontext(DefaultTestContext)
 
@@ -229,14 +235,14 @@ class IBMTestCases(unittest.TestCase):
                             'xor':'logical_xor'}
 
         # Map test-case names to roundings.
-        self.RoundingDict = {'ceiling' : self.decimal.ROUND_CEILING,
-                             'down' : self.decimal.ROUND_DOWN,
-                             'floor' : self.decimal.ROUND_FLOOR,
-                             'half_down' : self.decimal.ROUND_HALF_DOWN,
-                             'half_even' : self.decimal.ROUND_HALF_EVEN,
-                             'half_up' : self.decimal.ROUND_HALF_UP,
-                             'up' : self.decimal.ROUND_UP,
-                             '05up' : self.decimal.ROUND_05UP}
+        self.RoundingDict = {'ceiling' : ROUND_CEILING,
+                             'down' : ROUND_DOWN,
+                             'floor' : ROUND_FLOOR,
+                             'half_down' : ROUND_HALF_DOWN,
+                             'half_even' : ROUND_HALF_EVEN,
+                             'half_up' : ROUND_HALF_UP,
+                             'up' : ROUND_UP,
+                             '05up' : ROUND_05UP}
 
         # Map the test cases' error names to the actual errors.
         self.ErrorNames = {'clamped' : self.decimal.Clamped,
@@ -2101,9 +2107,6 @@ class UsabilityTest(unittest.TestCase):
         Inexact = self.decimal.Inexact
         Rounded = self.decimal.Rounded
         Clamped = self.decimal.Clamped
-        ROUND_HALF_EVEN = self.decimal.ROUND_HALF_EVEN
-        ROUND_DOWN = self.decimal.ROUND_DOWN
-        ROUND_UP = self.decimal.ROUND_UP
 
         with localcontext(Context()) as c:
             c.prec = 7
@@ -2430,7 +2433,6 @@ class PythonAPItests(unittest.TestCase):
 
     def test_int(self):
         Decimal = self.decimal.Decimal
-        ROUND_DOWN = self.decimal.ROUND_DOWN
 
         for x in range(-250, 250):
             s = '%0.2f' % (x / 100.0)
@@ -2448,7 +2450,6 @@ class PythonAPItests(unittest.TestCase):
 
     def test_trunc(self):
         Decimal = self.decimal.Decimal
-        ROUND_DOWN = self.decimal.ROUND_DOWN
 
         for x in range(-250, 250):
             s = '%0.2f' % (x / 100.0)
@@ -2491,8 +2492,6 @@ class PythonAPItests(unittest.TestCase):
     def test_create_decimal_from_float(self):
         Decimal = self.decimal.Decimal
         Context = self.decimal.Context
-        ROUND_DOWN = self.decimal.ROUND_DOWN
-        ROUND_UP = self.decimal.ROUND_UP
         Inexact = self.decimal.Inexact
 
         context = Context(prec=5, rounding=ROUND_DOWN)
@@ -2522,7 +2521,6 @@ class PythonAPItests(unittest.TestCase):
         Decimal = self.decimal.Decimal
         Context = self.decimal.Context
         InvalidOperation = self.decimal.InvalidOperation
-        ROUND_DOWN = self.decimal.ROUND_DOWN
 
         c = Context(Emax=99999, Emin=-99999)
         self.assertEqual(
@@ -2723,7 +2721,6 @@ class ContextAPItests(unittest.TestCase):
         InvalidOperation = self.decimal.InvalidOperation
         DivisionByZero = self.decimal.DivisionByZero
         Overflow = self.decimal.Overflow
-        ROUND_HALF_EVEN = self.decimal.ROUND_HALF_EVEN
 
         c1 = Context()
         c2 = Context(prec=None, rounding=None, Emax=None, Emin=None,
@@ -2738,6 +2735,21 @@ class ContextAPItests(unittest.TestCase):
             assert_signals(self, c, 'flags', [])
             assert_signals(self, c, 'traps', [InvalidOperation, DivisionByZero,
                                               Overflow])
+
+    @cpython_only
+    def test_from_legacy_strings(self):
+        import _testcapi
+        c = self.decimal.Context()
+
+        for rnd in RoundingModes:
+            c.rounding = _testcapi.unicode_legacy_string(rnd)
+            self.assertEqual(c.rounding, rnd)
+
+        s = _testcapi.unicode_legacy_string('')
+        self.assertRaises(TypeError, setattr, c, 'rounding', s)
+
+        s = _testcapi.unicode_legacy_string('ROUND_\x00UP')
+        self.assertRaises(TypeError, setattr, c, 'rounding', s)
 
     def test_pickle(self):
 
@@ -2762,7 +2774,7 @@ class ContextAPItests(unittest.TestCase):
         # Test interchangeability
         combinations = [(C, P), (P, C)] if C else [(P, P)]
         for dumper, loader in combinations:
-            for ri, _ in enumerate(RoundingModes[dumper]):
+            for ri, _ in enumerate(RoundingModes):
                 for fi, _ in enumerate(OrderedSignals[dumper]):
                     for ti, _ in enumerate(OrderedSignals[dumper]):
 
@@ -2776,7 +2788,7 @@ class ContextAPItests(unittest.TestCase):
                         sys.modules['decimal'] = dumper
                         c = dumper.Context(
                               prec=prec, Emin=emin, Emax=emax,
-                              rounding=RoundingModes[dumper][ri],
+                              rounding=RoundingModes[ri],
                               capitals=caps, clamp=clamp,
                               flags=OrderedSignals[dumper][:fi],
                               traps=OrderedSignals[dumper][:ti]
@@ -2791,7 +2803,7 @@ class ContextAPItests(unittest.TestCase):
                         self.assertEqual(d.prec, prec)
                         self.assertEqual(d.Emin, emin)
                         self.assertEqual(d.Emax, emax)
-                        self.assertEqual(d.rounding, RoundingModes[loader][ri])
+                        self.assertEqual(d.rounding, RoundingModes[ri])
                         self.assertEqual(d.capitals, caps)
                         self.assertEqual(d.clamp, clamp)
                         assert_signals(self, d, 'flags', OrderedSignals[loader][:fi])
@@ -3593,7 +3605,6 @@ class ContextFlags(unittest.TestCase):
         Underflow = self.decimal.Underflow
         Clamped = self.decimal.Clamped
         Subnormal = self.decimal.Subnormal
-        ROUND_HALF_EVEN = self.decimal.ROUND_HALF_EVEN
 
         def raise_error(context, flag):
             if self.decimal == C:
@@ -3960,17 +3971,6 @@ class ContextInputValidation(unittest.TestCase):
         self.assertRaises(ValueError, setattr, c, 'Emin', 1)
         self.assertRaises(TypeError, setattr, c, 'Emin', (1,2,3))
 
-        # rounding: always raise TypeError in order to get consistent
-        # exceptions across implementations. In decimal, rounding
-        # modes are strings, in _decimal they are integers. The idea
-        # is to view rounding as an abstract type and not mind the
-        # implementation details.
-        # Hence, a user should view the rounding modes as if they
-        # had been defined in a language that supports abstract
-        # data types, e.g. ocaml:
-        #
-        #   type rounding = ROUND_DOWN | ROUND_HALF_UP | ... ;;
-        #
         self.assertRaises(TypeError, setattr, c, 'rounding', -1)
         self.assertRaises(TypeError, setattr, c, 'rounding', 9)
         self.assertRaises(TypeError, setattr, c, 'rounding', 1.0)
@@ -4023,8 +4023,6 @@ class ContextSubclassing(unittest.TestCase):
         decimal = self.decimal
         Decimal = decimal.Decimal
         Context = decimal.Context
-        ROUND_HALF_EVEN = decimal.ROUND_HALF_EVEN
-        ROUND_DOWN = decimal.ROUND_DOWN
         Clamped = decimal.Clamped
         DivisionByZero = decimal.DivisionByZero
         Inexact = decimal.Inexact
@@ -4192,7 +4190,7 @@ class Coverage(unittest.TestCase):
         c.prec = 425000000
         c.Emax = 425000000
         c.Emin = -425000000
-        c.rounding = self.decimal.ROUND_HALF_DOWN
+        c.rounding = ROUND_HALF_DOWN
         c.capitals = 0
         c.clamp = 1
         for sig in OrderedSignals[self.decimal]:
@@ -4584,7 +4582,6 @@ class PyWhitebox(unittest.TestCase):
     def test_py_rescale(self):
         # Coverage
         Decimal = P.Decimal
-        ROUND_UP = P.ROUND_UP
         localcontext = P.localcontext
 
         with localcontext() as c:
@@ -4594,7 +4591,6 @@ class PyWhitebox(unittest.TestCase):
     def test_py__round(self):
         # Coverage
         Decimal = P.Decimal
-        ROUND_UP = P.ROUND_UP
 
         self.assertRaises(ValueError, Decimal("3.1234")._round, 0, ROUND_UP)
 
@@ -4663,11 +4659,6 @@ class CFunctionality(unittest.TestCase):
         self.assertEqual(C.DECIMAL128, 128)
         self.assertEqual(C.IEEE_CONTEXT_MAX_BITS, 512)
 
-        # Rounding modes
-        for i, v in enumerate(RoundingModes[C]):
-            self.assertEqual(v, i)
-        self.assertEqual(C.ROUND_TRUNC, 8)
-
         # Conditions
         for i, v in enumerate(cond):
             self.assertEqual(v, 1<<i)
@@ -4727,7 +4718,6 @@ class CWhitebox(unittest.TestCase):
         # in the same order.
         DefaultContext = C.DefaultContext
         FloatOperation = C.FloatOperation
-        ROUND_HALF_DOWN = C.ROUND_HALF_DOWN
 
         c = DefaultContext.copy()
 
@@ -4800,7 +4790,6 @@ class CWhitebox(unittest.TestCase):
         self.assertRaises(OverflowError, Context, prec=int_max+1)
         self.assertRaises(OverflowError, Context, Emax=int_max+1)
         self.assertRaises(OverflowError, Context, Emin=-int_max-2)
-        self.assertRaises(OverflowError, Context, rounding=int_max+1)
         self.assertRaises(OverflowError, Context, clamp=int_max+1)
         self.assertRaises(OverflowError, Context, capitals=int_max+1)
 
@@ -4811,14 +4800,6 @@ class CWhitebox(unittest.TestCase):
             if sys.platform != 'win32':
                 self.assertRaises(ValueError, setattr, c, attr, int_max)
                 self.assertRaises(ValueError, setattr, c, attr, -int_max-1)
-
-        # OverflowError, general TypeError
-        for attr in ('rounding',):
-            self.assertRaises(OverflowError, setattr, c, attr, int_max+1)
-            self.assertRaises(OverflowError, setattr, c, attr, -int_max-2)
-            if sys.platform != 'win32':
-                self.assertRaises(TypeError, setattr, c, attr, int_max)
-                self.assertRaises(TypeError, setattr, c, attr, -int_max-1)
 
         # OverflowError: _unsafe_setprec, _unsafe_setemin, _unsafe_setemax
         if C.MAX_PREC == 425000000:
@@ -4861,6 +4842,17 @@ class CWhitebox(unittest.TestCase):
         saved_context = getcontext()
         self.assertRaises(TypeError, setcontext, "xyz")
         setcontext(saved_context)
+
+    def test_rounding_strings_interned(self):
+
+        self.assertIs(C.ROUND_UP, P.ROUND_UP)
+        self.assertIs(C.ROUND_DOWN, P.ROUND_DOWN)
+        self.assertIs(C.ROUND_CEILING, P.ROUND_CEILING)
+        self.assertIs(C.ROUND_FLOOR, P.ROUND_FLOOR)
+        self.assertIs(C.ROUND_HALF_UP, P.ROUND_HALF_UP)
+        self.assertIs(C.ROUND_HALF_DOWN, P.ROUND_HALF_DOWN)
+        self.assertIs(C.ROUND_HALF_EVEN, P.ROUND_HALF_EVEN)
+        self.assertIs(C.ROUND_05UP, P.ROUND_05UP)
 
     @requires_extra_functionality
     def test_c_context_errors_extra(self):
@@ -4908,7 +4900,6 @@ class CWhitebox(unittest.TestCase):
     def test_c_valid_context(self):
         # These tests are for code coverage in _decimal.
         DefaultContext = C.DefaultContext
-        ROUND_HALF_UP = C.ROUND_HALF_UP
         Clamped = C.Clamped
         Underflow = C.Underflow
         Inexact = C.Inexact
@@ -5000,7 +4991,6 @@ class CWhitebox(unittest.TestCase):
     def test_c_integral(self):
         Decimal = C.Decimal
         Inexact = C.Inexact
-        ROUND_UP = C.ROUND_UP
         localcontext = C.localcontext
 
         x = Decimal(10)
@@ -5034,7 +5024,6 @@ class CWhitebox(unittest.TestCase):
         Decimal = C.Decimal
         InvalidOperation = C.InvalidOperation
         DivisionByZero = C.DivisionByZero
-        ROUND_UP = C.ROUND_UP
         getcontext = C.getcontext
         localcontext = C.localcontext
 
@@ -5237,7 +5226,7 @@ class CWhitebox(unittest.TestCase):
         lim = len(OrderedSignals[C])
         for r in range(lim):
             for t in range(lim):
-                for round in RoundingModes[C]:
+                for round in RoundingModes:
                     flags = random.sample(OrderedSignals[C], r)
                     traps = random.sample(OrderedSignals[C], t)
                     prec = random.randrange(1, 10000)
