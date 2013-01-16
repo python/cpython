@@ -245,7 +245,7 @@ Proof (inverse transform):
    which means that all A[k] = A[m * C + n] are in the correct order.
 
 
--- 
+--
 
   [1] Joerg Arndt: "Matters Computational"
       http://www.jjj.de/fxt/
