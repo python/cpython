@@ -321,7 +321,7 @@
 
 (defthmd dw-submod-correct
   (implies (and (< 0 m) (< m base)
-                (natp a) (< a m) 
+                (natp a) (< a m)
 		(< hi base) (< lo base)
                 (natp m) (natp base)
                 (natp hi) (natp lo))
