@@ -202,6 +202,13 @@ static const char *dec_signal_string[MPD_NUM_FLAGS] = {
     "Underflow",
 };
 
+#ifdef EXTRA_FUNCTIONALITY
+  #define _PY_DEC_ROUND_GUARD MPD_ROUND_GUARD
+#else
+  #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
+#endif
+static PyObject *round_map[_PY_DEC_ROUND_GUARD];
+
 static const char *invalid_rounding_err =
 "valid values for rounding are:\n\
   [ROUND_CEILING, ROUND_FLOOR, ROUND_UP, ROUND_DOWN,\n\
@@ -247,13 +254,6 @@ type_error_int(const char *mesg)
 {
     PyErr_SetString(PyExc_TypeError, mesg);
     return -1;
-}
-
-static PyObject *
-type_error_ptr(const char *mesg)
-{
-    PyErr_SetString(PyExc_TypeError, mesg);
-    return NULL;
 }
 
 static int
@@ -502,6 +502,27 @@ dec_addstatus(PyObject *context, uint32_t status)
     return 0;
 }
 
+static int
+getround(PyObject *v)
+{
+    int i;
+
+    if (PyUnicode_Check(v)) {
+        for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
+            if (v == round_map[i]) {
+                return i;
+            }
+        }
+        for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
+            if (PyUnicode_Compare(v, round_map[i]) == 0) {
+                return i;
+            }
+        }
+    }
+
+    return type_error_int(invalid_rounding_err);
+}
+
 
 /******************************************************************************/
 /*                            SignalDict Object                               */
@@ -715,13 +736,21 @@ context_get##mem(PyObject *self, void *closure UNUSED)       \
 Dec_CONTEXT_GET_SSIZE(prec)
 Dec_CONTEXT_GET_SSIZE(emax)
 Dec_CONTEXT_GET_SSIZE(emin)
-Dec_CONTEXT_GET_SSIZE(round)
 Dec_CONTEXT_GET_SSIZE(clamp)
 
 #ifdef EXTRA_FUNCTIONALITY
 Dec_CONTEXT_GET_ULONG(traps)
 Dec_CONTEXT_GET_ULONG(status)
 #endif
+
+static PyObject *
+context_getround(PyObject *self, void *closure UNUSED)
+{
+    int i = mpd_getround(CTX(self));
+
+    Py_INCREF(round_map[i]);
+    return round_map[i];
+}
 
 static PyObject *
 context_getcapitals(PyObject *self, void *closure UNUSED)
@@ -875,17 +904,16 @@ static int
 context_setround(PyObject *self, PyObject *value, void *closure UNUSED)
 {
     mpd_context_t *ctx;
-    mpd_ssize_t x;
+    int x;
 
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
+    x = getround(value);
+    if (x == -1) {
         return -1;
     }
-    BOUNDS_CHECK(x, INT_MIN, INT_MAX);
 
     ctx = CTX(self);
-    if (!mpd_qsetround(ctx, (int)x)) {
-        return type_error_int(invalid_rounding_err);
+    if (!mpd_qsetround(ctx, x)) {
+        INTERNAL_ERROR_INT("context_setround"); /* GCOV_NOT_REACHED */
     }
 
     return 0;
@@ -1208,33 +1236,6 @@ context_dealloc(PyDecContextObject *self)
 }
 
 static int
-getround(PyObject *v)
-{
-    const char *s;
-    long x;
-    int i;
-
-    if (PyLong_Check(v)) {
-        x = PyLong_AsLong(v);
-        if (x == -1 && PyErr_Occurred()) {
-            return -1;
-        }
-        BOUNDS_CHECK(x, 0, INT_MAX);
-        return (int)x;
-    }
-    else if (PyUnicode_Check(v)) {
-        for (i = 0; i < MPD_ROUND_GUARD; i++) {
-            s = mpd_round_string[i];
-            if (PyUnicode_CompareWithASCIIString(v, s) == 0) {
-                return i;
-            }
-        }
-    }
-
-    return type_error_int("invalid rounding mode");
-}
-
-static int
 context_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {
@@ -1264,6 +1265,9 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (prec != Py_None && context_setprec(self, prec, NULL) < 0) {
         return -1;
     }
+    if (rounding != Py_None && context_setround(self, rounding, NULL) < 0) {
+        return -1;
+    }
     if (emin != Py_None && context_setemin(self, emin, NULL) < 0) {
         return -1;
     }
@@ -1275,16 +1279,6 @@ context_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     if (clamp != Py_None && context_setclamp(self, clamp, NULL) < 0) {
        return -1;
-    }
-
-    if (rounding != Py_None) {
-        int x = getround(rounding);
-        if (x < 0) {
-            return -1;
-        }
-        if (!mpd_qsetround(CTX(self), x)) {
-            return type_error_int(invalid_rounding_err);
-        }
     }
 
     if (traps != Py_None) {
@@ -3345,7 +3339,7 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
             return NULL;
         }
         if (!mpd_qsetround(&workctx, round)) {
-            return type_error_ptr(invalid_rounding_err);
+            INTERNAL_ERROR_PTR("PyDec_ToIntegralValue"); /* GCOV_NOT_REACHED */
         }
     }
 
@@ -3386,7 +3380,7 @@ PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
             return NULL;
         }
         if (!mpd_qsetround(&workctx, round)) {
-            return type_error_ptr(invalid_rounding_err);
+            INTERNAL_ERROR_PTR("PyDec_ToIntegralExact"); /* GCOV_NOT_REACHED */
         }
     }
 
@@ -4187,7 +4181,7 @@ dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
             return NULL;
         }
         if (!mpd_qsetround(&workctx, round)) {
-            return type_error_ptr(invalid_rounding_err);
+            INTERNAL_ERROR_PTR("dec_mpd_qquantize"); /* GCOV_NOT_REACHED */
         }
     }
 
@@ -5419,17 +5413,6 @@ static struct int_constmap int_constants [] = {
     {"DECIMAL64", MPD_DECIMAL64},
     {"DECIMAL128", MPD_DECIMAL128},
     {"IEEE_CONTEXT_MAX_BITS", MPD_IEEE_CONTEXT_MAX_BITS},
-#endif
-    {"ROUND_CEILING", MPD_ROUND_CEILING},
-    {"ROUND_FLOOR", MPD_ROUND_FLOOR},
-    {"ROUND_UP", MPD_ROUND_UP},
-    {"ROUND_DOWN", MPD_ROUND_DOWN},
-    {"ROUND_HALF_UP", MPD_ROUND_HALF_UP},
-    {"ROUND_HALF_DOWN", MPD_ROUND_HALF_DOWN},
-    {"ROUND_HALF_EVEN", MPD_ROUND_HALF_EVEN},
-    {"ROUND_05UP", MPD_ROUND_05UP},
-#ifdef EXTRA_FUNCTIONALITY
-    {"ROUND_TRUNC", MPD_ROUND_TRUNC},
     /* int condition flags */
     {"DecClamped", MPD_Clamped},
     {"DecConversionSyntax", MPD_Conversion_syntax},
@@ -5678,6 +5661,13 @@ PyInit__decimal(void)
     for (int_cm = int_constants; int_cm->name != NULL; int_cm++) {
         CHECK_INT(PyModule_AddIntConstant(m, int_cm->name,
                                           int_cm->val));
+    }
+
+    /* Init string constants */
+    for (i = 0; i < _PY_DEC_ROUND_GUARD; i++) {
+        ASSIGN_PTR(round_map[i], PyUnicode_InternFromString(mpd_round_string[i]));
+        Py_INCREF(round_map[i]);
+        CHECK_INT(PyModule_AddObject(m, mpd_round_string[i], round_map[i]));
     }
 
     /* Add specification version number */

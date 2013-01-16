@@ -150,6 +150,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16422: Use strings for rounding mode constants for better readability
+  and pickling compatibility.
+
 - Issue #15861: tkinter now correctly works with lists and tuples containing
   strings with whitespaces, backslashes or unbalanced braces.
 
