@@ -352,7 +352,7 @@ word_to_string(char *s, mpd_uint_t x, int n, char *dot)
     case 2:  EXTRACT_DIGIT(s, x, 10UL, dot);
     default: if (s == dot) *s++ = '.'; *s++ = '0' + (char)x;
     }
- 
+
     *s = '\0';
     return s;
 }
@@ -1059,7 +1059,7 @@ _mpd_add_sep_dot(mpd_mbstr_t *dest,
  * Not allowed, since _mpd_to_string() never returns this form:
  *
  *     3) [sign] '.' digits [exponent-part]
- * 
+ *
  * Input: result->data := original numeric string (ASCII)
  *        result->bytes := strlen(result->data)
  *        result->nchars := strlen(result->data)
