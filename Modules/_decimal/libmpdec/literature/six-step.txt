@@ -55,7 +55,7 @@ Transform.
 
 
 
--- 
+--
 
   [1] David H. Bailey: FFTs in External or Hierarchical Memory
       http://crd.lbl.gov/~dhbailey/dhbpapers/
