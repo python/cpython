@@ -158,17 +158,9 @@ CondMap = {
         C.FloatOperation:      P.FloatOperation,
 }
 
-RoundMap = {
-        C.ROUND_UP:           P.ROUND_UP,
-        C.ROUND_DOWN:         P.ROUND_DOWN,
-        C.ROUND_CEILING:      P.ROUND_CEILING,
-        C.ROUND_FLOOR:        P.ROUND_FLOOR,
-        C.ROUND_HALF_UP:      P.ROUND_HALF_UP,
-        C.ROUND_HALF_DOWN:    P.ROUND_HALF_DOWN,
-        C.ROUND_HALF_EVEN:    P.ROUND_HALF_EVEN,
-        C.ROUND_05UP:         P.ROUND_05UP
-}
-RoundModes = RoundMap.items()
+RoundModes = [C.ROUND_UP, C.ROUND_DOWN, C.ROUND_CEILING, C.ROUND_FLOOR,
+              C.ROUND_HALF_UP, C.ROUND_HALF_DOWN, C.ROUND_HALF_EVEN,
+              C.ROUND_05UP]
 
 
 class Context(object):
@@ -183,7 +175,7 @@ class Context(object):
         self.p.prec = self.c.prec
         self.p.Emin = self.c.Emin
         self.p.Emax = self.c.Emax
-        self.p.rounding = RoundMap[self.c.rounding]
+        self.p.rounding = self.c.rounding
         self.p.capitals = self.c.capitals
         self.settraps([sig for sig in self.c.traps if self.c.traps[sig]])
         self.setstatus([sig for sig in self.c.flags if self.c.flags[sig]])
@@ -217,12 +209,12 @@ class Context(object):
         self.p.Emax = val
 
     def getround(self):
-        assert(self.c.rounding == RoundMap[self.p.rounding])
+        assert(self.c.rounding == self.p.rounding)
         return self.c.rounding
 
     def setround(self, val):
         self.c.rounding = val
-        self.p.rounding = RoundMap[val]
+        self.p.rounding = val
 
     def getcapitals(self):
         assert(self.c.capitals == self.p.capitals)
@@ -627,8 +619,12 @@ def convert(t, convstr=True):
 
         context.clear_status()
 
-        if not t.contextfunc and i == 0 or \
-           convstr and isinstance(op, str):
+        if op in RoundModes:
+            t.cop.append(op)
+            t.pop.append(op)
+
+        elif not t.contextfunc and i == 0 or \
+             convstr and isinstance(op, str):
             try:
                 c = C.Decimal(op)
                 cex = None
@@ -661,10 +657,6 @@ def convert(t, convstr=True):
             t.context = op
             t.cop.append(op.c)
             t.pop.append(op.p)
-
-        elif op in RoundModes:
-            t.cop.append(op[0])
-            t.pop.append(op[1])
 
         else:
             t.cop.append(op)
@@ -809,7 +801,7 @@ def test_method(method, testspecs, testfunc):
                 log("    prec: %d  emin: %d  emax: %d",
                     (context.prec, context.Emin, context.Emax))
                 restr_range = 9999 if context.Emax > 9999 else context.Emax+99
-                for rounding in sorted(RoundMap):
+                for rounding in RoundModes:
                     context.rounding = rounding
                     context.capitals = random.randrange(2)
                     if spec['clamp'] == 'rand':
@@ -941,7 +933,7 @@ def test_round(method, prec, exprange, restricted_range, itr, stat):
 
 def test_from_float(method, prec, exprange, restricted_range, itr, stat):
     """Iterate the __float__ method through many test cases."""
-    for rounding in sorted(RoundMap):
+    for rounding in RoundModes:
         context.rounding = rounding
         for i in range(1000):
             f = randfloat()
