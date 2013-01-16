@@ -79,7 +79,7 @@ Pointers to literature, proofs and more
     mulmod-ppro.txt      -> Proof for the x87 FPU modular multiplication
                             from umodarith.h.
     umodarith.lisp       -> ACL2 proofs for many functions from umodarith.h.
-  
+
 
 Library Author
 ==============

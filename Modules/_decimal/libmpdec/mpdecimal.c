@@ -3119,7 +3119,7 @@ _mpd_qaddsub(mpd_t *result, const mpd_t *a, const mpd_t *b, uint8_t sign_b,
                  *     ----------XX1234  ->  sdigits
                  *     ----------X1      ->  tiny-digits
                  *     |- prec -|
-                 *     
+                 *
                  *      OR
                  *
                  *   bdigits > prec AND
@@ -5983,7 +5983,7 @@ finish:
     mpd_qfinalize(result, ctx, status);
 }
 
-/* 
+/*
  * If the exponent is infinite and base equals one, the result is one
  * with a coefficient of length prec. Otherwise, result is undefined.
  * Return the value of the comparison against one.
@@ -7129,7 +7129,7 @@ _mpd_base_ndivmod(mpd_t *q, mpd_t *r, const mpd_t *a, const mpd_t *b,
         goto nanresult;
     }
 
-    /* Let x := _mpd_qreciprocal(b, prec) 
+    /* Let x := _mpd_qreciprocal(b, prec)
      * Then x is bounded by:
      *    1) 1/b - 10**(-prec - bdigits) < x < 1/b + 10**(-prec - bdigits)
      *    2) 1/b - 10**(-adigits - 4) < x < 1/b + 10**(-adigits - 4)
