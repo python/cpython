@@ -769,52 +769,6 @@ Yes, this feature was added in Python 2.5. The syntax would be as follows::
 
 For versions previous to 2.5 the answer would be 'No'.
 
-.. XXX remove rest?
-
-In many cases you can mimic ``a ? b : c`` with ``a and b or c``, but there's a
-flaw: if *b* is zero (or empty, or ``None`` -- anything that tests false) then
-*c* will be selected instead.  In many cases you can prove by looking at the
-code that this can't happen (e.g. because *b* is a constant or has a type that
-can never be false), but in general this can be a problem.
-
-Tim Peters (who wishes it was Steve Majewski) suggested the following solution:
-``(a and [b] or [c])[0]``.  Because ``[b]`` is a singleton list it is never
-false, so the wrong path is never taken; then applying ``[0]`` to the whole
-thing gets the *b* or *c* that you really wanted.  Ugly, but it gets you there
-in the rare cases where it is really inconvenient to rewrite your code using
-'if'.
-
-The best course is usually to write a simple ``if...else`` statement.  Another
-solution is to implement the ``?:`` operator as a function::
-
-   def q(cond, on_true, on_false):
-       if cond:
-           if not isfunction(on_true):
-               return on_true
-           else:
-               return on_true()
-       else:
-           if not isfunction(on_false):
-               return on_false
-           else:
-               return on_false()
-
-In most cases you'll pass b and c directly: ``q(a, b, c)``.  To avoid evaluating
-b or c when they shouldn't be, encapsulate them within a lambda function, e.g.:
-``q(a, lambda: b, lambda: c)``.
-
-It has been asked *why* Python has no if-then-else expression.  There are
-several answers: many languages do just fine without one; it can easily lead to
-less readable code; no sufficiently "Pythonic" syntax has been discovered; a
-search of the standard library found remarkably few places where using an
-if-then-else expression would make the code more understandable.
-
-In 2002, :pep:`308` was written proposing several possible syntaxes and the
-community was asked to vote on the issue.  The vote was inconclusive.  Most
-people liked one of the syntaxes, but also hated other syntaxes; many votes
-implied that people preferred no ternary operator rather than having a syntax
-they hated.
-
 
 Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
