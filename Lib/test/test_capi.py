@@ -193,7 +193,6 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
     def test_subinterps(self):
-        # XXX this test leaks in refleak runs
         import builtins
         r, w = os.pipe()
         code = """if 1:
