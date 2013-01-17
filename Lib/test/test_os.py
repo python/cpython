@@ -49,6 +49,9 @@ if hasattr(sys, 'thread_info') and sys.thread_info.version:
 else:
     USING_LINUXTHREADS = False
 
+# Issue #14110: Some tests fail on FreeBSD if the user is in the wheel group.
+HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
+
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
     def setUp(self):
@@ -1240,7 +1243,7 @@ if sys.platform != 'win32':
 
         if hasattr(os, 'setgid'):
             def test_setgid(self):
-                if os.getuid() != 0:
+                if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
                     self.assertRaises(OSError, os.setgid, 0)
                 self.assertRaises(OverflowError, os.setgid, 1<<32)
 
@@ -1252,7 +1255,7 @@ if sys.platform != 'win32':
 
         if hasattr(os, 'setegid'):
             def test_setegid(self):
-                if os.getuid() != 0:
+                if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
                     self.assertRaises(OSError, os.setegid, 0)
                 self.assertRaises(OverflowError, os.setegid, 1<<32)
 
@@ -1272,7 +1275,7 @@ if sys.platform != 'win32':
 
         if hasattr(os, 'setregid'):
             def test_setregid(self):
-                if os.getuid() != 0:
+                if os.getuid() != 0 and not HAVE_WHEEL_GROUP:
                     self.assertRaises(OSError, os.setregid, 0, 0)
                 self.assertRaises(OverflowError, os.setregid, 1<<32, 0)
                 self.assertRaises(OverflowError, os.setregid, 0, 1<<32)
