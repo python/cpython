@@ -452,7 +452,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
     # problems with some operating systems (issue #3863): skip problematic tests
     # on platforms known to behave badly.
     platforms_to_skip = ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
-                         'os2emx')
+                         'os2emx', 'hp-ux11')
 
     def _run_and_join(self, script):
         script = """if 1:
