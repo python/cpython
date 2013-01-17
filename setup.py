@@ -2008,8 +2008,12 @@ class PyBuildExt(build_ext):
 
         # Increase warning level for gcc:
         if 'gcc' in cc:
-            extra_compile_args.extend(['-Wextra',
-                                       '-Wno-missing-field-initializers'])
+            cmd = ("echo '' | gcc -Wextra -Wno-missing-field-initializers -E - "
+                   "> /dev/null 2>&1")
+            ret = os.system(cmd)
+            if ret >> 8 == 0:
+                extra_compile_args.extend(['-Wextra',
+                                           '-Wno-missing-field-initializers'])
 
         # Uncomment for extra functionality:
         #define_macros.append(('EXTRA_FUNCTIONALITY', 1))
