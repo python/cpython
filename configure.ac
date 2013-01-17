@@ -1898,7 +1898,6 @@ AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
 
-AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
 # (Shared libraries in this instance are shared modules to be loaded into
@@ -3955,6 +3954,8 @@ else
 	sleep 10
 fi
 AC_MSG_RESULT($SO)
+
+AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
