@@ -2392,15 +2392,17 @@ _servername_callback(SSL *s, int *al, void *args)
     PyObject *result;
     /* The high-level ssl.SSLSocket object */
     PyObject *ssl_socket;
-    PyGILState_STATE gstate;
     const char *servername = SSL_get_servername(s, TLSEXT_NAMETYPE_host_name);
-
-    gstate = PyGILState_Ensure();
+#ifdef WITH_THREAD
+    PyGILState_STATE gstate = PyGILState_Ensure();
+#endif
 
     if (ssl_ctx->set_hostname == NULL) {
         /* remove race condition in this the call back while if removing the
          * callback is in progress */
+#ifdef WITH_THREAD
         PyGILState_Release(gstate);
+#endif
         return SSL_TLSEXT_ERR_OK;
     }
 
@@ -2449,14 +2451,18 @@ _servername_callback(SSL *s, int *al, void *args)
         Py_DECREF(result);
     }
 
+#ifdef WITH_THREAD
     PyGILState_Release(gstate);
+#endif
     return ret;
 
 error:
     Py_DECREF(ssl_socket);
     *al = SSL_AD_INTERNAL_ERROR;
     ret = SSL_TLSEXT_ERR_ALERT_FATAL;
+#ifdef WITH_THREAD
     PyGILState_Release(gstate);
+#endif
     return ret;
 }
 
