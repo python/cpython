@@ -331,7 +331,7 @@ class Future(object):
         return True
 
     def cancelled(self):
-        """Return True if the future has cancelled."""
+        """Return True if the future was cancelled."""
         with self._condition:
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]
 
