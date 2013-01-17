@@ -8384,11 +8384,6 @@ esac
 
 
 
-
-cat >>confdefs.h <<_ACEOF
-#define SHLIB_EXT "$SO"
-_ACEOF
-
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
 # (Shared libraries in this instance are shared modules to be loaded into
@@ -13720,6 +13715,12 @@ else
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SO" >&5
 $as_echo "$SO" >&6; }
+
+
+cat >>confdefs.h <<_ACEOF
+#define SHLIB_EXT "$SO"
+_ACEOF
+
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
