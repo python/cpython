@@ -227,6 +227,13 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
 
+class WakeupFDTests(unittest.TestCase):
+
+    def test_invalid_fd(self):
+        fd = support.make_bad_fd()
+        self.assertRaises(ValueError, signal.set_wakeup_fd, fd)
+
+
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class WakeupSignalTests(unittest.TestCase):
     TIMEOUT_FULL = 10
@@ -485,8 +492,9 @@ class ItimerTest(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(BasicSignalTests, InterProcessSignalTests,
-                              WakeupSignalTests, SiginterruptTest,
-                              ItimerTest, WindowsSignalTests)
+                              WakeupFDTests, WakeupSignalTests,
+                              SiginterruptTest, ItimerTest,
+                              WindowsSignalTests)
 
 
 if __name__ == "__main__":
