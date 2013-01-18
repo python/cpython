@@ -230,7 +230,7 @@ class WindowsSignalTests(unittest.TestCase):
 class WakeupFDTests(unittest.TestCase):
 
     def test_invalid_fd(self):
-        fd = support.make_bad_fd()
+        fd = test_support.make_bad_fd()
         self.assertRaises(ValueError, signal.set_wakeup_fd, fd)
 
 
