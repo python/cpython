@@ -427,7 +427,7 @@ signal_set_wakeup_fd(PyObject *self, PyObject *args)
         return NULL;
     }
 #endif
-    if (fd != -1 && fstat(fd, &buf) != 0) {
+    if (fd != -1 && (!_PyVerify_fd(fd) || fstat(fd, &buf) != 0)) {
         PyErr_SetString(PyExc_ValueError, "invalid fd");
         return NULL;
     }
