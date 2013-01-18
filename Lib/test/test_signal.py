@@ -222,6 +222,13 @@ class WindowsSignalTests(unittest.TestCase):
             signal.signal(7, handler)
 
 
+class WakeupFDTests(unittest.TestCase):
+
+    def test_invalid_fd(self):
+        fd = support.make_bad_fd()
+        self.assertRaises(ValueError, signal.set_wakeup_fd, fd)
+
+
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
 class WakeupSignalTests(unittest.TestCase):
     def check_wakeup(self, test_body, *signals, ordered=True):
@@ -864,8 +871,8 @@ class PendingSignalsTests(unittest.TestCase):
 def test_main():
     try:
         support.run_unittest(PosixTests, InterProcessSignalTests,
-                             WakeupSignalTests, SiginterruptTest,
-                             ItimerTest, WindowsSignalTests,
+                             WakeupFDTests, WakeupSignalTests,
+                             SiginterruptTest, ItimerTest, WindowsSignalTests,
                              PendingSignalsTests)
     finally:
         support.reap_children()
