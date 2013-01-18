@@ -5,6 +5,9 @@
 .. module:: math
    :synopsis: Mathematical functions (sin() etc.).
 
+.. testsetup::
+
+   from math import fsum
 
 This module is always available.  It provides access to the mathematical
 functions defined by the C standard.
@@ -82,8 +85,6 @@ Number-theoretic and representation functions
 
 
 .. function:: fsum(iterable)
-.. testsetup::
-        >>> from math import fsum
 
    Return an accurate floating point sum of values in the iterable.  Avoids
    loss of precision by tracking multiple intermediate partial sums::
