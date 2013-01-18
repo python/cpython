@@ -150,6 +150,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16992: On Windows in signal.set_wakeup_fd, validate the file
+  descriptor argument.
+
 - Issue #16422: For compatibility with the Python version, the C version of
   decimal now uses strings instead of integers for rounding mode constants.
 
