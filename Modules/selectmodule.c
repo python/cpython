@@ -2115,7 +2115,7 @@ descriptors can be used.");
 
 static PyMethodDef select_methods[] = {
     {"select",          select_select,  METH_VARARGS,   select_doc},
-#ifdef HAVE_POLL
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
     {"poll",            select_poll,    METH_NOARGS,    poll_doc},
 #endif /* HAVE_POLL */
 #ifdef HAVE_SYS_DEVPOLL_H
@@ -2165,7 +2165,7 @@ PyInit_select(void)
     PyModule_AddIntConstant(m, "PIPE_BUF", PIPE_BUF);
 #endif
 
-#if defined(HAVE_POLL)
+#if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
 #ifdef __APPLE__
     if (select_have_broken_poll()) {
         if (PyObject_DelAttrString(m, "poll") == -1) {
