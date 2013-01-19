@@ -9,8 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
-- Issue #14850: Now a chamap decoder treates U+FFFE as "undefined mapping"
-  in any mapping, not only in an unicode string.
+- Issue #14850: Now a charmap decoder treats U+FFFE as "undefined mapping"
+  in any mapping, not only in a Unicode string.
 
 - Issue #11461: Fix the incremental UTF-16 decoder. Original patch by
   Amaury Forgeot d'Arc.
@@ -27,7 +27,7 @@ Core and Builtins
   now raises TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
-  when retreiving a REG_DWORD value. This corrects functions like
+  when retrieving a REG_DWORD value. This corrects functions like
   winreg.QueryValueEx that may have been returning truncated values.
 
 - Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
@@ -224,7 +224,7 @@ Library
 
 - Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
 
-- Issue 10527: make multiprocessing use poll() instead of select() if available.
+- Issue #10527: make multiprocessing use poll() instead of select() if available.
 
 - Issue #16485: Now file descriptors are closed if file header patching failed
   on closing an aifc file.
@@ -1232,7 +1232,7 @@ Library
   check or set the MACOSX_DEPLOYMENT_TARGET environment variable for the
   interpreter process.  This could cause failures in non-Distutils subprocesses
   and was unreliable since tests or user programs could modify the interpreter
-  environment after Distutils set it.  Instead, have Distutils set the the
+  environment after Distutils set it.  Instead, have Distutils set the
   deployment target only in the environment of each build subprocess.  It is
   still possible to globally override the default by setting
   MACOSX_DEPLOYMENT_TARGET before launching the interpreter; its value must be
@@ -1520,7 +1520,7 @@ Core and Builtins
   rather than the Py_IsInitialized flag, avoiding a Fatal Python
   error in certain circumstances when an import is done in __del__.
 
-- issue #11828: startswith and endswith don't accept None as slice index.
+- Issue #11828: startswith and endswith don't accept None as slice index.
   Patch by Torsten Becker.
 
 - Issue #10674: Remove unused 'dictmaker' rule from grammar.
@@ -3662,7 +3662,7 @@ Tools/Demos
 Tests
 -----
 
-- issue #7728: test_timeout was changed to use ``test_support.bind_port()``
+- Issue #7728: test_timeout was changed to use ``test_support.bind_port()``
   instead of a hard coded port.
 
 Documentation
@@ -5228,7 +5228,7 @@ Library
   backporting to maintenance branches.  Original patch by Alexander Belopolsky.
 
 - Issue #4163: Use unicode-friendly word splitting in the textwrap functions
-  when given an unicode string.
+  when given a Unicode string.
 
 - Issue #4616: TarFile.utime(): Restore directory times on Windows.
 
