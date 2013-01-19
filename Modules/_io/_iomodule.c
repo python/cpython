@@ -303,7 +303,8 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
     int text = 0, binary = 0, universal = 0;
 
     char rawmode[5], *m;
-    int line_buffering, isatty;
+    int line_buffering;
+    long isatty;
 
     PyObject *raw, *modeobj = NULL, *buffer = NULL, *wrapper = NULL;
 
@@ -441,12 +442,12 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
         {
             struct stat st;
-            long fileno;
+            int fileno;
             PyObject *res = PyObject_CallMethod(raw, "fileno", NULL);
             if (res == NULL)
                 goto error;
 
-            fileno = PyLong_AsLong(res);
+            fileno = _PyLong_AsInt(res);
             Py_DECREF(res);
             if (fileno == -1 && PyErr_Occurred())
                 goto error;
