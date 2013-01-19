@@ -725,7 +725,7 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
         /* elem must always be a sequence, however simple */
         PyObject* elem = PySequence_GetItem(tuple, i);
         int ok = elem != NULL;
-        long  type = 0;
+        int type = 0;
         char *strn = 0;
 
         if (ok)
@@ -736,8 +736,14 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 ok = 0;
             else {
                 ok = PyLong_Check(temp);
-                if (ok)
-                    type = PyLong_AS_LONG(temp);
+                if (ok) {
+                    type = _PyLong_AsInt(temp);
+                    if (type == -1 && PyErr_Occurred()) {
+                        Py_DECREF(temp);
+                        Py_DECREF(elem);
+                        return 0;
+                    }
+                }
                 Py_DECREF(temp);
             }
         }
@@ -773,8 +779,16 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             if (len == 3) {
                 PyObject *o = PySequence_GetItem(elem, 2);
                 if (o != NULL) {
-                    if (PyLong_Check(o))
-                        *line_num = PyLong_AS_LONG(o);
+                    if (PyLong_Check(o)) {
+                        int num = _PyLong_AsInt(o);
+                        if (num == -1 && PyErr_Occurred()) {
+                            Py_DECREF(o);
+                            Py_DECREF(temp);
+                            Py_DECREF(elem);
+                            return 0;
+                        }
+                        *line_num = num;
+                    }
                     else {
                         PyErr_Format(parser_error,
                                      "third item in terminal node must be an"
