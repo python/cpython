@@ -339,6 +339,24 @@ PyLong_AsLong(PyObject *obj)
     return result;
 }
 
+/* Get a C int from a long int object or any object that has an __int__
+   method.  Return -1 and set an error if overflow occurs. */
+
+int
+_PyLong_AsInt(PyObject *obj)
+{
+    int overflow;
+    long result = PyLong_AsLongAndOverflow(obj, &overflow);
+    if (overflow || result > INT_MAX || result < INT_MIN) {
+        /* XXX: could be cute and give a different
+           message for overflow == -1 */
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C int");
+        return -1;
+    }
+    return (int)result;
+}
+
 /* Get a Py_ssize_t from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 

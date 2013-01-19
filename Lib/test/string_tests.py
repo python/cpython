@@ -5,6 +5,7 @@ Common tests shared by test_str, test_unicode, test_userstring and test_string.
 import unittest, string, sys, struct
 from test import test_support
 from UserList import UserList
+import _testcapi
 
 class Sequence:
     def __init__(self, seq='wxyz'): self.seq = seq
@@ -1112,6 +1113,20 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, '%*s', '__mod__', ('foo', 'bar'))
         self.checkraises(TypeError, '%10.*f', '__mod__', ('foo', 42.))
         self.checkraises(ValueError, '%10', '__mod__', (42,))
+
+        if _testcapi.PY_SSIZE_T_MAX < sys.maxint:
+            self.checkraises(OverflowError, '%*s', '__mod__',
+                            (_testcapi.PY_SSIZE_T_MAX + 1, ''))
+        if _testcapi.INT_MAX < sys.maxint:
+            self.checkraises(OverflowError, '%.*f', '__mod__',
+                            (_testcapi.INT_MAX + 1, 1. / 7))
+        # Issue 15989
+        if 1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1) <= sys.maxint:
+            self.checkraises(OverflowError, '%*s', '__mod__',
+                            (1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1), ''))
+        if _testcapi.UINT_MAX < sys.maxint:
+            self.checkraises(OverflowError, '%.*f', '__mod__',
+                            (_testcapi.UINT_MAX + 1, 1. / 7))
 
         class X(object): pass
         self.checkraises(TypeError, 'abc', '__mod__', X())

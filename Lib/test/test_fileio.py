@@ -10,6 +10,7 @@ from array import array
 from weakref import proxy
 from functools import wraps
 from UserList import UserList
+import _testcapi
 
 from test.test_support import TESTFN, check_warnings, run_unittest, make_bad_fd
 from test.test_support import py3k_bytes as bytes
@@ -343,6 +344,9 @@ class OtherFileTests(unittest.TestCase):
         if sys.platform == 'win32':
             import msvcrt
             self.assertRaises(IOError, msvcrt.get_osfhandle, make_bad_fd())
+        # Issue 15989
+        self.assertRaises(TypeError, _FileIO, _testcapi.INT_MAX + 1)
+        self.assertRaises(TypeError, _FileIO, _testcapi.INT_MIN - 1)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
