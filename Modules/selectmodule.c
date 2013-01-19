@@ -357,10 +357,13 @@ update_ufd_array(pollObject *self)
 
     i = pos = 0;
     while (PyDict_Next(self->dict, &pos, &key, &value)) {
-        self->ufds[i].fd = PyLong_AsLong(key);
+        assert(i < self->ufd_len);
+        /* Never overflow */
+        self->ufds[i].fd = (int)PyLong_AsLong(key);
         self->ufds[i].events = (short)PyLong_AsLong(value);
         i++;
     }
+    assert(i == self->ufd_len);
     self->ufd_uptodate = 1;
     return 1;
 }
@@ -376,10 +379,11 @@ static PyObject *
 poll_register(pollObject *self, PyObject *args)
 {
     PyObject *o, *key, *value;
-    int fd, events = POLLIN | POLLPRI | POLLOUT;
+    int fd;
+    short events = POLLIN | POLLPRI | POLLOUT;
     int err;
 
-    if (!PyArg_ParseTuple(args, "O|i:register", &o, &events)) {
+    if (!PyArg_ParseTuple(args, "O|h:register", &o, &events)) {
         return NULL;
     }
 
@@ -518,7 +522,7 @@ poll_poll(pollObject *self, PyObject *args)
         tout = PyNumber_Long(tout);
         if (!tout)
             return NULL;
-        timeout = PyLong_AsLong(tout);
+        timeout = _PyLong_AsInt(tout);
         Py_DECREF(tout);
         if (timeout == -1 && PyErr_Occurred())
             return NULL;

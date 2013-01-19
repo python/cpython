@@ -881,7 +881,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
             }
         }
         else {
-            int fd = (int) PyLong_AsLong(fileno);
+            int fd = _PyLong_AsInt(fileno);
             Py_DECREF(fileno);
             if (fd == -1 && PyErr_Occurred()) {
                 goto error;
