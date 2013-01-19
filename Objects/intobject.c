@@ -189,6 +189,20 @@ PyInt_AsLong(register PyObject *op)
     return val;
 }
 
+int
+_PyInt_AsInt(PyObject *obj)
+{
+    long result = PyInt_AsLong(obj);
+    if (result == -1 && PyErr_Occurred())
+        return -1;
+    if (result > INT_MAX || result < INT_MIN) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C int");
+        return -1;
+    }
+    return (int)result;
+}
+
 Py_ssize_t
 PyInt_AsSsize_t(register PyObject *op)
 {

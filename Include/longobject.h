@@ -25,6 +25,7 @@ PyAPI_FUNC(long) PyLong_AsLongAndOverflow(PyObject *, int *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 PyAPI_FUNC(Py_ssize_t) PyLong_AsSsize_t(PyObject *);
+PyAPI_FUNC(int) _PyLong_AsInt(PyObject *);
 PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 
 /* For use by intobject.c only */

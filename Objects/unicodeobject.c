@@ -8411,7 +8411,9 @@ PyObject *PyUnicode_Format(PyObject *format,
                                     "* wants int");
                     goto onError;
                 }
-                width = PyInt_AsLong(v);
+                width = PyInt_AsSsize_t(v);
+                if (width == -1 && PyErr_Occurred())
+                    goto onError;
                 if (width < 0) {
                     flags |= F_LJUST;
                     width = -width;
@@ -8446,7 +8448,9 @@ PyObject *PyUnicode_Format(PyObject *format,
                                         "* wants int");
                         goto onError;
                     }
-                    prec = PyInt_AsLong(v);
+                    prec = _PyInt_AsInt(v);
+                    if (prec == -1 && PyErr_Occurred())
+                        goto onError;
                     if (prec < 0)
                         prec = 0;
                     if (--fmtcnt >= 0)
