@@ -849,6 +849,9 @@ Tests
 Build
 -----
 
+- Issue #16953: Fix socket module compilation on platforms with
+  HAVE_BROKEN_POLL. Patch by Jeffrey Armstrong.
+
 - Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
 
 - Issue #16593: Have BSD 'make -s' do the right thing, thanks to Daniel Shahaf
