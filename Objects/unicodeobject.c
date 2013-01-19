@@ -9640,7 +9640,7 @@ PyObject *PyUnicode_Format(PyObject *format,
                                     "* wants int");
                     goto onError;
                 }
-                width = PyLong_AsLong(v);
+                width = PyLong_AsSsize_t(v);
                 if (width == -1 && PyErr_Occurred())
                     goto onError;
                 if (width < 0) {
@@ -9677,7 +9677,7 @@ PyObject *PyUnicode_Format(PyObject *format,
                                         "* wants int");
                         goto onError;
                     }
-                    prec = PyLong_AsLong(v);
+                    prec = _PyLong_AsInt(v);
                     if (prec == -1 && PyErr_Occurred())
                         goto onError;
                     if (prec < 0)
