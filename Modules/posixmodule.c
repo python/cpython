@@ -8174,7 +8174,7 @@ posix_pipe2(PyObject *self, PyObject *arg)
     int fds[2];
     int res;
 
-    flags = PyLong_AsLong(arg);
+    flags = _PyLong_AsInt(arg);
     if (flags == -1 && PyErr_Occurred())
         return NULL;
 
