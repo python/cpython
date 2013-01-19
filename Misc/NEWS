@@ -732,6 +732,9 @@ Tests
 Build
 -----
 
+- Issue #16953: Fix socket module compilation on platforms with
+  HAVE_BROKEN_POLL. Patch by Jeffrey Armstrong.
+
 - Issue #16320: Remove redundant Makefile dependencies for strings and bytes.
 
 - Cross compiling needs host and build settings. configure no longer
