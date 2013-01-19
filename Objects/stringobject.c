@@ -4355,7 +4355,9 @@ PyString_Format(PyObject *format, PyObject *args)
                                     "* wants int");
                     goto error;
                 }
-                width = PyInt_AsLong(v);
+                width = PyInt_AsSsize_t(v);
+                if (width == -1 && PyErr_Occurred())
+                    goto error;
                 if (width < 0) {
                     flags |= F_LJUST;
                     width = -width;
@@ -4392,7 +4394,9 @@ PyString_Format(PyObject *format, PyObject *args)
                             "* wants int");
                         goto error;
                     }
-                    prec = PyInt_AsLong(v);
+                    prec = _PyInt_AsInt(v);
+                    if (prec == -1 && PyErr_Occurred())
+                        goto error;
                     if (prec < 0)
                         prec = 0;
                     if (--fmtcnt >= 0)
