@@ -31,6 +31,7 @@ import signal
 import errno
 import warnings
 import pickle
+import _testcapi
 from itertools import cycle, count
 from collections import deque, UserList
 from test import support
@@ -1902,6 +1903,14 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(r.getvalue(), b"XY\nZ")  # All got flushed
         t.write("A\rB")
         self.assertEqual(r.getvalue(), b"XY\nZA\rB")
+
+    # Issue 15989
+    def test_device_encoding(self):
+        b = self.BytesIO()
+        b.fileno = lambda: _testcapi.INT_MAX + 1
+        self.assertRaises(OverflowError, self.TextIOWrapper, b)
+        b.fileno = lambda: _testcapi.UINT_MAX + 1
+        self.assertRaises(OverflowError, self.TextIOWrapper, b)
 
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
