@@ -118,7 +118,7 @@ heappush(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(heappush_doc,
-"Push item onto heap, maintaining the heap invariant.");
+"heappush(heap, item) -> None. Push item onto heap, maintaining the heap invariant.");
 
 static PyObject *
 heappop(PyObject *self, PyObject *heap)
@@ -186,7 +186,7 @@ heapreplace(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(heapreplace_doc,
-"Pop and return the current smallest value, and add the new item.\n\
+"heapreplace(heap, item) -> value. Pop and return the current smallest value, and add the new item.\n\
 \n\
 This is more efficient than heappop() followed by heappush(), and can be\n\
 more appropriate when using a fixed-size heap.  Note that the value\n\
@@ -233,7 +233,7 @@ heappushpop(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(heappushpop_doc,
-"Push item on the heap, then pop and return the smallest item\n\
+"heappushpop(heap, item) -> value. Push item on the heap, then pop and return the smallest item\n\
 from the heap. The combined action runs more efficiently than\n\
 heappush() followed by a separate call to heappop().");
 
