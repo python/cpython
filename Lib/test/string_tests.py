@@ -1114,19 +1114,19 @@ class MixinStrUnicodeUserStringTest:
         self.checkraises(TypeError, '%10.*f', '__mod__', ('foo', 42.))
         self.checkraises(ValueError, '%10', '__mod__', (42,))
 
-        if _testcapi.PY_SSIZE_T_MAX < sys.maxint:
-            self.checkraises(OverflowError, '%*s', '__mod__',
-                            (_testcapi.PY_SSIZE_T_MAX + 1, ''))
-        if _testcapi.INT_MAX < sys.maxint:
-            self.checkraises(OverflowError, '%.*f', '__mod__',
-                            (_testcapi.INT_MAX + 1, 1. / 7))
+        width = int(_testcapi.PY_SSIZE_T_MAX + 1)
+        if width <= sys.maxint:
+            self.checkraises(OverflowError, '%*s', '__mod__', (width, ''))
+        prec = int(_testcapi.INT_MAX + 1)
+        if prec <= sys.maxint:
+            self.checkraises(OverflowError, '%.*f', '__mod__', (prec, 1. / 7))
         # Issue 15989
-        if 1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1) <= sys.maxint:
-            self.checkraises(OverflowError, '%*s', '__mod__',
-                            (1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1), ''))
-        if _testcapi.UINT_MAX < sys.maxint:
-            self.checkraises(OverflowError, '%.*f', '__mod__',
-                            (_testcapi.UINT_MAX + 1, 1. / 7))
+        width = int(1 << (_testcapi.PY_SSIZE_T_MAX.bit_length() + 1))
+        if width <= sys.maxint:
+            self.checkraises(OverflowError, '%*s', '__mod__', (width, ''))
+        prec = int(_testcapi.UINT_MAX + 1)
+        if prec <= sys.maxint:
+            self.checkraises(OverflowError, '%.*f', '__mod__', (prec, 1. / 7))
 
         class X(object): pass
         self.checkraises(TypeError, 'abc', '__mod__', X())
