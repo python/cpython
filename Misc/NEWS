@@ -10,7 +10,7 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
-- Issue #14850: Now a chamap decoder treates U+FFFE as "undefined mapping"
+- Issue #14850: Now a charmap decoder treats U+FFFE as "undefined mapping"
   in any mapping, not only in a string.
 
 - Issue #11461: Fix the incremental UTF-16 decoder. Original patch by
@@ -27,7 +27,7 @@ Core and Builtins
 - Issue #16761: Calling int() with base argument only now raises TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
-  when retreiving a REG_DWORD value. This corrects functions like
+  when retrieving a REG_DWORD value. This corrects functions like
   winreg.QueryValueEx that may have been returning truncated values.
 
 - Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
@@ -242,7 +242,7 @@ Library
 
 - Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
 
-- Issue 10527: make multiprocessing use poll() instead of select() if available.
+- Issue #10527: make multiprocessing use poll() instead of select() if available.
 
 - Issue #16485: Now file descriptors are closed if file header patching failed
   on closing an aifc file.
@@ -671,7 +671,7 @@ Library
 
 - Issue #14399: zipfile now recognizes that the archive has been modified even
   if only the comment is changed.  In addition, the TypeError that results from
-  trying to set a non-binary value as a comment is now now raised at the time
+  trying to set a non-binary value as a comment is now raised at the time
   the comment is set rather than at the time the zipfile is written.
 
 - Issue #7978: socketserver now restarts the select() call when EINTR is
@@ -1907,7 +1907,7 @@ Library
   check or set the MACOSX_DEPLOYMENT_TARGET environment variable for the
   interpreter process.  This could cause failures in non-Distutils subprocesses
   and was unreliable since tests or user programs could modify the interpreter
-  environment after Distutils set it.  Instead, have Distutils set the the
+  environment after Distutils set it.  Instead, have Distutils set the
   deployment target only in the environment of each build subprocess.  It is
   still possible to globally override the default by setting
   MACOSX_DEPLOYMENT_TARGET before launching the interpreter; its value must be
@@ -2172,7 +2172,7 @@ Core and Builtins
 - Issue #11272: On Windows, input() strips '\r' (and not only '\n'), and
   sys.stdin uses universal newline (replace '\r\n' by '\n').
 
-- issue #11828: startswith and endswith don't accept None as slice index.  Patch
+- Issue #11828: startswith and endswith don't accept None as slice index.  Patch
   by Torsten Becker.
 
 - Issue #10830: Fix PyUnicode_FromFormatV("%c") for non-BMP characters on
