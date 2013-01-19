@@ -10,7 +10,7 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #14850: Now a chamap decoder treates U+FFFE as "undefined mapping"
+- Issue #14850: Now a charmap decoder treats U+FFFE as "undefined mapping"
   in any mapping, not only in a string.
 
 - Issue #16730: importlib.machinery.FileFinder now no longers raises an
@@ -34,7 +34,7 @@ Core and Builtins
 - Issue #16761: Calling int() with base argument only now raises TypeError.
 
 - Issue #16759: Support the full DWORD (unsigned long) range in Reg2Py
-  when retreiving a REG_DWORD value. This corrects functions like
+  when retrieving a REG_DWORD value. This corrects functions like
   winreg.QueryValueEx that may have been returning truncated values.
 
 - Issue #14420: Support the full DWORD (unsigned long) range in Py2Reg
@@ -1619,7 +1619,7 @@ Library
 
 - Issue #14626: Large refactoring of functions / parameters in the os module.
   Many functions now support "dir_fd" and "follow_symlinks" parameters;
-  some also support accepting an open file descriptor in place of of a path
+  some also support accepting an open file descriptor in place of a path
   string.  Added os.support_* collections as LBYL helpers.  Removed many
   functions only previously seen in 3.3 alpha releases (often starting with
   "f" or "l", or ending with "at").  Originally suggested by Serhiy Storchaka;
@@ -2253,7 +2253,7 @@ Library
 
 - Issue #14399: zipfile now recognizes that the archive has been modified even
   if only the comment is changed.  In addition, the TypeError that results from
-  trying to set a non-binary value as a comment is now now raised at the time
+  trying to set a non-binary value as a comment is now raised at the time
   the comment is set rather than at the time the zipfile is written.
 
 - trace.CoverageResults.is_ignored_filename() now ignores any name that starts
@@ -3893,7 +3893,7 @@ Library
   check or set the MACOSX_DEPLOYMENT_TARGET environment variable for the
   interpreter process.  This could cause failures in non-Distutils subprocesses
   and was unreliable since tests or user programs could modify the interpreter
-  environment after Distutils set it.  Instead, have Distutils set the the
+  environment after Distutils set it.  Instead, have Distutils set the
   deployment target only in the environment of each build subprocess.  It is
   still possible to globally override the default by setting
   MACOSX_DEPLOYMENT_TARGET before launching the interpreter; its value must be
