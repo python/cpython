@@ -44,7 +44,7 @@ machines assigned values between 128 and 255 to accented characters.  Different
 machines had different codes, however, which led to problems exchanging files.
 Eventually various commonly used sets of values for the 128--255 range emerged.
 Some were true standards, defined by the International Standards Organization,
-and some were **de facto** conventions that were invented by one company or
+and some were *de facto* conventions that were invented by one company or
 another and managed to catch on.
 
 255 characters aren't very many.  For example, you can't fit both the accented
@@ -62,8 +62,8 @@ bits means you have 2^16 = 65,536 distinct values available, making it possible
 to represent many different characters from many different alphabets; an initial
 goal was to have Unicode contain the alphabets for every single human language.
 It turns out that even 16 bits isn't enough to meet that goal, and the modern
-Unicode specification uses a wider range of codes, 0 through 1,114,111 (0x10ffff
-in base 16).
+Unicode specification uses a wider range of codes, 0 through 1,114,111 (
+``0x10FFFF`` in base 16).
 
 There's a related ISO standard, ISO 10646.  Unicode and ISO 10646 were
 originally separate efforts, but the specifications were merged with the 1.1
@@ -87,9 +87,11 @@ meanings.
 
 The Unicode standard describes how characters are represented by **code
 points**.  A code point is an integer value, usually denoted in base 16.  In the
-standard, a code point is written using the notation U+12ca to mean the
-character with value 0x12ca (4,810 decimal).  The Unicode standard contains a lot
-of tables listing characters and their corresponding code points::
+standard, a code point is written using the notation ``U+12CA`` to mean the
+character with value ``0x12ca`` (4,810 decimal).  The Unicode standard contains
+a lot of tables listing characters and their corresponding code points:
+
+.. code-block:: none
 
    0061    'a'; LATIN SMALL LETTER A
    0062    'b'; LATIN SMALL LETTER B
@@ -98,7 +100,7 @@ of tables listing characters and their corresponding code points::
    007B    '{'; LEFT CURLY BRACKET
 
 Strictly, these definitions imply that it's meaningless to say 'this is
-character U+12ca'.  U+12ca is a code point, which represents some particular
+character ``U+12CA``'.  ``U+12CA`` is a code point, which represents some particular
 character; in this case, it represents the character 'ETHIOPIC SYLLABLE WI'.  In
 informal contexts, this distinction between code points and characters will
 sometimes be forgotten.
@@ -115,13 +117,15 @@ Encodings
 ---------
 
 To summarize the previous section: a Unicode string is a sequence of code
-points, which are numbers from 0 through 0x10ffff (1,114,111 decimal).  This
+points, which are numbers from 0 through ``0x10FFFF`` (1,114,111 decimal).  This
 sequence needs to be represented as a set of bytes (meaning, values
 from 0 through 255) in memory.  The rules for translating a Unicode string
 into a sequence of bytes are called an **encoding**.
 
 The first encoding you might think of is an array of 32-bit integers.  In this
-representation, the string "Python" would look like this::
+representation, the string "Python" would look like this:
+
+.. code-block:: none
 
        P           y           t           h           o           n
     0x50 00 00 00 79 00 00 00 74 00 00 00 68 00 00 00 6f 00 00 00 6e 00 00 00
@@ -133,10 +137,10 @@ problems.
 1. It's not portable; different processors order the bytes differently.
 
 2. It's very wasteful of space.  In most texts, the majority of the code points
-   are less than 127, or less than 255, so a lot of space is occupied by zero
+   are less than 127, or less than 255, so a lot of space is occupied by ``0x00``
    bytes.  The above string takes 24 bytes compared to the 6 bytes needed for an
    ASCII representation.  Increased RAM usage doesn't matter too much (desktop
-   computers have megabytes of RAM, and strings aren't usually that large), but
+   computers have gigabytes of RAM, and strings aren't usually that large), but
    expanding our usage of disk and network bandwidth by a factor of 4 is
    intolerable.
 
@@ -175,14 +179,12 @@ internal detail.
 
 UTF-8 is one of the most commonly used encodings.  UTF stands for "Unicode
 Transformation Format", and the '8' means that 8-bit numbers are used in the
-encoding.  (There's also a UTF-16 encoding, but it's less frequently used than
-UTF-8.)  UTF-8 uses the following rules:
+encoding.  (There are also a UTF-16 and UTF-32 encodings, but they are less
+frequently used than UTF-8.)  UTF-8 uses the following rules:
 
-1. If the code point is <128, it's represented by the corresponding byte value.
-2. If the code point is between 128 and 0x7ff, it's turned into two byte values
-   between 128 and 255.
-3. Code points >0x7ff are turned into three- or four-byte sequences, where each
-   byte of the sequence is between 128 and 255.
+1. If the code point is < 128, it's represented by the corresponding byte value.
+2. If the code point is >= 128, it's turned into a sequence of two, three, or
+   four bytes, where each byte of the sequence is between 128 and 255.
 
 UTF-8 has several convenient properties:
 
@@ -192,8 +194,8 @@ UTF-8 has several convenient properties:
    processed by C functions such as ``strcpy()`` and sent through protocols that
    can't handle zero bytes.
 3. A string of ASCII text is also valid UTF-8 text.
-4. UTF-8 is fairly compact; the majority of code points are turned into two
-   bytes, and values less than 128 occupy only a single byte.
+4. UTF-8 is fairly compact; the majority of commonly used characters can be
+   represented with one or two bytes.
 5. If bytes are corrupted or lost, it's possible to determine the start of the
    next UTF-8-encoded code point and resynchronize.  It's also unlikely that
    random 8-bit data will look like valid UTF-8.
@@ -203,25 +205,25 @@ UTF-8 has several convenient properties:
 References
 ----------
 
-The Unicode Consortium site at <http://www.unicode.org> has character charts, a
+The `Unicode Consortium site <http://www.unicode.org>`_ has character charts, a
 glossary, and PDF versions of the Unicode specification.  Be prepared for some
-difficult reading.  <http://www.unicode.org/history/> is a chronology of the
-origin and development of Unicode.
+difficult reading.  `A chronology <http://www.unicode.org/history/>`_ of the
+origin and development of Unicode is also available on the site.
 
-To help understand the standard, Jukka Korpela has written an introductory guide
-to reading the Unicode character tables, available at
-<http://www.cs.tut.fi/~jkorpela/unicode/guide.html>.
+To help understand the standard, Jukka Korpela has written `an introductory
+guide <http://www.cs.tut.fi/~jkorpela/unicode/guide.html>`_ to reading the
+Unicode character tables.
 
-Another good introductory article was written by Joel Spolsky
-<http://www.joelonsoftware.com/articles/Unicode.html>.
+Another `good introductory article <http://www.joelonsoftware.com/articles/Unicode.html>`_
+was written by Joel Spolsky.
 If this introduction didn't make things clear to you, you should try reading this
 alternate article before continuing.
 
 .. Jason Orendorff XXX http://www.jorendorff.com/articles/unicode/ is broken
 
-Wikipedia entries are often helpful; see the entries for "character encoding"
-<http://en.wikipedia.org/wiki/Character_encoding> and UTF-8
-<http://en.wikipedia.org/wiki/UTF-8>, for example.
+Wikipedia entries are often helpful; see the entries for "`character encoding
+<http://en.wikipedia.org/wiki/Character_encoding>`_" and `UTF-8
+<http://en.wikipedia.org/wiki/UTF-8>`_, for example.
 
 
 Python's Unicode Support
@@ -233,11 +235,11 @@ Unicode features.
 The String Type
 ---------------
 
-Since Python 3.0, the language features a ``str`` type that contain Unicode
+Since Python 3.0, the language features a :class:`str` type that contain Unicode
 characters, meaning any string created using ``"unicode rocks!"``, ``'unicode
 rocks!'``, or the triple-quoted string syntax is stored as Unicode.
 
-To insert a Unicode character that is not part ASCII, e.g., any letters with
+To insert a non-ASCII Unicode character, e.g., any letters with
 accents, one can use escape sequences in their string literals as such::
 
    >>> "\N{GREEK CAPITAL LETTER DELTA}"  # Using the character name
@@ -247,15 +249,16 @@ accents, one can use escape sequences in their string literals as such::
    >>> "\U00000394"                      # Using a 32-bit hex value
    '\u0394'
 
-In addition, one can create a string using the :func:`decode` method of
-:class:`bytes`.  This method takes an encoding, such as UTF-8, and, optionally,
-an *errors* argument.
+In addition, one can create a string using the :func:`~bytes.decode` method of
+:class:`bytes`.  This method takes an *encoding* argument, such as ``UTF-8``,
+and optionally, an *errors* argument.
 
 The *errors* argument specifies the response when the input string can't be
 converted according to the encoding's rules.  Legal values for this argument are
-'strict' (raise a :exc:`UnicodeDecodeError` exception), 'replace' (use U+FFFD,
-'REPLACEMENT CHARACTER'), or 'ignore' (just leave the character out of the
-Unicode result).  The following examples show the differences::
+``'strict'`` (raise a :exc:`UnicodeDecodeError` exception), ``'replace'`` (use
+``U+FFFD``, ``REPLACEMENT CHARACTER``), or ``'ignore'`` (just leave the
+character out of the Unicode result).
+The following examples show the differences::
 
     >>> b'\x80abc'.decode("utf-8", "strict")  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
@@ -273,8 +276,8 @@ a question mark because it may not be displayed on some systems.)
 Encodings are specified as strings containing the encoding's name.  Python 3.2
 comes with roughly 100 different encodings; see the Python Library Reference at
 :ref:`standard-encodings` for a list.  Some encodings have multiple names; for
-example, 'latin-1', 'iso_8859_1' and '8859' are all synonyms for the same
-encoding.
+example, ``'latin-1'``, ``'iso_8859_1'`` and ``'8859``' are all synonyms for
+the same encoding.
 
 One-character Unicode strings can also be created with the :func:`chr`
 built-in function, which takes integers and returns a Unicode string of length 1
@@ -290,13 +293,14 @@ returns the code point value::
 Converting to Bytes
 -------------------
 
-Another important str method is ``.encode([encoding], [errors='strict'])``,
-which returns a ``bytes`` representation of the Unicode string, encoded in the
-requested encoding.  The ``errors`` parameter is the same as the parameter of
-the :meth:`decode` method, with one additional possibility; as well as 'strict',
-'ignore', and 'replace' (which in this case inserts a question mark instead of
-the unencodable character), you can also pass 'xmlcharrefreplace' which uses
-XML's character references.  The following example shows the different results::
+The opposite method of :meth:`bytes.decode` is :meth:`str.encode`,
+which returns a :class:`bytes` representation of the Unicode string, encoded in the
+requested *encoding*.  The *errors* parameter is the same as the parameter of
+the :meth:`~bytes.decode` method, with one additional possibility; as well as
+``'strict'``, ``'ignore'``, and ``'replace'`` (which in this case inserts a
+question mark instead of the unencodable character), you can also pass
+``'xmlcharrefreplace'`` which uses XML's character references.
+The following example shows the different results::
 
     >>> u = chr(40960) + 'abcd' + chr(1972)
     >>> u.encode('utf-8')
@@ -312,6 +316,8 @@ XML's character references.  The following example shows the different results::
     b'?abcd?'
     >>> u.encode('ascii', 'xmlcharrefreplace')
     b'&#40960;abcd&#1972;'
+
+.. XXX mention the surrogate* error handlers
 
 The low-level routines for registering and accessing the available encodings are
 found in the :mod:`codecs` module.  However, the encoding and decoding functions
@@ -365,14 +371,14 @@ they have no significance to Python but are a convention.  Python looks for
 ``coding: name`` or ``coding=name`` in the comment.
 
 If you don't include such a comment, the default encoding used will be UTF-8 as
-already mentioned.
+already mentioned.  See also :pep:`263` for more information.
 
 
 Unicode Properties
 ------------------
 
 The Unicode specification includes a database of information about code points.
-For each code point that's defined, the information includes the character's
+For each defined code point, the information includes the character's
 name, its category, the numeric value if applicable (Unicode has characters
 representing the Roman numerals and fractions such as one-third and
 four-fifths).  There are also properties related to the code point's use in
@@ -392,7 +398,9 @@ prints the numeric value of one particular character::
     # Get numeric value of second character
     print(unicodedata.numeric(u[1]))
 
-When run, this prints::
+When run, this prints:
+
+.. code-block:: none
 
     0 00e9 Ll LATIN SMALL LETTER E WITH ACUTE
     1 0bf2 No TAMIL NUMBER ONE THOUSAND
@@ -413,7 +421,7 @@ list of category codes.
 References
 ----------
 
-The ``str`` type is described in the Python library reference at
+The :class:`str` type is described in the Python library reference at
 :ref:`textseq`.
 
 The documentation for the :mod:`unicodedata` module.
@@ -443,16 +451,16 @@ columns and can return Unicode values from an SQL query.
 
 Unicode data is usually converted to a particular encoding before it gets
 written to disk or sent over a socket.  It's possible to do all the work
-yourself: open a file, read an 8-bit byte string from it, and convert the string
-with ``str(bytes, encoding)``.  However, the manual approach is not recommended.
+yourself: open a file, read an 8-bit bytes object from it, and convert the string
+with ``bytes.decode(encoding)``.  However, the manual approach is not recommended.
 
 One problem is the multi-byte nature of encodings; one Unicode character can be
 represented by several bytes.  If you want to read the file in arbitrary-sized
-chunks (say, 1K or 4K), you need to write error-handling code to catch the case
+chunks (say, 1k or 4k), you need to write error-handling code to catch the case
 where only part of the bytes encoding a single Unicode character are read at the
 end of a chunk.  One solution would be to read the entire file into memory and
 then perform the decoding, but that prevents you from working with files that
-are extremely large; if you need to read a 2Gb file, you need 2Gb of RAM.
+are extremely large; if you need to read a 2GB file, you need 2GB of RAM.
 (More, really, since for at least a moment you'd need to have both the encoded
 string and its Unicode version in memory.)
 
@@ -460,9 +468,9 @@ The solution would be to use the low-level decoding interface to catch the case
 of partial coding sequences.  The work of implementing this has already been
 done for you: the built-in :func:`open` function can return a file-like object
 that assumes the file's contents are in a specified encoding and accepts Unicode
-parameters for methods such as ``.read()`` and ``.write()``.  This works through
+parameters for methods such as :meth:`read` and :meth:`write`.  This works through
 :func:`open`\'s *encoding* and *errors* parameters which are interpreted just
-like those in string objects' :meth:`encode` and :meth:`decode` methods.
+like those in :meth:`str.encode` and :meth:`bytes.decode`.
 
 Reading Unicode from a file is therefore simple::
 
@@ -478,7 +486,7 @@ writing::
         f.seek(0)
         print(repr(f.readline()[:1]))
 
-The Unicode character U+FEFF is used as a byte-order mark (BOM), and is often
+The Unicode character ``U+FEFF`` is used as a byte-order mark (BOM), and is often
 written as the first character of a file in order to assist with autodetection
 of the file's byte ordering.  Some encodings, such as UTF-16, expect a BOM to be
 present at the start of a file; when such an encoding is used, the BOM will be
@@ -520,12 +528,12 @@ Functions in the :mod:`os` module such as :func:`os.stat` will also accept Unico
 filenames.
 
 Function :func:`os.listdir`, which returns filenames, raises an issue: should it return
-the Unicode version of filenames, or should it return byte strings containing
+the Unicode version of filenames, or should it return bytes containing
 the encoded versions?  :func:`os.listdir` will do both, depending on whether you
-provided the directory path as a byte string or a Unicode string.  If you pass a
+provided the directory path as bytes or a Unicode string.  If you pass a
 Unicode string as the path, filenames will be decoded using the filesystem's
 encoding and a list of Unicode strings will be returned, while passing a byte
-path will return the byte string versions of the filenames.  For example,
+path will return the bytes versions of the filenames.  For example,
 assuming the default filesystem encoding is UTF-8, running the following
 program::
 
@@ -559,13 +567,13 @@ Unicode.
 
 The most important tip is:
 
-    Software should only work with Unicode strings internally, converting to a
-    particular encoding on output.
+    Software should only work with Unicode strings internally, decoding the input
+    data as soon as possible and encoding the output only at the end.
 
 If you attempt to write processing functions that accept both Unicode and byte
 strings, you will find your program vulnerable to bugs wherever you combine the
-two different kinds of strings.  There is no automatic encoding or decoding if
-you do e.g. ``str + bytes``, a :exc:`TypeError` is raised for this expression.
+two different kinds of strings.  There is no automatic encoding or decoding: if
+you do e.g. ``str + bytes``, a :exc:`TypeError` will be raised.
 
 When using data coming from a web browser or some other untrusted source, a
 common technique is to check for illegal characters in a string before using the
@@ -610,7 +618,6 @@ Marc-André Lemburg, Martin von Löwis, Chad Whitacre.
    and that the HOWTO only covers 2.x.
 
 .. comment Describe Python 3.x support (new section? new document?)
-.. comment Additional topic: building Python w/ UCS2 or UCS4 support
 .. comment Describe use of codecs.StreamRecoder and StreamReaderWriter
 
 .. comment
@@ -640,5 +647,3 @@ Marc-André Lemburg, Martin von Löwis, Chad Whitacre.
        - [ ] Writing Unicode programs
            - [ ] Do everything in Unicode
            - [ ] Declaring source code encodings (PEP 263)
-       - [ ] Other issues
-           - [ ] Building Python (UCS2, UCS4)
