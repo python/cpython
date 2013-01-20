@@ -479,13 +479,10 @@ Here's a sample usage of the ``generate_ints()`` generator:
 You could equally write ``for i in generate_ints(5)``, or ``a,b,c =
 generate_ints(3)``.
 
-Inside a generator function, the ``return`` statement can only be used without a
-value, and signals the end of the procession of values; after executing a
-``return`` the generator cannot return any further values.  ``return`` with a
-value, such as ``return 5``, is a syntax error inside a generator function.  The
-end of the generator's results can also be indicated by raising
-:exc:`StopIteration` manually, or by just letting the flow of execution fall off
-the bottom of the function.
+Inside a generator function, ``return value`` is semantically equivalent to
+``raise StopIteration(value)``.  If no value is returned or the bottom of the
+function is reached, the procession of values ends and the generator cannot
+return any further values.
 
 You could achieve the effect of generators manually by writing your own class
 and storing all the local variables of the generator as instance variables.  For
