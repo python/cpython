@@ -2,7 +2,7 @@
 # Define dependencies of generated files that are checked into hg.
 # The syntax of this file uses make rule dependencies, without actions
 
-Python/importlib.h: Lib/importlib/_bootstrap.py Python/freeze_importlib.py
+Python/importlib.h: Lib/importlib/_bootstrap.py Modules/_freeze_importlib.c
 
 Include/ast.h: Parser/Python.asdl Parser/asdl.py Parser/asdl_c.py
 Python/Python-ast.c: Include/ast.h
