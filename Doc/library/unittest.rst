@@ -11,17 +11,14 @@
 (If you are already familiar with the basic concepts of testing, you might want
 to skip to :ref:`the list of assert methods <assert-methods>`.)
 
-The Python unit testing framework, sometimes referred to as "PyUnit," is a
-Python language version of JUnit, by Kent Beck and Erich Gamma. JUnit is, in
-turn, a Java version of Kent's Smalltalk testing framework.  Each is the de
-facto standard unit testing framework for its respective language.
+The :mod:`unittest` unit testing framework was originally inspired by JUnit
+and has a similar flavor as major unit testing frameworks in other
+languages.  It supports test automation, sharing of setup and shutdown code
+for tests, aggregation of tests into collections, and independence of the
+tests from the reporting framework.
 
-:mod:`unittest` supports test automation, sharing of setup and shutdown code for
-tests, aggregation of tests into collections, and independence of the tests from
-the reporting framework.  The :mod:`unittest` module provides classes that make
-it easy to support these qualities for a set of tests.
-
-To achieve this, :mod:`unittest` supports some important concepts:
+To achieve this, :mod:`unittest` supports some important concepts in an
+object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
@@ -30,7 +27,7 @@ test fixture
    process.
 
 test case
-   A :dfn:`test case` is the smallest unit of testing.  It checks for a specific
+   A :dfn:`test case` is the individual unit of testing.  It checks for a specific
    response to a particular set of inputs.  :mod:`unittest` provides a base class,
    :class:`TestCase`, which may be used to create new test cases.
 
@@ -44,42 +41,11 @@ test runner
    a textual interface, or return a special value to indicate the results of
    executing the tests.
 
-The test case and test fixture concepts are supported through the
-:class:`TestCase` and :class:`FunctionTestCase` classes; the former should be
-used when creating new tests, and the latter can be used when integrating
-existing test code with a :mod:`unittest`\ -driven framework. When building test
-fixtures using :class:`TestCase`, the :meth:`~TestCase.setUp` and
-:meth:`~TestCase.tearDown` methods can be overridden to provide initialization
-and cleanup for the fixture.  With :class:`FunctionTestCase`, existing functions
-can be passed to the constructor for these purposes.  When the test is run, the
-fixture initialization is run first; if it succeeds, the cleanup method is run
-after the test has been executed, regardless of the outcome of the test.  Each
-instance of the :class:`TestCase` will only be used to run a single test method,
-so a new fixture is created for each test.
-
-Test suites are implemented by the :class:`TestSuite` class.  This class allows
-individual tests and test suites to be aggregated; when the suite is executed,
-all tests added directly to the suite and in "child" test suites are run.
-
-A test runner is an object that provides a single method,
-:meth:`~TestRunner.run`, which accepts a :class:`TestCase` or :class:`TestSuite`
-object as a parameter, and returns a result object.  The class
-:class:`TestResult` is provided for use as the result object. :mod:`unittest`
-provides the :class:`TextTestRunner` as an example test runner which reports
-test results on the standard error stream by default.  Alternate runners can be
-implemented for other environments (such as graphical environments) without any
-need to derive from a specific class.
-
 
 .. seealso::
 
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
-
-   `unittest2: A backport of new unittest features for Python 2.4-2.6 <http://pypi.python.org/pypi/unittest2>`_
-      Many new features were added to unittest in Python 2.7, including test
-      discovery. unittest2 allows you to use these features with earlier
-      versions of Python.
 
    `Simple Smalltalk Testing: With Patterns <http://www.XProgramming.com/testfram.htm>`_
       Kent Beck's original paper on testing frameworks using the pattern shared
@@ -89,7 +55,7 @@ need to derive from a specific class.
       Third-party unittest frameworks with a lighter-weight syntax for writing
       tests.  For example, ``assert func(10) == 42``.
 
-   `The Python Testing Tools Taxonomy <http://pycheesecake.org/wiki/PythonTestingToolsTaxonomy>`_
+   `The Python Testing Tools Taxonomy <http://wiki.python.org/moin/PythonTestingToolsTaxonomy>`_
       An extensive list of Python testing tools including functional testing
       frameworks and mock object libraries.
 
@@ -173,15 +139,8 @@ line, the above script produces an output that looks like this::
 
    OK
 
-Instead of :func:`unittest.main`, there are other ways to run the tests with a
-finer level of control, less terse output, and no requirement to be run from the
-command line.  For example, the last two lines may be replaced with::
-
-   suite = unittest.TestLoader().loadTestsFromTestCase(TestSequenceFunctions)
-   unittest.TextTestRunner(verbosity=2).run(suite)
-
-Running the revised script from the interpreter or another script produces the
-following output::
+Passing the ``-v`` option to your test script will instruct :func:`unittest.main`
+to enable a higher level of verbosity, and produce the following output::
 
    test_choice (__main__.TestSequenceFunctions) ... ok
    test_sample (__main__.TestSequenceFunctions) ... ok
@@ -359,45 +318,30 @@ test cases are represented by :class:`unittest.TestCase` instances.
 To make your own test cases you must write subclasses of
 :class:`TestCase` or use :class:`FunctionTestCase`.
 
-An instance of a :class:`TestCase`\ -derived class is an object that can
-completely run a single test method, together with optional set-up and tidy-up
-code.
-
 The testing code of a :class:`TestCase` instance should be entirely self
 contained, such that it can be run either in isolation or in arbitrary
 combination with any number of other test cases.
 
-The simplest :class:`TestCase` subclass will simply override the
-:meth:`~TestCase.runTest` method in order to perform specific testing code::
+The simplest :class:`TestCase` subclass will simply implement a test method
+(i.e. a method whose name starts with ``test``) in order to perform specific
+testing code::
 
    import unittest
 
    class DefaultWidgetSizeTestCase(unittest.TestCase):
-       def runTest(self):
+       def test_default_widget_size(self):
            widget = Widget('The widget')
-           self.assertEqual(widget.size(), (50, 50), 'incorrect default size')
+           self.assertEqual(widget.size(), (50, 50))
 
 Note that in order to test something, we use one of the :meth:`assert\*`
 methods provided by the :class:`TestCase` base class.  If the test fails, an
 exception will be raised, and :mod:`unittest` will identify the test case as a
-:dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`. This
-helps you identify where the problem is: :dfn:`failures` are caused by incorrect
-results - a 5 where you expected a 6. :dfn:`Errors` are caused by incorrect
-code - e.g., a :exc:`TypeError` caused by an incorrect function call.
+:dfn:`failure`.  Any other exceptions will be treated as :dfn:`errors`.
 
-The way to run a test case will be described later.  For now, note that to
-construct an instance of such a test case, we call its constructor without
-arguments::
-
-   testCase = DefaultWidgetSizeTestCase()
-
-Now, such test cases can be numerous, and their set-up can be repetitive.  In
-the above case, constructing a :class:`Widget` in each of 100 Widget test case
-subclasses would mean unsightly duplication.
-
-Luckily, we can factor out such set-up code by implementing a method called
-:meth:`~TestCase.setUp`, which the testing framework will automatically call for
-us when we run the test::
+Tests can be numerous, and their set-up can be repetitive.  Luckily, we
+can factor out set-up code by implementing a method called
+:meth:`~TestCase.setUp`, which the testing framework will automatically
+call for every single test we run::
 
    import unittest
 
@@ -405,23 +349,26 @@ us when we run the test::
        def setUp(self):
            self.widget = Widget('The widget')
 
-   class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
-       def runTest(self):
+       def test_default_widget_size(self):
            self.assertEqual(self.widget.size(), (50,50),
                             'incorrect default size')
 
-   class WidgetResizeTestCase(SimpleWidgetTestCase):
-       def runTest(self):
+       def test_widget_resize(self):
            self.widget.resize(100,150)
            self.assertEqual(self.widget.size(), (100,150),
                             'wrong size after resize')
 
+.. note::
+   The order in which the various tests will be run is determined
+   by sorting the test method names with respect to the built-in
+   ordering for strings.
+
 If the :meth:`~TestCase.setUp` method raises an exception while the test is
-running, the framework will consider the test to have suffered an error, and the
-:meth:`~TestCase.runTest` method will not be executed.
+running, the framework will consider the test to have suffered an error, and
+the test method will not be executed.
 
 Similarly, we can provide a :meth:`~TestCase.tearDown` method that tidies up
-after the :meth:`~TestCase.runTest` method has been run::
+after the test method has been run::
 
    import unittest
 
@@ -431,96 +378,26 @@ after the :meth:`~TestCase.runTest` method has been run::
 
        def tearDown(self):
            self.widget.dispose()
-           self.widget = None
 
-If :meth:`~TestCase.setUp` succeeded, the :meth:`~TestCase.tearDown` method will
-be run whether :meth:`~TestCase.runTest` succeeded or not.
+If :meth:`~TestCase.setUp` succeeded, :meth:`~TestCase.tearDown` will be
+run whether the test method succeeded or not.
 
 Such a working environment for the testing code is called a :dfn:`fixture`.
 
-Often, many small test cases will use the same fixture.  In this case, we would
-end up subclassing :class:`SimpleWidgetTestCase` into many small one-method
-classes such as :class:`DefaultWidgetSizeTestCase`.  This is time-consuming and
-discouraging, so in the same vein as JUnit, :mod:`unittest` provides a simpler
-mechanism::
-
-   import unittest
-
-   class WidgetTestCase(unittest.TestCase):
-       def setUp(self):
-           self.widget = Widget('The widget')
-
-       def tearDown(self):
-           self.widget.dispose()
-           self.widget = None
-
-       def test_default_size(self):
-           self.assertEqual(self.widget.size(), (50,50),
-                            'incorrect default size')
-
-       def test_resize(self):
-           self.widget.resize(100,150)
-           self.assertEqual(self.widget.size(), (100,150),
-                            'wrong size after resize')
-
-Here we have not provided a :meth:`~TestCase.runTest` method, but have instead
-provided two different test methods.  Class instances will now each run one of
-the :meth:`test_\*` methods, with ``self.widget`` created and destroyed
-separately for each instance.  When creating an instance we must specify the
-test method it is to run.  We do this by passing the method name in the
-constructor::
-
-   defaultSizeTestCase = WidgetTestCase('test_default_size')
-   resizeTestCase = WidgetTestCase('test_resize')
-
 Test case instances are grouped together according to the features they test.
 :mod:`unittest` provides a mechanism for this: the :dfn:`test suite`,
-represented by :mod:`unittest`'s :class:`TestSuite` class::
+represented by :mod:`unittest`'s :class:`TestSuite` class.  In most cases,
+calling :func:`unittest.main` will do the right thing and collect all the
+module's test cases for you, and then execute them.
 
-   widgetTestSuite = unittest.TestSuite()
-   widgetTestSuite.addTest(WidgetTestCase('test_default_size'))
-   widgetTestSuite.addTest(WidgetTestCase('test_resize'))
-
-For the ease of running tests, as we will see later, it is a good idea to
-provide in each test module a callable object that returns a pre-built test
-suite::
+However, should you want to customize the building of your test suite,
+you can do it yourself::
 
    def suite():
        suite = unittest.TestSuite()
        suite.addTest(WidgetTestCase('test_default_size'))
        suite.addTest(WidgetTestCase('test_resize'))
        return suite
-
-or even::
-
-   def suite():
-       tests = ['test_default_size', 'test_resize']
-
-       return unittest.TestSuite(map(WidgetTestCase, tests))
-
-Since it is a common pattern to create a :class:`TestCase` subclass with many
-similarly named test functions, :mod:`unittest` provides a :class:`TestLoader`
-class that can be used to automate the process of creating a test suite and
-populating it with individual tests. For example, ::
-
-   suite = unittest.TestLoader().loadTestsFromTestCase(WidgetTestCase)
-
-will create a test suite that will run ``WidgetTestCase.test_default_size()`` and
-``WidgetTestCase.test_resize``. :class:`TestLoader` uses the ``'test'`` method
-name prefix to identify test methods automatically.
-
-Note that the order in which the various test cases will be run is
-determined by sorting the test function names with respect to the
-built-in ordering for strings.
-
-Often it is desirable to group suites of test cases together, so as to run tests
-for the whole system at once.  This is easy, since :class:`TestSuite` instances
-can be added to a :class:`TestSuite` just as :class:`TestCase` instances can be
-added to a :class:`TestSuite`::
-
-   suite1 = module1.TheTestSuite()
-   suite2 = module2.TheTestSuite()
-   alltests = unittest.TestSuite([suite1, suite2])
 
 You can place the definitions of test cases and test suites in the same modules
 as the code they are to test (such as :file:`widget.py`), but there are several
@@ -564,22 +441,12 @@ Given the following test function::
        assert something.name is not None
        # ...
 
-one can create an equivalent test case instance as follows::
-
-   testcase = unittest.FunctionTestCase(testSomething)
-
-If there are additional set-up and tear-down methods that should be called as
-part of the test case's operation, they can also be provided like so::
+one can create an equivalent test case instance as follows, with optional
+set-up and tear-down methods::
 
    testcase = unittest.FunctionTestCase(testSomething,
                                         setUp=makeSomethingDB,
                                         tearDown=deleteSomethingDB)
-
-To make migrating existing test suites easier, :mod:`unittest` supports tests
-raising :exc:`AssertionError` to indicate test failure. However, it is
-recommended that you use the explicit :meth:`TestCase.fail\*` and
-:meth:`TestCase.assert\*` methods instead, as future versions of :mod:`unittest`
-may treat :exc:`AssertionError` differently.
 
 .. note::
 
@@ -704,32 +571,24 @@ Test cases
 
 .. class:: TestCase(methodName='runTest')
 
-   Instances of the :class:`TestCase` class represent the smallest testable units
+   Instances of the :class:`TestCase` class represent the logical test units
    in the :mod:`unittest` universe.  This class is intended to be used as a base
    class, with specific tests being implemented by concrete subclasses.  This class
    implements the interface needed by the test runner to allow it to drive the
-   test, and methods that the test code can use to check for and report various
+   tests, and methods that the test code can use to check for and report various
    kinds of failure.
 
-   Each instance of :class:`TestCase` will run a single test method: the method
-   named *methodName*.  If you remember, we had an earlier example that went
-   something like this::
-
-      def suite():
-          suite = unittest.TestSuite()
-          suite.addTest(WidgetTestCase('test_default_size'))
-          suite.addTest(WidgetTestCase('test_resize'))
-          return suite
-
-   Here, we create two instances of :class:`WidgetTestCase`, each of which runs a
-   single test.
+   Each instance of :class:`TestCase` will run a single base method: the method
+   named *methodName*.  However, the standard implementation of the default
+   *methodName*, ``runTest()``, will run every method starting with ``test``
+   as an individual test, and count successes and failures accordingly.
+   Therefore, in most uses of :class:`TestCase`, you will neither change
+   the *methodName* nor reimplement the default ``runTest()`` method.
 
    .. versionchanged:: 3.2
-      :class:`TestCase` can be instantiated successfully without providing a method
-      name. This makes it easier to experiment with :class:`TestCase` from the
-      interactive interpreter.
-
-   *methodName* defaults to :meth:`runTest`.
+      :class:`TestCase` can be instantiated successfully without providing a
+      *methodName*. This makes it easier to experiment with :class:`TestCase`
+      from the interactive interpreter.
 
    :class:`TestCase` instances provide three groups of methods: one group used
    to run the test, another used by the test implementation to check conditions
@@ -737,7 +596,6 @@ Test cases
    test itself to be gathered.
 
    Methods in the first group (running the test) are:
-
 
    .. method:: setUp()
 
@@ -790,10 +648,11 @@ Test cases
 
    .. method:: run(result=None)
 
-      Run the test, collecting the result into the test result object passed as
-      *result*.  If *result* is omitted or ``None``, a temporary result
-      object is created (by calling the :meth:`defaultTestResult` method) and
-      used. The result object is returned to :meth:`run`'s caller.
+      Run the test, collecting the result into the :class:`TestResult` object
+      passed as *result*.  If *result* is omitted or ``None``, a temporary
+      result object is created (by calling the :meth:`defaultTestResult`
+      method) and used. The result object is returned to :meth:`run`'s
+      caller.
 
       The same effect may be had by simply calling the :class:`TestCase`
       instance.
