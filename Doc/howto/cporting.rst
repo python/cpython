@@ -100,25 +100,6 @@ corresponds to Python 2's :func:`long` type--the :func:`int` type
 used in Python 2 was removed.  In the C-API, ``PyInt_*`` functions
 are replaced by their ``PyLong_*`` equivalents.
 
-The best course of action here is using the ``PyInt_*`` functions aliased to
-``PyLong_*`` found in :file:`intobject.h`.  The abstract ``PyNumber_*`` APIs
-can also be used in some cases. ::
-
-   #include "Python.h"
-   #include "intobject.h"
-
-   static PyObject *
-   add_ints(PyObject *self, PyObject *args) {
-       int one, two;
-       PyObject *result;
-
-       if (!PyArg_ParseTuple(args, "ii:add_ints", &one, &two))
-           return NULL;
-
-       return PyInt_FromLong(one + two);
-   }
-
-
 
 Module initialization and state
 ===============================
