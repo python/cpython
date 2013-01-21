@@ -150,6 +150,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16993: shutil.which() now preserves the case of the path and extension
+  on Windows.
+
 - Issue #16992: On Windows in signal.set_wakeup_fd, validate the file
   descriptor argument.
 
