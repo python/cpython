@@ -83,14 +83,14 @@ is the module's name in the Python package namespace.
 
    The constructor sets this attribute to ``True``.
 
-   .. note:: If you attach a handler to several loggers, it may emit the same
-      record multiple times. In general, you should not need to attach a
-      handler to more than one logger - if you just attach it to the
-      appropriate logger which is highest in the logger hierarchy, then it
-      will see all events logged by all descendant loggers, provided that
-      their propagate setting is left set to ``True``. A common scenario is to
-      attach handlers only to the root logger, and let propagation take care of
-      the rest.
+   .. note:: If you attach a handler to a logger *and* one or more of its
+      ancestors, it may emit the same record multiple times. In general, you
+      should not need to attach a handler to more than one logger - if you just
+      attach it to the appropriate logger which is highest in the logger
+      hierarchy, then it will see all events logged by all descendant loggers,
+      provided that their propagate setting is left set to ``True``. A common
+      scenario is to attach handlers only to the root logger, and to let
+      propagation take care of the rest.
 
 .. method:: Logger.setLevel(lvl)
 
