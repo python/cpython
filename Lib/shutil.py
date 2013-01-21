@@ -1092,10 +1092,12 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         pathext = os.environ.get("PATHEXT", "").split(os.pathsep)
         # See if the given file matches any of the expected path extensions.
         # This will allow us to short circuit when given "python.exe".
-        matches = [cmd for ext in pathext if cmd.lower().endswith(ext.lower())]
         # If it does match, only test that one, otherwise we have to try
         # others.
-        files = [cmd] if matches else [cmd + ext.lower() for ext in pathext]
+        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
+            files = [cmd]
+        else:
+            files = [cmd + ext for ext in pathext]
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
@@ -1103,9 +1105,9 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
 
     seen = set()
     for dir in path:
-        dir = os.path.normcase(dir)
-        if not dir in seen:
-            seen.add(dir)
+        normdir = os.path.normcase(dir)
+        if not normdir in seen:
+            seen.add(normdir)
             for thefile in files:
                 name = os.path.join(dir, thefile)
                 if _access_check(name, mode):
