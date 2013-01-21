@@ -1280,12 +1280,13 @@ class TestShutil(unittest.TestCase):
 class TestWhich(unittest.TestCase):
 
     def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = tempfile.mkdtemp(prefix="Tmp")
         self.addCleanup(shutil.rmtree, self.temp_dir, True)
         # Give the temp_file an ".exe" suffix for all.
         # It's needed on Windows and not harmful on other platforms.
         self.temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir,
-                                                     suffix=".exe")
+                                                     prefix="Tmp",
+                                                     suffix=".Exe")
         os.chmod(self.temp_file.name, stat.S_IXUSR)
         self.addCleanup(self.temp_file.close)
         self.dir, self.file = os.path.split(self.temp_file.name)
@@ -1328,7 +1329,7 @@ class TestWhich(unittest.TestCase):
         # Ask for the file without the ".exe" extension, then ensure that
         # it gets found properly with the extension.
         rv = shutil.which(self.temp_file.name[:-4], path=self.dir)
-        self.assertEqual(self.temp_file.name, rv)
+        self.assertEqual(rv, self.temp_file.name[:-4] + ".exe")
 
 
 class TestMove(unittest.TestCase):
