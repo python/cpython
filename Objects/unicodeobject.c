@@ -3923,7 +3923,8 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                     /* found a name.  look it up in the unicode database */
                     message = "unknown Unicode character name";
                     s++;
-                    if (ucnhash_CAPI->getcode(NULL, start, (int)(s-start-1), &chr))
+                    if (s - start - 1 <= INT_MAX &&
+                        ucnhash_CAPI->getcode(NULL, start, (int)(s-start-1), &chr))
                         goto store;
                 }
             }
