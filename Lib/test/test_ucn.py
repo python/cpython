@@ -144,13 +144,14 @@ class UnicodeNamesTest(unittest.TestCase):
         # very very long bogus character name
         try:
             x = b'\\N{SPACE' + b'x' * int(_testcapi.UINT_MAX + 1) + b'}'
+            self.assertEqual(len(x), len(b'\\N{SPACE}') +
+                                     (_testcapi.UINT_MAX + 1))
+            self.assertRaisesRegexp(UnicodeError,
+                'unknown Unicode character name',
+                x.decode, 'unicode-escape'
+            )
         except MemoryError:
             raise unittest.SkipTest("not enough memory")
-        self.assertEqual(len(x), len(b'\\N{SPACE}') + (_testcapi.UINT_MAX + 1))
-        self.assertRaisesRegexp(UnicodeError,
-            'unknown Unicode character name',
-            x.decode, 'unicode-escape'
-        )
 
 
 def test_main():
