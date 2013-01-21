@@ -218,18 +218,17 @@ class UnicodeNamesTest(unittest.TestCase):
 
     @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
                          "needs UINT_MAX < SIZE_MAX")
-    def test_issue16335(self):
+    @support.bigmemtest(size=_testcapi.UINT_MAX + 1,
+                        memuse=1 + 1, dry_run=False)
+    def test_issue16335(self, size):
         # very very long bogus character name
-        try:
-            x = b'\\N{SPACE' + b'x' * (_testcapi.UINT_MAX + 1) + b'}'
-            self.assertEqual(len(x), len(b'\\N{SPACE}') +
-                                     (_testcapi.UINT_MAX + 1))
-            self.assertRaisesRegex(UnicodeError,
-                'unknown Unicode character name',
-                x.decode, 'unicode-escape'
-            )
-        except MemoryError:
-            raise unittest.SkipTest("not enough memory")
+        x = b'\\N{SPACE' + b'x' * (_testcapi.UINT_MAX + 1) + b'}'
+        self.assertEqual(len(x), len(b'\\N{SPACE}') +
+                                    (_testcapi.UINT_MAX + 1))
+        self.assertRaisesRegex(UnicodeError,
+            'unknown Unicode character name',
+            x.decode, 'unicode-escape'
+        )
 
 
 def test_main():
