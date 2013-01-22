@@ -330,6 +330,9 @@ of components: loggers, handlers, filters, and formatters.
   to output.
 * Formatters specify the layout of log records in the final output.
 
+Log event information is passed between loggers, handlers, filters and
+formatters in a :class:`LogRecord` instance.
+
 Logging is performed by calling methods on instances of the :class:`Logger`
 class (hereafter called :dfn:`loggers`). Each instance has a name, and they are
 conceptually arranged in a namespace hierarchy using dots (periods) as
@@ -374,6 +377,13 @@ You can change this by passing a format string to :func:`basicConfig` with the
 *format* keyword argument. For all options regarding how a format string is
 constructed, see :ref:`formatter-objects`.
 
+Logging Flow
+^^^^^^^^^^^^
+
+The flow of log event information in loggers and handlers is illustrated in the
+following diagram.
+
+.. image:: logging_flow.png
 
 Loggers
 ^^^^^^^
