@@ -189,6 +189,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1159051: GzipFile now raises EOFError when reading a corrupted file
+  with truncated header or footer.
+
 - Issue #16992: On Windows in signal.set_wakeup_fd, validate the file
   descriptor argument.
 
