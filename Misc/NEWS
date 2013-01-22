@@ -466,6 +466,9 @@ Library
 - Issue #15424: Add a __sizeof__ implementation for array objects.
   Patch by Ludwig Hähne.
 
+- Issue #15546: Fix handling of pathological input data in the peek() method
+  of the GzipFile class.
+
 - Issue #13052: Fix IDLE crashing when replace string in Search/Replace dialog
   ended with '\'. Patch by Roger Serwy.
 
