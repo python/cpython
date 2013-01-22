@@ -335,7 +335,7 @@ Directory and files operations
    directories.  For example, on Windows::
 
       >>> shutil.which("python")
-      'C:\\Python33\\python.exe'
+      'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
 
