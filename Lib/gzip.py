@@ -367,8 +367,10 @@ class GzipFile(io.BufferedIOBase):
             if self.fileobj is None:
                 return b''
             try:
-                # 1024 is the same buffering heuristic used in read()
-                self._read(max(n, 1024))
+                # Ensure that we don't return b"" if we haven't reached EOF.
+                while self.extrasize == 0:
+                    # 1024 is the same buffering heuristic used in read()
+                    self._read(max(n, 1024))
             except EOFError:
                 pass
         offset = self.offset - self.extrastart
