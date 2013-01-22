@@ -669,6 +669,20 @@ class FileTestCase(unittest.TestCase):
         with LZMAFile(BytesIO(COMPRESSED_XZ[:128])) as f:
             self.assertRaises(EOFError, f.read)
 
+    def test_read_truncated(self):
+        # Drop stream footer: CRC (4 bytes), index size (4 bytes),
+        # flags (2 bytes) and magic number (2 bytes).
+        truncated = COMPRESSED_XZ[:-12]
+        with LZMAFile(BytesIO(truncated)) as f:
+            self.assertRaises(EOFError, f.read)
+        with LZMAFile(BytesIO(truncated)) as f:
+            self.assertEqual(f.read(len(INPUT)), INPUT)
+            self.assertRaises(EOFError, f.read, 1)
+        # Incomplete 12-byte header.
+        for i in range(12):
+            with LZMAFile(BytesIO(truncated[:i])) as f:
+                self.assertRaises(EOFError, f.read, 1)
+
     def test_read_bad_args(self):
         f = LZMAFile(BytesIO(COMPRESSED_XZ))
         f.close()
