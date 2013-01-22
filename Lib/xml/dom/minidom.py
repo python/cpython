@@ -1,5 +1,6 @@
-"""\
-minidom.py -- a lightweight DOM implementation.
+"""Simple implementation of the Level 1 DOM.
+
+Namespaces and other minor Level 2 features are also supported.
 
 parse("foo.xml")
 
