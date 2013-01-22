@@ -1329,7 +1329,7 @@ class TestWhich(unittest.TestCase):
         # Ask for the file without the ".exe" extension, then ensure that
         # it gets found properly with the extension.
         rv = shutil.which(self.temp_file.name[:-4], path=self.dir)
-        self.assertEqual(rv, self.temp_file.name[:-4] + ".exe")
+        self.assertEqual(rv, self.temp_file.name[:-4] + ".EXE")
 
 
 class TestMove(unittest.TestCase):
