@@ -365,6 +365,21 @@ class TestGzip(unittest.TestCase):
             datac = gzip.compress(data)
             self.assertEqual(gzip.decompress(datac), data)
 
+    def test_read_truncated(self):
+        data = data1*50
+        # Drop the CRC (4 bytes) and file size (4 bytes).
+        truncated = gzip.compress(data)[:-8]
+        with gzip.GzipFile(fileobj=io.BytesIO(truncated)) as f:
+            self.assertRaises(EOFError, f.read)
+        with gzip.GzipFile(fileobj=io.BytesIO(truncated)) as f:
+            self.assertEqual(f.read(len(data)), data)
+            self.assertRaises(EOFError, f.read, 1)
+        # Incomplete 10-byte header.
+        for i in range(2, 10):
+            with gzip.GzipFile(fileobj=io.BytesIO(truncated[:i])) as f:
+                self.assertRaises(EOFError, f.read, 1)
+
+
 def test_main(verbose=None):
     support.run_unittest(TestGzip)
 
