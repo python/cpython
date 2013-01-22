@@ -295,6 +295,24 @@ class BZ2FileTest(BaseTest):
             self.assertRaises(ValueError, f.readline)
             self.assertRaises(ValueError, f.readlines)
 
+    def test_read_truncated(self):
+        # Drop the eos_magic field (6 bytes) and CRC (4 bytes).
+        truncated = self.DATA[:-10]
+        with open(self.filename, 'wb') as f:
+            f.write(truncated)
+        with BZ2File(self.filename) as f:
+            self.assertRaises(EOFError, f.read)
+        with BZ2File(self.filename) as f:
+            self.assertEqual(f.read(len(self.TEXT)), self.TEXT)
+            self.assertRaises(EOFError, f.read, 1)
+        # Incomplete 4-byte file header, and block header of at least 146 bits.
+        for i in range(22):
+            with open(self.filename, 'wb') as f:
+                f.write(truncated[:i])
+            with BZ2File(self.filename) as f:
+                self.assertRaises(EOFError, f.read, 1)
+
+
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
         # "Test BZ2Compressor.compress()/flush()"
