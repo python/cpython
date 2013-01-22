@@ -1776,6 +1776,23 @@ class ElementFindTest(unittest.TestCase):
         # Issue #16922
         self.assertEqual(ET.XML('<tag><empty /></tag>').findtext('empty'), '')
 
+    def test_find_xpath(self):
+        LINEAR_XML = '''
+        <body>
+            <tag class='a'/>
+            <tag class='b'/>
+            <tag class='c'/>
+            <tag class='d'/>
+        </body>'''
+        e = ET.XML(LINEAR_XML)
+
+        # Test for numeric indexing and last()
+        self.assertEqual(e.find('./tag[1]').attrib['class'], 'a')
+        self.assertEqual(e.find('./tag[2]').attrib['class'], 'b')
+        self.assertEqual(e.find('./tag[last()]').attrib['class'], 'd')
+        self.assertEqual(e.find('./tag[last()-1]').attrib['class'], 'c')
+        self.assertEqual(e.find('./tag[last()-2]').attrib['class'], 'b')
+
     def test_findall(self):
         e = ET.XML(SAMPLE_XML)
         e[2] = ET.XML(SAMPLE_SECTION)
