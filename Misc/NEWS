@@ -220,6 +220,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12411: Fix to cgi.parse_multipart to correctly use bytes boundaries
+  and bytes data. Patch by Jonas Wagner.
+
 - Issue #16957: shutil.which() no longer searches a bare file name in the
   current directory on Unix and no longer searches a relative file path with
   a directory part in PATH directories.  Patch by Thomas Kluyver.

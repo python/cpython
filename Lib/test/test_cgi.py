@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import warnings
+from collections import namedtuple
 from io import StringIO, BytesIO
 
 class HackedSysModule:
@@ -118,6 +119,23 @@ def gen_result(data, environ):
     return result
 
 class CgiTests(unittest.TestCase):
+
+    def test_parse_multipart(self):
+        fp = BytesIO(POSTDATA.encode('latin1'))
+        env = {'boundary': BOUNDARY.encode('latin1'),
+               'CONTENT-LENGTH': '558'}
+        result = cgi.parse_multipart(fp, env)
+        expected = {'submit': [b' Add '], 'id': [b'1234'],
+                    'file': [b'Testing 123.\n'], 'title': [b'']}
+        self.assertEqual(result, expected)
+
+    def test_fieldstorage_properties(self):
+        fs = cgi.FieldStorage()
+        self.assertFalse(fs)
+        self.assertIn("FieldStorage", repr(fs))
+        self.assertEqual(list(fs), list(fs.keys()))
+        fs.list.append(namedtuple('MockFieldStorage', 'name')('fieldvalue'))
+        self.assertTrue(fs)
 
     def test_escape(self):
         # cgi.escape() is deprecated.
