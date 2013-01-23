@@ -202,6 +202,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12411: Fix to cgi.parse_multipart to correctly use bytes boundaries
+  and bytes data. Patch by Jonas Wagner.
+
 - Issue #1159051: GzipFile now raises EOFError when reading a corrupted file
   with truncated header or footer.
 
