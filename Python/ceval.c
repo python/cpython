@@ -1277,8 +1277,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         /* line-by-line tracing support */
 
         if (_Py_TracingPossible &&
-                tstate->c_tracefunc != NULL && !tstate->tracing &&
-                f->f_trace != NULL) {
+            tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
             /* see maybe_call_line_trace
                for expository comments */
@@ -3009,7 +3008,7 @@ error:
         /* Log traceback info. */
         PyTraceBack_Here(f);
 
-        if (tstate->c_tracefunc != NULL && f->f_trace != NULL)
+        if (tstate->c_tracefunc != NULL)
             call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, f);
 
 fast_block_end:
@@ -3128,7 +3127,7 @@ fast_yield:
     }
 
     if (tstate->use_tracing) {
-        if (tstate->c_tracefunc && f->f_trace != NULL) {
+        if (tstate->c_tracefunc) {
             if (why == WHY_RETURN || why == WHY_YIELD) {
                 if (call_trace(tstate->c_tracefunc,
                                tstate->c_traceobj, f,
