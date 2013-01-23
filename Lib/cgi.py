@@ -214,17 +214,17 @@ def parse_multipart(fp, pdict):
     """
     import http.client
 
-    boundary = ""
+    boundary = b""
     if 'boundary' in pdict:
         boundary = pdict['boundary']
     if not valid_boundary(boundary):
         raise ValueError('Invalid boundary in multipart form: %r'
                             % (boundary,))
 
-    nextpart = "--" + boundary
-    lastpart = "--" + boundary + "--"
+    nextpart = b"--" + boundary
+    lastpart = b"--" + boundary + b"--"
     partdict = {}
-    terminator = ""
+    terminator = b""
 
     while terminator != lastpart:
         bytes = -1
@@ -243,7 +243,7 @@ def parse_multipart(fp, pdict):
                     raise ValueError('Maximum content length exceeded')
                 data = fp.read(bytes)
             else:
-                data = ""
+                data = b""
         # Read lines until end of part.
         lines = []
         while 1:
@@ -251,7 +251,7 @@ def parse_multipart(fp, pdict):
             if not line:
                 terminator = lastpart # End outer loop
                 break
-            if line.startswith("--"):
+            if line.startswith(b"--"):
                 terminator = line.rstrip()
                 if terminator in (nextpart, lastpart):
                     break
@@ -263,12 +263,12 @@ def parse_multipart(fp, pdict):
             if lines:
                 # Strip final line terminator
                 line = lines[-1]
-                if line[-2:] == "\r\n":
+                if line[-2:] == b"\r\n":
                     line = line[:-2]
-                elif line[-1:] == "\n":
+                elif line[-1:] == b"\n":
                     line = line[:-1]
                 lines[-1] = line
-                data = "".join(lines)
+                data = b"".join(lines)
         line = headers['content-disposition']
         if not line:
             continue
