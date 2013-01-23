@@ -220,6 +220,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16957: shutil.which() no longer searches a bare file name in the
+  current directory on Unix and no longer searches a relative file path with
+  a directory part in PATH directories.  Patch by Thomas Kluyver.
+
 - Issue #1159051: GzipFile now raises EOFError when reading a corrupted file
   with truncated header or footer.
 
