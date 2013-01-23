@@ -1296,11 +1296,36 @@ class TestWhich(unittest.TestCase):
         rv = shutil.which(self.file, path=self.dir)
         self.assertEqual(rv, self.temp_file.name)
 
-    def test_full_path_short_circuit(self):
+    def test_absolute_cmd(self):
         # When given the fully qualified path to an executable that exists,
         # it should be returned.
         rv = shutil.which(self.temp_file.name, path=self.temp_dir)
-        self.assertEqual(self.temp_file.name, rv)
+        self.assertEqual(rv, self.temp_file.name)
+
+    def test_relative_cmd(self):
+        # When given the relative path with a directory part to an executable
+        # that exists, it should be returned.
+        base_dir, tail_dir = os.path.split(self.dir)
+        relpath = os.path.join(tail_dir, self.file)
+        with support.temp_cwd(path=base_dir):
+            rv = shutil.which(relpath, path=self.temp_dir)
+            self.assertEqual(rv, relpath)
+        # But it shouldn't be searched in PATH directories (issue #16957).
+        with support.temp_cwd(path=self.dir):
+            rv = shutil.which(relpath, path=base_dir)
+            self.assertIsNone(rv)
+
+    def test_cwd(self):
+        # Issue #16957
+        base_dir = os.path.dirname(self.dir)
+        with support.temp_cwd(path=self.dir):
+            rv = shutil.which(self.file, path=base_dir)
+            if sys.platform == "win32":
+                # Windows: current directory implicitly on PATH
+                self.assertEqual(rv, os.path.join(os.curdir, self.file))
+            else:
+                # Other platforms: shouldn't match in the current directory.
+                self.assertIsNone(rv)
 
     def test_non_matching_mode(self):
         # Set the file read-only and ask for writeable files.
@@ -1308,15 +1333,11 @@ class TestWhich(unittest.TestCase):
         rv = shutil.which(self.file, path=self.dir, mode=os.W_OK)
         self.assertIsNone(rv)
 
-    def test_relative(self):
-        old_cwd = os.getcwd()
+    def test_relative_path(self):
         base_dir, tail_dir = os.path.split(self.dir)
-        os.chdir(base_dir)
-        try:
+        with support.temp_cwd(path=base_dir):
             rv = shutil.which(self.file, path=tail_dir)
             self.assertEqual(rv, os.path.join(tail_dir, self.file))
-        finally:
-            os.chdir(old_cwd)
 
     def test_nonexistent_file(self):
         # Return None when no matching executable file is found on the path.

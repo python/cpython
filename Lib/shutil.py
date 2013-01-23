@@ -1076,10 +1076,13 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         return (os.path.exists(fn) and os.access(fn, mode)
                 and not os.path.isdir(fn))
 
-    # Short circuit. If we're given a full path which matches the mode
-    # and it exists, we're done here.
-    if _access_check(cmd, mode):
-        return cmd
+    # If we're given a path with a directory part, look it up directly rather
+    # than referring to PATH directories. This includes checking relative to the
+    # current directory, e.g. ./script
+    if os.path.dirname(cmd):
+        if _access_check(cmd, mode):
+            return cmd
+        return None
 
     path = (path or os.environ.get("PATH", os.defpath)).split(os.pathsep)
 
