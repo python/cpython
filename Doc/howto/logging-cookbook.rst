@@ -1595,7 +1595,7 @@ Implementing structured logging
 Although most logging messages are intended for reading by humans, and thus not
 readily machine-parseable, there might be cirumstances where you want to output
 messages in a structured format which *is* capable of being parsed by a program
-(without needed complex regular expressions to parse the log message). This is
+(without needing complex regular expressions to parse the log message). This is
 straightforward to achieve using the logging package. There are a number of
 ways in which this could be achieved, but the following is a simple approach
 which uses JSON to serialise the event in a machine-parseable manner::
@@ -1620,6 +1620,9 @@ If the above script is run, it prints::
 
     message 1 >>> {"fnum": 123.456, "num": 123, "bar": "baz", "foo": "bar"}
 
+Note that the order of items might be different according to the version of
+Python used.
+
 If you need more specialised processing, you can use a custom JSON encoder,
 as in the following complete example::
 
@@ -1628,6 +1631,7 @@ as in the following complete example::
     import json
     import logging
 
+    # This next bit is to ensure the script runs unchanged on 2.x and 3.x
     try:
         unicode
     except NameError:
@@ -1650,7 +1654,7 @@ as in the following complete example::
             s = Encoder().encode(self.kwargs)
             return '%s >>> %s' % (self.message, s)
 
-    _ = StructuredMessage
+    _ = StructuredMessage   # optional, to improve readability
 
     def main():
         logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -1662,4 +1666,7 @@ as in the following complete example::
 When the above script is run, it prints::
 
     message 1 >>> {"snowman": "\u2603", "set_value": [1, 2, 3]}
+
+Note that the order of items might be different according to the version of
+Python used.
 
