@@ -101,8 +101,9 @@ Functions
    and ``"end-ns"`` (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  Returns an :term:`iterator` providing
-   ``(event, elem)`` pairs.
+   :class:`XMLParser` parser is used.  *parser* is not supported by
+   ``cElementTree``.  Returns an :term:`iterator` providing ``(event, elem)``
+   pairs.
 
    .. note::
 
