@@ -4971,22 +4971,16 @@ class CWhitebox(unittest.TestCase):
     def test_c_format(self):
         # Restricted input
         Decimal = C.Decimal
-        InvalidOperation = C.InvalidOperation
-        Rounded = C.Rounded
-        localcontext = C.localcontext
         HAVE_CONFIG_64 = (C.MAX_PREC > 425000000)
 
         self.assertRaises(TypeError, Decimal(1).__format__, "=10.10", [], 9)
         self.assertRaises(TypeError, Decimal(1).__format__, "=10.10", 9)
         self.assertRaises(TypeError, Decimal(1).__format__, [])
 
-        with localcontext() as c:
-            c.traps[InvalidOperation] = True
-            c.traps[Rounded] = True
-            self.assertRaises(ValueError, Decimal(1).__format__, "<>=10.10")
-            maxsize = 2**63-1 if HAVE_CONFIG_64 else 2**31-1
-            self.assertRaises(InvalidOperation, Decimal("1.23456789").__format__,
-                              "=%d.1" % maxsize)
+        self.assertRaises(ValueError, Decimal(1).__format__, "<>=10.10")
+        maxsize = 2**63-1 if HAVE_CONFIG_64 else 2**31-1
+        self.assertRaises(ValueError, Decimal("1.23456789").__format__,
+                          "=%d.1" % maxsize)
 
     def test_c_integral(self):
         Decimal = C.Decimal
