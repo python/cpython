@@ -403,8 +403,9 @@ Functions
    going on to the user.  *source* is a filename or file object containing XML
    data.  *events* is a list of events to report back.  If omitted, only "end"
    events are reported.  *parser* is an optional parser instance.  If not
-   given, the standard :class:`XMLParser` parser is used.  Returns an
-   :term:`iterator` providing ``(event, elem)`` pairs.
+   given, the standard :class:`XMLParser` parser is used.  *parser* is not
+   supported by ``cElementTree``. Returns an :term:`iterator` providing
+   ``(event, elem)`` pairs.
 
    .. note::
 
