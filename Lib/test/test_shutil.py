@@ -1349,7 +1349,7 @@ class TestWhich(unittest.TestCase):
     def test_pathext_checking(self):
         # Ask for the file without the ".exe" extension, then ensure that
         # it gets found properly with the extension.
-        rv = shutil.which(self.temp_file.name[:-4], path=self.dir)
+        rv = shutil.which(self.file[:-4], path=self.dir)
         self.assertEqual(rv, self.temp_file.name[:-4] + ".EXE")
 
 
