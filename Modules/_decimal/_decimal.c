@@ -3222,7 +3222,13 @@ dec_format(PyObject *dec, PyObject *args)
 
     decstring = mpd_qformat_spec(MPD(dec), &spec, CTX(context), &status);
     if (decstring == NULL) {
-        dec_addstatus(context, status);
+        if (status & MPD_Malloc_error) {
+            PyErr_NoMemory();
+        }
+        else {
+            PyErr_SetString(PyExc_ValueError,
+                "format specification exceeds internal limits of _decimal");
+        }
         goto finish;
     }
     result = PyUnicode_DecodeUTF8(decstring, strlen(decstring), NULL);
