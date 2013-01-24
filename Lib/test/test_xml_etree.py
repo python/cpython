@@ -1881,6 +1881,12 @@ class ElementIterTest(unittest.TestCase):
         sourcefile = serialize(doc, to_string=False)
         self.assertEqual(next(ET.iterparse(sourcefile))[0], 'end')
 
+        # With an explitit parser too (issue #9708)
+        sourcefile = serialize(doc, to_string=False)
+        parser = ET.XMLParser(target=ET.TreeBuilder())
+        self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0],
+                         'end')
+
         tree = ET.ElementTree(None)
         self.assertRaises(AttributeError, tree.iter)
 

@@ -1737,8 +1737,20 @@ else:
                     source.close()
 
     class iterparse:
+        """Parses an XML section into an element tree incrementally.
+
+        Reports what’s going on to the user. 'source' is a filename or file
+        object containing XML data. 'events' is a list of events to report back.
+        The supported events are the strings "start", "end", "start-ns" and
+        "end-ns" (the "ns" events are used to get detailed namespace
+        information). If 'events' is omitted, only "end" events are reported.
+        'parser' is an optional parser instance. If not given, the standard
+        XMLParser parser is used. Returns an iterator providing
+        (event, elem) pairs.
+        """
+
         root = None
-        def __init__(self, file, events=None):
+        def __init__(self, file, events=None, parser=None):
             self._close_file = False
             if not hasattr(file, 'read'):
                 file = open(file, 'rb')
@@ -1748,8 +1760,9 @@ else:
             self._index = 0
             self._error = None
             self.root = self._root = None
-            b = TreeBuilder()
-            self._parser = XMLParser(b)
+            if parser is None:
+                parser = XMLParser(target=TreeBuilder())
+            self._parser = parser
             self._parser._setevents(self._events, events)
 
         def __next__(self):
