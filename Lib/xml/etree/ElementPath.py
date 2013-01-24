@@ -174,7 +174,7 @@ def prepare_predicate(next, token):
                 if elem.get(key) == value:
                     yield elem
         return select
-    if signature == "-" and not re.match("\d+$", predicate[0]):
+    if signature == "-" and not re.match("\-?\d+$", predicate[0]):
         # [tag]
         tag = predicate[0]
         def select(context, result):
@@ -182,7 +182,7 @@ def prepare_predicate(next, token):
                 if elem.find(tag) is not None:
                     yield elem
         return select
-    if signature == "-='" and not re.match("\d+$", predicate[0]):
+    if signature == "-='" and not re.match("\-?\d+$", predicate[0]):
         # [tag='value']
         tag = predicate[0]
         value = predicate[-1]
@@ -196,7 +196,10 @@ def prepare_predicate(next, token):
     if signature == "-" or signature == "-()" or signature == "-()-":
         # [index] or [last()] or [last()-index]
         if signature == "-":
+            # [index]
             index = int(predicate[0]) - 1
+            if index < 0:
+                raise SyntaxError("XPath position >= 1 expected")
         else:
             if predicate[0] != "last":
                 raise SyntaxError("unsupported function")
@@ -205,6 +208,8 @@ def prepare_predicate(next, token):
                     index = int(predicate[2]) - 1
                 except ValueError:
                     raise SyntaxError("unsupported expression")
+                if index > -2:
+                    raise SyntaxError("XPath offset from last() must be negative")
             else:
                 index = -1
         def select(context, result):
