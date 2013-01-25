@@ -6056,7 +6056,7 @@ then
 # function available.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts -pthread" >&5
 $as_echo_n "checking whether $CC accepts -pthread... " >&6; }
-if ${ac_cv_thread+:} false; then :
+if ${ac_cv_pthread+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_save_cc="$CC"
