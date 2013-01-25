@@ -861,6 +861,8 @@ Tests
 Build
 -----
 
+- Issue #17029: Let h2py search the multiarch system include directory.
+
 - Issue #16953: Fix socket module compilation on platforms with
   HAVE_BROKEN_POLL. Patch by Jeffrey Armstrong.
 
