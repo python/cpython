@@ -145,7 +145,7 @@ class UnicodeNamesTest(unittest.TestCase):
     @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
                          "needs UINT_MAX < SIZE_MAX")
     @support.bigmemtest(size=_testcapi.UINT_MAX + 1,
-                        memuse=1 + 4 // len('\U00010000'), dry_run=False)
+                        memuse=2 + 4 // len('\U00010000'), dry_run=False)
     def test_issue16335(self, size):
         # very very long bogus character name
         x = b'\\N{SPACE' + b'x' * (_testcapi.UINT_MAX + 1) + b'}'
