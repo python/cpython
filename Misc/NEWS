@@ -150,6 +150,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13454: Fix a crash when deleting an iterator created by itertools.tee()
+  if all other iterators were very advanced before.
+
 - Issue #12411: Fix to cgi.parse_multipart to correctly use bytes boundaries
   and bytes data. Patch by Jonas Wagner.
 
