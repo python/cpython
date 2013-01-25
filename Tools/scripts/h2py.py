@@ -58,6 +58,12 @@ except KeyError:
                 raise KeyError
         except KeyError:
             searchdirs=['/usr/include']
+            try:
+                searchdirs.insert(0, os.path.join('/usr/include',
+                                                  os.environ['MULTIARCH']))
+            except KeyError:
+                pass
+
 
 def main():
     global filedict
