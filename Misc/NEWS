@@ -197,6 +197,9 @@ Core and Builtins
 - Issue #13521: dict.setdefault() now does only one lookup for the given key,
   making it "atomic" for many purposes.  Patch by Filip Gruszczyński.
 
+- Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
+  now fills the ``os.environ`` variable correctly.
+
 - Issue #14471: Fix a possible buffer overrun in the winreg module.
 
 Library
