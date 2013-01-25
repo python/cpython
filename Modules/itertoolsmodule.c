@@ -473,14 +473,31 @@ teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
     return 0;
 }
 
+static void
+teedataobject_safe_decref(PyObject *obj)
+{
+    while (obj && Py_TYPE(obj) == &teedataobject_type &&
+           Py_REFCNT(obj) == 1) {
+        PyObject *nextlink = ((teedataobject *)obj)->nextlink;
+        ((teedataobject *)obj)->nextlink = NULL;
+        Py_DECREF(obj);
+        obj = nextlink;
+    }
+    Py_XDECREF(obj);
+}
+
 static int
 teedataobject_clear(teedataobject *tdo)
 {
     int i;
+    PyObject *tmp;
+
     Py_CLEAR(tdo->it);
     for (i=0 ; i<tdo->numread ; i++)
         Py_CLEAR(tdo->values[i]);
-    Py_CLEAR(tdo->nextlink);
+    tmp = tdo->nextlink;
+    tdo->nextlink = NULL;
+    teedataobject_safe_decref(tmp);
     return 0;
 }
 
@@ -617,6 +634,8 @@ tee_next(teeobject *to)
 
     if (to->index >= LINKCELLS) {
         link = teedataobject_jumplink(to->dataobj);
+        if (link == NULL)
+            return NULL;
         Py_DECREF(to->dataobj);
         to->dataobj = (teedataobject *)link;
         to->index = 0;

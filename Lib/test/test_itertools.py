@@ -1267,6 +1267,14 @@ class TestBasicOps(unittest.TestCase):
         self.pickletest(a, compare=ans)
         self.pickletest(b, compare=ans)
 
+    # Issue 13454: Crash when deleting backward iterator from tee()
+    def test_tee_del_backward(self):
+        forward, backward = tee(range(20000000))
+        for i in forward:
+            pass
+
+        del backward
+
     def test_StopIteration(self):
         self.assertRaises(StopIteration, next, zip())
 
