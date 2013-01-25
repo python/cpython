@@ -5725,7 +5725,7 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
             }
             else {
                 WRITECHAR('\\');
-                WRITECHAR(s[-1]);
+                WRITECHAR((unsigned char)s[-1]);
             }
             break;
         }
