@@ -417,10 +417,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except socket.timeout as err:
             self.display_no_subprocess_error()
             return None
-        # Can't regiter self.tkconsole.stdin, since run.py wants to
-        # call non-TextIO methods on it (such as getvar)
-        # XXX should be renamed to "console"
-        self.rpcclt.register("stdin", self.tkconsole)
+        self.rpcclt.register("console", self.tkconsole)
+        self.rpcclt.register("stdin", self.tkconsole.stdin)
         self.rpcclt.register("stdout", self.tkconsole.stdout)
         self.rpcclt.register("stderr", self.tkconsole.stderr)
         self.rpcclt.register("flist", self.tkconsole.flist)
@@ -864,10 +862,10 @@ class PyShell(OutputWindow):
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
         from idlelib import IOBinding
-        self.stdin = PseudoInputFile(self)
-        self.stdout = PseudoFile(self, "stdout", IOBinding.encoding)
-        self.stderr = PseudoFile(self, "stderr", IOBinding.encoding)
-        self.console = PseudoFile(self, "console", IOBinding.encoding)
+        self.stdin = PseudoInputFile(self, "stdin", IOBinding.encoding)
+        self.stdout = PseudoOutputFile(self, "stdout", IOBinding.encoding)
+        self.stderr = PseudoOutputFile(self, "stderr", IOBinding.encoding)
+        self.console = PseudoOutputFile(self, "console", IOBinding.encoding)
         if not use_subprocess:
             sys.stdout = self.stdout
             sys.stderr = self.stderr
@@ -1275,36 +1273,82 @@ class PyShell(OutputWindow):
             return 'disabled'
         return super().rmenu_check_paste()
 
-class PseudoFile(object):
+class PseudoFile(io.TextIOBase):
 
     def __init__(self, shell, tags, encoding=None):
         self.shell = shell
         self.tags = tags
-        self.encoding = encoding
+        self._encoding = encoding
 
-    def write(self, s):
-        if not isinstance(s, str):
-            raise TypeError('must be str, not ' + type(s).__name__)
-        return self.shell.write(s, self.tags)
+    @property
+    def encoding(self):
+        return self._encoding
 
-    def writelines(self, lines):
-        for line in lines:
-            self.write(line)
-
-    def flush(self):
-        pass
+    @property
+    def name(self):
+        return '<%s>' % self.tags
 
     def isatty(self):
         return True
 
-class PseudoInputFile(object):
-    def __init__(self, shell):
-        self.readline = shell.readline
-        self.isatty = shell.isatty
+
+class PseudoOutputFile(PseudoFile):
+
+    def writable(self):
+        return True
 
     def write(self, s):
-        raise io.UnsupportedOperation("not writable")
-    writelines = write
+        if self.closed:
+            raise ValueError("write to closed file")
+        if not isinstance(s, str):
+            raise TypeError('must be str, not ' + type(s).__name__)
+        return self.shell.write(s, self.tags)
+
+
+class PseudoInputFile(PseudoFile):
+
+    def __init__(self, shell, tags, encoding=None):
+        PseudoFile.__init__(self, shell, tags, encoding)
+        self._line_buffer = ''
+
+    def readable(self):
+        return True
+
+    def read(self, size=-1):
+        if self.closed:
+            raise ValueError("read from closed file")
+        if size is None:
+            size = -1
+        elif not isinstance(size, int):
+            raise TypeError('must be int, not ' + type(size).__name__)
+        result = self._line_buffer
+        self._line_buffer = ''
+        if size < 0:
+            while True:
+                line = self.shell.readline()
+                if not line: break
+                result += line
+        else:
+            while len(result) < size:
+                line = self.shell.readline()
+                if not line: break
+                result += line
+            self._line_buffer = result[size:]
+            result = result[:size]
+        return result
+
+    def readline(self, size=-1):
+        if self.closed:
+            raise ValueError("read from closed file")
+        if size is None:
+            size = -1
+        elif not isinstance(size, int):
+            raise TypeError('must be int, not ' + type(size).__name__)
+        line = self._line_buffer or self.shell.readline()
+        if size < 0:
+            size = len(line)
+        self._line_buffer = line[size:]
+        return line[:size]
 
 
 usage_msg = """\
