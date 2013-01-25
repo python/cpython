@@ -726,6 +726,10 @@ PyObject *PyString_DecodeEscape(const char *s,
                              errors);
                 goto failed;
             }
+            /* skip \x */
+            if (s < end && isxdigit(Py_CHARMASK(s[0])))
+                s++; /* and a hexdigit */
+            break;
 #ifndef Py_USING_UNICODE
         case 'u':
         case 'U':
