@@ -242,7 +242,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
      * but we are safe because we are using a semaphore wich has an internal
      * count.
      */
-    wait = WaitForSingleObject(cv->sem, ms);
+    wait = WaitForSingleObjectEx(cv->sem, ms, FALSE);
     PyMUTEX_LOCK(cs);
     if (wait != WAIT_OBJECT_0)
         --cv->waiting;

@@ -1574,7 +1574,7 @@ floatsleep(double secs)
             DWORD rc;
             HANDLE hInterruptEvent = _PyOS_SigintEvent();
             ResetEvent(hInterruptEvent);
-            rc = WaitForSingleObject(hInterruptEvent, ul_millis);
+            rc = WaitForSingleObjectEx(hInterruptEvent, ul_millis, FALSE);
             if (rc == WAIT_OBJECT_0) {
                 Py_BLOCK_THREADS
                 errno = EINTR;
