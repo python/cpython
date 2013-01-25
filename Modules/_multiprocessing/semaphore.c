@@ -118,7 +118,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     Py_BEGIN_ALLOW_THREADS
     if (sigint_event != NULL)
         ResetEvent(sigint_event);
-    res = WaitForMultipleObjects(nhandles, handles, FALSE, full_msecs);
+    res = WaitForMultipleObjectsEx(nhandles, handles, FALSE, full_msecs, FALSE);
     Py_END_ALLOW_THREADS
 
     /* handle result */
