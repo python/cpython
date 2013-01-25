@@ -484,6 +484,10 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                              errors);
                 goto failed;
             }
+            /* skip \x */
+            if (s < end && Py_ISXDIGIT(s[0]))
+                s++; /* and a hexdigit */
+            break;
         default:
             *p++ = '\\';
             s--;
