@@ -639,21 +639,21 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
         exc_details['name'] = name
     else:
         # To prevent having to make all messages have a conditional name.
-        name = 'bytecode'
+        name = '<bytecode>'
     if path is not None:
         exc_details['path'] = path
     magic = data[:4]
     raw_timestamp = data[4:8]
     raw_size = data[8:12]
     if magic != _MAGIC_BYTES:
-        msg = 'bad magic number in {!r}: {!r}'.format(name, magic)
+        msg = 'incomplete magic number in {!r}: {!r}'.format(name, magic)
         raise ImportError(msg, **exc_details)
     elif len(raw_timestamp) != 4:
-        message = 'bad timestamp in {!r}'.format(name)
+        message = 'incomplete timestamp in {!r}'.format(name)
         _verbose_message(message)
         raise EOFError(message)
     elif len(raw_size) != 4:
-        message = 'bad size in {!r}'.format(name)
+        message = 'incomplete size in {!r}'.format(name)
         _verbose_message(message)
         raise EOFError(message)
     if source_stats is not None:
