@@ -964,7 +964,7 @@ cycle_reduce(cycleobject *lz)
     /* Create a new cycle with the iterator tuple, then set
      * the saved state on it.
      */
-    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz), 
+    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz),
         lz->it, lz->saved, lz->firstpass);
     }
 
@@ -3154,7 +3154,7 @@ permutations_reduce(permutationsobject *po)
                 goto err;
             PyTuple_SET_ITEM(indices, i, index);
         }
-            
+
         cycles = PyTuple_New(po->r);
         if (cycles == NULL)
             goto err;
@@ -3180,7 +3180,7 @@ permutations_setstate(permutationsobject *po, PyObject *state)
 {
     PyObject *indices, *cycles, *result;
     Py_ssize_t n, i;
-    
+
     if (!PyArg_ParseTuple(state, "O!O!",
                           &PyTuple_Type, &indices,
                           &PyTuple_Type, &cycles))
@@ -3359,18 +3359,18 @@ static PyObject *
 accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *oldtotal, *newtotal;
-    
+
     val = PyIter_Next(lz->it);
     if (val == NULL)
         return NULL;
- 
+
     if (lz->total == NULL) {
         Py_INCREF(val);
         lz->total = val;
         return lz->total;
     }
 
-    if (lz->binop == NULL) 
+    if (lz->binop == NULL)
         newtotal = PyNumber_Add(lz->total, val);
     else
         newtotal = PyObject_CallFunctionObjArgs(lz->binop, lz->total, val, NULL);
@@ -3381,7 +3381,7 @@ accumulate_next(accumulateobject *lz)
     oldtotal = lz->total;
     lz->total = newtotal;
     Py_DECREF(oldtotal);
-    
+
     Py_INCREF(newtotal);
     return newtotal;
 }
@@ -4351,7 +4351,7 @@ zip_longest_next(ziplongestobject *lz)
 static PyObject *
 zip_longest_reduce(ziplongestobject *lz)
 {
-    
+
     /* Create a new tuple with empty sequences where appropriate to pickle.
      * Then use setstate to set the fillvalue
      */
