@@ -535,7 +535,7 @@ run_child(wchar_t * cmdline)
         error(RC_CREATE_PROCESS, L"Unable to create process using '%s'", cmdline);
     AssignProcessToJobObject(job, pi.hProcess);
     CloseHandle(pi.hThread);
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    WaitForSingleObjectEx(pi.hProcess, INFINITE, FALSE);
     ok = GetExitCodeProcess(pi.hProcess, &rc);
     if (!ok)
         error(RC_CREATE_PROCESS, L"Failed to get exit code of process");
