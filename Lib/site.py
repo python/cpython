@@ -146,7 +146,7 @@ def addpackage(sitedir, name, known_paths):
        and add that to known_paths, or execute it if it starts with 'import '.
     """
     if known_paths is None:
-        _init_pathinfo()
+        known_paths = _init_pathinfo()
         reset = 1
     else:
         reset = 0
