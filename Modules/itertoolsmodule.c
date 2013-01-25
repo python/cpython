@@ -2667,17 +2667,17 @@ static PyObject *
 accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *oldtotal, *newtotal;
-    
+
     val = PyIter_Next(lz->it);
     if (val == NULL)
         return NULL;
- 
+
     if (lz->total == NULL) {
         Py_INCREF(val);
         lz->total = val;
         return lz->total;
     }
-   
+
     newtotal = PyNumber_Add(lz->total, val);
     Py_DECREF(val);
     if (newtotal == NULL)
@@ -2686,7 +2686,7 @@ accumulate_next(accumulateobject *lz)
     oldtotal = lz->total;
     lz->total = newtotal;
     Py_DECREF(oldtotal);
-    
+
     Py_INCREF(newtotal);
     return newtotal;
 }
