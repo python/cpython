@@ -930,6 +930,14 @@ class TestBasicOps(unittest.TestCase):
         del a
         self.assertRaises(ReferenceError, getattr, p, '__class__')
 
+    # Issue 13454: Crash when deleting backward iterator from tee()
+    def test_tee_del_backward(self):
+        forward, backward = tee(range(20000000))
+        for i in forward:
+            pass
+
+        del backward
+
     def test_StopIteration(self):
         self.assertRaises(StopIteration, next, zip())
 
