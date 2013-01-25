@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16980: Fix processing of escaped non-ascii bytes in the
+  unicode-escape-decode decoder.
+
 - Issue #16975: Fix error handling bug in the escape-decode bytes decoder.
 
 - Issue #14850: Now a charmap decoder treats U+FFFE as "undefined mapping"
