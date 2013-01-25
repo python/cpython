@@ -97,6 +97,9 @@ PY_CORE_CFLAGS=	$(PY_CFLAGS) $(PY_CPPFLAGS) $(CFLAGSFORSHARED) -DPy_BUILD_CORE
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
 
+# Multiarch directory (may be empty)
+MULTIARCH=	@MULTIARCH@
+
 # Install prefix for architecture-independent files
 prefix=		@prefix@
 
@@ -1040,6 +1043,7 @@ $(srcdir)/Lib/$(PLATDIR):
 	export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
 	export DYLD_FRAMEWORK_PATH; DYLD_FRAMEWORK_PATH="`pwd`"; \
 	export EXE; EXE="$(BUILDEXE)"; \
+	if [ -n "$(MULTIARCH)" ]; then export MULTIARCH; MULTIARCH=$(MULTIARCH); fi; \
 	cd $(srcdir)/Lib/$(PLATDIR); $(RUNSHARED) ./regen
 
 python-config: $(srcdir)/Misc/python-config.in
