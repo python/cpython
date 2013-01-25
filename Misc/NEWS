@@ -218,6 +218,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #180022: Have site.addpackage() consider already known paths even when
+  none are explicitly passed in. Bug report and fix by Kirill.
+
 - Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
   now fills the ``os.environ`` variable correctly.
 
