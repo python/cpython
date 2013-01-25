@@ -203,7 +203,8 @@ BUILDPYTHON=	python$(BUILDEXE)
 
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
-HOST_GNU_TYPE=  @host@
+BUILD_GNU_TYPE=	@build@
+HOST_GNU_TYPE=	@host@
 
 # The task to run while instrument when building the profile-opt target
 PROFILE_TASK=	$(srcdir)/Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
@@ -1123,6 +1124,12 @@ $(srcdir)/Lib/$(PLATDIR):
 	export DYLD_FRAMEWORK_PATH; DYLD_FRAMEWORK_PATH="`pwd`"; \
 	export EXE; EXE="$(BUILDEXE)"; \
 	if [ -n "$(MULTIARCH)" ]; then export MULTIARCH; MULTIARCH=$(MULTIARCH); fi; \
+	export PYTHON_FOR_BUILD; \
+	if [ "$(BUILD_GNU_TYPE)" = "$(HOST_GNU_TYPE)" ]; then \
+	  PYTHON_FOR_BUILD="$(BUILDPYTHON)"; \
+	else \
+	  PYTHON_FOR_BUILD="$(PYTHON_FOR_BUILD)"; \
+	fi; \
 	cd $(srcdir)/Lib/$(PLATDIR); $(RUNSHARED) ./regen
 
 python-config: $(srcdir)/Misc/python-config.in
