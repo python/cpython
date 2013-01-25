@@ -688,6 +688,7 @@ BLDLIBRARY
 DLLLIBRARY
 LDLIBRARY
 LIBRARY
+MULTIARCH
 BUILDEXEEXT
 EGREP
 GREP
@@ -4749,6 +4750,9 @@ hp*|HP*)
     cc|*/cc) CC="$CC -Ae";;
     esac;;
 esac
+
+MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+
 
 
 
