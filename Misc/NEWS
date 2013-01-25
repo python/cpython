@@ -218,6 +218,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
+  interface and support all mandatory methods and properties.
+
 - Issue #13454: Fix a crash when deleting an iterator created by itertools.tee()
   if all other iterators were very advanced before.
 
