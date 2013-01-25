@@ -749,6 +749,8 @@ Tests
 Build
 -----
 
+- Issue #3754: fix typo in pthread AC_CACHE_VAL.
+
 - Issue #15484: Fix _PYTHON_PROJECT_BASE for srcdir != builddir builds;
   use _PYTHON_PROJECT_BASE in distutils/sysconfig.py.
 
