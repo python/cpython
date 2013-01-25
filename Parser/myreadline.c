@@ -68,7 +68,7 @@ my_fgets(char *buf, int len, FILE *fp)
         */
         if (GetLastError()==ERROR_OPERATION_ABORTED) {
             hInterruptEvent = _PyOS_SigintEvent();
-            switch (WaitForSingleObject(hInterruptEvent, 10)) {
+            switch (WaitForSingleObjectEx(hInterruptEvent, 10, FALSE)) {
             case WAIT_OBJECT_0:
                 ResetEvent(hInterruptEvent);
                 return 1; /* Interrupt */

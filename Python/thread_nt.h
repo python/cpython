@@ -130,7 +130,7 @@ FreeNonRecursiveMutex(PNRMUTEX mutex)
 DWORD
 EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
 {
-    return WaitForSingleObject(mutex, milliseconds);
+    return WaitForSingleObjectEx(mutex, milliseconds, FALSE);
 }
 
 BOOL

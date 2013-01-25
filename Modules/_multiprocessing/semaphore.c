@@ -43,7 +43,7 @@ _GetSemaphoreValue(HANDLE handle, long *value)
 {
     long previous;
 
-    switch (WaitForSingleObject(handle, 0)) {
+    switch (WaitForSingleObjectEx(handle, 0, FALSE)) {
     case WAIT_OBJECT_0:
         if (!ReleaseSemaphore(handle, 1, &previous))
             return MP_STANDARD_ERROR;
@@ -99,7 +99,7 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
     }
 
     /* check whether we can acquire without releasing the GIL and blocking */
-    if (WaitForSingleObject(self->handle, 0) == WAIT_OBJECT_0) {
+    if (WaitForSingleObjectEx(self->handle, 0, FALSE) == WAIT_OBJECT_0) {
         self->last_tid = GetCurrentThreadId();
         ++self->count;
         Py_RETURN_TRUE;
