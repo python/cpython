@@ -352,9 +352,9 @@ if test -z "$MACHDEP"
 then
     # avoid using uname for cross builds
     if test "$cross_compiling" = yes; then
-       # ac_sys_system and ac_sys_release are only used for setting
-       # `define_xopen_source' in the case statement below. For the
-       # current supported cross builds, this macro is not adjusted.
+       # ac_sys_system and ac_sys_release are used for setting
+       # a lot of different things including 'define_xopen_source'
+       # in the case statement below.
 	case "$host" in
 	*-*-linux*)
 		ac_sys_system=Linux
