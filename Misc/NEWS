@@ -189,6 +189,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13454: Fix a crash when deleting an iterator created by itertools.tee()
+  if all other iterators were very advanced before.
+
 - Issue #1159051: GzipFile now raises EOFError when reading a corrupted file
   with truncated header or footer.
 
