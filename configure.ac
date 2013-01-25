@@ -764,6 +764,9 @@ hp*|HP*)
     esac;;
 esac
 
+MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+AC_SUBST(MULTIARCH)
+
 
 AC_SUBST(LIBRARY)
 AC_MSG_CHECKING(LIBRARY)
