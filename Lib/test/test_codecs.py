@@ -927,6 +927,50 @@ class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(""), (b"", 0))
 
+    def test_raw(self):
+        for b in range(256):
+            if b != b'\\'[0]:
+                self.assertEqual(codecs.escape_decode(bytes([b]) + b'0'),
+                                 (bytes([b]) + b'0', 2))
+
+    def test_escape(self):
+        self.assertEqual(codecs.escape_decode(b"[\\\n]"), (b"[]", 4))
+        self.assertEqual(codecs.escape_decode(br'[\"]'), (b'["]', 4))
+        self.assertEqual(codecs.escape_decode(br"[\']"), (b"[']", 4))
+        self.assertEqual(codecs.escape_decode(br"[\\]"), (br"[\]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\a]"), (b"[\x07]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\b]"), (b"[\x08]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\t]"), (b"[\x09]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\n]"), (b"[\x0a]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\v]"), (b"[\x0b]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\f]"), (b"[\x0c]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\r]"), (b"[\x0d]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\7]"), (b"[\x07]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\8]"), (br"[\8]", 4))
+        self.assertEqual(codecs.escape_decode(br"[\78]"), (b"[\x078]", 5))
+        self.assertEqual(codecs.escape_decode(br"[\41]"), (b"[!]", 5))
+        self.assertEqual(codecs.escape_decode(br"[\418]"), (b"[!8]", 6))
+        self.assertEqual(codecs.escape_decode(br"[\101]"), (b"[A]", 6))
+        self.assertEqual(codecs.escape_decode(br"[\1010]"), (b"[A0]", 7))
+        self.assertEqual(codecs.escape_decode(br"[\501]"), (b"[A]", 6))
+        self.assertEqual(codecs.escape_decode(br"[\x41]"), (b"[A]", 6))
+        self.assertEqual(codecs.escape_decode(br"[\X41]"), (br"[\X41]", 6))
+        self.assertEqual(codecs.escape_decode(br"[\x410]"), (b"[A0]", 7))
+        for b in range(256):
+            if b not in b'\n"\'\\abtnvfr01234567x':
+                self.assertEqual(codecs.escape_decode(b'\\' + bytes([b])),
+                                 (b'\\' + bytes([b]), 2))
+
+    def test_errors(self):
+        self.assertRaises(ValueError, codecs.escape_decode, br"\x")
+        self.assertRaises(ValueError, codecs.escape_decode, br"[\x]")
+        self.assertEqual(codecs.escape_decode(br"[\x]\x", "ignore"), (b"[]", 6))
+        self.assertEqual(codecs.escape_decode(br"[\x]\x", "replace"), (b"[?]?", 6))
+        self.assertRaises(ValueError, codecs.escape_decode, br"\x0")
+        self.assertRaises(ValueError, codecs.escape_decode, br"[\x0]")
+        self.assertEqual(codecs.escape_decode(br"[\x0]\x0", "ignore"), (b"[]", 8))
+        self.assertEqual(codecs.escape_decode(br"[\x0]\x0", "replace"), (b"[?]?", 8))
+
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
         f = io.BytesIO()
