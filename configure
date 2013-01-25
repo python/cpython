@@ -686,6 +686,7 @@ BUILDEXEEXT
 EGREP
 GREP
 CPP
+MULTIARCH
 MAINCC
 CXX
 OBJEXT
@@ -4280,6 +4281,9 @@ $as_echo "$as_me: WARNING:
   If this is not intended, then set CXX on the configure command line.
   " >&2;}
 fi
+
+MULTIARCH=$($CC --print-multiarch 2>/dev/null)
+
 
 
 # checks for UNIX variants that set C preprocessor variables
