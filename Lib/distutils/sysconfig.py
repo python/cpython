@@ -24,7 +24,11 @@ BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCBuild9.  If we're dealing with an x64 Windows build,
 # it'll live in project/PCbuild/amd64.
-project_base = os.path.dirname(os.path.abspath(sys.executable))
+# set for cross builds
+if "_PYTHON_PROJECT_BASE" in os.environ:
+    project_base = os.path.abspath(os.environ["_PYTHON_PROJECT_BASE"])
+else:
+    project_base = os.path.dirname(os.path.abspath(sys.executable))
 if os.name == "nt" and "pcbuild" in project_base[-8:].lower():
     project_base = os.path.abspath(os.path.join(project_base, os.path.pardir))
 # PC/VS7.1
@@ -98,7 +102,7 @@ def get_python_inc(plat_specific=0, prefix=None):
             # the build directory may not be the source directory, we
             # must use "srcdir" from the makefile to find the "Include"
             # directory.
-            base = _sys_home or os.path.dirname(os.path.abspath(sys.executable))
+            base = _sys_home or project_base
             if plat_specific:
                 return base
             if _sys_home:
@@ -251,8 +255,7 @@ def get_config_h_filename():
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
     if python_build:
-        return os.path.join(_sys_home or os.path.dirname(sys.executable),
-                                                         "Makefile")
+        return os.path.join(_sys_home or project_base, "Makefile")
     lib_dir = get_python_lib(plat_specific=0, standard_lib=1)
     config_file = 'config-{}{}'.format(get_python_version(), build_flags)
     return os.path.join(lib_dir, config_file, 'Makefile')
@@ -555,7 +558,7 @@ def get_config_vars(*args):
         # testing, for example, we might be running a non-installed python
         # from a different directory.
         if python_build and os.name == "posix":
-            base = os.path.dirname(os.path.abspath(sys.executable))
+            base = project_base
             if (not os.path.isabs(_config_vars['srcdir']) and
                 base != os.getcwd()):
                 # srcdir is relative and we are not in the same directory

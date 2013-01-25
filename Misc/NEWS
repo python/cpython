@@ -533,6 +533,9 @@ Tests
 Build
 -----
 
+- Issue #15484: Fix _PYTHON_PROJECT_BASE for srcdir != builddir builds;
+  use _PYTHON_PROJECT_BASE in distutils/sysconfig.py.
+
 - Issue #17029: Let h2py search the multiarch system include directory.
 
 - Issue #16953: Fix socket module compilation on platforms with
