@@ -50,6 +50,8 @@ AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
 AC_CANONICAL_HOST
+AC_SUBST(build)
+AC_SUBST(host)
 
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
