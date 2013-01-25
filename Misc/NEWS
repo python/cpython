@@ -746,6 +746,9 @@ Tests
 Build
 -----
 
+- Issue #15484: Fix _PYTHON_PROJECT_BASE for srcdir != builddir builds;
+  use _PYTHON_PROJECT_BASE in distutils/sysconfig.py.
+
 - Drop support for Windows 2000.
 
 - Issue #17029: Let h2py search the multiarch system include directory.
