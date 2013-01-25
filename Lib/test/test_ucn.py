@@ -144,8 +144,12 @@ class UnicodeNamesTest(unittest.TestCase):
     @unittest.skipUnless(_testcapi.UINT_MAX < sys.maxint,
                          "needs UINT_MAX < sys.maxint")
     @test_support.bigmemtest(minsize=_testcapi.UINT_MAX + 1,
-                             memuse=1 + 4 // len(u'\U00010000'))
+                             memuse=2 + 4 // len(u'\U00010000'))
     def test_issue16335(self, size):
+        func = self.test_issue16335
+        if size < func.minsize:
+            raise unittest.SkipTest("not enough memory: %.1fG minimum needed" %
+                    (func.minsize * func.memuse / float(1024**3),))
         # very very long bogus character name
         x = b'\\N{SPACE' + b'x' * int(_testcapi.UINT_MAX + 1) + b'}'
         self.assertEqual(len(x), len(b'\\N{SPACE}') +
