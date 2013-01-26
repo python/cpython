@@ -1445,6 +1445,8 @@ class MiscTests(unittest.TestCase):
         self.opener_has_handler(o, MyHTTPHandler)
         self.opener_has_handler(o, MyOtherHTTPHandler)
 
+    @unittest.skipUnless(support.is_resource_enabled('network'),
+                         'test requires network access')
     def test_issue16464(self):
         opener = urllib.request.build_opener()
         request = urllib.request.Request("http://www.python.org/~jeremy/")
