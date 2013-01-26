@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #10156: In the interpreter's initialization phase, unicode globals
+  are now initialized dynamically as needed.
+
 - Issue #16975: Fix error handling bug in the escape-decode decoder.
 
 - Issue #14850: Now a charmap decoder treats U+FFFE as "undefined mapping"
