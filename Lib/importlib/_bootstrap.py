@@ -689,6 +689,15 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
         raise ImportError("Non-code object in {!r}".format(bytecode_path),
                           name=name, path=bytecode_path)
 
+def _code_to_bytecode(code, mtime=0, source_size=0):
+    """Compile a code object into bytecode for writing out to a byte-compiled
+    file."""
+    data = bytearray(_MAGIC_BYTES)
+    data.extend(_w_long(mtime))
+    data.extend(_w_long(source_size))
+    data.extend(marshal.dumps(code))
+    return data
+
 
 # Loaders #####################################################################
 
@@ -951,13 +960,13 @@ class SourceLoader(_LoaderBasics):
             raise ImportError("Failed to decode source file",
                               name=fullname) from exc
 
-    def source_to_code(self, data, path):
+    def source_to_code(self, data, path, *, _optimize=-1):
         """Return the code object compiled from source.
 
         The 'data' argument can be any object type that compile() supports.
         """
         return _call_with_frames_removed(compile, data, path, 'exec',
-                                        dont_inherit=True)
+                                        dont_inherit=True, optimize=_optimize)
 
     def get_code(self, fullname):
         """Concrete implementation of InspectLoader.get_code.
@@ -1000,11 +1009,9 @@ class SourceLoader(_LoaderBasics):
         code_object = self.source_to_code(source_bytes, source_path)
         _verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
-            source_mtime is not None):
-            data = bytearray(_MAGIC_BYTES)
-            data.extend(_w_long(source_mtime))
-            data.extend(_w_long(len(source_bytes)))
-            data.extend(marshal.dumps(code_object))
+                source_mtime is not None):
+            data = _code_to_bytecode(code_object, source_mtime,
+                    len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
                 _verbose_message('wrote {!r}', bytecode_path)

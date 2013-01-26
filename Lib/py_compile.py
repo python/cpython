@@ -3,16 +3,12 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
-import builtins
-import errno
 import imp
-import marshal
+import importlib._bootstrap
+import importlib.machinery
 import os
 import sys
-import tokenize
 import traceback
-
-MAGIC = imp.get_magic()
 
 __all__ = ["compile", "main", "PyCompileError"]
 
@@ -65,13 +61,6 @@ class PyCompileError(Exception):
         return self.msg
 
 
-def wr_long(f, x):
-    """Internal; write a 32-bit int to a file in little-endian order."""
-    f.write(bytes([x         & 0xff,
-                   (x >> 8)  & 0xff,
-                   (x >> 16) & 0xff,
-                   (x >> 24) & 0xff]))
-
 def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     """Byte-compile one Python source file to Python bytecode.
 
@@ -108,17 +97,16 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     byte-compile all installed files (or all files in selected
     directories).
     """
-    with tokenize.open(file) as f:
-        try:
-            st = os.fstat(f.fileno())
-        except AttributeError:
-            st = os.stat(file)
-        timestamp = int(st.st_mtime)
-        size = st.st_size & 0xFFFFFFFF
-        codestring = f.read()
+    if cfile is None:
+        if optimize >= 0:
+            cfile = imp.cache_from_source(file, debug_override=not optimize)
+        else:
+            cfile = imp.cache_from_source(file)
+    loader = importlib.machinery.SourceFileLoader('<py_compile>', file)
+    source_bytes = loader.get_data(file)
     try:
-        codeobject = builtins.compile(codestring, dfile or file, 'exec',
-                                      optimize=optimize)
+        code = loader.source_to_code(source_bytes, dfile or file,
+                _optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
         if doraise:
@@ -126,26 +114,16 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
         else:
             sys.stderr.write(py_exc.msg + '\n')
             return
-    if cfile is None:
-        if optimize >= 0:
-            cfile = imp.cache_from_source(file, debug_override=not optimize)
-        else:
-            cfile = imp.cache_from_source(file)
     try:
         dirname = os.path.dirname(cfile)
         if dirname:
             os.makedirs(dirname)
-    except OSError as error:
-        if error.errno != errno.EEXIST:
-            raise
-    with open(cfile, 'wb') as fc:
-        fc.write(b'\0\0\0\0')
-        wr_long(fc, timestamp)
-        wr_long(fc, size)
-        marshal.dump(codeobject, fc)
-        fc.flush()
-        fc.seek(0, 0)
-        fc.write(MAGIC)
+    except FileExistsError:
+        pass
+    source_stats = loader.path_stats(file)
+    bytecode = importlib._bootstrap._code_to_bytecode(code,
+        source_stats['mtime'], len(source_bytes))
+    loader._cache_bytecode(file, cfile, bytecode)
     return cfile
 
 def main(args=None):
