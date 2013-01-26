@@ -597,6 +597,10 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
+requires_docstrings = unittest.skipUnless(
+    sysconfig.get_config_var('WITH_DOC_STRINGS'),
+    "test requires docstrings")
+
 is_jython = sys.platform.startswith('java')
 
 # Filename used for testing
