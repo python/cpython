@@ -256,6 +256,7 @@ class PydocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @test.support.requires_docstrings
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         mod_file = inspect.getabsfile(pydoc_mod)
@@ -273,6 +274,7 @@ class PydocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @test.support.requires_docstrings
     def test_text_doc(self):
         result, doc_loc = get_pydoc_text(pydoc_mod)
         expected_text = expected_text_pattern % \
@@ -327,6 +329,7 @@ class PydocDocTest(unittest.TestCase):
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
+    @test.support.requires_docstrings
     def test_help_output_redirect(self):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
@@ -496,6 +499,7 @@ class PydocUrlHandlerTest(unittest.TestCase):
         self.assertRaises(TypeError, f, 'A', '')
         self.assertRaises(TypeError, f, 'B', 'foobar')
 
+    @test.support.requires_docstrings
     def test_url_requests(self):
         # Test for the correct title in the html pages returned.
         # This tests the different parts of the URL handler without
