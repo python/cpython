@@ -223,6 +223,8 @@ Core and Builtins
 Library
 -------
 
+Have py_compile use importlib as much as possible to avoid code duplication.
+
 - Issue #180022: Have site.addpackage() consider already known paths even when
   none are explicitly passed in. Bug report and fix by Kirill.
 
