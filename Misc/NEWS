@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #10156: In the interpreter's initialization phase, unicode globals
+  are now initialized dynamically as needed.
+
 - Issue #16980: Fix processing of escaped non-ascii bytes in the
   unicode-escape-decode decoder.
 
