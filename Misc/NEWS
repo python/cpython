@@ -763,6 +763,8 @@ Tests
 Build
 -----
 
+- Issue #16235: Implement python-config as a shell script.
+
 - Issue #16769: Remove outdated Visual Studio projects.
 
 - Issue #17031: Fix running regen in cross builds.
