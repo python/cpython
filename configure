@@ -625,6 +625,8 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 SRCDIRS
 THREADHEADERS
+LIBPL
+PY_ENABLE_SHARED
 SOABI
 LIBC
 LIBM
@@ -5573,6 +5575,7 @@ fi
 
 # Other platforms follow
 if test $enable_shared = "yes"; then
+  PY_ENABLE_SHARED=1
 
 $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 
@@ -5630,6 +5633,7 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 
   esac
 else # shared is disabled
+  PY_ENABLE_SHARED=0
   case $ac_sys_system in
     CYGWIN*)
           BLDLIBRARY='$(LIBRARY)'
@@ -13689,6 +13693,10 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
 
+
+LIBPL="${prefix}/lib/python${VERSION}/config-${LDVERSION}"
+
+
 # SO is the extension of shared libraries `(including the dot!)
 # -- usually .so, .sl on HP-UX, .dll on Cygwin
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking SO" >&5
@@ -15136,7 +15144,7 @@ $as_echo "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
 fi
 
 # generate output files
-ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc"
+ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
@@ -15840,6 +15848,7 @@ do
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Modules/Setup.config") CONFIG_FILES="$CONFIG_FILES Modules/Setup.config" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
+    "Misc/python-config.sh") CONFIG_FILES="$CONFIG_FILES Misc/python-config.sh" ;;
     "Modules/ld_so_aix") CONFIG_FILES="$CONFIG_FILES Modules/ld_so_aix" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
