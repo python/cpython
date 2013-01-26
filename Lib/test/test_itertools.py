@@ -908,10 +908,8 @@ class TestBasicOps(unittest.TestCase):
 
     # Issue 13454: Crash when deleting backward iterator from tee()
     def test_tee_del_backward(self):
-        forward, backward = tee(xrange(20000000))
-        for i in forward:
-            pass
-
+        forward, backward = tee(repeat(None, 20000000))
+        any(forward)  # exhaust the iterator
         del backward
 
     def test_StopIteration(self):
