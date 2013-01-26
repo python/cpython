@@ -82,8 +82,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* --- Globals ------------------------------------------------------------
 
-   The globals are initialized by the _PyUnicode_Init() API and should
-   not be used before calling that API.
+NOTE: In the interpreter's initialization phase, some globals are currently
+      initialized dynamically as needed. In the process Unicode objects may
+      be created before the Unicode type is ready.
 
 */
 
@@ -93,15 +94,27 @@ extern "C" {
 #endif
 
 /* Free list for Unicode objects */
-static PyUnicodeObject *free_list;
-static int numfree;
+static PyUnicodeObject *free_list = NULL;
+static int numfree = 0;
 
 /* The empty Unicode object is shared to improve performance. */
-static PyUnicodeObject *unicode_empty;
+static PyUnicodeObject *unicode_empty = NULL;
+
+#define _Py_RETURN_UNICODE_EMPTY()                      \
+    do {                                                \
+        if (unicode_empty != NULL)                      \
+            Py_INCREF(unicode_empty);                   \
+        else {                                          \
+            unicode_empty = _PyUnicode_New(0);          \
+            if (unicode_empty != NULL)                  \
+                Py_INCREF(unicode_empty);               \
+        }                                               \
+        return (PyObject *)unicode_empty;               \
+    } while (0)
 
 /* Single character Unicode strings in the Latin-1 range are being
    shared as well. */
-static PyUnicodeObject *unicode_latin1[256];
+static PyUnicodeObject *unicode_latin1[256] = {NULL};
 
 /* Default encoding to use and assume when NULL is passed as encoding
    parameter; it is initialized by _PyUnicode_Init().
@@ -110,7 +123,7 @@ static PyUnicodeObject *unicode_latin1[256];
    PyUnicode_GetDefaultEncoding() APIs to access this global.
 
 */
-static char unicode_default_encoding[100];
+static char unicode_default_encoding[100 + 1] = "ascii";
 
 /* Fast detection of the most frequent whitespace characters */
 const unsigned char _Py_ascii_whitespace[] = {
@@ -204,7 +217,7 @@ PyUnicode_GetMax(void)
 
 #define BLOOM_MASK unsigned long
 
-static BLOOM_MASK bloom_linebreak;
+static BLOOM_MASK bloom_linebreak = ~(BLOOM_MASK)0;
 
 #define BLOOM_ADD(mask, ch) ((mask |= (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
 #define BLOOM(mask, ch)     ((mask &  (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
@@ -448,10 +461,8 @@ PyObject *PyUnicode_FromUnicode(const Py_UNICODE *u,
     if (u != NULL) {
 
         /* Optimization for empty strings */
-        if (size == 0 && unicode_empty != NULL) {
-            Py_INCREF(unicode_empty);
-            return (PyObject *)unicode_empty;
-        }
+        if (size == 0)
+            _Py_RETURN_UNICODE_EMPTY();
 
         /* Single character Unicode objects in the Latin-1 range are
            shared when using this constructor */
@@ -497,10 +508,8 @@ PyObject *PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
     if (u != NULL) {
 
         /* Optimization for empty strings */
-        if (size == 0 && unicode_empty != NULL) {
-            Py_INCREF(unicode_empty);
-            return (PyObject *)unicode_empty;
-        }
+        if (size == 0)
+            _Py_RETURN_UNICODE_EMPTY();
 
         /* Single characters are shared when using this constructor.
            Restrict to ASCII, since the input must be UTF-8. */
@@ -1162,13 +1171,10 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     }
 
     /* Convert to Unicode */
-    if (len == 0) {
-        Py_INCREF(unicode_empty);
-        v = (PyObject *)unicode_empty;
-    }
-    else
-        v = PyUnicode_Decode(s, len, encoding, errors);
+    if (len == 0)
+        _Py_RETURN_UNICODE_EMPTY();
 
+    v = PyUnicode_Decode(s, len, encoding, errors);
     return v;
 
   onError:
@@ -1381,7 +1387,7 @@ int PyUnicode_SetDefaultEncoding(const char *encoding)
     Py_DECREF(v);
     strncpy(unicode_default_encoding,
             encoding,
-            sizeof(unicode_default_encoding));
+            sizeof(unicode_default_encoding) - 1);
     return 0;
 
   onError:
@@ -8850,8 +8856,6 @@ PyTypeObject PyUnicode_Type = {
 
 void _PyUnicode_Init(void)
 {
-    int i;
-
     /* XXX - move this array to unicodectype.c ? */
     Py_UNICODE linebreak[] = {
         0x000A, /* LINE FEED */
@@ -8865,15 +8869,12 @@ void _PyUnicode_Init(void)
     };
 
     /* Init the implementation */
-    free_list = NULL;
-    numfree = 0;
-    unicode_empty = _PyUnicode_New(0);
-    if (!unicode_empty)
-        return;
+    if (!unicode_empty) {
+        unicode_empty = _PyUnicode_New(0);
+        if (!unicode_empty)
+            return;
+    }
 
-    strcpy(unicode_default_encoding, "ascii");
-    for (i = 0; i < 256; i++)
-        unicode_latin1[i] = NULL;
     if (PyType_Ready(&PyUnicode_Type) < 0)
         Py_FatalError("Can't initialize 'unicode'");
 
@@ -8918,15 +8919,11 @@ _PyUnicode_Fini(void)
 {
     int i;
 
-    Py_XDECREF(unicode_empty);
-    unicode_empty = NULL;
+    Py_CLEAR(unicode_empty);
 
-    for (i = 0; i < 256; i++) {
-        if (unicode_latin1[i]) {
-            Py_DECREF(unicode_latin1[i]);
-            unicode_latin1[i] = NULL;
-        }
-    }
+    for (i = 0; i < 256; i++)
+        Py_CLEAR(unicode_latin1[i]);
+
     (void)PyUnicode_ClearFreeList();
 }
 
