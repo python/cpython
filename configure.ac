@@ -67,7 +67,7 @@ if test "$cross_compiling" = yes; then
 	    AC_MSG_ERROR([python$PACKAGE_VERSION interpreter not found])
 	fi
         AC_MSG_RESULT($interp)
-	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib:$(srcdir)/Lib/plat-$(MACHDEP) '$interp
+	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib:$(srcdir)/Lib/$(PLATDIR) '$interp
     fi
 elif test "$cross_compiling" = maybe; then
     AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
@@ -917,6 +917,7 @@ fi
 
 # Other platforms follow
 if test $enable_shared = "yes"; then
+  PY_ENABLE_SHARED=1
   AC_DEFINE(Py_ENABLE_SHARED, 1, [Defined if Python is built as a shared library.])
   case $ac_sys_system in
     CYGWIN*)
@@ -972,6 +973,7 @@ if test $enable_shared = "yes"; then
 
   esac
 else # shared is disabled
+  PY_ENABLE_SHARED=0
   case $ac_sys_system in
     CYGWIN*)
           BLDLIBRARY='$(LIBRARY)'
@@ -3929,6 +3931,11 @@ AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
 
+dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
+AC_SUBST(PY_ENABLE_SHARED)
+LIBPL="${prefix}/lib/python${VERSION}/config-${LDVERSION}"
+AC_SUBST(LIBPL)
+
 # SO is the extension of shared libraries `(including the dot!)
 # -- usually .so, .sl on HP-UX, .dll on Cygwin
 AC_MSG_CHECKING(SO)
@@ -4641,7 +4648,7 @@ if test "$have_gcc_asm_for_x87" = yes; then
 fi
 
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc)
+AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 

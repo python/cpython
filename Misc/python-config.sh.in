@@ -1,0 +1,106 @@
+#!/bin/sh
+
+exit_with_usage ()
+{
+    echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir"
+    exit $1
+}
+
+if [ "$1" = "" ] ; then
+    exit_with_usage 1
+fi
+
+# Returns the actual prefix where this script was installed to.
+installed_prefix ()
+{
+    RESULT=$(dirname $(cd $(dirname "$1") && pwd -P))
+    if which readlink >/dev/null 2>&1 ; then
+        RESULT=$(readlink -f "$RESULT")
+    fi
+    echo $RESULT
+}
+
+prefix_build="@prefix@"
+prefix_real=$(installed_prefix "$0")
+
+# Use sed to fix paths from their built to locations to their installed to locations.
+prefix=$(echo "$prefix_build" | sed "s#$prefix_build#$prefix_real#")
+exec_prefix_build="@exec_prefix@"
+exec_prefix=$(echo "$exec_prefix_build" | sed "s#$exec_prefix_build#$prefix_real#")
+includedir=$(echo "@includedir@" | sed "s#$prefix_build#$prefix_real#")
+libdir=$(echo "@libdir@" | sed "s#$prefix_build#$prefix_real#")
+CFLAGS=$(echo "@CFLAGS@" | sed "s#$prefix_build#$prefix_real#")
+VERSION="@VERSION@"
+LIBM="@LIBM@"
+LIBC="@LIBC@"
+SYSLIBS="$LIBM $LIBC"
+ABIFLAGS="@ABIFLAGS@"
+LIBS="@LIBS@ $SYSLIBS -lpython${VERSION}${ABIFLAGS}"
+BASECFLAGS="@BASECFLAGS@"
+LDLIBRARY="@LDLIBRARY@"
+LINKFORSHARED="@LINKFORSHARED@"
+OPT="@OPT@"
+PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
+LDVERSION="@LDVERSION@"
+LIBDEST=${prefix}/lib/python${VERSION}
+LIBPL=$(echo "@LIBPL@" | sed "s#$prefix_build#$prefix_real#")
+SO="@SO@"
+PYTHONFRAMEWORK="@PYTHONFRAMEWORK@"
+INCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
+PLATINCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
+
+# Scan for --help or unknown argument.
+for ARG in $*
+do
+    case $ARG in
+        --help)
+            exit_with_usage 0
+        ;;
+        --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--abiflags|--configdir)
+        ;;
+        *)
+            exit_with_usage 1
+        ;;
+    esac
+done
+
+for ARG in "$@"
+do
+    case "$ARG" in
+        --prefix)
+            echo "$prefix"
+        ;;
+        --exec-prefix)
+            echo "$exec_prefix"
+        ;;
+        --includes)
+            echo "$INCDIR $PLATINCDIR"
+        ;;
+        --cflags)
+            echo "$INCDIR $PLATINCDIR $BASECFLAGS $CFLAGS $OPT"
+        ;;
+        --libs)
+            echo "$LIBS"
+        ;;
+        --ldflags)
+            LINKFORSHAREDUSED=
+            if [ -z "$PYTHONFRAMEWORK" ] ; then
+                LINKFORSHAREDUSED=$LINKFORSHARED
+            fi
+            LIBPLUSED=
+            if [ "$PY_ENABLE_SHARED" = "0" ] ; then
+                LIBPLUSED="-L$LIBPL"
+            fi
+            echo "$LIBPLUSED -L$libdir $LIBS $LINKFORSHAREDUSED"
+        ;;
+        --extension-suffix)
+            echo "$SO"
+        ;;
+        --abiflags)
+            echo "$ABIFLAGS"
+        ;;
+        --configdir)
+            echo "$LIBPL"
+        ;;
+esac
+done
