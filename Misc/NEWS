@@ -765,6 +765,8 @@ Tests
 Build
 -----
 
+- Issue #3718: Use AC_ARG_VAR to set MACHDEP in configure.ac.
+
 - Issue #16235: Implement python-config as a shell script.
 
 - Issue #16769: Remove outdated Visual Studio projects.

@@ -348,7 +348,7 @@ AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
 ##
 # Set name for machine-dependent library files
-AC_SUBST(MACHDEP)
+AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
 AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then

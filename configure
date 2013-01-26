@@ -812,6 +812,7 @@ with_computed_gotos
       ac_precious_vars='build_alias
 host_alias
 target_alias
+MACHDEP
 CC
 CFLAGS
 LDFLAGS
@@ -1486,6 +1487,7 @@ Optional Packages:
                           default on supported compilers)
 
 Some influential environment variables:
+  MACHDEP     name for machine-dependent library files
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
