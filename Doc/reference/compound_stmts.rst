@@ -294,7 +294,7 @@ not handled, the exception is temporarily saved. The :keyword:`finally` clause
 is executed.  If there is a saved exception, it is re-raised at the end of the
 :keyword:`finally` clause. If the :keyword:`finally` clause raises another
 exception or executes a :keyword:`return` or :keyword:`break` statement, the
-saved exception is dicarded::
+saved exception is discarded::
 
     def f():
         try:
