@@ -20,6 +20,7 @@ import re
 import time
 import struct
 import _testcapi
+import sysconfig
 try:
     import thread
 except ImportError:
@@ -1110,6 +1111,10 @@ def requires_resource(resource):
         return _id
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
+
+requires_docstrings = unittest.skipUnless(
+    sysconfig.get_config_var('WITH_DOC_STRINGS'),
+    "test requires docstrings")
 
 def cpython_only(test):
     """
