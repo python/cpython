@@ -1253,7 +1253,7 @@ loops.
    the formula ``r[i] = start + step*i``, but the constraints are ``i >= 0``
    and ``r[i] > stop``.
 
-   A range object will be empty if ``r[0]`` does not meant the value
+   A range object will be empty if ``r[0]`` does not meet the value
    constraint. Ranges do support negative indices, but these are interpreted
    as indexing from the end of the sequence determined by the positive
    indices.
