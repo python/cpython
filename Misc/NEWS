@@ -10,6 +10,10 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #13886: Fix input() to not strip out input bytes that cannot be decoded
+  using the locale encoding. Also fix sporadic failures in test_builtin due to
+  dependence on whether the readline module has previously been imported.
+
 - Issue #10156: In the interpreter's initialization phase, unicode globals
   are now initialized dynamically as needed.
 
