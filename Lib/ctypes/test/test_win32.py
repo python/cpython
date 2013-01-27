@@ -3,6 +3,7 @@
 from ctypes import *
 from ctypes.test import is_resource_enabled
 import unittest, sys
+from test import support
 
 import _ctypes_test
 
@@ -60,7 +61,9 @@ if sys.platform == "win32":
 
         def test_COMError(self):
             from _ctypes import COMError
-            self.assertEqual(COMError.__doc__, "Raised when a COM method call failed.")
+            if support.HAVE_DOCSTRINGS:
+                self.assertEqual(COMError.__doc__,
+                                 "Raised when a COM method call failed.")
 
             ex = COMError(-1, "text", ("details",))
             self.assertEqual(ex.hresult, -1)
