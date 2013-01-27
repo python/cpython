@@ -3598,7 +3598,7 @@ time_isoformat(PyDateTime_Time *self, PyObject *unused)
 {
     char buf[100];
     PyObject *result;
-    int us = TIME_GET_MICROSECOND(self);;
+    int us = TIME_GET_MICROSECOND(self);
 
     if (us)
         result = PyUnicode_FromFormat("%02d:%02d:%02d.%06d",
