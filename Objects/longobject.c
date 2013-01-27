@@ -4283,11 +4283,6 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     if (obase == NULL)
         return PyNumber_Long(x);
-    if (!PyLong_Check(obase)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "int() base must be an integer.");
-        return NULL;
-    }
 
     base = PyNumber_AsSsize_t(obase, NULL);
     if (base == -1 && PyErr_Occurred())
