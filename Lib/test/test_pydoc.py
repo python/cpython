@@ -30,6 +30,14 @@ except ImportError:
 if hasattr(pydoc_mod, "__loader__"):
     del pydoc_mod.__loader__
 
+if test.support.HAVE_DOCSTRINGS:
+    expected_data_docstrings = (
+        'dictionary for instance variables (if defined)',
+        'list of weak references to the object (if defined)',
+        ) * 2
+else:
+    expected_data_docstrings = ('', '', '', '')
+
 expected_text_pattern = """
 NAME
     test.pydoc_mod - This is a test module for test_pydoc
@@ -50,20 +58,16 @@ CLASSES
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |\x20\x20
-     |  __dict__
-     |      dictionary for instance variables (if defined)
+     |  __dict__%s
      |\x20\x20
-     |  __weakref__
-     |      list of weak references to the object (if defined)
+     |  __weakref__%s
 \x20\x20\x20\x20
     class B(builtins.object)
      |  Data descriptors defined here:
      |\x20\x20
-     |  __dict__
-     |      dictionary for instance variables (if defined)
+     |  __dict__%s
      |\x20\x20
-     |  __weakref__
-     |      list of weak references to the object (if defined)
+     |  __weakref__%s
      |\x20\x20
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
@@ -94,6 +98,9 @@ CREDITS
 FILE
     %s
 """.strip()
+
+expected_text_data_docstrings = tuple('\n     |      ' + s if s else ''
+                                      for s in expected_data_docstrings)
 
 expected_html_pattern = """
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="heading">
@@ -134,10 +141,10 @@ expected_html_pattern = """
 <hr>
 Data descriptors defined here:<br>
 <dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+<dd><tt>%s</tt></dd>
 </dl>
 <dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+<dd><tt>%s</tt></dd>
 </dl>
 </td></tr></table> <p>
 <table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
@@ -148,10 +155,10 @@ Data descriptors defined here:<br>
 <tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%%">Data descriptors defined here:<br>
 <dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+<dd><tt>%s</tt></dd>
 </dl>
 <dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+<dd><tt>%s</tt></dd>
 </dl>
 <hr>
 Data and other attributes defined here:<br>
@@ -193,6 +200,8 @@ war</tt></dd></dl>
 <td width="100%%">Nobody</td></tr></table>
 """.strip() # ' <- emacs turd
 
+expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
+                                      for s in expected_data_docstrings)
 
 # output pattern for missing module
 missing_pattern = "no Python documentation found for '%s'"
@@ -256,7 +265,6 @@ class PydocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
-    @test.support.requires_docstrings
     def test_html_doc(self):
         result, doc_loc = get_pydoc_html(pydoc_mod)
         mod_file = inspect.getabsfile(pydoc_mod)
@@ -265,7 +273,9 @@ class PydocDocTest(unittest.TestCase):
             mod_url = nturl2path.pathname2url(mod_file)
         else:
             mod_url = mod_file
-        expected_html = expected_html_pattern % (mod_url, mod_file, doc_loc)
+        expected_html = expected_html_pattern % (
+                        (mod_url, mod_file, doc_loc) +
+                        expected_html_data_docstrings)
         if result != expected_html:
             print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
@@ -274,11 +284,12 @@ class PydocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
-    @test.support.requires_docstrings
     def test_text_doc(self):
         result, doc_loc = get_pydoc_text(pydoc_mod)
-        expected_text = expected_text_pattern % \
-                        (doc_loc, inspect.getabsfile(pydoc_mod))
+        expected_text = expected_text_pattern % (
+                        (doc_loc,) +
+                        expected_text_data_docstrings +
+                        (inspect.getabsfile(pydoc_mod),))
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
@@ -329,7 +340,6 @@ class PydocDocTest(unittest.TestCase):
                      'Docstrings are omitted with -O2 and above')
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'trace function introduces __locals__ unexpectedly')
-    @test.support.requires_docstrings
     def test_help_output_redirect(self):
         # issue 940286, if output is set in Helper, then all output from
         # Helper.help should be redirected
@@ -355,8 +365,10 @@ class PydocDocTest(unittest.TestCase):
                  captured_output('stderr') as err:
                 helper.help(module)
                 result = buf.getvalue().strip()
-                expected_text = expected_help_pattern % \
-                                (doc_loc, inspect.getabsfile(pydoc_mod))
+                expected_text = expected_help_pattern % (
+                                (doc_loc,) +
+                                expected_text_data_docstrings +
+                                (inspect.getabsfile(pydoc_mod),))
                 self.assertEqual('', output.getvalue())
                 self.assertEqual('', err.getvalue())
                 self.assertEqual(expected_text, result)
@@ -499,7 +511,6 @@ class PydocUrlHandlerTest(unittest.TestCase):
         self.assertRaises(TypeError, f, 'A', '')
         self.assertRaises(TypeError, f, 'B', 'foobar')
 
-    @test.support.requires_docstrings
     def test_url_requests(self):
         # Test for the correct title in the html pages returned.
         # This tests the different parts of the URL handler without
