@@ -646,7 +646,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
     raw_timestamp = data[4:8]
     raw_size = data[8:12]
     if magic != _MAGIC_BYTES:
-        msg = 'incomplete magic number in {!r}: {!r}'.format(name, magic)
+        msg = 'bad magic number in {!r}: {!r}'.format(name, magic)
         raise ImportError(msg, **exc_details)
     elif len(raw_timestamp) != 4:
         message = 'incomplete timestamp in {!r}'.format(name)
