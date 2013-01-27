@@ -2084,7 +2084,7 @@ mpd_qcmp(const mpd_t *a, const mpd_t *b, uint32_t *status)
 }
 
 /*
- * Compare a and b, convert the the usual integer result to a decimal and
+ * Compare a and b, convert the usual integer result to a decimal and
  * store it in 'result'. For convenience, the integer result of the comparison
  * is returned. Comparisons involving NaNs return NaN/INT_MAX.
  */

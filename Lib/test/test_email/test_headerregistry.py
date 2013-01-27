@@ -670,7 +670,7 @@ class TestContentTypeHeader(TestHeaderBase):
             ),
 
         # XXX: I would say this one should default to ascii/en for the
-        # "encoded" segment, since the the first segment is not encoded and is
+        # "encoded" segment, since the first segment is not encoded and is
         # in double quotes, making the value a valid non-encoded string.  The
         # old parser decodes this just like the previous case, which may be the
         # better Postel rule, but could equally result in borking headers that
