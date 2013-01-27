@@ -73,8 +73,9 @@ class BuildExtTestCase(TempdirManager,
         self.assertEqual(xx.foo(2, 5), 7)
         self.assertEqual(xx.foo(13,15), 28)
         self.assertEqual(xx.new().demo(), None)
-        doc = 'This is a template module just for instruction.'
-        self.assertEqual(xx.__doc__, doc)
+        if support.HAVE_DOCSTRINGS:
+            doc = 'This is a template module just for instruction.'
+            self.assertEqual(xx.__doc__, doc)
         self.assertTrue(isinstance(xx.Null(), xx.Null))
         self.assertTrue(isinstance(xx.Str(), xx.Str))
 

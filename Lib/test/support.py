@@ -597,10 +597,6 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
-requires_docstrings = unittest.skipUnless(
-    sysconfig.get_config_var('WITH_DOC_STRINGS'),
-    "test requires docstrings")
-
 is_jython = sys.platform.startswith('java')
 
 # Filename used for testing
@@ -1598,6 +1594,16 @@ def run_unittest(*classes):
         return False
     _filter_suite(suite, case_pred)
     _run_suite(suite)
+
+#=======================================================================
+# Check for the presence of docstrings.
+
+HAVE_DOCSTRINGS = (check_impl_detail(cpython=False) or
+                   sys.platform == 'win32' or
+                   sysconfig.get_config_var('WITH_DOC_STRINGS'))
+
+requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
+                                          "test requires docstrings")
 
 
 #=======================================================================
