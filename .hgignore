@@ -18,6 +18,8 @@ platform$
 pyconfig.h$
 python$
 python.exe$
+python-config$
+python-config.py$
 reflog.txt$
 tags$
 Lib/plat-mac/errors.rsrc.df.rsrc
@@ -27,6 +29,7 @@ Doc/tools/jinja/
 Doc/tools/jinja2/
 Doc/tools/pygments/
 Misc/python.pc
+Misc/python-config.sh$
 Modules/Setup$
 Modules/Setup.config
 Modules/Setup.local
