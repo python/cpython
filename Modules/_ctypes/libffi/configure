@@ -12262,10 +12262,10 @@ if test "${libffi_cv_as_x86_pcrel+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
 
-	libffi_cv_as_x86_pcrel=yes
+	libffi_cv_as_x86_pcrel=no
 	echo '.text; foo: nop; .data; .long foo-.; .text' > conftest.s
-	if $CC $CFLAGS -c conftest.s 2>&1 | grep -i warning > /dev/null; then
-	    libffi_cv_as_x86_pcrel=no
+	if $CC $CFLAGS -c conftest.s > /dev/null 2>&1; then
+	    libffi_cv_as_x86_pcrel=yes
 	fi
 
 fi
