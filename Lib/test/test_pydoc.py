@@ -16,6 +16,14 @@ from test.test_support import (
 
 from test import pydoc_mod
 
+if test.test_support.HAVE_DOCSTRINGS:
+    expected_data_docstrings = (
+        'dictionary for instance variables (if defined)',
+        'list of weak references to the object (if defined)',
+        )
+else:
+    expected_data_docstrings = ('', '')
+
 expected_text_pattern = \
 """
 NAME
@@ -40,11 +48,9 @@ CLASSES
     class B(__builtin__.object)
      |  Data descriptors defined here:
      |\x20\x20
-     |  __dict__
-     |      dictionary for instance variables (if defined)
+     |  __dict__%s
      |\x20\x20
-     |  __weakref__
-     |      list of weak references to the object (if defined)
+     |  __weakref__%s
      |\x20\x20
      |  ----------------------------------------------------------------------
      |  Data and other attributes defined here:
@@ -74,6 +80,9 @@ AUTHOR
 CREDITS
     Nobody
 """.strip()
+
+expected_text_data_docstrings = tuple('\n     |      ' + s if s else ''
+                                      for s in expected_data_docstrings)
 
 expected_html_pattern = \
 """
@@ -121,10 +130,10 @@ expected_html_pattern = \
 <tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%%">Data descriptors defined here:<br>
 <dl><dt><strong>__dict__</strong></dt>
-<dd><tt>dictionary&nbsp;for&nbsp;instance&nbsp;variables&nbsp;(if&nbsp;defined)</tt></dd>
+<dd><tt>%s</tt></dd>
 </dl>
 <dl><dt><strong>__weakref__</strong></dt>
-<dd><tt>list&nbsp;of&nbsp;weak&nbsp;references&nbsp;to&nbsp;the&nbsp;object&nbsp;(if&nbsp;defined)</tt></dd>
+<dd><tt>%s</tt></dd>
 </dl>
 <hr>
 Data and other attributes defined here:<br>
@@ -168,6 +177,8 @@ war</tt></dd></dl>
 <td width="100%%">Nobody</td></tr></table>
 """.strip()
 
+expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
+                                      for s in expected_data_docstrings)
 
 # output pattern for missing module
 missing_pattern = "no Python documentation found for '%s'"
@@ -229,7 +240,9 @@ class PyDocDocTest(unittest.TestCase):
             mod_url = nturl2path.pathname2url(mod_file)
         else:
             mod_url = mod_file
-        expected_html = expected_html_pattern % (mod_url, mod_file, doc_loc)
+        expected_html = expected_html_pattern % (
+                        (mod_url, mod_file, doc_loc) +
+                        expected_html_data_docstrings)
         if result != expected_html:
             print_diffs(expected_html, result)
             self.fail("outputs are not equal, see diff above")
@@ -238,8 +251,9 @@ class PyDocDocTest(unittest.TestCase):
                      "Docstrings are omitted with -O2 and above")
     def test_text_doc(self):
         result, doc_loc = get_pydoc_text(pydoc_mod)
-        expected_text = expected_text_pattern % \
-                        (inspect.getabsfile(pydoc_mod), doc_loc)
+        expected_text = expected_text_pattern % (
+                        (inspect.getabsfile(pydoc_mod), doc_loc) +
+                        expected_text_data_docstrings)
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")

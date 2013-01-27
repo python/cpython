@@ -232,6 +232,7 @@ class TestUpdateWrapper(unittest.TestCase):
         self.assertEqual(wrapper.attr, 'This is a different test')
         self.assertEqual(wrapper.dict_attr, f.dict_attr)
 
+    @test_support.requires_docstrings
     def test_builtin_update(self):
         # Test for bug #1576241
         def wrapper():
