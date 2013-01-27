@@ -5,7 +5,7 @@
 #
 # A possible improvement would be to have empty.vbs do something that
 # we can detect here, to make sure that not only the os.startfile()
-# call succeeded, but also the the script actually has run.
+# call succeeded, but also the script actually has run.
 
 import unittest
 from test import support

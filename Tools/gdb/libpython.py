@@ -1463,7 +1463,7 @@ class Frame(object):
             return name.startswith('pthread_cond_timedwait')
 
     def is_gc_collect(self):
-        '''Is this frame "collect" within the the garbage-collector?'''
+        '''Is this frame "collect" within the garbage-collector?'''
         return self._gdbframe.name() == 'collect'
 
     def get_pyop(self):
