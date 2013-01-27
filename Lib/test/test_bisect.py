@@ -7,7 +7,7 @@ py_bisect = support.import_fresh_module('bisect', blocked=['_bisect'])
 c_bisect = support.import_fresh_module('bisect', fresh=['_bisect'])
 
 class Range(object):
-    """A trivial range()-like object without any integer width limitations."""
+    """A trivial range()-like object that has an insert() method."""
     def __init__(self, start, stop):
         self.start = start
         self.stop = stop
