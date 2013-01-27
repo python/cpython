@@ -1112,10 +1112,6 @@ def requires_resource(resource):
     else:
         return unittest.skip("resource {0!r} is not enabled".format(resource))
 
-requires_docstrings = unittest.skipUnless(
-    sysconfig.get_config_var('WITH_DOC_STRINGS'),
-    "test requires docstrings")
-
 def cpython_only(test):
     """
     Decorator for tests only applicable on CPython.
@@ -1192,6 +1188,16 @@ def run_unittest(*classes):
         else:
             suite.addTest(unittest.makeSuite(cls))
     _run_suite(suite)
+
+#=======================================================================
+# Check for the presence of docstrings.
+
+HAVE_DOCSTRINGS = (check_impl_detail(cpython=False) or
+                   sys.platform == 'win32' or
+                   sysconfig.get_config_var('WITH_DOC_STRINGS'))
+
+requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
+                                          "test requires docstrings")
 
 
 #=======================================================================
