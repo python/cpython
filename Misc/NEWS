@@ -674,6 +674,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #17041: Fix testing when Python is configured with the
+  --without-doc-strings option.
+
 - Issue #15539: Added regression tests for Tools/scripts/pindent.py.
 
 - Issue #15324: Fix regrtest parsing of --fromfile and --randomize options.
