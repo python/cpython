@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16772: The base argument to the int constructor no longer accepts
+  floats, or other non-integer objects with an __int__ method.  Objects
+  with an __index__ method are now accepted.
+
 - Issue #10156: In the interpreter's initialization phase, unicode globals
   are now initialized dynamically as needed.
 

@@ -260,6 +260,23 @@ class IntTestCases(unittest.TestCase):
         with self.assertRaises(TypeError):
             int('0', 5.0)
 
+    def test_int_base_indexable(self):
+        class MyIndexable(object):
+            def __init__(self, value):
+                self.value = value
+            def __index__(self):
+                return self.value
+
+        # Check out of range bases.
+        for base in 2**100, -2**100, 1, 37:
+            with self.assertRaises(ValueError):
+                int('43', base)
+
+        # Check in-range bases.
+        self.assertEqual(int('101', base=MyIndexable(2)), 5)
+        self.assertEqual(int('101', base=MyIndexable(10)), 101)
+        self.assertEqual(int('101', base=MyIndexable(36)), 1 + 36**2)
+
     def test_non_numeric_input_types(self):
         # Test possible non-numeric types for the argument x, including
         # subclasses of the explicitly documented accepted types.
