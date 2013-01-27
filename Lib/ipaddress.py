@@ -723,7 +723,7 @@ class _BaseNetwork(_IPAddressBase):
             other: An IPv4Network or IPv6Network object of the same type.
 
         Returns:
-            An iterator of the the IPv(4|6)Network objects which is self
+            An iterator of the IPv(4|6)Network objects which is self
             minus other.
 
         Raises:
