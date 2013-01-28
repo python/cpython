@@ -4229,6 +4229,7 @@ posix__isdir(PyObject *self, PyObject *args)
         return NULL;
 
     attributes = GetFileAttributesA(path);
+    PyMem_Free(path);
     if (attributes == INVALID_FILE_ATTRIBUTES)
         Py_RETURN_FALSE;
 
