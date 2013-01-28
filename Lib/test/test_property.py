@@ -186,7 +186,7 @@ class PropertySubclassTests(unittest.TestCase):
             Foo.spam.__doc__,
             "spam wrapped in property subclass")
 
-    @unittest.skipIf(sys.flags.optimize <= 2,
+    @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_property_setter_copies_getter_docstring(self):
         class Foo(object):
@@ -219,7 +219,7 @@ class PropertySubclassTests(unittest.TestCase):
             FooSub.spam.__doc__,
             "spam wrapped in property subclass")
 
-    @unittest.skipIf(sys.flags.optimize <= 2,
+    @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_property_new_getter_new_docstring(self):
 
