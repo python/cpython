@@ -200,6 +200,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17051: Fix a memory leak in os.path.isdir() on Windows. Patch by
+  Robert Xiao.
+
 - Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
   interface and support all mandatory methods and properties.
 
