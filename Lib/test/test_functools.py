@@ -321,7 +321,7 @@ class TestWraps(TestUpdateWrapper):
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')
 
-    @unittest.skipIf(not sys.flags.optimize <= 1,
+    @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_default_update_doc(self):
         wrapper, _ = self._default_update()
