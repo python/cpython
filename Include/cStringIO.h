@@ -7,7 +7,7 @@ extern "C" {
 
   This header provides access to cStringIO objects from C.
   Functions are provided for calling cStringIO objects and
-  macros are provided for testing whether you have cStringIO 
+  macros are provided for testing whether you have cStringIO
   objects.
 
   Before calling any of the functions or macros, you must initialize
@@ -28,7 +28,7 @@ extern "C" {
 /* Basic functions to manipulate cStringIO objects from C */
 
 static struct PycStringIO_CAPI {
-  
+
  /* Read a string from an input object.  If the last argument
     is -1, the remainder will be read.
     */
