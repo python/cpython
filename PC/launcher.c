@@ -1257,8 +1257,8 @@ process(int argc, wchar_t ** argv)
             if (!valid)
                 debug(L"GetFileVersionInfo failed: %X\n", GetLastError());
             else {
-                valid = VerQueryValueW(version_data, L"\\", &file_info,
-                                       &block_size);
+                valid = VerQueryValueW(version_data, L"\\",
+                                       (LPVOID *) &file_info, &block_size);
                 if (!valid)
                     debug(L"VerQueryValue failed: %X\n", GetLastError());
                 else {
