@@ -738,12 +738,11 @@ Configuring Logging for a Library
 When developing a library which uses logging, you should take care to
 document how the library uses logging - for example, the names of loggers
 used. Some consideration also needs to be given to its logging configuration.
-If the using application does not use logging, and library code makes logging
-calls, then (as described in the previous section) events of severity
-``WARNING`` and greater will be printed to ``sys.stderr``. This is regarded as
-the best default behaviour.
+If the using application does not configure logging, and library code makes
+logging calls, then (as described in the previous section) an error message
+will be printed to ``sys.stderr``.
 
-If for some reason you *don't* want these messages printed in the absence of
+If for some reason you *don't* want this message printed in the absence of
 any logging configuration, you can attach a do-nothing handler to the top-level
 logger for your library. This avoids the message being printed, since a handler
 will be always be found for the library's events: it just doesn't produce any
@@ -755,7 +754,7 @@ handlers, as normal.
 A do-nothing handler is included in the logging package:
 :class:`~logging.NullHandler` (since Python 2.7). An instance of this handler
 could be added to the top-level logger of the logging namespace used by the
-library (*if* you want to prevent your library's logged events being output to
+library (*if* you want to prevent an error message being output to
 ``sys.stderr`` in the absence of logging configuration). If all logging by a
 library *foo* is done using loggers with names matching 'foo.x', 'foo.x.y',
 etc. then the code::
