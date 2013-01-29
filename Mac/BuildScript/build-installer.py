@@ -192,7 +192,8 @@ def library_recipes():
 
     LT_10_5 = bool(DEPTARGET < '10.5')
 
-    result.extend([
+    if getVersionTuple() >= (3, 3):
+        result.extend([
           dict(
               name="XZ 5.0.3",
               url="http://tukaani.org/xz/xz-5.0.3.tar.gz",
@@ -201,6 +202,9 @@ def library_recipes():
                     '--disable-dependency-tracking',
               ]
               ),
+        ])
+
+    result.extend([
           dict(
               name="NCurses 5.9",
               url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz",
