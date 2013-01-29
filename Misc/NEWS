@@ -236,10 +236,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #17071: Signature.bind() now works when one of the keyword arguments
+  is named ``self``.
+
 - Issue #12004: Fix an internal error in PyZipFile when writing an invalid
   Python file.  Patch by Ben Morgan.
 
-Have py_compile use importlib as much as possible to avoid code duplication.
+- Have py_compile use importlib as much as possible to avoid code duplication.
 
 - Issue #180022: Have site.addpackage() consider already known paths even when
   none are explicitly passed in. Bug report and fix by Kirill.
