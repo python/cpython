@@ -214,6 +214,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
+
 - Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
   interface and support all mandatory methods and properties.
 

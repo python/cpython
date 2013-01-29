@@ -4,6 +4,11 @@ import codecs
 import locale
 import sys, _testcapi, io
 
+def coding_checker(self, coder):
+    def check(input, expect):
+        self.assertEqual(coder(input), (expect, len(input)))
+    return check
+
 class Queue(object):
     """
     queue: write bytes at one end, read bytes from the other end
@@ -1846,6 +1851,85 @@ class TypesTest(unittest.TestCase):
         self.assertEqual(codecs.raw_unicode_escape_decode(r"\u1234"), ("\u1234", 6))
         self.assertEqual(codecs.raw_unicode_escape_decode(br"\u1234"), ("\u1234", 6))
 
+
+class UnicodeEscapeTest(unittest.TestCase):
+    def test_empty(self):
+        self.assertEqual(codecs.unicode_escape_encode(""), (b"", 0))
+        self.assertEqual(codecs.unicode_escape_decode(b""), ("", 0))
+
+    def test_raw_encode(self):
+        encode = codecs.unicode_escape_encode
+        for b in range(32, 127):
+            if b != b'\\'[0]:
+                self.assertEqual(encode(chr(b)), (bytes([b]), 1))
+
+    def test_raw_decode(self):
+        decode = codecs.unicode_escape_decode
+        for b in range(256):
+            if b != b'\\'[0]:
+                self.assertEqual(decode(bytes([b]) + b'0'), (chr(b) + '0', 2))
+
+    def test_escape_encode(self):
+        encode = codecs.unicode_escape_encode
+        check = coding_checker(self, encode)
+        check('\t', br'\t')
+        check('\n', br'\n')
+        check('\r', br'\r')
+        check('\\', br'\\')
+        for b in range(32):
+            if chr(b) not in '\t\n\r':
+                check(chr(b), ('\\x%02x' % b).encode())
+        for b in range(127, 256):
+            check(chr(b), ('\\x%02x' % b).encode())
+        check('\u20ac', br'\u20ac')
+        check('\U0001d120', br'\U0001d120')
+
+    def test_escape_decode(self):
+        decode = codecs.unicode_escape_decode
+        check = coding_checker(self, decode)
+        check(b"[\\\n]", "[]")
+        check(br'[\"]', '["]')
+        check(br"[\']", "[']")
+        check(br"[\\]", r"[\]")
+        check(br"[\a]", "[\x07]")
+        check(br"[\b]", "[\x08]")
+        check(br"[\t]", "[\x09]")
+        check(br"[\n]", "[\x0a]")
+        check(br"[\v]", "[\x0b]")
+        check(br"[\f]", "[\x0c]")
+        check(br"[\r]", "[\x0d]")
+        check(br"[\7]", "[\x07]")
+        check(br"[\8]", r"[\8]")
+        check(br"[\78]", "[\x078]")
+        check(br"[\41]", "[!]")
+        check(br"[\418]", "[!8]")
+        check(br"[\101]", "[A]")
+        check(br"[\1010]", "[A0]")
+        check(br"[\x41]", "[A]")
+        check(br"[\x410]", "[A0]")
+        check(br"\u20ac", "\u20ac")
+        check(br"\U0001d120", "\U0001d120")
+        for b in range(256):
+            if b not in b'\n"\'\\abtnvfr01234567xuUN':
+                check(b'\\' + bytes([b]), '\\' + chr(b))
+
+    def test_decode_errors(self):
+        decode = codecs.unicode_escape_decode
+        for c, d in (b'x', 2), (b'u', 4), (b'U', 4):
+            for i in range(d):
+                self.assertRaises(UnicodeDecodeError, decode,
+                                  b"\\" + c + b"0"*i)
+                self.assertRaises(UnicodeDecodeError, decode,
+                                  b"[\\" + c + b"0"*i + b"]")
+                data = b"[\\" + c + b"0"*i + b"]\\" + c + b"0"*i
+                self.assertEqual(decode(data, "ignore"), ("[]", len(data)))
+                self.assertEqual(decode(data, "replace"),
+                                 ("[\ufffd]\ufffd", len(data)))
+        self.assertRaises(UnicodeDecodeError, decode, br"\U00110000")
+        self.assertEqual(decode(br"\U00110000", "ignore"), ("", 10))
+        self.assertEqual(decode(br"\U00110000", "replace"), ("\ufffd", 10))
+
+
 class SurrogateEscapeTest(unittest.TestCase):
 
     def test_utf8(self):
@@ -2011,6 +2095,7 @@ def test_main():
         CharmapTest,
         WithStmtTest,
         TypesTest,
+        UnicodeEscapeTest,
         SurrogateEscapeTest,
         BomTest,
         TransformCodecTest,
