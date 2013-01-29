@@ -5,18 +5,9 @@ FWK="/Library/Frameworks/Python.framework/Versions/${PYVER}"
 FWK_DOCDIR_SUBPATH="Resources/English.lproj/Documentation"
 FWK_DOCDIR="${FWK}/${FWK_DOCDIR_SUBPATH}"
 APPDIR="/Applications/Python ${PYVER}"
-DEV_DOCDIR="/Developer/Documentation"
 SHARE_DIR="${FWK}/share"
 SHARE_DOCDIR="${SHARE_DIR}/doc/python${PYVER}"
 SHARE_DOCDIR_TO_FWK="../../.."
-
-# make link in /Developer/Documentation/ for Xcode users
-if [ -d "${DEV_DOCDIR}" ]; then
-    if [ ! -d "${DEV_DOCDIR}/Python" ]; then
-        mkdir -p "${DEV_DOCDIR}/Python"
-    fi
-    ln -fhs "${FWK_DOCDIR}" "${DEV_DOCDIR}/Python/Reference Documentation ${PYVER}"
-fi
 
 # make link in /Applications/Python m.n/ for Finder users
 if [ -d "${APPDIR}" ]; then

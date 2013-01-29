@@ -38,10 +38,10 @@ INSTALL_SCRIPT= @INSTALL_SCRIPT@
 INSTALL_DATA=@INSTALL_DATA@
 LN=@LN@
 STRIPFLAG=-s
-CPMAC=/Developer/Tools/CpMac
+CPMAC=CpMac
 
 APPTEMPLATE=$(srcdir)/Resources/app
-APPSUBDIRS=MacOS Resources 
+APPSUBDIRS=MacOS Resources
 CACHERSRC=$(srcdir)/scripts/cachersrc.py
 compileall=$(srcdir)/../Lib/compileall.py
 
