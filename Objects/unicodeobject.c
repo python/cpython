@@ -7510,14 +7510,18 @@ Error:
                     Py_DECREF(x);
                     goto onError;
                 }
-                if (unicode_putchar(&v, &outpos, value) < 0)
+                if (unicode_putchar(&v, &outpos, value) < 0) {
+                    Py_DECREF(x);
                     goto onError;
+                }
             }
             else if (PyUnicode_Check(x)) {
                 Py_ssize_t targetsize;
 
-                if (PyUnicode_READY(x) == -1)
+                if (PyUnicode_READY(x) == -1) {
+                    Py_DECREF(x);
                     goto onError;
+                }
                 targetsize = PyUnicode_GET_LENGTH(x);
 
                 if (targetsize == 1) {
@@ -7525,8 +7529,10 @@ Error:
                     Py_UCS4 value = PyUnicode_READ_CHAR(x, 0);
                     if (value == 0xFFFE)
                         goto Undefined;
-                    if (unicode_putchar(&v, &outpos, value) < 0)
+                    if (unicode_putchar(&v, &outpos, value) < 0) {
+                        Py_DECREF(x);
                         goto onError;
+                    }
                 }
                 else if (targetsize > 1) {
                     /* 1-n mapping */
@@ -7543,8 +7549,11 @@ Error:
                             goto onError;
                         }
                     }
-                    if (unicode_widen(&v, outpos, PyUnicode_MAX_CHAR_VALUE(x)) < 0)
+                    if (unicode_widen(&v, outpos,
+                                      PyUnicode_MAX_CHAR_VALUE(x)) < 0) {
+                        Py_DECREF(x);
                         goto onError;
+                    }
                     PyUnicode_CopyCharacters(v, outpos, x, 0, targetsize);
                     outpos += targetsize;
                     extrachars -= targetsize;
