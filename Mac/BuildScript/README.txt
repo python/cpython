@@ -8,70 +8,83 @@ $DESTROOT, massages that installation to remove .pyc files and such, creates
 an Installer package from the installation plus other files in ``resources`` 
 and ``scripts`` and placed that on a ``.dmg`` disk image.
 
-As of Python 2.7.x and 3.2, PSF practice is to build two installer variants
-for each release:
+For Python 2.7.x and 3.2.x, PSF practice is to build two installer variants
+for each release.
 
 1.  32-bit-only, i386 and PPC universal, capable on running on all machines
-    supported by Mac OS X 10.3.9 through (at least) 10.6::
+    supported by Mac OS X 10.3.9 through (at least) 10.8::
 
-        python build-installer.py \
+        /usr/bin/python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.4u.sdk \
             --universal-archs=32-bit \
             --dep-target=10.3 
-            # These are the current default options
 
     - builds the following third-party libraries
 
         * Bzip2
-        * Zlib 1.2.3
-        * GNU Readline (GPL)
-        * SQLite 3
         * NCurses
+        * GNU Readline (GPL)
+        * SQLite 3.7.13
+        * Zlib 1.2.3
         * Oracle Sleepycat DB 4.8 (Python 2.x only)
 
     - requires ActiveState ``Tcl/Tk 8.4`` (currently 8.4.19) to be installed for building
 
-    - current target build environment:
+    - recommended build environment:
         
         * Mac OS X 10.5.8 PPC or Intel
-        * Xcode 3.1.4 (or later)
+        * Xcode 3.1.4
         * ``MacOSX10.4u`` SDK (later SDKs do not support PPC G3 processors)
         * ``MACOSX_DEPLOYMENT_TARGET=10.3``
         * Apple ``gcc-4.0``
-        * Python 2.n (n >= 4) for documentation build with Sphinx
+        * system Python 2.5 for documentation build with Sphinx
 
     - alternate build environments:
 
-        * Mac OS X 10.4.11 with Xcode 2.5
-        * Mac OS X 10.6.6 with Xcode 3.2.5
+        * Mac OS X 10.6.8 with Xcode 3.2.6
             - need to change ``/System/Library/Frameworks/{Tcl,Tk}.framework/Version/Current`` to ``8.4``
+        * Note Xcode 4.* does not support building for PPC so cannot be used for this build
+
 
 2.  64-bit / 32-bit, x86_64 and i386 universal, for OS X 10.6 (and later)::
 
-        python build-installer.py \
+        /usr/bin/python build-installer.py \
             --sdk-path=/Developer/SDKs/MacOSX10.6.sdk \
             --universal-archs=intel \
             --dep-target=10.6
 
+    - builds the following third-party libraries
+
+        * NCurses 5.9 (http://bugs.python.org/issue15037)
+        * SQLite 3.7.13
+
     - uses system-supplied versions of third-party libraries
-    
+
         * readline module links with Apple BSD editline (libedit)
-        * builds Oracle Sleepycat DB 4.8 (Python 2.x only)
 
     - requires ActiveState Tcl/Tk 8.5.9 (or later) to be installed for building
 
-    - current target build environment:
-        
-        * Mac OS X 10.6.6 (or later)
-        * Xcode 3.2.5 (or later)
+    - recommended build environment:
+
+        * Mac OS X 10.6.8 (or later)
+        * Xcode 3.2.6
         * ``MacOSX10.6`` SDK
         * ``MACOSX_DEPLOYMENT_TARGET=10.6``
         * Apple ``gcc-4.2``
-        * Python 2.n (n >= 4) for documentation build with Sphinx
+        * system Python 2.6 for documentation build with Sphinx
 
     - alternate build environments:
 
-        * none
+        * none.  Xcode 4.x currently supplies two C compilers.
+          ``llvm-gcc-4.2.1`` has been found to miscompile Python 3.3.x and
+          produce a non-functional Python executable.  As it appears to be
+          considered a migration aid by Apple and is not likely to be fixed,
+          its use should be avoided.  The other compiler, ``clang``, has been
+          undergoing rapid development.  While it appears to have become
+          production-ready in the most recent Xcode 4 releases (Xcode 4.5.x
+          as of this writing), there are still some open issues when
+          building Python and there has not yet been the level of exposure in
+          production environments that the Xcode 3 gcc-4.2 compiler has had.
 
 
 General Prerequisites
@@ -86,6 +99,11 @@ General Prerequisites
 
 * It is safest to start each variant build with an empty source directory
   populated with a fresh copy of the untarred source.
+
+* It is recommended that you remove any existing installed version of the
+  Python being built::
+
+      sudo rm -rf /Library/Frameworks/Python.framework/Versions/n.n
 
 
 The Recipe
@@ -107,9 +125,9 @@ Building other universal installers
 ...................................
 
 It is also possible to build a 4-way universal installer that runs on 
-OS X Leopard or later::
+OS X 10.5 Leopard or later::
 
-  python 2.6 /build-installer.py \
+    /usr/bin/python /build-installer.py \
         --dep-target=10.5
         --universal-archs=all
         --sdk-path=/Developer/SDKs/MacOSX10.5.sdk
@@ -120,7 +138,8 @@ also that you are building on at least OS X 10.5.  4-way includes
 variants can only be run on G5 machines running 10.5.  Note that,
 while OS X 10.6 is only supported on Intel-based machines, it is possible
 to run ``ppc`` (32-bit) executables unmodified thanks to the Rosetta ppc
-emulation in OS X 10.5 and 10.6.
+emulation in OS X 10.5 and 10.6.  The 4-way installer variant must be
+built with Xcode 3.  It is not regularly built or tested.
 
 Other ``--universal-archs`` options are ``64-bit`` (``x86_64``, ``ppc64``),
 and ``3-way`` (``ppc``, ``i386``, ``x86_64``).  None of these options
@@ -133,15 +152,21 @@ Testing
 Ideally, the resulting binaries should be installed and the test suite run
 on all supported OS X releases and architectures.  As a practical matter,
 that is generally not possible.  At a minimum, variant 1 should be run on
-at least one Intel, one PPC G4, and one PPC G3 system and one each of 
-OS X 10.6, 10.5, 10.4, and 10.3.9.  Not all tests run on 10.3.9.
-Variant 2 should be run on 10.6 in both 32-bit and 64-bit modes.::
+a PPC G4 system with OS X 10.5 and at least one Intel system running OS X
+10.8, 10.7, 10.6, or 10.5.  Variant 2 should be run on 10.8, 10.7, and 10.6
+systems in both 32-bit and 64-bit modes.::
 
-    arch -i386 /usr/local/bin/pythonn.n -m test.regrtest -w -u all 
-    arch -X86_64 /usr/local/bin/pythonn.n -m test.regrtest -w -u all
+    /usr/local/bin/pythonn.n -m test -w -u all,-largefile
+    /usr/local/bin/pythonn.n-32 -m test -w -u all
     
 Certain tests will be skipped and some cause the interpreter to fail
 which will likely generate ``Python quit unexpectedly`` alert messages
-to be generated at several points during a test run.  These can
-be ignored.
+to be generated at several points during a test run.  These are normal
+during testing and can be ignored.
+
+It is also recommend to launch IDLE and verify that it is at least
+functional.  Double-click on the IDLE app icon in ``/Applications/Pythonn.n``.
+It should also be tested from the command line::
+
+    /usr/local/bin/idlen.n
 
