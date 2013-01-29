@@ -40,14 +40,13 @@ INSTALL_SCRIPT= @INSTALL_SCRIPT@
 INSTALL_DATA=@INSTALL_DATA@
 LN=@LN@
 STRIPFLAG=-s
-CPMAC=/Developer/Tools/CpMac
+CPMAC=CpMac
 
 APPTEMPLATE=$(srcdir)/Resources/app
-APPSUBDIRS=MacOS Resources 
+APPSUBDIRS=MacOS Resources
 compileall=$(srcdir)/../Lib/compileall.py
 
-installapps: install_Python install_pythonw install_PythonLauncher install_IDLE \
-	checkapplepython
+installapps: install_Python install_pythonw install_PythonLauncher install_IDLE
 
 install_pythonw: pythonw
 	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
@@ -195,14 +194,6 @@ installextras: $(srcdir)/Extras.install.py
 	$(RUNSHARED) $(BUILDPYTHON) $(srcdir)/Extras.install.py $(srcdir)/../Tools \
 		"$(DESTDIR)$(prefix)/share/doc/python$(VERSION)/examples/Tools" ; \
 		chmod -R ugo+rX,go-w "$(DESTDIR)$(prefix)/share/doc/python$(VERSION)/examples/Tools"
-
-
-checkapplepython: $(srcdir)/Tools/fixapplepython23.py
-	@if ! $(RUNSHARED) $(BUILDPYTHON) $(srcdir)/Tools/fixapplepython23.py -n; then \
-		echo "* WARNING: Apple-installed Python 2.3 will have trouble building extensions from now on."; \
-		echo "* WARNING: Run $(srcdir)/Tools/fixapplepython23.py with \"sudo\" to fix this."; \
-	fi
-
 
 clean:
 	rm pythonw
