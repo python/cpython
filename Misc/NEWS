@@ -162,6 +162,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
+
 - Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
   now fills the ``os.environ`` variable correctly.
 
