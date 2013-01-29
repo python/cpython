@@ -1934,6 +1934,56 @@ class UnicodeEscapeTest(unittest.TestCase):
         self.assertEqual(decode(br"\U00110000", "replace"), ("\ufffd", 10))
 
 
+class RawUnicodeEscapeTest(unittest.TestCase):
+    def test_empty(self):
+        self.assertEqual(codecs.raw_unicode_escape_encode(""), (b"", 0))
+        self.assertEqual(codecs.raw_unicode_escape_decode(b""), ("", 0))
+
+    def test_raw_encode(self):
+        encode = codecs.raw_unicode_escape_encode
+        for b in range(256):
+            self.assertEqual(encode(chr(b)), (bytes([b]), 1))
+
+    def test_raw_decode(self):
+        decode = codecs.raw_unicode_escape_decode
+        for b in range(256):
+            self.assertEqual(decode(bytes([b]) + b'0'), (chr(b) + '0', 2))
+
+    def test_escape_encode(self):
+        encode = codecs.raw_unicode_escape_encode
+        check = coding_checker(self, encode)
+        for b in range(256):
+            if b not in b'uU':
+                check('\\' + chr(b), b'\\' + bytes([b]))
+        check('\u20ac', br'\u20ac')
+        check('\U0001d120', br'\U0001d120')
+
+    def test_escape_decode(self):
+        decode = codecs.raw_unicode_escape_decode
+        check = coding_checker(self, decode)
+        for b in range(256):
+            if b not in b'uU':
+                check(b'\\' + bytes([b]), '\\' + chr(b))
+        check(br"\u20ac", "\u20ac")
+        check(br"\U0001d120", "\U0001d120")
+
+    def test_decode_errors(self):
+        decode = codecs.raw_unicode_escape_decode
+        for c, d in (b'u', 4), (b'U', 4):
+            for i in range(d):
+                self.assertRaises(UnicodeDecodeError, decode,
+                                  b"\\" + c + b"0"*i)
+                self.assertRaises(UnicodeDecodeError, decode,
+                                  b"[\\" + c + b"0"*i + b"]")
+                data = b"[\\" + c + b"0"*i + b"]\\" + c + b"0"*i
+                self.assertEqual(decode(data, "ignore"), ("[]", len(data)))
+                self.assertEqual(decode(data, "replace"),
+                                 ("[\ufffd]\ufffd", len(data)))
+        self.assertRaises(UnicodeDecodeError, decode, br"\U00110000")
+        self.assertEqual(decode(br"\U00110000", "ignore"), ("", 10))
+        self.assertEqual(decode(br"\U00110000", "replace"), ("\ufffd", 10))
+
+
 class SurrogateEscapeTest(unittest.TestCase):
 
     def test_utf8(self):
@@ -2100,6 +2150,7 @@ def test_main():
         WithStmtTest,
         TypesTest,
         UnicodeEscapeTest,
+        RawUnicodeEscapeTest,
         SurrogateEscapeTest,
         BomTest,
         TransformCodecTest,
