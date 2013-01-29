@@ -216,6 +216,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12004: Fix an internal error in PyZipFile when writing an invalid
+  Python file.  Patch by Ben Morgan.
+
 - Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
   interface and support all mandatory methods and properties.
 
