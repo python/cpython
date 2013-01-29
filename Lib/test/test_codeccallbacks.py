@@ -262,12 +262,12 @@ class CodecCallbackTest(unittest.TestCase):
 
         self.assertEqual(
             "\\u3042\u3xxx".decode("unicode-escape", "test.handler1"),
-            u"\u3042[<92><117><51><120>]xx"
+            u"\u3042[<92><117><51>]xxx"
         )
 
         self.assertEqual(
             "\\u3042\u3xx".decode("unicode-escape", "test.handler1"),
-            u"\u3042[<92><117><51><120><120>]"
+            u"\u3042[<92><117><51>]xx"
         )
 
         self.assertEqual(

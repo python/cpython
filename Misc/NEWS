@@ -200,6 +200,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
+
 - Issue #17051: Fix a memory leak in os.path.isdir() on Windows. Patch by
   Robert Xiao.
 

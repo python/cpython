@@ -2738,7 +2738,6 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
-    int i;
     PyUnicodeObject *v;
     Py_UNICODE *p;
     const char *end;
@@ -2824,29 +2823,19 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             message = "truncated \\UXXXXXXXX escape";
         hexescape:
             chr = 0;
-            outpos = p-PyUnicode_AS_UNICODE(v);
-            if (s+digits>end) {
-                endinpos = size;
-                if (unicode_decode_call_errorhandler(
-                        errors, &errorHandler,
-                        "unicodeescape", "end of string in escape sequence",
-                        starts, size, &startinpos, &endinpos, &exc, &s,
-                        &v, &outpos, &p))
-                    goto onError;
-                goto nextByte;
-            }
-            for (i = 0; i < digits; ++i) {
-                c = (unsigned char) s[i];
-                if (!isxdigit(c)) {
-                    endinpos = (s+i+1)-starts;
-                    if (unicode_decode_call_errorhandler(
-                            errors, &errorHandler,
-                            "unicodeescape", message,
-                            starts, size, &startinpos, &endinpos, &exc, &s,
-                            &v, &outpos, &p))
-                        goto onError;
-                    goto nextByte;
+            if (end - s < digits) {
+                /* count only hex digits */
+                for (; s < end; ++s) {
+                    c = (unsigned char)*s;
+                    if (!Py_ISXDIGIT(c))
+                        goto error;
                 }
+                goto error;
+            }
+            for (; digits--; ++s) {
+                c = (unsigned char)*s;
+                if (!Py_ISXDIGIT(c))
+                    goto error;
                 chr = (chr<<4) & ~0xF;
                 if (c >= '0' && c <= '9')
                     chr += c - '0';
@@ -2855,7 +2844,6 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 else
                     chr += 10 + c - 'A';
             }
-            s += i;
             if (chr == 0xffffffff && PyErr_Occurred())
                 /* _decoding_error will have already written into the
                    target buffer. */
@@ -2876,14 +2864,8 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 *p++ = 0xDC00 + (Py_UNICODE) (chr & 0x03FF);
 #endif
             } else {
-                endinpos = s-starts;
-                outpos = p-PyUnicode_AS_UNICODE(v);
-                if (unicode_decode_call_errorhandler(
-                        errors, &errorHandler,
-                        "unicodeescape", "illegal Unicode character",
-                        starts, size, &startinpos, &endinpos, &exc, &s,
-                        &v, &outpos, &p))
-                    goto onError;
+                message = "illegal Unicode character";
+                goto error;
             }
             break;
 
@@ -2910,28 +2892,13 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                         goto store;
                 }
             }
-            endinpos = s-starts;
-            outpos = p-PyUnicode_AS_UNICODE(v);
-            if (unicode_decode_call_errorhandler(
-                    errors, &errorHandler,
-                    "unicodeescape", message,
-                    starts, size, &startinpos, &endinpos, &exc, &s,
-                    &v, &outpos, &p))
-                goto onError;
-            break;
+            goto error;
 
         default:
             if (s > end) {
                 message = "\\ at end of string";
                 s--;
-                endinpos = s-starts;
-                outpos = p-PyUnicode_AS_UNICODE(v);
-                if (unicode_decode_call_errorhandler(
-                        errors, &errorHandler,
-                        "unicodeescape", message,
-                        starts, size, &startinpos, &endinpos, &exc, &s,
-                        &v, &outpos, &p))
-                    goto onError;
+                goto error;
             }
             else {
                 *p++ = '\\';
@@ -2939,8 +2906,18 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             }
             break;
         }
-      nextByte:
-        ;
+        continue;
+
+      error:
+        endinpos = s-starts;
+        outpos = p-PyUnicode_AS_UNICODE(v);
+        if (unicode_decode_call_errorhandler(
+                errors, &errorHandler,
+                "unicodeescape", message,
+                starts, size, &startinpos, &endinpos, &exc, &s,
+                &v, &outpos, &p))
+            goto onError;
+        continue;
     }
     if (_PyUnicode_Resize(&v, p - PyUnicode_AS_UNICODE(v)) < 0)
         goto onError;
