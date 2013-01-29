@@ -234,6 +234,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
+
 Have py_compile use importlib as much as possible to avoid code duplication.
 
 - Issue #180022: Have site.addpackage() consider already known paths even when

@@ -5378,7 +5378,6 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
     const char *starts = s;
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
-    int j;
     _PyUnicodeWriter writer;
     const char *end;
     char* message;
@@ -5500,28 +5499,19 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
             message = "truncated \\UXXXXXXXX escape";
         hexescape:
             chr = 0;
-            if (s+digits>end) {
-                endinpos = size;
-                if (unicode_decode_call_errorhandler_writer(
-                        errors, &errorHandler,
-                        "unicodeescape", "end of string in escape sequence",
-                        &starts, &end, &startinpos, &endinpos, &exc, &s,
-                        &writer))
-                    goto onError;
-                goto nextByte;
-            }
-            for (j = 0; j < digits; ++j) {
-                c = (unsigned char) s[j];
-                if (!Py_ISXDIGIT(c)) {
-                    endinpos = (s+j+1)-starts;
-                    if (unicode_decode_call_errorhandler_writer(
-                            errors, &errorHandler,
-                            "unicodeescape", message,
-                            &starts, &end, &startinpos, &endinpos, &exc, &s,
-                            &writer))
-                        goto onError;
-                    goto nextByte;
+            if (end - s < digits) {
+                /* count only hex digits */
+                for (; s < end; ++s) {
+                    c = (unsigned char)*s;
+                    if (!Py_ISXDIGIT(c))
+                        goto error;
                 }
+                goto error;
+            }
+            for (; digits--; ++s) {
+                c = (unsigned char)*s;
+                if (!Py_ISXDIGIT(c))
+                    goto error;
                 chr = (chr<<4) & ~0xF;
                 if (c >= '0' && c <= '9')
                     chr += c - '0';
@@ -5530,24 +5520,16 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                 else
                     chr += 10 + c - 'A';
             }
-            s += j;
             if (chr == 0xffffffff && PyErr_Occurred())
                 /* _decoding_error will have already written into the
                    target buffer. */
                 break;
         store:
             /* when we get here, chr is a 32-bit unicode character */
-            if (chr <= MAX_UNICODE) {
-                WRITECHAR(chr);
-            } else {
-                endinpos = s-starts;
-                if (unicode_decode_call_errorhandler_writer(
-                        errors, &errorHandler,
-                        "unicodeescape", "illegal Unicode character",
-                        &starts, &end, &startinpos, &endinpos, &exc, &s,
-                        &writer))
-                    goto onError;
-            }
+            message = "illegal Unicode character";
+            if (chr > MAX_UNICODE)
+                goto error;
+            WRITECHAR(chr);
             break;
 
             /* \N{name} */
@@ -5575,26 +5557,13 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
                         goto store;
                 }
             }
-            endinpos = s-starts;
-            if (unicode_decode_call_errorhandler_writer(
-                    errors, &errorHandler,
-                    "unicodeescape", message,
-                    &starts, &end, &startinpos, &endinpos, &exc, &s,
-                    &writer))
-                goto onError;
-            break;
+            goto error;
 
         default:
             if (s > end) {
                 message = "\\ at end of string";
                 s--;
-                endinpos = s-starts;
-                if (unicode_decode_call_errorhandler_writer(
-                        errors, &errorHandler,
-                        "unicodeescape", message,
-                        &starts, &end, &startinpos, &endinpos, &exc, &s,
-                        &writer))
-                    goto onError;
+                goto error;
             }
             else {
                 WRITECHAR('\\');
@@ -5602,8 +5571,17 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
             }
             break;
         }
-      nextByte:
-        ;
+        continue;
+
+      error:
+        endinpos = s-starts;
+        if (unicode_decode_call_errorhandler_writer(
+                errors, &errorHandler,
+                "unicodeescape", message,
+                &starts, &end, &startinpos, &endinpos, &exc, &s,
+                &writer))
+            goto onError;
+        continue;
     }
 #undef WRITECHAR
 
