@@ -164,6 +164,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12004: Fix an internal error in PyZipFile when writing an invalid
+  Python file.  Patch by Ben Morgan.
+
 - Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
   now fills the ``os.environ`` variable correctly.
 
