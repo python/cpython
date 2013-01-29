@@ -1604,7 +1604,7 @@ class PyZipFile(ZipFile):
                 print("Compiling", file)
             try:
                 py_compile.compile(file, doraise=True, optimize=optimize)
-            except py_compile.PyCompileError as error:
+            except py_compile.PyCompileError as err:
                 print(err.msg)
                 return False
             return True
