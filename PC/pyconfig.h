@@ -193,8 +193,10 @@ typedef _W64 int ssize_t;
 #define HAVE_SSIZE_T 1
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
-#ifdef _M_IX86
+#if defined(_M_IX86)
 #define COMPILER _Py_PASTE_VERSION("32 bit (Intel)")
+#elif defined(_M_ARM)
+#define COMPILER _Py_PASTE_VERSION("32 bit (ARM)")
 #else
 #define COMPILER _Py_PASTE_VERSION("32 bit (Unknown)")
 #endif
