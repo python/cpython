@@ -173,6 +173,9 @@ Library
 - Issue #1602133: on Mac OS X a shared library build (``--enable-shared``)
   now fills the ``os.environ`` variable correctly.
 
+- Issue #15505: `unittest.installHandler` no longer assumes SIGINT handler is
+  set to a callable object.
+
 - Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
   interface and support all mandatory methods and properties.
 
