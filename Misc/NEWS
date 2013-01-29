@@ -202,6 +202,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15505: `unittest.installHandler` no longer assumes SIGINT handler is
+  set to a callable object.
+
 - Issue #17051: Fix a memory leak in os.path.isdir() on Windows. Patch by
   Robert Xiao.
 
