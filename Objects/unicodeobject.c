@@ -7383,27 +7383,35 @@ Error:
                     goto onError;
                 }
 
-                if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1)
+                if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1) {
+                    Py_DECREF(x);
                     goto onError;
+                }
                 PyUnicode_WRITE(writer.kind, writer.data, writer.pos, value);
                 writer.pos++;
             }
             else if (PyUnicode_Check(x)) {
-                if (PyUnicode_READY(x) == -1)
+                if (PyUnicode_READY(x) == -1) {
+                    Py_DECREF(x);
                     goto onError;
+                }
                 if (PyUnicode_GET_LENGTH(x) == 1) {
                     Py_UCS4 value = PyUnicode_READ_CHAR(x, 0);
                     if (value == 0xFFFE)
                         goto Undefined;
-                    if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1)
+                    if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1) {
+                        Py_DECREF(x);
                         goto onError;
+                    }
                     PyUnicode_WRITE(writer.kind, writer.data, writer.pos, value);
                     writer.pos++;
                 }
                 else {
                     writer.overallocate = 1;
-                    if (_PyUnicodeWriter_WriteStr(&writer, x) == -1)
+                    if (_PyUnicodeWriter_WriteStr(&writer, x) == -1) {
+                        Py_DECREF(x);
                         goto onError;
+                    }
                 }
             }
             else {
