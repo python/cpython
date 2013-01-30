@@ -891,6 +891,9 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #17028: Allowed Python arguments to be supplied to the Windows 
+  launcher.
+
 - Issue #15539: Fix a number of bugs in Tools/scripts/pindent.py.  Now
   pindent.py works with a "with" statement.  pindent.py no longer produces
   improper indentation.  pindent.py now works with continued lines broken after
