@@ -383,7 +383,8 @@ From the Iterators list, about the types of these things.
 <type 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
 ['close', 'gi_code', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
->>> print i.next.__doc__
+>>> from test.test_support import HAVE_DOCSTRINGS
+>>> print(i.next.__doc__ if HAVE_DOCSTRINGS else 'x.next() -> the next value, or raise StopIteration')
 x.next() -> the next value, or raise StopIteration
 >>> iter(i) is i
 True
