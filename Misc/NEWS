@@ -202,6 +202,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4844: ZipFile now raises BadZipfile when opens a ZIP file with an
+  incomplete "End of Central Directory" record.  Original patch by Guilherme
+  Polo and Alan McIntyre.
+
 - Issue #15505: `unittest.installHandler` no longer assumes SIGINT handler is
   set to a callable object.
 

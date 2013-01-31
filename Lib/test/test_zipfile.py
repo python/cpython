@@ -760,6 +760,20 @@ class OtherTests(unittest.TestCase):
         chk = zipfile.is_zipfile(fp)
         self.assertTrue(not chk)
 
+    def test_damaged_zipfile(self):
+        """Check that zipfiles with missing bytes at the end raise BadZipFile."""
+        # - Create a valid zip file
+        fp = io.BytesIO()
+        with zipfile.ZipFile(fp, mode="w") as zipf:
+            zipf.writestr("foo.txt", b"O, for a Muse of Fire!")
+        zipfiledata = fp.getvalue()
+
+        # - Now create copies of it missing the last N bytes and make sure
+        #   a BadZipFile exception is raised when we try to open it
+        for N in range(len(zipfiledata)):
+            fp = io.BytesIO(zipfiledata[:N])
+            self.assertRaises(zipfile.BadZipfile, zipfile.ZipFile, fp)
+
     def test_is_zip_valid_file(self):
         """Check that is_zipfile() correctly identifies zip files."""
         # - passing a filename
