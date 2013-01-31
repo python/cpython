@@ -501,64 +501,11 @@ def get_config_vars(*args):
                 srcdir = os.path.join(base, _CONFIG_VARS['srcdir'])
                 _CONFIG_VARS['srcdir'] = os.path.normpath(srcdir)
 
+        # OS X platforms require special customization to handle
+        # multi-architecture, multi-os-version installers
         if sys.platform == 'darwin':
-            kernel_version = os.uname()[2] # Kernel version (8.4.3)
-            major_version = int(kernel_version.split('.')[0])
-
-            if major_version < 8:
-                # On Mac OS X before 10.4, check if -arch and -isysroot
-                # are in CFLAGS or LDFLAGS and remove them if they are.
-                # This is needed when building extensions on a 10.3 system
-                # using a universal build of python.
-                for key in ('LDFLAGS', 'BASECFLAGS',
-                        # a number of derived variables. These need to be
-                        # patched up as well.
-                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-                    flags = _CONFIG_VARS[key]
-                    flags = re.sub('-arch\s+\w+\s', ' ', flags)
-                    flags = re.sub('-isysroot [^ \t]*', ' ', flags)
-                    _CONFIG_VARS[key] = flags
-            else:
-                # Allow the user to override the architecture flags using
-                # an environment variable.
-                # NOTE: This name was introduced by Apple in OSX 10.5 and
-                # is used by several scripting languages distributed with
-                # that OS release.
-                if 'ARCHFLAGS' in os.environ:
-                    arch = os.environ['ARCHFLAGS']
-                    for key in ('LDFLAGS', 'BASECFLAGS',
-                        # a number of derived variables. These need to be
-                        # patched up as well.
-                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-
-                        flags = _CONFIG_VARS[key]
-                        flags = re.sub('-arch\s+\w+\s', ' ', flags)
-                        flags = flags + ' ' + arch
-                        _CONFIG_VARS[key] = flags
-
-                # If we're on OSX 10.5 or later and the user tries to
-                # compiles an extension using an SDK that is not present
-                # on the current machine it is better to not use an SDK
-                # than to fail.
-                #
-                # The major usecase for this is users using a Python.org
-                # binary installer  on OSX 10.6: that installer uses
-                # the 10.4u SDK, but that SDK is not installed by default
-                # when you install Xcode.
-                #
-                CFLAGS = _CONFIG_VARS.get('CFLAGS', '')
-                m = re.search('-isysroot\s+(\S+)', CFLAGS)
-                if m is not None:
-                    sdk = m.group(1)
-                    if not os.path.exists(sdk):
-                        for key in ('LDFLAGS', 'BASECFLAGS',
-                             # a number of derived variables. These need to be
-                             # patched up as well.
-                            'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-
-                            flags = _CONFIG_VARS[key]
-                            flags = re.sub('-isysroot\s+\S+(\s|$)', ' ', flags)
-                            _CONFIG_VARS[key] = flags
+            import _osx_support
+            _osx_support.customize_config_vars(_CONFIG_VARS)
 
     if args:
         vals = []
@@ -656,92 +603,10 @@ def get_platform():
         if m:
             release = m.group()
     elif osname[:6] == "darwin":
-        #
-        # For our purposes, we'll assume that the system version from
-        # distutils' perspective is what MACOSX_DEPLOYMENT_TARGET is set
-        # to. This makes the compatibility story a bit more sane because the
-        # machine is going to compile and link as if it were
-        # MACOSX_DEPLOYMENT_TARGET.
-        #
-        cfgvars = get_config_vars()
-        macver = cfgvars.get('MACOSX_DEPLOYMENT_TARGET')
-
-        if 1:
-            # Always calculate the release of the running machine,
-            # needed to determine if we can build fat binaries or not.
-
-            macrelease = macver
-            # Get the system version. Reading this plist is a documented
-            # way to get the system version (see the documentation for
-            # the Gestalt Manager)
-            try:
-                f = open('/System/Library/CoreServices/SystemVersion.plist')
-            except IOError:
-                # We're on a plain darwin box, fall back to the default
-                # behaviour.
-                pass
-            else:
-                try:
-                    m = re.search(
-                            r'<key>ProductUserVisibleVersion</key>\s*' +
-                            r'<string>(.*?)</string>', f.read())
-                    if m is not None:
-                        macrelease = '.'.join(m.group(1).split('.')[:2])
-                    # else: fall back to the default behaviour
-                finally:
-                    f.close()
-
-        if not macver:
-            macver = macrelease
-
-        if macver:
-            release = macver
-            osname = "macosx"
-
-            if (macrelease + '.') >= '10.4.' and \
-                    '-arch' in get_config_vars().get('CFLAGS', '').strip():
-                # The universal build will build fat binaries, but not on
-                # systems before 10.4
-                #
-                # Try to detect 4-way universal builds, those have machine-type
-                # 'universal' instead of 'fat'.
-
-                machine = 'fat'
-                cflags = get_config_vars().get('CFLAGS')
-
-                archs = re.findall('-arch\s+(\S+)', cflags)
-                archs = tuple(sorted(set(archs)))
-
-                if len(archs) == 1:
-                    machine = archs[0]
-                elif archs == ('i386', 'ppc'):
-                    machine = 'fat'
-                elif archs == ('i386', 'x86_64'):
-                    machine = 'intel'
-                elif archs == ('i386', 'ppc', 'x86_64'):
-                    machine = 'fat3'
-                elif archs == ('ppc64', 'x86_64'):
-                    machine = 'fat64'
-                elif archs == ('i386', 'ppc', 'ppc64', 'x86_64'):
-                    machine = 'universal'
-                else:
-                    raise ValueError(
-                       "Don't know machine value for archs=%r"%(archs,))
-
-            elif machine == 'i386':
-                # On OSX the machine type returned by uname is always the
-                # 32-bit variant, even if the executable architecture is
-                # the 64-bit variant
-                if sys.maxsize >= 2**32:
-                    machine = 'x86_64'
-
-            elif machine in ('PowerPC', 'Power_Macintosh'):
-                # Pick a sane name for the PPC architecture.
-                # See 'i386' case
-                if sys.maxsize >= 2**32:
-                    machine = 'ppc64'
-                else:
-                    machine = 'ppc'
+        import _osx_support
+        osname, release, machine = _osx_support.get_platform_osx(
+                                            get_config_vars(),
+                                            osname, release, machine)
 
     return "%s-%s-%s" % (osname, release, machine)
 

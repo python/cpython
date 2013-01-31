@@ -15,6 +15,7 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        _get_default_scheme, _expand_vars,
                        get_scheme_names, get_config_var, _main)
+import _osx_support
 
 class TestSysConfig(unittest.TestCase):
 
@@ -135,8 +136,7 @@ class TestSysConfig(unittest.TestCase):
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'PowerPC'))
-
-
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
@@ -151,12 +151,11 @@ class TestSysConfig(unittest.TestCase):
         finally:
             sys.maxsize = maxint
 
-
         self._set_uname(('Darwin', 'macziade', '8.11.1',
                    ('Darwin Kernel Version 8.11.1: '
                     'Wed Oct 10 18:23:28 PDT 2007; '
                     'root:xnu-792.25.20~1/RELEASE_I386'), 'i386'))
-        get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.3'
 
         get_config_vars()['CFLAGS'] = ('-fno-strict-aliasing -DNDEBUG -g '
@@ -171,6 +170,7 @@ class TestSysConfig(unittest.TestCase):
             sys.maxsize = maxint
 
         # macbook with fat binaries (fat, universal or fat64)
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = '10.4'
         get_config_vars()['CFLAGS'] = ('-arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
@@ -179,6 +179,7 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertEqual(get_platform(), 'macosx-10.4-fat')
 
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
@@ -186,18 +187,21 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertEqual(get_platform(), 'macosx-10.4-intel')
 
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
         self.assertEqual(get_platform(), 'macosx-10.4-fat3')
 
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['CFLAGS'] = ('-arch ppc64 -arch x86_64 -arch ppc -arch i386 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
                                        '-dynamic -DNDEBUG -g -O3')
         self.assertEqual(get_platform(), 'macosx-10.4-universal')
 
+        _osx_support._remove_original_values(get_config_vars())
         get_config_vars()['CFLAGS'] = ('-arch x86_64 -arch ppc64 -isysroot '
                                        '/Developer/SDKs/MacOSX10.4u.sdk  '
                                        '-fno-strict-aliasing -fno-common '
@@ -206,12 +210,13 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(get_platform(), 'macosx-10.4-fat64')
 
         for arch in ('ppc', 'i386', 'x86_64', 'ppc64'):
+            _osx_support._remove_original_values(get_config_vars())
             get_config_vars()['CFLAGS'] = ('-arch %s -isysroot '
                                            '/Developer/SDKs/MacOSX10.4u.sdk  '
                                            '-fno-strict-aliasing -fno-common '
-                                           '-dynamic -DNDEBUG -g -O3'%(arch,))
+                                           '-dynamic -DNDEBUG -g -O3' % arch)
 
-            self.assertEqual(get_platform(), 'macosx-10.4-%s'%(arch,))
+            self.assertEqual(get_platform(), 'macosx-10.4-%s' % arch)
 
         # linux debian sarge
         os.name = 'posix'
