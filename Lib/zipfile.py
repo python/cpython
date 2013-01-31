@@ -196,6 +196,8 @@ def _EndRecData64(fpin, offset, endrec):
         return endrec
 
     data = fpin.read(sizeEndCentDir64Locator)
+    if len(data) != sizeEndCentDir64Locator:
+        return endrec
     sig, diskno, reloff, disks = struct.unpack(structEndArchive64Locator, data)
     if sig != stringEndArchive64Locator:
         return endrec
@@ -206,6 +208,8 @@ def _EndRecData64(fpin, offset, endrec):
     # Assume no 'zip64 extensible data'
     fpin.seek(offset - sizeEndCentDir64Locator - sizeEndCentDir64, 2)
     data = fpin.read(sizeEndCentDir64)
+    if len(data) != sizeEndCentDir64:
+        return endrec
     sig, sz, create_version, read_version, disk_num, disk_dir, \
             dircount, dircount2, dirsize, diroffset = \
             struct.unpack(structEndArchive64, data)
@@ -241,7 +245,9 @@ def _EndRecData(fpin):
     except IOError:
         return None
     data = fpin.read()
-    if data[0:4] == stringEndArchive and data[-2:] == b"\000\000":
+    if (len(data) == sizeEndCentDir and
+        data[0:4] == stringEndArchive and
+        data[-2:] == b"\000\000"):
         # the signature is correct and there's no comment, unpack structure
         endrec = struct.unpack(structEndArchive, data)
         endrec=list(endrec)
@@ -265,6 +271,9 @@ def _EndRecData(fpin):
     if start >= 0:
         # found the magic number; attempt to unpack and interpret
         recData = data[start:start+sizeEndCentDir]
+        if len(recData) != sizeEndCentDir:
+            # Zip file is corrupted.
+            return None
         endrec = list(struct.unpack(structEndArchive, recData))
         commentSize = endrec[_ECD_COMMENT_SIZE] #as claimed by the zip file
         comment = data[start+sizeEndCentDir:start+sizeEndCentDir+commentSize]
@@ -276,7 +285,7 @@ def _EndRecData(fpin):
                              endrec)
 
     # Unable to find a valid end of central directory structure
-    return
+    return None
 
 
 class ZipInfo (object):
@@ -978,9 +987,11 @@ class ZipFile:
         total = 0
         while total < size_cd:
             centdir = fp.read(sizeCentralDir)
-            if centdir[0:4] != stringCentralDir:
-                raise BadZipFile("Bad magic number for central directory")
+            if len(centdir) != sizeCentralDir:
+                raise BadZipFile("Truncated central directory")
             centdir = struct.unpack(structCentralDir, centdir)
+            if centdir[_CD_SIGNATURE] != stringCentralDir:
+                raise BadZipFile("Bad magic number for central directory")
             if self.debug > 2:
                 print(centdir)
             filename = fp.read(centdir[_CD_FILENAME_LENGTH])
@@ -1123,10 +1134,12 @@ class ZipFile:
 
             # Skip the file header:
             fheader = zef_file.read(sizeFileHeader)
-            if fheader[0:4] != stringFileHeader:
+            if len(fheader) != sizeFileHeader:
+                raise BadZipFile("Truncated file header")
+            fheader = struct.unpack(structFileHeader, fheader)
+            if fheader[_FH_SIGNATURE] != stringFileHeader:
                 raise BadZipFile("Bad magic number for file header")
 
-            fheader = struct.unpack(structFileHeader, fheader)
             fname = zef_file.read(fheader[_FH_FILENAME_LENGTH])
             if fheader[_FH_EXTRA_FIELD_LENGTH]:
                 zef_file.read(fheader[_FH_EXTRA_FIELD_LENGTH])
