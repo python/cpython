@@ -116,6 +116,10 @@ if os.name == "nt" and "\\pc\\v" in _PROJECT_BASE[-10:].lower():
 if os.name == "nt" and "\\pcbuild\\amd64" in _PROJECT_BASE[-14:].lower():
     _PROJECT_BASE = _safe_realpath(os.path.join(_PROJECT_BASE, pardir, pardir))
 
+# set for cross builds
+if "_PYTHON_PROJECT_BASE" in os.environ:
+    # the build directory for posix builds
+    _PROJECT_BASE = os.path.normpath(os.path.abspath("."))
 def is_python_build():
     for fn in ("Setup.dist", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
@@ -506,6 +510,10 @@ def get_platform():
         if look == 'itanium':
             return 'win-ia64'
         return sys.platform
+
+    # Set for cross builds explicitly
+    if "_PYTHON_HOST_PLATFORM" in os.environ:
+        return os.environ["_PYTHON_HOST_PLATFORM"]
 
     if os.name != "posix" or not hasattr(os, 'uname'):
         # XXX what about the architecture? NT is Intel or Alpha,
