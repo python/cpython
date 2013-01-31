@@ -37,6 +37,11 @@ if os.name == "nt" and "\\pcbuild\\amd64" in project_base[-14:].lower():
     project_base = os.path.abspath(os.path.join(project_base, os.path.pardir,
                                                 os.path.pardir))
 
+# set for cross builds
+if "_PYTHON_PROJECT_BASE" in os.environ:
+    # this is the build directory, at least for posix
+    project_base = os.path.normpath(os.environ["_PYTHON_PROJECT_BASE"])
+
 # python_build: (Boolean) if true, we're either building Python or
 # building an extension with an un-installed Python, so we use
 # different (hard-wired) directories.
@@ -230,7 +235,7 @@ def get_config_h_filename():
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
     if python_build:
-        return os.path.join(os.path.dirname(sys.executable), "Makefile")
+        return os.path.join(project_base, "Makefile")
     lib_dir = get_python_lib(plat_specific=1, standard_lib=1)
     return os.path.join(lib_dir, "config", "Makefile")
 
