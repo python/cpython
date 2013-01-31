@@ -258,11 +258,21 @@ class CalendarTestCase(unittest.TestCase):
         # (it is still not thread-safe though)
         old_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         try:
-            calendar.LocaleTextCalendar(locale='').formatmonthname(2010, 10, 10)
+            cal = calendar.LocaleTextCalendar(locale='')
+            local_weekday = cal.formatweekday(1, 10)
+            local_month = cal.formatmonthname(2010, 10, 10)
         except locale.Error:
             # cannot set the system default locale -- skip rest of test
-            return
-        calendar.LocaleHTMLCalendar(locale='').formatmonthname(2010, 10)
+            raise unittest.SkipTest('cannot set the system default locale')
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
+        self.assertEqual(len(local_weekday), 10)
+        self.assertGreaterEqual(len(local_month), 10)
+        cal = calendar.LocaleHTMLCalendar(locale='')
+        local_weekday = cal.formatweekday(1)
+        local_month = cal.formatmonthname(2010, 10)
+        self.assertIsInstance(local_weekday, str)
+        self.assertIsInstance(local_month, str)
         new_october = calendar.TextCalendar().formatmonthname(2010, 10, 10)
         self.assertEqual(old_october, new_october)
 
