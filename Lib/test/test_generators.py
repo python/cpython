@@ -383,7 +383,8 @@ From the Iterators list, about the types of these things.
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
 ['close', 'gi_code', 'gi_frame', 'gi_running', 'send', 'throw']
->>> print(i.__next__.__doc__)
+>>> from test.support import HAVE_DOCSTRINGS
+>>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'x.__next__() <==> next(x)')
 x.__next__() <==> next(x)
 >>> iter(i) is i
 True
