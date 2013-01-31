@@ -164,6 +164,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #4844: ZipFile now raises BadZipFile when opens a ZIP file with an
+  incomplete "End of Central Directory" record.  Original patch by Guilherme
+  Polo and Alan McIntyre.
+
 - Issue #17071: Signature.bind() now works when one of the keyword arguments
   is named ``self``.
 
