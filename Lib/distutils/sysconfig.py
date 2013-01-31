@@ -146,7 +146,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
             "I don't know where Python installs its library "
             "on platform '%s'" % os.name)
 
-_USE_CLANG = None
+
 
 def customize_compiler(compiler):
     """Do any platform-specific customization of a CCompiler instance.
@@ -155,42 +155,28 @@ def customize_compiler(compiler):
     varies across Unices and is stored in Python's Makefile.
     """
     if compiler.compiler_type == "unix":
+        if sys.platform == "darwin":
+            # Perform first-time customization of compiler-related
+            # config vars on OS X now that we know we need a compiler.
+            # This is primarily to support Pythons from binary
+            # installers.  The kind and paths to build tools on
+            # the user system may vary significantly from the system
+            # that Python itself was built on.  Also the user OS
+            # version and build tools may not support the same set
+            # of CPU architectures for universal builds.
+            global _config_vars
+            if not _config_vars.get('CUSTOMIZED_OSX_COMPILER', ''):
+                import _osx_support
+                _osx_support.customize_compiler(_config_vars)
+                _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
+
         (cc, cxx, opt, cflags, ccshared, ldshared, so_ext, ar, ar_flags) = \
             get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
                             'CCSHARED', 'LDSHARED', 'SO', 'AR', 'ARFLAGS')
 
         newcc = None
         if 'CC' in os.environ:
-            newcc = os.environ['CC']
-        elif sys.platform == 'darwin' and cc == 'gcc-4.2':
-            # Issue #13590:
-            #       Since Apple removed gcc-4.2 in Xcode 4.2, we can no
-            #       longer assume it is available for extension module builds.
-            #       If Python was built with gcc-4.2, check first to see if
-            #       it is available on this system; if not, try to use clang
-            #       instead unless the caller explicitly set CC.
-            global _USE_CLANG
-            if _USE_CLANG is None:
-                from distutils import log
-                from subprocess import Popen, PIPE
-                p = Popen("! type gcc-4.2 && type clang && exit 2",
-                                shell=True, stdout=PIPE, stderr=PIPE)
-                p.wait()
-                if p.returncode == 2:
-                    _USE_CLANG = True
-                    log.warn("gcc-4.2 not found, using clang instead")
-                else:
-                    _USE_CLANG = False
-            if _USE_CLANG:
-                newcc = 'clang'
-        if newcc:
-            # On OS X, if CC is overridden, use that as the default
-            #       command for LDSHARED as well
-            if (sys.platform == 'darwin'
-                    and 'LDSHARED' not in os.environ
-                    and ldshared.startswith(cc)):
-                ldshared = newcc + ldshared[len(cc):]
-            cc = newcc
+            cc = os.environ['CC']
         if 'CXX' in os.environ:
             cxx = os.environ['CXX']
         if 'LDSHARED' in os.environ:
@@ -543,43 +529,11 @@ def get_config_vars(*args):
                 srcdir = os.path.join(base, _config_vars['srcdir'])
                 _config_vars['srcdir'] = os.path.normpath(srcdir)
 
+        # OS X platforms require special customization to handle
+        # multi-architecture, multi-os-version installers
         if sys.platform == 'darwin':
-            kernel_version = os.uname()[2] # Kernel version (8.4.3)
-            major_version = int(kernel_version.split('.')[0])
-
-            if major_version < 8:
-                # On Mac OS X before 10.4, check if -arch and -isysroot
-                # are in CFLAGS or LDFLAGS and remove them if they are.
-                # This is needed when building extensions on a 10.3 system
-                # using a universal build of python.
-                for key in ('LDFLAGS', 'BASECFLAGS',
-                        # a number of derived variables. These need to be
-                        # patched up as well.
-                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-                    flags = _config_vars[key]
-                    flags = re.sub('-arch\s+\w+\s', ' ', flags, re.ASCII)
-                    flags = re.sub('-isysroot [^ \t]*', ' ', flags)
-                    _config_vars[key] = flags
-
-            else:
-
-                # Allow the user to override the architecture flags using
-                # an environment variable.
-                # NOTE: This name was introduced by Apple in OSX 10.5 and
-                # is used by several scripting languages distributed with
-                # that OS release.
-
-                if 'ARCHFLAGS' in os.environ:
-                    arch = os.environ['ARCHFLAGS']
-                    for key in ('LDFLAGS', 'BASECFLAGS',
-                        # a number of derived variables. These need to be
-                        # patched up as well.
-                        'CFLAGS', 'PY_CFLAGS', 'BLDSHARED'):
-
-                        flags = _config_vars[key]
-                        flags = re.sub('-arch\s+\w+\s', ' ', flags)
-                        flags = flags + ' ' + arch
-                        _config_vars[key] = flags
+            import _osx_support
+            _osx_support.customize_config_vars(_config_vars)
 
     if args:
         vals = []
