@@ -221,7 +221,8 @@ Check that generator attributes are present
     >>> set(attr for attr in dir(g) if not attr.startswith('__')) >= expected
     True
 
-    >>> print(g.__next__.__doc__)
+    >>> from test.support import HAVE_DOCSTRINGS
+    >>> print(g.__next__.__doc__ if HAVE_DOCSTRINGS else 'x.__next__() <==> next(x)')
     x.__next__() <==> next(x)
     >>> import types
     >>> isinstance(g, types.GeneratorType)
