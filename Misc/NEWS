@@ -754,6 +754,9 @@ Tests
 Build
 -----
 
+- Issue #17086: Backport the patches from the 3.3 branch to cross-build
+  the package.
+
 - Issue #3754: fix typo in pthread AC_CACHE_VAL.
 
 - Issue #17029: Let h2py search the multiarch system include directory.
