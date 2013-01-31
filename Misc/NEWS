@@ -679,6 +679,21 @@ Extension Modules
 - Issue #16012: Fix a regression in pyexpat. The parser's UseForeignDTD()
   method doesn't require an argument again.
 
+- Issue #13590: OS X Xcode 4 - improve support for universal extension modules
+  In particular, fix extension module build failures when trying to use
+  32-bit-only installer Pythons on systems with Xcode 4 (currently
+  OS X 10.8, 10.7, and optionally 10.6).
+  * Backport 3.3.0 fixes to 2.7 branch (for release in 2.7.4)
+  * Since Xcode 4 removes ppc support, extension module builds now
+    check for ppc compiler support and by default remove ppc and
+    ppc64 archs when they are not available.
+  * Extension module builds now revert to using system installed
+    headers and libs (/usr and /System/Library) if the SDK used
+    to build the interpreter is not installed or has moved.
+  * Try to avoid building extension modules with deprecated
+    and problematic Apple llvm-gcc compiler.  If original compiler
+    is not available, use clang instead by default.
+
 Tests
 -----
 
