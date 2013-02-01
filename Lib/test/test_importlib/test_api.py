@@ -4,6 +4,7 @@ import importlib
 from importlib import machinery
 import sys
 from test import support
+import types
 import unittest
 
 
@@ -175,12 +176,22 @@ class FrozenImportlibTests(unittest.TestCase):
                                     machinery.FrozenImporter))
 
 
+class StartupTests(unittest.TestCase):
+
+    def test_everyone_has___loader__(self):
+        # Issue #17098: all modules should have __loader__ defined.
+        for name, module in sys.modules.items():
+            if isinstance(module, types.ModuleType):
+                self.assertTrue(hasattr(module, '__loader__'),
+                        '{!r} lacks a __loader__ attribute'.format(name))
+
 def test_main():
     from test.support import run_unittest
     run_unittest(ImportModuleTests,
                  FindLoaderTests,
                  InvalidateCacheTests,
-                 FrozenImportlibTests)
+                 FrozenImportlibTests,
+                 StartupTests)
 
 
 if __name__ == '__main__':
