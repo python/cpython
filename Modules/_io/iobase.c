@@ -669,7 +669,10 @@ iobase_writelines(PyObject *self, PyObject *args)
                 break; /* Stop Iteration */
         }
 
-        res = PyObject_CallMethodObjArgs(self, _PyIO_str_write, line, NULL);
+        res = NULL;
+        do {
+            res = PyObject_CallMethodObjArgs(self, _PyIO_str_write, line, NULL);
+        } while (res == NULL && _PyIO_trap_eintr());
         Py_DECREF(line);
         if (res == NULL) {
             Py_DECREF(iter);
