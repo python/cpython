@@ -679,8 +679,8 @@ Library
 Extension Modules
 -----------------
 
-- Issue #12268: The io module file object writelines() methods no longer
-  abort early when one of its write system calls is interrupted (EINTR).
+- Issue #12268: The io module file object write methods no longer abort early
+  when a write system calls is interrupted (EINTR).
 
 - Fix the leak of a dict in the time module when used in an embedded
   interpreter that is repeatedly initialized and shutdown and reinitialized.
