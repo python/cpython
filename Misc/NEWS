@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17098: All modules now have __loader__ set even if they pre-exist the
+  bootstrapping of importlib.
+
 - Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
 
 - Issue #13886: Fix input() to not strip out input bytes that cannot be decoded
