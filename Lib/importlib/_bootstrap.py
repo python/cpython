@@ -1703,9 +1703,11 @@ def _setup(sys_module, _imp_module):
     else:
         BYTECODE_SUFFIXES = DEBUG_BYTECODE_SUFFIXES
 
-    for module in (_imp, sys):
-        if not hasattr(module, '__loader__'):
-            module.__loader__ = BuiltinImporter
+    module_type = type(sys)
+    for module in sys.modules.values():
+        if isinstance(module, module_type):
+            if not hasattr(module, '__loader__'):
+                module.__loader__ = BuiltinImporter
 
     self_module = sys.modules[__name__]
     for builtin_name in ('_io', '_warnings', 'builtins', 'marshal'):
