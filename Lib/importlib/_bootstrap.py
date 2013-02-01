@@ -1724,10 +1724,13 @@ def _setup(sys_module, _imp_module):
         BYTECODE_SUFFIXES = DEBUG_BYTECODE_SUFFIXES
 
     module_type = type(sys)
-    for module in sys.modules.values():
+    for name, module in sys.modules.items():
         if isinstance(module, module_type):
             if not hasattr(module, '__loader__'):
-                module.__loader__ = BuiltinImporter
+                if name in sys.builtin_module_names:
+                    module.__loader__ = BuiltinImporter
+                elif _imp.is_frozen(name):
+                    module.__loader__ = FrozenImporter
 
     self_module = sys.modules[__name__]
     for builtin_name in ('_io', '_warnings', 'builtins', 'marshal'):
