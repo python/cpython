@@ -789,6 +789,8 @@ Build
 
 - Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
 
+- Issue #16256: OS X installer now sets correct permissions for doc directory.
+
 - Issue #8767: Restore building with --disable-unicode.
   Patch by Stefano Taschini.
 
