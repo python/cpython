@@ -16,7 +16,7 @@ fi
 
 # make share/doc link in framework for command line users
 if [ -d "${SHARE_DIR}" ]; then
-    mkdir -p "${SHARE_DOCDIR}"
+    mkdir -m 775 -p "${SHARE_DOCDIR}"
     # make relative link to html doc directory
     ln -fhs "${SHARE_DOCDIR_TO_FWK}/${FWK_DOCDIR_SUBPATH}" "${SHARE_DOCDIR}/html"
 fi
