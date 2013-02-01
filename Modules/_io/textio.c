@@ -1247,8 +1247,11 @@ _textiowrapper_writeflush(textio *self)
     Py_DECREF(pending);
     if (b == NULL)
         return -1;
-    ret = PyObject_CallMethodObjArgs(self->buffer,
-                                     _PyIO_str_write, b, NULL);
+    ret = NULL;
+    do {
+        ret = PyObject_CallMethodObjArgs(self->buffer,
+                                         _PyIO_str_write, b, NULL);
+    } while (ret == NULL && _PyIO_trap_eintr());
     Py_DECREF(b);
     if (ret == NULL)
         return -1;
