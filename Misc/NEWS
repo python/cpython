@@ -239,6 +239,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6972: The zipfile module no longer overwrites files outside of
+  its destination path when extracting malicious zip files.
+
 - Issue #4844: ZipFile now raises BadZipFile when opens a ZIP file with an
   incomplete "End of Central Directory" record.  Original patch by Guilherme
   Polo and Alan McIntyre.
@@ -711,6 +714,12 @@ Library
   3.2. The `hashlib` module has four additional hash algorithms: `sha3_224`,
   `sha3_256`, `sha3_384` and `sha3_512`. As part of the patch some common
   code was moved from _hashopenssl.c to hashlib.h.
+
+Extension Modules
+-----------------
+
+- Issue #12268: The io module file object write methods no longer abort early
+  when one of its write system calls is interrupted (EINTR).
 
 Tests
 -----
