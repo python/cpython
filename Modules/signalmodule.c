@@ -1367,9 +1367,8 @@ PyErr_SetInterrupt(void)
 void
 PyOS_InitInterrupts(void)
 {
-    PyObject *m = PyInit_signal();
+    PyObject *m = PyImport_ImportModule("signal");
     if (m) {
-        _PyImport_FixupBuiltin(m, "signal");
         Py_DECREF(m);
     }
 }
