@@ -1313,6 +1313,8 @@ Build
 
 - Issue #14018: Fix OS X Tcl/Tk framework checking when using OS X SDKs.
 
+- Issue #16256: OS X installer now sets correct permissions for doc directory.
+
 - Issue #15431: Add _freeze_importlib project to regenerate importlib.h on
   Windows. Patch by Kristján Valur Jónsson.
 
