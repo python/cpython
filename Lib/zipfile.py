@@ -1229,17 +1229,22 @@ class ZipFile:
         """
         # build the destination pathname, replacing
         # forward slashes to platform specific separators.
-        # Strip trailing path separator, unless it represents the root.
-        if (targetpath[-1:] in (os.path.sep, os.path.altsep)
-            and len(os.path.splitdrive(targetpath)[1]) > 1):
-            targetpath = targetpath[:-1]
+        arcname = member.filename.replace('/', os.path.sep)
 
-        # don't include leading "/" from file name if present
-        if member.filename[0] == '/':
-            targetpath = os.path.join(targetpath, member.filename[1:])
-        else:
-            targetpath = os.path.join(targetpath, member.filename)
+        if os.path.altsep:
+            arcname = arcname.replace(os.path.altsep, os.path.sep)
+        # interpret absolute pathname as relative, remove drive letter or
+        # UNC path, redundant separators, "." and ".." components.
+        arcname = os.path.splitdrive(arcname)[1]
+        arcname = os.path.sep.join(x for x in arcname.split(os.path.sep)
+                    if x not in ('', os.path.curdir, os.path.pardir))
+        # filter illegal characters on Windows
+        if os.path.sep == '\\':
+            illegal = ':<>|"?*'
+            table = str.maketrans(illegal, '_' * len(illegal))
+            arcname = arcname.translate(table)
 
+        targetpath = os.path.join(targetpath, arcname)
         targetpath = os.path.normpath(targetpath)
 
         # Create all upper directories if necessary.
