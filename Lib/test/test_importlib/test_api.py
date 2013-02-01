@@ -184,6 +184,12 @@ class StartupTests(unittest.TestCase):
             if isinstance(module, types.ModuleType):
                 self.assertTrue(hasattr(module, '__loader__'),
                         '{!r} lacks a __loader__ attribute'.format(name))
+                if name in sys.builtin_module_names:
+                    self.assertEqual(importlib.machinery.BuiltinImporter,
+                                     module.__loader__)
+                elif imp.is_frozen(name):
+                    self.assertEqual(importlib.machinery.FrozenImporter,
+                                     module.__loader__)
 
 def test_main():
     from test.support import run_unittest
