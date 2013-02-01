@@ -26,7 +26,7 @@ FIXEDTEST_SIZE = 1000
 
 SMALL_TEST_DATA = [('_ziptest1', '1q2w3e4r5t'),
                    ('ziptest2dir/_ziptest2', 'qawsedrftg'),
-                   ('/ziptest2dir/ziptest3dir/_ziptest3', 'azsxdcfvgb'),
+                   ('ziptest2dir/ziptest3dir/_ziptest3', 'azsxdcfvgb'),
                    ('ziptest2dir/ziptest3dir/ziptest4dir/_ziptest3', '6y7u8i9o0p')]
 
 
@@ -391,10 +391,7 @@ class TestsWithSourceFile(unittest.TestCase):
                 writtenfile = zipfp.extract(fpath)
 
                 # make sure it was written to the right place
-                if os.path.isabs(fpath):
-                    correctfile = os.path.join(os.getcwd(), fpath[1:])
-                else:
-                    correctfile = os.path.join(os.getcwd(), fpath)
+                correctfile = os.path.join(os.getcwd(), fpath)
                 correctfile = os.path.normpath(correctfile)
 
                 self.assertEqual(writtenfile, correctfile)
@@ -414,16 +411,87 @@ class TestsWithSourceFile(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             zipfp.extractall()
             for fpath, fdata in SMALL_TEST_DATA:
-                if os.path.isabs(fpath):
-                    outfile = os.path.join(os.getcwd(), fpath[1:])
-                else:
-                    outfile = os.path.join(os.getcwd(), fpath)
+                outfile = os.path.join(os.getcwd(), fpath)
 
                 self.assertEqual(fdata, open(outfile, "rb").read())
                 os.remove(outfile)
 
         # remove the test file subdirectories
         shutil.rmtree(os.path.join(os.getcwd(), 'ziptest2dir'))
+
+    def check_file(self, filename, content):
+        self.assertTrue(os.path.isfile(filename))
+        with open(filename, 'rb') as f:
+            self.assertEqual(f.read(), content)
+
+    def test_extract_hackers_arcnames(self):
+        hacknames = [
+            ('../foo/bar', 'foo/bar'),
+            ('foo/../bar', 'foo/bar'),
+            ('foo/../../bar', 'foo/bar'),
+            ('foo/bar/..', 'foo/bar'),
+            ('./../foo/bar', 'foo/bar'),
+            ('/foo/bar', 'foo/bar'),
+            ('/foo/../bar', 'foo/bar'),
+            ('/foo/../../bar', 'foo/bar'),
+            ('//foo/bar', 'foo/bar'),
+            ('../../foo../../ba..r', 'foo../ba..r'),
+        ]
+        if os.path.sep == '\\':
+            hacknames.extend([
+                (r'..\foo\bar', 'foo/bar'),
+                (r'..\/foo\/bar', 'foo/bar'),
+                (r'foo/\..\/bar', 'foo/bar'),
+                (r'foo\/../\bar', 'foo/bar'),
+                (r'C:foo/bar', 'foo/bar'),
+                (r'C:/foo/bar', 'foo/bar'),
+                (r'C://foo/bar', 'foo/bar'),
+                (r'C:\foo\bar', 'foo/bar'),
+                (r'//conky/mountpoint/foo/bar', 'foo/bar'),
+                (r'\\conky\mountpoint\foo\bar', 'foo/bar'),
+                (r'///conky/mountpoint/foo/bar', 'conky/mountpoint/foo/bar'),
+                (r'\\\conky\mountpoint\foo\bar', 'conky/mountpoint/foo/bar'),
+                (r'//conky//mountpoint/foo/bar', 'conky/mountpoint/foo/bar'),
+                (r'\\conky\\mountpoint\foo\bar', 'conky/mountpoint/foo/bar'),
+                (r'//?/C:/foo/bar', 'foo/bar'),
+                (r'\\?\C:\foo\bar', 'foo/bar'),
+                (r'C:/../C:/foo/bar', 'C_/foo/bar'),
+                (r'a:b\c<d>e|f"g?h*i', 'b/c_d_e_f_g_h_i'),
+            ])
+
+        for arcname, fixedname in hacknames:
+            content = b'foobar' + arcname.encode()
+            with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zipfp:
+                zipfp.writestr(arcname, content)
+
+            targetpath = os.path.join('target', 'subdir', 'subsub')
+            correctfile = os.path.join(targetpath, *fixedname.split('/'))
+
+            with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
+                writtenfile = zipfp.extract(arcname, targetpath)
+                self.assertEqual(writtenfile, correctfile)
+            self.check_file(correctfile, content)
+            shutil.rmtree('target')
+
+            with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
+                zipfp.extractall(targetpath)
+            self.check_file(correctfile, content)
+            shutil.rmtree('target')
+
+            correctfile = os.path.join(os.getcwd(), *fixedname.split('/'))
+
+            with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
+                writtenfile = zipfp.extract(arcname)
+                self.assertEqual(writtenfile, correctfile)
+            self.check_file(correctfile, content)
+            shutil.rmtree(fixedname.split('/')[0])
+
+            with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
+                zipfp.extractall()
+            self.check_file(correctfile, content)
+            shutil.rmtree(fixedname.split('/')[0])
+
+            os.remove(TESTFN2)
 
     def test_writestr_compression(self):
         zipfp = zipfile.ZipFile(TESTFN2, "w")
