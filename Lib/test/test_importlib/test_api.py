@@ -1,6 +1,7 @@
 from . import util
 import imp
 import importlib
+from importlib import _bootstrap
 from importlib import machinery
 import sys
 from test import support
@@ -184,6 +185,14 @@ class StartupTests(unittest.TestCase):
             if isinstance(module, types.ModuleType):
                 self.assertTrue(hasattr(module, '__loader__'),
                         '{!r} lacks a __loader__ attribute'.format(name))
+                if name in sys.builtin_module_names:
+                    self.assertIn(module.__loader__,
+                            (importlib.machinery.BuiltinImporter,
+                             importlib._bootstrap.BuiltinImporter))
+                elif imp.is_frozen(name):
+                    self.assertIn(module.__loader__,
+                            (importlib.machinery.FrozenImporter,
+                             importlib._bootstrap.FrozenImporter))
 
 
 if __name__ == '__main__':
