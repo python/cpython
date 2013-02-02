@@ -51,6 +51,8 @@
 	<string>%VERSION%</string>
 	<key>CFBundleVersion</key>
 	<string>%VERSION%</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 <!--
 	<key>LSMinimumSystemVersionByArchitecture</key>
 	<dict>
