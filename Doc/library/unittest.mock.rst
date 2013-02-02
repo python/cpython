@@ -264,7 +264,6 @@ the `new_callable` argument to `patch`.
             <Mock name='mock.method()' id='...'>
             >>> mock.method.assert_called_with(1, 2, 3, test='wow')
 
-
     .. method:: assert_called_once_with(*args, **kwargs)
 
        Assert that the mock was called exactly once and with the specified
@@ -684,6 +683,27 @@ have to create a dictionary and unpack it using `**`:
     Traceback (most recent call last):
       ...
     KeyError
+
+A callable mock which was created with a *spec* (or a *spec_set*) will
+introspect the specification object's signature when matching calls to
+the mock.  Therefore, it can match the actual call's arguments regardless
+of whether they were passed positionally or by name::
+
+   >>> def f(a, b, c): pass
+   ...
+   >>> mock = Mock(spec=f)
+   >>> mock(1, 2, c=3)
+   <Mock name='mock()' id='140161580456576'>
+   >>> mock.assert_called_with(1, 2, 3)
+   >>> mock.assert_called_with(a=1, b=2, c=3)
+
+This applies to :meth:`~Mock.assert_called_with`,
+:meth:`~Mock.assert_called_once_with`, :meth:`~Mock.assert_has_calls` and
+:meth:`~Mock.assert_any_call`.  When :ref:`auto-speccing`, it will also
+apply to method calls on the mock object.
+
+   .. versionchanged:: 3.4
+      Added signature introspection on specced and autospecced mock objects.
 
 
 .. class:: PropertyMock(*args, **kwargs)

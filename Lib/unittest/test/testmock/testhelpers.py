@@ -337,9 +337,10 @@ class SpecSignatureTest(unittest.TestCase):
 
 
     def test_basic(self):
-        for spec in (SomeClass, SomeClass()):
-            mock = create_autospec(spec)
-            self._check_someclass_mock(mock)
+        mock = create_autospec(SomeClass)
+        self._check_someclass_mock(mock)
+        mock = create_autospec(SomeClass())
+        self._check_someclass_mock(mock)
 
 
     def test_create_autospec_return_value(self):
@@ -576,10 +577,10 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_spec_inheritance_for_classes(self):
         class Foo(object):
-            def a(self):
+            def a(self, x):
                 pass
             class Bar(object):
-                def f(self):
+                def f(self, y):
                     pass
 
         class_mock = create_autospec(Foo)
@@ -587,26 +588,30 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertIsNot(class_mock, class_mock())
 
         for this_mock in class_mock, class_mock():
-            this_mock.a()
-            this_mock.a.assert_called_with()
-            self.assertRaises(TypeError, this_mock.a, 'foo')
+            this_mock.a(x=5)
+            this_mock.a.assert_called_with(x=5)
+            this_mock.a.assert_called_with(5)
+            self.assertRaises(TypeError, this_mock.a, 'foo', 'bar')
             self.assertRaises(AttributeError, getattr, this_mock, 'b')
 
         instance_mock = create_autospec(Foo())
-        instance_mock.a()
-        instance_mock.a.assert_called_with()
-        self.assertRaises(TypeError, instance_mock.a, 'foo')
+        instance_mock.a(5)
+        instance_mock.a.assert_called_with(5)
+        instance_mock.a.assert_called_with(x=5)
+        self.assertRaises(TypeError, instance_mock.a, 'foo', 'bar')
         self.assertRaises(AttributeError, getattr, instance_mock, 'b')
 
         # The return value isn't isn't callable
         self.assertRaises(TypeError, instance_mock)
 
-        instance_mock.Bar.f()
-        instance_mock.Bar.f.assert_called_with()
+        instance_mock.Bar.f(6)
+        instance_mock.Bar.f.assert_called_with(6)
+        instance_mock.Bar.f.assert_called_with(y=6)
         self.assertRaises(AttributeError, getattr, instance_mock.Bar, 'g')
 
-        instance_mock.Bar().f()
-        instance_mock.Bar().f.assert_called_with()
+        instance_mock.Bar().f(6)
+        instance_mock.Bar().f.assert_called_with(6)
+        instance_mock.Bar().f.assert_called_with(y=6)
         self.assertRaises(AttributeError, getattr, instance_mock.Bar(), 'g')
 
 
@@ -663,12 +668,15 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertRaises(TypeError, mock)
         mock(1, 2)
         mock.assert_called_with(1, 2)
+        mock.assert_called_with(1, b=2)
+        mock.assert_called_with(a=1, b=2)
 
         f.f = f
         mock = create_autospec(f)
         self.assertRaises(TypeError, mock.f)
         mock.f(3, 4)
         mock.f.assert_called_with(3, 4)
+        mock.f.assert_called_with(a=3, b=4)
 
 
     def test_skip_attributeerrors(self):
@@ -704,9 +712,13 @@ class SpecSignatureTest(unittest.TestCase):
         self.assertRaises(TypeError, mock)
         mock(1)
         mock.assert_called_once_with(1)
+        mock.assert_called_once_with(a=1)
+        self.assertRaises(AssertionError, mock.assert_called_once_with, 2)
 
         mock(4, 5)
         mock.assert_called_with(4, 5)
+        mock.assert_called_with(a=4, b=5)
+        self.assertRaises(AssertionError, mock.assert_called_with, a=5, b=4)
 
 
     def test_class_with_no_init(self):
@@ -719,24 +731,27 @@ class SpecSignatureTest(unittest.TestCase):
 
     def test_signature_callable(self):
         class Callable(object):
-            def __init__(self):
+            def __init__(self, x, y):
                 pass
             def __call__(self, a):
                 pass
 
         mock = create_autospec(Callable)
-        mock()
-        mock.assert_called_once_with()
+        mock(1, 2)
+        mock.assert_called_once_with(1, 2)
+        mock.assert_called_once_with(x=1, y=2)
         self.assertRaises(TypeError, mock, 'a')
 
-        instance = mock()
+        instance = mock(1, 2)
         self.assertRaises(TypeError, instance)
         instance(a='a')
+        instance.assert_called_once_with('a')
         instance.assert_called_once_with(a='a')
         instance('a')
         instance.assert_called_with('a')
+        instance.assert_called_with(a='a')
 
-        mock = create_autospec(Callable())
+        mock = create_autospec(Callable(1, 2))
         mock(a='a')
         mock.assert_called_once_with(a='a')
         self.assertRaises(TypeError, mock)
@@ -779,7 +794,11 @@ class SpecSignatureTest(unittest.TestCase):
                 pass
 
         a = create_autospec(Foo)
+        a.f(10)
+        a.f.assert_called_with(10)
+        a.f.assert_called_with(self=10)
         a.f(self=10)
+        a.f.assert_called_with(10)
         a.f.assert_called_with(self=10)
 
 
