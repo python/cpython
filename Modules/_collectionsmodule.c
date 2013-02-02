@@ -484,6 +484,8 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         if (m > BLOCKLEN - 1 - deque->rightindex)
             m = BLOCKLEN - 1 - deque->rightindex;
         assert (m > 0);
+        assert (deque->leftblock != deque->rightblock ||
+                deque->leftindex + m < deque->rightindex + 1);
         memcpy(&deque->rightblock->data[deque->rightindex + 1],
                &deque->leftblock->data[deque->leftindex],
                m * sizeof(PyObject *));
