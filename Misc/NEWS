@@ -15,10 +15,6 @@ Core and Builtins
 
 - Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
 
-- Issue #13886: Fix input() to not strip out input bytes that cannot be decoded
-  using the locale encoding. Also fix sporadic failures in test_builtin due to
-  dependence on whether the readline module has previously been imported.
-
 - Issue #16772: The base argument to the int constructor no longer accepts
   floats, or other non-integer objects with an __int__ method.  Objects
   with an __index__ method are now accepted.
