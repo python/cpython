@@ -847,6 +847,10 @@ Build
 - Issue #15819: Make sure we can build Python out-of-tree from a read-only
   source directory.  (Somewhat related to issue #9860.)
 
+- Issue #15587: Enable Tk high-resolution text rendering on Macs with
+  Retina displays.  Applies to Tkinter apps, such as IDLE, on OS X
+  framework builds linked with Cocoa Tk 8.5.
+
 Documentation
 -------------
 
