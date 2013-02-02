@@ -800,6 +800,10 @@ Build
 
 - Issue #14437: Fix building the _io module under Cygwin.
 
+- Issue #15587: Enable Tk high-resolution text rendering on Macs with
+  Retina displays.  Applies to Tkinter apps, such as IDLE, on OS X
+  framework builds linked with Cocoa Tk 8.5.
+
 Tools/Demos
 -----------
 
