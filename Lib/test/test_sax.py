@@ -14,6 +14,8 @@ from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
+import shutil
+import test.test_support as support
 from test.test_support import findfile, run_unittest
 import unittest
 
@@ -384,6 +386,22 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
+    @unittest.skipUnless(hasattr(support, 'TESTFN_UNICODE'),
+                         'Requires unicode filenames support')
+    def test_expat_file_unicode(self):
+        fname = support.TESTFN_UNICODE
+        shutil.copyfile(TEST_XMLFILE, fname)
+        self.addCleanup(support.unlink, fname)
+
+        parser = create_parser()
+        result = StringIO()
+        xmlgen = XMLGenerator(result)
+
+        parser.setContentHandler(xmlgen)
+        parser.parse(open(fname))
+
+        self.assertEqual(result.getvalue(), xml_test_out)
+
     # ===== DTDHandler support
 
     class TestDTDHandler:
@@ -523,6 +541,22 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
+    @unittest.skipUnless(hasattr(support, 'TESTFN_UNICODE'),
+                         'Requires unicode filenames support')
+    def test_expat_inpsource_sysid_unicode(self):
+        fname = support.TESTFN_UNICODE
+        shutil.copyfile(TEST_XMLFILE, fname)
+        self.addCleanup(support.unlink, fname)
+
+        parser = create_parser()
+        result = StringIO()
+        xmlgen = XMLGenerator(result)
+
+        parser.setContentHandler(xmlgen)
+        parser.parse(InputSource(fname))
+
+        self.assertEqual(result.getvalue(), xml_test_out)
+
     def test_expat_inpsource_stream(self):
         parser = create_parser()
         result = StringIO()
@@ -594,6 +628,22 @@ class ExpatReaderTest(XmlTestBase):
         parser.parse(TEST_XMLFILE)
 
         self.assertEqual(parser.getSystemId(), TEST_XMLFILE)
+        self.assertEqual(parser.getPublicId(), None)
+
+    @unittest.skipUnless(hasattr(support, 'TESTFN_UNICODE'),
+                         'Requires unicode filenames support')
+    def test_expat_locator_withinfo_unicode(self):
+        fname = support.TESTFN_UNICODE
+        shutil.copyfile(TEST_XMLFILE, fname)
+        self.addCleanup(support.unlink, fname)
+
+        result = StringIO()
+        xmlgen = XMLGenerator(result)
+        parser = create_parser()
+        parser.setContentHandler(xmlgen)
+        parser.parse(fname)
+
+        self.assertEqual(parser.getSystemId(), fname)
         self.assertEqual(parser.getPublicId(), None)
 
 
