@@ -56,5 +56,7 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>(c) 2013 Python Software Foundation.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
 </dict>
 </plist>
