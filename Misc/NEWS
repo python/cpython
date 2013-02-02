@@ -199,6 +199,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15633: httplib.HTTPResponse is now mark closed when the server
+  sends less than the advertised Content-Length.
+
 - Issue #15881: Fixed atexit hook in multiprocessing.
 
 - Issue #14340: Upgrade the embedded expat library to version 2.1.0.
