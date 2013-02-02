@@ -960,6 +960,10 @@ Build
 
 - Issue #16256: OS X installer now sets correct permissions for doc directory.
 
+- Issue #15587: Enable Tk high-resolution text rendering on Macs with
+  Retina displays.  Applies to Tkinter apps, such as IDLE, on OS X
+  framework builds linked with Cocoa Tk 8.5.
+
 Tools/Demos
 -----------
 
