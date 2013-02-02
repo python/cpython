@@ -473,6 +473,7 @@ class TestsWithSourceFile(unittest.TestCase):
                 zinfo.external_attr = 0o600 << 16
                 zipfp.writestr(zinfo, content)
 
+            arcname = arcname.replace(os.sep, "/")
             targetpath = os.path.join('target', 'subdir', 'subsub')
             correctfile = os.path.join(targetpath, *fixedname.split('/'))
 
