@@ -235,6 +235,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17015: When it has a spec, a Mock object now inspects its signature
+  when matching calls, so that arguments can be matched positionally or
+  by name.
+
 - Issue #15633: httplib.HTTPResponse is now mark closed when the server
   sends less than the advertised Content-Length.
 

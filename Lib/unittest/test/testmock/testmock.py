@@ -25,6 +25,18 @@ class Iter(object):
     __next__ = next
 
 
+class Something(object):
+    def meth(self, a, b, c, d=None):
+        pass
+
+    @classmethod
+    def cmeth(cls, a, b, c, d=None):
+        pass
+
+    @staticmethod
+    def smeth(a, b, c, d=None):
+        pass
+
 
 class MockTest(unittest.TestCase):
 
@@ -273,6 +285,43 @@ class MockTest(unittest.TestCase):
         mock.assert_called_with(1, 2, 3, a='fish', b='nothing')
 
 
+    def test_assert_called_with_function_spec(self):
+        def f(a, b, c, d=None):
+            pass
+
+        mock = Mock(spec=f)
+
+        mock(1, b=2, c=3)
+        mock.assert_called_with(1, 2, 3)
+        mock.assert_called_with(a=1, b=2, c=3)
+        self.assertRaises(AssertionError, mock.assert_called_with,
+                          1, b=3, c=2)
+        # Expected call doesn't match the spec's signature
+        with self.assertRaises(AssertionError) as cm:
+            mock.assert_called_with(e=8)
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
+
+
+    def test_assert_called_with_method_spec(self):
+        def _check(mock):
+            mock(1, b=2, c=3)
+            mock.assert_called_with(1, 2, 3)
+            mock.assert_called_with(a=1, b=2, c=3)
+            self.assertRaises(AssertionError, mock.assert_called_with,
+                              1, b=3, c=2)
+
+        mock = Mock(spec=Something().meth)
+        _check(mock)
+        mock = Mock(spec=Something.cmeth)
+        _check(mock)
+        mock = Mock(spec=Something().cmeth)
+        _check(mock)
+        mock = Mock(spec=Something.smeth)
+        _check(mock)
+        mock = Mock(spec=Something().smeth)
+        _check(mock)
+
+
     def test_assert_called_once_with(self):
         mock = Mock()
         mock()
@@ -295,6 +344,29 @@ class MockTest(unittest.TestCase):
             AssertionError,
             lambda: mock.assert_called_once_with('bob', 'bar', baz=2)
         )
+
+
+    def test_assert_called_once_with_function_spec(self):
+        def f(a, b, c, d=None):
+            pass
+
+        mock = Mock(spec=f)
+
+        mock(1, b=2, c=3)
+        mock.assert_called_once_with(1, 2, 3)
+        mock.assert_called_once_with(a=1, b=2, c=3)
+        self.assertRaises(AssertionError, mock.assert_called_once_with,
+                          1, b=3, c=2)
+        # Expected call doesn't match the spec's signature
+        with self.assertRaises(AssertionError) as cm:
+            mock.assert_called_once_with(e=8)
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
+        # Mock called more than once => always fails
+        mock(4, 5, 6)
+        self.assertRaises(AssertionError, mock.assert_called_once_with,
+                          1, 2, 3)
+        self.assertRaises(AssertionError, mock.assert_called_once_with,
+                          4, 5, 6)
 
 
     def test_attribute_access_returns_mocks(self):
@@ -991,6 +1063,39 @@ class MockTest(unittest.TestCase):
                         )
 
 
+    def test_assert_has_calls_with_function_spec(self):
+        def f(a, b, c, d=None):
+            pass
+
+        mock = Mock(spec=f)
+
+        mock(1, b=2, c=3)
+        mock(4, 5, c=6, d=7)
+        mock(10, 11, c=12)
+        calls = [
+            ('', (1, 2, 3), {}),
+            ('', (4, 5, 6), {'d': 7}),
+            ((10, 11, 12), {}),
+            ]
+        mock.assert_has_calls(calls)
+        mock.assert_has_calls(calls, any_order=True)
+        mock.assert_has_calls(calls[1:])
+        mock.assert_has_calls(calls[1:], any_order=True)
+        mock.assert_has_calls(calls[:-1])
+        mock.assert_has_calls(calls[:-1], any_order=True)
+        # Reversed order
+        calls = list(reversed(calls))
+        with self.assertRaises(AssertionError):
+            mock.assert_has_calls(calls)
+        mock.assert_has_calls(calls, any_order=True)
+        with self.assertRaises(AssertionError):
+            mock.assert_has_calls(calls[1:])
+        mock.assert_has_calls(calls[1:], any_order=True)
+        with self.assertRaises(AssertionError):
+            mock.assert_has_calls(calls[:-1])
+        mock.assert_has_calls(calls[:-1], any_order=True)
+
+
     def test_assert_any_call(self):
         mock = Mock()
         mock(1, 2)
@@ -1015,6 +1120,26 @@ class MockTest(unittest.TestCase):
             mock.assert_any_call,
             a=4
         )
+
+
+    def test_assert_any_call_with_function_spec(self):
+        def f(a, b, c, d=None):
+            pass
+
+        mock = Mock(spec=f)
+
+        mock(1, b=2, c=3)
+        mock(4, 5, c=6, d=7)
+        mock.assert_any_call(1, 2, 3)
+        mock.assert_any_call(a=1, b=2, c=3)
+        mock.assert_any_call(4, 5, 6, 7)
+        mock.assert_any_call(a=4, b=5, c=6, d=7)
+        self.assertRaises(AssertionError, mock.assert_any_call,
+                          1, b=3, c=2)
+        # Expected call doesn't match the spec's signature
+        with self.assertRaises(AssertionError) as cm:
+            mock.assert_any_call(e=8)
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
 
 
     def test_mock_calls_create_autospec(self):
