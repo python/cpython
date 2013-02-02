@@ -190,6 +190,19 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(1), '')
         self.assertTrue(resp.isclosed())
 
+    def test_partial_reads_incomplete_body(self):
+        # if the server shuts down the connection before the whole
+        # content-length is delivered, the socket is gracefully closed
+        body = "HTTP/1.1 200 Ok\r\nContent-Length: 10\r\n\r\nText"
+        sock = FakeSocket(body)
+        resp = httplib.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.read(2), 'Te')
+        self.assertFalse(resp.isclosed())
+        self.assertEqual(resp.read(2), 'xt')
+        self.assertEqual(resp.read(1), '')
+        self.assertTrue(resp.isclosed())
+
     def test_host_port(self):
         # Check invalid host_port
 
@@ -320,7 +333,7 @@ class BasicTest(TestCase):
         resp = httplib.HTTPResponse(sock, method="GET")
         resp.begin()
         self.assertEqual(resp.read(), 'Hello\r\n')
-        resp.close()
+        self.assertTrue(resp.isclosed())
 
     def test_incomplete_read(self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
@@ -334,10 +347,9 @@ class BasicTest(TestCase):
                              "IncompleteRead(7 bytes read, 3 more expected)")
             self.assertEqual(str(i),
                              "IncompleteRead(7 bytes read, 3 more expected)")
+            self.assertTrue(resp.isclosed())
         else:
             self.fail('IncompleteRead expected')
-        finally:
-            resp.close()
 
     def test_epipe(self):
         sock = EPipeSocket(
