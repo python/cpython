@@ -507,7 +507,11 @@ class HTTPResponse(io.RawIOBase):
             if self.length is None:
                 s = self.fp.read()
             else:
-                s = self._safe_read(self.length)
+                try:
+                    s = self._safe_read(self.length)
+                except IncompleteRead:
+                    self.close()
+                    raise
                 self.length = 0
             self.close()        # we read everything
             return s
@@ -532,12 +536,13 @@ class HTTPResponse(io.RawIOBase):
         # connection, and the user is reading more bytes than will be provided
         # (for example, reading in 1k chunks)
         n = self.fp.readinto(b)
-        if self.length is not None:
+        if not n:
+            # Ideally, we would raise IncompleteRead if the content-length
+            # wasn't satisfied, but it might break compatibility.
+            self.close()
+        elif self.length is not None:
             self.length -= n
             if not self.length:
-                self.close()
-        else:
-            if not n:
                 self.close()
         return n
 
