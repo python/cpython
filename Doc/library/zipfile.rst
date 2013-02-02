@@ -246,7 +246,7 @@ ZipFile Objects
 
       If a member filename is an absolute path, a drive/UNC sharepoint and
       leading (back)slashes will be stripped, e.g.: ``///foo/bar`` becomes
-      ``foo/bar`` on Unix, and ``С:\foo\bar`` becomes ``foo\bar`` on Windows.
+      ``foo/bar`` on Unix, and ``C:\foo\bar`` becomes ``foo\bar`` on Windows.
       And all ``".."`` components in a member filename will be removed, e.g.:
       ``../../foo../../ba..r`` becomes ``foo../ba..r``.  On Windows illegal
       characters (``:``, ``<``, ``>``, ``|``, ``"``, ``?``, and ``*``)
