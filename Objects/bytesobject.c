@@ -2800,8 +2800,7 @@ PyBytes_Concat(register PyObject **pv, register PyObject *w)
     if (*pv == NULL)
         return;
     if (w == NULL) {
-        Py_DECREF(*pv);
-        *pv = NULL;
+        Py_CLEAR(*pv);
         return;
     }
     v = bytes_concat(*pv, w);
@@ -3008,12 +3007,9 @@ void
 PyBytes_Fini(void)
 {
     int i;
-    for (i = 0; i < UCHAR_MAX + 1; i++) {
-        Py_XDECREF(characters[i]);
-        characters[i] = NULL;
-    }
-    Py_XDECREF(nullstring);
-    nullstring = NULL;
+    for (i = 0; i < UCHAR_MAX + 1; i++)
+        Py_CLEAR(characters[i]);
+    Py_CLEAR(nullstring);
 }
 
 /*********************** Bytes Iterator ****************************/
