@@ -548,8 +548,6 @@ class TestsWithSourceFile(unittest.TestCase):
             ('/foo/bar', 'foo/bar'),
             ('/foo/../bar', 'foo/bar'),
             ('/foo/../../bar', 'foo/bar'),
-            ('//foo/bar', 'foo/bar'),
-            ('../../foo../../ba..r', 'foo../ba..r'),
         ]
         if os.path.sep == '\\':  # Windows.
             hacknames.extend([
@@ -571,19 +569,32 @@ class TestsWithSourceFile(unittest.TestCase):
                 (r'\\?\C:\foo\bar', 'foo/bar'),
                 (r'C:/../C:/foo/bar', 'C_/foo/bar'),
                 (r'a:b\c<d>e|f"g?h*i', 'b/c_d_e_f_g_h_i'),
+                ('../../foo../../ba..r', 'foo/ba..r'),
+            ])
+        else:  # Unix
+            hacknames.extend([
+                ('//foo/bar', 'foo/bar'),
+                ('../../foo../../ba..r', 'foo../ba..r'),
+                (r'foo/..\bar', r'foo/..\bar'),
             ])
 
         for arcname, fixedname in hacknames:
             content = b'foobar' + arcname.encode()
             with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zipfp:
-                zipfp.writestr(arcname, content)
+                zinfo = zipfile.ZipInfo()
+                # preserve backslashes
+                zinfo.filename = arcname
+                zinfo.external_attr = 0o600 << 16
+                zipfp.writestr(zinfo, content)
 
+            arcname = arcname.replace(os.sep, "/")
             targetpath = os.path.join('target', 'subdir', 'subsub')
             correctfile = os.path.join(targetpath, *fixedname.split('/'))
 
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 writtenfile = zipfp.extract(arcname, targetpath)
-                self.assertEqual(writtenfile, correctfile)
+                self.assertEqual(writtenfile, correctfile,
+                                 msg="extract %r" % arcname)
             self.check_file(correctfile, content)
             shutil.rmtree('target')
 
@@ -596,7 +607,8 @@ class TestsWithSourceFile(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 writtenfile = zipfp.extract(arcname)
-                self.assertEqual(writtenfile, correctfile)
+                self.assertEqual(writtenfile, correctfile,
+                                 msg="extract %r" % arcname)
             self.check_file(correctfile, content)
             shutil.rmtree(fixedname.split('/')[0])
 
