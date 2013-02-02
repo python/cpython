@@ -14,6 +14,7 @@ from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import StringIO
+import os.path
 import shutil
 from test import support
 from test.support import findfile, run_unittest
@@ -26,6 +27,18 @@ try:
     TEST_XMLFILE_OUT.encode("utf8")
 except UnicodeEncodeError:
     raise unittest.SkipTest("filename is not encodable to utf8")
+
+supports_nonascii_filenames = True
+if not os.path.supports_unicode_filenames:
+    try:
+        support.TESTFN_UNICODE.encode(support.TESTFN_ENCODING)
+    except (UnicodeError, TypeError):
+        # Either the file system encoding is None, or the file name
+        # cannot be encoded in the file system encoding.
+        supports_nonascii_filenames = False
+requires_nonascii_filenames = unittest.skipUnless(
+        supports_nonascii_filenames,
+        'Requires non-ascii filenames support')
 
 ns_uri = "http://www.python.org/xml-ns/saxtest/"
 
@@ -483,6 +496,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
+    @requires_nonascii_filenames
     def test_expat_file_nonascii(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
@@ -636,6 +650,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
+    @requires_nonascii_filenames
     def test_expat_inpsource_sysid_nonascii(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
@@ -724,6 +739,7 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(parser.getSystemId(), TEST_XMLFILE)
         self.assertEqual(parser.getPublicId(), None)
 
+    @requires_nonascii_filenames
     def test_expat_locator_withinfo_nonascii(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
