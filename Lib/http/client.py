@@ -515,12 +515,9 @@ class HTTPResponse(io.RawIOBase):
             # Ideally, we would raise IncompleteRead if the content-length
             # wasn't satisfied, but it might break compatibility.
             self.close()
-        if self.length is not None:
+        elif self.length is not None:
             self.length -= len(s)
             if not self.length:
-                self.close()
-        else:
-            if not s:
                 self.close()
 
         return s
