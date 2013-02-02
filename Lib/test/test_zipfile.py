@@ -461,12 +461,17 @@ class TestsWithSourceFile(unittest.TestCase):
             hacknames.extend([
                 ('//foo/bar', 'foo/bar'),
                 ('../../foo../../ba..r', 'foo../ba..r'),
+                (r'foo/..\bar', r'foo/..\bar'),
             ])
 
         for arcname, fixedname in hacknames:
             content = b'foobar' + arcname.encode()
             with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zipfp:
-                zipfp.writestr(arcname, content)
+                zinfo = zipfile.ZipInfo()
+                # preserve backslashes
+                zinfo.filename = arcname
+                zinfo.external_attr = 0o600 << 16
+                zipfp.writestr(zinfo, content)
 
             targetpath = os.path.join('target', 'subdir', 'subsub')
             correctfile = os.path.join(targetpath, *fixedname.split('/'))
