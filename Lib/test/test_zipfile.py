@@ -434,8 +434,6 @@ class TestsWithSourceFile(unittest.TestCase):
             ('/foo/bar', 'foo/bar'),
             ('/foo/../bar', 'foo/bar'),
             ('/foo/../../bar', 'foo/bar'),
-            ('//foo/bar', 'foo/bar'),
-            ('../../foo../../ba..r', 'foo../ba..r'),
         ]
         if os.path.sep == '\\':
             hacknames.extend([
@@ -447,16 +445,22 @@ class TestsWithSourceFile(unittest.TestCase):
                 (r'C:/foo/bar', 'foo/bar'),
                 (r'C://foo/bar', 'foo/bar'),
                 (r'C:\foo\bar', 'foo/bar'),
-                (r'//conky/mountpoint/foo/bar', 'foo/bar'),
-                (r'\\conky\mountpoint\foo\bar', 'foo/bar'),
+                (r'//conky/mountpoint/foo/bar', 'conky/mountpoint/foo/bar'),
+                (r'\\conky\mountpoint\foo\bar', 'conky/mountpoint/foo/bar'),
                 (r'///conky/mountpoint/foo/bar', 'conky/mountpoint/foo/bar'),
                 (r'\\\conky\mountpoint\foo\bar', 'conky/mountpoint/foo/bar'),
                 (r'//conky//mountpoint/foo/bar', 'conky/mountpoint/foo/bar'),
                 (r'\\conky\\mountpoint\foo\bar', 'conky/mountpoint/foo/bar'),
-                (r'//?/C:/foo/bar', 'foo/bar'),
-                (r'\\?\C:\foo\bar', 'foo/bar'),
+                (r'//?/C:/foo/bar', '_/C_/foo/bar'),
+                (r'\\?\C:\foo\bar', '_/C_/foo/bar'),
                 (r'C:/../C:/foo/bar', 'C_/foo/bar'),
                 (r'a:b\c<d>e|f"g?h*i', 'b/c_d_e_f_g_h_i'),
+                ('../../foo../../ba..r', 'foo/ba..r'),
+            ])
+        else:  # Unix
+            hacknames.extend([
+                ('//foo/bar', 'foo/bar'),
+                ('../../foo../../ba..r', 'foo../ba..r'),
             ])
 
         for arcname, fixedname in hacknames:
@@ -469,7 +473,8 @@ class TestsWithSourceFile(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 writtenfile = zipfp.extract(arcname, targetpath)
-                self.assertEqual(writtenfile, correctfile)
+                self.assertEqual(writtenfile, correctfile,
+                                 msg="extract %r" % arcname)
             self.check_file(correctfile, content)
             shutil.rmtree('target')
 
@@ -482,7 +487,8 @@ class TestsWithSourceFile(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 writtenfile = zipfp.extract(arcname)
-                self.assertEqual(writtenfile, correctfile)
+                self.assertEqual(writtenfile, correctfile,
+                                 msg="extract %r" % arcname)
             self.check_file(correctfile, content)
             shutil.rmtree(fixedname.split('/')[0])
 
