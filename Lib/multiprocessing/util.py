@@ -247,6 +247,12 @@ def _run_finalizers(minpriority=None):
     Finalizers with highest priority are called first; finalizers with
     the same priority will be called in reverse order of creation.
     '''
+    if _finalizer_registry is None:
+        # This function may be called after this module's globals are
+        # destroyed.  See the _exit_function function in this module for more
+        # notes.
+        return
+
     if minpriority is None:
         f = lambda p : p[0][0] is not None
     else:
@@ -278,21 +284,38 @@ def is_exiting():
 
 _exiting = False
 
-def _exit_function():
+def _exit_function(info=info, debug=debug, _run_finalizers=_run_finalizers,
+                   active_children=active_children,
+                   current_process=current_process):
+    # NB: we hold on to references to functions in the arglist due to the
+    # situation described below, where this function is called after this
+    # module's globals are destroyed.
+
     global _exiting
 
     info('process shutting down')
     debug('running all "atexit" finalizers with priority >= 0')
     _run_finalizers(0)
 
-    for p in active_children():
-        if p._daemonic:
-            info('calling terminate() for daemon %s', p.name)
-            p._popen.terminate()
+    if current_process() is not None:
+        # NB: we check if the current process is None here because if
+        # it's None, any call to ``active_children()`` will throw an
+        # AttributeError (active_children winds up trying to get
+        # attributes from util._current_process).  This happens in a
+        # variety of shutdown circumstances that are not well-understood
+        # because module-scope variables are not apparently supposed to
+        # be destroyed until after this function is called.  However,
+        # they are indeed destroyed before this function is called.  See
+        # issues 9775 and 15881.  Also related: 4106, 9205, and 9207.
 
-    for p in active_children():
-        info('calling join() for process %s', p.name)
-        p.join()
+        for p in active_children():
+            if p._daemonic:
+                info('calling terminate() for daemon %s', p.name)
+                p._popen.terminate()
+
+        for p in active_children():
+            info('calling join() for process %s', p.name)
+            p.join()
 
     debug('running the remaining "atexit" finalizers')
     _run_finalizers()

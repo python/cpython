@@ -202,6 +202,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15881: Fixed atexit hook in multiprocessing.
+
 - Issue #14340: Upgrade the embedded expat library to version 2.1.0.
 
 - Issue #11159: SAX parser now supports unicode file names.
