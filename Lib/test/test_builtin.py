@@ -18,13 +18,6 @@ try:
     import pty, signal
 except ImportError:
     pty = signal = None
-# Importing this module has the side-effect of changing the behavior of input().
-# Ensure that we always use the readline version (if available), so we don't get
-# different results depending on what other tests have already imported.
-try:
-    import readline
-except ImportError:
-    pass
 
 
 class Squares:
