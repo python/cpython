@@ -447,6 +447,13 @@ class PosixTester(unittest.TestCase):
         if ret != None or not groups:
             raise unittest.SkipTest("need working 'id -G'")
 
+        # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
+        if sys.platform == 'darwin':
+            import sysconfig
+            dt = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') or '10.0'
+            if float(dt) < 10.6:
+                raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
+
         # 'id -G' and 'os.getgroups()' should return the same
         # groups, ignoring order and duplicates.
         # #10822 - it is implementation defined whether posix.getgroups()
