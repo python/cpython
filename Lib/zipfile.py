@@ -1050,11 +1050,14 @@ class ZipFile(object):
         arcname = os.path.splitdrive(arcname)[1]
         arcname = os.path.sep.join(x for x in arcname.split(os.path.sep)
                     if x not in ('', os.path.curdir, os.path.pardir))
-        # filter illegal characters on Windows
         if os.path.sep == '\\':
+            # filter illegal characters on Windows
             illegal = ':<>|"?*'
             table = string.maketrans(illegal, '_' * len(illegal))
             arcname = arcname.translate(table)
+            # remove trailing dots
+            arcname = (x.rstrip('.') for x in arcname.split(os.path.sep))
+            arcname = os.path.sep.join(x for x in arcname if x)
 
         targetpath = os.path.join(targetpath, arcname)
         targetpath = os.path.normpath(targetpath)
