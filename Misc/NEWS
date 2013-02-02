@@ -235,6 +235,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15633: httplib.HTTPResponse is now mark closed when the server
+  sends less than the advertised Content-Length.
+
 - Issue #6972: The zipfile module no longer overwrites files outside of
   its destination path when extracting malicious zip files.
 
