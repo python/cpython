@@ -868,6 +868,9 @@ Documentation
 - Issue #15250: Document that filecmp.dircmp compares files shallowly. Patch
   contributed by Chris Jerdonek.
 
+- Issue #15116: Remove references to appscript as it is no longer being
+  supported.
+
 
 What's New in Python 2.7.3 release candidate 2?
 ===============================================
