@@ -4,6 +4,7 @@ convenience of application and driver writers.
 """
 
 import os, urlparse, urllib, types
+import sys
 import handler
 import xmlreader
 
@@ -293,14 +294,31 @@ def prepare_input_source(source, base = ""):
             source.setSystemId(f.name)
 
     if source.getByteStream() is None:
-        sysid = source.getSystemId()
-        basehead = os.path.dirname(os.path.normpath(base))
-        sysidfilename = os.path.join(basehead, sysid)
-        if os.path.isfile(sysidfilename):
+        try:
+            sysid = source.getSystemId()
+            basehead = os.path.dirname(os.path.normpath(base))
+            encoding = sys.getfilesystemencoding()
+            if isinstance(sysid, unicode):
+                if not isinstance(basehead, unicode):
+                    try:
+                        basehead = basehead.decode(encoding)
+                    except UnicodeDecodeError:
+                        sysid = sysid.encode(encoding)
+            else:
+                if isinstance(basehead, unicode):
+                    try:
+                        sysid = sysid.decode(encoding)
+                    except UnicodeDecodeError:
+                        basehead = basehead.encode(encoding)
+            sysidfilename = os.path.join(basehead, sysid)
+            isfile = os.path.isfile(sysidfilename)
+        except UnicodeError:
+            isfile = False
+        if isfile:
             source.setSystemId(sysidfilename)
             f = open(sysidfilename, "rb")
         else:
-            source.setSystemId(urlparse.urljoin(base, sysid))
+            source.setSystemId(urlparse.urljoin(base, source.getSystemId()))
             f = urllib.urlopen(source.getSystemId())
 
         source.setByteStream(f)
