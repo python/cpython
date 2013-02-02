@@ -1067,7 +1067,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
     char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
     if (!saved_locale)
         Py_FatalError("not enough memory to save locale");
-    setlocale(LC_CTYPE, "C");
+    setlocale(LC_CTYPE, "");
 #endif
 
     if (sys_stdin != rl_instream || sys_stdout != rl_outstream) {
