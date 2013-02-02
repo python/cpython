@@ -9,8 +9,7 @@ This chapter describes the current implementation of the Open Scripting
 Architecture (OSA, also commonly referred to as AppleScript) for Python,
 allowing you to control scriptable applications from your Python program,
 and with a fairly pythonic interface. Development on this set of modules has
-stopped. For more up-to-date implementation of AppleScript support for Python,
-see the third-party py-appscript project: <http://pypi.python.org/pypi/appscript/>.
+stopped.
 
 For a description of the various components of AppleScript and OSA, and to get
 an understanding of the architecture and terminology, you should read Apple's
