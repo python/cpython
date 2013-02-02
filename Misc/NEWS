@@ -796,6 +796,9 @@ Tests
 - Issue #15557: Added a test suite for the webbrowser module, thanks to Anton
   Barkovsky.
 
+- Issue #16698: Skip posix test_getgroups when built with OS X
+  deployment target prior to 10.6.
+
 Build
 -----
 
