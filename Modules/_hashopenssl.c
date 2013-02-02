@@ -67,7 +67,7 @@ static PyTypeObject EVPtype;
 
 
 #define DEFINE_CONSTS_FOR_NEW(Name)  \
-    static PyObject *CONST_ ## Name ## _name_obj; \
+    static PyObject *CONST_ ## Name ## _name_obj = NULL; \
     static EVP_MD_CTX CONST_new_ ## Name ## _ctx; \
     static EVP_MD_CTX *CONST_new_ ## Name ## _ctx_p = NULL;
 
@@ -525,12 +525,15 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
                   " hash object; optionally initialized with a string") \
     }
 
-/* used in the init function to setup a constructor */
+/* used in the init function to setup a constructor: initialize OpenSSL
+   constructor constants if they haven't been initialized already.  */
 #define INIT_CONSTRUCTOR_CONSTANTS(NAME)  do { \
+    if (CONST_ ## NAME ## _name_obj == NULL) { \
     CONST_ ## NAME ## _name_obj = PyString_FromString(#NAME); \
-    if (EVP_get_digestbyname(#NAME)) { \
-        CONST_new_ ## NAME ## _ctx_p = &CONST_new_ ## NAME ## _ctx; \
-        EVP_DigestInit(CONST_new_ ## NAME ## _ctx_p, EVP_get_digestbyname(#NAME)); \
+        if (EVP_get_digestbyname(#NAME)) { \
+            CONST_new_ ## NAME ## _ctx_p = &CONST_new_ ## NAME ## _ctx; \
+            EVP_DigestInit(CONST_new_ ## NAME ## _ctx_p, EVP_get_digestbyname(#NAME)); \
+        } \
     } \
 } while (0);
 
