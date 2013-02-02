@@ -27,7 +27,7 @@ __version__ = '1.0'
 import inspect
 import pprint
 import sys
-from functools import wraps
+from functools import wraps, partial
 
 
 BaseExceptions = (BaseException,)
@@ -66,55 +66,45 @@ DescriptorTypes = (
 )
 
 
-def _getsignature(func, skipfirst, instance=False):
-    if isinstance(func, type) and not instance:
+def _get_signature_object(func, as_instance, eat_self):
+    """
+    Given an arbitrary, possibly callable object, try to create a suitable
+    signature object.
+    Return a (reduced func, signature) tuple, or None.
+    """
+    if isinstance(func, type) and not as_instance:
+        # If it's a type and should be modelled as a type, use __init__.
         try:
             func = func.__init__
         except AttributeError:
-            return
-        skipfirst = True
+            return None
+        # Skip the `self` argument in __init__
+        eat_self = True
     elif not isinstance(func, FunctionTypes):
-        # for classes where instance is True we end up here too
+        # If we really want to model an instance of the passed type,
+        # __call__ should be looked up, not __init__.
         try:
             func = func.__call__
         except AttributeError:
-            return
-
+            return None
+    if eat_self:
+        sig_func = partial(func, None)
+    else:
+        sig_func = func
     try:
-        argspec = inspect.getfullargspec(func)
-    except TypeError:
-        # C function / method, possibly inherited object().__init__
-        return
-
-    regargs, varargs, varkw, defaults, kwonly, kwonlydef, ann = argspec
-
-
-    # instance methods and classmethods need to lose the self argument
-    if getattr(func, '__self__', None) is not None:
-        regargs = regargs[1:]
-    if skipfirst:
-        # this condition and the above one are never both True - why?
-        regargs = regargs[1:]
-
-    signature = inspect.formatargspec(
-        regargs, varargs, varkw, defaults,
-        kwonly, kwonlydef, ann, formatvalue=lambda value: "")
-    return signature[1:-1], func
+        return func, inspect.signature(sig_func)
+    except ValueError:
+        # Certain callable types are not supported by inspect.signature()
+        return None
 
 
 def _check_signature(func, mock, skipfirst, instance=False):
-    if not _callable(func):
+    sig = _get_signature_object(func, instance, skipfirst)
+    if sig is None:
         return
-
-    result = _getsignature(func, skipfirst, instance)
-    if result is None:
-        return
-    signature, func = result
-
-    # can't use self because "self" is common as an argument name
-    # unfortunately even not in the first place
-    src = "lambda _mock_self, %s: None" % signature
-    checksig = eval(src, {})
+    func, sig = sig
+    def checksig(_mock_self, *args, **kwargs):
+        sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
     type(mock)._mock_check_sig = checksig
 
@@ -166,15 +156,12 @@ def _set_signature(mock, original, instance=False):
         return
 
     skipfirst = isinstance(original, type)
-    result = _getsignature(original, skipfirst, instance)
+    result = _get_signature_object(original, instance, skipfirst)
     if result is None:
-        # was a C function (e.g. object().__init__ ) that can't be mocked
         return
-
-    signature, func = result
-
-    src = "lambda %s: None" % signature
-    checksig = eval(src, {})
+    func, sig = result
+    def checksig(*args, **kwargs):
+        sig.bind(*args, **kwargs)
     _copy_func_details(func, checksig)
 
     name = original.__name__
@@ -368,7 +355,7 @@ class NonCallableMock(Base):
     def __init__(
             self, spec=None, wraps=None, name=None, spec_set=None,
             parent=None, _spec_state=None, _new_name='', _new_parent=None,
-            **kwargs
+            _spec_as_instance=False, _eat_self=None, **kwargs
         ):
         if _new_parent is None:
             _new_parent = parent
@@ -382,8 +369,10 @@ class NonCallableMock(Base):
         if spec_set is not None:
             spec = spec_set
             spec_set = True
+        if _eat_self is None:
+            _eat_self = parent is not None
 
-        self._mock_add_spec(spec, spec_set)
+        self._mock_add_spec(spec, spec_set, _spec_as_instance, _eat_self)
 
         __dict__['_mock_children'] = {}
         __dict__['_mock_wraps'] = wraps
@@ -428,20 +417,26 @@ class NonCallableMock(Base):
         self._mock_add_spec(spec, spec_set)
 
 
-    def _mock_add_spec(self, spec, spec_set):
+    def _mock_add_spec(self, spec, spec_set, _spec_as_instance=False,
+                       _eat_self=False):
         _spec_class = None
+        _spec_signature = None
 
         if spec is not None and not _is_list(spec):
             if isinstance(spec, type):
                 _spec_class = spec
             else:
                 _spec_class = _get_class(spec)
+            res = _get_signature_object(spec,
+                                        _spec_as_instance, _eat_self)
+            _spec_signature = res and res[1]
 
             spec = dir(spec)
 
         __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
         __dict__['_spec_set'] = spec_set
+        __dict__['_spec_signature'] = _spec_signature
         __dict__['_mock_methods'] = spec
 
 
@@ -695,7 +690,6 @@ class NonCallableMock(Base):
         self._mock_children[name] = _deleted
 
 
-
     def _format_mock_call_signature(self, args, kwargs):
         name = self._mock_name or 'mock'
         return _format_call_signature(name, args, kwargs)
@@ -711,6 +705,28 @@ class NonCallableMock(Base):
         return message % (expected_string, actual_string)
 
 
+    def _call_matcher(self, _call):
+        """
+        Given a call (or simply a (args, kwargs) tuple), return a
+        comparison key suitable for matching with other calls.
+        This is a best effort method which relies on the spec's signature,
+        if available, or falls back on the arguments themselves.
+        """
+        sig = self._spec_signature
+        if sig is not None:
+            if len(_call) == 2:
+                name = ''
+                args, kwargs = _call
+            else:
+                name, args, kwargs = _call
+            try:
+                return name, sig.bind(*args, **kwargs)
+            except TypeError as e:
+                return e.with_traceback(None)
+        else:
+            return _call
+
+
     def assert_called_with(_mock_self, *args, **kwargs):
         """assert that the mock was called with the specified arguments.
 
@@ -721,9 +737,14 @@ class NonCallableMock(Base):
             expected = self._format_mock_call_signature(args, kwargs)
             raise AssertionError('Expected call: %s\nNot called' % (expected,))
 
-        if self.call_args != (args, kwargs):
+        def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
-            raise AssertionError(msg)
+            return msg
+        expected = self._call_matcher((args, kwargs))
+        actual = self._call_matcher(self.call_args)
+        if expected != actual:
+            cause = expected if isinstance(expected, Exception) else None
+            raise AssertionError(_error_message()) from cause
 
 
     def assert_called_once_with(_mock_self, *args, **kwargs):
@@ -747,18 +768,21 @@ class NonCallableMock(Base):
 
         If `any_order` is True then the calls can be in any order, but
         they must all appear in `mock_calls`."""
+        expected = [self._call_matcher(c) for c in calls]
+        cause = expected if isinstance(expected, Exception) else None
+        all_calls = _CallList(self._call_matcher(c) for c in self.mock_calls)
         if not any_order:
-            if calls not in self.mock_calls:
+            if expected not in all_calls:
                 raise AssertionError(
                     'Calls not found.\nExpected: %r\n'
                     'Actual: %r' % (calls, self.mock_calls)
-                )
+                ) from cause
             return
 
-        all_calls = list(self.mock_calls)
+        all_calls = list(all_calls)
 
         not_found = []
-        for kall in calls:
+        for kall in expected:
             try:
                 all_calls.remove(kall)
             except ValueError:
@@ -766,7 +790,7 @@ class NonCallableMock(Base):
         if not_found:
             raise AssertionError(
                 '%r not all found in call list' % (tuple(not_found),)
-            )
+            ) from cause
 
 
     def assert_any_call(self, *args, **kwargs):
@@ -775,12 +799,14 @@ class NonCallableMock(Base):
         The assert passes if the mock has *ever* been called, unlike
         `assert_called_with` and `assert_called_once_with` that only pass if
         the call is the most recent one."""
-        kall = call(*args, **kwargs)
-        if kall not in self.call_args_list:
+        expected = self._call_matcher((args, kwargs))
+        actual = [self._call_matcher(c) for c in self.call_args_list]
+        if expected not in actual:
+            cause = expected if isinstance(expected, Exception) else None
             expected_string = self._format_mock_call_signature(args, kwargs)
             raise AssertionError(
                 '%s call not found' % expected_string
-            )
+            ) from cause
 
 
     def _get_child_mock(self, **kw):
@@ -850,11 +876,12 @@ class CallableMixin(Base):
         self = _mock_self
         self.called = True
         self.call_count += 1
-        self.call_args = _Call((args, kwargs), two=True)
-        self.call_args_list.append(_Call((args, kwargs), two=True))
-
         _new_name = self._mock_new_name
         _new_parent = self._mock_new_parent
+
+        _call = _Call((args, kwargs), two=True)
+        self.call_args = _call
+        self.call_args_list.append(_call)
         self.mock_calls.append(_Call(('', args, kwargs)))
 
         seen = set()
@@ -2031,6 +2058,8 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     elif spec is None:
         # None we mock with a normal mock without a spec
         _kwargs = {}
+    if _kwargs and instance:
+        _kwargs['_spec_as_instance'] = True
 
     _kwargs.update(kwargs)
 
@@ -2097,10 +2126,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
             if isinstance(spec, FunctionTypes):
                 parent = mock.mock
 
-            new = MagicMock(parent=parent, name=entry, _new_name=entry,
-                            _new_parent=parent, **kwargs)
-            mock._mock_children[entry] = new
             skipfirst = _must_skip(spec, entry, is_type)
+            kwargs['_eat_self'] = skipfirst
+            new = MagicMock(parent=parent, name=entry, _new_name=entry,
+                            _new_parent=parent,
+                            **kwargs)
+            mock._mock_children[entry] = new
             _check_signature(original, new, skipfirst=skipfirst)
 
         # so functions created with _set_signature become instance attributes,
@@ -2114,6 +2145,10 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
 
 def _must_skip(spec, entry, is_type):
+    """
+    Return whether we should skip the first argument on spec's `entry`
+    attribute.
+    """
     if not isinstance(spec, type):
         if entry in getattr(spec, '__dict__', {}):
             # instance attribute - shouldn't skip
@@ -2126,7 +2161,12 @@ def _must_skip(spec, entry, is_type):
             continue
         if isinstance(result, (staticmethod, classmethod)):
             return False
-        return is_type
+        elif isinstance(getattr(result, '__get__', None), MethodWrapperTypes):
+            # Normal method => skip if looked up on type
+            # (if looked up on instance, self is already skipped)
+            return is_type
+        else:
+            return False
 
     # shouldn't get here unless function is a dynamically provided attribute
     # XXXX untested behaviour
@@ -2158,6 +2198,10 @@ FunctionTypes = (
     type(create_autospec),
     # instance method
     type(ANY.__eq__),
+)
+
+MethodWrapperTypes = (
+    type(ANY.__eq__.__get__),
 )
 
 
