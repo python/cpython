@@ -14,6 +14,7 @@ from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
+import os.path
 import shutil
 import test.test_support as support
 from test.test_support import findfile, run_unittest
@@ -21,6 +22,18 @@ import unittest
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
+
+supports_unicode_filenames = True
+if not os.path.supports_unicode_filenames:
+    try:
+        support.TESTFN_UNICODE.encode(support.TESTFN_ENCODING)
+    except (AttributeError, UnicodeError, TypeError):
+        # Either the file system encoding is None, or the file name
+        # cannot be encoded in the file system encoding.
+        supports_unicode_filenames = False
+requires_unicode_filenames = unittest.skipUnless(
+        supports_unicode_filenames,
+        'Requires unicode filenames support')
 
 ns_uri = "http://www.python.org/xml-ns/saxtest/"
 
@@ -386,8 +399,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
-    @unittest.skipUnless(hasattr(support, 'TESTFN_UNICODE'),
-                         'Requires unicode filenames support')
+    @requires_unicode_filenames
     def test_expat_file_unicode(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
@@ -541,8 +553,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
-    @unittest.skipUnless(hasattr(support, 'TESTFN_UNICODE'),
-                         'Requires unicode filenames support')
+    @requires_unicode_filenames
     def test_expat_inpsource_sysid_unicode(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
@@ -630,8 +641,7 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(parser.getSystemId(), TEST_XMLFILE)
         self.assertEqual(parser.getPublicId(), None)
 
-    @unittest.skipUnless(hasattr(support, 'TESTFN_UNICODE'),
-                         'Requires unicode filenames support')
+    @requires_unicode_filenames
     def test_expat_locator_withinfo_unicode(self):
         fname = support.TESTFN_UNICODE
         shutil.copyfile(TEST_XMLFILE, fname)
