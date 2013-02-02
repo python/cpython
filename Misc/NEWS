@@ -908,6 +908,9 @@ Documentation
 - Issue #11964: Document a change in v3.2 to the behavior of the indent
   parameter of json encoding operations.
 
+- Issue #15116: Remove references to appscript as it is no longer being
+  supported.
+
 Tools/Demos
 -----------
 
