@@ -5,6 +5,7 @@ import struct, os, time, sys, shutil
 import binascii, cStringIO, stat
 import io
 import re
+import string
 
 try:
     import zlib # We may need its compression method
@@ -1052,7 +1053,7 @@ class ZipFile(object):
         # filter illegal characters on Windows
         if os.path.sep == '\\':
             illegal = ':<>|"?*'
-            table = str.maketrans(illegal, '_' * len(illegal))
+            table = string.maketrans(illegal, '_' * len(illegal))
             arcname = arcname.translate(table)
 
         targetpath = os.path.join(targetpath, arcname)
