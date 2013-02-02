@@ -167,13 +167,21 @@ weakref_repr(PyWeakReference *self)
                 PyErr_Clear();
         else if (PyString_Check(nameobj))
                 name = PyString_AS_STRING(nameobj);
-        PyOS_snprintf(buffer, sizeof(buffer),
-                      name ? "<weakref at %p; to '%.50s' at %p (%s)>"
-                           : "<weakref at %p; to '%.50s' at %p>",
-                      self,
-                      Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-                      PyWeakref_GET_OBJECT(self),
-                      name);
+        if (name != NULL) {
+            PyOS_snprintf(buffer, sizeof(buffer),
+                          "<weakref at %p; to '%.50s' at %p (%s)>",
+                          self,
+                          Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
+                          PyWeakref_GET_OBJECT(self),
+                          name);
+        }
+        else {
+            PyOS_snprintf(buffer, sizeof(buffer),
+                          "<weakref at %p; to '%.50s' at %p>",
+                          self,
+                          Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
+                          PyWeakref_GET_OBJECT(self));
+        }
         Py_XDECREF(nameobj);
     }
     return PyString_FromString(buffer);
