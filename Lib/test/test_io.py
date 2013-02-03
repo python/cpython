@@ -36,6 +36,7 @@ from itertools import cycle, count
 from collections import deque
 from UserList import UserList
 from test import test_support as support
+import contextlib
 
 import codecs
 import io  # C implementation of io
@@ -2419,6 +2420,39 @@ class TextIOWrapperTest(unittest.TestCase):
         with self.assertRaises((AttributeError, TypeError)):
             txt.buffer = buf
 
+    def test_read_nonbytes(self):
+        # Issue #17106
+        # Crash when underlying read() returns non-bytes
+        class NonbytesStream(self.StringIO):
+            read1 = self.StringIO.read
+        class NonbytesStream(self.StringIO):
+            read1 = self.StringIO.read
+        t = self.TextIOWrapper(NonbytesStream('a'))
+        with self.maybeRaises(TypeError):
+            t.read(1)
+        t = self.TextIOWrapper(NonbytesStream('a'))
+        with self.maybeRaises(TypeError):
+            t.readline()
+        t = self.TextIOWrapper(NonbytesStream('a'))
+        self.assertEqual(t.read(), u'a')
+
+    def test_illegal_decoder(self):
+        # Issue #17106
+        # Crash when decoder returns non-string
+        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                               encoding='quopri_codec')
+        with self.maybeRaises(TypeError):
+            t.read(1)
+        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                               encoding='quopri_codec')
+        with self.maybeRaises(TypeError):
+            t.readline()
+        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                               encoding='quopri_codec')
+        with self.maybeRaises(TypeError):
+            t.read()
+
+
 class CTextIOWrapperTest(TextIOWrapperTest):
 
     def test_initialization(self):
@@ -2460,9 +2494,13 @@ class CTextIOWrapperTest(TextIOWrapperTest):
             t2.buddy = t1
         support.gc_collect()
 
+    maybeRaises = unittest.TestCase.assertRaises
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
-    pass
+    @contextlib.contextmanager
+    def maybeRaises(self, *args, **kwds):
+        yield
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):
