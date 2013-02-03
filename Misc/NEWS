@@ -199,6 +199,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17106: Fix a segmentation fault in io.TextIOWrapper when an underlying
+  stream or a decoder produces data of an unexpected type (i.e. when
+  io.TextIOWrapper initialized with text stream or use bytes-to-bytes codec).
+
 - Issue #15633: httplib.HTTPResponse is now mark closed when the server
   sends less than the advertised Content-Length.
 
