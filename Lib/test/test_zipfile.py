@@ -538,8 +538,15 @@ class TestsWithSourceFile(unittest.TestCase):
         with open(filename, 'rb') as f:
             self.assertEqual(f.read(), content)
 
-    def test_extract_hackers_arcnames(self):
-        hacknames = [
+    def test_sanitize_windows_name(self):
+        san = zipfile.ZipFile._sanitize_windows_name
+        # Passing pathsep in allows this test to work regardless of platform.
+        self.assertEqual(san(r',,?,C:,foo,bar/z', ','), r'_,C_,foo,bar/z')
+        self.assertEqual(san(r'a\b,c<d>e|f"g?h*i', ','), r'a\b,c_d_e_f_g_h_i')
+        self.assertEqual(san('../../foo../../ba..r', '/'), r'foo/ba..r')
+
+    def test_extract_hackers_arcnames_common_cases(self):
+        common_hacknames = [
             ('../foo/bar', 'foo/bar'),
             ('foo/../bar', 'foo/bar'),
             ('foo/../../bar', 'foo/bar'),
@@ -549,8 +556,12 @@ class TestsWithSourceFile(unittest.TestCase):
             ('/foo/../bar', 'foo/bar'),
             ('/foo/../../bar', 'foo/bar'),
         ]
-        if os.path.sep == '\\':  # Windows.
-            hacknames.extend([
+        self._test_extract_hackers_arcnames(common_hacknames)
+
+    @unittest.skipIf(os.path.sep != '\\', 'Requires \\ as path separator.')
+    def test_extract_hackers_arcnames_windows_only(self):
+        """Test combination of path fixing and windows name sanitization."""
+        windows_hacknames = [
                 (r'..\foo\bar', 'foo/bar'),
                 (r'..\/foo\/bar', 'foo/bar'),
                 (r'foo/\..\/bar', 'foo/bar'),
@@ -570,14 +581,19 @@ class TestsWithSourceFile(unittest.TestCase):
                 (r'C:/../C:/foo/bar', 'C_/foo/bar'),
                 (r'a:b\c<d>e|f"g?h*i', 'b/c_d_e_f_g_h_i'),
                 ('../../foo../../ba..r', 'foo/ba..r'),
-            ])
-        else:  # Unix
-            hacknames.extend([
-                ('//foo/bar', 'foo/bar'),
-                ('../../foo../../ba..r', 'foo../ba..r'),
-                (r'foo/..\bar', r'foo/..\bar'),
-            ])
+        ]
+        self._test_extract_hackers_arcnames(windows_hacknames)
 
+    @unittest.skipIf(os.path.sep != '/', r'Requires / as path separator.')
+    def test_extract_hackers_arcnames_posix_only(self):
+        posix_hacknames = [
+            ('//foo/bar', 'foo/bar'),
+            ('../../foo../../ba..r', 'foo../ba..r'),
+            (r'foo/..\bar', r'foo/..\bar'),
+        ]
+        self._test_extract_hackers_arcnames(posix_hacknames)
+
+    def _test_extract_hackers_arcnames(self, hacknames):
         for arcname, fixedname in hacknames:
             content = b'foobar' + arcname.encode()
             with zipfile.ZipFile(TESTFN2, 'w', zipfile.ZIP_STORED) as zipfp:
@@ -594,7 +610,8 @@ class TestsWithSourceFile(unittest.TestCase):
             with zipfile.ZipFile(TESTFN2, 'r') as zipfp:
                 writtenfile = zipfp.extract(arcname, targetpath)
                 self.assertEqual(writtenfile, correctfile,
-                                 msg="extract %r" % arcname)
+                                 msg='extract %r: %r != %r' %
+                                 (arcname, writtenfile, correctfile))
             self.check_file(correctfile, content)
             shutil.rmtree('target')
 
