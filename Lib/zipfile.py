@@ -883,6 +883,7 @@ class ZipFile:
     """
 
     fp = None                   # Set here since __del__ checks it
+    _windows_illegal_name_trans_table = None
 
     def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=False):
         """Open the ZIP file with mode read "r", write "w" or append "a"."""
@@ -1223,6 +1224,21 @@ class ZipFile:
         for zipinfo in members:
             self.extract(zipinfo, path, pwd)
 
+    @classmethod
+    def _sanitize_windows_name(cls, arcname, pathsep):
+        """Replace bad characters and remove trailing dots from parts."""
+        table = cls._windows_illegal_name_trans_table
+        if not table:
+            illegal = ':<>|"?*'
+            table = str.maketrans(illegal, '_' * len(illegal))
+            cls._windows_illegal_name_trans_table = table
+        arcname = arcname.translate(table)
+        # remove trailing dots
+        arcname = (x.rstrip('.') for x in arcname.split(pathsep))
+        # rejoin, removing empty parts.
+        arcname = pathsep.join(x for x in arcname if x)
+        return arcname
+
     def _extract_member(self, member, targetpath, pwd):
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
@@ -1236,16 +1252,12 @@ class ZipFile:
         # interpret absolute pathname as relative, remove drive letter or
         # UNC path, redundant separators, "." and ".." components.
         arcname = os.path.splitdrive(arcname)[1]
+        invalid_path_parts = ('', os.path.curdir, os.path.pardir)
         arcname = os.path.sep.join(x for x in arcname.split(os.path.sep)
-                    if x not in ('', os.path.curdir, os.path.pardir))
+                                   if x not in invalid_path_parts)
         if os.path.sep == '\\':
             # filter illegal characters on Windows
-            illegal = ':<>|"?*'
-            table = str.maketrans(illegal, '_' * len(illegal))
-            arcname = arcname.translate(table)
-            # remove trailing dots
-            arcname = (x.rstrip('.') for x in arcname.split(os.path.sep))
-            arcname = os.path.sep.join(x for x in arcname if x)
+            arcname = self._sanitize_windows_name(arcname, os.path.sep)
 
         targetpath = os.path.join(targetpath, arcname)
         targetpath = os.path.normpath(targetpath)
