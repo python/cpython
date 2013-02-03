@@ -946,7 +946,7 @@ method:
 
 
 The patchers
-============
+------------
 
 The patch decorators are used for patching objects only within the scope of
 the function they decorate. They automatically handle the unpatching for you,
@@ -955,7 +955,7 @@ statements or as class decorators.
 
 
 patch
------
+~~~~~
 
 .. note::
 
@@ -1128,7 +1128,7 @@ into a `patch` call using `**`:
 
 
 patch.object
-------------
+~~~~~~~~~~~~
 
 .. function:: patch.object(target, attribute, new=DEFAULT, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
@@ -1164,7 +1164,7 @@ meaning as they do for `patch`.
 
 
 patch.dict
-----------
+~~~~~~~~~~
 
 .. function:: patch.dict(in_dict, values=(), clear=False, **kwargs)
 
@@ -1247,7 +1247,7 @@ magic methods `__getitem__`, `__setitem__`, `__delitem__` and either
 
 
 patch.multiple
---------------
+~~~~~~~~~~~~~~
 
 .. function:: patch.multiple(target, spec=None, create=False, spec_set=None, autospec=None, new_callable=None, **kwargs)
 
@@ -1311,7 +1311,7 @@ context manger is a dictionary where created mocks are keyed by name:
 .. _start-and-stop:
 
 patch methods: start and stop
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 All the patchers have `start` and `stop` methods. These make it simpler to do
 patching in `setUp` methods or where you want to do multiple patches without
@@ -1384,7 +1384,7 @@ It is also possible to stop all patches which have been started by using
 
 
 TEST_PREFIX
------------
+~~~~~~~~~~~
 
 All of the patchers can be used as class decorators. When used in this way
 they wrap every test method on the class. The patchers recognise methods that
@@ -1414,7 +1414,7 @@ inform the patchers of the different prefix by setting `patch.TEST_PREFIX`:
 
 
 Nesting Patch Decorators
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to perform multiple patches then you can simply stack up the
 decorators.
@@ -1443,7 +1443,7 @@ passed into your test function matches this order.
 .. _where-to-patch:
 
 Where to patch
---------------
+~~~~~~~~~~~~~~
 
 `patch` works by (temporarily) changing the object that a *name* points to with
 another one. There can be many names pointing to any individual object, so
@@ -1485,7 +1485,7 @@ being looked up on the a module and so we have to patch `a.SomeClass` instead::
 
 
 Patching Descriptors and Proxy Objects
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Both patch_ and patch.object_ correctly patch and restore descriptors: class
 methods, static methods and properties. You should patch these on the *class*
@@ -1495,12 +1495,12 @@ that proxy attribute access, like the `django setttings object
 
 
 MagicMock and magic method support
-==================================
+----------------------------------
 
 .. _magic-methods:
 
 Mocking Magic Methods
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 :class:`Mock` supports mocking the Python protocol methods, also known as
 "magic methods". This allows mock objects to replace containers or other
@@ -1586,7 +1586,7 @@ by mock, can't be set dynamically, or can cause problems:
 
 
 Magic Mock
-----------
+~~~~~~~~~~
 
 There are two `MagicMock` variants: `MagicMock` and `NonCallableMagicMock`.
 
@@ -1715,10 +1715,10 @@ Magic methods that are supported but not setup by default in ``MagicMock`` are:
 
 
 Helpers
-=======
+-------
 
 sentinel
---------
+~~~~~~~~
 
 .. data:: sentinel
 
@@ -1746,7 +1746,7 @@ In this example we monkey patch `method` to return `sentinel.some_object`:
 
 
 DEFAULT
--------
+~~~~~~~
 
 
 .. data:: DEFAULT
@@ -1756,9 +1756,8 @@ DEFAULT
     functions to indicate that the normal return value should be used.
 
 
-
 call
-----
+~~~~
 
 .. function:: call(*args, **kwargs)
 
@@ -1847,7 +1846,7 @@ arguments are a dictionary:
 
 
 create_autospec
----------------
+~~~~~~~~~~~~~~~
 
 .. function:: create_autospec(spec, spec_set=False, instance=False, **kwargs)
 
@@ -1874,7 +1873,7 @@ See :ref:`auto-speccing` for examples of how to use auto-speccing with
 
 
 ANY
----
+~~~
 
 .. data:: ANY
 
@@ -1905,7 +1904,7 @@ passed in.
 
 
 FILTER_DIR
-----------
+~~~~~~~~~~
 
 .. data:: FILTER_DIR
 
@@ -1960,7 +1959,7 @@ Alternatively you can just use `vars(my_mock)` (instance members) and
 
 
 mock_open
----------
+~~~~~~~~~
 
 .. function:: mock_open(mock=None, read_data=None)
 
@@ -2014,7 +2013,7 @@ And for reading files:
 .. _auto-speccing:
 
 Autospeccing
-------------
+~~~~~~~~~~~~
 
 Autospeccing is based on the existing `spec` feature of mock. It limits the
 api of mocks to the api of an original object (the spec), but it is recursive
