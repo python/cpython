@@ -236,6 +236,21 @@ incrementalnewlinedecoder_dealloc(nldecoder_object *self)
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
+static int
+check_decoded(PyObject *decoded)
+{
+    if (decoded == NULL)
+        return -1;
+    if (!PyUnicode_Check(decoded)) {
+        PyErr_Format(PyExc_TypeError,
+                     "decoder should return a string result, not '%.200s'",
+                     Py_TYPE(decoded)->tp_name);
+        Py_DECREF(decoded);
+        return -1;
+    }
+    return 0;
+}
+
 #define SEEN_CR   1
 #define SEEN_LF   2
 #define SEEN_CRLF 4
@@ -265,14 +280,8 @@ _PyIncrementalNewlineDecoder_decode(PyObject *_self,
         Py_INCREF(output);
     }
 
-    if (output == NULL)
+    if (check_decoded(output) < 0)
         return NULL;
-
-    if (!PyUnicode_Check(output)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "decoder should return a string result");
-        goto error;
-    }
 
     output_len = PyUnicode_GET_SIZE(output);
     if (self->pendingcr && (final || output_len > 0)) {
@@ -1454,7 +1463,13 @@ textiowrapper_read_chunk(textio *self)
     Py_DECREF(chunk_size);
     if (input_chunk == NULL)
         goto fail;
-    assert(PyBytes_Check(input_chunk));
+    if (!PyBytes_Check(input_chunk)) {
+        PyErr_Format(PyExc_TypeError,
+                     "underlying %s() should have returned a bytes object, "
+                     "not '%.200s'", (self->has_read1 ? "read1": "read"),
+                     Py_TYPE(input_chunk)->tp_name);
+        goto fail;
+    }
 
     eof = (PyBytes_Size(input_chunk) == 0);
 
@@ -1467,8 +1482,7 @@ textiowrapper_read_chunk(textio *self)
             _PyIO_str_decode, input_chunk, eof ? Py_True : Py_False, NULL);
     }
 
-    /* TODO sanity check: isinstance(decoded_chars, unicode) */
-    if (decoded_chars == NULL)
+    if (check_decoded(decoded_chars) < 0)
         goto fail;
     textiowrapper_set_decoded_chars(self, decoded_chars);
     if (PyUnicode_GET_SIZE(decoded_chars) > 0)
@@ -1481,7 +1495,14 @@ textiowrapper_read_chunk(textio *self)
         PyObject *next_input = PyNumber_Add(dec_buffer, input_chunk);
         if (next_input == NULL)
             goto fail;
-        assert (PyBytes_Check(next_input));
+        if (!PyBytes_Check(next_input)) {
+            PyErr_Format(PyExc_TypeError,
+                         "decoder getstate() should have returned a bytes "
+                         "object, not '%.200s'",
+                         Py_TYPE(next_input)->tp_name);
+            Py_DECREF(next_input);
+            goto fail;
+        }
         Py_DECREF(dec_buffer);
         Py_CLEAR(self->snapshot);
         self->snapshot = Py_BuildValue("NN", dec_flags, next_input);
@@ -1525,7 +1546,7 @@ textiowrapper_read(textio *self, PyObject *args)
         decoded = PyObject_CallMethodObjArgs(self->decoder, _PyIO_str_decode,
                                              bytes, Py_True, NULL);
         Py_DECREF(bytes);
-        if (decoded == NULL)
+        if (check_decoded(decoded) < 0)
             goto fail;
 
         result = textiowrapper_get_decoded_chars(self, -1);
@@ -2123,7 +2144,14 @@ textiowrapper_seek(textio *self, PyObject *args)
         if (input_chunk == NULL)
             goto fail;
 
-        assert (PyBytes_Check(input_chunk));
+        if (!PyBytes_Check(input_chunk)) {
+            PyErr_Format(PyExc_TypeError,
+                         "underlying read() should have returned a bytes "
+                         "object, not '%.200s'",
+                         Py_TYPE(input_chunk)->tp_name);
+            Py_DECREF(input_chunk);
+            goto fail;
+        }
 
         self->snapshot = Py_BuildValue("iN", cookie.dec_flags, input_chunk);
         if (self->snapshot == NULL) {
@@ -2134,7 +2162,7 @@ textiowrapper_seek(textio *self, PyObject *args)
         decoded = PyObject_CallMethod(self->decoder, "decode",
                                       "Oi", input_chunk, (int)cookie.need_eof);
 
-        if (decoded == NULL)
+        if (check_decoded(decoded) < 0)
             goto fail;
 
         textiowrapper_set_decoded_chars(self, decoded);
@@ -2257,9 +2285,8 @@ textiowrapper_tell(textio *self, PyObject *args)
 
         PyObject *decoded = PyObject_CallMethod(
             self->decoder, "decode", "y#", input, 1);
-        if (decoded == NULL)
+        if (check_decoded(decoded) < 0)
             goto fail;
-        assert (PyUnicode_Check(decoded));
         chars_decoded += PyUnicode_GET_SIZE(decoded);
         Py_DECREF(decoded);
 
@@ -2291,9 +2318,8 @@ textiowrapper_tell(textio *self, PyObject *args)
         /* We didn't get enough decoded data; signal EOF to get more. */
         PyObject *decoded = PyObject_CallMethod(
             self->decoder, "decode", "yi", "", /* final = */ 1);
-        if (decoded == NULL)
+        if (check_decoded(decoded) < 0)
             goto fail;
-        assert (PyUnicode_Check(decoded));
         chars_decoded += PyUnicode_GET_SIZE(decoded);
         Py_DECREF(decoded);
         cookie.need_eof = 1;
