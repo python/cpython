@@ -182,6 +182,10 @@ class StartupTests(unittest.TestCase):
         # Issue #17098: all modules should have __loader__ defined.
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
+                # pyexpat/xml.parsers.expat have submodules that it creates
+                # by hand and do not set __loader__, which is acceptable.
+                if 'expat' in name:
+                    continue
                 self.assertTrue(hasattr(module, '__loader__'),
                         '{!r} lacks a __loader__ attribute'.format(name))
                 if name in sys.builtin_module_names:
