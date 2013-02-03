@@ -2542,6 +2542,30 @@ class TextIOWrapperTest(unittest.TestCase):
         txt.write('5')
         self.assertEqual(b''.join(raw._write_stack), b'123\n45')
 
+    def test_read_nonbytes(self):
+        # Issue #17106
+        # Crash when underlying read() returns non-bytes
+        t = self.TextIOWrapper(self.StringIO('a'))
+        self.assertRaises(TypeError, t.read, 1)
+        t = self.TextIOWrapper(self.StringIO('a'))
+        self.assertRaises(TypeError, t.readline)
+        t = self.TextIOWrapper(self.StringIO('a'))
+        self.assertRaises(TypeError, t.read)
+
+    def test_illegal_decoder(self):
+        # Issue #17106
+        # Crash when decoder returns non-string
+        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                               encoding='quopri_codec')
+        self.assertRaises(TypeError, t.read, 1)
+        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                               encoding='quopri_codec')
+        self.assertRaises(TypeError, t.readline)
+        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                               encoding='quopri_codec')
+        self.assertRaises(TypeError, t.read)
+
+
 class CTextIOWrapperTest(TextIOWrapperTest):
 
     def test_initialization(self):
