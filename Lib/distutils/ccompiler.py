@@ -17,6 +17,8 @@ from distutils.dir_util import mkpath
 from distutils.dep_util import newer_group
 from distutils.util import split_quoted, execute
 from distutils import log
+# following import is for backward compatibility
+from distutils.sysconfig import customize_compiler
 
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
