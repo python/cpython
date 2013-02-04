@@ -1,5 +1,6 @@
 import unittest
 from ctypes import *
+import os
 
 import _ctypes_test
 
@@ -33,6 +34,7 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
 
+    @unittest.skipIf(os.name == 'nt', 'Temporarily disabled for Windows')
     def test_from_dll(self):
         dll = CDLL(_ctypes_test.__file__)
         # _CFuncPtr instances are now callable with a tuple argument
@@ -43,8 +45,9 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
 
+    @unittest.skipIf(os.name == 'nt', 'Temporarily disabled for Windows')
     # Issue 6083: Reference counting bug
-    def test_test_from_dll_refcount(self):
+    def test_from_dll_refcount(self):
         class BadSequence(tuple):
             def __getitem__(self, key):
                 if key == 0:
