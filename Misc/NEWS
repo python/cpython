@@ -212,6 +212,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16903: Popen.communicate() on Unix now accepts strings when
+  universal_newlines is true as on Windows.
+
 - Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
   parses nested mutating sequence.
 
