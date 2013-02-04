@@ -199,6 +199,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5289: Fix ctypes.util.find_library on Solaris.
+
 - Issue #17106: Fix a segmentation fault in io.TextIOWrapper when an underlying
   stream or a decoder produces data of an unexpected type (i.e. when
   io.TextIOWrapper initialized with text stream or use bytes-to-bytes codec).
