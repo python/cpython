@@ -212,6 +212,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
+  parses nested mutating sequence.
+
 - Issue #17106: Fix a segmentation fault in io.TextIOWrapper when an underlying
   stream or a decoder produces data of an unexpected type (i.e. when
   io.TextIOWrapper initialized with text stream or use bytes-to-bytes codec).
