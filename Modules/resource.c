@@ -144,10 +144,9 @@ resource_setrlimit(PyObject *self, PyObject *args)
 {
     struct rlimit rl;
     int resource;
-    PyObject *curobj, *maxobj;
+    PyObject *limits, *curobj, *maxobj;
 
-    if (!PyArg_ParseTuple(args, "i(OO):setrlimit",
-                          &resource, &curobj, &maxobj))
+    if (!PyArg_ParseTuple(args, "iO:setrlimit", &resource, &limits))
         return NULL;
 
     if (resource < 0 || resource >= RLIM_NLIMITS) {
@@ -156,21 +155,34 @@ resource_setrlimit(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    limits = PySequence_Tuple(limits);
+    if (!limits)
+        /* Here limits is a borrowed reference */
+        return NULL;
+
+    if (PyTuple_GET_SIZE(limits) != 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "expected a tuple of 2 integers");
+        goto error;
+    }
+    curobj = PyTuple_GET_ITEM(limits, 0);
+    maxobj = PyTuple_GET_ITEM(limits, 1);
+
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     rl.rlim_cur = PyLong_AsLong(curobj);
     if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
-        return NULL;
+        goto error;
     rl.rlim_max = PyLong_AsLong(maxobj);
     if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        return NULL;
+        goto error;
 #else
     /* The limits are probably bigger than a long */
     rl.rlim_cur = PyLong_AsLongLong(curobj);
     if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
-        return NULL;
+        goto error;
     rl.rlim_max = PyLong_AsLongLong(maxobj);
     if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        return NULL;
+        goto error;
 #endif
 
     rl.rlim_cur = rl.rlim_cur & RLIM_INFINITY;
@@ -184,10 +196,15 @@ resource_setrlimit(PyObject *self, PyObject *args)
                             "not allowed to raise maximum limit");
         else
             PyErr_SetFromErrno(ResourceError);
-        return NULL;
+        goto error;
     }
+    Py_DECREF(limits);
     Py_INCREF(Py_None);
     return Py_None;
+
+  error:
+    Py_DECREF(limits);
+    return NULL;
 }
 
 static PyObject *
