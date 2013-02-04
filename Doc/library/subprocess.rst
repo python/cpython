@@ -537,9 +537,10 @@ Instances of the :class:`Popen` class have the following methods:
 .. method:: Popen.communicate(input=None)
 
    Interact with process: Send data to stdin.  Read data from stdout and stderr,
-   until end-of-file is reached.  Wait for process to terminate. The optional
-   *input* argument should be a byte string to be sent to the child process, or
-   ``None``, if no data should be sent to the child.
+   until end-of-file is reached.  Wait for process to terminate.  The optional
+   *input* argument should be data to be sent to the child process, or
+   ``None``, if no data should be sent to the child.  The type of *input*
+   must be bytes or, if *universal_newlines* was ``True``, a string.
 
    :meth:`communicate` returns a tuple ``(stdoutdata, stderrdata)``.
 
