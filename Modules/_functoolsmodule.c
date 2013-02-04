@@ -254,10 +254,10 @@ partial_reduce(partialobject *pto, PyObject *unused)
 }
 
 static PyObject *
-partial_setstate(partialobject *pto, PyObject *args)
+partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
-    if (!PyArg_ParseTuple(args, "(OOOO):__setstate__",
+    if (!PyArg_ParseTuple(state, "OOOO",
                           &fn, &fnargs, &kw, &dict))
         return NULL;
     Py_XDECREF(pto->fn);
@@ -281,7 +281,7 @@ partial_setstate(partialobject *pto, PyObject *args)
 
 static PyMethodDef partial_methods[] = {
     {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
-    {"__setstate__", (PyCFunction)partial_setstate, METH_VARARGS},
+    {"__setstate__", (PyCFunction)partial_setstate, METH_O},
     {NULL,              NULL}           /* sentinel */
 };
 
