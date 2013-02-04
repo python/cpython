@@ -212,6 +212,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17089: Expat parser now correctly works with string input not only when
+  an internal XML encoding is UTF-8 or US-ASCII.  It now accepts bytes and
+  strings larger than 2 GiB.
+
 - Issue #16903: Popen.communicate() on Unix now accepts strings when
   universal_newlines is true as on Windows.
 
