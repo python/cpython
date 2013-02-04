@@ -163,6 +163,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17089: Expat parser now correctly works with string input not only when
+  an internal XML encoding is UTF-8 or US-ASCII.  It now accepts bytes and
+  strings larger than 2 GiB.
+
 - Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
   parses nested mutating sequence.
 
