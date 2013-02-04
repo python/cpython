@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
+  parses nested mutating sequence.
+
 - Issue #5289: Fix ctypes.util.find_library on Solaris.
 
 - Issue #17106: Fix a segmentation fault in io.TextIOWrapper when an underlying
