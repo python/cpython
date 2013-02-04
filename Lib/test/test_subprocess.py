@@ -608,8 +608,6 @@ class ProcessTestCase(BaseTestCase):
                              universal_newlines=1)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
-        # BUG: can't give a non-empty stdin because it breaks both the
-        # select- and poll-based communicate() implementations.
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout,
                          "line2\nline4\nline5\nline6\nline7\nline8")
@@ -639,6 +637,35 @@ class ProcessTestCase(BaseTestCase):
                              universal_newlines=True)
         p.communicate()
         self.assertEqual(p.returncode, 0)
+
+    def test_universal_newlines_communicate_stdin_stdout_stderr(self):
+        # universal newlines through communicate(), with stdin, stdout, stderr
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys,os;' + SETBINARY + '''\nif True:
+                                  s = sys.stdin.buffer.readline()
+                                  sys.stdout.buffer.write(s)
+                                  sys.stdout.buffer.write(b"line2\\r")
+                                  sys.stderr.buffer.write(b"eline2\\n")
+                                  s = sys.stdin.buffer.read()
+                                  sys.stdout.buffer.write(s)
+                                  sys.stdout.buffer.write(b"line4\\n")
+                                  sys.stdout.buffer.write(b"line5\\r\\n")
+                                  sys.stderr.buffer.write(b"eline6\\r")
+                                  sys.stderr.buffer.write(b"eline7\\r\\nz")
+                              '''],
+                             stdin=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             stdout=subprocess.PIPE,
+                             universal_newlines=True)
+        self.addCleanup(p.stdout.close)
+        self.addCleanup(p.stderr.close)
+        (stdout, stderr) = p.communicate("line1\nline3\n")
+        self.assertEqual(p.returncode, 0)
+        self.assertEqual("line1\nline2\nline3\nline4\nline5\n", stdout)
+        # Python debug build push something like "[42442 refs]\n"
+        # to stderr at exit of subprocess.
+        # Don't use assertStderrEqual because it strips CR and LF from output.
+        self.assertTrue(stderr.startswith("eline2\neline6\neline7\n"))
 
     def test_universal_newlines_communicate_encodings(self):
         # Check that universal newlines mode works for various encodings,

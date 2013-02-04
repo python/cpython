@@ -1519,6 +1519,8 @@ class Popen(object):
                 fd2output[self.stderr.fileno()] = stderr = []
 
             input_offset = 0
+            if self.universal_newlines and isinstance(input, str):
+                input = input.encode(self.stdin.encoding)
             while fd2file:
                 try:
                     ready = poller.poll()
@@ -1571,6 +1573,8 @@ class Popen(object):
                 stderr = []
 
             input_offset = 0
+            if self.universal_newlines and isinstance(input, str):
+                input = input.encode(self.stdin.encoding)
             while read_set or write_set:
                 try:
                     rlist, wlist, xlist = select.select(read_set, write_set, [])
