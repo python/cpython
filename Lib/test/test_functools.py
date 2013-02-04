@@ -194,7 +194,25 @@ class TestPartial(object):
         self.assertEqual(signature(f), signature(f_copy))
 
 class TestPartialC(BaseTestC, TestPartial):
-    pass
+
+    # Issue 6083: Reference counting bug
+    def test_setstate_refcount(self):
+        class BadSequence:
+            def __len__(self):
+                return 4
+            def __getitem__(self, key):
+                if key == 0:
+                    return max
+                elif key == 1:
+                    return tuple(range(1000000))
+                elif key in (2, 3):
+                    return {}
+                raise IndexError
+
+        f = self.partial(object)
+        self.assertRaisesRegex(SystemError,
+                "new style getargs format but argument is not a tuple",
+                f.__setstate__, BadSequence())
 
 class TestPartialPy(BaseTestPy, TestPartial):
 
@@ -204,7 +222,7 @@ class TestPartialPy(BaseTestPy, TestPartial):
     def test_repr(self):
         raise unittest.SkipTest("Python implementation of partial uses own repr")
 
-class TestPartialCSubclass(BaseTestC, TestPartial):
+class TestPartialCSubclass(TestPartialC):
 
     class PartialSubclass(c_functools.partial):
         pass
