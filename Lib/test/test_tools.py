@@ -50,7 +50,7 @@ class PindentTests(unittest.TestCase):
                 (sys.executable, self.script) + args,
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 universal_newlines=True) as proc:
-            out, err = proc.communicate(source.encode())
+            out, err = proc.communicate(source)
         self.assertIsNone(err)
         return out
 
