@@ -3188,23 +3188,37 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     char *name;
     int (* address)(void);
+    PyObject *ftuple;
     PyObject *dll;
     PyObject *obj;
     PyCFuncPtrObject *self;
     void *handle;
     PyObject *paramflags = NULL;
 
-    if (!PyArg_ParseTuple(args, "(O&O)|O", _get_name, &name, &dll, &paramflags))
+    if (!PyArg_ParseTuple(args, "O|O", &ftuple, &paramflags))
         return NULL;
     if (paramflags == Py_None)
         paramflags = NULL;
 
-    obj = PyObject_GetAttrString(dll, "_handle");
-    if (!obj)
+    ftuple = PySequence_Tuple(ftuple);
+    if (!ftuple)
+        /* Here ftuple is a borrowed reference */
         return NULL;
+
+    if (!PyArg_ParseTuple(ftuple, "O&O", _get_name, &name, &dll)) {
+        Py_DECREF(ftuple);
+        return NULL;
+    }
+
+    obj = PyObject_GetAttrString(dll, "_handle");
+    if (!obj) {
+        Py_DECREF(ftuple);
+        return NULL;
+    }
     if (!PyLong_Check(obj)) {
         PyErr_SetString(PyExc_TypeError,
                         "the _handle attribute of the second argument must be an integer");
+        Py_DECREF(ftuple);
         Py_DECREF(obj);
         return NULL;
     }
@@ -3213,6 +3227,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyErr_Occurred()) {
         PyErr_SetString(PyExc_ValueError,
                         "could not convert the _handle attribute to a pointer");
+        Py_DECREF(ftuple);
         return NULL;
     }
 
@@ -3227,6 +3242,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyErr_Format(PyExc_AttributeError,
                          "function ordinal %d not found",
                          (WORD)(size_t)name);
+        Py_DECREF(ftuple);
         return NULL;
     }
 #else
@@ -3240,9 +3256,12 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #else
         PyErr_SetString(PyExc_AttributeError, ctypes_dlerror());
 #endif
+        Py_DECREF(ftuple);
         return NULL;
     }
 #endif
+    Py_INCREF(dll); /* for KeepRef */
+    Py_DECREF(ftuple);
     if (!_validate_paramflags(type, paramflags))
         return NULL;
 
@@ -3255,7 +3274,6 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     *(void **)self->b_ptr = address;
 
-    Py_INCREF((PyObject *)dll); /* for KeepRef */
     if (-1 == KeepRef((CDataObject *)self, 0, dll)) {
         Py_DECREF((PyObject *)self);
         return NULL;
