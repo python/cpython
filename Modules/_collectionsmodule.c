@@ -3,13 +3,13 @@
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2004 Python Software Foundation.
+   Copyright (c) 2004-2013 Python Software Foundation.
    All rights reserved.
 */
 
 /* The block length may be set to any number over 1.  Larger numbers
  * reduce the number of calls to the memory allocator but take more
- * memory.  Ideally, BLOCKLEN should be set with an eye to the
+ * memory.  Ideally, BLOCKLEN should be set to a multiple of the
  * length of a cache line.
  */
 
@@ -413,7 +413,7 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
-    Py_ssize_t i, m, len=deque->len, halflen=(len+1)>>1;
+    Py_ssize_t i, m, len=deque->len, halflen=len>>1;
     block *prevblock;
 
     if (len <= 1)
@@ -426,7 +426,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             n += len;
     }
     assert(deque->len > 1);
-    assert((n < len / 2) || (n > len / -2));
+    assert(-halflen <= n && n <= halflen);
 
     deque->state++;
     for (i=0 ; i<n ; ) {
@@ -446,9 +446,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             m = deque->rightindex + 1;
         if (m > deque->leftindex)
             m = deque->leftindex;
-        assert (m > 0);
-        assert (deque->leftblock != deque->rightblock ||
-                deque->leftindex < deque->rightindex - m + 1);
+        assert (m > 0 && m <= deque->len);
         memcpy(&deque->leftblock->data[deque->leftindex - m],
                &deque->rightblock->data[deque->rightindex - m + 1],
                m * sizeof(PyObject *));
@@ -483,9 +481,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             m = BLOCKLEN - deque->leftindex;
         if (m > BLOCKLEN - 1 - deque->rightindex)
             m = BLOCKLEN - 1 - deque->rightindex;
-        assert (m > 0);
-        assert (deque->leftblock != deque->rightblock ||
-                deque->leftindex + m < deque->rightindex + 1);
+        assert (m > 0 && m <= deque->len);
         memcpy(&deque->rightblock->data[deque->rightindex + 1],
                &deque->leftblock->data[deque->leftindex],
                m * sizeof(PyObject *));
