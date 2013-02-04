@@ -179,6 +179,25 @@ class TestPartial(unittest.TestCase):
         f_copy = pickle.loads(pickle.dumps(f))
         self.assertEqual(signature(f), signature(f_copy))
 
+    # Issue 6083: Reference counting bug
+    def test_setstate_refcount(self):
+        class BadSequence:
+            def __len__(self):
+                return 4
+            def __getitem__(self, key):
+                if key == 0:
+                    return max
+                elif key == 1:
+                    return tuple(range(1000000))
+                elif key in (2, 3):
+                    return {}
+                raise IndexError
+
+        f = self.thetype(object)
+        self.assertRaisesRegex(SystemError,
+                "new style getargs format but argument is not a tuple",
+                f.__setstate__, BadSequence())
+
 class PartialSubclass(functools.partial):
     pass
 
@@ -195,6 +214,7 @@ class TestPythonPartial(TestPartial):
 
     # the python version isn't picklable
     def test_pickle(self): pass
+    def test_setstate_refcount(self): pass
 
 class TestUpdateWrapper(unittest.TestCase):
 
