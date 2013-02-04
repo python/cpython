@@ -173,7 +173,7 @@ class EmailPolicy(Policy):
         lines = value.splitlines()
         refold = (self.refold_source == 'all' or
                   self.refold_source == 'long' and
-                    (len(lines[0])+len(name)+2 > maxlen or
+                    (lines and len(lines[0])+len(name)+2 > maxlen or
                      any(len(x) > maxlen for x in lines[1:])))
         if refold or refold_binary and _has_surrogates(value):
             return self.header_factory(name, ''.join(lines)).fold(policy=self)
