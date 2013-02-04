@@ -777,17 +777,52 @@ PyDoc_STRVAR(xmlparse_Parse__doc__,
 "Parse(data[, isfinal])\n\
 Parse XML data.  `isfinal' should be true at end of input.");
 
+#define MAX_CHUNK_SIZE (1 << 20)
+
 static PyObject *
 xmlparse_Parse(xmlparseobject *self, PyObject *args)
 {
-    char *s;
-    int slen;
+    PyObject *data;
     int isFinal = 0;
+    const char *s;
+    Py_ssize_t slen;
+    Py_buffer view;
+    int rc;
 
-    if (!PyArg_ParseTuple(args, "s#|i:Parse", &s, &slen, &isFinal))
+    if (!PyArg_ParseTuple(args, "O|i:Parse", &data, &isFinal))
         return NULL;
 
-    return get_parse_result(self, XML_Parse(self->itself, s, slen, isFinal));
+    if (PyUnicode_Check(data)) {
+        PyObject *bytes;
+        bytes = PyUnicode_AsUTF8String(data);
+        if (bytes == NULL)
+            return NULL;
+        view.buf = NULL;
+        s = PyBytes_AS_STRING(bytes);
+        slen = PyBytes_GET_SIZE(bytes);
+        /* Explicitly set UTF-8 encoding. Return code ignored. */
+        (void)XML_SetEncoding(self->itself, "utf-8");
+    }
+    else {
+        if (PyObject_GetBuffer(data, &view, PyBUF_SIMPLE) < 0)
+            return NULL;
+        s = view.buf;
+        slen = view.len;
+    }
+
+    while (slen > MAX_CHUNK_SIZE) {
+        rc = XML_Parse(self->itself, s, MAX_CHUNK_SIZE, 0);
+        if (!rc)
+            goto done;
+        s += MAX_CHUNK_SIZE;
+        slen -= MAX_CHUNK_SIZE;
+    }
+    rc = XML_Parse(self->itself, s, slen, isFinal);
+
+done:
+    if (view.buf != NULL)
+        PyBuffer_Release(&view);
+    return get_parse_result(self, rc);
 }
 
 /* File reading copied from cPickle */
