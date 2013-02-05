@@ -450,6 +450,17 @@ class TestShutil(unittest.TestCase):
             self.assertIn('user.bar', os.listxattr(dst))
         finally:
             os.setxattr = orig_setxattr
+        # the source filesystem not supporting xattrs should be ok, too.
+        def _raise_on_src(fname, *, follow_symlinks=True):
+            if fname == src:
+                raise OSError(errno.ENOTSUP, 'Operation not supported')
+            return orig_listxattr(fname, follow_symlinks=follow_symlinks)
+        try:
+            orig_listxattr = os.listxattr
+            os.listxattr = _raise_on_src
+            shutil._copyxattr(src, dst)
+        finally:
+            os.listxattr = orig_listxattr
 
         # test that shutil.copystat copies xattrs
         src = os.path.join(tmp_dir, 'the_original')
