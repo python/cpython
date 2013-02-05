@@ -107,8 +107,8 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.3
 
-- Certain other address families (:const:`AF_BLUETOOTH`, :const:`AF_PACKET`)
-  support specific representations.
+- Certain other address families (:const:`AF_BLUETOOTH`, :const:`AF_PACKET`,
+  :const:`AF_CAN`) support specific representations.
 
   .. XXX document them!
 
@@ -257,6 +257,16 @@ The module :mod:`socket` exports the following constants and functions:
 
    .. versionadded:: 3.3
 
+.. data:: CAN_BCM
+          CAN_BCM_*
+
+   CAN_BCM, in the CAN protocol family, is the broadcast manager (BCM) protocol.
+   Broadcast manager constants, documented in the Linux documentation, are also
+   defined in the socket module.
+
+   Availability: Linux >= 2.6.25.
+
+   .. versionadded:: 3.4
 
 .. data:: AF_RDS
           PF_RDS
@@ -452,13 +462,16 @@ The module :mod:`socket` exports the following constants and functions:
    :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
    socket type should be :const:`SOCK_STREAM` (the default),
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted in that
-   case or :const:`CAN_RAW` in case the address family is :const:`AF_CAN`.
+   constants. The protocol number is usually zero and may be omitted or in the
+   case where the address family is :const:`AF_CAN` the protocol should be one
+   of :const:`CAN_RAW` or :const:`CAN_BCM`.
 
    .. versionchanged:: 3.3
       The AF_CAN family was added.
       The AF_RDS family was added.
 
+  .. versionchanged:: 3.4
+      The CAN_BCM protocol was added.
 
 .. function:: socketpair([family[, type[, proto]]])
 
@@ -1331,7 +1344,16 @@ the interface::
    s.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
 
 The last example shows how to use the socket interface to communicate to a CAN
-network. This example might require special priviledge::
+network using the raw socket protocol. To use CAN with the broadcast
+manager protocol instead, open a socket with::
+
+    socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
+
+After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, you
+can use the :method:`socket.send`, and the :method:`socket.recv` operations (and
+their counterparts) on the socket object as usual.
+
+This example might require special priviledge::
 
    import socket
    import struct
