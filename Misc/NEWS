@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17076: Make copying of xattrs more permissive of missing FS support.
+  Patch by Thomas Wouters.
+
 - Issue #17089: Expat parser now correctly works with string input not only when
   an internal XML encoding is UTF-8 or US-ASCII.  It now accepts bytes and
   strings larger than 2 GiB.
