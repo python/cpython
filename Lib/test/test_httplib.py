@@ -703,7 +703,7 @@ class HTTPSTest(TestCase):
 
     def make_server(self, certfile):
         from test.ssl_servers import make_https_server
-        return make_https_server(self, certfile)
+        return make_https_server(self, certfile=certfile)
 
     def test_attributes(self):
         # simple test to check it's storing the timeout

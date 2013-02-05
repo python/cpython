@@ -147,9 +147,11 @@ class HTTPSServerThread(threading.Thread):
         self.server.shutdown()
 
 
-def make_https_server(case, certfile=CERTFILE, host=HOST, handler_class=None):
-    # we assume the certfile contains both private key and certificate
-    context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+def make_https_server(case, *, context=None, certfile=CERTFILE,
+                      host=HOST, handler_class=None):
+    if context is None:
+        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+    # We assume the certfile contains both private key and certificate
     context.load_cert_chain(certfile)
     server = HTTPSServerThread(context, host, handler_class)
     flag = threading.Event()
