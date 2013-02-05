@@ -8,29 +8,8 @@ from random import choice
 
 import functools
 
-original_functools = functools
 py_functools = support.import_fresh_module('functools', blocked=['_functools'])
 c_functools = support.import_fresh_module('functools', fresh=['_functools'])
-
-class BaseTest(unittest.TestCase):
-
-    """Base class required for testing C and Py implementations."""
-
-    def setUp(self):
-
-        # The module must be explicitly set so that the proper
-        # interaction between the c module and the python module
-        # can be controlled.
-        self.partial = self.module.partial
-        super(BaseTest, self).setUp()
-
-class BaseTestC(BaseTest):
-    module = c_functools
-
-class BaseTestPy(BaseTest):
-    module = py_functools
-
-PythonPartial = py_functools.partial
 
 def capture(*args, **kw):
     """capture all positional and keyword arguments"""
@@ -40,9 +19,7 @@ def signature(part):
     """ return the signature of a partial object """
     return (part.func, part.args, part.keywords, part.__dict__)
 
-class TestPartial(object):
-
-    partial = functools.partial
+class TestPartial:
 
     def test_basic_examples(self):
         p = self.partial(capture, 1, 2, a=10, b=20)
@@ -161,12 +138,17 @@ class TestPartial(object):
         join = self.partial(''.join)
         self.assertEqual(join(data), '0123456789')
 
+@unittest.skipUnless(c_functools, 'requires the C _functools module')
+class TestPartialC(TestPartial, unittest.TestCase):
+    if c_functools:
+        partial = c_functools.partial
+
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
         kwargs = {'a': object(), 'b': object()}
         kwargs_repr = ', '.join("%s=%r" % (k, v) for k, v in kwargs.items())
-        if self.partial is functools.partial:
+        if self.partial is c_functools.partial:
             name = 'functools.partial'
         else:
             name = self.partial.__name__
@@ -193,8 +175,6 @@ class TestPartial(object):
         f_copy = pickle.loads(pickle.dumps(f))
         self.assertEqual(signature(f), signature(f_copy))
 
-class TestPartialC(BaseTestC, TestPartial):
-
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):
         class BadSequence:
@@ -214,27 +194,17 @@ class TestPartialC(BaseTestC, TestPartial):
                 "new style getargs format but argument is not a tuple",
                 f.__setstate__, BadSequence())
 
-class TestPartialPy(BaseTestPy, TestPartial):
+class TestPartialPy(TestPartial, unittest.TestCase):
+    partial = staticmethod(py_functools.partial)
 
-    def test_pickle(self):
-        raise unittest.SkipTest("Python implementation of partial isn't picklable")
+if c_functools:
+    class PartialSubclass(c_functools.partial):
+        pass
 
-    def test_repr(self):
-        raise unittest.SkipTest("Python implementation of partial uses own repr")
-
+@unittest.skipUnless(c_functools, 'requires the C _functools module')
 class TestPartialCSubclass(TestPartialC):
-
-    class PartialSubclass(c_functools.partial):
-        pass
-
-    partial = staticmethod(PartialSubclass)
-
-class TestPartialPySubclass(TestPartialPy):
-
-    class PartialSubclass(c_functools.partial):
-        pass
-
-    partial = staticmethod(PartialSubclass)
+    if c_functools:
+        partial = PartialSubclass
 
 class TestUpdateWrapper(unittest.TestCase):
 
@@ -482,7 +452,7 @@ class TestReduce(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(self.func(add, d), "".join(d.keys()))
 
-class TestCmpToKey(object):
+class TestCmpToKey:
 
     def test_cmp_to_key(self):
         def cmp1(x, y):
@@ -513,7 +483,7 @@ class TestCmpToKey(object):
         with self.assertRaises(TypeError):
             key = self.cmp_to_key()             # too few args
         with self.assertRaises(TypeError):
-            key = self.module.cmp_to_key(cmp1, None)   # too many args
+            key = self.cmp_to_key(cmp1, None)   # too many args
         key = self.cmp_to_key(cmp1)
         with self.assertRaises(TypeError):
             key()                                    # too few args
@@ -564,10 +534,12 @@ class TestCmpToKey(object):
         self.assertRaises(TypeError, hash, k)
         self.assertNotIsInstance(k, collections.Hashable)
 
-class TestCmpToKeyC(BaseTestC, TestCmpToKey):
-    cmp_to_key = c_functools.cmp_to_key
+@unittest.skipUnless(c_functools, 'requires the C _functools module')
+class TestCmpToKeyC(TestCmpToKey, unittest.TestCase):
+    if c_functools:
+        cmp_to_key = c_functools.cmp_to_key
 
-class TestCmpToKeyPy(BaseTestPy, TestCmpToKey):
+class TestCmpToKeyPy(TestCmpToKey, unittest.TestCase):
     cmp_to_key = staticmethod(py_functools.cmp_to_key)
 
 class TestTotalOrdering(unittest.TestCase):
@@ -842,7 +814,6 @@ def test_main(verbose=None):
         TestPartialC,
         TestPartialPy,
         TestPartialCSubclass,
-        TestPartialPySubclass,
         TestUpdateWrapper,
         TestTotalOrdering,
         TestCmpToKeyC,
