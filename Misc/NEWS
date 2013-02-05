@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16811: Fix folding of headers with no value in the provisional email
+  policies.
+
 - Issue #17132: Update symbol for "yield from" grammar changes.
 
 - Issue #17076: Make copying of xattrs more permissive of missing FS support.
