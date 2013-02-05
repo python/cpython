@@ -91,6 +91,7 @@ comp_for = 333
 comp_if = 334
 encoding_decl = 335
 yield_expr = 336
+yield_arg = 337
 #--end constants--
 
 sym_name = {}
