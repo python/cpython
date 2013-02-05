@@ -754,6 +754,10 @@ Extension Modules
 Tests
 -----
 
+- Issue #17107: Test client-side SNI support in urllib.request thanks to
+  the new server-side SNI support in the ssl module.  Initial patch by
+  Daniel Black.
+
 - Issue #17041: Fix testing when Python is configured with the
   --without-doc-strings.
 

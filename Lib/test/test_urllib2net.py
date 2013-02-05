@@ -330,31 +330,9 @@ class TimeoutTest(unittest.TestCase):
             self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
 
 
-@unittest.skipUnless(ssl, "requires SSL support")
-class HTTPSTests(unittest.TestCase):
-
-    def test_sni(self):
-        self.skipTest("test disabled - test server needed")
-        # Checks that Server Name Indication works, if supported by the
-        # OpenSSL linked to.
-        # The ssl module itself doesn't have server-side support for SNI,
-        # so we rely on a third-party test site.
-        expect_sni = ssl.HAS_SNI
-        with support.transient_internet("XXX"):
-            u = urllib.request.urlopen("XXX")
-            contents = u.readall()
-            if expect_sni:
-                self.assertIn(b"Great", contents)
-                self.assertNotIn(b"Unfortunately", contents)
-            else:
-                self.assertNotIn(b"Great", contents)
-                self.assertIn(b"Unfortunately", contents)
-
-
 def test_main():
     support.requires("network")
     support.run_unittest(AuthTests,
-                         HTTPSTests,
                          OtherNetworkTests,
                          CloseSocketTest,
                          TimeoutTest,
