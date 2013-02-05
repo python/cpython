@@ -212,6 +212,10 @@ Core and Builtins
 Library
 -------
 
+
+- Issue #16948: Fix quoted printable body encoding for non-latin1 character
+  sets in the email package.
+
 - Issue #17089: Expat parser now correctly works with string input not only when
   an internal XML encoding is UTF-8 or US-ASCII.  It now accepts bytes and
   strings larger than 2 GiB.
