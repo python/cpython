@@ -91,6 +91,7 @@ comp_for = 333
 comp_if = 334
 encoding_decl = 335
 yield_expr = 336
+yield_arg = 337
 #--end constants--
 
 sym_name = {}
@@ -104,7 +105,7 @@ def main():
     import token
     if len(sys.argv) == 1:
         sys.argv = sys.argv + ["Include/graminit.h", "Lib/symbol.py"]
-    token.main()
+    token._main()
 
 if __name__ == "__main__":
     main()
