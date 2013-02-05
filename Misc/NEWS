@@ -235,6 +235,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16948: Fix quoted printable body encoding for non-latin1 character
+  sets in the email package.
+
 - Issue #16811: Fix folding of headers with no value in the provisional email
   policies.
 
