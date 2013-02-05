@@ -80,6 +80,10 @@ typedef int socklen_t;
 #include <linux/can/raw.h>
 #endif
 
+#ifdef HAVE_LINUX_CAN_BCM_H
+#include <linux/can/bcm.h>
+#endif
+
 #ifdef HAVE_SYS_SYS_DOMAIN_H
 #include <sys/sys_domain.h>
 #endif

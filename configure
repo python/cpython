@@ -7224,7 +7224,7 @@ done
 
 
 # On Linux, can.h and can/raw.h require sys/socket.h
-for ac_header in linux/can.h linux/can/raw.h
+for ac_header in linux/can.h linux/can/raw.h linux/can/bcm.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "

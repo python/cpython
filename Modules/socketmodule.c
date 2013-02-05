@@ -1598,6 +1598,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     case AF_CAN:
         switch (s->sock_proto) {
         case CAN_RAW:
+        /* fall-through */
+        case CAN_BCM:
         {
             struct sockaddr_can *addr;
             PyObject *interfaceName;
@@ -6030,6 +6032,21 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "CAN_RAW_ERR_FILTER", CAN_RAW_ERR_FILTER);
     PyModule_AddIntConstant(m, "CAN_RAW_LOOPBACK", CAN_RAW_LOOPBACK);
     PyModule_AddIntConstant(m, "CAN_RAW_RECV_OWN_MSGS", CAN_RAW_RECV_OWN_MSGS);
+#endif
+#ifdef HAVE_LINUX_CAN_BCM_H
+    PyModule_AddIntConstant(m, "CAN_BCM", CAN_BCM);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_SETUP", TX_SETUP);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_DELETE", TX_DELETE);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_READ", TX_READ);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_SEND", TX_SEND);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_SETUP", RX_SETUP);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_DELETE", RX_DELETE);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_READ", RX_READ);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_STATUS", TX_STATUS);
+    PyModule_AddIntConstant(m, "CAN_BCM_TX_EXPIRED", TX_EXPIRED);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_STATUS", RX_STATUS);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_TIMEOUT", RX_TIMEOUT);
+    PyModule_AddIntConstant(m, "CAN_BCM_RX_CHANGED", RX_CHANGED);
 #endif
 #ifdef SOL_RDS
     PyModule_AddIntConstant(m, "SOL_RDS", SOL_RDS);
