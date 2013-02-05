@@ -677,6 +677,27 @@ class TestEncoders(unittest.TestCase):
         msg = MIMEText('文', _charset='euc-jp')
         eq(msg['content-transfer-encoding'], '7bit')
 
+    def test_qp_encode_latin1(self):
+        msg = MIMEText('\xe1\xf6\n', 'text', 'ISO-8859-1')
+        self.assertEqual(str(msg), textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-Type: text/text; charset="iso-8859-1"
+            Content-Transfer-Encoding: quoted-printable
+
+            =E1=F6
+            """))
+
+    def test_qp_encode_non_latin1(self):
+        # Issue 16948
+        msg = MIMEText('\u017c\n', 'text', 'ISO-8859-2')
+        self.assertEqual(str(msg), textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-Type: text/text; charset="iso-8859-2"
+            Content-Transfer-Encoding: quoted-printable
+
+            =BF
+            """))
+
 
 # Test long header wrapping
 class TestLongHeaders(TestEmailBase):

@@ -392,6 +392,19 @@ class Charset:
                 string = string.encode(self.output_charset)
             return email.base64mime.body_encode(string)
         elif self.body_encoding is QP:
+            # quopromime.body_encode takes a string, but operates on it as if
+            # it were a list of byte codes.  For a (minimal) history on why
+            # this is so, see changeset 0cf700464177.  To correctly encode a
+            # character set, then, we must turn it into pseudo bytes via the
+            # latin1 charset, which will encode any byte as a single code point
+            # between 0 and 255, which is what body_encode is expecting.
+            #
+            # Note that this clause doesn't handle the case of a _payload that
+            # is already bytes.  It never did, and the semantics of _payload
+            # being bytes has never been nailed down, so fixing that is a
+            # longer term TODO.
+            if isinstance(string, str):
+                string = string.encode(self.output_charset).decode('latin1')
             return email.quoprimime.body_encode(string)
         else:
             if isinstance(string, str):
