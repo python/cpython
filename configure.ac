@@ -1568,7 +1568,7 @@ AC_CHECK_HEADERS(linux/netlink.h,,,[
 ])
 
 # On Linux, can.h and can/raw.h require sys/socket.h
-AC_CHECK_HEADERS(linux/can.h linux/can/raw.h,,,[
+AC_CHECK_HEADERS(linux/can.h linux/can/raw.h linux/can/bcm.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
