@@ -235,6 +235,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17132: Update symbol for "yield from" grammar changes.
+
 - Issue #17076: Make copying of xattrs more permissive of missing FS support.
   Patch by Thomas Wouters.
 
