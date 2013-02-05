@@ -104,7 +104,7 @@ def main():
     import token
     if len(sys.argv) == 1:
         sys.argv = sys.argv + ["Include/graminit.h", "Lib/symbol.py"]
-    token.main()
+    token._main()
 
 if __name__ == "__main__":
     main()
