@@ -100,7 +100,7 @@ for _name, _value in list(globals().items()):
         sym_name[_value] = _name
 
 
-def main():
+def _main():
     import sys
     import token
     if len(sys.argv) == 1:
@@ -108,4 +108,4 @@ def main():
     token._main()
 
 if __name__ == "__main__":
-    main()
+    _main()
