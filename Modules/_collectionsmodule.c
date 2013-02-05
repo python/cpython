@@ -413,7 +413,7 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
-    Py_ssize_t i, m, len=deque->len, halflen=len>>1;
+    Py_ssize_t m, len=deque->len, halflen=len>>1;
     block *prevblock;
 
     if (len <= 1)
@@ -425,13 +425,13 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         else if (n < -halflen)
             n += len;
     }
-    assert(deque->len > 1);
+    assert(len > 1);
     assert(-halflen <= n && n <= halflen);
 
     deque->state++;
-    for (i=0 ; i<n ; ) {
+    while (n > 0) {
         if (deque->leftindex == 0) {
-            block *b = newblock(NULL, deque->leftblock, deque->len);
+            block *b = newblock(NULL, deque->leftblock, len);
             if (b == NULL)
                 return -1;
             assert(deque->leftblock->leftlink == NULL);
@@ -441,18 +441,18 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         }
         assert(deque->leftindex > 0);
 
-        m = n - i;
+        m = n;
         if (m > deque->rightindex + 1)
             m = deque->rightindex + 1;
         if (m > deque->leftindex)
             m = deque->leftindex;
-        assert (m > 0 && m <= deque->len);
+        assert (m > 0 && m <= len);
         memcpy(&deque->leftblock->data[deque->leftindex - m],
-               &deque->rightblock->data[deque->rightindex - m + 1],
+               &deque->rightblock->data[deque->rightindex + 1 - m],
                m * sizeof(PyObject *));
         deque->rightindex -= m;
         deque->leftindex -= m;
-        i += m;
+        n -= m;
 
         if (deque->rightindex == -1) {
             assert(deque->rightblock != NULL);
@@ -464,9 +464,9 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             deque->rightindex = BLOCKLEN - 1;
         }
     }
-    for (i=0 ; i>n ; ) {
+    while (n < 0) {
         if (deque->rightindex == BLOCKLEN - 1) {
-            block *b = newblock(deque->rightblock, NULL, deque->len);
+            block *b = newblock(deque->rightblock, NULL, len);
             if (b == NULL)
                 return -1;
             assert(deque->rightblock->rightlink == NULL);
@@ -476,18 +476,18 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         }
         assert (deque->rightindex < BLOCKLEN - 1);
 
-        m = i - n;
+        m = -n;
         if (m > BLOCKLEN - deque->leftindex)
             m = BLOCKLEN - deque->leftindex;
         if (m > BLOCKLEN - 1 - deque->rightindex)
             m = BLOCKLEN - 1 - deque->rightindex;
-        assert (m > 0 && m <= deque->len);
+        assert (m > 0 && m <= len);
         memcpy(&deque->rightblock->data[deque->rightindex + 1],
                &deque->leftblock->data[deque->leftindex],
                m * sizeof(PyObject *));
         deque->leftindex += m;
         deque->rightindex += m;
-        i -= m;
+        n += m;
 
         if (deque->leftindex == BLOCKLEN) {
             assert(deque->leftblock != deque->rightblock);
