@@ -189,7 +189,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(any([None, None, None]), False)
         self.assertEqual(any([None, 4, None]), True)
         self.assertRaises(RuntimeError, any, [None, TestFailingBool(), 6])
-        self.assertRaises(RuntimeError, all, TestFailingIter())
+        self.assertRaises(RuntimeError, any, TestFailingIter())
         self.assertRaises(TypeError, any, 10)               # Non-iterable
         self.assertRaises(TypeError, any)                   # No args
         self.assertRaises(TypeError, any, [2, 4, 6], [])    # Too many args
