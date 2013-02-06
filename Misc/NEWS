@@ -235,6 +235,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16723: httplib.HTTPResponse no longer marked closed when the connection
+  is automatically closed.
+
 - Issue #15359: Add CAN_BCM protocol support to the socket module. Patch by
   Brian Thorne.
 

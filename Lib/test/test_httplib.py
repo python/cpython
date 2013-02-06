@@ -166,6 +166,9 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), b"Text")
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
         body = "HTTP/1.1 400.100 Not Ok\r\n\r\nText"
         sock = FakeSocket(body)
@@ -187,6 +190,9 @@ class BasicTest(TestCase):
         self.assertFalse(resp.isclosed())
         self.assertEqual(resp.read(2), b'xt')
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_partial_readintos(self):
         # if we have a length, the system knows when to close itself
@@ -204,6 +210,9 @@ class BasicTest(TestCase):
         self.assertEqual(n, 2)
         self.assertEqual(bytes(b), b'xt')
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_partial_reads_no_content_length(self):
         # when no length is present, the socket should be gracefully closed when
@@ -217,6 +226,9 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(2), b'xt')
         self.assertEqual(resp.read(1), b'')
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_partial_readintos_no_content_length(self):
         # when no length is present, the socket should be gracefully closed when
@@ -268,6 +280,9 @@ class BasicTest(TestCase):
         n = resp.readinto(b)
         self.assertEqual(n, 0)
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_host_port(self):
         # Check invalid host_port
@@ -495,6 +510,9 @@ class BasicTest(TestCase):
         self.assertEqual(resp.status, 200)
         self.assertEqual(resp.reason, 'OK')
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_readinto_chunked_head(self):
         chunked_start = (
@@ -515,6 +533,9 @@ class BasicTest(TestCase):
         self.assertEqual(resp.status, 200)
         self.assertEqual(resp.reason, 'OK')
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_negative_content_length(self):
         sock = FakeSocket(
@@ -590,6 +611,9 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), b'')
         self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
 
     def test_delayed_ack_opt(self):
         # Test that Nagle/delayed_ack optimistaion works correctly.
