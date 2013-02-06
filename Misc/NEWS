@@ -163,6 +163,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16723: httplib.HTTPResponse no longer marked closed when the connection
+  is automatically closed.
+
 - Issue #16948: Fix quoted printable body encoding for non-latin1 character
   sets in the email package.
 
