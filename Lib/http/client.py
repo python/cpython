@@ -324,7 +324,7 @@ class HTTPResponse(io.RawIOBase):
                 # empty version will cause next test to fail.
                 version = ""
         if not version.startswith("HTTP/"):
-            self.close()
+            self._close_conn()
             raise BadStatusLine(line)
 
         # The status code is a three-digit number
@@ -446,22 +446,25 @@ class HTTPResponse(io.RawIOBase):
         # otherwise, assume it will close
         return True
 
+    def _close_conn(self):
+        fp = self.fp
+        self.fp = None
+        fp.close()
+
     def close(self):
+        super().close() # set "closed" flag
         if self.fp:
-            self.fp.close()
-            self.fp = None
+            self._close_conn()
 
     # These implementations are for the benefit of io.BufferedReader.
 
     # XXX This class should probably be revised to act more like
     # the "raw stream" that BufferedReader expects.
 
-    @property
-    def closed(self):
-        return self.isclosed()
-
     def flush(self):
-        self.fp.flush()
+        super().flush()
+        if self.fp:
+            self.fp.flush()
 
     def readable(self):
         return True
@@ -469,6 +472,7 @@ class HTTPResponse(io.RawIOBase):
     # End of "raw stream" methods
 
     def isclosed(self):
+        """True if the connection is closed."""
         # NOTE: it is possible that we will not ever call self.close(). This
         #       case occurs when will_close is TRUE, length is None, and we
         #       read up to the last byte, but NOT past it.
@@ -482,7 +486,7 @@ class HTTPResponse(io.RawIOBase):
             return b""
 
         if self._method == "HEAD":
-            self.close()
+            self._close_conn()
             return b""
 
         if self.chunked:
@@ -496,10 +500,10 @@ class HTTPResponse(io.RawIOBase):
                 try:
                     s = self._safe_read(self.length)
                 except IncompleteRead:
-                    self.close()
+                    self._close_conn()
                     raise
                 self.length = 0
-            self.close()        # we read everything
+            self._close_conn()        # we read everything
             return s
 
         if self.length is not None:
@@ -514,11 +518,11 @@ class HTTPResponse(io.RawIOBase):
         if not s:
             # Ideally, we would raise IncompleteRead if the content-length
             # wasn't satisfied, but it might break compatibility.
-            self.close()
+            self._close_conn()
         elif self.length is not None:
             self.length -= len(s)
             if not self.length:
-                self.close()
+                self._close_conn()
 
         return s
 
@@ -539,7 +543,7 @@ class HTTPResponse(io.RawIOBase):
                 except ValueError:
                     # close the connection as protocol synchronisation is
                     # probably lost
-                    self.close()
+                    self._close_conn()
                     raise IncompleteRead(b''.join(value))
                 if chunk_left == 0:
                     break
@@ -576,7 +580,7 @@ class HTTPResponse(io.RawIOBase):
                 break
 
         # we read everything; close the "file"
-        self.close()
+        self._close_conn()
 
         return b''.join(value)
 
