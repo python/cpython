@@ -34,31 +34,30 @@ class ReturnFuncPtrTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
 
-    @unittest.skipIf(os.name == 'nt', 'Temporarily disabled for Windows')
     def test_from_dll(self):
         dll = CDLL(_ctypes_test.__file__)
         # _CFuncPtr instances are now callable with a tuple argument
         # which denotes a function name and a dll:
-        strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(("strchr", dll))
+        strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(("my_strchr", dll))
         self.assertTrue(strchr(b"abcdef", b"b"), "bcdef")
         self.assertEqual(strchr(b"abcdef", b"x"), None)
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
         self.assertRaises(TypeError, strchr, b"abcdef")
 
-    @unittest.skipIf(os.name == 'nt', 'Temporarily disabled for Windows')
     # Issue 6083: Reference counting bug
     def test_from_dll_refcount(self):
         class BadSequence(tuple):
             def __getitem__(self, key):
                 if key == 0:
-                    return "strchr"
+                    return "my_strchr"
                 if key == 1:
                     return CDLL(_ctypes_test.__file__)
                 raise IndexError
 
         # _CFuncPtr instances are now callable with a tuple argument
         # which denotes a function name and a dll:
-        strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(BadSequence(("strchr", CDLL(_ctypes_test.__file__))))
+        strchr = CFUNCTYPE(c_char_p, c_char_p, c_char)(
+                BadSequence(("my_strchr", CDLL(_ctypes_test.__file__))))
         self.assertTrue(strchr(b"abcdef", b"b"), "bcdef")
         self.assertEqual(strchr(b"abcdef", b"x"), None)
         self.assertRaises(ArgumentError, strchr, b"abcdef", 3.0)
