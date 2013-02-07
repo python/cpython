@@ -52,6 +52,8 @@ The :mod:`urllib2` module defines the following functions:
      in the form of an :class:`mimetools.Message` instance
      (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
+   * :meth:`getcode` --- return the HTTP status code of the response.
+
    Raises :exc:`URLError` on errors.
 
    Note that ``None`` may be returned if no handler handles the request (though the
