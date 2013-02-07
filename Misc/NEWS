@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17043: The unicode-internal decoder no longer read past the end of
+  input buffer.
+
 - Issue #17098: All modules now have __loader__ set even if they pre-exist the
   bootstrapping of importlib.
 
