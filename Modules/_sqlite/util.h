@@ -35,4 +35,8 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection);
  * Returns the error code (0 means no error occurred).
  */
 int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st);
+
+PyObject * _pysqlite_long_from_int64(sqlite3_int64 value);
+sqlite3_int64 _pysqlite_long_as_int64(PyObject * value);
+
 #endif

@@ -26,14 +26,6 @@
 #include "util.h"
 #include "sqlitecompat.h"
 
-/* used to decide wether to call PyInt_FromLong or PyLong_FromLongLong */
-#ifndef INT32_MIN
-#define INT32_MIN (-2147483647 - 1)
-#endif
-#ifndef INT32_MAX
-#define INT32_MAX 2147483647
-#endif
-
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
 static char* errmsg_fetch_across_rollback = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
@@ -307,7 +299,6 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
     PyObject* row;
     PyObject* item = NULL;
     int coltype;
-    PY_LONG_LONG intval;
     PyObject* converter;
     PyObject* converted;
     Py_ssize_t nbytes;
@@ -366,12 +357,7 @@ PyObject* _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 Py_INCREF(Py_None);
                 converted = Py_None;
             } else if (coltype == SQLITE_INTEGER) {
-                intval = sqlite3_column_int64(self->statement->st, i);
-                if (intval < INT32_MIN || intval > INT32_MAX) {
-                    converted = PyLong_FromLongLong(intval);
-                } else {
-                    converted = PyInt_FromLong((long)intval);
-                }
+                converted = _pysqlite_long_from_int64(sqlite3_column_int64(self->statement->st, i));
             } else if (coltype == SQLITE_FLOAT) {
                 converted = PyFloat_FromDouble(sqlite3_column_double(self->statement->st, i));
             } else if (coltype == SQLITE_TEXT) {
@@ -466,7 +452,6 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     PyObject* func_args;
     PyObject* result;
     int numcols;
-    PY_LONG_LONG lastrowid;
     int statement_type;
     PyObject* descriptor;
     PyObject* second_argument = NULL;
@@ -747,10 +732,11 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
         Py_DECREF(self->lastrowid);
         if (!multiple && statement_type == STATEMENT_INSERT) {
+            sqlite3_int64 lastrowid;
             Py_BEGIN_ALLOW_THREADS
             lastrowid = sqlite3_last_insert_rowid(self->connection->db);
             Py_END_ALLOW_THREADS
-            self->lastrowid = PyInt_FromLong((long)lastrowid);
+            self->lastrowid = _pysqlite_long_from_int64(lastrowid);
         } else {
             Py_INCREF(Py_None);
             self->lastrowid = Py_None;
