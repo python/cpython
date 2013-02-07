@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
+import sys
 import os
 from test import test_support
 
@@ -151,6 +152,27 @@ class TclTest(unittest.TestCase):
         # exit code must be zero
         self.assertEqual(f.close(), None)
 
+    def test_passing_values(self):
+        def passValue(value):
+            return self.interp.call('set', '_', value)
+        self.assertEqual(passValue(True), True)
+        self.assertEqual(passValue(False), False)
+        self.assertEqual(passValue('string'), 'string')
+        self.assertEqual(passValue('string\u20ac'), 'string\u20ac')
+        self.assertEqual(passValue(u'string'), u'string')
+        self.assertEqual(passValue(u'string\u20ac'), u'string\u20ac')
+        for i in (0, 1, -1, int(2**31-1), int(-2**31)):
+            self.assertEqual(passValue(i), i)
+        for f in (0.0, 1.0, -1.0, 1/3,
+                  sys.float_info.min, sys.float_info.max,
+                  -sys.float_info.min, -sys.float_info.max):
+            self.assertEqual(passValue(f), f)
+        for f in float('nan'), float('inf'), -float('inf'):
+            if f != f: # NaN
+                self.assertNotEqual(passValue(f), f)
+            else:
+                self.assertEqual(passValue(f), f)
+        self.assertEqual(passValue((1, '2', (3.4,))), (1, '2', (3.4,)))
 
 
 def test_main():
