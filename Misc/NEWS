@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #17043: The unicode-internal decoder no longer read past the end of
+  input buffer.
+
 - Issue #16979: Fix error handling bugs in the unicode-escape-decode decoder.
 
 - Issue #10156: In the interpreter's initialization phase, unicode globals
