@@ -63,15 +63,23 @@ The :mod:`urllib.request` module defines the following functions:
       an HTTPS request will not do any verification of the server's
       certificate.
 
-   This function returns a file-like object that works as a :term:`context manager`,
-   with two additional methods from the :mod:`urllib.response` module
+   For http and https urls, this function returns a
+   :class:`http.client.HTTPResponse` object which has the following
+   :ref:`httpresponse-objects` methods.
 
-   * :meth:`geturl` --- return the URL of the resource retrieved,
+   For ftp, file, data urls and requests are explicity handled by legacy
+   :class:`URLopener` and :class:`FancyURLopener` class, this function returns
+   an :class:`urllib.response.addinfourl` object which can work as
+   :term:`context manager` and has methods such as
+
+   * :meth:`~urllib.response.addinfourl.geturl` --- return the URL of the resource retrieved,
      commonly used to determine if a redirect was followed
 
-   * :meth:`info` --- return the meta-information of the page, such as headers,
+   * :meth:`~urllib.response.addinfourl.info` --- return the meta-information of the page, such as headers,
      in the form of an :func:`email.message_from_string` instance (see
      `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
+
+   * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
 
    Raises :exc:`URLError` on errors.
 
