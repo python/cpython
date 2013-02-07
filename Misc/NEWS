@@ -166,6 +166,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17073: Fix some integer overflows in sqlite3 module.
+
 - Issue #17114: IDLE now uses non-strict config parser.
 
 - Issue #16723: httplib.HTTPResponse no longer marked closed when the connection
