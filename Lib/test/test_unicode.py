@@ -2191,6 +2191,21 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(args[0], text)
         self.assertEqual(len(args), 1)
 
+    def test_resize(self):
+        for length in range(1, 100, 7):
+            # generate a fresh string (refcount=1)
+            text = 'a' * length + 'b'
+
+            # fill wstr internal field
+            abc = text.encode('unicode_internal')
+            self.assertEqual(abc.decode('unicode_internal'), text)
+
+            # resize text: wstr field must be cleared and then recomputed
+            text += 'c'
+            abcdef = text.encode('unicode_internal')
+            self.assertNotEqual(abc, abcdef)
+            self.assertEqual(abcdef.decode('unicode_internal'), text)
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):
