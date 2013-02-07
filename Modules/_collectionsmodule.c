@@ -9,7 +9,7 @@
 
 /* The block length may be set to any number over 1.  Larger numbers
  * reduce the number of calls to the memory allocator but take more
- * memory.  Ideally, BLOCKLEN should be set to a multiple of the
+ * memory.  Ideally, (BLOCKLEN+2) should be set to a multiple of the
  * length of a cache line.
  */
 
@@ -71,7 +71,7 @@ newblock(block *leftlink, block *rightlink, Py_ssize_t len) {
         return NULL;
     }
     if (numfreeblocks) {
-        numfreeblocks -= 1;
+        numfreeblocks--;
         b = freeblocks[numfreeblocks];
     } else {
         b = PyMem_Malloc(sizeof(block));
@@ -414,7 +414,6 @@ static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
     Py_ssize_t m, len=deque->len, halflen=len>>1;
-    block *prevblock;
 
     if (len <= 1)
         return 0;
@@ -455,8 +454,8 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         n -= m;
 
         if (deque->rightindex == -1) {
+            block *prevblock = deque->rightblock->leftlink;
             assert(deque->rightblock != NULL);
-            prevblock = deque->rightblock->leftlink;
             assert(deque->leftblock != deque->rightblock);
             freeblock(deque->rightblock);
             prevblock->rightlink = NULL;
@@ -490,12 +489,12 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         n += m;
 
         if (deque->leftindex == BLOCKLEN) {
+            block *nextblock = deque->leftblock->rightlink;
             assert(deque->leftblock != deque->rightblock);
-            prevblock = deque->leftblock->rightlink;
             freeblock(deque->leftblock);
-            assert(prevblock != NULL);
-            prevblock->leftlink = NULL;
-            deque->leftblock = prevblock;
+            assert(nextblock != NULL);
+            nextblock->leftlink = NULL;
+            deque->leftblock = nextblock;
             deque->leftindex = 0;
         }
     }
