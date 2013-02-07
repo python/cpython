@@ -6103,6 +6103,11 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
     while (s < end) {
         Py_UNICODE uch;
         Py_UCS4 ch;
+        if (end - s < Py_UNICODE_SIZE) {
+            endinpos = end-starts;
+            reason = "truncated input";
+            goto error;
+        }
         /* We copy the raw representation one byte at a time because the
            pointer may be unaligned (see test_codeccallbacks). */
         ((char *) &uch)[0] = s[0];
@@ -6112,37 +6117,18 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
         ((char *) &uch)[3] = s[3];
 #endif
         ch = uch;
-
+#ifdef Py_UNICODE_WIDE
         /* We have to sanity check the raw data, otherwise doom looms for
            some malformed UCS-4 data. */
-        if (
-#ifdef Py_UNICODE_WIDE
-            ch > 0x10ffff ||
-#endif
-            end-s < Py_UNICODE_SIZE
-            )
-        {
-            startinpos = s - starts;
-            if (end-s < Py_UNICODE_SIZE) {
-                endinpos = end-starts;
-                reason = "truncated input";
-            }
-            else {
-                endinpos = s - starts + Py_UNICODE_SIZE;
-                reason = "illegal code point (> 0x10FFFF)";
-            }
-            if (unicode_decode_call_errorhandler(
-                    errors, &errorHandler,
-                    "unicode_internal", reason,
-                    &starts, &end, &startinpos, &endinpos, &exc, &s,
-                    &v, &outpos))
-                goto onError;
-            continue;
+        if (ch > 0x10ffff) {
+            endinpos = s - starts + Py_UNICODE_SIZE;
+            reason = "illegal code point (> 0x10FFFF)";
+            goto error;
         }
-
+#endif
         s += Py_UNICODE_SIZE;
 #ifndef Py_UNICODE_WIDE
-        if (Py_UNICODE_IS_HIGH_SURROGATE(ch) && s < end)
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch) && end - s >= Py_UNICODE_SIZE)
         {
             Py_UNICODE uch2;
             ((char *) &uch2)[0] = s[0];
@@ -6156,6 +6142,16 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
 #endif
 
         if (unicode_putchar(&v, &outpos, ch) < 0)
+            goto onError;
+        continue;
+
+  error:
+        startinpos = s - starts;
+        if (unicode_decode_call_errorhandler(
+                errors, &errorHandler,
+                "unicode_internal", reason,
+                &starts, &end, &startinpos, &endinpos, &exc, &s,
+                &v, &outpos))
             goto onError;
     }
 
