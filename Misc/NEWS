@@ -235,6 +235,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17114: IDLE now uses non-strict config parser.
+
 - Issue #16723: httplib.HTTPResponse no longer marked closed when the connection
   is automatically closed.
 
