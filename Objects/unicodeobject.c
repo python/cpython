@@ -702,6 +702,10 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         if (!PyUnicode_IS_ASCII(unicode))
             _PyUnicode_WSTR_LENGTH(unicode) = length;
     }
+    else if (_PyUnicode_HAS_WSTR_MEMORY(unicode)) {
+        PyObject_DEL(_PyUnicode_WSTR(unicode));
+        _PyUnicode_WSTR(unicode) = NULL;
+    }
     PyUnicode_WRITE(PyUnicode_KIND(unicode), PyUnicode_DATA(unicode),
                     length, 0);
     assert(_PyUnicode_CheckConsistency(unicode, 0));

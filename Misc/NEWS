@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #17137: When an Unicode string is resized, the internal wide character
+  string (wstr) format is now cleared.
+
 - Issue #17043: The unicode-internal decoder no longer read past the end of
   input buffer.
 
