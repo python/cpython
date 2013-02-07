@@ -26,6 +26,7 @@
 #include "connection.h"
 #include "microprotocols.h"
 #include "prepare_protocol.h"
+#include "util.h"
 #include "sqlitecompat.h"
 
 /* prototypes */
@@ -90,7 +91,6 @@ int pysqlite_statement_create(pysqlite_Statement* self, pysqlite_Connection* con
 int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObject* parameter, int allow_8bit_chars)
 {
     int rc = SQLITE_OK;
-    PY_LONG_LONG longlongval;
     const char* buffer;
     char* string;
     Py_ssize_t buflen;
@@ -120,11 +120,14 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
     }
 
     switch (paramtype) {
-        case TYPE_LONG:
-            /* in the overflow error case, longval/longlongval is -1, and an exception is set */
-            longlongval = PyLong_AsLongLong(parameter);
-            rc = sqlite3_bind_int64(self->st, pos, (sqlite_int64)longlongval);
+        case TYPE_LONG: {
+            sqlite_int64 value = _pysqlite_long_as_int64(parameter);
+            if (value == -1 && PyErr_Occurred())
+                rc = -1;
+            else
+                rc = sqlite3_bind_int64(self->st, pos, value);
             break;
+        }
         case TYPE_FLOAT:
             rc = sqlite3_bind_double(self->st, pos, PyFloat_AsDouble(parameter));
             break;
