@@ -37,7 +37,7 @@ class IdleConfParser(ConfigParser):
         cfgFile - string, fully specified configuration file name
         """
         self.file=cfgFile
-        ConfigParser.__init__(self,defaults=cfgDefaults)
+        ConfigParser.__init__(self, defaults=cfgDefaults, strict=False)
 
     def Get(self, section, option, type=None, default=None, raw=False):
         """
