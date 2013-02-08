@@ -600,7 +600,7 @@ class MalformedInputTest(unittest.TestCase):
             self.assertEqual(str(e), 'unclosed token: line 2, column 0')
 
     def test2(self):
-        # \xc2\x85 is UTF-8 encoded U+0085 (NEXT LINE)
+        # \xc2\x85 is UTF-8 encoded U+0085 (NEXT LINE)
         xml = b"<?xml version\xc2\x85='1.0'?>\r\n"
         parser = expat.ParserCreate()
         try:
