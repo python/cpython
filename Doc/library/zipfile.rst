@@ -260,9 +260,15 @@ ZipFile Objects
    be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
    used for encrypted files.
 
-   .. note::
+   .. warning::
 
-      See :meth:`extract` note.
+      Never extract archives from untrusted sources without prior inspection.
+      It is possible that files are created outside of *path*, e.g. members
+      that have absolute filenames starting with ``"/"`` or filenames with two
+      dots ``".."``.
+
+   .. versionchanged:: 3.3.1
+      The zipfile module attempts to prevent that.  See :meth:`extract` note.
 
 
 .. method:: ZipFile.printdir()
