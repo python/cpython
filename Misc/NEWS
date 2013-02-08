@@ -239,7 +239,7 @@ Library
 - Issue #15505: `unittest.installHandler` no longer assumes SIGINT handler is
   set to a callable object.
 
-- Issue #17051: Fix a memory leak in os.path.isdir() on Windows. Patch by
+- Issue #17051: Fix a memory leak in os.path.isdir() on Windows. Patch by
   Robert Xiao.
 
 - Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
