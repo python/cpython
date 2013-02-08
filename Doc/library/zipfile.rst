@@ -213,6 +213,16 @@ ZipFile Objects
 
    .. versionadded:: 2.6
 
+   .. note::
+
+      If a member filename is an absolute path, a drive/UNC sharepoint and
+      leading (back)slashes will be stripped, e.g.: ``///foo/bar`` becomes
+      ``foo/bar`` on Unix, and ``C:\foo\bar`` becomes ``foo\bar`` on Windows.
+      And all ``".."`` components in a member filename will be removed, e.g.:
+      ``../../foo../../ba..r`` becomes ``foo../ba..r``.  On Windows illegal
+      characters (``:``, ``<``, ``>``, ``|``, ``"``, ``?``, and ``*``)
+      replaced by underscore (``_``).
+
 
 .. method:: ZipFile.extractall([path[, members[, pwd]]])
 
@@ -227,6 +237,9 @@ ZipFile Objects
       It is possible that files are created outside of *path*, e.g. members
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.
+      
+   .. versionchanged:: 2.7.4
+      The zipfile module attempts to prevent that.  See :meth:`extract` note.
 
    .. versionadded:: 2.6
 
@@ -241,16 +254,6 @@ ZipFile Objects
    Set *pwd* as default password to extract encrypted files.
 
    .. versionadded:: 2.6
-
-   .. note::
-
-      If a member filename is an absolute path, a drive/UNC sharepoint and
-      leading (back)slashes will be stripped, e.g.: ``///foo/bar`` becomes
-      ``foo/bar`` on Unix, and ``C:\foo\bar`` becomes ``foo\bar`` on Windows.
-      And all ``".."`` components in a member filename will be removed, e.g.:
-      ``../../foo../../ba..r`` becomes ``foo../ba..r``.  On Windows illegal
-      characters (``:``, ``<``, ``>``, ``|``, ``"``, ``?``, and ``*``)
-      replaced by underscore (``_``).
 
 
 .. method:: ZipFile.read(name[, pwd])
