@@ -67,9 +67,9 @@ The :mod:`urllib.request` module defines the following functions:
    :class:`http.client.HTTPResponse` object which has the following
    :ref:`httpresponse-objects` methods.
 
-   For ftp, file, data urls and requests are explicity handled by legacy
-   :class:`URLopener` and :class:`FancyURLopener` class, this function returns
-   an :class:`urllib.response.addinfourl` object which can work as
+   For ftp, file, and data urls and requests explicity handled by legacy
+   :class:`URLopener` and :class:`FancyURLopener` classes, this function
+   returns a :class:`urllib.response.addinfourl` object which can work as
    :term:`context manager` and has methods such as
 
    * :meth:`~urllib.response.addinfourl.geturl` --- return the URL of the resource retrieved,
