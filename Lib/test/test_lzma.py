@@ -671,7 +671,7 @@ class FileTestCase(unittest.TestCase):
 
     def test_read_truncated(self):
         # Drop stream footer: CRC (4 bytes), index size (4 bytes),
-        # flags (2 bytes) and magic number (2 bytes).
+        # flags (2 bytes) and magic number (2 bytes).
         truncated = COMPRESSED_XZ[:-12]
         with LZMAFile(BytesIO(truncated)) as f:
             self.assertRaises(EOFError, f.read)
