@@ -237,7 +237,7 @@ ZipFile Objects
       It is possible that files are created outside of *path*, e.g. members
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.
-      
+
    .. versionchanged:: 2.7.4
       The zipfile module attempts to prevent that.  See :meth:`extract` note.
 
