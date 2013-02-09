@@ -169,6 +169,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16564: Fixed regression relative to Python2 in the operation of
+  email.encoders.encode_noop when used with binary data.
+
 - Issue #10355: In SpooledTemporaryFile class mode, name, encoding and
   newlines properties now work for unrolled files.  Obsoleted and never
   working on Python 3 xreadline method now removed.
