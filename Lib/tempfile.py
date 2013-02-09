@@ -479,8 +479,8 @@ else:
             raise
 
 class SpooledTemporaryFile:
-    """Temporary file wrapper, specialized to switch from
-    StringIO to a real file when it exceeds a certain size or
+    """Temporary file wrapper, specialized to switch from BytesIO
+    or StringIO to a real file when it exceeds a certain size or
     when a fileno is needed.
     """
     _rolled = False
