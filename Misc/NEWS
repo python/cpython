@@ -205,6 +205,9 @@ Library
 - Issue #7358: cStringIO.StringIO now supports writing to and reading from
   a stream larger than 2 GiB on 64-bit systems.
 
+- IDLE was displaying spurious SystemExit tracebacks when running scripts
+  that terminated by raising SystemExit (i.e. unittest and turtledemo).
+
 - Issue #10355: In SpooledTemporaryFile class mode and name properties and
   xreadlines method now work for unrolled files.  encoding and newlines
   properties now removed as they have no sense and always produced
