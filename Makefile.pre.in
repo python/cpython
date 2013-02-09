@@ -886,10 +886,10 @@ quicktest:	all platform
 		$(TESTRUNNER) $(QUICKTESTOPTS)
 
 
-install: altinstall bininstall
+install: altinstall bininstall maninstall
 
 altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
-                sharedinstall oldsharedinstall maninstall @FRAMEWORKALTINSTALLLAST@
+                sharedinstall oldsharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -970,8 +970,8 @@ bininstall: altbininstall
 	-rm -f $(DESTDIR)$(BINDIR)/pyvenv
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pyvenv-$(VERSION) pyvenv)
 
-# Install the manual page
-maninstall:
+# Install the versioned manual page
+altmaninstall:
 	@for i in $(MANDIR) $(MANDIR)/man1; \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -982,6 +982,11 @@ maninstall:
 	done
 	$(INSTALL_DATA) $(srcdir)/Misc/python.man \
 		$(DESTDIR)$(MANDIR)/man1/python$(VERSION).1
+
+# Install the unversioned manual page
+maninstall:	altmaninstall
+	-rm -f $(DESTDIR)$(MANDIR)/man1/python3.1
+	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python3.1)
 
 # Install the library
 PLATDIR=	plat-$(MACHDEP)
@@ -1455,7 +1460,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean
-.PHONY: smelly funny patchcheck touch
+.PHONY: smelly funny patchcheck touch altmaninstall
 .PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
