@@ -401,7 +401,7 @@ parse_number(PyObject *s, Py_ssize_t pos, Py_ssize_t end,
 {
     Py_ssize_t remainder;
 
-    while (pos<end && isdigit(PyUnicode_READ_CHAR(s, pos)))
+    while (pos<end && Py_ISDIGIT(PyUnicode_READ_CHAR(s, pos)))
         ++pos;
     remainder = pos;
 
