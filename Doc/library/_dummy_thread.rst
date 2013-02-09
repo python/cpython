@@ -17,7 +17,7 @@ Suggested usage is::
    try:
        import _thread
    except ImportError:
-       import dummy_thread as _thread
+       import _dummy_thread as _thread
 
 Be careful to not use this module where deadlock might occur from a thread being
 created that blocks waiting for another thread to be created.  This often occurs
