@@ -406,6 +406,9 @@ class BytesGenerator(Generator):
         else:
             super(BytesGenerator,self)._handle_text(msg)
 
+    # Default body handler
+    _writeBody = _handle_text
+
     @classmethod
     def _compile_re(cls, s, flags):
         return re.compile(s.encode('ascii'), flags)
