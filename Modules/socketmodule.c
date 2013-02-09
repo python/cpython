@@ -555,7 +555,7 @@ set_error(void)
                 /* If non-empty msg, trim CRLF */
                 char *lastc = &outbuf[ strlen(outbuf)-1 ];
                 while (lastc > outbuf &&
-                       isspace(Py_CHARMASK(*lastc))) {
+                       Py_ISSPACE(Py_CHARMASK(*lastc))) {
                     /* Trim trailing whitespace (CRLF) */
                     *lastc-- = '\0';
                 }

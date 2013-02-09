@@ -3747,7 +3747,7 @@ parsestr(struct compiling *c, const node *n, int *bytesmode)
     int quote = Py_CHARMASK(*s);
     int rawmode = 0;
     int need_encoding;
-    if (isalpha(quote)) {
+    if (Py_ISALPHA(quote)) {
         while (!*bytesmode || !rawmode) {
             if (quote == 'b' || quote == 'B') {
                 quote = *++s;
