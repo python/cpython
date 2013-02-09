@@ -806,7 +806,8 @@ memtest:	all platform
 install:	@FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 
 # Install almost everything without disturbing previous versions
-altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
+altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall \
+				libainstall altmaninstall \
                 sharedinstall oldsharedinstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
@@ -876,8 +877,8 @@ altbininstall:	$(BUILDPYTHON)
 	else	true; \
 	fi
 
-# Install the manual page
-maninstall:
+# Install the versioned manual page
+altmaninstall:
 	@for i in $(MANDIR) $(MANDIR)/man1; \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -888,6 +889,13 @@ maninstall:
 	done
 	$(INSTALL_DATA) $(srcdir)/Misc/python.man \
 		$(DESTDIR)$(MANDIR)/man1/python$(VERSION).1
+
+# Install the unversioned manual pages
+maninstall:	altmaninstall
+	-rm -f $(DESTDIR)$(MANDIR)/man1/python2.1
+	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python$(VERSION).1 python2.1)
+	-rm -f $(DESTDIR)$(MANDIR)/man1/python.1
+	(cd $(DESTDIR)$(MANDIR)/man1; $(LN) -s python2.1 python.1)
 
 # Install the library
 PLATDIR=	plat-$(MACHDEP)
@@ -1326,7 +1334,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
-.PHONY: smelly funny patchcheck
+.PHONY: smelly funny patchcheck altmaninstall
 .PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
