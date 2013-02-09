@@ -1099,7 +1099,7 @@ This function is also available as \"hexlify()\".");
 static int
 to_int(int c)
 {
-    if (isdigit(c))
+    if (Py_ISDIGIT(c))
         return c - '0';
     else {
         if (Py_ISUPPER(c))
