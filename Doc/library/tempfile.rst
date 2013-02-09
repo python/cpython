@@ -82,9 +82,11 @@ The module defines the following user-callable items:
    causes the file to roll over to an on-disk file regardless of its size.
 
    The returned object is a file-like object whose :attr:`_file` attribute
-   is either a :class:`StringIO` object or a true file object, depending on
-   whether :func:`rollover` has been called. This file-like object can be
-   used in a :keyword:`with` statement, just like a normal file.
+   is either a :class:`BytesIO` or :class:`StringIO` object (depending on
+   whether specifies binary or text *mode* was specified) or a true file
+   object, depending on whether :func:`rollover` has been called.  This
+   file-like object can be used in a :keyword:`with` statement, just like
+   a normal file.
 
    .. versionchanged:: 3.3
       the truncate method now accepts a ``size`` argument.
