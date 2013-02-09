@@ -414,7 +414,7 @@ parse_number(STRINGLIB_CHAR *ptr, Py_ssize_t len,
     STRINGLIB_CHAR *end = ptr + len;
     STRINGLIB_CHAR *remainder;
 
-    while (ptr<end && isdigit(*ptr))
+    while (ptr<end && Py_ISDIGIT(*ptr))
         ++ptr;
     remainder = ptr;
 
