@@ -1,5 +1,6 @@
 # tempfile.py unit tests.
 import tempfile
+import errno
 import os
 import signal
 import sys
@@ -963,8 +964,9 @@ class TestTemporaryDirectory(BaseTestCase):
         # (noted as part of Issue #10188)
         with tempfile.TemporaryDirectory() as nonexistent:
             pass
-        with self.assertRaises(OSError):
+        with self.assertRaises(FileNotFoundError) as cm:
             tempfile.TemporaryDirectory(dir=nonexistent)
+        self.assertEqual(cm.exception.errno, errno.ENOENT)
 
     def test_explicit_cleanup(self):
         # A TemporaryDirectory is deleted when cleaned up
