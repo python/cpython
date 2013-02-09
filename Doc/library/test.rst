@@ -364,9 +364,9 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: captured_stdout()
 
-   A context manager that runs the :keyword:`with` statement body using
-   a :class:`StringIO.StringIO` object as sys.stdout.  That object can be
-   retrieved using the ``as`` clause of the :keyword:`with` statement.
+   A context manager that runs the :keyword:`with` statement body using a
+   :class:`io.StringIO` object as sys.stdout.  That object can be retrieved
+   using the ``as`` clause of the :keyword:`with` statement.
 
    Example use::
 
