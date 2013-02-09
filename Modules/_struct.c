@@ -1270,7 +1270,7 @@ prepare_s(PyStructObject *self)
     size = 0;
     len = 0;
     while ((c = *s++) != '\0') {
-        if (isspace(Py_CHARMASK(c)))
+        if (Py_ISSPACE(Py_CHARMASK(c)))
             continue;
         if ('0' <= c && c <= '9') {
             num = c - '0';
@@ -1335,7 +1335,7 @@ prepare_s(PyStructObject *self)
     s = fmt;
     size = 0;
     while ((c = *s++) != '\0') {
-        if (isspace(Py_CHARMASK(c)))
+        if (Py_ISSPACE(Py_CHARMASK(c)))
             continue;
         if ('0' <= c && c <= '9') {
             num = c - '0';
