@@ -546,10 +546,6 @@ class SpooledTemporaryFile:
     def closed(self):
         return self._file.closed
 
-    @property
-    def encoding(self):
-        return self._file.encoding
-
     def fileno(self):
         self.rollover()
         return self._file.fileno()
@@ -562,15 +558,17 @@ class SpooledTemporaryFile:
 
     @property
     def mode(self):
-        return self._file.mode
+        try:
+            return self._file.mode
+        except AttributeError:
+            return self._TemporaryFileArgs[0]
 
     @property
     def name(self):
-        return self._file.name
-
-    @property
-    def newlines(self):
-        return self._file.newlines
+        try:
+            return self._file.name
+        except AttributeError:
+            return None
 
     def next(self):
         return self._file.next
@@ -610,4 +608,7 @@ class SpooledTemporaryFile:
         return rv
 
     def xreadlines(self, *args):
-        return self._file.xreadlines(*args)
+        try:
+            return self._file.xreadlines(*args)
+        except AttributeError:
+            return iter(self._file.readlines(*args))
