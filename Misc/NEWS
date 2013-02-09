@@ -748,6 +748,10 @@ Extension Modules
 Tests
 -----
 
+- We now run both test_email.py and test_email_renamed.py when running the
+  test_email regression test.  test_email_renamed contains some tests that
+  test_email does not.
+
 - Issue #17041: Fix testing when Python is configured with the
   --without-doc-strings option.
 
