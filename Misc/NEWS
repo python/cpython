@@ -901,6 +901,8 @@ Build
   Retina displays.  Applies to Tkinter apps, such as IDLE, on OS X
   framework builds linked with Cocoa Tk 8.5.
 
+- Issue #17161: make install now also installs a python3 man page.
+
 Documentation
 -------------
 
