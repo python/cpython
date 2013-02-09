@@ -60,7 +60,11 @@ static void _sqlite3_result_error(sqlite3_context* ctx, const char* errmsg, int 
 
 int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", NULL, NULL};
+    static char *kwlist[] = {
+        "database", "timeout", "detect_types", "isolation_level",
+        "check_same_thread", "factory", "cached_statements", "uri",
+        NULL
+    };
 
     char* database;
     int detect_types = 0;
@@ -68,11 +72,14 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     PyObject* factory = NULL;
     int check_same_thread = 1;
     int cached_statements = 100;
+    int uri = 0;
     double timeout = 5.0;
     int rc;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOi", kwlist,
-                                     &database, &timeout, &detect_types, &isolation_level, &check_same_thread, &factory, &cached_statements))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
+                                     &database, &timeout, &detect_types,
+                                     &isolation_level, &check_same_thread,
+                                     &factory, &cached_statements, &uri))
     {
         return -1;
     }
@@ -91,8 +98,19 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
     Py_INCREF(&PyUnicode_Type);
     self->text_factory = (PyObject*)&PyUnicode_Type;
 
+#ifdef SQLITE_OPEN_URI
+    Py_BEGIN_ALLOW_THREADS
+    rc = sqlite3_open_v2(database, &self->db,
+                         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+                         (uri ? SQLITE_OPEN_URI : 0), NULL);
+#else
+    if (uri) {
+        PyErr_SetString(pysqlite_NotSupportedError, "URIs not supported");
+        return -1;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = sqlite3_open(database, &self->db);
+#endif
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
