@@ -808,6 +808,26 @@ class test_SpooledTemporaryFile(TC):
         seek(0, 0)
         self.assertEqual(read(70), b'a'*35 + b'b'*35)
 
+    def test_properties(self):
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'x' * 10)
+        self.assertFalse(f._rolled)
+        self.assertEqual(f.mode, 'w+b')
+        self.assertIsNone(f.name)
+        with self.assertRaises(AttributeError):
+            f.newlines
+        with self.assertRaises(AttributeError):
+            f.encoding
+
+        f.write(b'x')
+        self.assertTrue(f._rolled)
+        self.assertEqual(f.mode, 'rb+')
+        self.assertIsNotNone(f.name)
+        with self.assertRaises(AttributeError):
+            f.newlines
+        with self.assertRaises(AttributeError):
+            f.encoding
+
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
         # a file object reading and writing (Unicode) text strings.
@@ -818,6 +838,12 @@ class test_SpooledTemporaryFile(TC):
         f.write("def\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\ndef\n")
+        self.assertFalse(f._rolled)
+        self.assertEqual(f.mode, 'w+')
+        self.assertIsNone(f.name)
+        self.assertIsNone(f.newlines)
+        self.assertIsNone(f.encoding)
+
         f.write("xyzzy\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\ndef\nxyzzy\n")
@@ -825,6 +851,11 @@ class test_SpooledTemporaryFile(TC):
         f.write("foo\x1abar\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\ndef\nxyzzy\nfoo\x1abar\n")
+        self.assertTrue(f._rolled)
+        self.assertEqual(f.mode, 'w+')
+        self.assertIsNotNone(f.name)
+        self.assertEqual(f.newlines, '\n')
+        self.assertIsNotNone(f.encoding)
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
@@ -833,11 +864,19 @@ class test_SpooledTemporaryFile(TC):
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n")
         self.assertFalse(f._rolled)
+        self.assertEqual(f.mode, 'w+')
+        self.assertIsNone(f.name)
+        self.assertIsNone(f.newlines)
+        self.assertIsNone(f.encoding)
 
         f.write("\u039B" * 20 + "\r\n")
         f.seek(0)
         self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
         self.assertTrue(f._rolled)
+        self.assertEqual(f.mode, 'w+')
+        self.assertIsNotNone(f.name)
+        self.assertIsNotNone(f.newlines)
+        self.assertEqual(f.encoding, 'utf-8')
 
     def test_context_manager_before_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager

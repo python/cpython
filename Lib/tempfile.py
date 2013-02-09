@@ -546,7 +546,12 @@ class SpooledTemporaryFile:
 
     @property
     def encoding(self):
-        return self._file.encoding
+        try:
+            return self._file.encoding
+        except AttributeError:
+            if 'b' in self._TemporaryFileArgs['mode']:
+                raise
+            return self._TemporaryFileArgs['encoding']
 
     def fileno(self):
         self.rollover()
@@ -560,18 +565,26 @@ class SpooledTemporaryFile:
 
     @property
     def mode(self):
-        return self._file.mode
+        try:
+            return self._file.mode
+        except AttributeError:
+            return self._TemporaryFileArgs['mode']
 
     @property
     def name(self):
-        return self._file.name
+        try:
+            return self._file.name
+        except AttributeError:
+            return None
 
     @property
     def newlines(self):
-        return self._file.newlines
-
-    def next(self):
-        return self._file.next
+        try:
+            return self._file.newlines
+        except AttributeError:
+            if 'b' in self._TemporaryFileArgs['mode']:
+                raise
+            return self._TemporaryFileArgs['newline']
 
     def read(self, *args):
         return self._file.read(*args)
@@ -606,9 +619,6 @@ class SpooledTemporaryFile:
         rv = file.writelines(iterable)
         self._check(file)
         return rv
-
-    def xreadlines(self, *args):
-        return self._file.xreadlines(*args)
 
 
 class TemporaryDirectory(object):
