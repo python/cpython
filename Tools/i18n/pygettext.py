@@ -208,6 +208,7 @@ escapes = []
 
 def make_escapes(pass_iso8859):
     global escapes
+    escapes = [chr(i) for i in range(256)]
     if pass_iso8859:
         # Allow iso-8859 characters to pass through so that e.g. 'msgid
         # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
@@ -215,11 +216,9 @@ def make_escapes(pass_iso8859):
         mod = 128
     else:
         mod = 256
-    for i in range(256):
-        if 32 <= (i % mod) <= 126:
-            escapes.append(chr(i))
-        else:
-            escapes.append("\\%03o" % i)
+    for i in range(mod):
+        if not(32 <= i <= 126):
+            escapes[i] = "\\%03o" % i
     escapes[ord('\\')] = '\\\\'
     escapes[ord('\t')] = '\\t'
     escapes[ord('\r')] = '\\r'
@@ -593,7 +592,7 @@ def main():
                 fp.close()
 
     # calculate escapes
-    make_escapes(options.escape)
+    make_escapes(not options.escape)
 
     # calculate all keywords
     options.keywords.extend(default_keywords)
