@@ -738,6 +738,17 @@ class test_SpooledTemporaryFile(TC):
         f.write(b'x')
         self.assertTrue(f._rolled)
 
+    def test_xreadlines(self):
+        f = self.do_create(max_size=20)
+        f.write(b'abc\n' * 5)
+        f.seek(0)
+        self.assertFalse(f._rolled)
+        self.assertEqual(list(f.xreadlines()), [b'abc\n'] * 5)
+        f.write(b'x\ny')
+        self.assertTrue(f._rolled)
+        f.seek(0)
+        self.assertEqual(list(f.xreadlines()), [b'abc\n'] * 5 + [b'x\n', b'y'])
+
     def test_sparse(self):
         # A SpooledTemporaryFile that is written late in the file will extend
         # when that occurs
@@ -792,6 +803,26 @@ class test_SpooledTemporaryFile(TC):
         write("b" * 35)
         seek(0, 0)
         self.assertTrue(read(70) == 'a'*35 + 'b'*35)
+
+    def test_properties(self):
+        f = tempfile.SpooledTemporaryFile(max_size=10)
+        f.write(b'x' * 10)
+        self.assertFalse(f._rolled)
+        self.assertEqual(f.mode, 'w+b')
+        self.assertIsNone(f.name)
+        with self.assertRaises(AttributeError):
+            f.newlines
+        with self.assertRaises(AttributeError):
+            f.encoding
+
+        f.write(b'x')
+        self.assertTrue(f._rolled)
+        self.assertEqual(f.mode, 'w+b')
+        self.assertIsNotNone(f.name)
+        with self.assertRaises(AttributeError):
+            f.newlines
+        with self.assertRaises(AttributeError):
+            f.encoding
 
     def test_context_manager_before_rollover(self):
         # A SpooledTemporaryFile can be used as a context manager
