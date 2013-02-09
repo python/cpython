@@ -36,7 +36,7 @@ The module defines the following variables and functions:
 
    Return a fragment which is the addition of the two samples passed as parameters.
    *width* is the sample width in bytes, either ``1``, ``2`` or ``4``.  Both
-   fragments should have the same length.
+   fragments should have the same length.  Samples are truncated in case of overflow.
 
 
 .. function:: adpcm2lin(adpcmfragment, width, state)
@@ -67,7 +67,7 @@ The module defines the following variables and functions:
 .. function:: bias(fragment, width, bias)
 
    Return a fragment that is the original fragment with a bias added to each
-   sample.
+   sample.  Samples wrap around in case of overflow.
 
 
 .. function:: cross(fragment, width)
@@ -175,7 +175,7 @@ The module defines the following variables and functions:
 .. function:: mul(fragment, width, factor)
 
    Return a fragment that has all samples in the original fragment multiplied by
-   the floating-point value *factor*.  Overflow is silently ignored.
+   the floating-point value *factor*.  Samples are truncated in case of overflow.
 
 
 .. function:: ratecv(fragment, width, nchannels, inrate, outrate, state[, weightA[, weightB]])
