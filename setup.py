@@ -1309,6 +1309,7 @@ class PyBuildExt(build_ext):
             define_macros = []
             expat_lib = ['expat']
             expat_sources = []
+            expat_depends = []
         else:
             expat_inc = [os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')]
             define_macros = [
@@ -1318,12 +1319,25 @@ class PyBuildExt(build_ext):
             expat_sources = ['expat/xmlparse.c',
                              'expat/xmlrole.c',
                              'expat/xmltok.c']
+            expat_depends = ['expat/ascii.h',
+                             'expat/asciitab.h',
+                             'expat/expat.h',
+                             'expat/expat_config.h',
+                             'expat/expat_external.h',
+                             'expat/internal.h',
+                             'expat/latin1tab.h',
+                             'expat/utf8tab.h',
+                             'expat/xmlrole.h',
+                             'expat/xmltok.h',
+                             'expat/xmltok_impl.h'
+                             ]
 
         exts.append(Extension('pyexpat',
                               define_macros = define_macros,
                               include_dirs = expat_inc,
                               libraries = expat_lib,
-                              sources = ['pyexpat.c'] + expat_sources
+                              sources = ['pyexpat.c'] + expat_sources,
+                              depends = expat_depends,
                               ))
 
         # Fredrik Lundh's cElementTree module.  Note that this also
@@ -1336,6 +1350,8 @@ class PyBuildExt(build_ext):
                                   include_dirs = expat_inc,
                                   libraries = expat_lib,
                                   sources = ['_elementtree.c'],
+                                  depends = ['pyexpat.c'] + expat_sources +
+                                      expat_depends,
                                   ))
         else:
             missing.append('_elementtree')
