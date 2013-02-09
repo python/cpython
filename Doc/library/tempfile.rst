@@ -84,7 +84,7 @@ The module defines the following user-callable items:
 
    The returned object is a file-like object whose :attr:`_file` attribute
    is either a :class:`BytesIO` or :class:`StringIO` object (depending on
-   whether specifies binary or text *mode* was specified) or a true file
+   whether binary or text *mode* was specified) or a true file
    object, depending on whether :func:`rollover` has been called.  This
    file-like object can be used in a :keyword:`with` statement, just like
    a normal file.
