@@ -244,6 +244,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13773: sqlite3.connect() gets a new `uri` parameter to pass the
+  filename as a URI, allowing to pass custom options.
+
 - Issue #17156: pygettext.py now uses an encoding of source file and correctly
   writes and escapes non-ascii characters.
 

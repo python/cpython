@@ -28,6 +28,9 @@ try:
 except ImportError:
     threading = None
 
+from test.support import TESTFN, unlink
+
+
 class ModuleTests(unittest.TestCase):
     def CheckAPILevel(self):
         self.assertEqual(sqlite.apilevel, "2.0",
@@ -162,6 +165,21 @@ class ConnectionTests(unittest.TestCase):
     def CheckInTransactionRO(self):
         with self.assertRaises(AttributeError):
             self.cx.in_transaction = True
+
+    def CheckOpenUri(self):
+        if sqlite.sqlite_version_info < (3, 7, 7):
+            with self.assertRaises(sqlite.NotSupportedError):
+                sqlite.connect(':memory:', uri=True)
+            return
+        self.addCleanup(unlink, TESTFN)
+        with sqlite.connect(TESTFN) as cx:
+            cx.execute('create table test(id integer)')
+        with sqlite.connect('file:' + TESTFN, uri=True) as cx:
+            cx.execute('insert into test(id) values(0)')
+        with sqlite.connect('file:' + TESTFN + '?mode=ro', uri=True) as cx:
+            with self.assertRaises(sqlite.OperationalError):
+                cx.execute('insert into test(id) values(1)')
+
 
 class CursorTests(unittest.TestCase):
     def setUp(self):

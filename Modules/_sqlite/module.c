@@ -50,19 +50,26 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
      * C-level, so this code is redundant with the one in connection_init in
      * connection.c and must always be copied from there ... */
 
-    static char *kwlist[] = {"database", "timeout", "detect_types", "isolation_level", "check_same_thread", "factory", "cached_statements", NULL, NULL};
+    static char *kwlist[] = {
+        "database", "timeout", "detect_types", "isolation_level",
+        "check_same_thread", "factory", "cached_statements", "uri",
+        NULL
+    };
     char* database;
     int detect_types = 0;
     PyObject* isolation_level;
     PyObject* factory = NULL;
     int check_same_thread = 1;
     int cached_statements;
+    int uri = 0;
     double timeout = 5.0;
 
     PyObject* result;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOi", kwlist,
-                                     &database, &timeout, &detect_types, &isolation_level, &check_same_thread, &factory, &cached_statements))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|diOiOip", kwlist,
+                                     &database, &timeout, &detect_types,
+                                     &isolation_level, &check_same_thread,
+                                     &factory, &cached_statements, &uri))
     {
         return NULL;
     }
@@ -77,7 +84,8 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
 }
 
 PyDoc_STRVAR(module_connect_doc,
-"connect(database[, timeout, isolation_level, detect_types, factory])\n\
+"connect(database[, timeout, detect_types, isolation_level,\n\
+        check_same_thread, factory, cached_statements, uri])\n\
 \n\
 Opens a connection to the SQLite database file *database*. You can use\n\
 \":memory:\" to open a database connection to a database that resides in\n\

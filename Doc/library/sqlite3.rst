@@ -159,7 +159,7 @@ Module functions and constants
    first blank for the column name: the column name would simply be "x".
 
 
-.. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements])
+.. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
 
    Opens a connection to the SQLite database file *database*. You can use
    ``":memory:"`` to open a database connection to a database that resides in RAM
@@ -194,6 +194,18 @@ Module functions and constants
    overhead. If you want to explicitly set the number of statements that are cached
    for the connection, you can set the *cached_statements* parameter. The currently
    implemented default is to cache 100 statements.
+
+   If *uri* is true, *database* is interpreted as a URI. This allows you
+   to specify options. For example, to open a database in read-only mode
+   you can use::
+
+       db = sqlite3.connect('file:path/to/database?mode=ro', uri=True)
+
+   More information about this feature, including a list of recognized options, can
+   be found in the `SQLite URI documentation <http://www.sqlite.org/uri.html>`_.
+
+   .. versionchanged:: 3.4
+      Added the *uri* parameter.
 
 
 .. function:: register_converter(typename, callable)
