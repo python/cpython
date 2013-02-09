@@ -1172,7 +1172,7 @@ os2_formatmsg(char *msgbuf, int msglen, char *reason)
     if (strlen(msgbuf) > 0) { /* If Non-Empty Msg, Trim CRLF */
         char *lastc = &msgbuf[ strlen(msgbuf)-1 ];
 
-        while (lastc > msgbuf && isspace(Py_CHARMASK(*lastc)))
+        while (lastc > msgbuf && Py_ISSPACE(Py_CHARMASK(*lastc)))
             *lastc-- = '\0'; /* Trim Trailing Whitespace (CRLF) */
     }
 

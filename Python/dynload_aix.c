@@ -4,7 +4,6 @@
 #include "Python.h"
 #include "importdl.h"
 
-#include <ctype.h>      /*  for isdigit()         */
 #include <errno.h>      /*  for global errno      */
 #include <string.h>     /*  for strerror()        */
 #include <stdlib.h>     /*  for malloc(), free()  */
@@ -141,7 +140,7 @@ aix_loaderror(const char *pathname)
             if (nerr == load_errtab[j].errNo && load_errtab[j].errstr)
             ERRBUF_APPEND(load_errtab[j].errstr);
         }
-        while (isdigit(Py_CHARMASK(*message[i]))) message[i]++ ;
+        while (Py_ISDIGIT(Py_CHARMASK(*message[i]))) message[i]++ ;
         ERRBUF_APPEND(message[i]);
         ERRBUF_APPEND("\n");
     }
