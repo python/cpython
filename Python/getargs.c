@@ -288,7 +288,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
             if (level == 0) {
                 if (c == 'O')
                     max++;
-                else if (isalpha(Py_CHARMASK(c))) {
+                else if (Py_ISALPHA(Py_CHARMASK(c))) {
                     if (c != 'e') /* skip encoded */
                         max++;
                 } else if (c == '|')
@@ -378,7 +378,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
         }
     }
 
-    if (*format != '\0' && !isalpha(Py_CHARMASK(*format)) &&
+    if (*format != '\0' && !Py_ISALPHA(Py_CHARMASK(*format)) &&
         *format != '(' &&
         *format != '|' && *format != ':' && *format != ';') {
         PyErr_Format(PyExc_SystemError,
@@ -471,7 +471,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         else if (c == ':' || c == ';' || c == '\0')
             break;
-        else if (level == 0 && isalpha(Py_CHARMASK(c)))
+        else if (level == 0 && Py_ISALPHA(Py_CHARMASK(c)))
             n++;
     }
 
