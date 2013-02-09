@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17173: Remove uses of locale-dependent C functions (isalpha() etc.)
+  in the interpreter.
+
 - Issue #17137: When an Unicode string is resized, the internal wide character
   string (wstr) format is now cleared.
 
