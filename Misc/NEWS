@@ -169,6 +169,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #10355: In SpooledTemporaryFile class mode, name, encoding and
+  newlines properties now work for unrolled files.  Obsoleted and never
+  working on Python 3 xreadline method now removed.
+
 - Issue #16686: Fixed a lot of bugs in audioop module.  Fixed crashes in
   avgpp(), maxpp() and ratecv().  Fixed an integer overflow in add(), bias(),
   and ratecv().  reverse(), lin2lin() and ratecv() no more lose precision for
