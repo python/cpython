@@ -250,6 +250,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17141: random.vonmisesvariate() no more hangs for large kappas.
+
 - Issue #17149: Fix random.vonmisesvariate to always return results in
   [0, 2*math.pi].
 
