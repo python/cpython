@@ -475,6 +475,20 @@ class TestDistributions(unittest.TestCase):
             self.assertAlmostEqual(s1/N, mu, places=2)
             self.assertAlmostEqual(s2/(N-1), sigmasqrd, places=2)
 
+    def test_von_mises_range(self):
+        # Issue 17149: von mises variates were not consistently in the
+        # range [0, 2*PI].
+        g = random.Random()
+        N = 100
+        for mu in 0.0, 0.1, 3.1, 6.2:
+            for kappa in 0.0, 2.3, 500.0:
+                for _ in range(N):
+                    sample = g.vonmisesvariate(mu, kappa)
+                    self.assertTrue(
+                        0 <= sample <= random.TWOPI,
+                        msg=("vonmisesvariate({}, {}) produced a result {} out"
+                             " of range [0, 2*pi]").format(mu, kappa, sample))
+
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
         self.assertAlmostEqual(random.NV_MAGICCONST, 1.71552776992141)
