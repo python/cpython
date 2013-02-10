@@ -176,6 +176,14 @@ class KeywordOnlyArgTestCase(unittest.TestCase):
                 return __a
         self.assertEqual(X().f(), 42)
 
+    def test_default_evaluation_order(self):
+        # See issue 16967
+        a = 42
+        with self.assertRaises(NameError) as err:
+            def f(v=a, x=b, *, y=c, z=d):
+                pass
+        self.assertEqual(str(err.exception), "global name 'b' is not defined")
+
 def test_main():
     run_unittest(KeywordOnlyArgTestCase)
 
