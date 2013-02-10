@@ -4,6 +4,9 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
+#ifndef MS_WINDOWS
+#include "posixmodule.h"
+#endif
 
 #ifdef MS_WINDOWS
 #include <Windows.h>
@@ -723,7 +726,7 @@ fill_siginfo(siginfo_t *si)
     PyStructSequence_SET_ITEM(result, 1, PyLong_FromLong((long)(si->si_code)));
     PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si->si_errno)));
     PyStructSequence_SET_ITEM(result, 3, PyLong_FromPid(si->si_pid));
-    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong((long)(si->si_uid)));
+    PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
     PyStructSequence_SET_ITEM(result, 5,
                                 PyLong_FromLong((long)(si->si_status)));
     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));

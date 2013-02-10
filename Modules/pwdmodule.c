@@ -2,8 +2,8 @@
 /* UNIX password file access module */
 
 #include "Python.h"
+#include "posixmodule.h"
 
-#include <sys/types.h>
 #include <pwd.h>
 
 static PyStructSequence_Field struct_pwd_type_fields[] = {
@@ -74,8 +74,8 @@ mkpwent(struct passwd *p)
 #else
     SETS(setIndex++, p->pw_passwd);
 #endif
-    SETI(setIndex++, p->pw_uid);
-    SETI(setIndex++, p->pw_gid);
+    PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromUid(p->pw_uid));
+    PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromGid(p->pw_gid));
 #ifdef __VMS
     SETS(setIndex++, "");
 #else
@@ -104,13 +104,17 @@ See help(pwd) for more on password database entries.");
 static PyObject *
 pwd_getpwuid(PyObject *self, PyObject *args)
 {
-    unsigned int uid;
+    uid_t uid;
     struct passwd *p;
-    if (!PyArg_ParseTuple(args, "I:getpwuid", &uid))
+    if (!PyArg_ParseTuple(args, "O&:getpwuid", _Py_Uid_Converter, &uid))
         return NULL;
     if ((p = getpwuid(uid)) == NULL) {
+        PyObject *uid_obj = _PyLong_FromUid(uid);
+        if (uid_obj == NULL)
+            return NULL;
         PyErr_Format(PyExc_KeyError,
-                     "getpwuid(): uid not found: %d", uid);
+                     "getpwuid(): uid not found: %S", uid_obj);
+        Py_DECREF(uid_obj);
         return NULL;
     }
     return mkpwent(p);
