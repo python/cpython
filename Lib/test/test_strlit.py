@@ -50,6 +50,10 @@ f = '\u1881'
 assert ord(f) == 0x1881
 g = r'\u1881'
 assert list(map(ord, g)) == [92, 117, 49, 56, 56, 49]
+h = '\U0001d120'
+assert ord(h) == 0x1d120
+i = r'\U0001d120'
+assert list(map(ord, i)) == [92, 85, 48, 48, 48, 49, 100, 49, 50, 48]
 """
 
 
@@ -82,6 +86,24 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(eval(""" '\x81' """), chr(0x81))
         self.assertEqual(eval(r""" '\u1881' """), chr(0x1881))
         self.assertEqual(eval(""" '\u1881' """), chr(0x1881))
+        self.assertEqual(eval(r""" '\U0001d120' """), chr(0x1d120))
+        self.assertEqual(eval(""" '\U0001d120' """), chr(0x1d120))
+
+    def test_eval_str_incomplete(self):
+        self.assertRaises(SyntaxError, eval, r""" '\x' """)
+        self.assertRaises(SyntaxError, eval, r""" '\x0' """)
+        self.assertRaises(SyntaxError, eval, r""" '\u' """)
+        self.assertRaises(SyntaxError, eval, r""" '\u0' """)
+        self.assertRaises(SyntaxError, eval, r""" '\u00' """)
+        self.assertRaises(SyntaxError, eval, r""" '\u000' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U0' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U00' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U000' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U0000' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U00000' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U000000' """)
+        self.assertRaises(SyntaxError, eval, r""" '\U0000000' """)
 
     def test_eval_str_raw(self):
         self.assertEqual(eval(""" r'x' """), 'x')
@@ -91,6 +113,8 @@ class TestLiterals(unittest.TestCase):
         self.assertEqual(eval(""" r'\x81' """), chr(0x81))
         self.assertEqual(eval(r""" r'\u1881' """), '\\' + 'u1881')
         self.assertEqual(eval(""" r'\u1881' """), chr(0x1881))
+        self.assertEqual(eval(r""" r'\U0001d120' """), '\\' + 'U0001d120')
+        self.assertEqual(eval(""" r'\U0001d120' """), chr(0x1d120))
 
     def test_eval_bytes_normal(self):
         self.assertEqual(eval(""" b'x' """), b'x')
@@ -100,6 +124,12 @@ class TestLiterals(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, """ b'\x81' """)
         self.assertEqual(eval(r""" b'\u1881' """), b'\\' + b'u1881')
         self.assertRaises(SyntaxError, eval, """ b'\u1881' """)
+        self.assertEqual(eval(r""" b'\U0001d120' """), b'\\' + b'U0001d120')
+        self.assertRaises(SyntaxError, eval, """ b'\U0001d120' """)
+
+    def test_eval_bytes_incomplete(self):
+        self.assertRaises(SyntaxError, eval, r""" b'\x' """)
+        self.assertRaises(SyntaxError, eval, r""" b'\x0' """)
 
     def test_eval_bytes_raw(self):
         self.assertEqual(eval(""" br'x' """), b'x')
@@ -109,6 +139,12 @@ class TestLiterals(unittest.TestCase):
         self.assertRaises(SyntaxError, eval, """ br'\x81' """)
         self.assertEqual(eval(r""" br'\u1881' """), b"\\" + b"u1881")
         self.assertRaises(SyntaxError, eval, """ br'\u1881' """)
+        self.assertEqual(eval(r""" br'\U0001d120' """), b"\\" + b"U0001d120")
+        self.assertRaises(SyntaxError, eval, """ br'\U0001d120' """)
+        self.assertRaises(SyntaxError, eval, """ rb'' """)
+        self.assertRaises(SyntaxError, eval, """ bb'' """)
+        self.assertRaises(SyntaxError, eval, """ rr'' """)
+        self.assertRaises(SyntaxError, eval, """ brr'' """)
 
     def check_encoding(self, encoding, extra=""):
         modname = "xx_" + encoding.replace("-", "_")
