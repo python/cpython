@@ -218,6 +218,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6975: os.path.realpath() now correctly resolves multiple nested
+  symlinks on POSIX platforms.
+
 - Issue #17156: pygettext.py now uses an encoding of source file and correctly
   writes and escapes non-ascii characters.
 
