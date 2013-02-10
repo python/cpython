@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #12983: Bytes literals with invalid \x escape now raise a SyntaxError
+  and a full traceback including line number.
+
 - Issue #16967: In function definition, evaluate positional defaults before
   keyword-only defaults.
 
