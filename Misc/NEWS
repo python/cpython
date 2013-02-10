@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16967: In function definition, evaluate positional defaults before
+  keyword-only defaults.
+
 - Issue #17173: Remove uses of locale-dependent C functions (isalpha() etc.)
   in the interpreter.
 

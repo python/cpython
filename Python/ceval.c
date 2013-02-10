@@ -2901,23 +2901,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             }
 
             /* XXX Maybe this should be a separate opcode? */
-            if (posdefaults > 0) {
-                PyObject *defs = PyTuple_New(posdefaults);
-                if (defs == NULL) {
-                    Py_DECREF(func);
-                    goto error;
-                }
-                while (--posdefaults >= 0)
-                    PyTuple_SET_ITEM(defs, posdefaults, POP());
-                if (PyFunction_SetDefaults(func, defs) != 0) {
-                    /* Can't happen unless
-                       PyFunction_SetDefaults changes. */
-                    Py_DECREF(defs);
-                    Py_DECREF(func);
-                    goto error;
-                }
-                Py_DECREF(defs);
-            }
             if (kwdefaults > 0) {
                 PyObject *defs = PyDict_New();
                 if (defs == NULL) {
@@ -2941,6 +2924,23 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                        PyFunction_SetKwDefaults changes. */
                     Py_DECREF(func);
                     Py_DECREF(defs);
+                    goto error;
+                }
+                Py_DECREF(defs);
+            }
+            if (posdefaults > 0) {
+                PyObject *defs = PyTuple_New(posdefaults);
+                if (defs == NULL) {
+                    Py_DECREF(func);
+                    goto error;
+                }
+                while (--posdefaults >= 0)
+                    PyTuple_SET_ITEM(defs, posdefaults, POP());
+                if (PyFunction_SetDefaults(func, defs) != 0) {
+                    /* Can't happen unless
+                       PyFunction_SetDefaults changes. */
+                    Py_DECREF(defs);
+                    Py_DECREF(func);
                     goto error;
                 }
                 Py_DECREF(defs);
