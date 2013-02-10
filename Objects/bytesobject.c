@@ -474,8 +474,9 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                 break;
             }
             if (!errors || strcmp(errors, "strict") == 0) {
-                PyErr_SetString(PyExc_ValueError,
-                                "invalid \\x escape");
+                PyErr_Format(PyExc_ValueError,
+                             "invalid \\x escape at position %d",
+                             s - 2 - (end - len));
                 goto failed;
             }
             if (strcmp(errors, "replace") == 0) {
