@@ -473,6 +473,7 @@ class TestDistributions(unittest.TestCase):
         g.random = x[:].pop; g.paretovariate(1.0)
         g.random = x[:].pop; g.expovariate(1.0)
         g.random = x[:].pop; g.weibullvariate(1.0, 1.0)
+        g.random = x[:].pop; g.vonmisesvariate(1.0, 1.0)
         g.random = x[:].pop; g.normalvariate(0.0, 1.0)
         g.random = x[:].pop; g.gauss(0.0, 1.0)
         g.random = x[:].pop; g.lognormvariate(0.0, 1.0)
@@ -493,6 +494,7 @@ class TestDistributions(unittest.TestCase):
                 (g.uniform, (1.0,10.0), (10.0+1.0)/2, (10.0-1.0)**2/12),
                 (g.triangular, (0.0, 1.0, 1.0/3.0), 4.0/9.0, 7.0/9.0/18.0),
                 (g.expovariate, (1.5,), 1/1.5, 1/1.5**2),
+                (g.vonmisesvariate, (1.23, 0), pi, pi**2/3),
                 (g.paretovariate, (5.0,), 5.0/(5.0-1),
                                   5.0/((5.0-1)**2*(5.0-2))),
                 (g.weibullvariate, (1.0, 3.0), gamma(1+1/3.0),
@@ -509,8 +511,30 @@ class TestDistributions(unittest.TestCase):
                 s1 += e
                 s2 += (e - mu) ** 2
             N = len(y)
-            self.assertAlmostEqual(s1/N, mu, places=2)
-            self.assertAlmostEqual(s2/(N-1), sigmasqrd, places=2)
+            self.assertAlmostEqual(s1/N, mu, places=2,
+                                   msg='%s%r' % (variate.__name__, args))
+            self.assertAlmostEqual(s2/(N-1), sigmasqrd, places=2,
+                                   msg='%s%r' % (variate.__name__, args))
+
+    def test_constant(self):
+        g = random.Random()
+        N = 100
+        for variate, args, expected in [
+                (g.uniform, (10.0, 10.0), 10.0),
+                (g.triangular, (10.0, 10.0), 10.0),
+                #(g.triangular, (10.0, 10.0, 10.0), 10.0),
+                (g.expovariate, (float('inf'),), 0.0),
+                (g.vonmisesvariate, (3.0, float('inf')), 3.0),
+                (g.gauss, (10.0, 0.0), 10.0),
+                (g.lognormvariate, (0.0, 0.0), 1.0),
+                (g.lognormvariate, (-float('inf'), 0.0), 0.0),
+                (g.normalvariate, (10.0, 0.0), 10.0),
+                (g.paretovariate, (float('inf'),), 1.0),
+                (g.weibullvariate, (10.0, float('inf')), 10.0),
+                (g.weibullvariate, (0.0, 10.0), 0.0),
+            ]:
+            for i in range(N):
+                self.assertEqual(variate(*args), expected)
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the
@@ -525,6 +549,12 @@ class TestDistributions(unittest.TestCase):
                         0 <= sample <= random.TWOPI,
                         msg=("vonmisesvariate({}, {}) produced a result {} out"
                              " of range [0, 2*pi]").format(mu, kappa, sample))
+
+    def test_von_mises_large_kappa(self):
+        # Issue #17141: vonmisesvariate() was hang for large kappas
+        random.vonmisesvariate(0, 1e15)
+        random.vonmisesvariate(0, 1e100)
+
 
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
