@@ -792,7 +792,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertTrue(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
-        self.assertEqual(f.newlines, '\n')
+        self.assertEqual(f.newlines, os.linesep)
         self.assertIsNotNone(f.encoding)
 
     def test_text_newline_and_encoding(self):
