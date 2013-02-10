@@ -158,6 +158,7 @@ import json
 import os
 import random
 import re
+import shutil
 import sys
 import time
 import traceback
@@ -943,7 +944,6 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False):
         return FAILED, test_time
 
 def cleanup_test_droppings(testname, verbose):
-    import shutil
     import stat
     import gc
 
