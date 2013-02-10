@@ -244,6 +244,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6975: os.path.realpath() now correctly resolves multiple nested
+  symlinks on POSIX platforms.
+
 - Issue #13773: sqlite3.connect() gets a new `uri` parameter to pass the
   filename as a URI, allowing to pass custom options.
 
