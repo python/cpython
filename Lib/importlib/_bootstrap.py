@@ -396,13 +396,15 @@ Known values:
                      3210 (added size modulo 2**32 to the pyc header)
     Python 3.3a1  3220 (changed PEP 380 implementation)
     Python 3.3a4  3230 (revert changes to implicit __class__ closure)
+    Python 3.4a1  3240 (evaluate positional default arguments before
+                       keyword-only defaults)
 
 MAGIC must change whenever the bytecode emitted by the compiler may no
 longer be understood by older implementations of the eval loop (usually
 due to the addition of new opcodes).
 
 """
-_RAW_MAGIC_NUMBER = 3230 | ord('\r') << 16 | ord('\n') << 24
+_RAW_MAGIC_NUMBER = 3240 | ord('\r') << 16 | ord('\n') << 24
 _MAGIC_BYTES = bytes(_RAW_MAGIC_NUMBER >> n & 0xff for n in range(0, 25, 8))
 
 _PYCACHE = '__pycache__'
