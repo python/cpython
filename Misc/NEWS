@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #12983: Bytes literals with invalid \x escape now raise a SyntaxError
+  and a full traceback including line number.
+
 - Issue #17173: Remove uses of locale-dependent C functions (isalpha() etc.)
   in the interpreter.
 
