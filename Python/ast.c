@@ -1843,20 +1843,24 @@ ast_for_atom(struct compiling *c, const node *n)
     case STRING: {
         PyObject *str = parsestrplus(c, n, &bytesmode);
         if (!str) {
-            if (PyErr_ExceptionMatches(PyExc_UnicodeError)) {
+            const char *errtype = NULL;
+            if (PyErr_ExceptionMatches(PyExc_UnicodeError))
+                errtype = "unicode error";
+            else if (PyErr_ExceptionMatches(PyExc_ValueError))
+                errtype = "value error";
+            if (errtype) {
+                char buf[128];
                 PyObject *type, *value, *tback, *errstr;
                 PyErr_Fetch(&type, &value, &tback);
                 errstr = PyObject_Str(value);
                 if (errstr) {
-                    char *s = "";
-                    char buf[128];
-                    s = _PyUnicode_AsString(errstr);
-                    PyOS_snprintf(buf, sizeof(buf), "(unicode error) %s", s);
-                    ast_error(c, n, buf);
+                    char *s = _PyUnicode_AsString(errstr);
+                    PyOS_snprintf(buf, sizeof(buf), "(%s) %s", errtype, s);
                     Py_DECREF(errstr);
                 } else {
-                    ast_error(c, n, "(unicode error) unknown error");
+                    PyOS_snprintf(buf, sizeof(buf), "(%s) unknown error", errtype);
                 }
+                ast_error(c, n, buf);
                 Py_DECREF(type);
                 Py_DECREF(value);
                 Py_XDECREF(tback);
