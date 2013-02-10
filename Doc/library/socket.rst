@@ -1350,7 +1350,7 @@ manager protocol instead, open a socket with::
     socket.socket(socket.AF_CAN, socket.SOCK_DGRAM, socket.CAN_BCM)
 
 After binding (:const:`CAN_RAW`) or connecting (:const:`CAN_BCM`) the socket, you
-can use the :method:`socket.send`, and the :method:`socket.recv` operations (and
+can use the :meth:`socket.send`, and the :meth:`socket.recv` operations (and
 their counterparts) on the socket object as usual.
 
 This example might require special priviledge::
