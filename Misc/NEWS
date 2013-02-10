@@ -172,6 +172,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1470548: XMLGenerator now works with binary output streams.
+
 - Issue #6975: os.path.realpath() now correctly resolves multiple nested
   symlinks on POSIX platforms.
 
