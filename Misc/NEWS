@@ -202,6 +202,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17502: unittest discovery should use self.testLoader.
+
 - Issue #17141: random.vonmisesvariate() no more hangs for large kappas.
 
 - Issue #17149: Fix random.vonmisesvariate to always return results in
