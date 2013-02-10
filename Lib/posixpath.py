@@ -364,45 +364,50 @@ def abspath(path):
 def realpath(filename):
     """Return the canonical path of the specified filename, eliminating any
 symbolic links encountered in the path."""
-    if isabs(filename):
-        bits = ['/'] + filename.split('/')[1:]
-    else:
-        bits = [''] + filename.split('/')
+    path, ok = _joinrealpath('', filename, {})
+    return abspath(path)
 
-    for i in range(2, len(bits)+1):
-        component = join(*bits[0:i])
-        # Resolve symbolic links.
-        if islink(component):
-            resolved = _resolve_link(component)
-            if resolved is None:
-                # Infinite loop -- return original component + rest of the path
-                return abspath(join(*([component] + bits[i:])))
+# Join two paths, normalizing ang eliminating any symbolic links
+# encountered in the second path.
+def _joinrealpath(path, rest, seen):
+    if isabs(rest):
+        rest = rest[1:]
+        path = sep
+
+    while rest:
+        name, _, rest = rest.partition(sep)
+        if not name or name == curdir:
+            # current dir
+            continue
+        if name == pardir:
+            # parent dir
+            if path:
+                path = dirname(path)
             else:
-                newpath = join(*([resolved] + bits[i:]))
-                return realpath(newpath)
+                path = name
+            continue
+        newpath = join(path, name)
+        if not islink(newpath):
+            path = newpath
+            continue
+        # Resolve the symbolic link
+        if newpath in seen:
+            # Already seen this path
+            path = seen[newpath]
+            if path is not None:
+                # use cached value
+                continue
+            # The symlink is not resolved, so we must have a symlink loop.
+            # Return already resolved part + rest of the path unchanged.
+            return join(newpath, rest), False
+        seen[newpath] = None # not resolved symlink
+        path, ok = _joinrealpath(path, os.readlink(newpath), seen)
+        if not ok:
+            return join(path, rest), False
+        seen[newpath] = path # resolved symlink
 
-    return abspath(filename)
+    return path, True
 
-
-def _resolve_link(path):
-    """Internal helper function.  Takes a path and follows symlinks
-    until we either arrive at something that isn't a symlink, or
-    encounter a path we've seen before (meaning that there's a loop).
-    """
-    paths_seen = set()
-    while islink(path):
-        if path in paths_seen:
-            # Already seen this path, so we must have a symlink loop
-            return None
-        paths_seen.add(path)
-        # Resolve where the link points to
-        resolved = os.readlink(path)
-        if not isabs(resolved):
-            dir = dirname(path)
-            path = normpath(join(dir, resolved))
-        else:
-            path = normpath(resolved)
-    return path
 
 supports_unicode_filenames = (sys.platform == 'darwin')
 
