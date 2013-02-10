@@ -202,6 +202,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1470548: XMLGenerator now works with UTF-16 and UTF-32 encodings.
+
 - Issue #6975: os.path.realpath() now correctly resolves multiple nested
   symlinks on POSIX platforms.
 
