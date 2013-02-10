@@ -406,7 +406,13 @@ int
 _Py_Uid_Converter(PyObject *obj, void *p)
 {
     int overflow;
-    long result = PyLong_AsLongAndOverflow(obj, &overflow);
+    long result;
+    if (PyFloat_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float");
+        return 0;
+    }
+    result = PyLong_AsLongAndOverflow(obj, &overflow);
     if (overflow < 0)
         goto OverflowDown;
     if (!overflow && result == -1) {
@@ -454,7 +460,13 @@ int
 _Py_Gid_Converter(PyObject *obj, void *p)
 {
     int overflow;
-    long result = PyLong_AsLongAndOverflow(obj, &overflow);
+    long result;
+    if (PyFloat_Check(obj)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float");
+        return 0;
+    }
+    result = PyLong_AsLongAndOverflow(obj, &overflow);
     if (overflow < 0)
         goto OverflowDown;
     if (!overflow && result == -1) {
