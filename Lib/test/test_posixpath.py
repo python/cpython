@@ -377,6 +377,22 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN+"1"), ABSTFN+"1")
             self.assertEqual(realpath(ABSTFN+"2"), ABSTFN+"2")
 
+            self.assertEqual(realpath(ABSTFN+"1/x"), ABSTFN+"1/x")
+            self.assertEqual(realpath(ABSTFN+"1/.."), dirname(ABSTFN))
+            self.assertEqual(realpath(ABSTFN+"1/../x"), dirname(ABSTFN) + "/x")
+            os.symlink(ABSTFN+"x", ABSTFN+"y")
+            self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "y"),
+                             ABSTFN + "y")
+            self.assertEqual(realpath(ABSTFN+"1/../" + basename(ABSTFN) + "1"),
+                             ABSTFN + "1")
+
+            os.symlink(basename(ABSTFN) + "a/b", ABSTFN+"a")
+            self.assertEqual(realpath(ABSTFN+"a"), ABSTFN+"a/b")
+
+            os.symlink("../" + basename(dirname(ABSTFN)) + "/" +
+                       basename(ABSTFN) + "c", ABSTFN+"c")
+            self.assertEqual(realpath(ABSTFN+"c"), ABSTFN+"c")
+
             # Test using relative path as well.
             os.chdir(dirname(ABSTFN))
             self.assertEqual(realpath(basename(ABSTFN)), ABSTFN)
@@ -385,6 +401,45 @@ class PosixPathTest(unittest.TestCase):
             support.unlink(ABSTFN)
             support.unlink(ABSTFN+"1")
             support.unlink(ABSTFN+"2")
+            support.unlink(ABSTFN+"y")
+            support.unlink(ABSTFN+"c")
+
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_repeated_indirect_symlinks(self):
+        # Issue #6975.
+        try:
+            os.mkdir(ABSTFN)
+            os.symlink('../' + basename(ABSTFN), ABSTFN + '/self')
+            os.symlink('self/self/self', ABSTFN + '/link')
+            self.assertEqual(realpath(ABSTFN + '/link'), ABSTFN)
+        finally:
+            support.unlink(ABSTFN + '/self')
+            support.unlink(ABSTFN + '/link')
+            safe_rmdir(ABSTFN)
+
+    @unittest.skipUnless(hasattr(os, "symlink"),
+                         "Missing symlink implementation")
+    @skip_if_ABSTFN_contains_backslash
+    def test_realpath_deep_recursion(self):
+        depth = 10
+        old_path = abspath('.')
+        try:
+            os.mkdir(ABSTFN)
+            for i in range(depth):
+                os.symlink('/'.join(['%d' % i] * 10), ABSTFN + '/%d' % (i + 1))
+            os.symlink('.', ABSTFN + '/0')
+            self.assertEqual(realpath(ABSTFN + '/%d' % depth), ABSTFN)
+
+            # Test using relative path as well.
+            os.chdir(ABSTFN)
+            self.assertEqual(realpath('%d' % depth), ABSTFN)
+        finally:
+            os.chdir(old_path)
+            for i in range(depth + 1):
+                support.unlink(ABSTFN + '/%d' % i)
+            safe_rmdir(ABSTFN)
 
     @unittest.skipUnless(hasattr(os, "symlink"),
                          "Missing symlink implementation")
