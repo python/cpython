@@ -4,6 +4,7 @@ convenience of application and driver writers.
 """
 
 import os, urlparse, urllib, types
+import io
 import sys
 import handler
 import xmlreader
@@ -12,15 +13,6 @@ try:
     _StringTypes = [types.StringType, types.UnicodeType]
 except AttributeError:
     _StringTypes = [types.StringType]
-
-# See whether the xmlcharrefreplace error handler is
-# supported
-try:
-    from codecs import xmlcharrefreplace_errors
-    _error_handling = "xmlcharrefreplace"
-    del xmlcharrefreplace_errors
-except ImportError:
-    _error_handling = "strict"
 
 def __dict_replace(s, d):
     """Replace substrings of a string using a dictionary."""
@@ -82,24 +74,45 @@ def quoteattr(data, entities={}):
     return data
 
 
+def _gettextwriter(out, encoding):
+    if out is None:
+        import sys
+        out = sys.stdout
+
+    if isinstance(out, io.RawIOBase):
+        buffer = io.BufferedIOBase(out)
+        # Keep the original file open when the TextIOWrapper is
+        # destroyed
+        buffer.close = lambda: None
+    else:
+        # This is to handle passed objects that aren't in the
+        # IOBase hierarchy, but just have a write method
+        buffer = io.BufferedIOBase()
+        buffer.writable = lambda: True
+        buffer.write = out.write
+        try:
+            # TextIOWrapper uses this methods to determine
+            # if BOM (for UTF-16, etc) should be added
+            buffer.seekable = out.seekable
+            buffer.tell = out.tell
+        except AttributeError:
+            pass
+    # wrap a binary writer with TextIOWrapper
+    return io.TextIOWrapper(buffer, encoding=encoding,
+                            errors='xmlcharrefreplace',
+                            newline='\n')
+
 class XMLGenerator(handler.ContentHandler):
 
     def __init__(self, out=None, encoding="iso-8859-1"):
-        if out is None:
-            import sys
-            out = sys.stdout
         handler.ContentHandler.__init__(self)
-        self._out = out
+        out = _gettextwriter(out, encoding)
+        self._write = out.write
+        self._flush = out.flush
         self._ns_contexts = [{}] # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
         self._undeclared_ns_maps = []
         self._encoding = encoding
-
-    def _write(self, text):
-        if isinstance(text, str):
-            self._out.write(text)
-        else:
-            self._out.write(text.encode(self._encoding, _error_handling))
 
     def _qname(self, name):
         """Builds a qualified name from a (ns_url, localname) pair"""
@@ -121,8 +134,11 @@ class XMLGenerator(handler.ContentHandler):
     # ContentHandler methods
 
     def startDocument(self):
-        self._write('<?xml version="1.0" encoding="%s"?>\n' %
+        self._write(u'<?xml version="1.0" encoding="%s"?>\n' %
                         self._encoding)
+
+    def endDocument(self):
+        self._flush()
 
     def startPrefixMapping(self, prefix, uri):
         self._ns_contexts.append(self._current_context.copy())
@@ -134,39 +150,39 @@ class XMLGenerator(handler.ContentHandler):
         del self._ns_contexts[-1]
 
     def startElement(self, name, attrs):
-        self._write('<' + name)
+        self._write(u'<' + name)
         for (name, value) in attrs.items():
-            self._write(' %s=%s' % (name, quoteattr(value)))
-        self._write('>')
+            self._write(u' %s=%s' % (name, quoteattr(value)))
+        self._write(u'>')
 
     def endElement(self, name):
-        self._write('</%s>' % name)
+        self._write(u'</%s>' % name)
 
     def startElementNS(self, name, qname, attrs):
-        self._write('<' + self._qname(name))
+        self._write(u'<' + self._qname(name))
 
         for prefix, uri in self._undeclared_ns_maps:
             if prefix:
-                self._out.write(' xmlns:%s="%s"' % (prefix, uri))
+                self._write(u' xmlns:%s="%s"' % (prefix, uri))
             else:
-                self._out.write(' xmlns="%s"' % uri)
+                self._write(u' xmlns="%s"' % uri)
         self._undeclared_ns_maps = []
 
         for (name, value) in attrs.items():
-            self._write(' %s=%s' % (self._qname(name), quoteattr(value)))
-        self._write('>')
+            self._write(u' %s=%s' % (self._qname(name), quoteattr(value)))
+        self._write(u'>')
 
     def endElementNS(self, name, qname):
-        self._write('</%s>' % self._qname(name))
+        self._write(u'</%s>' % self._qname(name))
 
     def characters(self, content):
-        self._write(escape(content))
+        self._write(escape(unicode(content)))
 
     def ignorableWhitespace(self, content):
-        self._write(content)
+        self._write(unicode(content))
 
     def processingInstruction(self, target, data):
-        self._write('<?%s %s?>' % (target, data))
+        self._write(u'<?%s %s?>' % (target, data))
 
 
 class XMLFilterBase(xmlreader.XMLReader):

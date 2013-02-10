@@ -14,6 +14,7 @@ from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from cStringIO import StringIO
+import io
 import os.path
 import shutil
 import test.test_support as support
@@ -170,9 +171,9 @@ class SaxutilsTest(unittest.TestCase):
 
 start = '<?xml version="1.0" encoding="iso-8859-1"?>\n'
 
-class XmlgenTest(unittest.TestCase):
+class XmlgenTest:
     def test_xmlgen_basic(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
         gen.startDocument()
         gen.startElement("doc", {})
@@ -182,7 +183,7 @@ class XmlgenTest(unittest.TestCase):
         self.assertEqual(result.getvalue(), start + "<doc></doc>")
 
     def test_xmlgen_content(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -194,7 +195,7 @@ class XmlgenTest(unittest.TestCase):
         self.assertEqual(result.getvalue(), start + "<doc>huhei</doc>")
 
     def test_xmlgen_pi(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -206,7 +207,7 @@ class XmlgenTest(unittest.TestCase):
         self.assertEqual(result.getvalue(), start + "<?test data?><doc></doc>")
 
     def test_xmlgen_content_escape(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -219,7 +220,7 @@ class XmlgenTest(unittest.TestCase):
             start + "<doc>&lt;huhei&amp;</doc>")
 
     def test_xmlgen_attr_escape(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -238,8 +239,41 @@ class XmlgenTest(unittest.TestCase):
              "<e a=\"'&quot;\"></e>"
              "<e a=\"&#10;&#13;&#9;\"></e></doc>"))
 
+    def test_xmlgen_encoding(self):
+        encodings = ('iso-8859-15', 'utf-8',
+                     'utf-16be', 'utf-16le',
+                     'utf-32be', 'utf-32le')
+        for encoding in encodings:
+            result = self.ioclass()
+            gen = XMLGenerator(result, encoding=encoding)
+
+            gen.startDocument()
+            gen.startElement("doc", {"a": u'\u20ac'})
+            gen.characters(u"\u20ac")
+            gen.endElement("doc")
+            gen.endDocument()
+
+            self.assertEqual(result.getvalue(), (
+                u'<?xml version="1.0" encoding="%s"?>\n'
+                u'<doc a="\u20ac">\u20ac</doc>' % encoding
+                ).encode(encoding, 'xmlcharrefreplace'))
+
+    def test_xmlgen_unencodable(self):
+        result = self.ioclass()
+        gen = XMLGenerator(result, encoding='ascii')
+
+        gen.startDocument()
+        gen.startElement("doc", {"a": u'\u20ac'})
+        gen.characters(u"\u20ac")
+        gen.endElement("doc")
+        gen.endDocument()
+
+        self.assertEqual(result.getvalue(),
+                '<?xml version="1.0" encoding="ascii"?>\n'
+                '<doc a="&#8364;">&#8364;</doc>')
+
     def test_xmlgen_ignorable(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -251,7 +285,7 @@ class XmlgenTest(unittest.TestCase):
         self.assertEqual(result.getvalue(), start + "<doc> </doc>")
 
     def test_xmlgen_ns(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -269,7 +303,7 @@ class XmlgenTest(unittest.TestCase):
                                          ns_uri))
 
     def test_1463026_1(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -280,7 +314,7 @@ class XmlgenTest(unittest.TestCase):
         self.assertEqual(result.getvalue(), start+'<a b="c"></a>')
 
     def test_1463026_2(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -293,7 +327,7 @@ class XmlgenTest(unittest.TestCase):
         self.assertEqual(result.getvalue(), start+'<a xmlns="qux"></a>')
 
     def test_1463026_3(self):
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -321,7 +355,7 @@ class XmlgenTest(unittest.TestCase):
 
         parser = make_parser()
         parser.setFeature(feature_namespaces, True)
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
         parser.setContentHandler(gen)
         parser.parse(test_xml)
@@ -340,7 +374,7 @@ class XmlgenTest(unittest.TestCase):
         #
         # This test demonstrates the bug by direct manipulation of the
         # XMLGenerator.
-        result = StringIO()
+        result = self.ioclass()
         gen = XMLGenerator(result)
 
         gen.startDocument()
@@ -359,6 +393,29 @@ class XmlgenTest(unittest.TestCase):
                          '<a:g1 xmlns:a="http://example.com/ns">'
                           '<a:g2 xml:lang="en">Hello</a:g2>'
                          '</a:g1>'))
+
+    def test_no_close_file(self):
+        result = self.ioclass()
+        def func(out):
+            gen = XMLGenerator(out)
+            gen.startDocument()
+            gen.startElement("doc", {})
+        func(result)
+        self.assertFalse(result.closed)
+
+class StringXmlgenTest(XmlgenTest, unittest.TestCase):
+    ioclass = StringIO
+
+class BytesIOXmlgenTest(XmlgenTest, unittest.TestCase):
+    ioclass = io.BytesIO
+
+class WriterXmlgenTest(XmlgenTest, unittest.TestCase):
+    class ioclass(list):
+        write = list.append
+        closed = False
+
+        def getvalue(self):
+            return b''.join(self)
 
 
 class XMLFilterBaseTest(unittest.TestCase):
@@ -804,7 +861,9 @@ class XmlReaderTest(XmlTestBase):
 def test_main():
     run_unittest(MakeParserTest,
                  SaxutilsTest,
-                 XmlgenTest,
+                 StringXmlgenTest,
+                 BytesIOXmlgenTest,
+                 WriterXmlgenTest,
                  ExpatReaderTest,
                  ErrorReportingTest,
                  XmlReaderTest)
