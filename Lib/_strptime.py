@@ -21,7 +21,7 @@ from datetime import (date as datetime_date,
                       timezone as datetime_timezone)
 try:
     from _thread import allocate_lock as _thread_allocate_lock
-except:
+except ImportError:
     from _dummy_thread import allocate_lock as _thread_allocate_lock
 
 __all__ = []
