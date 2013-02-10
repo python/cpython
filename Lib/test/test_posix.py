@@ -404,10 +404,20 @@ class PosixTester(unittest.TestCase):
         else:
             self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
 
-    def _test_all_chown_common(self, chown_func, first_param):
+    def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
+        def check_stat():
+            if stat_func is not None:
+                stat = stat_func(first_param)
+                self.assertEqual(stat.st_uid, os.getuid())
+                self.assertEqual(stat.st_gid, os.getgid())
         # test a successful chown call
         chown_func(first_param, os.getuid(), os.getgid())
+        check_stat()
+        chown_func(first_param, -1, os.getgid())
+        check_stat()
+        chown_func(first_param, os.getuid(), -1)
+        check_stat()
 
         if os.getuid() == 0:
             try:
@@ -427,8 +437,12 @@ class PosixTester(unittest.TestCase):
                                     "behavior")
         else:
             # non-root cannot chown to root, raises OSError
-            self.assertRaises(OSError, chown_func,
-                              first_param, 0, 0)
+            self.assertRaises(OSError, chown_func, first_param, 0, 0)
+            check_stat()
+            self.assertRaises(OSError, chown_func, first_param, -1, 0)
+            check_stat()
+            self.assertRaises(OSError, chown_func, first_param, 0, -1)
+            check_stat()
 
     @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
     def test_chown(self):
@@ -438,7 +452,8 @@ class PosixTester(unittest.TestCase):
 
         # re-create the file
         support.create_empty_file(support.TESTFN)
-        self._test_all_chown_common(posix.chown, support.TESTFN)
+        self._test_all_chown_common(posix.chown, support.TESTFN,
+                                    getattr(posix, 'stat', None))
 
     @unittest.skipUnless(hasattr(posix, 'fchown'), "test needs os.fchown()")
     def test_fchown(self):
@@ -448,7 +463,8 @@ class PosixTester(unittest.TestCase):
         test_file = open(support.TESTFN, 'w')
         try:
             fd = test_file.fileno()
-            self._test_all_chown_common(posix.fchown, fd)
+            self._test_all_chown_common(posix.fchown, fd,
+                                        getattr(posix, 'fstat', None))
         finally:
             test_file.close()
 
@@ -457,7 +473,8 @@ class PosixTester(unittest.TestCase):
         os.unlink(support.TESTFN)
         # create a symlink
         os.symlink(_DUMMY_SYMLINK, support.TESTFN)
-        self._test_all_chown_common(posix.lchown, support.TESTFN)
+        self._test_all_chown_common(posix.lchown, support.TESTFN,
+                                    getattr(posix, 'lstat', None))
 
     def test_chdir(self):
         if hasattr(posix, 'chdir'):
