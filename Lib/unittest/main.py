@@ -222,7 +222,7 @@ class TestProgram(object):
 
     def _do_discovery(self, argv, Loader=None):
         if Loader is None:
-            Loader = self.testLoader
+            Loader = lambda: self.testLoader
 
         # handle command line args for test discovery
         self.progName = '%s discover' % self.progName
