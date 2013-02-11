@@ -994,7 +994,24 @@ class TestMIMEApplication(unittest.TestCase):
         eq(msg.get_payload(), '+vv8/f7/')
         eq(msg.get_payload(decode=True), bytes)
 
-    def test_body_with_encode_noop(self):
+    def test_binary_body_with_encode_7or8bit(self):
+        # Issue 17171.
+        bytesdata = b'\xfa\xfb\xfc\xfd\xfe\xff'
+        msg = MIMEApplication(bytesdata, _encoder=encoders.encode_7or8bit)
+        # Treated as a string, this will be invalid code points.
+        self.assertEqual(msg.get_payload(), bytesdata)
+        self.assertEqual(msg.get_payload(decode=True), bytesdata)
+        self.assertEqual(msg['Content-Transfer-Encoding'], '8bit')
+        s = StringIO()
+        g = Generator(s)
+        g.flatten(msg)
+        wireform = s.getvalue()
+        msg2 = email.message_from_string(wireform)
+        self.assertEqual(msg.get_payload(), bytesdata)
+        self.assertEqual(msg2.get_payload(decode=True), bytesdata)
+        self.assertEqual(msg2['Content-Transfer-Encoding'], '8bit')
+
+    def test_binary_body_with_encode_noop(self):
         # Issue 16564: This does not produce an RFC valid message, since to be
         # valid it should have a CTE of binary.  But the below works, and is
         # documented as working this way.
