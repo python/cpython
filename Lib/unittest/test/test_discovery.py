@@ -269,7 +269,7 @@ class TestDiscovery(unittest.TestCase):
                 self.args.append((start_dir, pattern, top_level_dir))
                 return 'tests'
 
-        program.testLoader = Loader
+        program.testLoader = Loader()
         program._do_discovery(['-v'])
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
