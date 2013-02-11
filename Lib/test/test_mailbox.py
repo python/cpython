@@ -43,9 +43,9 @@ class TestBase:
     def _delete_recursively(self, target):
         # Delete a file or delete a directory recursively
         if os.path.isdir(target):
-            shutil.rmtree(target)
+            support.rmtree(target)
         elif os.path.exists(target):
-            os.remove(target)
+            support.unlink(target)
 
 
 class TestMailbox(TestBase):
@@ -2112,9 +2112,9 @@ class MaildirTestCase(unittest.TestCase):
         # create a new maildir mailbox to work with:
         self._dir = support.TESTFN
         if os.path.isdir(self._dir):
-            shutil.rmtree(self._dir)
+            support.rmtree(self._dir)
         elif os.path.isfile(self._dir):
-            os.unlink(self._dir)
+            support.unlink(self._dir)
         os.mkdir(self._dir)
         os.mkdir(os.path.join(self._dir, "cur"))
         os.mkdir(os.path.join(self._dir, "tmp"))
@@ -2124,10 +2124,10 @@ class MaildirTestCase(unittest.TestCase):
 
     def tearDown(self):
         list(map(os.unlink, self._msgfiles))
-        os.rmdir(os.path.join(self._dir, "cur"))
-        os.rmdir(os.path.join(self._dir, "tmp"))
-        os.rmdir(os.path.join(self._dir, "new"))
-        os.rmdir(self._dir)
+        support.rmdir(os.path.join(self._dir, "cur"))
+        support.rmdir(os.path.join(self._dir, "tmp"))
+        support.rmdir(os.path.join(self._dir, "new"))
+        support.rmdir(self._dir)
 
     def createMessage(self, dir, mbox=False):
         t = int(time.time() % 1000000)
