@@ -106,8 +106,12 @@ pwd_getpwuid(PyObject *self, PyObject *args)
 {
     uid_t uid;
     struct passwd *p;
-    if (!PyArg_ParseTuple(args, "O&:getpwuid", _Py_Uid_Converter, &uid))
+    if (!PyArg_ParseTuple(args, "O&:getpwuid", _Py_Uid_Converter, &uid)) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError))
+            PyErr_Format(PyExc_KeyError,
+                         "getpwuid(): uid not found");
         return NULL;
+    }
     if ((p = getpwuid(uid)) == NULL) {
         PyObject *uid_obj = _PyLong_FromUid(uid);
         if (uid_obj == NULL)
