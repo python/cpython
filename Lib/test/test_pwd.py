@@ -49,7 +49,9 @@ class PwdTest(unittest.TestCase):
 
     def test_errors(self):
         self.assertRaises(TypeError, pwd.getpwuid)
+        self.assertRaises(TypeError, pwd.getpwuid, 3.14)
         self.assertRaises(TypeError, pwd.getpwnam)
+        self.assertRaises(TypeError, pwd.getpwnam, 42)
         self.assertRaises(TypeError, pwd.getpwall, 42)
 
         # try to get some errors
@@ -92,6 +94,13 @@ class PwdTest(unittest.TestCase):
         fakeuid = sys.maxsize
         self.assertNotIn(fakeuid, byuids)
         self.assertRaises(KeyError, pwd.getpwuid, fakeuid)
+
+        # -1 shouldn't be a valid uid because it has a special meaning in many
+        # uid-related functions
+        self.assertRaises(KeyError, pwd.getpwuid, -1)
+        # should be out of uid_t range
+        self.assertRaises(KeyError, pwd.getpwuid, 2**128)
+        self.assertRaises(KeyError, pwd.getpwuid, -2**128)
 
 def test_main():
     support.run_unittest(PwdTest)
