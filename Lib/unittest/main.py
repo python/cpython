@@ -175,6 +175,7 @@ class TestProgram(object):
                                                            self.module)
 
     def _getOptParser(self):
+        import optparse
         parser = optparse.OptionParser()
         parser.prog = self.progName
         parser.add_option('-v', '--verbose', dest='verbose', default=False,
@@ -219,7 +220,10 @@ class TestProgram(object):
         parser.add_option('-t', '--top-level-directory', dest='top', default=None,
                           help='Top level directory of project (defaults to start directory)')
 
-    def _do_discovery(self, argv, Loader=loader.TestLoader):
+    def _do_discovery(self, argv, Loader=None):
+        if Loader is None:
+            Loader = self.testLoader
+
         # handle command line args for test discovery
         self.progName = '%s discover' % self.progName
         parser = self._getOptParser()
