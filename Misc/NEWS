@@ -1122,6 +1122,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17158: Add 'symbols' to help() welcome message; clarify
+  'modules spam' messages.
+
 - Issue #15847: Fix a regression in argparse, which did not accept tuples as
   argument lists anymore.
 
