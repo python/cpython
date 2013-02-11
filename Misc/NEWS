@@ -250,6 +250,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16564: Fixed regression relative to Python2 in the operation of
+  email.encoders.encode_7or8bit when used with binary data.
+
 - Issue #17052: unittest discovery should use self.testLoader.
 
 - Issue #4591: Uid and gid values larger than 2**31 are supported now.
