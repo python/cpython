@@ -175,7 +175,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #17502: unittest discovery should use self.testLoader.
+- Issue #17052: unittest discovery should use self.testLoader.
 
 - Issue #4591: Uid and gid values larger than 2**31 are supported now.
 
