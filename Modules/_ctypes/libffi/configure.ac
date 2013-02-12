@@ -5,7 +5,7 @@ dnl Process this with autoconf to create configure
 
 AC_PREREQ(2.68)
 
-AC_INIT([libffi], [3.0.11], [http://github.com/atgreen/libffi/issues])
+AC_INIT([libffi], [3.0.12], [http://github.com/atgreen/libffi/issues])
 AC_CONFIG_HEADERS([fficonfig.h])
 
 AC_CANONICAL_SYSTEM
@@ -30,7 +30,7 @@ save_CFLAGS=$CFLAGS
 AC_PROG_CC
 CFLAGS=$save_CFLAGS
 m4_undefine([_AC_ARG_VAR_PRECIOUS])
-m4_rename([real_PRECIOUS],[_AC_ARG_VAR_PRECIOUS])
+m4_rename_force([real_PRECIOUS],[_AC_ARG_VAR_PRECIOUS])
 
 AC_SUBST(CFLAGS)
 
@@ -39,10 +39,24 @@ AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
 
+# Test for 64-bit build.
+AC_CHECK_SIZEOF([size_t])
+
+AX_COMPILER_VENDOR
 AX_CC_MAXOPT
-AX_CFLAGS_WARN_ALL
+# The AX_CFLAGS_WARN_ALL macro doesn't currently work for sunpro
+# compiler.
+if test "$ax_cv_c_compiler_vendor" != "sun"; then
+  AX_CFLAGS_WARN_ALL
+fi
+
 if test "x$GCC" = "xyes"; then
   CFLAGS="$CFLAGS -fexceptions"
+  touch local.exp
+else
+  cat > local.exp <<EOF
+set CC_FOR_TARGET "$CC"
+EOF
 fi
 
 AM_MAINTAINER_MODE
@@ -56,6 +70,10 @@ AM_CONDITIONAL(TESTSUBDIR, test -d $srcdir/testsuite)
 
 TARGETDIR="unknown"
 case "$host" in
+  aarch64*-*-*)
+	TARGET=AARCH64; TARGETDIR=aarch64
+	;;
+
   alpha*-*-*)
 	TARGET=ALPHA; TARGETDIR=alpha;
 	# Support 128-bit long double, changeable via command-line switch.
@@ -72,11 +90,19 @@ case "$host" in
 
   amd64-*-freebsd*)
 	TARGET=X86_64; TARGETDIR=x86
+  	;;
+
+  amd64-*-freebsd*)
+	TARGET=X86_64; TARGETDIR=x86
 	;;
 
   avr32*-*-*)
 	TARGET=AVR32; TARGETDIR=avr32
 	;;
+
+  bfin*)
+  	TARGET=BFIN; TARGETDIR=bfin
+  	;;
 
   cris-*-*)
 	TARGET=LIBFFI_CRIS; TARGETDIR=cris
@@ -115,13 +141,49 @@ case "$host" in
 	TARGET=X86_DARWIN; TARGETDIR=x86
 	;;
   i?86-*-solaris2.1[[0-9]]*)
-	TARGET=X86_64; TARGETDIR=x86
+	TARGETDIR=x86
+	if test $ac_cv_sizeof_size_t = 4; then
+	  TARGET=X86; 
+	else
+	  TARGET=X86_64; 
+	fi	  
 	;;
+
   i*86-*-nto-qnx*) 
-        TARGET=X86; TARGETDIR=x86
-        ;;
-  i?86-*-*)
-	TARGET=X86_64; TARGETDIR=x86
+	TARGET=X86; TARGETDIR=x86
+	;;
+
+  x86_64-*-darwin*)
+	TARGET=X86_DARWIN; TARGETDIR=x86
+	;;
+
+  x86_64-*-cygwin* | x86_64-*-mingw*)
+	TARGET=X86_WIN64; TARGETDIR=x86
+	# All mingw/cygwin/win32 builds require -no-undefined for sharedlib.
+	# We must also check with_cross_host to decide if this is a native
+	# or cross-build and select where to install dlls appropriately.
+	if test -n "$with_cross_host" &&
+	   test x"$with_cross_host" != x"no"; then
+	  AM_LTLDFLAGS='-no-undefined -bindir "$(toolexeclibdir)"';
+	else
+	  AM_LTLDFLAGS='-no-undefined -bindir "$(bindir)"';
+	fi
+	;;
+
+  i?86-*-* | x86_64-*-*)
+	TARGETDIR=x86
+	if test $ac_cv_sizeof_size_t = 4; then
+	  case "$host" in
+	    *-gnux32)
+	      TARGET=X86_64
+	      ;;
+	    *)
+	      TARGET=X86
+	      ;;
+          esac	
+	else
+	  TARGET=X86_64; 
+	fi	  
 	;;
 
   ia64*-*-*)
@@ -136,6 +198,14 @@ case "$host" in
 	TARGET=M68K; TARGETDIR=m68k
 	;;
 
+  microblaze*-*-*)
+	TARGET=MICROBLAZE; TARGETDIR=microblaze
+	;;
+
+  moxie-*-*)
+	TARGET=MOXIE; TARGETDIR=moxie
+	;;
+
   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
 	TARGET=MIPS_IRIX; TARGETDIR=mips
 	;;
@@ -143,10 +213,6 @@ case "$host" in
 	# Support 128-bit long double for NewABI.
 	HAVE_LONG_DOUBLE='defined(__mips64)'
 	TARGET=MIPS_IRIX; TARGETDIR=mips
-	;;
-
-  moxie-*-*)
-        TARGET=MOXIE; TARGETDIR=moxie
 	;;
 
   powerpc*-*-linux* | powerpc-*-sysv*)
@@ -189,26 +255,14 @@ case "$host" in
 	TARGET=SPARC; TARGETDIR=sparc
 	;;
 
-  x86_64-*-darwin*)
-	TARGET=X86_DARWIN; TARGETDIR=x86
+  tile*-*)
+        TARGET=TILE; TARGETDIR=tile
+        ;;
+
+  xtensa*-*)
+	TARGET=XTENSA; TARGETDIR=xtensa
 	;;
 
-  x86_64-*-cygwin* | x86_64-*-mingw*)
-	TARGET=X86_WIN64; TARGETDIR=x86
-	# All mingw/cygwin/win32 builds require -no-undefined for sharedlib.
-	# We must also check with_cross_host to decide if this is a native
-	# or cross-build and select where to install dlls appropriately.
-	if test -n "$with_cross_host" &&
-	   test x"$with_cross_host" != x"no"; then
-	  AM_LTLDFLAGS='-no-undefined -bindir "$(toolexeclibdir)"';
-	else
-	  AM_LTLDFLAGS='-no-undefined -bindir "$(bindir)"';
-	fi
-	;;
-
-  x86_64-*-*)
-	TARGET=X86_64; TARGETDIR=x86
-	;;
 esac
 
 AC_SUBST(AM_RUNTESTFLAGS)
@@ -219,6 +273,7 @@ if test $TARGETDIR = unknown; then
 fi
 
 AM_CONDITIONAL(MIPS,[expr x$TARGET : 'xMIPS' > /dev/null])
+AM_CONDITIONAL(BFIN, test x$TARGET = xBFIN)
 AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
 AM_CONDITIONAL(X86, test x$TARGET = xX86)
 AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
@@ -229,11 +284,13 @@ AM_CONDITIONAL(ALPHA, test x$TARGET = xALPHA)
 AM_CONDITIONAL(IA64, test x$TARGET = xIA64)
 AM_CONDITIONAL(M32R, test x$TARGET = xM32R)
 AM_CONDITIONAL(M68K, test x$TARGET = xM68K)
+AM_CONDITIONAL(MICROBLAZE, test x$TARGET = xMICROBLAZE)
 AM_CONDITIONAL(MOXIE, test x$TARGET = xMOXIE)
 AM_CONDITIONAL(POWERPC, test x$TARGET = xPOWERPC)
 AM_CONDITIONAL(POWERPC_AIX, test x$TARGET = xPOWERPC_AIX)
 AM_CONDITIONAL(POWERPC_DARWIN, test x$TARGET = xPOWERPC_DARWIN)
 AM_CONDITIONAL(POWERPC_FREEBSD, test x$TARGET = xPOWERPC_FREEBSD)
+AM_CONDITIONAL(AARCH64, test x$TARGET = xAARCH64)
 AM_CONDITIONAL(ARM, test x$TARGET = xARM)
 AM_CONDITIONAL(AVR32, test x$TARGET = xAVR32)
 AM_CONDITIONAL(LIBFFI_CRIS, test x$TARGET = xLIBFFI_CRIS)
@@ -245,6 +302,8 @@ AM_CONDITIONAL(SH64, test x$TARGET = xSH64)
 AM_CONDITIONAL(PA_LINUX, test x$TARGET = xPA_LINUX)
 AM_CONDITIONAL(PA_HPUX, test x$TARGET = xPA_HPUX)
 AM_CONDITIONAL(PA64_HPUX, test x$TARGET = xPA64_HPUX)
+AM_CONDITIONAL(TILE, test x$TARGET = xTILE)
+AM_CONDITIONAL(XTENSA, test x$TARGET = xXTENSA)
 
 AC_HEADER_STDC
 AC_CHECK_FUNCS(memcpy)
@@ -290,7 +349,7 @@ if test x$TARGET = xSPARC; then
        libffi_cv_as_register_pseudo_op, [
        libffi_cv_as_register_pseudo_op=unknown
        # Check if we have .register
-       AC_TRY_COMPILE([asm (".register %g2, #scratch");],,
+       AC_TRY_COMPILE(,[asm (".register %g2, #scratch");],
 		       [libffi_cv_as_register_pseudo_op=yes],
 		       [libffi_cv_as_register_pseudo_op=no])
     ])
@@ -318,7 +377,7 @@ if test x$TARGET = xX86 || test x$TARGET = xX86_WIN32 || test x$TARGET = xX86_64
        libffi_cv_as_ascii_pseudo_op, [
        libffi_cv_as_ascii_pseudo_op=unknown
        # Check if we have .ascii
-       AC_TRY_COMPILE([asm (".ascii \\"string\\"");],,
+       AC_TRY_COMPILE(,[asm (".ascii \\"string\\"");],
 		       [libffi_cv_as_ascii_pseudo_op=yes],
 		       [libffi_cv_as_ascii_pseudo_op=no])
     ])
@@ -331,7 +390,7 @@ if test x$TARGET = xX86 || test x$TARGET = xX86_WIN32 || test x$TARGET = xX86_64
        libffi_cv_as_string_pseudo_op, [
        libffi_cv_as_string_pseudo_op=unknown
        # Check if we have .string
-       AC_TRY_COMPILE([asm (".string \\"string\\"");],,
+       AC_TRY_COMPILE(,[asm (".string \\"string\\"");],
 		       [libffi_cv_as_string_pseudo_op=yes],
 		       [libffi_cv_as_string_pseudo_op=no])
     ])
@@ -341,13 +400,20 @@ if test x$TARGET = xX86 || test x$TARGET = xX86_WIN32 || test x$TARGET = xX86_64
     fi
 fi
 
+# On PaX enable kernels that have MPROTECT enable we can't use PROT_EXEC.
+AC_ARG_ENABLE(pax_emutramp,
+  [  --enable-pax_emutramp       enable pax emulated trampolines, for we can't use PROT_EXEC],
+  if test "$enable_pax_emutramp" = "yes"; then
+    AC_DEFINE(FFI_MMAP_EXEC_EMUTRAMP_PAX, 1,
+      [Define this if you want to enable pax emulated trampolines])
+  fi)
+
 if test x$TARGET = xX86_WIN64; then
     LT_SYS_SYMBOL_USCORE
     if test "x$sys_symbol_underscore" = xyes; then
         AC_DEFINE(SYMBOL_UNDERSCORE, 1, [Define if symbols are underscored.])
     fi
 fi
-
 
 FFI_EXEC_TRAMPOLINE_TABLE=0
 case "$target" in
@@ -357,7 +423,7 @@ case "$target" in
                  [Cannot use PROT_EXEC on this target, so, we revert to
                    alternative means])
      ;;
-     *-apple-darwin1[[10]]* | *-*-freebsd* | *-*-kfreebsd* | *-*-openbsd* | *-pc-solaris*)
+     *-apple-darwin1* | *-*-freebsd* | *-*-kfreebsd* | *-*-openbsd* | *-pc-solaris*)
        AC_DEFINE(FFI_MMAP_EXEC_WRIT, 1,
                  [Cannot use malloc on this target, so, we revert to
                    alternative means])
@@ -386,11 +452,12 @@ if test "x$GCC" = "xyes"; then
       libffi_cv_ro_eh_frame, [
   	libffi_cv_ro_eh_frame=no
   	echo 'extern void foo (void); void bar (void) { foo (); foo (); }' > conftest.c
-  	if $CC $CFLAGS -S -fpic -fexceptions -o conftest.s conftest.c > /dev/null 2>&1; then
-  	    if grep '.section.*eh_frame.*"a"' conftest.s > /dev/null; then
-  		libffi_cv_ro_eh_frame=yes
-  	    elif grep '.section.*eh_frame.*#alloc' conftest.c \
-  		 | grep -v '#write' > /dev/null; then
+  	if $CC $CFLAGS -c -fpic -fexceptions -o conftest.o conftest.c > /dev/null 2>&1; then
+	    objdump -h conftest.o > conftest.dump 2>&1
+	    libffi_eh_frame_line=`grep -n eh_frame conftest.dump | cut -d: -f 1`
+	    libffi_test_line=`expr $libffi_eh_frame_line + 1`p
+	    sed -n $libffi_test_line conftest.dump > conftest.line
+  	    if grep READONLY conftest.line > /dev/null; then
   		libffi_cv_ro_eh_frame=yes
   	    fi
   	fi
@@ -456,6 +523,7 @@ AC_ARG_ENABLE(structs,
   if test "$enable_structs" = "no"; then
     AC_DEFINE(FFI_NO_STRUCTS, 1, [Define this is you do not want support for aggregate types.])
   fi)
+AM_CONDITIONAL(FFI_DEBUG, test "$enable_debug" = "yes")
 
 AC_ARG_ENABLE(raw-api,
 [  --disable-raw-api       make the raw api unavailable],
@@ -471,7 +539,7 @@ AC_ARG_ENABLE(purify-safety,
 
 # These variables are only ever used when we cross-build to X86_WIN32.
 # And we only support this with GCC, so...
-if test x"$GCC" != x"no"; then
+if test "x$GCC" = "xyes"; then
   if test -n "$with_cross_host" &&
      test x"$with_cross_host" != x"no"; then
     toolexecdir='$(exec_prefix)/$(target_alias)'
@@ -486,14 +554,10 @@ if test x"$GCC" != x"no"; then
     *) toolexeclibdir=$toolexeclibdir/$multi_os_directory ;;
   esac
   AC_SUBST(toolexecdir)
-  AC_SUBST(toolexeclibdir)
-fi
-
-if test "${multilib}" = "yes"; then
-  multilib_arg="--enable-multilib"
 else
-  multilib_arg=
+  toolexeclibdir='$(libdir)'
 fi
+AC_SUBST(toolexeclibdir)
 
 AC_CONFIG_COMMANDS(include, [test -d include || mkdir include])
 AC_CONFIG_COMMANDS(src, [

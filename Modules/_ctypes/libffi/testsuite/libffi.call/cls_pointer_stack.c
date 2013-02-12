@@ -98,7 +98,7 @@ int main (void)
         void *code;
 	ffi_closure*	pcl = ffi_closure_alloc(sizeof(ffi_closure), &code);
 	void*			args[3];
-//	ffi_type		cls_pointer_type;
+	/*	ffi_type		cls_pointer_type; */
 	ffi_type*		arg_types[3];
 
 /*	cls_pointer_type.size = sizeof(void*);
@@ -125,18 +125,18 @@ int main (void)
 	ffi_call(&cif, FFI_FN(cls_pointer_fn1), &res, args);
 
 	printf("res: 0x%08x\n", (unsigned int) res);
-	// { dg-output "\n0x01234567 0x89abcdef: 0x8acf1356" }
-	// { dg-output "\n0x8acf1356 0x01234567: 0x8bf258bd" }
-	// { dg-output "\nres: 0x8bf258bd" }
+	/* { dg-output "\n0x01234567 0x89abcdef: 0x8acf1356" } */
+	/* { dg-output "\n0x8acf1356 0x01234567: 0x8bf258bd" } */
+	/* { dg-output "\nres: 0x8bf258bd" } */
 
 	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_pointer_gn, NULL, code) == FFI_OK);
 
 	res = (ffi_arg)(uintptr_t)((void*(*)(void*, void*))(code))(arg1, arg2);
 
 	printf("res: 0x%08x\n", (unsigned int) res);
-	// { dg-output "\n0x01234567 0x89abcdef: 0x8acf1356" }
-	// { dg-output "\n0x8acf1356 0x01234567: 0x8bf258bd" }
-	// { dg-output "\nres: 0x8bf258bd" }
+	/* { dg-output "\n0x01234567 0x89abcdef: 0x8acf1356" } */
+	/* { dg-output "\n0x8acf1356 0x01234567: 0x8bf258bd" } */
+	/* { dg-output "\nres: 0x8bf258bd" } */
 
 	exit(0);
 }
