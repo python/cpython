@@ -202,6 +202,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13555: cPickle now supports files larger than 2 GiB.
+
 - Issue #17052: unittest discovery should use self.testLoader.
 
 - Issue #4591: Uid and gid values larger than 2**31 are supported now.

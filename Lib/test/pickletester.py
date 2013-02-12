@@ -6,7 +6,8 @@ import cStringIO
 import pickletools
 import copy_reg
 
-from test.test_support import TestFailed, have_unicode, TESTFN
+from test.test_support import (TestFailed, have_unicode, TESTFN, _2G, _1M,
+                               precisionbigmemtest)
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
@@ -1280,3 +1281,31 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         f.write(pickled2)
         f.seek(0)
         self.assertEqual(unpickler.load(), data2)
+
+class BigmemPickleTests(unittest.TestCase):
+
+    # Memory requirements: 1 byte per character for input strings, 1 byte
+    # for pickled data, 1 byte for unpickled strings, 1 byte for internal
+    # buffer and 1 byte of free space for resizing of internal buffer.
+
+    @precisionbigmemtest(size=_2G + 100*_1M, memuse=5)
+    def test_huge_strlist(self, size):
+        chunksize = 2**20
+        data = []
+        while size > chunksize:
+            data.append('x' * chunksize)
+            size -= chunksize
+            chunksize += 1
+        data.append('y' * size)
+
+        try:
+            for proto in protocols:
+                try:
+                    pickled = self.dumps(data, proto)
+                    res = self.loads(pickled)
+                    self.assertEqual(res, data)
+                finally:
+                    res = None
+                    pickled = None
+        finally:
+            data = None
