@@ -291,25 +291,20 @@ else:
 def unlink(filename):
     try:
         _unlink(filename)
-    except OSError as error:
-        # The filename need not exist.
-        if error.errno not in (errno.ENOENT, errno.ENOTDIR):
-            raise
+    except (FileNotFoundError, NotADirectoryError):
+        pass
 
 def rmdir(dirname):
     try:
         _rmdir(dirname)
-    except OSError as error:
-        # The directory need not exist.
-        if error.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
 
 def rmtree(path):
     try:
         _rmtree(path)
-    except OSError as error:
-        if error.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
 
 def make_legacy_pyc(source):
     """Move a PEP 3147 pyc/pyo file to its legacy pyc/pyo location.

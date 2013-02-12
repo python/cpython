@@ -334,11 +334,8 @@ class Maildir(Mailbox):
         # This overrides an inapplicable implementation in the superclass.
         try:
             self.remove(key)
-        except KeyError:
+        except (KeyError, FileNotFoundError):
             pass
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
 
     def __setitem__(self, key, message):
         """Replace the keyed message; raise KeyError if it doesn't exist."""
@@ -493,16 +490,12 @@ class Maildir(Mailbox):
         path = os.path.join(self._path, 'tmp', uniq)
         try:
             os.stat(path)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                Maildir._count += 1
-                try:
-                    return _create_carefully(path)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise
-            else:
-                raise
+        except FileNotFoundError:
+            Maildir._count += 1
+            try:
+                return _create_carefully(path)
+            except FileExistsError:
+                pass
 
         # Fall through to here if stat succeeded or open raised EEXIST.
         raise ExternalClashError('Name clash prevented file creation: %s' %
@@ -700,12 +693,9 @@ class _singlefileMailbox(Mailbox):
         os.chmod(new_file.name, mode)
         try:
             os.rename(new_file.name, self._path)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                os.remove(self._path)
-                os.rename(new_file.name, self._path)
-            else:
-                raise
+        except FileExistsError:
+            os.remove(self._path)
+            os.rename(new_file.name, self._path)
         self._file = open(self._path, 'rb+')
         self._toc = new_toc
         self._pending = False
@@ -2081,13 +2071,10 @@ def _lock_file(f, dotlock=True):
                 else:
                     os.rename(pre_lock.name, f.name + '.lock')
                     dotlock_done = True
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    os.remove(pre_lock.name)
-                    raise ExternalClashError('dot lock unavailable: %s' %
-                                             f.name)
-                else:
-                    raise
+            except FileExistsError:
+                os.remove(pre_lock.name)
+                raise ExternalClashError('dot lock unavailable: %s' %
+                                         f.name)
     except:
         if fcntl:
             fcntl.lockf(f, fcntl.LOCK_UN)

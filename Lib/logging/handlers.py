@@ -438,11 +438,8 @@ class WatchedFileHandler(logging.FileHandler):
         try:
             # stat the file by path, checking for existence
             sres = os.stat(self.baseFilename)
-        except OSError as err:
-            if err.errno == errno.ENOENT:
-                sres = None
-            else:
-                raise
+        except FileNotFoundError:
+            sres = None
         # compare file system stat with that of our stream file handle
         if not sres or sres[ST_DEV] != self.dev or sres[ST_INO] != self.ino:
             if self.stream is not None:

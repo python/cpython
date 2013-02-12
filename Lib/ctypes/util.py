@@ -102,9 +102,8 @@ elif os.name == "posix":
         finally:
             try:
                 os.unlink(ccout)
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
         if rv == 10:
             raise OSError('gcc or cc command not found')
         res = re.search(expr, trace)
