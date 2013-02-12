@@ -82,8 +82,8 @@ class ProfileTest(unittest.TestCase):
 
     def test_run(self):
         with silent():
-            self.profilermodule.run("testfunc()")
-        self.profilermodule.run("testfunc()", filename=TESTFN)
+            self.profilermodule.run("int('1')")
+        self.profilermodule.run("int('1')", filename=TESTFN)
         self.assertTrue(os.path.exists(TESTFN))
 
     def test_runctx(self):
