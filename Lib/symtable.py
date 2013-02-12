@@ -235,7 +235,8 @@ class Symbol(object):
 
 if __name__ == "__main__":
     import os, sys
-    src = open(sys.argv[0]).read()
+    with open(sys.argv[0]) as f:
+        src = f.read()
     mod = symtable(src, os.path.split(sys.argv[0])[1], "exec")
     for ident in mod.get_identifiers():
         info = mod.lookup(ident)

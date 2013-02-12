@@ -85,9 +85,8 @@ def main():
         sys.exit(1)
 
     # write the output file
-    fp = open(optfile, 'w')
-    fp.write(''.join(format))
-    fp.close()
+    with open(optfile, 'w') as fp:
+        fp.write(''.join(format))
 
 if __name__ == "__main__":
     main()

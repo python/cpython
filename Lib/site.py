@@ -384,9 +384,8 @@ class _Printer(object):
             for filename in self.__files:
                 filename = os.path.join(dir, filename)
                 try:
-                    fp = open(filename, "r")
-                    data = fp.read()
-                    fp.close()
+                    with open(filename, "r") as fp:
+                        data = fp.read()
                     break
                 except OSError:
                     pass

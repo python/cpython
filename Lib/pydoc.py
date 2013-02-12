@@ -1426,9 +1426,8 @@ def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
     import tempfile
     filename = tempfile.mktemp()
-    file = open(filename, 'w')
-    file.write(text)
-    file.close()
+    with open(filename, 'w') as file:
+        file.write(text)
     try:
         os.system(cmd + ' "' + filename + '"')
     finally:

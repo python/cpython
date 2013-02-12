@@ -93,9 +93,8 @@ class Stats:
             self.stats = {}
             return
         elif isinstance(arg, str):
-            f = open(arg, 'rb')
-            self.stats = marshal.load(f)
-            f.close()
+            with open(arg, 'rb') as f:
+                self.stats = marshal.load(f)
             try:
                 file_stats = os.stat(arg)
                 arg = time.ctime(file_stats.st_mtime) + "    " + arg
@@ -149,11 +148,8 @@ class Stats:
 
     def dump_stats(self, filename):
         """Write the profile data to a file we know how to load back."""
-        f = open(filename, 'wb')
-        try:
+        with open(filename, 'wb') as f:
             marshal.dump(self.stats, f)
-        finally:
-            f.close()
 
     # list the tuple indices and directions for sorting,
     # along with some printable description
