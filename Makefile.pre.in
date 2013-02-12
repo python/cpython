@@ -475,7 +475,7 @@ libpython$(VERSION).so: $(LIBRARY_OBJS)
 
 libpython$(VERSION).dylib: $(LIBRARY_OBJS)
 	 $(CC) -dynamiclib -Wl,-single_module $(LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(VERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST); \
-		 
+
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM) $(LDLAST)
@@ -911,7 +911,7 @@ PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 	plat-mac/lib-scriptpackages/Netscape \
 	plat-mac/lib-scriptpackages/StdSuites \
 	plat-mac/lib-scriptpackages/SystemEvents \
-	plat-mac/lib-scriptpackages/Terminal 
+	plat-mac/lib-scriptpackages/Terminal
 PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	lib-tk lib-tk/test lib-tk/test/test_tkinter \
 		lib-tk/test/test_ttk site-packages test test/data \
@@ -1333,7 +1333,7 @@ Python/thread.o: @THREADHEADERS@
 .PHONY: maninstall libinstall inclinstall libainstall sharedinstall
 .PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
-.PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean 
+.PHONY: frameworkaltinstallunixtools recheck autoconf clean clobber distclean
 .PHONY: smelly funny patchcheck altmaninstall
 .PHONY: gdbhooks
 
