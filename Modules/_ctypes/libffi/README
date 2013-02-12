@@ -1,7 +1,7 @@
 Status
 ======
 
-libffi-3.0.11 was released on April 11, 2012.  Check the libffi web
+libffi-3.0.12 was released on February 11, 2013.  Check the libffi web
 page for updates: <URL:http://sourceware.org/libffi/>.
 
 
@@ -43,54 +43,69 @@ Libffi has been ported to many different platforms.
 For specific configuration details and testing status, please
 refer to the wiki page here:
 
- http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.11
+ http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.12
 
 At the time of release, the following basic configurations have been
 tested:
 
-|--------------+------------------|
-| Architecture | Operating System |
-|--------------+------------------|
-| Alpha        | Linux            |
-| Alpha        | Tru64            |
-| ARM          | Linux            |
-| ARM          | iOS              |
-| AVR32        | Linux            |
-| HPPA         | HPUX             |
-| IA-64        | Linux            |
-| M68K         | FreeMiNT         |
-| M68K         | RTEMS            |
-| MIPS         | IRIX             |
-| MIPS         | Linux            |
-| MIPS         | RTEMS            |
-| MIPS64       | Linux            |
-| PowerPC      | AMIGA            |
-| PowerPC      | Linux            |
-| PowerPC      | Mac OSX          |
-| PowerPC      | FreeBSD          |
-| PowerPC64    | Linux            |
-| S390         | Linux            |
-| S390X        | Linux            |
-| SPARC        | Linux            |
-| SPARC        | Solaris          |
-| SPARC64      | Linux            |
-| SPARC64      | FreeBSD          |
-| X86          | FreeBSD          |
-| X86          | Interix          |
-| X86          | kFreeBSD         |
-| X86          | Linux            |
-| X86          | Mac OSX          |
-| X86          | OpenBSD          |
-| X86          | OS/2             |
-| X86          | Solaris          |
-| X86          | Windows/Cygwin   |
-| X86          | Windows/MingW    |
-| X86-64       | FreeBSD          |
-| X86-64       | Linux            |
-| X86-64       | Linux/x32        |
-| X86-64       | OpenBSD          |
-| X86-64       | Windows/MingW    |
-|--------------+------------------|
+|-----------------+------------------+-------------------------|
+| Architecture    | Operating System | Compiler                |
+|-----------------+------------------+-------------------------|
+| AArch64         | Linux            | GCC                     |
+| Alpha           | Linux            | GCC                     |
+| Alpha           | Tru64            | GCC                     |
+| ARM             | Linux            | GCC                     |
+| ARM             | iOS              | GCC                     |
+| AVR32           | Linux            | GCC                     |
+| Blackfin        | uClinux          | GCC                     |
+| HPPA            | HPUX             | GCC                     |
+| IA-64           | Linux            | GCC                     |
+| M68K            | FreeMiNT         | GCC                     |
+| M68K            | Linux	     | GCC                     |
+| M68K            | RTEMS            | GCC                     |
+| MicroBlaze      | Linux            | GCC                     |
+| MIPS            | IRIX             | GCC                     |
+| MIPS            | Linux            | GCC                     |
+| MIPS            | RTEMS            | GCC                     |
+| MIPS64          | Linux            | GCC                     |
+| Moxie		  | Bare metal	     | GCC
+| PowerPC 32-bit  | AIX              | IBM XL C                |
+| PowerPC 64-bit  | AIX              | IBM XL C                |
+| PowerPC         | AMIGA            | GCC                     |
+| PowerPC         | Linux            | GCC                     |
+| PowerPC         | Mac OSX          | GCC                     |
+| PowerPC         | FreeBSD          | GCC                     |
+| PowerPC 64-bit  | FreeBSD          | GCC                     |
+| PowerPC 64-bit  | Linux            | GCC                     |
+| S390            | Linux            | GCC                     |
+| S390X           | Linux            | GCC                     |
+| SPARC           | Linux            | GCC                     |
+| SPARC           | Solaris          | GCC                     |
+| SPARC           | Solaris          | Oracle Solaris Studio C |
+| SPARC64         | Linux            | GCC                     |
+| SPARC64         | FreeBSD          | GCC                     |
+| SPARC64         | Solaris          | Oracle Solaris Studio C |
+| TILE-Gx/TILEPro | Linux            | GCC                     |
+| X86             | FreeBSD          | GCC                     |
+| X86             | GNU HURD         | GCC                     |
+| X86             | Interix          | GCC                     |
+| X86             | kFreeBSD         | GCC                     |
+| X86             | Linux            | GCC                     |
+| X86             | Mac OSX          | GCC                     |
+| X86             | OpenBSD          | GCC                     |
+| X86             | OS/2             | GCC                     |
+| X86             | Solaris          | GCC                     |
+| X86             | Solaris          | Oracle Solaris Studio C |
+| X86             | Windows/Cygwin   | GCC                     |
+| X86             | Windows/MingW    | GCC                     |
+| X86-64          | FreeBSD          | GCC                     |
+| X86-64          | Linux            | GCC                     |
+| X86-64          | Linux/x32        | GCC                     |
+| X86-64          | OpenBSD          | GCC                     |
+| X86-64          | Solaris          | Oracle Solaris Studio C |
+| X86-64          | Windows/MingW    | GCC                     |
+| Xtensa          | Linux            | GCC                     |
+|-----------------+------------------+-------------------------|
 
 Please send additional platform test results to
 libffi-discuss@sourceware.org and feel free to update the wiki page
@@ -129,13 +144,12 @@ under a MingW environment, you may need to remove the line in configure
 that sets 'fix_srcfile_path' to a 'cygpath' command. ('cygpath' is not
 present in MingW, and is not required when using MingW-style paths.)
 
-For iOS builds, run generate-ios-source-and-headers.py and then
-libffi.xcodeproj should work.
+For iOS builds, the 'libffi.xcodeproj' Xcode project is available.
 
 Configure has many other options. Use "configure --help" to see them all.
 
 Once configure has finished, type "make". Note that you must be using
-GNU make.  You can ftp GNU make from prep.ai.mit.edu:/pub/gnu.
+GNU make.  You can ftp GNU make from ftp.gnu.org:/pub/gnu/make .
 
 To ensure that libffi is working as advertised, type "make check".
 This will require that you have DejaGNU installed.
@@ -148,16 +162,29 @@ History
 
 See the ChangeLog files for details.
 
+3.0.12 Feb-11-13
+        Add Moxie support.
+	Add AArch64 support.
+	Add Blackfin support.
+	Add TILE-Gx/TILEPro support.
+	Add MicroBlaze support.
+	Add Xtensa support.
+	Add support for PaX enabled kernels with MPROTECT.
+	Add support for native vendor compilers on
+	  Solaris and AIX.
+	Work around LLVM/GCC interoperability issue on x86_64.
+
 3.0.11 Apr-11-12
-        Add support for variadic functions (ffi_prep_cif_var).
+        Lots of build fixes.
+	Add Amiga newer MacOS support.
+	Add support for variadic functions (ffi_prep_cif_var).
 	Add Linux/x32 support.
 	Add thiscall, fastcall and MSVC cdecl support on Windows.
-        Add Amiga and newer MacOS support.
+	Add Amiga and newer MacOS support.
 	Add m68k FreeMiNT support.
 	Integration with iOS' xcode build tools.
 	Fix Octeon and MC68881 support.
 	Fix code pessimizations.
-        Lots of build fixes.
 
 3.0.10 Aug-23-11
         Add support for Apple's iOS.
@@ -301,7 +328,7 @@ See the ChangeLog files for details.
 Authors & Credits
 =================
 
-libffi was originally written by Anthony Green <green@moxielogic.com>.
+libffi was originally written by Anthony Green <green@redhat.com>.
 
 The developers of the GNU Compiler Collection project have made
 innumerable valuable contributions.  See the ChangeLog file for
@@ -316,15 +343,19 @@ Thorup.
 Major processor architecture ports were contributed by the following
 developers:
 
+aarch64		Marcus Shawcroft, James Greenhalgh
 alpha		Richard Henderson
 arm		Raffaele Sena
+blackfin        Alexandre Keunecke I. de Mendonca
 cris		Simon Posnjak, Hans-Peter Nilsson
 frv		Anthony Green
 ia64		Hans Boehm
 m32r		Kazuhiro Inaoka
 m68k		Andreas Schwab
+microblaze	Nathan Rossi
 mips		Anthony Green, Casey Marshall
 mips64		David Daney
+moxie		Anthony Green
 pa		Randolph Chung, Dave Anglin, Andreas Tobler
 powerpc		Geoffrey Keating, Andreas Tobler, 
 			 David Edelsohn, John Hornkvist
@@ -333,8 +364,10 @@ s390		Gerhard Tonn, Ulrich Weigand
 sh		Kaz Kojima
 sh64		Kaz Kojima
 sparc		Anthony Green, Gordon Irlam
+tile-gx/tilepro Walter Lee
 x86		Anthony Green, Jon Beniston
 x86-64		Bo Thorsen
+xtensa		Chris Zankel
 
 Jesper Skov and Andrew Haley both did more than their fair share of
 stepping through the code and tracking down bugs.

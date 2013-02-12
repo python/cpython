@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   ffi64.c - Copyright (c) 20011  Anthony Green
+   ffi64.c - Copyright (c) 2013  The Written Word, Inc.
+             Copyright (c) 2011  Anthony Green
              Copyright (c) 2008, 2010  Red Hat, Inc.
              Copyright (c) 2002, 2007  Bo Thorsen <bo@suse.de>
              
@@ -37,17 +38,29 @@
 #define MAX_GPR_REGS 6
 #define MAX_SSE_REGS 8
 
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER)
 #define UINT128 __m128
+#else
+#if defined(__SUNPRO_C)
+#include <sunmedia_types.h>
+#define UINT128 __m128i
 #else
 #define UINT128 __int128_t
 #endif
+#endif
+
+union big_int_union
+{
+  UINT32 i32;
+  UINT64 i64;
+  UINT128 i128;
+};
 
 struct register_args
 {
   /* Registers for argument passing.  */
   UINT64 gpr[MAX_GPR_REGS];
-  UINT128 sse[MAX_SSE_REGS];
+  union big_int_union sse[MAX_SSE_REGS]; 
 };
 
 extern void ffi_call_unix64 (void *args, unsigned long bytes, unsigned flags,
@@ -471,16 +484,33 @@ ffi_call (ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 		{
 		case X86_64_INTEGER_CLASS:
 		case X86_64_INTEGERSI_CLASS:
-		  reg_args->gpr[gprcount] = 0;
-		  memcpy (&reg_args->gpr[gprcount], a, size < 8 ? size : 8);
+		  /* Sign-extend integer arguments passed in general
+		     purpose registers, to cope with the fact that
+		     LLVM incorrectly assumes that this will be done
+		     (the x86-64 PS ABI does not specify this). */
+		  switch (arg_types[i]->type)
+		    {
+		    case FFI_TYPE_SINT8:
+		      *(SINT64 *)&reg_args->gpr[gprcount] = (SINT64) *((SINT8 *) a);
+		      break;
+		    case FFI_TYPE_SINT16:
+		      *(SINT64 *)&reg_args->gpr[gprcount] = (SINT64) *((SINT16 *) a);
+		      break;
+		    case FFI_TYPE_SINT32:
+		      *(SINT64 *)&reg_args->gpr[gprcount] = (SINT64) *((SINT32 *) a);
+		      break;
+		    default:
+		      reg_args->gpr[gprcount] = 0;
+		      memcpy (&reg_args->gpr[gprcount], a, size < 8 ? size : 8);
+		    }
 		  gprcount++;
 		  break;
 		case X86_64_SSE_CLASS:
 		case X86_64_SSEDF_CLASS:
-		  reg_args->sse[ssecount++] = *(UINT64 *) a;
+		  reg_args->sse[ssecount++].i64 = *(UINT64 *) a;
 		  break;
 		case X86_64_SSESF_CLASS:
-		  reg_args->sse[ssecount++] = *(UINT32 *) a;
+		  reg_args->sse[ssecount++].i32 = *(UINT32 *) a;
 		  break;
 		default:
 		  abort();

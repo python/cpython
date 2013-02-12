@@ -87,7 +87,7 @@ typedef struct
 } extended_cif;
 
 /* Terse sized type definitions.  */
-#if defined(_MSC_VER) || defined(__sgi)
+#if defined(_MSC_VER) || defined(__sgi) || defined(__SUNPRO_C)
 typedef unsigned char UINT8;
 typedef signed char   SINT8;
 typedef unsigned short UINT16;

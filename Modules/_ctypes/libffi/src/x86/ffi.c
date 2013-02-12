@@ -424,7 +424,7 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 /** private members **/
 
 /* The following __attribute__((regparm(1))) decorations will have no effect
-   on MSVC - standard cdecl convention applies. */
+   on MSVC or SUNPRO_C -- standard conventions apply. */
 static void ffi_prep_incoming_args_SYSV (char *stack, void **ret,
                                          void** args, ffi_cif* cif);
 void FFI_HIDDEN ffi_closure_SYSV (ffi_closure *)

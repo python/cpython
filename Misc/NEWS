@@ -806,6 +806,8 @@ Library
 Extension Modules
 -----------------
 
+- Issue #17192: Import libffi-3.0.12.
+
 - Issue #12268: The io module file object write methods no longer abort early
   when one of its write system calls is interrupted (EINTR).
 
