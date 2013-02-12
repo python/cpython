@@ -29,6 +29,7 @@ __all__ = [
 
 # Imports.
 
+import io as _io
 import os as _os
 import errno as _errno
 from random import Random as _Random
@@ -193,14 +194,17 @@ def _get_default_tempdir():
             name = namer.next()
             filename = _os.path.join(dir, name)
             try:
-                fd = _os.open(filename, flags, 0600)
-                fp = _os.fdopen(fd, 'w')
-                fp.write('blat')
-                fp.close()
-                _os.unlink(filename)
-                del fp, fd
+                fd = _os.open(filename, flags, 0o600)
+                try:
+                    try:
+                        fp = _io.open(fd, 'wb', buffering=0, closefd=False)
+                        fp.write(b'blat')
+                    finally:
+                        _os.close(fd)
+                finally:
+                    _os.unlink(filename)
                 return dir
-            except (OSError, IOError), e:
+            except (OSError, IOError) as e:
                 if e[0] != _errno.EEXIST:
                     break # no point trying more names in this directory
                 pass

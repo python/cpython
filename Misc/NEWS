@@ -202,6 +202,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16800: tempfile.gettempdir() no longer left temporary files when
+  the disk is full.  Original patch by Amir Szekely.
+
 - Issue #13555: cPickle now supports files larger than 2 GiB.
 
 - Issue #17052: unittest discovery should use self.testLoader.

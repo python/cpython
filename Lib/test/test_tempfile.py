@@ -1,13 +1,16 @@
 # tempfile.py unit tests.
 import tempfile
+import errno
+import io
 import os
 import signal
+import shutil
 import sys
 import re
 import warnings
 
 import unittest
-from test import test_support
+from test import test_support as support
 
 warnings.filterwarnings("ignore",
                         category=RuntimeWarning,
@@ -177,7 +180,7 @@ class test__candidate_tempdir_list(TC):
         # _candidate_tempdir_list contains the expected directories
 
         # Make sure the interesting environment variables are all set.
-        with test_support.EnvironmentVarGuard() as env:
+        with support.EnvironmentVarGuard() as env:
             for envname in 'TMPDIR', 'TEMP', 'TMP':
                 dirname = os.getenv(envname)
                 if not dirname:
@@ -202,8 +205,51 @@ class test__candidate_tempdir_list(TC):
 
 test_classes.append(test__candidate_tempdir_list)
 
+# We test _get_default_tempdir some more by testing gettempdir.
 
-# We test _get_default_tempdir by testing gettempdir.
+class TestGetDefaultTempdir(TC):
+    """Test _get_default_tempdir()."""
+
+    def test_no_files_left_behind(self):
+        # use a private empty directory
+        our_temp_directory = tempfile.mkdtemp()
+        try:
+            # force _get_default_tempdir() to consider our empty directory
+            def our_candidate_list():
+                return [our_temp_directory]
+
+            with support.swap_attr(tempfile, "_candidate_tempdir_list",
+                                   our_candidate_list):
+                # verify our directory is empty after _get_default_tempdir()
+                tempfile._get_default_tempdir()
+                self.assertEqual(os.listdir(our_temp_directory), [])
+
+                def raise_OSError(*args, **kwargs):
+                    raise OSError(-1)
+
+                with support.swap_attr(io, "open", raise_OSError):
+                    # test again with failing io.open()
+                    with self.assertRaises(IOError) as cm:
+                        tempfile._get_default_tempdir()
+                    self.assertEqual(cm.exception.errno, errno.ENOENT)
+                    self.assertEqual(os.listdir(our_temp_directory), [])
+
+                open = io.open
+                def bad_writer(*args, **kwargs):
+                    fp = open(*args, **kwargs)
+                    fp.write = raise_OSError
+                    return fp
+
+                with support.swap_attr(io, "open", bad_writer):
+                    # test again with failing write()
+                    with self.assertRaises(IOError) as cm:
+                        tempfile._get_default_tempdir()
+                    self.assertEqual(cm.exception.errno, errno.ENOENT)
+                    self.assertEqual(os.listdir(our_temp_directory), [])
+        finally:
+            shutil.rmtree(our_temp_directory)
+
+test_classes.append(TestGetDefaultTempdir)
 
 
 class test__get_candidate_names(TC):
@@ -299,7 +345,7 @@ class test__mkstemp_inner(TC):
         if not has_spawnl:
             return            # ugh, can't use SkipTest.
 
-        if test_support.verbose:
+        if support.verbose:
             v="v"
         else:
             v="q"
@@ -913,7 +959,7 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
     test_classes.append(test_TemporaryFile)
 
 def test_main():
-    test_support.run_unittest(*test_classes)
+    support.run_unittest(*test_classes)
 
 if __name__ == "__main__":
     test_main()
