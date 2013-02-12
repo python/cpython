@@ -450,8 +450,9 @@ class OtherFileTests(unittest.TestCase):
         env = dict(os.environ)
         env[b'LC_CTYPE'] = b'C'
         _, out = run_python('-c', 'import _io; _io.FileIO(%r)' % filename, env=env)
-        if ('UnicodeEncodeError' not in out and
-            'IOError: [Errno 2] No such file or directory' not in out):
+        if ('UnicodeEncodeError' not in out and not
+                ( ('IOError: [Errno 2] No such file or directory' in out) or
+                  ('IOError: [Errno 22] Invalid argument' in out) ) ):
             self.fail('Bad output: %r' % out)
 
     def testUnclosedFDOnException(self):

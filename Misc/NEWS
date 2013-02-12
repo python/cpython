@@ -818,6 +818,8 @@ Tests
 - Issue #16698: Skip posix test_getgroups when built with OS X
   deployment target prior to 10.6.
 
+- Issue #17111: Prevent test_surrogates (test_fileio) failure on OS X 10.4.
+
 Build
 -----
 
