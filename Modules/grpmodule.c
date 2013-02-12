@@ -10,8 +10,8 @@
 static PyStructSequence_Field struct_group_type_fields[] = {
    {"gr_name", "group name"},
    {"gr_passwd", "password"},
-   {"gr_gid", "group id"}, 
-   {"gr_mem", "group memebers"}, 
+   {"gr_gid", "group id"},
+   {"gr_mem", "group memebers"},
    {0}
 };
 
@@ -113,7 +113,7 @@ grp_getgrnam(PyObject *self, PyObject *pyo_name)
     if (!py_str_name)
 	    return NULL;
     name = PyString_AS_STRING(py_str_name);
-    
+
     if ((p = getgrnam(name)) == NULL) {
 	PyErr_Format(PyExc_KeyError, "getgrnam(): name not found: %s", name);
 	Py_DECREF(py_str_name);
