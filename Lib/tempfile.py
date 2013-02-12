@@ -174,11 +174,14 @@ def _get_default_tempdir():
             filename = _os.path.join(dir, name)
             try:
                 fd = _os.open(filename, _bin_openflags, 0o600)
-                fp = _io.open(fd, 'wb')
-                fp.write(b'blat')
-                fp.close()
-                _os.unlink(filename)
-                del fp, fd
+                try:
+                    try:
+                        fp = _io.open(fd, 'wb', buffering=0, closefd=False)
+                        fp.write(b'blat')
+                    finally:
+                        _os.close(fd)
+                finally:
+                    _os.unlink(filename)
                 return dir
             except FileExistsError:
                 pass
