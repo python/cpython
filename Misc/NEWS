@@ -175,6 +175,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16800: tempfile.gettempdir() no longer left temporary files when
+  the disk is full.  Original patch by Amir Szekely.
+
 - Issue #16564: Fixed regression relative to Python2 in the operation of
   email.encoders.encode_7or8bit when used with binary data.
 
