@@ -366,14 +366,11 @@ class Maildir(Mailbox):
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
         subpath = self._lookup(key)
-        f = open(os.path.join(self._path, subpath), 'rb')
-        try:
+        with open(os.path.join(self._path, subpath), 'rb') as f:
             if self._factory:
                 msg = self._factory(f)
             else:
                 msg = MaildirMessage(f)
-        finally:
-            f.close()
         subdir, name = os.path.split(subpath)
         msg.set_subdir(subdir)
         if self.colon in name:
@@ -383,11 +380,8 @@ class Maildir(Mailbox):
 
     def get_bytes(self, key):
         """Return a bytes representation or raise a KeyError."""
-        f = open(os.path.join(self._path, self._lookup(key)), 'rb')
-        try:
+        with open(os.path.join(self._path, self._lookup(key)), 'rb') as f:
             return f.read().replace(linesep, b'\n')
-        finally:
-            f.close()
 
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""
@@ -1033,7 +1027,7 @@ class MH(Mailbox):
                 raise KeyError('No message with key: %s' % key)
             else:
                 raise
-        try:
+        with f:
             if self._locked:
                 _lock_file(f)
             try:
@@ -1041,8 +1035,6 @@ class MH(Mailbox):
             finally:
                 if self._locked:
                     _unlock_file(f)
-        finally:
-            f.close()
         for name, key_list in self.get_sequences().items():
             if key in key_list:
                 msg.add_sequence(name)
@@ -1060,7 +1052,7 @@ class MH(Mailbox):
                 raise KeyError('No message with key: %s' % key)
             else:
                 raise
-        try:
+        with f:
             if self._locked:
                 _lock_file(f)
             try:
@@ -1068,8 +1060,6 @@ class MH(Mailbox):
             finally:
                 if self._locked:
                     _unlock_file(f)
-        finally:
-            f.close()
 
     def get_file(self, key):
         """Return a file-like representation or raise a KeyError."""

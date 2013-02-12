@@ -373,10 +373,9 @@ class Profile:
                   print_stats()
 
     def dump_stats(self, file):
-        f = open(file, 'wb')
-        self.create_stats()
-        marshal.dump(self.stats, f)
-        f.close()
+        with open(file, 'wb') as f:
+            self.create_stats()
+            marshal.dump(self.stats, f)
 
     def create_stats(self):
         self.simulate_cmd_complete()
