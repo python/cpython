@@ -2,8 +2,8 @@
 /* UNIX group file access module */
 
 #include "Python.h"
+#include "posixmodule.h"
 
-#include <sys/types.h>
 #include <grp.h>
 
 static PyStructSequence_Field struct_group_type_fields[] = {
@@ -69,7 +69,7 @@ mkgrent(struct group *p)
             Py_INCREF(Py_None);
     }
 #endif
-    SET(setIndex++, PyLong_FromLong((long) p->gr_gid));
+    SET(setIndex++, _PyLong_FromGid(p->gr_gid));
     SET(setIndex++, w);
 #undef SET
 
@@ -85,17 +85,24 @@ static PyObject *
 grp_getgrgid(PyObject *self, PyObject *pyo_id)
 {
     PyObject *py_int_id;
-    unsigned int gid;
+    gid_t gid;
     struct group *p;
 
     py_int_id = PyNumber_Long(pyo_id);
     if (!py_int_id)
             return NULL;
-    gid = PyLong_AS_LONG(py_int_id);
+    if (!_Py_Gid_Converter(py_int_id, &gid)) {
+        Py_DECREF(py_int_id);
+        return NULL;
+    }
     Py_DECREF(py_int_id);
 
     if ((p = getgrgid(gid)) == NULL) {
-        PyErr_Format(PyExc_KeyError, "getgrgid(): gid not found: %d", gid);
+        PyObject *gid_obj = _PyLong_FromGid(gid);
+        if (gid_obj == NULL)
+            return NULL;
+        PyErr_Format(PyExc_KeyError, "getgrgid(): gid not found: %S", gid_obj);
+        Py_DECREF(gid_obj);
         return NULL;
     }
     return mkgrent(p);
