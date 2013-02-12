@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 1996, 1998, 2001-2003, 2005, 2008, 2010  Red Hat, Inc.
+   sysv.S - Copyright (c) 2013  The Written Word, Inc.
+	  - Copyright (c) 1996,1998,2001-2003,2005,2008,2010  Red Hat, Inc.
    
    X86 Foreign Function Interface 
 
@@ -181,9 +182,19 @@ ffi_closure_SYSV:
 	leal	-24(%ebp), %edx
 	movl	%edx, -12(%ebp)	/* resp */
 	leal	8(%ebp), %edx
+#ifdef __SUNPRO_C
+	/* The SUNPRO compiler doesn't support GCC's regparm function
+  	   attribute, so we have to pass all three arguments to
+	   ffi_closure_SYSV_inner on the stack.  */
+	movl	%edx, 8(%esp)	/* args = __builtin_dwarf_cfa () */
+	leal	-12(%ebp), %edx
+	movl	%edx, 4(%esp)	/* &resp */
+	movl    %eax, (%esp)    /* closure */
+#else
 	movl	%edx, 4(%esp)	/* args = __builtin_dwarf_cfa () */
 	leal	-12(%ebp), %edx
 	movl	%edx, (%esp)	/* &resp */
+#endif
 #if defined HAVE_HIDDEN_VISIBILITY_ATTRIBUTE || !defined __PIC__
 	call	ffi_closure_SYSV_inner
 #else
@@ -328,6 +339,9 @@ ffi_closure_raw_SYSV:
 	.size	ffi_closure_raw_SYSV, .-ffi_closure_raw_SYSV
 #endif
 
+#if defined __GNUC__
+/* Only emit dwarf unwind info when building with GNU toolchain.  */
+
 #if defined __PIC__
 # if defined __sun__ && defined __svr4__
 /* 32-bit Solaris 2/x86 uses datarel encoding for PIC.  GNU ld before 2.22
@@ -459,6 +473,7 @@ ffi_closure_raw_SYSV:
 	.align 4
 .LEFDE3:
 
+#endif
 #endif
 
 #endif /* ifndef __x86_64__ */

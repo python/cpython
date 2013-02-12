@@ -750,7 +750,8 @@ ffi_prep_closure_loc (ffi_closure *closure,
 		      void *user_data,
 		      void *codeloc)
 {
-  FFI_ASSERT (cif->abi == FFI_SYSV);
+  if (cif->abi != FFI_SYSV)
+    return FFI_BAD_ABI;
 
 #ifndef __s390x__
   *(short *)&closure->tramp [0] = 0x0d10;   /* basr %r1,0 */

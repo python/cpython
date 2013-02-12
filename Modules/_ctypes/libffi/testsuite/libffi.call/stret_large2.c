@@ -9,8 +9,8 @@
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-*  } } */
 #include "ffitest.h"
 
-// 13 FPRs: 104 bytes
-// 14 FPRs: 112 bytes
+/* 13 FPRs: 104 bytes */
+/* 14 FPRs: 112 bytes */
 
 typedef struct struct_116byte {
 	double a;
