@@ -174,8 +174,8 @@ def _get_default_tempdir():
                 fd = _os.open(filename, _bin_openflags, 0o600)
                 try:
                     try:
-                        fp = _io.open(fd, 'wb', buffering=0, closefd=False)
-                        fp.write(b'blat')
+                        with _io.open(fd, 'wb', closefd=False) as fp:
+                            fp.write(b'blat')
                     finally:
                         _os.close(fd)
                 finally:
