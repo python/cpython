@@ -2010,16 +2010,13 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             # replace arguments referencing files with the file content
             else:
                 try:
-                    args_file = open(arg_string[1:])
-                    try:
+                    with open(arg_string[1:]) as args_file:
                         arg_strings = []
                         for arg_line in args_file.read().splitlines():
                             for arg in self.convert_arg_line_to_args(arg_line):
                                 arg_strings.append(arg)
                         arg_strings = self._read_args_from_files(arg_strings)
                         new_arg_strings.extend(arg_strings)
-                    finally:
-                        args_file.close()
                 except OSError:
                     err = _sys.exc_info()[1]
                     self.error(str(err))

@@ -1761,11 +1761,8 @@ class FileCookieJar(CookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        f = open(filename)
-        try:
+        with open(filename) as f:
             self._really_load(f, filename, ignore_discard, ignore_expires)
-        finally:
-            f.close()
 
     def revert(self, filename=None,
                ignore_discard=False, ignore_expires=False):
@@ -1856,15 +1853,12 @@ class LWPCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        f = open(filename, "w")
-        try:
+        with open(filename, "w") as f:
             # There really isn't an LWP Cookies 2.0 format, but this indicates
             # that there is extra information in here (domain_dot and
             # port_spec) while still being compatible with libwww-perl, I hope.
             f.write("#LWP-Cookies-2.0\n")
             f.write(self.as_lwp_str(ignore_discard, ignore_expires))
-        finally:
-            f.close()
 
     def _really_load(self, f, filename, ignore_discard, ignore_expires):
         magic = f.readline()
@@ -2055,8 +2049,7 @@ class MozillaCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        f = open(filename, "w")
-        try:
+        with open(filename, "w") as f:
             f.write(self.header)
             now = time.time()
             for cookie in self:
@@ -2085,5 +2078,3 @@ class MozillaCookieJar(FileCookieJar):
                     "\t".join([cookie.domain, initial_dot, cookie.path,
                                secure, expires, name, value])+
                     "\n")
-        finally:
-            f.close()

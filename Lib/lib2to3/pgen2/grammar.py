@@ -86,15 +86,13 @@ class Grammar(object):
 
     def dump(self, filename):
         """Dump the grammar tables to a pickle file."""
-        f = open(filename, "wb")
-        pickle.dump(self.__dict__, f, 2)
-        f.close()
+        with open(filename, "wb") as f:
+            pickle.dump(self.__dict__, f, 2)
 
     def load(self, filename):
         """Load the grammar tables from a pickle file."""
-        f = open(filename, "rb")
-        d = pickle.load(f)
-        f.close()
+        with open(filename, "rb") as f:
+            d = pickle.load(f)
         self.__dict__.update(d)
 
     def copy(self):

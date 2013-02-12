@@ -905,11 +905,8 @@ def parse(file, namespaces=True):
         builder = ExpatBuilder()
 
     if isinstance(file, str):
-        fp = open(file, 'rb')
-        try:
+        with open(file, 'rb') as fp:
             result = builder.parseFile(fp)
-        finally:
-            fp.close()
     else:
         result = builder.parseFile(file)
     return result
@@ -939,11 +936,8 @@ def parseFragment(file, context, namespaces=True):
         builder = FragmentBuilder(context)
 
     if isinstance(file, str):
-        fp = open(file, 'rb')
-        try:
+        with open(file, 'rb') as fp:
             result = builder.parseFile(fp)
-        finally:
-            fp.close()
     else:
         result = builder.parseFile(file)
     return result
