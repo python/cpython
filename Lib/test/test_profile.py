@@ -3,9 +3,11 @@
 import sys
 import pstats
 import unittest
+import os
 from difflib import unified_diff
 from io import StringIO
-from test.support import run_unittest
+from test.support import TESTFN, run_unittest, unlink
+from contextlib import contextmanager
 
 import profile
 from test.profilee import testfunc, timer
@@ -14,8 +16,12 @@ from test.profilee import testfunc, timer
 class ProfileTest(unittest.TestCase):
 
     profilerclass = profile.Profile
+    profilermodule = profile
     methodnames = ['print_stats', 'print_callers', 'print_callees']
     expected_max_output = ':0(max)'
+
+    def tearDown(self):
+        unlink(TESTFN)
 
     def get_expected_output(self):
         return _ProfileOutput
@@ -74,6 +80,19 @@ class ProfileTest(unittest.TestCase):
             self.assertIn(self.expected_max_output, res,
                 "Profiling {0!r} didn't report max:\n{1}".format(stmt, res))
 
+    def test_run(self):
+        with silent():
+            self.profilermodule.run("testfunc()")
+        self.profilermodule.run("testfunc()", filename=TESTFN)
+        self.assertTrue(os.path.exists(TESTFN))
+
+    def test_runctx(self):
+        with silent():
+            self.profilermodule.runctx("testfunc()", globals(), locals())
+        self.profilermodule.runctx("testfunc()", globals(), locals(),
+                                  filename=TESTFN)
+        self.assertTrue(os.path.exists(TESTFN))
+
 
 def regenerate_expected_output(filename, cls):
     filename = filename.rstrip('co')
@@ -95,6 +114,14 @@ def regenerate_expected_output(filename, cls):
                     method, results[i+1]))
         f.write('\nif __name__ == "__main__":\n    main()\n')
 
+@contextmanager
+def silent():
+    stdout = sys.stdout
+    try:
+        sys.stdout = StringIO()
+        yield
+    finally:
+        sys.stdout = stdout
 
 def test_main():
     run_unittest(ProfileTest)
