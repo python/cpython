@@ -1,7 +1,9 @@
 import cPickle, unittest
 from cStringIO import StringIO
-from test.pickletester import AbstractPickleTests, AbstractPickleModuleTests
-from test.pickletester import AbstractPicklerUnpicklerObjectTests
+from test.pickletester import (AbstractPickleTests,
+                               AbstractPickleModuleTests,
+                               AbstractPicklerUnpicklerObjectTests,
+                               BigmemPickleTests)
 from test import test_support
 
 class cPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
@@ -101,6 +103,16 @@ class cPicklePicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
     pickler_class = cPickle.Pickler
     unpickler_class = cPickle.Unpickler
 
+class cPickleBigmemPickleTests(BigmemPickleTests):
+
+    def dumps(self, arg, proto=0, fast=0):
+        # Ignore fast
+        return cPickle.dumps(arg, proto)
+
+    def loads(self, buf):
+        # Ignore fast
+        return cPickle.loads(buf)
+
 
 class Node(object):
     pass
@@ -133,6 +145,7 @@ def test_main():
         cPickleFastPicklerTests,
         cPickleDeepRecursive,
         cPicklePicklerUnpicklerObjectTests,
+        cPickleBigmemPickleTests,
     )
 
 if __name__ == "__main__":

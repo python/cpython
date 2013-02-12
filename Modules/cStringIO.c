@@ -210,11 +210,8 @@ IO_creadline(PyObject *self, char **output) {
     if (n < end) n++;
 
     len = n - start;
-    if (len > INT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "length too large");
-        return -1;
-    }
+    if (len > INT_MAX)
+        len = INT_MAX;
 
     *output=start;
 
