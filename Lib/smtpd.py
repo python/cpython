@@ -850,8 +850,7 @@ if __name__ == '__main__':
         nobody = pwd.getpwnam('nobody')[2]
         try:
             os.setuid(nobody)
-        except OSError as e:
-            if e.errno != errno.EPERM: raise
+        except PermissionError:
             print('Cannot setuid "nobody"; try running with -n option.', file=sys.stderr)
             sys.exit(1)
     try:

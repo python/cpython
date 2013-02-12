@@ -232,10 +232,9 @@ def makedirs(name, mode=0o777, exist_ok=False):
     if head and tail and not path.exists(head):
         try:
             makedirs(head, mode, exist_ok)
-        except OSError as e:
+        except FileExistsError:
             # be happy if someone already created the path
-            if e.errno != errno.EEXIST:
-                raise
+            pass
         cdir = curdir
         if isinstance(tail, bytes):
             cdir = bytes(curdir, 'ASCII')
