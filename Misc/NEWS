@@ -253,6 +253,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16996: webbrowser module now uses shutil.which() to find a
+  web-browser on the executable search path.
+
 - Issue #16800: tempfile.gettempdir() no longer left temporary files when
   the disk is full.  Original patch by Amir Szekely.
 
