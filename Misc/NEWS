@@ -205,6 +205,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11311: StringIO.readline(0) now returns an empty string as all other
+  file-like objects.
+
 - Issue #16800: tempfile.gettempdir() no longer left temporary files when
   the disk is full.  Original patch by Amir Szekely.
 
