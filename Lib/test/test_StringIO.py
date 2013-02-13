@@ -28,6 +28,8 @@ class TestGenericStringIO(unittest.TestCase):
         eq = self.assertEqual
         self.assertRaises(TypeError, self._fp.seek)
         eq(self._fp.read(10), self._line[:10])
+        eq(self._fp.read(0), '')
+        eq(self._fp.readline(0), '')
         eq(self._fp.readline(), self._line[10:] + '\n')
         eq(len(self._fp.readlines(60)), 2)
         self._fp.seek(0)
