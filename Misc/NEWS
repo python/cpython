@@ -253,6 +253,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16743: Fix mmap overflow check on 32 bit Windows.
+
 - Issue #16996: webbrowser module now uses shutil.which() to find a
   web-browser on the executable search path.
 
