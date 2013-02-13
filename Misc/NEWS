@@ -205,6 +205,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16743: Fix mmap overflow check on 32 bit Windows.
+
 - Issue #11311: StringIO.readline(0) now returns an empty string as all other
   file-like objects.
 
