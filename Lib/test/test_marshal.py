@@ -280,7 +280,6 @@ class BugsTestCase(unittest.TestCase):
         self.assertRaises(TypeError, marshal.loads, unicode_string)
 
 LARGE_SIZE = 2**31
-character_size = 4 if sys.maxunicode > 0xFFFF else 2
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
 
 class NullWriter:
@@ -296,7 +295,7 @@ class LargeValuesTestCase(unittest.TestCase):
     def test_bytes(self, size):
         self.check_unmarshallable(b'x' * size)
 
-    @support.bigmemtest(size=LARGE_SIZE, memuse=character_size, dry_run=False)
+    @support.bigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
     def test_str(self, size):
         self.check_unmarshallable('x' * size)
 
