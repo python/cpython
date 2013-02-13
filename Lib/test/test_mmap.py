@@ -721,6 +721,13 @@ class LargeMmapTests(unittest.TestCase):
 
     def test_large_filesize(self):
         with self._make_test_file(0x17FFFFFFF, b" ") as f:
+            if sys.maxsize < 0x180000000:
+                # On 32 bit platforms the file is larger than sys.maxsize so
+                # mapping the whole file should fail -- Issue #16743
+                with self.assertRaises(OverflowError):
+                    mmap.mmap(f.fileno(), 0x180000000, access=mmap.ACCESS_READ)
+                with self.assertRaises(ValueError):
+                    mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             with mmap.mmap(f.fileno(), 0x10000, access=mmap.ACCESS_READ) as m:
                 self.assertEqual(m.size(), 0x180000000)
 
