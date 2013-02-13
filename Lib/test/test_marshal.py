@@ -282,13 +282,13 @@ class LargeValuesTestCase(unittest.TestCase):
             self.assertRaises(ValueError, marshal.dump, data, f)
 
     @test_support.precisionbigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
-    def test_bytes(self, size):
-        self.check_unmarshallable(b'x' * size)
+    def test_string(self, size):
+        self.check_unmarshallable('x' * size)
 
     @test_support.precisionbigmemtest(size=LARGE_SIZE,
             memuse=character_size, dry_run=False)
-    def test_str(self, size):
-        self.check_unmarshallable('x' * size)
+    def test_unicode(self, size):
+        self.check_unmarshallable(u'x' * size)
 
     @test_support.precisionbigmemtest(size=LARGE_SIZE,
             memuse=pointer_size, dry_run=False)
