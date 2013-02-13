@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #5308: Raise ValueError when marshalling too large object (a sequence
+  with size >= 2**31), instead of producing illegal marshal data.
+
 - Issue #12983: Bytes literals with invalid \x escape now raise a SyntaxError
   and a full traceback including line number.
 
