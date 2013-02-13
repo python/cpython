@@ -269,6 +269,53 @@ class BugsTestCase(unittest.TestCase):
         invalid_string = 'l\x02\x00\x00\x00\x00\x00\x00\x00'
         self.assertRaises(ValueError, marshal.loads, invalid_string)
 
+LARGE_SIZE = 2**31
+character_size = 4 if sys.maxunicode > 0xFFFF else 2
+pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
+
+@unittest.skipIf(LARGE_SIZE > sys.maxsize, "test cannot run on 32-bit systems")
+class LargeValuesTestCase(unittest.TestCase):
+    def check_unmarshallable(self, data):
+        f = open(test_support.TESTFN, 'wb')
+        self.addCleanup(test_support.unlink, test_support.TESTFN)
+        with f:
+            self.assertRaises(ValueError, marshal.dump, data, f)
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
+    def test_bytes(self, size):
+        self.check_unmarshallable(b'x' * size)
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE,
+            memuse=character_size, dry_run=False)
+    def test_str(self, size):
+        self.check_unmarshallable('x' * size)
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE,
+            memuse=pointer_size, dry_run=False)
+    def test_tuple(self, size):
+        self.check_unmarshallable((None,) * size)
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE,
+            memuse=pointer_size, dry_run=False)
+    def test_list(self, size):
+        self.check_unmarshallable([None] * size)
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE,
+            memuse=pointer_size*12 + sys.getsizeof(LARGE_SIZE-1),
+            dry_run=False)
+    def test_set(self, size):
+        self.check_unmarshallable(set(range(size)))
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE,
+            memuse=pointer_size*12 + sys.getsizeof(LARGE_SIZE-1),
+            dry_run=False)
+    def test_frozenset(self, size):
+        self.check_unmarshallable(frozenset(range(size)))
+
+    @test_support.precisionbigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
+    def test_bytearray(self, size):
+        self.check_unmarshallable(bytearray(size))
+
 
 def test_main():
     test_support.run_unittest(IntTestCase,
@@ -277,7 +324,9 @@ def test_main():
                               CodeTestCase,
                               ContainerTestCase,
                               ExceptionTestCase,
-                              BugsTestCase)
+                              BugsTestCase,
+                              LargeValuesTestCase,
+                             )
 
 if __name__ == "__main__":
     test_main()
