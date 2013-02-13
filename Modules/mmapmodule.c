@@ -1188,7 +1188,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
 #  endif
     if (fd != -1 && fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
-            off_t calc_size;
             if (st.st_size == 0) {
                 PyErr_SetString(PyExc_ValueError,
                                 "cannot mmap an empty file");
@@ -1199,13 +1198,12 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "mmap offset is greater than file size");
                 return NULL;
             }
-            calc_size = st.st_size - offset;
-            map_size = calc_size;
-            if (map_size != calc_size) {
+            if (st.st_size - offset > PY_SSIZE_T_MAX) {
                 PyErr_SetString(PyExc_ValueError,
                                  "mmap length is too large");
-                 return NULL;
-             }
+                return NULL;
+            }
+            map_size = (Py_ssize_t) (st.st_size - offset);
         } else if (offset + (size_t)map_size > st.st_size) {
             PyErr_SetString(PyExc_ValueError,
                             "mmap length is greater than file size");
@@ -1400,11 +1398,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                 Py_DECREF(m_obj);
                 return NULL;
             }
-            if (offset - size > PY_SSIZE_T_MAX)
-                /* Map area too large to fit in memory */
-                m_obj->size = (Py_ssize_t) -1;
-            else
-                m_obj->size = (Py_ssize_t) (size - offset);
+            if (size - offset > PY_SSIZE_T_MAX) {
+                PyErr_SetString(PyExc_ValueError,
+                                "mmap length is too large");
+                Py_DECREF(m_obj);
+                return NULL;
+            }
+            m_obj->size = (Py_ssize_t) (size - offset);
         } else {
             m_obj->size = map_size;
             size = offset + map_size;
