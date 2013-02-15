@@ -605,6 +605,9 @@ Tests
 
 - Issue #15539: Added regression tests for Tools/scripts/pindent.py.
 
+- Issue #17163: test_file now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #16925: test_configparser now works with unittest test discovery.
   Patch by Zachary Ware.
 
