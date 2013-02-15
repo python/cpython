@@ -174,6 +174,12 @@ initial value is inherited from the creating thread.  The flag can be set
 through the :attr:`~Thread.daemon` property or the *daemon* constructor
 argument.
 
+.. note::
+   Daemon threads are abruptly stopped at shutdown.  Their resources (such
+   as open files, database transactions, etc.) may not be released properly.
+   If you want your threads to stop gracefully, make them non-daemonic and
+   use a suitable signalling mechanism such as an :class:`Event`.
+
 There is a "main thread" object; this corresponds to the initial thread of
 control in the Python program.  It is not a daemon thread.
 
