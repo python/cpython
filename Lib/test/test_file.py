@@ -10,7 +10,7 @@ import _pyio as pyio
 from test.support import TESTFN, run_unittest
 from collections import UserList
 
-class AutoFileTests(unittest.TestCase):
+class AutoFileTests:
     # file tests for which a test file is automatically set up
 
     def setUp(self):
@@ -128,14 +128,14 @@ class AutoFileTests(unittest.TestCase):
     def testReadWhenWriting(self):
         self.assertRaises(OSError, self.f.read)
 
-class CAutoFileTests(AutoFileTests):
+class CAutoFileTests(AutoFileTests, unittest.TestCase):
     open = io.open
 
-class PyAutoFileTests(AutoFileTests):
+class PyAutoFileTests(AutoFileTests, unittest.TestCase):
     open = staticmethod(pyio.open)
 
 
-class OtherFileTests(unittest.TestCase):
+class OtherFileTests:
 
     def testModeStrings(self):
         # check invalid mode strings
@@ -322,22 +322,18 @@ class OtherFileTests(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
-class COtherFileTests(OtherFileTests):
+class COtherFileTests(OtherFileTests, unittest.TestCase):
     open = io.open
 
-class PyOtherFileTests(OtherFileTests):
+class PyOtherFileTests(OtherFileTests, unittest.TestCase):
     open = staticmethod(pyio.open)
 
 
-def test_main():
+def tearDownModule():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
-    try:
-        run_unittest(CAutoFileTests, PyAutoFileTests,
-                     COtherFileTests, PyOtherFileTests)
-    finally:
-        if os.path.exists(TESTFN):
-            os.unlink(TESTFN)
+    if os.path.exists(TESTFN):
+        os.unlink(TESTFN)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
