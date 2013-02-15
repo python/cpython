@@ -253,6 +253,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17143: Fix a missing import in the trace module.  Initial patch by
+  Berker Peksag.
+
 - Issue #15220: email.feedparser's line splitting algorithm is now simpler and
   faster.
 
