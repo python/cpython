@@ -1,7 +1,9 @@
 import os
+import io
 import sys
 from test.support import (run_unittest, TESTFN, rmtree, unlink,
                                captured_stdout)
+import tempfile
 import unittest
 
 import trace
@@ -359,6 +361,49 @@ class Test_Ignore(unittest.TestCase):
         self.assertFalse(ignore.names(jn('bar', 'z.py'), 'z'))
         # Matched before.
         self.assertTrue(ignore.names(jn('bar', 'baz.py'), 'baz'))
+
+
+class TestDeprecatedMethods(unittest.TestCase):
+
+    def test_deprecated_usage(self):
+        sio = io.StringIO()
+        with self.assertWarns(DeprecationWarning):
+            trace.usage(sio)
+        self.assertIn('Usage:', sio.getvalue())
+
+    def test_deprecated_Ignore(self):
+        with self.assertWarns(DeprecationWarning):
+            trace.Ignore()
+
+    def test_deprecated_modname(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual("spam", trace.modname("spam"))
+
+    def test_deprecated_fullmodname(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual("spam", trace.fullmodname("spam"))
+
+    def test_deprecated_find_lines_from_code(self):
+        with self.assertWarns(DeprecationWarning):
+            def foo():
+                pass
+            trace.find_lines_from_code(foo.__code__, ["eggs"])
+
+    def test_deprecated_find_lines(self):
+        with self.assertWarns(DeprecationWarning):
+            def foo():
+                pass
+            trace.find_lines(foo.__code__, ["eggs"])
+
+    def test_deprecated_find_strings(self):
+        with self.assertWarns(DeprecationWarning):
+            with tempfile.NamedTemporaryFile() as fd:
+                trace.find_strings(fd.name)
+
+    def test_deprecated_find_executable_linenos(self):
+        with self.assertWarns(DeprecationWarning):
+            with tempfile.NamedTemporaryFile() as fd:
+                trace.find_executable_linenos(fd.name)
 
 
 def test_main():
