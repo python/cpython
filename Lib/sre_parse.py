@@ -15,6 +15,7 @@
 import sys
 
 from sre_constants import *
+from _sre import MAXREPEAT
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
@@ -537,10 +538,14 @@ def _parse(source, state):
                     continue
                 if lo:
                     min = int(lo)
+                    if min >= MAXREPEAT:
+                        raise OverflowError("the repetition number is too large")
                 if hi:
                     max = int(hi)
-                if max < min:
-                    raise error("bad repeat interval")
+                    if max >= MAXREPEAT:
+                        raise OverflowError("the repetition number is too large")
+                    if max < min:
+                        raise error("bad repeat interval")
             else:
                 raise error("not supported")
             # figure out which item to repeat
