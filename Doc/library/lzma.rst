@@ -158,7 +158,7 @@ Compressing and decompressing data in memory
       In addition to being more CPU-intensive, compression with higher presets
       also requires much more memory (and produces output that needs more memory
       to decompress). With preset ``9`` for example, the overhead for an
-      :class:`LZMACompressor` object can be as high as 800MiB. For this reason,
+      :class:`LZMACompressor` object can be as high as 800 MiB. For this reason,
       it is generally best to stick with the default preset.
 
    The *filters* argument (if provided) should be a filter chain specifier.
@@ -302,8 +302,8 @@ entries in the dictionary representing the filter):
 
    * ``preset``: A compression preset to use as a source of default values for
      options that are not specified explicitly.
-   * ``dict_size``: Dictionary size in bytes. This should be between 4KiB and
-     1.5GiB (inclusive).
+   * ``dict_size``: Dictionary size in bytes. This should be between 4 KiB and
+     1.5 GiB (inclusive).
    * ``lc``: Number of literal context bits.
    * ``lp``: Number of literal position bits. The sum ``lc + lp`` must be at
      most 4.
