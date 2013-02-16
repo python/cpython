@@ -492,7 +492,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, Py_ssize_t maxcount)
     Py_ssize_t i;
 
     /* adjust end */
-    if (maxcount < (end - ptr) / state->charsize && maxcount != 65535)
+    if (maxcount < (end - ptr) / state->charsize && maxcount != SRE_MAXREPEAT)
         end = ptr + maxcount*state->charsize;
 
     switch (pattern[0]) {
@@ -1109,7 +1109,7 @@ entrance:
             } else {
                 /* general case */
                 LASTMARK_SAVE();
-                while ((Py_ssize_t)ctx->pattern[2] == 65535
+                while ((Py_ssize_t)ctx->pattern[2] == SRE_MAXREPEAT
                        || ctx->count <= (Py_ssize_t)ctx->pattern[2]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
@@ -1195,7 +1195,7 @@ entrance:
             }
 
             if ((ctx->count < ctx->u.rep->pattern[2] ||
-                ctx->u.rep->pattern[2] == 65535) &&
+                ctx->u.rep->pattern[2] == SRE_MAXREPEAT) &&
                 state->ptr != ctx->u.rep->last_ptr) {
                 /* we may have enough matches, but if we can
                    match another item, do so */
@@ -1273,7 +1273,7 @@ entrance:
             LASTMARK_RESTORE();
 
             if (ctx->count >= ctx->u.rep->pattern[2]
-                && ctx->u.rep->pattern[2] != 65535)
+                && ctx->u.rep->pattern[2] != SRE_MAXREPEAT)
                 RETURN_FAILURE;
 
             ctx->u.rep->count = ctx->count;
@@ -3037,7 +3037,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-                if (max > 65535)
+                if (max > SRE_MAXREPEAT)
                     FAIL;
                 if (!_validate_inner(code, code+skip-4, groups))
                     FAIL;
@@ -3056,7 +3056,7 @@ _validate_inner(SRE_CODE *code, SRE_CODE *end, Py_ssize_t groups)
                 GET_ARG; max = arg;
                 if (min > max)
                     FAIL;
-                if (max > 65535)
+                if (max > SRE_MAXREPEAT)
                     FAIL;
                 if (!_validate_inner(code, code+skip-3, groups))
                     FAIL;
@@ -3939,6 +3939,12 @@ PyMODINIT_FUNC PyInit__sre(void)
     x = PyLong_FromLong(sizeof(SRE_CODE));
     if (x) {
         PyDict_SetItemString(d, "CODESIZE", x);
+        Py_DECREF(x);
+    }
+
+    x = PyLong_FromUnsignedLong(SRE_MAXREPEAT);
+    if (x) {
+        PyDict_SetItemString(d, "MAXREPEAT", x);
         Py_DECREF(x);
     }
 

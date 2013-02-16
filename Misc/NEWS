@@ -253,6 +253,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13169: The maximal repetition number in a regular expression has been
+  increased from 65534 to 2147483647 (on 32-bit platform) or 4294967294 (on
+  64-bit).
+
 - Issue #17143: Fix a missing import in the trace module.  Initial patch by
   Berker Peksag.
 
