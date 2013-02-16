@@ -681,6 +681,15 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match('(x)*y', 50000*'x'+'y').group(1), 'x')
         self.assertEqual(re.match('(x)*?y', 50000*'x'+'y').group(1), 'x')
 
+    def test_unlimited_zero_width_repeat(self):
+        # Issue #9669
+        self.assertIsNone(re.match(r'(?:a?)*y', 'z'))
+        self.assertIsNone(re.match(r'(?:a?)+y', 'z'))
+        self.assertIsNone(re.match(r'(?:a?){2,}y', 'z'))
+        self.assertIsNone(re.match(r'(?:a?)*?y', 'z'))
+        self.assertIsNone(re.match(r'(?:a?)+?y', 'z'))
+        self.assertIsNone(re.match(r'(?:a?){2,}?y', 'z'))
+
     def test_scanner(self):
         def s_ident(scanner, token): return token
         def s_operator(scanner, token): return "op%s" % token
