@@ -1788,7 +1788,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
         }
         else {
             PyErr_SetString(PyExc_OverflowError,
-                            "cannot serialize a bytes object larger than 4GB");
+                            "cannot serialize a bytes object larger than 4 GiB");
             return -1;          /* string too large */
         }
 
@@ -1888,7 +1888,7 @@ save_unicode(PicklerObject *self, PyObject *obj)
         size = PyBytes_GET_SIZE(encoded);
         if (size > 0xffffffffL) {
             PyErr_SetString(PyExc_OverflowError,
-                            "cannot serialize a string larger than 4GB");
+                            "cannot serialize a string larger than 4 GiB");
             goto error;          /* string too large */
         }
 

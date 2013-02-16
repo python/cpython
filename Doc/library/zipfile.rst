@@ -18,7 +18,7 @@ defined in `PKZIP Application Note
 
 This module does not currently handle multi-disk ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
-(that is ZIP files that are more than 4 GByte in size).  It supports
+(that is ZIP files that are more than 4 GiB in size).  It supports
 decryption of encrypted files in ZIP archives, but it currently cannot
 create an encrypted file.  Decryption is extremely slow as it is
 implemented in native Python rather than C.
@@ -148,7 +148,7 @@ ZipFile Objects
    (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not available, :exc:`RuntimeError`
    is also raised. The default is :const:`ZIP_STORED`.  If *allowZip64* is
    ``True`` zipfile will create ZIP files that use the ZIP64 extensions when
-   the zipfile is larger than 2 GB. If it is  false (the default) :mod:`zipfile`
+   the zipfile is larger than 2 GiB. If it is  false (the default) :mod:`zipfile`
    will raise an exception when the ZIP file would require ZIP64 extensions.
    ZIP64 extensions are disabled by default because the default :program:`zip`
    and :program:`unzip` commands on Unix (the InfoZIP utilities) don't support
