@@ -66,16 +66,20 @@ namespace_dealloc(_PyNamespaceObject *ns)
 
 
 static PyObject *
-namespace_repr(_PyNamespaceObject *ns)
+namespace_repr(PyObject *ns)
 {
     int i, loop_error = 0;
     PyObject *pairs = NULL, *d = NULL, *keys = NULL, *keys_iter = NULL;
     PyObject *key;
     PyObject *separator, *pairsrepr, *repr = NULL;
+    const char * name;
 
-    i = Py_ReprEnter((PyObject *)ns);
+    name = (Py_TYPE(ns) == &_PyNamespace_Type) ? "namespace"
+                                               : ns->ob_type->tp_name;
+
+    i = Py_ReprEnter(ns);
     if (i != 0) {
-        return i > 0 ? PyUnicode_FromString("namespace(...)") : NULL;
+        return i > 0 ? PyUnicode_FromFormat("%s(...)", name) : NULL;
     }
 
     pairs = PyList_New(0);
@@ -127,8 +131,7 @@ namespace_repr(_PyNamespaceObject *ns)
     if (pairsrepr == NULL)
         goto error;
 
-    repr = PyUnicode_FromFormat("%s(%S)",
-                                ((PyObject *)ns)->ob_type->tp_name, pairsrepr);
+    repr = PyUnicode_FromFormat("%s(%S)", name, pairsrepr);
     Py_DECREF(pairsrepr);
 
 error:
@@ -136,7 +139,7 @@ error:
     Py_XDECREF(d);
     Py_XDECREF(keys);
     Py_XDECREF(keys_iter);
-    Py_ReprLeave((PyObject *)ns);
+    Py_ReprLeave(ns);
 
     return repr;
 }
@@ -158,14 +161,26 @@ namespace_clear(_PyNamespaceObject *ns)
 }
 
 
+static PyObject *
+namespace_richcompare(PyObject *self, PyObject *other, int op)
+{
+    if (PyObject_IsInstance(self, (PyObject *)&_PyNamespace_Type) &&
+            PyObject_IsInstance(other, (PyObject *)&_PyNamespace_Type))
+        return PyObject_RichCompare(((_PyNamespaceObject *)self)->ns_dict,
+                                   ((_PyNamespaceObject *)other)->ns_dict, op);
+    Py_INCREF(Py_NotImplemented);
+    return Py_NotImplemented;
+}
+
+
 PyDoc_STRVAR(namespace_doc,
 "A simple attribute-based namespace.\n\
 \n\
-namespace(**kwargs)");
+SimpleNamespace(**kwargs)");
 
 PyTypeObject _PyNamespace_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
-    "namespace",                                /* tp_name */
+    "types.SimpleNamespace",                    /* tp_name */
     sizeof(_PyNamespaceObject),                 /* tp_size */
     0,                                          /* tp_itemsize */
     (destructor)namespace_dealloc,              /* tp_dealloc */
@@ -188,7 +203,7 @@ PyTypeObject _PyNamespace_Type = {
     namespace_doc,                              /* tp_doc */
     (traverseproc)namespace_traverse,           /* tp_traverse */
     (inquiry)namespace_clear,                   /* tp_clear */
-    0,                                          /* tp_richcompare */
+    namespace_richcompare,                      /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */

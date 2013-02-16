@@ -252,6 +252,8 @@ Core and Builtins
 - Issue #15111: __import__ should propagate ImportError when raised as a
   side-effect of a module triggered from using fromlist.
 
+- Issue #15022: Add pickle and comparison support to types.SimpleNamespace.
+
 Library
 -------
 
