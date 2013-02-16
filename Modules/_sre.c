@@ -1295,13 +1295,18 @@ entrance:
 
             LASTMARK_RESTORE();
 
-            if (ctx->count >= ctx->u.rep->pattern[2]
-                && ctx->u.rep->pattern[2] != SRE_MAXREPEAT)
+            if ((ctx->count >= ctx->u.rep->pattern[2]
+                && ctx->u.rep->pattern[2] != SRE_MAXREPEAT) ||
+                state->ptr == ctx->u.rep->last_ptr)
                 RETURN_FAILURE;
 
             ctx->u.rep->count = ctx->count;
+            /* zero-width match protection */
+            DATA_PUSH(&ctx->u.rep->last_ptr);
+            ctx->u.rep->last_ptr = state->ptr;
             DO_JUMP(JUMP_MIN_UNTIL_3,jump_min_until_3,
                     ctx->u.rep->pattern+3);
+            DATA_POP(&ctx->u.rep->last_ptr);
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
