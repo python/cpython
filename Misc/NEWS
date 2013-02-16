@@ -178,6 +178,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9669: Protect re against infinite loops on zero-width matching in
+  non-greedy repeat.  Patch by Matthew Barnett.
+
 - Issue #13169: The maximal repetition number in a regular expression has been
   increased from 65534 to 2147483647 (on 32-bit platform) or 4294967294 (on
   64-bit).
