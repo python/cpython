@@ -107,13 +107,12 @@ class BasicSocketTests(unittest.TestCase):
         if test_support.verbose:
             sys.stdout.write("\n" + pprint.pformat(p) + "\n")
         self.assertEqual(p['subject'],
-                         ((('countryName', u'US'),),
-                          (('stateOrProvinceName', u'Delaware'),),
-                          (('localityName', u'Wilmington'),),
-                          (('organizationName', u'Python Software Foundation'),),
-                          (('organizationalUnitName', u'SSL'),),
-                          (('commonName', u'somemachine.python.org'),)),
+                         ((('countryName', 'XY'),),
+                          (('localityName', 'Castle Anthrax'),),
+                          (('organizationName', 'Python Software Foundation'),),
+                          (('commonName', 'localhost'),))
                         )
+        self.assertEqual(p['subjectAltName'], (('DNS', 'localhost'),))
         # Issue #13034: the subjectAltName in some certificates
         # (notably projects.developer.nokia.com:443) wasn't parsed
         p = ssl._ssl._test_decode_cert(NOKIACERT)
