@@ -862,6 +862,7 @@ read_directory(PyObject *archive)
     long l, count;
     Py_ssize_t i;
     char name[MAXPATHLEN + 5];
+    char dummy[8]; /* Buffer to read unused header values into */
     PyObject *nameobj = NULL;
     char *p, endof_central_dir[22];
     Py_ssize_t arc_offset;  /* Absolute offset to start of the zip-archive. */
@@ -905,17 +906,23 @@ read_directory(PyObject *archive)
 
     /* Start of Central Directory */
     count = 0;
+    if (fseek(fp, header_offset, 0) == -1)
+        goto file_error;
     for (;;) {
         PyObject *t;
         int err;
 
-        if (fseek(fp, header_offset, 0) == -1)  /* Start of file header */
-            goto fseek_error;
+        /* Start of file header */
         l = PyMarshal_ReadLongFromFile(fp);
         if (l != 0x02014B50)
             break;              /* Bad: Central Dir File Header */
-        if (fseek(fp, header_offset + 8, 0) == -1)
-            goto fseek_error;
+
+        /* On Windows, calling fseek to skip over the fields we don't use is
+        slower than reading the data into a dummy buffer because fseek flushes
+        stdio's internal buffers. See issue #8745. */
+        if (fread(dummy, 1, 4, fp) != 4) /* Skip unused fields, avoid fseek */
+            goto file_error;
+
         flags = (unsigned short)PyMarshal_ReadShortFromFile(fp);
         compress = PyMarshal_ReadShortFromFile(fp);
         time = PyMarshal_ReadShortFromFile(fp);
@@ -924,11 +931,11 @@ read_directory(PyObject *archive)
         data_size = PyMarshal_ReadLongFromFile(fp);
         file_size = PyMarshal_ReadLongFromFile(fp);
         name_size = PyMarshal_ReadShortFromFile(fp);
-        header_size = 46 + name_size +
+        header_size = name_size +
            PyMarshal_ReadShortFromFile(fp) +
            PyMarshal_ReadShortFromFile(fp);
-        if (fseek(fp, header_offset + 42, 0) == -1)
-            goto fseek_error;
+        if (fread(dummy, 1, 8, fp) != 8) /* Skip unused fields, avoid fseek */
+            goto file_error;
         file_offset = PyMarshal_ReadLongFromFile(fp) + arc_offset;
         if (name_size > MAXPATHLEN)
             name_size = MAXPATHLEN;
@@ -941,7 +948,9 @@ read_directory(PyObject *archive)
             p++;
         }
         *p = 0;         /* Add terminating null byte */
-        header_offset += header_size;
+        for (; i < header_size; i++) /* Skip the rest of the header */
+            if(getc(fp) == EOF) /* Avoid fseek */
+                goto file_error;
 
         bootstrap = 0;
         if (flags & 0x0800)
@@ -988,7 +997,7 @@ read_directory(PyObject *archive)
         PySys_FormatStderr("# zipimport: found %ld names in %R\n",
                            count, archive);
     return files;
-fseek_error:
+file_error:
     fclose(fp);
     Py_XDECREF(files);
     Py_XDECREF(nameobj);

@@ -196,6 +196,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
+                zinfo.comment = b"spam"
                 z.writestr(zinfo, data)
             z.close()
 
@@ -245,6 +246,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
+                zinfo.comment = b"eggs"
                 z.writestr(zinfo, data)
             z.close()
 
