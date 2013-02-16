@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #8745: Small speed up zipimport on Windows. Patch by Catalin Iacob.
+
 - Issue #5308: Raise ValueError when marshalling too large object (a sequence
   with size >= 2**31), instead of producing illegal marshal data.
 
