@@ -2329,7 +2329,7 @@ These functions are all available on Linux only.
 .. data:: XATTR_SIZE_MAX
 
    The maximum size the value of an extended attribute can be. Currently, this
-   is 64 kilobytes on Linux.
+   is 64 KiB on Linux.
 
 
 .. data:: XATTR_CREATE
