@@ -669,11 +669,11 @@ There are three tar formats that can be created with the :mod:`tarfile` module:
 
 * The POSIX.1-1988 ustar format (:const:`USTAR_FORMAT`). It supports filenames
   up to a length of at best 256 characters and linknames up to 100 characters. The
-  maximum file size is 8 gigabytes. This is an old and limited but widely
+  maximum file size is 8 GiB. This is an old and limited but widely
   supported format.
 
 * The GNU tar format (:const:`GNU_FORMAT`). It supports long filenames and
-  linknames, files bigger than 8 gigabytes and sparse files. It is the de facto
+  linknames, files bigger than 8 GiB and sparse files. It is the de facto
   standard on GNU/Linux systems. :mod:`tarfile` fully supports the GNU tar
   extensions for long names, sparse file support is read-only.
 
