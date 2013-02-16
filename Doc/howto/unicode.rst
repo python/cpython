@@ -456,11 +456,11 @@ with ``bytes.decode(encoding)``.  However, the manual approach is not recommende
 
 One problem is the multi-byte nature of encodings; one Unicode character can be
 represented by several bytes.  If you want to read the file in arbitrary-sized
-chunks (say, 1k or 4k), you need to write error-handling code to catch the case
+chunks (say, 1024 or 4096 bytes), you need to write error-handling code to catch the case
 where only part of the bytes encoding a single Unicode character are read at the
 end of a chunk.  One solution would be to read the entire file into memory and
 then perform the decoding, but that prevents you from working with files that
-are extremely large; if you need to read a 2GB file, you need 2GB of RAM.
+are extremely large; if you need to read a 2 GiB file, you need 2 GiB of RAM.
 (More, really, since for at least a moment you'd need to have both the encoded
 string and its Unicode version in memory.)
 
