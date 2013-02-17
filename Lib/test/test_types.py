@@ -2,6 +2,7 @@
 
 from test.support import run_unittest, run_with_locale
 import collections
+import pickle
 import locale
 import sys
 import types
@@ -1077,9 +1078,19 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns2 = types.SimpleNamespace()
         ns2.x = "spam"
         ns2._y = 5
+        name = "namespace"
 
-        self.assertEqual(repr(ns1), "namespace(w=3, x=1, y=2)")
-        self.assertEqual(repr(ns2), "namespace(_y=5, x='spam')")
+        self.assertEqual(repr(ns1), "{name}(w=3, x=1, y=2)".format(name=name))
+        self.assertEqual(repr(ns2), "{name}(_y=5, x='spam')".format(name=name))
+
+    def test_equal(self):
+        ns1 = types.SimpleNamespace(x=1)
+        ns2 = types.SimpleNamespace()
+        ns2.x = 1
+
+        self.assertEqual(types.SimpleNamespace(), types.SimpleNamespace())
+        self.assertEqual(ns1, ns2)
+        self.assertNotEqual(ns2, types.SimpleNamespace())
 
     def test_nested(self):
         ns1 = types.SimpleNamespace(a=1, b=2)
@@ -1117,11 +1128,12 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns1.spam = ns1
         ns2.spam = ns3
         ns3.spam = ns2
+        name = "namespace"
+        repr1 = "{name}(c='cookie', spam={name}(...))".format(name=name)
+        repr2 = "{name}(spam={name}(spam={name}(...), x=1))".format(name=name)
 
-        self.assertEqual(repr(ns1),
-                         "namespace(c='cookie', spam=namespace(...))")
-        self.assertEqual(repr(ns2),
-                         "namespace(spam=namespace(spam=namespace(...), x=1))")
+        self.assertEqual(repr(ns1), repr1)
+        self.assertEqual(repr(ns2), repr2)
 
     def test_as_dict(self):
         ns = types.SimpleNamespace(spam='spamspamspam')
@@ -1143,6 +1155,14 @@ class SimpleNamespaceTests(unittest.TestCase):
 
         self.assertIs(type(spam), Spam)
         self.assertEqual(vars(spam), {'ham': 8, 'eggs': 9})
+
+    def test_pickle(self):
+        ns = types.SimpleNamespace(breakfast="spam", lunch="spam")
+
+        ns_pickled = pickle.dumps(ns)
+        ns_roundtrip = pickle.loads(ns_pickled)
+
+        self.assertEqual(ns, ns_roundtrip)
 
 
 def test_main():
