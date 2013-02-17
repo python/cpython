@@ -173,6 +173,29 @@ namespace_richcompare(PyObject *self, PyObject *other, int op)
 }
 
 
+PyDoc_STRVAR(namespace_reduce__doc__, "Return state information for pickling");
+
+static PyObject *
+namespace_reduce(register _PyNamespaceObject *ns)
+{
+    PyObject *result, *args = PyTuple_New(0);
+
+    if (!args)
+        return NULL;
+
+    result = PyTuple_Pack(3, (PyObject *)Py_TYPE(ns), args, ns->ns_dict);
+    Py_DECREF(args);
+    return result;
+}
+
+
+static PyMethodDef namespace_methods[] = {
+    {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
+     namespace_reduce__doc__},
+    {NULL,         NULL}  /* sentinel */
+};
+
+
 PyDoc_STRVAR(namespace_doc,
 "A simple attribute-based namespace.\n\
 \n\
@@ -207,7 +230,7 @@ PyTypeObject _PyNamespace_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    namespace_methods,                          /* tp_methods */
     namespace_members,                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */

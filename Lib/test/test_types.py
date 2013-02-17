@@ -1159,10 +1159,15 @@ class SimpleNamespaceTests(unittest.TestCase):
     def test_pickle(self):
         ns = types.SimpleNamespace(breakfast="spam", lunch="spam")
 
-        ns_pickled = pickle.dumps(ns)
-        ns_roundtrip = pickle.loads(ns_pickled)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            pname = "protocol {}".format(protocol)
+            try:
+                ns_pickled = pickle.dumps(ns, protocol)
+            except TypeError as e:
+                raise TypeError(pname) from e
+            ns_roundtrip = pickle.loads(ns_pickled)
 
-        self.assertEqual(ns, ns_roundtrip)
+            self.assertEqual(ns, ns_roundtrip, pname)
 
 
 def test_main():
