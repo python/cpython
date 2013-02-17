@@ -328,7 +328,7 @@ ABC hierarchy::
 .. class:: FileLoader(fullname, path)
 
    An abstract base class which inherits from :class:`ResourceLoader` and
-   :class:`ExecutionLoader`, providing concreate implementations of
+   :class:`ExecutionLoader`, providing concrete implementations of
    :meth:`ResourceLoader.get_data` and :meth:`ExecutionLoader.get_filename`.
 
    The *fullname* argument is a fully resolved name of the module the loader is
