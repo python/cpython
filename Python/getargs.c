@@ -46,10 +46,12 @@ typedef struct {
 } freelistentry_t;
 
 typedef struct {
-  int first_available;
   freelistentry_t *entries;
+  int first_available;
+  int entries_malloced;
 } freelist_t;
 
+#define STATIC_FREELIST_ENTRIES 8
 
 /* Forward */
 static int vgetargs1(PyObject *, const char *, va_list *, int);
@@ -187,7 +189,8 @@ cleanreturn(int retval, freelist_t *freelist)
                                               freelist->entries[index].item);
       }
     }
-    PyMem_FREE(freelist->entries);
+    if (freelist->entries_malloced)
+        PyMem_FREE(freelist->entries);
     return retval;
 }
 
@@ -197,6 +200,8 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 {
     char msgbuf[256];
     int levels[32];
+    freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
+    freelist_t freelist = {static_entries, 0, 0};
     const char *fname = NULL;
     const char *message = NULL;
     int min = -1;
@@ -206,7 +211,6 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
     const char *formatsave = format;
     Py_ssize_t i, len;
     char *msg;
-    freelist_t freelist = {0, NULL};
     int compat = flags & FLAG_COMPAT;
 
     assert(compat || (args != (PyObject*)NULL));
@@ -240,15 +244,15 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
             message = format;
             endfmt = 1;
             break;
+        case '|':
+            if (level == 0)
+                min = max;
+            break;
         default:
             if (level == 0) {
-                if (c == 'O')
-                    max++;
-                else if (Py_ISALPHA(Py_CHARMASK(c))) {
+                if (Py_ISALPHA(Py_CHARMASK(c)))
                     if (c != 'e') /* skip encoded */
                         max++;
-                } else if (c == '|')
-                    min = max;
             }
             break;
         }
@@ -262,10 +266,13 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 
     format = formatsave;
 
-    freelist.entries = PyMem_NEW(freelistentry_t, max);
-    if (freelist.entries == NULL) {
-        PyErr_NoMemory();
-        return 0;
+    if (max > STATIC_FREELIST_ENTRIES) {
+        freelist.entries = PyMem_NEW(freelistentry_t, max);
+        if (freelist.entries == NULL) {
+            PyErr_NoMemory();
+            return 0;
+        }
+        freelist.entries_malloced = 1;
     }
 
     if (compat) {
@@ -1421,7 +1428,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     int max = INT_MAX;
     int i, len, nargs, nkeywords;
     PyObject *current_arg;
-    freelist_t freelist = {0, NULL};
+    freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
+    freelist_t freelist = {static_entries, 0, 0};
 
     assert(args != NULL && PyTuple_Check(args));
     assert(keywords == NULL || PyDict_Check(keywords));
@@ -1445,10 +1453,13 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     for (len=0; kwlist[len]; len++)
         continue;
 
-    freelist.entries = PyMem_NEW(freelistentry_t, len);
-    if (freelist.entries == NULL) {
-        PyErr_NoMemory();
-        return 0;
+    if (len > STATIC_FREELIST_ENTRIES) {
+        freelist.entries = PyMem_NEW(freelistentry_t, len);
+        if (freelist.entries == NULL) {
+            PyErr_NoMemory();
+            return 0;
+        }
+        freelist.entries_malloced = 1;
     }
 
     nargs = PyTuple_GET_SIZE(args);
@@ -1574,20 +1585,16 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
         Py_ssize_t pos = 0;
         while (PyDict_Next(keywords, &pos, &key, &value)) {
             int match = 0;
-            char *ks;
             if (!PyUnicode_Check(key)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "keywords must be strings");
                 return cleanreturn(0, &freelist);
             }
             /* check that _PyUnicode_AsString() result is not NULL */
-            ks = _PyUnicode_AsString(key);
-            if (ks != NULL) {
-                for (i = 0; i < len; i++) {
-                    if (!strcmp(ks, kwlist[i])) {
-                        match = 1;
-                        break;
-                    }
+            for (i = 0; i < len; i++) {
+                if (!PyUnicode_CompareWithASCIIString(key, kwlist[i])) {
+                    match = 1;
+                    break;
                 }
             }
             if (!match) {
