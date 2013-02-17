@@ -261,7 +261,7 @@ def escape(pattern):
 
 _pattern_type = type(sre_compile.compile("", 0))
 
-@functools.lru_cache(maxsize=500, typed=True)
+@functools.lru_cache(maxsize=512, typed=True)
 def _compile(pattern, flags):
     # internal: compile pattern
     if isinstance(pattern, _pattern_type):
@@ -273,7 +273,7 @@ def _compile(pattern, flags):
         raise TypeError("first argument must be string or compiled pattern")
     return sre_compile.compile(pattern, flags)
 
-@functools.lru_cache(maxsize=500)
+@functools.lru_cache(maxsize=512)
 def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
     return sre_parse.parse_template(repl, pattern)
