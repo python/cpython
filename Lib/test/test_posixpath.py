@@ -338,6 +338,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.normpath(b"///..//./foo/.//bar"),
                          b"/foo/bar")
 
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_curdir(self):
         self.assertEqual(realpath('.'), os.getcwd())
         self.assertEqual(realpath('./.'), os.getcwd())
@@ -347,6 +348,7 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(realpath(b'./.'), os.getcwdb())
         self.assertEqual(realpath(b'/'.join([b'.'] * 100)), os.getcwdb())
 
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_pardir(self):
         self.assertEqual(realpath('..'), dirname(os.getcwd()))
         self.assertEqual(realpath('../..'), dirname(dirname(os.getcwd())))
