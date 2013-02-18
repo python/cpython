@@ -9,6 +9,16 @@ from posixpath import realpath, abspath, dirname, basename
 
 ABSTFN = abspath(test_support.TESTFN)
 
+def skip_if_ABSTFN_contains_backslash(test):
+    """
+    On Windows, posixpath.abspath still returns paths with backslashes
+    instead of posix forward slashes. If this is the case, several tests
+    fail, so skip them.
+    """
+    found_backslash = '\\' in ABSTFN
+    msg = "ABSTFN is not a posix path - tests fail"
+    return [test, unittest.skip(msg)(test)][found_backslash]
+
 def safe_rmdir(dirname):
     try:
         os.rmdir(dirname)
@@ -214,11 +224,13 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.normpath("///foo/.//bar//.//..//.//baz"), "/foo/baz")
         self.assertEqual(posixpath.normpath("///..//./foo/.//bar"), "/foo/bar")
 
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_curdir(self):
         self.assertEqual(realpath('.'), os.getcwd())
         self.assertEqual(realpath('./.'), os.getcwd())
         self.assertEqual(realpath('/'.join(['.'] * 100)), os.getcwd())
 
+    @skip_if_ABSTFN_contains_backslash
     def test_realpath_pardir(self):
         self.assertEqual(realpath('..'), dirname(os.getcwd()))
         self.assertEqual(realpath('../..'), dirname(dirname(os.getcwd())))
