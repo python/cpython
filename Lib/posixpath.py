@@ -390,9 +390,11 @@ def _joinrealpath(path, rest, seen):
         if name == pardir:
             # parent dir
             if path:
-                path = dirname(path)
+                path, name = split(path)
+                if name == pardir:
+                    path = join(path, pardir, pardir)
             else:
-                path = name
+                path = pardir
             continue
         newpath = join(path, name)
         if not islink(newpath):
