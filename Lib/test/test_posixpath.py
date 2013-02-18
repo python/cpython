@@ -338,6 +338,24 @@ class PosixPathTest(unittest.TestCase):
         self.assertEqual(posixpath.normpath(b"///..//./foo/.//bar"),
                          b"/foo/bar")
 
+    def test_realpath_curdir(self):
+        self.assertEqual(realpath('.'), os.getcwd())
+        self.assertEqual(realpath('./.'), os.getcwd())
+        self.assertEqual(realpath('/'.join(['.'] * 100)), os.getcwd())
+
+        self.assertEqual(realpath(b'.'), os.getcwdb())
+        self.assertEqual(realpath(b'./.'), os.getcwdb())
+        self.assertEqual(realpath(b'/'.join([b'.'] * 100)), os.getcwdb())
+
+    def test_realpath_pardir(self):
+        self.assertEqual(realpath('..'), dirname(os.getcwd()))
+        self.assertEqual(realpath('../..'), dirname(dirname(os.getcwd())))
+        self.assertEqual(realpath('/'.join(['..'] * 100)), '/')
+
+        self.assertEqual(realpath(b'..'), dirname(os.getcwdb()))
+        self.assertEqual(realpath(b'../..'), dirname(dirname(os.getcwdb())))
+        self.assertEqual(realpath(b'/'.join([b'..'] * 100)), b'/')
+
     @unittest.skipUnless(hasattr(os, "symlink"),
                          "Missing symlink implementation")
     @skip_if_ABSTFN_contains_backslash
