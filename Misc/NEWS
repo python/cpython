@@ -181,6 +181,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13700: Fix byte/string handling in imaplib authentication when an
+  authobject is specified.
+
 - Issue #13153: Tkinter functions now raise TclError instead of ValueError when
   a string argument contains non-BMP character.
 
