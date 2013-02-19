@@ -39,6 +39,7 @@ python ftplib.py -d localhost -l -p -l
 import os
 import sys
 import socket
+import warnings
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["FTP","Netrc"]
@@ -953,6 +954,8 @@ class Netrc:
     __defacct = None
 
     def __init__(self, filename=None):
+        warnings.warn("This class is deprecated, use the netrc module instead",
+                      DeprecationWarning, 2)
         if filename is None:
             if "HOME" in os.environ:
                 filename = os.path.join(os.environ["HOME"],
