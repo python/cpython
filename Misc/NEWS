@@ -260,6 +260,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6623: Added explicit DeprecationWarning for ftplib.netrc, which has
+  been deprecated and undocumented for a long time.
+
 - Issue #13700: Fix byte/string handling in imaplib authentication when an
   authobject is specified.
 

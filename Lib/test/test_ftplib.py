@@ -985,8 +985,19 @@ class TestTimeouts(TestCase):
         ftp.close()
 
 
+class TestNetrcDeprecation(TestCase):
+
+    def test_deprecation(self):
+        with support.temp_cwd(), support.EnvironmentVarGuard() as env:
+            env['HOME'] = os.getcwd()
+            open('.netrc', 'w').close()
+            with self.assertWarns(DeprecationWarning):
+                ftplib.Netrc()
+
+
+
 def test_main():
-    tests = [TestFTPClass, TestTimeouts]
+    tests = [TestFTPClass, TestTimeouts, TestNetrcDeprecation]
     if support.IPV6_ENABLED:
         tests.append(TestIPv6Environment)
 
