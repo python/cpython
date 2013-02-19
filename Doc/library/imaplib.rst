@@ -185,9 +185,10 @@ An :class:`IMAP4` instance has the following methods:
 
       data = authobject(response)
 
-   It will be called to process server continuation responses. It should return
-   ``data`` that will be encoded and sent to server. It should return ``None`` if
-   the client abort response ``*`` should be sent instead.
+   It will be called to process server continuation responses; the *response*
+   argument it is passed will be ``bytes``.  It should return ``bytes`` *data*
+   that will be base64 encoded and sent to the server.  It should return
+   ``None`` if the client abort response ``*`` should be sent instead.
 
 
 .. method:: IMAP4.check()
