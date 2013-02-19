@@ -307,7 +307,8 @@ equiv_structure(const Py_buffer *dest, const Py_buffer *src)
     if (!equiv_format(dest, src) ||
         !equiv_shape(dest, src)) {
         PyErr_SetString(PyExc_ValueError,
-            "ndarray assignment: lvalue and rvalue have different structures");
+            "memoryview assignment: lvalue and rvalue have different "
+            "structures");
         return 0;
     }
 
@@ -1433,7 +1434,7 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
             /* PyBUF_SIMPLE|PyBUF_FORMAT and PyBUF_WRITABLE|PyBUF_FORMAT do
                not make sense. */
             PyErr_Format(PyExc_BufferError,
-                "ndarray: cannot cast to unsigned bytes if the format flag "
+                "memoryview: cannot cast to unsigned bytes if the format flag "
                 "is present");
             return -1;
         }
