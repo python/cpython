@@ -3059,7 +3059,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     if (excess_args(args, kwds) &&
         (type->tp_init == object_init || type->tp_new != object_new)) {
-        PyErr_SetString(PyExc_TypeError, "object.__new__() takes no parameters");
+        PyErr_SetString(PyExc_TypeError, "object() takes no parameters");
         return NULL;
     }
 
