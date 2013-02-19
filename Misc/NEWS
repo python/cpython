@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #7963: Fixed misleading error message that issued when object is
+  called without arguments.
+
 - Issue #5308: Raise ValueError when marshalling too large object (a sequence
   with size >= 2**31), instead of producing illegal marshal data.
 

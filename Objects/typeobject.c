@@ -2842,14 +2842,14 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             type->tp_init != object_init)
         {
             err = PyErr_WarnEx(PyExc_DeprecationWarning,
-                       "object.__new__() takes no parameters",
+                       "object() takes no parameters",
                        1);
         }
         else if (type->tp_new != object_new ||
                  type->tp_init == object_init)
         {
             PyErr_SetString(PyExc_TypeError,
-                "object.__new__() takes no parameters");
+                "object() takes no parameters");
             err = -1;
         }
     }
