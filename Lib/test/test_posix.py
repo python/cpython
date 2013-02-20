@@ -224,30 +224,42 @@ class PosixTester(unittest.TestCase):
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
-        def check_stat():
+        def check_stat(uid, gid):
             if stat_func is not None:
                 stat = stat_func(first_param)
-                self.assertEqual(stat.st_uid, os.getuid())
-                self.assertEqual(stat.st_gid, os.getgid())
+                self.assertEqual(stat.st_uid, uid)
+                self.assertEqual(stat.st_gid, gid)
+        uid = os.getuid()
+        gid = os.getgid()
         # test a successful chown call
-        chown_func(first_param, os.getuid(), os.getgid())
-        check_stat()
-        chown_func(first_param, -1, os.getgid())
-        check_stat()
-        chown_func(first_param, os.getuid(), -1)
-        check_stat()
+        chown_func(first_param, uid, gid)
+        check_stat(uid, gid)
+        chown_func(first_param, -1, gid)
+        check_stat(uid, gid)
+        chown_func(first_param, uid, -1)
+        check_stat(uid, gid)
 
-        if os.getuid() == 0:
-            try:
-                # Many linux distros have a nfsnobody user as MAX_UID-2
-                # that makes a good test case for signedness issues.
-                #   http://bugs.python.org/issue1747858
-                # This part of the test only runs when run as root.
-                # Only scary people run their tests as root.
-                ent = pwd.getpwnam('nfsnobody')
-                chown_func(first_param, ent.pw_uid, ent.pw_gid)
-            except KeyError:
-                pass
+        if uid == 0:
+            # Try an amusingly large uid/gid to make sure we handle
+            # large unsigned values.  (chown lets you use any
+            # uid/gid you like, even if they aren't defined.)
+            #
+            # This problem keeps coming up:
+            #   http://bugs.python.org/issue1747858
+            #   http://bugs.python.org/issue4591
+            #   http://bugs.python.org/issue15301
+            # Hopefully the fix in 4591 fixes it for good!
+            #
+            # This part of the test only runs when run as root.
+            # Only scary people run their tests as root.
+
+            big_value = 2**31
+            chown_func(first_param, big_value, big_value)
+            check_stat(big_value, big_value)
+            chown_func(first_param, -1, -1)
+            check_stat(big_value, big_value)
+            chown_func(first_param, uid, gid)
+            check_stat(uid, gid)
         elif platform.system() in ('HP-UX', 'SunOS'):
             # HP-UX and Solaris can allow a non-root user to chown() to root
             # (issue #5113)
@@ -256,11 +268,17 @@ class PosixTester(unittest.TestCase):
         else:
             # non-root cannot chown to root, raises OSError
             self.assertRaises(OSError, chown_func, first_param, 0, 0)
-            check_stat()
+            check_stat(uid, gid)
             self.assertRaises(OSError, chown_func, first_param, -1, 0)
-            check_stat()
+            check_stat(uid, gid)
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
-            check_stat()
+            check_stat(uid, gid)
+        # test illegal types
+        for t in str, float:
+            self.assertRaises(TypeError, chown_func, first_param, t(uid), gid)
+            check_stat(uid, gid)
+            self.assertRaises(TypeError, chown_func, first_param, uid, t(gid))
+            check_stat(uid, gid)
 
     @unittest.skipUnless(hasattr(posix, 'chown'), "test needs os.chown()")
     def test_chown(self):
