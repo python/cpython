@@ -689,6 +689,8 @@ Tests
 Build
 -----
 
+- Issue #17228: Fix building without pymalloc.
+
 - Issue #3718: Use AC_ARG_VAR to set MACHDEP in configure.ac.
 
 - Issue #17031: Fix running regen in cross builds.
