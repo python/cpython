@@ -1713,7 +1713,7 @@ printone(const char* msg, size_t value)
     k = 3;
     do {
         size_t nextvalue = value / 10;
-        uint digit = (uint)(value - nextvalue * 10);
+        unsigned int digit = (unsigned int)(value - nextvalue * 10);
         value = nextvalue;
         buf[i--] = (char)(digit + '0');
         --k;

@@ -853,6 +853,8 @@ Tests
 Build
 -----
 
+- Issue #17228: Fix building without pymalloc.
+
 - Issue #17086: Backport the patches from the 3.3 branch to cross-build
   the package.
 
