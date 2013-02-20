@@ -451,10 +451,11 @@ class PosixTester(unittest.TestCase):
             # non-root cannot chown to root, raises OSError
             self.assertRaises(OSError, chown_func, first_param, 0, 0)
             check_stat(uid, gid)
-            self.assertRaises(OSError, chown_func, first_param, -1, 0)
-            check_stat(uid, gid)
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
+            if gid != 0:
+                self.assertRaises(OSError, chown_func, first_param, -1, 0)
+                check_stat(uid, gid)
         # test illegal types
         for t in str, float:
             self.assertRaises(TypeError, chown_func, first_param, t(uid), gid)
