@@ -3,7 +3,6 @@ import io
 import sys
 from test.support import (run_unittest, TESTFN, rmtree, unlink,
                                captured_stdout)
-import tempfile
 import unittest
 
 import trace
@@ -396,14 +395,16 @@ class TestDeprecatedMethods(unittest.TestCase):
             trace.find_lines(foo.__code__, ["eggs"])
 
     def test_deprecated_find_strings(self):
+        with open(TESTFN, 'w') as fd:
+            self.addCleanup(unlink, TESTFN)
         with self.assertWarns(DeprecationWarning):
-            with tempfile.NamedTemporaryFile() as fd:
-                trace.find_strings(fd.name)
+            trace.find_strings(fd.name)
 
     def test_deprecated_find_executable_linenos(self):
+        with open(TESTFN, 'w') as fd:
+            self.addCleanup(unlink, TESTFN)
         with self.assertWarns(DeprecationWarning):
-            with tempfile.NamedTemporaryFile() as fd:
-                trace.find_executable_linenos(fd.name)
+            trace.find_executable_linenos(fd.name)
 
 
 def test_main():
