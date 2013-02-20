@@ -2196,15 +2196,17 @@ class UnicodeTest(string_tests.CommonTest,
             # generate a fresh string (refcount=1)
             text = 'a' * length + 'b'
 
-            # fill wstr internal field
-            abc = text.encode('unicode_internal')
-            self.assertEqual(abc.decode('unicode_internal'), text)
+            with support.check_warnings(('unicode_internal codec has been '
+                                         'deprecated', DeprecationWarning)):
+                # fill wstr internal field
+                abc = text.encode('unicode_internal')
+                self.assertEqual(abc.decode('unicode_internal'), text)
 
-            # resize text: wstr field must be cleared and then recomputed
-            text += 'c'
-            abcdef = text.encode('unicode_internal')
-            self.assertNotEqual(abc, abcdef)
-            self.assertEqual(abcdef.decode('unicode_internal'), text)
+                # resize text: wstr field must be cleared and then recomputed
+                text += 'c'
+                abcdef = text.encode('unicode_internal')
+                self.assertNotEqual(abc, abcdef)
+                self.assertEqual(abcdef.decode('unicode_internal'), text)
 
 
 class StringModuleTest(unittest.TestCase):
