@@ -260,6 +260,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17225: JSON decoder now counts columns in the first line starting
+  with 1, as in other lines.
+
 - Issue #6623: Added explicit DeprecationWarning for ftplib.netrc, which has
   been deprecated and undocumented for a long time.
 

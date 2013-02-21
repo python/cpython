@@ -125,8 +125,8 @@ class TestFail:
         ]
         for data, msg, idx in test_cases:
             self.assertRaisesRegex(ValueError,
-                r'^{0}: line 1 column {1} \(char {1}\)'.format(
-                    re.escape(msg), idx),
+                r'^{0}: line 1 column {1} \(char {2}\)'.format(
+                    re.escape(msg), idx + 1, idx),
                 self.loads, data)
 
     def test_unexpected_data(self):
@@ -155,8 +155,8 @@ class TestFail:
         ]
         for data, msg, idx in test_cases:
             self.assertRaisesRegex(ValueError,
-                r'^{0}: line 1 column {1} \(char {1}\)'.format(
-                    re.escape(msg), idx),
+                r'^{0}: line 1 column {1} \(char {2}\)'.format(
+                    re.escape(msg), idx + 1, idx),
                 self.loads, data)
 
     def test_extra_data(self):
@@ -173,10 +173,22 @@ class TestFail:
         for data, msg, idx in test_cases:
             self.assertRaisesRegex(ValueError,
                 r'^{0}: line 1 column {1} - line 1 column {2}'
-                r' \(char {1} - {2}\)'.format(
-                    re.escape(msg), idx, len(data)),
+                r' \(char {3} - {4}\)'.format(
+                    re.escape(msg), idx + 1, len(data) + 1, idx, len(data)),
                 self.loads, data)
 
+    def test_linecol(self):
+        test_cases = [
+            ('!', 1, 1, 0),
+            (' !', 1, 2, 1),
+            ('\n!', 2, 1, 1),
+            ('\n  \n\n     !', 4, 6, 10),
+        ]
+        for data, line, col, idx in test_cases:
+            self.assertRaisesRegex(ValueError,
+                r'^Expecting value: line {0} column {1}'
+                r' \(char {2}\)$'.format(line, col, idx),
+                self.loads, data)
 
 class TestPyFail(TestFail, PyTest): pass
 class TestCFail(TestFail, CTest): pass
