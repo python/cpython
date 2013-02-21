@@ -32,7 +32,7 @@ def linecol(doc, pos):
         newline = '\n'
     lineno = doc.count(newline, 0, pos) + 1
     if lineno == 1:
-        colno = pos
+        colno = pos + 1
     else:
         colno = pos - doc.rindex(newline, 0, pos)
     return lineno, colno
