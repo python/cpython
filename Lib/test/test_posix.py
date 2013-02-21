@@ -271,7 +271,7 @@ class PosixTester(unittest.TestCase):
             check_stat(uid, gid)
             self.assertRaises(OSError, chown_func, first_param, 0, -1)
             check_stat(uid, gid)
-            if gid != 0:
+            if 0 not in os.getgroups():
                 self.assertRaises(OSError, chown_func, first_param, -1, 0)
                 check_stat(uid, gid)
         # test illegal types
