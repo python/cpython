@@ -208,6 +208,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17225: JSON decoder now counts columns in the first line starting
+  with 1, as in other lines.
+
 - Issue #7842: backported fix for py_compile.compile() syntax error handling.
 
 - Issue #13153: Tkinter functions now raise TclError instead of ValueError when
