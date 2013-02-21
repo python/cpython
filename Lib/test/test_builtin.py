@@ -110,6 +110,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, all)                   # No args
         self.assertRaises(TypeError, all, [2, 4, 6], [])    # Too many args
         self.assertEqual(all([]), True)                     # Empty iterator
+        self.assertEqual(all([0, TestFailingBool()]), False)# Short-circuit
         S = [50, 60]
         self.assertEqual(all(x > 42 for x in S), True)
         S = [50, 40, 60]
@@ -124,6 +125,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, any)                   # No args
         self.assertRaises(TypeError, any, [2, 4, 6], [])    # Too many args
         self.assertEqual(any([]), False)                    # Empty iterator
+        self.assertEqual(any([1, TestFailingBool()]), True) # Short-circuit
         S = [40, 60, 30]
         self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
