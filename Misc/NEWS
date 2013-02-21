@@ -227,6 +227,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17225: JSON decoder now counts columns in the first line starting
+  with 1, as in other lines.
+
 - Issue #13700: Fix byte/string handling in imaplib authentication when an
   authobject is specified.
 
