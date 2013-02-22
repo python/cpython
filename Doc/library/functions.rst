@@ -162,9 +162,10 @@ available.  They are listed here in alphabetical order.
    instance method receives the instance. To declare a class method, use this
    idiom::
 
-      class C:
+      class C(object):
           @classmethod
-          def f(cls, arg1, arg2, ...): ...
+          def f(cls, arg1, arg2, ...):
+              ...
 
    The ``@classmethod`` form is a function :term:`decorator` -- see the description
    of function definitions in :ref:`function` for details.
@@ -1303,9 +1304,10 @@ available.  They are listed here in alphabetical order.
    A static method does not receive an implicit first argument. To declare a static
    method, use this idiom::
 
-      class C:
+      class C(object):
           @staticmethod
-          def f(arg1, arg2, ...): ...
+          def f(arg1, arg2, ...):
+              ...
 
    The ``@staticmethod`` form is a function :term:`decorator` -- see the
    description of function definitions in :ref:`function` for details.
