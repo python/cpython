@@ -1001,6 +1001,8 @@ Build
 Documentation
 -------------
 
+- Issue #17203: add long option names to unittest discovery docs.
+
 - Issue #13094: add "Why do lambdas defined in a loop with different values
   all return the same result?" programming FAQ.
 
@@ -1064,7 +1066,7 @@ Documentation
 Tools/Demos
 -----------
 
-- Issue #17028: Allowed Python arguments to be supplied to the Windows 
+- Issue #17028: Allowed Python arguments to be supplied to the Windows
   launcher.
 
 - Issue #15539: Fix a number of bugs in Tools/scripts/pindent.py.  Now
