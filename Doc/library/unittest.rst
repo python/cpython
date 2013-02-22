@@ -304,15 +304,15 @@ The ``discover`` sub-command has the following options:
 
    Verbose output
 
-.. cmdoption:: -s directory
+.. cmdoption:: -s, --start-directory directory
 
    Directory to start discovery (``.`` default)
 
-.. cmdoption:: -p pattern
+.. cmdoption:: -p, --pattern pattern
 
    Pattern to match test files (``test*.py`` default)
 
-.. cmdoption:: -t directory
+.. cmdoption:: -t, --top-level-directory directory
 
    Top level directory of project (defaults to start directory)
 
