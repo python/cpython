@@ -138,7 +138,9 @@ This code loads a Python script using ``argv[1]``, and calls the function named
 in ``argv[2]``.  Its integer arguments are the other values of the ``argv``
 array.  If you :ref:`compile and link <compiling>` this program (let's call
 the finished executable :program:`call`), and use it to execute a Python
-script, such as::
+script, such as:
+
+.. code-block:: python
 
    def multiply(a,b):
        print("Will compute", a, "times", b)
@@ -238,7 +240,9 @@ following two statements before the call to :c:func:`Py_Initialize`::
 
 These two lines initialize the ``numargs`` variable, and make the
 :func:`emb.numargs` function accessible to the embedded Python interpreter.
-With these extensions, the Python script can do things like ::
+With these extensions, the Python script can do things like
+
+.. code-block:: python
 
    import emb
    print("Number of arguments", emb.numargs())
@@ -303,7 +307,9 @@ examine Python's :file:`Makefile` (use :func:`sysconfig.get_makefile_filename`
 to find its location) and compilation
 options.  In this case, the :mod:`sysconfig` module is a useful tool to
 programmatically extract the configuration values that you will want to
-combine together::
+combine together:
+
+.. code-block:: python
 
    >>> import sysconfig
    >>> sysconfig.get_config_var('LINKFORSHARED')
