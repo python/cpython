@@ -179,11 +179,10 @@ The module defines the following user-callable items:
       ``delete=False`` parameter::
 
          >>> f = NamedTemporaryFile(delete=False)
-         >>> f
-         <open file '<fdopen>', mode 'w+b' at 0x384698>
          >>> f.name
-         '/var/folders/5q/5qTPn6xq2RaWqk+1Ytw3-U+++TI/-Tmp-/tmpG7V1Y0'
-         >>> f.write("Hello World!\n")
+         '/tmp/tmptjujjt'
+         >>> f.write(b"Hello World!\n")
+         13
          >>> f.close()
          >>> os.unlink(f.name)
          >>> os.path.exists(f.name)
