@@ -140,7 +140,9 @@ The code to run a function defined in a Python script is:
 This code loads a Python script using ``argv[1]``, and calls the function named
 in ``argv[2]``.  Its integer arguments are the other values of the ``argv``
 array.  If you compile and link this program (let's call the finished executable
-:program:`call`), and use it to execute a Python script, such as::
+:program:`call`), and use it to execute a Python script, such as:
+
+.. code-block:: python
 
    def multiply(a,b):
        print "Will compute", a, "times", b
