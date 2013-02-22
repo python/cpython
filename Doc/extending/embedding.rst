@@ -229,7 +229,9 @@ following two statements directly after :c:func:`Py_Initialize`::
 
 These two lines initialize the ``numargs`` variable, and make the
 :func:`emb.numargs` function accessible to the embedded Python interpreter.
-With these extensions, the Python script can do things like ::
+With these extensions, the Python script can do things like
+
+.. code-block:: python
 
    import emb
    print "Number of arguments", emb.numargs()
@@ -273,7 +275,9 @@ the linker not to remove these symbols.
 Determining the right options to use for any given platform can be quite
 difficult, but fortunately the Python configuration already has those values.
 To retrieve them from an installed Python interpreter, start an interactive
-interpreter and have a short session like this::
+interpreter and have a short session like this
+
+.. code-block:: python
 
    >>> import distutils.sysconfig
    >>> distutils.sysconfig.get_config_var('LINKFORSHARED')
