@@ -1070,6 +1070,8 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #17203: add long option names to unittest discovery docs.
+
 - Issue #13094: add "Why do lambdas defined in a loop with different values
   all return the same result?" programming FAQ.
 
