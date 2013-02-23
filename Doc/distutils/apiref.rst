@@ -48,7 +48,10 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *maintainer*       | The name of the current        | a string                                                    |
    |                    | maintainer, if different from  |                                                             |
-   |                    | the author                     |                                                             |
+   |                    | the author. Note that if       |                                                             |
+   |                    | the maintainer is provided,    |                                                             |
+   |                    | distutils will use it as the   |                                                             |
+   |                    | author in :file:`PKG-INFO`     |                                                             |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *maintainer_email* | The email address of the       | a string                                                    |
    |                    | current maintainer, if         |                                                             |
