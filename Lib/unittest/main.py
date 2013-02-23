@@ -164,7 +164,10 @@ class TestProgram(object):
                 # to support python -m unittest ...
                 self.module = None
         else:
-            self.testNames = (self.defaultTest,)
+            if isinstance(self.defaultTest, str):
+                self.testNames = (self.defaultTest,)
+            else:
+                self.testNames = list(self.defaultTest)
         self.createTests()
 
     def createTests(self):
