@@ -4,6 +4,7 @@
 from __future__ import with_statement
 import sys
 import time
+import thread
 import random
 import unittest
 from test import test_support
@@ -96,8 +97,32 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
-def test_main():
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class TestThreadState(unittest.TestCase):
 
+    @test_support.reap_threads
+    def test_thread_state(self):
+        # some extra thread-state tests driven via _testcapi
+        def target():
+            idents = []
+
+            def callback():
+                idents.append(thread.get_ident())
+
+            _testcapi._test_thread_state(callback)
+            a = b = callback
+            time.sleep(1)
+            # Check our main thread is in the list exactly 3 times.
+            self.assertEqual(idents.count(thread.get_ident()), 3,
+                             "Couldn't find main thread correctly in the list")
+
+        target()
+        t = threading.Thread(target=target)
+        t.start()
+        t.join()
+
+
+def test_main():
     for name in dir(_testcapi):
         if name.startswith('test_'):
             test = getattr(_testcapi, name)
@@ -108,33 +133,7 @@ def test_main():
             except _testcapi.error:
                 raise test_support.TestFailed, sys.exc_info()[1]
 
-    # some extra thread-state tests driven via _testcapi
-    def TestThreadState():
-        if test_support.verbose:
-            print "auto-thread-state"
-
-        idents = []
-
-        def callback():
-            idents.append(thread.get_ident())
-
-        _testcapi._test_thread_state(callback)
-        a = b = callback
-        time.sleep(1)
-        # Check our main thread is in the list exactly 3 times.
-        if idents.count(thread.get_ident()) != 3:
-            raise test_support.TestFailed, \
-                  "Couldn't find main thread correctly in the list"
-
-    if threading:
-        import thread
-        import time
-        TestThreadState()
-        t=threading.Thread(target=TestThreadState)
-        t.start()
-        t.join()
-
-    test_support.run_unittest(TestPendingCalls)
+    test_support.run_unittest(TestPendingCalls, TestThreadState)
 
 if __name__ == "__main__":
     test_main()
