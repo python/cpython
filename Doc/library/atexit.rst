@@ -68,7 +68,7 @@ automatically when the program terminates without relying on the application
 making an explicit call into this module at termination. ::
 
    try:
-       with open("/tmp/counter") as infile:
+       with open("counterfile") as infile:
            _count = int(infile.read())
    except FileNotFoundError:
        _count = 0
@@ -78,7 +78,7 @@ making an explicit call into this module at termination. ::
        _count = _count + n
 
    def savecounter():
-       with open("/tmp/counter", "w") as outfile:
+       with open("counterfile", "w") as outfile:
            outfile.write("%d" % _count)
 
    import atexit
