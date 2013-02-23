@@ -44,7 +44,6 @@ class shlex:
         self.state = ' '
         self.pushback = deque()
         self.lineno = 1
-        self._lines_found = 0
         self.debug = 0
         self.token = ''
         self.filestack = deque()
@@ -115,23 +114,12 @@ class shlex:
         return raw
 
     def read_token(self):
-        if self._lines_found:
-            self.lineno += self._lines_found
-            self._lines_found = 0
-
-        i = 0
         quoted = False
         escapedstate = ' '
         while True:
-            i += 1
             nextchar = self.instream.read(1)
             if nextchar == '\n':
-                # In case newline is the first character increment lineno
-                if i == 1:
-                    self.lineno += 1
-                else:
-                    self._lines_found += 1
-
+                self.lineno = self.lineno + 1
             if self.debug >= 3:
                 print("shlex: in state", repr(self.state), \
                       "I see character:", repr(nextchar))
@@ -151,7 +139,6 @@ class shlex:
                         continue
                 elif nextchar in self.commenters:
                     self.instream.readline()
-                    # Not considered a token so incrementing lineno directly
                     self.lineno = self.lineno + 1
                 elif self.posix and nextchar in self.escape:
                     escapedstate = 'a'
@@ -219,7 +206,6 @@ class shlex:
                         continue
                 elif nextchar in self.commenters:
                     self.instream.readline()
-                    # Not considered a token so incrementing lineno directly
                     self.lineno = self.lineno + 1
                     if self.posix:
                         self.state = ' '

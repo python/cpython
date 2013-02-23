@@ -227,9 +227,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #16121: Fix line number accounting in shlex. Patch by Birk
-  Nilson.
-
 - Issue #14720: sqlite3: Convert datetime microseconds correctly.
   Patch by Lowe Thiderman.
 
