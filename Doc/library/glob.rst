@@ -16,8 +16,10 @@ according to the rules used by the Unix shell.  No tilde expansion is done, but
 ``*``, ``?``, and character ranges expressed with ``[]`` will be correctly
 matched.  This is done by using the :func:`os.listdir` and
 :func:`fnmatch.fnmatch` functions in concert, and not by actually invoking a
-subshell.  (For tilde and shell variable expansion, use
-:func:`os.path.expanduser` and :func:`os.path.expandvars`.)
+subshell.  Note that unlike :func:`fnmatch.fnmatch`, :mod:`glob` treats
+filenames beginning with a dot (``.``) as special cases.  (For tilde and shell
+variable expansion, use :func:`os.path.expanduser` and
+:func:`os.path.expandvars`.)
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
@@ -51,6 +53,15 @@ preserved. ::
    >>> glob.glob('?.gif')
    ['1.gif']
 
+If the directory contains files starting with ``.`` they won't be matched by
+default. For example, consider a directory containing :file:`card.gif` and
+:file:`.card.gif`::
+
+   >>> import glob
+   >>> glob.glob('*.gif')
+   ['card.gif']
+   >>> glob.glob('.c*')
+   ['.card.gif']
 
 .. seealso::
 
