@@ -227,6 +227,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14720: sqlite3: Convert datetime microseconds correctly.
+  Patch by Lowe Thiderman.
+
 - Issue #17225: JSON decoder now counts columns in the first line starting
   with 1, as in other lines.
 
