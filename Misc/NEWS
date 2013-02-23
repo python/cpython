@@ -1009,6 +1009,9 @@ Tests
 Build
 -----
 
+- Issue #5033: Fix building of the sqlite3 extension module when the
+  SQLite library version has "beta" in it. Patch by Andreas Pelme.
+
 - Issue #3754: fix typo in pthread AC_CACHE_VAL.
 
 - Issue #17029: Let h2py search the multiarch system include directory.
