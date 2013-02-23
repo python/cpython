@@ -65,6 +65,6 @@ to this variable:
 Example::
 
    >>> import imghdr
-   >>> imghdr.what('/tmp/bass.gif')
+   >>> imghdr.what('bass.gif')
    'gif'
 
