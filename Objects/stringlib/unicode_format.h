@@ -2,12 +2,6 @@
     unicode_format.h -- implementation of str.format().
 */
 
-/* Defines for more efficiently reallocating the string buffer */
-#define INITIAL_SIZE_INCREMENT 100
-#define SIZE_MULTIPLIER 2
-#define MAX_SIZE_INCREMENT  3200
-
-
 /************************************************************************/
 /***********   Global data structures and forward declarations  *********/
 /************************************************************************/
