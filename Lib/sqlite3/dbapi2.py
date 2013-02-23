@@ -68,7 +68,7 @@ def register_adapters_and_converters():
         timepart_full = timepart.split(".")
         hours, minutes, seconds = map(int, timepart_full[0].split(":"))
         if len(timepart_full) == 2:
-            microseconds = int(timepart_full[1])
+            microseconds = int('{:0<6}'.format(timepart_full[1].decode()))
         else:
             microseconds = 0
 
