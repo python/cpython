@@ -8,7 +8,6 @@ import random
 import subprocess
 import sys
 import time
-import _thread
 import unittest
 from test import support
 try:
@@ -16,8 +15,10 @@ try:
 except ImportError:
     _posixsubprocess = None
 try:
+    import _thread
     import threading
 except ImportError:
+    _thread = None
     threading = None
 import _testcapi
 
@@ -223,7 +224,7 @@ class EmbeddingTest(unittest.TestCase):
             os.chdir(oldcwd)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
+@unittest.skipUnless(threading and _thread, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
     @support.reap_threads
