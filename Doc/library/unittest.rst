@@ -1830,6 +1830,10 @@ Loading and running tests
       The *verbosity*, *failfast*, *catchbreak*, *buffer*
       and *warnings* parameters were added.
 
+   .. versionchanged:: 3.4
+      The *defaultTest* parameter was changed to also accept an iterable of
+      test names.
+
 
 load_tests Protocol
 ###################
