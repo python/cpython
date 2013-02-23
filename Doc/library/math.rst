@@ -212,6 +212,10 @@ Power and logarithmic functions
    ``x`` is negative, and ``y`` is not an integer then ``pow(x, y)``
    is undefined, and raises :exc:`ValueError`.
 
+   Unlike the built-in ``**`` operator, :func:`math.pow` converts both
+   its arguments to type :class:`float`.  Use ``**`` or the built-in
+   :func:`pow` function for computing exact integer powers.
+
    .. versionchanged:: 2.6
       The outcome of ``1**nan`` and ``nan**0`` was undefined.
 
