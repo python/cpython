@@ -200,7 +200,7 @@ A simple example demonstrating the use of the programmatic interface::
    # run the new command using the given tracer
    tracer.run('main()')
 
-   # make a report, placing output in /tmp
+   # make a report, placing output in the current directory
    r = tracer.results()
-   r.write_results(show_missing=True, coverdir="/tmp")
+   r.write_results(show_missing=True, coverdir=".")
 

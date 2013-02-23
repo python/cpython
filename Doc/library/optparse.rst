@@ -173,10 +173,10 @@ required option
 
 For example, consider this hypothetical command-line::
 
-   prog -v --report /tmp/report.txt foo bar
+   prog -v --report report.txt foo bar
 
 ``-v`` and ``--report`` are both options.  Assuming that ``--report``
-takes one argument, ``/tmp/report.txt`` is an option argument.  ``foo`` and
+takes one argument, ``report.txt`` is an option argument.  ``foo`` and
 ``bar`` are positional arguments.
 
 
