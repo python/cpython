@@ -4,13 +4,14 @@
 from __future__ import with_statement
 import sys
 import time
-import thread
 import random
 import unittest
 from test import test_support
 try:
+    import thread
     import threading
 except ImportError:
+    thread = None
     threading = None
 import _testcapi
 
@@ -97,7 +98,7 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_wait(l, n)
 
 
-@unittest.skipUnless(threading, 'Threading required for this test.')
+@unittest.skipUnless(threading and thread, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
     @test_support.reap_threads
