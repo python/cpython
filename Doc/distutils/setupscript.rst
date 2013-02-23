@@ -601,7 +601,8 @@ Notes:
     It is recommended that versions take the form *major.minor[.patch[.sub]]*.
 
 (3)
-    Either the author or the maintainer must be identified.
+    Either the author or the maintainer must be identified. If maintainer is
+    provided, distutils lists it as the author in :file:`PKG-INFO`.
 
 (4)
     These fields should not be used if your package is to be compatible with Python
