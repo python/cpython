@@ -326,9 +326,34 @@ class SkipitemTest(unittest.TestCase):
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
                           (), {}, b'', [42])
 
+@unittest.skipUnless(threading, 'Threading required for this test.')
+class TestThreadState(unittest.TestCase):
+
+    @support.reap_threads
+    def test_thread_state(self):
+        # some extra thread-state tests driven via _testcapi
+        def target():
+            idents = []
+
+            def callback():
+                idents.append(threading.get_ident())
+
+            _testcapi._test_thread_state(callback)
+            a = b = callback
+            time.sleep(1)
+            # Check our main thread is in the list exactly 3 times.
+            self.assertEqual(idents.count(threading.get_ident()), 3,
+                             "Couldn't find main thread correctly in the list")
+
+        target()
+        t = threading.Thread(target=target)
+        t.start()
+        t.join()
+
+
 def test_main():
-    support.run_unittest(CAPITest, TestPendingCalls,
-                         Test6012, EmbeddingTest, SkipitemTest)
+    support.run_unittest(CAPITest, TestPendingCalls, Test6012,
+                         EmbeddingTest, SkipitemTest, TestThreadState)
 
     for name in dir(_testcapi):
         if name.startswith('test_'):
@@ -336,32 +361,6 @@ def test_main():
             if support.verbose:
                 print("internal", name)
             test()
-
-    # some extra thread-state tests driven via _testcapi
-    def TestThreadState():
-        if support.verbose:
-            print("auto-thread-state")
-
-        idents = []
-
-        def callback():
-            idents.append(threading.get_ident())
-
-        _testcapi._test_thread_state(callback)
-        a = b = callback
-        time.sleep(1)
-        # Check our main thread is in the list exactly 3 times.
-        if idents.count(threading.get_ident()) != 3:
-            raise support.TestFailed(
-                        "Couldn't find main thread correctly in the list")
-
-    if threading:
-        import time
-        TestThreadState()
-        t = threading.Thread(target=TestThreadState)
-        t.start()
-        t.join()
-
 
 if __name__ == "__main__":
     test_main()
