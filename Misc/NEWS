@@ -926,6 +926,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #16695: Document how glob handles filenames starting with a
+  dot. Initial patch by Jyrki Pulliainen.
+
 - Issue #8890: Stop advertising an insecure practice by replacing uses
   of the /tmp directory with better alternatives in the documentation.
   Patch by Geoff Wilson.
