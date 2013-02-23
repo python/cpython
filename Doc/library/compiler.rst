@@ -540,7 +540,7 @@ examples demonstrate how to use the :func:`parse` function, what the repr of an
 AST looks like, and how to access attributes of an AST node.
 
 The first module defines a single function.  Assume it is stored in
-:file:`/tmp/doublelib.py`.  ::
+:file:`doublelib.py`.  ::
 
    """This is an example module.
 
@@ -557,7 +557,7 @@ to create an instance from a repr, you must import the class names from the
 :mod:`compiler.ast` module. ::
 
    >>> import compiler
-   >>> mod = compiler.parseFile("/tmp/doublelib.py")
+   >>> mod = compiler.parseFile("doublelib.py")
    >>> mod
    Module('This is an example module.\n\nThis is the docstring.\n',
           Stmt([Function(None, 'double', ['x'], [], 0,

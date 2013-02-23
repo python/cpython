@@ -170,7 +170,7 @@ dictionaries.  In addition, they support the methods listed below.
 Example::
 
    >>> import bsddb
-   >>> db = bsddb.btopen('/tmp/spam.db', 'c')
+   >>> db = bsddb.btopen('spam.db', 'c')
    >>> for i in range(10): db['%d'%i] = '%d'% (i*i)
    ...
    >>> db['3']

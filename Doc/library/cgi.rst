@@ -81,7 +81,7 @@ program to users of your script, you can have the reports saved to files
 instead, with code like this::
 
    import cgitb
-   cgitb.enable(display=0, logdir="/tmp")
+   cgitb.enable(display=0, logdir="/path/to/logdir")
 
 It's very helpful to use this feature during script development. The reports
 produced by :mod:`cgitb` provide information that can save you a lot of time in

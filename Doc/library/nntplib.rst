@@ -46,7 +46,7 @@ To post an article from a file (this assumes that the article has valid
 headers, and that you have right to post on the particular newsgroup)::
 
    >>> s = NNTP('news.gmane.org')
-   >>> f = open('/tmp/article')
+   >>> f = open('articlefile')
    >>> s.post(f)
    '240 Article posted successfully.'
    >>> s.quit()
