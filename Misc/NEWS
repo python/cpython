@@ -1078,6 +1078,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #16403: Document how distutils uses the maintainer field in
+  PKG-INFO. Patch by Jyrki Pulliainen.
+
 - Issue #16695: Document how glob handles filenames starting with a
   dot. Initial patch by Jyrki Pulliainen.
 
