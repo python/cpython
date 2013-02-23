@@ -1012,7 +1012,7 @@ class PyBuildExt(build_ext):
                 with open(f) as file:
                     incf = file.read()
                 m = re.search(
-                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"(.*)"', incf)
+                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"([\d\.]*)"', incf)
                 if m:
                     sqlite_version = m.group(1)
                     sqlite_version_tuple = tuple([int(x)
