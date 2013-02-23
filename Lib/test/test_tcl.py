@@ -163,7 +163,7 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue(u'string\u20ac'), u'string\u20ac')
         for i in (0, 1, -1, int(2**31-1), int(-2**31)):
             self.assertEqual(passValue(i), i)
-        for f in (0.0, 1.0, -1.0, 1/3,
+        for f in (0.0, 1.0, -1.0, 1//3, 1/3.0,
                   sys.float_info.min, sys.float_info.max,
                   -sys.float_info.min, -sys.float_info.max):
             self.assertEqual(passValue(f), f)
