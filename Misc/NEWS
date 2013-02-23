@@ -945,6 +945,9 @@ Tests
 Build
 -----
 
+- Issue #5033: Fix building of the sqlite3 extension module when the
+  SQLite library version has "beta" in it. Patch by Andreas Pelme.
+
 - Issue #17228: Fix building without pymalloc.
 
 - Issue #3718: Use AC_ARG_VAR to set MACHDEP in configure.ac.
