@@ -857,6 +857,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #17249: convert a test in test_capi to use unittest and reap threads.
+
 - Issue #17107: Test client-side SNI support in urllib.request thanks to
   the new server-side SNI support in the ssl module.  Initial patch by
   Daniel Black.
