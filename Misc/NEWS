@@ -756,6 +756,10 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #8890: Stop advertising an insecure practice by replacing uses
+  of the /tmp directory with better alternatives in the documentation.
+  Patch by Geoff Wilson.
+
 - Issue #17203: add long option names to unittest discovery docs.
 
 - Issue #13094: add "Why do lambdas defined in a loop with different values
