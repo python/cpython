@@ -260,6 +260,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14720: sqlite3: Convert datetime microseconds correctly.
+  Patch by Lowe Thiderman.
+
 - Issue #15132: Allow a list for the defaultTest argument of
   unittest.TestProgram. Patch by Jyrki Pulliainen.
 
