@@ -26,12 +26,12 @@ The :mod:`pipes` module defines the following class:
 Example::
 
    >>> import pipes
-   >>> t=pipes.Template()
+   >>> t = pipes.Template()
    >>> t.append('tr a-z A-Z', '--')
-   >>> f=t.open('/tmp/1', 'w')
+   >>> f = t.open('pipefile', 'w')
    >>> f.write('hello world')
    >>> f.close()
-   >>> open('/tmp/1').read()
+   >>> open('pipefile').read()
    'HELLO WORLD'
 
 

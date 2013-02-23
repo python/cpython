@@ -16,7 +16,7 @@ Typically, :data:`sys.path` is a list of directory names as strings.  This modul
 also allows an item of :data:`sys.path` to be a string naming a ZIP file archive.
 The ZIP archive can contain a subdirectory structure to support package imports,
 and a path within the archive can be specified to only import from a
-subdirectory.  For example, the path :file:`/tmp/example.zip/lib/` would only
+subdirectory.  For example, the path :file:`example.zip/lib/` would only
 import from the :file:`lib/` subdirectory within the archive.
 
 Any files may be present in the ZIP archive, but only files :file:`.py` and
@@ -147,8 +147,8 @@ Examples
 Here is an example that imports a module from a ZIP archive - note that the
 :mod:`zipimport` module is not explicitly used. ::
 
-   $ unzip -l /tmp/example.zip
-   Archive:  /tmp/example.zip
+   $ unzip -l example.zip
+   Archive:  example.zip
      Length     Date   Time    Name
     --------    ----   ----    ----
         8467  11-26-02 22:30   jwzthreading.py
@@ -157,8 +157,8 @@ Here is an example that imports a module from a ZIP archive - note that the
    $ ./python
    Python 2.3 (#1, Aug 1 2003, 19:54:32)
    >>> import sys
-   >>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
+   >>> sys.path.insert(0, 'example.zip')  # Add .zip file to front of path
    >>> import jwzthreading
    >>> jwzthreading.__file__
-   '/tmp/example.zip/jwzthreading.py'
+   'example.zip/jwzthreading.py'
 
