@@ -260,6 +260,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15132: Allow a list for the defaultTest argument of
+  unittest.TestProgram. Patch by Jyrki Pulliainen.
+
 - Issue #17225: JSON decoder now counts columns in the first line starting
   with 1, as in other lines.
 
