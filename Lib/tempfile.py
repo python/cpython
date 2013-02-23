@@ -205,7 +205,7 @@ def _get_default_tempdir():
                     _os.unlink(filename)
                 return dir
             except (OSError, IOError) as e:
-                if e[0] != _errno.EEXIST:
+                if e.args[0] != _errno.EEXIST:
                     break # no point trying more names in this directory
                 pass
     raise IOError, (_errno.ENOENT,
