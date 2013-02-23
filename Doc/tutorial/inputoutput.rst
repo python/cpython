@@ -234,12 +234,12 @@ two arguments: ``open(filename, mode)``.
 
 ::
 
-   >>> f = open('/tmp/workfile', 'w')
+   >>> f = open('workfile', 'w')
 
 .. XXX str(f) is <io.TextIOWrapper object at 0x82e8dc4>
 
    >>> print(f)
-   <open file '/tmp/workfile', mode 'w' at 80a0960>
+   <open file 'workfile', mode 'w' at 80a0960>
 
 The first argument is a string containing the filename.  The second argument is
 another string containing a few characters describing the way in which the file
@@ -346,7 +346,7 @@ of the file, 1 uses the current file position, and 2 uses the end of the file as
 the reference point.  *from_what* can be omitted and defaults to 0, using the
 beginning of the file as the reference point. ::
 
-   >>> f = open('/tmp/workfile', 'rb+')
+   >>> f = open('workfile', 'rb+')
    >>> f.write(b'0123456789abcdef')
    16
    >>> f.seek(5)     # Go to the 6th byte in the file
@@ -377,7 +377,7 @@ objects.  This has the advantage that the file is properly closed after its
 suite finishes, even if an exception is raised on the way.  It is also much
 shorter than writing equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
 
-    >>> with open('/tmp/workfile', 'r') as f:
+    >>> with open('workfile', 'r') as f:
     ...     read_data = f.read()
     >>> f.closed
     True

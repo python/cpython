@@ -67,7 +67,7 @@ automatically when the program terminates without relying on the application
 making an explicit call into this module at termination. ::
 
    try:
-       _count = int(open("/tmp/counter").read())
+       _count = int(open("counter").read())
    except IOError:
        _count = 0
 
@@ -76,7 +76,7 @@ making an explicit call into this module at termination. ::
        _count = _count + n
 
    def savecounter():
-       open("/tmp/counter", "w").write("%d" % _count)
+       open("counter", "w").write("%d" % _count)
 
    import atexit
    atexit.register(savecounter)
