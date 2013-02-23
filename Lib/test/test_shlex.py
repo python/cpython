@@ -189,6 +189,14 @@ class ShlexTest(unittest.TestCase):
             self.assertEqual(shlex.quote("test%s'name'" % u),
                              "'test%s'\"'\"'name'\"'\"''" % u)
 
+    def testLineNumbers(self):
+        data = '"a \n b \n c"\n"x"\n"y"'
+        for is_posix in (True, False):
+            s = shlex.shlex(data, posix=is_posix)
+            for i in (1, 4, 5):
+                s.read_token()
+                self.assertEqual(s.lineno, i)
+
 
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):
