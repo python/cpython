@@ -14,10 +14,10 @@ maxsize = support.MAX_Py_ssize_t
 def testformat(formatstr, args, output=None, limit=None, overflowok=False):
     if verbose:
         if output:
-            print("%r %% %r =? %r ..." %\
-                (formatstr, args, output), end=' ')
+            print("{!a} % {!a} =? {!a} ...".format(formatstr, args, output),
+                  end=' ')
         else:
-            print("%r %% %r works? ..." % (formatstr, args), end=' ')
+            print("{!a} % {!a} works? ...".format(formatstr, args), end=' ')
     try:
         result = formatstr % args
     except OverflowError:
