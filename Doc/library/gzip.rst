@@ -93,7 +93,7 @@ Examples of usage
 Example of how to read a compressed file::
 
    import gzip
-   f = gzip.open('/home/joe/file.txt.gz', 'rb')
+   f = gzip.open('file.txt.gz', 'rb')
    file_content = f.read()
    f.close()
 
@@ -101,15 +101,15 @@ Example of how to create a compressed GZIP file::
 
    import gzip
    content = "Lots of content here"
-   f = gzip.open('/home/joe/file.txt.gz', 'wb')
+   f = gzip.open('file.txt.gz', 'wb')
    f.write(content)
    f.close()
 
 Example of how to GZIP compress an existing file::
 
    import gzip
-   f_in = open('/home/joe/file.txt', 'rb')
-   f_out = gzip.open('/home/joe/file.txt.gz', 'wb')
+   f_in = open('file.txt', 'rb')
+   f_out = gzip.open('file.txt.gz', 'wb')
    f_out.writelines(f_in)
    f_out.close()
    f_in.close()

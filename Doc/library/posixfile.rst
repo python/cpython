@@ -181,7 +181,7 @@ Examples::
 
    import posixfile
 
-   file = posixfile.open('/tmp/test', 'w')
+   file = posixfile.open('testfile', 'w')
    file.lock('w|')
    ...
    file.lock('u')
