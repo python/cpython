@@ -1,4 +1,4 @@
-#-*- coding: ISO-8859-1 -*-
+#-*- coding: iso-8859-1 -*-
 # pysqlite2/test/regression.py: pysqlite regression tests
 #
 # Copyright (C) 2006-2010 Gerhard Häring <gh@ghaering.de>
@@ -301,6 +301,23 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(sqlite.ProgrammingError):
             cur.executemany("insert into b (baz) values (?)",
                             ((i,) for i in foo()))
+
+    def CheckConvertTimestampMicrosecondPadding(self):
+        """
+        http://bugs.python.org/issue14720
+
+        The microsecond parsing of convert_timestamp() should pad with zeros,
+        since the microsecond string "456" actually represents "456000".
+        """
+
+        con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
+        cur = con.cursor()
+        cur.execute("CREATE TABLE t (x TIMESTAMP)")
+        cur.execute("INSERT INTO t (x) VALUES ('2012-04-04 15:06:00.456')")
+        cur.execute("SELECT * FROM t")
+        date = cur.fetchall()[0][0]
+
+        self.assertEqual(date, datetime.datetime(2012, 4, 4, 15, 6, 0, 456000))
 
 
 def suite():
