@@ -600,6 +600,7 @@ class ReTests(unittest.TestCase):
             self.assertIsNotNone(re.match(r"[\U%08x]" % i, chr(i)))
             self.assertIsNotNone(re.match(r"[\U%08x0]" % i, chr(i)+"0"))
             self.assertIsNotNone(re.match(r"[\U%08xz]" % i, chr(i)+"z"))
+        self.assertIsNotNone(re.match(r"[\U0001d49c-\U0001d4b5]", "\U0001d49e"))
         self.assertRaises(re.error, re.match, r"[\911]", "")
         self.assertRaises(re.error, re.match, r"[\x1z]", "")
         self.assertRaises(re.error, re.match, r"[\u123z]", "")
