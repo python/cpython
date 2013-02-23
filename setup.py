@@ -1114,7 +1114,7 @@ class PyBuildExt(build_ext):
                 if sqlite_setup_debug: print "sqlite: found %s"%f
                 incf = open(f).read()
                 m = re.search(
-                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"(.*)"', incf)
+                    r'\s*.*#\s*.*define\s.*SQLITE_VERSION\W*"([\d\.]*)"', incf)
                 if m:
                     sqlite_version = m.group(1)
                     sqlite_version_tuple = tuple([int(x)
