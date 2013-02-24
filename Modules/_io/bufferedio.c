@@ -1822,7 +1822,7 @@ bufferedwriter_init(buffered *self, PyObject *args, PyObject *kwds)
     self->ok = 0;
     self->detached = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedReader", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedWriter", kwlist,
                                      &raw, &buffer_size)) {
         return -1;
     }
@@ -2451,7 +2451,7 @@ bufferedrandom_init(buffered *self, PyObject *args, PyObject *kwds)
     self->ok = 0;
     self->detached = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedReader", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:BufferedRandom", kwlist,
                                      &raw, &buffer_size)) {
         return -1;
     }
