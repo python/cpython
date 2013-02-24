@@ -12,6 +12,9 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #17275: Corrected class name in init error messages of the C version of
+  BufferedWriter and BufferedRandom.
+
 - Issue #7963: Fixed misleading error message that issued when object is
   called without arguments.
 
