@@ -1004,6 +1004,12 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         support.gc_collect()
         self.assertTrue(wr() is None, wr)
 
+    def test_args_error(self):
+        # Issue #17275
+        with self.assertRaisesRegexp(TypeError, "BufferedReader"):
+            self.tp(io.BytesIO(), 1024, 1024, 1024)
+
+
 class PyBufferedReaderTest(BufferedReaderTest):
     tp = pyio.BufferedReader
 
@@ -1295,6 +1301,11 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"123xxx")
+
+    def test_args_error(self):
+        # Issue #17275
+        with self.assertRaisesRegexp(TypeError, "BufferedWriter"):
+            self.tp(io.BytesIO(), 1024, 1024, 1024)
 
 
 class PyBufferedWriterTest(BufferedWriterTest):
@@ -1646,6 +1657,7 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
                 f.flush()
                 self.assertEqual(raw.getvalue(), b'1b\n2def\n3\n')
 
+
 class CBufferedRandomTest(CBufferedReaderTest, CBufferedWriterTest,
                           BufferedRandomTest, SizeofTest):
     tp = io.BufferedRandom
@@ -1663,6 +1675,12 @@ class CBufferedRandomTest(CBufferedReaderTest, CBufferedWriterTest,
     def test_garbage_collection(self):
         CBufferedReaderTest.test_garbage_collection(self)
         CBufferedWriterTest.test_garbage_collection(self)
+
+    def test_args_error(self):
+        # Issue #17275
+        with self.assertRaisesRegexp(TypeError, "BufferedRandom"):
+            self.tp(io.BytesIO(), 1024, 1024, 1024)
+
 
 class PyBufferedRandomTest(BufferedRandomTest):
     tp = pyio.BufferedRandom
