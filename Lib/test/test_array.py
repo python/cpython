@@ -1069,6 +1069,12 @@ class UnicodeTest(StringTest, unittest.TestCase):
 
         self.assertRaises(TypeError, a.fromunicode)
 
+    def test_issue17223(self):
+        # this used to crash
+        a = array.array('u', b'\xff' * 4)
+        self.assertRaises(ValueError, a.tounicode)
+        self.assertRaises(ValueError, str, a)
+
 class NumberTest(BaseTest):
 
     def test_extslice(self):
