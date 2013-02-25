@@ -40,6 +40,40 @@ __all__ = ["run", "runctx", "Profile"]
 #       return i_count
 #itimes = integer_timer # replace with C coded timer returning integers
 
+class _Utils:
+    """Support class for utility functions which are shared by
+    profile.py and cProfile.py modules.
+    Not supposed to be used directly.
+    """
+
+    def __init__(self, profiler):
+        self.profiler = profiler
+
+    def run(self, statement, filename, sort):
+        prof = self.profiler()
+        try:
+            prof.run(statement)
+        except SystemExit:
+            pass
+        finally:
+            self._show(prof, filename, sort)
+
+    def runctx(self, statement, globals, locals, filename, sort):
+        prof = self.profiler()
+        try:
+            prof.runctx(statement, globals, locals)
+        except SystemExit:
+            pass
+        finally:
+            self._show(prof, filename, sort)
+
+    def _show(self, prof, filename, sort):
+        if filename is not None:
+            prof.dump_stats(filename)
+        else:
+            prof.print_stats(sort)
+
+
 #**************************************************************************
 # The following are the static member functions for the profiler class
 # Note that an instance of Profile() is *not* needed to call them.
@@ -56,15 +90,7 @@ def run(statement, filename=None, sort=-1):
     standard name string (file/line/function-name) that is presented in
     each line.
     """
-    prof = Profile()
-    try:
-        prof = prof.run(statement)
-    except SystemExit:
-        pass
-    if filename is not None:
-        prof.dump_stats(filename)
-    else:
-        return prof.print_stats(sort)
+    return _Utils(Profile).run(statement, filename, sort)
 
 def runctx(statement, globals, locals, filename=None, sort=-1):
     """Run statement under profiler, supplying your own globals and locals,
@@ -72,16 +98,8 @@ def runctx(statement, globals, locals, filename=None, sort=-1):
 
     statement and filename have the same semantics as profile.run
     """
-    prof = Profile()
-    try:
-        prof = prof.runctx(statement, globals, locals)
-    except SystemExit:
-        pass
+    return _Utils(Profile).runctx(statement, globals, locals, filename, sort)
 
-    if filename is not None:
-        prof.dump_stats(filename)
-    else:
-        return prof.print_stats(sort)
 
 class Profile:
     """Profiler class.

@@ -7,54 +7,20 @@
 __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
+import profile as _pyprofile
 
 # ____________________________________________________________
 # Simple interface
 
 def run(statement, filename=None, sort=-1):
-    """Run statement under profiler optionally saving results in filename
-
-    This function takes a single argument that can be passed to the
-    "exec" statement, and an optional file name.  In all cases this
-    routine attempts to "exec" its first argument and gather profiling
-    statistics from the execution. If no file name is present, then this
-    function automatically prints a simple profiling report, sorted by the
-    standard name string (file/line/function-name) that is presented in
-    each line.
-    """
-    prof = Profile()
-    result = None
-    try:
-        try:
-            prof = prof.run(statement)
-        except SystemExit:
-            pass
-    finally:
-        if filename is not None:
-            prof.dump_stats(filename)
-        else:
-            result = prof.print_stats(sort)
-    return result
+    return _pyprofile._Utils(Profile).run(statement, filename, sort)
 
 def runctx(statement, globals, locals, filename=None, sort=-1):
-    """Run statement under profiler, supplying your own globals and locals,
-    optionally saving results in filename.
+    return _pyprofile._Utils(Profile).runctx(statement, globals, locals,
+                                             filename, sort)
 
-    statement and filename have the same semantics as profile.run
-    """
-    prof = Profile()
-    result = None
-    try:
-        try:
-            prof = prof.runctx(statement, globals, locals)
-        except SystemExit:
-            pass
-    finally:
-        if filename is not None:
-            prof.dump_stats(filename)
-        else:
-            result = prof.print_stats(sort)
-    return result
+run.__doc__ = _pyprofile.run.__doc__
+runctx.__doc__ = _pyprofile.runctx.__doc__
 
 # ____________________________________________________________
 
