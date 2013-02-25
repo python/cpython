@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17223: Fix PyUnicode_FromUnicode() for string of 1 character outside
+  the range U+0000-U+10ffff.
+
 - Issue #17275: Corrected class name in init error messages of the C version of
   BufferedWriter and BufferedRandom.
 
