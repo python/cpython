@@ -263,6 +263,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17197: profile/cProfile modules refactored so that code of run() and
+  runctx() utility functions is not duplicated in both modules.
+
 - Issue #14720: sqlite3: Convert datetime microseconds correctly.
   Patch by Lowe Thiderman.
 
