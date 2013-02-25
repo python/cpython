@@ -48,7 +48,7 @@ def _w_long(x):
     XXX Temporary until marshal's long functions are exposed.
 
     """
-    return int(x).to_bytes(4, 'little')
+    return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
 
 # TODO: Expose from marshal
@@ -74,7 +74,7 @@ def _path_split(path):
         return front, tail
     for x in reversed(path):
         if x in path_separators:
-            front, tail = path.rsplit(x)
+            front, tail = path.rsplit(x, maxsplit=1)
             return front, tail
     return '', path
 
