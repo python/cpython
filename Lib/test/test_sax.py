@@ -493,6 +493,21 @@ class XmlgenTest:
         func(result)
         self.assertFalse(result.closed)
 
+    def test_xmlgen_fragment(self):
+        result = self.ioclass()
+        gen = XMLGenerator(result)
+
+        # Don't call gen.startDocument()
+        gen.startElement("foo", {"a": "1.0"})
+        gen.characters("Hello")
+        gen.endElement("foo")
+        gen.startElement("bar", {"b": "2.0"})
+        gen.endElement("bar")
+        # Don't call gen.endDocument()
+
+        self.assertEqual(result.getvalue(),
+            self.xml('<foo a="1.0">Hello</foo><bar b="2.0"></bar>')[len(self.xml('')):])
+
 class StringXmlgenTest(XmlgenTest, unittest.TestCase):
     ioclass = StringIO
 
