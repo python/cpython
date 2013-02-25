@@ -2180,6 +2180,8 @@ array_repr(arrayobject *a)
     } else {
         v = array_tolist(a, NULL);
     }
+    if (v == NULL)
+        return NULL;
 
     s = PyUnicode_FromFormat("array('%c', %R)", (int)typecode, v);
     Py_DECREF(v);
