@@ -249,7 +249,7 @@ static int unicode_modifiable(PyObject *unicode);
 
 
 static PyObject *
-_PyUnicode_FromUCS1(const unsigned char *s, Py_ssize_t size);
+_PyUnicode_FromUCS1(const Py_UCS1 *s, Py_ssize_t size);
 static PyObject *
 _PyUnicode_FromUCS2(const Py_UCS2 *s, Py_ssize_t size);
 static PyObject *
@@ -442,7 +442,7 @@ unicode_result_wchar(PyObject *unicode)
 
     if (len == 1) {
         wchar_t ch = _PyUnicode_WSTR(unicode)[0];
-        if (ch < 256) {
+        if ((Py_UCS4)ch < 256) {
             PyObject *latin1_char = get_latin1_char((unsigned char)ch);
             Py_DECREF(unicode);
             return latin1_char;
@@ -1761,7 +1761,7 @@ PyUnicode_FromUnicode(const Py_UNICODE *u, Py_ssize_t size)
 
     /* Single character Unicode objects in the Latin-1 range are
        shared when using this constructor */
-    if (size == 1 && *u < 256)
+    if (size == 1 && (Py_UCS4)*u < 256)
         return get_latin1_char((unsigned char)*u);
 
     /* If not empty and not single character, copy the Unicode data
@@ -1869,7 +1869,7 @@ _PyUnicode_FromASCII(const char *buffer, Py_ssize_t size)
     PyObject *unicode;
     if (size == 1) {
 #ifdef Py_DEBUG
-        assert(s[0] < 128);
+        assert((unsigned char)s[0] < 128);
 #endif
         return get_latin1_char(s[0]);
     }
@@ -1911,7 +1911,7 @@ align_maxchar(Py_UCS4 maxchar)
 }
 
 static PyObject*
-_PyUnicode_FromUCS1(const unsigned char* u, Py_ssize_t size)
+_PyUnicode_FromUCS1(const Py_UCS1* u, Py_ssize_t size)
 {
     PyObject *res;
     unsigned char max_char;
@@ -2974,8 +2974,8 @@ PyUnicode_FromOrdinal(int ordinal)
         return NULL;
     }
 
-    if (ordinal < 256)
-        return get_latin1_char(ordinal);
+    if ((Py_UCS4)ordinal < 256)
+        return get_latin1_char((unsigned char)ordinal);
 
     v = PyUnicode_New(1, ordinal);
     if (v == NULL)
