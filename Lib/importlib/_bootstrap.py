@@ -48,13 +48,7 @@ def _w_long(x):
     XXX Temporary until marshal's long functions are exposed.
 
     """
-    x = int(x)
-    int_bytes = []
-    int_bytes.append(x & 0xFF)
-    int_bytes.append((x >> 8) & 0xFF)
-    int_bytes.append((x >> 16) & 0xFF)
-    int_bytes.append((x >> 24) & 0xFF)
-    return bytearray(int_bytes)
+    return int(x).to_bytes(4, 'little')
 
 
 # TODO: Expose from marshal
@@ -64,35 +58,25 @@ def _r_long(int_bytes):
     XXX Temporary until marshal's long function are exposed.
 
     """
-    x = int_bytes[0]
-    x |= int_bytes[1] << 8
-    x |= int_bytes[2] << 16
-    x |= int_bytes[3] << 24
-    return x
+    return int.from_bytes(int_bytes, 'little')
 
 
 def _path_join(*path_parts):
     """Replacement for os.path.join()."""
-    new_parts = []
-    for part in path_parts:
-        if not part:
-            continue
-        new_parts.append(part)
-        if part[-1] not in path_separators:
-            new_parts.append(path_sep)
-    return ''.join(new_parts[:-1])  # Drop superfluous path separator.
+    return path_sep.join([part.rstrip(path_separators)
+                          for part in path_parts if part])
 
 
 def _path_split(path):
     """Replacement for os.path.split()."""
+    if len(path_separators) == 1:
+        front, _, tail = path.rpartition(path_sep)
+        return front, tail
     for x in reversed(path):
         if x in path_separators:
-            sep = x
-            break
-    else:
-        sep = path_sep
-    front, _, tail = path.rpartition(sep)
-    return front, tail
+            front, tail = path.rsplit(x)
+            return front, tail
+    return '', path
 
 
 def _path_is_mode_type(path, mode):
@@ -404,8 +388,8 @@ longer be understood by older implementations of the eval loop (usually
 due to the addition of new opcodes).
 
 """
-_RAW_MAGIC_NUMBER = 3250 | ord('\r') << 16 | ord('\n') << 24
-_MAGIC_BYTES = bytes(_RAW_MAGIC_NUMBER >> n & 0xff for n in range(0, 25, 8))
+_MAGIC_BYTES = (3250).to_bytes(2, 'little') + b'\r\n'
+_RAW_MAGIC_NUMBER = int.from_bytes(_MAGIC_BYTES, 'little')
 
 _PYCACHE = '__pycache__'
 
@@ -1441,7 +1425,7 @@ class FileFinder:
                 lower_suffix_contents.add(new_name)
             self._path_cache = lower_suffix_contents
         if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
-            self._relaxed_path_cache = set(fn.lower() for fn in contents)
+            self._relaxed_path_cache = {fn.lower() for fn in contents}
 
     @classmethod
     def path_hook(cls, *loader_details):
@@ -1774,7 +1758,7 @@ def _setup(sys_module, _imp_module):
     setattr(self_module, '_thread', thread_module)
     setattr(self_module, '_weakref', weakref_module)
     setattr(self_module, 'path_sep', path_sep)
-    setattr(self_module, 'path_separators', set(path_separators))
+    setattr(self_module, 'path_separators', ''.join(path_separators))
     # Constants
     setattr(self_module, '_relax_case', _make_relax_case())
     EXTENSION_SUFFIXES.extend(_imp.extension_suffixes())
