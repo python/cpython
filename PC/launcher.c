@@ -500,6 +500,21 @@ run_child(wchar_t * cmdline)
     STARTUPINFOW si;
     PROCESS_INFORMATION pi;
 
+#if defined(_WINDOWS)
+    // When explorer launches a Windows (GUI) application, it displays
+    // the "app starting" (the "pointer + hourglass") cursor for a number
+    // of seconds, or until the app does something UI-ish (eg, creating a
+    // window, or fetching a message).  As this launcher doesn't do this
+    // directly, that cursor remains even after the child process does these
+    // things.  We avoid that by doing a simple post+get message.
+    // See http://bugs.python.org/issue17290 and 
+    // https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    MSG msg;
+
+    PostMessage(0, 0, 0, 0);
+    GetMessage(&msg, 0, 0, 0);
+#endif
+
     debug(L"run_child: about to run '%s'\n", cmdline);
     job = CreateJobObject(NULL, NULL);
     ok = QueryInformationJobObject(job, JobObjectExtendedLimitInformation,
