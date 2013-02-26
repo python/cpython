@@ -296,11 +296,20 @@ class RegressionTests(unittest.TestCase):
         con = sqlite.connect(":memory:", detect_types=sqlite.PARSE_DECLTYPES)
         cur = con.cursor()
         cur.execute("CREATE TABLE t (x TIMESTAMP)")
-        cur.execute("INSERT INTO t (x) VALUES ('2012-04-04 15:06:00.456')")
-        cur.execute("SELECT * FROM t")
-        date = cur.fetchall()[0][0]
 
-        self.assertEqual(date, datetime.datetime(2012, 4, 4, 15, 6, 0, 456000))
+        # Microseconds should be 456000
+        cur.execute("INSERT INTO t (x) VALUES ('2012-04-04 15:06:00.456')")
+
+        # Microseconds should be truncated to 123456
+        cur.execute("INSERT INTO t (x) VALUES ('2012-04-04 15:06:00.123456789')")
+
+        cur.execute("SELECT * FROM t")
+        values = [x[0] for x in cur.fetchall()]
+
+        self.assertEqual(values, [
+            datetime.datetime(2012, 4, 4, 15, 6, 0, 456000),
+            datetime.datetime(2012, 4, 4, 15, 6, 0, 123456),
+        ])
 
 
 def suite():
