@@ -1,18 +1,9 @@
-# xml.etree test.  This file contains enough tests to make sure that
-# all included components work as they should.
-# Large parts are extracted from the upstream test suite.
-#
-# PLEASE write all new tests using the standard unittest infrastructure and
-# not doctest.
-#
 # IMPORTANT: the same tests are run from "test_xml_etree_c" in order
 # to ensure consistency between the C implementation and the Python
 # implementation.
 #
 # For this purpose, the module-level "ET" symbol is temporarily
 # monkey-patched when running the "test_xml_etree_c" test suite.
-# Don't re-import "xml.etree.ElementTree" module in the docstring,
-# except if the test is specific to the Python implementation.
 
 import html
 import io
@@ -24,7 +15,7 @@ import weakref
 
 from itertools import product
 from test import support
-from test.support import TESTFN, findfile, unlink, import_fresh_module, gc_collect
+from test.support import TESTFN, findfile, import_fresh_module, gc_collect
 
 # pyET is the pure-Python implementation.
 #
@@ -97,6 +88,7 @@ ENTITY_XML = """\
 
 
 class ModuleTest(unittest.TestCase):
+    # TODO: this should be removed once we get rid of the global module vars
 
     def test_sanity(self):
         # Import sanity.
@@ -528,7 +520,8 @@ class ElementTreeTest(unittest.TestCase):
 
         events = ("start", "end", "start-ns", "end-ns")
         context = iterparse(SIMPLE_NS_XMLFILE, events)
-        self.assertEqual([(action, elem.tag) if action in ("start", "end") else (action, elem)
+        self.assertEqual([(action, elem.tag) if action in ("start", "end")
+                                             else (action, elem)
                           for action, elem in context], [
                 ('start-ns', ('', 'namespace')),
                 ('start', '{namespace}root'),
@@ -1493,6 +1486,7 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
             self.assertEqual(len(e2), 2)
             self.assertEqualElements(e, e2)
 
+
 class ElementTreeTypeTest(unittest.TestCase):
     def test_istype(self):
         self.assertIsInstance(ET.ParseError, type)
@@ -1866,7 +1860,9 @@ class XMLParserTest(unittest.TestCase):
         self._check_sample_element(parser.close())
 
         # Now as keyword args.
-        parser2 = ET.XMLParser(encoding='utf-8', html=[{}], target=ET.TreeBuilder())
+        parser2 = ET.XMLParser(encoding='utf-8',
+                               html=[{}],
+                               target=ET.TreeBuilder())
         parser2.feed(self.sample1)
         self._check_sample_element(parser2.close())
 
@@ -1979,7 +1975,7 @@ class ElementSlicingTest(unittest.TestCase):
 
 class IOTest(unittest.TestCase):
     def tearDown(self):
-        unlink(TESTFN)
+        support.unlink(TESTFN)
 
     def test_encoding(self):
         # Test encoding issues.
