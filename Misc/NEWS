@@ -270,6 +270,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17018: Make Process.join() retry if os.waitpid() fails with EINTR.
+
 - Issue #17197: profile/cProfile modules refactored so that code of run() and
   runctx() utility functions is not duplicated in both modules.
 
