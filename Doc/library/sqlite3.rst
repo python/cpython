@@ -830,6 +830,10 @@ The following example demonstrates this.
 
 .. literalinclude:: ../includes/sqlite3/pysqlite_datetime.py
 
+If a timestamp stored in SQLite has a fractional part longer than 6
+numbers, its value will be truncated to microsecond precision by the
+timestamp converter.
+
 
 .. _sqlite3-controlling-transactions:
 
