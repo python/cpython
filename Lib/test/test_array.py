@@ -24,6 +24,17 @@ try:
 except struct.error:
     have_long_long = False
 
+try:
+    import ctypes
+    sizeof_wchar = ctypes.sizeof(ctypes.c_wchar)
+except ImportError:
+    import sys
+    if sys.platform == 'win32':
+        sizeof_wchar = 2
+    else:
+        sizeof_wchar = 4
+
+
 class ArraySubclass(array.array):
     pass
 
@@ -1040,16 +1051,6 @@ class UnicodeTest(StringTest, unittest.TestCase):
     minitemsize = 2
 
     def test_unicode(self):
-        try:
-            import ctypes
-            sizeof_wchar = ctypes.sizeof(ctypes.c_wchar)
-        except ImportError:
-            import sys
-            if sys.platform == 'win32':
-                sizeof_wchar = 2
-            else:
-                sizeof_wchar = 4
-
         self.assertRaises(TypeError, array.array, 'b', 'foo')
 
         a = array.array('u', '\xa0\xc2\u1234')
@@ -1071,7 +1072,13 @@ class UnicodeTest(StringTest, unittest.TestCase):
 
     def test_issue17223(self):
         # this used to crash
-        a = array.array('u', b'\xff' * 4)
+        if sizeof_wchar == 4:
+            # U+FFFFFFFF is an invalid code point in Unicode 6.0
+            invalid_str = b'\xff\xff\xff\xff'
+        else:
+            # invalid UTF-16 surrogate pair
+            invalid_str = b'\xff\xdf\x61\x00'
+        a = array.array('u', invalid_str)
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
 
