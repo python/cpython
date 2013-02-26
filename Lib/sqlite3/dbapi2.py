@@ -1,4 +1,4 @@
-#-*- coding: ISO-8859-1 -*-
+# -*- coding: iso-8859-1 -*-
 # pysqlite2/dbapi2.py: the DB-API 2.0 interface
 #
 # Copyright (C) 2004-2005 Gerhard Häring <gh@ghaering.de>
@@ -68,7 +68,7 @@ def register_adapters_and_converters():
         timepart_full = timepart.split(".")
         hours, minutes, seconds = map(int, timepart_full[0].split(":"))
         if len(timepart_full) == 2:
-            microseconds = int('{:0<6}'.format(timepart_full[1].decode()))
+            microseconds = int('{:0<6.6}'.format(timepart_full[1].decode()))
         else:
             microseconds = 0
 
