@@ -595,7 +595,7 @@ readline_file(Unpicklerobject *self, char **s)
                 return i + 1;
             }
         }
-        if (self->buf_size < (PY_SSIZE_T_MAX >> 1)) {
+        if (self->buf_size > (PY_SSIZE_T_MAX >> 1)) {
             PyErr_NoMemory();
             return -1;
         }
