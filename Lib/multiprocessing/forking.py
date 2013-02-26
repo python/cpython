@@ -35,6 +35,7 @@
 import os
 import sys
 import signal
+import errno
 
 from multiprocessing import util, process
 
@@ -128,12 +129,17 @@ if sys.platform != 'win32':
 
         def poll(self, flag=os.WNOHANG):
             if self.returncode is None:
-                try:
-                    pid, sts = os.waitpid(self.pid, flag)
-                except os.error:
-                    # Child process not yet created. See #1731717
-                    # e.errno == errno.ECHILD == 10
-                    return None
+                while True:
+                    try:
+                        pid, sts = os.waitpid(self.pid, flag)
+                    except os.error as e:
+                        if e.errno == errno.EINTR:
+                            continue
+                        # Child process not yet created. See #1731717
+                        # e.errno == errno.ECHILD == 10
+                        return None
+                    else:
+                        break
                 if pid == self.pid:
                     if os.WIFSIGNALED(sts):
                         self.returncode = -os.WTERMSIG(sts)
