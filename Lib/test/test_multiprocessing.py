@@ -2894,6 +2894,38 @@ class _TestLogging(BaseTestCase):
 #         assert self.__handled
 
 #
+# Check that Process.join() retries if os.waitpid() fails with EINTR
+#
+
+class _TestPollEintr(BaseTestCase):
+
+    ALLOWED_TYPES = ('processes',)
+
+    @classmethod
+    def _killer(cls, pid):
+        time.sleep(0.5)
+        os.kill(pid, signal.SIGUSR1)
+
+    @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
+    def test_poll_eintr(self):
+        got_signal = [False]
+        def record(*args):
+            got_signal[0] = True
+        pid = os.getpid()
+        oldhandler = signal.signal(signal.SIGUSR1, record)
+        try:
+            killer = self.Process(target=self._killer, args=(pid,))
+            killer.start()
+            p = self.Process(target=time.sleep, args=(1,))
+            p.start()
+            p.join()
+            self.assertTrue(got_signal[0])
+            self.assertEqual(p.exitcode, 0)
+            killer.join()
+        finally:
+            signal.signal(signal.SIGUSR1, oldhandler)
+
+#
 # Test to verify handle verification, see issue 3321
 #
 
