@@ -71,7 +71,7 @@ The :mod:`urlparse` module defines the following functions:
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
-       >>> urlparse('www.cwi.nl:80/%7Eguido/Python.html')
+       >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='', path='www.cwi.nl:80/%7Eguido/Python.html',
                   params='', query='', fragment='')
        >>> urlparse('help/Python.html')
