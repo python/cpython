@@ -4,8 +4,10 @@ from test import support
 from test.support import import_fresh_module
 import unittest
 
-cET = import_fresh_module('xml.etree.ElementTree', fresh=['_elementtree'])
-cET_alias = import_fresh_module('xml.etree.cElementTree', fresh=['_elementtree', 'xml.etree'])
+cET = import_fresh_module('xml.etree.ElementTree',
+                          fresh=['_elementtree'])
+cET_alias = import_fresh_module('xml.etree.cElementTree',
+                                fresh=['_elementtree', 'xml.etree'])
 
 
 class MiscTests(unittest.TestCase):
