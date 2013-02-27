@@ -3406,6 +3406,7 @@ class BasicConfigTest(unittest.TestCase):
         self.addCleanup(expected.close)
         self.assertEqual(handler.stream.mode, expected.stream.mode)
         self.assertEqual(handler.stream.name, expected.stream.name)
+        self.addCleanup(os.remove, 'test.log')
 
     def test_filemode(self):
         logging.basicConfig(filename='test.log', filemode='wb')
@@ -3414,6 +3415,7 @@ class BasicConfigTest(unittest.TestCase):
         expected = logging.FileHandler('test.log', 'wb')
         self.addCleanup(expected.close)
         self.assertEqual(handler.stream.mode, expected.stream.mode)
+        self.addCleanup(os.remove, 'test.log')
 
     def test_stream(self):
         stream = io.StringIO()
