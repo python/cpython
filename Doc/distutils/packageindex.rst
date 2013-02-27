@@ -1,12 +1,33 @@
+.. index::
+   single: Python Package Index (PyPI)
+   single: PyPI; (see Python Package Index (PyPI))
+
 .. _package-index:
 
-**********************************
-Registering with the Package Index
-**********************************
+*******************************
+The Python Package Index (PyPI)
+*******************************
 
-The Python Package Index (PyPI) holds meta-data describing distributions
-packaged with distutils. The distutils command :command:`register` is used to
-submit your distribution's meta-data to the index. It is invoked as follows::
+The `Python Package Index (PyPI)`_ holds :ref:`meta-data <meta-data>`
+describing distributions packaged with distutils, as well as package data like
+distribution files if the package author wishes.
+
+Distutils exposes two commands for submitting package data to PyPI: the
+:ref:`register <package-register>` command for submitting meta-data to PyPI
+and the :ref:`upload <package-upload>` command for submitting distribution
+files.  Both commands read configuration data from a special file called the
+:ref:`.pypirc file <pypirc>`.  PyPI :ref:`displays a home page
+<package-display>` for each package created from the ``long_description``
+submitted by the :command:`register` command.
+
+
+.. _package-register:
+
+Registering Packages
+====================
+
+The distutils command :command:`register` is used to submit your distribution's
+meta-data to the index. It is invoked as follows::
 
     python setup.py register
 
@@ -47,6 +68,52 @@ By default PyPI displays only the newest version of a given package. The web
 interface lets one change this default behavior and manually select which
 versions to display and hide.
 
+
+.. _package-upload:
+
+Uploading Packages
+==================
+
+The distutils command :command:`upload` pushes the distribution files to PyPI.
+
+The command is invoked immediately after building one or more distribution
+files.  For example, the command ::
+
+    python setup.py sdist bdist_wininst upload
+
+will cause the source distribution and the Windows installer to be uploaded to
+PyPI.  Note that these will be uploaded even if they are built using an earlier
+invocation of :file:`setup.py`, but that only distributions named on the command
+line for the invocation including the :command:`upload` command are uploaded.
+
+The :command:`upload` command uses the username, password, and repository URL
+from the :file:`$HOME/.pypirc` file (see section :ref:`pypirc` for more on this
+file). If a :command:`register` command was previously called in the same command,
+and if the password was entered in the prompt, :command:`upload` will reuse the
+entered password. This is useful if you do not want to store a clear text
+password in the :file:`$HOME/.pypirc` file.
+
+You can specify another PyPI server with the ``--repository=url`` option::
+
+    python setup.py sdist bdist_wininst upload -r http://example.com/pypi
+
+See section :ref:`pypirc` for more on defining several servers.
+
+You can use the ``--sign`` option to tell :command:`upload` to sign each
+uploaded file using GPG (GNU Privacy Guard).  The  :program:`gpg` program must
+be available for execution on the system :envvar:`PATH`.  You can also specify
+which key to use for signing using the ``--identity=name`` option.
+
+Other :command:`upload` options include ``--repository=url`` or
+``--repository=section`` where *url* is the url of the server and
+*section* the name of the section in :file:`$HOME/.pypirc`, and
+``--show-response`` (which displays the full response text from the PyPI
+server for help in debugging upload problems).
+
+
+.. index::
+   single: .pypirc file
+   single: Python Package Index (PyPI); .pypirc file
 
 .. _pypirc:
 
@@ -102,3 +169,45 @@ For convenience, the name of the section that describes the repository
 may also be used::
 
     python setup.py register -r other
+
+
+.. _package-display:
+
+PyPI package display
+====================
+
+The ``long_description`` field plays a special role at PyPI. It is used by
+the server to display a home page for the registered package.
+
+If you use the `reStructuredText <http://docutils.sourceforge.net/rst.html>`_
+syntax for this field, PyPI will parse it and display an HTML output for
+the package home page.
+
+The ``long_description`` field can be attached to a text file located
+in the package::
+
+    from distutils.core import setup
+
+    with open('README.txt') as file:
+        long_description = file.read()
+
+    setup(name='Distutils',
+          long_description=long_description)
+
+In that case, :file:`README.txt` is a regular reStructuredText text file located
+in the root of the package besides :file:`setup.py`.
+
+To prevent registering broken reStructuredText content, you can use the
+:program:`rst2html` program that is provided by the :mod:`docutils` package and
+check the ``long_description`` from the command line::
+
+    $ python setup.py --long-description | rst2html.py > output.html
+
+:mod:`docutils` will display a warning if there's something wrong with your
+syntax.  Because PyPI applies additional checks (e.g. by passing ``--no-raw``
+to ``rst2html.py`` in the command above), being able to run the command above
+without warnings does not guarantee that PyPI will convert the content
+successfully.
+
+
+.. _Python Package Index (PyPI): http://pypi.python.org/
