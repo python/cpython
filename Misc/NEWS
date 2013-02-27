@@ -10,6 +10,9 @@ What's New in Python 3.2.4
 Core and Builtins
 -----------------
 
+- Issue #1692335: Move initial args assignment to
+  BaseException.__new__ to help pickling of naive subclasses.
+
 - Issue #17275: Corrected class name in init error messages of the C version of
   BufferedWriter and BufferedRandom.
 
