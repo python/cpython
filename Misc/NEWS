@@ -774,6 +774,8 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #16406: Combine the pages for uploading and registering to PyPI.
+
 - Issue #16403: Document how distutils uses the maintainer field in
   PKG-INFO. Patch by Jyrki Pulliainen.
 
