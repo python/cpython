@@ -22,7 +22,6 @@ very little overhead for build/release/install mechanics.
    sourcedist.rst
    builtdist.rst
    packageindex.rst
-   uploading.rst
    examples.rst
    extending.rst
    commandref.rst
