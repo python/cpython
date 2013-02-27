@@ -7,7 +7,6 @@ import datetime
 import os
 import sys
 import unittest
-from test import support
 from test.script_helper import assert_python_ok
 from collections import Hashable
 
@@ -133,7 +132,7 @@ class HashBuiltinsTestCase(unittest.TestCase):
         for obj in self.hashes_to_check:
             self.assertEqual(hash(obj), _default_hash(obj))
 
-class HashRandomizationTests(unittest.TestCase):
+class HashRandomizationTests:
 
     # Each subclass should define a field "repr_", containing the repr() of
     # an object to be tested
@@ -190,19 +189,22 @@ class StringlikeHashRandomizationTests(HashRandomizationTests):
                 h = -1024014457
         self.assertEqual(self.get_hash(self.repr_, seed=42), h)
 
-class StrHashRandomizationTests(StringlikeHashRandomizationTests):
+class StrHashRandomizationTests(StringlikeHashRandomizationTests,
+                                unittest.TestCase):
     repr_ = repr('abc')
 
     def test_empty_string(self):
         self.assertEqual(hash(""), 0)
 
-class BytesHashRandomizationTests(StringlikeHashRandomizationTests):
+class BytesHashRandomizationTests(StringlikeHashRandomizationTests,
+                                  unittest.TestCase):
     repr_ = repr(b'abc')
 
     def test_empty_string(self):
         self.assertEqual(hash(b""), 0)
 
-class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests):
+class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests,
+                                       unittest.TestCase):
     repr_ = "memoryview(b'abc')"
 
     def test_empty_string(self):
@@ -212,27 +214,15 @@ class DatetimeTests(HashRandomizationTests):
     def get_hash_command(self, repr_):
         return 'import datetime; print(hash(%s))' % repr_
 
-class DatetimeDateTests(DatetimeTests):
+class DatetimeDateTests(DatetimeTests, unittest.TestCase):
     repr_ = repr(datetime.date(1066, 10, 14))
 
-class DatetimeDatetimeTests(DatetimeTests):
+class DatetimeDatetimeTests(DatetimeTests, unittest.TestCase):
     repr_ = repr(datetime.datetime(1, 2, 3, 4, 5, 6, 7))
 
-class DatetimeTimeTests(DatetimeTests):
+class DatetimeTimeTests(DatetimeTests, unittest.TestCase):
     repr_ = repr(datetime.time(0))
 
 
-def test_main():
-    support.run_unittest(HashEqualityTestCase,
-                         HashInheritanceTestCase,
-                         HashBuiltinsTestCase,
-                         StrHashRandomizationTests,
-                         BytesHashRandomizationTests,
-                         MemoryviewHashRandomizationTests,
-                         DatetimeDateTests,
-                         DatetimeDatetimeTests,
-                         DatetimeTimeTests)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
