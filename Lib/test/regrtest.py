@@ -200,7 +200,14 @@ from test import support
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
                   'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
 
-TEMPDIR = os.path.abspath(tempfile.gettempdir())
+# When tests are run from the Python build directory, it is best practice
+# to keep the test files in a subfolder.  This eases the cleanup of leftover
+# files using the "make distclean" command.
+if sysconfig.is_python_build():
+    TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
+else:
+    TEMPDIR = tempfile.gettempdir()
+TEMPDIR = os.path.abspath(TEMPDIR)
 
 class _ArgParser(argparse.ArgumentParser):
 
@@ -1543,13 +1550,9 @@ def printlist(x, width=70, indent=4):
                initial_indent=blanks, subsequent_indent=blanks))
 
 
-def _make_temp_dir_for_build(TEMPDIR):
-    # When tests are run from the Python build directory, it is best practice
-    # to keep the test files in a subfolder.  It eases the cleanup of leftover
-    # files using command "make distclean".
+def main_in_temp_cwd():
+    """Run main() in a temporary working directory."""
     if sysconfig.is_python_build():
-        TEMPDIR = os.path.join(sysconfig.get_config_var('srcdir'), 'build')
-        TEMPDIR = os.path.abspath(TEMPDIR)
         try:
             os.mkdir(TEMPDIR)
         except FileExistsError:
@@ -1558,10 +1561,16 @@ def _make_temp_dir_for_build(TEMPDIR):
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
-    TESTCWD = 'test_python_{}'.format(os.getpid())
+    test_cwd = 'test_python_{}'.format(os.getpid())
+    test_cwd = os.path.join(TEMPDIR, test_cwd)
 
-    TESTCWD = os.path.join(TEMPDIR, TESTCWD)
-    return TEMPDIR, TESTCWD
+    # Run the tests in a context manager that temporarily changes the CWD to a
+    # temporary and writable directory.  If it's not possible to create or
+    # change the CWD, the original CWD will be used.  The original CWD is
+    # available from support.SAVEDCWD.
+    with support.temp_cwd(test_cwd, quiet=True):
+        main()
+
 
 if __name__ == '__main__':
     # Remove regrtest.py's own directory from the module search path. Despite
@@ -1585,11 +1594,4 @@ if __name__ == '__main__':
     # sanity check
     assert __file__ == os.path.abspath(sys.argv[0])
 
-    TEMPDIR, TESTCWD = _make_temp_dir_for_build(TEMPDIR)
-
-    # Run the tests in a context manager that temporary changes the CWD to a
-    # temporary and writable directory. If it's not possible to create or
-    # change the CWD, the original CWD will be used. The original CWD is
-    # available from support.SAVEDCWD.
-    with support.temp_cwd(TESTCWD, quiet=True):
-        main()
+    main_in_temp_cwd()

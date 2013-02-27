@@ -878,6 +878,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #17283: Share code between `__main__.py` and `regrtest.py` in
+  `Lib/test`.
+
 - Issue #17249: convert a test in test_capi to use unittest and reap threads.
 
 - Issue #17107: Test client-side SNI support in urllib.request thanks to
