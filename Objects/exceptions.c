@@ -29,6 +29,12 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->dict = NULL;
     self->traceback = self->cause = self->context = NULL;
 
+    if (args) {
+        self->args = args;
+        Py_INCREF(args);
+        return (PyObject *)self;
+    }
+
     self->args = PyTuple_New(0);
     if (!self->args) {
         Py_DECREF(self);
@@ -41,12 +47,15 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
 {
+    PyObject *tmp;
+
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
-    Py_DECREF(self->args);
+    tmp = self->args;
     self->args = args;
     Py_INCREF(self->args);
+    Py_XDECREF(tmp);
 
     return 0;
 }
