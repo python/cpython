@@ -34,6 +34,14 @@ def _make_failed_test(classname, methodname, exception, suiteClass):
     TestClass = type(classname, (case.TestCase,), attrs)
     return suiteClass((TestClass(methodname),))
 
+def _make_skipped_test(methodname, exception, suiteClass):
+    @case.skip(str(exception))
+    def testSkipped(self):
+        pass
+    attrs = {methodname: testSkipped}
+    TestClass = type("ModuleSkipped", (case.TestCase,), attrs)
+    return suiteClass((TestClass(methodname),))
+
 def _jython_aware_splitext(path):
     if path.lower().endswith('$py.class'):
         return path[:-9]
@@ -259,6 +267,8 @@ class TestLoader(object):
                 name = self._get_name_from_path(full_path)
                 try:
                     module = self._get_module_from_name(name)
+                except case.SkipTest as e:
+                    yield _make_skipped_test(name, e, self.suiteClass)
                 except:
                     yield _make_failed_import_test(name, self.suiteClass)
                 else:

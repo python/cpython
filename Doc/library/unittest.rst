@@ -1493,7 +1493,9 @@ Loading and running tests
       directory must be specified separately.
 
       If importing a module fails, for example due to a syntax error, then this
-      will be recorded as a single error and discovery will continue.
+      will be recorded as a single error and discovery will continue.  If the
+      import failure is due to ``SkipTest`` being raised, it will be recorded
+      as a skip instead of an error.
 
       If a test package name (directory with :file:`__init__.py`) matches the
       pattern then the package will be checked for a ``load_tests``
@@ -1511,6 +1513,10 @@ Loading and running tests
       *start_dir* can be a dotted module name as well as a directory.
 
       .. versionadded:: 3.2
+
+      .. versionchanged:: 3.4
+         Modules that raise ``SkipTest`` on import are recorded as skips, not
+         errors.
 
 
    The following attributes of a :class:`TestLoader` can be configured either by
