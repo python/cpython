@@ -2,7 +2,7 @@ from test import support
 gdbm = support.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import verbose, TESTFN, run_unittest, unlink
+from test.support import verbose, TESTFN, unlink
 
 
 filename = TESTFN
@@ -81,8 +81,5 @@ class TestGdbm(unittest.TestCase):
         self.assertTrue(size1 > size2 >= size0)
 
 
-def test_main():
-    run_unittest(TestGdbm)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

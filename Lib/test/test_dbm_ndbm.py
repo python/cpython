@@ -36,8 +36,5 @@ class DbmTestCase(unittest.TestCase):
             except error:
                 self.fail()
 
-def test_main():
-    support.run_unittest(DbmTestCase)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
