@@ -14,9 +14,9 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 from _functools import partial, reduce
 from collections import namedtuple
 try:
-    from _thread import allocate_lock as Lock
+    from _thread import RLock
 except:
-    from _dummy_thread import allocate_lock as Lock
+    from dummy_threading import RLock
 
 
 ################################################################################
@@ -207,7 +207,7 @@ def lru_cache(maxsize=128, typed=False):
         hits = misses = currsize = 0
         full = False
         cache_get = cache.get    # bound method to lookup a key or return None
-        lock = Lock()            # because linkedlist updates aren't threadsafe
+        lock = RLock()           # because linkedlist updates aren't threadsafe
         root = []                # root of the circular doubly linked list
         root[:] = [root, root, None, None]     # initialize by pointing to self
 
