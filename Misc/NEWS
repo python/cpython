@@ -644,6 +644,9 @@ Tests
 
 - Issue #15539: Added regression tests for Tools/scripts/pindent.py.
 
+- Issue #17082: test_dbm* now work with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #17079: test_ctypes now works with unittest test discovery.
   Patch by Zachary Ware.
 
