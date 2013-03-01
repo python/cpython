@@ -609,7 +609,7 @@ that is broken and will fail, but shouldn't be counted as a failure on a
 Skipping a test is simply a matter of using the :func:`skip` :term:`decorator`
 or one of its conditional variants.
 
-Basic skipping looks like this: ::
+Basic skipping looks like this::
 
    class MyTestCase(unittest.TestCase):
 
@@ -628,7 +628,7 @@ Basic skipping looks like this: ::
            # windows specific testing code
            pass
 
-This is the output of running the example above in verbose mode: ::
+This is the output of running the example above in verbose mode::
 
    test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
    test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
@@ -639,7 +639,7 @@ This is the output of running the example above in verbose mode: ::
 
    OK (skipped=3)
 
-Classes can be skipped just like methods: ::
+Classes can be skipped just like methods::
 
    @unittest.skip("showing class skipping")
    class MySkippedTestCase(unittest.TestCase):
@@ -658,7 +658,7 @@ Expected failures use the :func:`expectedFailure` decorator. ::
 
 It's easy to roll your own skipping decorators by making a decorator that calls
 :func:`skip` on the test when it wants it to be skipped.  This decorator skips
-the test unless the passed object has a certain attribute: ::
+the test unless the passed object has a certain attribute::
 
    def skipUnlessHasattr(obj, attr):
        if hasattr(obj, attr):
