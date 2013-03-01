@@ -421,6 +421,7 @@ class PosixPathTest(unittest.TestCase):
             support.unlink(ABSTFN+"2")
             support.unlink(ABSTFN+"y")
             support.unlink(ABSTFN+"c")
+            support.unlink(ABSTFN+"a")
 
     @unittest.skipUnless(hasattr(os, "symlink"),
                          "Missing symlink implementation")
