@@ -29,9 +29,6 @@ class DumbDBMTestCase(unittest.TestCase):
              '\u00fc'.encode('utf-8') : b'!',
              }
 
-    def __init__(self, *args):
-        unittest.TestCase.__init__(self, *args)
-
     def test_dumbdbm_creation(self):
         f = dumbdbm.open(_fname, 'c')
         self.assertEqual(list(f.keys()), [])
@@ -195,11 +192,6 @@ class DumbDBMTestCase(unittest.TestCase):
     def setUp(self):
         _delete_files()
 
-def test_main():
-    try:
-        support.run_unittest(DumbDBMTestCase)
-    finally:
-        _delete_files()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
