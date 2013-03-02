@@ -444,7 +444,7 @@ class RemoteIMAP_SSLTest(RemoteIMAPTest):
                               keyfile=CERTFILE, ssl_context=self.create_ssl_context())
 
 
-def test_main():
+def load_tests(*args):
     tests = [TestImaplib]
 
     if support.is_resource_enabled('network'):
@@ -459,9 +459,9 @@ def test_main():
             RemoteIMAPTest, RemoteIMAP_SSLTest, RemoteIMAP_STARTTLSTest,
         ])
 
-    support.run_unittest(*tests)
+    return unittest.TestSuite([unittest.makeSuite(test) for test in tests])
 
 
 if __name__ == "__main__":
     support.use_resources = ['network']
-    test_main()
+    unittest.main()
