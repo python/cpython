@@ -19,7 +19,10 @@ from collections import namedtuple
 try:
     from _thread import RLock
 except:
-    from dummy_threading import RLock
+    class RLock:
+        'Dummy reentrant lock'
+        def __enter__(self): pass
+        def __exit__(self, exctype, excinst, exctb): pass
 
 
 ################################################################################
