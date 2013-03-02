@@ -56,7 +56,7 @@ class BaseTestCase(unittest.TestCase):
         self.assertRaises(TypeError, slice(self.n).indices, 0)
 
 
-class SeqTestCase(unittest.TestCase):
+class SeqTestCase:
     # This test case isn't run directly. It just defines common tests
     # to the different sequence types below
     def setUp(self):
@@ -126,7 +126,7 @@ class SeqTestCase(unittest.TestCase):
         self.assertRaises(TypeError, sliceobj, self.n, self)
 
 
-class ListTestCase(SeqTestCase):
+class ListTestCase(SeqTestCase, unittest.TestCase):
     seq = [0,10,20,30,40,50]
 
     def test_setdelitem(self):
@@ -182,19 +182,19 @@ class NewSeq:
         return self._list[index]
 
 
-class TupleTestCase(SeqTestCase):
+class TupleTestCase(SeqTestCase, unittest.TestCase):
     seq = (0,10,20,30,40,50)
 
-class ByteArrayTestCase(SeqTestCase):
+class ByteArrayTestCase(SeqTestCase, unittest.TestCase):
     seq = bytearray(b"this is a test")
 
-class BytesTestCase(SeqTestCase):
+class BytesTestCase(SeqTestCase, unittest.TestCase):
     seq = b"this is a test"
 
-class StringTestCase(SeqTestCase):
+class StringTestCase(SeqTestCase, unittest.TestCase):
     seq = "this is a test"
 
-class NewSeqTestCase(SeqTestCase):
+class NewSeqTestCase(SeqTestCase, unittest.TestCase):
     seq = NewSeq((0,10,20,30,40,50))
 
 
@@ -237,18 +237,5 @@ class OverflowTestCase(unittest.TestCase):
         self.assertRaises(OverflowError, lambda: "a" * self.neg)
 
 
-def test_main():
-    support.run_unittest(
-        BaseTestCase,
-        ListTestCase,
-        TupleTestCase,
-        BytesTestCase,
-        ByteArrayTestCase,
-        StringTestCase,
-        NewSeqTestCase,
-        RangeTestCase,
-        OverflowTestCase,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
