@@ -644,6 +644,9 @@ Tests
 
 - Issue #15539: Added regression tests for Tools/scripts/pindent.py.
 
+- Issue #17334: test_index now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #17333: test_imaplib now works with unittest test discovery.
   Patch by Zachary Ware.
 
