@@ -142,8 +142,6 @@ static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
-#define GLOBAL_NAME_ERROR_MSG \
-    "global name '%.200s' is not defined"
 #define UNBOUNDLOCAL_ERROR_MSG \
     "local variable '%.200s' referenced before assignment"
 #define UNBOUNDFREE_ERROR_MSG \
@@ -2140,7 +2138,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             err = PyDict_DelItem(f->f_globals, name);
             if (err != 0) {
                 format_exc_check_arg(
-                    PyExc_NameError, GLOBAL_NAME_ERROR_MSG, name);
+                    PyExc_NameError, NAME_ERROR_MSG, name);
                 goto error;
             }
             DISPATCH();
@@ -2208,7 +2206,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 if (v == NULL) {
                     if (!PyErr_Occurred())
                         format_exc_check_arg(PyExc_NameError,
-                                             GLOBAL_NAME_ERROR_MSG, name);
+                                             NAME_ERROR_MSG, name);
                     goto error;
                 }
                 Py_INCREF(v);
@@ -2222,7 +2220,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                         if (PyErr_ExceptionMatches(PyExc_KeyError))
                             format_exc_check_arg(
                                         PyExc_NameError,
-                                        GLOBAL_NAME_ERROR_MSG, name);
+                                        NAME_ERROR_MSG, name);
                         goto error;
                     }
                 }
