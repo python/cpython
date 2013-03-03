@@ -635,6 +635,8 @@ Library
 Tests
 -----
 
+- Issue #13898: test_ssl no longer prints a spurious stack trace on Ubuntu.
+
 - Issue #17249: convert a test in test_capi to use unittest and reap threads.
 
 - Issue #17041: Fix testing when Python is configured with the
