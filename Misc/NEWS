@@ -887,6 +887,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #13898: test_ssl no longer prints a spurious stack trace on Ubuntu.
+
 - Issue #17283: Share code between `__main__.py` and `regrtest.py` in
   `Lib/test`.
 
