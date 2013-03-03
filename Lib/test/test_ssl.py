@@ -774,7 +774,13 @@ else:
                 try:
                     self.sslconn = self.server.context.wrap_socket(
                         self.sock, server_side=True)
-                except ssl.SSLError as e:
+                except (ssl.SSLError, socket.error) as e:
+                    # Treat ECONNRESET as though it were an SSLError - OpenSSL
+                    # on Ubuntu abruptly closes the connection when asked to use
+                    # an unsupported protocol.
+                    if (not isinstance(e, ssl.SSLError) and
+                        e.errno != errno.ECONNRESET):
+                        raise
                     # XXX Various errors can have happened here, for example
                     # a mismatching protocol version, an invalid certificate,
                     # or a low-level bug. This should be made more discriminating.
