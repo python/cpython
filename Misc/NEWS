@@ -273,6 +273,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16962: Use getdents64 instead of the obsolete getdents syscall
+  in the subprocess module on Linux.
+
 - Issue #16935: unittest now counts the module as skipped if it raises SkipTest,
   instead of counting it as an error.  Patch by Zachary Ware.
 
