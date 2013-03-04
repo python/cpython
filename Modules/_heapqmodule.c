@@ -35,12 +35,14 @@ cmp_lt(PyObject *x, PyObject *y)
 static int
 _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
-    PyObject *newitem, *parent;
+    PyObject *newitem, *parent, *olditem;
     int cmp;
     Py_ssize_t parentpos;
+    Py_ssize_t size;
 
     assert(PyList_Check(heap));
-    if (pos >= PyList_GET_SIZE(heap)) {
+    size = PyList_GET_SIZE(heap);
+    if (pos >= size) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return -1;
     }
@@ -57,12 +59,24 @@ _siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
             Py_DECREF(newitem);
             return -1;
         }
+        if (size != PyList_GET_SIZE(heap)) {
+            Py_DECREF(newitem);
+            PyErr_SetString(PyExc_RuntimeError,
+                            "list changed size during iteration");
+            return -1;
+        }
         if (cmp == 0)
             break;
         Py_INCREF(parent);
-        Py_DECREF(PyList_GET_ITEM(heap, pos));
+        olditem = PyList_GET_ITEM(heap, pos);
         PyList_SET_ITEM(heap, pos, parent);
+        Py_DECREF(olditem);
         pos = parentpos;
+        if (size != PyList_GET_SIZE(heap)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "list changed size during iteration");
+            return -1;
+        }
     }
     Py_DECREF(PyList_GET_ITEM(heap, pos));
     PyList_SET_ITEM(heap, pos, newitem);
@@ -74,10 +88,12 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
 {
     Py_ssize_t startpos, endpos, childpos, rightpos;
     int cmp;
-    PyObject *newitem, *tmp;
+    PyObject *newitem, *tmp, *olditem;
+    Py_ssize_t size;
 
     assert(PyList_Check(heap));
-    endpos = PyList_GET_SIZE(heap);
+    size = PyList_GET_SIZE(heap);
+    endpos = size;
     startpos = pos;
     if (pos >= endpos) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
@@ -102,13 +118,25 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
             if (cmp == 0)
                 childpos = rightpos;
         }
+        if (size != PyList_GET_SIZE(heap)) {
+            Py_DECREF(newitem);
+            PyErr_SetString(PyExc_RuntimeError,
+                            "list changed size during iteration");
+            return -1;
+        }
         /* Move the smaller child up. */
         tmp = PyList_GET_ITEM(heap, childpos);
         Py_INCREF(tmp);
-        Py_DECREF(PyList_GET_ITEM(heap, pos));
+        olditem = PyList_GET_ITEM(heap, pos);
         PyList_SET_ITEM(heap, pos, tmp);
+        Py_DECREF(olditem);
         pos = childpos;
         childpos = 2*pos + 1;
+        if (size != PyList_GET_SIZE(heap)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "list changed size during iteration");
+            return -1;
+        }
     }
 
     /* The leaf at pos is empty now.  Put newitem there, and and bubble
