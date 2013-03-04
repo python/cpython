@@ -12,6 +12,8 @@ What's New in Python 3.3.1?
 Core and Builtins
 -----------------
 
+- Issue #17328: Fix possible refleak in dict.setdefault.
+
 - Issue #17223: array module: Fix a crasher when converting an array containing
   invalid characters (outside range [U+0000; U+10ffff]) to Unicode:
   repr(array), str(array) and array.tounicode(). Patch written by Manuel Jacob.
