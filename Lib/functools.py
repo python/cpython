@@ -285,7 +285,7 @@ def lru_cache(maxsize=128, typed=False):
                         link = [last, root, key, result]
                         last[NEXT] = root[PREV] = cache[key] = link
                         currsize += 1
-                        full = (currsize == maxsize)
+                        full = (currsize >= maxsize)
                     misses += 1
                 return result
 
