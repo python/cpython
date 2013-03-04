@@ -923,6 +923,9 @@ Build
 
 - Issue #17161: make install now also installs a python2 and python man page.
 
+- Issue #16848: python-config now returns proper --ldflags values for OS X
+  framework builds.
+
 Tools/Demos
 -----------
 
