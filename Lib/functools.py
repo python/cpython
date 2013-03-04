@@ -291,19 +291,23 @@ def lru_cache(maxsize=128, typed=False):
                         # computed result and update the count of misses.
                         pass
                     elif full:
-                        # use root to store the new key and result
-                        root[KEY] = key
-                        root[RESULT] = result
-                        cache[key] = root
+                        # use the old root to store the new key and result
+                        oldroot = root
+                        oldroot[KEY] = key
+                        oldroot[RESULT] = result
                         # empty the oldest link and make it the new root
-                        root = root[NEXT]
-                        del cache[root[KEY]]
+                        root = oldroot[NEXT]
+                        oldkey = root[KEY]
+                        oldvalue = root[RESULT]
                         root[KEY] = root[RESULT] = None
+                        # now update the cache dictionary for the new links
+                        del cache[oldkey]
+                        cache[key] = oldroot
                     else:
                         # put result in a new link at the front of the queue
                         last = root[PREV]
                         link = [last, root, key, result]
-                        cache[key] = last[NEXT] = root[PREV] = link
+                        last[NEXT] = root[PREV] = cache[key] = link
                         full = (len(cache) == maxsize)
                     misses += 1
                 return result
