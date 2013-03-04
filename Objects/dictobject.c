@@ -2235,14 +2235,14 @@ dict_setdefault(register PyDictObject *mp, PyObject *args)
         return NULL;
     val = *value_addr;
     if (val == NULL) {
-        Py_INCREF(failobj);
-        Py_INCREF(key);
         if (mp->ma_keys->dk_usable <= 0) {
             /* Need to resize. */
             if (insertion_resize(mp) < 0)
                 return NULL;
             ep = find_empty_slot(mp, key, hash, &value_addr);
         }
+        Py_INCREF(failobj);
+        Py_INCREF(key);
         MAINTAIN_TRACKING(mp, key, failobj);
         ep->me_key = key;
         ep->me_hash = hash;
