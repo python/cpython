@@ -777,6 +777,31 @@ class TestLRU(unittest.TestCase):
             self.assertEqual(square.cache_info().hits, 4)
             self.assertEqual(square.cache_info().misses, 4)
 
+    def test_need_for_rlock(self):
+        # This will deadlock on an LRU cache that uses a regular lock
+
+        @functools.lru_cache(maxsize=10)
+        def test_func(x):
+            'Used to demonstrate a reentrant lru_cache call within a single thread'
+            return x
+
+        class DoubleEq:
+            'Demonstrate a reentrant lru_cache call within a single thread'
+            def __init__(self, x):
+                self.x = x
+            def __hash__(self):
+                return self.x
+            def __eq__(self, other):
+                if self.x == 2:
+                    test_func(DoubleEq(1))
+                return self.x == other.x
+
+        test_func(DoubleEq(1))                      # Load the cache
+        test_func(DoubleEq(2))                      # Load the cache
+        self.assertEqual(test_func(DoubleEq(2)),    # Trigger a re-entrant __eq__ call
+                         DoubleEq(2))               # Verify the correct return value
+
+
 def test_main(verbose=None):
     test_classes = (
         TestPartial,
