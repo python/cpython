@@ -349,8 +349,7 @@ BaseException_set_message(PyBaseExceptionObject *self, PyObject *val)
             if (PyDict_DelItemString(self->dict, "message") < 0)
                 return -1;
         }
-        Py_XDECREF(self->message);
-        self->message = NULL;
+        Py_CLEAR(self->message);
         return 0;
     }
 

@@ -9,6 +9,9 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #16445: Fixed potential segmentation fault when deleting an exception
+  message.
+
 - Issue #17275: Corrected class name in init error messages of the C version of
   BufferedWriter and BufferedRandom.
 
@@ -210,6 +213,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #17278: Fix a crash in heapq.heappush() and heapq.heappop() when
+  the list is being resized concurrently.
 
 - Issue #17018: Make Process.join() retry if os.waitpid() fails with EINTR.
 
@@ -916,6 +922,9 @@ Build
   framework builds linked with Cocoa Tk 8.5.
 
 - Issue #17161: make install now also installs a python2 and python man page.
+
+- Issue #16848: python-config now returns proper --ldflags values for OS X
+  framework builds.
 
 Tools/Demos
 -----------
