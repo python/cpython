@@ -1384,13 +1384,18 @@ find_maxchar_surrogates(const wchar_t *begin, const wchar_t *end,
 
     for (iter = begin; iter < end; ) {
 #if SIZEOF_WCHAR_T == 2
-        if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])
-            && (iter+1) < end
-            && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
-        {
-            ch = Py_UNICODE_JOIN_SURROGATES(iter[0], iter[1]);
-            ++(*num_surrogates);
-            iter += 2;
+        if (Py_UNICODE_IS_HIGH_SURROGATE(iter[0])) {
+            if ((iter+1) < end
+                && Py_UNICODE_IS_LOW_SURROGATE(iter[1]))
+            {
+                ch = Py_UNICODE_JOIN_SURROGATES(iter[0], iter[1]);
+                ++(*num_surrogates);
+                iter += 2;
+            }
+            else {
+                PyErr_SetString(PyExc_ValueError, "illegal UTF-16 surrogate");
+                return -1;
+            }
         }
         else
 #endif
