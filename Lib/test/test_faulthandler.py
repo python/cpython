@@ -102,7 +102,7 @@ class FaultHandlerTests(unittest.TestCase):
         if other_regex:
             regex += '|' + other_regex
         with support.suppress_crash_popup():
-               output, exitcode = self.get_output(code, filename)
+            output, exitcode = self.get_output(code, filename)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
