@@ -1418,6 +1418,16 @@ test_widechar(PyObject *self)
     else
         return raiseTestError("test_widechar",
                               "PyUnicode_FromUnicode(L\"\\U00110000\", 1) didn't fail");
+
+    wide = PyUnicode_FromUnicode(NULL, 1);
+    if (wide == NULL)
+        return NULL;
+    PyUnicode_AS_UNICODE(wide)[0] = invalid[0];
+    if (_PyUnicode_Ready(wide) < 0)
+        PyErr_Clear();
+    else
+        return raiseTestError("test_widechar",
+                              "PyUnicode_Ready() didn't fail");
 #endif
 
     Py_RETURN_NONE;
