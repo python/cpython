@@ -284,6 +284,7 @@ class PosixPathTest(unittest.TestCase):
                 test_support.unlink(ABSTFN+"2")
                 test_support.unlink(ABSTFN+"y")
                 test_support.unlink(ABSTFN+"c")
+                test_support.unlink(ABSTFN+"a")
 
         def test_realpath_repeated_indirect_symlinks(self):
             # Issue #6975.

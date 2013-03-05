@@ -51,6 +51,7 @@ for opt in opt_flags:
         if opt == '--ldflags':
             if not getvar('Py_ENABLE_SHARED'):
                 libs.insert(0, '-L' + getvar('LIBPL'))
-            libs.extend(getvar('LINKFORSHARED').split())
+            if not getvar('PYTHONFRAMEWORK'):
+                libs.extend(getvar('LINKFORSHARED').split())
         print ' '.join(libs)
 
