@@ -426,7 +426,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         content = (self.error_message_format %
                    {'code': code, 'message': _quote_html(message), 'explain': explain})
         body = content.encode('UTF-8', 'replace')
-        self.send_response(code, shortmsg)
+        self.send_response(code, message)
         self.send_header("Content-Type", self.error_content_type)
         self.send_header('Connection', 'close')
         self.send_header('Content-Length', int(len(body)))
