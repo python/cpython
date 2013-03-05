@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17223: Fix PyUnicode_FromUnicode() on Windows (16-bit wchar_t type)
+  to reject invalid UTF-16 surrogate.
+
 - Issue #17032: The "global" in the "NameError: global name 'x' is not defined"
   error message has been removed.  Patch by Ram Rachum.
 
