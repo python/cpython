@@ -101,7 +101,8 @@ class FaultHandlerTests(unittest.TestCase):
             header=re.escape(header))
         if other_regex:
             regex += '|' + other_regex
-        output, exitcode = self.get_output(code, filename)
+        with support.suppress_crash_popup():
+               output, exitcode = self.get_output(code, filename)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
@@ -229,7 +230,8 @@ faulthandler.disable()
 faulthandler._read_null()
 """.strip()
         not_expected = 'Fatal Python error'
-        stderr, exitcode = self.get_output(code)
+        with support.suppress_crash_popup():
+            stderr, exitcode = self.get_output(code)
         stder = '\n'.join(stderr)
         self.assertTrue(not_expected not in stderr,
                      "%r is present in %r" % (not_expected, stderr))

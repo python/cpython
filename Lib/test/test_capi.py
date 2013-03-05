@@ -44,7 +44,8 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_no_FatalError_infinite_loop(self):
-        p = subprocess.Popen([sys.executable, "-c",
+        with support.suppress_crash_popup():
+            p = subprocess.Popen([sys.executable, "-c",
                               'import _testcapi;'
                               '_testcapi.crash_no_current_thread()'],
                              stdout=subprocess.PIPE,
