@@ -71,7 +71,7 @@ __all__ = [
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
     "skip_unless_xattr", "import_fresh_module", "requires_zlib",
     "PIPE_MAX_SIZE", "failfast", "anticipate_failure", "run_with_tz",
-    "requires_bz2", "requires_lzma"
+    "requires_bz2", "requires_lzma", "suppress_crash_popup",
     ]
 
 class Error(Exception):
@@ -1906,6 +1906,28 @@ def skip_unless_xattr(test):
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
+
+
+if sys.platform.startswith('win'):
+    @contextlib.contextmanager
+    def suppress_crash_popup():
+        """Disable Windows Error Reporting dialogs using SetErrorMode."""
+        # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621%28v=vs.85%29.aspx
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        old_error_mode = k32.GetErrorMode()
+        SEM_NOGPFAULTERRORBOX = 0x02
+        k32.SetErrorMode(old_error_mode | SEM_NOGPFAULTERRORBOX)
+        try:
+            yield
+        finally:
+            k32.SetErrorMode(old_error_mode)
+else:
+    # this is a no-op for other platforms
+    @contextlib.contextmanager
+    def suppress_crash_popup():
+        yield
+
 
 def patch(test_instance, object_to_patch, attr_name, new_value):
     """Override 'object_to_patch'.'attr_name' with 'new_value'.
