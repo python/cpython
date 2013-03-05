@@ -181,7 +181,7 @@ def heapify(x):
 
 def _heappushpop_max(heap, item):
     """Maxheap version of a heappush followed by a heappop."""
-    if heap and heap[0] > item:
+    if heap and item < heap[0]:
         item, heap[0] = heap[0], item
         _siftup_max(heap, 0)
     return item
@@ -312,7 +312,7 @@ def _siftdown_max(heap, startpos, pos):
     while pos > startpos:
         parentpos = (pos - 1) >> 1
         parent = heap[parentpos]
-        if newitem > parent:
+        if parent < newitem:
             heap[pos] = parent
             pos = parentpos
             continue
@@ -329,7 +329,7 @@ def _siftup_max(heap, pos):
     while childpos < endpos:
         # Set childpos to index of larger child.
         rightpos = childpos + 1
-        if rightpos < endpos and not heap[childpos] > heap[rightpos]:
+        if rightpos < endpos and not heap[rightpos] < heap[childpos]:
             childpos = rightpos
         # Move the larger child up.
         heap[pos] = heap[childpos]
