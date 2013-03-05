@@ -320,7 +320,7 @@ def _siftdown_max(heap, startpos, pos):
     heap[pos] = newitem
 
 def _siftup_max(heap, pos):
-    'Minheap variant of _siftup'
+    'Maxheap variant of _siftup'
     endpos = len(heap)
     startpos = pos
     newitem = heap[pos]
