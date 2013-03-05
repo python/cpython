@@ -479,6 +479,18 @@ class ExceptionTests(unittest.TestCase):
         except AssertionError as e:
             self.assertEqual(str(e), "(3,)")
 
+    def test_bad_exception_clearing(self):
+        # See issue 16445: use of Py_XDECREF instead of Py_CLEAR in
+        # BaseException_set_message gave a possible way to segfault the
+        # interpreter.
+        class Nasty(str):
+            def __del__(message):
+                del e.message
+
+        e = ValueError(Nasty("msg"))
+        e.args = ()
+        del e.message
+
 
 # Helper class used by TestSameStrAndUnicodeMsg
 class ExcWithOverriddenStr(Exception):
