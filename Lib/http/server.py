@@ -421,7 +421,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         # using _quote_html to prevent Cross Site Scripting attacks (see bug #1100201)
         content = (self.error_message_format %
                    {'code': code, 'message': _quote_html(message), 'explain': explain})
-        self.send_response(code, shortmsg)
+        self.send_response(code, message)
         self.send_header("Content-Type", self.error_content_type)
         self.send_header('Connection', 'close')
         self.end_headers()
