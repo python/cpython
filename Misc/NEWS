@@ -275,6 +275,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12921: BaseHTTPServer's send_error should send the correct error
+  response message when  send_error includes a message in addition to error
+  status. Patch submitted by Karl.
+
 - Issue #17278: Fix a crash in heapq.heappush() and heapq.heappop() when
   the list is being resized concurrently.
 
