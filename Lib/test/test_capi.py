@@ -44,11 +44,12 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     def test_no_FatalError_infinite_loop(self):
-        p = subprocess.Popen([sys.executable, "-c",
-                              'import _testcapi;'
-                              '_testcapi.crash_no_current_thread()'],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        with support.suppress_crash_popup():
+            p = subprocess.Popen([sys.executable, "-c",
+                                  'import _testcapi;'
+                                  '_testcapi.crash_no_current_thread()'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
         (out, err) = p.communicate()
         self.assertEqual(out, b'')
         # This used to cause an infinite loop.
