@@ -1078,9 +1078,10 @@ PyObject *_ctypes_callproc(PPROC pProc,
         args[0].ffi_type = &ffi_type_pointer;
         args[0].value.p = pIunk;
         pa = &args[1];
-    } else
+    } else {
 #endif
         pa = &args[0];
+    }
 
     /* Convert the arguments */
     for (i = 0; i < n; ++i, ++pa) {
@@ -1096,9 +1097,7 @@ PyObject *_ctypes_callproc(PPROC pProc,
         if (argtypes && argtype_count > i) {
             PyObject *v;
             converter = PyTuple_GET_ITEM(argtypes, i);
-            v = PyObject_CallFunctionObjArgs(converter,
-                                               arg,
-                                               NULL);
+            v = PyObject_CallFunctionObjArgs(converter, arg, NULL);
             if (v == NULL) {
                 _ctypes_extend_error(PyExc_ArgError, "argument %d: ", i+1);
                 goto cleanup;
@@ -1175,9 +1174,10 @@ PyObject *_ctypes_callproc(PPROC pProc,
             retval = PyErr_SetFromWindowsErr(*(int *)resbuf);
         else
             retval = PyLong_FromLong(*(int *)resbuf);
-    } else
+    } else {
 #endif
         retval = GetResult(restype, resbuf, checker);
+    }
   cleanup:
     for (i = 0; i < argcount; ++i)
         Py_XDECREF(args[i].keep);
@@ -1313,9 +1313,9 @@ call_commethod(PyObject *self, PyObject *args)
                         NULL,
 #endif
                         FUNCFLAG_HRESULT, /* flags */
-                argtypes, /* self->argtypes */
-                NULL, /* self->restype */
-                NULL); /* checker */
+                        argtypes, /* self->argtypes */
+                        NULL, /* self->restype */
+                        NULL); /* checker */
     return result;
 }
 
@@ -1480,9 +1480,9 @@ call_cdeclfunction(PyObject *self, PyObject *args)
                         NULL,
 #endif
                         FUNCFLAG_CDECL, /* flags */
-                NULL, /* self->argtypes */
-                NULL, /* self->restype */
-                NULL); /* checker */
+                        NULL, /* self->argtypes */
+                        NULL, /* self->restype */
+                        NULL); /* checker */
     return result;
 }
 
