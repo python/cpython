@@ -881,6 +881,9 @@ Library
   `sha3_256`, `sha3_384` and `sha3_512`. As part of the patch some common
   code was moved from _hashopenssl.c to hashlib.h.
 
+- ctypes.call_commethod was removed, since its only usage was in the defunct
+  samples directory.
+
 Extension Modules
 -----------------
 
