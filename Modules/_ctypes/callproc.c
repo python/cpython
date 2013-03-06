@@ -1263,62 +1263,6 @@ static PyObject *free_library(PyObject *self, PyObject *args)
     return Py_None;
 }
 
-/* obsolete, should be removed */
-/* Only used by sample code (in samples\Windows\COM.py) */
-static PyObject *
-call_commethod(PyObject *self, PyObject *args)
-{
-    IUnknown *pIunk;
-    int index;
-    PyObject *arguments;
-    PPROC *lpVtbl;
-    PyObject *result;
-    CDataObject *pcom;
-    PyObject *argtypes = NULL;
-
-    if (!PyArg_ParseTuple(args,
-                          "OiO!|O!",
-                          &pcom, &index,
-                          &PyTuple_Type, &arguments,
-                          &PyTuple_Type, &argtypes))
-        return NULL;
-
-    if (argtypes && (PyTuple_GET_SIZE(arguments) != PyTuple_GET_SIZE(argtypes))) {
-        PyErr_Format(PyExc_TypeError,
-                     "Method takes %d arguments (%d given)",
-                     PyTuple_GET_SIZE(argtypes), PyTuple_GET_SIZE(arguments));
-        return NULL;
-    }
-
-    if (!CDataObject_Check(pcom) || (pcom->b_size != sizeof(void *))) {
-        PyErr_Format(PyExc_TypeError,
-                     "COM Pointer expected instead of %s instance",
-                     Py_TYPE(pcom)->tp_name);
-        return NULL;
-    }
-
-    if ((*(void **)(pcom->b_ptr)) == NULL) {
-        PyErr_SetString(PyExc_ValueError,
-                        "The COM 'this' pointer is NULL");
-        return NULL;
-    }
-
-    pIunk = (IUnknown *)(*(void **)(pcom->b_ptr));
-    lpVtbl = (PPROC *)(pIunk->lpVtbl);
-
-    result =  _ctypes_callproc(lpVtbl[index],
-                        arguments,
-#ifdef MS_WIN32
-                        pIunk,
-                        NULL,
-#endif
-                        FUNCFLAG_HRESULT, /* flags */
-                        argtypes, /* self->argtypes */
-                        NULL, /* self->restype */
-                        NULL); /* checker */
-    return result;
-}
-
 static char copy_com_pointer_doc[] =
 "CopyComPointer(src, dst) -> HRESULT value\n";
 
@@ -1813,7 +1757,6 @@ PyMethodDef _ctypes_module_methods[] = {
     {"FormatError", format_error, METH_VARARGS, format_error_doc},
     {"LoadLibrary", load_library, METH_VARARGS, load_library_doc},
     {"FreeLibrary", free_library, METH_VARARGS, free_library_doc},
-    {"call_commethod", call_commethod, METH_VARARGS },
     {"_check_HRESULT", check_hresult, METH_VARARGS},
 #else
     {"dlopen", py_dl_open, METH_VARARGS,
