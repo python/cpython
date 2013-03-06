@@ -12821,7 +12821,7 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
         writer->buffer = newbuffer;
     }
     assert(_PyUnicode_CheckConsistency(writer->buffer, 1));
-    return writer->buffer;
+    return unicode_result_ready(writer->buffer);
 }
 
 void
