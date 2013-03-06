@@ -569,8 +569,8 @@ Here is a simple example of a POINT structure, which contains two integers named
    ValueError: too many initializers
    >>>
 
-You can, however, build much more complicated structures. Structures can itself
-contain other structures by using a structure as a field type.
+You can, however, build much more complicated structures.  A structure can
+itself contain other structures by using a structure as a field type.
 
 Here is a RECT structure which contains two POINTs named *upperleft* and
 *lowerright*::
