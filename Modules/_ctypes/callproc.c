@@ -1078,10 +1078,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
         args[0].ffi_type = &ffi_type_pointer;
         args[0].value.p = pIunk;
         pa = &args[1];
-    } else {
+    } else
 #endif
         pa = &args[0];
-    }
 
     /* Convert the arguments */
     for (i = 0; i < n; ++i, ++pa) {
@@ -1174,10 +1173,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
             retval = PyErr_SetFromWindowsErr(*(int *)resbuf);
         else
             retval = PyLong_FromLong(*(int *)resbuf);
-    } else {
+    } else
 #endif
         retval = GetResult(restype, resbuf, checker);
-    }
   cleanup:
     for (i = 0; i < argcount; ++i)
         Py_XDECREF(args[i].keep);
