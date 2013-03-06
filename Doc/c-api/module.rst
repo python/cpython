@@ -122,7 +122,7 @@ There are only a few functions special to module objects.
    :c:func:`PyState_AddModule` beforehand. In case the corresponding module object is not
    found or has not been attached to the interpreter state yet, it returns NULL.
 
-.. c:function:: int PyState_AddModule(PyModuleDef *def, PyObject *module)
+.. c:function:: int PyState_AddModule(PyObject *module, PyModuleDef *def)
 
    Attaches the module object passed to the function to the interpreter state. This allows
    the module object to be accessible via
@@ -130,7 +130,7 @@ There are only a few functions special to module objects.
 
    .. versionadded:: 3.3
 
-.. c:function:: int PyState_RemoveModule(PyModuleDef *def, PyObject *module)
+.. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
 
