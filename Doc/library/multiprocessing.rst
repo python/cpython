@@ -579,7 +579,6 @@ For an example of the usage of queues for interprocess communication see
       :exc:`Queue.Empty` exception (*timeout* is ignored in that case).
 
    .. method:: get_nowait()
-               get_no_wait()
 
       Equivalent to ``get(False)``.
 
