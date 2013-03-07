@@ -2024,8 +2024,8 @@ class PyBuildExt(build_ext):
 
         # Increase warning level for gcc:
         if 'gcc' in cc:
-            cmd = ("echo '' | gcc -Wextra -Wno-missing-field-initializers -E - "
-                   "> /dev/null 2>&1")
+            cmd = ("echo '' | %s -Wextra -Wno-missing-field-initializers -E - "
+                   "> /dev/null 2>&1" % cc)
             ret = os.system(cmd)
             if ret >> 8 == 0:
                 extra_compile_args.extend(['-Wextra',
