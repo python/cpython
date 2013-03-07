@@ -1911,10 +1911,12 @@ if sys.platform.startswith('win'):
     def suppress_crash_popup():
         """Disable Windows Error Reporting dialogs using SetErrorMode."""
         # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621%28v=vs.85%29.aspx
+        # GetErrorMode is not available on Windows XP and Windows Server 2003,
+        # but SetErrorMode returns the previous value, so we can use that
         import ctypes
         k32 = ctypes.windll.kernel32
-        old_error_mode = k32.GetErrorMode()
         SEM_NOGPFAULTERRORBOX = 0x02
+        old_error_mode = k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
         k32.SetErrorMode(old_error_mode | SEM_NOGPFAULTERRORBOX)
         try:
             yield
