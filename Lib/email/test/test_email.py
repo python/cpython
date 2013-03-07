@@ -9,7 +9,6 @@ import time
 import base64
 import difflib
 import unittest
-import warnings
 import textwrap
 
 from io import StringIO, BytesIO

@@ -129,7 +129,7 @@ class Generator:
             self.write(self._NL)
         laststripped = lines[-1].rstrip('\r\n')
         self.write(laststripped)
-        if len(lines[-1])!=len(laststripped):
+        if len(lines[-1]) != len(laststripped):
             self.write(self._NL)
 
     def _write(self, msg):
