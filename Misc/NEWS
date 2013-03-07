@@ -275,6 +275,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #14645: The email generator classes now produce output using the
+  specified linesep throughout.  Previously if the prolog, epilog, or
+  body were stored with a different linesep, that linesep was used.  This
+  fix corrects an RFC non-compliance issue with smtplib.send_message.
+
 - Issue #17278: Fix a crash in heapq.heappush() and heapq.heappop() when
   the list is being resized concurrently.
 
