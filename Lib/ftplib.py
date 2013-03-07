@@ -439,6 +439,9 @@ class FTP:
                 if not data:
                     break
                 callback(data)
+            # shutdown ssl layer
+            if isinstance(conn, _SSLSocket):
+                conn.unwrap()
         return self.voidresp()
 
     def retrlines(self, cmd, callback = None):
@@ -469,6 +472,9 @@ class FTP:
                 elif line[-1:] == '\n':
                     line = line[:-1]
                 callback(line)
+            # shutdown ssl layer
+            if isinstance(conn, _SSLSocket):
+                conn.unwrap()
         return self.voidresp()
 
     def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
@@ -495,6 +501,9 @@ class FTP:
                 conn.sendall(buf)
                 if callback:
                     callback(buf)
+            # shutdown ssl layer
+            if isinstance(conn, _SSLSocket):
+                conn.unwrap()
         return self.voidresp()
 
     def storlines(self, cmd, fp, callback=None):
@@ -521,6 +530,9 @@ class FTP:
                 conn.sendall(buf)
                 if callback:
                     callback(buf)
+            # shutdown ssl layer
+            if isinstance(conn, _SSLSocket):
+                conn.unwrap()
         return self.voidresp()
 
     def acct(self, password):
@@ -655,8 +667,10 @@ class FTP:
 try:
     import ssl
 except ImportError:
-    pass
+    _SSLSocket = None
 else:
+    _SSLSocket = ssl.SSLSocket
+
     class FTP_TLS(FTP):
         '''A FTP subclass which adds TLS support to FTP as described
         in RFC-4217.
@@ -770,76 +784,6 @@ else:
                     conn = ssl.wrap_socket(conn, self.keyfile, self.certfile,
                                            ssl_version=self.ssl_version)
             return conn, size
-
-        def retrbinary(self, cmd, callback, blocksize=8192, rest=None):
-            self.voidcmd('TYPE I')
-            with self.transfercmd(cmd, rest) as conn:
-                while 1:
-                    data = conn.recv(blocksize)
-                    if not data:
-                        break
-                    callback(data)
-                # shutdown ssl layer
-                if isinstance(conn, ssl.SSLSocket):
-                    conn.unwrap()
-            return self.voidresp()
-
-        def retrlines(self, cmd, callback = None):
-            if callback is None:
-                callback = print_line
-            resp = self.sendcmd('TYPE A')
-            conn = self.transfercmd(cmd)
-            fp = conn.makefile('r', encoding=self.encoding)
-            with fp, conn:
-                while 1:
-                    line = fp.readline()
-                    if self.debugging > 2:
-                        print('*retr*', repr(line))
-                    if not line:
-                        break
-                    if line[-2:] == CRLF:
-                        line = line[:-2]
-                    elif line[-1:] == '\n':
-                        line = line[:-1]
-                    callback(line)
-                # shutdown ssl layer
-                if isinstance(conn, ssl.SSLSocket):
-                    conn.unwrap()
-            return self.voidresp()
-
-        def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
-            self.voidcmd('TYPE I')
-            with self.transfercmd(cmd, rest) as conn:
-                while 1:
-                    buf = fp.read(blocksize)
-                    if not buf:
-                        break
-                    conn.sendall(buf)
-                    if callback:
-                        callback(buf)
-                # shutdown ssl layer
-                if isinstance(conn, ssl.SSLSocket):
-                    conn.unwrap()
-            return self.voidresp()
-
-        def storlines(self, cmd, fp, callback=None):
-            self.voidcmd('TYPE A')
-            with self.transfercmd(cmd) as conn:
-                while 1:
-                    buf = fp.readline()
-                    if not buf:
-                        break
-                    if buf[-2:] != B_CRLF:
-                        if buf[-1] in B_CRLF:
-                            buf = buf[:-1]
-                        buf = buf + B_CRLF
-                    conn.sendall(buf)
-                    if callback:
-                        callback(buf)
-                # shutdown ssl layer
-                if isinstance(conn, ssl.SSLSocket):
-                    conn.unwrap()
-            return self.voidresp()
 
         def abort(self):
             # overridden as we can't pass MSG_OOB flag to sendall()
