@@ -119,6 +119,19 @@ class Generator:
         # BytesGenerator overrides this to encode strings to bytes.
         return s
 
+    def _write_lines(self, lines):
+        # We have to transform the line endings.
+        if not lines:
+            return
+        lines = lines.splitlines(True)
+        for line in lines[:-1]:
+            self.write(line.rstrip('\r\n'))
+            self.write(self._NL)
+        laststripped = lines[-1].rstrip('\r\n')
+        self.write(laststripped)
+        if len(lines[-1])!=len(laststripped):
+            self.write(self._NL)
+
     def _write(self, msg):
         # We can't write the headers yet because of the following scenario:
         # say a multipart message includes the boundary string somewhere in
@@ -198,7 +211,7 @@ class Generator:
                 payload = msg.get_payload()
         if self._mangle_from_:
             payload = fcre.sub('>From ', payload)
-        self.write(payload)
+        self._write_lines(payload)
 
     # Default body handler
     _writeBody = _handle_text
@@ -237,7 +250,8 @@ class Generator:
                 preamble = fcre.sub('>From ', msg.preamble)
             else:
                 preamble = msg.preamble
-            self.write(preamble + self._NL)
+            self._write_lines(preamble)
+            self.write(self._NL)
         # dash-boundary transport-padding CRLF
         self.write('--' + boundary + self._NL)
         # body-part
@@ -259,7 +273,7 @@ class Generator:
                 epilogue = fcre.sub('>From ', msg.epilogue)
             else:
                 epilogue = msg.epilogue
-            self.write(epilogue)
+            self._write_lines(epilogue)
 
     def _handle_multipart_signed(self, msg):
         # The contents of signed parts has to stay unmodified in order to keep
@@ -393,7 +407,7 @@ class BytesGenerator(Generator):
         if _has_surrogates(msg._payload):
             if self._mangle_from_:
                 msg._payload = fcre.sub(">From ", msg._payload)
-            self.write(msg._payload)
+            self._write_lines(msg._payload)
         else:
             super(BytesGenerator,self)._handle_text(msg)
 
