@@ -23,3 +23,4 @@ document the API functions in detail.
    memory.rst
    objimpl.rst
    stable.rst
+   apiabiversion.rst
