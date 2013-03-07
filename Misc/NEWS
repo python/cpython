@@ -950,6 +950,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #11732: add a new suppress_crash_popup() context manager to test.support
+  that disables crash popups on Windows and use it in test_ctypes.
+
 - Issue #13898: test_ssl no longer prints a spurious stack trace on Ubuntu.
 
 - Issue #17249: convert a test in test_capi to use unittest and reap threads.
