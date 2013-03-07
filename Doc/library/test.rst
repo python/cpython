@@ -365,6 +365,13 @@ The :mod:`test.support` module defines the following functions:
       assert s.getvalue() == "hello\n"
 
 
+.. function:: suppress_crash_popup()
+
+   A context manager that disables Windows Error Reporting dialogs using
+   `SetErrorMode <http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621%28v=vs.85%29.aspx>`_.
+   On other platforms it's a no-op.
+
+
 .. function:: import_module(name, deprecated=False)
 
    This function imports and returns the named module. Unlike a normal

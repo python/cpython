@@ -56,7 +56,7 @@ __all__ = [
     "reap_children", "cpython_only", "check_impl_detail", "get_attribute",
     "swap_item", "swap_attr", "requires_IEEE_754",
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
-    "import_fresh_module", "failfast", "run_with_tz"
+    "import_fresh_module", "failfast", "run_with_tz", "suppress_crash_popup",
     ]
 
 class Error(Exception):
@@ -1774,6 +1774,30 @@ def skip_unless_symlink(test):
     ok = can_symlink()
     msg = "Requires functional symlink implementation"
     return test if ok else unittest.skip(msg)(test)
+
+
+if sys.platform.startswith('win'):
+    @contextlib.contextmanager
+    def suppress_crash_popup():
+        """Disable Windows Error Reporting dialogs using SetErrorMode."""
+        # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621%28v=vs.85%29.aspx
+        # GetErrorMode is not available on Windows XP and Windows Server 2003,
+        # but SetErrorMode returns the previous value, so we can use that
+        import ctypes
+        k32 = ctypes.windll.kernel32
+        SEM_NOGPFAULTERRORBOX = 0x02
+        old_error_mode = k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
+        k32.SetErrorMode(old_error_mode | SEM_NOGPFAULTERRORBOX)
+        try:
+            yield
+        finally:
+            k32.SetErrorMode(old_error_mode)
+else:
+    # this is a no-op for other platforms
+    @contextlib.contextmanager
+    def suppress_crash_popup():
+        yield
+
 
 def patch(test_instance, object_to_patch, attr_name, new_value):
     """Override 'object_to_patch'.'attr_name' with 'new_value'.
