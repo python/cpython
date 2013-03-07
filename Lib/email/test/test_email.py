@@ -68,6 +68,7 @@ class TestEmailBase(unittest.TestCase):
         with openfile(findfile(filename)) as fp:
             return email.message_from_file(fp)
 
+    maxDiff = None
 
 
 # Test various aspects of the Message class's API
@@ -2906,6 +2907,40 @@ multipart/report
         self.assertEqual(
             email.utils.make_msgid(domain='testdomain-string')[-19:],
             '@testdomain-string>')
+
+    def test_Generator_linend(self):
+        # Issue 14645.
+        with openfile('msg_26.txt', newline='\n') as f:
+            msgtxt = f.read()
+        msgtxt_nl = msgtxt.replace('\r\n', '\n')
+        msg = email.message_from_string(msgtxt)
+        s = StringIO()
+        g = email.generator.Generator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), msgtxt_nl)
+
+    def test_BytesGenerator_linend(self):
+        # Issue 14645.
+        with openfile('msg_26.txt', newline='\n') as f:
+            msgtxt = f.read()
+        msgtxt_nl = msgtxt.replace('\r\n', '\n')
+        msg = email.message_from_string(msgtxt_nl)
+        s = BytesIO()
+        g = email.generator.BytesGenerator(s)
+        g.flatten(msg, linesep='\r\n')
+        self.assertEqual(s.getvalue().decode('ascii'), msgtxt)
+
+    def test_BytesGenerator_linend_with_non_ascii(self):
+        # Issue 14645.
+        with openfile('msg_26.txt', 'rb') as f:
+            msgtxt = f.read()
+        msgtxt = msgtxt.replace(b'with attachment', b'fo\xf6')
+        msgtxt_nl = msgtxt.replace(b'\r\n', b'\n')
+        msg = email.message_from_bytes(msgtxt_nl)
+        s = BytesIO()
+        g = email.generator.BytesGenerator(s)
+        g.flatten(msg, linesep='\r\n')
+        self.assertEqual(s.getvalue(), msgtxt)
 
 
 # Test the iterator/generators
