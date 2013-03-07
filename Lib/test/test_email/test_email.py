@@ -2,14 +2,10 @@
 # Contact: email-sig@python.org
 # email package unit tests
 
-import os
 import re
-import sys
 import time
 import base64
-import difflib
 import unittest
-import warnings
 import textwrap
 
 from io import StringIO, BytesIO
@@ -37,7 +33,7 @@ from email import iterators
 from email import base64mime
 from email import quoprimime
 
-from test.support import run_unittest, unlink
+from test.support import unlink
 from test.test_email import openfile, TestEmailBase
 
 NL = '\n'
