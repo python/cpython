@@ -24,15 +24,7 @@ try:
 except struct.error:
     have_long_long = False
 
-try:
-    import ctypes
-    sizeof_wchar = ctypes.sizeof(ctypes.c_wchar)
-except ImportError:
-    import sys
-    if sys.platform == 'win32':
-        sizeof_wchar = 2
-    else:
-        sizeof_wchar = 4
+sizeof_wchar = array.array('u').itemsize
 
 
 class ArraySubclass(array.array):
@@ -1076,8 +1068,8 @@ class UnicodeTest(StringTest, unittest.TestCase):
             # U+FFFFFFFF is an invalid code point in Unicode 6.0
             invalid_str = b'\xff\xff\xff\xff'
         else:
-            # invalid UTF-16 surrogate pair
-            invalid_str = b'\xff\xdf\x61\x00'
+            # PyUnicode_FromUnicode() cannot fail with 16-bit wchar_t
+            self.skipTest("specific to 32-bit wchar_t")
         a = array.array('u', invalid_str)
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
