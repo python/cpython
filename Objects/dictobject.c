@@ -2211,19 +2211,19 @@ dict_get(register PyDictObject *mp, PyObject *args)
     return val;
 }
 
-static PyObject *
-dict_setdefault(register PyDictObject *mp, PyObject *args)
+PyObject *
+PyDict_SetDefault(PyObject *d, PyObject *key, PyObject *defaultobj)
 {
-    PyObject *key;
-    PyObject *failobj = Py_None;
+    PyDictObject *mp = (PyDictObject *)d;
     PyObject *val = NULL;
     Py_hash_t hash;
     PyDictKeyEntry *ep;
     PyObject **value_addr;
 
-    if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
+    if (!PyDict_Check(d)) {
+        PyErr_BadInternalCall();
         return NULL;
-
+    }
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
         hash = PyObject_Hash(key);
@@ -2241,20 +2241,32 @@ dict_setdefault(register PyDictObject *mp, PyObject *args)
                 return NULL;
             ep = find_empty_slot(mp, key, hash, &value_addr);
         }
-        Py_INCREF(failobj);
+        Py_INCREF(defaultobj);
         Py_INCREF(key);
-        MAINTAIN_TRACKING(mp, key, failobj);
+        MAINTAIN_TRACKING(mp, key, defaultobj);
         ep->me_key = key;
         ep->me_hash = hash;
-        *value_addr = failobj;
-        val = failobj;
+        *value_addr = defaultobj;
+        val = defaultobj;
         mp->ma_keys->dk_usable--;
         mp->ma_used++;
     }
-    Py_INCREF(val);
     return val;
 }
 
+static PyObject *
+dict_setdefault(PyDictObject *mp, PyObject *args)
+{
+    PyObject *key, *val;
+    PyObject *defaultobj = Py_None;
+
+    if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &defaultobj))
+        return NULL;
+
+    val = PyDict_SetDefault(mp, key, defaultobj);
+    Py_XINCREF(val);
+    return val;
+}
 
 static PyObject *
 dict_clear(register PyDictObject *mp)

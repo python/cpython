@@ -220,6 +220,11 @@ PyDict_GetItemString:PyObject*::0:
 PyDict_GetItemString:PyObject*:p:0:
 PyDict_GetItemString:char*:key::
 
+PyDict_SetDefault:PyObject*::0:
+PyDict_SetDefault:PyObject*:p:0:
+PyDict_SetDefault:PyObject*:key:0:conditionally +1 if inserted into the dict
+PyDict_SetDefault:PyObject*:default:0:conditionally +1 if inserted into the dict
+
 PyDict_Items:PyObject*::+1:
 PyDict_Items:PyObject*:p:0:
 

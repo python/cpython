@@ -110,6 +110,15 @@ Dictionary Objects
    :c:type:`char\*`, rather than a :c:type:`PyObject\*`.
 
 
+.. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *default)
+
+   This is the same the Python-level :meth:`dict.setdefault`.  If present, it
+   returns the value corresponding to *key* from the dictionary *p*.  If the key
+   is not in the dict, it is inserted with value *defaultobj* and *defaultobj*
+   is inserted.  This function evaluates the hash function of *key* only once,
+   instead of evaluating it independently for the lookup and the insertion.
+
+
 .. c:function:: PyObject* PyDict_Items(PyObject *p)
 
    Return a :c:type:`PyListObject` containing all the items from the dictionary.
