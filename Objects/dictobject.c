@@ -2263,7 +2263,7 @@ dict_setdefault(PyDictObject *mp, PyObject *args)
     if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &defaultobj))
         return NULL;
 
-    val = PyDict_SetDefault(mp, key, defaultobj);
+    val = PyDict_SetDefault((PyObject *)mp, key, defaultobj);
     Py_XINCREF(val);
     return val;
 }
