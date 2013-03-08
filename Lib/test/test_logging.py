@@ -3396,6 +3396,12 @@ class BasicConfigTest(unittest.TestCase):
         self.assertEqual(logging.root.level, self.original_logging_level)
 
     def test_filename(self):
+
+        def cleanup(h1, h2, fn):
+            h1.close()
+            h2.close()
+            os.remove(fn)
+
         logging.basicConfig(filename='test.log')
 
         self.assertEqual(len(logging.root.handlers), 1)
@@ -3403,19 +3409,23 @@ class BasicConfigTest(unittest.TestCase):
         self.assertIsInstance(handler, logging.FileHandler)
 
         expected = logging.FileHandler('test.log', 'a')
-        self.addCleanup(expected.close)
         self.assertEqual(handler.stream.mode, expected.stream.mode)
         self.assertEqual(handler.stream.name, expected.stream.name)
-        self.addCleanup(os.remove, 'test.log')
+        self.addCleanup(cleanup, handler, expected, 'test.log')
 
     def test_filemode(self):
+
+        def cleanup(h1, h2, fn):
+            h1.close()
+            h2.close()
+            os.remove(fn)
+
         logging.basicConfig(filename='test.log', filemode='wb')
 
         handler = logging.root.handlers[0]
         expected = logging.FileHandler('test.log', 'wb')
-        self.addCleanup(expected.close)
         self.assertEqual(handler.stream.mode, expected.stream.mode)
-        self.addCleanup(os.remove, 'test.log')
+        self.addCleanup(cleanup, handler, expected, 'test.log')
 
     def test_stream(self):
         stream = io.StringIO()
