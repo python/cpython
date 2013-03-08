@@ -236,10 +236,14 @@ timed intervals.
    +----------------+-----------------------+
    | ``'D'``        | Days                  |
    +----------------+-----------------------+
-   | ``'W'``        | Week day (0=Monday)   |
+   | ``'W0'-'W6'``  | Weekday (0=Monday)    |
    +----------------+-----------------------+
    | ``'midnight'`` | Roll over at midnight |
    +----------------+-----------------------+
+
+   When using weekday-based rotation, specify 'W0' for Monday, 'W1' for
+   Tuesday, and so on up to 'W6' for Sunday. In this case, the value passed for
+   *interval* isn't used.
 
    The system will save old log files by appending extensions to the filename.
    The extensions are date-and-time based, using the strftime format
