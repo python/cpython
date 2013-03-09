@@ -266,7 +266,7 @@ def lru_cache(maxsize=128, typed=False):
         elif maxsize is None:
 
             def wrapper(*args, **kwds):
-                # simple caching without ordering or size limit
+                # Simple caching without ordering or size limit
                 nonlocal hits, misses
                 key = make_key(args, kwds, typed)
                 result = cache_get(key, sentinel)
@@ -281,7 +281,7 @@ def lru_cache(maxsize=128, typed=False):
         else:
 
             def wrapper(*args, **kwds):
-                # size limited caching that tracks accesses by recency
+                # Size limited caching that tracks accesses by recency
                 nonlocal root, hits, misses, full
                 key = make_key(args, kwds, typed)
                 with lock:
