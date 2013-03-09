@@ -222,7 +222,7 @@ def lru_cache(maxsize=128, typed=False):
     def decorating_function(user_function):
 
         cache = {}
-        hits = misses = currsize = 0
+        hits = misses = 0
         full = False
         cache_get = cache.get    # bound method to lookup a key or return None
         lock = RLock()           # because linkedlist updates aren't threadsafe
@@ -242,7 +242,7 @@ def lru_cache(maxsize=128, typed=False):
 
             def wrapper(*args, **kwds):
                 # Simple caching without ordering or size limit
-                nonlocal hits, misses, currsize
+                nonlocal hits, misses
                 key = make_key(args, kwds, typed)
                 result = cache_get(key, sentinel)
                 if result is not sentinel:
@@ -251,14 +251,13 @@ def lru_cache(maxsize=128, typed=False):
                 result = user_function(*args, **kwds)
                 cache[key] = result
                 misses += 1
-                currsize += 1
                 return result
 
         else:
 
             def wrapper(*args, **kwds):
                 # Size limited caching that tracks accesses by recency
-                nonlocal root, hits, misses, currsize, full
+                nonlocal root, hits, misses, full
                 key = make_key(args, kwds, typed)
                 with lock:
                     link = cache_get(key)
@@ -307,23 +306,22 @@ def lru_cache(maxsize=128, typed=False):
                         last = root[PREV]
                         link = [last, root, key, result]
                         last[NEXT] = root[PREV] = cache[key] = link
-                        currsize += 1
-                        full = (currsize >= maxsize)
+                        full = (len(cache) >= maxsize)
                     misses += 1
                 return result
 
         def cache_info():
             """Report cache statistics"""
             with lock:
-                return _CacheInfo(hits, misses, maxsize, currsize)
+                return _CacheInfo(hits, misses, maxsize, len(cache))
 
         def cache_clear():
             """Clear the cache and cache statistics"""
-            nonlocal hits, misses, currsize, full
+            nonlocal hits, misses, full
             with lock:
                 cache.clear()
                 root[:] = [root, root, None, None]
-                hits = misses = currsize = 0
+                hits = misses = 0
                 full = False
 
         wrapper.cache_info = cache_info
