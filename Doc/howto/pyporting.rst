@@ -21,20 +21,20 @@ Porting Python 2 Code to Python 3
 Choosing a Strategy
 ===================
 
-When a project makes the decision that it's time to support both Python 2 & 3,
+When a project chooses to support both Python 2 & 3,
 a decision needs to be made as to how to go about accomplishing that goal.
 The chosen strategy will depend on how large the project's existing
-codebase is and how much divergence you want from your Python 2 codebase from
-your Python 3 one (e.g., starting a new version with Python 3).
-
-If your project is brand-new or does not have a large codebase, then you may
-want to consider writing/porting :ref:`all of your code for Python 3
-and use 3to2 <use_3to2>` to port your code for Python 2.
+codebase is and how much divergence you want from your current Python 2 codebase
+(e.g., changing your code to work simultaneously with Python 2 and 3).
 
 If you would prefer to maintain a codebase which is semantically **and**
 syntactically compatible with Python 2 & 3 simultaneously, you can write
 :ref:`use_same_source`. While this tends to lead to somewhat non-idiomatic
 code, it does mean you keep a rapid development process for you, the developer.
+
+If your project is brand-new or does not have a large codebase, then you may
+want to consider writing/porting :ref:`all of your code for Python 3
+and use 3to2 <use_3to2>` to port your code for Python 2.
 
 Finally, you do have the option of :ref:`using 2to3 <use_2to3>` to translate
 Python 2 code into Python 3 code (with some manual help). This can take the
@@ -55,10 +55,10 @@ Regardless of what strategy you pick, there are a few things you should
 consider.
 
 One is make sure you have a robust test suite. You need to make sure everything
-continues to work, just like when you support a new minor version of Python.
-This means making sure your test suite is thorough and is ported properly
-between Python 2 & 3. You will also most likely want to use something like tox_
-to automate testing between both a Python 2 and Python 3 VM.
+continues to work, just like when you support a new minor/feature release of
+Python. This means making sure your test suite is thorough and is ported
+properly between Python 2 & 3. You will also most likely want to use something
+like tox_ to automate testing between both a Python 2 and Python 3 interpreter.
 
 Two, once your project has Python 3 support, make sure to add the proper
 classifier on the Cheeseshop_ (PyPI_). To have your project listed as Python 3
@@ -98,7 +98,8 @@ guard.
 
 Four, read all the approaches. Just because some bit of advice applies to one
 approach more than another doesn't mean that some advice doesn't apply to other
-strategies.
+strategies. This is especially true of whether you decide to use 2to3 or be
+source-compatible; tips for one approach almost always apply to the other.
 
 Five, drop support for older Python versions if possible. `Python 2.5`_
 introduced a lot of useful syntax and libraries which have become idiomatic
@@ -107,6 +108,14 @@ compatibility much easier if you are going from Python 2 to 3.
 `Python 2.7`_ continues the trend in the stdlib. So choose the newest version
 of Python which you believe can be your minimum support version
 and work from there.
+
+Six, target the newest version of Python 3 that you can. Beyond just the usual
+bugfixes, compatibility has continued to improve between Python 2 and 3 as time
+has passed. This is especially true for Python 3.3 where the ``u`` prefix for
+strings is allowed, making source-compatible Python code easier.
+
+Seven, make sure to look at the `Other Resources`_ for tips from other people
+which may help you out.
 
 
 .. _tox: http://codespeak.net/tox/
@@ -169,8 +178,8 @@ experimental translation just to see how long it takes to evaluate whether you
 prefer this approach compared to using :ref:`use_same_source` or simply keeping
 a separate Python 3 codebase.
 
-Below are the typical steps taken by a project which uses a 2to3-based approach
-to supporting Python 2 & 3.
+Below are the typical steps taken by a project which tries to support
+Python 2 & 3 while keeping the code directly executable by Python 2.
 
 
 Support Python 2.7
@@ -215,7 +224,9 @@ string with a ``u`` prefix to get the same effect. But regardless of whether
 you use this future statement or not, you **must** make sure you know exactly
 which Python 2 strings you want to be bytes, and which are to be strings. This
 means you should, **at minimum** mark all strings that are meant to be text
-strings with a ``u`` prefix if you do not use this future statement.
+strings with a ``u`` prefix if you do not use this future statement. Python 3.3
+allows strings to continue to have the ``u`` prefix (it's a no-op in that case)
+to make it easier for code to be source-compatible between Python 2 & 3.
 
 
 Bytes literals
@@ -225,6 +236,15 @@ This is a **very** important one. The ability to prefix Python 2 strings that
 are meant to contain bytes with a ``b`` prefix help to very clearly delineate
 what is and is not a Python 3 string. When you run 2to3 on code, all Python 2
 strings become Python 3 strings **unless** they are prefixed with ``b``.
+
+This point cannot be stressed enough: make sure you know what all of your string
+literals in Python 2 are meant to become in Python 3. Any string literal that
+should be treated as bytes should have the ``b`` prefix. Any string literal
+that should be Unicode/text in Python 2 should either have the ``u`` literal
+(supported, but ignored, in Python 3.3 and later) or you should have
+``from __future__ import unicode_literals`` at the top of the file. But the key
+point is you should know how Python 3 will treat everyone one of your string
+literals and you should mark them as appropriate.
 
 There are some differences between byte literals in Python 2 and those in
 Python 3 thanks to the bytes type just being an alias to ``str`` in Python 2.
@@ -262,6 +282,16 @@ the statement, but you still want the __future__ statement to prevent implicit
 relative imports. In `Python 2.7`_ the __future__ statement is not needed. In
 other words, unless you are only supporting Python 2.7 or a version earlier
 than Python 2.5, use the __future__ statement.
+
+
+Mark all Unicode strings with a ``u`` prefix
+'''''''''''''''''''''''''''''''''''''''''''''
+
+While Python 2.6 has a ``__future__`` statement to automatically cause Python 2
+to treat all string literals as Unicode, Python 2.5 does not have that shortcut.
+This means you should go through and mark all string literals with a ``u``
+prefix to turn them explicitly into Unicode strings where appropriate. That
+leaves all unmarked string literals to be considered byte literals in Python 3.
 
 
 
@@ -708,6 +738,7 @@ thus helping provide information for this document):
 * http://lucumr.pocoo.org/2011/1/22/forwards-compatible-python/
 * http://lucumr.pocoo.org/2010/2/11/porting-to-python-3-a-guide/
 * http://wiki.python.org/moin/PortingPythonToPy3k
+* https://wiki.ubuntu.com/Python/3
 
 If you feel there is something missing from this document that should be added,
 please email the python-porting_ mailing list.
