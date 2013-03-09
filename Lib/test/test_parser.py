@@ -4,6 +4,7 @@ import sys
 import operator
 import struct
 from test import support
+from test.script_helper import assert_python_failure
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -607,10 +608,10 @@ class ParserStackLimitTestCase(unittest.TestCase):
 
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
-        print("Expecting 's_push: parser stack overflow' in next line",
-              file=sys.stderr)
-        sys.stderr.flush()
-        self.assertRaises(MemoryError, parser.expr, e)
+        rc, out, err = assert_python_failure('-c', e)
+        # parsing the expression will result in an error message
+        # followed by a MemoryError (see #11963)
+        self.assertEqual(err, b's_push: parser stack overflow\nMemoryError')
 
 class STObjectTestCase(unittest.TestCase):
     """Test operations on ST objects themselves"""
