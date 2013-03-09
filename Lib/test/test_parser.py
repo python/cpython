@@ -3,6 +3,7 @@ import unittest
 import sys
 import struct
 from test import test_support as support
+from test.script_helper import assert_python_failure
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -579,7 +580,7 @@ class CompileTestCase(unittest.TestCase):
 
 
 class ParserStackLimitTestCase(unittest.TestCase):
-    """try to push the parser to/over it's limits.
+    """try to push the parser to/over its limits.
     see http://bugs.python.org/issue1881 for a discussion
     """
     def _nested_expression(self, level):
@@ -592,8 +593,10 @@ class ParserStackLimitTestCase(unittest.TestCase):
 
     def test_trigger_memory_error(self):
         e = self._nested_expression(100)
-        print >>sys.stderr, "Expecting 's_push: parser stack overflow' in next line"
-        self.assertRaises(MemoryError, parser.expr, e)
+        rc, out, err = assert_python_failure('-c', e)
+        # parsing the expression will result in an error message
+        # followed by a MemoryError (see #11963)
+        self.assertEqual(err, b's_push: parser stack overflow\nMemoryError')
 
 class STObjectTestCase(unittest.TestCase):
     """Test operations on ST objects themselves"""
