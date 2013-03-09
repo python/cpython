@@ -17,7 +17,7 @@ try:
     from _thread import RLock
 except:
     class RLock:
-        'Dummy reentrant lock'
+        'Dummy reentrant lock for builds without threads'
         def __enter__(self): pass
         def __exit__(self, exctype, excinst, exctb): pass
 
@@ -146,6 +146,12 @@ except ImportError:
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
 class _HashedSeq(list):
+    """ This class guarantees that hash() will be called no more than once
+        per element.  This is important because the lru_cache() will hash
+        the key multiple times on a cache miss.
+
+    """
+
     __slots__ = 'hashvalue'
 
     def __init__(self, tup, hash=hash):
@@ -159,7 +165,16 @@ def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
              fasttypes = {int, str, frozenset, type(None)},
              sorted=sorted, tuple=tuple, type=type, len=len):
-    'Make a cache key from optionally typed positional and keyword arguments'
+    """Make a cache key from optionally typed positional and keyword arguments
+
+    The key is constructed in a way that is flat as possible rather than
+    as a nested structure that would take more memory.
+
+    If there is only a single argument and its data type is known to cache
+    its hash value, then that argument is returned without a wrapper.  This
+    saves space and improves lookup speed.
+
+    """
     key = args
     if kwds:
         sorted_items = sorted(kwds.items())
@@ -217,7 +232,7 @@ def lru_cache(maxsize=128, typed=False):
         if maxsize == 0:
 
             def wrapper(*args, **kwds):
-                # no caching, just a statistics update after a successful call
+                # No caching -- just a statistics update after a successful call
                 nonlocal misses
                 result = user_function(*args, **kwds)
                 misses += 1
@@ -226,7 +241,7 @@ def lru_cache(maxsize=128, typed=False):
         elif maxsize is None:
 
             def wrapper(*args, **kwds):
-                # simple caching without ordering or size limit
+                # Simple caching without ordering or size limit
                 nonlocal hits, misses, currsize
                 key = make_key(args, kwds, typed)
                 result = cache_get(key, sentinel)
@@ -242,14 +257,14 @@ def lru_cache(maxsize=128, typed=False):
         else:
 
             def wrapper(*args, **kwds):
-                # size limited caching that tracks accesses by recency
+                # Size limited caching that tracks accesses by recency
                 nonlocal root, hits, misses, currsize, full
                 key = make_key(args, kwds, typed)
                 with lock:
                     link = cache_get(key)
                     if link is not None:
-                        # move the link to the front of the circular queue
-                        link_prev, link_next, key, result = link
+                        # Move the link to the front of the circular queue
+                        link_prev, link_next, _key, result = link
                         link_prev[NEXT] = link_next
                         link_next[PREV] = link_prev
                         last = root[PREV]
@@ -261,26 +276,34 @@ def lru_cache(maxsize=128, typed=False):
                 result = user_function(*args, **kwds)
                 with lock:
                     if key in cache:
-                        # getting here means that this same key was added to the
-                        # cache while the lock was released.  since the link
+                        # Getting here means that this same key was added to the
+                        # cache while the lock was released.  Since the link
                         # update is already done, we need only return the
                         # computed result and update the count of misses.
                         pass
                     elif full:
-                        # use the old root to store the new key and result
+                        # Use the old root to store the new key and result.
                         oldroot = root
                         oldroot[KEY] = key
                         oldroot[RESULT] = result
-                        # empty the oldest link and make it the new root
+                        # Empty the oldest link and make it the new root.
+                        # Keep a reference to the old key and old result to
+                        # prevent their ref counts from going to zero during the
+                        # update. That will prevent potentially arbitrary object
+                        # clean-up code (i.e. __del__) from running while we're
+                        # still adjusting the links.
                         root = oldroot[NEXT]
                         oldkey = root[KEY]
-                        oldvalue = root[RESULT]
+                        oldresult = root[RESULT]
                         root[KEY] = root[RESULT] = None
-                        # now update the cache dictionary for the new links
+                        # Now update the cache dictionary.
                         del cache[oldkey]
+                        # Save the potentially reentrant cache[key] assignment
+                        # for last, after the root and links have been put in
+                        # a consistent state.
                         cache[key] = oldroot
                     else:
-                        # put result in a new link at the front of the queue
+                        # Put result in a new link at the front of the queue.
                         last = root[PREV]
                         link = [last, root, key, result]
                         last[NEXT] = root[PREV] = cache[key] = link
