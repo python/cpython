@@ -1409,6 +1409,8 @@ Tools/Demos
 Documentation
 -------------
 
+- Touched up the Python 2 to 3 porting guide.
+
 - Issue #14674: Add a discussion of the `json` module's standard compliance.
   Patch by Chris Rebert.
 
