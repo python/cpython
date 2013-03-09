@@ -602,6 +602,13 @@ for debugging because they can provide useful information::
 
 .. _ctypes-structureunion-alignment-byte-order:
 
+.. warning::
+
+   :mod:`ctypes` does not support passing unions or structures with bit-fields
+   to functions by value.  While this may work on 32-bit x86, it's not
+   guaranteed by the library to work in the general case.  Unions and
+   structures with bit-fields should always be passed to functions by pointer.
+
 Structure/union alignment and byte order
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
