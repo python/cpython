@@ -401,7 +401,7 @@ is to create alternate class constructors.  In Python 2.3, the classmethod
 :func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
 Python equivalent is::
 
-    class Dict:
+    class Dict(object):
         . . .
         def fromkeys(klass, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
