@@ -19,7 +19,7 @@ available.  They are listed here in alphabetical order.
 :func:`bytearray`    :func:`float`      :func:`list`        :func:`raw_input`  :func:`unichr`
 :func:`callable`     :func:`format`     :func:`locals`      :func:`reduce`     :func:`unicode`
 :func:`chr`          |func-frozenset|_  :func:`long`        :func:`reload`     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`map`         :func:`repr`       :func:`xrange`
+:func:`classmethod`  :func:`getattr`    :func:`map`         |func-repr|_       :func:`xrange`
 :func:`cmp`          :func:`globals`    :func:`max`         :func:`reversed`   :func:`zip`
 :func:`compile`      :func:`hasattr`    |func-memoryview|_  :func:`round`      :func:`__import__`
 :func:`complex`      :func:`hash`       :func:`min`         |func-set|_        :func:`apply`
@@ -34,6 +34,7 @@ available.  They are listed here in alphabetical order.
 .. |func-dict| replace:: ``dict()``
 .. |func-frozenset| replace:: ``frozenset()``
 .. |func-memoryview| replace:: ``memoryview()``
+.. |func-repr| replace:: ``repr()``
 .. |func-set| replace:: ``set()``
 
 
@@ -1179,6 +1180,7 @@ available.  They are listed here in alphabetical order.
    continue to use the old class definition.  The same is true for derived classes.
 
 
+.. _func-repr:
 .. function:: repr(object)
 
    Return a string containing a printable representation of an object.  This is
