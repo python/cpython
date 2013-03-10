@@ -112,7 +112,7 @@ Dictionary Objects
 
 .. c:function:: PyObject* PyDict_SetDefault(PyObject *p, PyObject *key, PyObject *default)
 
-   This is the same the Python-level :meth:`dict.setdefault`.  If present, it
+   This is the same as the Python-level :meth:`dict.setdefault`.  If present, it
    returns the value corresponding to *key* from the dictionary *p*.  If the key
    is not in the dict, it is inserted with value *defaultobj* and *defaultobj*
    is inserted.  This function evaluates the hash function of *key* only once,
