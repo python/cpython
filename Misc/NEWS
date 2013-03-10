@@ -812,6 +812,8 @@ Extension Modules
 Tests
 -----
 
+- Issue #11963: remove human verification from test_parser and test_subprocess.
+
 - Issue #17249: convert a test in test_capi to use unittest and reap threads.
 
 - We now run both test_email.py and test_email_renamed.py when running the
