@@ -79,7 +79,7 @@ class _RLock:
     def acquire(self, blocking=True, timeout=-1):
         me = get_ident()
         if self._owner == me:
-            self._count = self._count + 1
+            self._count += 1
             return 1
         rc = self._block.acquire(blocking, timeout)
         if rc:
@@ -261,7 +261,7 @@ class Semaphore:
                         break
             self._cond.wait(timeout)
         else:
-            self._value = self._value - 1
+            self._value -= 1
             rc = True
         self._cond.release()
         return rc
@@ -270,7 +270,7 @@ class Semaphore:
 
     def release(self):
         self._cond.acquire()
-        self._value = self._value + 1
+        self._value += 1
         self._cond.notify()
         self._cond.release()
 
@@ -506,7 +506,7 @@ class BrokenBarrierError(RuntimeError): pass
 _counter = 0
 def _newname(template="Thread-%d"):
     global _counter
-    _counter = _counter + 1
+    _counter += 1
     return template % _counter
 
 # Active thread administration
