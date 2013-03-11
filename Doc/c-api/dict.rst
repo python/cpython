@@ -114,9 +114,9 @@ Dictionary Objects
 
    This is the same as the Python-level :meth:`dict.setdefault`.  If present, it
    returns the value corresponding to *key* from the dictionary *p*.  If the key
-   is not in the dict, it is inserted with value *defaultobj*.  This function
-   evaluates the hash function of *key* only once, instead of evaluating it
-   independently for the lookup and the insertion.
+   is not in the dict, it is inserted with value *defaultobj* and *defautobj* is
+   returned.  This function evaluates the hash function of *key* only once,
+   instead of evaluating it independently for the lookup and the insertion.
 
 
 .. c:function:: PyObject* PyDict_Items(PyObject *p)
