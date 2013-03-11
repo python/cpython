@@ -317,7 +317,7 @@ are always available.  They are listed here in alphabetical order.
       ['Struct', '__builtins__', '__doc__', '__file__', '__name__',
        '__package__', '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']
-      >>> class Shape(object):
+      >>> class Shape:
               def __dir__(self):
                   return ['area', 'perimeter', 'location']
       >>> s = Shape()
