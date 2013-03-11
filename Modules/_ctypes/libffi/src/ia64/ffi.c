@@ -84,7 +84,7 @@ endian_adjust (void *addr, size_t len)
 #define ldf_fill(result, addr)	\
   asm ("ldf.fill %0 = %1%P1" : "=f"(result) : "m"(*addr));
 
-/* Return the size of the C type associated with with TYPE.  Which will
+/* Return the size of the C type associated with TYPE, which will
    be one of the FFI_IA64_TYPE_HFA_* values.  */
 
 static size_t
@@ -184,7 +184,7 @@ hfa_element_type (ffi_type *type, int nested)
       break;
 
     case FFI_TYPE_LONGDOUBLE:
-      /* Similarly, except that that HFA is true for double extended,
+      /* Similarly, except that HFA is true for double extended,
 	 but not quad precision.  Both have sizeof == 16, so tell the
 	 difference based on the precision.  */
       if (LDBL_MANT_DIG == 64 && nested)
