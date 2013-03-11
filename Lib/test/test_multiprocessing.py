@@ -1748,7 +1748,6 @@ class _TestPool(BaseTestCase):
             with multiprocessing.Pool(2) as p:
                 r = p.map_async(sqr, L)
                 self.assertEqual(r.get(), expected)
-            print(p._state)
             self.assertRaises(ValueError, p.map_async, sqr, L)
 
 def raising():
