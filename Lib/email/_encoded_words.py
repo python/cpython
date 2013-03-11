@@ -14,7 +14,7 @@ to a public API if there is demand.
 # cte (Content Transfer Encoding) is either 'q' or 'b' (ignoring case).  In
 # theory other letters could be used for other encodings, but in practice this
 # (almost?) never happens.  There could be a public API for adding entries
-# to to the CTE tables, but YAGNI for now.  'q' is Quoted Printable, 'b' is
+# to the CTE tables, but YAGNI for now.  'q' is Quoted Printable, 'b' is
 # Base64.  The meaning of encoded_string should be obvious.  'lang' is optional
 # as indicated by the brackets (they are not part of the syntax) but is almost
 # never encountered in practice.

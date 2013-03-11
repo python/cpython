@@ -23,7 +23,7 @@ class EmailPolicy(Policy):
     """+
     PROVISIONAL
 
-    The API extensions enabled by this this policy are currently provisional.
+    The API extensions enabled by this policy are currently provisional.
     Refer to the documentation for details.
 
     This policy adds new header parsing and folding algorithms.  Instead of
