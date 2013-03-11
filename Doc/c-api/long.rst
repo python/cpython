@@ -203,7 +203,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
 
 .. c:function:: size_t PyLong_AsSize_t(PyObject *pylong)
 
-   Return a C :c:type:`size_t` representation of of *pylong*.  *pylong* must be
+   Return a C :c:type:`size_t` representation of *pylong*.  *pylong* must be
    an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for a
@@ -215,7 +215,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    .. index::
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`unsigned PY_LONG_LONG` representation of of *pylong*.
+   Return a C :c:type:`unsigned PY_LONG_LONG` representation of *pylong*.
    *pylong* must be an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for an

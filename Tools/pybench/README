@@ -3,7 +3,7 @@ ________________________________________________________________________
 PYBENCH - A Python Benchmark Suite
 ________________________________________________________________________
 
-     Extendable suite of of low-level benchmarks for measuring
+     Extendable suite of low-level benchmarks for measuring
           the performance of the Python implementation 
                  (interpreter, compiler or VM).
 
