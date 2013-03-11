@@ -1036,7 +1036,7 @@ arbitrary object as a message format string, and that the logging package will
 call ``str()`` on that object to get the actual format string. Consider the
 following two classes::
 
-    class BraceMessage(object):
+    class BraceMessage:
         def __init__(self, fmt, *args, **kwargs):
             self.fmt = fmt
             self.args = args
@@ -1045,7 +1045,7 @@ following two classes::
         def __str__(self):
             return self.fmt.format(*self.args, **self.kwargs)
 
-    class DollarMessage(object):
+    class DollarMessage:
         def __init__(self, fmt, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
@@ -1372,7 +1372,7 @@ works::
     import random
     import time
 
-    class MyHandler(object):
+    class MyHandler:
         """
         A simple handler for logging events. It runs in the listener process and
         dispatches events to loggers based on the name in the received record,
