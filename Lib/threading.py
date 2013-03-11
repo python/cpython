@@ -222,14 +222,14 @@ class Condition:
     def notify(self, n=1):
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
-        __waiters = self._waiters
-        waiters = _deque(_islice(__waiters, n))
-        if not waiters:
+        all_waiters = self._waiters
+        waiters_to_notify = _deque(_islice(all_waiters, n))
+        if not waiters_to_notify:
             return
-        for waiter in waiters:
+        for waiter in waiters_to_notify:
             waiter.release()
             try:
-                __waiters.remove(waiter)
+                all_waiters.remove(waiter)
             except ValueError:
                 pass
 
