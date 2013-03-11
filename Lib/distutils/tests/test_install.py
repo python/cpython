@@ -166,7 +166,7 @@ class InstallTestCase(support.TempdirManager,
         cmd.home = 'home'
         self.assertRaises(DistutilsOptionError, cmd.finalize_options)
 
-        # can't combine user with with prefix/exec_prefix/home or
+        # can't combine user with prefix/exec_prefix/home or
         # install_(plat)base
         cmd.prefix = None
         cmd.user = 'user'
