@@ -277,6 +277,9 @@ Core and Builtins
 Library
 -------
 
+_ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
+  queue now uses a deque instead of a list.
+
 - Issue #14645: The email generator classes now produce output using the
   specified linesep throughout.  Previously if the prolog, epilog, or
   body were stored with a different linesep, that linesep was used.  This
