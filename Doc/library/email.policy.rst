@@ -327,7 +327,7 @@ added matters.  To illustrate::
       each resulting line to the ``max_line_length``.  If ``cte_type`` is
       ``7bit``, non-ascii binary data is CTE encoded using the ``unknown-8bit``
       charset.  Otherwise the original source header is used, with its existing
-      line breaks and and any (RFC invalid) binary data it may contain.
+      line breaks and any (RFC invalid) binary data it may contain.
 
 
 .. note::
