@@ -139,7 +139,7 @@ _siftup(PyListObject *heap, Py_ssize_t pos)
         }
     }
 
-    /* The leaf at pos is empty now.  Put newitem there, and and bubble
+    /* The leaf at pos is empty now.  Put newitem there, and bubble
        it up to its final resting place (by sifting its parents down). */
     Py_DECREF(PyList_GET_ITEM(heap, pos));
     PyList_SET_ITEM(heap, pos, newitem);
@@ -478,7 +478,7 @@ _siftupmax(PyListObject *heap, Py_ssize_t pos)
         childpos = 2*pos + 1;
     }
 
-    /* The leaf at pos is empty now.  Put newitem there, and and bubble
+    /* The leaf at pos is empty now.  Put newitem there, and bubble
        it up to its final resting place (by sifting its parents down). */
     Py_DECREF(PyList_GET_ITEM(heap, pos));
     PyList_SET_ITEM(heap, pos, newitem);
