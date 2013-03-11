@@ -20,7 +20,7 @@ from . import token, tokenize
 
 
 class Grammar(object):
-    """Pgen parsing tables tables conversion class.
+    """Pgen parsing tables conversion class.
 
     Once initialized, this class supplies the grammar tables for the
     parsing engine implemented by parse.py.  The parsing engine
@@ -45,7 +45,7 @@ class Grammar(object):
                      these two are each other's inverse.
 
     states        -- a list of DFAs, where each DFA is a list of
-                     states, each state is is a list of arcs, and each
+                     states, each state is a list of arcs, and each
                      arc is a (i, j) pair where i is a label and j is
                      a state number.  The DFA number is the index into
                      this list.  (This name is slightly confusing.)

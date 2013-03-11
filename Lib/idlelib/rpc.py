@@ -2,7 +2,7 @@
 
 For security reasons, GvR requested that Idle's Python execution server process
 connect to the Idle process, which listens for the connection.  Since Idle has
-has only one client per server, this was not a limitation.
+only one client per server, this was not a limitation.
 
    +---------------------------------+ +-------------+
    | socketserver.BaseRequestHandler | | SocketIO    |
