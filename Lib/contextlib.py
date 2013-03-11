@@ -4,7 +4,7 @@ import sys
 from collections import deque
 from functools import wraps
 
-__all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack"]
+__all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack", "ignored"]
 
 
 class ContextDecorator(object):
@@ -140,6 +140,18 @@ class closing(object):
     def __exit__(self, *exc_info):
         self.thing.close()
 
+@contextmanager
+def ignored(*exceptions):
+    """Context manager to ignore specifed exceptions
+
+         with ignored(OSError):
+             os.remove(somefile)
+
+    """
+    try:
+        yield
+    except exceptions:
+        pass
 
 # Inspired by discussions on http://bugs.python.org/issue13585
 class ExitStack(object):
