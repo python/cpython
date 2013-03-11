@@ -824,7 +824,7 @@ to speed up repeated connections from the same clients.
    will not contain return meaningful values nor can they be called safely.
 
    The *server_name_callback* function must return ``None`` to allow the
-   the TLS negotiation to continue.  If a TLS failure is required, a constant
+   TLS negotiation to continue.  If a TLS failure is required, a constant
    :const:`ALERT_DESCRIPTION_* <ALERT_DESCRIPTION_INTERNAL_ERROR>` can be
    returned.  Other return values will result in a TLS fatal error with
    :const:`ALERT_DESCRIPTION_INTERNAL_ERROR`.
