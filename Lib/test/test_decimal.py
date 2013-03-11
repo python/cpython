@@ -4492,7 +4492,7 @@ class PyWhitebox(unittest.TestCase):
             x = Decimal(2**578) ** Decimal("-0.5")
 
     def test_py_immutability_operations(self):
-        # Do operations and check that it didn't change change internal objects.
+        # Do operations and check that it didn't change internal objects.
         Decimal = P.Decimal
         DefaultContext = P.DefaultContext
         setcontext = P.setcontext

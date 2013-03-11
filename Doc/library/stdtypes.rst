@@ -2637,7 +2637,7 @@ copying.
          >>> z.nbytes
          48
 
-      Cast 1D/unsigned char to to 2D/unsigned long::
+      Cast 1D/unsigned char to 2D/unsigned long::
 
          >>> buf = struct.pack("L"*6, *list(range(6)))
          >>> x = memoryview(buf)

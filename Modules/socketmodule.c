@@ -3609,7 +3609,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
            the next header, it checks its (uninitialized) cmsg_len
            member to see if the "message" fits in the buffer, and
            returns NULL if it doesn't.  Zero-filling the buffer
-           ensures that that doesn't happen. */
+           ensures that this doesn't happen. */
         memset(controlbuf, 0, controllen);
 
         for (i = 0; i < ncmsgbufs; i++) {

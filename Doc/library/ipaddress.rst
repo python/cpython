@@ -393,7 +393,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: is_link_local
 
       These attributes are true for the network as a whole if they are true
-      true for both the network address and the broadcast address
+      for both the network address and the broadcast address
 
    .. attribute:: network_address
 
@@ -452,7 +452,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. method:: overlaps(other)
 
       ``True`` if this network is partly or wholly contained in *other* or
-      or *other* is wholly contained in this network.
+      *other* is wholly contained in this network.
 
    .. method:: address_exclude(network)
 
@@ -582,7 +582,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    .. attribute:: is_site_local
 
       These attribute is true for the network as a whole if it is true
-      true for both the network address and the broadcast address
+      for both the network address and the broadcast address
 
 
 Operators
