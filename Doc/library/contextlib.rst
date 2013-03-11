@@ -94,6 +94,26 @@ Functions and classes provided:
    without needing to explicitly close ``page``.  Even if an error occurs,
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
+.. function:: ignored(*exceptions)
+
+   Return a context manager that ignores the specified expections if they
+   occur in the body of a with-statement.
+
+   For example::
+
+       from contextlib import ignored
+
+       with ignored(OSError):
+           os.remove('somefile.tmp')
+
+   This code is equivalent to::
+
+       try:
+           os.remove('somefile.tmp')
+       except OSError:
+           pass
+
+   .. versionadded:: 3.4
 
 .. class:: ContextDecorator()
 

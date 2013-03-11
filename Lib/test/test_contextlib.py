@@ -594,6 +594,28 @@ class TestExitStack(unittest.TestCase):
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1], cm)
 
+class TestIgnored(unittest.TestCase):
+
+    def test_no_exception(self):
+
+        with ignored(ValueError):
+            self.assertEqual(pow(2, 5), 32)
+
+    def test_exact_exception(self):
+
+        with ignored(TypeError):
+            len(5)
+
+    def test_multiple_exception_args(self):
+
+        with ignored(ZeroDivisionError, TypeError):
+            len(5)
+
+    def test_exception_hierarchy(self):
+
+        with ignored(LookupError):
+            'Hello'[50]
+
 
 # This is needed to make the test actually run under regrtest.py!
 def test_main():
