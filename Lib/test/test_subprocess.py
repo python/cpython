@@ -319,22 +319,22 @@ class ProcessTestCase(BaseTestCase):
 
     def test_stdout_filedes_of_stdout(self):
         # stdout is set to 1 (#1531862).
-        # To avoid printing the '.\n' on stdout, we do something similar to
+        # To avoid printing the text on stdout, we do something similar to
         # test_stdout_none (see above).  The parent subprocess calls the child
         # subprocess passing stdout=1, and this test uses stdout=PIPE in
         # order to capture and check the output of the parent. See #11963.
         code = ('import sys, subprocess; '
                 'rc = subprocess.call([sys.executable, "-c", '
                 '    "import os, sys; sys.exit(os.write(sys.stdout.fileno(), '
-                     '\'.\\\\n\'))"], stdout=1); '
-                'assert rc == 2')
+                     '\'test with stdout=1\'))"], stdout=1); '
+                'assert rc == 18')
         p = subprocess.Popen([sys.executable, "-c", code],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.addCleanup(p.stdout.close)
         self.addCleanup(p.stderr.close)
         out, err = p.communicate()
         self.assertEqual(p.returncode, 0, err)
-        self.assertEqual(out, '.\n')
+        self.assertEqual(out.rstrip(), 'test with stdout=1')
 
     def test_cwd(self):
         tmpdir = tempfile.gettempdir()
