@@ -1141,7 +1141,7 @@ class FileType(object):
         - bufsize -- The file's desired buffer size. Accepts the same values as
             the builtin open() function.
         - encoding -- The file's encoding. Accepts the same values as the
-            the builtin open() function.
+            builtin open() function.
         - errors -- A string indicating how encoding and decoding errors are to
             be handled. Accepts the same value as the builtin open() function.
     """
