@@ -381,7 +381,7 @@ and maps them to the context management protocol::
 
    from contextlib import contextmanager, ExitStack
 
-   class ResourceManager(object):
+   class ResourceManager:
 
        def __init__(self, acquire_resource, release_resource, check_resource_ok=None):
            self.acquire_resource = acquire_resource
