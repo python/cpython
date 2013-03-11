@@ -519,7 +519,7 @@ class Executor(object):
         """Returns a iterator equivalent to map(fn, iter).
 
         Args:
-            fn: A callable that will take take as many arguments as there are
+            fn: A callable that will take as many arguments as there are
                 passed iterables.
             timeout: The maximum number of seconds to wait. If None, then there
                 is no limit on the wait time.
