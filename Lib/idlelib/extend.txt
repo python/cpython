@@ -54,7 +54,7 @@ Extensions are not required to define menu entries for all the events they
 implement.  (They are also not required to create keybindings, but in that
 case there must be empty bindings in cofig-extensions.def)
 
-Here is a complete example example:
+Here is a complete example:
 
 class ZoomHeight:
 
@@ -72,7 +72,7 @@ class ZoomHeight:
         "...Do what you want here..."
 
 The final piece of the puzzle is the file "config-extensions.def", which is
-used to to configure the loading of extensions and to establish key (or, more
+used to configure the loading of extensions and to establish key (or, more
 generally, event) bindings to the virtual events defined in the extensions.
 
 See the comments at the top of config-extensions.def for information.  It's
