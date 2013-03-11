@@ -3152,7 +3152,7 @@ class Text(Widget, XView, YView):
     def peer_create(self, newPathName, cnf={}, **kw): # new in Tk 8.5
         """Creates a peer text widget with the given newPathName, and any
         optional standard configuration options. By default the peer will
-        have the same start and and end line as the parent widget, but
+        have the same start and end line as the parent widget, but
         these can be overriden with the standard configuration options."""
         self.tk.call(self._w, 'peer', 'create', newPathName,
             *self._options(cnf, kw))

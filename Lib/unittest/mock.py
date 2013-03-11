@@ -1417,7 +1417,7 @@ def patch(
     you pass in `create=True`, and the attribute doesn't exist, patch will
     create the attribute for you when the patched function is called, and
     delete it again afterwards. This is useful for writing tests against
-    attributes that your production code creates at runtime. It is off by by
+    attributes that your production code creates at runtime. It is off by
     default because it can be dangerous. With it switched on you can write
     passing tests against APIs that don't actually exist!
 
