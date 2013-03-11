@@ -45,7 +45,7 @@ the correct arguments.
 This example tests that calling `ProductionClass().method` results in a call to
 the `something` method:
 
-    >>> class ProductionClass(object):
+    >>> class ProductionClass:
     ...     def method(self):
     ...         self.something(1, 2, 3)
     ...     def something(self, a, b, c):
@@ -69,7 +69,7 @@ in the correct way.
 The simple `ProductionClass` below has a `closer` method. If it is called with
 an object then it calls `close` on it.
 
-    >>> class ProductionClass(object):
+    >>> class ProductionClass:
     ...     def closer(self, something):
     ...         something.close()
     ...
@@ -398,7 +398,7 @@ ends:
 Where you use `patch` to create a mock for you, you can get a reference to the
 mock using the "as" form of the with statement:
 
-    >>> class ProductionClass(object):
+    >>> class ProductionClass:
     ...     def method(self):
     ...         pass
     ...
@@ -446,7 +446,7 @@ testable way in the first place...
 
 So, suppose we have some code that looks a little bit like this:
 
-    >>> class Something(object):
+    >>> class Something:
     ...     def __init__(self):
     ...         self.backend = BackendProvider()
     ...     def method(self):
@@ -554,7 +554,7 @@ mock this using a `MagicMock`.
 
 Here's an example class with an "iter" method implemented as a generator:
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     def iter(self):
     ...         for i in [1, 2, 3]:
     ...             yield i
@@ -664,7 +664,7 @@ function will be turned into a bound method if it is fetched from an instance.
 It will have `self` passed in as the first argument, which is exactly what I
 wanted:
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...   def foo(self):
     ...     pass
     ...
@@ -1183,7 +1183,7 @@ for us.
 You can see in this example how a 'standard' call to `assert_called_with` isn't
 sufficient:
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     def __init__(self, a, b):
     ...         self.a, self.b = a, b
     ...
@@ -1210,7 +1210,7 @@ A comparison function for our `Foo` class might look something like this:
 And a matcher object that can use comparison functions like this for its
 equality operation would look something like this:
 
-    >>> class Matcher(object):
+    >>> class Matcher:
     ...     def __init__(self, compare, some_obj):
     ...         self.compare = compare
     ...         self.some_obj = some_obj

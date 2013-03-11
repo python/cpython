@@ -695,7 +695,7 @@ have to create a dictionary and unpack it using `**`:
    Fetching a `PropertyMock` instance from an object calls the mock, with
    no args. Setting it calls the mock with the value being set.
 
-        >>> class Foo(object):
+        >>> class Foo:
         ...     @property
         ...     def foo(self):
         ...         return 'something'
@@ -1031,7 +1031,7 @@ can set the `return_value` to be anything you want.
 To configure return values on methods of *instances* on the patched class
 you must do this on the `return_value`. For example:
 
-    >>> class Class(object):
+    >>> class Class:
     ...     def method(self):
     ...         pass
     ...
@@ -1204,7 +1204,7 @@ deleting and either iteration or membership test. This corresponds to the
 magic methods `__getitem__`, `__setitem__`, `__delitem__` and either
 `__iter__` or `__contains__`.
 
-    >>> class Container(object):
+    >>> class Container:
     ...     def __init__(self):
     ...         self.values = {}
     ...     def __getitem__(self, name):
@@ -1378,7 +1378,7 @@ inform the patchers of the different prefix by setting `patch.TEST_PREFIX`:
     >>> value = 3
     >>>
     >>> @patch('__main__.value', 'not three')
-    ... class Thing(object):
+    ... class Thing:
     ...     def foo_one(self):
     ...         print value
     ...     def foo_two(self):
@@ -2137,7 +2137,7 @@ created in the `__init__` method and not to exist on the class at all.
 `autospec` can't know about any dynamically created attributes and restricts
 the api to visible attributes.
 
-    >>> class Something(object):
+    >>> class Something:
     ...   def __init__(self):
     ...     self.a = 33
     ...
@@ -2180,7 +2180,7 @@ class attributes (shared between instances of course) is faster too. e.g.
 
 .. code-block:: python
 
-    class Something(object):
+    class Something:
         a = 33
 
 This brings up another issue. It is relatively common to provide a default
@@ -2191,7 +2191,7 @@ spec, and probably indicates a member that will normally of some other type,
 `autospec` doesn't use a spec for members that are set to `None`. These will
 just be ordinary mocks (well - `MagicMocks`):
 
-    >>> class Something(object):
+    >>> class Something:
     ...     member = None
     ...
     >>> mock = create_autospec(Something)
@@ -2206,7 +2206,7 @@ production class. Both of these require you to use an alternative object as
 the spec. Thankfully `patch` supports this - you can simply pass the
 alternative object as the `autospec` argument:
 
-    >>> class Something(object):
+    >>> class Something:
     ...   def __init__(self):
     ...     self.a = 33
     ...
