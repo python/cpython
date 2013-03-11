@@ -76,7 +76,7 @@ iobase_unsupported(const char *message)
 PyDoc_STRVAR(iobase_seek_doc,
     "Change stream position.\n"
     "\n"
-    "Change the stream position to byte offset offset. offset is\n"
+    "Change the stream position to the given byte offset. The offset is\n"
     "interpreted relative to the position indicated by whence.  Values\n"
     "for whence are:\n"
     "\n"
