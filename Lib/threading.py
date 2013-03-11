@@ -10,6 +10,12 @@ except ImportError:
     from time import time as _time
 from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
+try:
+    from _itertools import islice as _slice
+    from _collections import deque as _deque
+except ImportError:
+    from itertools import islice as _islice
+    from collections import deque as _deque
 
 # Note regarding PEP 8 compliant names
 #  This threading model was originally inspired by Java, and inherited
@@ -146,7 +152,7 @@ class Condition:
             self._is_owned = lock._is_owned
         except AttributeError:
             pass
-        self._waiters = []
+        self._waiters = _deque()
 
     def __enter__(self):
         return self._lock.__enter__()
@@ -217,7 +223,7 @@ class Condition:
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
         __waiters = self._waiters
-        waiters = __waiters[:n]
+        waiters = _deque(_islice(__waiters, n))
         if not waiters:
             return
         for waiter in waiters:
