@@ -2998,7 +2998,13 @@ class ManagerMixin(object):
 
     @classmethod
     def tearDownClass(cls):
-        multiprocessing.active_children()  # discard dead process objs
+        # only the manager process should be returned by active_children()
+        # but this can take a bit on slow machines, so wait a few seconds
+        # if there are other children too (see #17395)
+        t = 0.01
+        while len(multiprocessing.active_children()) > 1 and t < 5:
+            time.sleep(t)
+            t *= 2
         gc.collect()                       # do garbage collection
         if cls.manager._number_of_objects() != 0:
             # This is not really an error since some tests do not
