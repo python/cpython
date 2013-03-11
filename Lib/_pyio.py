@@ -298,7 +298,7 @@ class IOBase(metaclass=abc.ABCMeta):
     def seek(self, pos, whence=0):
         """Change stream position.
 
-        Change the stream position to byte offset offset. offset is
+        Change the stream position to byte offset pos. Argument pos is
         interpreted relative to the position indicated by whence.  Values
         for whence are ints:
 

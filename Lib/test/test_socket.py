@@ -442,7 +442,7 @@ class GeneralModuleTests(unittest.TestCase):
         # Try same call with optional protocol omitted
         port2 = socket.getservbyname(service)
         eq(port, port2)
-        # Try udp, but don't barf it it doesn't exist
+        # Try udp, but don't barf if it doesn't exist
         try:
             udpport = socket.getservbyname(service, 'udp')
         except socket.error:
