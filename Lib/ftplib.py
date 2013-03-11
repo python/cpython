@@ -454,7 +454,7 @@ class FTP:
           blocksize: The maximum data size to read from fp and send over
                      the connection at once.  [default: 8192]
           callback: An optional single parameter callable that is called on
-                    on each block of data after it is sent.  [default: None]
+                    each block of data after it is sent.  [default: None]
           rest: Passed to transfercmd().  [default: None]
 
         Returns:
@@ -477,7 +477,7 @@ class FTP:
           cmd: A STOR command.
           fp: A file-like object with a readline() method.
           callback: An optional single parameter callable that is called on
-                    on each line after it is sent.  [default: None]
+                    each line after it is sent.  [default: None]
 
         Returns:
           The response code.

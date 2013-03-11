@@ -329,7 +329,7 @@ Attributes defined by get/set methods
     ...         return self.__set(inst, value)
 
 Now let's define a class with an attribute x defined by a pair of methods,
-getx() and and setx():
+getx() and setx():
 
     >>> class C(object):
     ...
