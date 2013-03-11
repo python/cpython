@@ -1864,7 +1864,7 @@ def get_dtext(value):
     """ dtext = <printable ascii except \ [ ]> / obs-dtext
         obs-dtext = obs-NO-WS-CTL / quoted-pair
 
-    We allow anything except the excluded characters, but but if we find any
+    We allow anything except the excluded characters, but if we find any
     ASCII other than the RFC defined printable ASCII an NonPrintableDefect is
     added to the token's defects list.  Quoted pairs are converted to their
     unquoted values, so what is returned is a ptext token, in this case a
