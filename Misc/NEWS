@@ -874,6 +874,8 @@ Tests
 Build
 -----
 
+- Issue #16004: Add `make touch`.
+
 - Issue #5033: Fix building of the sqlite3 extension module when the
   SQLite library version has "beta" in it. Patch by Andreas Pelme.
 
