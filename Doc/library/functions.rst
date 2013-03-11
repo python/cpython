@@ -324,7 +324,7 @@ are always available.  They are listed here in alphabetical order.
        '__initializing__', '__loader__', '__name__', '__package__',
        '_clearcache', 'calcsize', 'error', 'pack', 'pack_into',
        'unpack', 'unpack_from']
-      >>> class Shape(object):
+      >>> class Shape:
       ...     def __dir__(self):
       ...         return ['area', 'perimeter', 'location']
       >>> s = Shape()
