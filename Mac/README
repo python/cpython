@@ -30,7 +30,7 @@ the Python distribution.
 
 * ``--enable-universalsdk[=PATH]``
 
-  Create a universal binary build of of Python. This can be used with both
+  Create a universal binary build of Python. This can be used with both
   regular and framework builds.
 
   The optional argument specifies which OSX SDK should be used to perform the
