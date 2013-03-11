@@ -812,7 +812,7 @@ ZEXTERN int ZEXPORT inflateSync OF((z_streamp strm));
      inflateSync returns Z_OK if a full flush point has been found, Z_BUF_ERROR
    if no more input was provided, Z_DATA_ERROR if no flush point has been
    found, or Z_STREAM_ERROR if the stream structure was inconsistent.  In the
-   success case, the application may save the current current value of total_in
+   success case, the application may save the current value of total_in
    which indicates where valid compressed data was found.  In the error case,
    the application may repeatedly call inflateSync, providing more input each
    time, until success or end of the input data.
