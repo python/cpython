@@ -215,7 +215,7 @@ oss_mixer_dealloc(oss_mixer_t *self)
  */
 
 /* _do_ioctl_1() is a private helper function used for the OSS ioctls --
-   SNDCTL_DSP_{SETFMT,CHANNELS,SPEED} -- that that are called from C
+   SNDCTL_DSP_{SETFMT,CHANNELS,SPEED} -- that are called from C
    like this:
      ioctl(fd, SNDCTL_DSP_cmd, &arg)
 
