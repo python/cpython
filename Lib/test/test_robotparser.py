@@ -6,7 +6,10 @@ from urllib.request import urlopen
 from test import support
 
 class RobotTestCase(unittest.TestCase):
-    def __init__(self, index, parser, url, good, agent):
+    def __init__(self, index=None, parser=None, url=None, good=None, agent=None):
+        # workaround to make unittest discovery work (see #17066)
+        if not isinstance(index, int):
+            return
         unittest.TestCase.__init__(self)
         if good:
             self.str = "RobotTest(%d, good, %s)" % (index, url)
@@ -269,10 +272,11 @@ class NetworkTestCase(unittest.TestCase):
             self.assertTrue(
                 parser.can_fetch("*", "http://www.python.org/robots.txt"))
 
-def test_main():
-    support.run_unittest(NetworkTestCase)
-    support.run_unittest(tests)
+def load_tests(loader, suite, pattern):
+    suite = unittest.makeSuite(NetworkTestCase)
+    suite.addTest(tests)
+    return suite
 
 if __name__=='__main__':
-    support.verbose = 1
-    test_main()
+    support.use_resources = ['network']
+    unittest.main()
