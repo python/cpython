@@ -705,8 +705,7 @@ class ElementTree:
         return list(self.iter(tag))
 
     ##
-    # Finds the first toplevel element with given tag.
-    # Same as getroot().find(path).
+    # Same as getroot().find(path), starting at the root of the tree.
     #
     # @param path What element to look for.
     # @keyparam namespaces Optional namespace prefix map.
@@ -726,10 +725,9 @@ class ElementTree:
         return self._root.find(path, namespaces)
 
     ##
-    # Finds the element text for the first toplevel element with given
-    # tag.  Same as getroot().findtext(path).
+    # Same as getroot().findtext(path), starting at the root of the tree.
     #
-    # @param path What toplevel element to look for.
+    # @param path What element to look for.
     # @param default What to return if the element was not found.
     # @keyparam namespaces Optional namespace prefix map.
     # @return The text content of the first matching element, or the
@@ -751,8 +749,7 @@ class ElementTree:
         return self._root.findtext(path, default, namespaces)
 
     ##
-    # Finds all toplevel elements with the given tag.
-    # Same as getroot().findall(path).
+    # Same as getroot().findall(path), starting at the root of the tree.
     #
     # @param path What element to look for.
     # @keyparam namespaces Optional namespace prefix map.
