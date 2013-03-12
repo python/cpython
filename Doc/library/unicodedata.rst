@@ -166,6 +166,6 @@ Examples:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/6.1.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/6.2.0/ucd/NameAliases.txt
 
-.. [#] http://www.unicode.org/Public/6.1.0/ucd/NamedSequences.txt
+.. [#] http://www.unicode.org/Public/6.2.0/ucd/NamedSequences.txt
