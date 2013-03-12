@@ -25,16 +25,22 @@ class TestDecode:
         p = [("xkd", 1), ("kcw", 2), ("art", 3), ("hxm", 4),
              ("qrt", 5), ("pad", 6), ("hoy", 7)]
         self.assertEqual(self.loads(s), eval(s))
-        self.assertEqual(self.loads(s, object_pairs_hook = lambda x: x), p)
+        self.assertEqual(self.loads(s, object_pairs_hook=lambda x: x), p)
         self.assertEqual(self.json.load(StringIO(s),
                                         object_pairs_hook=lambda x: x), p)
-        od = self.loads(s, object_pairs_hook = OrderedDict)
+        od = self.loads(s, object_pairs_hook=OrderedDict)
         self.assertEqual(od, OrderedDict(p))
         self.assertEqual(type(od), OrderedDict)
         # the object_pairs_hook takes priority over the object_hook
-        self.assertEqual(self.loads(s, object_pairs_hook = OrderedDict,
-                                    object_hook = lambda x: None),
+        self.assertEqual(self.loads(s, object_pairs_hook=OrderedDict,
+                                    object_hook=lambda x: None),
                          OrderedDict(p))
+        # check that empty objects literals work (see #17368)
+        self.assertEqual(self.loads('{}', object_pairs_hook=OrderedDict),
+                         OrderedDict())
+        self.assertEqual(self.loads('{"empty": {}}',
+                                    object_pairs_hook=OrderedDict),
+                         OrderedDict([('empty', OrderedDict())]))
 
     def test_decoder_optimizations(self):
         # Several optimizations were made that skip over calls to
