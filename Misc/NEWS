@@ -944,6 +944,9 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #14707: remove doubled words in docs and docstrings
+  reported by Serhiy Storchaka and Matthew Barnett.
+
 - Issue #16406: combine the pages for uploading and registering to PyPI.
 
 - Issue #16403: Document how distutils uses the maintainer field in
