@@ -277,6 +277,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17368: Fix an off-by-one error in the Python JSON decoder that caused
+  a failure while decoding empty object literals when object_pairs_hook was
+  specified.
+
 _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
   queue now uses a deque instead of a list.
 
