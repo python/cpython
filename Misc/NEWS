@@ -934,6 +934,9 @@ Tests
 
 - Issue #16836: Enable IPv6 support even if IPv6 is disabled on the build host.
 
+- Issue #17066: test_robotparser now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #17334: test_index now works with unittest test discovery.
   Patch by Zachary Ware.
 
