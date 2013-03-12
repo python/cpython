@@ -40,10 +40,15 @@ class TestDecode(object):
         self.assertEqual(od, OrderedDict(p))
         self.assertEqual(type(od), OrderedDict)
         # the object_pairs_hook takes priority over the object_hook
-        self.assertEqual(self.loads(s,
-                                    object_pairs_hook=OrderedDict,
+        self.assertEqual(self.loads(s, object_pairs_hook=OrderedDict,
                                     object_hook=lambda x: None),
                          OrderedDict(p))
+        # check that empty objects literals work (see #17368)
+        self.assertEqual(self.loads('{}', object_pairs_hook=OrderedDict),
+                         OrderedDict())
+        self.assertEqual(self.loads('{"empty": {}}',
+                                    object_pairs_hook=OrderedDict),
+                         OrderedDict([('empty', OrderedDict())]))
 
     def test_extra_data(self):
         s = '[1, 2, 3]5'
