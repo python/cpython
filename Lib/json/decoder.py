@@ -166,7 +166,7 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
         if nextchar == '}':
             if object_pairs_hook is not None:
                 result = object_pairs_hook(pairs)
-                return result, end
+                return result, end + 1
             pairs = {}
             if object_hook is not None:
                 pairs = object_hook(pairs)
