@@ -233,6 +233,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17368: Fix an off-by-one error in the Python JSON decoder that caused
+  a failure while decoding empty object literals when object_pairs_hook was
+  specified.
+
 - Issue #14645: The email generator classes now produce output using the
   specified linesep throughout.  Previously if the prolog, epilog, or
   body were stored with a different linesep, that linesep was used.  This
