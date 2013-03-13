@@ -277,6 +277,8 @@ Core and Builtins
 Library
 -------
 
+- Expose the O_PATH constant in the os module if it is available.
+
 - Issue #17368: Fix an off-by-one error in the Python JSON decoder that caused
   a failure while decoding empty object literals when object_pairs_hook was
   specified.

@@ -10858,6 +10858,9 @@ all_ins(PyObject *d)
 #ifdef O_SEARCH
     if (ins(d, "O_SEARCH", (long)O_SEARCH)) return -1;
 #endif
+#ifdef O_PATH
+    if (ins(d, "O_PATH", (long)O_PATH)) return -1;
+#endif
 #ifdef O_TTY_INIT
     if (ins(d, "O_TTY_INIT", (long)O_TTY_INIT)) return -1;
 #endif
