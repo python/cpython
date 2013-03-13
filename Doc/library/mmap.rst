@@ -106,19 +106,19 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       with open("hello.txt", "r+b") as f:
           # memory-map the file, size 0 means whole file
-          map = mmap.mmap(f.fileno(), 0)
+          mm = mmap.mmap(f.fileno(), 0)
           # read content via standard file methods
-          print(map.readline())  # prints b"Hello Python!\n"
+          print(mm.readline())  # prints b"Hello Python!\n"
           # read content via slice notation
-          print(map[:5])  # prints b"Hello"
+          print(mm[:5])  # prints b"Hello"
           # update content using slice notation;
           # note that new content must have same size
-          map[6:] = b" world!\n"
+          mm[6:] = b" world!\n"
           # ... and read again using standard file methods
-          map.seek(0)
-          print(map.readline())  # prints b"Hello  world!\n"
+          mm.seek(0)
+          print(mm.readline())  # prints b"Hello  world!\n"
           # close the map
-          map.close()
+          mm.close()
 
 
    :class:`mmap` can also be used as a context manager in a :keyword:`with`
@@ -126,8 +126,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       import mmap
 
-      with mmap.mmap(-1, 13) as map:
-          map.write("Hello world!")
+      with mmap.mmap(-1, 13) as mm:
+          mm.write("Hello world!")
 
    .. versionadded:: 3.2
       Context manager support.
@@ -139,16 +139,16 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       import mmap
       import os
 
-      map = mmap.mmap(-1, 13)
-      map.write(b"Hello world!")
+      mm = mmap.mmap(-1, 13)
+      mm.write(b"Hello world!")
 
       pid = os.fork()
 
       if pid == 0: # In a child process
-          map.seek(0)
-          print(map.readline())
+          mm.seek(0)
+          print(mm.readline())
 
-          map.close()
+          mm.close()
 
 
    Memory-mapped file objects support the following methods:
