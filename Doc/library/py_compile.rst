@@ -28,7 +28,7 @@ byte-code cache files in the directory containing the source code.
 
 .. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1)
 
-   Compile a source file to byte-code and write out the byte-code cache  file.
+   Compile a source file to byte-code and write out the byte-code cache file.
    The source code is loaded from the file name *file*.  The  byte-code is
    written to *cfile*, which defaults to the :PEP:`3147` path, ending in
    ``.pyc`` (``.pyo`` if optimization is enabled in the current interpreter).
@@ -49,6 +49,11 @@ byte-code cache files in the directory containing the source code.
       Changed default value of *cfile* to be :PEP:`3147`-compliant.  Previous
       default was *file* + ``'c'`` (``'o'`` if optimization was enabled).
       Also added the *optimize* parameter.
+
+   .. versionchanged:: 3.4
+      Changed code to use :mod:`importlib` for the byte-code cache file writing.
+      This means file creation/writing semantics now match what :mod:`importlib`
+      does, e.g. permissions, write-and-move semantics, etc.
 
 
 .. function:: main(args=None)
