@@ -369,16 +369,18 @@ Loaders must satisfy the following requirements:
  * The ``__loader__`` attribute must be set to the loader object that loaded
    the module.  This is mostly for introspection and reloading, but can be
    used for additional loader-specific functionality, for example getting
-   data associated with a loader.
+   data associated with a loader. If the attribute is missing or set to ``None``
+   then the import machinery will automatically set it **after** the module has
+   been imported.
 
- * The module's ``__package__`` attribute should be set.  Its value must be a
+ * The module's ``__package__`` attribute must be set.  Its value must be a
    string, but it can be the same value as its ``__name__``.  If the attribute
    is set to ``None`` or is missing, the import system will fill it in with a
-   more appropriate value.  When the module is a package, its ``__package__``
-   value should be set to its ``__name__``.  When the module is not a package,
-   ``__package__`` should be set to the empty string for top-level modules, or
-   for submodules, to the parent package's name.  See :pep:`366` for further
-   details.
+   more appropriate value **after** the module has been imported.
+   When the module is a package, its ``__package__`` value should be set to its
+   ``__name__``.  When the module is not a package, ``__package__`` should be
+   set to the empty string for top-level modules, or for submodules, to the
+   parent package's name.  See :pep:`366` for further details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
    relative imports for main modules, as defined in :pep:`366`.

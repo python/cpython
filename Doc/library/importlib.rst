@@ -774,6 +774,10 @@ an :term:`importer`.
       It is recommended that :func:`module_for_loader` be used over this
       decorator as it subsumes this functionality.
 
+   .. versionchanged:: 3.4
+      Set ``__loader__`` if set to ``None`` as well if the attribute does not
+      exist.
+
 
 .. decorator:: set_package
 

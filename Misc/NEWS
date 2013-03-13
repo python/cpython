@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17117: Import and @importlib.util.set_loader now set __loader__ when
+  it has a value of None or the attribute doesn't exist.
+
 - Issue #17327: Add PyDict_SetDefault.
 
 - Issue #17032: The "global" in the "NameError: global name 'x' is not defined"
