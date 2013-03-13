@@ -770,11 +770,14 @@ always available.
     A dictionary acting as a cache for :term:`finder` objects. The keys are
     paths that have been passed to :data:`sys.path_hooks` and the values are
     the finders that are found. If a path is a valid file system path but no
-    explicit finder is found on :data:`sys.path_hooks` then ``None`` is
-    stored to represent the implicit default finder should be used. If the path
-    is not an existing path then :class:`imp.NullImporter` is set.
+    finder is found on :data:`sys.path_hooks` then ``None`` is
+    stored.
 
     Originally specified in :pep:`302`.
+
+    .. versionchanged:: 3.3
+       ``None`` is stored instead of :class:`imp.NullImporter` when no finder
+       is found.
 
 
 .. data:: platform
