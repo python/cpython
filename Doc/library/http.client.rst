@@ -633,6 +633,24 @@ Here is an example session that shows how to ``POST`` requests::
    b'Redirecting to <a href="http://bugs.python.org/issue12524">http://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
+Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
+difference lies only the server side where HTTP server will allow resources to
+be created via ``PUT`` request. It should be noted that custom HTTP methods
++are also handled in :class:`urllib.request.Request` by sending the appropriate
++method attribute.Here is an example session that shows how to do ``PUT``
+request using http.client::
+
+    >>> # This creates an HTTP message
+    >>> # with the content of BODY as the enclosed representation
+    >>> # for the resource http://localhost:8080/foobar
+    ...
+    >>> import http.client
+    >>> BODY = "***filecontents***"
+    >>> conn = http.client.HTTPConnection("localhost", 8080)
+    >>> conn.request("PUT", "/file", BODY)
+    >>> response = conn.getresponse()
+    >>> print(resp.status, response.reason)
+    200, OK
 
 .. _httpmessage-objects:
 
