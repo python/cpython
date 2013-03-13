@@ -114,19 +114,19 @@ memory but does not update the underlying file.
 
       with open("hello.txt", "r+b") as f:
           # memory-map the file, size 0 means whole file
-          map = mmap.mmap(f.fileno(), 0)
+          mm = mmap.mmap(f.fileno(), 0)
           # read content via standard file methods
-          print map.readline()  # prints "Hello Python!"
+          print mm.readline()  # prints "Hello Python!"
           # read content via slice notation
-          print map[:5]  # prints "Hello"
+          print mm[:5]  # prints "Hello"
           # update content using slice notation;
           # note that new content must have same size
-          map[6:] = " world!\n"
+          mm[6:] = " world!\n"
           # ... and read again using standard file methods
-          map.seek(0)
-          print map.readline()  # prints "Hello  world!"
+          mm.seek(0)
+          print mm.readline()  # prints "Hello  world!"
           # close the map
-          map.close()
+          mm.close()
 
 
    The next example demonstrates how to create an anonymous map and exchange
@@ -135,16 +135,16 @@ memory but does not update the underlying file.
       import mmap
       import os
 
-      map = mmap.mmap(-1, 13)
-      map.write("Hello world!")
+      mm = mmap.mmap(-1, 13)
+      mm.write("Hello world!")
 
       pid = os.fork()
 
       if pid == 0: # In a child process
-          map.seek(0)
-          print map.readline()
+          mm.seek(0)
+          print mm.readline()
 
-          map.close()
+          mm.close()
 
 
    Memory-mapped file objects support the following methods:
