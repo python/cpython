@@ -116,6 +116,20 @@ class FindLoaderTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 importlib.find_loader(name)
 
+    def test_sys_modules_loader_is_not_set(self):
+        # Should raise ValueError
+        # Issue #17099
+        name = 'some_mod'
+        with util.uncache(name):
+            module = imp.new_module(name)
+            try:
+                del module.__loader__
+            except AttributeError:
+                pass
+            sys.modules[name] = module
+            with self.assertRaises(ValueError):
+                importlib.find_loader(name)
+
     def test_success(self):
         # Return the loader found on sys.meta_path.
         name = 'some_mod'
