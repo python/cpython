@@ -28,7 +28,7 @@ static unsigned char M___hello__[] = {
 
 #define SIZE (int)sizeof(M___hello__)
 
-static struct _frozen _PyImport_FrozenModules[] = {
+static const struct _frozen _PyImport_FrozenModules[] = {
     /* importlib */
     {"_frozen_importlib", _Py_M__importlib, (int)sizeof(_Py_M__importlib)},
     /* Test module */
@@ -42,4 +42,4 @@ static struct _frozen _PyImport_FrozenModules[] = {
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
 
-struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
+const struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
