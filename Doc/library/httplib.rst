@@ -612,3 +612,20 @@ Here is an example session that shows how to ``POST`` requests::
    'Redirecting to <a href="http://bugs.python.org/issue12524">http://bugs.python.org/issue12524</a>'
    >>> conn.close()
 
+Client side ``HTTP PUT`` requests are very similar to ``POST`` requests. The
+difference lies only the server side where HTTP server will allow resources to
+be created via ``PUT`` request. Here is an example session that shows how to do
+``PUT`` request using httplib::
+
+    >>> # This creates an HTTP message
+    >>> # with the content of BODY as the enclosed representation
+    >>> # for the resource http://localhost:8080/foobar
+    ...
+    >>> import httplib
+    >>> BODY = "***filecontents***"
+    >>> conn = httplib.HTTPConnection("localhost", 8080)
+    >>> conn.request("PUT", "/file", BODY)
+    >>> response = conn.getresponse()
+    >>> print resp.status, response.reason
+    200, OK
+
