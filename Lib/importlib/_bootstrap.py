@@ -494,7 +494,7 @@ def set_loader(fxn):
     """Set __loader__ on the returned module."""
     def set_loader_wrapper(self, *args, **kwargs):
         module = fxn(self, *args, **kwargs)
-        if not hasattr(module, '__loader__'):
+        if getattr(module, '__loader__', None) is None:
             module.__loader__ = self
         return module
     _wrap(set_loader_wrapper, fxn)
@@ -875,12 +875,9 @@ class _LoaderBasics:
                 module.__cached__ = module.__file__
         else:
             module.__cached__ = module.__file__
-        module.__package__ = name
         if self.is_package(name):
             module.__path__ = [_path_split(module.__file__)[0]]
-        else:
-            module.__package__ = module.__package__.rpartition('.')[0]
-        module.__loader__ = self
+        # __package__ and __loader set by @module_for_loader.
         _call_with_frames_removed(exec, code_object, module.__dict__)
         return module
 
@@ -1551,7 +1548,7 @@ def _find_and_load_unlocked(name, import_):
         except AttributeError:
             pass
     # Set loader if need be.
-    if not hasattr(module, '__loader__'):
+    if getattr(module, '__loader__', None) is None:
         try:
             module.__loader__ = loader
         except AttributeError:
