@@ -113,15 +113,15 @@ PyAPI_FUNC(int) PyImport_AppendInittab(
 
 #ifndef Py_LIMITED_API
 struct _frozen {
-    char *name;                 /* ASCII encoded string */
-    unsigned char *code;
+    const char *name;                 /* ASCII encoded string */
+    const unsigned char *code;
     int size;
 };
 
 /* Embedding apps may change this pointer to point to their favorite
    collection of frozen modules: */
 
-PyAPI_DATA(struct _frozen *) PyImport_FrozenModules;
+PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
 #endif
 
 #ifdef __cplusplus
