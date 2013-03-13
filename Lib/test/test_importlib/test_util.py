@@ -162,6 +162,37 @@ class SetPackageTests(unittest.TestCase):
         self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
 
+class SetLoaderTests(unittest.TestCase):
+
+    """Tests importlib.util.set_loader()."""
+
+    class DummyLoader:
+        @util.set_loader
+        def load_module(self, module):
+            return self.module
+
+    def test_no_attribute(self):
+        loader = self.DummyLoader()
+        loader.module = imp.new_module('blah')
+        try:
+            del loader.module.__loader__
+        except AttributeError:
+            pass
+        self.assertEqual(loader, loader.load_module('blah').__loader__)
+
+    def test_attribute_is_None(self):
+        loader = self.DummyLoader()
+        loader.module = imp.new_module('blah')
+        loader.module.__loader__ = None
+        self.assertEqual(loader, loader.load_module('blah').__loader__)
+
+    def test_not_reset(self):
+        loader = self.DummyLoader()
+        loader.module = imp.new_module('blah')
+        loader.module.__loader__ = 42
+        self.assertEqual(42, loader.load_module('blah').__loader__)
+
+
 class ResolveNameTests(unittest.TestCase):
 
     """Tests importlib.util.resolve_name()."""
@@ -195,14 +226,5 @@ class ResolveNameTests(unittest.TestCase):
             util.resolve_name('..bacon', 'spam')
 
 
-def test_main():
-    from test import support
-    support.run_unittest(
-            ModuleForLoaderTests,
-            SetPackageTests,
-            ResolveNameTests
-        )
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
