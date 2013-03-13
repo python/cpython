@@ -1141,6 +1141,15 @@ The code for the sample CGI used in the above example is::
    data = sys.stdin.read()
    print('Content-type: text-plain\n\nGot Data: "%s"' % data)
 
+Here is an example of doing a ``PUT`` request using :class:`Request`::
+
+    import urllib.request
+    DATA=b'some data'
+    req = urllib.request.Request(url='http://localhost:8080', data=DATA,method='PUT')
+    f = urllib.request.urlopen(req)
+    print(f.status)
+    print(f.reason)
+
 Use of Basic HTTP Authentication::
 
    import urllib.request
