@@ -1,10 +1,44 @@
-import cPickle, unittest
-from cStringIO import StringIO
+import cPickle
+import cStringIO
+import io
+import unittest
 from test.pickletester import (AbstractPickleTests,
                                AbstractPickleModuleTests,
                                AbstractPicklerUnpicklerObjectTests,
                                BigmemPickleTests)
 from test import test_support
+
+class cStringIOMixin:
+    output = input = cStringIO.StringIO
+
+    def close(self, f):
+        pass
+
+class BytesIOMixin:
+    output = input = io.BytesIO
+
+    def close(self, f):
+        pass
+
+class FileIOMixin:
+
+    def output(self):
+        return open(test_support.TESTFN, 'w+')
+
+    def input(self, data):
+        f = open(test_support.TESTFN, 'w+')
+        try:
+            f.write(data)
+            f.seek(0)
+            return f
+        except:
+            f.close()
+            raise
+
+    def close(self, f):
+        f.close()
+        test_support.unlink(test_support.TESTFN)
+
 
 class cPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
@@ -18,18 +52,34 @@ class cPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 class cPicklePicklerTests(AbstractPickleTests):
 
     def dumps(self, arg, proto=0):
-        f = StringIO()
-        p = cPickle.Pickler(f, proto)
-        p.dump(arg)
-        f.seek(0)
-        return f.read()
+        f = self.output()
+        try:
+            p = cPickle.Pickler(f, proto)
+            p.dump(arg)
+            f.seek(0)
+            return f.read()
+        finally:
+            self.close(f)
 
     def loads(self, buf):
-        f = StringIO(buf)
-        p = cPickle.Unpickler(f)
-        return p.load()
+        f = self.input(buf)
+        try:
+            p = cPickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
 
     error = cPickle.BadPickleGet
+
+class cStringIOCPicklerTests(cStringIOMixin, cPicklePicklerTests):
+    pass
+
+class BytesIOCPicklerTests(BytesIOMixin, cPicklePicklerTests):
+    pass
+
+class FileIOCPicklerTests(FileIOMixin, cPicklePicklerTests):
+    pass
+
 
 class cPickleListPicklerTests(AbstractPickleTests):
 
@@ -39,26 +89,45 @@ class cPickleListPicklerTests(AbstractPickleTests):
         return p.getvalue()
 
     def loads(self, *args):
-        f = StringIO(args[0])
-        p = cPickle.Unpickler(f)
-        return p.load()
+        f = self.input(args[0])
+        try:
+            p = cPickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
 
     error = cPickle.BadPickleGet
+
+class cStringIOCPicklerListTests(cStringIOMixin, cPickleListPicklerTests):
+    pass
+
+class BytesIOCPicklerListTests(BytesIOMixin, cPickleListPicklerTests):
+    pass
+
+class FileIOCPicklerListTests(FileIOMixin, cPickleListPicklerTests):
+    pass
+
 
 class cPickleFastPicklerTests(AbstractPickleTests):
 
     def dumps(self, arg, proto=0):
-        f = StringIO()
-        p = cPickle.Pickler(f, proto)
-        p.fast = 1
-        p.dump(arg)
-        f.seek(0)
-        return f.read()
+        f = self.output()
+        try:
+            p = cPickle.Pickler(f, proto)
+            p.fast = 1
+            p.dump(arg)
+            f.seek(0)
+            return f.read()
+        finally:
+            self.close(f)
 
     def loads(self, *args):
-        f = StringIO(args[0])
-        p = cPickle.Unpickler(f)
-        return p.load()
+        f = self.input(args[0])
+        try:
+            p = cPickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
 
     error = cPickle.BadPickleGet
 
@@ -97,6 +166,16 @@ class cPickleFastPicklerTests(AbstractPickleTests):
             a = [a]
         b = self.loads(self.dumps(a))
         self.assertEqual(a, b)
+
+class cStringIOCPicklerFastTests(cStringIOMixin, cPickleFastPicklerTests):
+    pass
+
+class BytesIOCPicklerFastTests(BytesIOMixin, cPickleFastPicklerTests):
+    pass
+
+class FileIOCPicklerFastTests(FileIOMixin, cPickleFastPicklerTests):
+    pass
+
 
 class cPicklePicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
 
@@ -140,9 +219,15 @@ class cPickleDeepRecursive(unittest.TestCase):
 def test_main():
     test_support.run_unittest(
         cPickleTests,
-        cPicklePicklerTests,
-        cPickleListPicklerTests,
-        cPickleFastPicklerTests,
+        cStringIOCPicklerTests,
+        BytesIOCPicklerTests,
+        FileIOCPicklerTests,
+        cStringIOCPicklerListTests,
+        BytesIOCPicklerListTests,
+        FileIOCPicklerListTests,
+        cStringIOCPicklerFastTests,
+        BytesIOCPicklerFastTests,
+        FileIOCPicklerFastTests,
         cPickleDeepRecursive,
         cPicklePicklerUnpicklerObjectTests,
         cPickleBigmemPickleTests,
