@@ -816,6 +816,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #17299: Add test coverage for cPickle with file objects and general IO
+  objects.  Original patch by Aman Shah.
+
 - Issue #11963: remove human verification from test_parser and test_subprocess.
 
 - Issue #17249: convert a test in test_capi to use unittest and reap threads.
