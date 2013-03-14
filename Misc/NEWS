@@ -214,6 +214,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1285086: Get rid of the refcounting hack and speed up urllib.unquote().
+
 - Issue #17368: Fix an off-by-one error in the Python JSON decoder that caused
   a failure while decoding empty object literals when object_pairs_hook was
   specified.
