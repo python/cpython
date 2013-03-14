@@ -953,6 +953,8 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue #17412: update 2.7 Doc/make.bat to also use sphinx-1.0.7.
+
 - Issue #17047: remove doubled words in docs and docstrings
   reported by Serhiy Storchaka and Matthew Barnett.
 
