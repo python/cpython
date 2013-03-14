@@ -2,7 +2,7 @@
 setlocal
 
 set SVNROOT=http://svn.python.org/projects
-if "%PYTHON%" EQU "" set PYTHON=..\pcbuild\python
+if "%PYTHON%" EQU "" set PYTHON=py -2
 if "%HTMLHELP%" EQU "" set HTMLHELP=%ProgramFiles%\HTML Help Workshop\hhc.exe
 if "%DISTVERSION%" EQU "" for /f "usebackq" %%v in (`%PYTHON% tools/sphinxext/patchlevel.py`) do set DISTVERSION=%%v
 
