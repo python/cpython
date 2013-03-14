@@ -27,6 +27,7 @@ parsing quirks from older RFCs are retained. The testcases in
 test_urlparse.py provides a good indicator of parsing behavior.
 """
 
+import re
 import sys
 import collections
 
@@ -470,6 +471,10 @@ def urldefrag(url):
         defrag = url
     return _coerce_result(DefragResult(defrag, frag))
 
+_hexdig = '0123456789ABCDEFabcdef'
+_hextobyte = {(a + b).encode(): bytes([int(a + b, 16)])
+              for a in _hexdig for b in _hexdig}
+
 def unquote_to_bytes(string):
     """unquote_to_bytes('abc%20def') -> b'abc def'."""
     # Note: strings are encoded as UTF-8. This is only an issue if it contains
@@ -480,16 +485,21 @@ def unquote_to_bytes(string):
         return b''
     if isinstance(string, str):
         string = string.encode('utf-8')
-    res = string.split(b'%')
-    if len(res) == 1:
+    bits = string.split(b'%')
+    if len(bits) == 1:
         return string
-    string = res[0]
-    for item in res[1:]:
+    res = [bits[0]]
+    append = res.append
+    for item in bits[1:]:
         try:
-            string += bytes([int(item[:2], 16)]) + item[2:]
-        except ValueError:
-            string += b'%' + item
-    return string
+            append(_hextobyte[item[:2]])
+            append(item[2:])
+        except KeyError:
+            append(b'%')
+            append(item)
+    return b''.join(res)
+
+_asciire = re.compile('([\x00-\x7f]+)')
 
 def unquote(string, encoding='utf-8', errors='replace'):
     """Replace %xx escapes by their single-character equivalent. The optional
@@ -501,39 +511,20 @@ def unquote(string, encoding='utf-8', errors='replace'):
 
     unquote('abc%20def') -> 'abc def'.
     """
-    if string == '':
-        return string
-    res = string.split('%')
-    if len(res) == 1:
+    if '%' not in string:
+        string.split
         return string
     if encoding is None:
         encoding = 'utf-8'
     if errors is None:
         errors = 'replace'
-    # pct_sequence: contiguous sequence of percent-encoded bytes, decoded
-    pct_sequence = b''
-    string = res[0]
-    for item in res[1:]:
-        try:
-            if not item:
-                raise ValueError
-            pct_sequence += bytes.fromhex(item[:2])
-            rest = item[2:]
-            if not rest:
-                # This segment was just a single percent-encoded character.
-                # May be part of a sequence of code units, so delay decoding.
-                # (Stored in pct_sequence).
-                continue
-        except ValueError:
-            rest = '%' + item
-        # Encountered non-percent-encoded characters. Flush the current
-        # pct_sequence.
-        string += pct_sequence.decode(encoding, errors) + rest
-        pct_sequence = b''
-    if pct_sequence:
-        # Flush the final pct_sequence
-        string += pct_sequence.decode(encoding, errors)
-    return string
+    bits = _asciire.split(string)
+    res = [bits[0]]
+    append = res.append
+    for i in range(1, len(bits), 2):
+        append(unquote_to_bytes(bits[i]).decode(encoding, errors))
+        append(bits[i + 1])
+    return ''.join(res)
 
 def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
              encoding='utf-8', errors='replace'):
