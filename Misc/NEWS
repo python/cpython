@@ -1109,6 +1109,9 @@ Documentation
 - Issue #16642: sched.scheduler timefunc initial default is time.monotonic.
   Patch by Ramchandra Apte
 
+- Issue #17047: remove doubled words in docs and docstrings
+  reported by Serhiy Storchaka and Matthew Barnett.
+
 - Issue #15465: Document the versioning macros in the C API docs rather than
   the standard library docs. Patch by Kushal Das.
 
