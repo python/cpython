@@ -280,6 +280,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17414: Add timeit, repeat, and default_timer to timeit.__all__.
+
 - Issue #1285086: Get rid of the refcounting hack and speed up
   urllib.parse.unquote() and urllib.parse.unquote_to_bytes().
 
