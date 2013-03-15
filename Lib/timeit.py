@@ -31,38 +31,29 @@ treated similarly.
 If -n is not given, a suitable number of loops is calculated by trying
 successive powers of 10 until the total time is at least 0.2 seconds.
 
-The difference in default timer function is because on Windows,
-clock() has microsecond granularity but time()'s granularity is 1/60th
-of a second; on Unix, clock() has 1/100th of a second granularity and
-time() is much more precise.  On either platform, the default timer
-functions measure wall clock time, not the CPU time.  This means that
-other processes running on the same computer may interfere with the
-timing.  The best thing to do when accurate timing is necessary is to
-repeat the timing a few times and use the best time.  The -r option is
-good for this; the default of 3 repetitions is probably enough in most
-cases.  On Unix, you can use clock() to measure CPU time.
-
 Note: there is a certain baseline overhead associated with executing a
-pass statement.  The code here doesn't try to hide it, but you should
-be aware of it.  The baseline overhead can be measured by invoking the
-program without arguments.
+pass statement.  It differs between versions.  The code here doesn't try
+to hide it, but you should be aware of it.  The baseline overhead can be
+measured by invoking the program without arguments.
 
-The baseline overhead differs between Python versions!  Also, to
-fairly compare older Python versions to Python 2.3, you may want to
-use python -O for the older versions to avoid timing SET_LINENO
-instructions.
+Classes:
+
+    Timer
+
+Functions:
+
+    timeit(string, string) -> float
+    repeat(string, string) -> list
+    default_timer() -> float
+
 """
 
 import gc
 import sys
 import time
-try:
-    import itertools
-except ImportError:
-    # Must be an older Python version (see timeit() below)
-    itertools = None
+import itertools
 
-__all__ = ["Timer"]
+__all__ = ["Timer", "timeit", "repeat", "default_timer"]
 
 dummy_src_name = "<timeit-src>"
 default_number = 1000000
@@ -180,10 +171,7 @@ class Timer:
         to one million.  The main statement, the setup statement and
         the timer function to be used are passed to the constructor.
         """
-        if itertools:
-            it = itertools.repeat(None, number)
-        else:
-            it = [None] * number
+        it = itertools.repeat(None, number)
         gcold = gc.isenabled()
         gc.disable()
         try:
