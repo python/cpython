@@ -19,10 +19,10 @@ Web site that published the :file:`robots.txt` file.  For more details on the
 structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
 
 
-.. class:: RobotFileParser()
+.. class:: RobotFileParser(url='')
 
-   This class provides a set of methods to read, parse and answer questions
-   about a single :file:`robots.txt` file.
+   This class provides methods to read, parse and answer questions about the
+   :file:`robots.txt` file at *url*.
 
    .. method:: set_url(url)
 
