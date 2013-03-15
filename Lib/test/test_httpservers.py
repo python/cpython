@@ -95,6 +95,10 @@ class BaseHTTPServerTestCase(BaseTestCase):
         def do_NOTFOUND(self):
             self.send_error(404)
 
+        def do_EXPLAINERROR(self):
+            self.send_error(999, "Short Message",
+                            "This is a long \n explaination")
+
         def do_CUSTOM(self):
             self.send_response(999)
             self.send_header('Content-Type', 'text/html')
@@ -205,6 +209,12 @@ class BaseHTTPServerTestCase(BaseTestCase):
         self.con.request('CUSTOM', '/')
         res = self.con.getresponse()
         self.assertEqual(res.status, 999)
+
+    def test_return_explain_error(self):
+        self.con.request('EXPLAINERROR', '/')
+        res = self.con.getresponse()
+        self.assertEqual(res.status, 999)
+        self.assertTrue(int(res.getheader('Content-Length')))
 
     def test_latin1_header(self):
         self.con.request('LATINONEHEADER', '/', headers={

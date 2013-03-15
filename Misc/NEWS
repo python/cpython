@@ -280,6 +280,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12921: http.server's send_error takes an explain argument to send more
+  information in response. Patch contributed by Karl.
+
 - Issue #17414: Add timeit, repeat, and default_timer to timeit.__all__.
 
 - Issue #1285086: Get rid of the refcounting hack and speed up
