@@ -2,6 +2,9 @@ from test import support
 # Skip test if _tkinter wasn't built.
 support.import_module('_tkinter')
 
+# Make sure tkinter._fix runs to set up the environment
+support.import_fresh_module('tkinter')
+
 # Skip test if tk cannot be initialized.
 from tkinter.test.support import check_tk_availability
 check_tk_availability()
