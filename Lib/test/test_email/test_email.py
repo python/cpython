@@ -36,6 +36,10 @@ from email import quoprimime
 from test.support import unlink
 from test.test_email import openfile, TestEmailBase
 
+# These imports are documented to work, but we are testing them using a
+# different path, so we import them here just to make sure they are importable.
+from email.parser import FeedParser, BytesFeedParser
+
 NL = '\n'
 EMPTYSTRING = ''
 SPACE = ' '
