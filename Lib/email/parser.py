@@ -9,7 +9,7 @@ __all__ = ['Parser', 'HeaderParser', 'BytesParser']
 import warnings
 from io import StringIO, TextIOWrapper
 
-from email.feedparser import FeedParser
+from email.feedparser import FeedParser, BytesFeedParser
 from email.message import Message
 
 
