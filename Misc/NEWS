@@ -964,6 +964,9 @@ Extension Modules
 Tests
 -----
 
+- Issue #11420: make test suite pass with -B/DONTWRITEBYTECODE set.
+  Initial patch by Thomas Wouters.
+
 - Issue #10652: make tcl/tk tests run after __all__ test, patch by
   Zachary Ware.
 
