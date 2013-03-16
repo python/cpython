@@ -215,8 +215,8 @@ def compile(pattern, flags=0):
 
 def purge():
     "Clear the regular expression caches"
-    _compile.cache_clear()
-    _compile_repl.cache_clear()
+    _cache.clear()
+    _cache_repl.clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
@@ -259,11 +259,18 @@ def escape(pattern):
 # --------------------------------------------------------------------
 # internals
 
+_cache = {}
+_cache_repl = {}
+
 _pattern_type = type(sre_compile.compile("", 0))
 
-@functools.lru_cache(maxsize=512, typed=True)
+_MAXCACHE = 512
 def _compile(pattern, flags):
     # internal: compile pattern
+    try:
+        return _cache[type(pattern), pattern, flags]
+    except KeyError:
+        pass
     if isinstance(pattern, _pattern_type):
         if flags:
             raise ValueError(
@@ -271,12 +278,23 @@ def _compile(pattern, flags):
         return pattern
     if not sre_compile.isstring(pattern):
         raise TypeError("first argument must be string or compiled pattern")
-    return sre_compile.compile(pattern, flags)
+    p = sre_compile.compile(pattern, flags)
+    if len(_cache) >= _MAXCACHE:
+        _cache.clear()
+    _cache[type(pattern), pattern, flags] = p
+    return p
 
-@functools.lru_cache(maxsize=512)
 def _compile_repl(repl, pattern):
     # internal: compile replacement pattern
-    return sre_parse.parse_template(repl, pattern)
+    try:
+        return _cache_repl[repl, pattern]
+    except KeyError:
+        pass
+    p = sre_parse.parse_template(repl, pattern)
+    if len(_cache_repl) >= _MAXCACHE:
+        _cache_repl.clear()
+    _cache_repl[repl, pattern] = p
+    return p
 
 def _expand(pattern, match, template):
     # internal: match.expand implementation hook

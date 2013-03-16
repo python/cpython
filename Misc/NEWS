@@ -283,6 +283,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16564: Fixed a performance regression relative to Python 3.1 in the
+  caching of compiled regular expressions.
+
 - Added missing FeedParser and BytesFeedParser to email.parser.__all__.
 
 - Issue #17431: Fix missing import of BytesFeedParser in email.parser.
