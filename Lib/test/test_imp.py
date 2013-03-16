@@ -153,9 +153,11 @@ class ImportTests(unittest.TestCase):
             mod = imp.load_source(temp_mod_name, temp_mod_name + '.py')
             self.assertEqual(mod.a, 1)
 
-            mod = imp.load_compiled(
-                temp_mod_name, imp.cache_from_source(temp_mod_name + '.py'))
-            self.assertEqual(mod.a, 1)
+            if not sys.dont_write_bytecode:
+                mod = imp.load_compiled(
+                    temp_mod_name,
+                    imp.cache_from_source(temp_mod_name + '.py'))
+                self.assertEqual(mod.a, 1)
 
             if not os.path.exists(test_package_name):
                 os.mkdir(test_package_name)

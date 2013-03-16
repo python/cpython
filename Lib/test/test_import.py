@@ -20,6 +20,10 @@ from test.support import (
 from test import script_helper
 
 
+skip_if_dont_write_bytecode = unittest.skipIf(
+        sys.dont_write_bytecode,
+        "test meaningful only when writing bytecode")
+
 def _files(name):
     return (name + os.extsep + "py",
             name + os.extsep + "pyc",
@@ -109,6 +113,7 @@ class ImportTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
+    @skip_if_dont_write_bytecode
     def test_execute_bit_not_copied(self):
         # Issue 6070: under posix .pyc files got their execute bit set if
         # the .py file had the execute bit set, but they aren't executable.
@@ -133,6 +138,7 @@ class ImportTests(unittest.TestCase):
                 remove_files(TESTFN)
                 unload(TESTFN)
 
+    @skip_if_dont_write_bytecode
     def test_rewrite_pyc_with_read_only_source(self):
         # Issue 6074: a long time ago on posix, and more recently on Windows,
         # a read only source file resulted in a read only pyc file, which
@@ -299,6 +305,7 @@ class ImportTests(unittest.TestCase):
             remove_files(TESTFN)
             unload(TESTFN)
 
+    @skip_if_dont_write_bytecode
     def test_file_to_source(self):
         # check if __file__ points to the source file where available
         source = TESTFN + ".py"
@@ -619,6 +626,7 @@ class PycacheTests(unittest.TestCase):
         del sys.path[0]
         self._clean()
 
+    @skip_if_dont_write_bytecode
     def test_import_pyc_path(self):
         self.assertFalse(os.path.exists('__pycache__'))
         __import__(TESTFN)
@@ -631,6 +639,7 @@ class PycacheTests(unittest.TestCase):
                          "test meaningful only on posix systems")
     @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
             "due to varying filesystem permission semantics (issue #11956)")
+    @skip_if_dont_write_bytecode
     def test_unwritable_directory(self):
         # When the umask causes the new __pycache__ directory to be
         # unwritable, the import still succeeds but no .pyc file is written.
@@ -640,6 +649,7 @@ class PycacheTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(
             '__pycache__', '{}.{}.pyc'.format(TESTFN, self.tag))))
 
+    @skip_if_dont_write_bytecode
     def test_missing_source(self):
         # With PEP 3147 cache layout, removing the source but leaving the pyc
         # file does not satisfy the import.
@@ -650,6 +660,7 @@ class PycacheTests(unittest.TestCase):
         forget(TESTFN)
         self.assertRaises(ImportError, __import__, TESTFN)
 
+    @skip_if_dont_write_bytecode
     def test_missing_source_legacy(self):
         # Like test_missing_source() except that for backward compatibility,
         # when the pyc file lives where the py file would have been (and named
@@ -670,6 +681,7 @@ class PycacheTests(unittest.TestCase):
         pyc_file = imp.cache_from_source(TESTFN + '.py')
         self.assertEqual(m.__cached__, os.path.join(os.curdir, pyc_file))
 
+    @skip_if_dont_write_bytecode
     def test___cached___legacy_pyc(self):
         # Like test___cached__() except that for backward compatibility,
         # when the pyc file lives where the py file would have been (and named
@@ -684,6 +696,7 @@ class PycacheTests(unittest.TestCase):
         self.assertEqual(m.__cached__,
                          os.path.join(os.curdir, os.path.relpath(pyc_file)))
 
+    @skip_if_dont_write_bytecode
     def test_package___cached__(self):
         # Like test___cached__ but for packages.
         def cleanup():

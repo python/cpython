@@ -254,11 +254,12 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             __import__(mod_name)
             os.remove(mod_fname)
-            make_legacy_pyc(mod_fname)
-            unload(mod_name)  # In case loader caches paths
-            if verbose > 1: print("Running from compiled:", mod_name)
-            self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
-            self.check_code_execution(create_ns, expected_ns)
+            if not sys.dont_write_bytecode:
+                make_legacy_pyc(mod_fname)
+                unload(mod_name)  # In case loader caches paths
+                if verbose > 1: print("Running from compiled:", mod_name)
+                self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
+                self.check_code_execution(create_ns, expected_ns)
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
         if verbose > 1: print("Module executed successfully")
@@ -287,11 +288,12 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             self.check_code_execution(create_ns, expected_ns)
             __import__(mod_name)
             os.remove(mod_fname)
-            make_legacy_pyc(mod_fname)
-            unload(mod_name)  # In case loader caches paths
-            if verbose > 1: print("Running from compiled:", pkg_name)
-            self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
-            self.check_code_execution(create_ns, expected_ns)
+            if not sys.dont_write_bytecode:
+                make_legacy_pyc(mod_fname)
+                unload(mod_name)  # In case loader caches paths
+                if verbose > 1: print("Running from compiled:", pkg_name)
+                self._fix_ns_for_legacy_pyc(expected_ns, alter_sys)
+                self.check_code_execution(create_ns, expected_ns)
         finally:
             self._del_pkg(pkg_dir, depth, pkg_name)
         if verbose > 1: print("Package executed successfully")
@@ -345,15 +347,16 @@ from ..uncle.cousin import nephew
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
-            make_legacy_pyc(mod_fname)
-            unload(mod_name)  # In case the loader caches paths
-            if verbose > 1: print("Running from compiled:", mod_name)
-            d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
-            self.assertEqual(d2["__name__"], expected_name)
-            self.assertEqual(d2["__package__"], pkg_name)
-            self.assertIn("sibling", d2)
-            self.assertIn("nephew", d2)
-            del d2 # Ensure __loader__ entry doesn't keep file open
+            if not sys.dont_write_bytecode:
+                make_legacy_pyc(mod_fname)
+                unload(mod_name)  # In case the loader caches paths
+                if verbose > 1: print("Running from compiled:", mod_name)
+                d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
+                self.assertEqual(d2["__name__"], expected_name)
+                self.assertEqual(d2["__package__"], pkg_name)
+                self.assertIn("sibling", d2)
+                self.assertIn("nephew", d2)
+                del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
         if verbose > 1: print("Module executed successfully")
@@ -472,9 +475,10 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             script_name = self._make_test_script(script_dir, mod_name)
             compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
-            legacy_pyc = make_legacy_pyc(script_name)
-            self._check_script(script_dir, "<run_path>", legacy_pyc,
-                               script_dir)
+            if not sys.dont_write_bytecode:
+                legacy_pyc = make_legacy_pyc(script_name)
+                self._check_script(script_dir, "<run_path>", legacy_pyc,
+                                   script_dir)
 
     def test_directory_error(self):
         with temp_dir() as script_dir:
