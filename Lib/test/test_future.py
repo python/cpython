@@ -82,6 +82,14 @@ class FutureTest(unittest.TestCase):
         else:
             self.fail("expected exception didn't occur")
 
+    def test_badfuture10(self):
+        try:
+            from test import badsyntax_future10
+        except SyntaxError as msg:
+            self.assertEqual(get_error_location(msg), ("badsyntax_future10", '3'))
+        else:
+            self.fail("expected exception didn't occur")
+
     def test_parserhack(self):
         # test that the parser.c::future_hack function works as expected
         # Note: although this test must pass, it's not testing the original
