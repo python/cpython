@@ -38,6 +38,10 @@ from email import quoprimime
 from test.support import findfile, run_unittest, unlink
 from email.test import __file__ as landmark
 
+# These imports are documented to work, but we are testing them using a
+# different path, so we import them here just to make sure they are importable.
+from email.parser import FeedParser, BytesFeedParser
+
 
 NL = '\n'
 EMPTYSTRING = ''
