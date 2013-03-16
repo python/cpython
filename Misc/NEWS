@@ -233,6 +233,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17431: Fix missing import of BytesFeedParser in email.parser.
+
 - Issue #1285086: Get rid of the refcounting hack and speed up
   urllib.parse.unquote() and urllib.parse.unquote_to_bytes().
 
