@@ -162,8 +162,10 @@ class ImportTests(unittest.TestCase):
 
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
-                mod = imp.load_compiled(
-                    temp_mod_name, imp.cache_from_source(temp_mod_name + '.py'))
+                if not sys.dont_write_bytecode:
+                    mod = imp.load_compiled(
+                        temp_mod_name,
+                        imp.cache_from_source(temp_mod_name + '.py'))
             self.assertEqual(mod.a, 1)
 
             if not os.path.exists(test_package_name):
