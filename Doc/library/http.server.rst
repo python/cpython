@@ -181,7 +181,7 @@ of which this module provides three different variants:
 
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
-         explain argument was added.
+         Added the *explain* argument.
 
 
    .. method:: send_response(code, message=None)
