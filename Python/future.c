@@ -58,9 +58,12 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, const char *filename)
 static int
 future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 {
-    int i, found_docstring = 0, done = 0, prev_line = 0;
+    int i, done = 0, prev_line = 0;
 
     if (!(mod->kind == Module_kind || mod->kind == Interactive_kind))
+        return 1;
+
+    if (asdl_seq_LEN(mod->v.Module.body) == 0)
         return 1;
 
     /* A subsequent pass will detect future imports that don't
@@ -71,8 +74,13 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
        but is preceded by a regular import.
     */
 
+    i = 0;
+    stmt_ty first = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
+    if (first->kind == Expr_kind && first->v.Expr.value->kind == Str_kind)
+        i++;
 
-    for (i = 0; i < asdl_seq_LEN(mod->v.Module.body); i++) {
+
+    for (; i < asdl_seq_LEN(mod->v.Module.body); i++) {
         stmt_ty s = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
 
         if (done && s->lineno > prev_line)
@@ -99,18 +107,13 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
                     return 0;
                 ff->ff_lineno = s->lineno;
             }
-            else
+            else {
                 done = 1;
+            }
         }
-        else if (s->kind == Expr_kind && !found_docstring) {
-            expr_ty e = s->v.Expr.value;
-            if (e->kind != Str_kind)
-                done = 1;
-            else
-                found_docstring = 1;
-        }
-        else
+        else {
             done = 1;
+        }
     }
     return 1;
 }
