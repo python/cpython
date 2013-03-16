@@ -127,7 +127,8 @@ class SimpleTest(unittest.TestCase):
         finally:
             os.unlink(file_path)
             pycache = os.path.dirname(imp.cache_from_source(file_path))
-            shutil.rmtree(pycache)
+            if os.path.exists(pycache):
+                shutil.rmtree(pycache)
 
     def test_timestamp_overflow(self):
         # When a modification timestamp is larger than 2**32, it should be
