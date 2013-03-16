@@ -59,6 +59,7 @@ static int
 future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
 {
     int i, done = 0, prev_line = 0;
+    stmt_ty first;
 
     if (!(mod->kind == Module_kind || mod->kind == Interactive_kind))
         return 1;
@@ -75,7 +76,7 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, const char *filename)
     */
 
     i = 0;
-    stmt_ty first = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
+    first = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
     if (first->kind == Expr_kind && first->v.Expr.value->kind == Str_kind)
         i++;
 
