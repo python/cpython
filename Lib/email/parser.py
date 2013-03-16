@@ -4,7 +4,8 @@
 
 """A parser of RFC 2822 and MIME email messages."""
 
-__all__ = ['Parser', 'HeaderParser', 'BytesParser', 'BytesHeaderParser']
+__all__ = ['Parser', 'HeaderParser', 'BytesParser', 'BytesHeaderParser',
+           'FeedParser', 'BytesFeedParser']
 
 import warnings
 from io import StringIO, TextIOWrapper
