@@ -170,11 +170,12 @@ class RunModuleTest(unittest.TestCase):
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
-            if verbose: print "Running from compiled:", mod_name
-            d2 = run_module(mod_name) # Read from bytecode
-            self.assertIn("x", d2)
-            self.assertTrue(d2["x"] == 1)
-            del d2 # Ensure __loader__ entry doesn't keep file open
+            if not sys.dont_write_bytecode:
+                if verbose: print "Running from compiled:", mod_name
+                d2 = run_module(mod_name) # Read from bytecode
+                self.assertIn("x", d2)
+                self.assertTrue(d2["x"] == 1)
+                del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
         if verbose: print "Module executed successfully"
@@ -192,11 +193,12 @@ class RunModuleTest(unittest.TestCase):
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
-            if verbose: print "Running from compiled:", pkg_name
-            d2 = run_module(pkg_name) # Read from bytecode
-            self.assertIn("x", d2)
-            self.assertTrue(d2["x"] == 1)
-            del d2 # Ensure __loader__ entry doesn't keep file open
+            if not sys.dont_write_bytecode:
+                if verbose: print "Running from compiled:", pkg_name
+                d2 = run_module(pkg_name) # Read from bytecode
+                self.assertIn("x", d2)
+                self.assertTrue(d2["x"] == 1)
+                del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, pkg_name)
         if verbose: print "Package executed successfully"
@@ -246,13 +248,14 @@ from ..uncle.cousin import nephew
             del d1 # Ensure __loader__ entry doesn't keep file open
             __import__(mod_name)
             os.remove(mod_fname)
-            if verbose: print "Running from compiled:", mod_name
-            d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
-            self.assertIn("__package__", d2)
-            self.assertTrue(d2["__package__"] == pkg_name)
-            self.assertIn("sibling", d2)
-            self.assertIn("nephew", d2)
-            del d2 # Ensure __loader__ entry doesn't keep file open
+            if not sys.dont_write_bytecode:
+                if verbose: print "Running from compiled:", mod_name
+                d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
+                self.assertIn("__package__", d2)
+                self.assertTrue(d2["__package__"] == pkg_name)
+                self.assertIn("sibling", d2)
+                self.assertIn("nephew", d2)
+                del d2 # Ensure __loader__ entry doesn't keep file open
         finally:
             self._del_pkg(pkg_dir, depth, mod_name)
         if verbose: print "Module executed successfully"

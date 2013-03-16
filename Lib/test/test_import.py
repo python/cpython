@@ -88,7 +88,8 @@ class ImportTests(unittest.TestCase):
                 unlink(source)
 
             try:
-                imp.reload(mod)
+                if not sys.dont_write_bytecode:
+                    imp.reload(mod)
             except ImportError, err:
                 self.fail("import from .pyc/.pyo failed: %s" % err)
             finally:
@@ -105,7 +106,10 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
-    @unittest.skipUnless(os.name == 'posix', "test meaningful only on posix systems")
+    @unittest.skipUnless(os.name == 'posix',
+        "test meaningful only on posix systems")
+    @unittest.skipIf(sys.dont_write_bytecode,
+        "test meaningful only when writing bytecode")
     def test_execute_bit_not_copied(self):
         # Issue 6070: under posix .pyc files got their execute bit set if
         # the .py file had the execute bit set, but they aren't executable.
@@ -132,6 +136,8 @@ class ImportTests(unittest.TestCase):
             unload(TESTFN)
             del sys.path[0]
 
+    @unittest.skipIf(sys.dont_write_bytecode,
+        "test meaningful only when writing bytecode")
     def test_rewrite_pyc_with_read_only_source(self):
         # Issue 6074: a long time ago on posix, and more recently on Windows,
         # a read only source file resulted in a read only pyc file, which
@@ -441,7 +447,8 @@ func_filename = func.func_code.co_filename
         self.assertEqual(mod.func_filename, self.file_name)
         del sys.modules[self.module_name]
         mod = self.import_module()
-        self.assertEqual(mod.module_filename, self.compiled_name)
+        if not sys.dont_write_bytecode:
+            self.assertEqual(mod.module_filename, self.compiled_name)
         self.assertEqual(mod.code_filename, self.file_name)
         self.assertEqual(mod.func_filename, self.file_name)
 
