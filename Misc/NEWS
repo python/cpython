@@ -280,6 +280,8 @@ Core and Builtins
 Library
 -------
 
+- Added missing FeedParser and BytesFeedParser to email.parser.__all__.
+
 - Issue #17431: Fix missing import of BytesFeedParser in email.parser.
 
 - Issue #12921: http.server's send_error takes an explain argument to send more
