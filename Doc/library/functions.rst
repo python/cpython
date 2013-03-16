@@ -874,9 +874,9 @@ available.  They are listed here in alphabetical order.
 
    The optional *buffering* argument specifies the file's desired buffer size: 0
    means unbuffered, 1 means line buffered, any other positive value means use a
-   buffer of (approximately) that size.  A negative *buffering* means to use the
-   system default, which is usually line buffered for tty devices and fully
-   buffered for other files.  If omitted, the system default is used. [#]_
+   buffer of (approximately) that size (in bytes).  A negative *buffering* means
+   to use the system default, which is usually line buffered for tty devices and
+   fully buffered for other files.  If omitted, the system default is used. [#]_
 
    Modes ``'r+'``, ``'w+'`` and ``'a+'`` open the file for updating (note that
    ``'w+'`` truncates the file).  Append ``'b'`` to the mode to open the file in
