@@ -7,9 +7,14 @@ functionality over this module.
 """
 # (Probably) need to stay in _imp
 from _imp import (lock_held, acquire_lock, release_lock,
-                  load_dynamic, get_frozen_object, is_frozen_package,
+                  get_frozen_object, is_frozen_package,
                   init_builtin, init_frozen, is_builtin, is_frozen,
                   _fix_co_filename)
+try:
+    from _imp import load_dynamic
+except ImportError:
+    # Platform doesn't support dynamic loading.
+    load_dynamic = None
 
 # Directly exposed by this module
 from importlib._bootstrap import new_module
@@ -160,7 +165,7 @@ def load_module(name, file, filename, details):
             return load_source(name, filename, file)
         elif type_ == PY_COMPILED:
             return load_compiled(name, filename, file)
-        elif type_ == C_EXTENSION:
+        elif type_ == C_EXTENSION and load_dynamic is not None:
             return load_dynamic(name, filename, file)
         elif type_ == PKG_DIRECTORY:
             return load_package(name, filename)
