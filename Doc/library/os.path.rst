@@ -218,7 +218,7 @@ the :mod:`glob` module.)
    references so that ``A//B``, ``A/B/``, ``A/./B`` and ``A/foo/../B`` all
    become ``A/B``.  This string manipulation may change the meaning of a path
    that contains symbolic links.  On Windows, it converts forward slashes to
-   backward slashes. To normalize case, use :func:`normcase`.  
+   backward slashes. To normalize case, use :func:`normcase`.
 
 
 .. function:: realpath(path)
