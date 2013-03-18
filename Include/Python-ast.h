@@ -364,18 +364,18 @@ struct _excepthandler {
 
 struct _arguments {
         asdl_seq *args;
-        identifier vararg;
-        expr_ty varargannotation;
+        arg_ty vararg;
         asdl_seq *kwonlyargs;
-        identifier kwarg;
-        expr_ty kwargannotation;
-        asdl_seq *defaults;
         asdl_seq *kw_defaults;
+        arg_ty kwarg;
+        asdl_seq *defaults;
 };
 
 struct _arg {
         identifier arg;
         expr_ty annotation;
+        int lineno;
+        int col_offset;
 };
 
 struct _keyword {
@@ -550,11 +550,10 @@ comprehension_ty _Py_comprehension(expr_ty target, expr_ty iter, asdl_seq *
 excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
                                    body, int lineno, int col_offset, PyArena
                                    *arena);
-#define arguments(a0, a1, a2, a3, a4, a5, a6, a7, a8) _Py_arguments(a0, a1, a2, a3, a4, a5, a6, a7, a8)
-arguments_ty _Py_arguments(asdl_seq * args, identifier vararg, expr_ty
-                           varargannotation, asdl_seq * kwonlyargs, identifier
-                           kwarg, expr_ty kwargannotation, asdl_seq * defaults,
-                           asdl_seq * kw_defaults, PyArena *arena);
+#define arguments(a0, a1, a2, a3, a4, a5, a6) _Py_arguments(a0, a1, a2, a3, a4, a5, a6)
+arguments_ty _Py_arguments(asdl_seq * args, arg_ty vararg, asdl_seq *
+                           kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg,
+                           asdl_seq * defaults, PyArena *arena);
 #define arg(a0, a1, a2) _Py_arg(a0, a1, a2)
 arg_ty _Py_arg(identifier arg, expr_ty annotation, PyArena *arena);
 #define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)

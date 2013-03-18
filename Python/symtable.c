@@ -1530,10 +1530,10 @@ symtable_visit_annotations(struct symtable *st, stmt_ty s)
 
     if (a->args && !symtable_visit_argannotations(st, a->args))
         return 0;
-    if (a->varargannotation)
-        VISIT(st, expr, a->varargannotation);
-    if (a->kwargannotation)
-        VISIT(st, expr, a->kwargannotation);
+    if (a->vararg && a->vararg->annotation)
+        VISIT(st, expr, a->vararg->annotation);
+    if (a->kwarg && a->kwarg->annotation)
+        VISIT(st, expr, a->kwarg->annotation);
     if (a->kwonlyargs && !symtable_visit_argannotations(st, a->kwonlyargs))
         return 0;
     if (s->v.FunctionDef.returns)
@@ -1552,12 +1552,12 @@ symtable_visit_arguments(struct symtable *st, arguments_ty a)
     if (a->kwonlyargs && !symtable_visit_params(st, a->kwonlyargs))
         return 0;
     if (a->vararg) {
-        if (!symtable_add_def(st, a->vararg, DEF_PARAM))
+        if (!symtable_add_def(st, a->vararg->arg, DEF_PARAM))
             return 0;
         st->st_cur->ste_varargs = 1;
     }
     if (a->kwarg) {
-        if (!symtable_add_def(st, a->kwarg, DEF_PARAM))
+        if (!symtable_add_def(st, a->kwarg->arg, DEF_PARAM))
             return 0;
         st->st_cur->ste_varkeywords = 1;
     }

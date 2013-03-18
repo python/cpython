@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16795: On the ast.arguments object, unify vararg with varargannotation
+  and kwarg and kwargannotation. Change the column offset of ast.Attribute to be
+  at the attribute name.
+
 - Issue #17434: Properly raise a SyntaxError when a string occurs between future
   imports.
 

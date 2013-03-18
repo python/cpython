@@ -1498,15 +1498,15 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
 
     if (compiler_visit_argannotations(c, args->args, names))
         goto error;
-    if (args->varargannotation &&
-        compiler_visit_argannotation(c, args->vararg,
-                                     args->varargannotation, names))
+    if (args->vararg && args->vararg->annotation &&
+        compiler_visit_argannotation(c, args->vararg->arg,
+                                     args->vararg->annotation, names))
         goto error;
     if (compiler_visit_argannotations(c, args->kwonlyargs, names))
         goto error;
-    if (args->kwargannotation &&
-        compiler_visit_argannotation(c, args->kwarg,
-                                     args->kwargannotation, names))
+    if (args->kwarg && args->kwarg->annotation &&
+        compiler_visit_argannotation(c, args->kwarg->arg,
+                                     args->kwarg->annotation, names))
         goto error;
 
     if (!return_str) {
