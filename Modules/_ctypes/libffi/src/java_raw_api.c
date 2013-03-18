@@ -311,7 +311,7 @@ ffi_java_translate_args (ffi_cif *cif, void *rvalue,
   ffi_raw_closure *cl = (ffi_raw_closure*)user_data;
 
   ffi_java_ptrarray_to_raw (cif, avalue, raw);
-  (*cl->fun) (cif, rvalue, raw, cl->user_data);
+  (*cl->fun) (cif, rvalue, (ffi_raw*)raw, cl->user_data);
   ffi_java_raw_to_rvalue (cif, rvalue);
 }
 

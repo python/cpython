@@ -58,6 +58,11 @@ int main (void)
   ffi_type cls_struct_type, cls_struct_type1;
   ffi_type* dbl_arg_types[3];
 
+  struct A e_dbl = { 1LL, 7};
+  struct B f_dbl = {{12.0 , 127}, 99};
+
+  struct B res_dbl;
+
   cls_struct_type.size = 0;
   cls_struct_type.alignment = 0;
   cls_struct_type.type = FFI_TYPE_STRUCT;
@@ -67,11 +72,6 @@ int main (void)
   cls_struct_type1.alignment = 0;
   cls_struct_type1.type = FFI_TYPE_STRUCT;
   cls_struct_type1.elements = cls_struct_fields1;
-
-  struct A e_dbl = { 1LL, 7};
-  struct B f_dbl = {{12.0 , 127}, 99};
-
-  struct B res_dbl;
 
   cls_struct_fields[0] = &ffi_type_uint64;
   cls_struct_fields[1] = &ffi_type_uchar;

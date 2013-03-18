@@ -1,9 +1,10 @@
 #! /bin/sh
 # Wrapper for compilers which do not understand `-c -o'.
 
-scriptversion=2005-05-14.22
+scriptversion=2009-10-06.20; # UTC
 
-# Copyright (C) 1999, 2000, 2003, 2004, 2005 Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2003, 2004, 2005, 2009  Free Software
+# Foundation, Inc.
 # Written by Tom Tromey <tromey@cygnus.com>.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,8 +18,7 @@ scriptversion=2005-05-14.22
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -103,13 +103,13 @@ if test -z "$ofile" || test -z "$cfile"; then
 fi
 
 # Name of file we expect compiler to create.
-cofile=`echo "$cfile" | sed -e 's|^.*/||' -e 's/\.c$/.o/'`
+cofile=`echo "$cfile" | sed 's|^.*[\\/]||; s|^[a-zA-Z]:||; s/\.c$/.o/'`
 
 # Create the lock directory.
-# Note: use `[/.-]' here to ensure that we don't use the same name
+# Note: use `[/\\:.-]' here to ensure that we don't use the same name
 # that we are using for the .o file.  Also, base the name on the expected
 # object file name, since that is what matters with a parallel build.
-lockdir=`echo "$cofile" | sed -e 's|[/.-]|_|g'`.d
+lockdir=`echo "$cofile" | sed -e 's|[/\\:.-]|_|g'`.d
 while true; do
   if mkdir "$lockdir" >/dev/null 2>&1; then
     break
@@ -124,9 +124,9 @@ trap "rmdir '$lockdir'; exit 1" 1 2 15
 ret=$?
 
 if test -f "$cofile"; then
-  mv "$cofile" "$ofile"
+  test "$cofile" = "$ofile" || mv "$cofile" "$ofile"
 elif test -f "${cofile}bj"; then
-  mv "${cofile}bj" "$ofile"
+  test "${cofile}bj" = "$ofile" || mv "${cofile}bj" "$ofile"
 fi
 
 rmdir "$lockdir"
@@ -138,5 +138,6 @@ exit $ret
 # eval: (add-hook 'write-file-hooks 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-end: "$"
+# time-stamp-time-zone: "UTC"
+# time-stamp-end: "; # UTC"
 # End:

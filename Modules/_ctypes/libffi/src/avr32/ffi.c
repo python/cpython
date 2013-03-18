@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2009  Bradley Smith <brad@brad-smith.co.uk>
+   ffi.c - Copyright (c) 2011  Anthony Green
+           Copyright (c) 2009  Bradley Smith <brad@brad-smith.co.uk>
 
    AVR32 Foreign Function Interface
 
@@ -394,7 +395,8 @@ ffi_status ffi_prep_closure_loc(ffi_closure* closure, ffi_cif* cif,
     void (*fun)(ffi_cif*, void*, void**, void*), void *user_data,
     void *codeloc)
 {
-    FFI_ASSERT(cif->abi == FFI_SYSV);
+    if (cif->abi != FFI_SYSV)
+      return FFI_BAD_ABI;
 
     unsigned char *__tramp = (unsigned char*)(&closure->tramp[0]);
     unsigned int  __fun = (unsigned int)(&ffi_closure_SYSV);

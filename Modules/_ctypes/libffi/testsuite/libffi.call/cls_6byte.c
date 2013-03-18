@@ -56,14 +56,14 @@ int main (void)
   ffi_type cls_struct_type;
   ffi_type* dbl_arg_types[5];
 
+  struct cls_struct_6byte g_dbl = { 127, 120, 1, 128 };
+  struct cls_struct_6byte f_dbl = { 12, 128, 9, 127 };
+  struct cls_struct_6byte res_dbl;
+
   cls_struct_type.size = 0;
   cls_struct_type.alignment = 0;
   cls_struct_type.type = FFI_TYPE_STRUCT;
   cls_struct_type.elements = cls_struct_fields;
-
-  struct cls_struct_6byte g_dbl = { 127, 120, 1, 128 };
-  struct cls_struct_6byte f_dbl = { 12, 128, 9, 127 };
-  struct cls_struct_6byte res_dbl;
 
   cls_struct_fields[0] = &ffi_type_ushort;
   cls_struct_fields[1] = &ffi_type_ushort;
