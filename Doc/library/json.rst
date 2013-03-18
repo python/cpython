@@ -82,6 +82,7 @@ Extending :class:`JSONEncoder`::
     ...     def default(self, obj):
     ...         if isinstance(obj, complex):
     ...             return [obj.real, obj.imag]
+    ...         # Let the base class default method raise the TypeError
     ...         return json.JSONEncoder.default(self, obj)
     ...
     >>> json.dumps(2 + 1j, cls=ComplexEncoder)
@@ -426,6 +427,7 @@ Encoders and Decoders
                 pass
             else:
                 return list(iterable)
+            # Let the base class default method raise the TypeError
             return json.JSONEncoder.default(self, o)
 
 
