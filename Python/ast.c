@@ -1115,6 +1115,7 @@ ast_for_arg(struct compiling *c, const node *n)
     identifier name;
     expr_ty annotation = NULL;
     node *ch;
+    arg_ty tmp;
 
     assert(TYPE(n) == tfpdef || TYPE(n) == vfpdef);
     ch = CHILD(n, 0);
@@ -1130,7 +1131,7 @@ ast_for_arg(struct compiling *c, const node *n)
             return NULL;
     }
 
-    arg_ty tmp = arg(name, annotation, c->c_arena);
+    tmp = arg(name, annotation, c->c_arena);
     if (!tmp)
         return NULL;
 
