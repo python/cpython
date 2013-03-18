@@ -103,11 +103,11 @@ module Python
     excepthandler = ExceptHandler(expr? type, identifier? name, stmt* body)
                     attributes (int lineno, int col_offset)
 
-    arguments = (arg* args, identifier? vararg, expr? varargannotation,
-                     arg* kwonlyargs, identifier? kwarg,
-                     expr? kwargannotation, expr* defaults,
-                     expr* kw_defaults)
+    arguments = (arg* args, arg? vararg, arg* kwonlyargs, expr* kw_defaults,
+                 arg? kwarg, expr* defaults)
+
     arg = (identifier arg, expr? annotation)
+           attributes (int lineno, int col_offset)
 
     -- keyword arguments supplied to call
     keyword = (identifier arg, expr value)

@@ -209,6 +209,11 @@ class StructVisitor(EmitVisitor):
         self.emit("struct _%(name)s {" % locals(), depth)
         for f in product.fields:
             self.visit(f, depth + 1)
+        for field in product.attributes:
+            # rudimentary attribute handling
+            type = str(field.type)
+            assert type in asdl.builtin_types, type
+            self.emit("%s %s;" % (type, field.name), depth + 1);
         self.emit("};", depth)
         self.emit("", depth)
 
@@ -493,7 +498,13 @@ class Obj2ModVisitor(PickleVisitor):
 
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
-        self.emit("if (_PyObject_HasAttrId(obj, &PyId_%s)) {" % field.name, depth)
+        if field.opt:
+            add_check = " && _PyObject_GetAttrId(obj, &PyId_%s) != Py_None" \
+                        % (field.name)
+        else:
+            add_check = str()
+        self.emit("if (_PyObject_HasAttrId(obj, &PyId_%s)%s) {"
+                   % (field.name, add_check), depth, reflow=False)
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
@@ -559,6 +570,13 @@ class PyTypesDeclareVisitor(PickleVisitor):
     def visitProduct(self, prod, name):
         self.emit("static PyTypeObject *%s_type;" % name, 0)
         self.emit("static PyObject* ast2obj_%s(void*);" % name, 0)
+        if prod.attributes:
+            for a in prod.attributes:
+                self.emit_identifier(a.name)
+            self.emit("static char *%s_attributes[] = {" % name, 0)
+            for a in prod.attributes:
+                self.emit('"%s",' % a.name, 1)
+            self.emit("};", 0)
         if prod.fields:
             for f in prod.fields:
                 self.emit_identifier(f.name)
@@ -934,6 +952,11 @@ static int add_ast_fields(void)
         self.emit('%s_type = make_type("%s", &AST_type, %s, %d);' %
                         (name, name, fields, len(prod.fields)), 1)
         self.emit("if (!%s_type) return 0;" % name, 1)
+        if prod.attributes:
+            self.emit("if (!add_attributes(%s_type, %s_attributes, %d)) return 0;" %
+                            (name, name, len(prod.attributes)), 1)
+        else:
+            self.emit("if (!add_attributes(%s_type, NULL, 0)) return 0;" % name, 1)
 
     def visitSum(self, sum, name):
         self.emit('%s_type = make_type("%s", &AST_type, NULL, 0);' %
@@ -1089,6 +1112,12 @@ class ObjVisitor(PickleVisitor):
         self.emit("if (!result) return NULL;", 1)
         for field in prod.fields:
             self.visitField(field, name, 1, True)
+        for a in prod.attributes:
+            self.emit("value = ast2obj_%s(o->%s);" % (a.type, a.name), 1)
+            self.emit("if (!value) goto failed;", 1)
+            self.emit('if (_PyObject_SetAttrId(result, &PyId_%s, value) < 0)' % a.name, 1)
+            self.emit('goto failed;', 2)
+            self.emit('Py_DECREF(value);', 1)
         self.func_end()
 
     def visitConstructor(self, cons, enum, name):
