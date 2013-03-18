@@ -1,5 +1,6 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
+import doctest
 import imp
 import pdb
 import sys
@@ -701,11 +702,11 @@ class PdbTestCase(unittest.TestCase):
         support.unlink(support.TESTFN)
 
 
-def test_main():
+def load_tests(*args):
     from test import test_pdb
-    support.run_doctest(test_pdb, verbosity=True)
-    support.run_unittest(PdbTestCase)
+    suites = [unittest.makeSuite(PdbTestCase), doctest.DocTestSuite(test_pdb)]
+    return unittest.TestSuite(suites)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
