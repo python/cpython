@@ -21,7 +21,7 @@ password:%s
 class PyPIRCCommand(Command):
     """Base command that knows how to handle the .pypirc file
     """
-    DEFAULT_REPOSITORY = 'http://pypi.python.org/pypi'
+    DEFAULT_REPOSITORY = 'https://pypi.python.org/pypi'
     DEFAULT_REALM = 'pypi'
     repository = None
     realm = None
@@ -83,6 +83,15 @@ class PyPIRCCommand(Command):
                             current[key] = config.get(server, key)
                         else:
                             current[key] = default
+
+                    # work around people having "repository" for the "pypi"
+                    # section of their config set to the HTTP (rather than
+                    # HTTPS) URL
+                    if (server == 'pypi' and
+                        repository in (self.DEFAULT_REPOSITORY, 'pypi')):
+                        current['repository'] = self.DEFAULT_REPOSITORY
+                        return current
+
                     if (current['server'] == repository or
                         current['repository'] == repository):
                         return current
