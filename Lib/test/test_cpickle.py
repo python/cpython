@@ -23,10 +23,10 @@ class BytesIOMixin:
 class FileIOMixin:
 
     def output(self):
-        return open(test_support.TESTFN, 'w+')
+        return open(test_support.TESTFN, 'wb+')
 
     def input(self, data):
-        f = open(test_support.TESTFN, 'w+')
+        f = open(test_support.TESTFN, 'wb+')
         try:
             f.write(data)
             f.seek(0)
