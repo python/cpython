@@ -287,7 +287,10 @@ Core and Builtins
 Library
 -------
 
-Issue #16880: Do not assume _imp.load_dynamic() is defined in the imp module.
+- Issue #17460: Remove the strict argument of HTTPConnection and removing the
+  DeprecationWarning being issued from 3.2 onwards.
+
+- Issue #16880: Do not assume _imp.load_dynamic() is defined in the imp module.
 
 - Issue #16389: Fixed a performance regression relative to Python 3.1 in the
   caching of compiled regular expressions.
