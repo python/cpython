@@ -412,24 +412,24 @@ static char *ExceptHandler_fields[]={
 static PyTypeObject *arguments_type;
 static PyObject* ast2obj_arguments(void*);
 _Py_IDENTIFIER(vararg);
-_Py_IDENTIFIER(varargannotation);
 _Py_IDENTIFIER(kwonlyargs);
-_Py_IDENTIFIER(kwarg);
-_Py_IDENTIFIER(kwargannotation);
-_Py_IDENTIFIER(defaults);
 _Py_IDENTIFIER(kw_defaults);
+_Py_IDENTIFIER(kwarg);
+_Py_IDENTIFIER(defaults);
 static char *arguments_fields[]={
         "args",
         "vararg",
-        "varargannotation",
         "kwonlyargs",
-        "kwarg",
-        "kwargannotation",
-        "defaults",
         "kw_defaults",
+        "kwarg",
+        "defaults",
 };
 static PyTypeObject *arg_type;
 static PyObject* ast2obj_arg(void*);
+static char *arg_attributes[] = {
+        "lineno",
+        "col_offset",
+};
 _Py_IDENTIFIER(arg);
 _Py_IDENTIFIER(annotation);
 static char *arg_fields[]={
@@ -1056,6 +1056,7 @@ static int init_types(void)
         comprehension_type = make_type("comprehension", &AST_type,
                                        comprehension_fields, 3);
         if (!comprehension_type) return 0;
+        if (!add_attributes(comprehension_type, NULL, 0)) return 0;
         excepthandler_type = make_type("excepthandler", &AST_type, NULL, 0);
         if (!excepthandler_type) return 0;
         if (!add_attributes(excepthandler_type, excepthandler_attributes, 2))
@@ -1063,16 +1064,21 @@ static int init_types(void)
         ExceptHandler_type = make_type("ExceptHandler", excepthandler_type,
                                        ExceptHandler_fields, 3);
         if (!ExceptHandler_type) return 0;
-        arguments_type = make_type("arguments", &AST_type, arguments_fields, 8);
+        arguments_type = make_type("arguments", &AST_type, arguments_fields, 6);
         if (!arguments_type) return 0;
+        if (!add_attributes(arguments_type, NULL, 0)) return 0;
         arg_type = make_type("arg", &AST_type, arg_fields, 2);
         if (!arg_type) return 0;
+        if (!add_attributes(arg_type, arg_attributes, 2)) return 0;
         keyword_type = make_type("keyword", &AST_type, keyword_fields, 2);
         if (!keyword_type) return 0;
+        if (!add_attributes(keyword_type, NULL, 0)) return 0;
         alias_type = make_type("alias", &AST_type, alias_fields, 2);
         if (!alias_type) return 0;
+        if (!add_attributes(alias_type, NULL, 0)) return 0;
         withitem_type = make_type("withitem", &AST_type, withitem_fields, 2);
         if (!withitem_type) return 0;
+        if (!add_attributes(withitem_type, NULL, 0)) return 0;
         initialized = 1;
         return 1;
 }
@@ -2213,9 +2219,8 @@ ExceptHandler(expr_ty type, identifier name, asdl_seq * body, int lineno, int
 }
 
 arguments_ty
-arguments(asdl_seq * args, identifier vararg, expr_ty varargannotation,
-          asdl_seq * kwonlyargs, identifier kwarg, expr_ty kwargannotation,
-          asdl_seq * defaults, asdl_seq * kw_defaults, PyArena *arena)
+arguments(asdl_seq * args, arg_ty vararg, asdl_seq * kwonlyargs, asdl_seq *
+          kw_defaults, arg_ty kwarg, asdl_seq * defaults, PyArena *arena)
 {
         arguments_ty p;
         p = (arguments_ty)PyArena_Malloc(arena, sizeof(*p));
@@ -2223,12 +2228,10 @@ arguments(asdl_seq * args, identifier vararg, expr_ty varargannotation,
                 return NULL;
         p->args = args;
         p->vararg = vararg;
-        p->varargannotation = varargannotation;
         p->kwonlyargs = kwonlyargs;
-        p->kwarg = kwarg;
-        p->kwargannotation = kwargannotation;
-        p->defaults = defaults;
         p->kw_defaults = kw_defaults;
+        p->kwarg = kwarg;
+        p->defaults = defaults;
         return p;
 }
 
@@ -3413,14 +3416,9 @@ ast2obj_arguments(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_args, value) == -1)
                 goto failed;
         Py_DECREF(value);
-        value = ast2obj_identifier(o->vararg);
+        value = ast2obj_arg(o->vararg);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_vararg, value) == -1)
-                goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->varargannotation);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_varargannotation, value) == -1)
                 goto failed;
         Py_DECREF(value);
         value = ast2obj_list(o->kwonlyargs, ast2obj_arg);
@@ -3428,24 +3426,19 @@ ast2obj_arguments(void* _o)
         if (_PyObject_SetAttrId(result, &PyId_kwonlyargs, value) == -1)
                 goto failed;
         Py_DECREF(value);
-        value = ast2obj_identifier(o->kwarg);
+        value = ast2obj_list(o->kw_defaults, ast2obj_expr);
         if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_kwarg, value) == -1)
+        if (_PyObject_SetAttrId(result, &PyId_kw_defaults, value) == -1)
                 goto failed;
         Py_DECREF(value);
-        value = ast2obj_expr(o->kwargannotation);
+        value = ast2obj_arg(o->kwarg);
         if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_kwargannotation, value) == -1)
+        if (_PyObject_SetAttrId(result, &PyId_kwarg, value) == -1)
                 goto failed;
         Py_DECREF(value);
         value = ast2obj_list(o->defaults, ast2obj_expr);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_defaults, value) == -1)
-                goto failed;
-        Py_DECREF(value);
-        value = ast2obj_list(o->kw_defaults, ast2obj_expr);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_kw_defaults, value) == -1)
                 goto failed;
         Py_DECREF(value);
         return result;
@@ -3475,6 +3468,16 @@ ast2obj_arg(void* _o)
         value = ast2obj_expr(o->annotation);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_annotation, value) == -1)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->lineno);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_lineno, value) < 0)
+                goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->col_offset);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_col_offset, value) < 0)
                 goto failed;
         Py_DECREF(value);
         return result;
@@ -3843,7 +3846,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from FunctionDef");
                         return 1;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_returns)) {
+                if (_PyObject_HasAttrId(obj, &PyId_returns) && _PyObject_GetAttrId(obj, &PyId_returns) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_returns);
                         if (tmp == NULL) goto failed;
@@ -3934,7 +3937,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from ClassDef");
                         return 1;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_starargs)) {
+                if (_PyObject_HasAttrId(obj, &PyId_starargs) && _PyObject_GetAttrId(obj, &PyId_starargs) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_starargs);
                         if (tmp == NULL) goto failed;
@@ -3945,7 +3948,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 } else {
                         starargs = NULL;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_kwargs)) {
+                if (_PyObject_HasAttrId(obj, &PyId_kwargs) && _PyObject_GetAttrId(obj, &PyId_kwargs) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_kwargs);
                         if (tmp == NULL) goto failed;
@@ -4018,7 +4021,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty value;
 
-                if (_PyObject_HasAttrId(obj, &PyId_value)) {
+                if (_PyObject_HasAttrId(obj, &PyId_value) && _PyObject_GetAttrId(obj, &PyId_value) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
@@ -4476,7 +4479,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 expr_ty exc;
                 expr_ty cause;
 
-                if (_PyObject_HasAttrId(obj, &PyId_exc)) {
+                if (_PyObject_HasAttrId(obj, &PyId_exc) && _PyObject_GetAttrId(obj, &PyId_exc) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_exc);
                         if (tmp == NULL) goto failed;
@@ -4487,7 +4490,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 } else {
                         exc = NULL;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_cause)) {
+                if (_PyObject_HasAttrId(obj, &PyId_cause) && _PyObject_GetAttrId(obj, &PyId_cause) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_cause);
                         if (tmp == NULL) goto failed;
@@ -4637,7 +4640,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"test\" missing from Assert");
                         return 1;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_msg)) {
+                if (_PyObject_HasAttrId(obj, &PyId_msg) && _PyObject_GetAttrId(obj, &PyId_msg) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_msg);
                         if (tmp == NULL) goto failed;
@@ -4697,7 +4700,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                 asdl_seq* names;
                 int level;
 
-                if (_PyObject_HasAttrId(obj, &PyId_module)) {
+                if (_PyObject_HasAttrId(obj, &PyId_module) && _PyObject_GetAttrId(obj, &PyId_module) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_module);
                         if (tmp == NULL) goto failed;
@@ -4733,7 +4736,7 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"names\" missing from ImportFrom");
                         return 1;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_level)) {
+                if (_PyObject_HasAttrId(obj, &PyId_level) && _PyObject_GetAttrId(obj, &PyId_level) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_level);
                         if (tmp == NULL) goto failed;
@@ -5452,7 +5455,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (isinstance) {
                 expr_ty value;
 
-                if (_PyObject_HasAttrId(obj, &PyId_value)) {
+                if (_PyObject_HasAttrId(obj, &PyId_value) && _PyObject_GetAttrId(obj, &PyId_value) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_value);
                         if (tmp == NULL) goto failed;
@@ -5639,7 +5642,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                         PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from Call");
                         return 1;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_starargs)) {
+                if (_PyObject_HasAttrId(obj, &PyId_starargs) && _PyObject_GetAttrId(obj, &PyId_starargs) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_starargs);
                         if (tmp == NULL) goto failed;
@@ -5650,7 +5653,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
                 } else {
                         starargs = NULL;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_kwargs)) {
+                if (_PyObject_HasAttrId(obj, &PyId_kwargs) && _PyObject_GetAttrId(obj, &PyId_kwargs) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_kwargs);
                         if (tmp == NULL) goto failed;
@@ -6121,7 +6124,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 expr_ty upper;
                 expr_ty step;
 
-                if (_PyObject_HasAttrId(obj, &PyId_lower)) {
+                if (_PyObject_HasAttrId(obj, &PyId_lower) && _PyObject_GetAttrId(obj, &PyId_lower) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_lower);
                         if (tmp == NULL) goto failed;
@@ -6132,7 +6135,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 } else {
                         lower = NULL;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_upper)) {
+                if (_PyObject_HasAttrId(obj, &PyId_upper) && _PyObject_GetAttrId(obj, &PyId_upper) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_upper);
                         if (tmp == NULL) goto failed;
@@ -6143,7 +6146,7 @@ obj2ast_slice(PyObject* obj, slice_ty* out, PyArena* arena)
                 } else {
                         upper = NULL;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_step)) {
+                if (_PyObject_HasAttrId(obj, &PyId_step) && _PyObject_GetAttrId(obj, &PyId_step) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_step);
                         if (tmp == NULL) goto failed;
@@ -6598,7 +6601,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 identifier name;
                 asdl_seq* body;
 
-                if (_PyObject_HasAttrId(obj, &PyId_type)) {
+                if (_PyObject_HasAttrId(obj, &PyId_type) && _PyObject_GetAttrId(obj, &PyId_type) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_type);
                         if (tmp == NULL) goto failed;
@@ -6609,7 +6612,7 @@ obj2ast_excepthandler(PyObject* obj, excepthandler_ty* out, PyArena* arena)
                 } else {
                         type = NULL;
                 }
-                if (_PyObject_HasAttrId(obj, &PyId_name)) {
+                if (_PyObject_HasAttrId(obj, &PyId_name) && _PyObject_GetAttrId(obj, &PyId_name) != Py_None) {
                         int res;
                         tmp = _PyObject_GetAttrId(obj, &PyId_name);
                         if (tmp == NULL) goto failed;
@@ -6662,13 +6665,11 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
 {
         PyObject* tmp = NULL;
         asdl_seq* args;
-        identifier vararg;
-        expr_ty varargannotation;
+        arg_ty vararg;
         asdl_seq* kwonlyargs;
-        identifier kwarg;
-        expr_ty kwargannotation;
-        asdl_seq* defaults;
         asdl_seq* kw_defaults;
+        arg_ty kwarg;
+        asdl_seq* defaults;
 
         if (_PyObject_HasAttrId(obj, &PyId_args)) {
                 int res;
@@ -6695,27 +6696,16 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"args\" missing from arguments");
                 return 1;
         }
-        if (_PyObject_HasAttrId(obj, &PyId_vararg)) {
+        if (_PyObject_HasAttrId(obj, &PyId_vararg) && _PyObject_GetAttrId(obj, &PyId_vararg) != Py_None) {
                 int res;
                 tmp = _PyObject_GetAttrId(obj, &PyId_vararg);
                 if (tmp == NULL) goto failed;
-                res = obj2ast_identifier(tmp, &vararg, arena);
+                res = obj2ast_arg(tmp, &vararg, arena);
                 if (res != 0) goto failed;
                 Py_XDECREF(tmp);
                 tmp = NULL;
         } else {
                 vararg = NULL;
-        }
-        if (_PyObject_HasAttrId(obj, &PyId_varargannotation)) {
-                int res;
-                tmp = _PyObject_GetAttrId(obj, &PyId_varargannotation);
-                if (tmp == NULL) goto failed;
-                res = obj2ast_expr(tmp, &varargannotation, arena);
-                if (res != 0) goto failed;
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                varargannotation = NULL;
         }
         if (_PyObject_HasAttrId(obj, &PyId_kwonlyargs)) {
                 int res;
@@ -6740,53 +6730,6 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 tmp = NULL;
         } else {
                 PyErr_SetString(PyExc_TypeError, "required field \"kwonlyargs\" missing from arguments");
-                return 1;
-        }
-        if (_PyObject_HasAttrId(obj, &PyId_kwarg)) {
-                int res;
-                tmp = _PyObject_GetAttrId(obj, &PyId_kwarg);
-                if (tmp == NULL) goto failed;
-                res = obj2ast_identifier(tmp, &kwarg, arena);
-                if (res != 0) goto failed;
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                kwarg = NULL;
-        }
-        if (_PyObject_HasAttrId(obj, &PyId_kwargannotation)) {
-                int res;
-                tmp = _PyObject_GetAttrId(obj, &PyId_kwargannotation);
-                if (tmp == NULL) goto failed;
-                res = obj2ast_expr(tmp, &kwargannotation, arena);
-                if (res != 0) goto failed;
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                kwargannotation = NULL;
-        }
-        if (_PyObject_HasAttrId(obj, &PyId_defaults)) {
-                int res;
-                Py_ssize_t len;
-                Py_ssize_t i;
-                tmp = _PyObject_GetAttrId(obj, &PyId_defaults);
-                if (tmp == NULL) goto failed;
-                if (!PyList_Check(tmp)) {
-                        PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %.200s", tmp->ob_type->tp_name);
-                        goto failed;
-                }
-                len = PyList_GET_SIZE(tmp);
-                defaults = asdl_seq_new(len, arena);
-                if (defaults == NULL) goto failed;
-                for (i = 0; i < len; i++) {
-                        expr_ty value;
-                        res = obj2ast_expr(PyList_GET_ITEM(tmp, i), &value, arena);
-                        if (res != 0) goto failed;
-                        asdl_seq_SET(defaults, i, value);
-                }
-                Py_XDECREF(tmp);
-                tmp = NULL;
-        } else {
-                PyErr_SetString(PyExc_TypeError, "required field \"defaults\" missing from arguments");
                 return 1;
         }
         if (_PyObject_HasAttrId(obj, &PyId_kw_defaults)) {
@@ -6814,8 +6757,44 @@ obj2ast_arguments(PyObject* obj, arguments_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"kw_defaults\" missing from arguments");
                 return 1;
         }
-        *out = arguments(args, vararg, varargannotation, kwonlyargs, kwarg,
-                         kwargannotation, defaults, kw_defaults, arena);
+        if (_PyObject_HasAttrId(obj, &PyId_kwarg) && _PyObject_GetAttrId(obj, &PyId_kwarg) != Py_None) {
+                int res;
+                tmp = _PyObject_GetAttrId(obj, &PyId_kwarg);
+                if (tmp == NULL) goto failed;
+                res = obj2ast_arg(tmp, &kwarg, arena);
+                if (res != 0) goto failed;
+                Py_XDECREF(tmp);
+                tmp = NULL;
+        } else {
+                kwarg = NULL;
+        }
+        if (_PyObject_HasAttrId(obj, &PyId_defaults)) {
+                int res;
+                Py_ssize_t len;
+                Py_ssize_t i;
+                tmp = _PyObject_GetAttrId(obj, &PyId_defaults);
+                if (tmp == NULL) goto failed;
+                if (!PyList_Check(tmp)) {
+                        PyErr_Format(PyExc_TypeError, "arguments field \"defaults\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                        goto failed;
+                }
+                len = PyList_GET_SIZE(tmp);
+                defaults = asdl_seq_new(len, arena);
+                if (defaults == NULL) goto failed;
+                for (i = 0; i < len; i++) {
+                        expr_ty value;
+                        res = obj2ast_expr(PyList_GET_ITEM(tmp, i), &value, arena);
+                        if (res != 0) goto failed;
+                        asdl_seq_SET(defaults, i, value);
+                }
+                Py_XDECREF(tmp);
+                tmp = NULL;
+        } else {
+                PyErr_SetString(PyExc_TypeError, "required field \"defaults\" missing from arguments");
+                return 1;
+        }
+        *out = arguments(args, vararg, kwonlyargs, kw_defaults, kwarg,
+                         defaults, arena);
         return 0;
 failed:
         Py_XDECREF(tmp);
@@ -6841,7 +6820,7 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from arg");
                 return 1;
         }
-        if (_PyObject_HasAttrId(obj, &PyId_annotation)) {
+        if (_PyObject_HasAttrId(obj, &PyId_annotation) && _PyObject_GetAttrId(obj, &PyId_annotation) != Py_None) {
                 int res;
                 tmp = _PyObject_GetAttrId(obj, &PyId_annotation);
                 if (tmp == NULL) goto failed;
@@ -6916,7 +6895,7 @@ obj2ast_alias(PyObject* obj, alias_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"name\" missing from alias");
                 return 1;
         }
-        if (_PyObject_HasAttrId(obj, &PyId_asname)) {
+        if (_PyObject_HasAttrId(obj, &PyId_asname) && _PyObject_GetAttrId(obj, &PyId_asname) != Py_None) {
                 int res;
                 tmp = _PyObject_GetAttrId(obj, &PyId_asname);
                 if (tmp == NULL) goto failed;
@@ -6953,7 +6932,7 @@ obj2ast_withitem(PyObject* obj, withitem_ty* out, PyArena* arena)
                 PyErr_SetString(PyExc_TypeError, "required field \"context_expr\" missing from withitem");
                 return 1;
         }
-        if (_PyObject_HasAttrId(obj, &PyId_optional_vars)) {
+        if (_PyObject_HasAttrId(obj, &PyId_optional_vars) && _PyObject_GetAttrId(obj, &PyId_optional_vars) != Py_None) {
                 int res;
                 tmp = _PyObject_GetAttrId(obj, &PyId_optional_vars);
                 if (tmp == NULL) goto failed;
