@@ -440,7 +440,7 @@ class FTP:
                     break
                 callback(data)
             # shutdown ssl layer
-            if isinstance(conn, _SSLSocket):
+            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -473,7 +473,7 @@ class FTP:
                     line = line[:-1]
                 callback(line)
             # shutdown ssl layer
-            if isinstance(conn, _SSLSocket):
+            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -502,7 +502,7 @@ class FTP:
                 if callback:
                     callback(buf)
             # shutdown ssl layer
-            if isinstance(conn, _SSLSocket):
+            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
@@ -531,7 +531,7 @@ class FTP:
                 if callback:
                     callback(buf)
             # shutdown ssl layer
-            if isinstance(conn, _SSLSocket):
+            if _SSLSocket is not None and isinstance(conn, _SSLSocket):
                 conn.unwrap()
         return self.voidresp()
 
