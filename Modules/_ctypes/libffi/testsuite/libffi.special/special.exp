@@ -1,4 +1,4 @@
-# Copyright (C) 2003, 2006, 2009 Free Software Foundation, Inc.
+# Copyright (C) 2003, 2006, 2009, 2010 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +14,6 @@
 # along with this program; see the file COPYING3.  If not see
 # <http://www.gnu.org/licenses/>.
 
-load_lib libffi-dg.exp
-
 dg-init
 libffi-init
 
@@ -25,10 +23,14 @@ global cxx_options
 
 set cxx_options " -shared-libgcc -lstdc++"
 
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O0 -W -Wall"
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O2"
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O3"
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-Os"
+if { [string match $using_gcc "yes"] } {
+
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O0 -W -Wall"
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O2"
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O3"
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-Os"
+
+}
 
 dg-finish
 

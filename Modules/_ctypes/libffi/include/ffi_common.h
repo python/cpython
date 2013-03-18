@@ -1,7 +1,8 @@
 /* -----------------------------------------------------------------------
-   ffi_common.h - Copyright (c) 1996  Red Hat, Inc.
-   Copyright (C) 2007 Free Software Foundation, Inc
-
+   ffi_common.h - Copyright (C) 2011, 2012  Anthony Green
+                  Copyright (C) 2007  Free Software Foundation, Inc
+                  Copyright (c) 1996  Red Hat, Inc.
+                  
    Common internal definitions and macros. Only necessary for building
    libffi.
    ----------------------------------------------------------------------- */
@@ -74,6 +75,8 @@ void ffi_type_test(ffi_type *a, char *file, int line);
 
 /* Perform machine dependent cif processing */
 ffi_status ffi_prep_cif_machdep(ffi_cif *cif);
+ffi_status ffi_prep_cif_machdep_var(ffi_cif *cif,
+	 unsigned int nfixedargs, unsigned int ntotalargs);
 
 /* Extended cif, used in callback from assembly routine */
 typedef struct
@@ -84,7 +87,7 @@ typedef struct
 } extended_cif;
 
 /* Terse sized type definitions.  */
-#if defined(_MSC_VER) || defined(__sgi)
+#if defined(_MSC_VER) || defined(__sgi) || defined(__SUNPRO_C)
 typedef unsigned char UINT8;
 typedef signed char   SINT8;
 typedef unsigned short UINT16;
@@ -112,11 +115,14 @@ typedef signed int   SINT64 __attribute__((__mode__(__DI__)));
 
 typedef float FLOAT32;
 
+#ifndef __GNUC__
+#define __builtin_expect(x, expected_value) (x)
+#endif
+#define LIKELY(x)    __builtin_expect(!!(x),1)
+#define UNLIKELY(x)  __builtin_expect((x)!=0,0)
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-

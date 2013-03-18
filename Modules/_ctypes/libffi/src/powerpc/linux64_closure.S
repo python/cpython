@@ -32,16 +32,24 @@
 
 #ifdef __powerpc64__
 	FFI_HIDDEN (ffi_closure_LINUX64)
-	FFI_HIDDEN (.ffi_closure_LINUX64)
-	.globl  ffi_closure_LINUX64, .ffi_closure_LINUX64
+	.globl  ffi_closure_LINUX64
 	.section        ".opd","aw"
 	.align  3
 ffi_closure_LINUX64:
+#ifdef _CALL_LINUX
+	.quad   .L.ffi_closure_LINUX64,.TOC.@tocbase,0
+	.type   ffi_closure_LINUX64,@function
+	.text
+.L.ffi_closure_LINUX64:
+#else
+	FFI_HIDDEN (.ffi_closure_LINUX64)
+	.globl  .ffi_closure_LINUX64
 	.quad   .ffi_closure_LINUX64,.TOC.@tocbase,0
 	.size   ffi_closure_LINUX64,24
 	.type   .ffi_closure_LINUX64,@function
 	.text
 .ffi_closure_LINUX64:
+#endif
 .LFB1:
 	# save general regs into parm save area
 	std	%r3, 48(%r1)
@@ -91,7 +99,11 @@ ffi_closure_LINUX64:
 	addi %r6, %r1, 128
 
 	# make the call
+#ifdef _CALL_LINUX
+	bl ffi_closure_helper_LINUX64
+#else
 	bl .ffi_closure_helper_LINUX64
+#endif
 .Lret:
 
 	# now r3 contains the return type
@@ -194,7 +206,11 @@ ffi_closure_LINUX64:
 .LFE1:
 	.long	0
 	.byte	0,12,0,1,128,0,0,0
+#ifdef _CALL_LINUX
+	.size	ffi_closure_LINUX64,.-.L.ffi_closure_LINUX64
+#else
 	.size	.ffi_closure_LINUX64,.-.ffi_closure_LINUX64
+#endif
 
 	.section	.eh_frame,EH_FRAME_FLAGS,@progbits
 .Lframe1:

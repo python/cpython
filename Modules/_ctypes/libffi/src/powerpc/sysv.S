@@ -83,6 +83,7 @@ ENTRY(ffi_call_SYSV)
 	nop
 1:
 
+#ifndef __NO_FPRS__
 	/* Load all the FP registers.  */
 	bf-	6,2f
 	lfd	%f1,-16-(8*4)-(8*8)(%r28)
@@ -94,6 +95,7 @@ ENTRY(ffi_call_SYSV)
 	lfd	%f6,-16-(8*4)-(3*8)(%r28)
 	lfd	%f7,-16-(8*4)-(2*8)(%r28)
 	lfd	%f8,-16-(8*4)-(1*8)(%r28)
+#endif
 2:
 
 	/* Make the call.  */
@@ -103,7 +105,9 @@ ENTRY(ffi_call_SYSV)
 	mtcrf	0x01,%r31 /* cr7  */
 	bt-	31,L(small_struct_return_value)
 	bt-	30,L(done_return_value)
+#ifndef __NO_FPRS__
 	bt-	29,L(fp_return_value)
+#endif
 	stw	%r3,0(%r30)
 	bf+	28,L(done_return_value)
 	stw	%r4,4(%r30)
@@ -124,6 +128,7 @@ L(done_return_value):
 	lwz	%r1,0(%r1)
 	blr
 
+#ifndef __NO_FPRS__
 L(fp_return_value):
 	bf	28,L(float_return_value)
 	stfd	%f1,0(%r30)
@@ -134,6 +139,7 @@ L(fp_return_value):
 L(float_return_value):
 	stfs	%f1,0(%r30)
 	b	L(done_return_value)
+#endif
 
 L(small_struct_return_value):
 	extrwi	%r6,%r31,2,19         /* number of bytes padding = shift/8 */

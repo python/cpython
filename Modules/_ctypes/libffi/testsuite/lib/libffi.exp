@@ -1,4 +1,4 @@
-#   Copyright (C) 2003, 2005, 2008, 2009, 2010 Free Software Foundation, Inc.
+#   Copyright (C) 2003, 2005, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,8 +11,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
 
 proc load_gcc_lib { filename } {
     global srcdir
@@ -101,8 +101,16 @@ proc libffi-init { args } {
     global tool_root_dir
     global ld_library_path
 
-    set blddirffi [pwd]/..
+    global using_gcc
+
+    set blddirffi [pwd]/.. 
     verbose "libffi $blddirffi"
+
+    # Are we building with GCC?
+    set tmp [grep ../config.status "GCC='yes'"]
+    if { [string match $tmp "GCC='yes'"] } {
+
+      set using_gcc "yes"
 
     set gccdir [lookfor_file $tool_root_dir gcc/libgcc.a]
     if {$gccdir != ""} {
@@ -127,6 +135,13 @@ proc libffi-init { args } {
 	    }
 	}
     }
+ 
+    } else {
+
+      set using_gcc "no"
+
+    }
+
     # add the library path for libffi.
     append ld_library_path ":${blddirffi}/.libs"
 
@@ -203,6 +218,10 @@ proc libffi_target_compile { source dest type options } {
 
     lappend options "libs= -lffi"
 
+    if { [string match "aarch64*-*-linux*" $target_triplet] } {
+	lappend options "libs= -lpthread"
+    }
+
     verbose "options: $options"
     return [target_compile $source $dest $type $options]
 }
@@ -266,6 +285,56 @@ proc dg-xfail-if { args } {
     }
 }
 
+proc check-flags { args } {
+
+    # The args are within another list; pull them out.
+    set args [lindex $args 0]
+
+    # The next two arguments are optional.  If they were not specified,
+    # use the defaults.
+    if { [llength $args] == 2 } {
+	lappend $args [list "*"]
+    }
+    if { [llength $args] == 3 } {
+	lappend $args [list ""]
+    }
+
+    # If the option strings are the defaults, or the same as the
+    # defaults, there is no need to call check_conditional_xfail to
+    # compare them to the actual options.
+    if { [string compare [lindex $args 2] "*"] == 0
+	 && [string compare [lindex $args 3] "" ] == 0 } {
+	set result 1    
+    } else {
+	# The target list might be an effective-target keyword, so replace
+	# the original list with "*-*-*", since we already know it matches.
+	set result [check_conditional_xfail [lreplace $args 1 1 "*-*-*"]]
+    }
+
+    return $result
+}
+
+proc dg-skip-if { args } {
+    # Verify the number of arguments.  The last two are optional.
+    set args [lreplace $args 0 0]
+    if { [llength $args] < 2 || [llength $args] > 4 } {
+        error "dg-skip-if 2: need 2, 3, or 4 arguments"
+    }
+
+    # Don't bother if we're already skipping the test.
+    upvar dg-do-what dg-do-what
+    if { [lindex ${dg-do-what} 1] == "N" } {
+      return
+    }
+
+    set selector [list target [lindex $args 1]]
+    if { [dg-process-target $selector] == "S" } {
+        if [check-flags $args] {
+            upvar dg-do-what dg-do-what
+            set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        }
+    }
+}
 
 # We need to make sure that additional_files and additional_sources
 # are both cleared out after every test.  It is not enough to clear

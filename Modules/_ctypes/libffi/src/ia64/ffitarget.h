@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------*-C-*-
-   ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
+   ffitarget.h - Copyright (c) 2012  Anthony Green
+                 Copyright (c) 1996-2003  Red Hat, Inc.
    Target configuration macros for IA-64.
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -27,6 +28,10 @@
 #ifndef LIBFFI_TARGET_H
 #define LIBFFI_TARGET_H
 
+#ifndef LIBFFI_H
+#error "Please do not include ffitarget.h directly into your source.  Use ffi.h instead."
+#endif
+
 #ifndef LIBFFI_ASM
 typedef unsigned long long          ffi_arg;
 typedef signed long long            ffi_sarg;
@@ -34,8 +39,8 @@ typedef signed long long            ffi_sarg;
 typedef enum ffi_abi {
   FFI_FIRST_ABI = 0,
   FFI_UNIX,   	/* Linux and all Unix variants use the same conventions	*/
-  FFI_DEFAULT_ABI = FFI_UNIX,
-  FFI_LAST_ABI = FFI_DEFAULT_ABI + 1
+  FFI_LAST_ABI,
+  FFI_DEFAULT_ABI = FFI_UNIX
 } ffi_abi;
 #endif
 

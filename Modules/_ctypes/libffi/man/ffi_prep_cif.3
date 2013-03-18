@@ -37,7 +37,9 @@ structs that describe the data type, size and alignment of each argument.
 points to an
 .Nm ffi_type
 that describes the data type, size and alignment of the
-return value.
+return value. Note that to call a variadic function
+.Nm ffi_prep_cif_var
+must be used instead.
 .Sh RETURN VALUES
 Upon successful completion,
 .Nm ffi_prep_cif
@@ -59,8 +61,8 @@ does not refer to a valid ABI,
 .Nm FFI_BAD_ABI
 will be returned. Available ABIs are
 defined in
-.Nm <ffitarget.h>
-.
+.Nm <ffitarget.h> .
 .Sh SEE ALSO
 .Xr ffi 3 ,
-.Xr ffi_call 3 
+.Xr ffi_call 3 ,
+.Xr ffi_prep_cif_var 3

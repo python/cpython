@@ -5,7 +5,6 @@
    Originator:	From the original ffitest.c  */
 
 /* { dg-do run } */
-/* { dg-options -O2 } */
 
 #include "ffitest.h"
 

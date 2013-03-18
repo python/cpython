@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 1998, 2008 Red Hat, Inc.
+   sysv.S - Copyright (c) 1998, 2008, 2011 Red Hat, Inc.
+	    Copyright (c) 2011 Plausible Labs Cooperative, Inc.
    
    ARM Foreign Function Interface 
 
@@ -39,13 +40,23 @@
 #else
 #define CNAME(x) x
 #endif
+#ifdef __APPLE__
+#define ENTRY(x) .globl _##x; _##x:
+#else
 #define ENTRY(x) .globl CNAME(x); .type CNAME(x),%function; CNAME(x):
+#endif /* __APPLE__ */
 #endif
 
 #ifdef __ELF__
 #define LSYM(x) .x
 #else
 #define LSYM(x) x
+#endif
+
+/* Use the SOFTFP return value ABI on Mac OS X, as per the iOS ABI
+  Function Call Guide */
+#ifdef __APPLE__
+#define __SOFTFP__
 #endif
 
 /* We need a better way of testing for this, but for now, this is all 
@@ -105,21 +116,33 @@
 	.align 0
 	.thumb
 	.thumb_func
+#ifdef __APPLE__
+	ENTRY($0)
+#else
 	ENTRY(\name)
+#endif
 	bx	pc
 	nop
 	.arm
 	UNWIND .fnstart
 /* A hook to tell gdb that we've switched to ARM mode.  Also used to call
    directly from other local arm routines.  */
-_L__\name:		
+#ifdef __APPLE__
+_L__$0:
+#else
+_L__\name:
+#endif
 .endm
 #else
 .macro	ARM_FUNC_START name
 	.text
 	.align 0
 	.arm
+#ifdef __APPLE__
+	ENTRY($0)
+#else
 	ENTRY(\name)
+#endif
 	UNWIND .fnstart
 .endm
 #endif
@@ -141,13 +164,11 @@ _L__\name:
 #endif
 .endm
 
-
 	@ r0:   ffi_prep_args
 	@ r1:   &ecif
 	@ r2:   cif->bytes
 	@ r3:   fig->flags
 	@ sp+0: ecif.rvalue
-	@ sp+4: fn
 
 	@ This assumes we are using gas.
 ARM_FUNC_START ffi_call_SYSV
@@ -162,24 +183,23 @@ ARM_FUNC_START ffi_call_SYSV
 	sub	sp, fp, r2
 
 	@ Place all of the ffi_prep_args in position
-	mov	ip, r0
 	mov	r0, sp
 	@     r1 already set
 
 	@ Call ffi_prep_args(stack, &ecif)
-	call_reg(ip)
+	bl	CNAME(ffi_prep_args)
 
 	@ move first 4 parameters in registers
 	ldmia	sp, {r0-r3}
 
 	@ and adjust stack
-	ldr	ip, [fp, #8]
-        cmp	ip, #16
-	movhs	ip, #16
-        add	sp, sp, ip
+	sub	lr, fp, sp	@ cif->bytes == fp - sp
+	ldr	ip, [fp]	@ load fn() in advance
+	cmp	lr, #16
+	movhs	lr, #16
+	add	sp, sp, lr
 
 	@ call (fn) (...)
-	ldr	ip, [fp, #28]
 	call_reg(ip)
 	
 	@ Remove the space we pushed for the args
@@ -224,11 +244,19 @@ ARM_FUNC_START ffi_call_SYSV
 #endif
 
 LSYM(Lepilogue):
-	RETLDM	"r0-r3,fp"
+#if defined (__INTERWORKING__)
+	ldmia   sp!, {r0-r3,fp, lr}
+	bx	lr
+#else
+	ldmia   sp!, {r0-r3,fp, pc}
+#endif
 
 .ffi_call_SYSV_end:
 	UNWIND .fnend
+#ifdef __ELF__
         .size    CNAME(ffi_call_SYSV),.ffi_call_SYSV_end-CNAME(ffi_call_SYSV)
+#endif
+
 
 /*
 	unsigned int FFI_HIDDEN
@@ -244,11 +272,11 @@ ARM_FUNC_START ffi_closure_SYSV
 	stmfd	sp!, {ip, lr}
 	UNWIND .save	{r0, lr}
 	add	r2, sp, #8
-	.pad #16
+	UNWIND .pad #16
 	sub	sp, sp, #16
 	str	sp, [sp, #8]
 	add	r1, sp, #8
-	bl	ffi_closure_SYSV_inner
+	bl	CNAME(ffi_closure_SYSV_inner)
 	cmp	r0, #FFI_TYPE_INT
 	beq	.Lretint
 
@@ -300,7 +328,177 @@ ARM_FUNC_START ffi_closure_SYSV
 
 .ffi_closure_SYSV_end:
 	UNWIND .fnend
+#ifdef __ELF__
         .size    CNAME(ffi_closure_SYSV),.ffi_closure_SYSV_end-CNAME(ffi_closure_SYSV)
+#endif
+
+
+/* Below are VFP hard-float ABI call and closure implementations.
+   Add VFP FPU directive here. This is only compiled into the library
+   under EABI.  */
+#ifdef __ARM_EABI__
+	.fpu	vfp
+
+	@ r0:   fn
+	@ r1:   &ecif
+	@ r2:   cif->bytes
+	@ r3:   fig->flags
+	@ sp+0: ecif.rvalue
+
+ARM_FUNC_START ffi_call_VFP
+	@ Save registers
+        stmfd	sp!, {r0-r3, fp, lr}
+	UNWIND .save	{r0-r3, fp, lr}
+	mov	fp, sp
+	UNWIND .setfp	fp, sp
+
+	@ Make room for all of the new args.
+	sub	sp, sp, r2
+
+	@ Make room for loading VFP args
+	sub	sp, sp, #64
+
+	@ Place all of the ffi_prep_args in position
+	mov	r0, sp
+	@     r1 already set
+	sub	r2, fp, #64   @ VFP scratch space
+
+	@ Call ffi_prep_args(stack, &ecif, vfp_space)
+	bl	CNAME(ffi_prep_args)
+
+	@ Load VFP register args if needed
+	cmp	r0, #0
+	beq	LSYM(Lbase_args)
+
+	@ Load only d0 if possible
+	cmp	r0, #3
+	sub	ip, fp, #64
+	flddle	d0, [ip]
+	fldmiadgt	ip, {d0-d7}
+
+LSYM(Lbase_args):
+	@ move first 4 parameters in registers
+	ldmia	sp, {r0-r3}
+
+	@ and adjust stack
+	sub	lr, ip, sp	@ cif->bytes == (fp - 64) - sp
+	ldr	ip, [fp]	@ load fn() in advance
+        cmp	lr, #16
+	movhs	lr, #16
+        add	sp, sp, lr
+
+	@ call (fn) (...)
+	call_reg(ip)
+
+	@ Remove the space we pushed for the args
+	mov	sp, fp
+
+	@ Load r2 with the pointer to storage for
+	@ the return value
+	ldr	r2, [sp, #24]
+
+	@ Load r3 with the return type code 
+	ldr	r3, [sp, #12]
+
+	@ If the return value pointer is NULL,
+	@ assume no return value.
+	cmp	r2, #0
+	beq	LSYM(Lepilogue_vfp)
+
+	cmp	r3, #FFI_TYPE_INT
+	streq	r0, [r2]
+	beq	LSYM(Lepilogue_vfp)
+
+	cmp	r3, #FFI_TYPE_SINT64
+	stmeqia	r2, {r0, r1}
+	beq	LSYM(Lepilogue_vfp)
+
+	cmp	r3, #FFI_TYPE_FLOAT
+	fstseq	s0, [r2]
+	beq	LSYM(Lepilogue_vfp)
+	
+	cmp	r3, #FFI_TYPE_DOUBLE
+	fstdeq	d0, [r2]
+	beq	LSYM(Lepilogue_vfp)
+
+	cmp	r3, #FFI_TYPE_STRUCT_VFP_FLOAT
+	cmpne	r3, #FFI_TYPE_STRUCT_VFP_DOUBLE
+	fstmiadeq	r2, {d0-d3}
+
+LSYM(Lepilogue_vfp):
+	RETLDM	"r0-r3,fp"
+
+.ffi_call_VFP_end:
+	UNWIND .fnend
+        .size    CNAME(ffi_call_VFP),.ffi_call_VFP_end-CNAME(ffi_call_VFP)
+
+
+ARM_FUNC_START ffi_closure_VFP
+	fstmfdd	sp!, {d0-d7}
+	@ r0-r3, then d0-d7
+	UNWIND .pad #80
+	add	ip, sp, #80
+	stmfd	sp!, {ip, lr}
+	UNWIND .save	{r0, lr}
+	add	r2, sp, #72
+	add	r3, sp, #8
+	UNWIND .pad #72
+	sub	sp, sp, #72
+	str	sp, [sp, #64]
+	add	r1, sp, #64
+	bl	CNAME(ffi_closure_SYSV_inner)
+
+	cmp	r0, #FFI_TYPE_INT
+	beq	.Lretint_vfp
+
+	cmp	r0, #FFI_TYPE_FLOAT
+	beq	.Lretfloat_vfp
+
+	cmp	r0, #FFI_TYPE_DOUBLE
+	cmpne	r0, #FFI_TYPE_LONGDOUBLE
+	beq	.Lretdouble_vfp
+
+	cmp	r0, #FFI_TYPE_SINT64
+	beq	.Lretlonglong_vfp
+
+	cmp	r0, #FFI_TYPE_STRUCT_VFP_FLOAT
+	beq	.Lretfloat_struct_vfp
+
+	cmp	r0, #FFI_TYPE_STRUCT_VFP_DOUBLE
+	beq	.Lretdouble_struct_vfp
+	
+.Lclosure_epilogue_vfp:
+	add	sp, sp, #72
+	ldmfd	sp, {sp, pc}
+
+.Lretfloat_vfp:
+	flds	s0, [sp]
+	b	.Lclosure_epilogue_vfp
+.Lretdouble_vfp:
+	fldd	d0, [sp]
+	b	.Lclosure_epilogue_vfp
+.Lretint_vfp:
+	ldr	r0, [sp]
+	b	.Lclosure_epilogue_vfp
+.Lretlonglong_vfp:
+	ldmia	sp, {r0, r1}
+	b	.Lclosure_epilogue_vfp
+.Lretfloat_struct_vfp:
+	fldmiad	sp, {d0-d1}
+	b	.Lclosure_epilogue_vfp
+.Lretdouble_struct_vfp:
+	fldmiad	sp, {d0-d3}
+	b	.Lclosure_epilogue_vfp
+
+.ffi_closure_VFP_end:
+	UNWIND .fnend
+        .size    CNAME(ffi_closure_VFP),.ffi_closure_VFP_end-CNAME(ffi_closure_VFP)
+#endif
+
+ENTRY(ffi_arm_trampoline)
+	stmfd sp!, {r0-r3}
+	ldr r0, [pc]
+	ldr pc, [pc]
 
 #if defined __ELF__ && defined __linux__
 	.section	.note.GNU-stack,"",%progbits
