@@ -867,6 +867,25 @@ will raise an `AttributeError`.
     AttributeError: f
 
 
+Mock names and the name attribute
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since "name" is an argument to the :class:`Mock` constructor, if you want your
+mock object to have a "name" attribute you can't just pass it in at creation
+time. There are two alternatives. One option is to use
+:meth:`~Mock.configure_mock`::
+
+    >>> mock = MagicMock()
+    >>> mock.configure_mock(name='my_name')
+    >>> mock.name
+    'my_name'
+
+A simpler option is to simply set the "name" attribute after mock creation::
+
+    >>> mock = MagicMock()
+    >>> mock.name = "foo"
+
+
 Attaching Mocks as Attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
