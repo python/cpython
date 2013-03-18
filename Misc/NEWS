@@ -659,6 +659,9 @@ Issue #16880: Do not assume _imp.load_dynamic() is defined in the imp module.
 Tests
 -----
 
+- Issue #17448: test_sax now skips if there are no xml parsers available
+  instead of raising an ImportError.
+
 - Issue #11420: make test suite pass with -B/DONTWRITEBYTECODE set.
   Initial patch by Thomas Wouters.
 
