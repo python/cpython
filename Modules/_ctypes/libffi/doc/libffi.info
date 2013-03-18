@@ -4,7 +4,7 @@ from ../libffi/doc/libffi.texi.
 This manual is for Libffi, a portable foreign-function interface
 library.
 
-   Copyright (C) 2008, 2010 Red Hat, Inc.
+   Copyright (C) 2008, 2010, 2011 Red Hat, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU General Public License as
@@ -27,7 +27,7 @@ libffi
 This manual is for Libffi, a portable foreign-function interface
 library.
 
-   Copyright (C) 2008, 2010 Red Hat, Inc.
+   Copyright (C) 2008, 2010, 2011 Red Hat, Inc.
 
      Permission is granted to copy, distribute and/or modify this
      document under the terms of the GNU General Public License as
@@ -115,8 +115,6 @@ To prepare a call interface object, use the function `ffi_prep_cif'.
      want.  *note Multiple ABIs:: for more information.
 
      NARGS is the number of arguments that this function accepts.
-     `libffi' does not yet handle varargs functions; see *note Missing
-     Features:: for more information.
 
      RTYPE is a pointer to an `ffi_type' structure that describes the
      return type of the function.  *Note Types::.
@@ -128,6 +126,30 @@ To prepare a call interface object, use the function `ffi_prep_cif'.
      `ffi_status'.  This will be either `FFI_OK' if everything worked
      properly; `FFI_BAD_TYPEDEF' if one of the `ffi_type' objects is
      incorrect; or `FFI_BAD_ABI' if the ABI parameter is invalid.
+
+   If the function being called is variadic (varargs) then
+`ffi_prep_cif_var' must be used instead of `ffi_prep_cif'.
+
+ -- Function: ffi_status ffi_prep_cif_var (ffi_cif *CIF, ffi_abi
+          varabi, unsigned int NFIXEDARGS, unsigned int varntotalargs,
+          ffi_type *RTYPE, ffi_type **ARGTYPES)
+     This initializes CIF according to the given parameters for a call
+     to a variadic function.  In general it's operation is the same as
+     for `ffi_prep_cif' except that:
+
+     NFIXEDARGS is the number of fixed arguments, prior to any variadic
+     arguments.  It must be greater than zero.
+
+     NTOTALARGS the total number of arguments, including variadic and
+     fixed arguments.
+
+     Note that, different cif's must be prepped for calls to the same
+     function when different numbers of arguments are passed.
+
+     Also note that a call to `ffi_prep_cif_var' with
+     NFIXEDARGS=NOTOTALARGS is NOT equivalent to a call to
+     `ffi_prep_cif'.
+
 
    To call a function using an initialized `ffi_cif', use the
 `ffi_call' function:
@@ -147,7 +169,9 @@ To prepare a call interface object, use the function `ffi_prep_cif'.
      AVALUES is a vector of `void *' pointers that point to the memory
      locations holding the argument values for a call.  If CIF declares
      that the function has no arguments (i.e., NARGS was 0), then
-     AVALUES is ignored.
+     AVALUES is ignored.  Note that argument values may be modified by
+     the callee (for instance, structs passed by value); the burden of
+     copying pass-by-value arguments is placed on the caller.
 
 
 File: libffi.info,  Node: Simple Example,  Next: Types,  Prev: The Basics,  Up: Using libffi
@@ -294,7 +318,7 @@ is perfectly happy passing structures back and forth.  You must first
 describe the structure to `libffi' by creating a new `ffi_type' object
 for it.
 
- -- ffi_type:
+ -- Data type: ffi_type
      The `ffi_type' has the following members:
     `size_t size'
           This is set by `libffi'; you should initialize it to zero.
@@ -509,15 +533,16 @@ File: libffi.info,  Node: Missing Features,  Next: Index,  Prev: Using libffi,  
 `libffi' is missing a few features.  We welcome patches to add support
 for these.
 
-   * There is no support for calling varargs functions.  This may work
-     on some platforms, depending on how the ABI is defined, but it is
-     not reliable.
+   * Variadic closures.
 
    * There is no support for bit fields in structures.
 
    * The closure API is
 
    * The "raw" API is undocumented.
+
+   Note that variadic support is very new and tested on a relatively
+small number of platforms.
 
 
 File: libffi.info,  Node: Index,  Prev: Missing Features,  Up: Top
@@ -528,7 +553,6 @@ Index
  [index ]
 * Menu:
 
-* :                                      Structures.           (line 12)
 * ABI:                                   Introduction.         (line 13)
 * Application Binary Interface:          Introduction.         (line 13)
 * calling convention:                    Introduction.         (line 13)
@@ -536,11 +560,12 @@ Index
 * closure API:                           The Closure API.      (line 13)
 * closures:                              The Closure API.      (line 13)
 * FFI:                                   Introduction.         (line 31)
-* ffi_call:                              The Basics.           (line 41)
-* ffi_closure_alloca:                    The Closure API.      (line 19)
+* ffi_call:                              The Basics.           (line 63)
+* ffi_closure_alloc:                     The Closure API.      (line 19)
 * ffi_closure_free:                      The Closure API.      (line 26)
 * FFI_CLOSURES:                          The Closure API.      (line 13)
 * ffi_prep_cif:                          The Basics.           (line 16)
+* ffi_prep_cif_var:                      The Basics.           (line 39)
 * ffi_prep_closure_loc:                  The Closure API.      (line 34)
 * ffi_status <1>:                        The Closure API.      (line 37)
 * ffi_status:                            The Basics.           (line 18)
@@ -568,24 +593,24 @@ Index
 * ffi_type_void:                         Primitive Types.      (line 10)
 * Foreign Function Interface:            Introduction.         (line 31)
 * void <1>:                              The Closure API.      (line 20)
-* void:                                  The Basics.           (line 43)
+* void:                                  The Basics.           (line 65)
 
 
 
 Tag Table:
-Node: Top706
-Node: Introduction1448
-Node: Using libffi3084
-Node: The Basics3570
-Node: Simple Example6177
-Node: Types7204
-Node: Primitive Types7487
-Node: Structures9307
-Node: Type Example10167
-Node: Multiple ABIs11390
-Node: The Closure API11761
-Node: Closure Example14705
-Node: Missing Features16264
-Node: Index16757
+Node: Top712
+Node: Introduction1460
+Node: Using libffi3096
+Node: The Basics3582
+Node: Simple Example7224
+Node: Types8251
+Node: Primitive Types8534
+Node: Structures10354
+Node: Type Example11224
+Node: Multiple ABIs12447
+Node: The Closure API12818
+Node: Closure Example15762
+Node: Missing Features17321
+Node: Index17774
 
 End Tag Table

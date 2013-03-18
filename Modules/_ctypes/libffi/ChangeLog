@@ -1,7 +1,1359 @@
+2013-03-17  Anthony Green  <green@moxielogic.com>
+
+	* README: Update for 3.0.13.
+	* configure.ac: Ditto.
+	* configure: Rebuilt.
+	* doc/*: Update version.
+
+2013-03-17  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* src/closures.c (is_emutramp_enabled
+	[!FFI_MMAP_EXEC_EMUTRAMP_PAX]): Move default definition outside
+	enclosing #if scope.
+
+2013-03-17  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Only modify toolexecdir in certain cases.
+	* configure: Rebuilt.
+
+2013-03-16  Gilles Talis  <gilles.talis@gmail.com>
+
+	* src/powerpc/ffi.c (ffi_prep_args_SYSV): Don't use
+	fparg_count,etc on __NO_FPRS__ targets.
+
+2013-03-16  Alan Hourihane  <alanh@fairlite.co.uk>
+
+	* src/m68k/sysv.S (epilogue): Don't use extb instruction on
+	m680000 machines.
+
+2013-03-16  Alex Gaynor <alex.gaynor@gmail.com>
+
+	* src/x86/ffi.c (ffi_prep_cif_machdep): Always align stack.
+
+2013-03-13  Markos Chandras <markos.chandras@imgtec.com>
+
+	* configure.ac: Add support for Imagination Technologies Meta.
+	* Makefile.am: Likewise.
+	* README: Add Imagination Technologies Meta details.
+	* src/metag/ffi.c: New.
+	* src/metag/ffitarget.h: Likewise.
+	* src/metag/sysv.S: Likewise.
+
+2013-02-24  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* doc/libffi.texi (Structures): Fix missing category argument of
+	@deftp.
+
+2013-02-11  Anthony Green <green@moxielogic.com>
+
+	* configure.ac: Update release number to 3.0.12.
+	* configure: Rebuilt.
+	* README: Update release info.
+
+2013-02-10  Anthony Green <green@moxielogic.com>
+
+	* README: Add Moxie.
+	* src/moxie/ffi.c: Created.
+	* src/moxie/eabi.S: Created.
+	* src/moxie/ffitarget.h: Created.
+	* Makefile.am (nodist_libffi_la_SOURCES): Add Moxie.
+	* Makefile.in: Rebuilt.
+	* configure.ac: Add Moxie.
+	* configure: Rebuilt.
+	* testsuite/libffi.call/huge_struct.c: Disable format string
+	warnings for moxie*-*-elf tests.
+
+2013-02-10  Anthony Green <green@moxielogic.com>
+
+	* Makefile.am (LTLDFLAGS): Fix reference.
+	* Makefile.in: Rebuilt.
+
+2013-02-10  Anthony Green <green@moxielogic.com>
+
+	* README: Update supported platforms.  Update test results link.
+
+2013-02-09  Anthony Green <green@moxielogic.com>
+
+	* testsuite/libffi.call/negint.c: Remove forced -O2.
+	* testsuite/libffi.call/many2.c (foo): Remove GCCism.
+	* testsuite/libffi.call/ffitest.h: Add default PRIuPTR definition.
+
+	* src/sparc/v8.S (ffi_closure_v8): Import ancient ulonglong
+	closure return type fix developed by Martin v. Löwis for cpython
+	fork.
+
+2013-02-08  Andreas Tobler  <andreast@fgznet.ch>
+
+	* src/powerpc/ffi.c (ffi_prep_cif_machdep): Fix small struct
+	support.
+	* src/powerpc/sysv.S: Ditto.
+
+2013-02-08  Anthony Green <green@moxielogic.com>
+
+	* testsuite/libffi.call/cls_longdouble.c: Remove xfail for
+	arm*-*-*.
+
+2013-02-08  Anthony Green <green@moxielogic.com>
+
+	* src/sparc/ffi.c (ffi_prep_closure_loc): Fix cache flushing for GCC.
+
+2013-02-08  Matthias Klose  <doko@ubuntu.com>
+
+	* man/ffi_prep_cif.3: Clean up for debian linter.
+
+2013-02-08  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* src/powerpc/ffi.c (ffi_prep_args_SYSV): Account for FP args pushed
+	on the stack.
+
+2013-02-08  Anthony Green <green@moxielogic.com>
+
+	* Makefile.am (EXTRA_DIST): Add missing files.
+	* testsuite/Makefile.am (EXTRA_DIST): Ditto.
+	* Makefile.in: Rebuilt.
+
+2013-02-08  Anthony Green <green@moxielogic.com>
+
+	* configure.ac: Move sparc asm config checks to within functions
+	for compatibility with sun tools.
+	* configure: Rebuilt.
+	* src/sparc/ffi.c (ffi_prep_closure_loc): Flush cache on v9
+	systems.
+	* src/sparc/v8.S (ffi_flush_icache): Implement a sparc v9 cache
+	flusher.
+
+2013-02-08  Nathan Rossi <nathan.rossi@xilinx.com>
+
+	* src/microblaze/ffi.c (ffi_closure_call_SYSV): Fix handling of
+	small big-endian structures.
+	(ffi_prep_args): Ditto.
+
+2013-02-07  Anthony Green <green@moxielogic.com>
+
+	* src/sparc/v8.S (ffi_call_v8): Fix typo from last patch
+	(effectively hiding ffi_call_v8).
+
+2013-02-07  Anthony Green <green@moxielogic.com>
+
+	* configure.ac: Update bug reporting address.
+	* configure.in: Rebuild.
+
+	* src/sparc/v8.S (ffi_flush_icache): Out-of-line cache flusher for
+	Sun compiler.
+	* src/sparc/ffi.c (ffi_call): Remove warning.
+	Call ffi_flush_icache for non-GCC builds.
+	(ffi_prep_closure_loc): Use ffi_flush_icache.
+
+	* Makefile.am (EXTRA_DIST): Add libtool-ldflags.
+	* Makefile.in: Rebuilt.
+	* libtool-ldflags: New file.
+
+2013-02-07  Daniel Schepler <dschepler@gmail.com>
+
+	* configure.ac: Correctly identify x32 systems as 64-bit.
+	* m4/libtool.m4: Remove libtool expr error.
+	* aclocal.m4, configure: Rebuilt.
+
+2013-02-07  Anthony Green <green@moxielogic.com>
+
+	* configure.ac: Fix GCC usage test.
+	* configure: Rebuilt.
+	* README: Mention LLVM/GCC x86_64 issue.
+	* testsuite/Makefile.in: Rebuilt.
+
+2013-02-07  Anthony Green <green@moxielogic.com>
+
+	* testsuite/libffi.call/cls_double_va.c (main): Replace // style
+	comments with /* */ for xlc compiler.
+	* testsuite/libffi.call/stret_large.c (main): Ditto.
+	* testsuite/libffi.call/stret_large2.c (main): Ditto.
+	* testsuite/libffi.call/nested_struct1.c (main): Ditto.
+	* testsuite/libffi.call/huge_struct.c (main): Ditto.
+	* testsuite/libffi.call/float_va.c (main): Ditto.
+	* testsuite/libffi.call/cls_struct_va1.c (main): Ditto.
+	* testsuite/libffi.call/cls_pointer_stack.c (main): Ditto.
+	* testsuite/libffi.call/cls_pointer.c (main): Ditto.
+	* testsuite/libffi.call/cls_longdouble_va.c (main): Ditto.
+
+2013-02-06  Anthony Green <green@moxielogic.com>
+
+	* man/ffi_prep_cif.3: Clean up for debian lintian checker.
+
+2013-02-06  Anthony Green <green@moxielogic.com>
+
+	* Makefile.am (pkgconfigdir): Add missing pkgconfig install bits.
+	* Makefile.in: Rebuild.
+
+2013-02-02  Mark H Weaver <mhw@netris.org>
+
+	* src/x86/ffi64.c (ffi_call): Sign-extend integer arguments passed
+	via general purpose registers.
+
+2013-01-21  Nathan Rossi <nathan.rossi@xilinx.com>
+
+	* README: Add MicroBlaze details.
+	* Makefile.am: Add MicroBlaze support.
+	* configure.ac: Likewise.
+	* src/microblaze/ffi.c: New.
+	* src/microblaze/ffitarget.h: Likewise.
+	* src/microblaze/sysv.S: Likewise.
+
+2013-01-21  Nathan Rossi <nathan.rossi@xilinx.com>
+	* testsuite/libffi.call/return_uc.c: Fixed issue.
+
+2013-01-21  Chris Zankel   <chris@zankel.net>
+
+	* README: Add Xtensa support.
+	* Makefile.am: Likewise.
+	* configure.ac: Likewise.
+	* Makefile.in Regenerate.
+	* configure: Likewise.
+	* src/prep_cif.c: Handle Xtensa.
+	* src/xtensa: New directory.
+	* src/xtensa/ffi.c: New file.
+	* src/xtensa/ffitarget.h: Ditto.
+	* src/xtensa/sysv.S: Ditto.
+
+2013-01-11  Anthony Green  <green@moxielogic.com>
+
+	* src/powerpc/ffi_darwin.c (ffi_prep_args): Replace // style
+	comments with /* */ for xlc compiler.
+	* src/powerpc/aix.S (ffi_call_AIX): Ditto.
+	* testsuite/libffi.call/ffitest.h (allocate_mmap): Delete
+	deprecated inline function.
+	* testsuite/libffi.special/ffitestcxx.h: Ditto.
+	* README: Add update for AIX support.
+
+2013-01-11  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Robustify pc relative reloc check.
+	* m4/ax_cc_maxopt.m4: Don't -malign-double.  This is an ABI
+	changing option for 32-bit x86.
+	* aclocal.m4, configure: Rebuilt.
+	* README: Update supported target list.
+
+2013-01-10  Anthony Green  <green@moxielogic.com>
+
+	* README (tested): Add Compiler column to table.
+
+2013-01-10  Anthony Green  <green@moxielogic.com>
+
+	* src/x86/ffi64.c (struct register_args): Make sse array and array
+	of unions for sunpro compiler compatibility.
+
+2013-01-10  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Test target platform size_t size.  Handle both 32
+	and 64-bit builds for x86_64-* and i?86-* targets (allowing for
+	CFLAG option to change default settings).
+	* configure, aclocal.m4: Rebuilt.
+
+2013-01-10  Anthony Green  <green@moxielogic.com>
+
+	* testsuite/libffi.special/special.exp: Only run exception
+	handling tests when using GNU compiler.
+
+	* m4/ax_compiler_vendor.m4: New file.
+	* configure.ac: Test for compiler vendor and don't use
+	AX_CFLAGS_WARN_ALL with the sun compiler.
+	* aclocal.m4, configure: Rebuilt.
+
+2013-01-10  Anthony Green  <green@moxielogic.com>
+
+	* include/ffi_common.h: Don't use GCCisms to define types when
+	building with the SUNPRO compiler.
+
+2013-01-10  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Put local.exp in the right place.
+	* configure: Rebuilt.
+
+	* src/x86/ffi.c: Update comment about regparm function attributes.
+	* src/x86/sysv.S (ffi_closure_SYSV): The SUNPRO compiler requires
+	that all function arguments be passed on the stack (no regparm
+	support).
+
+2013-01-08  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Generate local.exp.  This sets CC_FOR_TARGET
+	when we are using the vendor compiler.
+	* testsuite/Makefile.am (EXTRA_DEJAGNU_SITE_CONFIG): Point to
+	../local.exp.
+	* configure, testsuite/Makefile.in: Rebuilt.
+
+	* testsuite/libffi.call/call.exp: Run tests with different
+	options, depending on whether or not we are using gcc or the
+	vendor compiler.
+	* testsuite/lib/libffi.exp (libffi-init): Set using_gcc based on
+	whether or not we are building/testing with gcc.
+
+2013-01-08  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Switch x86 solaris target to X86 by default.
+	* configure: Rebuilt.
+
+2013-01-08  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Fix test for read-only eh_frame.
+	* configure: Rebuilt.
+
+2013-01-08  Anthony Green  <green@moxielogic.com>
+
+	* src/x86/sysv.S, src/x86/unix64.S: Only emit DWARF unwind info
+	when building with the GNU toolchain.
+	* testsuite/libffi.call/ffitest.h (CHECK): Fix for Solaris vendor
+	compiler.
+
+2013-01-07  Thorsten Glaser <tg@mirbsd.org>
+
+	* testsuite/libffi.call/cls_uchar_va.c,
+	testsuite/libffi.call/cls_ushort_va.c,
+	testsuite/libffi.call/va_1.c: Testsuite fixes.
+
+2013-01-07  Thorsten Glaser <tg@mirbsd.org>
+
+	* src/m68k/ffi.c (CIF_FLAGS_SINT8, CIF_FLAGS_SINT16): Define.
+	(ffi_prep_cif_machdep): Fix 8-bit and 16-bit signed calls.
+	* src/m68k/sysv.S (ffi_call_SYSV, ffi_closure_SYSV): Ditto.
+
+2013-01-04  Anthony Green  <green@moxielogic.com>
+
+	* Makefile.am (AM_CFLAGS): Don't automatically add -fexceptions
+	and -Wall.  This is set in the configure script after testing for
+	GCC.
+	* Makefile.in: Rebuilt.
+
+2013-01-02  rofl0r <https://github.com/rofl0r>
+
+	* src/powerpc/ffi.c (ffi_prep_cif_machdep): Fix build error on ppc
+	when long double == double.
+
+2013-01-02  Reini Urban  <rurban@x-ray.at>
+
+	* Makefile.am (libffi_la_LDFLAGS): Add -no-undefined to LDFLAGS
+	(required for shared libs on cygwin/mingw).
+	* Makefile.in: Rebuilt.
+
+2012-10-31  Alan Modra  <amodra@gmail.com>
+
+	* src/powerpc/linux64_closure.S: Add new ABI support.
+	* src/powerpc/linux64.S: Likewise.
+
+2012-10-30  Magnus Granberg  <zorry@gentoo.org>
+	    Pavel Labushev  <pavel.labushev@runbox.ru>
+
+	* configure.ac: New options pax_emutramp
+	* configure, fficonfig.h.in: Regenerated
+	* src/closures.c: New function emutramp_enabled_check() and
+	checks.
+
+2012-10-30  Frederick Cheung  <frederick.cheung@gmail.com>
+
+	* configure.ac: Enable FFI_MAP_EXEC_WRIT for Darwin 12 (mountain
+	lion) and future version.
+	* configure: Rebuild.
+
+2012-10-30  James Greenhalgh  <james.greenhalgh at arm.com>
+            Marcus Shawcroft  <marcus.shawcroft at arm.com>
+
+        * README: Add details of aarch64 port.
+        * src/aarch64/ffi.c: New.
+        * src/aarch64/ffitarget.h: Likewise.
+        * src/aarch64/sysv.S: Likewise.
+	* Makefile.am: Support aarch64.
+	* configure.ac: Support aarch64.
+	* Makefile.in, configure: Rebuilt.
+
+2012-10-30  James Greenhalgh  <james.greenhalgh at arm.com>
+            Marcus Shawcroft  <marcus.shawcroft at arm.com>
+
+        * testsuite/lib/libffi.exp: Add support for aarch64.
+        * testsuite/libffi.call/cls_struct_va1.c: New.
+        * testsuite/libffi.call/cls_uchar_va.c: Likewise.
+        * testsuite/libffi.call/cls_uint_va.c: Likewise.
+        * testsuite/libffi.call/cls_ulong_va.c: Likewise.
+        * testsuite/libffi.call/cls_ushort_va.c: Likewise.
+        * testsuite/libffi.call/nested_struct11.c: Likewise.
+        * testsuite/libffi.call/uninitialized.c: Likewise.
+        * testsuite/libffi.call/va_1.c: Likewise.
+        * testsuite/libffi.call/va_struct1.c: Likewise.
+        * testsuite/libffi.call/va_struct2.c: Likewise.
+        * testsuite/libffi.call/va_struct3.c: Likewise.
+
+2012-10-12  Walter Lee  <walt@tilera.com>
+
+        * Makefile.am: Add TILE-Gx/TILEPro support.
+        * configure.ac: Likewise.
+        * Makefile.in: Regenerate.
+        * configure: Likewise.
+        * src/prep_cif.c (ffi_prep_cif_core): Handle TILE-Gx/TILEPro.
+        * src/tile: New directory.
+        * src/tile/ffi.c: New file.
+        * src/tile/ffitarget.h: Ditto.
+        * src/tile/tile.S: Ditto.
+
+2012-10-12  Matthias Klose  <doko@ubuntu.com>
+
+	* generate-osx-source-and-headers.py: Normalize whitespace.
+
+2012-09-14  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure: Regenerated.
+
+2012-08-26  Andrew Pinski  <apinski@cavium.com>
+
+	PR libffi/53014
+	* src/mips/ffi.c (ffi_prep_closure_loc): Allow n32 with soft-float and n64 with
+	soft-float.
+
+2012-08-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	* src/s390/ffi.c (ffi_prep_closure_loc): Don't ASSERT ABI test,
+	just return FFI_BAD_ABI when things are wrong.
+
+2012-07-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR libffi/53982
+	PR libffi/53973
+	* src/x86/ffitarget.h: Check __ILP32__ instead of __LP64__ for x32.
+	(FFI_SIZEOF_JAVA_RAW): Defined to 4 for x32.
+
+2012-05-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2012-05-05  Nicolas Lelong
+
+	* libffi.xcodeproj/project.pbxproj: Fixes.
+	* README: Update for iOS builds.
+
+2012-04-23  Alexandre Keunecke I. de Mendonca <alexandre.keunecke@gmail.com>
+
+	* configure.ac: Add Blackfin/sysv support
+	* Makefile.am: Add Blackfin/sysv support
+	* src/bfin/ffi.c:  Add Blackfin/sysv support
+	* src/bfin/ffitarget.h: Add Blackfin/sysv support
+
+2012-04-11  Anthony Green  <green@moxielogic.com>
+
+	* Makefile.am (EXTRA_DIST): Add new script.
+	* Makefile.in: Rebuilt.
+
+2012-04-11  Zachary Waldowski  <zwaldowski@gmail.com>
+
+	* generate-ios-source-and-headers.py,
+	libffi.xcodeproj/project.pbxproj: Support a Mac static library via
+	Xcode. Set iOS compatibility to 4.0.  Move iOS trampoline
+	generation into an Xcode "run script" phase.  Include both as
+	Xcode build scripts. Don't always regenerate config files.
+
+2012-04-10  Anthony Green  <green@moxielogic.com>
+
+	* src/powerpc/ffi_darwin.c (ffi_prep_args): Add missing semicolon.
+
+2012-04-06  Anthony Green  <green@moxielogic.com>
+
+	* Makefile.am (EXTRA_DIST): Add new iOS/xcode files.
+	* Makefile.in: Rebuilt.
+
+2012-04-06  Mike Lewis  <mikelikespie@gmail.com>
+
+	* generate-ios-source-and-headers.py: New file.
+	* libffi.xcodeproj/project.pbxproj: New file.
+	* README: Update instructions on building iOS binary.
+	* build-ios.sh: Delete.
+
+2012-04-06  Anthony Green  <green@moxielogic.com>
+
+	* src/x86/ffi64.c (UINT128): Define differently for Intel and GNU
+	compilers, then use it.
+
+2012-04-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* m4/libtool.m4 (_LT_ENABLE_LOCK): Support x32.
+
+2012-04-06  Anthony Green  <green@moxielogic.com>
+
+	* testsuite/Makefile.am (EXTRA_DIST): Add missing test cases.
+	* testsuite/Makefile.in: Rebuilt.
+
+2012-04-05  Zachary Waldowski  <zwaldowski@gmail.com>
+
+	* include/ffi.h.in: Add missing trampoline table fields.
+	* src/arm/sysv.S: Fix ENTRY definition, and wrap symbol references
+	in CNAME.
+	* src/x86/ffi.c: Wrap Windows specific code in ifdefs.
+
+2012-04-02  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* src/powerpc/ffi.c (ffi_prep_args_SYSV): Declare double_tmp.
+	Silence casting pointer to integer of different size warning.
+	Delete goto to previously deleted label.
+	(ffi_call): Silence possibly undefined warning.
+	(ffi_closure_helper_SYSV): Declare variable type.
+
+2012-04-02  Peter Rosin  <peda@lysator.liu.se>
+
+	* src/x86/win32.S (ffi_call_win32): Sign/zero extend the return
+	value in the Intel version as is already done for the AT&T version.
+	(ffi_closure_SYSV): Likewise.
+	(ffi_closure_raw_SYSV): Likewise.
+	(ffi_closure_STDCALL): Likewise.
+
+2012-03-29  Peter Rosin  <peda@lysator.liu.se>
+
+	* src/x86/win32.S (ffi_closure_raw_THISCALL): Unify the frame
+	generation, fix the ENDP label and remove the surplus third arg
+	from the 'lea' insn.
+
+2012-03-29  Peter Rosin  <peda@lysator.liu.se>
+
+	* src/x86/win32.S (ffi_closure_raw_SYSV): Make the 'stubraw' label
+	visible outside the PROC, so that ffi_closure_raw_THISCALL can see
+	it.  Also instruct the assembler to add a frame to the function.
+
+2012-03-23  Peter Rosin  <peda@lysator.liu.se>
+
+	* Makefile.am (AM_CPPFLAGS): Add -DFFI_BUILDING.
+	* Makefile.in: Rebuilt.
+	* include/ffi.h.in [MSVC]: Add __declspec(dllimport) decorations
+	to all data exports, when compiling libffi clients using MSVC.
+
+2012-03-29  Peter Rosin  <peda@lysator.liu.se>
+
+	* src/x86/ffitarget.h (ffi_abi): Add new ABI FFI_MS_CDECL and
+	make it the default for MSVC.
+	(FFI_TYPE_MS_STRUCT): New structure return convention.
+	* src/x86/ffi.c (ffi_prep_cif_machdep): Tweak the structure
+	return convention for FFI_MS_CDECL to be FFI_TYPE_MS_STRUCT
+	instead of an ordinary FFI_TYPE_STRUCT.
+	(ffi_prep_args): Treat FFI_TYPE_MS_STRUCT as FFI_TYPE_STRUCT.
+	(ffi_call): Likewise.
+	(ffi_prep_incoming_args_SYSV): Likewise.
+	(ffi_raw_call): Likewise.
+	(ffi_prep_closure_loc): Treat FFI_MS_CDECL as FFI_SYSV.
+	* src/x86/win32.S (ffi_closure_SYSV): For FFI_TYPE_MS_STRUCT,
+	return a pointer to the result structure in eax and don't pop
+	that pointer from the stack, the caller takes care of it.
+	(ffi_call_win32): Treat FFI_TYPE_MS_STRUCT as FFI_TYPE_STRUCT.
+	(ffi_closure_raw_SYSV): Likewise.
+
+2012-03-22  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/closure_stdcall.c [MSVC]: Add inline
+	assembly version with Intel syntax.
+	* testsuite/libffi.call/closure_thiscall.c [MSVC]: Likewise.
+
+2012-03-23  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/ffitest.h: Provide abstration of
+	__attribute__((fastcall)) in the form of a __FASTCALL__
+	define.  Define it to __fastcall for MSVC.
+	* testsuite/libffi.call/fastthis1_win32.c: Use the above.
+	* testsuite/libffi.call/fastthis2_win32.c: Likewise.
+	* testsuite/libffi.call/fastthis3_win32.c: Likewise.
+	* testsuite/libffi.call/strlen2_win32.c: Likewise.
+	* testsuite/libffi.call/struct1_win32.c: Likewise.
+	* testsuite/libffi.call/struct2_win32.c: Likewise.
+
+2012-03-22  Peter Rosin  <peda@lysator.liu.se>
+
+	* src/x86/win32.S [MSVC] (ffi_closure_THISCALL): Remove the manual
+	frame on function entry, MASM adds one automatically.
+
+2012-03-22  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/ffitest.h [MSVC]: Add kludge for missing
+	bits in the MSVC headers.
+
+2012-03-22  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/cls_12byte.c: Adjust to the C89 style
+	with no declarations after statements.
+	* testsuite/libffi.call/cls_16byte.c: Likewise.
+	* testsuite/libffi.call/cls_18byte.c: Likewise.
+	* testsuite/libffi.call/cls_19byte.c: Likewise.
+	* testsuite/libffi.call/cls_1_1byte.c: Likewise.
+	* testsuite/libffi.call/cls_20byte.c: Likewise.
+	* testsuite/libffi.call/cls_20byte1.c: Likewise.
+	* testsuite/libffi.call/cls_24byte.c: Likewise.
+	* testsuite/libffi.call/cls_2byte.c: Likewise.
+	* testsuite/libffi.call/cls_3_1byte.c: Likewise.
+	* testsuite/libffi.call/cls_3byte1.c: Likewise.
+	* testsuite/libffi.call/cls_3byte2.c: Likewise.
+	* testsuite/libffi.call/cls_4_1byte.c: Likewise.
+	* testsuite/libffi.call/cls_4byte.c: Likewise.
+	* testsuite/libffi.call/cls_5_1_byte.c: Likewise.
+	* testsuite/libffi.call/cls_5byte.c: Likewise.
+	* testsuite/libffi.call/cls_64byte.c: Likewise.
+	* testsuite/libffi.call/cls_6_1_byte.c: Likewise.
+	* testsuite/libffi.call/cls_6byte.c: Likewise.
+	* testsuite/libffi.call/cls_7_1_byte.c: Likewise.
+	* testsuite/libffi.call/cls_7byte.c: Likewise.
+	* testsuite/libffi.call/cls_8byte.c: Likewise.
+	* testsuite/libffi.call/cls_9byte1.c: Likewise.
+	* testsuite/libffi.call/cls_9byte2.c: Likewise.
+	* testsuite/libffi.call/cls_align_double.c: Likewise.
+	* testsuite/libffi.call/cls_align_float.c: Likewise.
+	* testsuite/libffi.call/cls_align_longdouble.c: Likewise.
+	* testsuite/libffi.call/cls_align_longdouble_split.c: Likewise.
+	* testsuite/libffi.call/cls_align_longdouble_split2.c: Likewise.
+	* testsuite/libffi.call/cls_align_pointer.c: Likewise.
+	* testsuite/libffi.call/cls_align_sint16.c: Likewise.
+	* testsuite/libffi.call/cls_align_sint32.c: Likewise.
+	* testsuite/libffi.call/cls_align_sint64.c: Likewise.
+	* testsuite/libffi.call/cls_align_uint16.c: Likewise.
+	* testsuite/libffi.call/cls_align_uint32.c: Likewise.
+	* testsuite/libffi.call/cls_align_uint64.c: Likewise.
+	* testsuite/libffi.call/cls_dbls_struct.c: Likewise.
+	* testsuite/libffi.call/cls_pointer_stack.c: Likewise.
+	* testsuite/libffi.call/err_bad_typedef.c: Likewise.
+	* testsuite/libffi.call/huge_struct.c: Likewise.
+	* testsuite/libffi.call/nested_struct.c: Likewise.
+	* testsuite/libffi.call/nested_struct1.c: Likewise.
+	* testsuite/libffi.call/nested_struct10.c: Likewise.
+	* testsuite/libffi.call/nested_struct2.c: Likewise.
+	* testsuite/libffi.call/nested_struct3.c: Likewise.
+	* testsuite/libffi.call/nested_struct4.c: Likewise.
+	* testsuite/libffi.call/nested_struct5.c: Likewise.
+	* testsuite/libffi.call/nested_struct6.c: Likewise.
+	* testsuite/libffi.call/nested_struct7.c: Likewise.
+	* testsuite/libffi.call/nested_struct8.c: Likewise.
+	* testsuite/libffi.call/nested_struct9.c: Likewise.
+	* testsuite/libffi.call/stret_large.c: Likewise.
+	* testsuite/libffi.call/stret_large2.c: Likewise.
+	* testsuite/libffi.call/stret_medium.c: Likewise.
+	* testsuite/libffi.call/stret_medium2.c: Likewise.
+	* testsuite/libffi.call/struct1.c: Likewise.
+	* testsuite/libffi.call/struct1_win32.c: Likewise.
+	* testsuite/libffi.call/struct2.c: Likewise.
+	* testsuite/libffi.call/struct2_win32.c: Likewise.
+	* testsuite/libffi.call/struct3.c: Likewise.
+	* testsuite/libffi.call/struct4.c: Likewise.
+	* testsuite/libffi.call/struct5.c: Likewise.
+	* testsuite/libffi.call/struct6.c: Likewise.
+	* testsuite/libffi.call/struct7.c: Likewise.
+	* testsuite/libffi.call/struct8.c: Likewise.
+	* testsuite/libffi.call/struct9.c: Likewise.
+	* testsuite/libffi.call/testclosure.c: Likewise.
+
+2012-03-21  Peter Rosin	 <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/float_va.c (float_va_fn): Use %f when
+	printing doubles (%lf is for long doubles).
+	(main): Likewise.
+
+2012-03-21  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/lib/target-libpath.exp [*-*-cygwin*, *-*-mingw*]
+	(set_ld_library_path_env_vars): Add the library search dir to PATH
+	(and save PATH for later).
+	(restore_ld_library_path_env_vars): Restore PATH.
+
+2012-03-21  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/lib/target-libpath.exp [*-*-cygwin*, *-*-mingw*]
+	(set_ld_library_path_env_vars): Add the library search dir to PATH
+	(and save PATH for later).
+	(restore_ld_library_path_env_vars): Restore PATH.
+
+2012-03-20  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/strlen2_win32.c (main): Remove bug.
+	* src/x86/win32.S [MSVC] (ffi_closure_SYSV): Make the 'stub' label
+	visible outside the PROC, so that ffi_closure_THISCALL can see it.
+
+2012-03-20  Peter Rosin  <peda@lysator.liu.se>
+
+	* testsuite/libffi.call/strlen2_win32.c (main): Remove bug.
+	* src/x86/win32.S [MSVC] (ffi_closure_SYSV): Make the 'stub' label
+	visible outside the PROC, so that ffi_closure_THISCALL can see it.
+
+2012-03-19  Alan Hourihane  <alanh@fairlite.co.uk>
+
+	* src/m68k/ffi.c: Add MINT support.
+	* src/m68k/sysv.S: Ditto.
+
+2012-03-06  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* src/arm/ffi.c (ffi_call): Add __ARM_EABI__ guard around call to
+	ffi_call_VFP().
+	(ffi_prep_closure_loc): Add __ARM_EABI__ guard around use of
+	ffi_closure_VFP.
+	* src/arm/sysv.S: Add __ARM_EABI__ guard around VFP code.
+
+2012-03-19  chennam  <csit@axway.com>
+
+	* src/powerpc/ffi_darwin.c (ffi_prep_closure_loc): Fix AIX closure
+	support.
+
+2012-03-13  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	* src/sh/ffi.c (ffi_prep_closure_loc): Don't ASSERT ABI test,
+	just return FFI_BAD_ABI when things are wrong.
+	* src/sh64/ffi.c (ffi_prep_closure_loc): Ditto.
+
+2012-03-09  David Edelsohn  <dje.gcc@gmail.com>
+
+	* src/powerpc/aix_closure.S (ffi_closure_ASM): Adjust for Darwin64
+	change to return value of ffi_closure_helper_DARWIN and load type
+	from return type.
+
+2012-03-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* src/x86/ffi64.c (ffi_call): Cast the return value to unsigned
+	long.
+	(ffi_prep_closure_loc): Cast to 64bit address in trampoline.
+	(ffi_closure_unix64_inner): Cast return pointer to unsigned long
+	first.
+
+	* src/x86/ffitarget.h (FFI_SIZEOF_ARG): Defined to 8 for x32.
+	(ffi_arg): Set to unsigned long long for x32.
+	(ffi_sarg): Set to long long for x32.
+
+2012-03-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* src/prep_cif.c (ffi_prep_cif_core): Properly check bad ABI.
+
+2012-03-03  Andoni Morales Alastruey  <ylatuya@gmail.com>
+
+	* configure.ac: Add -no-undefined for both 32- and 64-bit x86
+	windows-like hosts.
+	* configure: Rebuilt.
+
+2012-02-27  Mikael Pettersson  <mikpe@it.uu.se>
+
+	PR libffi/52223
+	* Makefile.am (FLAGS_TO_PASS): Define.
+	* Makefile.in: Regenerate.
+
+2012-02-23  Anthony Green  <green@moxielogic.com>
+
+	* src/*/ffitarget.h: Ensure that users never include ffitarget.h
+	directly.
+
+2012-02-23  Kai Tietz  <ktietz@redhat.com>
+
+	PR libffi/52221
+	* src/x86/ffi.c (ffi_closure_raw_THISCALL): New
+	prototype.
+	(ffi_prep_raw_closure_loc): Use ffi_closure_raw_THISCALL for
+	thiscall-convention.
+	(ffi_raw_call): Use ffi_prep_args_raw.
+	* src/x86/win32.S (ffi_closure_raw_THISCALL): Add
+	implementation for stub.
+
+2012-02-10  Kai Tietz  <ktietz@redhat.com>
+
+	* configure.ac (AM_LTLDFLAGS): Add -no-undefine for x64
+	windows target.
+	* configure: Regenerated.
+
+2012-02-08  Kai Tietz  <ktietz@redhat.com>
+
+	* src/prep_cif.c (ffi_prep_cif): Allow for X86_WIN32
+	also FFI_THISCALL.
+	* src/x86/ffi.c (ffi_closure_THISCALL): Add prototype.
+	(FFI_INIT_TRAMPOLINE_THISCALL): New trampoline code.
+	(ffi_prep_closure_loc): Add FFI_THISCALL support.
+	* src/x86/ffitarget.h (FFI_TRAMPOLINE_SIZE): Adjust size.
+	* src/x86/win32.S (ffi_closure_THISCALL): New closure code
+	for thiscall-calling convention.
+	* testsuite/libffi.call/closure_thiscall.c: New test.
+
+2012-01-28  Kai Tietz  <ktietz@redhat.com>
+
+	* src/libffi/src/x86/ffi.c (ffi_call_win32): Add new
+	argument to prototype for specify calling-convention.
+	(ffi_call): Add support for stdcall/thiscall convention.
+	(ffi_prep_args): Likewise.
+	(ffi_raw_call): Likewise.
+	* src/x86/ffitarget.h (ffi_abi): Add FFI_THISCALL and
+	FFI_FASTCALL.
+	* src/x86/win32.S (_ffi_call_win32): Add support for
+	fastcall/thiscall calling-convention calls.
+	* testsuite/libffi.call/fastthis1_win32.c: New test.
+	* testsuite/libffi.call/fastthis2_win32.c: New test.
+	* testsuite/libffi.call/fastthis3_win32.c: New test.
+	* testsuite/libffi.call/strlen2_win32.c: New test.
+	* testsuite/libffi.call/many2_win32.c: New test.
+	* testsuite/libffi.call/struct1_win32.c: New test.
+	* testsuite/libffi.call/struct2_win32.c: New test.
+
+2012-01-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	* src/alpha/ffi.c (ffi_prep_closure_loc): Check for bad ABI.
+
+2012-01-23  Anthony Green  <green@moxielogic.com>
+	    Chris Young  <cdyoung@ntlworld.com>
+
+	* configure.ac: Add Amiga support.
+	* configure: Rebuilt.
+
+2012-01-23  Dmitry Nadezhin  <dmitry.nadezhin@gmail.com>
+
+	* include/ffi_common.h (LIKELY, UNLIKELY): Fix definitions.
+
+2012-01-23  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* src/m68k/sysv.S (ffi_call_SYSV): Properly test for plain
+	mc68000.  Test for __HAVE_68881__ in addition to __MC68881__.
+
+2012-01-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/48496
+	* src/ia64/ffi.c (ffi_call): Fix up aliasing violations.
+
+2012-01-09  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (i?86-*-*): Set TARGET to X86_64.
+	* configure: Regenerate.
+
+2011-12-07  Andrew Pinski  <apinski@cavium.com>
+
+	PR libffi/50051
+	* src/mips/n32.S: Add ".set mips4".
+
+2011-11-21  Andreas Tobler  <andreast@fgznet.ch>
+
+	* configure: Regenerate.
+
+2011-11-12  David Gilbert <david.gilbert@linaro.org>
+
+	* doc/libffi.texi, include/ffi.h.in, include/ffi_common.h,
+	man/Makefile.am, man/ffi.3, man/ffi_prep_cif.3,
+	man/ffi_prep_cif_var.3, src/arm/ffi.c, src/arm/ffitarget.h,
+	src/cris/ffi.c, src/prep_cif.c,
+	testsuite/libffi.call/cls_double_va.c,
+	testsuite/libffi.call/cls_longdouble_va.c,
+	testsuite/libffi.call/float_va.c: Many changes to support variadic
+	function calls.
+
+2011-11-12  Kyle Moffett <Kyle.D.Moffett@boeing.com>
+
+	* src/powerpc/ffi.c, src/powerpc/ffitarget.h,
+	src/powerpc/ppc_closure.S, src/powerpc/sysv.S: Many changes for
+	softfloat powerpc variants.
+
+2011-11-12  Petr Salinger <Petr.Salinger@seznam.cz>
+
+	* configure.ac (FFI_EXEC_TRAMPOLINE_TABLE): Fix kfreebsd support.
+	* configure: Rebuilt.
+
+2011-11-12  Timothy Wall  <twall@users.sf.net>
+
+	* src/arm/ffi.c (ffi_prep_args, ffi_prep_incoming_args_SYSV): Max
+	alignment of 4 for wince on ARM.
+
+2011-11-12  Kyle Moffett <Kyle.D.Moffett@boeing.com>
+	    Anthony Green <green@moxielogic.com>
+
+	* src/ppc/sysv.S, src/ppc/ffi.c: Remove use of ppc string
+	instructions (not available on some cores, like the PPC440).
+
+2011-11-12  Kimura Wataru  <kimuraw@i.nifty.jp>
+
+	* m4/ax_enable_builddir: Change from string comparison to numeric
+	comparison for wc output.
+	* configure.ac: Enable FFI_MMAP_EXEC_WRIT for darwin11 aka Mac OS
+	X 10.7.
+	* configure: Rebuilt.
+
+2011-11-12  Anthony Green  <green@moxielogic.com>
+
+	* Makefile.am (AM_CCASFLAGS): Add -g option to build assembly
+	files with debug info.
+	* Makefile.in: Rebuilt.
+
+2011-11-12  Jasper Lievisse Adriaanse <jasper@openbsd.org>
+
+	* README: Update list of supported OpenBSD systems.
+
+2011-11-12  Anthony Green  <green@moxielogic.com>
+
+	* libtool-version: Update.
+	* Makefile.am (nodist_libffi_la_SOURCES): Add src/debug.c if
+	FFI_DEBUG.
+	(libffi_la_SOURCES): Remove src/debug.c
+	(EXTRA_DIST): Add src/debug.c
+	* Makefile.in: Rebuilt.
+	* README: Update for 3.0.11.
+
+2011-11-10  Richard Henderson  <rth@redhat.com>
+
+	* configure.ac (GCC_AS_CFI_PSEUDO_OP): Use it instead of inline check.
+	* configure, aclocal.m4: Rebuild.
+
+2011-09-04  Iain Sandoe  <iains@gcc.gnu.org>
+
+	PR libffi/49594
+	* src/powerpc/darwin_closure.S (stubs): Make the stub binding
+	helper reference track the architecture pointer size.
+
+2011-08-25  Andrew Haley  <aph@redhat.com>
+
+	* src/arm/ffi.c (FFI_INIT_TRAMPOLINE): Remove hard-coded assembly
+	instructions.
+	* src/arm/sysv.S (ffi_arm_trampoline): Put them here instead.
+
+2011-07-11  Andrew Haley  <aph@redhat.com>
+
+        * src/arm/ffi.c (FFI_INIT_TRAMPOLINE): Clear icache.
+
+2011-06-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libffi.call/cls_double_va.c: Move PR number to comment.
+	* testsuite/libffi.call/cls_longdouble_va.c: Likewise.
+
+2011-06-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libffi/46660
+	* testsuite/libffi.call/cls_double_va.c: xfail dg-output on
+	mips-sgi-irix6*.
+	* testsuite/libffi.call/cls_longdouble_va.c: Likewise.
+
+2011-06-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libffi.call/huge_struct.c (test_large_fn): Use PRIu8,
+	PRId8 instead of %hhu, %hhd.
+	* testsuite/libffi.call/ffitest.h [__alpha__ && __osf__] (PRId8,
+	PRIu8): Define.
+	[__sgi__] (PRId8, PRIu8): Define.
+
+2011-04-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* src/alpha/osf.S (UA_SI, FDE_ENCODING, FDE_ENCODE, FDE_ARANGE):
+	Define.
+	Use them to handle ELF vs. ECOFF differences.
+	[__osf__] (_GLOBAL__F_ffi_call_osf): Define.
+
+2011-03-30  Timothy Wall  <twall@users.sf.net>
+
+	* src/powerpc/darwin.S: Fix unknown FDE encoding.
+	* src/powerpc/darwin_closure.S: ditto.
+
+2011-02-25  Anthony Green  <green@moxielogic.com>
+
+	* src/powerpc/ffi.c (ffi_prep_closure_loc): Allow for more
+	32-bit ABIs.
+
+2011-02-15  Anthony Green  <green@moxielogic.com>
+
+	* m4/ax_cc_maxopt.m4: Don't -malign-double or use -ffast-math.
+	* configure: Rebuilt.
+
+2011-02-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2011-02-13  Anthony Green  <green@moxielogic.com>
+
+	* include/ffi_common.h (UNLIKELY, LIKELY): Define.
+	* src/x86/ffi64.c (UNLIKELY, LIKELY): Remove definition.
+	* src/prep_cif.c (UNLIKELY, LIKELY): Remove definition.
+
+	* src/prep_cif.c (initialize_aggregate): Convert assertion into
+	FFI_BAD_TYPEDEF return.  Initialize arg size and alignment to 0.
+
+	* src/pa/ffi.c (ffi_prep_closure_loc): Don't ASSERT ABI test,
+	just return FFI_BAD_ABI when things are wrong.
+	* src/arm/ffi.c (ffi_prep_closure_loc): Ditto.
+	* src/powerpc/ffi.c (ffi_prep_closure_loc): Ditto.
+	* src/mips/ffi.c (ffi_prep_closure_loc): Ditto.
+	* src/ia64/ffi.c (ffi_prep_closure_loc): Ditto.
+	* src/avr32/ffi.c (ffi_prep_closure_loc): Ditto.
+
+2011-02-11  Anthony Green  <green@moxielogic.com>
+
+	* src/sparc/ffi.c (ffi_prep_closure_loc): Don't ASSERT ABI test,
+	just return FFI_BAD_ABI when things are wrong.
+
+2012-02-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* src/sparc/v9.S (STACKFRAME): Bump to 176.
+
+2011-02-09  Stuart Shelton  <srcshelton@gmail.com>
+
+	http://bugs.gentoo.org/show_bug.cgi?id=286911
+	* src/mips/ffitarget.h: Clean up error messages.
+	* src/java_raw_api.c (ffi_java_translate_args): Cast raw arg to
+	ffi_raw*.
+	* include/ffi.h.in: Add pragma for SGI compiler.
+
+2011-02-09  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Add powerpc64-*-darwin* support.
+
+2011-02-09  Anthony Green <green@moxielogic.com>
+
+	* README: Mention Interix.
+
+2011-02-09  Jonathan Callen  <abcd@gentoo.org>
+
+	* configure.ac: Add Interix to win32/cygwin/mingw case.
+	* configure: Ditto.
+	* src/closures.c: Treat Interix like Cygwin, instead of as a
+	generic win32.
+
+2011-02-09  Anthony Green <green@moxielogic.com>
+
+	* testsuite/libffi.call/err_bad_typedef.c: Remove xfail.
+	* testsuite/libffi.call/err_bad_abi.c: Remove xfail.
+	* src/x86/ffi64.c (UNLIKELY, LIKELY): Define.
+	(ffi_prep_closure_loc): Check for bad ABI.
+	* src/prep_cif.c (UNLIKELY, LIKELY): Define.
+	(initialize_aggregate): Check for bad types.
+
+2011-02-09  Landon Fuller <landonf@plausible.coop>
+
+	* Makefile.am (EXTRA_DIST): Add build-ios.sh, src/arm/gentramp.sh,
+	src/arm/trampoline.S.
+	(nodist_libffi_la_SOURCES): Add src/arc/trampoline.S.
+	* configure.ac (FFI_EXEC_TRAMPOLINE_TABLE): Define.
+	* src/arm/ffi.c (ffi_trampoline_table)
+	(ffi_closure_trampoline_table_page, ffi_trampoline_table_entry)
+	(FFI_TRAMPOLINE_CODELOC_CONFIG, FFI_TRAMPOLINE_CONFIG_PAGE_OFFSET)
+	(FFI_TRAMPOLINE_COUNT, ffi_trampoline_lock, ffi_trampoline_tables)
+	(ffi_trampoline_table_alloc, ffi_closure_alloc, ffi_closure_free):
+	Define for FFI_EXEC_TRAMPOLINE_TABLE case (iOS).
+	(ffi_prep_closure_loc): Handl FFI_EXEC_TRAMPOLINE_TABLE case
+	separately.
+	* src/arm/sysv.S: Handle Apple iOS host.
+	* src/closures.c: Handle FFI_EXEC_TRAMPOLINE_TABLE case.
+	* build-ios.sh: New file.
+	* fficonfig.h.in, configure, Makefile.in: Rebuilt.
+	* README: Mention ARM iOS.
+
+2011-02-08  Oren Held  <orenhe@il.ibm.com>
+
+	* src/dlmalloc.c (_STRUCT_MALLINFO): Define in order to avoid
+	redefinition of mallinfo on HP-UX.
+
+2011-02-08  Ginn Chen  <ginn.chen@oracle.com>
+
+	* src/sparc/ffi.c (ffi_call): Make compatible with Solaris Studio
+	aggregate return ABI.  Flush cache.
+	(ffi_prep_closure_loc): Flush cache.
+
+2011-02-11  Anthony Green  <green@moxielogic.com>
+
+	From Tom Honermann <tom.honermann@oracle.com>:
+	* src/powerpc/aix.S (ffi_call_AIX): Support for xlc toolchain on
+	AIX.  Declare .ffi_prep_args.  Insert nops after branch
+	instructions so that the AIX linker can insert TOC reload
+	instructions.
+	* src/powerpc/aix_closure.S: Declare .ffi_closure_helper_DARWIN.
+
+2011-02-08  Ed  <ed@kdtc.net>
+
+	* src/powerpc/asm.h: Fix grammar nit in comment.
+
+2011-02-08  Uli Link  <ul.mcamafia@linkitup.de>
+
+	* include/ffi.h.in (FFI_64_BIT_MAX): Define and use.
+
+2011-02-09  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libffi/46661
+	* testsuite/libffi.call/cls_pointer.c (main): Cast void * to
+	uintptr_t first.
+	* testsuite/libffi.call/cls_pointer_stack.c (main): Likewise.
+
+2011-02-08  Rafael Avila de Espindola  <respindola@mozilla.com>
+
+	* configure.ac: Fix x86 test for pc related relocs.
+	* configure: Rebuilt.
+
+2011-02-07  Joel Sherrill <joel.sherrill@oarcorp.com>
+
+	* libffi/src/m68k/ffi.c: Add RTEMS support for cache flushing.
+	Handle case when CPU variant does not have long double support.
+	* libffi/src/m68k/sysv.S: Add support for mc68000, Coldfire,
+	and cores with soft floating point.
+
+2011-02-07  Joel Sherrill <joel.sherrill@oarcorp.com>
+
+	* configure.ac: Add mips*-*-rtems* support.
+	* configure: Regenerate.
+	* src/mips/ffitarget.h: Ensure needed constants are available
+	for targets which do not have sgidefs.h.
+
+2011-01-26  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR target/40125
+	* configure.ac (AM_LTLDFLAGS): Add -bindir option for windows DLLs.
+	* configure: Regenerate.
+
+2010-12-18  Iain Sandoe  <iains@gcc.gnu.org>
+
+	PR libffi/29152
+	PR libffi/42378
+	* src/powerpc/darwin_closure.S: Provide Darwin64 implementation,
+	update comments.
+	* src/powerpc/ffitarget.h (POWERPC_DARWIN64): New,
+	(FFI_TRAMPOLINE_SIZE): Update for Darwin64.
+	* src/powerpc/darwin.S: Provide Darwin64 implementation,
+	update comments.
+	* src/powerpc/ffi_darwin.c: Likewise.
+
+2010-12-06  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (libffi_cv_as_ascii_pseudo_op): Use double
+	backslashes.
+	(libffi_cv_as_string_pseudo_op): Likewise.
+	* configure: Regenerate.
+
+2010-12-03  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* src/arm/sysv.S (ffi_closure_SYSV): Add UNWIND to .pad directive.
+	(ffi_closure_VFP): Same.
+	(ffi_call_VFP): Move down to before ffi_closure_VFP. Add '.fpu vfp'
+	directive.
+
+2010-12-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/libffi.call/ffitest.h [__sgi] (PRId64, PRIu64): Define.
+	(PRIuPTR): Define.
+
+2010-11-29  Richard Henderson  <rth@redhat.com>
+	    Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* src/x86/sysv.S (FDE_ENCODING, FDE_ENCODE): Define.
+	(.eh_frame): Use FDE_ENCODING.
+	(.LASFDE1, .LASFDE2, LASFDE3): Simplify with FDE_ENCODE.
+
+2010-11-22  Jacek Caban <jacek@codeweavers.com>
+
+	* configure.ac: Check for symbol underscores on mingw-w64.
+	* configure: Rebuilt.
+	* src/x86/win64.S: Correctly access extern symbols in respect to
+	underscores.
+
+2010-11-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite/lib/libffi-dg.exp: Rename ...
+	* testsuite/lib/libffi.exp: ... to this.
+	* libffi/testsuite/libffi.call/call.exp: Don't load libffi-dg.exp.
+	* libffi/testsuite/libffi.special/special.exp: Likewise.
+
+2010-10-28  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* src/arm/ffi.c (ffi_prep_args): Add VFP register argument handling
+	code, new parameter, and return value. Update comments.
+	(ffi_prep_cif_machdep): Add case for VFP struct return values. Add
+	call to layout_vfp_args().
+	(ffi_call_SYSV): Update declaration.
+	(ffi_call_VFP): New declaration.
+	(ffi_call): Add VFP struct return conditions. Call ffi_call_VFP()
+	when ABI is FFI_VFP.
+	(ffi_closure_VFP): New declaration.
+	(ffi_closure_SYSV_inner): Add new vfp_args parameter, update call to
+	ffi_prep_incoming_args_SYSV().
+	(ffi_prep_incoming_args_SYSV): Update parameters. Add VFP argument
+	case handling.
+	(ffi_prep_closure_loc): Pass ffi_closure_VFP to trampoline
+	construction under VFP hard-float.
+	(rec_vfp_type_p): New function.
+	(vfp_type_p): Same.
+	(place_vfp_arg): Same.
+	(layout_vfp_args): Same.
+	* src/arm/ffitarget.h (ffi_abi): Add FFI_VFP. Define FFI_DEFAULT_ABI
+	based on __ARM_PCS_VFP.
+	(FFI_EXTRA_CIF_FIELDS): Define for adding VFP hard-float specific
+	fields.
+	(FFI_TYPE_STRUCT_VFP_FLOAT): Define internally used type code.
+	(FFI_TYPE_STRUCT_VFP_DOUBLE): Same.
+	* src/arm/sysv.S (ffi_call_SYSV): Change call of ffi_prep_args() to
+	direct call. Move function pointer load upwards.
+	(ffi_call_VFP): New function.
+	(ffi_closure_VFP): Same.
+
+	* testsuite/lib/libffi-dg.exp (check-flags): New function.
+	(dg-skip-if): New function.
+	* testsuite/libffi.call/cls_double_va.c: Skip if target is arm*-*-*
+	and compiler options include -mfloat-abi=hard.
+	* testsuite/libffi.call/cls_longdouble_va.c: Same.
+
+2010-10-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libffi/45677
+	* src/x86/ffi64.c (ffi_prep_cif_machdep): Ensure cif->bytes is
+	a multiple of 8.
+	* testsuite/libffi.call/many2.c: New test.
+
+2010-08-20  Mark Wielaard  <mjw@redhat.com>
+
+	* src/closures.c (open_temp_exec_file_mnt): Check if getmntent_r
+	returns NULL.
+
+2010-08-09  Andreas Tobler  <andreast@fgznet.ch>
+
+	* configure.ac: Add target powerpc64-*-freebsd*.
+	* configure: Regenerate.
+	* testsuite/libffi.call/cls_align_longdouble_split.c: Pass
+	-mlong-double-128 only to linux targets.
+	* testsuite/libffi.call/cls_align_longdouble_split2.c: Likewise.
+	* testsuite/libffi.call/cls_longdouble.c: Likewise.
+	* testsuite/libffi.call/huge_struct.c: Likewise.
+
+2010-08-05  Dan Witte  <dwitte@mozilla.com>
+
+        * Makefile.am: Pass FFI_DEBUG define to msvcc.sh for linking to the
+        debug CRT when --enable-debug is given.
+        * configure.ac: Define it.
+        * msvcc.sh: Translate -g and -DFFI_DEBUG appropriately.
+
+2010-08-04  Dan Witte  <dwitte@mozilla.com>
+
+	* src/x86/ffitarget.h: Add X86_ANY define for all x86/x86_64
+	platforms.
+	* src/x86/ffi.c: Remove redundant ifdef checks.
+	* src/prep_cif.c: Push stack space computation into src/x86/ffi.c
+	for X86_ANY so return value space doesn't get added twice.
+
+2010-08-03  Neil Rashbrooke <neil@parkwaycc.co.uk>
+
+	* msvcc.sh: Don't pass -safeseh to ml64 because behavior is buggy.
+
+2010-07-22  Dan Witte  <dwitte@mozilla.com>
+
+	* src/*/ffitarget.h: Make FFI_LAST_ABI one past the last valid ABI.
+	* src/prep_cif.c: Fix ABI assertion.
+        * src/cris/ffi.c: Ditto.
+
+2010-07-10  Evan Phoenix  <evan@fallingsnow.net>
+
+	* src/closures.c (selinux_enabled_check): Fix strncmp usage bug.
+
+2010-07-07  Dan Horák <dan@danny.cz>
+
+	* include/ffi.h.in: Protect #define with #ifndef.
+	* src/powerpc/ffitarget.h: Ditto.
+	* src/s390/ffitarget.h: Ditto.
+	* src/sparc/ffitarget.h: Ditto.
+
+2010-07-07   Neil Roberts <neil@linux.intel.com>
+
+	* src/x86/sysv.S (ffi_call_SYSV): Align the stack pointer to
+	16-bytes.
+
+2010-07-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.am (AM_MAKEFLAGS): Pass also mandir to submakes.
+	* Makefile.in: Regenerated.
+
+2010-05-19  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (libffi_cv_as_x86_pcrel): Check for illegal in as
+	output, too.
+	(libffi_cv_as_ascii_pseudo_op): Check for .ascii.
+	(libffi_cv_as_string_pseudo_op): Check for .string.
+	* configure: Regenerate.
+	* fficonfig.h.in: Regenerate.
+	* src/x86/sysv.S (.eh_frame): Use .ascii, .string or error.
+
+2010-05-11  Dan Witte  <dwitte@mozilla.com>
+
+	* doc/libffi.tex: Document previous change.
+
+2010-05-11  Makoto Kato <m_kato@ga2.so-net.ne.jp>
+
+	* src/x86/ffi.c (ffi_call): Don't copy structs passed by value.
+
+2010-05-05  Michael Kohler <michaelkohler@live.com>
+
+	* src/dlmalloc.c (dlfree): Fix spelling.
+	* src/ia64/ffi.c (ffi_prep_cif_machdep): Ditto.
+	* configure.ac: Ditto.
+	* configure: Rebuilt.
+
+2010-04-13  Dan Witte  <dwitte@mozilla.com>
+
+	* msvcc.sh: Build with -W3 instead of -Wall.
+	* src/powerpc/ffi_darwin.c: Remove build warnings.
+	* src/x86/ffi.c: Ditto.
+	* src/x86/ffitarget.h: Ditto.
+
+2010-04-12  Dan Witte  <dwitte@mozilla.com>
+	    Walter Meinl <wuno@lsvw.de>
+
+	* configure.ac: Add OS/2 support.
+	* configure: Rebuilt.
+	* src/closures.c: Ditto.
+	* src/dlmalloc.c: Ditto.
+	* src/x86/win32.S: Ditto.
+
+2010-04-07  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/libffi.call/err_bad_abi.c: Remove unused args variable.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* include/Makefile.in: Regenerate.
+	* man/Makefile.in: Regenerate.
+	* testsuite/Makefile.in: Regenerate.
+
+2010-03-30  Dan Witte  <dwitte@mozilla.com>
+
+	* msvcc.sh: Disable build warnings.
+	* README (tested): Clarify windows build procedure.
+
+2010-03-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (libffi_cv_as_x86_64_unwind_section_type): New test.
+	* configure: Regenerate.
+	* fficonfig.h.in: Regenerate.
+	* libffi/src/x86/unix64.S (.eh_frame)
+	[HAVE_AS_X86_64_UNWIND_SECTION_TYPE]: Use @unwind section type.
+
 2010-03-14  Matthias Klose  <doko@ubuntu.com>
 
 	* src/x86/ffi64.c: Fix typo in comment.
 	* src/x86/ffi.c: Use /* ... */ comment style.
+
+2010-02-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* doc/libffi.texi (The Closure API): Fix typo.
+	* doc/libffi.info: Remove.
+
+2010-02-15  Matthias Klose  <doko@ubuntu.com>
+
+	* src/arm/sysv.S (__ARM_ARCH__): Define for processor
+	__ARM_ARCH_7EM__.
+
+2010-01-15  Anthony Green  <green@redhat.com>
+
+	* README: Add notes on building with Microsoft Visual C++.
+
+2010-01-15  Daniel Witte  <dwitte@mozilla.com>
+
+	* msvcc.sh: New file.
+
+	* src/x86/win32.S: Port assembly routines to MSVC and #ifdef.
+	* src/x86/ffi.c: Tweak function declaration and remove excess
+	parens.
+	* include/ffi.h.in: Add __declspec(align(8)) to typedef struct
+	ffi_closure.
+
+	* src/x86/ffi.c: Merge ffi_call_SYSV and ffi_call_STDCALL into new
+	function ffi_call_win32 on X86_WIN32.
+	* src/x86/win32.S (ffi_call_SYSV): Rename to ffi_call_win32.
+	(ffi_call_STDCALL): Remove.
+
+	* src/prep_cif.c (ffi_prep_cif): Move stack space allocation code
+	to ffi_prep_cif_machdep for x86.
+	* src/x86/ffi.c (ffi_prep_cif_machdep): To here.
+
+2010-01-15  Oliver Kiddle  <okiddle@yahoo.co.uk>
+
+	* src/x86/ffitarget.h (ffi_abi): Check for __i386 and __amd64 for
+	Sun Studio compiler compatibility.
+
+2010-01-12  Conrad Irwin <conrad.irwin@gmail.com>
+
+	* doc/libffi.texi: Add closure example.
 
 2010-01-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
@@ -147,6 +1499,13 @@
 
 	* src/pa/ffi.c (ffi_closure_inner_pa32): Handle FFI_TYPE_LONGDOUBLE
 	type on HP-UX.
+
+2012-02-13  Kai Tietz  <ktietz@redhat.com>
+
+	PR libffi/52221
+	* src/x86/ffi.c (ffi_prep_raw_closure_loc): Add thiscall
+	support for X86_WIN32.
+	(FFI_INIT_TRAMPOLINE_THISCALL): Fix displacement.
 
 2009-12-11  Eric Botcazou  <ebotcazou@adacore.com>
 
@@ -321,6 +1680,11 @@
 	* include/Makefile.in: Regenerate.
 	* man/Makefile.in: Regenerate.
 	* testsuite/Makefile.in: Regenerate.
+
+2011-08-22  Jasper Lievisse Adriaanse <jasper@openbsd.org>
+
+	* configure.ac: Add OpenBSD/hppa and OpenBSD/powerpc support.
+	* configure: Rebuilt.
 
 2009-07-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
 

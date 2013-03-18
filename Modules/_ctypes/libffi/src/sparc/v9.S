@@ -32,7 +32,7 @@
 /* Only compile this in for 64bit builds, because otherwise the object file
    will have inproper architecture due to used instructions.  */
 
-#define STACKFRAME 128		/* Minimum stack framesize for SPARC */
+#define STACKFRAME 176		/* Minimum stack framesize for SPARC 64-bit */
 #define STACK_BIAS 2047
 #define ARGS (128)		/* Offset of register area in frame */
 

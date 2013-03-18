@@ -15,7 +15,7 @@
 
 #define MAX_ARGS 256
 
-#define CHECK(x) !(x) ? abort() : 0
+#define CHECK(x) !(x) ? (abort(), 1) : 0
 
 /* Define __UNUSED__ that also other compilers than gcc can run the tests.  */
 #undef __UNUSED__
@@ -23,6 +23,14 @@
 #define __UNUSED__ __attribute__((__unused__))
 #else
 #define __UNUSED__
+#endif
+
+/* Define __FASTCALL__ so that other compilers than gcc can run the tests.  */
+#undef __FASTCALL__
+#if defined _MSC_VER
+#define __FASTCALL__ __fastcall
+#else
+#define __FASTCALL__ __attribute__((fastcall))
 #endif
 
 /* Prefer MAP_ANON(YMOUS) to /dev/zero, since we don't need to keep a
@@ -67,6 +75,8 @@
 #define PRIdLL "ld"
 #undef PRIuLL
 #define PRIuLL "lu"
+#define PRId8 "hd"
+#define PRIu8 "hu"
 #define PRId64 "ld"
 #define PRIu64 "lu"
 #define PRIuPTR "lu"
@@ -74,6 +84,28 @@
 
 /* PA HP-UX kludge.  */
 #if defined(__hppa__) && defined(__hpux__) && !defined(PRIuPTR)
+#define PRIuPTR "lu"
+#endif
+
+/* IRIX kludge.  */
+#if defined(__sgi)
+/* IRIX 6.5 <inttypes.h> provides all definitions, but only for C99
+   compilations.  */
+#define PRId8 "hhd"
+#define PRIu8 "hhu"
+#if (_MIPS_SZLONG == 32)
+#define PRId64 "lld"
+#define PRIu64 "llu"
+#endif
+/* This doesn't match <inttypes.h>, which always has "lld" here, but the
+   arguments are uint64_t, int64_t, which are unsigned long, long for
+   64-bit in <sgidefs.h>.  */
+#if (_MIPS_SZLONG == 64)
+#define PRId64 "ld"
+#define PRIu64 "lu"
+#endif
+/* This doesn't match <inttypes.h>, which has "u" here, but the arguments
+   are uintptr_t, which is always unsigned long.  */
 #define PRIuPTR "lu"
 #endif
 
@@ -86,44 +118,15 @@
 #endif
 #endif
 
-#ifdef USING_MMAP
-static inline void *
-allocate_mmap (size_t size)
-{
-  void *page;
-#if defined (HAVE_MMAP_DEV_ZERO)
-  static int dev_zero_fd = -1;
+/* MSVC kludge.  */
+#if defined _MSC_VER
+#define PRIuPTR "lu"
+#define PRIu8 "u"
+#define PRId8 "d"
+#define PRIu64 "I64u"
+#define PRId64 "I64d"
 #endif
 
-#ifdef HAVE_MMAP_DEV_ZERO
-  if (dev_zero_fd == -1)
-    {
-      dev_zero_fd = open ("/dev/zero", O_RDONLY);
-      if (dev_zero_fd == -1)
-	{
-	  perror ("open /dev/zero: %m");
-	  exit (1);
-	}
-    }
-#endif
-
-
-#ifdef HAVE_MMAP_ANON
-  page = mmap (NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC,
-	       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#endif
-#ifdef HAVE_MMAP_DEV_ZERO
-  page = mmap (NULL, size, PROT_READ | PROT_WRITE | PROT_EXEC,
-	       MAP_PRIVATE, dev_zero_fd, 0);
-#endif
-
-  if (page == (void *) MAP_FAILED)
-    {
-      perror ("virtual memory exhausted");
-      exit (1);
-    }
-
-  return page;
-}
-
+#ifndef PRIuPTR
+#define PRIuPTR "u"
 #endif

@@ -19,7 +19,7 @@
 This manual is for Libffi, a portable foreign-function interface
 library.
 
-Copyright @copyright{} 2008, 2010 Red Hat, Inc.
+Copyright @copyright{} 2008, 2010, 2011 Red Hat, Inc.
 
 @quotation
 Permission is granted to copy, distribute and/or modify this document
@@ -133,8 +133,6 @@ This initializes @var{cif} according to the given parameters.
 you want.  @ref{Multiple ABIs} for more information.
 
 @var{nargs} is the number of arguments that this function accepts.
-@samp{libffi} does not yet handle varargs functions; see @ref{Missing
-Features} for more information.
 
 @var{rtype} is a pointer to an @code{ffi_type} structure that
 describes the return type of the function.  @xref{Types}.
@@ -148,6 +146,30 @@ this argument is ignored.
 worked properly; @code{FFI_BAD_TYPEDEF} if one of the @code{ffi_type}
 objects is incorrect; or @code{FFI_BAD_ABI} if the @var{abi} parameter
 is invalid.
+@end defun
+
+If the function being called is variadic (varargs) then
+@code{ffi_prep_cif_var} must be used instead of @code{ffi_prep_cif}.
+
+@findex ffi_prep_cif_var
+@defun ffi_status ffi_prep_cif_var (ffi_cif *@var{cif}, ffi_abi var{abi}, unsigned int @var{nfixedargs}, unsigned int var{ntotalargs}, ffi_type *@var{rtype}, ffi_type **@var{argtypes})
+This initializes @var{cif} according to the given parameters for
+a call to a variadic function.  In general it's operation is the
+same as for @code{ffi_prep_cif} except that:
+
+@var{nfixedargs} is the number of fixed arguments, prior to any
+variadic arguments.  It must be greater than zero.
+
+@var{ntotalargs} the total number of arguments, including variadic
+and fixed arguments.
+
+Note that, different cif's must be prepped for calls to the same
+function when different numbers of arguments are passed.
+
+Also note that a call to @code{ffi_prep_cif_var} with
+@var{nfixedargs}=@var{nototalargs} is NOT equivalent to a call to
+@code{ffi_prep_cif}.
+
 @end defun
 
 
@@ -171,7 +193,9 @@ discarded.
 @var{avalues} is a vector of @code{void *} pointers that point to the
 memory locations holding the argument values for a call.  If @var{cif}
 declares that the function has no arguments (i.e., @var{nargs} was 0),
-then @var{avalues} is ignored.
+then @var{avalues} is ignored.  Note that argument values may be
+modified by the callee (for instance, structs passed by value); the
+burden of copying pass-by-value arguments is placed on the caller.
 @end defun
 
 
@@ -336,7 +360,7 @@ You must first describe the structure to @samp{libffi} by creating a
 new @code{ffi_type} object for it.
 
 @tindex ffi_type
-@deftp ffi_type
+@deftp {Data type} ffi_type
 The @code{ffi_type} has the following members:
 @table @code
 @item size_t size
@@ -438,7 +462,7 @@ require special allocation on platforms that have a non-executable
 heap.  Memory management for closures is handled by a pair of
 functions:
 
-@findex ffi_closure_alloca
+@findex ffi_closure_alloc
 @defun void *ffi_closure_alloc (size_t @var{size}, void **@var{code})
 Allocate a chunk of memory holding @var{size} bytes.  This returns a
 pointer to the writable address, and sets *@var{code} to the
@@ -570,9 +594,7 @@ support for these.
 
 @itemize @bullet
 @item
-There is no support for calling varargs functions.  This may work on
-some platforms, depending on how the ABI is defined, but it is not
-reliable.
+Variadic closures.
 
 @item
 There is no support for bit fields in structures.
@@ -589,6 +611,8 @@ The ``raw'' API is undocumented.
 @c anything else?
 @end itemize
 
+Note that variadic support is very new and tested on a relatively
+small number of platforms.
 
 @node Index
 @unnumbered Index

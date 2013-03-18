@@ -6,7 +6,7 @@
 
 /* { dg-excess-errors "no long double format" { xfail x86_64-*-mingw* x86_64-*-cygwin* } } */
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-* } } */
-/* { dg-options -mlong-double-128 { target powerpc64*-*-* } } */
+/* { dg-options -mlong-double-128 { target powerpc64*-*-linux* } } */
 /* { dg-output "" { xfail x86_64-*-mingw* x86_64-*-cygwin* } } */
 
 #include "ffitest.h"
@@ -87,14 +87,14 @@ int main (void)
 	ffi_type cls_struct_type;
 	ffi_type* dbl_arg_types[3];
 
+	struct cls_struct_align g_dbl = { 1, 2, 3, 4, 5, 6, 7 };
+	struct cls_struct_align f_dbl = { 8, 9, 10, 11, 12, 13, 14 };
+	struct cls_struct_align res_dbl;
+
 	cls_struct_type.size = 0;
 	cls_struct_type.alignment = 0;
 	cls_struct_type.type = FFI_TYPE_STRUCT;
 	cls_struct_type.elements = cls_struct_fields;
-
-	struct cls_struct_align g_dbl = { 1, 2, 3, 4, 5, 6, 7 };
-	struct cls_struct_align f_dbl = { 8, 9, 10, 11, 12, 13, 14 };
-	struct cls_struct_align res_dbl;
 
 	cls_struct_fields[0] = &ffi_type_longdouble;
 	cls_struct_fields[1] = &ffi_type_longdouble;

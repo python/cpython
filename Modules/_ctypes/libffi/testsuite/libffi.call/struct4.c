@@ -28,21 +28,22 @@ int main (void)
   void *values[MAX_ARGS];
   ffi_type ts4_type;
   ffi_type *ts4_type_elements[4];  
+
+  test_structure_4 ts4_arg;
+
+  /* This is a hack to get a properly aligned result buffer */
+  test_structure_4 *ts4_result =
+    (test_structure_4 *) malloc (sizeof(test_structure_4));
+
   ts4_type.size = 0;
   ts4_type.alignment = 0;
   ts4_type.type = FFI_TYPE_STRUCT;
-  test_structure_4 ts4_arg;
   ts4_type.elements = ts4_type_elements;
   ts4_type_elements[0] = &ffi_type_uint;
   ts4_type_elements[1] = &ffi_type_uint;
   ts4_type_elements[2] = &ffi_type_uint;
   ts4_type_elements[3] = NULL;
 
-  
-  /* This is a hack to get a properly aligned result buffer */
-  test_structure_4 *ts4_result = 
-    (test_structure_4 *) malloc (sizeof(test_structure_4));
-  
   args[0] = &ts4_type;
   values[0] = &ts4_arg;
   
