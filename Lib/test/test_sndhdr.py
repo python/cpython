@@ -12,7 +12,7 @@ class TestFormats(unittest.TestCase):
             ('sndhdr.hcom', ('hcom', 22050.0, 1, -1, 8)),
             ('sndhdr.sndt', ('sndt', 44100, 1, 5, 8)),
             ('sndhdr.voc', ('voc', 0, 1, -1, 8)),
-            ('sndhdr.wav', ('wav', 44100, 2, -1, 16)),
+            ('sndhdr.wav', ('wav', 44100, 2, 5, 16)),
         ):
             filename = findfile(filename, subdir="sndhdrdata")
             what = sndhdr.what(filename)

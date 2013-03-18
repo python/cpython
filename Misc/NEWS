@@ -287,6 +287,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5024: sndhdr.whichhdr now returns the frame count for WAV files
+  rather than -1.
+
 - Issue #17460: Remove the strict argument of HTTPConnection and removing the
   DeprecationWarning being issued from 3.2 onwards.
 
