@@ -420,6 +420,30 @@ class PydocDocTest(unittest.TestCase):
             self.assertTrue(pydoc.ispackage(test_dir))
             os.remove(init_path)
 
+    def test_allmethods(self):
+        # issue 17476: allmethods was no longer returning unbound methods.
+        # This test is a bit fragile in the face of changes to object and type,
+        # but I can't think of a better way to do it without duplicating the
+        # logic of the function under test.
+
+        class TestClass(object):
+            def method_returning_true(self):
+                return True
+
+        # What we expect to get back: everything on object...
+        expected = dict(vars(object))
+        # ...plus our unbound method...
+        expected['method_returning_true'] = TestClass.method_returning_true
+        # ...but not the non-methods on object.
+        del expected['__doc__']
+        del expected['__class__']
+        # inspect resolves descriptors on type into methods, but vars doesn't,
+        # so we need to update __subclasshook__.
+        expected['__subclasshook__'] = TestClass.__subclasshook__
+
+        methods = pydoc.allmethods(TestClass)
+        self.assertDictEqual(methods, expected)
+
 
 class PydocImportTest(unittest.TestCase):
 

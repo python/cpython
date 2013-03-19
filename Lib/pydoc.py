@@ -132,7 +132,10 @@ def stripid(text):
     return _re_stripid.sub(r'\1', text)
 
 def _is_some_method(obj):
-    return inspect.ismethod(obj) or inspect.ismethoddescriptor(obj)
+    return (inspect.isfunction(obj) or
+            inspect.ismethod(obj) or
+            inspect.isbuiltin(obj) or
+            inspect.ismethoddescriptor(obj))
 
 def allmethods(cl):
     methods = {}
