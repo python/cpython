@@ -1306,6 +1306,8 @@ some point in the future.
 
 .. class:: URLopener(proxies=None, **x509)
 
+   .. deprecated:: 3.3
+
    Base class for opening and reading URLs.  Unless you need to support opening
    objects using schemes other than :file:`http:`, :file:`ftp:`, or :file:`file:`,
    you probably want to use :class:`FancyURLopener`.
@@ -1374,6 +1376,8 @@ some point in the future.
 
 
 .. class:: FancyURLopener(...)
+
+   .. deprecated:: 3.3
 
    :class:`FancyURLopener` subclasses :class:`URLopener` providing default handling
    for the following HTTP response codes: 301, 302, 303, 307 and 401.  For the 30x
