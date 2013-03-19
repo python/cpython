@@ -321,50 +321,6 @@ class Request:
         else:
             return self.full_url
 
-    # Begin deprecated methods
-
-    def add_data(self, data):
-        msg = "Request.add_data method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        self.data = data
-
-    def has_data(self):
-        msg = "Request.has_data method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.data is not None
-
-    def get_data(self):
-        msg = "Request.get_data method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.data
-
-    def get_type(self):
-        msg = "Request.get_type method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.type
-
-    def get_host(self):
-        msg = "Request.get_host method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.host
-
-    def get_selector(self):
-        msg = "Request.get_selector method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.selector
-
-    def is_unverifiable(self):
-        msg = "Request.is_unverifiable method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.unverifiable
-
-    def get_origin_req_host(self):
-        msg = "Request.get_origin_req_host method is deprecated."
-        warnings.warn(msg, DeprecationWarning, stacklevel=1)
-        return self.origin_req_host
-
-    # End deprecated methods
-
     def set_proxy(self, host, type):
         if self.type == 'https' and not self._tunnel_host:
             self._tunnel_host = self.host
