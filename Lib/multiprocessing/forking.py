@@ -361,7 +361,8 @@ else:
             return [sys.executable, '--multiprocessing-fork']
         else:
             prog = 'from multiprocessing.forking import main; main()'
-            return [_python_exe, '-c', prog, '--multiprocessing-fork']
+            opts = util._args_from_interpreter_flags()
+            return [_python_exe] + opts + ['-c', prog, '--multiprocessing-fork']
 
 
     def main():
