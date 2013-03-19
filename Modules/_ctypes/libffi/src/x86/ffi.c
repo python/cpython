@@ -315,9 +315,7 @@ ffi_status ffi_prep_cif_machdep(ffi_cif *cif)
   cif->bytes += 4 * sizeof(ffi_arg);
 #endif
 
-#ifdef X86_DARWIN
   cif->bytes = (cif->bytes + 15) & ~0xF;
-#endif
 
   return FFI_OK;
 }

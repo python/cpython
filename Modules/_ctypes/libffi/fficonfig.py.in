@@ -11,7 +11,6 @@ ffi_platforms = {
     'X86_FREEBSD': ['src/x86/ffi.c', 'src/x86/freebsd.S'],
     'X86_WIN32': ['src/x86/ffi.c', 'src/x86/win32.S'],
     'SPARC': ['src/sparc/ffi.c', 'src/sparc/v8.S', 'src/sparc/v9.S'],
-    'AARCH64': ['src/aarch64/ffi.c', 'src/aarch64/sysv.S'],
     'ALPHA': ['src/alpha/ffi.c', 'src/alpha/osf.S'],
     'IA64': ['src/ia64/ffi.c', 'src/ia64/unix.S'],
     'M32R': ['src/m32r/sysv.S', 'src/m32r/ffi.c'],

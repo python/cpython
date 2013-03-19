@@ -101,16 +101,8 @@ proc libffi-init { args } {
     global tool_root_dir
     global ld_library_path
 
-    global using_gcc
-
     set blddirffi [pwd]/.. 
     verbose "libffi $blddirffi"
-
-    # Are we building with GCC?
-    set tmp [grep ../config.status "GCC='yes'"]
-    if { [string match $tmp "GCC='yes'"] } {
-
-      set using_gcc "yes"
 
     set gccdir [lookfor_file $tool_root_dir gcc/libgcc.a]
     if {$gccdir != ""} {
@@ -135,13 +127,6 @@ proc libffi-init { args } {
 	    }
 	}
     }
- 
-    } else {
-
-      set using_gcc "no"
-
-    }
-
     # add the library path for libffi.
     append ld_library_path ":${blddirffi}/.libs"
 
@@ -217,10 +202,6 @@ proc libffi_target_compile { source dest type options } {
     }
 
     lappend options "libs= -lffi"
-
-    if { [string match "aarch64*-*-linux*" $target_triplet] } {
-	lappend options "libs= -lpthread"
-    }
 
     verbose "options: $options"
     return [target_compile $source $dest $type $options]

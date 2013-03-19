@@ -289,9 +289,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #17192: Update the ctypes module's libffi to v3.0.13.  This
+  specifically addresses a stack misalignment issue on x86 and issues on
+  some more recent platforms.
+
 - Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
 
-- Issue #17443: impalib.IMAP4_stream was using the default unbuffered IO
+- Issue #17443: imaplib.IMAP4_stream was using the default unbuffered IO
   in subprocess, but the imap code assumes buffered IO.  In Python2 this
   worked by accident.  IMAP4_stream now explicitly uses buffered IO.
 
