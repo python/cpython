@@ -802,6 +802,16 @@ buffer_getcharbuf(PyBufferObject *self, Py_ssize_t idx, const char **pp)
     return size;
 }
 
+static int buffer_getbuffer(PyBufferObject *self, Py_buffer *buf, int flags)
+{
+    void *ptr;
+    Py_ssize_t size;
+    if (!get_buf(self, &ptr, &size, ANY_BUFFER))
+        return -1;
+    return PyBuffer_FillInfo(buf, (PyObject*)self, ptr, size,
+                             self->b_readonly, flags);
+}
+
 static PySequenceMethods buffer_as_sequence = {
     (lenfunc)buffer_length, /*sq_length*/
     (binaryfunc)buffer_concat, /*sq_concat*/
@@ -823,6 +833,7 @@ static PyBufferProcs buffer_as_buffer = {
     (writebufferproc)buffer_getwritebuf,
     (segcountproc)buffer_getsegcount,
     (charbufferproc)buffer_getcharbuf,
+    (getbufferproc)buffer_getbuffer,
 };
 
 PyTypeObject PyBuffer_Type = {
@@ -845,7 +856,7 @@ PyTypeObject PyBuffer_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     &buffer_as_buffer,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GETCHARBUFFER, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GETCHARBUFFER | Py_TPFLAGS_HAVE_NEWBUFFER, /* tp_flags */
     buffer_doc,                                 /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
