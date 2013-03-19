@@ -185,5 +185,15 @@ Here are the classes:
    minor type and defaults to :mimetype:`plain`.  *_charset* is the character
    set of the text and is passed as a parameter to the
    :class:`~email.mime.nonmultipart.MIMENonMultipart` constructor; it defaults
-   to ``us-ascii``.  No guessing or encoding is performed on the text data.
+   to ``us-ascii``.
+
+   Unless the ``_charset`` parameter is explicitly set to ``None``, the
+   MIMEText object created will have both a :mailheader:`Content-Type` header
+   with a ``charset`` parameter, and a :mailheader:`Content-Transfer-Endcoding`
+   header.  This means that a subsequent ``set_payload`` call will not result
+   in an encoded payload, even if a charset is passed in the ``set_payload``
+   command.  You can "reset" this behavior by deleting the
+   ``Content-Transfer-Encoding`` header, after which a ``set_payload`` call
+   will automatically encode the new payload (and add a new
+   :mailheader:`Content-Transfer-Encoding` header).
 
