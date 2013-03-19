@@ -46,9 +46,9 @@ class TestDiscovery(unittest.TestCase):
         def restore_isdir():
             os.path.isdir = original_isdir
 
-        path_lists = [['test1.py', 'test2.py', 'not_a_test.py', 'test_dir',
+        path_lists = [['test2.py', 'test1.py', 'not_a_test.py', 'test_dir',
                        'test.foo', 'test-not-a-module.py', 'another_dir'],
-                      ['test3.py', 'test4.py', ]]
+                      ['test4.py', 'test3.py', ]]
         os.listdir = lambda path: path_lists.pop(0)
         self.addCleanup(restore_listdir)
 
@@ -70,6 +70,8 @@ class TestDiscovery(unittest.TestCase):
         loader._top_level_dir = top_level
         suite = list(loader._find_tests(top_level, 'test*.py'))
 
+        # The test suites found should be sorted alphabetically for reliable
+        # execution order.
         expected = [name + ' module tests' for name in
                     ('test1', 'test2')]
         expected.extend([('test_dir.%s' % name) + ' module tests' for name in
@@ -132,6 +134,7 @@ class TestDiscovery(unittest.TestCase):
         # and directly from the test_directory2 package
         self.assertEqual(suite,
                          ['load_tests', 'test_directory2' + ' module tests'])
+        # The test module paths should be sorted for reliable execution order
         self.assertEqual(Module.paths, ['test_directory', 'test_directory2'])
 
         # load_tests should have been called once with loader, tests and pattern

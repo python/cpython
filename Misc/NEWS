@@ -289,6 +289,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16709: unittest discover order is no-longer filesystem specific. Patch
+  by Jeff Ramnani.
+
 - Issue #5024: sndhdr.whichhdr now returns the frame count for WAV files
   rather than -1.
 
