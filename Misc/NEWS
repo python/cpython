@@ -197,6 +197,15 @@ Library
   specifically addresses a stack misalignment issue on x86 and issues on
   some more recent platforms.
 
+- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+
+- Issue #17443: imaplib.IMAP4_stream was using the default unbuffered IO
+  in subprocess, but the imap code assumes buffered IO.  In Python2 this
+  worked by accident.  IMAP4_stream now explicitly uses buffered IO.
+
+- Issue #17476: Fixed regression relative to Python2 in undocumented pydoc
+  'allmethods'; it was missing unbound methods on the class.
+
 - Issue #16880: Do not assume _imp.load_dynamic() is defined in the imp module.
 
 - Issue #16389: Fixed a performance regression relative to Python 3.1 in the
