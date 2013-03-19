@@ -5,11 +5,6 @@ from test_all import db, test_support, get_new_environment_path, get_new_databas
 
 
 class DBSequenceTest(unittest.TestCase):
-    import sys
-    if sys.version_info < (2, 4) :
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
     def setUp(self):
         self.int_32_max = 0x100000000
         self.homeDir = get_new_environment_path()
@@ -133,8 +128,7 @@ class DBSequenceTest(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    if db.version() >= (4,3):
-        suite.addTest(unittest.makeSuite(DBSequenceTest))
+    suite.addTest(unittest.makeSuite(DBSequenceTest))
     return suite
 
 

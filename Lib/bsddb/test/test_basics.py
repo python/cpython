@@ -9,6 +9,7 @@ import string
 from pprint import pprint
 import unittest
 import time
+import sys
 
 from test_all import db, test_support, verbose, get_new_environment_path, \
         get_new_database_path
@@ -44,13 +45,6 @@ class BasicTestCase(unittest.TestCase):
 
     _numKeys      = 1002    # PRIVATE.  NOTE: must be an even value
 
-    import sys
-    if sys.version_info < (2, 4):
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-        def assertFalse(self, expr, msg=None):
-            self.failIf(expr,msg=msg)
-
     def setUp(self):
         if self.useEnv:
             self.homeDir=get_new_environment_path()
@@ -74,7 +68,6 @@ class BasicTestCase(unittest.TestCase):
         # create and open the DB
         self.d = db.DB(self.env)
         if not self.useEnv :
-            if db.version() >= (4, 2) :
                 self.d.set_cachesize(*self.cachesize)
                 cachesize = self.d.get_cachesize()
                 self.assertEqual(cachesize[0], self.cachesize[0])
@@ -161,7 +154,6 @@ class BasicTestCase(unittest.TestCase):
         try:
             d.delete('abcd')
         except db.DBNotFoundError, val:
-            import sys
             if sys.version_info < (2, 6) :
                 self.assertEqual(val[0], db.DB_NOTFOUND)
             else :
@@ -184,7 +176,6 @@ class BasicTestCase(unittest.TestCase):
         try:
             d.put('abcd', 'this should fail', flags=db.DB_NOOVERWRITE)
         except db.DBKeyExistError, val:
-            import sys
             if sys.version_info < (2, 6) :
                 self.assertEqual(val[0], db.DB_KEYEXIST)
             else :
@@ -338,7 +329,6 @@ class BasicTestCase(unittest.TestCase):
                 rec = c.next()
             except db.DBNotFoundError, val:
                 if get_raises_error:
-                    import sys
                     if sys.version_info < (2, 6) :
                         self.assertEqual(val[0], db.DB_NOTFOUND)
                     else :
@@ -363,7 +353,6 @@ class BasicTestCase(unittest.TestCase):
                 rec = c.prev()
             except db.DBNotFoundError, val:
                 if get_raises_error:
-                    import sys
                     if sys.version_info < (2, 6) :
                         self.assertEqual(val[0], db.DB_NOTFOUND)
                     else :
@@ -390,7 +379,6 @@ class BasicTestCase(unittest.TestCase):
         try:
             n = c.set('bad key')
         except db.DBNotFoundError, val:
-            import sys
             if sys.version_info < (2, 6) :
                 self.assertEqual(val[0], db.DB_NOTFOUND)
             else :
@@ -408,7 +396,6 @@ class BasicTestCase(unittest.TestCase):
         try:
             n = c.get_both('0404', 'bad data')
         except db.DBNotFoundError, val:
-            import sys
             if sys.version_info < (2, 6) :
                 self.assertEqual(val[0], db.DB_NOTFOUND)
             else :
@@ -441,7 +428,6 @@ class BasicTestCase(unittest.TestCase):
             rec = c.current()
         except db.DBKeyEmptyError, val:
             if get_raises_error:
-                import sys
                 if sys.version_info < (2, 6) :
                     self.assertEqual(val[0], db.DB_KEYEMPTY)
                 else :
@@ -490,7 +476,6 @@ class BasicTestCase(unittest.TestCase):
                 # a bug may cause a NULL pointer dereference...
                 getattr(c, method)(*args)
             except db.DBError, val:
-                import sys
                 if sys.version_info < (2, 6) :
                     self.assertEqual(val[0], 0)
                 else :
@@ -712,11 +697,6 @@ class BasicHashWithEnvTestCase(BasicWithEnvTestCase):
 #----------------------------------------------------------------------
 
 class BasicTransactionTestCase(BasicTestCase):
-    import sys
-    if sys.version_info < (2, 4):
-        def assertTrue(self, expr, msg=None):
-            return self.failUnless(expr,msg=msg)
-
     if (sys.version_info < (2, 7)) or ((sys.version_info >= (3, 0)) and
             (sys.version_info < (3, 2))) :
         def assertIn(self, a, b, msg=None) :
@@ -792,7 +772,6 @@ class BasicTransactionTestCase(BasicTestCase):
         for log in logs:
             if verbose:
                 print 'log file: ' + log
-        if db.version() >= (4,2):
             logs = self.env.log_archive(db.DB_ARCH_REMOVE)
             self.assertTrue(not logs)
 
@@ -875,7 +854,6 @@ class BasicTransactionTestCase(BasicTestCase):
 
     #----------------------------------------
 
-    if db.version() >= (4, 2) :
         def test_get_tx_max(self) :
             self.assertEqual(self.env.get_tx_max(), 30)
 
@@ -1098,11 +1076,6 @@ class HashMultiDBTestCase(BasicMultiDBTestCase):
 
 
 class PrivateObject(unittest.TestCase) :
-    import sys
-    if sys.version_info < (2, 4):
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
     def tearDown(self) :
         del self.obj
 
@@ -1116,7 +1089,6 @@ class PrivateObject(unittest.TestCase) :
         self.assertTrue(a is b)  # Object identity
 
     def test03_leak_assignment(self) :
-        import sys
         a = "example of private object"
         refcount = sys.getrefcount(a)
         self.obj.set_private(a)
@@ -1125,7 +1097,6 @@ class PrivateObject(unittest.TestCase) :
         self.assertEqual(refcount, sys.getrefcount(a))
 
     def test04_leak_GC(self) :
-        import sys
         a = "example of private object"
         refcount = sys.getrefcount(a)
         self.obj.set_private(a)
@@ -1141,11 +1112,6 @@ class DBPrivateObject(PrivateObject) :
         self.obj = db.DB()
 
 class CrashAndBurn(unittest.TestCase) :
-    import sys
-    if sys.version_info < (2, 4):
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
     #def test01_OpenCrash(self) :
     #    # See http://bugs.python.org/issue3307
     #    self.assertRaises(db.DBInvalidArgError, db.DB, None, 65535)

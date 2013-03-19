@@ -7,11 +7,6 @@ from test_all import db, test_support, get_new_environment_path, \
 #----------------------------------------------------------------------
 
 class DB(unittest.TestCase):
-    import sys
-    if sys.version_info < (2, 4) :
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
     def setUp(self):
         self.path = get_new_database_path()
         self.db = db.DB()
@@ -19,10 +14,28 @@ class DB(unittest.TestCase):
     def tearDown(self):
         self.db.close()
         del self.db
-        test_support.rmtree(self.path)
+        test_support.unlink(self.path)
 
 class DB_general(DB) :
-    if db.version() >= (4, 2) :
+    def test_get_open_flags(self) :
+        self.db.open(self.path, dbtype=db.DB_HASH, flags = db.DB_CREATE)
+        self.assertEqual(db.DB_CREATE, self.db.get_open_flags())
+
+    def test_get_open_flags2(self) :
+        self.db.open(self.path, dbtype=db.DB_HASH, flags = db.DB_CREATE |
+                db.DB_THREAD)
+        self.assertEqual(db.DB_CREATE | db.DB_THREAD, self.db.get_open_flags())
+
+    def test_get_dbname_filename(self) :
+        self.db.open(self.path, dbtype=db.DB_HASH, flags = db.DB_CREATE)
+        self.assertEqual((self.path, None), self.db.get_dbname())
+
+    def test_get_dbname_filename_database(self) :
+        name = "jcea-random-name"
+        self.db.open(self.path, dbname=name, dbtype=db.DB_HASH,
+                flags = db.DB_CREATE)
+        self.assertEqual((self.path, name), self.db.get_dbname())
+
         def test_bt_minkey(self) :
             for i in [17, 108, 1030] :
                 self.db.set_bt_minkey(i)
@@ -44,8 +57,12 @@ class DB_general(DB) :
                 self.db.set_priority(flag)
                 self.assertEqual(flag, self.db.get_priority())
 
+    def test_get_transactional(self) :
+        self.assertFalse(self.db.get_transactional())
+        self.db.open(self.path, dbtype=db.DB_HASH, flags = db.DB_CREATE)
+        self.assertFalse(self.db.get_transactional())
+
 class DB_hash(DB) :
-    if db.version() >= (4, 2) :
         def test_h_ffactor(self) :
             for ffactor in [4, 16, 256] :
                 self.db.set_h_ffactor(ffactor)
@@ -84,7 +101,6 @@ class DB_txn(DB) :
         del self.env
         test_support.rmtree(self.homeDir)
 
-    if db.version() >= (4, 2) :
         def test_flags(self) :
             self.db.set_flags(db.DB_CHKSUM)
             self.assertEqual(db.DB_CHKSUM, self.db.get_flags())
@@ -92,8 +108,14 @@ class DB_txn(DB) :
             self.assertEqual(db.DB_TXN_NOT_DURABLE | db.DB_CHKSUM,
                     self.db.get_flags())
 
+    def test_get_transactional(self) :
+        self.assertFalse(self.db.get_transactional())
+        # DB_AUTO_COMMIT = Implicit transaction
+        self.db.open("XXX", dbtype=db.DB_HASH,
+                flags = db.DB_CREATE | db.DB_AUTO_COMMIT)
+        self.assertTrue(self.db.get_transactional())
+
 class DB_recno(DB) :
-    if db.version() >= (4, 2) :
         def test_re_pad(self) :
             for i in [' ', '*'] :  # Check chars
                 self.db.set_re_pad(i)
@@ -116,7 +138,6 @@ class DB_recno(DB) :
                 self.assertEqual(i, self.db.get_re_source())
 
 class DB_queue(DB) :
-    if db.version() >= (4, 2) :
         def test_re_len(self) :
             for i in [33, 65, 300, 2000] :
                 self.db.set_re_len(i)

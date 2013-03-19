@@ -30,7 +30,7 @@ else :
     if sys.version_info < (2, 6) :
         import cPickle as pickle
     else :
-        # When we drop support for python 2.3 and 2.4
+        # When we drop support for python 2.4
         # we could use: (in 2.5 we need a __future__ statement)
         #
         #    with warnings.catch_warnings():
@@ -38,7 +38,7 @@ else :
         #        ...
         #
         # We can not use "with" as is, because it would be invalid syntax
-        # in python 2.3, 2.4 and (with no __future__) 2.5.
+        # in python 2.4 and (with no __future__) 2.5.
         # Here we simulate "with" following PEP 343 :
         import warnings
         w = warnings.catch_warnings()

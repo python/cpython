@@ -7,14 +7,6 @@ from test_all import db, test_support, get_new_environment_path, \
 #----------------------------------------------------------------------
 
 class DBEnv(unittest.TestCase):
-    import sys
-    if sys.version_info < (2, 4) :
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
-        def assertFalse(self, expr, msg=None):
-            self.failIf(expr,msg=msg)
-
     def setUp(self):
         self.homeDir = get_new_environment_path()
         self.env = db.DBEnv()
@@ -25,11 +17,30 @@ class DBEnv(unittest.TestCase):
         test_support.rmtree(self.homeDir)
 
 class DBEnv_general(DBEnv) :
+    def test_get_open_flags(self) :
+        flags = db.DB_CREATE | db.DB_INIT_MPOOL
+        self.env.open(self.homeDir, flags)
+        self.assertEqual(flags, self.env.get_open_flags())
+
+    def test_get_open_flags2(self) :
+        flags = db.DB_CREATE | db.DB_INIT_MPOOL | \
+                db.DB_INIT_LOCK | db.DB_THREAD
+        self.env.open(self.homeDir, flags)
+        self.assertEqual(flags, self.env.get_open_flags())
+
     if db.version() >= (4, 7) :
         def test_lk_partitions(self) :
             for i in [10, 20, 40] :
                 self.env.set_lk_partitions(i)
                 self.assertEqual(i, self.env.get_lk_partitions())
+
+        def test_getset_intermediate_dir_mode(self) :
+            self.assertEqual(None, self.env.get_intermediate_dir_mode())
+            for mode in ["rwx------", "rw-rw-rw-", "rw-r--r--"] :
+                self.env.set_intermediate_dir_mode(mode)
+                self.assertEqual(mode, self.env.get_intermediate_dir_mode())
+            self.assertRaises(db.DBInvalidArgError,
+                    self.env.set_intermediate_dir_mode, "abcde")
 
     if db.version() >= (4, 6) :
         def test_thread(self) :
@@ -58,21 +69,19 @@ class DBEnv_general(DBEnv) :
                 self.env.set_lg_filemode(i)
                 self.assertEqual(i, self.env.get_lg_filemode())
 
-    if db.version() >= (4, 3) :
-        def test_mp_max_openfd(self) :
-            for i in [17, 31, 42] :
-                self.env.set_mp_max_openfd(i)
-                self.assertEqual(i, self.env.get_mp_max_openfd())
+    def test_mp_max_openfd(self) :
+        for i in [17, 31, 42] :
+            self.env.set_mp_max_openfd(i)
+            self.assertEqual(i, self.env.get_mp_max_openfd())
 
-        def test_mp_max_write(self) :
-            for i in [100, 200, 300] :
-                for j in [1, 2, 3] :
-                    j *= 1000000
-                    self.env.set_mp_max_write(i, j)
-                    v=self.env.get_mp_max_write()
-                    self.assertEqual((i, j), v)
+    def test_mp_max_write(self) :
+        for i in [100, 200, 300] :
+            for j in [1, 2, 3] :
+                j *= 1000000
+                self.env.set_mp_max_write(i, j)
+                v=self.env.get_mp_max_write()
+                self.assertEqual((i, j), v)
 
-    if db.version() >= (4, 2) :
         def test_invalid_txn(self) :
             # This environment doesn't support transactions
             self.assertRaises(db.DBInvalidArgError, self.env.txn_begin)
@@ -115,7 +124,7 @@ class DBEnv_general(DBEnv) :
                 self.assertEqual(i, self.env.get_lk_max_lockers())
 
         def test_lg_regionmax(self) :
-            for i in [128, 256, 1024] :
+            for i in [128, 256, 1000] :
                 i = i*1024*1024
                 self.env.set_lg_regionmax(i)
                 j = self.env.get_lg_regionmax()
@@ -127,8 +136,7 @@ class DBEnv_general(DBEnv) :
                     db.DB_LOCK_MINLOCKS, db.DB_LOCK_MINWRITE,
                     db.DB_LOCK_OLDEST, db.DB_LOCK_RANDOM, db.DB_LOCK_YOUNGEST]
 
-            if db.version() >= (4, 3) :
-                flags.append(db.DB_LOCK_MAXWRITE)
+            flags.append(db.DB_LOCK_MAXWRITE)
 
             for i in flags :
                 self.env.set_lk_detect(i)
@@ -172,8 +180,12 @@ class DBEnv_general(DBEnv) :
             self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL)
             cachesize = (0, 2*1024*1024, 1)
             self.assertRaises(db.DBInvalidArgError,
-                self.env.set_cachesize, *cachesize)
-            self.assertEqual(cachesize2, self.env.get_cachesize())
+                              self.env.set_cachesize, *cachesize)
+            cachesize3 = self.env.get_cachesize()
+            self.assertEqual(cachesize2[0], cachesize3[0])
+            self.assertEqual(cachesize2[2], cachesize3[2])
+            # In Berkeley DB 5.1, the cachesize can change when opening the Env
+            self.assertTrue(cachesize2[1] <= cachesize3[1])
 
         def test_set_cachesize_dbenv_db(self) :
             # You can not configure the cachesize using
@@ -305,7 +317,7 @@ class DBEnv_log_txn(DBEnv) :
         self.env.open(self.homeDir, db.DB_CREATE | db.DB_INIT_MPOOL |
                 db.DB_INIT_LOG | db.DB_INIT_TXN)
 
-    if db.version() >= (4, 5) :
+    if (db.version() >= (4, 5)) and (db.version() < (5, 2)) :
         def test_tx_max(self) :
             txns=[]
             def tx() :

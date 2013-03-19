@@ -33,7 +33,7 @@
 #----------------------------------------------------------------------
 
 
-"""Support for Berkeley DB 4.1 through 4.8 with a simple interface.
+"""Support for Berkeley DB 4.3 through 5.3 with a simple interface.
 
 For the full featured object oriented interface use the bsddb.db module
 instead.  It mirrors the Oracle Berkeley DB C API.
@@ -138,7 +138,7 @@ class _iter_mixin(MutableMapping):
             except _bsddb.DBCursorClosedError:
                 # the database was modified during iteration.  abort.
                 pass
-# When Python 2.3 not supported in bsddb3, we can change this to "finally"
+# When Python 2.4 not supported in bsddb3, we can change this to "finally"
         except :
             self._in_iter -= 1
             raise
@@ -181,7 +181,7 @@ class _iter_mixin(MutableMapping):
             except _bsddb.DBCursorClosedError:
                 # the database was modified during iteration.  abort.
                 pass
-# When Python 2.3 not supported in bsddb3, we can change this to "finally"
+# When Python 2.4 not supported in bsddb3, we can change this to "finally"
         except :
             self._in_iter -= 1
             raise
