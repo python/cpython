@@ -1518,6 +1518,11 @@ Loading and running tests
          Modules that raise ``SkipTest`` on import are recorded as skips, not
          errors.
 
+      .. versionchanged:: 3.4
+         Paths are sorted before being imported to ensure execution order for a
+         given test suite is the same even if the underlying file system's ordering
+         is not dependent on file name like in ext3/4.
+
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
