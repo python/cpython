@@ -21,6 +21,14 @@ class BufferTests(unittest.TestCase):
                     self.assertEqual(b[start:stop:step],
                                      s[start:stop:step])
 
+    def test_newbuffer_interface(self):
+        # Test that the buffer object has the new buffer interface
+        # as used by the memoryview object
+        s = "".join(chr(c) for c in list(range(255, -1, -1)))
+        b = buffer(s)
+        m = memoryview(b) # Should not raise an exception
+        self.assertEqual(m.tobytes(), s)
+
 
 def test_main():
     with test_support.check_py3k_warnings(("buffer.. not supported",
