@@ -214,6 +214,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+
 - Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
   retry the select() loop instead of bailing out.  This is because select()
   can incorrectly report a socket as ready for reading (for example, if it
