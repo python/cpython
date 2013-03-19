@@ -336,20 +336,6 @@ class SequenceMatcher:
             for elt in popular: # ditto; as fast for 1% deletion
                 del b2j[elt]
 
-    def isbjunk(self, item):
-        "Deprecated; use 'item in SequenceMatcher().bjunk'."
-        warnings.warn("'SequenceMatcher().isbjunk(item)' is deprecated;\n"
-                      "use 'item in SMinstance.bjunk' instead.",
-                      DeprecationWarning, 2)
-        return item in self.bjunk
-
-    def isbpopular(self, item):
-        "Deprecated; use 'item in SequenceMatcher().bpopular'."
-        warnings.warn("'SequenceMatcher().isbpopular(item)' is deprecated;\n"
-                      "use 'item in SMinstance.bpopular' instead.",
-                      DeprecationWarning, 2)
-        return item in self.bpopular
-
     def find_longest_match(self, alo, ahi, blo, bhi):
         """Find longest matching block in a[alo:ahi] and b[blo:bhi].
 
