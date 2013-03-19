@@ -193,6 +193,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
+
 - Issue #17443: impalib.IMAP4_stream was using the default unbuffered IO
   in subprocess, but the imap code assumes buffered IO.  In Python2 this
   worked by accident.  IMAP4_stream now explicitly uses buffered IO.
