@@ -7,7 +7,7 @@ What's New in Python 3.3.1?
 
 *Not yet released, see sections below for changes released in 3.3.0*
 
-.. *Release date: XX-XXX-2012*
+.. *Release date: 2013-XX-XX*
 
 Core and Builtins
 -----------------
@@ -20,6 +20,9 @@ Core and Builtins
 
 - Issue #17223: Fix PyUnicode_FromUnicode() for string of 1 character outside
   the range U+0000-U+10ffff.
+
+- Issue #1692335: Move initial args assignment to
+  BaseException.__new__ to help pickling of naive subclasses.
 
 - Issue #17275: Corrected class name in init error messages of the C version of
   BufferedWriter and BufferedRandom.
