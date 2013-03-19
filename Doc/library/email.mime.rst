@@ -187,3 +187,13 @@ Here are the classes:
    :class:`~email.mime.nonmultipart.MIMENonMultipart` constructor; it defaults
    to ``us-ascii`` if the string contains only ``ascii`` codepoints, and
    ``utf-8`` otherwise.
+
+   Unless the ``_charset`` parameter is explicitly set to ``None``, the
+   MIMEText object created will have both a :mailheader:`Content-Type` header
+   with a ``charset`` parameter, and a :mailheader:`Content-Transfer-Endcoding`
+   header.  This means that a subsequent ``set_payload`` call will not result
+   in an encoded payload, even if a charset is passed in the ``set_payload``
+   command.  You can "reset" this behavior by deleting the
+   ``Content-Transfer-Encoding`` header, after which a ``set_payload`` call
+   will automatically encode the new payload (and add a new
+   :mailheader:`Content-Transfer-Encoding` header).
