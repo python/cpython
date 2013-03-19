@@ -233,6 +233,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17443: impalib.IMAP4_stream was using the default unbuffered IO
+  in subprocess, but the imap code assumes buffered IO.  In Python2 this
+  worked by accident.  IMAP4_stream now explicitly uses buffered IO.
+
 - Issue #17476: Fixed regression relative to Python2 in undocumented pydoc
   'allmethods'; it was missing unbound methods on the class.
 
