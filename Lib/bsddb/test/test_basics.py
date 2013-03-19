@@ -68,13 +68,13 @@ class BasicTestCase(unittest.TestCase):
         # create and open the DB
         self.d = db.DB(self.env)
         if not self.useEnv :
-                self.d.set_cachesize(*self.cachesize)
-                cachesize = self.d.get_cachesize()
-                self.assertEqual(cachesize[0], self.cachesize[0])
-                self.assertEqual(cachesize[2], self.cachesize[2])
-                # Berkeley DB expands the cache 25% accounting overhead,
-                # if the cache is small.
-                self.assertEqual(125, int(100.0*cachesize[1]/self.cachesize[1]))
+            self.d.set_cachesize(*self.cachesize)
+            cachesize = self.d.get_cachesize()
+            self.assertEqual(cachesize[0], self.cachesize[0])
+            self.assertEqual(cachesize[2], self.cachesize[2])
+            # Berkeley DB expands the cache 25% accounting overhead,
+            # if the cache is small.
+            self.assertEqual(125, int(100.0*cachesize[1]/self.cachesize[1]))
         self.d.set_flags(self.dbsetflags)
         if self.dbname:
             self.d.open(self.filename, self.dbname, self.dbtype,

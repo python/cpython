@@ -63,28 +63,28 @@ class DB_general(DB) :
         self.assertFalse(self.db.get_transactional())
 
 class DB_hash(DB) :
-        def test_h_ffactor(self) :
-            for ffactor in [4, 16, 256] :
-                self.db.set_h_ffactor(ffactor)
-                self.assertEqual(ffactor, self.db.get_h_ffactor())
+    def test_h_ffactor(self) :
+        for ffactor in [4, 16, 256] :
+            self.db.set_h_ffactor(ffactor)
+            self.assertEqual(ffactor, self.db.get_h_ffactor())
 
-        def test_h_nelem(self) :
-            for nelem in [1, 2, 4] :
-                nelem = nelem*1024*1024  # Millions
-                self.db.set_h_nelem(nelem)
-                self.assertEqual(nelem, self.db.get_h_nelem())
+    def test_h_nelem(self) :
+        for nelem in [1, 2, 4] :
+            nelem = nelem*1024*1024  # Millions
+            self.db.set_h_nelem(nelem)
+            self.assertEqual(nelem, self.db.get_h_nelem())
 
-        def test_pagesize(self) :
-            for i in xrange(9, 17) :  # From 512 to 65536
-                i = 1<<i
-                self.db.set_pagesize(i)
-                self.assertEqual(i, self.db.get_pagesize())
+    def test_pagesize(self) :
+        for i in xrange(9, 17) :  # From 512 to 65536
+            i = 1<<i
+            self.db.set_pagesize(i)
+            self.assertEqual(i, self.db.get_pagesize())
 
-            # The valid values goes from 512 to 65536
-            # Test 131072 bytes...
-            self.assertRaises(db.DBInvalidArgError, self.db.set_pagesize, 1<<17)
-            # Test 256 bytes...
-            self.assertRaises(db.DBInvalidArgError, self.db.set_pagesize, 1<<8)
+        # The valid values goes from 512 to 65536
+        # Test 131072 bytes...
+        self.assertRaises(db.DBInvalidArgError, self.db.set_pagesize, 1<<17)
+        # Test 256 bytes...
+        self.assertRaises(db.DBInvalidArgError, self.db.set_pagesize, 1<<8)
 
 class DB_txn(DB) :
     def setUp(self) :
@@ -116,37 +116,37 @@ class DB_txn(DB) :
         self.assertTrue(self.db.get_transactional())
 
 class DB_recno(DB) :
-        def test_re_pad(self) :
-            for i in [' ', '*'] :  # Check chars
-                self.db.set_re_pad(i)
-                self.assertEqual(ord(i), self.db.get_re_pad())
-            for i in [97, 65] :  # Check integers
-                self.db.set_re_pad(i)
-                self.assertEqual(i, self.db.get_re_pad())
+    def test_re_pad(self) :
+        for i in [' ', '*'] :  # Check chars
+            self.db.set_re_pad(i)
+            self.assertEqual(ord(i), self.db.get_re_pad())
+        for i in [97, 65] :  # Check integers
+            self.db.set_re_pad(i)
+            self.assertEqual(i, self.db.get_re_pad())
 
-        def test_re_delim(self) :
-            for i in [' ', '*'] :  # Check chars
-                self.db.set_re_delim(i)
-                self.assertEqual(ord(i), self.db.get_re_delim())
-            for i in [97, 65] :  # Check integers
-                self.db.set_re_delim(i)
-                self.assertEqual(i, self.db.get_re_delim())
+    def test_re_delim(self) :
+        for i in [' ', '*'] :  # Check chars
+            self.db.set_re_delim(i)
+            self.assertEqual(ord(i), self.db.get_re_delim())
+        for i in [97, 65] :  # Check integers
+            self.db.set_re_delim(i)
+            self.assertEqual(i, self.db.get_re_delim())
 
-        def test_re_source(self) :
-            for i in ["test", "test2", "test3"] :
-                self.db.set_re_source(i)
-                self.assertEqual(i, self.db.get_re_source())
+    def test_re_source(self) :
+        for i in ["test", "test2", "test3"] :
+            self.db.set_re_source(i)
+            self.assertEqual(i, self.db.get_re_source())
 
 class DB_queue(DB) :
-        def test_re_len(self) :
-            for i in [33, 65, 300, 2000] :
-                self.db.set_re_len(i)
-                self.assertEqual(i, self.db.get_re_len())
+    def test_re_len(self) :
+        for i in [33, 65, 300, 2000] :
+            self.db.set_re_len(i)
+            self.assertEqual(i, self.db.get_re_len())
 
-        def test_q_extentsize(self) :
-            for i in [1, 60, 100] :
-                self.db.set_q_extentsize(i)
-                self.assertEqual(i, self.db.get_q_extentsize())
+    def test_q_extentsize(self) :
+        for i in [1, 60, 100] :
+            self.db.set_q_extentsize(i)
+            self.assertEqual(i, self.db.get_q_extentsize())
 
 def test_suite():
     suite = unittest.TestSuite()
