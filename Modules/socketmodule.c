@@ -751,6 +751,14 @@ internal_select(PySocketSockObject *s, int writing)
     }
     END_SELECT_LOOP(s)
 */
+#ifdef _WIN32
+/* _PyTime_floattime is exported from timemodule.c which is a builtin on windows
+ * but not on linux.  The problem we are fixing is mostly a windows problem so
+ * we leave it at that.
+ */
+#define HAVE_PYTIME_FLOATTIME
+#endif
+#ifdef HAVE_PYTIME_FLOATTIME
 PyAPI_FUNC(double) _PyTime_floattime(void); /* defined in timemodule.c */
 #define BEGIN_SELECT_LOOP(s) \
     { \
@@ -768,7 +776,18 @@ PyAPI_FUNC(double) _PyTime_floattime(void); /* defined in timemodule.c */
                 break; \
             interval = deadline - _PyTime_floattime(); \
         } \
-    } \
+    }
+#else
+#define BEGIN_SELECT_LOOP(s) \
+    { \
+        double interval = s->sock_timeout; \
+        do { \
+            errno = 0; \
+
+#define END_SELECT_LOOP(s) \
+        } while(0); \
+    }
+#endif
 
 /* Initialize a new socket object. */
 
