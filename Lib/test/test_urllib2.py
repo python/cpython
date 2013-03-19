@@ -47,6 +47,9 @@ class TrivialTests(unittest.TestCase):
         for string, list in tests:
             self.assertEqual(urllib.request.parse_http_list(string), list)
 
+    def test_URLError_reasonstr(self):
+        err = urllib.error.URLError('reason')
+        self.assertIn(err.reason, str(err))
 
 def test_request_headers_dict():
     """

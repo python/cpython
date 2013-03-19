@@ -23,6 +23,7 @@ Public functions:       Internaldate2tuple
 __version__ = "2.58"
 
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
+from io import DEFAULT_BUFFER_SIZE
 
 try:
     import ssl
@@ -1237,6 +1238,7 @@ class IMAP4_stream(IMAP4):
         self.sock = None
         self.file = None
         self.process = subprocess.Popen(self.command,
+            bufsize=DEFAULT_BUFFER_SIZE,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             shell=True, close_fds=True)
         self.writefile = self.process.stdin
