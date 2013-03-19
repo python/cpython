@@ -846,7 +846,7 @@ imp_fix_co_filename(PyObject *self, PyObject *args)
 
 
 /* Forward */
-static struct _frozen * find_frozen(PyObject *);
+static const struct _frozen * find_frozen(PyObject *);
 
 
 /* Helper to test for built-in module */
@@ -983,10 +983,10 @@ init_builtin(PyObject *name)
 
 /* Frozen modules */
 
-static struct _frozen *
+static const struct _frozen *
 find_frozen(PyObject *name)
 {
-    struct _frozen *p;
+    const struct _frozen *p;
 
     if (name == NULL)
         return NULL;
@@ -1003,7 +1003,7 @@ find_frozen(PyObject *name)
 static PyObject *
 get_frozen_object(PyObject *name)
 {
-    struct _frozen *p = find_frozen(name);
+    const struct _frozen *p = find_frozen(name);
     int size;
 
     if (p == NULL) {
@@ -1027,7 +1027,7 @@ get_frozen_object(PyObject *name)
 static PyObject *
 is_frozen_package(PyObject *name)
 {
-    struct _frozen *p = find_frozen(name);
+    const struct _frozen *p = find_frozen(name);
     int size;
 
     if (p == NULL) {
@@ -1054,7 +1054,7 @@ is_frozen_package(PyObject *name)
 int
 PyImport_ImportFrozenModuleObject(PyObject *name)
 {
-    struct _frozen *p;
+    const struct _frozen *p;
     PyObject *co, *m, *path;
     int ispackage;
     int size;
@@ -1781,7 +1781,7 @@ static PyObject *
 imp_is_frozen(PyObject *self, PyObject *args)
 {
     PyObject *name;
-    struct _frozen *p;
+    const struct _frozen *p;
     if (!PyArg_ParseTuple(args, "U:is_frozen", &name))
         return NULL;
     p = find_frozen(name);
