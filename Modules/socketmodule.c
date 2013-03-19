@@ -473,6 +473,17 @@ select_error(void)
     return NULL;
 }
 
+#ifdef MS_WINDOWS
+#ifndef WSAEAGAIN
+#define WSAEAGAIN WSAEWOULDBLOCK
+#endif
+#define CHECK_ERRNO(expected) \
+    (WSAGetLastError() == WSA ## expected)
+#else
+#define CHECK_ERRNO(expected) \
+    (errno == expected)
+#endif
+
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */
 
@@ -661,7 +672,7 @@ internal_setblocking(PySocketSockObject *s, int block)
    after they've reacquired the interpreter lock.
    Returns 1 on timeout, -1 on error, 0 otherwise. */
 static int
-internal_select(PySocketSockObject *s, int writing)
+internal_select_ex(PySocketSockObject *s, int writing, double interval)
 {
     int n;
 
@@ -672,6 +683,10 @@ internal_select(PySocketSockObject *s, int writing)
     /* Guard against closed socket */
     if (s->sock_fd < 0)
         return 0;
+
+    /* Handling this condition here simplifies the select loops */
+    if (interval < 0.0)
+        return 1;
 
     /* Prefer poll, if available, since you can poll() any fd
      * which can't be done with select(). */
@@ -684,7 +699,7 @@ internal_select(PySocketSockObject *s, int writing)
         pollfd.events = writing ? POLLOUT : POLLIN;
 
         /* s->sock_timeout is in seconds, timeout in ms */
-        timeout = (int)(s->sock_timeout * 1000 + 0.5);
+        timeout = (int)(interval * 1000 + 0.5);
         n = poll(&pollfd, 1, timeout);
     }
 #else
@@ -692,8 +707,8 @@ internal_select(PySocketSockObject *s, int writing)
         /* Construct the arguments to select */
         fd_set fds;
         struct timeval tv;
-        tv.tv_sec = (int)s->sock_timeout;
-        tv.tv_usec = (int)((s->sock_timeout - tv.tv_sec) * 1e6);
+        tv.tv_sec = (int)interval;
+        tv.tv_usec = (int)((interval - tv.tv_sec) * 1e6);
         FD_ZERO(&fds);
         FD_SET(s->sock_fd, &fds);
 
@@ -711,6 +726,49 @@ internal_select(PySocketSockObject *s, int writing)
         return 1;
     return 0;
 }
+
+static int
+internal_select(PySocketSockObject *s, int writing)
+{
+    return internal_select_ex(s, writing, s->sock_timeout);
+}
+
+/*
+   Two macros for automatic retry of select() in case of false positives
+   (for example, select() could indicate a socket is ready for reading
+    but the data then discarded by the OS because of a wrong checksum).
+   Here is an example of use:
+
+    BEGIN_SELECT_LOOP(s)
+    Py_BEGIN_ALLOW_THREADS
+    timeout = internal_select_ex(s, 0, interval);
+    if (!timeout)
+        outlen = recv(s->sock_fd, cbuf, len, flags);
+    Py_END_ALLOW_THREADS
+    if (timeout == 1) {
+        PyErr_SetString(socket_timeout, "timed out");
+        return -1;
+    }
+    END_SELECT_LOOP(s)
+*/
+PyAPI_FUNC(double) _PyTime_floattime(void); /* defined in timemodule.c */
+#define BEGIN_SELECT_LOOP(s) \
+    { \
+        double deadline, interval = s->sock_timeout; \
+        int has_timeout = s->sock_timeout > 0.0; \
+        if (has_timeout) { \
+            deadline = _PyTime_floattime() + s->sock_timeout; \
+        } \
+        while (1) { \
+            errno = 0; \
+
+#define END_SELECT_LOOP(s) \
+            if (!has_timeout || \
+                (!CHECK_ERRNO(EWOULDBLOCK) && !CHECK_ERRNO(EAGAIN))) \
+                break; \
+            interval = deadline - _PyTime_floattime(); \
+        } \
+    } \
 
 /* Initialize a new socket object. */
 
@@ -1656,8 +1714,9 @@ sock_accept(PySocketSockObject *s)
     if (!IS_SELECTABLE(s))
         return select_error();
 
+    BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
-    timeout = internal_select(s, 0);
+    timeout = internal_select_ex(s, 0, interval);
     if (!timeout)
         newfd = accept(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
     Py_END_ALLOW_THREADS
@@ -1666,6 +1725,7 @@ sock_accept(PySocketSockObject *s)
         PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
+    END_SELECT_LOOP(s)
 
 #ifdef MS_WINDOWS
     if (newfd == INVALID_SOCKET)
@@ -2355,8 +2415,9 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
     }
 
 #ifndef __VMS
+    BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
-    timeout = internal_select(s, 0);
+    timeout = internal_select_ex(s, 0, interval);
     if (!timeout)
         outlen = recv(s->sock_fd, cbuf, len, flags);
     Py_END_ALLOW_THREADS
@@ -2365,6 +2426,7 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
         PyErr_SetString(socket_timeout, "timed out");
         return -1;
     }
+    END_SELECT_LOOP(s)
     if (outlen < 0) {
         /* Note: the call to errorhandler() ALWAYS indirectly returned
            NULL, so ignore its return value */
@@ -2386,8 +2448,9 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
             segment = remaining;
         }
 
+        BEGIN_SELECT_LOOP(s)
         Py_BEGIN_ALLOW_THREADS
-        timeout = internal_select(s, 0);
+        timeout = internal_select_ex(s, 0, interval);
         if (!timeout)
             nread = recv(s->sock_fd, read_buf, segment, flags);
         Py_END_ALLOW_THREADS
@@ -2396,6 +2459,8 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, int len, int flags)
             PyErr_SetString(socket_timeout, "timed out");
             return -1;
         }
+        END_SELECT_LOOP(s)
+
         if (nread < 0) {
             s->errorhandler();
             return -1;
@@ -2559,9 +2624,10 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, int len, int flags,
         return -1;
     }
 
+    BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
     memset(&addrbuf, 0, addrlen);
-    timeout = internal_select(s, 0);
+    timeout = internal_select_ex(s, 0, interval);
     if (!timeout) {
 #ifndef MS_WINDOWS
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
@@ -2582,6 +2648,7 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, int len, int flags,
         PyErr_SetString(socket_timeout, "timed out");
         return -1;
     }
+    END_SELECT_LOOP(s)
     if (n < 0) {
         s->errorhandler();
         return -1;
@@ -2719,8 +2786,9 @@ sock_send(PySocketSockObject *s, PyObject *args)
     buf = pbuf.buf;
     len = pbuf.len;
 
+    BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
-    timeout = internal_select(s, 1);
+    timeout = internal_select_ex(s, 1, interval);
     if (!timeout)
 #ifdef __VMS
         n = sendsegmented(s->sock_fd, buf, len, flags);
@@ -2728,13 +2796,14 @@ sock_send(PySocketSockObject *s, PyObject *args)
         n = send(s->sock_fd, buf, len, flags);
 #endif
     Py_END_ALLOW_THREADS
-
-    PyBuffer_Release(&pbuf);
-
     if (timeout == 1) {
+        PyBuffer_Release(&pbuf);
         PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
+    END_SELECT_LOOP(s)
+
+    PyBuffer_Release(&pbuf);
     if (n < 0)
         return s->errorhandler();
     return PyInt_FromLong((long)n);
@@ -2768,8 +2837,9 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     }
 
     do {
+        BEGIN_SELECT_LOOP(s)
         Py_BEGIN_ALLOW_THREADS
-        timeout = internal_select(s, 1);
+        timeout = internal_select_ex(s, 1, interval);
         n = -1;
         if (!timeout) {
 #ifdef __VMS
@@ -2784,6 +2854,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
             PyErr_SetString(socket_timeout, "timed out");
             return NULL;
         }
+        END_SELECT_LOOP(s)
         /* PyErr_CheckSignals() might change errno */
         saved_errno = errno;
         /* We must run our signal handlers before looping again.
@@ -2863,17 +2934,20 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
+    BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
-    timeout = internal_select(s, 1);
+    timeout = internal_select_ex(s, 1, interval);
     if (!timeout)
         n = sendto(s->sock_fd, buf, len, flags, SAS2SA(&addrbuf), addrlen);
     Py_END_ALLOW_THREADS
 
-    PyBuffer_Release(&pbuf);
     if (timeout == 1) {
+        PyBuffer_Release(&pbuf);
         PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
+    END_SELECT_LOOP(s)
+    PyBuffer_Release(&pbuf);
     if (n < 0)
         return s->errorhandler();
     return PyInt_FromLong((long)n);
