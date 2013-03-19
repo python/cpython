@@ -395,6 +395,31 @@ class PydocDocTest(unittest.TestCase):
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
 
+    def test_splitdoc_with_description(self):
+        example_string = "I Am A Doc\n\n\nHere is my description"
+        self.assertEqual(pydoc.splitdoc(example_string),
+                         ('I Am A Doc', '\nHere is my description'))
+
+    def test_is_object_or_method(self):
+        doc = pydoc.Doc()
+        # Bound Method
+        self.assertTrue(pydoc._is_some_method(doc.fail))
+        # Method Descriptor
+        self.assertTrue(pydoc._is_some_method(int.__add__))
+        # String
+        self.assertFalse(pydoc._is_some_method("I am not a method"))
+
+    def test_is_package_when_not_package(self):
+        with test.support.temp_cwd() as test_dir:
+            self.assertFalse(pydoc.ispackage(test_dir))
+
+    def test_is_package_when_is_package(self):
+        with test.support.temp_cwd() as test_dir:
+            init_path = os.path.join(test_dir, '__init__.py')
+            open(init_path, 'w').close()
+            self.assertTrue(pydoc.ispackage(test_dir))
+            os.remove(init_path)
+
 
 class PydocImportTest(unittest.TestCase):
 
