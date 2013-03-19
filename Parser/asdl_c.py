@@ -499,12 +499,10 @@ class Obj2ModVisitor(PickleVisitor):
     def visitField(self, field, name, sum=None, prod=None, depth=0):
         ctype = get_c_type(field.type)
         if field.opt:
-            add_check = " && _PyObject_GetAttrId(obj, &PyId_%s) != Py_None" \
-                        % (field.name)
+            check = "exists_not_none(obj, &PyId_%s)" % (field.name,)
         else:
-            add_check = str()
-        self.emit("if (_PyObject_HasAttrId(obj, &PyId_%s)%s) {"
-                   % (field.name, add_check), depth, reflow=False)
+            check = "_PyObject_HasAttrId(obj, &PyId_%s)" % (field.name,)
+        self.emit("if (%s) {" % (check,), depth, reflow=False)
         self.emit("int res;", depth+1)
         if field.seq:
             self.emit("Py_ssize_t len;", depth+1)
@@ -929,6 +927,18 @@ static int add_ast_fields(void)
     }
     Py_DECREF(empty_tuple);
     return 0;
+}
+
+static int exists_not_none(PyObject *obj, _Py_Identifier *id)
+{
+    PyObject *attr = _PyObject_GetAttrId(obj, id);
+    if (!attr) {
+        PyErr_Clear();
+        return 0;
+    }
+    int isnone = attr == Py_None;
+    Py_DECREF(attr);
+    return !isnone;
 }
 
 """, 0, reflow=False)
