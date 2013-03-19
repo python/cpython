@@ -931,12 +931,13 @@ static int add_ast_fields(void)
 
 static int exists_not_none(PyObject *obj, _Py_Identifier *id)
 {
+    int isnone;
     PyObject *attr = _PyObject_GetAttrId(obj, id);
     if (!attr) {
         PyErr_Clear();
         return 0;
     }
-    int isnone = attr == Py_None;
+    isnone = attr == Py_None;
     Py_DECREF(attr);
     return !isnone;
 }
