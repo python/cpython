@@ -35,10 +35,6 @@ class BaseThreadedTestCase(unittest.TestCase):
     dbsetflags   = 0
     envflags     = 0
 
-    if sys.version_info < (2, 4) :
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
     def setUp(self):
         if verbose:
             dbutils._deadlock_VerboseFile = sys.stdout
