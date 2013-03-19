@@ -25,7 +25,7 @@ set orig_ld_library64_path_saved 0
 set orig_ld_library_path_32_saved 0
 set orig_ld_library_path_64_saved 0
 set orig_dyld_library_path_saved 0
-
+set orig_path_saved 0
 
 #######################################
 # proc set_ld_library_path_env_vars { }
@@ -42,6 +42,7 @@ proc set_ld_library_path_env_vars { } {
   global orig_ld_library_path_32_saved
   global orig_ld_library_path_64_saved
   global orig_dyld_library_path_saved
+  global orig_path_saved
   global orig_ld_library_path
   global orig_ld_run_path
   global orig_shlib_path
@@ -50,6 +51,7 @@ proc set_ld_library_path_env_vars { } {
   global orig_ld_library_path_32
   global orig_ld_library_path_64
   global orig_dyld_library_path
+  global orig_path
   global GCC_EXEC_PREFIX
 
   # Set the relocated compiler prefix, but only if the user hasn't specified one.
@@ -99,6 +101,10 @@ proc set_ld_library_path_env_vars { } {
     if [info exists env(DYLD_LIBRARY_PATH)] {
       set orig_dyld_library_path "$env(DYLD_LIBRARY_PATH)"
       set orig_dyld_library_path_saved 1
+    }
+    if [info exists env(PATH)] {
+      set orig_path "$env(PATH)"
+      set orig_path_saved 1
     }
   }
 
@@ -169,6 +175,13 @@ proc set_ld_library_path_env_vars { } {
   } else {
     setenv DYLD_LIBRARY_PATH "$ld_library_path"
   }
+  if { [istarget *-*-cygwin*] || [istarget *-*-mingw*] } {
+    if { $orig_path_saved } {
+      setenv PATH "$ld_library_path:$orig_path"
+    } else {
+      setenv PATH "$ld_library_path"
+    }
+  }
 
   verbose -log "set_ld_library_path_env_vars: ld_library_path=$ld_library_path"
 }
@@ -187,6 +200,7 @@ proc restore_ld_library_path_env_vars { } {
   global orig_ld_library_path_32_saved
   global orig_ld_library_path_64_saved
   global orig_dyld_library_path_saved
+  global orig_path_saved
   global orig_ld_library_path
   global orig_ld_run_path
   global orig_shlib_path
@@ -195,6 +209,7 @@ proc restore_ld_library_path_env_vars { } {
   global orig_ld_library_path_32
   global orig_ld_library_path_64
   global orig_dyld_library_path
+  global orig_path
 
   if { $orig_environment_saved == 0 } {
     return
@@ -239,6 +254,11 @@ proc restore_ld_library_path_env_vars { } {
     setenv DYLD_LIBRARY_PATH "$orig_dyld_library_path"
   } elseif [info exists env(DYLD_LIBRARY_PATH)] {
     unsetenv DYLD_LIBRARY_PATH
+  }
+  if { $orig_path_saved } {
+    setenv PATH "$orig_path"
+  } elseif [info exists env(PATH)] {
+    unsetenv PATH
   }
 }
 

@@ -100,7 +100,7 @@
 
        If you don't like either of these options, you can define
        CORRUPTION_ERROR_ACTION and USAGE_ERROR_ACTION to do anything
-       else. And if you are sure that your program using malloc has
+       else. And if if you are sure that your program using malloc has
        no errors or vulnerabilities, you can define INSECURE to 1,
        which might (or might not) provide a small performance improvement.
 
@@ -457,12 +457,15 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
 #define LACKS_ERRNO_H
 #define MALLOC_FAILURE_ACTION
 #define MMAP_CLEARS 0 /* WINCE and some others apparently don't clear */
-#elif !defined _GNU_SOURCE
-/* mremap() on Linux requires this via sys/mman.h
- * See roundup issue 10309
- */
-#define _GNU_SOURCE 1
 #endif  /* WIN32 */
+
+#ifdef __OS2__
+#define INCL_DOS
+#include <os2.h>
+#define HAVE_MMAP 1
+#define HAVE_MORECORE 0
+#define LACKS_SYS_MMAN_H
+#endif  /* __OS2__ */
 
 #if defined(DARWIN) || defined(_DARWIN)
 /* Mac OSX docs advise not to use sbrk; it seems better to use mmap */
@@ -599,7 +602,7 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
   declaration needed is the mallinfo struct that is returned (by-copy)
   by mallinfo().  The malloinfo struct contains a bunch of fields that
   are not even meaningful in this version of malloc.  These fields are
-  instead filled by mallinfo() with other numbers that might be of
+  are instead filled by mallinfo() with other numbers that might be of
   interest.
 
   HAVE_USR_INCLUDE_MALLOC_H should be set if you have a
@@ -618,6 +621,9 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
 #ifdef HAVE_USR_INCLUDE_MALLOC_H
 #include "/usr/include/malloc.h"
 #else /* HAVE_USR_INCLUDE_MALLOC_H */
+
+/* HP-UX's stdlib.h redefines mallinfo unless _STRUCT_MALLINFO is defined */
+#define _STRUCT_MALLINFO
 
 struct mallinfo {
   MALLINFO_FIELD_TYPE arena;    /* non-mmapped space allocated from system */
@@ -1293,7 +1299,7 @@ extern void*     sbrk(ptrdiff_t);
 #define IS_MMAPPED_BIT       (SIZE_T_ONE)
 #define USE_MMAP_BIT         (SIZE_T_ONE)
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined (__OS2__)
 #define CALL_MUNMAP(a, s)    munmap((a), (s))
 #define MMAP_PROT            (PROT_READ|PROT_WRITE)
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
@@ -1316,6 +1322,42 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 #endif /* MAP_ANONYMOUS */
 
 #define DIRECT_MMAP(s)       CALL_MMAP(s)
+
+#elif defined(__OS2__)
+
+/* OS/2 MMAP via DosAllocMem */
+static void* os2mmap(size_t size) {
+  void* ptr;
+  if (DosAllocMem(&ptr, size, OBJ_ANY|PAG_COMMIT|PAG_READ|PAG_WRITE) &&
+      DosAllocMem(&ptr, size, PAG_COMMIT|PAG_READ|PAG_WRITE))
+    return MFAIL;
+  return ptr;
+}
+
+#define os2direct_mmap(n)     os2mmap(n)
+
+/* This function supports releasing coalesed segments */
+static int os2munmap(void* ptr, size_t size) {
+  while (size) {
+    ULONG ulSize = size;
+    ULONG ulFlags = 0;
+    if (DosQueryMem(ptr, &ulSize, &ulFlags) != 0)
+      return -1;
+    if ((ulFlags & PAG_BASE) == 0 ||(ulFlags & PAG_COMMIT) == 0 ||
+        ulSize > size)
+      return -1;
+    if (DosFreeMem(ptr) != 0)
+      return -1;
+    ptr = ( void * ) ( ( char * ) ptr + ulSize );
+    size -= ulSize;
+  }
+  return 0;
+}
+
+#define CALL_MMAP(s)         os2mmap(s)
+#define CALL_MUNMAP(a, s)    os2munmap((a), (s))
+#define DIRECT_MMAP(s)       os2direct_mmap(s)
+
 #else /* WIN32 */
 
 /* Win32 MMAP via VirtualAlloc */
@@ -1392,7 +1434,7 @@ static int win32munmap(void* ptr, size_t size) {
     unique mparams values are initialized only once.
 */
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__OS2__)
 /* By default use posix locks */
 #include <pthread.h>
 #define MLOCK_T pthread_mutex_t
@@ -1405,6 +1447,16 @@ static MLOCK_T morecore_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif /* HAVE_MORECORE */
 
 static MLOCK_T magic_init_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#elif defined(__OS2__)
+#define MLOCK_T HMTX
+#define INITIAL_LOCK(l)      DosCreateMutexSem(0, l, 0, FALSE)
+#define ACQUIRE_LOCK(l)      DosRequestMutexSem(*l, SEM_INDEFINITE_WAIT)
+#define RELEASE_LOCK(l)      DosReleaseMutexSem(*l)
+#if HAVE_MORECORE
+static MLOCK_T morecore_mutex;
+#endif /* HAVE_MORECORE */
+static MLOCK_T magic_init_mutex;
 
 #else /* WIN32 */
 /*
@@ -1564,7 +1616,7 @@ static MLOCK_T magic_init_mutex;
   Each freshly allocated chunk must have both cinuse and pinuse set.
   That is, each allocated chunk borders either a previously allocated
   and still in-use chunk, or the base of its memory arena. This is
-  ensured by making all allocations from the `lowest' part of any
+  ensured by making all allocations from the the `lowest' part of any
   found chunk.  Further, no free chunk physically borders another one,
   so each free chunk is known to be preceded and followed by either
   inuse chunks or the ends of memory.
@@ -1770,12 +1822,12 @@ nextchunk-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   of the same size are arranged in a circularly-linked list, with only
   the oldest chunk (the next to be used, in our FIFO ordering)
   actually in the tree.  (Tree members are distinguished by a non-null
-  parent pointer.)  If a chunk with the same size as an existing node
+  parent pointer.)  If a chunk with the same size an an existing node
   is inserted, it is linked off the existing node using pointers that
   work in the same way as fd/bk pointers of small chunks.
 
   Each tree contains a power of 2 sized range of chunk sizes (the
-  smallest is 0x100 <= x < 0x180), which is divided in half at each
+  smallest is 0x100 <= x < 0x180), which is is divided in half at each
   tree level, with the chunks in the smaller half of the range (0x100
   <= x < 0x140 for the top nose) in the left subtree and the larger
   half (0x140 <= x < 0x180) in the right subtree.  This is, of course,
@@ -2497,10 +2549,15 @@ static int init_mparams(void) {
     }
     RELEASE_MAGIC_INIT_LOCK();
 
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__OS2__)
     mparams.page_size = malloc_getpagesize;
     mparams.granularity = ((DEFAULT_GRANULARITY != 0)?
                            DEFAULT_GRANULARITY : mparams.page_size);
+#elif defined (__OS2__)
+ /* if low-memory is used, os2munmap() would break
+    if it were anything other than 64k */
+    mparams.page_size = 4096u;
+    mparams.granularity = 65536u;
 #else /* WIN32 */
     {
       SYSTEM_INFO system_info;
@@ -3380,7 +3437,7 @@ static void* sys_alloc(mstate m, size_t nb) {
     least-preferred order):
     1. A call to MORECORE that can normally contiguously extend memory.
        (disabled if not MORECORE_CONTIGUOUS or not HAVE_MORECORE or
-       main space is mmapped or a previous contiguous call failed)
+       or main space is mmapped or a previous contiguous call failed)
     2. A call to MMAP new space (disabled if not HAVE_MMAP).
        Note that under the default settings, if MORECORE is unable to
        fulfill a request, and HAVE_MMAP is true, then mmap is
@@ -4197,7 +4254,7 @@ void* dlmalloc(size_t bytes) {
 
 void dlfree(void* mem) {
   /*
-     Consolidate freed chunks with preceeding or succeeding bordering
+     Consolidate freed chunks with preceding or succeeding bordering
      free chunks, if they exist, and then place in a bin.  Intermixed
      with special cases for top, dv, mmapped chunks, and usage errors.
   */

@@ -1,7 +1,7 @@
 /* -----------------------------------------------------------------------
-   eabi.S - Copyright (c) 2004  Anthony Green
+   eabi.S - Copyright (c) 2012, 2013  Anthony Green
    
-   FR-V Assembly glue.
+   Moxie Assembly glue.
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -34,95 +34,68 @@
 	.globl ffi_call_EABI
 	.type ffi_call_EABI, @function
 
-	# gr8 :   ffi_prep_args
-	# gr9 :   &ecif
-	# gr10:   cif->bytes
-	# gr11:   fig->flags
-	# gr12:   ecif.rvalue
-	# gr13:   fn
+	# $r0 :   ffi_prep_args
+	# $r1 :   &ecif
+	# $r2 :   cif->bytes
+	# $r3 :   fig->flags
+	# $r4 :   ecif.rvalue
+	# $r5 :   fn
 	
-ffi_call_EABI:	
-	addi	sp, #-80, sp
-	sti	fp, @(sp, #24)
-	addi	sp, #24, fp
-	movsg	lr, gr5
+ffi_call_EABI:
+	push	$sp, $r6
+	push	$sp, $r7
+	push	$sp, $r8
+	dec	$sp, 24
 
-	/* Make room for the new arguments.  */
-	/* subi	sp, fp, gr10 */
-	
-	/* Store return address and incoming args on stack.  */
-	sti	gr5, @(fp, #8)
-	sti	gr8, @(fp, #-4)
-	sti	gr9, @(fp, #-8)
-	sti	gr10, @(fp, #-12)
-	sti	gr11, @(fp, #-16)
-	sti	gr12, @(fp, #-20)
-	sti	gr13, @(fp, #-24)
-
-	sub     sp, gr10, sp
+	/* Store incoming args on stack.  */
+	sto.l	0($sp), $r0 /* ffi_prep_args */
+	sto.l	4($sp), $r1 /* ecif */
+	sto.l	8($sp), $r2 /* bytes */
+	sto.l	12($sp), $r3 /* flags */
+	sto.l	16($sp), $r4 /* &rvalue */
+	sto.l	20($sp), $r5 /* fn */
 	
 	/* Call ffi_prep_args.  */
-	ldi	@(fp, #-4), gr4
-	addi	sp, #0, gr8
-	ldi	@(fp, #-8), gr9
-#ifdef __FRV_FDPIC__
-	ldd	@(gr4, gr0), gr14
-	calll	@(gr14, gr0)
-#else
-	calll	@(gr4, gr0)
-#endif	
+	mov 	$r6, $r4 /* Save result buffer */
+	mov	$r7, $r5 /* Save the target fn */
+	mov	$r8, $r3 /* Save the flags */
+	sub.l	$sp, $r2 /* Allocate stack space */
+	mov	$r0, $sp /* We can stomp over $r0 */
+	/* $r1 is already set up */
+	jsra 	ffi_prep_args
 
-	/* ffi_prep_args returns the new stack pointer.  */
-	mov	gr8, gr4
-		
-	ldi	@(sp, #0), gr8
-	ldi	@(sp, #4), gr9
-	ldi	@(sp, #8), gr10
-	ldi	@(sp, #12), gr11
-	ldi	@(sp, #16), gr12
-	ldi	@(sp, #20), gr13
-
-	/* Always copy the return value pointer into the hidden
-	   parameter register.  This is only strictly necessary
-	   when we're returning an aggregate type, but it doesn't
-	   hurt to do this all the time, and it saves a branch.  */
-	ldi	@(fp, #-20), gr3
-
-	/* Use the ffi_prep_args return value for the new sp.  */
-	mov	gr4, sp
+	/* Load register arguments.  */
+	ldo.l	$r0, 0($sp)
+	ldo.l	$r1, 4($sp)
+	ldo.l	$r2, 8($sp)
+	ldo.l	$r3, 12($sp)
+	ldo.l	$r4, 16($sp)
+	ldo.l	$r5, 20($sp)
 	
 	/* Call the target function.  */
-	ldi	@(fp, -24), gr4
-#ifdef __FRV_FDPIC__
-	ldd	@(gr4, gr0), gr14
-	calll	@(gr14, gr0)
-#else
-	calll	@(gr4, gr0)
-#endif	
+	jsr	$r7
 
-	/* Store the result. */
-	ldi	@(fp, #-16), gr10  /* fig->flags */
-	ldi	@(fp, #-20), gr4   /* ecif.rvalue */
+	ldi.l	$r7, 0xffffffff
+	cmp	$r8, $r7
+	beq	retstruct
 
-	/* Is the return value stored in two registers?  */
-	cmpi	gr10, #8, icc0
-	bne	icc0, 0, .L2
-	/*   Yes, save them.  */
-	sti	gr8, @(gr4, #0)
-	sti	gr9, @(gr4, #4)
-	bra	.L3
-.L2:
-	/* Is the return value a structure?  */
-	cmpi	gr10, #-1, icc0
-	beq	icc0, 0, .L3
-	/*   No, save a 4 byte return value.  */
-	sti	gr8, @(gr4, #0)
-.L3:	
+	ldi.l	$r7, 4
+	cmp	$r8, $r7
+	bgt	ret2reg
 
-	/* Restore the stack, and return.  */
-	ldi	@(fp, 8), gr5
-	ld	@(fp, gr0), fp
-	addi	sp,#80,sp
-	jmpl	@(gr5,gr0)
+	st.l	($r6), $r0
+	jmpa	retdone
+
+ret2reg:	
+	st.l	($r6), $r0
+	sto.l	4($r6), $r1
+
+retstruct:
+retdone:	
+	/* Return.  */
+	ldo.l	$r6, -4($fp)
+	ldo.l	$r7, -8($fp)
+	ldo.l	$r8, -12($fp)
+	ret
 	.size ffi_call_EABI, .-ffi_call_EABI
 	

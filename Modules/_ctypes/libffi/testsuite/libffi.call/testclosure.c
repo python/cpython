@@ -43,12 +43,12 @@ int main (void)
   ffi_type cls_struct_type0;
   ffi_type* dbl_arg_types[5];
 
+  struct cls_struct_combined g_dbl = {4.0, 5.0, 1.0, 8.0};
+
   cls_struct_type0.size = 0;
   cls_struct_type0.alignment = 0;
   cls_struct_type0.type = FFI_TYPE_STRUCT;
   cls_struct_type0.elements = cls_struct_fields0;
-
-  struct cls_struct_combined g_dbl = {4.0, 5.0, 1.0, 8.0};
 
   cls_struct_fields0[0] = &ffi_type_float;
   cls_struct_fields0[1] = &ffi_type_float;

@@ -28,6 +28,13 @@ int main (void)
   void *values[MAX_ARGS];
   ffi_type ts9_type;
   ffi_type *ts9_type_elements[3];
+
+  test_structure_9 ts9_arg;
+
+  /* This is a hack to get a properly aligned result buffer */
+  test_structure_9 *ts9_result =
+    (test_structure_9 *) malloc (sizeof(test_structure_9));
+
   ts9_type.size = 0;
   ts9_type.alignment = 0;
   ts9_type.type = FFI_TYPE_STRUCT;
@@ -36,12 +43,6 @@ int main (void)
   ts9_type_elements[1] = &ffi_type_sint;
   ts9_type_elements[2] = NULL;
 
-  test_structure_9 ts9_arg;
-  
-  /* This is a hack to get a properly aligned result buffer */
-  test_structure_9 *ts9_result = 
-    (test_structure_9 *) malloc (sizeof(test_structure_9));
-  
   args[0] = &ts9_type;
   values[0] = &ts9_arg;
   

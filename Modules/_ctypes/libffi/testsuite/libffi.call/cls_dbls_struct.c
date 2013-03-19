@@ -37,6 +37,8 @@ int main(int argc __UNUSED__, char** argv __UNUSED__)
 	ffi_type	ts1_type;
 	ffi_type*	ts1_type_elements[4];
 
+	Dbls arg = { 1.0, 2.0 };
+
 	ts1_type.size = 0;
 	ts1_type.alignment = 0;
 	ts1_type.type = FFI_TYPE_STRUCT;
@@ -47,8 +49,6 @@ int main(int argc __UNUSED__, char** argv __UNUSED__)
 	ts1_type_elements[2] = NULL;
 
 	cl_arg_types[0] = &ts1_type;
-
-	Dbls arg = { 1.0, 2.0 };
 
 	/* Initialize the cif */
 	CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1,

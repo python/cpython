@@ -1,10 +1,10 @@
 #! /bin/sh
 # depcomp - compile a program generating dependencies as side-effects
 
-scriptversion=2006-10-15.18
+scriptversion=2009-04-28.21; # UTC
 
-# Copyright (C) 1999, 2000, 2003, 2004, 2005, 2006 Free Software
-# Foundation, Inc.
+# Copyright (C) 1999, 2000, 2003, 2004, 2005, 2006, 2007, 2009 Free
+# Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,9 +17,7 @@ scriptversion=2006-10-15.18
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-# 02110-1301, USA.
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # As a special exception to the GNU General Public License, if you
 # distribute this file as part of a program that contains a
@@ -85,6 +83,15 @@ if test "$depmode" = dashXmstdout; then
    # This is just like dashmstdout with a different argument.
    dashmflag=-xM
    depmode=dashmstdout
+fi
+
+cygpath_u="cygpath -u -f -"
+if test "$depmode" = msvcmsys; then
+   # This is just like msvisualcpp but w/o cygpath translation.
+   # Just convert the backslash-escaped backslashes to single forward
+   # slashes to satisfy depend.m4
+   cygpath_u="sed s,\\\\\\\\,/,g"
+   depmode=msvisualcpp
 fi
 
 case "$depmode" in
@@ -192,14 +199,14 @@ sgi)
 ' < "$tmpdepfile" \
     | sed -e 's/^.*\.o://' -e 's/#.*$//' -e '/^$/ d' | \
     tr '
-' ' ' >> $depfile
-    echo >> $depfile
+' ' ' >> "$depfile"
+    echo >> "$depfile"
 
     # The second pass generates a dummy entry for each header file.
     tr ' ' '
 ' < "$tmpdepfile" \
    | sed -e 's/^.*\.o://' -e 's/#.*$//' -e '/^$/ d' -e 's/$/:/' \
-   >> $depfile
+   >> "$depfile"
   else
     # The sourcefile does not contain any dependencies, so just
     # store a dummy comment line, to avoid errors with the Makefile
@@ -215,34 +222,39 @@ aix)
   # current directory.  Also, the AIX compiler puts `$object:' at the
   # start of each line; $object doesn't have directory information.
   # Version 6 uses the directory in both cases.
-  stripped=`echo "$object" | sed 's/\(.*\)\..*$/\1/'`
-  tmpdepfile="$stripped.u"
+  dir=`echo "$object" | sed -e 's|/[^/]*$|/|'`
+  test "x$dir" = "x$object" && dir=
+  base=`echo "$object" | sed -e 's|^.*/||' -e 's/\.o$//' -e 's/\.lo$//'`
   if test "$libtool" = yes; then
+    tmpdepfile1=$dir$base.u
+    tmpdepfile2=$base.u
+    tmpdepfile3=$dir.libs/$base.u
     "$@" -Wc,-M
   else
+    tmpdepfile1=$dir$base.u
+    tmpdepfile2=$dir$base.u
+    tmpdepfile3=$dir$base.u
     "$@" -M
   fi
   stat=$?
 
-  if test -f "$tmpdepfile"; then :
-  else
-    stripped=`echo "$stripped" | sed 's,^.*/,,'`
-    tmpdepfile="$stripped.u"
-  fi
-
   if test $stat -eq 0; then :
   else
-    rm -f "$tmpdepfile"
+    rm -f "$tmpdepfile1" "$tmpdepfile2" "$tmpdepfile3"
     exit $stat
   fi
 
+  for tmpdepfile in "$tmpdepfile1" "$tmpdepfile2" "$tmpdepfile3"
+  do
+    test -f "$tmpdepfile" && break
+  done
   if test -f "$tmpdepfile"; then
-    outname="$stripped.o"
     # Each line is of the form `foo.o: dependent.h'.
     # Do two passes, one to just change these to
     # `$object: dependent.h' and one to simply `dependent.h:'.
-    sed -e "s,^$outname:,$object :," < "$tmpdepfile" > "$depfile"
-    sed -e "s,^$outname: \(.*\)$,\1:," < "$tmpdepfile" >> "$depfile"
+    sed -e "s,^.*\.[a-z]*:,$object:," < "$tmpdepfile" > "$depfile"
+    # That's a tab and a space in the [].
+    sed -e 's,^.*\.[a-z]*:[	 ]*,,' -e 's,$,:,' < "$tmpdepfile" >> "$depfile"
   else
     # The sourcefile does not contain any dependencies, so just
     # store a dummy comment line, to avoid errors with the Makefile
@@ -323,7 +335,12 @@ hp2)
   if test -f "$tmpdepfile"; then
     sed -e "s,^.*\.[a-z]*:,$object:," "$tmpdepfile" > "$depfile"
     # Add `dependent.h:' lines.
-    sed -ne '2,${; s/^ *//; s/ \\*$//; s/$/:/; p;}' "$tmpdepfile" >> "$depfile"
+    sed -ne '2,${
+	       s/^ *//
+	       s/ \\*$//
+	       s/$/:/
+	       p
+	     }' "$tmpdepfile" >> "$depfile"
   else
     echo "#dummy" > "$depfile"
   fi
@@ -399,7 +416,7 @@ dashmstdout)
 
   # Remove the call to Libtool.
   if test "$libtool" = yes; then
-    while test $1 != '--mode=compile'; do
+    while test "X$1" != 'X--mode=compile'; do
       shift
     done
     shift
@@ -450,32 +467,39 @@ makedepend)
   "$@" || exit $?
   # Remove any Libtool call
   if test "$libtool" = yes; then
-    while test $1 != '--mode=compile'; do
+    while test "X$1" != 'X--mode=compile'; do
       shift
     done
     shift
   fi
   # X makedepend
   shift
-  cleared=no
-  for arg in "$@"; do
+  cleared=no eat=no
+  for arg
+  do
     case $cleared in
     no)
       set ""; shift
       cleared=yes ;;
     esac
+    if test $eat = yes; then
+      eat=no
+      continue
+    fi
     case "$arg" in
     -D*|-I*)
       set fnord "$@" "$arg"; shift ;;
     # Strip any option that makedepend may not understand.  Remove
     # the object too, otherwise makedepend will parse it as a source file.
+    -arch)
+      eat=yes ;;
     -*|$object)
       ;;
     *)
       set fnord "$@" "$arg"; shift ;;
     esac
   done
-  obj_suffix="`echo $object | sed 's/^.*\././'`"
+  obj_suffix=`echo "$object" | sed 's/^.*\././'`
   touch "$tmpdepfile"
   ${MAKEDEPEND-makedepend} -o"$obj_suffix" -f"$tmpdepfile" "$@"
   rm -f "$depfile"
@@ -495,7 +519,7 @@ cpp)
 
   # Remove the call to Libtool.
   if test "$libtool" = yes; then
-    while test $1 != '--mode=compile'; do
+    while test "X$1" != 'X--mode=compile'; do
       shift
     done
     shift
@@ -533,13 +557,27 @@ cpp)
 
 msvisualcpp)
   # Important note: in order to support this mode, a compiler *must*
-  # always write the preprocessed file to stdout, regardless of -o,
-  # because we must use -o when running libtool.
+  # always write the preprocessed file to stdout.
   "$@" || exit $?
+
+  # Remove the call to Libtool.
+  if test "$libtool" = yes; then
+    while test "X$1" != 'X--mode=compile'; do
+      shift
+    done
+    shift
+  fi
+
   IFS=" "
   for arg
   do
     case "$arg" in
+    -o)
+      shift
+      ;;
+    $object)
+      shift
+      ;;
     "-Gm"|"/Gm"|"-Gi"|"/Gi"|"-ZI"|"/ZI")
 	set fnord "$@"
 	shift
@@ -552,14 +590,21 @@ msvisualcpp)
 	;;
     esac
   done
-  "$@" -E |
-  sed -n '/^#line [0-9][0-9]* "\([^"]*\)"/ s::echo "`cygpath -u \\"\1\\"`":p' | sort | uniq > "$tmpdepfile"
+  "$@" -E 2>/dev/null |
+  sed -n '/^#line [0-9][0-9]* "\([^"]*\)"/ s::\1:p' | $cygpath_u | sort -u > "$tmpdepfile"
   rm -f "$depfile"
   echo "$object : \\" > "$depfile"
-  . "$tmpdepfile" | sed 's% %\\ %g' | sed -n '/^\(.*\)$/ s::	\1 \\:p' >> "$depfile"
+  sed < "$tmpdepfile" -n -e 's% %\\ %g' -e '/^\(.*\)$/ s::	\1 \\:p' >> "$depfile"
   echo "	" >> "$depfile"
-  . "$tmpdepfile" | sed 's% %\\ %g' | sed -n '/^\(.*\)$/ s::\1\::p' >> "$depfile"
+  sed < "$tmpdepfile" -n -e 's% %\\ %g' -e '/^\(.*\)$/ s::\1\::p' >> "$depfile"
   rm -f "$tmpdepfile"
+  ;;
+
+msvcmsys)
+  # This case exists only to let depend.m4 do its work.  It works by
+  # looking at the text of this script.  This case will never be run,
+  # since it is checked for above.
+  exit 1
   ;;
 
 none)
@@ -580,5 +625,6 @@ exit 0
 # eval: (add-hook 'write-file-hooks 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-end: "$"
+# time-stamp-time-zone: "UTC"
+# time-stamp-end: "; # UTC"
 # End:

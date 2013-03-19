@@ -49,9 +49,17 @@ int main (void)
   CHECK(ffi_prep_closure_loc(pcl, &cif, closure_test_stdcall,
                              (void *) 3 /* userdata */, code) == FFI_OK);
 
+#ifdef _MSC_VER
+  __asm { mov sp_pre, esp }
+#else
   asm volatile (" movl %%esp,%0" : "=g" (sp_pre));
+#endif
   res = (*(closure_test_type0)code)(0, 1, 2, 3);
+#ifdef _MSC_VER
+  __asm { mov sp_post, esp }
+#else
   asm volatile (" movl %%esp,%0" : "=g" (sp_post));
+#endif
   /* { dg-output "0 1 2 3: 9" } */
 
   printf("res: %d\n",res);

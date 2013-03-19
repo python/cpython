@@ -35,7 +35,7 @@ int main (void)
         void *code;
 	ffi_closure*	pcl = ffi_closure_alloc(sizeof(ffi_closure), &code);
 	void*			args[3];
-//	ffi_type		cls_pointer_type;
+	/*	ffi_type		cls_pointer_type; */
 	ffi_type*		arg_types[3];
 
 /*	cls_pointer_type.size = sizeof(void*);
@@ -65,7 +65,7 @@ int main (void)
 
 	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_pointer_gn, NULL, code) == FFI_OK);
 
-	res = (ffi_arg)((void*(*)(void*, void*))(code))(arg1, arg2);
+	res = (ffi_arg)(uintptr_t)((void*(*)(void*, void*))(code))(arg1, arg2);
 	/* { dg-output "\n0x12345678 0x89abcdef: 0x9be02467" } */
 	printf("res: 0x%08x\n", (unsigned int) res);
 	/* { dg-output "\nres: 0x9be02467" } */

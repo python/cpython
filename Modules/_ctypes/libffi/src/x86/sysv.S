@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------------
-   sysv.S - Copyright (c) 1996, 1998, 2001-2003, 2005, 2008  Red Hat, Inc.
+   sysv.S - Copyright (c) 2013  The Written Word, Inc.
+	  - Copyright (c) 1996,1998,2001-2003,2005,2008,2010  Red Hat, Inc.
    
    X86 Foreign Function Interface 
 
@@ -47,6 +48,9 @@ ffi_call_SYSV:
 	/* Make room for all of the new args.  */
 	movl  16(%ebp),%ecx
 	subl  %ecx,%esp
+
+        /* Align the stack pointer to 16-bytes */
+        andl  $0xfffffff0, %esp
 
 	movl  %esp,%eax
 
@@ -178,9 +182,19 @@ ffi_closure_SYSV:
 	leal	-24(%ebp), %edx
 	movl	%edx, -12(%ebp)	/* resp */
 	leal	8(%ebp), %edx
+#ifdef __SUNPRO_C
+	/* The SUNPRO compiler doesn't support GCC's regparm function
+  	   attribute, so we have to pass all three arguments to
+	   ffi_closure_SYSV_inner on the stack.  */
+	movl	%edx, 8(%esp)	/* args = __builtin_dwarf_cfa () */
+	leal	-12(%ebp), %edx
+	movl	%edx, 4(%esp)	/* &resp */
+	movl    %eax, (%esp)    /* closure */
+#else
 	movl	%edx, 4(%esp)	/* args = __builtin_dwarf_cfa () */
 	leal	-12(%ebp), %edx
 	movl	%edx, (%esp)	/* &resp */
+#endif
 #if defined HAVE_HIDDEN_VISIBILITY_ATTRIBUTE || !defined __PIC__
 	call	ffi_closure_SYSV_inner
 #else
@@ -325,23 +339,55 @@ ffi_closure_raw_SYSV:
 	.size	ffi_closure_raw_SYSV, .-ffi_closure_raw_SYSV
 #endif
 
+#if defined __GNUC__
+/* Only emit dwarf unwind info when building with GNU toolchain.  */
+
+#if defined __PIC__
+# if defined __sun__ && defined __svr4__
+/* 32-bit Solaris 2/x86 uses datarel encoding for PIC.  GNU ld before 2.22
+   doesn't correctly sort .eh_frame_hdr with mixed encodings, so match this.  */
+#  define FDE_ENCODING		0x30	/* datarel */
+#  define FDE_ENCODE(X)		X@GOTOFF
+# else
+#  define FDE_ENCODING		0x1b	/* pcrel sdata4 */
+#  if defined HAVE_AS_X86_PCREL
+#   define FDE_ENCODE(X)	X-.
+#  else
+#   define FDE_ENCODE(X)	X@rel
+#  endif
+# endif
+#else
+# define FDE_ENCODING		0	/* absolute */
+# define FDE_ENCODE(X)		X
+#endif
+
 	.section	.eh_frame,EH_FRAME_FLAGS,@progbits
 .Lframe1:
 	.long	.LECIE1-.LSCIE1	/* Length of Common Information Entry */
 .LSCIE1:
 	.long	0x0	/* CIE Identifier Tag */
 	.byte	0x1	/* CIE Version */
+#ifdef HAVE_AS_ASCII_PSEUDO_OP
 #ifdef __PIC__
 	.ascii "zR\0"	/* CIE Augmentation */
 #else
 	.ascii "\0"	/* CIE Augmentation */
+#endif
+#elif defined HAVE_AS_STRING_PSEUDO_OP
+#ifdef __PIC__
+	.string "zR"	/* CIE Augmentation */
+#else
+	.string ""	/* CIE Augmentation */
+#endif
+#else
+#error missing .ascii/.string
 #endif
 	.byte	0x1	/* .uleb128 0x1; CIE Code Alignment Factor */
 	.byte	0x7c	/* .sleb128 -4; CIE Data Alignment Factor */
 	.byte	0x8	/* CIE RA Column */
 #ifdef __PIC__
 	.byte	0x1	/* .uleb128 0x1; Augmentation size */
-	.byte	0x1b	/* FDE Encoding (pcrel sdata4) */
+	.byte	FDE_ENCODING
 #endif
 	.byte	0xc	/* DW_CFA_def_cfa */
 	.byte	0x4	/* .uleb128 0x4 */
@@ -354,14 +400,8 @@ ffi_closure_raw_SYSV:
 	.long	.LEFDE1-.LASFDE1	/* FDE Length */
 .LASFDE1:
 	.long	.LASFDE1-.Lframe1	/* FDE CIE offset */
-#if defined __PIC__ && defined HAVE_AS_X86_PCREL
-	.long	.LFB1-.	/* FDE initial location */
-#elif defined __PIC__
-	.long	.LFB1@rel
-#else
-	.long	.LFB1
-#endif
-	.long	.LFE1-.LFB1	/* FDE address range */
+	.long	FDE_ENCODE(.LFB1)	/* FDE initial location */
+	.long	.LFE1-.LFB1		/* FDE address range */
 #ifdef __PIC__
 	.byte	0x0	/* .uleb128 0x0; Augmentation size */
 #endif
@@ -381,14 +421,8 @@ ffi_closure_raw_SYSV:
 	.long	.LEFDE2-.LASFDE2	/* FDE Length */
 .LASFDE2:
 	.long	.LASFDE2-.Lframe1	/* FDE CIE offset */
-#if defined __PIC__ && defined HAVE_AS_X86_PCREL
-	.long	.LFB2-.	/* FDE initial location */
-#elif defined __PIC__
-	.long	.LFB2@rel
-#else
-	.long	.LFB2
-#endif
-	.long	.LFE2-.LFB2	/* FDE address range */
+	.long	FDE_ENCODE(.LFB2)	/* FDE initial location */
+	.long	.LFE2-.LFB2		/* FDE address range */
 #ifdef __PIC__
 	.byte	0x0	/* .uleb128 0x0; Augmentation size */
 #endif
@@ -417,14 +451,8 @@ ffi_closure_raw_SYSV:
 	.long	.LEFDE3-.LASFDE3	/* FDE Length */
 .LASFDE3:
 	.long	.LASFDE3-.Lframe1	/* FDE CIE offset */
-#if defined __PIC__ && defined HAVE_AS_X86_PCREL
-	.long	.LFB3-.	/* FDE initial location */
-#elif defined __PIC__
-	.long	.LFB3@rel
-#else
-	.long	.LFB3
-#endif
-	.long	.LFE3-.LFB3	/* FDE address range */
+	.long	FDE_ENCODE(.LFB3)	/* FDE initial location */
+	.long	.LFE3-.LFB3		/* FDE address range */
 #ifdef __PIC__
 	.byte	0x0	/* .uleb128 0x0; Augmentation size */
 #endif
@@ -445,6 +473,7 @@ ffi_closure_raw_SYSV:
 	.align 4
 .LEFDE3:
 
+#endif
 #endif
 
 #endif /* ifndef __x86_64__ */

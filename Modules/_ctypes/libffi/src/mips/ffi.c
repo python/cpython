@@ -1,6 +1,7 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 1996, 2007, 2008  Red Hat, Inc.
-           Copyright (c) 2008       David Daney
+   ffi.c - Copyright (c) 2011  Anthony Green
+           Copyright (c) 2008  David Daney
+           Copyright (c) 1996, 2007, 2008, 2011  Red Hat, Inc.
    
    MIPS Foreign Function Interface 
 
@@ -37,7 +38,11 @@
 #endif
 
 #ifndef USE__BUILTIN___CLEAR_CACHE
-#include <sys/cachectl.h>
+#  if defined(__OpenBSD__)
+#    include <mips64/sysarch.h>
+#  else
+#    include <sys/cachectl.h>
+#  endif
 #endif
 
 #ifdef FFI_DEBUG
@@ -662,10 +667,19 @@ ffi_prep_closure_loc (ffi_closure *closure,
   char *clear_location = (char *) codeloc;
 
 #if defined(FFI_MIPS_O32)
-  FFI_ASSERT(cif->abi == FFI_O32 || cif->abi == FFI_O32_SOFT_FLOAT);
+  if (cif->abi != FFI_O32 && cif->abi != FFI_O32_SOFT_FLOAT)
+    return FFI_BAD_ABI;
   fn = ffi_closure_O32;
-#else /* FFI_MIPS_N32 */
-  FFI_ASSERT(cif->abi == FFI_N32 || cif->abi == FFI_N64);
+#else
+#if _MIPS_SIM ==_ABIN32
+  if (cif->abi != FFI_N32
+      && cif->abi != FFI_N32_SOFT_FLOAT)
+    return FFI_BAD_ABI;
+#else
+  if (cif->abi != FFI_N64
+      && cif->abi != FFI_N64_SOFT_FLOAT)
+    return FFI_BAD_ABI;
+#endif
   fn = ffi_closure_N32;
 #endif /* FFI_MIPS_O32 */
 
