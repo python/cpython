@@ -51,7 +51,7 @@ The module provides the following classes:
    .. versionchanged:: 3.2
       *source_address* was added.
 
-   .. versionchanged:: 3.2
+   .. deprecated-removed:: 3.2 3.4
       The *strict* parameter is deprecated.  HTTP 0.9-style "Simple Responses"
       are not supported anymore.
 
@@ -89,7 +89,7 @@ The module provides the following classes:
       This class now supports HTTPS virtual hosts if possible (that is,
       if :data:`ssl.HAS_SNI` is true).
 
-   .. versionchanged:: 3.2
+   .. deprecated-removed:: 3.2 3.4
       The *strict* parameter is deprecated.  HTTP 0.9-style "Simple Responses"
       are not supported anymore.
 
@@ -99,7 +99,7 @@ The module provides the following classes:
    Class whose instances are returned upon successful connection.  Not
    instantiated directly by user.
 
-   .. versionchanged:: 3.2
+   .. deprecated-removed:: 3.2 3.4
       The *strict* parameter is deprecated.  HTTP 0.9-style "Simple Responses"
       are not supported anymore.
 
