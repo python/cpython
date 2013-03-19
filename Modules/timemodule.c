@@ -1055,3 +1055,10 @@ floatsleep(double secs)
 
     return 0;
 }
+
+/* export floattime to socketmodule.c */
+PyAPI_FUNC(double)
+_PyTime_floattime(void)
+{
+    return floattime();
+}
