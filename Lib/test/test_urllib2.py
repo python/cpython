@@ -1387,6 +1387,10 @@ class HandlerTests(unittest.TestCase):
 
 class MiscTests(unittest.TestCase):
 
+    def opener_has_handler(self, opener, handler_class):
+        self.assertTrue(any(h.__class__ == handler_class
+                            for h in opener.handlers))
+
     def test_build_opener(self):
         class MyHTTPHandler(urllib.request.HTTPHandler): pass
         class FooHandler(urllib.request.BaseHandler):
@@ -1439,10 +1443,22 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(b"1234567890", request.data)
         self.assertEqual("10", request.get_header("Content-length"))
 
+    def test_HTTPError_interface(self):
+        """
+        Issue 13211 reveals that HTTPError didn't implement the URLError
+        interface even though HTTPError is a subclass of URLError.
 
-    def opener_has_handler(self, opener, handler_class):
-        self.assertTrue(any(h.__class__ == handler_class
-                            for h in opener.handlers))
+        >>> msg = 'something bad happened'
+        >>> url = code = fp = None
+        >>> hdrs = 'Content-Length: 42'
+        >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
+        >>> assert hasattr(err, 'reason')
+        >>> err.reason
+        'something bad happened'
+        >>> assert hasattr(err, 'headers')
+        >>> err.headers
+        'Content-Length: 42'
+        """
 
 class RequestTests(unittest.TestCase):
 
@@ -1513,23 +1529,6 @@ class RequestTests(unittest.TestCase):
         url = 'http://docs.python.org/library/urllib2.html#OK'
         req = Request(url)
         self.assertEqual(req.get_full_url(), url)
-
-def test_HTTPError_interface():
-    """
-    Issue 13211 reveals that HTTPError didn't implement the URLError
-    interface even though HTTPError is a subclass of URLError.
-
-    >>> msg = 'something bad happened'
-    >>> url = code = fp = None
-    >>> hdrs = 'Content-Length: 42'
-    >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-    >>> assert hasattr(err, 'reason')
-    >>> err.reason
-    'something bad happened'
-    >>> assert hasattr(err, 'headers')
-    >>> err.headers
-    'Content-Length: 42'
-    """
 
 def test_main(verbose=None):
     from test import test_urllib2
