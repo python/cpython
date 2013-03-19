@@ -214,6 +214,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
+  retry the select() loop instead of bailing out.  This is because select()
+  can incorrectly report a socket as ready for reading (for example, if it
+  received some data with an invalid checksum).
+
 - Issue #1285086: Get rid of the refcounting hack and speed up urllib.unquote().
 
 - Issue #17368: Fix an off-by-one error in the Python JSON decoder that caused
