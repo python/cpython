@@ -947,7 +947,7 @@ class TreeviewTest(unittest.TestCase):
             anchor=1)
 
     # XXX skipping for now; should be fixed to work with newer ttk
-    @unittest.skip
+    @unittest.skip("skipping pending resolution of Issue #10734")
     def test_heading_callback(self):
         def simulate_heading_click(x, y):
             support.simulate_mouse_click(self.tv, x, y)
