@@ -174,7 +174,7 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
             txn.commit()
             warnings.resetwarnings()
         else :
-            # When we drop support for python 2.3 and 2.4
+            # When we drop support for python 2.4
             # we could use: (in 2.5 we need a __future__ statement)
             #
             #    with warnings.catch_warnings():
@@ -182,7 +182,7 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
             #        txn.commit()
             #
             # We can not use "with" as is, because it would be invalid syntax
-            # in python 2.3, 2.4 and (with no __future__) 2.5.
+            # in python 2.4 and (with no __future__) 2.5.
             # Here we simulate "with" following PEP 343 :
             w = warnings.catch_warnings()
             w.__enter__()
@@ -194,15 +194,14 @@ class DBEnvClosedEarlyCrash(unittest.TestCase):
 
         self.assertRaises(db.DBCursorClosedError, c2.first)
 
-    if db.version() > (4,3,0) :
-        def test07_close_db_before_sequence(self):
-            import os.path
-            path=os.path.join(self.homeDir,self.filename)
-            d = db.DB()
-            d.open(path, db.DB_BTREE, db.DB_CREATE | db.DB_THREAD, 0666)
-            dbs=db.DBSequence(d)
-            d.close()  # This "close" should close the child DBSequence also
-            dbs.close()  # If not closed, core dump (in Berkeley DB 4.6.*)
+    def test07_close_db_before_sequence(self):
+        import os.path
+        path=os.path.join(self.homeDir,self.filename)
+        d = db.DB()
+        d.open(path, db.DB_BTREE, db.DB_CREATE | db.DB_THREAD, 0666)
+        dbs=db.DBSequence(d)
+        d.close()  # This "close" should close the child DBSequence also
+        dbs.close()  # If not closed, core dump (in Berkeley DB 4.6.*)
 
 #----------------------------------------------------------------------
 

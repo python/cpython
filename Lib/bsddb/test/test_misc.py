@@ -9,13 +9,6 @@ from test_all import db, dbshelve, hashopen, test_support, get_new_environment_p
 #----------------------------------------------------------------------
 
 class MiscTestCase(unittest.TestCase):
-    if sys.version_info < (2, 4) :
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr, msg=msg)
-
-        def assertFalse(self, expr, msg=None):
-            self.failIf(expr, msg=msg)
-
     def setUp(self):
         self.filename = get_new_database_path()
         self.homeDir = get_new_environment_path()
@@ -97,10 +90,6 @@ class MiscTestCase(unittest.TestCase):
             test_support.unlink(self.filename)
 
     def test07_DB_set_flags_persists(self):
-        if db.version() < (4,2):
-            # The get_flags API required for this to work is only available
-            # in Berkeley DB >= 4.2
-            return
         try:
             db1 = db.DB()
             db1.set_flags(db.DB_DUPSORT)

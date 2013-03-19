@@ -19,12 +19,6 @@ if have_threads :
 #----------------------------------------------------------------------
 
 class LockingTestCase(unittest.TestCase):
-    import sys
-    if sys.version_info < (2, 4) :
-        def assertTrue(self, expr, msg=None):
-            self.failUnless(expr,msg=msg)
-
-
     def setUp(self):
         self.homeDir = get_new_environment_path()
         self.env = db.DBEnv()
@@ -89,7 +83,6 @@ class LockingTestCase(unittest.TestCase):
         for t in threads:
             t.join()
 
-    if db.version() >= (4, 2) :
         def test03_lock_timeout(self):
             self.env.set_timeout(0, db.DB_SET_LOCK_TIMEOUT)
             self.assertEqual(self.env.get_timeout(db.DB_SET_LOCK_TIMEOUT), 0)

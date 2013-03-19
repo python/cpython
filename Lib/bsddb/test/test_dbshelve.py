@@ -12,9 +12,6 @@ from test_all import db, dbshelve, test_support, verbose, \
 
 
 
-if sys.version_info < (2, 4) :
-    from sets import Set as set
-
 
 
 #----------------------------------------------------------------------
@@ -33,10 +30,6 @@ class DataClass:
 
 
 class DBShelveTestCase(unittest.TestCase):
-    if sys.version_info < (2, 4):
-        def assertTrue(self, expr, msg=None):
-            return self.failUnless(expr,msg=msg)
-
     if (sys.version_info < (2, 7)) or ((sys.version_info >= (3, 0)) and
             (sys.version_info < (3, 2))) :
         def assertIn(self, a, b, msg=None) :

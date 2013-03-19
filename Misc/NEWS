@@ -793,6 +793,9 @@ Library
 Extension Modules
 -----------------
 
+- Issue #17477: Update the bsddb module to pybsddb 5.3.0, supporting
+  db-5.x, and dropping support for db-4.1 and db-4.2.
+
 - Issue #17192: Update the ctypes module's libffi to v3.0.13.  This
   specifically addresses a stack misalignment issue on x86 and issues on
   some more recent platforms.

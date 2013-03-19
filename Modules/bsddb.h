@@ -61,7 +61,7 @@
  *
  * http://www.python.org/peps/pep-0291.html
  *
- * This module contains 6 types:
+ * This module contains 7 types:
  *
  * DB           (Database)
  * DBCursor     (Database Cursor)
@@ -69,6 +69,7 @@
  * DBTxn        (An explicit database transaction)
  * DBLock       (A lock handle)
  * DBSequence   (Sequence)
+ * DBSite       (Site)
  *
  * New datatypes:
  *
@@ -109,7 +110,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.8.4.2"
+#define PY_BSDDB_VERSION "5.3.0"
 
 /* Python object definitions */
 
@@ -129,6 +130,9 @@ struct DBCursorObject;    /* Forward declaration */
 struct DBLogCursorObject; /* Forward declaration */
 struct DBTxnObject;       /* Forward declaration */
 struct DBSequenceObject;  /* Forward declaration */
+#if (DBVER >= 52)
+struct DBSiteObject;      /* Forward declaration */
+#endif
 
 typedef struct {
     PyObject_HEAD
@@ -140,6 +144,9 @@ typedef struct {
     struct DBObject *children_dbs;
     struct DBTxnObject *children_txns;
     struct DBLogCursorObject *children_logcursors;
+#if (DBVER >= 52)
+    struct DBSiteObject *children_sites;
+#endif
     PyObject        *private_obj;
     PyObject        *rep_transport;
     PyObject        *in_weakreflist; /* List of weak references */
@@ -154,15 +161,14 @@ typedef struct DBObject {
     struct behaviourFlags moduleFlags;
     struct DBTxnObject *txn;
     struct DBCursorObject *children_cursors;
-#if (DBVER >=43)
     struct DBSequenceObject *children_sequences;
-#endif
     struct DBObject **sibling_prev_p;
     struct DBObject *sibling_next;
     struct DBObject **sibling_prev_p_txn;
     struct DBObject *sibling_next_txn;
     PyObject*       associateCallback;
     PyObject*       btCompareCallback;
+    PyObject*       dupCompareCallback;	    
     int             primaryDBType;
     PyObject        *private_obj;
     PyObject        *in_weakreflist; /* List of weak references */
@@ -207,6 +213,16 @@ typedef struct DBLogCursorObject {
     PyObject        *in_weakreflist; /* List of weak references */
 } DBLogCursorObject;
 
+#if (DBVER >= 52)
+typedef struct DBSiteObject {
+    PyObject_HEAD
+    DB_SITE         *site;
+    DBEnvObject     *env;
+    struct DBSiteObject **sibling_prev_p;
+    struct DBSiteObject *sibling_next;
+    PyObject    *in_weakreflist; /* List of weak references */
+} DBSiteObject;
+#endif
 
 typedef struct {
     PyObject_HEAD
@@ -216,7 +232,6 @@ typedef struct {
 } DBLockObject;
 
 
-#if (DBVER >= 43)
 typedef struct DBSequenceObject {
     PyObject_HEAD
     DB_SEQUENCE*     sequence;
@@ -228,7 +243,6 @@ typedef struct DBSequenceObject {
     struct DBSequenceObject *sibling_next_txn;
     PyObject        *in_weakreflist; /* List of weak references */
 } DBSequenceObject;
-#endif
 
 
 /* API structure for use by C code */
@@ -236,7 +250,7 @@ typedef struct DBSequenceObject {
 /* To access the structure from an external module, use code like the
    following (error checking missed out for clarity):
 
-     // If you are using Python before 3.2:
+     // If you are using Python before 2.7:
      BSDDB_api* bsddb_api;
      PyObject*  mod;
      PyObject*  cobj;
@@ -249,7 +263,7 @@ typedef struct DBSequenceObject {
      Py_DECREF(mod);
 
 
-     // If you are using Python 3.2 or up:
+     // If you are using Python 2.7 or up: (except Python 3.0, unsupported)
      BSDDB_api* bsddb_api;
 
      // Use "bsddb3._pybsddb.api" if you're using
@@ -257,10 +271,14 @@ typedef struct DBSequenceObject {
      bsddb_api = (void **)PyCapsule_Import("bsddb._bsddb.api", 1);
 
 
+   Check "api_version" number before trying to use the API.
+
    The structure's members must not be changed.
 */
 
+#define PYBSDDB_API_VERSION 1
 typedef struct {
+    unsigned int api_version;
     /* Type objects */
     PyTypeObject* db_type;
     PyTypeObject* dbcursor_type;
@@ -268,9 +286,7 @@ typedef struct {
     PyTypeObject* dbenv_type;
     PyTypeObject* dbtxn_type;
     PyTypeObject* dblock_type;
-#if (DBVER >= 43)
     PyTypeObject* dbsequence_type;
-#endif
 
     /* Functions */
     int (*makeDBError)(int err);
@@ -289,9 +305,9 @@ typedef struct {
 #define DBEnvObject_Check(v)    ((v)->ob_type == bsddb_api->dbenv_type)
 #define DBTxnObject_Check(v)    ((v)->ob_type == bsddb_api->dbtxn_type)
 #define DBLockObject_Check(v)   ((v)->ob_type == bsddb_api->dblock_type)
-#if (DBVER >= 43)
-#define DBSequenceObject_Check(v)  ((v)->ob_type == bsddb_api->dbsequence_type)
-#endif
+#define DBSequenceObject_Check(v)  \
+    ((bsddb_api->dbsequence_type) && \
+        ((v)->ob_type == bsddb_api->dbsequence_type))
 
 #endif /* COMPILING_BSDDB_C */
 

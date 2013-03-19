@@ -43,7 +43,7 @@ else :
     if sys.version_info < (2, 6) :
         import cPickle
     else :
-        # When we drop support for python 2.3 and 2.4
+        # When we drop support for python 2.4
         # we could use: (in 2.5 we need a __future__ statement)
         #
         #    with warnings.catch_warnings():
@@ -51,7 +51,7 @@ else :
         #        ...
         #
         # We can not use "with" as is, because it would be invalid syntax
-        # in python 2.3, 2.4 and (with no __future__) 2.5.
+        # in python 2.4 and (with no __future__) 2.5.
         # Here we simulate "with" following PEP 343 :
         import warnings
         w = warnings.catch_warnings()
@@ -65,32 +65,12 @@ else :
             w.__exit__()
         del w
 
-#At version 2.3 cPickle switched to using protocol instead of bin
-if sys.version_info >= (2, 3):
-    HIGHEST_PROTOCOL = cPickle.HIGHEST_PROTOCOL
-# In python 2.3.*, "cPickle.dumps" accepts no
-# named parameters. "pickle.dumps" accepts them,
-# so this seems a bug.
-    if sys.version_info < (2, 4):
-        def _dumps(object, protocol):
-            return cPickle.dumps(object, protocol)
-    else :
-        def _dumps(object, protocol):
-            return cPickle.dumps(object, protocol=protocol)
-
-else:
-    HIGHEST_PROTOCOL = None
-    def _dumps(object, protocol):
-        return cPickle.dumps(object, bin=protocol)
-
+HIGHEST_PROTOCOL = cPickle.HIGHEST_PROTOCOL
+def _dumps(object, protocol):
+    return cPickle.dumps(object, protocol=protocol)
 
 if sys.version_info < (2, 6) :
-    try:
-        from UserDict import DictMixin
-    except ImportError:
-        # DictMixin is new in Python 2.3
-        class DictMixin: pass
-    MutableMapping = DictMixin
+    from UserDict import DictMixin as MutableMapping
 else :
     import collections
     MutableMapping = collections.MutableMapping
