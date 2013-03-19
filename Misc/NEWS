@@ -289,6 +289,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17474: Remove the deprecated methods of Request class.
+
 - Issue #16709: unittest discover order is no-longer filesystem specific. Patch
   by Jeff Ramnani.
 
