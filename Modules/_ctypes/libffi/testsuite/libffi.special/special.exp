@@ -23,10 +23,14 @@ global cxx_options
 
 set cxx_options " -shared-libgcc -lstdc++"
 
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O0 -W -Wall"
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O2"
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O3"
-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-Os"
+if { [string match $using_gcc "yes"] } {
+
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O0 -W -Wall"
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O2"
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-O3"
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.cc]] $cxx_options "-Os"
+
+}
 
 dg-finish
 

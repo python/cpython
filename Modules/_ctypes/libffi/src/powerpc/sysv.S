@@ -142,14 +142,19 @@ L(float_return_value):
 #endif
 
 L(small_struct_return_value):
-	/*
-	 * The C code always allocates a properly-aligned 8-byte bounce
-	 * buffer to make this assembly code very simple.  Just write out
-	 * r3 and r4 to the buffer to allow the C code to handle the rest.
-	 */
-	stw %r3, 0(%r30)
-	stw %r4, 4(%r30)
-	b L(done_return_value)
+	extrwi	%r6,%r31,2,19         /* number of bytes padding = shift/8 */
+	mtcrf	0x02,%r31	      /* copy flags to cr[24:27] (cr6) */
+	extrwi	%r5,%r31,5,19         /* r5 <- number of bits of padding */
+	subfic  %r6,%r6,4             /* r6 <- number of useful bytes in r3 */
+	bf-	25,L(done_return_value) /* struct in r3 ? if not, done. */
+/* smst_one_register: */
+	slw	%r3,%r3,%r5           /* Left-justify value in r3 */
+	mtxer	%r6                   /* move byte count to XER ... */
+	stswx	%r3,0,%r30            /* ... and store that many bytes */
+	bf+	26,L(done_return_value)  /* struct in r3:r4 ? */
+	add	%r6,%r6,%r30          /* adjust pointer */
+	stswi	%r4,%r6,4             /* store last four bytes */
+	b	L(done_return_value)
 
 .LFE1:
 END(ffi_call_SYSV)

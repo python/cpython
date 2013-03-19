@@ -12,17 +12,12 @@
 		6C43CBDE1534F76F00162364 /* trampoline.S in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CBC01534F76F00162364 /* trampoline.S */; };
 		6C43CBE61534F76F00162364 /* darwin.S in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CBC91534F76F00162364 /* darwin.S */; };
 		6C43CBE81534F76F00162364 /* ffi.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CBCB1534F76F00162364 /* ffi.c */; };
-		6C43CBE91534F76F00162364 /* ffi64.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CBCC1534F76F00162364 /* ffi64.c */; };
 		6C43CC1F1534F77800162364 /* darwin.S in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC051534F77800162364 /* darwin.S */; };
 		6C43CC201534F77800162364 /* darwin64.S in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC061534F77800162364 /* darwin64.S */; };
 		6C43CC211534F77800162364 /* ffi.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC071534F77800162364 /* ffi.c */; };
 		6C43CC221534F77800162364 /* ffi64.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC081534F77800162364 /* ffi64.c */; };
 		6C43CC2F1534F7BE00162364 /* closures.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC281534F7BE00162364 /* closures.c */; };
 		6C43CC301534F7BE00162364 /* closures.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC281534F7BE00162364 /* closures.c */; };
-		6C43CC311534F7BE00162364 /* debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC291534F7BE00162364 /* debug.c */; };
-		6C43CC321534F7BE00162364 /* debug.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC291534F7BE00162364 /* debug.c */; };
-		6C43CC331534F7BE00162364 /* dlmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC2A1534F7BE00162364 /* dlmalloc.c */; };
-		6C43CC341534F7BE00162364 /* dlmalloc.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC2A1534F7BE00162364 /* dlmalloc.c */; };
 		6C43CC351534F7BE00162364 /* java_raw_api.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC2B1534F7BE00162364 /* java_raw_api.c */; };
 		6C43CC361534F7BE00162364 /* java_raw_api.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC2B1534F7BE00162364 /* java_raw_api.c */; };
 		6C43CC371534F7BE00162364 /* prep_cif.c in Sources */ = {isa = PBXBuildFile; fileRef = 6C43CC2C1534F7BE00162364 /* prep_cif.c */; };
@@ -61,14 +56,11 @@
 		6C43CBC01534F76F00162364 /* trampoline.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = trampoline.S; sourceTree = "<group>"; };
 		6C43CBC91534F76F00162364 /* darwin.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = darwin.S; sourceTree = "<group>"; };
 		6C43CBCB1534F76F00162364 /* ffi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffi.c; sourceTree = "<group>"; };
-		6C43CBCC1534F76F00162364 /* ffi64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffi64.c; sourceTree = "<group>"; };
 		6C43CC051534F77800162364 /* darwin.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = darwin.S; sourceTree = "<group>"; };
 		6C43CC061534F77800162364 /* darwin64.S */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = darwin64.S; sourceTree = "<group>"; };
 		6C43CC071534F77800162364 /* ffi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffi.c; sourceTree = "<group>"; };
 		6C43CC081534F77800162364 /* ffi64.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ffi64.c; sourceTree = "<group>"; };
 		6C43CC281534F7BE00162364 /* closures.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = closures.c; path = src/closures.c; sourceTree = SOURCE_ROOT; };
-		6C43CC291534F7BE00162364 /* debug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = debug.c; path = src/debug.c; sourceTree = SOURCE_ROOT; };
-		6C43CC2A1534F7BE00162364 /* dlmalloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dlmalloc.c; path = src/dlmalloc.c; sourceTree = SOURCE_ROOT; };
 		6C43CC2B1534F7BE00162364 /* java_raw_api.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = java_raw_api.c; path = src/java_raw_api.c; sourceTree = SOURCE_ROOT; };
 		6C43CC2C1534F7BE00162364 /* prep_cif.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = prep_cif.c; path = src/prep_cif.c; sourceTree = SOURCE_ROOT; };
 		6C43CC2D1534F7BE00162364 /* raw_api.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = raw_api.c; path = src/raw_api.c; sourceTree = SOURCE_ROOT; };
@@ -149,7 +141,6 @@
 			children = (
 				6C43CBC91534F76F00162364 /* darwin.S */,
 				6C43CBCB1534F76F00162364 /* ffi.c */,
-				6C43CBCC1534F76F00162364 /* ffi64.c */,
 			);
 			path = x86;
 			sourceTree = "<group>";
@@ -187,8 +178,6 @@
 			isa = PBXGroup;
 			children = (
 				6C43CC281534F7BE00162364 /* closures.c */,
-				6C43CC291534F7BE00162364 /* debug.c */,
-				6C43CC2A1534F7BE00162364 /* dlmalloc.c */,
 				6C43CC2B1534F7BE00162364 /* java_raw_api.c */,
 				6C43CC2C1534F7BE00162364 /* prep_cif.c */,
 				6C43CC2D1534F7BE00162364 /* raw_api.c */,
@@ -412,8 +401,6 @@
 				6C43CC211534F77800162364 /* ffi.c in Sources */,
 				6C43CC221534F77800162364 /* ffi64.c in Sources */,
 				6C43CC301534F7BE00162364 /* closures.c in Sources */,
-				6C43CC321534F7BE00162364 /* debug.c in Sources */,
-				6C43CC341534F7BE00162364 /* dlmalloc.c in Sources */,
 				6C43CC361534F7BE00162364 /* java_raw_api.c in Sources */,
 				6C43CC381534F7BE00162364 /* prep_cif.c in Sources */,
 				6C43CC3A1534F7BE00162364 /* raw_api.c in Sources */,
@@ -430,10 +417,7 @@
 				6C43CBDE1534F76F00162364 /* trampoline.S in Sources */,
 				6C43CBE61534F76F00162364 /* darwin.S in Sources */,
 				6C43CBE81534F76F00162364 /* ffi.c in Sources */,
-				6C43CBE91534F76F00162364 /* ffi64.c in Sources */,
 				6C43CC2F1534F7BE00162364 /* closures.c in Sources */,
-				6C43CC311534F7BE00162364 /* debug.c in Sources */,
-				6C43CC331534F7BE00162364 /* dlmalloc.c in Sources */,
 				6C43CC351534F7BE00162364 /* java_raw_api.c in Sources */,
 				6C43CC371534F7BE00162364 /* prep_cif.c in Sources */,
 				6C43CC391534F7BE00162364 /* raw_api.c in Sources */,
