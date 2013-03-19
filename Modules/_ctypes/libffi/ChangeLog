@@ -1,3 +1,49 @@
+2013-03-17  Anthony Green  <green@moxielogic.com>
+
+	* README: Update for 3.0.13.
+	* configure.ac: Ditto.
+	* configure: Rebuilt.
+	* doc/*: Update version.
+
+2013-03-17  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* src/closures.c (is_emutramp_enabled
+	[!FFI_MMAP_EXEC_EMUTRAMP_PAX]): Move default definition outside
+	enclosing #if scope.
+
+2013-03-17  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Only modify toolexecdir in certain cases.
+	* configure: Rebuilt.
+
+2013-03-16  Gilles Talis  <gilles.talis@gmail.com>
+
+	* src/powerpc/ffi.c (ffi_prep_args_SYSV): Don't use
+	fparg_count,etc on __NO_FPRS__ targets.
+
+2013-03-16  Alan Hourihane  <alanh@fairlite.co.uk>
+
+	* src/m68k/sysv.S (epilogue): Don't use extb instruction on
+	m680000 machines.
+
+2013-03-16  Alex Gaynor <alex.gaynor@gmail.com>
+
+	* src/x86/ffi.c (ffi_prep_cif_machdep): Always align stack.
+
+2013-03-13  Markos Chandras <markos.chandras@imgtec.com>
+
+	* configure.ac: Add support for Imagination Technologies Meta.
+	* Makefile.am: Likewise.
+	* README: Add Imagination Technologies Meta details.
+	* src/metag/ffi.c: New.
+	* src/metag/ffitarget.h: Likewise.
+	* src/metag/sysv.S: Likewise.
+
+2013-02-24  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* doc/libffi.texi (Structures): Fix missing category argument of
+	@deftp.
+
 2013-02-11  Anthony Green <green@moxielogic.com>
 
 	* configure.ac: Update release number to 3.0.12.

@@ -1,7 +1,7 @@
 Status
 ======
 
-libffi-3.0.12 was released on February 11, 2013.  Check the libffi web
+libffi-3.0.13 was released on March 17, 2013.  Check the libffi web
 page for updates: <URL:http://sourceware.org/libffi/>.
 
 
@@ -43,7 +43,7 @@ Libffi has been ported to many different platforms.
 For specific configuration details and testing status, please
 refer to the wiki page here:
 
- http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.12
+ http://www.moxielogic.org/wiki/index.php?title=Libffi_3.0.13
 
 At the time of release, the following basic configurations have been
 tested:
@@ -63,6 +63,7 @@ tested:
 | M68K            | FreeMiNT         | GCC                     |
 | M68K            | Linux	     | GCC                     |
 | M68K            | RTEMS            | GCC                     |
+| Meta            | Linux            | GCC                     |
 | MicroBlaze      | Linux            | GCC                     |
 | MIPS            | IRIX             | GCC                     |
 | MIPS            | Linux            | GCC                     |
@@ -161,6 +162,16 @@ History
 =======
 
 See the ChangeLog files for details.
+
+3.0.13 Mar-17-13
+	Add Meta support.
+	Add missing Moxie bits.
+	Fix stack alignment bug on 32-bit x86.
+	Build fix for m68000 targets.
+	Build fix for soft-float Power targets.
+	Fix the install dir location for some platforms when building
+	  with GCC (OS X, Solaris).
+	Fix Cygwin regression.
 
 3.0.12 Feb-11-13
         Add Moxie support.

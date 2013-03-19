@@ -56,9 +56,9 @@ int main (void)
    * different. */
   /* Call it statically and then via ffi */
   resfp=float_va_fn(0,2.0);
-  /* { dg-output "0: 2.0 : total: 2.0" } */
+  // { dg-output "0: 2.0 : total: 2.0" }
   printf("compiled: %.1f\n", resfp);
-  /* { dg-output "\ncompiled: 2.0" } */
+  // { dg-output "\ncompiled: 2.0" }
 
   arg_types[0] = &ffi_type_uint;
   arg_types[1] = &ffi_type_double;
@@ -71,16 +71,16 @@ int main (void)
   values[0] = &firstarg;
   values[1] = &doubles[0];
   ffi_call(&cif, FFI_FN(float_va_fn), &resfp, values);
-  /* { dg-output "\n0: 2.0 : total: 2.0" } */
+  // { dg-output "\n0: 2.0 : total: 2.0" }
   printf("ffi: %.1f\n", resfp);
-  /* { dg-output "\nffi: 2.0" } */
+  // { dg-output "\nffi: 2.0" }
 
   /* Second test, float_va_fn(2,2.0,3.0,4.0), now with variadic params */
   /* Call it statically and then via ffi */
   resfp=float_va_fn(2,2.0,3.0,4.0);
-  /* { dg-output "\n2: 2.0 : 0:3.0  1:4.0  total: 11.0" } */
+  // { dg-output "\n2: 2.0 : 0:3.0  1:4.0  total: 11.0" }
   printf("compiled: %.1f\n", resfp);
-  /* { dg-output "\ncompiled: 11.0" } */
+  // { dg-output "\ncompiled: 11.0" }
 
   arg_types[0] = &ffi_type_uint;
   arg_types[1] = &ffi_type_double;
@@ -99,9 +99,9 @@ int main (void)
   values[2] = &doubles[1];
   values[3] = &doubles[2];
   ffi_call(&cif, FFI_FN(float_va_fn), &resfp, values);
-  /* { dg-output "\n2: 2.0 : 0:3.0  1:4.0  total: 11.0" } */
+  // { dg-output "\n2: 2.0 : 0:3.0  1:4.0  total: 11.0" }
   printf("ffi: %.1f\n", resfp);
-  /* { dg-output "\nffi: 11.0" } */
+  // { dg-output "\nffi: 11.0" }
 
   exit(0);
 }

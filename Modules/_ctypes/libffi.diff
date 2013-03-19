@@ -1,73 +1,19 @@
-diff -urN libffi.orig/configure.ac libffi/configure.ac
---- libffi.orig/configure.ac	2013-02-11 20:24:24.000000000 +0100
-+++ libffi/configure.ac	2013-02-12 15:05:46.209844321 +0100
-@@ -1,4 +1,7 @@
- dnl Process this with autoconf to create configure
-+#
-+# file from libffi - slightly patched for ctypes
-+#
- 
- AC_PREREQ(2.68)
- 
-@@ -146,6 +149,10 @@
- 	fi	  
- 	;;
- 
-+  i*86-*-nto-qnx*) 
-+	TARGET=X86; TARGETDIR=x86
-+	;;
-+
-   x86_64-*-darwin*)
- 	TARGET=X86_DARWIN; TARGETDIR=x86
- 	;;
-@@ -200,12 +207,12 @@
- 	;;
- 
-   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
--	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
- 	;;
-   mips*-*-linux* | mips*-*-openbsd*)
- 	# Support 128-bit long double for NewABI.
- 	HAVE_LONG_DOUBLE='defined(__mips64)'
--	TARGET=MIPS; TARGETDIR=mips
-+	TARGET=MIPS_IRIX; TARGETDIR=mips
- 	;;
- 
-   powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -265,7 +272,7 @@
-   AC_MSG_ERROR(["libffi has not been ported to $host."])
- fi
- 
--AM_CONDITIONAL(MIPS, test x$TARGET = xMIPS)
-+AM_CONDITIONAL(MIPS,[expr x$TARGET : 'xMIPS' > /dev/null])
- AM_CONDITIONAL(BFIN, test x$TARGET = xBFIN)
- AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
- AM_CONDITIONAL(X86, test x$TARGET = xX86)
-@@ -562,4 +569,8 @@
- 
- AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
- 
-+AC_CONFIG_LINKS(include/ffi_common.h:include/ffi_common.h)
-+
-+AC_CONFIG_FILES(fficonfig.py)
-+
- AC_OUTPUT
-diff -urN libffi.orig/configure libffi/configure
---- libffi.orig/configure	2013-02-11 20:24:24.000000000 +0100
-+++ libffi/configure	2013-02-12 15:11:42.353853081 +0100
-@@ -13366,6 +13366,10 @@
+diff -r -N -u libffi.orig/autom4te.cache/output.0 libffi/autom4te.cache/output.0
+diff -r -N -u libffi.orig/configure libffi/configure
+--- libffi.orig/configure	2013-03-17 15:37:50.000000000 -0700
++++ libffi/configure	2013-03-18 15:11:39.611575163 -0700
+@@ -13368,6 +13368,10 @@
  	fi
  	;;
  
 +  i*86-*-nto-qnx*)
-+	TARGET=X86; TARGETDIR=x86
-+	;;
++        TARGET=X86; TARGETDIR=x86
++        ;;
 +
    x86_64-*-darwin*)
  	TARGET=X86_DARWIN; TARGETDIR=x86
  	;;
-@@ -13420,12 +13424,12 @@
+@@ -13426,12 +13430,12 @@
  	;;
  
    mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
@@ -82,7 +28,7 @@ diff -urN libffi.orig/configure libffi/configure
  	;;
  
    powerpc*-*-linux* | powerpc-*-sysv*)
-@@ -13485,7 +13489,7 @@
+@@ -13491,7 +13495,7 @@
    as_fn_error $? "\"libffi has not been ported to $host.\"" "$LINENO" 5
  fi
  
@@ -91,7 +37,7 @@ diff -urN libffi.orig/configure libffi/configure
    MIPS_TRUE=
    MIPS_FALSE='#'
  else
-@@ -14848,6 +14852,12 @@
+@@ -14862,6 +14866,12 @@
  ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
  
  
@@ -104,7 +50,7 @@ diff -urN libffi.orig/configure libffi/configure
  cat >confcache <<\_ACEOF
  # This file is a shell script that caches the results of configure
  # tests run on this system so they can be shared between configure
-@@ -16029,6 +16039,8 @@
+@@ -16047,6 +16057,8 @@
      "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
      "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
      "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
@@ -113,10 +59,64 @@ diff -urN libffi.orig/configure libffi/configure
  
    *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
    esac
-diff -urN libffi.orig/fficonfig.py.in libffi/fficonfig.py.in
---- libffi.orig/fficonfig.py.in	1970-01-01 01:00:00.000000000 +0100
-+++ libffi/fficonfig.py.in	2013-02-12 15:11:24.589852644 +0100
-@@ -0,0 +1,36 @@
+diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
+--- libffi.orig/configure.ac	2013-03-17 15:37:50.000000000 -0700
++++ libffi/configure.ac	2013-03-18 15:11:11.392989136 -0700
+@@ -1,4 +1,7 @@
+ dnl Process this with autoconf to create configure
++#
++# file from libffi - slightly patched for Python's ctypes
++#
+ 
+ AC_PREREQ(2.68)
+ 
+@@ -146,6 +149,10 @@
+ 	fi	  
+ 	;;
+ 
++  i*86-*-nto-qnx*) 
++        TARGET=X86; TARGETDIR=x86
++        ;;
++
+   x86_64-*-darwin*)
+ 	TARGET=X86_DARWIN; TARGETDIR=x86
+ 	;;
+@@ -204,12 +211,12 @@
+ 	;;
+ 
+   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+   mips*-*-linux* | mips*-*-openbsd*)
+ 	# Support 128-bit long double for NewABI.
+ 	HAVE_LONG_DOUBLE='defined(__mips64)'
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+ 
+   powerpc*-*-linux* | powerpc-*-sysv*)
+@@ -269,7 +276,7 @@
+   AC_MSG_ERROR(["libffi has not been ported to $host."])
+ fi
+ 
+-AM_CONDITIONAL(MIPS, test x$TARGET = xMIPS)
++AM_CONDITIONAL(MIPS,[expr x$TARGET : 'xMIPS' > /dev/null])
+ AM_CONDITIONAL(BFIN, test x$TARGET = xBFIN)
+ AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
+ AM_CONDITIONAL(X86, test x$TARGET = xX86)
+@@ -567,4 +574,8 @@
+ 
+ AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
+ 
++AC_CONFIG_LINKS(include/ffi_common.h:include/ffi_common.h)
++
++AC_CONFIG_FILES(fficonfig.py)
++
+ AC_OUTPUT
+--- libffi-3.0.11/fficonfig.py.in	1970-01-01 01:00:00.000000000 +0100
++++ libffi/fficonfig.py.in	2012-03-15 01:04:27.000000000 +0100
+@@ -0,0 +1,35 @@
 +ffi_sources = """
 +src/prep_cif.c
 +src/closures.c
@@ -130,7 +130,6 @@ diff -urN libffi.orig/fficonfig.py.in libffi/fficonfig.py.in
 +    'X86_FREEBSD': ['src/x86/ffi.c', 'src/x86/freebsd.S'],
 +    'X86_WIN32': ['src/x86/ffi.c', 'src/x86/win32.S'],
 +    'SPARC': ['src/sparc/ffi.c', 'src/sparc/v8.S', 'src/sparc/v9.S'],
-+    'AARCH64': ['src/aarch64/ffi.c', 'src/aarch64/sysv.S'],
 +    'ALPHA': ['src/alpha/ffi.c', 'src/alpha/osf.S'],
 +    'IA64': ['src/ia64/ffi.c', 'src/ia64/unix.S'],
 +    'M32R': ['src/m32r/sysv.S', 'src/m32r/ffi.c'],
@@ -153,9 +152,9 @@ diff -urN libffi.orig/fficonfig.py.in libffi/fficonfig.py.in
 +ffi_sources += ffi_platforms['@TARGET@']
 +
 +ffi_cflags = '@CFLAGS@'
-diff -urN libffi.orig/src/dlmalloc.c libffi/src/dlmalloc.c
---- libffi.orig/src/dlmalloc.c	2013-02-11 20:24:18.000000000 +0100
-+++ libffi/src/dlmalloc.c	2013-02-12 15:15:12.113858241 +0100
+diff -urN libffi-3.0.11/src/dlmalloc.c libffi/src/dlmalloc.c
+--- libffi-3.0.11/src/dlmalloc.c	2012-04-12 04:46:06.000000000 +0200
++++ libffi/src/dlmalloc.c	2012-06-26 15:15:58.949547461 +0200
 @@ -457,6 +457,11 @@
  #define LACKS_ERRNO_H
  #define MALLOC_FAILURE_ACTION

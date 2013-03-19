@@ -5,9 +5,7 @@
    Originator:	Blake Chaffin	*/
 
 /* { dg-excess-errors "no long double format" { xfail x86_64-*-mingw* x86_64-*-cygwin* } } */
-/* This test is known to PASS on armv7l-unknown-linux-gnueabihf, so I have
-   remove the xfail for arm*-*-* below, until we know more.  */
-/* { dg-do run { xfail strongarm*-*-* xscale*-*-* } } */
+/* { dg-do run { xfail arm*-*-* strongarm*-*-* xscale*-*-* } } */
 /* { dg-options -mlong-double-128 { target powerpc64*-*-linux* } } */
 /* { dg-output "" { xfail x86_64-*-mingw* x86_64-*-cygwin* } } */
 
