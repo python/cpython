@@ -4,7 +4,8 @@
    PR:			none.
    Originator:	Blake Chaffin 6/6/2007	 */
 
-/* { dg-do run { xfail *-*-* } } */
+/* { dg-do run } */
+
 #include "ffitest.h"
 
 static void
@@ -17,11 +18,9 @@ int main (void)
 	ffi_cif cif;
         void *code;
 	ffi_closure *pcl = ffi_closure_alloc(sizeof(ffi_closure), &code);
-	void* args[1];
 	ffi_type* arg_types[1];
 
 	arg_types[0] = NULL;
-	args[0] = NULL;
 
 	CHECK(ffi_prep_cif(&cif, 255, 0, &ffi_type_void,
 		arg_types) == FFI_BAD_ABI);

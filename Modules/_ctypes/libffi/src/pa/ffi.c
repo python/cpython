@@ -1,9 +1,11 @@
 /* -----------------------------------------------------------------------
-   ffi.c - (c) 2003-2004 Randolph Chung <tausq@debian.org>
+   ffi.c - (c) 2011 Anthony Green
            (c) 2008 Red Hat, Inc.
-
+	   (c) 2006 Free Software Foundation, Inc.
+           (c) 2003-2004 Randolph Chung <tausq@debian.org>
+           
    HPPA Foreign Function Interface
-   HP-UX PA ABI support (c) 2006 Free Software Foundation, Inc.
+   HP-UX PA ABI support 
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -633,7 +635,8 @@ ffi_prep_closure_loc (ffi_closure* closure,
   UINT32 *tmp;
 #endif
 
-  FFI_ASSERT (cif->abi == FFI_PA32);
+  if (cif->abi != FFI_PA32)
+    return FFI_BAD_ABI;
 
   /* Make a small trampoline that will branch to our
      handler function. Use PC-relative addressing.  */

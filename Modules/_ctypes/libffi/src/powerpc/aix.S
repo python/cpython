@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   aix.S - Copyright (c) 2002,2009 Free Software Foundation, Inc.
+   aix.S - Copyright (c) 2002, 2009 Free Software Foundation, Inc.
    based on darwin.S by John Hornkvist
 
    PowerPC Assembly glue.
@@ -79,6 +79,8 @@
 	.set f20,20
 	.set f21,21
 
+	.extern .ffi_prep_args
+
 #define LIBFFI_ASM
 #include <fficonfig.h>
 #include <ffi.h>
@@ -125,6 +127,7 @@ ffi_call_AIX:
 	/* Call ffi_prep_args.  */
 	mr	r4, r1
 	bl	.ffi_prep_args
+	nop
 
 	/* Now do the call.  */
 	ld	r0, 0(r29)
@@ -134,7 +137,7 @@ ffi_call_AIX:
 	mtcrf	0x40, r31
 	mtctr	r0
 	/* Load all those argument registers.  */
-	// We have set up a nice stack frame, just load it into registers.
+	/* We have set up a nice stack frame, just load it into registers. */
 	ld	r3, 40+(1*8)(r1)
 	ld	r4, 40+(2*8)(r1)
 	ld	r5, 40+(3*8)(r1)
@@ -147,7 +150,7 @@ ffi_call_AIX:
 
 L1:
 	/* Load all the FP registers.  */
-	bf	6,L2 // 2f + 0x18
+	bf	6,L2 /* 2f + 0x18 */
 	lfd	f1,-32-(13*8)(r28)
 	lfd	f2,-32-(12*8)(r28)
 	lfd	f3,-32-(11*8)(r28)
@@ -226,6 +229,7 @@ L(float_return_value):
 	/* Call ffi_prep_args.  */
 	mr	r4, r1
 	bl	.ffi_prep_args
+	nop
 
 	/* Now do the call.  */
 	lwz	r0, 0(r29)
@@ -235,7 +239,7 @@ L(float_return_value):
 	mtcrf	0x40, r31
 	mtctr	r0
 	/* Load all those argument registers.  */
-	// We have set up a nice stack frame, just load it into registers.
+	/* We have set up a nice stack frame, just load it into registers. */
 	lwz	r3, 20+(1*4)(r1)
 	lwz	r4, 20+(2*4)(r1)
 	lwz	r5, 20+(3*4)(r1)
@@ -248,7 +252,7 @@ L(float_return_value):
 
 L1:
 	/* Load all the FP registers.  */
-	bf	6,L2 // 2f + 0x18
+	bf	6,L2 /* 2f + 0x18 */
 	lfd	f1,-16-(13*8)(r28)
 	lfd	f2,-16-(12*8)(r28)
 	lfd	f3,-16-(11*8)(r28)
@@ -303,7 +307,7 @@ L(float_return_value):
 #endif
 	.long 0
 	.byte 0,0,0,1,128,4,0,0
-//END(ffi_call_AIX)
+/* END(ffi_call_AIX) */
 
 .csect .text[PR]
 	.align 2
@@ -321,4 +325,4 @@ ffi_call_DARWIN:
 	blr
 	.long 0
 	.byte 0,0,0,0,0,0,0,0
-//END(ffi_call_DARWIN)
+/* END(ffi_call_DARWIN) */

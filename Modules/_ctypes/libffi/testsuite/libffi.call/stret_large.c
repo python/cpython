@@ -9,8 +9,8 @@
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-*  } } */
 #include "ffitest.h"
 
-// 13 FPRs: 104 bytes
-// 14 FPRs: 112 bytes
+/* 13 FPRs: 104 bytes */
+/* 14 FPRs: 112 bytes */
 
 typedef struct struct_108byte {
 	double a;
@@ -82,16 +82,16 @@ int main (void)
 	ffi_type cls_struct_type;
 	ffi_type* dbl_arg_types[5];
 
-	cls_struct_type.size = 0;
-	cls_struct_type.alignment = 0;
-	cls_struct_type.type = FFI_TYPE_STRUCT;
-	cls_struct_type.elements = cls_struct_fields;
-
 	struct_108byte e_dbl = { 9.0, 2.0, 6.0, 5.0, 3.0, 4.0, 8.0, 1.0, 1.0, 2.0, 3.0, 7.0, 2.0, 7 };
 	struct_108byte f_dbl = { 1.0, 2.0, 3.0, 7.0, 2.0, 5.0, 6.0, 7.0, 4.0, 5.0, 7.0, 9.0, 1.0, 4 };
 	struct_108byte g_dbl = { 4.0, 5.0, 7.0, 9.0, 1.0, 1.0, 2.0, 9.0, 8.0, 6.0, 1.0, 4.0, 0.0, 3 };
 	struct_108byte h_dbl = { 8.0, 6.0, 1.0, 4.0, 0.0, 3.0, 3.0, 1.0, 9.0, 2.0, 6.0, 5.0, 3.0, 2 };
 	struct_108byte res_dbl;
+
+	cls_struct_type.size = 0;
+	cls_struct_type.alignment = 0;
+	cls_struct_type.type = FFI_TYPE_STRUCT;
+	cls_struct_type.elements = cls_struct_fields;
 
 	cls_struct_fields[0] = &ffi_type_double;
 	cls_struct_fields[1] = &ffi_type_double;

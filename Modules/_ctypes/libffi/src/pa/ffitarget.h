@@ -1,5 +1,6 @@
 /* -----------------------------------------------------------------*-C-*-
-   ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
+   ffitarget.h - Copyright (c) 2012  Anthony Green
+                 Copyright (c) 1996-2003  Red Hat, Inc.
    Target configuration macros for hppa.
 
    Permission is hereby granted, free of charge, to any person obtaining
@@ -27,6 +28,10 @@
 #ifndef LIBFFI_TARGET_H
 #define LIBFFI_TARGET_H
 
+#ifndef LIBFFI_H
+#error "Please do not include ffitarget.h directly into your source.  Use ffi.h instead."
+#endif
+
 /* ---- System specific configurations ----------------------------------- */
 
 #ifndef LIBFFI_ASM
@@ -38,21 +43,22 @@ typedef enum ffi_abi {
 
 #ifdef PA_LINUX
   FFI_PA32,
-  FFI_DEFAULT_ABI = FFI_PA32,
+  FFI_LAST_ABI,
+  FFI_DEFAULT_ABI = FFI_PA32
 #endif
 
 #ifdef PA_HPUX
   FFI_PA32,
-  FFI_DEFAULT_ABI = FFI_PA32,
+  FFI_LAST_ABI,
+  FFI_DEFAULT_ABI = FFI_PA32
 #endif
 
 #ifdef PA64_HPUX
 #error "PA64_HPUX FFI is not yet implemented"
   FFI_PA64,
-  FFI_DEFAULT_ABI = FFI_PA64,
+  FFI_LAST_ABI,
+  FFI_DEFAULT_ABI = FFI_PA64
 #endif
-
-  FFI_LAST_ABI = FFI_DEFAULT_ABI + 1
 } ffi_abi;
 #endif
 
