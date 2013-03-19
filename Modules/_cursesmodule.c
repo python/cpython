@@ -895,7 +895,9 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
     }
     if (rtn == ERR) {
         /* getch() returns ERR in nodelay mode */
-        PyErr_SetString(PyCursesError, "no input");
+        PyErr_CheckSignals();
+        if (!PyErr_Occurred())
+            PyErr_SetString(PyCursesError, "no input");
         return NULL;
     } else if (rtn<=255) {
         return Py_BuildValue("C", rtn);
