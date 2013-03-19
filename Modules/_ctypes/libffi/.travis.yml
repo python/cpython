@@ -1,0 +1,8 @@
+language: c
+compiler:
+  - gcc
+  - clang
+
+before_script: sudo apt-get install dejagnu
+
+script: ./configure && make && make check

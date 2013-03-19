@@ -5,6 +5,7 @@
    Originator:	Jeff Sturm <jsturm@one-point.com>  */
 
 /* { dg-do run } */
+
 #include "ffitestcxx.h"
 
 #if defined HAVE_STDINT_H

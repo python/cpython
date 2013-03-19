@@ -172,6 +172,25 @@ selinux_enabled_check (void)
 
 #endif /* !FFI_MMAP_EXEC_SELINUX */
 
+/* On PaX enable kernels that have MPROTECT enable we can't use PROT_EXEC. */
+#ifdef FFI_MMAP_EXEC_EMUTRAMP_PAX
+#include <stdlib.h>
+
+static int emutramp_enabled = -1;
+
+static int
+emutramp_enabled_check (void)
+{
+  if (getenv ("FFI_DISABLE_EMUTRAMP") == NULL)
+    return 1;
+  else
+    return 0;
+}
+
+#define is_emutramp_enabled() (emutramp_enabled >= 0 ? emutramp_enabled \
+                               : (emutramp_enabled = emutramp_enabled_check ()))
+#endif /* FFI_MMAP_EXEC_EMUTRAMP_PAX */
+
 #elif defined (__CYGWIN__) || defined(__INTERIX)
 
 #include <sys/mman.h>
@@ -180,6 +199,10 @@ selinux_enabled_check (void)
 #define is_selinux_enabled() 0
 
 #endif /* !defined(X86_WIN32) && !defined(X86_WIN64) */
+
+#ifndef FFI_MMAP_EXEC_EMUTRAMP_PAX
+#define is_emutramp_enabled() 0
+#endif /* FFI_MMAP_EXEC_EMUTRAMP_PAX */
 
 /* Declare all functions defined in dlmalloc.c as static.  */
 static void *dlmalloc(size_t);
@@ -457,6 +480,12 @@ dlmmap (void *start, size_t length, int prot,
 #if FFI_CLOSURE_TEST
   printf ("mapping in %zi\n", length);
 #endif
+
+  if (execfd == -1 && is_emutramp_enabled ())
+    {
+      ptr = mmap (start, length, prot & ~PROT_EXEC, flags, fd, offset);
+      return ptr;
+    }
 
   if (execfd == -1 && !is_selinux_enabled ())
     {

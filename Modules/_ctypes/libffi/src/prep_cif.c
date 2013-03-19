@@ -140,6 +140,13 @@ ffi_status FFI_HIDDEN ffi_prep_cif_core(ffi_cif *cif, ffi_abi abi,
 #ifdef SPARC
       && (cif->abi != FFI_V9 || cif->rtype->size > 32)
 #endif
+#ifdef TILE
+      && (cif->rtype->size > 10 * FFI_SIZEOF_ARG)
+#endif
+#ifdef XTENSA
+      && (cif->rtype->size > 16)
+#endif
+
      )
     bytes = STACK_ARG_SIZE(sizeof(void*));
 #endif
@@ -168,6 +175,20 @@ ffi_status FFI_HIDDEN ffi_prep_cif_core(ffi_cif *cif, ffi_abi abi,
 	  /* Add any padding if necessary */
 	  if (((*ptr)->alignment - 1) & bytes)
 	    bytes = ALIGN(bytes, (*ptr)->alignment);
+
+#ifdef TILE
+	  if (bytes < 10 * FFI_SIZEOF_ARG &&
+	      bytes + STACK_ARG_SIZE((*ptr)->size) > 10 * FFI_SIZEOF_ARG)
+	    {
+	      /* An argument is never split between the 10 parameter
+		 registers and the stack.  */
+	      bytes = 10 * FFI_SIZEOF_ARG;
+	    }
+#endif
+#ifdef XTENSA
+	  if (bytes <= 6*4 && bytes + STACK_ARG_SIZE((*ptr)->size) > 6*4)
+	    bytes = 6*4;
+#endif
 
 	  bytes += STACK_ARG_SIZE((*ptr)->size);
 	}

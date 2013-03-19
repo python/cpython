@@ -30,16 +30,25 @@
 #include <ffi.h>
 
 #ifdef __powerpc64__
-	.hidden	ffi_call_LINUX64, .ffi_call_LINUX64
-	.globl	ffi_call_LINUX64, .ffi_call_LINUX64
+	.hidden	ffi_call_LINUX64
+	.globl	ffi_call_LINUX64
 	.section	".opd","aw"
 	.align	3
 ffi_call_LINUX64:
+#ifdef _CALL_LINUX
+	.quad	.L.ffi_call_LINUX64,.TOC.@tocbase,0
+	.type	ffi_call_LINUX64,@function
+	.text
+.L.ffi_call_LINUX64:
+#else
+	.hidden	.ffi_call_LINUX64
+	.globl	.ffi_call_LINUX64
 	.quad	.ffi_call_LINUX64,.TOC.@tocbase,0
 	.size	ffi_call_LINUX64,24
 	.type	.ffi_call_LINUX64,@function
 	.text
 .ffi_call_LINUX64:
+#endif
 .LFB1:
 	mflr	%r0
 	std	%r28, -32(%r1)
@@ -58,7 +67,11 @@ ffi_call_LINUX64:
 
 	/* Call ffi_prep_args64.  */
 	mr	%r4, %r1
+#ifdef _CALL_LINUX
+	bl	ffi_prep_args64
+#else
 	bl	.ffi_prep_args64
+#endif
 
 	ld	%r0, 0(%r29)
 	ld	%r2, 8(%r29)
@@ -137,7 +150,11 @@ ffi_call_LINUX64:
 .LFE1:
 	.long	0
 	.byte	0,12,0,1,128,4,0,0
+#ifdef _CALL_LINUX
+	.size	ffi_call_LINUX64,.-.L.ffi_call_LINUX64
+#else
 	.size	.ffi_call_LINUX64,.-.ffi_call_LINUX64
+#endif
 
 	.section	.eh_frame,EH_FRAME_FLAGS,@progbits
 .Lframe1:
