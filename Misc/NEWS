@@ -214,6 +214,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #12098: multiprocessing on Windows now starts child processes
+  using the same sys.flags as the current process.  Initial patch by
+  Sergey Mezentsev.
+
 - Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
 
 - Issue #9090: When a socket with a timeout fails with EWOULDBLOCK or EAGAIN,
