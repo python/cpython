@@ -777,8 +777,9 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_csv', ['_csv.c']) )
 
         # socket(2)
-        exts.append( Extension('_socket', ['socketmodule.c'],
-                               depends = ['socketmodule.h']) )
+        exts.append( Extension('_socket', ['socketmodule.c', 'timemodule.c'],
+                               depends=['socketmodule.h'],
+                               libraries=math_libs) )
         # Detect SSL support for the socket module (via _ssl)
         search_for_ssl_incs_in = [
                               '/usr/local/ssl/include',

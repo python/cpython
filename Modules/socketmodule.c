@@ -92,6 +92,7 @@ Local naming conventions:
 
 #include "Python.h"
 #include "structmember.h"
+#include "timefuncs.h"
 
 #undef MAX
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
@@ -751,43 +752,23 @@ internal_select(PySocketSockObject *s, int writing)
     }
     END_SELECT_LOOP(s)
 */
-#ifdef _WIN32
-/* _PyTime_floattime is exported from timemodule.c which is a builtin on windows
- * but not on linux.  The problem we are fixing is mostly a windows problem so
- * we leave it at that.
- */
-#define HAVE_PYTIME_FLOATTIME
-#endif
-#ifdef HAVE_PYTIME_FLOATTIME
-PyAPI_FUNC(double) _PyTime_floattime(void); /* defined in timemodule.c */
 #define BEGIN_SELECT_LOOP(s) \
     { \
         double deadline, interval = s->sock_timeout; \
         int has_timeout = s->sock_timeout > 0.0; \
         if (has_timeout) { \
-            deadline = _PyTime_floattime() + s->sock_timeout; \
+            deadline = _PyTime_FloatTime() + s->sock_timeout; \
         } \
         while (1) { \
-            errno = 0; \
+            errno = 0;
 
 #define END_SELECT_LOOP(s) \
             if (!has_timeout || \
                 (!CHECK_ERRNO(EWOULDBLOCK) && !CHECK_ERRNO(EAGAIN))) \
                 break; \
-            interval = deadline - _PyTime_floattime(); \
+            interval = deadline - _PyTime_FloatTime(); \
         } \
     }
-#else
-#define BEGIN_SELECT_LOOP(s) \
-    { \
-        double interval = s->sock_timeout; \
-        do { \
-            errno = 0; \
-
-#define END_SELECT_LOOP(s) \
-        } while(0); \
-    }
-#endif
 
 /* Initialize a new socket object. */
 

@@ -1058,7 +1058,7 @@ floatsleep(double secs)
 
 /* export floattime to socketmodule.c */
 PyAPI_FUNC(double)
-_PyTime_floattime(void)
+_PyTime_FloatTime(void)
 {
     return floattime();
 }
