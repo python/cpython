@@ -401,6 +401,11 @@ static DWORD HandleException(EXCEPTION_POINTERS *ptrs,
 {
     *pdw = ptrs->ExceptionRecord->ExceptionCode;
     *record = *ptrs->ExceptionRecord;
+    /* We don't want to catch breakpoint exceptions, they are used to attach
+     * a debugger to the process.
+     */
+    if (*pdw == EXCEPTION_BREAKPOINT)
+        return EXCEPTION_CONTINUE_SEARCH;
     return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif
