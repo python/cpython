@@ -37,6 +37,7 @@ import weakref
 import atexit
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
+from subprocess import _args_from_interpreter_flags
 
 from multiprocessing.process import current_process, active_children
 
