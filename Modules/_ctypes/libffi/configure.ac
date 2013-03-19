@@ -1,11 +1,11 @@
 dnl Process this with autoconf to create configure
 #
-# file from libffi - slightly patched for ctypes
+# file from libffi - slightly patched for Python's ctypes
 #
 
 AC_PREREQ(2.68)
 
-AC_INIT([libffi], [3.0.12], [http://github.com/atgreen/libffi/issues])
+AC_INIT([libffi], [3.0.13], [http://github.com/atgreen/libffi/issues])
 AC_CONFIG_HEADERS([fficonfig.h])
 
 AC_CANONICAL_SYSTEM
@@ -150,8 +150,8 @@ case "$host" in
 	;;
 
   i*86-*-nto-qnx*) 
-	TARGET=X86; TARGETDIR=x86
-	;;
+        TARGET=X86; TARGETDIR=x86
+        ;;
 
   x86_64-*-darwin*)
 	TARGET=X86_DARWIN; TARGETDIR=x86
@@ -204,6 +204,10 @@ case "$host" in
 
   moxie-*-*)
 	TARGET=MOXIE; TARGETDIR=moxie
+	;;
+
+  metag-*-*)
+	TARGET=METAG; TARGETDIR=metag
 	;;
 
   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
@@ -285,6 +289,7 @@ AM_CONDITIONAL(IA64, test x$TARGET = xIA64)
 AM_CONDITIONAL(M32R, test x$TARGET = xM32R)
 AM_CONDITIONAL(M68K, test x$TARGET = xM68K)
 AM_CONDITIONAL(MICROBLAZE, test x$TARGET = xMICROBLAZE)
+AM_CONDITIONAL(METAG, test x$TARGET = xMETAG)
 AM_CONDITIONAL(MOXIE, test x$TARGET = xMOXIE)
 AM_CONDITIONAL(POWERPC, test x$TARGET = xPOWERPC)
 AM_CONDITIONAL(POWERPC_AIX, test x$TARGET = xPOWERPC_AIX)
@@ -362,10 +367,10 @@ fi
 if test x$TARGET = xX86 || test x$TARGET = xX86_WIN32 || test x$TARGET = xX86_64; then
     AC_CACHE_CHECK([assembler supports pc related relocs],
 	libffi_cv_as_x86_pcrel, [
-	libffi_cv_as_x86_pcrel=no
+	libffi_cv_as_x86_pcrel=yes
 	echo '.text; foo: nop; .data; .long foo-.; .text' > conftest.s
-	if $CC $CFLAGS -c conftest.s > /dev/null 2>&1; then
-	    libffi_cv_as_x86_pcrel=yes
+	if $CC $CFLAGS -c conftest.s 2>&1 | grep -i warning > /dev/null; then
+	    libffi_cv_as_x86_pcrel=no
 	fi
 	])
     if test "x$libffi_cv_as_x86_pcrel" = xyes; then
@@ -551,7 +556,7 @@ if test "x$GCC" = "xyes"; then
   multi_os_directory=`$CC -print-multi-os-directory`
   case $multi_os_directory in
     .) ;; # Avoid trailing /.
-    *) toolexeclibdir=$toolexeclibdir/$multi_os_directory ;;
+    ../*) toolexeclibdir=$toolexeclibdir/$multi_os_directory ;;
   esac
   AC_SUBST(toolexecdir)
 else

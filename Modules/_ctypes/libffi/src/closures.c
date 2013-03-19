@@ -189,8 +189,6 @@ emutramp_enabled_check (void)
 
 #define is_emutramp_enabled() (emutramp_enabled >= 0 ? emutramp_enabled \
                                : (emutramp_enabled = emutramp_enabled_check ()))
-#else
-#define is_emutramp_enabled() 0
 #endif /* FFI_MMAP_EXEC_EMUTRAMP_PAX */
 
 #elif defined (__CYGWIN__) || defined(__INTERIX)
@@ -201,6 +199,10 @@ emutramp_enabled_check (void)
 #define is_selinux_enabled() 0
 
 #endif /* !defined(X86_WIN32) && !defined(X86_WIN64) */
+
+#ifndef FFI_MMAP_EXEC_EMUTRAMP_PAX
+#define is_emutramp_enabled() 0
+#endif /* FFI_MMAP_EXEC_EMUTRAMP_PAX */
 
 /* Declare all functions defined in dlmalloc.c as static.  */
 static void *dlmalloc(size_t);

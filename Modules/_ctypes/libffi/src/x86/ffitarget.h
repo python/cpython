@@ -61,9 +61,8 @@ typedef unsigned long long     ffi_arg;
 typedef long long              ffi_sarg;
 #endif
 #else
-#if defined __x86_64__ && defined __ILP32__
+#if defined __x86_64__ && !defined __LP64__
 #define FFI_SIZEOF_ARG 8
-#define FFI_SIZEOF_JAVA_RAW  4
 typedef unsigned long long     ffi_arg;
 typedef long long              ffi_sarg;
 #else

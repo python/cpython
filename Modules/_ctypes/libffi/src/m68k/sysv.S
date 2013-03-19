@@ -2,10 +2,9 @@
 	
    sysv.S - Copyright (c) 2012 Alan Hourihane
 	    Copyright (c) 1998, 2012 Andreas Schwab
-	    Copyright (c) 2008 Red Hat, Inc.
-	    Copyright (c) 2012 Thorsten Glaser
-
-   m68k Foreign Function Interface
+	    Copyright (c) 2008 Red Hat, Inc. 
+   
+   m68k Foreign Function Interface 
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -169,22 +168,8 @@ retstruct1:
 
 retstruct2:
 	btst	#7,%d2
-	jbeq	retsint8
-	move.w	%d0,(%a1)
-	jbra	epilogue
-
-retsint8:
-	btst	#8,%d2
-	jbeq	retsint16
-	extb.l	%d0
-	move.l	%d0,(%a1)
-	jbra	epilogue
-
-retsint16:
-	btst	#9,%d2
 	jbeq	noretval
-	ext.l	%d0
-	move.l	%d0,(%a1)
+	move.w	%d0,(%a1)
 
 noretval:
 epilogue:
@@ -216,10 +201,8 @@ CALLFUNC(ffi_closure_SYSV):
 	lsr.l	#1,%d0
 	jne	1f
 	jcc	.Lcls_epilogue
-	| CIF_FLAGS_INT
 	move.l	-12(%fp),%d0
 .Lcls_epilogue:
-	| no CIF_FLAGS_*
 	unlk	%fp
 	rts
 1:
@@ -227,7 +210,6 @@ CALLFUNC(ffi_closure_SYSV):
 	lsr.l	#2,%d0
 	jne	1f
 	jcs	.Lcls_ret_float
-	| CIF_FLAGS_DINT
 	move.l	(%a0)+,%d0
 	move.l	(%a0),%d1
 	jra	.Lcls_epilogue
@@ -242,7 +224,6 @@ CALLFUNC(ffi_closure_SYSV):
 	lsr.l	#2,%d0
 	jne	1f
 	jcs	.Lcls_ret_ldouble
-	| CIF_FLAGS_DOUBLE
 #if defined(__MC68881__) || defined(__HAVE_68881__)
 	fmove.d	(%a0),%fp0
 #else
@@ -261,30 +242,16 @@ CALLFUNC(ffi_closure_SYSV):
 	jra	.Lcls_epilogue
 1:
 	lsr.l	#2,%d0
-	jne	1f
+	jne	.Lcls_ret_struct2
 	jcs	.Lcls_ret_struct1
-	| CIF_FLAGS_POINTER
 	move.l	(%a0),%a0
 	move.l	%a0,%d0
 	jra	.Lcls_epilogue
 .Lcls_ret_struct1:
 	move.b	(%a0),%d0
 	jra	.Lcls_epilogue
-1:
-	lsr.l	#2,%d0
-	jne	1f
-	jcs	.Lcls_ret_sint8
-	| CIF_FLAGS_STRUCT2
+.Lcls_ret_struct2:
 	move.w	(%a0),%d0
-	jra	.Lcls_epilogue
-.Lcls_ret_sint8:
-	move.l	(%a0),%d0
-	extb.l	%d0
-	jra	.Lcls_epilogue
-1:
-	| CIF_FLAGS_SINT16
-	move.l	(%a0),%d0
-	ext.l	%d0
 	jra	.Lcls_epilogue
 	CFI_ENDPROC()
 
