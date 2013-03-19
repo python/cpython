@@ -360,7 +360,7 @@ You must first describe the structure to @samp{libffi} by creating a
 new @code{ffi_type} object for it.
 
 @tindex ffi_type
-@deftp ffi_type
+@deftp {Data type} ffi_type
 The @code{ffi_type} has the following members:
 @table @code
 @item size_t size

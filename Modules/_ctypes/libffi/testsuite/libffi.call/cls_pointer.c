@@ -35,7 +35,7 @@ int main (void)
         void *code;
 	ffi_closure*	pcl = ffi_closure_alloc(sizeof(ffi_closure), &code);
 	void*			args[3];
-//	ffi_type		cls_pointer_type;
+	/*	ffi_type		cls_pointer_type; */
 	ffi_type*		arg_types[3];
 
 /*	cls_pointer_type.size = sizeof(void*);

@@ -193,7 +193,11 @@ Core and Builtins
 Library
 -------
 
-Issue #16880: Do not assume _imp.load_dynamic() is defined in the imp module.
+- Issue #17192: Update the ctypes module's libffi to v3.0.13.  This
+  specifically addresses a stack misalignment issue on x86 and issues on
+  some more recent platforms.
+
+- Issue #16880: Do not assume _imp.load_dynamic() is defined in the imp module.
 
 - Issue #16389: Fixed a performance regression relative to Python 3.1 in the
   caching of compiled regular expressions.

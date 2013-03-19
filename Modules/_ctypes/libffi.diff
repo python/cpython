@@ -1,24 +1,19 @@
---- libffi.orig/configure.ac	2012-04-12 05:10:51.000000000 +0200
-+++ libffi/configure.ac	2012-06-26 15:42:42.477498938 +0200
-@@ -1,4 +1,7 @@
- dnl Process this with autoconf to create configure
-+#
-+# file from libffi - slightly patched for ctypes
-+#
- 
- AC_PREREQ(2.68)
- 
-@@ -114,6 +117,9 @@
-   i?86-*-solaris2.1[[0-9]]*)
- 	TARGET=X86_64; TARGETDIR=x86
+diff -r -N -u libffi.orig/autom4te.cache/output.0 libffi/autom4te.cache/output.0
+diff -r -N -u libffi.orig/configure libffi/configure
+--- libffi.orig/configure	2013-03-17 15:37:50.000000000 -0700
++++ libffi/configure	2013-03-18 15:11:39.611575163 -0700
+@@ -13368,6 +13368,10 @@
+ 	fi
  	;;
-+  i*86-*-nto-qnx*) 
+ 
++  i*86-*-nto-qnx*)
 +        TARGET=X86; TARGETDIR=x86
 +        ;;
-   i?86-*-*)
- 	TARGET=X86_64; TARGETDIR=x86
++
+   x86_64-*-darwin*)
+ 	TARGET=X86_DARWIN; TARGETDIR=x86
  	;;
-@@ -131,12 +137,12 @@
+@@ -13426,12 +13430,12 @@
  	;;
  
    mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
@@ -32,17 +27,85 @@
 +	TARGET=MIPS_IRIX; TARGETDIR=mips
  	;;
  
-   moxie-*-*)
-@@ -212,7 +218,7 @@
+   powerpc*-*-linux* | powerpc-*-sysv*)
+@@ -13491,7 +13495,7 @@
+   as_fn_error $? "\"libffi has not been ported to $host.\"" "$LINENO" 5
+ fi
+ 
+- if test x$TARGET = xMIPS; then
++ if expr x$TARGET : 'xMIPS' > /dev/null; then
+   MIPS_TRUE=
+   MIPS_FALSE='#'
+ else
+@@ -14862,6 +14866,12 @@
+ ac_config_files="$ac_config_files include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc"
+ 
+ 
++ac_config_links="$ac_config_links include/ffi_common.h:include/ffi_common.h"
++
++
++ac_config_files="$ac_config_files fficonfig.py"
++
++
+ cat >confcache <<\_ACEOF
+ # This file is a shell script that caches the results of configure
+ # tests run on this system so they can be shared between configure
+@@ -16047,6 +16057,8 @@
+     "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
+     "man/Makefile") CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
+     "libffi.pc") CONFIG_FILES="$CONFIG_FILES libffi.pc" ;;
++    "include/ffi_common.h") CONFIG_LINKS="$CONFIG_LINKS include/ffi_common.h:include/ffi_common.h" ;;
++    "fficonfig.py") CONFIG_FILES="$CONFIG_FILES fficonfig.py" ;;
+ 
+   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
+   esac
+diff -r -N -u libffi.orig/configure.ac libffi/configure.ac
+--- libffi.orig/configure.ac	2013-03-17 15:37:50.000000000 -0700
++++ libffi/configure.ac	2013-03-18 15:11:11.392989136 -0700
+@@ -1,4 +1,7 @@
+ dnl Process this with autoconf to create configure
++#
++# file from libffi - slightly patched for Python's ctypes
++#
+ 
+ AC_PREREQ(2.68)
+ 
+@@ -146,6 +149,10 @@
+ 	fi	  
+ 	;;
+ 
++  i*86-*-nto-qnx*) 
++        TARGET=X86; TARGETDIR=x86
++        ;;
++
+   x86_64-*-darwin*)
+ 	TARGET=X86_DARWIN; TARGETDIR=x86
+ 	;;
+@@ -204,12 +211,12 @@
+ 	;;
+ 
+   mips-sgi-irix5.* | mips-sgi-irix6.* | mips*-*-rtems*)
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+   mips*-*-linux* | mips*-*-openbsd*)
+ 	# Support 128-bit long double for NewABI.
+ 	HAVE_LONG_DOUBLE='defined(__mips64)'
+-	TARGET=MIPS; TARGETDIR=mips
++	TARGET=MIPS_IRIX; TARGETDIR=mips
+ 	;;
+ 
+   powerpc*-*-linux* | powerpc-*-sysv*)
+@@ -269,7 +276,7 @@
    AC_MSG_ERROR(["libffi has not been ported to $host."])
  fi
  
 -AM_CONDITIONAL(MIPS, test x$TARGET = xMIPS)
 +AM_CONDITIONAL(MIPS,[expr x$TARGET : 'xMIPS' > /dev/null])
+ AM_CONDITIONAL(BFIN, test x$TARGET = xBFIN)
  AM_CONDITIONAL(SPARC, test x$TARGET = xSPARC)
  AM_CONDITIONAL(X86, test x$TARGET = xX86)
- AM_CONDITIONAL(X86_FREEBSD, test x$TARGET = xX86_FREEBSD)
-@@ -499,4 +505,8 @@
+@@ -567,4 +574,8 @@
  
  AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile man/Makefile libffi.pc)
  
@@ -104,17 +167,3 @@ diff -urN libffi-3.0.11/src/dlmalloc.c libffi/src/dlmalloc.c
  #endif  /* WIN32 */
  
  #ifdef __OS2__
-diff -urN libffi-3.0.11/src/sparc/v8.S libffi/src/sparc/v8.S
---- libffi-3.0.11/src/sparc/v8.S	2012-04-12 04:46:06.000000000 +0200
-+++ libffi/src/sparc/v8.S	2011-03-13 05:15:04.000000000 +0100
-@@ -213,6 +213,10 @@
- 	be,a	done1
- 	 ldd	[%fp-8], %i0
- 
-+	cmp	%o0, FFI_TYPE_UINT64
-+	be,a	done1
-+	 ldd	[%fp-8], %i0
-+
- 	ld	[%fp-8], %i0
- done1:
- 	jmp	%i7+8

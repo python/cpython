@@ -302,10 +302,10 @@ ffi_prep_args (extended_cif *ecif, unsigned long *const stack)
     }
 
   /* Check that we didn't overrun the stack...  */
-  //FFI_ASSERT(gpr_base <= stacktop - ASM_NEEDS_REGISTERS);
-  //FFI_ASSERT((unsigned *)fpr_base
-  //	     <= stacktop - ASM_NEEDS_REGISTERS - NUM_GPR_ARG_REGISTERS);
-  //FFI_ASSERT(flags & FLAG_4_GPR_ARGUMENTS || intarg_count <= 4);
+  /* FFI_ASSERT(gpr_base <= stacktop - ASM_NEEDS_REGISTERS);
+     FFI_ASSERT((unsigned *)fpr_base
+     	     <= stacktop - ASM_NEEDS_REGISTERS - NUM_GPR_ARG_REGISTERS);
+     FFI_ASSERT(flags & FLAG_4_GPR_ARGUMENTS || intarg_count <= 4);  */
 }
 
 #if defined(POWERPC_DARWIN64)

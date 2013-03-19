@@ -36,6 +36,7 @@
 #
 #   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
 #   Copyright (c) 2008 Matteo Frigo
+#   Copyright (c) 2012 Tsukasa Oi
 #
 #   This program is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -63,7 +64,7 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 10
+#serial 11
 
 AC_DEFUN([AX_GCC_ARCHFLAG],
 [AC_REQUIRE([AC_PROG_CC])
@@ -84,7 +85,7 @@ if test "x$ax_gcc_arch" = xyes; then
 ax_gcc_arch=""
 if test "$cross_compiling" = no; then
 case $host_cpu in
-  i[[3456]]86*|x86_64*) # use cpuid codes, in part from x86info-1.7 by D. Jones
+  i[[3456]]86*|x86_64*) # use cpuid codes
      AX_GCC_X86_CPUID(0)
      AX_GCC_X86_CPUID(1)
      case $ax_cv_gcc_x86_cpuid_0 in
@@ -92,18 +93,24 @@ case $host_cpu in
           case $ax_cv_gcc_x86_cpuid_1 in
 	    *5[[48]]?:*:*:*) ax_gcc_arch="pentium-mmx pentium" ;;
 	    *5??:*:*:*) ax_gcc_arch=pentium ;;
-	    *6[[3456]]?:*:*:*) ax_gcc_arch="pentium2 pentiumpro" ;;
-	    *6a?:*[[01]]:*:*) ax_gcc_arch="pentium2 pentiumpro" ;;
-	    *6a?:*[[234]]:*:*) ax_gcc_arch="pentium3 pentiumpro" ;;
-	    *6[[9d]]?:*:*:*) ax_gcc_arch="pentium-m pentium3 pentiumpro" ;;
-	    *6[[78b]]?:*:*:*) ax_gcc_arch="pentium3 pentiumpro" ;;
-	    *6??:*:*:*) ax_gcc_arch=pentiumpro ;;
-            *f3[[347]]:*:*:*|*f4[1347]:*:*:*)
+	    *0?6[[3456]]?:*:*:*) ax_gcc_arch="pentium2 pentiumpro" ;;
+	    *0?6a?:*[[01]]:*:*) ax_gcc_arch="pentium2 pentiumpro" ;;
+	    *0?6a?:*[[234]]:*:*) ax_gcc_arch="pentium3 pentiumpro" ;;
+	    *0?6[[9de]]?:*:*:*) ax_gcc_arch="pentium-m pentium3 pentiumpro" ;;
+	    *0?6[[78b]]?:*:*:*) ax_gcc_arch="pentium3 pentiumpro" ;;
+	    *0?6f?:*:*:*|*1?66?:*:*:*) ax_gcc_arch="core2 pentium-m pentium3 pentiumpro" ;;
+	    *1?6[[7d]]?:*:*:*) ax_gcc_arch="penryn core2 pentium-m pentium3 pentiumpro" ;;
+	    *1?6[[aef]]?:*:*:*|*2?6[[5cef]]?:*:*:*) ax_gcc_arch="corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *1?6c?:*:*:*|*[[23]]?66?:*:*:*) ax_gcc_arch="atom core2 pentium-m pentium3 pentiumpro" ;;
+	    *2?6[[ad]]?:*:*:*) ax_gcc_arch="corei7-avx corei7 core2 pentium-m pentium3 pentiumpro" ;;
+	    *0?6??:*:*:*) ax_gcc_arch=pentiumpro ;;
+	    *6??:*:*:*) ax_gcc_arch="core2 pentiumpro" ;;
+	    ?000?f3[[347]]:*:*:*|?000?f4[1347]:*:*:*|?000?f6?:*:*:*)
 		case $host_cpu in
-                  x86_64*) ax_gcc_arch="nocona pentium4 pentiumpro" ;;
-                  *) ax_gcc_arch="prescott pentium4 pentiumpro" ;;
-                esac ;;
-            *f??:*:*:*) ax_gcc_arch="pentium4 pentiumpro";;
+	          x86_64*) ax_gcc_arch="nocona pentium4 pentiumpro" ;;
+	          *) ax_gcc_arch="prescott pentium4 pentiumpro" ;;
+	        esac ;;
+	    ?000?f??:*:*:*) ax_gcc_arch="pentium4 pentiumpro";;
           esac ;;
        *:68747541:*:*) # AMD
           case $ax_cv_gcc_x86_cpuid_1 in
@@ -121,10 +128,13 @@ case $host_cpu in
 			ax_gcc_arch="athlon-xp athlon-4 athlon k7" ;;
                  *) ax_gcc_arch="athlon-4 athlon k7" ;;
 	       esac ;;
-	    *f[[4cef8b]]?:*:*:*) ax_gcc_arch="athlon64 k8" ;;
-	    *f5?:*:*:*) ax_gcc_arch="opteron k8" ;;
-	    *f7?:*:*:*) ax_gcc_arch="athlon-fx opteron k8" ;;
-	    *f??:*:*:*) ax_gcc_arch="k8" ;;
+	    ?00??f[[4cef8b]]?:*:*:*) ax_gcc_arch="athlon64 k8" ;;
+	    ?00??f5?:*:*:*) ax_gcc_arch="opteron k8" ;;
+	    ?00??f7?:*:*:*) ax_gcc_arch="athlon-fx opteron k8" ;;
+	    ?00??f??:*:*:*) ax_gcc_arch="k8" ;;
+	    ?05??f??:*:*:*) ax_gcc_arch="btver1 amdfam10 k8" ;;
+	    ?06??f??:*:*:*) ax_gcc_arch="bdver1 amdfam10 k8" ;;
+	    *f??:*:*:*) ax_gcc_arch="amdfam10 k8" ;;
           esac ;;
 	*:746e6543:*:*) # IDT
 	   case $ax_cv_gcc_x86_cpuid_1 in

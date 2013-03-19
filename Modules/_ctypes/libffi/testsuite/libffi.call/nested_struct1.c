@@ -156,6 +156,6 @@ int main (void)
   CHECK( res_dbl.e.ii == (e_dbl.c + f_dbl.ii + g_dbl.e.ii));
   CHECK( res_dbl.e.dd == (e_dbl.a + f_dbl.dd + g_dbl.e.dd));
   CHECK( res_dbl.e.ff == (e_dbl.b + f_dbl.ff + g_dbl.e.ff));
-  //  CHECK( 1 == 0);
+  /*  CHECK( 1 == 0); */
   exit(0);
 }
