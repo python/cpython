@@ -81,6 +81,13 @@ int main (void)
   ffi_type cls_struct_type, cls_struct_type1, cls_struct_type2;
   ffi_type* dbl_arg_types[5];
 
+  struct cls_struct_16byte1 e_dbl = { 9.0, 2.0, 6};
+  struct cls_struct_16byte2 f_dbl = { 1, 2.0, 3.0};
+  struct cls_struct_combined g_dbl = {{4.0, 5.0, 6},
+				      {3, 1.0, 8.0}};
+  struct cls_struct_16byte1 h_dbl = { 3.0, 2.0, 4};
+  struct cls_struct_combined res_dbl;
+
   cls_struct_type.size = 0;
   cls_struct_type.alignment = 0;
   cls_struct_type.type = FFI_TYPE_STRUCT;
@@ -95,13 +102,6 @@ int main (void)
   cls_struct_type2.alignment = 0;
   cls_struct_type2.type = FFI_TYPE_STRUCT;
   cls_struct_type2.elements = cls_struct_fields2;
-
-  struct cls_struct_16byte1 e_dbl = { 9.0, 2.0, 6};
-  struct cls_struct_16byte2 f_dbl = { 1, 2.0, 3.0};
-  struct cls_struct_combined g_dbl = {{4.0, 5.0, 6},
-				      {3, 1.0, 8.0}};
-  struct cls_struct_16byte1 h_dbl = { 3.0, 2.0, 4};
-  struct cls_struct_combined res_dbl;
 
   cls_struct_fields[0] = &ffi_type_double;
   cls_struct_fields[1] = &ffi_type_float;
@@ -156,6 +156,6 @@ int main (void)
   CHECK( res_dbl.e.ii == (e_dbl.c + f_dbl.ii + g_dbl.e.ii));
   CHECK( res_dbl.e.dd == (e_dbl.a + f_dbl.dd + g_dbl.e.dd));
   CHECK( res_dbl.e.ff == (e_dbl.b + f_dbl.ff + g_dbl.e.ff));
-  //  CHECK( 1 == 0);
+  /*  CHECK( 1 == 0); */
   exit(0);
 }

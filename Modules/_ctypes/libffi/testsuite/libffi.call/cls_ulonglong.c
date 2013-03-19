@@ -11,7 +11,7 @@
 static void cls_ret_ulonglong_fn(ffi_cif* cif __UNUSED__, void* resp,
 				 void** args, void* userdata __UNUSED__)
 {
-  *(unsigned long long *)resp=  *(unsigned long long *)args[0];
+  *(unsigned long long *)resp= 0xfffffffffffffffLL ^ *(unsigned long long *)args[0];
 
   printf("%" PRIuLL ": %" PRIuLL "\n",*(unsigned long long *)args[0],
 	 *(unsigned long long *)(resp));
@@ -34,14 +34,14 @@ int main (void)
 		     &ffi_type_uint64, cl_arg_types) == FFI_OK);
   CHECK(ffi_prep_closure_loc(pcl, &cif, cls_ret_ulonglong_fn, NULL, code)  == FFI_OK);
   res = (*((cls_ret_ulonglong)code))(214LL);
-  /* { dg-output "214: 214" } */
+  /* { dg-output "214: 1152921504606846761" } */
   printf("res: %" PRIdLL "\n", res);
-  /* { dg-output "\nres: 214" } */
+  /* { dg-output "\nres: 1152921504606846761" } */
 
   res = (*((cls_ret_ulonglong)code))(9223372035854775808LL);
-  /* { dg-output "\n9223372035854775808: 9223372035854775808" } */
+  /* { dg-output "\n9223372035854775808: 8070450533247928831" } */
   printf("res: %" PRIdLL "\n", res);
-  /* { dg-output "\nres: 9223372035854775808" } */
+  /* { dg-output "\nres: 8070450533247928831" } */
 
   exit(0);
 }

@@ -1,6 +1,7 @@
 /* -----------------------------------------------------------------------
-   darwin_closure.S - Copyright (c) 2002, 2003, 2004, Free Software Foundation,
-   Inc. based on ppc_closure.S
+   darwin_closure.S - Copyright (c) 2002, 2003, 2004, 2010, 
+   Free Software Foundation, Inc. 
+   based on ppc_closure.S
 
    PowerPC Assembly glue.
 
@@ -33,91 +34,177 @@
 #define MODE_CHOICE(x, y) x
 #endif
 
-#define lgu     MODE_CHOICE(lwzu, ldu)
+#define machine_choice	MODE_CHOICE(ppc7400,ppc64)
 
-#define g_long  MODE_CHOICE(long, quad)         /* usage is ".g_long" */
+; Define some pseudo-opcodes for size-independent load & store of GPRs ...
+#define lgu		MODE_CHOICE(lwzu, ldu)
+#define lg		MODE_CHOICE(lwz,ld)
+#define sg		MODE_CHOICE(stw,std)
+#define sgu		MODE_CHOICE(stwu,stdu)
 
-#define LOG2_GPR_BYTES  MODE_CHOICE(2,3)        /* log2(GPR_BYTES) */
+; ... and the size of GPRs and their storage indicator.
+#define GPR_BYTES	MODE_CHOICE(4,8)
+#define LOG2_GPR_BYTES	MODE_CHOICE(2,3)	/* log2(GPR_BYTES) */
+#define g_long		MODE_CHOICE(long, quad)	/* usage is ".g_long" */
+
+; From the ABI doc: "Mac OS X ABI Function Call Guide" Version 2009-02-04.
+#define LINKAGE_SIZE	MODE_CHOICE(24,48)
+#define PARAM_AREA	MODE_CHOICE(32,64)
+
+#define SAVED_CR_OFFSET	MODE_CHOICE(4,8)	/* save position for CR */
+#define SAVED_LR_OFFSET	MODE_CHOICE(8,16)	/* save position for lr */
+
+/* WARNING: if ffi_type is changed... here be monsters.  
+   Offsets of items within the result type.  */
+#define FFI_TYPE_TYPE	MODE_CHOICE(6,10)
+#define FFI_TYPE_ELEM	MODE_CHOICE(8,16)
+
+#define SAVED_FPR_COUNT 13
+#define FPR_SIZE	8
+/* biggest m64 struct ret is 8GPRS + 13FPRS = 168 bytes - rounded to 16bytes = 176. */
+#define RESULT_BYTES	MODE_CHOICE(16,176)
+
+; The whole stack frame **MUST** be 16byte-aligned.
+#define SAVE_SIZE (((LINKAGE_SIZE+PARAM_AREA+SAVED_FPR_COUNT*FPR_SIZE+RESULT_BYTES)+15) & -16LL)
+#define PAD_SIZE (SAVE_SIZE-(LINKAGE_SIZE+PARAM_AREA+SAVED_FPR_COUNT*FPR_SIZE+RESULT_BYTES))
+
+#define PARENT_PARM_BASE (SAVE_SIZE+LINKAGE_SIZE)
+#define FP_SAVE_BASE (LINKAGE_SIZE+PARAM_AREA)
+
+#if defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) && __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1050
+; We no longer need the pic symbol stub for Darwin >= 9.
+#define BLCLS_HELP _ffi_closure_helper_DARWIN
+#define STRUCT_RETVALUE_P _darwin64_struct_ret_by_value_p
+#define PASS_STR_FLOATS _darwin64_pass_struct_floats
+#undef WANT_STUB
+#else
+#define BLCLS_HELP L_ffi_closure_helper_DARWIN$stub
+#define STRUCT_RETVALUE_P L_darwin64_struct_ret_by_value_p$stub
+#define PASS_STR_FLOATS L_darwin64_pass_struct_floats$stub
+#define WANT_STUB
+#endif
+
+/* m32/m64
+
+   The stack layout looks like this:
+
+   |   Additional params...			| |     Higher address
+   ~						~ ~
+   |   Parameters      (at least 8*4/8=32/64)	| | NUM_GPR_ARG_REGISTERS
+   |--------------------------------------------| |
+   |   TOC=R2 (AIX) Reserved (Darwin)   4/8	| |
+   |--------------------------------------------| |
+   |   Reserved                       2*4/8	| |
+   |--------------------------------------------| |
+   |   Space for callee`s LR		4/8	| |
+   |--------------------------------------------| |
+   |   Saved CR [low word for m64]      4/8	| |
+   |--------------------------------------------| |
+   |   Current backchain pointer	4/8	|-/ Parent`s frame.
+   |--------------------------------------------| <+ <<< on entry to
+   |   Result Bytes		       16/176	| |
+   |--------------------------------------------| |
+   ~   padding to 16-byte alignment		~ ~
+   |--------------------------------------------| |
+   |   NUM_FPR_ARG_REGISTERS slots		| |
+   |   here fp13 .. fp1		       13*8	| |
+   |--------------------------------------------| |
+   |   R3..R10			  8*4/8=32/64	| | NUM_GPR_ARG_REGISTERS
+   |--------------------------------------------| |
+   |   TOC=R2 (AIX) Reserved (Darwin)   4/8	| |
+   |--------------------------------------------| |	stack	|
+   |   Reserved [compiler,binder]     2*4/8	| |	grows	|
+   |--------------------------------------------| |	down	V
+   |   Space for callees LR		4/8	| |
+   |--------------------------------------------| |	lower addresses
+   |   Saved CR [low word for m64]      4/8	| |
+   |--------------------------------------------| |     stack pointer here
+   |   Current backchain pointer	4/8	|-/	during
+   |--------------------------------------------|   <<<	call.
+
+*/
 
 	.file	"darwin_closure.S"
-.text
-	.align LOG2_GPR_BYTES
-.globl _ffi_closure_ASM
 
-.text
+	.machine machine_choice
+
+	.text
+	.globl _ffi_closure_ASM
 	.align LOG2_GPR_BYTES
 _ffi_closure_ASM:
 LFB1:
-	mflr	r0		/* extract return address  */
-	stw	r0,8(r1)	/* save the return address  */
+Lstartcode:
+	mflr	r0			/* extract return address  */
+	sg	r0,SAVED_LR_OFFSET(r1)	/* save the return address  */
 LCFI0:
-	/* 24 Bytes (Linkage Area)
-	   32 Bytes (outgoing parameter area, always reserved)
-	   104 Bytes (13*8 from FPR)
-	   16 Bytes (result)
-	   176 Bytes  */
-
-	stwu	r1,-176(r1)	/* skip over caller save area
-				keep stack aligned to 16.  */
+	sgu	r1,-SAVE_SIZE(r1)	/* skip over caller save area
+					keep stack aligned to 16.  */
 LCFI1:
 	/* We want to build up an area for the parameters passed
 	   in registers. (both floating point and integer)  */
 
-	/* We store gpr 3 to gpr 10 (aligned to 4)
-	   in the parents outgoing area.  */
-	stw   r3,200(r1)
-	stw   r4,204(r1)
-	stw   r5,208(r1)
-	stw   r6,212(r1)
-	stw   r7,216(r1)
-	stw   r8,220(r1)
-	stw   r9,224(r1)
-	stw   r10,228(r1)
+	/* Put gpr 3 to gpr 10 in the parents outgoing area...
+	   ... the remainder of any params that overflowed the regs will
+	   follow here.  */
+	sg	r3, (PARENT_PARM_BASE                )(r1)
+	sg	r4, (PARENT_PARM_BASE + GPR_BYTES    )(r1)
+	sg	r5, (PARENT_PARM_BASE + GPR_BYTES * 2)(r1)
+	sg	r6, (PARENT_PARM_BASE + GPR_BYTES * 3)(r1)
+	sg	r7, (PARENT_PARM_BASE + GPR_BYTES * 4)(r1)
+	sg	r8, (PARENT_PARM_BASE + GPR_BYTES * 5)(r1)
+	sg	r9, (PARENT_PARM_BASE + GPR_BYTES * 6)(r1)
+	sg	r10,(PARENT_PARM_BASE + GPR_BYTES * 7)(r1)
 
-	/* We save fpr 1 to fpr 13. (aligned to 8)  */
-	stfd  f1,56(r1)
-	stfd  f2,64(r1)
-	stfd  f3,72(r1)
-	stfd  f4,80(r1)
-	stfd  f5,88(r1)
-	stfd  f6,96(r1)
-	stfd  f7,104(r1)
-	stfd  f8,112(r1)
-	stfd  f9,120(r1)
-	stfd  f10,128(r1)
-	stfd  f11,136(r1)
-	stfd  f12,144(r1)
-	stfd  f13,152(r1)
+	/* We save fpr 1 to fpr 14 in our own save frame.  */
+	stfd	f1, (FP_SAVE_BASE                 )(r1)
+	stfd	f2, (FP_SAVE_BASE +  FPR_SIZE     )(r1)
+	stfd	f3, (FP_SAVE_BASE +  FPR_SIZE * 2 )(r1)
+	stfd	f4, (FP_SAVE_BASE +  FPR_SIZE * 3 )(r1)
+	stfd	f5, (FP_SAVE_BASE +  FPR_SIZE * 4 )(r1)
+	stfd	f6, (FP_SAVE_BASE +  FPR_SIZE * 5 )(r1)
+	stfd	f7, (FP_SAVE_BASE +  FPR_SIZE * 6 )(r1)
+	stfd	f8, (FP_SAVE_BASE +  FPR_SIZE * 7 )(r1)
+	stfd	f9, (FP_SAVE_BASE +  FPR_SIZE * 8 )(r1)
+	stfd	f10,(FP_SAVE_BASE +  FPR_SIZE * 9 )(r1)
+	stfd	f11,(FP_SAVE_BASE +  FPR_SIZE * 10)(r1)
+	stfd	f12,(FP_SAVE_BASE +  FPR_SIZE * 11)(r1)
+	stfd	f13,(FP_SAVE_BASE +  FPR_SIZE * 12)(r1)
 
 	/* Set up registers for the routine that actually does the work
 	   get the context pointer from the trampoline.  */
-	mr r3,r11
+	mr	r3,r11
 
 	/* Now load up the pointer to the result storage.  */
-	addi r4,r1,160
+	addi	r4,r1,(SAVE_SIZE-RESULT_BYTES)
 
 	/* Now load up the pointer to the saved gpr registers.  */
-	addi r5,r1,200
+	addi	r5,r1,PARENT_PARM_BASE
 
 	/* Now load up the pointer to the saved fpr registers.  */
-	addi r6,r1,56
+	addi	r6,r1,FP_SAVE_BASE
 
 	/* Make the call.  */
-	bl	Lffi_closure_helper_DARWIN$stub
+	bl	BLCLS_HELP
 
-	/* Now r3 contains the return type
-	   so use it to look up in a table
+	/* r3 contains the rtype pointer... save it since we will need
+	   it later.  */
+	sg	r3,LINKAGE_SIZE(r1)	; ffi_type * result_type
+	lg	r0,0(r3)		; size => r0
+	lhz	r3,FFI_TYPE_TYPE(r3)	; type => r3
+
+	/* The helper will have intercepted struture returns and inserted
+	   the caller`s destination address for structs returned by ref.  */
+
+	/* r3 contains the return type  so use it to look up in a table
 	   so we know how to deal with each type.  */
 
-	/* Look up the proper starting point in table
-	   by using return type as offset.  */
-	addi  r5,r1,160		  /* Get pointer to results area.  */
-	bl    Lget_ret_type0_addr /* Get pointer to Lret_type0 into LR.  */
-	mflr  r4		  /* Move to r4.  */
-	slwi  r3,r3,4		  /* Now multiply return type by 16.  */
-	add   r3,r3,r4		  /* Add contents of table to table address.  */
-	mtctr r3
-	bctr			  /* Jump to it.  */
+	addi	r5,r1,(SAVE_SIZE-RESULT_BYTES) /* Otherwise, our return is here.  */
+	bl	Lget_ret_type0_addr	/* Get pointer to Lret_type0 into LR.  */
+	mflr	r4			/* Move to r4.  */
+	slwi	r3,r3,4			/* Now multiply return type by 16.  */
+	add	r3,r3,r4		/* Add contents of table to table address.  */
+	mtctr	r3
+	bctr			 	 /* Jump to it.  */
 LFE1:
 /* Each of the ret_typeX code fragments has to be exactly 16 bytes long
    (4 instructions). For cache effectiveness we align to a 16 byte boundary
@@ -140,7 +227,7 @@ Lret_type0:
 
 /* case FFI_TYPE_INT  */
 Lret_type1:
-	lwz	r3,0(r5)
+	lg	r3,0(r5)
 	b	Lfinish
 	nop
 	nop
@@ -168,85 +255,224 @@ Lret_type4:
 
 /* case FFI_TYPE_UINT8  */
 Lret_type5:
+#if defined(__ppc64__)
+	lbz	r3,7(r5)
+#else
 	lbz	r3,3(r5)
+#endif
 	b	Lfinish
 	nop
 	nop
 
 /* case FFI_TYPE_SINT8  */
 Lret_type6:
+#if defined(__ppc64__)
+	lbz	r3,7(r5)
+#else
 	lbz	r3,3(r5)
+#endif
 	extsb	r3,r3
 	b	Lfinish
 	nop
 
 /* case FFI_TYPE_UINT16  */
 Lret_type7:
+#if defined(__ppc64__)
+	lhz	r3,6(r5)
+#else
 	lhz	r3,2(r5)
+#endif
 	b	Lfinish
 	nop
 	nop
 
 /* case FFI_TYPE_SINT16  */
 Lret_type8:
+#if defined(__ppc64__)
+	lha	r3,6(r5)
+#else
 	lha	r3,2(r5)
+#endif
 	b	Lfinish
 	nop
 	nop
 
 /* case FFI_TYPE_UINT32  */
 Lret_type9:
+#if defined(__ppc64__)
+	lwz	r3,4(r5)
+#else
 	lwz	r3,0(r5)
+#endif
 	b	Lfinish
 	nop
 	nop
 
 /* case FFI_TYPE_SINT32  */
 Lret_type10:
+#if defined(__ppc64__)
+	lwz	r3,4(r5)
+#else
 	lwz	r3,0(r5)
+#endif
 	b	Lfinish
 	nop
 	nop
 
 /* case FFI_TYPE_UINT64  */
 Lret_type11:
+#if defined(__ppc64__)
+	lg	r3,0(r5)
+	b	Lfinish
+	nop
+#else
 	lwz	r3,0(r5)
 	lwz	r4,4(r5)
 	b	Lfinish
+#endif
 	nop
 
 /* case FFI_TYPE_SINT64  */
 Lret_type12:
+#if defined(__ppc64__)
+	lg	r3,0(r5)
+	b	Lfinish
+	nop
+#else
 	lwz	r3,0(r5)
 	lwz	r4,4(r5)
 	b	Lfinish
+#endif
 	nop
 
 /* case FFI_TYPE_STRUCT  */
 Lret_type13:
+#if defined(__ppc64__)
+	lg	r3,0(r5)		; we need at least this...
+	cmpi	0,r0,4
+	bgt	Lstructend		; not a special small case
+	b	Lsmallstruct		; see if we need more.
+#else
+	cmpi	0,r0,4
+	bgt	Lfinish		; not by value
+	lg	r3,0(r5)
 	b	Lfinish
-	nop
+#endif
+/* case FFI_TYPE_POINTER  */
+Lret_type14:
+	lg	r3,0(r5)
+	b	Lfinish
 	nop
 	nop
 
-/* case FFI_TYPE_POINTER  */
-Lret_type14:
-	lwz	r3,0(r5)
-	b	Lfinish
-	nop
-	nop
+#if defined(__ppc64__)
+Lsmallstruct:
+	beq	Lfour			; continuation of Lret13.
+	cmpi	0,r0,3
+	beq	Lfinish			; don`t adjust this - can`t be any floats here...
+	srdi	r3,r3,48
+	cmpi	0,r0,2
+	beq	Lfinish			; .. or here ..
+	srdi	r3,r3,8
+	b 	Lfinish			; .. or here.
+
+Lfour:
+	lg	r6,LINKAGE_SIZE(r1)	; get the result type
+	lg	r6,FFI_TYPE_ELEM(r6)	; elements array pointer
+	lg	r6,0(r6)		; first element
+	lhz	r0,FFI_TYPE_TYPE(r6)	; OK go the type
+	cmpi	0,r0,2			; FFI_TYPE_FLOAT
+	bne	Lfourint
+	lfs	f1,0(r5)		; just one float in the struct.
+	b 	Lfinish
+
+Lfourint:
+	srdi	r3,r3,32		; four bytes.
+	b 	Lfinish
+
+Lstructend:
+	lg	r3,LINKAGE_SIZE(r1)	; get the result type
+	bl	STRUCT_RETVALUE_P
+	cmpi	0,r3,0
+	beq	Lfinish			; nope.
+	/* Recover a pointer to the results.  */
+	addi	r11,r1,(SAVE_SIZE-RESULT_BYTES)
+	lg	r3,0(r11)		; we need at least this...
+	lg	r4,8(r11)
+	cmpi	0,r0,16
+	beq	Lfinish		; special case 16 bytes we don't consider floats.
+
+	/* OK, frustratingly, the process of saving the struct to mem might have
+	   messed with the FPRs, so we have to re-load them :(.
+	   We`ll use our FPRs space again - calling: 
+	   void darwin64_pass_struct_floats (ffi_type *s, char *src, 
+					     unsigned *nfpr, double **fprs) 
+	   We`ll temporarily pinch the first two slots of the param area for local
+	   vars used by the routine.  */
+	xor	r6,r6,r6
+	addi	r5,r1,PARENT_PARM_BASE		; some space
+	sg	r6,0(r5)			; *nfpr zeroed.
+	addi	r6,r5,8				; **fprs
+	addi	r3,r1,FP_SAVE_BASE		; pointer to FPRs space
+	sg	r3,0(r6)
+	mr	r4,r11				; the struct is here...
+	lg	r3,LINKAGE_SIZE(r1)		; ffi_type * result_type.
+	bl	PASS_STR_FLOATS			; get struct floats into FPR save space.
+	/* See if we used any floats  */
+	lwz	r0,(SAVE_SIZE-RESULT_BYTES)(r1)	
+	cmpi	0,r0,0
+	beq	Lstructints			; nope.
+	/* OK load `em up... */
+	lfd	f1, (FP_SAVE_BASE                 )(r1)
+	lfd	f2, (FP_SAVE_BASE +  FPR_SIZE     )(r1)
+	lfd	f3, (FP_SAVE_BASE +  FPR_SIZE * 2 )(r1)
+	lfd	f4, (FP_SAVE_BASE +  FPR_SIZE * 3 )(r1)
+	lfd	f5, (FP_SAVE_BASE +  FPR_SIZE * 4 )(r1)
+	lfd	f6, (FP_SAVE_BASE +  FPR_SIZE * 5 )(r1)
+	lfd	f7, (FP_SAVE_BASE +  FPR_SIZE * 6 )(r1)
+	lfd	f8, (FP_SAVE_BASE +  FPR_SIZE * 7 )(r1)
+	lfd	f9, (FP_SAVE_BASE +  FPR_SIZE * 8 )(r1)
+	lfd	f10,(FP_SAVE_BASE +  FPR_SIZE * 9 )(r1)
+	lfd	f11,(FP_SAVE_BASE +  FPR_SIZE * 10)(r1)
+	lfd	f12,(FP_SAVE_BASE +  FPR_SIZE * 11)(r1)
+	lfd	f13,(FP_SAVE_BASE +  FPR_SIZE * 12)(r1)
+
+	/* point back at our saved struct.  */
+Lstructints:
+	addi	r11,r1,(SAVE_SIZE-RESULT_BYTES)
+	lg	r3,0(r11)			; we end up picking the
+	lg	r4,8(r11)			; first two again.
+	lg	r5,16(r11)
+	lg	r6,24(r11)
+	lg	r7,32(r11)
+	lg	r8,40(r11)
+	lg	r9,48(r11)
+	lg	r10,56(r11)
+#endif
 
 /* case done  */
 Lfinish:
-	addi	r1,r1,176	/* Restore stack pointer.  */
-	lwz	r0,8(r1)	/* Get return address.  */
-	mtlr	r0		/* Reset link register.  */
+	addi	r1,r1,SAVE_SIZE		/* Restore stack pointer.  */
+	lg	r0,SAVED_LR_OFFSET(r1)	/* Get return address.  */
+	mtlr	r0			/* Reset link register.  */
 	blr
-
+Lendcode:
+	.align 1
+	
 /* END(ffi_closure_ASM)  */
 
-.data
-.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms+live_support
+/* EH frame stuff.  */
+#define EH_DATA_ALIGN_FACT MODE_CHOICE(0x7c,0x78)
+/* 176, 400 */
+#define EH_FRAME_OFFSETA MODE_CHOICE(176,0x90)
+#define EH_FRAME_OFFSETB MODE_CHOICE(1,3)
+
+	.static_data
+	.align LOG2_GPR_BYTES
+LLFB1$non_lazy_ptr:
+	.g_long Lstartcode
+
+	.section __TEXT,__eh_frame,coalesced,no_toc+strip_static_syms+live_support
 EH_frame1:
 	.set	L$set$0,LECIE1-LSCIE1
 	.long	L$set$0	; Length of Common Information Entry
@@ -255,16 +481,16 @@ LSCIE1:
 	.byte	0x1	; CIE Version
 	.ascii	"zR\0"	; CIE Augmentation
 	.byte	0x1	; uleb128 0x1; CIE Code Alignment Factor
-	.byte	0x7c	; sleb128 -4; CIE Data Alignment Factor
+	.byte	EH_DATA_ALIGN_FACT ; sleb128 -4; CIE Data Alignment Factor
 	.byte	0x41	; CIE RA Column
 	.byte	0x1	; uleb128 0x1; Augmentation size
-	.byte	0x90	; FDE Encoding (indirect pcrel)
+	.byte	0x10	; FDE Encoding (indirect pcrel)
 	.byte	0xc	; DW_CFA_def_cfa
 	.byte	0x1	; uleb128 0x1
 	.byte	0x0	; uleb128 0x0
 	.align	LOG2_GPR_BYTES
 LECIE1:
-.globl _ffi_closure_ASM.eh
+	.globl _ffi_closure_ASM.eh
 _ffi_closure_ASM.eh:
 LSFDE1:
 	.set	L$set$1,LEFDE1-LASFDE1
@@ -273,45 +499,78 @@ LSFDE1:
 LASFDE1:
 	.long	LASFDE1-EH_frame1	; FDE CIE offset
 	.g_long	LLFB1$non_lazy_ptr-.	; FDE initial location
-	.set	L$set$3,LFE1-LFB1
+	.set	L$set$3,LFE1-Lstartcode
 	.g_long	L$set$3	; FDE address range
 	.byte   0x0     ; uleb128 0x0; Augmentation size
 	.byte	0x4	; DW_CFA_advance_loc4
 	.set	L$set$3,LCFI1-LCFI0
 	.long	L$set$3
 	.byte	0xe	; DW_CFA_def_cfa_offset
-	.byte	176,1	; uleb128 176
+	.byte	EH_FRAME_OFFSETA,EH_FRAME_OFFSETB	; uleb128 176,1/190,3
 	.byte	0x4	; DW_CFA_advance_loc4
-	.set	L$set$4,LCFI0-LFB1
+	.set	L$set$4,LCFI0-Lstartcode
 	.long	L$set$4
 	.byte   0x11    ; DW_CFA_offset_extended_sf
 	.byte	0x41	; uleb128 0x41
 	.byte   0x7e    ; sleb128 -2
 	.align	LOG2_GPR_BYTES
 LEFDE1:
-.data
-	.align	LOG2_GPR_BYTES
-LDFCM0:
-.section __TEXT,__picsymbolstub1,symbol_stubs,pure_instructions,32
-	.align	LOG2_GPR_BYTES
-Lffi_closure_helper_DARWIN$stub:
-#if 1
+	.align 	1
+
+#ifdef WANT_STUB
+	.section __TEXT,__picsymbolstub1,symbol_stubs,pure_instructions,32
+	.align 5
+L_ffi_closure_helper_DARWIN$stub:
 	.indirect_symbol _ffi_closure_helper_DARWIN
-	mflr	r0
-	bcl	20,31,LO$ffi_closure_helper_DARWIN
-LO$ffi_closure_helper_DARWIN:
-	mflr	r11
-	addis	r11,r11,ha16(L_ffi_closure_helper_DARWIN$lazy_ptr - LO$ffi_closure_helper_DARWIN)
-	mtlr	r0
-	lgu	r12,lo16(L_ffi_closure_helper_DARWIN$lazy_ptr - LO$ffi_closure_helper_DARWIN)(r11)
-	mtctr	r12
+	mflr r0
+	bcl 20,31,"L00000000001$spb"
+"L00000000001$spb":
+	mflr r11
+	addis r11,r11,ha16(L_ffi_closure_helper_DARWIN$lazy_ptr-"L00000000001$spb")
+	mtlr r0
+	lwzu r12,lo16(L_ffi_closure_helper_DARWIN$lazy_ptr-"L00000000001$spb")(r11)
+	mtctr r12
 	bctr
-.lazy_symbol_pointer
+	.lazy_symbol_pointer
 L_ffi_closure_helper_DARWIN$lazy_ptr:
 	.indirect_symbol _ffi_closure_helper_DARWIN
-	.g_long dyld_stub_binding_helper
+	.g_long	dyld_stub_binding_helper
+
+#if defined(__ppc64__)
+	.section __TEXT,__picsymbolstub1,symbol_stubs,pure_instructions,32
+	.align 5
+L_darwin64_struct_ret_by_value_p$stub:
+	.indirect_symbol _darwin64_struct_ret_by_value_p
+	mflr r0
+	bcl 20,31,"L00000000002$spb"
+"L00000000002$spb":
+	mflr r11
+	addis r11,r11,ha16(L_darwin64_struct_ret_by_value_p$lazy_ptr-"L00000000002$spb")
+	mtlr r0
+	lwzu r12,lo16(L_darwin64_struct_ret_by_value_p$lazy_ptr-"L00000000002$spb")(r11)
+	mtctr r12
+	bctr
+	.lazy_symbol_pointer
+L_darwin64_struct_ret_by_value_p$lazy_ptr:
+	.indirect_symbol _darwin64_struct_ret_by_value_p
+	.g_long	dyld_stub_binding_helper
+
+	.section __TEXT,__picsymbolstub1,symbol_stubs,pure_instructions,32
+	.align 5
+L_darwin64_pass_struct_floats$stub:
+	.indirect_symbol _darwin64_pass_struct_floats
+	mflr r0
+	bcl 20,31,"L00000000003$spb"
+"L00000000003$spb":
+	mflr r11
+	addis r11,r11,ha16(L_darwin64_pass_struct_floats$lazy_ptr-"L00000000003$spb")
+	mtlr r0
+	lwzu r12,lo16(L_darwin64_pass_struct_floats$lazy_ptr-"L00000000003$spb")(r11)
+	mtctr r12
+	bctr
+	.lazy_symbol_pointer
+L_darwin64_pass_struct_floats$lazy_ptr:
+	.indirect_symbol _darwin64_pass_struct_floats
+	.g_long	dyld_stub_binding_helper
+#  endif
 #endif
-.data
-	.align LOG2_GPR_BYTES
-LLFB1$non_lazy_ptr:
-	.g_long LFB1

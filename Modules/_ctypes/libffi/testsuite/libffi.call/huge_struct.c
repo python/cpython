@@ -7,7 +7,8 @@
 
 /* { dg-excess-errors "" { target x86_64-*-mingw* x86_64-*-cygwin* } } */
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-* } } */
-/* { dg-options -mlong-double-128 { target powerpc64*-*-* } } */
+/* { dg-options -mlong-double-128 { target powerpc64*-*-linux* } } */
+/* { dg-options -Wformat=0 { target moxie*-*-elf } } */
 /* { dg-output "" { xfail x86_64-*-mingw* x86_64-*-cygwin* } } */
 
 #include "ffitest.h"
@@ -129,14 +130,14 @@ test_large_fn(
 			ui64_4 + 4, si64_4 + 4, f_4 + 4, d_4 + 4, ld_4 + 4, (char*)((intptr_t)p_4 + 4), 
 		ui8_5 + 5, si8_5 + 5};
 
-	printf("%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %hhu %hhd: "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %hhu %hhd\n",
+	printf("%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %" PRIu8 " %" PRId8 ": "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %" PRIu8 " %" PRId8 "\n",
 	       ui8_1, si8_1, ui16_1, si16_1, ui32_1, si32_1, ui64_1, si64_1, f_1, d_1, ld_1, (unsigned long)p_1,
 		ui8_2, si8_2, ui16_2, si16_2, ui32_2, si32_2, ui64_2, si64_2, f_2, d_2, ld_2, (unsigned long)p_2,
 		ui8_3, si8_3, ui16_3, si16_3, ui32_3, si32_3, ui64_3, si64_3, f_3, d_3, ld_3, (unsigned long)p_3,
@@ -229,6 +230,19 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	ffi_type*	st_fields[51];
 	BigStruct	retVal;
 
+	uint8_t		ui8		= 1;
+	int8_t		si8		= 2;
+	uint16_t	ui16	= 3;
+	int16_t		si16	= 4;
+	uint32_t	ui32	= 5;
+	int32_t		si32	= 6;
+	uint64_t	ui64	= 7;
+	int64_t		si64	= 8;
+	float		f		= 9;
+	double		d		= 10;
+	long double	ld		= 11;
+	char*		p		= (char*)0x12345678;
+
 	memset (&retVal, 0, sizeof(retVal));
 
 	ret_struct_type.size = 0;
@@ -250,19 +264,6 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	st_fields[11]	= st_fields[23]	= st_fields[35]	= st_fields[47]	= &ffi_type_pointer;
 
 	st_fields[50] = NULL;
-
-	uint8_t		ui8		= 1;
-	int8_t		si8		= 2;
-	uint16_t	ui16	= 3;
-	int16_t		si16	= 4;
-	uint32_t	ui32	= 5;
-	int32_t		si32	= 6;
-	uint64_t	ui64	= 7;
-	int64_t		si64	= 8;
-	float		f		= 9;
-	double		d		= 10;
-	long double	ld		= 11;
-	char*		p		= (char*)0x12345678;
 
 	argTypes[0]		= argTypes[12]	= argTypes[24]	= argTypes[36]	= argTypes[48]	= &ffi_type_uint8;
 	argValues[0]	= argValues[12]	= argValues[24]	= argValues[36]	= argValues[48]	= &ui8;
@@ -295,11 +296,11 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 50, &ret_struct_type, argTypes) == FFI_OK);
 
 	ffi_call(&cif, FFI_FN(test_large_fn), &retVal, argValues);
-	// { dg-output "1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
-	printf("res: %hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %hhu %hhd\n",
+	/* { dg-output "1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
+	printf("res: %" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %" PRIu8 " %" PRId8 "\n",
 		retVal.a, retVal.b, retVal.c, retVal.d, retVal.e, retVal.f,
 	       retVal.g, retVal.h, retVal.i, retVal.j, retVal.k, (unsigned long)retVal.l,
 		retVal.m, retVal.n, retVal.o, retVal.p, retVal.q, retVal.r,
@@ -308,7 +309,7 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	       retVal.ee, retVal.ff, retVal.gg, retVal.hh, retVal.ii, (unsigned long)retVal.jj,
 		retVal.kk, retVal.ll, retVal.mm, retVal.nn, retVal.oo, retVal.pp,
 	       retVal.qq, retVal.rr, retVal.ss, retVal.tt, retVal.uu, (unsigned long)retVal.vv, retVal.ww, retVal.xx);
-	// { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
+	/* { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
 
 	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_large_fn, NULL, code) == FFI_OK);
 
@@ -323,11 +324,11 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 		ui8, si8, ui16, si16, ui32, si32, ui64, si64, f, d, ld, p,
 		ui8, si8, ui16, si16, ui32, si32, ui64, si64, f, d, ld, p,
 		ui8, si8);
-	// { dg-output "\n1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
-	printf("res: %hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
-		"%hhu %hhd %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %hhu %hhd\n",
+	/* { dg-output "\n1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
+	printf("res: %" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
+		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx %" PRIu8 " %" PRId8 "\n",
 		retVal.a, retVal.b, retVal.c, retVal.d, retVal.e, retVal.f,
 	       retVal.g, retVal.h, retVal.i, retVal.j, retVal.k, (unsigned long)retVal.l,
 		retVal.m, retVal.n, retVal.o, retVal.p, retVal.q, retVal.r,
@@ -336,7 +337,7 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	       retVal.ee, retVal.ff, retVal.gg, retVal.hh, retVal.ii, (unsigned long)retVal.jj,
 		retVal.kk, retVal.ll, retVal.mm, retVal.nn, retVal.oo, retVal.pp,
 	       retVal.qq, retVal.rr, retVal.ss, retVal.tt, retVal.uu, (unsigned long)retVal.vv, retVal.ww, retVal.xx);
-	// { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
+	/* { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
 
     return 0;
 }

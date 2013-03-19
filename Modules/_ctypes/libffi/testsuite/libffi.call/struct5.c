@@ -27,6 +27,13 @@ int main (void)
   void *values[MAX_ARGS];
   ffi_type ts5_type;
   ffi_type *ts5_type_elements[3];
+
+  test_structure_5 ts5_arg1, ts5_arg2;
+
+  /* This is a hack to get a properly aligned result buffer */
+  test_structure_5 *ts5_result =
+    (test_structure_5 *) malloc (sizeof(test_structure_5));
+
   ts5_type.size = 0;
   ts5_type.alignment = 0;
   ts5_type.type = FFI_TYPE_STRUCT;
@@ -35,12 +42,6 @@ int main (void)
   ts5_type_elements[1] = &ffi_type_schar;
   ts5_type_elements[2] = NULL;
 
-  test_structure_5 ts5_arg1, ts5_arg2;
-  
-  /* This is a hack to get a properly aligned result buffer */
-  test_structure_5 *ts5_result = 
-    (test_structure_5 *) malloc (sizeof(test_structure_5));
-  
   args[0] = &ts5_type;
   args[1] = &ts5_type;
   values[0] = &ts5_arg1;

@@ -1,6 +1,7 @@
 /* -----------------------------------------------------------------------
-   unix64.S - Copyright (c) 2002  Bo Thorsen <bo@suse.de>
-	      Copyright (c) 2008  Red Hat, Inc
+   unix64.S - Copyright (c) 2013  The Written Word, Inc.
+	    - Copyright (c) 2008  Red Hat, Inc
+	    - Copyright (c) 2002  Bo Thorsen <bo@suse.de>
 
    x86-64 Foreign Function Interface 
 
@@ -324,7 +325,14 @@ ffi_closure_unix64:
 .LUW9:
 	.size	ffi_closure_unix64,.-ffi_closure_unix64
 
+#ifdef __GNUC__
+/* Only emit DWARF unwind info when building with the GNU toolchain.  */
+
+#ifdef HAVE_AS_X86_64_UNWIND_SECTION_TYPE
+	.section	.eh_frame,"a",@unwind
+#else
 	.section	.eh_frame,"a",@progbits
+#endif
 .Lframe1:
 	.long	.LECIE1-.LSCIE1		/* CIE Length */
 .LSCIE1:
@@ -415,6 +423,8 @@ ffi_closure_unix64:
 	.align 8
 .LEFDE3:
 
+#endif /* __GNUC__ */
+	
 #endif /* __x86_64__ */
 
 #if defined __ELF__ && defined __linux__

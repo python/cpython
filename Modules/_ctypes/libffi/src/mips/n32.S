@@ -43,6 +43,7 @@
 #ifdef __GNUC__
 	.abicalls
 #endif
+	.set mips4
 	.text
 	.align	2
 	.globl	ffi_call_N32
