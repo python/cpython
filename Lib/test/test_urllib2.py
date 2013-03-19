@@ -1446,10 +1446,18 @@ class RequestTests(unittest.TestCase):
         Issue 13211 reveals that HTTPError didn't implement the URLError
         interface even though HTTPError is a subclass of URLError.
 
-        >>> err = urllib.error.HTTPError(msg='something bad happened', url=None, code=None, hdrs=None, fp=None)
+        >>> msg = 'something bad happened'
+        >>> url = code = fp = None
+        >>> hdrs = 'Content-Length: 42'
+        >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
         >>> assert hasattr(err, 'reason')
         >>> err.reason
         'something bad happened'
+        >>> assert hasattr(err, 'hdrs')
+        >>> err.hdrs
+        'Content-Length: 42'
+        >>> expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
+        >>> assert str(err) == expected_errmsg
         """
 
     def test_HTTPError_interface_call(self):
