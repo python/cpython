@@ -1461,6 +1461,8 @@ class MiscTests(unittest.TestCase):
         >>> assert hasattr(err, 'headers')
         >>> err.headers
         'Content-Length: 42'
+        >>> expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
+        >>> assert str(err) == expected_errmsg
         """
 
 class RequestTests(unittest.TestCase):
