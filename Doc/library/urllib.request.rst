@@ -488,54 +488,6 @@ request.
    URL given in the constructor.
 
 
-.. method:: Request.add_data(data)
-
-   Set the :class:`Request` data to *data*.  This is ignored by all handlers except
-   HTTP handlers --- and there it should be a byte string, and will change the
-   request to be ``POST`` rather than ``GET``.  Deprecated in 3.3, use
-   :attr:`Request.data`.
-
-   .. deprecated:: 3.3
-
-
-.. method:: Request.has_data()
-
-   Return whether the instance has a non-\ ``None`` data. Deprecated in 3.3,
-   use :attr:`Request.data`.
-
-   .. deprecated:: 3.3
-
-
-.. method:: Request.get_data()
-
-   Return the instance's data.  Deprecated in 3.3, use :attr:`Request.data`.
-
-   .. deprecated:: 3.3
-
-
-.. method:: Request.get_type()
-
-   Return the type of the URL --- also known as the scheme.  Deprecated in 3.3,
-   use :attr:`Request.type`.
-
-   .. deprecated:: 3.3
-
-
-.. method:: Request.get_host()
-
-   Return the host to which a connection will be made. Deprecated in 3.3, use
-   :attr:`Request.host`.
-
-   .. deprecated:: 3.3
-
-
-.. method:: Request.get_selector()
-
-   Return the selector --- the part of the URL that is sent to the server.
-   Deprecated in 3.3, use :attr:`Request.selector`.
-
-   .. deprecated:: 3.3
-
 .. method:: Request.get_header(header_name, default=None)
 
    Return the value of the given header. If the header is not present, return
@@ -545,27 +497,6 @@ request.
 .. method:: Request.header_items()
 
    Return a list of tuples (header_name, header_value) of the Request headers.
-
-
-.. method:: Request.set_proxy(host, type)
-
-.. method:: Request.get_origin_req_host()
-
-   Return the request-host of the origin transaction, as defined by
-   :rfc:`2965`.  See the documentation for the :class:`Request` constructor.
-   Deprecated in 3.3, use :attr:`Request.origin_req_host`.
-
-   .. deprecated:: 3.3
-
-
-.. method:: Request.is_unverifiable()
-
-   Return whether the request is unverifiable, as defined by RFC 2965. See the
-   documentation for the :class:`Request` constructor.  Deprecated in 3.3, use
-   :attr:`Request.unverifiable`.
-
-   .. deprecated:: 3.3
-
 
 .. _opener-director-objects:
 

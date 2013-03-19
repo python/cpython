@@ -630,27 +630,6 @@ class OpenerDirectorTests(unittest.TestCase):
                 self.assertTrue(args[1] is None or
                              isinstance(args[1], MockResponse))
 
-    def test_method_deprecations(self):
-        req = Request("http://www.example.com")
-
-        with self.assertWarns(DeprecationWarning):
-            req.add_data("data")
-        with self.assertWarns(DeprecationWarning):
-            req.get_data()
-        with self.assertWarns(DeprecationWarning):
-            req.has_data()
-        with self.assertWarns(DeprecationWarning):
-            req.get_host()
-        with self.assertWarns(DeprecationWarning):
-            req.get_selector()
-        with self.assertWarns(DeprecationWarning):
-            req.is_unverifiable()
-        with self.assertWarns(DeprecationWarning):
-            req.get_origin_req_host()
-        with self.assertWarns(DeprecationWarning):
-            req.get_type()
-
-
 def sanepathname2url(path):
     try:
         path.encode("utf-8")
