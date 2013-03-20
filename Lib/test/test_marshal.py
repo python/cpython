@@ -283,6 +283,11 @@ class BugsTestCase(unittest.TestCase):
         unicode_string = 'T'
         self.assertRaises(TypeError, marshal.loads, unicode_string)
 
+    def _test_eof(self):
+        data = marshal.dumps(("hello", "dolly", None))
+        for i in range(len(data)):
+            self.assertRaises(EOFError, marshal.loads, data[0: i])
+
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4
 
