@@ -934,8 +934,6 @@ class CallableMixin(Base):
                 return result
 
             ret_val = effect(*args, **kwargs)
-            if ret_val is DEFAULT:
-                ret_val = self.return_value
 
         if (self._mock_wraps is not None and
              self._mock_return_value is DEFAULT):
@@ -2207,6 +2205,24 @@ MethodWrapperTypes = (
 
 file_spec = None
 
+def _iterate_read_data(read_data):
+    # Helper for mock_open:
+    # Retrieve lines from read_data via a generator so that separate calls to
+    # readline, read, and readlines are properly interleaved
+    data_as_list = ['{}\n'.format(l) for l in read_data.split('\n')]
+
+    if data_as_list[-1] == '\n':
+        # If the last line ended in a newline, the list comprehension will have an
+        # extra entry that's just a newline.  Remove this.
+        data_as_list = data_as_list[:-1]
+    else:
+        # If there wasn't an extra newline by itself, then the file being
+        # emulated doesn't have a newline to end the last line  remove the
+        # newline that our naive format() added
+        data_as_list[-1] = data_as_list[-1][:-1]
+
+    for line in data_as_list:
+        yield line
 
 def mock_open(mock=None, read_data=''):
     """
@@ -2217,9 +2233,27 @@ def mock_open(mock=None, read_data=''):
     default) then a `MagicMock` will be created for you, with the API limited
     to methods or attributes available on standard file handles.
 
-    `read_data` is a string for the `read` method of the file handle to return.
-    This is an empty string by default.
+    `read_data` is a string for the `read` methoddline`, and `readlines` of the
+    file handle to return.  This is an empty string by default.
     """
+    def _readlines_side_effect(*args, **kwargs):
+        if handle.readlines.return_value is not None:
+            return handle.readlines.return_value
+        return list(_data)
+
+    def _read_side_effect(*args, **kwargs):
+        if handle.read.return_value is not None:
+            return handle.read.return_value
+        return ''.join(_data)
+
+    def _readline_side_effect():
+        if handle.readline.return_value is not None:
+            while True:
+                yield handle.readline.return_value
+        for line in _data:
+            yield line
+
+
     global file_spec
     if file_spec is None:
         import _io
@@ -2229,9 +2263,18 @@ def mock_open(mock=None, read_data=''):
         mock = MagicMock(name='open', spec=open)
 
     handle = MagicMock(spec=file_spec)
-    handle.write.return_value = None
     handle.__enter__.return_value = handle
-    handle.read.return_value = read_data
+
+    _data = _iterate_read_data(read_data)
+
+    handle.write.return_value = None
+    handle.read.return_value = None
+    handle.readline.return_value = None
+    handle.readlines.return_value = None
+
+    handle.read.side_effect = _read_side_effect
+    handle.readline.side_effect = _readline_side_effect()
+    handle.readlines.side_effect = _readlines_side_effect
 
     mock.return_value = handle
     return mock
