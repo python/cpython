@@ -556,6 +556,68 @@ Skipped tests will not have :meth:`setUp` or :meth:`tearDown` run around them.
 Skipped classes will not have :meth:`setUpClass` or :meth:`tearDownClass` run.
 
 
+.. _subtests:
+
+Distinguishing test iterations using subtests
+---------------------------------------------
+
+.. versionadded:: 3.4
+
+When some of your tests differ only by a some very small differences, for
+instance some parameters, unittest allows you to distinguish them inside
+the body of a test method using the :meth:`~TestCase.subTest` context manager.
+
+For example, the following test::
+
+   class NumbersTest(unittest.TestCase):
+
+       def test_even(self):
+           """
+           Test that numbers between 0 and 5 are all even.
+           """
+           for i in range(0, 6):
+               with self.subTest(i=i):
+                   self.assertEqual(i % 2, 0)
+
+will produce the following output::
+
+   ======================================================================
+   FAIL: test_even (__main__.NumbersTest) (i=1)
+   ----------------------------------------------------------------------
+   Traceback (most recent call last):
+     File "subtests.py", line 32, in test_even
+       self.assertEqual(i % 2, 0)
+   AssertionError: 1 != 0
+
+   ======================================================================
+   FAIL: test_even (__main__.NumbersTest) (i=3)
+   ----------------------------------------------------------------------
+   Traceback (most recent call last):
+     File "subtests.py", line 32, in test_even
+       self.assertEqual(i % 2, 0)
+   AssertionError: 1 != 0
+
+   ======================================================================
+   FAIL: test_even (__main__.NumbersTest) (i=5)
+   ----------------------------------------------------------------------
+   Traceback (most recent call last):
+     File "subtests.py", line 32, in test_even
+       self.assertEqual(i % 2, 0)
+   AssertionError: 1 != 0
+
+Without using a subtest, execution would stop after the first failure,
+and the error would be less easy to diagnose because the value of ``i``
+wouldn't be displayed::
+
+   ======================================================================
+   FAIL: test_even (__main__.NumbersTest)
+   ----------------------------------------------------------------------
+   Traceback (most recent call last):
+     File "subtests.py", line 32, in test_even
+       self.assertEqual(i % 2, 0)
+   AssertionError: 1 != 0
+
+
 .. _unittest-contents:
 
 Classes and functions
@@ -667,6 +729,21 @@ Test cases
       test.  See :ref:`unittest-skipping` for more information.
 
       .. versionadded:: 3.1
+
+
+   .. method:: subTest(msg=None, **params)
+
+      Return a context manager which executes the enclosed code block as a
+      subtest.  *msg* and *params* are optional, arbitrary values which are
+      displayed whenever a subtest fails, allowing you to identify them
+      clearly.
+
+      A test case can contain any number of subtest declarations, and
+      they can be arbitrarily nested.
+
+      See :ref:`subtests` for more information.
+
+      .. versionadded:: 3.4
 
 
    .. method:: debug()
@@ -1731,6 +1808,22 @@ Loading and running tests
 
       The default implementation appends the test to the instance's
       :attr:`unexpectedSuccesses` attribute.
+
+
+   .. method:: addSubTest(test, subtest, outcome)
+
+      Called when a subtest finishes.  *test* is the test case
+      corresponding to the test method.  *subtest* is a custom
+      :class:`TestCase` instance describing the subtest.
+
+      If *outcome* is :const:`None`, the subtest succeeded.  Otherwise,
+      it failed with an exception where *outcome* is a tuple of the form
+      returned by :func:`sys.exc_info`: ``(type, value, traceback)``.
+
+      The default implementation does nothing when the outcome is a
+      success, and records subtest failures as normal failures.
+
+      .. versionadded:: 3.4
 
 
 .. class:: TextTestResult(stream, descriptions, verbosity)

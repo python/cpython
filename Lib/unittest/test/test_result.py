@@ -234,6 +234,37 @@ class Test_TestResult(unittest.TestCase):
                 'testGetDescriptionWithoutDocstring (' + __name__ +
                 '.Test_TestResult)')
 
+    def testGetSubTestDescriptionWithoutDocstring(self):
+        with self.subTest(foo=1, bar=2):
+            result = unittest.TextTestResult(None, True, 1)
+            self.assertEqual(
+                    result.getDescription(self._subtest),
+                    'testGetSubTestDescriptionWithoutDocstring (' + __name__ +
+                    '.Test_TestResult) (bar=2, foo=1)')
+        with self.subTest('some message'):
+            result = unittest.TextTestResult(None, True, 1)
+            self.assertEqual(
+                    result.getDescription(self._subtest),
+                    'testGetSubTestDescriptionWithoutDocstring (' + __name__ +
+                    '.Test_TestResult) [some message]')
+
+    def testGetSubTestDescriptionWithoutDocstringAndParams(self):
+        with self.subTest():
+            result = unittest.TextTestResult(None, True, 1)
+            self.assertEqual(
+                    result.getDescription(self._subtest),
+                    'testGetSubTestDescriptionWithoutDocstringAndParams '
+                    '(' + __name__ + '.Test_TestResult) (<subtest>)')
+
+    def testGetNestedSubTestDescriptionWithoutDocstring(self):
+        with self.subTest(foo=1):
+            with self.subTest(bar=2):
+                result = unittest.TextTestResult(None, True, 1)
+                self.assertEqual(
+                        result.getDescription(self._subtest),
+                        'testGetNestedSubTestDescriptionWithoutDocstring '
+                        '(' + __name__ + '.Test_TestResult) (bar=2, foo=1)')
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def testGetDescriptionWithOneLineDocstring(self):
@@ -247,6 +278,18 @@ class Test_TestResult(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
+    def testGetSubTestDescriptionWithOneLineDocstring(self):
+        """Tests getDescription() for a method with a docstring."""
+        result = unittest.TextTestResult(None, True, 1)
+        with self.subTest(foo=1, bar=2):
+            self.assertEqual(
+                result.getDescription(self._subtest),
+               ('testGetSubTestDescriptionWithOneLineDocstring '
+                '(' + __name__ + '.Test_TestResult) (bar=2, foo=1)\n'
+                'Tests getDescription() for a method with a docstring.'))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
     def testGetDescriptionWithMultiLineDocstring(self):
         """Tests getDescription() for a method with a longer docstring.
         The second line of the docstring.
@@ -256,6 +299,21 @@ class Test_TestResult(unittest.TestCase):
                 result.getDescription(self),
                ('testGetDescriptionWithMultiLineDocstring '
                 '(' + __name__ + '.Test_TestResult)\n'
+                'Tests getDescription() for a method with a longer '
+                'docstring.'))
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def testGetSubTestDescriptionWithMultiLineDocstring(self):
+        """Tests getDescription() for a method with a longer docstring.
+        The second line of the docstring.
+        """
+        result = unittest.TextTestResult(None, True, 1)
+        with self.subTest(foo=1, bar=2):
+            self.assertEqual(
+                result.getDescription(self._subtest),
+               ('testGetSubTestDescriptionWithMultiLineDocstring '
+                '(' + __name__ + '.Test_TestResult) (bar=2, foo=1)\n'
                 'Tests getDescription() for a method with a longer '
                 'docstring.'))
 
