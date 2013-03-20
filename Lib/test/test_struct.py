@@ -497,7 +497,7 @@ class StructTest(unittest.TestCase):
             self.test_unpack_from(cls=buffer)
 
     def test_unpack_with_memoryview(self):
-        # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
+        # Bug 10212: struct.unpack doesn't support new buffer protocol objects
         data1 = memoryview('\x12\x34\x56\x78')
         for data in [data1,]:
             value, = struct.unpack('>I', data)
