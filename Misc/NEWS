@@ -289,6 +289,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15927: CVS now correctly parses escaped newlines and carriage
+  when parsing with quoting turned off.
+
 - Issue #17467: add readline and readlines support to mock_open in
   unittest.mock.
 
