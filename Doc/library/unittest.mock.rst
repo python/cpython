@@ -1989,8 +1989,12 @@ mock_open
     default) then a `MagicMock` will be created for you, with the API limited
     to methods or attributes available on standard file handles.
 
-    `read_data` is a string for the `read` method of the file handle to return.
-    This is an empty string by default.
+    `read_data` is a string for the `read`, `readline`, and `readlines` methods
+    of the file handle to return.  Calls to those methods will take data from
+    `read_data` until it is depleted.  The mock of these methods is pretty
+    simplistic.  If you need more control over the data that you are feeding to
+    the tested code you will need to customize this mock for yourself.
+    `read_data` is an empty string by default.
 
 Using `open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
