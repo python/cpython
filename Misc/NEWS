@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16475: Support object instancing, recursion and interned strings
+  in marshal
+
 - Use the HTTPS PyPI url for upload, overriding any plain HTTP URL in pypirc.
 
 - Issue #16795: On the ast.arguments object, unify vararg with varargannotation
