@@ -292,6 +292,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16997: unittest.TestCase now provides a subTest() context manager
+  to procedurally generate, in an easy way, small test instances.
+
 - Issue #17485: Also delete the Request Content-Length header if the data
   attribute is deleted.  (Follow on to issue 16464).
 
