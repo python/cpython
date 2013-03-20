@@ -574,9 +574,9 @@ IPV6_ENABLED = _is_ipv6_enabled()
 
 
 # A constant likely larger than the underlying OS pipe buffer size.
-# Windows limit seems to be around 512B, and most Unix kernels have a 64K pipe
-# buffer size: take 1M to be sure.
-PIPE_MAX_SIZE = 1024 * 1024
+# Windows limit seems to be around 512B, and many Unix kernels have a 64K pipe
+# buffer size or 16*PAGE_SIZE: take a few megs to be sure.  This
+PIPE_MAX_SIZE = 3 * 1000 * 1000
 
 
 # decorator for skipping tests on non-IEEE 754 platforms

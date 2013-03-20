@@ -166,7 +166,7 @@ getoutput(cmd):
     '/bin/ls'
 
 check_output(*popenargs, **kwargs):
-    Run command with arguments and return its output as a byte string.
+    Run command with arguments and return its output.
 
     If the exit code was non-zero it raises a CalledProcessError.  The
     CalledProcessError object will have the return code in the returncode
@@ -547,7 +547,7 @@ def check_call(*popenargs, **kwargs):
 
 
 def check_output(*popenargs, timeout=None, **kwargs):
-    r"""Run command with arguments and return its output as a byte string.
+    r"""Run command with arguments and return its output.
 
     If the exit code was non-zero it raises a CalledProcessError.  The
     CalledProcessError object will have the return code in the returncode
@@ -565,6 +565,9 @@ def check_output(*popenargs, timeout=None, **kwargs):
     ...               "ls -l non_existent_file ; exit 0"],
     ...              stderr=STDOUT)
     b'ls: non_existent_file: No such file or directory\n'
+
+    If universal_newlines=True is passed, the return value will be a
+    string rather than bytes.
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
