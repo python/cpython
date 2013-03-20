@@ -51,7 +51,7 @@ static struct PyModuleDef _csvmodule;
 typedef enum {
     START_RECORD, START_FIELD, ESCAPED_CHAR, IN_FIELD,
     IN_QUOTED_FIELD, ESCAPE_IN_QUOTED_FIELD, QUOTE_IN_QUOTED_FIELD,
-    EAT_CRNL
+    EAT_CRNL,AFTER_ESCAPED_CRNL
 } ParserState;
 
 typedef enum {
@@ -644,12 +644,23 @@ parse_process_char(ReaderObj *self, Py_UCS4 c)
         break;
 
     case ESCAPED_CHAR:
+        if (c == '\n' | c=='\r') {
+            if (parse_add_char(self, c) < 0)
+                return -1;
+            self->state = AFTER_ESCAPED_CRNL;
+            break;
+        }
         if (c == '\0')
             c = '\n';
         if (parse_add_char(self, c) < 0)
             return -1;
         self->state = IN_FIELD;
         break;
+
+    case AFTER_ESCAPED_CRNL:
+        if (c == '\0')
+            break;
+        /*fallthru*/
 
     case IN_FIELD:
         /* in unquoted field */
