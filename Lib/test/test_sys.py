@@ -237,9 +237,6 @@ class SysModuleTest(unittest.TestCase):
     def test_recursionlimit_fatalerror(self):
         # A fatal error occurs if a second recursion limit is hit when recovering
         # from a first one.
-        if os.name == "nt":
-            raise unittest.SkipTest(
-                "under Windows, test would generate a spurious crash dialog")
         code = textwrap.dedent("""
             import sys
 
@@ -251,14 +248,15 @@ class SysModuleTest(unittest.TestCase):
 
             sys.setrecursionlimit(%d)
             f()""")
-        for i in (50, 1000):
-            sub = subprocess.Popen([sys.executable, '-c', code % i],
-                stderr=subprocess.PIPE)
-            err = sub.communicate()[1]
-            self.assertTrue(sub.returncode, sub.returncode)
-            self.assertTrue(
-                b"Fatal Python error: Cannot recover from stack overflow" in err,
-                err)
+        with test.support.suppress_crash_popup():
+            for i in (50, 1000):
+                sub = subprocess.Popen([sys.executable, '-c', code % i],
+                    stderr=subprocess.PIPE)
+                err = sub.communicate()[1]
+                self.assertTrue(sub.returncode, sub.returncode)
+                self.assertIn(
+                    b"Fatal Python error: Cannot recover from stack overflow",
+                    err)
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
