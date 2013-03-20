@@ -200,8 +200,12 @@ class BugsTestCase(unittest.TestCase):
             except Exception:
                 pass
 
-    def test_loads_recursion(self):
+    def test_loads_2x_code(self):
         s = b'c' + (b'X' * 4*4) + b'{' * 2**20
+        self.assertRaises(ValueError, marshal.loads, s)
+
+    def test_loads_recursion(self):
+        s = b'c' + (b'X' * 4*5) + b'{' * 2**20
         self.assertRaises(ValueError, marshal.loads, s)
 
     def test_recursion_limit(self):
@@ -322,6 +326,122 @@ class LargeValuesTestCase(unittest.TestCase):
     @support.bigmemtest(size=LARGE_SIZE, memuse=1, dry_run=False)
     def test_bytearray(self, size):
         self.check_unmarshallable(bytearray(size))
+
+def CollectObjectIDs(ids, obj):
+    """Collect object ids seen in a structure"""
+    if id(obj) in ids:
+        return
+    ids.add(id(obj))
+    if isinstance(obj, (list, tuple, set, frozenset)):
+        for e in obj:
+            CollectObjectIDs(ids, e)
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            CollectObjectIDs(ids, k)
+            CollectObjectIDs(ids, v)
+    return len(ids)
+
+class InstancingTestCase(unittest.TestCase, HelperMixin):
+    intobj = 123321
+    floatobj = 1.2345
+    strobj = "abcde"*3
+    dictobj = {"hello":floatobj, "goodbye":floatobj, floatobj:"hello"}
+
+    def helper3(self, rsample, recursive=False, simple=False):
+        #we have two instances
+        sample = (rsample, rsample)
+
+        n0 = CollectObjectIDs(set(), sample)
+
+        s3 = marshal.dumps(sample, 3)
+        n3 = CollectObjectIDs(set(), marshal.loads(s3))
+
+        #same number of instances generated
+        self.assertEqual(n3, n0)
+
+        if not recursive:
+            #can compare with version 2
+            s2 = marshal.dumps(sample, 2)
+            n2 = CollectObjectIDs(set(), marshal.loads(s2))
+            #old format generated more instances
+            self.assertGreater(n2, n0)
+
+            #if complex objects are in there, old format is larger
+            if not simple:
+                self.assertGreater(len(s2), len(s3))
+            else:
+                self.assertGreaterEqual(len(s2), len(s3))
+
+    def testInt(self):
+        self.helper(self.intobj)
+        self.helper3(self.intobj, simple=True)
+
+    def testFloat(self):
+        self.helper(self.floatobj)
+        self.helper3(self.floatobj)
+
+    def testStr(self):
+        self.helper(self.strobj)
+        self.helper3(self.strobj)
+
+    def testDict(self):
+        self.helper(self.dictobj)
+        self.helper3(self.dictobj)
+
+    def testModule(self):
+        with open(__file__, "rb") as f:
+            code = f.read()
+        if __file__.endswith(".py"):
+            code = compile(code, __file__, "exec")
+        self.helper(code)
+        self.helper3(code)
+
+    def testRecursion(self):
+        d = dict(self.dictobj)
+        d["self"] = d
+        self.helper3(d, recursive=True)
+        l = [self.dictobj]
+        l.append(l)
+        self.helper3(l, recursive=True)
+
+class CompatibilityTestCase(unittest.TestCase):
+    def _test(self, version):
+        with open(__file__, "rb") as f:
+            code = f.read()
+        if __file__.endswith(".py"):
+            code = compile(code, __file__, "exec")
+        data = marshal.dumps(code, version)
+        marshal.loads(data)
+
+    def test0To3(self):
+        self._test(0)
+
+    def test1To3(self):
+        self._test(1)
+
+    def test2To3(self):
+        self._test(2)
+
+    def test3To3(self):
+        self._test(3)
+
+class InterningTestCase(unittest.TestCase, HelperMixin):
+    strobj = "this is an interned string"
+    strobj = sys.intern(strobj)
+
+    def testIntern(self):
+        s = marshal.loads(marshal.dumps(self.strobj))
+        self.assertEqual(s, self.strobj)
+        self.assertEqual(id(s), id(self.strobj))
+        s2 = sys.intern(s)
+        self.assertEqual(id(s2), id(s))
+
+    def testNoIntern(self):
+        s = marshal.loads(marshal.dumps(self.strobj, 2))
+        self.assertEqual(s, self.strobj)
+        self.assertNotEqual(id(s), id(self.strobj))
+        s2 = sys.intern(s)
+        self.assertNotEqual(id(s2), id(s))
 
 
 def test_main():
