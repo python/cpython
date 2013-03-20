@@ -40,10 +40,11 @@ this module.  The following types are supported: booleans, integers, floating
 point numbers, complex numbers, strings, bytes, bytearrays, tuples, lists, sets,
 frozensets, dictionaries, and code objects, where it should be understood that
 tuples, lists, sets, frozensets and dictionaries are only supported as long as
-the values contained therein are themselves supported; and recursive lists, sets
-and dictionaries should not be written (they will cause infinite loops).  The
+the values contained therein are themselves supported.
 singletons :const:`None`, :const:`Ellipsis` and :exc:`StopIteration` can also be
 marshalled and unmarshalled.
+For format *version* lower than 3, recursive lists, sets and dictionaries cannot
+be written (see below).
 
 There are functions that read/write files as well as functions operating on
 strings.
@@ -103,7 +104,9 @@ In addition, the following constants are defined:
 
    Indicates the format that the module uses. Version 0 is the historical
    format, version 1 shares interned strings and version 2 uses a binary format
-   for floating point numbers. The current version is 2.
+   for floating point numbers.
+   Version 3 adds support for object instancing and recursion.
+   The current version is 3.
 
 
 .. rubric:: Footnotes
