@@ -9,6 +9,8 @@ What's New in Python 2.7.4
 Core and Builtins
 -----------------
 
+- Issue #10211: Buffer objects expose the new buffer interface internally
+
 - Issue #16445: Fixed potential segmentation fault when deleting an exception
   message.
 
@@ -213,6 +215,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #10212: cStringIO and struct.unpack support new buffer objects.
 
 - Issue #12098: multiprocessing on Windows now starts child processes
   using the same sys.flags as the current process.  Initial patch by
