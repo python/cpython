@@ -2427,7 +2427,7 @@ class TestFlags(unittest.TestCase):
         prog = ('from test.test_multiprocessing import TestFlags; ' +
                 'TestFlags.run_in_child()')
         data = subprocess.check_output(
-            [sys.executable, '-E', '-S', '-O', '-c', prog])
+            [sys.executable, '-E', '-B', '-O', '-c', prog])
         child_flags, grandchild_flags = json.loads(data.decode('ascii'))
         self.assertEqual(child_flags, grandchild_flags)
 #
