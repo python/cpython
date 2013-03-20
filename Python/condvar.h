@@ -163,10 +163,9 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long us)
 
    Generic emulations of the pthread_cond_* API using
    earlier Win32 functions can be found on the Web.
-   The following read can be edificating (or not):
+   The following read can be give background information to these issues,
+   but the implementations are all broken in some way.
    http://www.cse.wustl.edu/~schmidt/win32-cv-1.html
-
-   See also 
 */
 
 typedef CRITICAL_SECTION PyMUTEX_T;
@@ -297,9 +296,10 @@ PyCOND_SIGNAL(PyCOND_T *cv)
 Py_LOCAL_INLINE(int)
 PyCOND_BROADCAST(PyCOND_T *cv)
 {
-    if (cv->waiting > 0) {
-        return ReleaseSemaphore(cv->sem, cv->waiting, NULL) ? 0 : -1;
-		cv->waiting = 0;
+    int waiting = cv->waiting;
+    if (waiting > 0) {
+        cv->waiting = 0;
+        return ReleaseSemaphore(cv->sem, waiting, NULL) ? 0 : -1;
     }
     return 0;
 }
