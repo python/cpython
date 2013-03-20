@@ -10,3 +10,6 @@ Python/Python-ast.c: Include/ast.h
 Python/opcode_targets.h: Python/makeopcodetargets.py Lib/opcode.py
 
 Objects/typeslots.inc: Include/typeslots.h Objects/typeslots.py
+
+Include/graminit.h: Grammar/Grammar Parser/acceler.c Parser/grammar1.c Parser/listnode.c Parser/node.c Parser/parser.c Parser/bitset.c Parser/metagrammar.c Parser/firstsets.c Parser/grammar.c Parser/pgen.c Objects/obmalloc.c Python/dynamic_annotations.c Python/mysnprintf.c Python/pyctype.c Parser/tokenizer_pgen.c Parser/printgrammar.c Parser/parsetok_pgen.c Parser/pgenmain.c
+Python/graminit.c: Include/graminit.h Grammar/Grammar Parser/acceler.c Parser/grammar1.c Parser/listnode.c Parser/node.c Parser/parser.c Parser/bitset.c Parser/metagrammar.c Parser/firstsets.c Parser/grammar.c Parser/pgen.c Objects/obmalloc.c Python/dynamic_annotations.c Python/mysnprintf.c Python/pyctype.c Parser/tokenizer_pgen.c Parser/printgrammar.c Parser/parsetok_pgen.c Parser/pgenmain.c
