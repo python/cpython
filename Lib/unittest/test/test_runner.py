@@ -5,6 +5,7 @@ import pickle
 import subprocess
 
 import unittest
+from unittest.case import _Outcome
 
 from .support import LoggingResult, ResultWithNoStartTestRunStopTestRun
 
@@ -42,12 +43,8 @@ class TestCleanUp(unittest.TestCase):
             def testNothing(self):
                 pass
 
-        class MockOutcome(object):
-            success = True
-            errors = []
-
         test = TestableTest('testNothing')
-        test._outcomeForDoCleanups = MockOutcome
+        outcome = test._outcome = _Outcome()
 
         exc1 = Exception('foo')
         exc2 = Exception('bar')
@@ -61,9 +58,10 @@ class TestCleanUp(unittest.TestCase):
         test.addCleanup(cleanup2)
 
         self.assertFalse(test.doCleanups())
-        self.assertFalse(MockOutcome.success)
+        self.assertFalse(outcome.success)
 
-        (Type1, instance1, _), (Type2, instance2, _) = reversed(MockOutcome.errors)
+        ((_, (Type1, instance1, _)),
+         (_, (Type2, instance2, _))) = reversed(outcome.errors)
         self.assertEqual((Type1, instance1), (Exception, exc1))
         self.assertEqual((Type2, instance2), (Exception, exc2))
 

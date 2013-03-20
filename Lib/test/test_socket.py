@@ -2,7 +2,6 @@
 
 import unittest
 from test import support
-from unittest.case import _ExpectedFailure
 
 import errno
 import io
@@ -272,9 +271,6 @@ class ThreadableTest:
             raise TypeError("test_func must be a callable function")
         try:
             test_func()
-        except _ExpectedFailure:
-            # We deliberately ignore expected failures
-            pass
         except BaseException as e:
             self.queue.put(e)
         finally:
