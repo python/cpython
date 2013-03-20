@@ -498,6 +498,11 @@ request.
 
    Return a list of tuples (header_name, header_value) of the Request headers.
 
+.. versionchanged:: 3.4
+  Request methods add_data, has_data, get_data, get_type, get_host,
+  get_selector, get_origin_req_host and is_unverifiable deprecated since 3.3
+  have been removed.
+
 .. _opener-director-objects:
 
 OpenerDirector Objects
