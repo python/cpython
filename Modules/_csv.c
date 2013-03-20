@@ -644,7 +644,7 @@ parse_process_char(ReaderObj *self, Py_UCS4 c)
         break;
 
     case ESCAPED_CHAR:
-        if (c == '\n' | c=='\r') {
+        if (c == '\n' || c=='\r') {
             if (parse_add_char(self, c) < 0)
                 return -1;
             self->state = AFTER_ESCAPED_CRNL;
