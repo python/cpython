@@ -743,34 +743,37 @@ r_PyLong(RFILE *p)
     return NULL;
 }
 
-/* allocate the reflist index */
-static PyObject *
-r_ref_reserve(PyObject *o, Py_ssize_t *idx, int flag, RFILE *p)
+/* allocate the reflist index for a new object. Return -1 on failure */
+static Py_ssize_t
+r_ref_reserve(int flag, RFILE *p)
 {
     if (flag) { /* currently only FLAG_REF is defined */
-        *idx = PyList_Size(p->refs);
-        if (*idx < 0)
-            goto err;
-        if (*idx >= 0x7ffffffe) {
+        Py_ssize_t idx = PyList_Size(p->refs);
+        if (idx < 0)
+            return -1;
+        if (idx >= 0x7ffffffe) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (index list too large)");
-            goto err;
+            return -1;
         }
         if (PyList_Append(p->refs, Py_None) < 0)
-            goto err;
+            return -1;
+        return idx;
     } else
-        *idx = 0;
-    return o;
-err:
-    Py_XDECREF(o);  /* release the new object */
-    *idx = -1;
-    return NULL;
+        return 0;
 }
 
-/* insert actual object to the reflist */
+/* insert the new object 'o' to the reflist at previously
+ * allocated index 'idx'.
+ * 'o' can be NULL, in which case nothing is done.
+ * if 'o' was non-NULL, and the function succeeds, 'o' is returned.
+ * if 'o' was non-NULL, and the function fails, 'o' is released and
+ * NULL returned. This simplifies error checking at the call site since
+ * a single test for NULL for the function result is enough.
+ */
 static PyObject *
 r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
 {
-    if (o && (flag & FLAG_REF)) {
+    if (o != NULL && flag) { /* currently only FLAG_REF is defined */
         if (PyList_SetItem(p->refs, idx, o) < 0) {
             Py_DECREF(o); /* release the new object */
             return NULL;
@@ -788,7 +791,7 @@ r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
 static PyObject *
 r_ref(PyObject *o, int flag, RFILE *p)
 {
-    if (o && (flag & FLAG_REF)) {
+    if (o != NULL && flag) { /* currently only FLAG_REF is defined */
         if (PyList_Append(p->refs, o) < 0) {
             Py_DECREF(o); /* release the new object */
             return NULL;
@@ -821,7 +824,8 @@ r_object(RFILE *p)
     type = type & ~FLAG_REF;
 
 #define R_REF(O) do{\
-    O = r_ref(O, flag, p);\
+    if (flag) \
+        O = r_ref(O, flag, p);\
 } while (0)
 
     switch (type) {
@@ -1143,13 +1147,16 @@ r_object(RFILE *p)
             break;
         }
         v = (type == TYPE_SET) ? PySet_New(NULL) : PyFrozenSet_New(NULL);
-        /* must use delayed registration of frozensets because they must
-         * be init with a refcount of 1
-         */
-        if (type == TYPE_SET)
+        if (type == TYPE_SET) {
             R_REF(v);
-        else
-            v = r_ref_reserve(v, &idx, flag, p);
+        } else {
+            /* must use delayed registration of frozensets because they must
+             * be init with a refcount of 1
+             */
+            idx = r_ref_reserve(flag, p);
+            if (idx < 0)
+                Py_CLEAR(v); /* signal error */
+        }
         if (v == NULL) {
             retval = NULL;
             break;
@@ -1195,7 +1202,7 @@ r_object(RFILE *p)
             int firstlineno;
             PyObject *lnotab = NULL;
             
-            r_ref_reserve(NULL, &idx, flag, p);
+            idx = r_ref_reserve(flag, p);
             if (idx < 0) {
                 retval = NULL;
                 break;
