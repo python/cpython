@@ -1439,6 +1439,7 @@ strings.");
 static PyObject *
 s_unpack(PyObject *self, PyObject *inputstr)
 {
+    Py_buffer buf;
     char *start;
     Py_ssize_t len;
     PyObject *args=NULL, *result;
@@ -1454,12 +1455,17 @@ s_unpack(PyObject *self, PyObject *inputstr)
     args = PyTuple_Pack(1, inputstr);
     if (args == NULL)
         return NULL;
-    if (!PyArg_ParseTuple(args, "s#:unpack", &start, &len))
+    if (!PyArg_ParseTuple(args, "s*:unpack", &buf))
         goto fail;
-    if (soself->s_size != len)
+    start = buf.buf;
+    len = buf.len;
+    if (soself->s_size != len) {
+        PyBuffer_Release(&buf);
         goto fail;
+    }
     result = s_unpack_internal(soself, start);
     Py_DECREF(args);
+    PyBuffer_Release(&buf);
     return result;
 
 fail:
@@ -1482,24 +1488,24 @@ static PyObject *
 s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"buffer", "offset", 0};
-#if (PY_VERSION_HEX < 0x02050000)
-    static char *fmt = "z#|i:unpack_from";
-#else
-    static char *fmt = "z#|n:unpack_from";
-#endif
+    static char *fmt = "z*|n:unpack_from";
+    Py_buffer buf;
     Py_ssize_t buffer_len = 0, offset = 0;
     char *buffer = NULL;
     PyStructObject *soself = (PyStructObject *)self;
+    PyObject *result;
     assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, fmt, kwlist,
-                                     &buffer, &buffer_len, &offset))
+                                     &buf, &offset))
         return NULL;
-
+    buffer = buf.buf;
+    buffer_len = buf.len;
     if (buffer == NULL) {
         PyErr_Format(StructError,
             "unpack_from requires a buffer argument");
+        PyBuffer_Release(&buf);
         return NULL;
     }
 
@@ -1510,9 +1516,12 @@ s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
         PyErr_Format(StructError,
             "unpack_from requires a buffer of at least %zd bytes",
             soself->s_size);
+        PyBuffer_Release(&buf);
         return NULL;
     }
-    return s_unpack_internal(soself, buffer + offset);
+    result = s_unpack_internal(soself, buffer + offset);
+    PyBuffer_Release(&buf);
+    return result;
 }
 
 

@@ -66,9 +66,7 @@ typedef struct { /* Subtype of IOobject */
   PyObject_HEAD
   char *buf;
   Py_ssize_t pos, string_size;
-  /* We store a reference to the object here in order to keep
-     the buffer alive during the lifetime of the Iobject. */
-  PyObject *pbuf;
+    Py_buffer pbuf;
 } Iobject;
 
 /* IOobject (common) methods */
@@ -448,12 +446,14 @@ O_cwrite(PyObject *self, const char *c, Py_ssize_t  len) {
 
 static PyObject *
 O_write(Oobject *self, PyObject *args) {
-    char *c;
-    int l;
+    Py_buffer buf;
+    int result;
 
-    if (!PyArg_ParseTuple(args, "t#:write", &c, &l)) return NULL;
+    if (!PyArg_ParseTuple(args, "s*:write", &buf)) return NULL;
 
-    if (O_cwrite((PyObject*)self,c,l) < 0) return NULL;
+    result = O_cwrite((PyObject*)self, buf.buf, buf.len);
+    PyBuffer_Release(&buf);
+    if (result < 0) return NULL;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -606,7 +606,7 @@ newOobject(int  size) {
 
 static PyObject *
 I_close(Iobject *self, PyObject *unused) {
-    Py_CLEAR(self->pbuf);
+    PyBuffer_Release(&self->pbuf);
     self->buf = NULL;
 
     self->pos = self->string_size = 0;
@@ -635,7 +635,7 @@ static struct PyMethodDef I_methods[] = {
 
 static void
 I_dealloc(Iobject *self) {
-  Py_XDECREF(self->pbuf);
+  PyBuffer_Release(&self->pbuf);
   PyObject_Del(self);
 }
 
@@ -680,25 +680,26 @@ static PyTypeObject Itype = {
 static PyObject *
 newIobject(PyObject *s) {
   Iobject *self;
-  char *buf;
-  Py_ssize_t size;
+  Py_buffer buf;
+  PyObject *args;
+  int result;
 
-  if (PyUnicode_Check(s)) {
-    if (PyObject_AsCharBuffer(s, (const char **)&buf, &size) != 0)
+  args = Py_BuildValue("(O)", s);
+  if (args == NULL)
       return NULL;
-  }
-  else if (PyObject_AsReadBuffer(s, (const void **)&buf, &size)) {
-    PyErr_Format(PyExc_TypeError, "expected read buffer, %.200s found",
-                 s->ob_type->tp_name);
-    return NULL;
-  }
+  result = PyArg_ParseTuple(args, "s*:StringIO", &buf);
+  Py_DECREF(args);
+  if (!result)
+      return NULL;
 
   self = PyObject_New(Iobject, &Itype);
-  if (!self) return NULL;
-  Py_INCREF(s);
-  self->buf=buf;
-  self->string_size=size;
-  self->pbuf=s;
+  if (!self) {
+      PyBuffer_Release(&buf);
+      return NULL;
+  }
+  self->buf=buf.buf;
+  self->string_size=buf.len;
+  self->pbuf=buf;
   self->pos=0;
 
   return (PyObject*)self;

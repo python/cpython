@@ -20,7 +20,6 @@ class TestGenericStringIO(unittest.TestCase):
     constructor = str
 
     def setUp(self):
-        self._line = self.constructor(self._line)
         self._lines = self.constructor((self._line + '\n') * 5)
         self._fp = self.MODULE.StringIO(self._lines)
 
@@ -210,12 +209,16 @@ class TestBufferStringIO(TestStringIO):
 class TestBuffercStringIO(TestcStringIO):
     constructor = buffer
 
+class TestMemoryviewcStringIO(TestcStringIO):
+    constructor = memoryview
+
 
 def test_main():
     test_support.run_unittest(TestStringIO, TestcStringIO)
     with test_support.check_py3k_warnings(("buffer.. not supported",
                                              DeprecationWarning)):
         test_support.run_unittest(TestBufferStringIO, TestBuffercStringIO)
+    test_support.run_unittest(TestMemoryviewcStringIO)
 
 if __name__ == '__main__':
     test_main()
