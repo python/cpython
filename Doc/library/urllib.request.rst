@@ -478,7 +478,7 @@ request.
    request to be ``POST`` rather than ``GET``.  Deprecated in 3.3, use
    :attr:`Request.data`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. method:: Request.has_data()
@@ -486,14 +486,14 @@ request.
    Return whether the instance has a non-\ ``None`` data. Deprecated in 3.3,
    use :attr:`Request.data`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. method:: Request.get_data()
 
    Return the instance's data.  Deprecated in 3.3, use :attr:`Request.data`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. method:: Request.get_type()
@@ -501,7 +501,7 @@ request.
    Return the type of the URL --- also known as the scheme.  Deprecated in 3.3,
    use :attr:`Request.type`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. method:: Request.get_host()
@@ -509,7 +509,7 @@ request.
    Return the host to which a connection will be made. Deprecated in 3.3, use
    :attr:`Request.host`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. method:: Request.get_selector()
@@ -517,7 +517,7 @@ request.
    Return the selector --- the part of the URL that is sent to the server.
    Deprecated in 3.3, use :attr:`Request.selector`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 .. method:: Request.get_header(header_name, default=None)
 
@@ -538,7 +538,7 @@ request.
    :rfc:`2965`.  See the documentation for the :class:`Request` constructor.
    Deprecated in 3.3, use :attr:`Request.origin_req_host`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. method:: Request.is_unverifiable()
@@ -547,7 +547,7 @@ request.
    documentation for the :class:`Request` constructor.  Deprecated in 3.3, use
    :attr:`Request.unverifiable`.
 
-   .. deprecated:: 3.3
+   .. deprecated-removed:: 3.3 3.4
 
 
 .. _opener-director-objects:
