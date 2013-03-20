@@ -118,7 +118,7 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
 .. function:: check_output(args, *, stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=None)
 
-   Run command with arguments and return its output as a byte string.
+   Run command with arguments and return its output.
 
    If the return code was non-zero it raises a :exc:`CalledProcessError`. The
    :exc:`CalledProcessError` object will have the return code in the
