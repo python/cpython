@@ -1488,11 +1488,20 @@ class RequestTests(unittest.TestCase):
     # if we change data we need to remove content-length header
     # (cause it's most probably calculated for previous value)
     def test_setting_data_should_remove_content_length(self):
-        self.assertFalse("Content-length" in self.get.unredirected_hdrs)
+        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
         self.get.add_unredirected_header("Content-length", 42)
         self.assertEqual(42, self.get.unredirected_hdrs["Content-length"])
         self.get.data = "spam"
-        self.assertFalse("Content-length" in self.get.unredirected_hdrs)
+        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
+
+    # issue 17485 same for deleting data.
+    def test_deleting_data_should_remove_content_length(self):
+        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
+        self.get.data = 'foo'
+        self.get.add_unredirected_header("Content-length", 3)
+        self.assertEqual(3, self.get.unredirected_hdrs["Content-length"])
+        del self.get.data
+        self.assertNotIn("Content-length", self.get.unredirected_hdrs)
 
     def test_get_full_url(self):
         self.assertEqual("http://www.python.org/~jeremy/",

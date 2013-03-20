@@ -296,7 +296,7 @@ class Request:
 
     @data.deleter
     def data(self):
-        self._data = None
+        self.data = None
 
     def _parse(self):
         self.type, rest = splittype(self.full_url)
