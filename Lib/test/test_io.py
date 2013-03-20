@@ -2880,7 +2880,7 @@ class SignalsTest(unittest.TestCase):
             # The buffered IO layer must check for pending signal
             # handlers, which in this case will invoke alarm_interrupt().
             self.assertRaises(ZeroDivisionError,
-                              wio.write, item * (1024 * 1024))
+                              wio.write, item * (3 * 1000 * 1000))
             t.join()
             # We got one byte, get another one and check that it isn't a
             # repeat of the first one.
