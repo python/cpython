@@ -308,6 +308,15 @@ class Test_Csv(unittest.TestCase):
             for i, row in enumerate(csv.reader(fileobj)):
                 self.assertEqual(row, rows[i])
 
+    def test_roundtrip_escaped_unquoted_newlines(self):
+        with TemporaryFile("w+", newline='') as fileobj:
+            writer = csv.writer(fileobj,quoting=csv.QUOTE_NONE,escapechar="\\")
+            rows = [['a\nb','b'],['c','x\r\nd']]
+            writer.writerows(rows)
+            fileobj.seek(0)
+            for i, row in enumerate(csv.reader(fileobj,quoting=csv.QUOTE_NONE,escapechar="\\")):
+                self.assertEqual(row,rows[i])
+
 class TestDialectRegistry(unittest.TestCase):
     def test_registry_badargs(self):
         self.assertRaises(TypeError, csv.list_dialects, None)
