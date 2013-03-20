@@ -497,15 +497,12 @@ class StructTest(unittest.TestCase):
             self.test_unpack_from(cls=buffer)
 
     def test_unpack_with_memoryview(self):
-        with check_py3k_warnings(("buffer.. not supported in 3.x",
-                                  DeprecationWarning)):
-            # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
-            data1 = memoryview('\x12\x34\x56\x78')
-            for data in [data1,]:
-                value, = struct.unpack('>I', data)
-                self.assertEqual(value, 0x12345678)
-
-            self.test_unpack_from(cls=memoryview)
+        # SF bug 1563759: struct.unpack doesn't support buffer protocol objects
+        data1 = memoryview('\x12\x34\x56\x78')
+        for data in [data1,]:
+            value, = struct.unpack('>I', data)
+            self.assertEqual(value, 0x12345678)
+        self.test_unpack_from(cls=memoryview)
 
     def test_bool(self):
         class ExplodingBool(object):
