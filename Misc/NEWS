@@ -292,6 +292,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17485: Also delete the Request Content-Length header if the data
+  attribute is deleted.  (Follow on to issue 16464).
+
 - Issue #15927: CVS now correctly parses escaped newlines and carriage
   when parsing with quoting turned off.
 
