@@ -216,6 +216,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13150: sysconfig no longer parses the Makefile and config.h files
+  when imported, instead doing it at build time.  This makes importing
+  sysconfig faster and reduces Python startup time by 20%.
+
 - Issue #10212: cStringIO and struct.unpack support new buffer objects.
 
 - Issue #12098: multiprocessing on Windows now starts child processes

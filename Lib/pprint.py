@@ -37,7 +37,10 @@ saferepr()
 import sys as _sys
 import warnings
 
-from cStringIO import StringIO as _StringIO
+try:
+    from cStringIO import StringIO as _StringIO
+except ImportError:
+    from StringIO import StringIO as _StringIO
 
 __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
            "PrettyPrinter"]
