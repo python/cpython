@@ -794,6 +794,10 @@ Tests
 Build
 -----
 
+- Issue #16754: Fix the incorrect shared library extension on linux. Introduce
+  two makefile macros SHLIB_SUFFIX and EXT_SUFFIX. SO now has the value of
+  SHLIB_SUFFIX again (as in 2.x and 3.1). The SO macro is removed in 3.4.
+
 - Issue #5033: Fix building of the sqlite3 extension module when the
   SQLite library version has "beta" in it. Patch by Andreas Pelme.
 

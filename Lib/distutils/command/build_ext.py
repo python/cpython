@@ -677,10 +677,10 @@ class build_ext(Command):
         if os.name == "os2":
             ext_path[len(ext_path) - 1] = ext_path[len(ext_path) - 1][:8]
         # extensions in debug_mode are named 'module_d.pyd' under windows
-        so_ext = get_config_var('SO')
+        ext_suffix = get_config_var('EXT_SUFFIX')
         if os.name == 'nt' and self.debug:
-            return os.path.join(*ext_path) + '_d' + so_ext
-        return os.path.join(*ext_path) + so_ext
+            return os.path.join(*ext_path) + '_d' + ext_suffix
+        return os.path.join(*ext_path) + ext_suffix
 
     def get_export_symbols(self, ext):
         """Return the list of symbols that a shared extension has to
