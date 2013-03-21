@@ -10,11 +10,10 @@ except ImportError:
     from time import time as _time
 from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
+from itertools import islice as _islice
 try:
-    from _itertools import islice as _slice
     from _collections import deque as _deque
 except ImportError:
-    from itertools import islice as _islice
     from collections import deque as _deque
 
 # Note regarding PEP 8 compliant names
