@@ -662,12 +662,12 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         if self.rcpt_response is None:
             super().smtp_RCPT(arg)
             return
-        self.push(self.rcpt_response[self.rcpt_count])
         self.rcpt_count += 1
+        self.push(self.rcpt_response[self.rcpt_count-1])
 
     def smtp_RSET(self, arg):
-        super().smtp_RSET(arg)
         self.rset_count += 1
+        super().smtp_RSET(arg)
 
     def smtp_DATA(self, arg):
         if self.data_response is None:
@@ -847,7 +847,7 @@ class SMTPSimTests(unittest.TestCase):
         with self.assertRaises(smtplib.SMTPSenderRefused):
             smtp.sendmail('John', 'Sally', 'test message')
         self.assertIsNone(smtp.sock)
-        self.assertEqual(self.serv._SMTPchannel.rcpt_count, 0)
+        self.assertEqual(self.serv._SMTPchannel.rset_count, 0)
 
     def test_421_from_rcpt_cmd(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
