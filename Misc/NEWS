@@ -233,6 +233,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #5713: smtplib now handles 421 (closing connection) error codes when
+  sending mail by closing the socket and reporting the 421 error code via the
+  exception appropriate to the command that received the error response.
+
 - Issue #8862: Fixed curses cleanup when getkey is interrputed by a signal.
 
 - Issue #17443: impalib.IMAP4_stream was using the default unbuffered IO
