@@ -1461,6 +1461,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13248: removed deprecated and undocumented difflib.isbjunk, isbpopular.
+
 - Issue #13370: Ensure that ctypes works on Mac OS X when Python is compiled
   using the clang compiler.
 
