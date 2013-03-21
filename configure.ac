@@ -1898,12 +1898,29 @@ case $ac_sys_system/$ac_sys_release in
 esac
 
 # Set info about shared libraries.
-AC_SUBST(SO)
+AC_SUBST(SHLIB_SUFFIX)
 AC_SUBST(LDSHARED)
 AC_SUBST(LDCXXSHARED)
 AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
+
+# SHLIB_SUFFIX is the extension of shared libraries `(including the dot!)
+# -- usually .so, .sl on HP-UX, .dll on Cygwin
+AC_MSG_CHECKING(the extension of shared libraries)
+if test -z "$SHLIB_SUFFIX"; then
+	case $ac_sys_system in
+	hp*|HP*)
+		case `uname -m` in
+			ia64) SHLIB_SUFFIX=.so;;
+	  		*)    SHLIB_SUFFIX=.sl;;
+		esac
+		;;
+	CYGWIN*)   SHLIB_SUFFIX=.dll;;
+	*)	   SHLIB_SUFFIX=.so;;
+	esac
+fi
+AC_MSG_RESULT($SHLIB_SUFFIX)
 
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
@@ -3927,6 +3944,14 @@ AC_MSG_CHECKING(SOABI)
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}
 AC_MSG_RESULT($SOABI)
 
+AC_SUBST(EXT_SUFFIX)
+case $ac_sys_system in
+    Linux*|GNU*)
+	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
+    *)
+	EXT_SUFFIX=${SHLIB_SUFFIX};;
+esac
+
 AC_MSG_CHECKING(LDVERSION)
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 AC_MSG_RESULT($LDVERSION)
@@ -3935,39 +3960,6 @@ dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST(PY_ENABLE_SHARED)
 LIBPL="${prefix}/lib/python${VERSION}/config-${LDVERSION}"
 AC_SUBST(LIBPL)
-
-# SO is the extension of shared libraries `(including the dot!)
-# -- usually .so, .sl on HP-UX, .dll on Cygwin
-AC_MSG_CHECKING(SO)
-if test -z "$SO"
-then
-	case $ac_sys_system in
-	hp*|HP*)
-		case `uname -m` in
-			ia64) SO=.so;;
-	  		*)    SO=.sl;;
-		esac
-		;;
-	CYGWIN*)   SO=.dll;;
-	Linux*|GNU*)
-		   SO=.${SOABI}.so;;
-	*)	   SO=.so;;
-	esac
-else
-	# this might also be a termcap variable, see #610332
-	echo
-	echo '====================================================================='
-	echo '+                                                                   +'
-	echo '+ WARNING: You have set SO in your environment.                     +'
-	echo '+ Do you really mean to change the extension for shared libraries?  +'
-	echo '+ Continuing in 10 seconds to let you to ponder.                    +'
-	echo '+                                                                   +'
-	echo '====================================================================='
-	sleep 10
-fi
-AC_MSG_RESULT($SO)
-
-AC_DEFINE_UNQUOTED(SHLIB_EXT, "$SO", [Define this to be extension of shared libraries (including the dot!).])
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
