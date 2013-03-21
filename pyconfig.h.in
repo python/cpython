@@ -1003,9 +1003,6 @@
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
 
-/* Define this to be extension of shared libraries (including the dot!). */
-#undef SHLIB_EXT
-
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
 
