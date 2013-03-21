@@ -1181,6 +1181,9 @@ PyCursesWindow_Get_WCh(PyCursesWindowObject *self, PyObject *args)
         return NULL;
     }
     if (ct == ERR) {
+        if (PyErr_CheckSignals())
+            return NULL;
+
         /* get_wch() returns ERR in nodelay mode */
         PyErr_SetString(PyCursesError, "no input");
         return NULL;
