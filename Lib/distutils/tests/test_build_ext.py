@@ -318,8 +318,8 @@ class BuildExtTestCase(TempdirManager,
         finally:
             os.chdir(old_wd)
         self.assertTrue(os.path.exists(so_file))
-        so_ext = sysconfig.get_config_var('SO')
-        self.assertTrue(so_file.endswith(so_ext))
+        ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        self.assertTrue(so_file.endswith(ext_suffix))
         so_dir = os.path.dirname(so_file)
         self.assertEqual(so_dir, other_tmp_dir)
 
@@ -328,7 +328,7 @@ class BuildExtTestCase(TempdirManager,
         cmd.run()
         so_file = cmd.get_outputs()[0]
         self.assertTrue(os.path.exists(so_file))
-        self.assertTrue(so_file.endswith(so_ext))
+        self.assertTrue(so_file.endswith(ext_suffix))
         so_dir = os.path.dirname(so_file)
         self.assertEqual(so_dir, cmd.build_lib)
 
@@ -355,7 +355,7 @@ class BuildExtTestCase(TempdirManager,
         self.assertEqual(lastdir, 'bar')
 
     def test_ext_fullpath(self):
-        ext = sysconfig.get_config_vars()['SO']
+        ext = sysconfig.get_config_var('EXT_SUFFIX')
         # building lxml.etree inplace
         #etree_c = os.path.join(self.tmp_dir, 'lxml.etree.c')
         #etree_ext = Extension('lxml.etree', [etree_c])

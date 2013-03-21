@@ -191,9 +191,9 @@ def customize_compiler(compiler):
                 _osx_support.customize_compiler(_config_vars)
                 _config_vars['CUSTOMIZED_OSX_COMPILER'] = 'True'
 
-        (cc, cxx, opt, cflags, ccshared, ldshared, so_ext, ar, ar_flags) = \
+        (cc, cxx, opt, cflags, ccshared, ldshared, shlib_suffix, ar, ar_flags) = \
             get_config_vars('CC', 'CXX', 'OPT', 'CFLAGS',
-                            'CCSHARED', 'LDSHARED', 'SO', 'AR', 'ARFLAGS')
+                            'CCSHARED', 'LDSHARED', 'SHLIB_SUFFIX', 'AR', 'ARFLAGS')
 
         newcc = None
         if 'CC' in os.environ:
@@ -232,7 +232,7 @@ def customize_compiler(compiler):
             linker_exe=cc,
             archiver=archiver)
 
-        compiler.shared_lib_extension = so_ext
+        compiler.shared_lib_extension = shlib_suffix
 
 
 def get_config_h_filename():
@@ -487,6 +487,7 @@ def _init_nt():
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
     g['SO'] = '.pyd'
+    g['EXT_SUFFIX'] = '.pyd'
     g['EXE'] = ".exe"
     g['VERSION'] = get_python_version().replace(".", "")
     g['BINDIR'] = os.path.dirname(os.path.abspath(sys.executable))
@@ -506,6 +507,7 @@ def _init_os2():
     g['INCLUDEPY'] = get_python_inc(plat_specific=0)
 
     g['SO'] = '.pyd'
+    g['EXT_SUFFIX'] = '.pyd'
     g['EXE'] = ".exe"
 
     global _config_vars
