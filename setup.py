@@ -163,13 +163,7 @@ class PyBuildExt(build_ext):
     def build_extensions(self):
 
         # Detect which modules should be compiled
-        old_so = self.compiler.shared_lib_extension
-        # Workaround PEP 3149 stuff
-        self.compiler.shared_lib_extension = os.environ.get("SO", ".so")
-        try:
-            missing = self.detect_modules()
-        finally:
-            self.compiler.shared_lib_extension = old_so
+        missing = self.detect_modules()
 
         # Remove modules that are present on the disabled list
         extensions = [ext for ext in self.extensions
@@ -1835,7 +1829,8 @@ class PyBuildInstallLib(install_lib):
     # mode 644 unless they are a shared library in which case they will get
     # mode 755. All installed directories will get mode 755.
 
-    so_ext = sysconfig.get_config_var("SO")
+    # this is works for EXT_SUFFIX too, which ends with SHLIB_SUFFIX
+    shlib_suffix = sysconfig.get_config_var("SHLIB_SUFFIX")
 
     def install(self):
         outfiles = install_lib.install(self)
@@ -1850,7 +1845,7 @@ class PyBuildInstallLib(install_lib):
         for filename in files:
             if os.path.islink(filename): continue
             mode = defaultMode
-            if filename.endswith(self.so_ext): mode = sharedLibMode
+            if filename.endswith(self.shlib_suffix): mode = sharedLibMode
             log.info("changing mode of %s to %o", filename, mode)
             if not self.dry_run: os.chmod(filename, mode)
 
