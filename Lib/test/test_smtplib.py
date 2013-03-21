@@ -837,8 +837,8 @@ class SMTPSimTests(unittest.TestCase):
     def test_with_statement_QUIT_failure(self):
         with self.assertRaises(smtplib.SMTPResponseException) as error:
             with smtplib.SMTP(HOST, self.port) as smtp:
-                self.serv._SMTPchannel.quit_response = '421 QUIT FAILED'
                 smtp.noop()
+                self.serv._SMTPchannel.quit_response = '421 QUIT FAILED'
         self.assertEqual(error.exception.smtp_code, 421)
         self.assertEqual(error.exception.smtp_error, b'QUIT FAILED')
 
