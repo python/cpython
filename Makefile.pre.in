@@ -125,7 +125,9 @@ INCLUDEPY=	$(INCLUDEDIR)/python$(LDVERSION)
 CONFINCLUDEPY=	$(CONFINCLUDEDIR)/python$(LDVERSION)
 
 # Symbols used for using shared libraries
-SO=		@SO@
+SHLIB_SUFFIX=	@SHLIB_SUFFIX@
+EXT_SUFFIX=	@EXT_SUFFIX@
+SO=		$(SHLIB_SUFFIX)
 LDSHARED=	@LDSHARED@ $(PY_LDFLAGS)
 BLDSHARED=	@BLDSHARED@ $(PY_LDFLAGS)
 LDCXXSHARED=	@LDCXXSHARED@
@@ -597,6 +599,11 @@ Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSOABI='"$(SOABI)"' \
 		-o $@ $(srcdir)/Python/dynload_shlib.c
+
+Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
+	$(CC) -c $(PY_CORE_CFLAGS) \
+		-DSHLIB_EXT='"$(EXT_SUFFIX)"' \
+		-o $@ $(srcdir)/Python/dynload_hpux.c
 
 Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 	$(CC) -c $(PY_CORE_CFLAGS) \
@@ -1098,7 +1105,7 @@ libainstall:	all python-config
 	done
 	@if test -d $(LIBRARY); then :; else \
 		if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
-			if test "$(SO)" = .dll; then \
+			if test "$(SHLIB_SUFFIX)" = .dll; then \
 				$(INSTALL_DATA) $(LDLIBRARY) $(DESTDIR)$(LIBPL) ; \
 			else \
 				$(INSTALL_DATA) $(LIBRARY) $(DESTDIR)$(LIBPL)/$(LIBRARY) ; \

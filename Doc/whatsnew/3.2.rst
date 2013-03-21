@@ -368,9 +368,9 @@ In Python itself, the tags are accessible from functions in the :mod:`sysconfig`
 module::
 
    >>> import sysconfig
-   >>> sysconfig.get_config_var('SOABI')    # find the version tag
+   >>> sysconfig.get_config_var('SOABI')       # find the version tag
    'cpython-32mu'
-   >>> sysconfig.get_config_var('SO')       # find the full filename extension
+   >>> sysconfig.get_config_var('EXT_SUFFIX')  # find the full filename extension
    '.cpython-32mu.so'
 
 .. seealso::
