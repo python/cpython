@@ -625,6 +625,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 SRCDIRS
 THREADHEADERS
+EXT_SUFFIX
 SOABI
 LIBC
 LIBM
@@ -652,7 +653,7 @@ CCSHARED
 BLDSHARED
 LDCXXSHARED
 LDSHARED
-SO
+SHLIB_SUFFIX
 LIBTOOL_CRUFT
 OTHER_LIBTOOL_OPT
 UNIVERSAL_ARCH_FLAGS
@@ -8392,6 +8393,25 @@ esac
 
 
 
+# SHLIB_SUFFIX is the extension of shared libraries `(including the dot!)
+# -- usually .so, .sl on HP-UX, .dll on Cygwin
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking the extension of shared libraries" >&5
+$as_echo_n "checking the extension of shared libraries... " >&6; }
+if test -z "$SHLIB_SUFFIX"; then
+	case $ac_sys_system in
+	hp*|HP*)
+		case `uname -m` in
+			ia64) SHLIB_SUFFIX=.so;;
+	  		*)    SHLIB_SUFFIX=.sl;;
+		esac
+		;;
+	CYGWIN*)   SHLIB_SUFFIX=.dll;;
+	*)	   SHLIB_SUFFIX=.so;;
+	esac
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $SHLIB_SUFFIX" >&5
+$as_echo "$SHLIB_SUFFIX" >&6; }
+
 # LDSHARED is the ld *command* used to create shared library
 # -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
 # (Shared libraries in this instance are shared modules to be loaded into
@@ -13685,50 +13705,19 @@ SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 $as_echo "$SOABI" >&6; }
 
+
+case $ac_sys_system in
+    Linux*|GNU*)
+	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
+    *)
+	EXT_SUFFIX=${SHLIB_SUFFIX};;
+esac
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking LDVERSION" >&5
 $as_echo_n "checking LDVERSION... " >&6; }
 LDVERSION='$(VERSION)$(ABIFLAGS)'
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LDVERSION" >&5
 $as_echo "$LDVERSION" >&6; }
-
-# SO is the extension of shared libraries `(including the dot!)
-# -- usually .so, .sl on HP-UX, .dll on Cygwin
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking SO" >&5
-$as_echo_n "checking SO... " >&6; }
-if test -z "$SO"
-then
-	case $ac_sys_system in
-	hp*|HP*)
-		case `uname -m` in
-			ia64) SO=.so;;
-	  		*)    SO=.sl;;
-		esac
-		;;
-	CYGWIN*)   SO=.dll;;
-	Linux*|GNU*)
-		   SO=.${SOABI}.so;;
-	*)	   SO=.so;;
-	esac
-else
-	# this might also be a termcap variable, see #610332
-	echo
-	echo '====================================================================='
-	echo '+                                                                   +'
-	echo '+ WARNING: You have set SO in your environment.                     +'
-	echo '+ Do you really mean to change the extension for shared libraries?  +'
-	echo '+ Continuing in 10 seconds to let you to ponder.                    +'
-	echo '+                                                                   +'
-	echo '====================================================================='
-	sleep 10
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $SO" >&5
-$as_echo "$SO" >&6; }
-
-
-cat >>confdefs.h <<_ACEOF
-#define SHLIB_EXT "$SO"
-_ACEOF
-
 
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
