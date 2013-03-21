@@ -3249,15 +3249,14 @@ On some platforms, path may also be specified as an open file descriptor;\n\
   the file descriptor must refer to a directory.\n\
   If this functionality is unavailable, using it raises NotImplementedError.");
 
+#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
 static PyObject *
-posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
+_listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     path_t path;
     PyObject *list = NULL;
     static char *keywords[] = {"path", NULL};
     int fd = -1;
-
-#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     PyObject *v;
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     BOOL result;
@@ -3268,28 +3267,16 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t len = sizeof(namebuf)-5;
     PyObject *po = NULL;
     wchar_t *wnamebuf = NULL;
-#else
-    PyObject *v;
-    DIR *dirp = NULL;
-    struct dirent *ep;
-    int return_str; /* if false, return bytes */
-#endif
 
     memset(&path, 0, sizeof(path));
     path.function_name = "listdir";
     path.nullable = 1;
-#ifdef HAVE_FDOPENDIR
-    path.allow_fd = 1;
-    path.fd = -1;
-#endif
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", keywords,
-        path_converter, &path
-        ))
-        return NULL;
 
-    /* XXX Should redo this putting the (now four) versions of opendir
-       in separate files instead of having them all here... */
-#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", keywords,
+                                     path_converter, &path)) {
+        return NULL;
+    }
+
     if (!path.narrow) {
         WIN32_FIND_DATAW wFileData;
         wchar_t *po_wchars;
@@ -3429,7 +3416,34 @@ exit:
 
     return list;
 
-#else
+}  /* end of _listdir_windows_no_opendir */
+
+#else  /* thus POSIX, ie: not (MS_WINDOWS and not HAVE_OPENDIR) */
+
+static PyObject *
+_posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    path_t path;
+    PyObject *list = NULL;
+    static char *keywords[] = {"path", NULL};
+    int fd = -1;
+
+    PyObject *v;
+    DIR *dirp = NULL;
+    struct dirent *ep;
+    int return_str; /* if false, return bytes */
+
+    memset(&path, 0, sizeof(path));
+    path.function_name = "listdir";
+    path.nullable = 1;
+#ifdef HAVE_FDOPENDIR
+    path.allow_fd = 1;
+    path.fd = -1;
+#endif
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", keywords,
+                                     path_converter, &path)) {
+        return NULL;
+    }
 
     errno = 0;
 #ifdef HAVE_FDOPENDIR
@@ -3522,9 +3536,18 @@ exit:
     path_cleanup(&path);
 
     return list;
+}  /* end of _posix_listdir */
+#endif  /* which OS */
 
-#endif /* which OS */
-}  /* end of posix_listdir */
+static PyObject *
+posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
+    return _listdir_windows_no_opendir(self, args, kwargs);
+#else
+    return _posix_listdir(self, args, kwargs);
+#endif
+}
 
 #ifdef MS_WINDOWS
 /* A helper function for abspath on win32 */
