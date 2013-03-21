@@ -238,11 +238,9 @@ default values. The arguments that are most commonly needed are:
 
    .. note::
 
-      The *universal_newlines* feature is supported only if Python is built
-      with universal newline support (the default).  Also, the newlines
-      attribute of the file objects :attr:`Popen.stdin`, :attr:`Popen.stdout`
-      and :attr:`Popen.stderr` are not updated by the
-      :meth:`Popen.communicate` method.
+      The newlines attribute of the file objects :attr:`Popen.stdin`,
+      :attr:`Popen.stdout` and :attr:`Popen.stderr` are not updated by
+      the :meth:`Popen.communicate` method.
 
    If *shell* is ``True``, the specified command will be executed through
    the shell.  This can be useful if you are using Python primarily for the
