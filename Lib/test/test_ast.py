@@ -947,7 +947,7 @@ class ASTValidatorTests(unittest.TestCase):
             fn = os.path.join(stdlib, module)
             with open(fn, "r", encoding="utf-8") as fp:
                 source = fp.read()
-            mod = ast.parse(source)
+            mod = ast.parse(source, fn)
             compile(mod, fn, "exec")
 
 
