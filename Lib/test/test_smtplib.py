@@ -848,6 +848,7 @@ class SMTPSimTests(unittest.TestCase):
     # Issue 5713: make sure close, not rset, is called if we get a 421 error
     def test_421_from_mail_cmd(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp.noop()
         self.serv._SMTPchannel.mail_response = '421 closing connection'
         with self.assertRaises(smtplib.SMTPSenderRefused):
             smtp.sendmail('John', 'Sally', 'test message')
@@ -856,6 +857,7 @@ class SMTPSimTests(unittest.TestCase):
 
     def test_421_from_rcpt_cmd(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp.noop()
         self.serv._SMTPchannel.rcpt_response = ['250 accepted', '421 closing']
         with self.assertRaises(smtplib.SMTPRecipientsRefused) as r:
             smtp.sendmail('John', ['Sally', 'Frank', 'George'], 'test message')
@@ -872,6 +874,7 @@ class SMTPSimTests(unittest.TestCase):
                     super().found_terminator()
         self.serv.channel_class = MySimSMTPChannel
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp.noop()
         with self.assertRaises(smtplib.SMTPDataError):
             smtp.sendmail('John@foo.org', ['Sally@foo.org'], 'test message')
         self.assertIsNone(smtp.sock)
