@@ -751,7 +751,10 @@ class SMTP:
                 esmtp_opts.append(option)
         (code, resp) = self.mail(from_addr, esmtp_opts)
         if code != 250:
-            self.rset()
+            if code == 421:
+                self.close()
+            else:
+                self.rset()
             raise SMTPSenderRefused(code, resp, from_addr)
         senderrs = {}
         if isinstance(to_addrs, str):
@@ -760,13 +763,19 @@ class SMTP:
             (code, resp) = self.rcpt(each, rcpt_options)
             if (code != 250) and (code != 251):
                 senderrs[each] = (code, resp)
+            if code == 421:
+                self.close()
+                raise SMTPRecipientsRefused(senderrs)
         if len(senderrs) == len(to_addrs):
             # the server refused all our recipients
             self.rset()
             raise SMTPRecipientsRefused(senderrs)
         (code, resp) = self.data(msg)
         if code != 250:
-            self.rset()
+            if code == 421:
+                self.close()
+            else:
+                self.rset()
             raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
         return senderrs
