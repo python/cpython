@@ -560,6 +560,12 @@ sim_lists = {'list-1':['Mr.A@somewhere.com','Mrs.C@somewhereesle.com'],
 # Simulated SMTP channel & server
 class SimSMTPChannel(smtpd.SMTPChannel):
 
+    mail_response = None
+    rcpt_response = None
+    data_response = None
+    rcpt_count = 0
+    rset_count = 0
+
     def __init__(self, extra_features, *args, **kw):
         self._extrafeatures = ''.join(
             [ "250-{0}\r\n".format(x) for x in extra_features ])
@@ -610,18 +616,43 @@ class SimSMTPChannel(smtpd.SMTPChannel):
         else:
             self.push('550 No access for you!')
 
+    def smtp_MAIL(self, arg):
+        if self.mail_response is None:
+            super().smtp_MAIL(arg)
+        else:
+            self.push(self.mail_response)
+
+    def smtp_RCPT(self, arg):
+        if self.rcpt_response is None:
+            super().smtp_RCPT(arg)
+            return
+        self.push(self.rcpt_response[self.rcpt_count])
+        self.rcpt_count += 1
+
+    def smtp_RSET(self, arg):
+        super().smtp_RSET(arg)
+        self.rset_count += 1
+
+    def smtp_DATA(self, arg):
+        if self.data_response is None:
+            super().smtp_DATA(arg)
+        else:
+            self.push(self.data_response)
+
     def handle_error(self):
         raise
 
 
 class SimSMTPServer(smtpd.SMTPServer):
 
+    channel_class = SimSMTPChannel
+
     def __init__(self, *args, **kw):
         self._extra_features = []
         smtpd.SMTPServer.__init__(self, *args, **kw)
 
     def handle_accepted(self, conn, addr):
-        self._SMTPchannel = SimSMTPChannel(self._extra_features,
+        self._SMTPchannel = self.channel_class(self._extra_features,
                                            self, conn, addr)
 
     def process_message(self, peer, mailfrom, rcpttos, data):
@@ -754,6 +785,38 @@ class SMTPSimTests(unittest.TestCase):
 
     #TODO: add tests for correct AUTH method fallback now that the
     #test infrastructure can support it.
+
+    # Issue 5713: make sure close, not rset, is called if we get a 421 error
+    def test_421_from_mail_cmd(self):
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        self.serv._SMTPchannel.mail_response = '421 closing connection'
+        with self.assertRaises(smtplib.SMTPSenderRefused):
+            smtp.sendmail('John', 'Sally', 'test message')
+        self.assertIsNone(smtp.sock)
+        self.assertEqual(self.serv._SMTPchannel.rcpt_count, 0)
+
+    def test_421_from_rcpt_cmd(self):
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        self.serv._SMTPchannel.rcpt_response = ['250 accepted', '421 closing']
+        with self.assertRaises(smtplib.SMTPRecipientsRefused) as r:
+            smtp.sendmail('John', ['Sally', 'Frank', 'George'], 'test message')
+        self.assertIsNone(smtp.sock)
+        self.assertEqual(self.serv._SMTPchannel.rset_count, 0)
+        self.assertDictEqual(r.exception.args[0], {'Frank': (421, b'closing')})
+
+    def test_421_from_data_cmd(self):
+        class MySimSMTPChannel(SimSMTPChannel):
+            def found_terminator(self):
+                if self.smtp_state == self.DATA:
+                    self.push('421 closing')
+                else:
+                    super().found_terminator()
+        self.serv.channel_class = MySimSMTPChannel
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        with self.assertRaises(smtplib.SMTPDataError):
+            smtp.sendmail('John@foo.org', ['Sally@foo.org'], 'test message')
+        self.assertIsNone(smtp.sock)
+        self.assertEqual(self.serv._SMTPchannel.rcpt_count, 0)
 
 
 @support.reap_threads
