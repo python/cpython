@@ -387,66 +387,11 @@ _config_vars = None
 
 def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
-    g = {}
-    # load the installed Makefile:
-    try:
-        filename = get_makefile_filename()
-        parse_makefile(filename, g)
-    except IOError, msg:
-        my_msg = "invalid Python installation: unable to open %s" % filename
-        if hasattr(msg, "strerror"):
-            my_msg = my_msg + " (%s)" % msg.strerror
-
-        raise DistutilsPlatformError(my_msg)
-
-    # load the installed pyconfig.h:
-    try:
-        filename = get_config_h_filename()
-        parse_config_h(file(filename), g)
-    except IOError, msg:
-        my_msg = "invalid Python installation: unable to open %s" % filename
-        if hasattr(msg, "strerror"):
-            my_msg = my_msg + " (%s)" % msg.strerror
-
-        raise DistutilsPlatformError(my_msg)
-
-    # On AIX, there are wrong paths to the linker scripts in the Makefile
-    # -- these paths are relative to the Python source, but when installed
-    # the scripts are in another directory.
-    if python_build:
-        g['LDSHARED'] = g['BLDSHARED']
-
-    elif get_python_version() < '2.1':
-        # The following two branches are for 1.5.2 compatibility.
-        if sys.platform == 'aix4':          # what about AIX 3.x ?
-            # Linker script is in the config directory, not in Modules as the
-            # Makefile says.
-            python_lib = get_python_lib(standard_lib=1)
-            ld_so_aix = os.path.join(python_lib, 'config', 'ld_so_aix')
-            python_exp = os.path.join(python_lib, 'config', 'python.exp')
-
-            g['LDSHARED'] = "%s %s -bI:%s" % (ld_so_aix, g['CC'], python_exp)
-
-        elif sys.platform == 'beos':
-            # Linker script is in the config directory.  In the Makefile it is
-            # relative to the srcdir, which after installation no longer makes
-            # sense.
-            python_lib = get_python_lib(standard_lib=1)
-            linkerscript_path = string.split(g['LDSHARED'])[0]
-            linkerscript_name = os.path.basename(linkerscript_path)
-            linkerscript = os.path.join(python_lib, 'config',
-                                        linkerscript_name)
-
-            # XXX this isn't the right place to do this: adding the Python
-            # library to the link, if needed, should be in the "build_ext"
-            # command.  (It's also needed for non-MS compilers on Windows, and
-            # it's taken care of for them by the 'build_ext.get_libraries()'
-            # method.)
-            g['LDSHARED'] = ("%s -L%s/lib -lpython%s" %
-                             (linkerscript, PREFIX, get_python_version()))
-
+    # _sysconfigdata is generated at build time, see the sysconfig module
+    from _sysconfigdata import build_time_vars
     global _config_vars
-    _config_vars = g
+    _config_vars = {}
+    _config_vars.update(build_time_vars)
 
 
 def _init_nt():
