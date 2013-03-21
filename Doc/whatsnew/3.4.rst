@@ -185,7 +185,9 @@ Unsupported Operating Systems
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* None yet.
+* :meth:`difflib.SequenceMatcher.isbjunk` and
+  :meth:`difflib.SequenceMatcher.isbpopulur`: use ``x in sm.bjunk`` and
+  ``x in sm.bpopular``, where sm is a :class:`~difflib.SequenceMatcher` object.
 
 
 Deprecated functions and types of the C API
