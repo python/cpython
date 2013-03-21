@@ -3251,12 +3251,9 @@ On some platforms, path may also be specified as an open file descriptor;\n\
 
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
 static PyObject *
-_listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
+_listdir_windows_no_opendir(path_t *path, PyObject *list)
 {
-    path_t path;
-    PyObject *list = NULL;
     static char *keywords[] = {"path", NULL};
-    int fd = -1;
     PyObject *v;
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     BOOL result;
@@ -3268,25 +3265,16 @@ _listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *po = NULL;
     wchar_t *wnamebuf = NULL;
 
-    memset(&path, 0, sizeof(path));
-    path.function_name = "listdir";
-    path.nullable = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", keywords,
-                                     path_converter, &path)) {
-        return NULL;
-    }
-
-    if (!path.narrow) {
+    if (!path->narrow) {
         WIN32_FIND_DATAW wFileData;
         wchar_t *po_wchars;
 
-        if (!path.wide) { /* Default arg: "." */
+        if (!path->wide) { /* Default arg: "." */
             po_wchars = L".";
             len = 1;
         } else {
-            po_wchars = path.wide;
-            len = wcslen(path.wide);
+            po_wchars = path->wide;
+            len = wcslen(path->wide);
         }
         /* The +5 is so we can append "\\*.*\0" */
         wnamebuf = malloc((len + 5) * sizeof(wchar_t));
@@ -3312,7 +3300,7 @@ _listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
             if (error == ERROR_FILE_NOT_FOUND)
                 goto exit;
             Py_DECREF(list);
-            list = path_error(&path);
+            list = path_error(path);
             goto exit;
         }
         do {
@@ -3341,15 +3329,15 @@ _listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
                it got to the end of the directory. */
             if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
                 Py_DECREF(list);
-                list = path_error(&path);
+                list = path_error(path);
                 goto exit;
             }
         } while (result == TRUE);
 
         goto exit;
     }
-    strcpy(namebuf, path.narrow);
-    len = path.length;
+    strcpy(namebuf, path->narrow);
+    len = path->length;
     if (len > 0) {
         char ch = namebuf[len-1];
         if (ch != SEP && ch != ALTSEP && ch != ':')
@@ -3368,7 +3356,7 @@ _listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
         if (error == ERROR_FILE_NOT_FOUND)
             goto exit;
         Py_DECREF(list);
-        list = path_error(&path);
+        list = path_error(path);
         goto exit;
     }
     do {
@@ -3396,7 +3384,7 @@ _listdir_windows_no_opendir(PyObject *self, PyObject *args, PyObject *kwargs)
            it got to the end of the directory. */
         if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
             Py_DECREF(list);
-            list = path_error(&path);
+            list = path_error(path);
             goto exit;
         }
     } while (result == TRUE);
@@ -3406,26 +3394,21 @@ exit:
         if (FindClose(hFindFile) == FALSE) {
             if (list != NULL) {
                 Py_DECREF(list);
-                list = path_error(&path);
+                list = path_error(path);
             }
         }
     }
     if (wnamebuf)
         free(wnamebuf);
-    path_cleanup(&path);
 
     return list;
-
 }  /* end of _listdir_windows_no_opendir */
 
 #else  /* thus POSIX, ie: not (MS_WINDOWS and not HAVE_OPENDIR) */
 
 static PyObject *
-_posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
+_posix_listdir(path_t *path, PyObject *list)
 {
-    path_t path;
-    PyObject *list = NULL;
-    static char *keywords[] = {"path", NULL};
     int fd = -1;
 
     PyObject *v;
@@ -3433,24 +3416,12 @@ _posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
     struct dirent *ep;
     int return_str; /* if false, return bytes */
 
-    memset(&path, 0, sizeof(path));
-    path.function_name = "listdir";
-    path.nullable = 1;
-#ifdef HAVE_FDOPENDIR
-    path.allow_fd = 1;
-    path.fd = -1;
-#endif
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", keywords,
-                                     path_converter, &path)) {
-        return NULL;
-    }
-
     errno = 0;
 #ifdef HAVE_FDOPENDIR
-    if (path.fd != -1) {
+    if (path->fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
         Py_BEGIN_ALLOW_THREADS
-        fd = dup(path.fd);
+        fd = dup(path->fd);
         Py_END_ALLOW_THREADS
 
         if (fd == -1) {
@@ -3468,10 +3439,10 @@ _posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
     {
         char *name;
-        if (path.narrow) {
-            name = path.narrow;
+        if (path->narrow) {
+            name = path->narrow;
             /* only return bytes if they specified a bytes object */
-            return_str = !(PyBytes_Check(path.object));
+            return_str = !(PyBytes_Check(path->object));
         }
         else {
             name = ".";
@@ -3484,7 +3455,7 @@ _posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     if (dirp == NULL) {
-        list = path_error(&path);
+        list = path_error(path);
         goto exit;
     }
     if ((list = PyList_New(0)) == NULL) {
@@ -3500,7 +3471,7 @@ _posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
                 break;
             } else {
                 Py_DECREF(list);
-                list = path_error(&path);
+                list = path_error(path);
                 goto exit;
             }
         }
@@ -3533,8 +3504,6 @@ exit:
         Py_END_ALLOW_THREADS
     }
 
-    path_cleanup(&path);
-
     return list;
 }  /* end of _posix_listdir */
 #endif  /* which OS */
@@ -3542,11 +3511,31 @@ exit:
 static PyObject *
 posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
-    return _listdir_windows_no_opendir(self, args, kwargs);
-#else
-    return _posix_listdir(self, args, kwargs);
+    path_t path;
+    PyObject *list = NULL;
+    static char *keywords[] = {"path", NULL};
+    PyObject *return_value;
+
+    memset(&path, 0, sizeof(path));
+    path.function_name = "listdir";
+    path.nullable = 1;
+#ifdef HAVE_FDOPENDIR
+    path.allow_fd = 1;
+    path.fd = -1;
 #endif
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O&:listdir", keywords,
+                                     path_converter, &path)) {
+        return NULL;
+    }
+
+#if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
+    return_value = _listdir_windows_no_opendir(&path, list);
+#else
+    return_value = _posix_listdir(&path, list);
+#endif
+    path_cleanup(&path);
+    return return_value;
 }
 
 #ifdef MS_WINDOWS
