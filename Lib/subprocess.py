@@ -108,10 +108,9 @@ If universal_newlines is true, the file objects stdout and stderr are
 opened as a text files, but lines may be terminated by any of '\n',
 the Unix end-of-line convention, '\r', the old Macintosh convention or
 '\r\n', the Windows convention.  All of these external representations
-are seen as '\n' by the Python program.  Note: This feature is only
-available if Python is built with universal newline support (the
-default).  Also, the newlines attribute of the file objects stdout,
-stdin and stderr are not updated by the communicate() method.
+are seen as '\n' by the Python program.  Also, the newlines attribute
+of the file objects stdout, stdin and stderr are not updated by the
+communicate() method.
 
 The startupinfo and creationflags, if given, will be passed to the
 underlying CreateProcess() function.  They can specify things such as
