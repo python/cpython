@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 
 """Test harness for the logging module. Run all tests.
 
-Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
 """
 
 import logging
@@ -1585,6 +1585,36 @@ class ConfigDictTest(BaseTest):
         },
     }
 
+    out_of_order = {
+        "version": 1,
+        "formatters": {
+            "mySimpleFormatter": {
+                "format": "%(asctime)s (%(name)s) %(levelname)s: %(message)s"
+            }
+        },
+        "handlers": {
+            "fileGlobal": {
+                "class": "logging.StreamHandler",
+                "level": "DEBUG",
+                "formatter": "mySimpleFormatter"
+            },
+            "bufferGlobal": {
+                "class": "logging.handlers.MemoryHandler",
+                "capacity": 5,
+                "formatter": "mySimpleFormatter",
+                "target": "fileGlobal",
+                "level": "DEBUG"
+                }
+        },
+        "loggers": {
+            "mymodule": {
+                "level": "DEBUG",
+                "handlers": ["bufferGlobal"],
+                "propagate": "true"
+            }
+        }
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -1839,6 +1869,10 @@ class ConfigDictTest(BaseTest):
             # Original logger output is empty.
             self.assert_log_lines([])
 
+    def test_out_of_order(self):
+        self.apply_config(self.out_of_order)
+        handler = logging.getLogger('mymodule').handlers[0]
+        self.assertIsInstance(handler.target, logging.Handler)
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):
