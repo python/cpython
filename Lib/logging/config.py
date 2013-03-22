@@ -1,4 +1,4 @@
-# Copyright 2001-2010 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -19,7 +19,7 @@ Configuration functions for the logging package for Python. The core package
 is based on PEP 282 and comments thereto in comp.lang.python, and influenced
 by Apache's log4j system.
 
-Copyright (C) 2001-2010 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
@@ -561,7 +561,21 @@ class DictConfigurator(BaseConfigurator):
                 # As handlers can refer to other handlers, sort the keys
                 # to allow a deterministic order of configuration
                 handlers = config.get('handlers', EMPTY_DICT)
+                deferred = []
                 for name in sorted(handlers):
+                    try:
+                        handler = self.configure_handler(handlers[name])
+                        handler.name = name
+                        handlers[name] = handler
+                    except Exception as e:
+                        if 'target not configured yet' in str(e):
+                            deferred.append(name)
+                        else:
+                            raise ValueError('Unable to configure handler '
+                                             '%r: %s' % (name, e))
+
+                # Now do any that were deferred
+                for name in deferred:
                     try:
                         handler = self.configure_handler(handlers[name])
                         handler.name = name
@@ -569,6 +583,7 @@ class DictConfigurator(BaseConfigurator):
                     except Exception as e:
                         raise ValueError('Unable to configure handler '
                                          '%r: %s' % (name, e))
+
                 # Next, do loggers - they refer to handlers and filters
 
                 #we don't want to lose the existing loggers,
@@ -691,12 +706,17 @@ class DictConfigurator(BaseConfigurator):
                 c = self.resolve(c)
             factory = c
         else:
-            klass = self.resolve(config.pop('class'))
+            cname = config.pop('class')
+            klass = self.resolve(cname)
             #Special case for handler which refers to another handler
             if issubclass(klass, logging.handlers.MemoryHandler) and\
                 'target' in config:
                 try:
-                    config['target'] = self.config['handlers'][config['target']]
+                    th = self.config['handlers'][config['target']]
+                    if not isinstance(th, logging.Handler):
+                        config['class'] = cname # restore for deferred configuration
+                        raise TypeError('target not configured yet')
+                    config['target'] = th
                 except Exception as e:
                     raise ValueError('Unable to set target handler '
                                      '%r: %s' % (config['target'], e))
