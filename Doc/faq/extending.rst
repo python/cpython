@@ -82,18 +82,20 @@ returns its length and :c:func:`PyTuple_GetItem` returns the item at a specified
 index.  Lists have similar functions, :c:func:`PyListSize` and
 :c:func:`PyList_GetItem`.
 
-For strings, :c:func:`PyString_Size` returns its length and
-:c:func:`PyString_AsString` a pointer to its value.  Note that Python strings may
-contain null bytes so C's :c:func:`strlen` should not be used.
+For bytes, :c:func:`PyBytes_Size` returns its length and
+:c:func:`PyBytes_AsStringAndSize` provides a pointer to its value and its
+length.  Note that Python bytes objects may contain null bytes so C's
+:c:func:`strlen` should not be used.
 
 To test the type of an object, first make sure it isn't *NULL*, and then use
-:c:func:`PyString_Check`, :c:func:`PyTuple_Check`, :c:func:`PyList_Check`, etc.
+:c:func:`PyBytes_Check`, :c:func:`PyTuple_Check`, :c:func:`PyList_Check`, etc.
 
 There is also a high-level API to Python objects which is provided by the
 so-called 'abstract' interface -- read ``Include/abstract.h`` for further
 details.  It allows interfacing with any kind of Python sequence using calls
-like :c:func:`PySequence_Length`, :c:func:`PySequence_GetItem`, etc.)  as well as
-many other useful protocols.
+like :c:func:`PySequence_Length`, :c:func:`PySequence_GetItem`, etc.) as well
+as many other useful protocols such as numbers (:c:func:`PyNumber_Index` et.
+al.) and mappings in the PyMapping APIs.
 
 
 How do I use Py_BuildValue() to create a tuple of arbitrary length?
