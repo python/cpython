@@ -847,6 +847,14 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p1.path, '863-1234')
         self.assertEqual(p1.params, 'phone-context=+1-914-555')
 
+    def test_unwrap(self):
+        url = urllib.parse.unwrap('<URL:type://host/path>')
+        self.assertEqual(url, 'type://host/path')
+
+    def test_Quoter_repr(self):
+        quoter = urllib.parse.Quoter(urllib.parse._ALWAYS_SAFE)
+        self.assertIn('Quoter', repr(quoter))
+
 
 def test_main():
     support.run_unittest(UrlParseTestCase)
