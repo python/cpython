@@ -278,10 +278,9 @@ def _get_makefile_filename():
         return os.path.join(_PROJECT_BASE, "Makefile")
     return os.path.join(get_path('platstdlib'), "config", "Makefile")
 
-def _generate_posix_vars():
-    """Generate the Python module containing build-time variables."""
-    import pprint
-    vars = {}
+
+def _init_posix(vars):
+    """Initialize the module as appropriate for POSIX systems."""
     # load the installed Makefile:
     makefile = _get_makefile_filename()
     try:
@@ -308,49 +307,6 @@ def _generate_posix_vars():
     # the scripts are in another directory.
     if _PYTHON_BUILD:
         vars['LDSHARED'] = vars['BLDSHARED']
-
-    # There's a chicken-and-egg situation on OS X with regards to the
-    # _sysconfigdata module after the changes introduced by #15298:
-    # get_config_vars() is called by get_platform() as part of the
-    # `make pybuilddir.txt` target -- which is a precursor to the
-    # _sysconfigdata.py module being constructed.  Unfortunately,
-    # get_config_vars() eventually calls _init_posix(), which attempts
-    # to import _sysconfigdata, which we won't have built yet.  In order
-    # for _init_posix() to work, if we're on Darwin, just mock up the
-    # _sysconfigdata module manually and populate it with the build vars.
-    # This is more than sufficient for ensuring the subsequent call to
-    # get_platform() succeeds.
-    name = '_sysconfigdata'
-    if 'darwin' in sys.platform:
-        import imp
-        module = imp.new_module(name)
-        module.build_time_vars = vars
-        sys.modules[name] = module
-
-    pybuilddir = 'build/lib.%s-%s' % (get_platform(), sys.version[:3])
-    if hasattr(sys, "gettotalrefcount"):
-        pybuilddir += '-pydebug'
-    try:
-        os.makedirs(pybuilddir)
-    except OSError:
-        pass
-    destfile = os.path.join(pybuilddir, name + '.py')
-
-    with open(destfile, 'wb') as f:
-        f.write('# system configuration generated and used by'
-                ' the sysconfig module\n')
-        f.write('build_time_vars = ')
-        pprint.pprint(vars, stream=f)
-
-    # Create file used for sys.path fixup -- see Modules/getpath.c
-    with open('pybuilddir.txt', 'w') as f:
-        f.write(pybuilddir)
-
-def _init_posix(vars):
-    """Initialize the module as appropriate for POSIX systems."""
-    # _sysconfigdata is generated at build time, see _generate_posix_vars()
-    from _sysconfigdata import build_time_vars
-    vars.update(build_time_vars)
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -609,28 +565,3 @@ def get_platform():
 
 def get_python_version():
     return _PY_VERSION_SHORT
-
-
-def _print_dict(title, data):
-    for index, (key, value) in enumerate(sorted(data.items())):
-        if index == 0:
-            print '%s: ' % (title)
-        print '\t%s = "%s"' % (key, value)
-
-
-def _main():
-    """Display all information sysconfig detains."""
-    if '--generate-posix-vars' in sys.argv:
-        _generate_posix_vars()
-        return
-    print 'Platform: "%s"' % get_platform()
-    print 'Python version: "%s"' % get_python_version()
-    print 'Current installation scheme: "%s"' % _get_default_scheme()
-    print
-    _print_dict('Paths', get_paths())
-    print
-    _print_dict('Variables', get_config_vars())
-
-
-if __name__ == '__main__':
-    _main()
