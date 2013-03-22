@@ -908,6 +908,8 @@ Tests
 Build
 -----
 
+- Issue #17425: Build against openssl 0.9.8y on Windows.
+
 - Issue #16004: Add `make touch`.
 
 - Issue #5033: Fix building of the sqlite3 extension module when the
