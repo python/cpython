@@ -61,7 +61,7 @@ example::
    if (buf == NULL)
        return PyErr_NoMemory();
    ...Do some I/O operation involving buf...
-   res = PyString_FromString(buf);
+   res = PyBytes_FromString(buf);
    free(buf); /* malloc'ed */
    return res;
 
@@ -169,7 +169,7 @@ I/O buffer is allocated from the Python heap by using the first function set::
    if (buf == NULL)
        return PyErr_NoMemory();
    /* ...Do some I/O operation involving buf... */
-   res = PyString_FromString(buf);
+   res = PyBytes_FromString(buf);
    PyMem_Free(buf); /* allocated with PyMem_Malloc */
    return res;
 
@@ -181,7 +181,7 @@ The same code using the type-oriented function set::
    if (buf == NULL)
        return PyErr_NoMemory();
    /* ...Do some I/O operation involving buf... */
-   res = PyString_FromString(buf);
+   res = PyBytes_FromString(buf);
    PyMem_Del(buf); /* allocated with PyMem_New */
    return res;
 
