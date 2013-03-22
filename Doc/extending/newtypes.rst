@@ -288,13 +288,13 @@ strings, so we provide a new method::
 
        self = (Noddy *)type->tp_alloc(type, 0);
        if (self != NULL) {
-           self->first = PyString_FromString("");
+           self->first = PyUnicode_FromString("");
            if (self->first == NULL) {
                Py_DECREF(self);
                return NULL;
            }
 
-           self->last = PyString_FromString("");
+           self->last = PyUnicode_FromString("");
            if (self->last == NULL) {
                Py_DECREF(self);
                return NULL;
@@ -540,9 +540,9 @@ getting and setting the :attr:`first` attribute::
        return -1;
      }
 
-     if (! PyString_Check(value)) {
+     if (! PyUnicode_Check(value)) {
        PyErr_SetString(PyExc_TypeError,
-                       "The first attribute value must be a string");
+                       "The first attribute value must be a str");
        return -1;
      }
 
@@ -1005,8 +1005,8 @@ example::
    static PyObject *
    newdatatype_repr(newdatatypeobject * obj)
    {
-       return PyString_FromFormat("Repr-ified_newdatatype{{size:\%d}}",
-                                  obj->obj_UnderlyingDatatypePtr->size);
+       return PyUnicode_FromFormat("Repr-ified_newdatatype{{size:\%d}}",
+                                   obj->obj_UnderlyingDatatypePtr->size);
    }
 
 If no :attr:`tp_repr` handler is specified, the interpreter will supply a
@@ -1025,8 +1025,8 @@ Here is a simple example::
    static PyObject *
    newdatatype_str(newdatatypeobject * obj)
    {
-       return PyString_FromFormat("Stringified_newdatatype{{size:\%d}}",
-                                  obj->obj_UnderlyingDatatypePtr->size);
+       return PyUnicode_FromFormat("Stringified_newdatatype{{size:\%d}}",
+                                   obj->obj_UnderlyingDatatypePtr->size);
    }
 
 
@@ -1342,11 +1342,10 @@ Here is a desultory example of the implementation of the call function. ::
        if (!PyArg_ParseTuple(args, "sss:call", &arg1, &arg2, &arg3)) {
            return NULL;
        }
-       result = PyString_FromFormat(
+       result = PyUnicode_FromFormat(
            "Returning -- value: [\%d] arg1: [\%s] arg2: [\%s] arg3: [\%s]\n",
            obj->obj_UnderlyingDatatypePtr->size,
            arg1, arg2, arg3);
-       printf("\%s", PyString_AS_STRING(result));
        return result;
    }
 
