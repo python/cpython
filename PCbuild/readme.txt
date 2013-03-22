@@ -142,7 +142,7 @@ _ssl
 
     Get the source code through
 
-    svn export http://svn.python.org/projects/external/openssl-0.9.8x
+    svn export http://svn.python.org/projects/external/openssl-0.9.8y
 
     ** NOTE: if you use the Tools\buildbot\external(-amd64).bat approach for
     obtaining external sources then you don't need to manually get the source
