@@ -9,7 +9,8 @@ What's New in Python 2.7.4?
 Library
 -------
 
-- Issue #17531: Return group and user ids as int instead long when possible.
+- Issue #17531: Fix tests that thought group and user ids were always the int
+  type.
 
 
 What's New in Python 2.7.4 release candidate 1

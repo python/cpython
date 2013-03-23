@@ -16,7 +16,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
         self.assertEqual(value[1], value.gr_passwd)
         self.assertIsInstance(value.gr_passwd, basestring)
         self.assertEqual(value[2], value.gr_gid)
-        self.assertIsInstance(value.gr_gid, int)
+        self.assertIsInstance(value.gr_gid, (long, int))
         self.assertEqual(value[3], value.gr_mem)
         self.assertIsInstance(value.gr_mem, list)
 
