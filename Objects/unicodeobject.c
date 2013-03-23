@@ -11369,7 +11369,10 @@ PyDoc_STRVAR(isidentifier__doc__,
              "S.isidentifier() -> bool\n\
 \n\
 Return True if S is a valid identifier according\n\
-to the language definition.");
+to the language definition.\n\
+\n\
+Use keyword.iskeyword() to test for reserved identifiers\n\
+such as \"def\" and \"class\".\n");
 
 static PyObject*
 unicode_isidentifier(PyObject *self)
