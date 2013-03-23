@@ -22,7 +22,7 @@ Library
 -------
 
 - Issue #17531: Fix tests that thought group and user ids were always the int
-  type.
+  type. Also, always allow -1 as a valid group and user id.
 
 
 What's New in Python 2.7.4 release candidate 1
