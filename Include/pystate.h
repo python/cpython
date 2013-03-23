@@ -212,6 +212,11 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
+/* Helper/diagnostic function - return 1 if the current thread
+ * currently holds the GIL, 0 otherwise
+ */
+PyAPI_FUNC(int) PyGILState_Check(void);
+
 #endif   /* #ifdef WITH_THREAD */
 
 /* The implementation of sys._current_frames()  Returns a dict mapping

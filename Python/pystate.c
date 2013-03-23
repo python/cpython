@@ -697,6 +697,15 @@ PyGILState_GetThisThreadState(void)
     return (PyThreadState *)PyThread_get_key_value(autoTLSkey);
 }
 
+int
+PyGILState_Check(void)
+{
+    /* can't use PyThreadState_Get() since it will assert that it has the GIL */
+    PyThreadState *tstate = (PyThreadState*)_Py_atomic_load_relaxed(
+        &_PyThreadState_Current);
+    return tstate && (tstate == PyGILState_GetThisThreadState());
+}
+
 PyGILState_STATE
 PyGILState_Ensure(void)
 {

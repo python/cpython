@@ -654,6 +654,18 @@ with sub-interpreters:
    made on the main thread.  This is mainly a helper/diagnostic function.
 
 
+.. c:function:: int PyGILState_Check()
+
+   Return 1 if the current thread is holding the GIL and 0 otherwise.
+   This function can be called from any thread at any time.
+   Only if it has had its Python thread state initialized and currently is
+   holding the GIL will it return 1.
+   This is mainly a helper/diagnostic function.  It can be useful
+   for example in callback contexts or memory allocation functions when
+   knowing that the GIL is locked can allow the caller to perform sensitive
+   actions or otherwise behave differently.
+
+
 The following macros are normally used without a trailing semicolon; look for
 example usage in the Python source distribution.
 
