@@ -172,8 +172,8 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
             logger.level = logging.NOTSET
             logger.handlers = []
             logger.propagate = True
-        elif disable_existing:
-            logger.disabled = True
+        else:
+            logger.disabled = disable_existing
 
 def _install_loggers(cp, handlers, disable_existing):
     """Create and install loggers"""
