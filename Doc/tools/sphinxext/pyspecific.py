@@ -186,7 +186,7 @@ pydoc_topic_labels = [
     'del', 'dict', 'dynamic-features', 'else', 'exceptions', 'execmodel',
     'exprlists', 'floating', 'for', 'formatstrings', 'function', 'global',
     'id-classes', 'identifiers', 'if', 'imaginary', 'import', 'in', 'integers',
-    'lambda', 'lists', 'naming', 'nonlocal', 'numbers', 'numeric-types',
+    'lambda', 'lists', 'naming', 'numbers', 'numeric-types',
     'objects', 'operator-summary', 'pass', 'power', 'raise', 'return',
     'sequence-types', 'shifting', 'slicings', 'specialattrs', 'specialnames',
     'string-methods', 'strings', 'subscriptions', 'truth', 'try', 'types',
