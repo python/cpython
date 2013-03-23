@@ -665,6 +665,8 @@ with sub-interpreters:
    knowing that the GIL is locked can allow the caller to perform sensitive
    actions or otherwise behave differently.
 
+   .. versionadded:: 3.4
+
 
 The following macros are normally used without a trailing semicolon; look for
 example usage in the Python source distribution.
