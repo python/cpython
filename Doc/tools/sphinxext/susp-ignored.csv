@@ -17,6 +17,7 @@ faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,
 faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
+faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
 faq/windows,229,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
 faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 howto/cporting,,:add,"if (!PyArg_ParseTuple(args, ""ii:add_ints"", &one, &two))"
@@ -51,6 +52,8 @@ howto/ipaddress,,:db8,>>> addr6 = ipaddress.ip_address('2001:db8::1')
 howto/ipaddress,,::,>>> addr6 = ipaddress.ip_address('2001:db8::1')
 howto/ipaddress,,:db8,>>> host6 = ipaddress.ip_interface('2001:db8::1/96')
 howto/ipaddress,,::,>>> host6 = ipaddress.ip_interface('2001:db8::1/96')
+howto/ipaddress,,:db8,>>> ipaddress.ip_interface('2001:db8::1/96')
+howto/ipaddress,,::,>>> ipaddress.ip_interface('2001:db8::1/96')
 howto/ipaddress,,:db8,IPv6Network('2001:db8::/96')
 howto/ipaddress,,::,IPv6Network('2001:db8::/96')
 howto/ipaddress,,:db8,>>> net6 = ipaddress.ip_network('2001:db8::0/96')
@@ -64,10 +67,15 @@ howto/ipaddress,,:ffff,IPv6Address('::ffff:ffff')
 howto/ipaddress,,::,IPv6Address('2001::1')
 howto/ipaddress,,::,IPv6Address('2001::ffff:ffff')
 howto/ipaddress,,:ffff,IPv6Address('2001::ffff:ffff')
+howto/ipaddress,,:db8,IPv6Address('2001:db8::ffff:ffff')
+howto/ipaddress,,::,IPv6Address('2001:db8::ffff:ffff')
+howto/ipaddress,,:ffff,IPv6Address('2001:db8::ffff:ffff')
 howto/ipaddress,,:db8,'2001:db8::'
 howto/ipaddress,,::,'2001:db8::'
 howto/ipaddress,,:db8,'2001:db8::/96'
 howto/ipaddress,,::,'2001:db8::/96'
+howto/ipaddress,,:db8,'2001:db8::1'
+howto/ipaddress,,::,'2001:db8::1'
 howto/logging,,:And,"WARNING:And this, too"
 howto/logging,,:And,"WARNING:root:And this, too"
 howto/logging,,:Doing,INFO:root:Doing something
@@ -120,6 +128,7 @@ library/dis,,`,TOS = `TOS`
 library/doctest,,`,``factorial`` from the ``example`` module:
 library/doctest,,`,The ``example`` module
 library/doctest,,`,Using ``factorial``
+library/exceptions,,:err,err.object[err.start:err.end]
 library/functions,,:step,a[start:stop:step]
 library/functions,,:stop,"a[start:stop, i]"
 library/functions,,:stop,a[start:stop:step]
@@ -280,6 +289,10 @@ library/urllib.request,,:close,Connection:close
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
+library/venv,,:param,":param nodist: If True, Distribute is not installed into the created"
+library/venv,,:param,":param nopip: If True, pip is not installed into the created"
+library/venv,,:param,":param progress: If Distribute or pip are installed, the progress of the"
+library/venv,,:param,:param context: The information for the environment creation request
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,,:pass,user:pass
 library/xmlrpc.client,,:port,http://user:pass@host:port/path
@@ -357,6 +370,9 @@ whatsnew/3.2,,:location,... zope9-location = ${zope9:location}
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,... zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
+whatsnew/changelog,,:platform,:platform:
+whatsnew/changelog,,:password,user:password
+whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
 whatsnew/news,,:platform,:platform:
 whatsnew/news,,:password,: Unquote before b64encoding user:password during Basic
 whatsnew/news,,:close,Connection:close header.

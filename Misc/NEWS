@@ -1185,7 +1185,7 @@ Documentation
 - Create a 'Concurrent Execution' section in the docs, and split up the
   'Optional Operating System Services' section to use a more user-centric
   classification scheme (splitting them across the new CE section, IPC and text
-  processing). Operating system limitatons can be reflected with the Sphinx
+  processing). Operating system limitations can be reflected with the Sphinx
   ``:platform:`` tag, it doesn't make sense as part of the Table of Contents.
 
 - Issue #4966: Bring the sequence docs up to date for the Py3k transition and
@@ -3393,7 +3393,7 @@ Library
 - Issue #13589: Fix some serialization primitives in the aifc module.
   Patch by Oleg Plakhotnyuk.
 
-- Issue #13642: Unquote before b64encoding user:password during Basic
+- Issue #13642: Unquote before b64encoding ``user:password`` during Basic
   Authentication. Patch contributed by Joonas Kuorilehto.
 
 - Issue #13726: Fix the ambiguous -S flag in regrtest. It is -o/--slow for slow
@@ -3877,8 +3877,8 @@ Library
 - Issue #12590: IDLE editor window now always displays the first line
   when opening a long file.  With Tk 8.5, the first line was hidden.
 
-- Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscates)
-  Connection:close header.
+- Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscate)
+  a ``Connection: close`` header.
 
 - Issue #12102: Document that buffered files must be flushed before being used
   with mmap. Patch by Steffen Daode Nurpmeso.
@@ -4204,7 +4204,7 @@ Library
   Patch by John O'Connor.
 
 - Issue #1028: Tk returns invalid Unicode null in %A: UnicodeDecodeError.
-  With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused
+  With Tk < 8.5, PythonCmd() in _tkinter.c raised UnicodeDecodeError, caused
   IDLE to exit.  Converted to valid Unicode null in PythonCmd().
 
 - Issue #11799: urllib.request Authentication Handlers will raise a ValueError
@@ -4483,7 +4483,7 @@ Library
 
 - Issue #11127: Raise a TypeError when trying to pickle a socket object.
 
-- Issue #11563: Connection:close header is sent by requests using URLOpener
+- Issue #11563: ``Connection: close`` header is sent by requests using URLOpener
   class which helps in closing of sockets after connection is over. Patch
   contributions by Jeff McNeil and Nadeem Vawda.
 
@@ -4991,7 +4991,7 @@ Tests
 - Issue #11505: improves test coverage of string.py. Patch by Alicia
   Arlen
 
-- Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
+- Issue #11490: test_subprocess.test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.
 
 - Issue #11223: Fix test_threadsignals to fail, not hang, when the
