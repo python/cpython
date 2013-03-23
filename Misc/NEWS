@@ -233,6 +233,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17521: Corrected non-enabling of logger following two calls to
+  fileConfig().
+
 - Issue #17508: Corrected MemoryHandler configuration in dictConfig() where
   the target handler wasn't configured first.
 
