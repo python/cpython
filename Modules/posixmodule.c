@@ -397,8 +397,6 @@ _Py_Uid_Converter(PyObject *obj, void *p)
                     goto OverflowUp;
                 return 0;
             }
-            if ((uid_t)uresult == (uid_t)-1)
-                goto OverflowUp;
         } else {
             if (result < 0)
                 goto OverflowDown;
@@ -451,8 +449,6 @@ _Py_Gid_Converter(PyObject *obj, void *p)
                     goto OverflowUp;
                 return 0;
             }
-            if ((gid_t)uresult == (gid_t)-1)
-                goto OverflowUp;
         } else {
             if (result < 0)
                 goto OverflowDown;
