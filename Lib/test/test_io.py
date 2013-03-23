@@ -3234,7 +3234,7 @@ class PySignalsTest(SignalsTest):
     test_reentrant_write_text = None
 
 
-def test_main():
+def load_tests(*args):
     tests = (CIOTest, PyIOTest,
              CBufferedReaderTest, PyBufferedReaderTest,
              CBufferedWriterTest, PyBufferedWriterTest,
@@ -3267,7 +3267,8 @@ def test_main():
             for name, obj in py_io_ns.items():
                 setattr(test, name, obj)
 
-    support.run_unittest(*tests)
+    suite = unittest.TestSuite([unittest.makeSuite(test) for test in tests])
+    return suite
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
