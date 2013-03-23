@@ -260,8 +260,8 @@ def _install_loggers(cp, handlers, disable_existing_loggers):
             logger.level = logging.NOTSET
             logger.handlers = []
             logger.propagate = 1
-        elif disable_existing_loggers:
-            logger.disabled = 1
+        else:
+            logger.disabled = disable_existing_loggers
 
 
 
