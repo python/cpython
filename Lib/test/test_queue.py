@@ -46,6 +46,9 @@ class _TriggerThread(threading.Thread):
 
 class BlockingTestMixin:
 
+    def tearDown(self):
+        self.t = None
+
     def do_blocking_test(self, block_func, block_args, trigger_func, trigger_args):
         self.t = _TriggerThread(trigger_func, trigger_args)
         self.t.start()
@@ -260,7 +263,7 @@ class FailingQueue(queue.Queue):
             raise FailingQueueException("You Lose")
         return queue.Queue._get(self)
 
-class FailingQueueTest(unittest.TestCase, BlockingTestMixin):
+class FailingQueueTest(BlockingTestMixin, unittest.TestCase):
 
     def failing_queue_test(self, q):
         if q.qsize():
