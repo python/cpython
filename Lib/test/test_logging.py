@@ -714,9 +714,30 @@ class ConfigFileTest(BaseTest):
     datefmt=
     """
 
-    def apply_config(self, conf):
+    disable_test = """
+    [loggers]
+    keys=root
+
+    [handlers]
+    keys=screen
+
+    [formatters]
+    keys=
+
+    [logger_root]
+    level=DEBUG
+    handlers=screen
+
+    [handler_screen]
+    level=DEBUG
+    class=StreamHandler
+    args=(sys.stdout,)
+    formatter=
+    """
+
+    def apply_config(self, conf, **kwargs):
         file = cStringIO.StringIO(textwrap.dedent(conf))
-        logging.config.fileConfig(file)
+        logging.config.fileConfig(file, **kwargs)
 
     def test_config0_ok(self):
         # A simple config file which overrides the default settings.
@@ -819,6 +840,15 @@ class ConfigFileTest(BaseTest):
             ], stream=output)
             # Original logger output is empty.
             self.assert_log_lines([])
+
+    def test_logger_disabling(self):
+        self.apply_config(self.disable_test)
+        logger = logging.getLogger('foo')
+        self.assertFalse(logger.disabled)
+        self.apply_config(self.disable_test)
+        self.assertTrue(logger.disabled)
+        self.apply_config(self.disable_test, disable_existing_loggers=False)
+        self.assertFalse(logger.disabled)
 
 class LogRecordStreamHandler(StreamRequestHandler):
 
