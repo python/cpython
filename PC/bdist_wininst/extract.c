@@ -127,7 +127,7 @@ char *map_new_file(DWORD flags, char *filename,
 
     CloseHandle(hFile);
 
-    if (hFileMapping == INVALID_HANDLE_VALUE) {
+    if (hFileMapping == NULL) {
         if (notify)
             notify(SYSTEM_ERROR,
                    "CreateFileMapping (%s)", filename);
