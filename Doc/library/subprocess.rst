@@ -356,7 +356,7 @@ are able to handle the less common cases not covered by the convenience
 functions.
 
 
-.. class:: Popen(args, bufsize=0, executable=None, stdin=None, stdout=None, \
+.. class:: Popen(args, bufsize=-1, executable=None, stdin=None, stdout=None, \
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=False, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
@@ -428,17 +428,20 @@ functions.
       untrusted input.  See the warning under :ref:`frequently-used-arguments`
       for details.
 
-   *bufsize*, if given, has the same meaning as the corresponding argument to the
-   built-in open() function: :const:`0` means unbuffered, :const:`1` means line
-   buffered, any other positive value means use a buffer of (approximately) that
-   size.  A negative *bufsize* means to use the system default, which usually means
-   fully buffered.  The default value for *bufsize* is :const:`0` (unbuffered).
+   *bufsize* will be supplied as the corresponding argument to the :meth:`io.open`
+   function when creating the stdin/stdout/stderr pipe file objects:
+   :const:`0` means unbuffered (read and write are one system call and can return short),
+   :const:`1` means line buffered, any other positive value means use a buffer of
+   approximately that size.  A negative bufsize (the default) means
+   the system default of io.DEFAULT_BUFFER_SIZE will be used.
 
-   .. note::
+   .. versionchanged:: 3.2.4, 3.3.1
 
-      If you experience performance issues, it is recommended that you try to
-      enable buffering by setting *bufsize* to either -1 or a large enough
-      positive value (such as 4096).
+      *bufsize* now defaults to -1 to enable buffering by default to match the
+      behavior that most code expects.  In 3.2.0 through 3.2.3 and 3.3.0 it
+      incorrectly defaulted to :const:`0` which was unbuffered and allowed
+      short reads.  This was unintentional and did not match the behavior of
+      Python 2 as most code expected.
 
    The *executable* argument specifies a replacement program to execute.   It
    is very seldom needed.  When ``shell=False``, *executable* replaces the
