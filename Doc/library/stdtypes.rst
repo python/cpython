@@ -1627,6 +1627,8 @@ expression support in the :mod:`re` module).
    Return true if the string is a valid identifier according to the language
    definition, section :ref:`identifiers`.
 
+   Use :func:`keyword.iskeyword` to test for reserved identifiers such as
+   :keyword:`def` and :keyword:`class`.
 
 .. method:: str.islower()
 
