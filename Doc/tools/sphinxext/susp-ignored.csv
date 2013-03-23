@@ -168,8 +168,9 @@ faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
 faq/programming,,::,for x in sequence[::-1]:
-faq/windows,229,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
-faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
+faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
+faq/windows,,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
+faq/windows,,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
 library/http.client,52,:port,host:port
@@ -273,3 +274,7 @@ library/pprint,209,::,"'Programming Language :: Python :: 2.6',"
 library/pprint,209,::,"'Programming Language :: Python :: 2.7',"
 library/pprint,209,::,"'Topic :: Software Development :: Libraries',"
 library/pprint,209,::,"'Topic :: Software Development :: Libraries :: Python Modules'],"
+library/http.client,,:port,host:port
+library/http.cookies,,`,!#$%&'*+-.^_`|~
+library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
+library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
