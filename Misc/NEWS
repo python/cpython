@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17522: Add the PyGILState_Check() API.
+
 - Issue #16475: Support object instancing, recursion and interned strings
   in marshal
 
