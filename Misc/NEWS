@@ -294,6 +294,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17150: pprint now uses line continuations to wrap long string
+  literals.
+
 - Issue #17488: Change the subprocess.Popen bufsize parameter default value
   from unbuffered (0) to buffering (-1) to match the behavior existing code
   expects and match the behavior of the subprocess module in Python 2 to avoid

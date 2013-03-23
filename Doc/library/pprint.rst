@@ -14,8 +14,8 @@ The :mod:`pprint` module provides a capability to "pretty-print" arbitrary
 Python data structures in a form which can be used as input to the interpreter.
 If the formatted structures include objects which are not fundamental Python
 types, the representation may not be loadable.  This may be the case if objects
-such as files, sockets, classes, or instances are included, as well as many
-other built-in objects which are not representable as Python constants.
+such as files, sockets or classes are included, as well as many other
+objects which are not representable as Python literals.
 
 The formatted representation keeps objects on a single line if it can, and
 breaks them onto multiple lines if they don't fit within the allowed width.
@@ -65,7 +65,7 @@ The :mod:`pprint` module defines one class:
       ('spam', ('eggs', ('lumberjack', ('knights', ('ni', ('dead', (...)))))))
 
 
-The :class:`PrettyPrinter` class supports several derivative functions:
+The :mod:`pprint` module also provides several shortcut functions:
 
 .. function:: pformat(object, indent=1, width=80, depth=None)
 
@@ -193,101 +193,141 @@ Example
 -------
 
 To demonstrate several uses of the :func:`pprint` function and its parameters,
-let's fetch information about a project from PyPI::
+let's fetch information about a project from `PyPI <https://pypi.python.org>`_::
 
    >>> import json
    >>> import pprint
    >>> from urllib.request import urlopen
-   >>> with urlopen('http://pypi.python.org/pypi/configparser/json') as url:
+   >>> with urlopen('http://pypi.python.org/pypi/Twisted/json') as url:
    ...     http_info = url.info()
    ...     raw_data = url.read().decode(http_info.get_content_charset())
    >>> project_info = json.loads(raw_data)
-   >>> result = {'headers': http_info.items(), 'body': project_info}
 
 In its basic form, :func:`pprint` shows the whole object::
 
-   >>> pprint.pprint(result)
-   {'body': {'info': {'_pypi_hidden': False,
-                      '_pypi_ordering': 12,
-                      'classifiers': ['Development Status :: 4 - Beta',
-                                      'Intended Audience :: Developers',
-                                      'License :: OSI Approved :: MIT License',
-                                      'Natural Language :: English',
-                                      'Operating System :: OS Independent',
-                                      'Programming Language :: Python',
-                                      'Programming Language :: Python :: 2',
-                                      'Programming Language :: Python :: 2.6',
-                                      'Programming Language :: Python :: 2.7',
-                                      'Topic :: Software Development :: Libraries',
-                                      'Topic :: Software Development :: Libraries :: Python Modules'],
-                      'download_url': 'UNKNOWN',
-                      'home_page': 'http://docs.python.org/py3k/library/configparser.html',
-                      'keywords': 'configparser ini parsing conf cfg configuration file',
-                      'license': 'MIT',
-                      'name': 'configparser',
-                      'package_url': 'http://pypi.python.org/pypi/configparser',
-                      'platform': 'any',
-                      'release_url': 'http://pypi.python.org/pypi/configparser/3.2.0r3',
-                      'requires_python': None,
-                      'stable_version': None,
-                      'summary': 'This library brings the updated configparser from Python 3.2+ to Python 2.6-2.7.',
-                      'version': '3.2.0r3'},
-           'urls': [{'comment_text': '',
-                     'downloads': 47,
-                     'filename': 'configparser-3.2.0r3.tar.gz',
-                     'has_sig': False,
-                     'md5_digest': '8500fd87c61ac0de328fc996fce69b96',
-                     'packagetype': 'sdist',
-                     'python_version': 'source',
-                     'size': 32281,
-                     'upload_time': '2011-05-10T16:28:50',
-                     'url': 'http://pypi.python.org/packages/source/c/configparser/configparser-3.2.0r3.tar.gz'}]},
-   'headers': [('Date', 'Sat, 14 May 2011 12:48:52 GMT'),
-               ('Server', 'Apache/2.2.16 (Debian)'),
-               ('Content-Disposition', 'inline'),
-               ('Connection', 'close'),
-               ('Transfer-Encoding', 'chunked'),
-               ('Content-Type', 'application/json; charset="UTF-8"')]}
+   >>> pprint.pprint(project_info)
+   {'info': {'_pypi_hidden': False,
+             '_pypi_ordering': 125,
+             'author': 'Glyph Lefkowitz',
+             'author_email': 'glyph@twistedmatrix.com',
+             'bugtrack_url': '',
+             'cheesecake_code_kwalitee_id': None,
+             'cheesecake_documentation_id': None,
+             'cheesecake_installability_id': None,
+             'classifiers': ['Programming Language :: Python :: 2.6',
+                             'Programming Language :: Python :: 2.7',
+                             'Programming Language :: Python :: 2 :: Only'],
+             'description': 'An extensible framework for Python programming, '
+                            'with special focus\r\n'
+                            'on event-based network programming and '
+                            'multiprotocol integration.',
+             'docs_url': '',
+             'download_url': 'UNKNOWN',
+             'home_page': 'http://twistedmatrix.com/',
+             'keywords': '',
+             'license': 'MIT',
+             'maintainer': '',
+             'maintainer_email': '',
+             'name': 'Twisted',
+             'package_url': 'http://pypi.python.org/pypi/Twisted',
+             'platform': 'UNKNOWN',
+             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
+             'requires_python': None,
+             'stable_version': None,
+             'summary': 'An asynchronous networking framework written in Python',
+             'version': '12.3.0'},
+    'urls': [{'comment_text': '',
+              'downloads': 71844,
+              'filename': 'Twisted-12.3.0.tar.bz2',
+              'has_sig': False,
+              'md5_digest': '6e289825f3bf5591cfd670874cc0862d',
+              'packagetype': 'sdist',
+              'python_version': 'source',
+              'size': 2615733,
+              'upload_time': '2012-12-26T12:47:03',
+              'url': 'https://pypi.python.org/packages/source/T/Twisted/Twisted-12.3.0.tar.bz2'},
+             {'comment_text': '',
+              'downloads': 5224,
+              'filename': 'Twisted-12.3.0.win32-py2.7.msi',
+              'has_sig': False,
+              'md5_digest': '6b778f5201b622a5519a2aca1a2fe512',
+              'packagetype': 'bdist_msi',
+              'python_version': '2.7',
+              'size': 2916352,
+              'upload_time': '2012-12-26T12:48:15',
+              'url': 'https://pypi.python.org/packages/2.7/T/Twisted/Twisted-12.3.0.win32-py2.7.msi'}]}
 
 The result can be limited to a certain *depth* (ellipsis is used for deeper
 contents)::
 
-   >>> pprint.pprint(result, depth=3)
-   {'body': {'info': {'_pypi_hidden': False,
-                      '_pypi_ordering': 12,
-                      'classifiers': [...],
-                      'download_url': 'UNKNOWN',
-                      'home_page': 'http://docs.python.org/py3k/library/configparser.html',
-                      'keywords': 'configparser ini parsing conf cfg configuration file',
-                      'license': 'MIT',
-                      'name': 'configparser',
-                      'package_url': 'http://pypi.python.org/pypi/configparser',
-                      'platform': 'any',
-                      'release_url': 'http://pypi.python.org/pypi/configparser/3.2.0r3',
-                      'requires_python': None,
-                      'stable_version': None,
-                      'summary': 'This library brings the updated configparser from Python 3.2+ to Python 2.6-2.7.',
-                      'version': '3.2.0r3'},
-           'urls': [{...}]},
-   'headers': [('Date', 'Sat, 14 May 2011 12:48:52 GMT'),
-               ('Server', 'Apache/2.2.16 (Debian)'),
-               ('Content-Disposition', 'inline'),
-               ('Connection', 'close'),
-               ('Transfer-Encoding', 'chunked'),
-               ('Content-Type', 'application/json; charset="UTF-8"')]}
+   >>> pprint.pprint(project_info, depth=2)
+   {'info': {'_pypi_hidden': False,
+             '_pypi_ordering': 125,
+             'author': 'Glyph Lefkowitz',
+             'author_email': 'glyph@twistedmatrix.com',
+             'bugtrack_url': '',
+             'cheesecake_code_kwalitee_id': None,
+             'cheesecake_documentation_id': None,
+             'cheesecake_installability_id': None,
+             'classifiers': [...],
+             'description': 'An extensible framework for Python programming, '
+                            'with special focus\r\n'
+                            'on event-based network programming and '
+                            'multiprotocol integration.',
+             'docs_url': '',
+             'download_url': 'UNKNOWN',
+             'home_page': 'http://twistedmatrix.com/',
+             'keywords': '',
+             'license': 'MIT',
+             'maintainer': '',
+             'maintainer_email': '',
+             'name': 'Twisted',
+             'package_url': 'http://pypi.python.org/pypi/Twisted',
+             'platform': 'UNKNOWN',
+             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
+             'requires_python': None,
+             'stable_version': None,
+             'summary': 'An asynchronous networking framework written in Python',
+             'version': '12.3.0'},
+    'urls': [{...}, {...}]}
 
-Additionally, maximum *width* can be suggested. If a long object cannot be
-split, the specified width will be exceeded::
+Additionally, maximum character *width* can be suggested. If a long object
+cannot be split, the specified width will be exceeded::
 
-   >>> pprint.pprint(result['headers'], width=30)
-   [('Date',
-     'Sat, 14 May 2011 12:48:52 GMT'),
-    ('Server',
-     'Apache/2.2.16 (Debian)'),
-    ('Content-Disposition',
-     'inline'),
-    ('Connection', 'close'),
-    ('Transfer-Encoding',
-     'chunked'),
-    ('Content-Type',
-     'application/json; charset="UTF-8"')]
+   >>> pprint.pprint(project_info, depth=2, width=50)
+   {'info': {'_pypi_hidden': False,
+             '_pypi_ordering': 125,
+             'author': 'Glyph Lefkowitz',
+             'author_email': 'glyph@twistedmatrix.com',
+             'bugtrack_url': '',
+             'cheesecake_code_kwalitee_id': None,
+             'cheesecake_documentation_id': None,
+             'cheesecake_installability_id': None,
+             'classifiers': [...],
+             'description': 'An extensible '
+                            'framework for '
+                            'Python programming, '
+                            'with special '
+                            'focus\r\n'
+                            'on event-based '
+                            'network programming '
+                            'and multiprotocol '
+                            'integration.',
+             'docs_url': '',
+             'download_url': 'UNKNOWN',
+             'home_page': 'http://twistedmatrix.com/',
+             'keywords': '',
+             'license': 'MIT',
+             'maintainer': '',
+             'maintainer_email': '',
+             'name': 'Twisted',
+             'package_url': 'http://pypi.python.org/pypi/Twisted',
+             'platform': 'UNKNOWN',
+             'release_url': 'http://pypi.python.org/pypi/Twisted/12.3.0',
+             'requires_python': None,
+             'stable_version': None,
+             'summary': 'An asynchronous '
+                        'networking framework '
+                        'written in Python',
+             'version': '12.3.0'},
+    'urls': [{...}, {...}]}

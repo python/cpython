@@ -34,6 +34,7 @@ saferepr()
 
 """
 
+import re
 import sys as _sys
 from collections import OrderedDict as _OrderedDict
 from io import StringIO as _StringIO
@@ -158,12 +159,9 @@ class PrettyPrinter:
             return
         rep = self._repr(object, context, level - 1)
         typ = _type(object)
-        sepLines = _len(rep) > (self._width - 1 - indent - allowance)
+        max_width = self._width - 1 - indent - allowance
+        sepLines = _len(rep) > max_width
         write = stream.write
-
-        if self._depth and level > self._depth:
-            write(rep)
-            return
 
         if sepLines:
             r = getattr(typ, "__repr__", None)
@@ -242,6 +240,37 @@ class PrettyPrinter:
                 write(endchar)
                 return
 
+            if issubclass(typ, str) and len(object) > 0 and r is str.__repr__:
+                def _str_parts(s):
+                    """
+                    Return a list of string literals comprising the repr()
+                    of the given string using literal concatenation.
+                    """
+                    lines = s.splitlines(True)
+                    for i, line in enumerate(lines):
+                        rep = repr(line)
+                        if _len(rep) <= max_width:
+                            yield rep
+                        else:
+                            # A list of alternating (non-space, space) strings
+                            parts = re.split(r'(\s+)', line) + ['']
+                            current = ''
+                            for i in range(0, len(parts), 2):
+                                part = parts[i] + parts[i+1]
+                                candidate = current + part
+                                if len(repr(candidate)) > max_width:
+                                    if current:
+                                        yield repr(current)
+                                    current = part
+                                else:
+                                    current = candidate
+                            if current:
+                                yield repr(current)
+                for i, rep in enumerate(_str_parts(object)):
+                    if i > 0:
+                        write('\n' + ' '*indent)
+                    write(rep)
+                return
         write(rep)
 
     def _repr(self, object, context, level):
