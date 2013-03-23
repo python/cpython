@@ -1,6 +1,17 @@
 Python News
 +++++++++++
 
+What's New in Python 2.7.4?
+===========================
+
+*Release date: XXXX-XX-XX*
+
+Library
+-------
+
+- Issue #17531: Return group and user ids as int instead long when possible.
+
+
 What's New in Python 2.7.4 release candidate 1
 ==============================================
 
