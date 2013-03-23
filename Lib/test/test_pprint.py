@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pprint
 import test.support
 import unittest
@@ -474,6 +476,42 @@ class QueryTestCase(unittest.TestCase):
         keys = [(1,), (None,)]
         self.assertEqual(pprint.pformat(dict.fromkeys(keys, 0)),
                          '{%r: 0, %r: 0}' % tuple(sorted(keys, key=id)))
+
+    def test_str_wrap(self):
+        # pprint tries to wrap strings intelligently
+        fox = 'the quick brown fox jumped over a lazy dog'
+        self.assertEqual(pprint.pformat(fox, width=20), """\
+'the quick brown '
+'fox jumped over '
+'a lazy dog'""")
+        self.assertEqual(pprint.pformat({'a': 1, 'b': fox, 'c': 2},
+                                        width=26), """\
+{'a': 1,
+ 'b': 'the quick brown '
+      'fox jumped over '
+      'a lazy dog',
+ 'c': 2}""")
+        # With some special characters
+        # - \n always triggers a new line in the pprint
+        # - \t and \n are escaped
+        # - non-ASCII is allowed
+        # - an apostrophe doesn't disrupt the pprint
+        special = "Portons dix bons \"whiskys\"\nà l'avocat goujat\t qui fumait au zoo"
+        self.assertEqual(pprint.pformat(special, width=20), """\
+'Portons dix bons '
+'"whiskys"\\n'
+"à l'avocat "
+'goujat\\t qui '
+'fumait au zoo'""")
+        # An unwrappable string is formatted as its repr
+        unwrappable = "x" * 100
+        self.assertEqual(pprint.pformat(unwrappable, width=80), repr(unwrappable))
+        self.assertEqual(pprint.pformat(''), "''")
+        # Check that the pprint is a usable repr
+        special *= 10
+        for width in range(3, 40):
+            formatted = pprint.pformat(special, width=width)
+            self.assertEqual(eval("(" + formatted + ")"), special)
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
