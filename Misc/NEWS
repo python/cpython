@@ -196,6 +196,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17508: Corrected MemoryHandler configuration in dictConfig() where
+  the target handler wasn't configured first.
+
 - Issue #17209: curses.window.get_wch() now handles correctly KeyboardInterrupt
   (CTRL+c).
 
