@@ -1019,7 +1019,7 @@ static char *MapExistingFile(char *pathname, DWORD *psize)
                                       NULL, PAGE_READONLY, 0, 0, NULL);
     CloseHandle(hFile);
 
-    if (hFileMapping == INVALID_HANDLE_VALUE)
+    if (hFileMapping == NULL)
         return NULL;
 
     data = MapViewOfFile(hFileMapping,
