@@ -7,7 +7,9 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
+import io
 import os
+import pickle
 import sys
 import signal
 import errno
@@ -43,6 +45,15 @@ class ForkingPickler(Pickler):
     @classmethod
     def register(cls, type, reduce):
         cls._extra_reducers[type] = reduce
+
+    @staticmethod
+    def dumps(obj):
+        buf = io.BytesIO()
+        ForkingPickler(buf, pickle.HIGHEST_PROTOCOL).dump(obj)
+        return buf.getbuffer()
+
+    loads = pickle.loads
+
 
 def _reduce_method(m):
     if m.__self__ is None:
