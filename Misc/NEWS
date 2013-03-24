@@ -18,6 +18,13 @@ What's New in Python 2.7.4?
 
 *Release date: XXXX-XX-XX*
 
+Core and Builtins
+-----------------
+
+- Issue #15801 (again): With string % formatting, relax the type check for a
+  mapping such that any type with a __getitem__ can be used on the right hand
+  side.
+
 Library
 -------
 
