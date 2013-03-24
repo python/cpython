@@ -294,6 +294,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17536: Add to webbrowser's browser list: www-browser, x-www-browser,
+  iceweasel, iceape.
+
 - Issue #17150: pprint now uses line continuations to wrap long string
   literals.
 

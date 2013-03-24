@@ -437,9 +437,13 @@ def register_X_browsers():
     if "KDE_FULL_SESSION" in os.environ and shutil.which("kfmclient"):
         register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
+    if shutil.which("x-www-browser"):
+        register("x-www-browser", None, BackgroundBrowser("x-www-browser"))
+
     # The Mozilla/Netscape browsers
     for browser in ("mozilla-firefox", "firefox",
                     "mozilla-firebird", "firebird",
+                    "iceweasel", "iceape",
                     "seamonkey", "mozilla", "netscape"):
         if shutil.which(browser):
             register(browser, None, Mozilla(browser))
@@ -482,6 +486,8 @@ if os.environ.get("DISPLAY"):
 
 # Also try console browsers
 if os.environ.get("TERM"):
+    if shutil.which("www-browser"):
+        register("www-browser", None, GenericBrowser("www-browser"))
     # The Links/elinks browsers <http://artax.karlin.mff.cuni.cz/~mikulas/links/>
     if shutil.which("links"):
         register("links", None, GenericBrowser("links"))
