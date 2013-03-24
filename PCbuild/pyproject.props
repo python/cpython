@@ -20,7 +20,7 @@
     <sqlite3Dir>$(externalsDir)\sqlite-3.7.12</sqlite3Dir>
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.3</lzmaDir>
-    <opensslDir>$(externalsDir)\openssl-1.0.1c</opensslDir>
+    <opensslDir>$(externalsDir)\openssl-1.0.1d</opensslDir>
     <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
     <tcltk64Dir>$(externalsDir)\tcltk64</tcltk64Dir>
     <tcltkLib>$(tcltkDir)\lib\tcl85.lib;$(tcltkDir)\lib\tk85.lib</tcltkLib>
