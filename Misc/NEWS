@@ -811,6 +811,8 @@ Tests
 Build
 -----
 
+- Issue #17425: Build with openssl 1.0.1d on Windows.
+
 - Issue #16754: Fix the incorrect shared library extension on linux. Introduce
   two makefile macros SHLIB_SUFFIX and EXT_SUFFIX. SO now has the value of
   SHLIB_SUFFIX again (as in 2.x and 3.1). The SO macro is removed in 3.4.
