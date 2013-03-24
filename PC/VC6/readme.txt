@@ -153,9 +153,9 @@ _ssl
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
-        dist/openssl-1.0.0j
+        dist/openssl-1.0.0k
 
-    You need to use version 1.0.0j of OpenSSL.
+    You need to use version 1.0.0k of OpenSSL.
 
     You can install the NASM assembler from
         http://www.nasm.us/
