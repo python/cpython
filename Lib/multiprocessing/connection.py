@@ -12,7 +12,6 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 import io
 import os
 import sys
-import pickle
 import select
 import socket
 import struct
@@ -202,9 +201,7 @@ class _ConnectionBase:
         """Send a (picklable) object"""
         self._check_closed()
         self._check_writable()
-        buf = io.BytesIO()
-        ForkingPickler(buf, pickle.HIGHEST_PROTOCOL).dump(obj)
-        self._send_bytes(buf.getbuffer())
+        self._send_bytes(ForkingPickler.dumps(obj))
 
     def recv_bytes(self, maxlength=None):
         """
@@ -249,7 +246,7 @@ class _ConnectionBase:
         self._check_closed()
         self._check_readable()
         buf = self._recv_bytes()
-        return pickle.loads(buf.getbuffer())
+        return ForkingPickler.loads(buf.getbuffer())
 
     def poll(self, timeout=0.0):
         """Whether there is any input available to be read"""
