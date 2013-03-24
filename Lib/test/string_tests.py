@@ -1130,6 +1130,10 @@ class MixinStrUnicodeUserStringTest:
 
         class X(object): pass
         self.checkraises(TypeError, 'abc', '__mod__', X())
+        class X(Exception):
+            def __getitem__(self, k):
+                return k
+        self.checkequal('melon apple', '%(melon)s %(apple)s', '__mod__', X())
 
     def test_floatformatting(self):
         # float formatting

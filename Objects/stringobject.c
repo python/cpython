@@ -4257,8 +4257,8 @@ PyString_Format(PyObject *format, PyObject *args)
         arglen = -1;
         argidx = -2;
     }
-    if (PyMapping_Check(args) && !PyTuple_Check(args) &&
-        !PyObject_TypeCheck(args, &PyBaseString_Type))
+    if (Py_TYPE(args)->tp_as_mapping && Py_TYPE(args)->tp_as_mapping->mp_subscript &&
+        !PyTuple_Check(args) && !PyObject_TypeCheck(args, &PyBaseString_Type))
         dict = args;
     while (--fmtcnt >= 0) {
         if (*fmt != '%') {
