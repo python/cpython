@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17323: The "[X refs, Y blocks]" printed by debug builds has been
+  disabled by default.  It can be re-enabled with the `-X showrefcount` option.
+
 - Issue #17522: Add the PyGILState_Check() API.
 
 - Issue #16475: Support object instancing, recursion and interned strings

@@ -35,13 +35,29 @@
 #define PATH_MAX MAXPATHLEN
 #endif
 
+#ifdef Py_REF_DEBUG
+void _print_total_refs() {
+    PyObject *xoptions, *key, *value;
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    key = PyUnicode_FromString("showrefcount");
+    if (key == NULL)
+        return;
+    value = PyDict_GetItem(xoptions, key);
+    Py_DECREF(key);
+    if (value == Py_True)
+        fprintf(stderr,
+                "[%" PY_FORMAT_SIZE_T "d refs, "
+                "%" PY_FORMAT_SIZE_T "d blocks]\n",
+                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
+}
+#endif
+
 #ifndef Py_REF_DEBUG
 #define PRINT_TOTAL_REFS()
 #else /* Py_REF_DEBUG */
-#define PRINT_TOTAL_REFS() fprintf(stderr,                   \
-                   "[%" PY_FORMAT_SIZE_T "d refs, "          \
-                   "%" PY_FORMAT_SIZE_T "d blocks]\n",       \
-                   _Py_GetRefTotal(), _Py_GetAllocatedBlocks())
+#define PRINT_TOTAL_REFS() _print_total_refs()
 #endif
 
 #ifdef __cplusplus
