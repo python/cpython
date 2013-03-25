@@ -82,6 +82,34 @@ class PopenExecuteChildRaises(subprocess.Popen):
 
 class ProcessTestCase(BaseTestCase):
 
+    def test_io_buffered_by_default(self):
+        p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        try:
+            self.assertIsInstance(p.stdin, io.BufferedIOBase)
+            self.assertIsInstance(p.stdout, io.BufferedIOBase)
+            self.assertIsInstance(p.stderr, io.BufferedIOBase)
+        finally:
+            p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
+            p.wait()
+
+    def test_io_unbuffered_works(self):
+        p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, bufsize=0)
+        try:
+            self.assertIsInstance(p.stdin, io.RawIOBase)
+            self.assertIsInstance(p.stdout, io.RawIOBase)
+            self.assertIsInstance(p.stderr, io.RawIOBase)
+        finally:
+            p.stdin.close()
+            p.stdout.close()
+            p.stderr.close()
+            p.wait()
+
     def test_call_seq(self):
         # call() function with sequence argument
         rc = subprocess.call([sys.executable, "-c",

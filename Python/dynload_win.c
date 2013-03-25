@@ -235,7 +235,7 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
                            SUBLANG_DEFAULT),
                            /* Default language */
                 theInfo, /* the buffer */
-                sizeof(theInfo), /* the buffer size */
+                sizeof(theInfo) / sizeof(wchar_t), /* size in wchars */
                 NULL); /* no additional format args. */
 
             /* Problem: could not get the error message.
