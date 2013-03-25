@@ -294,6 +294,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17025: multiprocessing: Reduce Queue and SimpleQueue contention.
+
 - Issue #17536: Add to webbrowser's browser list: www-browser, x-www-browser,
   iceweasel, iceape.
 
