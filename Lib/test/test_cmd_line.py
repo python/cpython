@@ -62,6 +62,34 @@ class CmdLineTest(unittest.TestCase):
         opts = eval(out.splitlines()[0])
         self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
+    def test_showrefcount(self):
+        def run_python(*args):
+            # this is similar to assert_python_ok but doesn't strip
+            # the refcount from stderr.  It can be replaced once
+            # assert_python_ok stops doing that.
+            cmd = [sys.executable]
+            cmd.extend(args)
+            PIPE = subprocess.PIPE
+            p = subprocess.Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out, err = p.communicate()
+            p.stdout.close()
+            p.stderr.close()
+            rc = p.returncode
+            self.assertEqual(rc, 0)
+            return rc, out, err
+        code = 'import sys; print(sys._xoptions)'
+        # normally the refcount is hidden
+        rc, out, err = run_python('-c', code)
+        self.assertEqual(out.rstrip(), b'{}')
+        self.assertEqual(err, b'')
+        # "-X showrefcount" shows the refcount, but only in debug builds
+        rc, out, err = run_python('-X', 'showrefcount', '-c', code)
+        self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
+        if hasattr(sys, 'gettotalrefcount'):  # debug build
+            self.assertRegex(err, br'^\[\d+ refs, \d+ blocks\]')
+        else:
+            self.assertEqual(err, b'')
+
     def test_run_module(self):
         # Test expected operation of the '-m' switch
         # Switch needs an argument
