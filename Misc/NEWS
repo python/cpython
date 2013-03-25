@@ -233,6 +233,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #17488: Change the subprocess.Popen bufsize parameter default value
+  from unbuffered (0) to buffering (-1) to match the behavior existing code
+  expects and match the behavior of the subprocess module in Python 2 to avoid
+  introducing hard to track down bugs.
+
 - Issue #17521: Corrected non-enabling of logger following two calls to
   fileConfig().
 
@@ -1078,6 +1083,8 @@ Tests
 
 Build
 -----
+
+- Issue #17425: Build with openssl 1.0.0k on Windows.
 
 - Issue #16754: Fix the incorrect shared library extension on linux. Introduce
   two makefile macros SHLIB_SUFFIX and EXT_SUFFIX. SO now has the value of
