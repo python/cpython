@@ -948,9 +948,6 @@ class Mock(CallableMixin, NonCallableMock):
       the next value from the iterable. If any of the members of the iterable
       are exceptions they will be raised instead of returned.
 
-      If `side_effect` is an iterable then each call to the mock will return
-      the next value from the iterable.
-
     * `return_value`: The value returned when the mock is called. By default
       this is a new Mock (created on first access). See the
       `return_value` attribute.
