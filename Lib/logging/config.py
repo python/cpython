@@ -379,6 +379,12 @@ class BaseConfigurator(object):
     def __init__(self, config):
         self.config = ConvertingDict(config)
         self.config.configurator = self
+        # Issue 12718: winpdb replaces __import__ with a Python function, which
+        # ends up being treated as a bound method. To avoid problems, we
+        # set the importer on the instance, but leave it defined in the class
+        # so existing code doesn't break
+        if type(__import__) == types.FunctionType:
+            self.importer = __import__
 
     def resolve(self, s):
         """
