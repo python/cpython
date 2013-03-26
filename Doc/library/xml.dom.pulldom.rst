@@ -17,6 +17,14 @@ processing model together with callbacks, the user of a pull parser is
 responsible for explicitly pulling events from the stream, looping over those
 events until either processing is finished or an error condition occurs.
 
+
+.. warning::
+
+   The :mod:`xml.dom.pulldom` module is not secure against
+   maliciously constructed data.  If you need to parse untrusted or
+   unauthenticated data see :ref:`xml-vulnerabilities`.
+
+
 Example::
 
    from xml.dom import pulldom
