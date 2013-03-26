@@ -98,9 +98,9 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-m', 'fnord43520xyz')
         # Check the runpy module also gives an error for
         # a nonexistent module
-        assert_python_failure('-m', 'runpy', 'fnord43520xyz'),
+        assert_python_failure('-m', 'runpy', 'fnord43520xyz')
         # All good if module is located and run successfully
-        assert_python_ok('-m', 'timeit', '-n', '1'),
+        assert_python_ok('-m', 'timeit', '-n', '1')
 
     def test_run_module_bug1764407(self):
         # -m and -i need to play well together
