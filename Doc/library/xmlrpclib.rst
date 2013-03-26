@@ -28,6 +28,13 @@ supports writing XML-RPC client code; it handles all the details of translating
 between conformable Python objects and XML on the wire.
 
 
+.. warning::
+
+   The :mod:`xmlrpclib` module is not secure against maliciously
+   constructed data.  If you need to parse untrusted or unauthenticated data see
+   :ref:`xml-vulnerabilities`.
+
+
 .. class:: ServerProxy(uri[, transport[, encoding[, verbose[,  allow_none[, use_datetime]]]]])
 
    A :class:`ServerProxy` instance is an object that manages communication with a

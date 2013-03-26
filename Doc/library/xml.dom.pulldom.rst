@@ -16,6 +16,13 @@
 Object Model representation of a document from SAX events.
 
 
+.. warning::
+
+   The :mod:`xml.dom.pulldom` module is not secure against
+   maliciously constructed data.  If you need to parse untrusted or
+   unauthenticated data see :ref:`xml-vulnerabilities`.
+
+
 .. class:: PullDOM([documentFactory])
 
    :class:`xml.sax.handler.ContentHandler` implementation that ...
