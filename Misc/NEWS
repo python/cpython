@@ -36,6 +36,11 @@ Library
 - Issue #17531: Fix tests that thought group and user ids were always the int
   type. Also, always allow -1 as a valid group and user id.
 
+Documentation
+-------------
+
+- Issue 17538: Document XML vulnerabilties
+
 
 What's New in Python 2.7.4 release candidate 1
 ==============================================
