@@ -81,7 +81,7 @@ For full details, see the
 Summary -- Release highlights
 =============================
 
-.. This section singles out the most important changes in Python 3.3.
+.. This section singles out the most important changes in Python 3.4.
    Brevity is key.
 
 New syntax features:
@@ -98,7 +98,7 @@ New built-in features:
 
 Implementation improvements:
 
-* None yet.
+* A more efficient :mod:`marshal` format <http://bugs.python.org/issue16475>.
 
 Significantly Improved Library Modules:
 
