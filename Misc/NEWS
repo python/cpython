@@ -1156,6 +1156,8 @@ Tools/Demos
 Documentation
 -------------
 
+- Issue 17538: Document XML vulnerabilties
+
 - Issue #17047: remove doubled words in docs and docstrings
   reported by Serhiy Storchaka and Matthew Barnett.
 
