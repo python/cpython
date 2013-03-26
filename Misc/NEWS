@@ -6,6 +6,11 @@ What's New in Python 2.7.4?
 
 *Release date: XXXX-XX-XX*
 
+Build
+-----
+
+- Issue #17550: Fix the --enable-profiling configure switch.
+
 Core and Builtins
 -----------------
 
