@@ -1337,8 +1337,8 @@ def XMLID(text, parser=None):
             ids[id] = elem
     return tree, ids
 
+# Parse XML document from string constant.  Alias for XML().
 fromstring = XML
-"""Parse XML document from string constant.  Alias for XML()."""
 
 def fromstringlist(sequence, parser=None):
     """Parse XML document from sequence of string fragments.
