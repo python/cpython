@@ -13,6 +13,14 @@ The :class:`Element` type is a flexible container object, designed to store
 hierarchical data structures in memory.  The type can be described as a cross
 between a list and a dictionary.
 
+
+.. warning::
+
+   The :mod:`xml.etree.ElementTree` module is not secure against
+   maliciously constructed data.  If you need to parse untrusted or
+   unauthenticated data see :ref:`xml-vulnerabilities`.
+
+
 Each element has a number of properties associated with it:
 
 * a tag which is a string identifying what kind of data this element represents
