@@ -9,11 +9,6 @@ What's New in Python 3.3.1?
 
 .. *Release date: 2013-XX-XX*
 
-Build
------
-
-- Issue #17550: Fix the --enable-profiling configure switch.
-
 Core and Builtins
 -----------------
 
@@ -815,6 +810,8 @@ Tests
 
 Build
 -----
+
+- Issue #17550: Fix the --enable-profiling configure switch.
 
 - Issue #17425: Build with openssl 1.0.1d on Windows.
 
