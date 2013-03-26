@@ -1317,24 +1317,22 @@ RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 # Parser
 #
 
-"""Parse strings according to RFC822/2047/2822/5322 rules.
-
-This is a stateless parser.  Each get_XXX function accepts a string and
-returns either a Terminal or a TokenList representing the RFC object named
-by the method and a string containing the remaining unparsed characters
-from the input.  Thus a parser method consumes the next syntactic construct
-of a given type and returns a token representing the construct plus the
-unparsed remainder of the input string.
-
-For example, if the first element of a structured header is a 'phrase',
-then:
-
-    phrase, value = get_phrase(value)
-
-returns the complete phrase from the start of the string value, plus any
-characters left in the string after the phrase is removed.
-
-"""
+# Parse strings according to RFC822/2047/2822/5322 rules.
+#
+# This is a stateless parser.  Each get_XXX function accepts a string and
+# returns either a Terminal or a TokenList representing the RFC object named
+# by the method and a string containing the remaining unparsed characters
+# from the input.  Thus a parser method consumes the next syntactic construct
+# of a given type and returns a token representing the construct plus the
+# unparsed remainder of the input string.
+#
+# For example, if the first element of a structured header is a 'phrase',
+# then:
+#
+#     phrase, value = get_phrase(value)
+#
+# returns the complete phrase from the start of the string value, plus any
+# characters left in the string after the phrase is removed.
 
 _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(

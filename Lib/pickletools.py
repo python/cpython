@@ -33,119 +33,118 @@ bytes_types = pickle.bytes_types
 #   by a later GET.
 
 
-"""
-"A pickle" is a program for a virtual pickle machine (PM, but more accurately
-called an unpickling machine).  It's a sequence of opcodes, interpreted by the
-PM, building an arbitrarily complex Python object.
+# "A pickle" is a program for a virtual pickle machine (PM, but more accurately
+# called an unpickling machine).  It's a sequence of opcodes, interpreted by the
+# PM, building an arbitrarily complex Python object.
+#
+# For the most part, the PM is very simple:  there are no looping, testing, or
+# conditional instructions, no arithmetic and no function calls.  Opcodes are
+# executed once each, from first to last, until a STOP opcode is reached.
+#
+# The PM has two data areas, "the stack" and "the memo".
+#
+# Many opcodes push Python objects onto the stack; e.g., INT pushes a Python
+# integer object on the stack, whose value is gotten from a decimal string
+# literal immediately following the INT opcode in the pickle bytestream.  Other
+# opcodes take Python objects off the stack.  The result of unpickling is
+# whatever object is left on the stack when the final STOP opcode is executed.
+#
+# The memo is simply an array of objects, or it can be implemented as a dict
+# mapping little integers to objects.  The memo serves as the PM's "long term
+# memory", and the little integers indexing the memo are akin to variable
+# names.  Some opcodes pop a stack object into the memo at a given index,
+# and others push a memo object at a given index onto the stack again.
+#
+# At heart, that's all the PM has.  Subtleties arise for these reasons:
+#
+# + Object identity.  Objects can be arbitrarily complex, and subobjects
+#   may be shared (for example, the list [a, a] refers to the same object a
+#   twice).  It can be vital that unpickling recreate an isomorphic object
+#   graph, faithfully reproducing sharing.
+#
+# + Recursive objects.  For example, after "L = []; L.append(L)", L is a
+#   list, and L[0] is the same list.  This is related to the object identity
+#   point, and some sequences of pickle opcodes are subtle in order to
+#   get the right result in all cases.
+#
+# + Things pickle doesn't know everything about.  Examples of things pickle
+#   does know everything about are Python's builtin scalar and container
+#   types, like ints and tuples.  They generally have opcodes dedicated to
+#   them.  For things like module references and instances of user-defined
+#   classes, pickle's knowledge is limited.  Historically, many enhancements
+#   have been made to the pickle protocol in order to do a better (faster,
+#   and/or more compact) job on those.
+#
+# + Backward compatibility and micro-optimization.  As explained below,
+#   pickle opcodes never go away, not even when better ways to do a thing
+#   get invented.  The repertoire of the PM just keeps growing over time.
+#   For example, protocol 0 had two opcodes for building Python integers (INT
+#   and LONG), protocol 1 added three more for more-efficient pickling of short
+#   integers, and protocol 2 added two more for more-efficient pickling of
+#   long integers (before protocol 2, the only ways to pickle a Python long
+#   took time quadratic in the number of digits, for both pickling and
+#   unpickling).  "Opcode bloat" isn't so much a subtlety as a source of
+#   wearying complication.
+#
+#
+# Pickle protocols:
+#
+# For compatibility, the meaning of a pickle opcode never changes.  Instead new
+# pickle opcodes get added, and each version's unpickler can handle all the
+# pickle opcodes in all protocol versions to date.  So old pickles continue to
+# be readable forever.  The pickler can generally be told to restrict itself to
+# the subset of opcodes available under previous protocol versions too, so that
+# users can create pickles under the current version readable by older
+# versions.  However, a pickle does not contain its version number embedded
+# within it.  If an older unpickler tries to read a pickle using a later
+# protocol, the result is most likely an exception due to seeing an unknown (in
+# the older unpickler) opcode.
+#
+# The original pickle used what's now called "protocol 0", and what was called
+# "text mode" before Python 2.3.  The entire pickle bytestream is made up of
+# printable 7-bit ASCII characters, plus the newline character, in protocol 0.
+# That's why it was called text mode.  Protocol 0 is small and elegant, but
+# sometimes painfully inefficient.
+#
+# The second major set of additions is now called "protocol 1", and was called
+# "binary mode" before Python 2.3.  This added many opcodes with arguments
+# consisting of arbitrary bytes, including NUL bytes and unprintable "high bit"
+# bytes.  Binary mode pickles can be substantially smaller than equivalent
+# text mode pickles, and sometimes faster too; e.g., BININT represents a 4-byte
+# int as 4 bytes following the opcode, which is cheaper to unpickle than the
+# (perhaps) 11-character decimal string attached to INT.  Protocol 1 also added
+# a number of opcodes that operate on many stack elements at once (like APPENDS
+# and SETITEMS), and "shortcut" opcodes (like EMPTY_DICT and EMPTY_TUPLE).
+#
+# The third major set of additions came in Python 2.3, and is called "protocol
+# 2".  This added:
+#
+# - A better way to pickle instances of new-style classes (NEWOBJ).
+#
+# - A way for a pickle to identify its protocol (PROTO).
+#
+# - Time- and space- efficient pickling of long ints (LONG{1,4}).
+#
+# - Shortcuts for small tuples (TUPLE{1,2,3}}.
+#
+# - Dedicated opcodes for bools (NEWTRUE, NEWFALSE).
+#
+# - The "extension registry", a vector of popular objects that can be pushed
+#   efficiently by index (EXT{1,2,4}).  This is akin to the memo and GET, but
+#   the registry contents are predefined (there's nothing akin to the memo's
+#   PUT).
+#
+# Another independent change with Python 2.3 is the abandonment of any
+# pretense that it might be safe to load pickles received from untrusted
+# parties -- no sufficient security analysis has been done to guarantee
+# this and there isn't a use case that warrants the expense of such an
+# analysis.
+#
+# To this end, all tests for __safe_for_unpickling__ or for
+# copyreg.safe_constructors are removed from the unpickling code.
+# References to these variables in the descriptions below are to be seen
+# as describing unpickling in Python 2.2 and before.
 
-For the most part, the PM is very simple:  there are no looping, testing, or
-conditional instructions, no arithmetic and no function calls.  Opcodes are
-executed once each, from first to last, until a STOP opcode is reached.
-
-The PM has two data areas, "the stack" and "the memo".
-
-Many opcodes push Python objects onto the stack; e.g., INT pushes a Python
-integer object on the stack, whose value is gotten from a decimal string
-literal immediately following the INT opcode in the pickle bytestream.  Other
-opcodes take Python objects off the stack.  The result of unpickling is
-whatever object is left on the stack when the final STOP opcode is executed.
-
-The memo is simply an array of objects, or it can be implemented as a dict
-mapping little integers to objects.  The memo serves as the PM's "long term
-memory", and the little integers indexing the memo are akin to variable
-names.  Some opcodes pop a stack object into the memo at a given index,
-and others push a memo object at a given index onto the stack again.
-
-At heart, that's all the PM has.  Subtleties arise for these reasons:
-
-+ Object identity.  Objects can be arbitrarily complex, and subobjects
-  may be shared (for example, the list [a, a] refers to the same object a
-  twice).  It can be vital that unpickling recreate an isomorphic object
-  graph, faithfully reproducing sharing.
-
-+ Recursive objects.  For example, after "L = []; L.append(L)", L is a
-  list, and L[0] is the same list.  This is related to the object identity
-  point, and some sequences of pickle opcodes are subtle in order to
-  get the right result in all cases.
-
-+ Things pickle doesn't know everything about.  Examples of things pickle
-  does know everything about are Python's builtin scalar and container
-  types, like ints and tuples.  They generally have opcodes dedicated to
-  them.  For things like module references and instances of user-defined
-  classes, pickle's knowledge is limited.  Historically, many enhancements
-  have been made to the pickle protocol in order to do a better (faster,
-  and/or more compact) job on those.
-
-+ Backward compatibility and micro-optimization.  As explained below,
-  pickle opcodes never go away, not even when better ways to do a thing
-  get invented.  The repertoire of the PM just keeps growing over time.
-  For example, protocol 0 had two opcodes for building Python integers (INT
-  and LONG), protocol 1 added three more for more-efficient pickling of short
-  integers, and protocol 2 added two more for more-efficient pickling of
-  long integers (before protocol 2, the only ways to pickle a Python long
-  took time quadratic in the number of digits, for both pickling and
-  unpickling).  "Opcode bloat" isn't so much a subtlety as a source of
-  wearying complication.
-
-
-Pickle protocols:
-
-For compatibility, the meaning of a pickle opcode never changes.  Instead new
-pickle opcodes get added, and each version's unpickler can handle all the
-pickle opcodes in all protocol versions to date.  So old pickles continue to
-be readable forever.  The pickler can generally be told to restrict itself to
-the subset of opcodes available under previous protocol versions too, so that
-users can create pickles under the current version readable by older
-versions.  However, a pickle does not contain its version number embedded
-within it.  If an older unpickler tries to read a pickle using a later
-protocol, the result is most likely an exception due to seeing an unknown (in
-the older unpickler) opcode.
-
-The original pickle used what's now called "protocol 0", and what was called
-"text mode" before Python 2.3.  The entire pickle bytestream is made up of
-printable 7-bit ASCII characters, plus the newline character, in protocol 0.
-That's why it was called text mode.  Protocol 0 is small and elegant, but
-sometimes painfully inefficient.
-
-The second major set of additions is now called "protocol 1", and was called
-"binary mode" before Python 2.3.  This added many opcodes with arguments
-consisting of arbitrary bytes, including NUL bytes and unprintable "high bit"
-bytes.  Binary mode pickles can be substantially smaller than equivalent
-text mode pickles, and sometimes faster too; e.g., BININT represents a 4-byte
-int as 4 bytes following the opcode, which is cheaper to unpickle than the
-(perhaps) 11-character decimal string attached to INT.  Protocol 1 also added
-a number of opcodes that operate on many stack elements at once (like APPENDS
-and SETITEMS), and "shortcut" opcodes (like EMPTY_DICT and EMPTY_TUPLE).
-
-The third major set of additions came in Python 2.3, and is called "protocol
-2".  This added:
-
-- A better way to pickle instances of new-style classes (NEWOBJ).
-
-- A way for a pickle to identify its protocol (PROTO).
-
-- Time- and space- efficient pickling of long ints (LONG{1,4}).
-
-- Shortcuts for small tuples (TUPLE{1,2,3}}.
-
-- Dedicated opcodes for bools (NEWTRUE, NEWFALSE).
-
-- The "extension registry", a vector of popular objects that can be pushed
-  efficiently by index (EXT{1,2,4}).  This is akin to the memo and GET, but
-  the registry contents are predefined (there's nothing akin to the memo's
-  PUT).
-
-Another independent change with Python 2.3 is the abandonment of any
-pretense that it might be safe to load pickles received from untrusted
-parties -- no sufficient security analysis has been done to guarantee
-this and there isn't a use case that warrants the expense of such an
-analysis.
-
-To this end, all tests for __safe_for_unpickling__ or for
-copyreg.safe_constructors are removed from the unpickling code.
-References to these variables in the descriptions below are to be seen
-as describing unpickling in Python 2.2 and before.
-"""
 
 # Meta-rule:  Descriptions are stored in instances of descriptor objects,
 # with plain constructors.  No meta-language is defined from which

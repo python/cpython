@@ -825,10 +825,9 @@ class SysLogHandler(logging.Handler):
             msg = self.ident + msg
         if self.append_nul:
             msg += '\000'
-        """
-        We need to convert record level to lowercase, maybe this will
-        change in the future.
-        """
+
+        # We need to convert record level to lowercase, maybe this will
+        # change in the future.
         prio = '<%d>' % self.encodePriority(self.facility,
                                             self.mapPriority(record.levelname))
         prio = prio.encode('utf-8')

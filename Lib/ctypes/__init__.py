@@ -34,17 +34,15 @@ from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
      FUNCFLAG_USE_ERRNO as _FUNCFLAG_USE_ERRNO, \
      FUNCFLAG_USE_LASTERROR as _FUNCFLAG_USE_LASTERROR
 
-"""
-WINOLEAPI -> HRESULT
-WINOLEAPI_(type)
-
-STDMETHODCALLTYPE
-
-STDMETHOD(name)
-STDMETHOD_(type, name)
-
-STDAPICALLTYPE
-"""
+# WINOLEAPI -> HRESULT
+# WINOLEAPI_(type)
+#
+# STDMETHODCALLTYPE
+#
+# STDMETHOD(name)
+# STDMETHOD_(type, name)
+#
+# STDAPICALLTYPE
 
 def create_string_buffer(init, size=None):
     """create_string_buffer(aBytes) -> character array
