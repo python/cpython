@@ -1217,6 +1217,8 @@ Build
 Documentation
 -------------
 
+- Issue 17538: Document XML vulnerabilties
+
 - Issue #16642: sched.scheduler timefunc initial default is time.monotonic.
   Patch by Ramchandra Apte
 
