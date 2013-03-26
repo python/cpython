@@ -16,6 +16,13 @@ servers written in Python.  Servers can either be free standing, using
 :class:`CGIXMLRPCRequestHandler`.
 
 
+.. warning::
+
+   The :mod:`xmlrpc.client` module is not secure against maliciously
+   constructed data.  If you need to parse untrusted or unauthenticated data see
+   :ref:`xml-vulnerabilities`.
+
+
 .. class:: SimpleXMLRPCServer(addr, requestHandler=SimpleXMLRPCRequestHandler, logRequests=True, allow_none=False, encoding=None, bind_and_activate=True)
 
    Create a new server instance.  This class provides methods for registration of
