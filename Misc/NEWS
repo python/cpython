@@ -1148,6 +1148,8 @@ Tests
 Build
 -----
 
+- Issue #17550: Fix the --enable-profiling configure switch.
+
 - Issue #17425: Build with openssl 1.0.1d on Windows.
 
 - Issue #16754: Fix the incorrect shared library extension on linux. Introduce

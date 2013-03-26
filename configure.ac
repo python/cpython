@@ -883,7 +883,7 @@ AC_ARG_ENABLE(profiling,
               AS_HELP_STRING([--enable-profiling], [enable C-level code profiling]))
 if test "x$enable_profiling" = xyes; then
   ac_save_cc="$CC"
-  CC="$(CC) -pg"
+  CC="$CC -pg"
   AC_LINK_IFELSE([AC_LANG_SOURCE([[int main() { return 0; }]])],
     [],
     [enable_profiling=no])
