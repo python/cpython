@@ -5532,7 +5532,7 @@ fi
 
 if test "x$enable_profiling" = xyes; then
   ac_save_cc="$CC"
-  CC="$(CC) -pg"
+  CC="$CC -pg"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int main() { return 0; }

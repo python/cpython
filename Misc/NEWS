@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.1?
+===========================
+
+*Release date: 07-Apr-2013*
+
+Build
+-----
+
+- Issue #17550: Fix the --enable-profiling configure switch.
+
+
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
 
