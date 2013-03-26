@@ -360,7 +360,7 @@ Miscellaneous options
    Reserved for various implementation-specific options.  CPython currently
    defines two possible values:
 
-   * ``-X faulthander`` to enable :mod:`faulthandler`;
+   * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to enable the output of the total reference count
      and memory blocks (only works on debug builds);
 
@@ -369,6 +369,9 @@ Miscellaneous options
 
    .. versionchanged:: 3.2
       It is now allowed to pass :option:`-X` with CPython.
+
+   .. versionadded:: 3.3
+      The ``-X faulthandler`` option.
 
    .. versionadded:: 3.4
       The ``-X showrefcount`` option.
