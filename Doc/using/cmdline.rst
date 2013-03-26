@@ -358,12 +358,15 @@ Miscellaneous options
 .. cmdoption:: -X
 
    Reserved for various implementation-specific options.  CPython currently
-   defines just one, you can use ``-X faulthander`` to enable
-   :data:`faulthandler`. It also allows to pass arbitrary values and retrieve
+   defines just one, you can use ``-X faulthandler`` to enable
+   :mod:`faulthandler`. It also allows to pass arbitrary values and retrieve
    them through the :data:`sys._xoptions` dictionary.
 
    .. versionchanged:: 3.2
       It is now allowed to pass :option:`-X` with CPython.
+
+   .. versionadded:: 3.3
+      The ``-X faulthandler`` option.
 
 
 Options you shouldn't use
