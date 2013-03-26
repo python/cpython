@@ -16,6 +16,14 @@ Simple API for XML (SAX) interface for Python.  The package itself provides the
 SAX exceptions and the convenience functions which will be most used by users of
 the SAX API.
 
+
+.. warning::
+
+   The :mod:`xml.sax` module is not secure against maliciously
+   constructed data.  If you need to parse untrusted or unauthenticated data see
+   :ref:`xml-vulnerabilities`.
+
+
 The convenience functions are:
 
 
