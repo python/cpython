@@ -2054,7 +2054,6 @@ class StringIO(TextIOWrapper):
             if not isinstance(initial_value, str):
                 raise TypeError("initial_value must be str or None, not {0}"
                                 .format(type(initial_value).__name__))
-                initial_value = str(initial_value)
             self.write(initial_value)
             self.seek(0)
 
