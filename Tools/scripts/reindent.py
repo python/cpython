@@ -52,8 +52,8 @@ verbose = False
 recurse = False
 dryrun = False
 makebackup = True
+# A specified newline to be used in the output (set by --newline option)
 spec_newline = None
-"""A specified newline to be used in the output (set by --newline option)"""
 
 
 def usage(msg=None):

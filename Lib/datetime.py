@@ -1929,203 +1929,203 @@ timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(timezone._minoffset)
 timezone.max = timezone._create(timezone._maxoffset)
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
-"""
-Some time zone algebra.  For a datetime x, let
-    x.n = x stripped of its timezone -- its naive time.
-    x.o = x.utcoffset(), and assuming that doesn't raise an exception or
-          return None
-    x.d = x.dst(), and assuming that doesn't raise an exception or
-          return None
-    x.s = x's standard offset, x.o - x.d
 
-Now some derived rules, where k is a duration (timedelta).
+# Some time zone algebra.  For a datetime x, let
+#     x.n = x stripped of its timezone -- its naive time.
+#     x.o = x.utcoffset(), and assuming that doesn't raise an exception or
+#           return None
+#     x.d = x.dst(), and assuming that doesn't raise an exception or
+#           return None
+#     x.s = x's standard offset, x.o - x.d
+#
+# Now some derived rules, where k is a duration (timedelta).
+#
+# 1. x.o = x.s + x.d
+#    This follows from the definition of x.s.
+#
+# 2. If x and y have the same tzinfo member, x.s = y.s.
+#    This is actually a requirement, an assumption we need to make about
+#    sane tzinfo classes.
+#
+# 3. The naive UTC time corresponding to x is x.n - x.o.
+#    This is again a requirement for a sane tzinfo class.
+#
+# 4. (x+k).s = x.s
+#    This follows from #2, and that datimetimetz+timedelta preserves tzinfo.
+#
+# 5. (x+k).n = x.n + k
+#    Again follows from how arithmetic is defined.
+#
+# Now we can explain tz.fromutc(x).  Let's assume it's an interesting case
+# (meaning that the various tzinfo methods exist, and don't blow up or return
+# None when called).
+#
+# The function wants to return a datetime y with timezone tz, equivalent to x.
+# x is already in UTC.
+#
+# By #3, we want
+#
+#     y.n - y.o = x.n                             [1]
+#
+# The algorithm starts by attaching tz to x.n, and calling that y.  So
+# x.n = y.n at the start.  Then it wants to add a duration k to y, so that [1]
+# becomes true; in effect, we want to solve [2] for k:
+#
+#    (y+k).n - (y+k).o = x.n                      [2]
+#
+# By #1, this is the same as
+#
+#    (y+k).n - ((y+k).s + (y+k).d) = x.n          [3]
+#
+# By #5, (y+k).n = y.n + k, which equals x.n + k because x.n=y.n at the start.
+# Substituting that into [3],
+#
+#    x.n + k - (y+k).s - (y+k).d = x.n; the x.n terms cancel, leaving
+#    k - (y+k).s - (y+k).d = 0; rearranging,
+#    k = (y+k).s - (y+k).d; by #4, (y+k).s == y.s, so
+#    k = y.s - (y+k).d
+#
+# On the RHS, (y+k).d can't be computed directly, but y.s can be, and we
+# approximate k by ignoring the (y+k).d term at first.  Note that k can't be
+# very large, since all offset-returning methods return a duration of magnitude
+# less than 24 hours.  For that reason, if y is firmly in std time, (y+k).d must
+# be 0, so ignoring it has no consequence then.
+#
+# In any case, the new value is
+#
+#     z = y + y.s                                 [4]
+#
+# It's helpful to step back at look at [4] from a higher level:  it's simply
+# mapping from UTC to tz's standard time.
+#
+# At this point, if
+#
+#     z.n - z.o = x.n                             [5]
+#
+# we have an equivalent time, and are almost done.  The insecurity here is
+# at the start of daylight time.  Picture US Eastern for concreteness.  The wall
+# time jumps from 1:59 to 3:00, and wall hours of the form 2:MM don't make good
+# sense then.  The docs ask that an Eastern tzinfo class consider such a time to
+# be EDT (because it's "after 2"), which is a redundant spelling of 1:MM EST
+# on the day DST starts.  We want to return the 1:MM EST spelling because that's
+# the only spelling that makes sense on the local wall clock.
+#
+# In fact, if [5] holds at this point, we do have the standard-time spelling,
+# but that takes a bit of proof.  We first prove a stronger result.  What's the
+# difference between the LHS and RHS of [5]?  Let
+#
+#     diff = x.n - (z.n - z.o)                    [6]
+#
+# Now
+#     z.n =                       by [4]
+#     (y + y.s).n =               by #5
+#     y.n + y.s =                 since y.n = x.n
+#     x.n + y.s =                 since z and y are have the same tzinfo member,
+#                                     y.s = z.s by #2
+#     x.n + z.s
+#
+# Plugging that back into [6] gives
+#
+#     diff =
+#     x.n - ((x.n + z.s) - z.o) =     expanding
+#     x.n - x.n - z.s + z.o =         cancelling
+#     - z.s + z.o =                   by #2
+#     z.d
+#
+# So diff = z.d.
+#
+# If [5] is true now, diff = 0, so z.d = 0 too, and we have the standard-time
+# spelling we wanted in the endcase described above.  We're done.  Contrarily,
+# if z.d = 0, then we have a UTC equivalent, and are also done.
+#
+# If [5] is not true now, diff = z.d != 0, and z.d is the offset we need to
+# add to z (in effect, z is in tz's standard time, and we need to shift the
+# local clock into tz's daylight time).
+#
+# Let
+#
+#     z' = z + z.d = z + diff                     [7]
+#
+# and we can again ask whether
+#
+#     z'.n - z'.o = x.n                           [8]
+#
+# If so, we're done.  If not, the tzinfo class is insane, according to the
+# assumptions we've made.  This also requires a bit of proof.  As before, let's
+# compute the difference between the LHS and RHS of [8] (and skipping some of
+# the justifications for the kinds of substitutions we've done several times
+# already):
+#
+#     diff' = x.n - (z'.n - z'.o) =           replacing z'.n via [7]
+#             x.n  - (z.n + diff - z'.o) =    replacing diff via [6]
+#             x.n - (z.n + x.n - (z.n - z.o) - z'.o) =
+#             x.n - z.n - x.n + z.n - z.o + z'.o =    cancel x.n
+#             - z.n + z.n - z.o + z'.o =              cancel z.n
+#             - z.o + z'.o =                      #1 twice
+#             -z.s - z.d + z'.s + z'.d =          z and z' have same tzinfo
+#             z'.d - z.d
+#
+# So z' is UTC-equivalent to x iff z'.d = z.d at this point.  If they are equal,
+# we've found the UTC-equivalent so are done.  In fact, we stop with [7] and
+# return z', not bothering to compute z'.d.
+#
+# How could z.d and z'd differ?  z' = z + z.d [7], so merely moving z' by
+# a dst() offset, and starting *from* a time already in DST (we know z.d != 0),
+# would have to change the result dst() returns:  we start in DST, and moving
+# a little further into it takes us out of DST.
+#
+# There isn't a sane case where this can happen.  The closest it gets is at
+# the end of DST, where there's an hour in UTC with no spelling in a hybrid
+# tzinfo class.  In US Eastern, that's 5:MM UTC = 0:MM EST = 1:MM EDT.  During
+# that hour, on an Eastern clock 1:MM is taken as being in standard time (6:MM
+# UTC) because the docs insist on that, but 0:MM is taken as being in daylight
+# time (4:MM UTC).  There is no local time mapping to 5:MM UTC.  The local
+# clock jumps from 1:59 back to 1:00 again, and repeats the 1:MM hour in
+# standard time.  Since that's what the local clock *does*, we want to map both
+# UTC hours 5:MM and 6:MM to 1:MM Eastern.  The result is ambiguous
+# in local time, but so it goes -- it's the way the local clock works.
+#
+# When x = 5:MM UTC is the input to this algorithm, x.o=0, y.o=-5 and y.d=0,
+# so z=0:MM.  z.d=60 (minutes) then, so [5] doesn't hold and we keep going.
+# z' = z + z.d = 1:MM then, and z'.d=0, and z'.d - z.d = -60 != 0 so [8]
+# (correctly) concludes that z' is not UTC-equivalent to x.
+#
+# Because we know z.d said z was in daylight time (else [5] would have held and
+# we would have stopped then), and we know z.d != z'.d (else [8] would have held
+# and we have stopped then), and there are only 2 possible values dst() can
+# return in Eastern, it follows that z'.d must be 0 (which it is in the example,
+# but the reasoning doesn't depend on the example -- it depends on there being
+# two possible dst() outcomes, one zero and the other non-zero).  Therefore
+# z' must be in standard time, and is the spelling we want in this case.
+#
+# Note again that z' is not UTC-equivalent as far as the hybrid tzinfo class is
+# concerned (because it takes z' as being in standard time rather than the
+# daylight time we intend here), but returning it gives the real-life "local
+# clock repeats an hour" behavior when mapping the "unspellable" UTC hour into
+# tz.
+#
+# When the input is 6:MM, z=1:MM and z.d=0, and we stop at once, again with
+# the 1:MM standard time spelling we want.
+#
+# So how can this break?  One of the assumptions must be violated.  Two
+# possibilities:
+#
+# 1) [2] effectively says that y.s is invariant across all y belong to a given
+#    time zone.  This isn't true if, for political reasons or continental drift,
+#    a region decides to change its base offset from UTC.
+#
+# 2) There may be versions of "double daylight" time where the tail end of
+#    the analysis gives up a step too early.  I haven't thought about that
+#    enough to say.
+#
+# In any case, it's clear that the default fromutc() is strong enough to handle
+# "almost all" time zones:  so long as the standard offset is invariant, it
+# doesn't matter if daylight time transition points change from year to year, or
+# if daylight time is skipped in some years; it doesn't matter how large or
+# small dst() may get within its bounds; and it doesn't even matter if some
+# perverse time zone returns a negative dst()).  So a breaking case must be
+# pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 
-1. x.o = x.s + x.d
-   This follows from the definition of x.s.
-
-2. If x and y have the same tzinfo member, x.s = y.s.
-   This is actually a requirement, an assumption we need to make about
-   sane tzinfo classes.
-
-3. The naive UTC time corresponding to x is x.n - x.o.
-   This is again a requirement for a sane tzinfo class.
-
-4. (x+k).s = x.s
-   This follows from #2, and that datimetimetz+timedelta preserves tzinfo.
-
-5. (x+k).n = x.n + k
-   Again follows from how arithmetic is defined.
-
-Now we can explain tz.fromutc(x).  Let's assume it's an interesting case
-(meaning that the various tzinfo methods exist, and don't blow up or return
-None when called).
-
-The function wants to return a datetime y with timezone tz, equivalent to x.
-x is already in UTC.
-
-By #3, we want
-
-    y.n - y.o = x.n                             [1]
-
-The algorithm starts by attaching tz to x.n, and calling that y.  So
-x.n = y.n at the start.  Then it wants to add a duration k to y, so that [1]
-becomes true; in effect, we want to solve [2] for k:
-
-   (y+k).n - (y+k).o = x.n                      [2]
-
-By #1, this is the same as
-
-   (y+k).n - ((y+k).s + (y+k).d) = x.n          [3]
-
-By #5, (y+k).n = y.n + k, which equals x.n + k because x.n=y.n at the start.
-Substituting that into [3],
-
-   x.n + k - (y+k).s - (y+k).d = x.n; the x.n terms cancel, leaving
-   k - (y+k).s - (y+k).d = 0; rearranging,
-   k = (y+k).s - (y+k).d; by #4, (y+k).s == y.s, so
-   k = y.s - (y+k).d
-
-On the RHS, (y+k).d can't be computed directly, but y.s can be, and we
-approximate k by ignoring the (y+k).d term at first.  Note that k can't be
-very large, since all offset-returning methods return a duration of magnitude
-less than 24 hours.  For that reason, if y is firmly in std time, (y+k).d must
-be 0, so ignoring it has no consequence then.
-
-In any case, the new value is
-
-    z = y + y.s                                 [4]
-
-It's helpful to step back at look at [4] from a higher level:  it's simply
-mapping from UTC to tz's standard time.
-
-At this point, if
-
-    z.n - z.o = x.n                             [5]
-
-we have an equivalent time, and are almost done.  The insecurity here is
-at the start of daylight time.  Picture US Eastern for concreteness.  The wall
-time jumps from 1:59 to 3:00, and wall hours of the form 2:MM don't make good
-sense then.  The docs ask that an Eastern tzinfo class consider such a time to
-be EDT (because it's "after 2"), which is a redundant spelling of 1:MM EST
-on the day DST starts.  We want to return the 1:MM EST spelling because that's
-the only spelling that makes sense on the local wall clock.
-
-In fact, if [5] holds at this point, we do have the standard-time spelling,
-but that takes a bit of proof.  We first prove a stronger result.  What's the
-difference between the LHS and RHS of [5]?  Let
-
-    diff = x.n - (z.n - z.o)                    [6]
-
-Now
-    z.n =                       by [4]
-    (y + y.s).n =               by #5
-    y.n + y.s =                 since y.n = x.n
-    x.n + y.s =                 since z and y are have the same tzinfo member,
-                                    y.s = z.s by #2
-    x.n + z.s
-
-Plugging that back into [6] gives
-
-    diff =
-    x.n - ((x.n + z.s) - z.o) =     expanding
-    x.n - x.n - z.s + z.o =         cancelling
-    - z.s + z.o =                   by #2
-    z.d
-
-So diff = z.d.
-
-If [5] is true now, diff = 0, so z.d = 0 too, and we have the standard-time
-spelling we wanted in the endcase described above.  We're done.  Contrarily,
-if z.d = 0, then we have a UTC equivalent, and are also done.
-
-If [5] is not true now, diff = z.d != 0, and z.d is the offset we need to
-add to z (in effect, z is in tz's standard time, and we need to shift the
-local clock into tz's daylight time).
-
-Let
-
-    z' = z + z.d = z + diff                     [7]
-
-and we can again ask whether
-
-    z'.n - z'.o = x.n                           [8]
-
-If so, we're done.  If not, the tzinfo class is insane, according to the
-assumptions we've made.  This also requires a bit of proof.  As before, let's
-compute the difference between the LHS and RHS of [8] (and skipping some of
-the justifications for the kinds of substitutions we've done several times
-already):
-
-    diff' = x.n - (z'.n - z'.o) =           replacing z'.n via [7]
-            x.n  - (z.n + diff - z'.o) =    replacing diff via [6]
-            x.n - (z.n + x.n - (z.n - z.o) - z'.o) =
-            x.n - z.n - x.n + z.n - z.o + z'.o =    cancel x.n
-            - z.n + z.n - z.o + z'.o =              cancel z.n
-            - z.o + z'.o =                      #1 twice
-            -z.s - z.d + z'.s + z'.d =          z and z' have same tzinfo
-            z'.d - z.d
-
-So z' is UTC-equivalent to x iff z'.d = z.d at this point.  If they are equal,
-we've found the UTC-equivalent so are done.  In fact, we stop with [7] and
-return z', not bothering to compute z'.d.
-
-How could z.d and z'd differ?  z' = z + z.d [7], so merely moving z' by
-a dst() offset, and starting *from* a time already in DST (we know z.d != 0),
-would have to change the result dst() returns:  we start in DST, and moving
-a little further into it takes us out of DST.
-
-There isn't a sane case where this can happen.  The closest it gets is at
-the end of DST, where there's an hour in UTC with no spelling in a hybrid
-tzinfo class.  In US Eastern, that's 5:MM UTC = 0:MM EST = 1:MM EDT.  During
-that hour, on an Eastern clock 1:MM is taken as being in standard time (6:MM
-UTC) because the docs insist on that, but 0:MM is taken as being in daylight
-time (4:MM UTC).  There is no local time mapping to 5:MM UTC.  The local
-clock jumps from 1:59 back to 1:00 again, and repeats the 1:MM hour in
-standard time.  Since that's what the local clock *does*, we want to map both
-UTC hours 5:MM and 6:MM to 1:MM Eastern.  The result is ambiguous
-in local time, but so it goes -- it's the way the local clock works.
-
-When x = 5:MM UTC is the input to this algorithm, x.o=0, y.o=-5 and y.d=0,
-so z=0:MM.  z.d=60 (minutes) then, so [5] doesn't hold and we keep going.
-z' = z + z.d = 1:MM then, and z'.d=0, and z'.d - z.d = -60 != 0 so [8]
-(correctly) concludes that z' is not UTC-equivalent to x.
-
-Because we know z.d said z was in daylight time (else [5] would have held and
-we would have stopped then), and we know z.d != z'.d (else [8] would have held
-and we have stopped then), and there are only 2 possible values dst() can
-return in Eastern, it follows that z'.d must be 0 (which it is in the example,
-but the reasoning doesn't depend on the example -- it depends on there being
-two possible dst() outcomes, one zero and the other non-zero).  Therefore
-z' must be in standard time, and is the spelling we want in this case.
-
-Note again that z' is not UTC-equivalent as far as the hybrid tzinfo class is
-concerned (because it takes z' as being in standard time rather than the
-daylight time we intend here), but returning it gives the real-life "local
-clock repeats an hour" behavior when mapping the "unspellable" UTC hour into
-tz.
-
-When the input is 6:MM, z=1:MM and z.d=0, and we stop at once, again with
-the 1:MM standard time spelling we want.
-
-So how can this break?  One of the assumptions must be violated.  Two
-possibilities:
-
-1) [2] effectively says that y.s is invariant across all y belong to a given
-   time zone.  This isn't true if, for political reasons or continental drift,
-   a region decides to change its base offset from UTC.
-
-2) There may be versions of "double daylight" time where the tail end of
-   the analysis gives up a step too early.  I haven't thought about that
-   enough to say.
-
-In any case, it's clear that the default fromutc() is strong enough to handle
-"almost all" time zones:  so long as the standard offset is invariant, it
-doesn't matter if daylight time transition points change from year to year, or
-if daylight time is skipped in some years; it doesn't matter how large or
-small dst() may get within its bounds; and it doesn't even matter if some
-perverse time zone returns a negative dst()).  So a breaking case must be
-pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
-"""
 try:
     from _datetime import *
 except ImportError:
