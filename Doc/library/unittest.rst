@@ -638,7 +638,7 @@ the test unless the passed object has a certain attribute::
    def skipUnlessHasattr(obj, attr):
        if hasattr(obj, attr):
            return lambda func: func
-       return unittest.skip("{0!r} doesn't have {1!r}".format(obj, attr))
+       return unittest.skip("{!r} doesn't have {!r}".format(obj, attr))
 
 The following decorators implement test skipping and expected failures:
 
@@ -659,6 +659,13 @@ The following decorators implement test skipping and expected failures:
 
    Mark the test as an expected failure.  If the test fails when run, the test
    is not counted as a failure.
+
+.. exception:: SkipTest(reason)
+
+   This exception is raised to skip a test.
+
+   Usually you can use :meth:`TestCase.skipTest` or one of the skipping
+   decorators instead of raising this directly.
 
 Skipped tests will not have :meth:`setUp` or :meth:`tearDown` run around them.
 Skipped classes will not have :meth:`setUpClass` or :meth:`tearDownClass` run.
@@ -1956,7 +1963,7 @@ then you must call up to them yourself. The implementations in
 If an exception is raised during a ``setUpClass`` then the tests in the class
 are not run and the ``tearDownClass`` is not run. Skipped classes will not
 have ``setUpClass`` or ``tearDownClass`` run. If the exception is a
-``SkipTest`` exception then the class will be reported as having been skipped
+:exc:`SkipTest` exception then the class will be reported as having been skipped
 instead of as an error.
 
 
@@ -1973,7 +1980,7 @@ These should be implemented as functions::
 
 If an exception is raised in a ``setUpModule`` then none of the tests in the
 module will be run and the ``tearDownModule`` will not be run. If the exception is a
-``SkipTest`` exception then the module will be reported as having been skipped
+:exc:`SkipTest` exception then the module will be reported as having been skipped
 instead of as an error.
 
 

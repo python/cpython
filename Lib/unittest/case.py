@@ -26,7 +26,7 @@ class SkipTest(Exception):
     """
     Raise this exception in a test to skip it.
 
-    Usually you can use TestResult.skip() or one of the skipping decorators
+    Usually you can use TestCase.skipTest() or one of the skipping decorators
     instead of raising this directly.
     """
     pass
