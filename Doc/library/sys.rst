@@ -302,6 +302,8 @@ always available.
    5.2.4.2.2 of the 1999 ISO/IEC C standard [C99]_, 'Characteristics of
    floating types', for details.
 
+   .. tabularcolumns:: |l|l|L|
+
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
    +=====================+================+==================================================+
@@ -598,6 +600,8 @@ always available.
 
    A struct sequence that holds information about Python's
    internal representation of integers.  The attributes are read only.
+
+   .. tabularcolumns:: |l|L|
 
    +-------------------------+----------------------------------------------+
    | Attribute               | Explanation                                  |

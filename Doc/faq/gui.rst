@@ -4,7 +4,9 @@
 Graphic User Interface FAQ
 ==========================
 
-.. contents::
+.. only:: html
+
+   .. contents::
 
 What platform-independent GUI toolkits exist for Python?
 ========================================================
