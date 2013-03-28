@@ -52,6 +52,8 @@ PROTOCOL_SSLv2
 PROTOCOL_SSLv3
 PROTOCOL_SSLv23
 PROTOCOL_TLSv1
+PROTOCOL_TLSv1_1
+PROTOCOL_TLSv1_2
 
 The following constants identify various SSL alert message descriptions as per
 http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6
@@ -110,8 +112,7 @@ _import_symbols('SSL_ERROR_')
 
 from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN
 
-from _ssl import (PROTOCOL_SSLv3, PROTOCOL_SSLv23,
-                  PROTOCOL_TLSv1)
+from _ssl import PROTOCOL_SSLv3, PROTOCOL_SSLv23, PROTOCOL_TLSv1
 from _ssl import _OPENSSL_API_VERSION
 
 
@@ -127,6 +128,14 @@ except ImportError:
     _SSLv2_IF_EXISTS = None
 else:
     _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
+
+try:
+    from _ssl import PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
+except ImportError:
+    pass
+else:
+    _PROTOCOL_NAMES[PROTOCOL_TLSv1_1] = "TLSv1.1"
+    _PROTOCOL_NAMES[PROTOCOL_TLSv1_2] = "TLSv1.2"
 
 from socket import getnameinfo as _getnameinfo
 from socket import socket, AF_INET, SOCK_STREAM, create_connection

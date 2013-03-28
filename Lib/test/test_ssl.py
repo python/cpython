@@ -20,13 +20,7 @@ import functools
 
 ssl = support.import_module("ssl")
 
-PROTOCOLS = [
-    ssl.PROTOCOL_SSLv3,
-    ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1
-]
-if hasattr(ssl, 'PROTOCOL_SSLv2'):
-    PROTOCOLS.append(ssl.PROTOCOL_SSLv2)
-
+PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = support.HOST
 
 data_file = lambda name: os.path.join(os.path.dirname(__file__), name)
@@ -101,10 +95,6 @@ needs_sni = unittest.skipUnless(ssl.HAS_SNI, "SNI support needed for this test")
 class BasicSocketTests(unittest.TestCase):
 
     def test_constants(self):
-        #ssl.PROTOCOL_SSLv2
-        ssl.PROTOCOL_SSLv23
-        ssl.PROTOCOL_SSLv3
-        ssl.PROTOCOL_TLSv1
         ssl.CERT_NONE
         ssl.CERT_OPTIONAL
         ssl.CERT_REQUIRED
@@ -396,11 +386,8 @@ class ContextTests(unittest.TestCase):
 
     @skip_if_broken_ubuntu_ssl
     def test_constructor(self):
-        if hasattr(ssl, 'PROTOCOL_SSLv2'):
-            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv2)
-        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv3)
-        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        for protocol in PROTOCOLS:
+            ssl.SSLContext(protocol)
         self.assertRaises(TypeError, ssl.SSLContext)
         self.assertRaises(ValueError, ssl.SSLContext, -1)
         self.assertRaises(ValueError, ssl.SSLContext, 42)
@@ -1360,12 +1347,15 @@ else:
         client_context.options = ssl.OP_ALL | client_options
         server_context = ssl.SSLContext(server_protocol)
         server_context.options = ssl.OP_ALL | server_options
+
+        # NOTE: we must enable "ALL" ciphers on the client, otherwise an
+        # SSLv23 client will send an SSLv3 hello (rather than SSLv2)
+        # starting from OpenSSL 1.0.0 (see issue #8322).
+        if client_context.protocol == ssl.PROTOCOL_SSLv23:
+            client_context.set_ciphers("ALL")
+
         for ctx in (client_context, server_context):
             ctx.verify_mode = certsreqs
-            # NOTE: we must enable "ALL" ciphers, otherwise an SSLv23 client
-            # will send an SSLv3 hello (rather than SSLv2) starting from
-            # OpenSSL 1.0.0 (see issue #8322).
-            ctx.set_ciphers("ALL")
             ctx.load_cert_chain(CERTFILE)
             ctx.load_verify_locations(CERTFILE)
         try:
@@ -1580,6 +1570,49 @@ else:
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv3, False)
             try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_SSLv23, False,
                                client_options=ssl.OP_NO_TLSv1)
+
+        @skip_if_broken_ubuntu_ssl
+        @unittest.skipUnless(hasattr(ssl, "PROTOCOL_TLSv1_1"),
+                             "TLS version 1.1 not supported.")
+        def test_protocol_tlsv1_1(self):
+            """Connecting to a TLSv1.1 server with various client options.
+               Testing against older TLS versions."""
+            if support.verbose:
+                sys.stdout.write("\n")
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_1, True)
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_SSLv2, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_SSLv3, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_SSLv23, False,
+                               client_options=ssl.OP_NO_TLSv1_1)
+
+            try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1_1, True)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_1, False)
+
+
+        @skip_if_broken_ubuntu_ssl
+        @unittest.skipUnless(hasattr(ssl, "PROTOCOL_TLSv1_2"),
+                             "TLS version 1.2 not supported.")
+        def test_protocol_tlsv1_2(self):
+            """Connecting to a TLSv1.2 server with various client options.
+               Testing against older TLS versions."""
+            if support.verbose:
+                sys.stdout.write("\n")
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_2, True,
+                               server_options=ssl.OP_NO_SSLv3|ssl.OP_NO_SSLv2,
+                               client_options=ssl.OP_NO_SSLv3|ssl.OP_NO_SSLv2,)
+            if hasattr(ssl, 'PROTOCOL_SSLv2'):
+                try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_SSLv2, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_SSLv3, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_SSLv23, False,
+                               client_options=ssl.OP_NO_TLSv1_2)
+
+            try_protocol_combo(ssl.PROTOCOL_SSLv23, ssl.PROTOCOL_TLSv1_2, True)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1, ssl.PROTOCOL_TLSv1_2, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_2, ssl.PROTOCOL_TLSv1_1, False)
+            try_protocol_combo(ssl.PROTOCOL_TLSv1_1, ssl.PROTOCOL_TLSv1_2, False)
 
         def test_starttls(self):
             """Switching from clear text to encrypted and back again."""
