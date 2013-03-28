@@ -124,8 +124,8 @@ break backward compatibility. After all inline DTD and entity expansion are
 well-definied XML features.
 
 
-.. _defusedxml: <https://pypi.python.org/pypi/defusedxml/>
-.. _defusedexpat: <https://pypi.python.org/pypi/defusedexpat/>
+.. _defusedxml: https://pypi.python.org/pypi/defusedxml/
+.. _defusedexpat: https://pypi.python.org/pypi/defusedexpat/
 .. _Billion Laughs: http://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: http://en.wikipedia.org/wiki/Zip_bomb
 .. _DTD: http://en.wikipedia.org/wiki/Document_Type_Definition
