@@ -315,6 +315,8 @@ To simplify and standardize error handling, the :meth:`encode` and
 providing the *errors* string argument.  The following string values are defined
 and implemented by all standard Python codecs:
 
+.. tabularcolumns:: |l|L|
+
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
 +=========================+===============================================+
@@ -926,6 +928,8 @@ particular, the following variants typically exist:
 
 * an IBM PC code page, which is ASCII compatible
 
+.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
+
 +-----------------+--------------------------------+--------------------------------+
 | Codec           | Aliases                        | Languages                      |
 +=================+================================+================================+
@@ -1140,6 +1144,8 @@ particular, the following variants typically exist:
 
 .. XXX fix here, should be in above table
 
+.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
+
 +--------------------+---------+---------------------------+
 | Codec              | Aliases | Purpose                   |
 +====================+=========+===========================+
@@ -1182,6 +1188,8 @@ particular, the following variants typically exist:
 
 The following codecs provide bytes-to-bytes mappings.
 
+.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
+
 +--------------------+---------------------------+---------------------------+
 | Codec              | Aliases                   | Purpose                   |
 +====================+===========================+===========================+
@@ -1207,6 +1215,8 @@ The following codecs provide bytes-to-bytes mappings.
 +--------------------+---------------------------+---------------------------+
 
 The following codecs provide string-to-string mappings.
+
+.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
 
 +--------------------+---------------------------+---------------------------+
 | Codec              | Aliases                   | Purpose                   |

@@ -187,6 +187,8 @@ Argument names are not part of the specification, and only the arguments of
 
 The following table summarizes the ABCs provided by the :mod:`io` module:
 
+.. tabularcolumns:: |l|l|L|L|
+
 =========================  ==================  ========================  ==================================================
 ABC                        Inherits            Stub Methods              Mixin Methods and Properties
 =========================  ==================  ========================  ==================================================

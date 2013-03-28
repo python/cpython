@@ -346,6 +346,8 @@ Module Functions
    *return_when* indicates when this function should return.  It must be one of
    the following constants:
 
+   .. tabularcolumns:: |l|L|
+
    +-----------------------------+----------------------------------------+
    | Constant                    | Description                            |
    +=============================+========================================+

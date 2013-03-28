@@ -72,6 +72,8 @@ between conformable Python objects and XML on the wire.
    (e.g. that can be marshalled through XML), include the following (and except
    where noted, they are unmarshalled as the same Python type):
 
+   .. tabularcolumns:: |l|L|
+
    +---------------------------------+---------------------------------------------+
    | Name                            | Meaning                                     |
    +=================================+=============================================+
