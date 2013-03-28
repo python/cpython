@@ -26,6 +26,8 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    The setup function takes a large number of arguments. These are laid out in the
    following table.
 
+   .. tabularcolumns:: |l|L|L|
+
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | argument name      | value                          | type                                                        |
    +====================+================================+=============================================================+
@@ -125,6 +127,8 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
 
    *stop_after* tells :func:`setup` when to stop processing; possible  values:
 
+   .. tabularcolumns:: |l|L|
+
    +---------------+---------------------------------------------+
    | value         | description                                 |
    +===============+=============================================+
@@ -164,6 +168,8 @@ the full reference.
 
    The Extension class describes a single C or C++extension module in a setup
    script. It accepts the following keyword arguments in its constructor:
+
+   .. tabularcolumns:: |l|L|l|
 
    +------------------------+--------------------------------+---------------------------+
    | argument name          | value                          | type                      |
@@ -1561,6 +1567,8 @@ lines, and joining lines with backslashes.
    :func:`open` built-in function.
 
    The options are all boolean, and affect the values returned by :meth:`readline`
+
+   .. tabularcolumns:: |l|L|l|
 
    +------------------+--------------------------------+---------+
    | option name      | description                    | default |

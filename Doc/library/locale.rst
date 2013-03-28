@@ -55,6 +55,8 @@ The :mod:`locale` module defines the following exception and functions:
    Returns the database of the local conventions as a dictionary. This dictionary
    has the following strings as keys:
 
+   .. tabularcolumns:: |l|l|L|
+
    +----------------------+-------------------------------------+--------------------------------+
    | Category             | Key                                 | Meaning                        |
    +======================+=====================================+================================+

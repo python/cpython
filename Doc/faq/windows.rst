@@ -6,7 +6,9 @@
 Python on Windows FAQ
 =====================
 
-.. contents::
+.. only:: html
+
+   .. contents::
 
 .. XXX need review for Python 3.
    XXX need review for Windows Vista/Seven?
