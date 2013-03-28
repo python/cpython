@@ -22,11 +22,33 @@ howto/curses,,:magenta,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:m
 howto/curses,,:red,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
 howto/curses,,:white,"7:white."
 howto/curses,,:yellow,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/logging,,:root,WARNING:root:Watch out!
+howto/logging,,:Watch,WARNING:root:Watch out!
+howto/logging,,:root,DEBUG:root:This message should go to the log file
+howto/logging,,:root,INFO:root:So should this
+howto/logging,,:So,INFO:root:So should this
+howto/logging,,:root,"WARNING:root:And this, too"
+howto/logging,,:And,"WARNING:root:And this, too"
+howto/logging,,:root,INFO:root:Started
+howto/logging,,:Started,INFO:root:Started
+howto/logging,,:root,INFO:root:Doing something
+howto/logging,,:Doing,INFO:root:Doing something
+howto/logging,,:root,INFO:root:Finished
+howto/logging,,:Finished,INFO:root:Finished
+howto/logging,,:root,WARNING:root:Look before you leap!
+howto/logging,,:Look,WARNING:root:Look before you leap!
+howto/logging,,:This,DEBUG:This message should appear on the console
+howto/logging,,:So,INFO:So should this
+howto/logging,,:And,"WARNING:And this, too"
+howto/logging,,:logger,severity:logger name:message
+howto/logging,,:message,severity:logger name:message
+howto/logging,,:This,DEBUG:root:This message should go to the log file
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:example,"for example ""joe@password:example.com"""
 howto/webservers,,.. image:,.. image:: http.png
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
+library/cookie,,`,!#$%&'*+-.^_`|~
 library/datetime,,:MM,
 library/datetime,,:SS,
 library/decimal,,:optional,"trailneg:optional trailing minus indicator"
@@ -40,13 +62,14 @@ library/dis,,`,TOS = `TOS`
 library/doctest,,`,``factorial`` from the ``example`` module:
 library/doctest,,`,The ``example`` module
 library/doctest,,`,Using ``factorial``
+library/exceptions,,:err,err.object[err.start:err.end]
 library/functions,,:step,a[start:stop:step]
 library/functions,,:stop,"a[start:stop, i]"
 library/functions,,:stop,a[start:stop:step]
 library/hotshot,,:lineno,"ncalls  tottime  percall  cumtime  percall filename:lineno(function)"
 library/httplib,,:port,host:port
-library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS +HHMM"""
-library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS +HHMM"""
+library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS"
+library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS"
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/itertools,,:step,elements from seq[start:stop:step]
 library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
@@ -56,6 +79,7 @@ library/logging,,:package2,
 library/logging,,:root,
 library/logging,,:This,
 library/logging,,:port,host:port
+library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
 library/multiprocessing,,`,">>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`"
@@ -79,6 +103,8 @@ library/multiprocessing,,`,`slots` is used to specify the number of slots for pr
 library/optparse,,:len,"del parser.rargs[:len(value)]"
 library/os.path,,:foo,c:foo
 library/parser,,`,"""Make a function that raises an argument to the exponent `exp`."""
+library/pdb,,:lineno,filename:lineno
+library/pdb,,:lineno,filename:lineno
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
 library/profile,,:lineno,ncalls  tottime  percall  cumtime  percall filename:lineno(function)
 library/profile,,:lineno,filename:lineno(function)
@@ -88,8 +114,8 @@ library/repr,,`,"return `obj`"
 library/smtplib,,:port,"as well as a regular host:port server."
 library/socket,,::,'5aef:2b::8'
 library/sqlite3,,:memory,
-library/sqlite3,,:age,"select name_last, age from people where name_last=:who and age=:age"
-library/sqlite3,,:who,"select name_last, age from people where name_last=:who and age=:age"
+library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
+library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
 library/ssl,,:myserver,"Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com"
@@ -123,6 +149,8 @@ reference/datamodel,,:max,
 reference/expressions,,:index,x[index:index]
 reference/expressions,,:datum,{key:datum...}
 reference/expressions,,`,`expressions...`
+reference/expressions,,`,"""`"""
+reference/expressions,,`,"""`"""
 reference/grammar,,:output,#diagram:output
 reference/grammar,,:rules,#diagram:rules
 reference/grammar,,:token,#diagram:token

@@ -72,7 +72,7 @@ numeric address in *host* portion.
    tuple, and the fields depend on the address type. The general tuple form is
    ``(addr_type, v1, v2, v3 [, scope])``, where:
 
-   - *addr_type* is one of :const;`TIPC_ADDR_NAMESEQ`, :const:`TIPC_ADDR_NAME`,
+   - *addr_type* is one of :const:`TIPC_ADDR_NAMESEQ`, :const:`TIPC_ADDR_NAME`,
      or :const:`TIPC_ADDR_ID`.
    - *scope* is one of :const:`TIPC_ZONE_SCOPE`, :const:`TIPC_CLUSTER_SCOPE`,
      and :const:`TIPC_NODE_SCOPE`.

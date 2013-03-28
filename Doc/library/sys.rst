@@ -774,7 +774,7 @@ always available.
    independent Python files are installed; by default, this is the string
    ``'/usr/local'``.  This can be set at build time with the ``--prefix``
    argument to the :program:`configure` script.  The main collection of Python
-   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}``
+   library modules is installed in the directory :file:`{prefix}/lib/python{X.Y}`
    while the platform independent header files (all except :file:`pyconfig.h`) are
    stored in :file:`{prefix}/include/python{X.Y}`, where *X.Y* is the version
    number of Python, for example ``2.7``.
