@@ -1,9 +1,7 @@
 c-api/arg,,:ref,"PyArg_ParseTuple(args, ""O|O:ref"", &object, &callback)"
 c-api/list,,:high,list[low:high]
-c-api/list,,:high,list[low:high] = itemlist
 c-api/sequence,,:i2,del o[i1:i2]
 c-api/sequence,,:i2,o[i1:i2]
-c-api/sequence,,:i2,o[i1:i2] = v
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
 distutils/examples,267,`,This is the description of the ``foobar`` package.
@@ -18,9 +16,6 @@ faq/programming,,::,for x in sequence[::-1]:
 faq/programming,,:reduce,"print((lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
-faq/windows,229,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
-faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
-howto/cporting,,:add,"if (!PyArg_ParseTuple(args, ""ii:add_ints"", &one, &two))"
 howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
 howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
 howto/curses,,:black,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
@@ -35,8 +30,6 @@ howto/ipaddress,,:DB8,>>> ipaddress.ip_address('2001:DB8::1')
 howto/ipaddress,,::,>>> ipaddress.ip_address('2001:DB8::1')
 howto/ipaddress,,:db8,IPv6Address('2001:db8::1')
 howto/ipaddress,,::,IPv6Address('2001:db8::1')
-howto/ipaddress,,:db8,IPv6Address('2001:db8::1')
-howto/ipaddress,,::,IPv6Address('2001:db8::1')
 howto/ipaddress,,::,IPv6Address('::1')
 howto/ipaddress,,:db8,>>> ipaddress.ip_network('2001:db8::0/96')
 howto/ipaddress,,::,>>> ipaddress.ip_network('2001:db8::0/96')
@@ -44,29 +37,18 @@ howto/ipaddress,,:db8,IPv6Network('2001:db8::/96')
 howto/ipaddress,,::,IPv6Network('2001:db8::/96')
 howto/ipaddress,,:db8,IPv6Network('2001:db8::/128')
 howto/ipaddress,,::,IPv6Network('2001:db8::/128')
-howto/ipaddress,,:db8,>>> ipaddress.ip_network('2001:db8::1/96')
-howto/ipaddress,,::,>>> ipaddress.ip_network('2001:db8::1/96')
 howto/ipaddress,,:db8,IPv6Interface('2001:db8::1/96')
 howto/ipaddress,,::,IPv6Interface('2001:db8::1/96')
 howto/ipaddress,,:db8,>>> addr6 = ipaddress.ip_address('2001:db8::1')
 howto/ipaddress,,::,>>> addr6 = ipaddress.ip_address('2001:db8::1')
 howto/ipaddress,,:db8,>>> host6 = ipaddress.ip_interface('2001:db8::1/96')
 howto/ipaddress,,::,>>> host6 = ipaddress.ip_interface('2001:db8::1/96')
-howto/ipaddress,,:db8,IPv6Network('2001:db8::/96')
-howto/ipaddress,,::,IPv6Network('2001:db8::/96')
-howto/ipaddress,,:db8,>>> net6 = ipaddress.ip_network('2001:db8::0/96')
-howto/ipaddress,,::,>>> net6 = ipaddress.ip_network('2001:db8::0/96')
 howto/ipaddress,,:db8,>>> net6 = ipaddress.ip_network('2001:db8::0/96')
 howto/ipaddress,,::,>>> net6 = ipaddress.ip_network('2001:db8::0/96')
 howto/ipaddress,,:ffff,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
 howto/ipaddress,,::,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
 howto/ipaddress,,::,IPv6Address('::ffff:ffff')
 howto/ipaddress,,:ffff,IPv6Address('::ffff:ffff')
-howto/ipaddress,,::,IPv6Address('2001::1')
-howto/ipaddress,,::,IPv6Address('2001::ffff:ffff')
-howto/ipaddress,,:ffff,IPv6Address('2001::ffff:ffff')
-howto/ipaddress,,:db8,'2001:db8::'
-howto/ipaddress,,::,'2001:db8::'
 howto/ipaddress,,:db8,'2001:db8::/96'
 howto/ipaddress,,::,'2001:db8::/96'
 howto/ipaddress,,:db8,>>> ipaddress.ip_interface('2001:db8::1/96')
@@ -103,7 +85,6 @@ howto/pyporting,75,::,'Programming Language :: Python :: 3'
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:example,"for example ""joe@password:example.com"""
-howto/webservers,,.. image:,.. image:: http.png
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
@@ -112,10 +93,7 @@ library/configparser,,:home,my_dir: ${Common:home_dir}/twosheds
 library/configparser,,:option,${section:option}
 library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
 library/configparser,,:Python,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
-library/configparser,,`,# Set the optional `raw` argument of get() to True if you wish to disable
 library/configparser,,:system,path: ${Common:system_dir}/Library/Frameworks/
-library/configparser,,`,# The optional `fallback` argument can be used to provide a fallback value
-library/configparser,,`,# The optional `vars` argument is a dict with members that will take
 library/datetime,,:MM,
 library/datetime,,:SS,
 library/decimal,,:optional,"trailneg:optional trailing minus indicator"
@@ -124,8 +102,6 @@ library/difflib,,:bhi,b[blo:bhi]
 library/difflib,,:i1,
 library/difflib,,:i2,
 library/difflib,,:j2,
-library/dis,,:TOS,
-library/dis,,`,TOS = `TOS`
 library/doctest,,`,``factorial`` from the ``example`` module:
 library/doctest,,`,The ``example`` module
 library/doctest,,`,Using ``factorial``
@@ -133,7 +109,6 @@ library/exceptions,,:err,err.object[err.start:err.end]
 library/functions,,:step,a[start:stop:step]
 library/functions,,:stop,"a[start:stop, i]"
 library/functions,,:stop,a[start:stop:step]
-library/hotshot,,:lineno,"ncalls  tottime  percall  cumtime  percall filename:lineno(function)"
 library/http.client,,:port,host:port
 library/http.cookies,,`,!#$%&'*+-.^_`|~:
 library/imaplib,,:MM,"""DD-Mmm-YYYY HH:MM:SS"
@@ -149,24 +124,6 @@ library/ipaddress,,:db8,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,::,>>> ipaddress.IPv6Address('2001:db8::1000')
 library/ipaddress,,:db8,IPv6Address('2001:db8::1000')
 library/ipaddress,,::,IPv6Address('2001:db8::1000')
-library/ipaddress,,:db8,>>> ipaddress.IPv6Interface('2001:db8::1000/96')
-library/ipaddress,,::,>>> ipaddress.IPv6Interface('2001:db8::1000/96')
-library/ipaddress,,:db8,IPv6Interface('2001:db8::1000/96')
-library/ipaddress,,::,IPv6Interface('2001:db8::1000/96')
-library/ipaddress,,:db8,>>> ipaddress.IPv6Interface('2001:db8::1000/96').network
-library/ipaddress,,::,>>> ipaddress.IPv6Interface('2001:db8::1000/96').network
-library/ipaddress,,:db8,IPv6Network('2001:db8::/96')
-library/ipaddress,,::,IPv6Network('2001:db8::/96')
-library/ipaddress,,:db8,>>> ipaddress.IPv6Network('2001:db8::/96')
-library/ipaddress,,::,>>> ipaddress.IPv6Network('2001:db8::/96')
-library/ipaddress,,:db8,IPv6Network('2001:db8::/96')
-library/ipaddress,,::,IPv6Network('2001:db8::/96')
-library/ipaddress,,:db8,>>> ipaddress.IPv6Network('2001:db8::/96').netmask
-library/ipaddress,,::,>>> ipaddress.IPv6Network('2001:db8::/96').netmask
-library/ipaddress,,:ffff,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
-library/ipaddress,,::,IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff::')
-library/ipaddress,,:db8,">>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)"
-library/ipaddress,,::,">>> ipaddress.IPv6Network('2001:db8::1000/96', strict=False)"
 library/ipaddress,,::,"""::abc:7:def"""
 library/ipaddress,,:def,"""::abc:7:def"""
 library/ipaddress,,::,::FFFF/96
@@ -174,41 +131,20 @@ library/ipaddress,,::,2002::/16
 library/ipaddress,,::,2001::/32
 library/ipaddress,,::,>>> str(ipaddress.IPv6Address('::1'))
 library/ipaddress,,::,'::1'
-library/ipaddress,,::,>>> int(ipaddress.IPv6Address('::1'))
 library/ipaddress,,:ff00,ffff:ff00::
 library/ipaddress,,:db00,2001:db00::0/24
 library/ipaddress,,::,2001:db00::0/24
 library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
 library/ipaddress,,::,2001:db00::0/ffff:ff00::
-library/ipaddress,,:ff00,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
-library/logging,,:And,
-library/logging,,:Doing,INFO:root:Doing something
-library/logging,,:Finished,INFO:root:Finished
-library/logging,,:logger,severity:logger name:message
-library/logging,,:Look,WARNING:root:Look before you leap!
-library/logging,,:message,severity:logger name:message
-library/logging,,:package1,
-library/logging,,:package2,
-library/logging,,:port,host:port
-library/logging,,:root,
-library/logging,,:So,INFO:root:So should this
-library/logging,,:So,INFO:So should this
-library/logging,,:Started,INFO:root:Started
-library/logging,,:This,
-library/logging,,:Watch,WARNING:root:Watch out!
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
 library/multiprocessing,,`,# A test file for the `multiprocessing` package
 library/multiprocessing,,`,# A test of `multiprocessing.Pool` class
 library/multiprocessing,,`,# `BaseManager`.
-library/multiprocessing,,`,`Cluster` is a subclass of `SyncManager` so it allows creation of
-library/multiprocessing,,`,# create server for a `HostManager` object
-library/multiprocessing,,`,# Depends on `multiprocessing` package -- tested with `processing-0.60`
-library/multiprocessing,,`,`hostname` gives the name of the host.  If hostname is not
 library/multiprocessing,,`,# in the original order then consider using `Pool.map()` or
 library/multiprocessing,,`,">>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`"
 library/multiprocessing,,`,">>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`"
@@ -219,16 +155,11 @@ library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable
 library/multiprocessing,,`,# register the Foo class; make `f()` and `g()` accessible via proxy
 library/multiprocessing,,`,# register the Foo class; make `g()` and `_h()` accessible via proxy
 library/multiprocessing,,`,# register the generator function baz; use `GeneratorProxy` to make proxies
-library/multiprocessing,,`,`slots` is used to specify the number of slots for processes on
 library/nntplib,,:bytes,:bytes
-library/nntplib,,:bytes,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
 library/nntplib,,:lines,:lines
-library/nntplib,,:lines,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
 library/optparse,,:len,"del parser.rargs[:len(value)]"
 library/os.path,,:foo,c:foo
-library/parser,,`,"""Make a function that raises an argument to the exponent `exp`."""
 library/pdb,,:lineno,filename:lineno
-library/pdb,,:lineno,[filename:lineno | bpnumber [bpnumber ...]]
 library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
 library/pprint,209,::,"'classifiers': ['Development Status :: 4 - Beta',"
@@ -243,19 +174,14 @@ library/pprint,209,::,"'Programming Language :: Python :: 2.7',"
 library/pprint,209,::,"'Topic :: Software Development :: Libraries',"
 library/pprint,209,::,"'Topic :: Software Development :: Libraries :: Python Modules'],"
 library/profile,,:lineno,filename:lineno(function)
-library/profile,,:lineno,ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-library/profile,,:lineno,"(sort by filename:lineno),"
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
-library/repr,,`,"return `obj`"
-library/smtplib,,:port,"as well as a regular host:port server."
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
 library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
-library/sqlite3,,:age,"select name_last, age from people where name_last=:who and age=:age"
 library/sqlite3,,:memory,
 library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
@@ -272,7 +198,6 @@ library/stdtypes,,::,>>> hash(v[::-2]) == hash(b'abcefg'[::-2])
 library/stdtypes,,:len,s[len(s):len(s)]
 library/stdtypes,,::,>>> y = m[::2]
 library/stdtypes,,::,>>> z = y[::-2]
-library/string,,:end,s[start:end]
 library/subprocess,,`,"output=`dmesg | grep hda`"
 library/subprocess,,`,"output=`mycmd myarg`"
 library/tarfile,,:bz2,
@@ -284,8 +209,6 @@ library/tarfile,,:xz,'w:xz'
 library/time,,:mm,
 library/time,,:ss,
 library/turtle,,::,Example::
-library/urllib2,,:password,"""joe:password@python.org"""
-library/urllib,,:port,:port
 library/urllib.request,,:close,Connection:close
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
@@ -304,16 +227,7 @@ license,,`,THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AN
 license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
 license,,`,THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 license,,:zooko,mailto:zooko@zooko.com
-reference/datamodel,,:max,
-reference/datamodel,,:step,a[i:j:step]
-reference/expressions,,:datum,{key:datum...}
-reference/expressions,,`,`expressions...`
 reference/expressions,,:index,x[index:index]
-reference/grammar,,:output,#diagram:output
-reference/grammar,,:rules,#diagram:rules
-reference/grammar,,`,'`' testlist1 '`'
-reference/grammar,,:token,#diagram:token
-reference/lexical_analysis,,`,",       :       .       `       =       ;"
 reference/lexical_analysis,,`,$       ?       `
 reference/lexical_analysis,,:fileencoding,# vim:fileencoding=<encoding-name>
 tutorial/datastructures,,:value,It is also possible to delete a key:value
@@ -361,15 +275,12 @@ whatsnew/3.2,,:cafe,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
 whatsnew/3.2,,:cafe,>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
 whatsnew/3.2,,:deaf,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
 whatsnew/3.2,,:deaf,>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
-whatsnew/3.2,,:directory,...   ${buildout:directory}/downloads/dist
 whatsnew/3.2,,:directory,${buildout:directory}/downloads/dist
 whatsnew/3.2,,::,"$ export PYTHONWARNINGS='ignore::RuntimeWarning::,once::UnicodeWarning::'"
 whatsnew/3.2,,:feed,"netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',"
 whatsnew/3.2,,:feed,>>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
 whatsnew/3.2,,:gz,">>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') as tf:"
-whatsnew/3.2,,:location,... zope9-location = ${zope9:location}
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
-whatsnew/3.2,,:prefix,... zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:platform,:platform:
 whatsnew/changelog,,:password,: Unquote before b64encoding user:password during Basic
@@ -378,15 +289,3 @@ whatsnew/changelog,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised Unic
 whatsnew/changelog,,:close,: Connection:close header is sent by requests using URLOpener
 whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
 whatsnew/changelog,,:test,: test_subprocess:test_leaking_fds_on_error no longer gives a
-whatsnew/news,,:platform,:platform:
-whatsnew/news,,:password,: Unquote before b64encoding user:password during Basic
-whatsnew/news,,:close,Connection:close header.
-whatsnew/news,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused"
-whatsnew/news,,:close,: Connection:close header is sent by requests using URLOpener
-whatsnew/news,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
-whatsnew/news,,:test,: test_subprocess:test_leaking_fds_on_error no longer gives a
-whatsnew/news,,:test,: Fix test_posix:test_getgroups failure under Solaris.  Patch
-whatsnew/news,,:Olimit,Drop -OPT:Olimit compiler option.
-whatsnew/news,,:MAXYEAR,timedelta from date or datetime falls outside of the MINYEAR:MAXYEAR range.
-whatsnew/news,,:bz2,with mode 'r' or 'r:bz2' and a fileobj argument that contained no data or
-whatsnew/news,,:db2,: Add configure option --with-dbmliborder=db1:db2:... to specify
