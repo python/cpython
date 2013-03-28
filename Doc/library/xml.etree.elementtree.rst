@@ -312,6 +312,8 @@ module.  We'll be using the ``countrydata`` XML document from the
 Supported XPath syntax
 ^^^^^^^^^^^^^^^^^^^^^^
 
+.. tabularcolumns:: |l|L|
+
 +-----------------------+------------------------------------------------------+
 | Syntax                | Meaning                                              |
 +=======================+======================================================+

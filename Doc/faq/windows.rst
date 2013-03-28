@@ -6,7 +6,9 @@
 Python on Windows FAQ
 =====================
 
-.. contents::
+.. only:: html
+
+   .. contents::
 
 How do I run a Python program under Windows?
 --------------------------------------------

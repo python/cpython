@@ -4,7 +4,10 @@
 General Python FAQ
 ==================
 
-.. contents::
+.. only:: html
+
+   .. contents::
+
 
 General Information
 ===================

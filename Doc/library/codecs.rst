@@ -320,6 +320,8 @@ To simplify and standardize error handling, the :meth:`encode` and
 providing the *errors* string argument.  The following string values are defined
 and implemented by all standard Python codecs:
 
+.. tabularcolumns:: |l|L|
+
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
 +=========================+===============================================+
@@ -887,6 +889,8 @@ particular, the following variants typically exist:
 
 * an IBM PC code page, which is ASCII compatible
 
+.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
+
 +-----------------+--------------------------------+--------------------------------+
 | Codec           | Aliases                        | Languages                      |
 +=================+================================+================================+
@@ -1102,6 +1106,8 @@ function with one argument can be considered as an encoding.
 For the codecs listed below, the result in the "encoding" direction is always a
 byte string. The result of the "decoding" direction is listed as operand type in
 the table.
+
+.. tabularcolumns:: |l|p{0.3\linewidth}|l|p{0.3\linewidth}|
 
 +--------------------+---------------------------+----------------+---------------------------+
 | Codec              | Aliases                   | Operand type   | Purpose                   |

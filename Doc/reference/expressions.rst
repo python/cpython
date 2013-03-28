@@ -1370,7 +1370,7 @@ groups from right to left).
 | :keyword:`not` ``x``                          | Boolean NOT                         |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`in`, :keyword:`not in`,             | Comparisons, including membership   |
-| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests,           |
+| :keyword:`is`, :keyword:`is not`, ``<``,      | tests and identity tests            |
 | ``<=``, ``>``, ``>=``, ``<>``, ``!=``, ``==`` |                                     |
 +-----------------------------------------------+-------------------------------------+
 | ``|``                                         | Bitwise OR                          |
