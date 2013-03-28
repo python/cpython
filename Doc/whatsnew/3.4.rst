@@ -103,6 +103,7 @@ Implementation improvements:
 Significantly Improved Library Modules:
 
 * SHA-3 (Keccak) support for :mod:`hashlib`.
+* TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 
 Security improvements:
 

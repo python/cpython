@@ -786,10 +786,10 @@ class PyBuildExt(build_ext):
                     for line in incfile:
                         m = openssl_ver_re.match(line)
                         if m:
-                            openssl_ver = eval(m.group(1))
+                            openssl_ver = int(m.group(1), 16)
+                            break
             except IOError as msg:
                 print("IOError while reading opensshv.h:", msg)
-                pass
 
         #print('openssl_ver = 0x%08x' % openssl_ver)
         min_openssl_ver = 0x00907000

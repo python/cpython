@@ -297,6 +297,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16692: The ssl module now supports TLS 1.1 and TLS 1.2.  Initial
+  patch by Michele Orrù.
+
 - Issue #17025: multiprocessing: Reduce Queue and SimpleQueue contention.
 
 - Issue #17536: Add to webbrowser's browser list: www-browser, x-www-browser,
@@ -1004,6 +1007,8 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 
 - ctypes.call_commethod was removed, since its only usage was in the defunct
   samples directory.
+
+- Issue #16692: Added  TLSv1.1 and TLSv1.2 support for the ssl modules.
 
 Extension Modules
 -----------------
