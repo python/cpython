@@ -439,6 +439,8 @@ APIs:
    .. % Similar comments apply to the %ll width modifier and
    .. % PY_FORMAT_LONG_LONG.
 
+   .. tabularcolumns:: |l|l|L|
+
    +-------------------+---------------------+--------------------------------+
    | Format Characters | Type                | Comment                        |
    +===================+=====================+================================+

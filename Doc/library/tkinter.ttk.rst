@@ -102,6 +102,8 @@ Standard Options
 
 All the :mod:`ttk` Widgets accepts the following options:
 
+   .. tabularcolumns:: |l|L|
+
    +-----------+--------------------------------------------------------------+
    | Option    | Description                                                  |
    +===========+==============================================================+
@@ -134,8 +136,10 @@ Scrollable Widget Options
 The following options are supported by widgets that are controlled by a
 scrollbar.
 
+   .. tabularcolumns:: |l|L|
+
    +----------------+---------------------------------------------------------+
-   | option         | description                                             |
+   | Option         | Description                                             |
    +================+=========================================================+
    | xscrollcommand | Used to communicate with horizontal scrollbars.         |
    |                |                                                         |
@@ -158,11 +162,10 @@ Label Options
 The following options are supported by labels, buttons and other button-like
 widgets.
 
-.. tabularcolumns:: |p{0.2\textwidth}|p{0.7\textwidth}|
-..
+   .. tabularcolumns:: |l|p{0.7\linewidth}|
 
    +--------------+-----------------------------------------------------------+
-   | option       | description                                               |
+   | Option       | Description                                               |
    +==============+===========================================================+
    | text         | Specifies a text string to be displayed inside the widget.|
    +--------------+-----------------------------------------------------------+
@@ -202,8 +205,10 @@ widgets.
 Compatibility Options
 ^^^^^^^^^^^^^^^^^^^^^
 
+   .. tabularcolumns:: |l|L|
+
    +--------+----------------------------------------------------------------+
-   | option | description                                                    |
+   | Option | Description                                                    |
    +========+================================================================+
    | state  | May be set to "normal" or "disabled" to control the "disabled" |
    |        | state bit. This is a write-only option: setting it changes the |
@@ -216,8 +221,10 @@ Widget States
 
 The widget state is a bitmap of independent state flags.
 
+   .. tabularcolumns:: |l|L|
+
    +------------+-------------------------------------------------------------+
-   | flag       | description                                                 |
+   | Flag       | Description                                                 |
    +============+=============================================================+
    | active     | The mouse cursor is over the widget and pressing a mouse    |
    |            | button will cause some action to occur                      |
@@ -301,8 +308,10 @@ Options
 
 This widget accepts the following specific options:
 
+   .. tabularcolumns:: |l|L|
+
    +-----------------+--------------------------------------------------------+
-   | option          | description                                            |
+   | Option          | Description                                            |
    +=================+========================================================+
    | exportselection | Boolean value. If set, the widget selection is linked  |
    |                 | to the Window Manager selection (which can be returned |
@@ -380,8 +389,10 @@ Options
 
 This widget accepts the following specific options:
 
+   .. tabularcolumns:: |l|L|
+
    +---------+----------------------------------------------------------------+
-   | option  | description                                                    |
+   | Option  | Description                                                    |
    +=========+================================================================+
    | height  | If present and greater than zero, specifies the desired height |
    |         | of the pane area (not including internal padding or tabs).     |
@@ -404,8 +415,10 @@ Tab Options
 
 There are also specific options for tabs:
 
+   .. tabularcolumns:: |l|L|
+
    +-----------+--------------------------------------------------------------+
-   | option    | description                                                  |
+   | Option    | Description                                                  |
    +===========+==============================================================+
    | state     | Either "normal", "disabled" or "hidden". If "disabled", then |
    |           | the tab is not selectable. If "hidden", then the tab is not  |
@@ -566,8 +579,10 @@ Options
 
 This widget accepts the following specific options:
 
+   .. tabularcolumns:: |l|L|
+
    +----------+---------------------------------------------------------------+
-   | option   | description                                                   |
+   | Option   | Description                                                   |
    +==========+===============================================================+
    | orient   | One of "horizontal" or "vertical". Specifies the orientation  |
    |          | of the progress bar.                                          |
@@ -635,8 +650,10 @@ Options
 
 This widget accepts the following specific option:
 
+   .. tabularcolumns:: |l|L|
+
    +--------+----------------------------------------------------------------+
-   | option | description                                                    |
+   | Option | Description                                                    |
    +========+================================================================+
    | orient | One of "horizontal" or "vertical". Specifies the orientation of|
    |        | the separator.                                                 |
@@ -701,11 +718,10 @@ Options
 
 This widget accepts the following specific options:
 
-.. tabularcolumns:: |p{0.2\textwidth}|p{0.7\textwidth}|
-..
+   .. tabularcolumns:: |l|p{0.7\linewidth}|
 
    +----------------+--------------------------------------------------------+
-   | option         | description                                            |
+   | Option         | Description                                            |
    +================+========================================================+
    | columns        | A list of column identifiers, specifying the number of |
    |                | columns and their names.                               |
@@ -753,8 +769,10 @@ Item Options
 The following item options may be specified for items in the insert and item
 widget commands.
 
+   .. tabularcolumns:: |l|L|
+
    +--------+---------------------------------------------------------------+
-   | option | description                                                   |
+   | Option | Description                                                   |
    +========+===============================================================+
    | text   | The textual label to display for the item.                    |
    +--------+---------------------------------------------------------------+
@@ -779,8 +797,10 @@ Tag Options
 
 The following options may be specified on tags:
 
+   .. tabularcolumns:: |l|L|
+
    +------------+-----------------------------------------------------------+
-   | option     | description                                               |
+   | Option     | Description                                               |
    +============+===========================================================+
    | foreground | Specifies the text foreground color.                      |
    +------------+-----------------------------------------------------------+
@@ -822,8 +842,10 @@ Virtual Events
 
 The Treeview widget generates the following virtual events.
 
+   .. tabularcolumns:: |l|L|
+
    +--------------------+--------------------------------------------------+
-   | event              | description                                      |
+   | Event              | Description                                      |
    +====================+==================================================+
    | <<TreeviewSelect>> | Generated whenever the selection changes.        |
    +--------------------+--------------------------------------------------+

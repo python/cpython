@@ -2301,9 +2301,11 @@ The :mod:`turtledemo` package directory contains:
 
 The demo scripts are:
 
+.. tabularcolumns:: |l|L|L|
+
 +----------------+------------------------------+-----------------------+
 | Name           | Description                  | Features              |
-+----------------+------------------------------+-----------------------+
++================+==============================+=======================+
 | bytedesign     | complex classical            | :func:`tracer`, delay,|
 |                | turtle graphics pattern      | :func:`update`        |
 +----------------+------------------------------+-----------------------+
