@@ -1,9 +1,6 @@
 c-api/arg,,:ref,"PyArg_ParseTuple(args, ""O|O:ref"", &object, &callback)"
 c-api/list,,:high,list[low:high]
-c-api/list,,:high,list[low:high] = itemlist
 c-api/sequence,,:i2,o[i1:i2]
-c-api/sequence,,:i2,o[i1:i2] = v
-c-api/sequence,,:i2,del o[i1:i2]
 c-api/unicode,,:end,str[start:end]
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
@@ -11,7 +8,6 @@ extending/extending,,:set,"if (PyArg_ParseTuple(args, ""O:set_callback"", &temp)
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
 extending/newtypes,,:call,"if (!PyArg_ParseTuple(args, ""sss:call"", &arg1, &arg2, &arg3)) {"
 extending/windows,,:initspam,/export:initspam
-howto/cporting,,:add,"if (!PyArg_ParseTuple(args, ""ii:add_ints"", &one, &two))"
 howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
 howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
 howto/curses,,:black,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
@@ -46,7 +42,6 @@ howto/logging,,:This,DEBUG:root:This message should go to the log file
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
 howto/urllib2,,:example,"for example ""joe@password:example.com"""
-howto/webservers,,.. image:,.. image:: http.png
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/cookie,,`,!#$%&'*+-.^_`|~
 library/datetime,,:MM,
@@ -73,12 +68,6 @@ library/imaplib,,:SS,"""DD-Mmm-YYYY HH:MM:SS"
 library/itertools,,:stop,elements from seq[start:stop:step]
 library/itertools,,:step,elements from seq[start:stop:step]
 library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
-library/logging,,:And,
-library/logging,,:package1,
-library/logging,,:package2,
-library/logging,,:root,
-library/logging,,:This,
-library/logging,,:port,host:port
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
@@ -89,28 +78,20 @@ library/multiprocessing,,`,# `Pool.imap()` (which will save on the amount of cod
 library/multiprocessing,,`,# A test file for the `multiprocessing` package
 library/multiprocessing,,`,# A test of `multiprocessing.Pool` class
 library/multiprocessing,,`,# Add more tasks using `put()`
-library/multiprocessing,,`,# create server for a `HostManager` object
-library/multiprocessing,,`,# Depends on `multiprocessing` package -- tested with `processing-0.60`
 library/multiprocessing,,`,# in the original order then consider using `Pool.map()` or
 library/multiprocessing,,`,# Not sure if we should synchronize access to `socket.accept()` method by
 library/multiprocessing,,`,# object.  (We import `multiprocessing.reduction` to enable this pickling.)
 library/multiprocessing,,`,# register the Foo class; make `f()` and `g()` accessible via proxy
 library/multiprocessing,,`,# register the Foo class; make `g()` and `_h()` accessible via proxy
 library/multiprocessing,,`,# register the generator function baz; use `GeneratorProxy` to make proxies
-library/multiprocessing,,`,`Cluster` is a subclass of `SyncManager` so it allows creation of
-library/multiprocessing,,`,`hostname` gives the name of the host.  If hostname is not
-library/multiprocessing,,`,`slots` is used to specify the number of slots for processes on
 library/optparse,,:len,"del parser.rargs[:len(value)]"
 library/os.path,,:foo,c:foo
-library/parser,,`,"""Make a function that raises an argument to the exponent `exp`."""
-library/pdb,,:lineno,filename:lineno
 library/pdb,,:lineno,filename:lineno
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
 library/profile,,:lineno,ncalls  tottime  percall  cumtime  percall filename:lineno(function)
 library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
-library/repr,,`,"return `obj`"
 library/smtplib,,:port,"as well as a regular host:port server."
 library/socket,,::,'5aef:2b::8'
 library/sqlite3,,:memory,
@@ -124,8 +105,6 @@ library/ssl,,:ops,Email Address []:ops@myserver.mygroup.myorganization.com
 library/ssl,,:Some,"Locality Name (eg, city) []:Some City"
 library/ssl,,:US,Country Name (2 letter code) [AU]:US
 library/stdtypes,,:len,s[len(s):len(s)]
-library/stdtypes,,:len,s[len(s):len(s)]
-library/string,,:end,s[start:end]
 library/string,,:end,s[start:end]
 library/subprocess,,`,"output=`mycmd myarg`"
 library/subprocess,,`,"output=`dmesg | grep hda`"
@@ -147,13 +126,8 @@ license,,`,THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AN
 reference/datamodel,,:step,a[i:j:step]
 reference/datamodel,,:max,
 reference/expressions,,:index,x[index:index]
-reference/expressions,,:datum,{key:datum...}
 reference/expressions,,`,`expressions...`
 reference/expressions,,`,"""`"""
-reference/expressions,,`,"""`"""
-reference/grammar,,:output,#diagram:output
-reference/grammar,,:rules,#diagram:rules
-reference/grammar,,:token,#diagram:token
 reference/grammar,,`,'`' testlist1 '`'
 reference/lexical_analysis,,:fileencoding,# vim:fileencoding=<encoding-name>
 reference/lexical_analysis,,`,",       :       .       `       =       ;"
@@ -176,8 +150,6 @@ using/cmdline,,:line,action:message:category:module:line
 using/cmdline,,:message,action:message:category:module:line
 using/cmdline,,:module,action:message:category:module:line
 using/cmdline,,:errorhandler,:errorhandler
-using/windows,162,`,`` this fixes syntax highlighting errors in some editors due to the \\\\ hackery
-using/windows,170,`,``
 whatsnew/2.0,418,:len,
 whatsnew/2.3,,::,
 whatsnew/2.3,,:config,
@@ -191,30 +163,18 @@ whatsnew/2.4,,:System,
 whatsnew/2.5,,:memory,:memory:
 whatsnew/2.5,,:step,[start:stop:step]
 whatsnew/2.5,,:stop,[start:stop:step]
-distutils/examples,267,`,This is the description of the ``foobar`` package.
 faq/programming,,:reduce,"print (lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
 faq/programming,,::,for x in sequence[::-1]:
-faq/windows,229,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
-faq/windows,393,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 library/bisect,,:hi,all(val >= x for val in a[i:hi])
 library/bisect,,:hi,all(val > x for val in a[i:hi])
-library/http.client,52,:port,host:port
-library/nntplib,,:bytes,:bytes
-library/nntplib,,:lines,:lines
-library/nntplib,,:lines,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
-library/nntplib,,:bytes,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
-library/pickle,567,:memory,"conn = sqlite3.connect("":memory:"")"
-library/profile,293,:lineno,"(sort by filename:lineno),"
 library/socket,,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
-library/stdtypes,,:end,s[start:end]
 library/stdtypes,,:end,s[start:end]
 license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
 license,,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
 license,,`,"``Software''), to deal in the Software without restriction, including"
 license,,`,"THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,"
-reference/lexical_analysis,704,`,$       ?       `
 whatsnew/2.7,735,:Sunday,'2009:4:Sunday'
 whatsnew/2.7,862,::,"export PYTHONWARNINGS=all,error:::Cookie:0"
 whatsnew/2.7,862,:Cookie,"export PYTHONWARNINGS=all,error:::Cookie:0"
