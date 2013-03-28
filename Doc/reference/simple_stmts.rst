@@ -737,7 +737,7 @@ can be found but the path exists then a value of ``None`` is
 stored in :data:`sys.path_importer_cache` to signify that an implicit,
 file-based finder that handles modules stored as individual files should be
 used for that path. If the path does not exist then a finder which always
-returns `None`` is placed in the cache for the path.
+returns ``None`` is placed in the cache for the path.
 
 .. index::
     single: loader
