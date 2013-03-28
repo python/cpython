@@ -263,6 +263,7 @@ The flags that control the logical structure of the memory are listed
 in decreasing order of complexity. Note that each flag contains all bits
 of the flags below it.
 
+.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|
 
 +-----------------------------+-------+---------+------------+
 |  Request                    | shape | strides | suboffsets |
@@ -282,6 +283,8 @@ contiguity requests
 
 C or Fortran contiguity can be explicitly requested, with and without stride
 information. Without stride information, the buffer must be C-contiguous.
+
+.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|
 
 +-----------------------------------+-------+---------+------------+--------+
 |  Request                          | shape | strides | suboffsets | contig |
@@ -306,7 +309,7 @@ used combinations as single flags.
 In the following table *U* stands for undefined contiguity. The consumer would
 have to call :c:func:`PyBuffer_IsContiguous` to determine contiguity.
 
-
+.. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|l|l|
 
 +-------------------------------+-------+---------+------------+--------+----------+--------+
 |  Request                      | shape | strides | suboffsets | contig | readonly | format |

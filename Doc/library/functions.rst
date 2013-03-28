@@ -853,7 +853,7 @@ are always available.  They are listed here in alphabetical order.
 
    ========= ===============================================================
    Character Meaning
-   --------- ---------------------------------------------------------------
+   ========= ===============================================================
    ``'r'``   open for reading (default)
    ``'w'``   open for writing, truncating the file first
    ``'x'``   open for exclusive creation, failing if the file already exists
