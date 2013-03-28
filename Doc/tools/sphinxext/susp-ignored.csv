@@ -88,8 +88,8 @@ library/repr,,`,"return `obj`"
 library/smtplib,,:port,"as well as a regular host:port server."
 library/socket,,::,'5aef:2b::8'
 library/sqlite3,,:memory,
-library/sqlite3,,:age,"select name_last, age from people where name_last=:who and age=:age"
-library/sqlite3,,:who,"select name_last, age from people where name_last=:who and age=:age"
+library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
+library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/ssl,,:My,"Organization Name (eg, company) [Internet Widgits Pty Ltd]:My Organization, Inc."
 library/ssl,,:My,"Organizational Unit Name (eg, section) []:My Group"
 library/ssl,,:myserver,"Common Name (eg, YOUR name) []:myserver.mygroup.myorganization.com"
@@ -112,9 +112,9 @@ library/turtle,,::,Example::
 library/urllib,,:port,:port
 library/urllib2,,:password,"""joe:password@python.org"""
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
-library/xmlrpclib,,:pass,http://user:pass@host:port/path
-library/xmlrpclib,,:pass,user:pass
-library/xmlrpclib,,:port,http://user:pass@host:port/path
+library/xmlrpc.client,,:pass,http://user:pass@host:port/path
+library/xmlrpc.client,,:port,http://user:pass@host:port/path
+library/xmlrpc.client,,:pass,user:pass
 license,,`,THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
 license,,:zooko,mailto:zooko@zooko.com
 license,,`,THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
@@ -173,7 +173,8 @@ faq/windows,,:EOF,@setlocal enableextensions & python -x %~f0 %* & goto :EOF
 faq/windows,,:REG,.py :REG_SZ: c:\<path to python>\python.exe -u %s %s
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
-library/http.client,52,:port,host:port
+library/http.client,,:port,host:port
+library/http.cookies,,`,!#$%&'*+-.^_`|~
 library/nntplib,,:bytes,:bytes
 library/nntplib,,:lines,:lines
 library/nntplib,,:lines,"['xref', 'from', ':lines', ':bytes', 'references', 'date', 'message-id', 'subject']"
@@ -186,9 +187,6 @@ library/stdtypes,,:end,s[start:end]
 library/urllib.request,,:close,Connection:close
 library/urllib.request,,:password,"""joe:password@python.org"""
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
-library/xmlrpc.client,103,:pass,http://user:pass@host:port/path
-library/xmlrpc.client,103,:port,http://user:pass@host:port/path
-library/xmlrpc.client,103,:pass,user:pass
 license,,`,* THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
 license,,`,* THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
 license,,`,"``Software''), to deal in the Software without restriction, including"
