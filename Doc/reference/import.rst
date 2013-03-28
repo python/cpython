@@ -685,8 +685,7 @@ proposed ``__name__`` for semantics :pep:`366` would eventually specify for
 :pep:`338` defines executing modules as scripts.
 
 
-Footnotes
-=========
+.. rubric:: Footnotes
 
 .. [#fnmo] See :class:`types.ModuleType`.
 

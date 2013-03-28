@@ -520,6 +520,8 @@ function.
       Describes how argument values are bound to the parameter.  Possible values
       (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
 
+      .. tabularcolumns:: |l|L|
+
       +------------------------+----------------------------------------------+
       |    Name                | Meaning                                      |
       +========================+==============================================+

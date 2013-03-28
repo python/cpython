@@ -1208,6 +1208,8 @@ the ``Message`` object it is serializing.  The default policy is
 
 The minimum set of controls implemented by all ``policy`` objects are:
 
+    .. tabularcolumns:: |l|L|
+
     ===============     =======================================================
     max_line_length     The maximum length, excluding the linesep character(s),
                         individual lines may have when a ``Message`` is
@@ -1258,6 +1260,8 @@ removal of the code) may occur if deemed necessary by the core developers.
 
 The new policies are instances of :class:`~email.policy.EmailPolicy`,
 and add the following additional controls:
+
+    .. tabularcolumns:: |l|L|
 
     ===============     =======================================================
     refold_source       Controls whether or not headers parsed by a
