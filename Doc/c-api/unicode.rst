@@ -252,6 +252,8 @@ APIs:
    .. % because not all compilers support the %z width modifier -- we fake it
    .. % when necessary via interpolating PY_FORMAT_SIZE_T.
 
+   .. tabularcolumns:: |l|l|L|
+
    +-------------------+---------------------+--------------------------------+
    | Format Characters | Type                | Comment                        |
    +===================+=====================+================================+

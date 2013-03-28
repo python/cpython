@@ -235,6 +235,8 @@ by how you built/installed Python itself.  On Unix (and Mac OS X, which is also
 Unix-based), it also depends on whether the module distribution being installed
 is pure Python or contains extensions ("non-pure"):
 
+.. tabularcolumns:: |l|l|l|l|
+
 +-----------------+-----------------------------------------------------+--------------------------------------------------+-------+
 | Platform        | Standard installation location                      | Default value                                    | Notes |
 +=================+=====================================================+==================================================+=======+

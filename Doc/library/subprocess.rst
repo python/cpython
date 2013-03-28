@@ -145,6 +145,8 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
    .. versionadded:: 2.7
 
+   ..
+
    .. warning::
 
       Invoking the system shell with ``shell=True`` can be a security hazard

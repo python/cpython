@@ -893,6 +893,8 @@ functions.
 
    The following keyword arguments are supported.
 
+   .. tabularcolumns:: |l|L|
+
    +--------------+---------------------------------------------+
    | Format       | Description                                 |
    +==============+=============================================+
