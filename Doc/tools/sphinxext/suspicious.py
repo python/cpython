@@ -68,6 +68,10 @@ class Rule:
                                # None -> don't care
         self.issue = issue     # the markup fragment that triggered this rule
         self.line = line       # text of the container element (single line only)
+        self.used = False
+
+    def __repr__(self):
+        return '{0.docname},,{0.issue},{0.line}'.format(self)
 
 
 
@@ -107,6 +111,12 @@ class CheckSuspiciousMarkupBuilder(Builder):
         doctree.walk(visitor)
 
     def finish(self):
+        unused_rules = [rule for rule in self.rules if not rule.used]
+        if unused_rules:
+            self.warn('Found %s/%s unused rules:' %
+                      (len(unused_rules), len(self.rules)))
+            for rule in unused_rules:
+                self.info(repr(rule))
         return
 
     def check_issue(self, line, lineno, issue):
@@ -131,6 +141,7 @@ class CheckSuspiciousMarkupBuilder(Builder):
             if (rule.lineno is not None) and \
                 abs(rule.lineno - lineno) > 5: continue
             # if it came this far, the rule matched
+            rule.used = True
             return True
         return False
 
