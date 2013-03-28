@@ -351,7 +351,7 @@ When run, this will produce the following output:
    Worker <Thread(worker 1, started 130283832797456)> running with argument 5
    ...
 
-Consult the module's documentation for more details; the :class:`~queue.Queue``
+Consult the module's documentation for more details; the :class:`~queue.Queue`
 class provides a featureful interface.
 
 
