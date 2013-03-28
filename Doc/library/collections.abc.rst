@@ -31,6 +31,8 @@ Collections Abstract Base Classes
 
 The collections module offers the following :term:`ABCs <abstract base class>`:
 
+.. tabularcolumns:: |l|L|L|L|
+
 =========================  =====================  ======================  ====================================================
 ABC                        Inherits from          Abstract Methods        Mixin Methods
 =========================  =====================  ======================  ====================================================
@@ -134,7 +136,7 @@ classes supporting container APIs.  For example, to write a class supporting
 the full :class:`Set` API, it only necessary to supply the three underlying
 abstract methods: :meth:`__contains__`, :meth:`__iter__`, and :meth:`__len__`.
 The ABC supplies the remaining methods such as :meth:`__and__` and
-:meth:`isdisjoint` ::
+:meth:`isdisjoint`::
 
     class ListBasedSet(collections.Set):
          ''' Alternate set implementation favoring space over speed

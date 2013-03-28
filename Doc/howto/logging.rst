@@ -63,6 +63,8 @@ The logging functions are named after the level or severity of the events
 they are used to track. The standard levels and their applicability are
 described below (in increasing order of severity):
 
+.. tabularcolumns:: |l|L|
+
 +--------------+---------------------------------------------+
 | Level        | When it's used                              |
 +==============+=============================================+

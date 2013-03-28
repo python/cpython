@@ -54,6 +54,8 @@ There are a number of built-in exceptions that represent warning categories.
 This categorization is useful to be able to filter out groups of warnings.  The
 following warnings category classes are currently defined:
 
+.. tabularcolumns:: |l|p{0.6\linewidth}|
+
 +----------------------------------+-----------------------------------------------+
 | Class                            | Description                                   |
 +==================================+===============================================+

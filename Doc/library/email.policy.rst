@@ -139,6 +139,8 @@ added matters.  To illustrate::
       Controls the type of Content Transfer Encodings that may be or are
       required to be used.  The possible values are:
 
+      .. tabularcolumns:: |l|L|
+
       ========  ===============================================================
       ``7bit``  all data must be "7 bit clean" (ASCII-only).  This means that
                 where necessary data will be encoded using either
