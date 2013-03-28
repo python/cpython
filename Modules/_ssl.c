@@ -40,6 +40,61 @@
 
 #endif
 
+/* Include symbols from _socket module */
+#include "socketmodule.h"
+
+static PySocketModule_APIObject PySocketModule;
+
+#if defined(HAVE_POLL_H)
+#include <poll.h>
+#elif defined(HAVE_SYS_POLL_H)
+#include <sys/poll.h>
+#endif
+
+/* Include OpenSSL header files */
+#include "openssl/rsa.h"
+#include "openssl/crypto.h"
+#include "openssl/x509.h"
+#include "openssl/x509v3.h"
+#include "openssl/pem.h"
+#include "openssl/ssl.h"
+#include "openssl/err.h"
+#include "openssl/rand.h"
+
+/* SSL error object */
+static PyObject *PySSLErrorObject;
+static PyObject *PySSLZeroReturnErrorObject;
+static PyObject *PySSLWantReadErrorObject;
+static PyObject *PySSLWantWriteErrorObject;
+static PyObject *PySSLSyscallErrorObject;
+static PyObject *PySSLEOFErrorObject;
+
+/* Error mappings */
+static PyObject *err_codes_to_names;
+static PyObject *err_names_to_codes;
+static PyObject *lib_codes_to_names;
+
+struct py_ssl_error_code {
+    const char *mnemonic;
+    int library, reason;
+};
+struct py_ssl_library_code {
+    const char *library;
+    int code;
+};
+
+/* Include generated data (error codes) */
+#include "_ssl_data.h"
+
+/* Openssl comes with TLSv1.1 and TLSv1.2 between 1.0.0h and 1.0.1
+    http://www.openssl.org/news/changelog.html
+ */
+#if OPENSSL_VERSION_NUMBER >= 0x10001000L
+# define HAVE_TLSv1_2 1
+#else
+# define HAVE_TLSv1_2 0
+#endif
+
 enum py_ssl_error {
     /* these mirror ssl.h */
     PY_SSL_ERROR_NONE,
@@ -73,55 +128,14 @@ enum py_ssl_version {
 #endif
     PY_SSL_VERSION_SSL3=1,
     PY_SSL_VERSION_SSL23,
+#if HAVE_TLSv1_2
+    PY_SSL_VERSION_TLS1,
+    PY_SSL_VERSION_TLS1_1,
+    PY_SSL_VERSION_TLS1_2
+#else
     PY_SSL_VERSION_TLS1
-};
-
-struct py_ssl_error_code {
-    const char *mnemonic;
-    int library, reason;
-};
-
-struct py_ssl_library_code {
-    const char *library;
-    int code;
-};
-
-/* Include symbols from _socket module */
-#include "socketmodule.h"
-
-static PySocketModule_APIObject PySocketModule;
-
-#if defined(HAVE_POLL_H)
-#include <poll.h>
-#elif defined(HAVE_SYS_POLL_H)
-#include <sys/poll.h>
 #endif
-
-/* Include OpenSSL header files */
-#include "openssl/rsa.h"
-#include "openssl/crypto.h"
-#include "openssl/x509.h"
-#include "openssl/x509v3.h"
-#include "openssl/pem.h"
-#include "openssl/ssl.h"
-#include "openssl/err.h"
-#include "openssl/rand.h"
-
-/* Include generated data (error codes) */
-#include "_ssl_data.h"
-
-/* SSL error object */
-static PyObject *PySSLErrorObject;
-static PyObject *PySSLZeroReturnErrorObject;
-static PyObject *PySSLWantReadErrorObject;
-static PyObject *PySSLWantWriteErrorObject;
-static PyObject *PySSLSyscallErrorObject;
-static PyObject *PySSLEOFErrorObject;
-
-/* Error mappings */
-static PyObject *err_codes_to_names;
-static PyObject *err_names_to_codes;
-static PyObject *lib_codes_to_names;
+};
 
 #ifdef WITH_THREAD
 
@@ -1732,6 +1746,12 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PySSL_BEGIN_ALLOW_THREADS
     if (proto_version == PY_SSL_VERSION_TLS1)
         ctx = SSL_CTX_new(TLSv1_method());
+#if HAVE_TLSv1_2
+    else if (proto_version == PY_SSL_VERSION_TLS1_1)
+        ctx = SSL_CTX_new(TLSv1_1_method());
+    else if (proto_version == PY_SSL_VERSION_TLS1_2)
+        ctx = SSL_CTX_new(TLSv1_2_method());
+#endif
     else if (proto_version == PY_SSL_VERSION_SSL3)
         ctx = SSL_CTX_new(SSLv3_method());
 #ifndef OPENSSL_NO_SSL2
@@ -3004,6 +3024,12 @@ PyInit__ssl(void)
                             PY_SSL_VERSION_SSL23);
     PyModule_AddIntConstant(m, "PROTOCOL_TLSv1",
                             PY_SSL_VERSION_TLS1);
+#if HAVE_TLSv1_2
+    PyModule_AddIntConstant(m, "PROTOCOL_TLSv1_1",
+                            PY_SSL_VERSION_TLS1_1);
+    PyModule_AddIntConstant(m, "PROTOCOL_TLSv1_2",
+                            PY_SSL_VERSION_TLS1_2);
+#endif
 
     /* protocol options */
     PyModule_AddIntConstant(m, "OP_ALL",
@@ -3011,6 +3037,10 @@ PyInit__ssl(void)
     PyModule_AddIntConstant(m, "OP_NO_SSLv2", SSL_OP_NO_SSLv2);
     PyModule_AddIntConstant(m, "OP_NO_SSLv3", SSL_OP_NO_SSLv3);
     PyModule_AddIntConstant(m, "OP_NO_TLSv1", SSL_OP_NO_TLSv1);
+#if HAVE_TLSv1_2
+    PyModule_AddIntConstant(m, "OP_NO_TLSv1_1", SSL_OP_NO_TLSv1_1);
+    PyModule_AddIntConstant(m, "OP_NO_TLSv1_2", SSL_OP_NO_TLSv1_2);
+#endif
     PyModule_AddIntConstant(m, "OP_CIPHER_SERVER_PREFERENCE",
                             SSL_OP_CIPHER_SERVER_PREFERENCE);
     PyModule_AddIntConstant(m, "OP_SINGLE_DH_USE", SSL_OP_SINGLE_DH_USE);

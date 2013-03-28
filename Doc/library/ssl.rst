@@ -26,7 +26,8 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    Some behavior may be platform dependent, since calls are made to the
    operating system socket APIs.  The installed version of OpenSSL may also
-   cause variations in behavior.
+   cause variations in behavior. For example, TLSv1.1 and TLSv1.2 come with
+   openssl version 1.0.1.
 
 This section documents the objects and functions in the ``ssl`` module; for more
 general information about TLS, SSL, and certificates, the reader is referred to
@@ -177,14 +178,16 @@ instead.
 
      .. table::
 
-       ========================  =========  =========  ==========  =========
-        *client* / **server**    **SSLv2**  **SSLv3**  **SSLv23**  **TLSv1**
-       ------------------------  ---------  ---------  ----------  ---------
-        *SSLv2*                    yes        no         yes         no
-        *SSLv3*                    no         yes        yes         no
-        *SSLv23*                   yes        no         yes         no
-        *TLSv1*                    no         no         yes         yes
-       ========================  =========  =========  ==========  =========
+       ========================  =========  =========  ==========  =========  ===========  ===========
+        *client* / **server**    **SSLv2**  **SSLv3**  **SSLv23**  **TLSv1**  **TLSv1.1**  **TLSv1.2**
+       ------------------------  ---------  ---------  ----------  ---------  -----------  -----------
+        *SSLv2*                    yes        no         yes         no         no         no
+        *SSLv3*                    no         yes        yes         no         no         no
+        *SSLv23*                   yes        no         yes         no         no         no
+        *TLSv1*                    no         no         yes         yes        no         no
+        *TLSv1.1*                  no         no         yes         no         yes        no
+        *TLSv1.2*                  no         no         yes         no         no         yes
+       ========================  =========  =========  ==========  =========  ===========  ===========
 
    .. note::
 
@@ -401,9 +404,25 @@ Constants
 
 .. data:: PROTOCOL_TLSv1
 
-   Selects TLS version 1 as the channel encryption protocol.  This is the most
+   Selects TLS version 1.0 as the channel encryption protocol.
+
+.. data:: PROTOCOL_TLSv1_1
+
+
+   Selects TLS version 1.1 as the channel encryption protocol.
+   Available only with openssl version 1.0.1+.
+
+   .. versionadded:: 3.4
+
+.. data:: PROTOCOL_TLSv1_2
+
+
+   Selects TLS version 1.2 as the channel encryption protocol. This is the most
    modern version, and probably the best choice for maximum protection, if both
    sides can speak it.
+   Available only with openssl version 1.0.1+.
+
+   .. versionadded:: 3.4
 
 .. data:: OP_ALL
 
@@ -436,6 +455,22 @@ Constants
    choosing TLSv1 as the protocol version.
 
    .. versionadded:: 3.2
+
+.. data:: OP_NO_TLSv1_1
+
+   Prevents a TLSv1.1 connection. This option is only applicable in conjunction
+   with :const:`PROTOCOL_SSLv23`. It prevents the peers from choosing TLSv1.1 as
+   the protocol version. Available only with openssl version 1.0.1+.
+
+   .. versionadded:: 3.4
+
+.. data:: OP_NO_TLSv1_2
+
+   Prevents a TLSv1.2 connection. This option is only applicable in conjunction
+   with :const:`PROTOCOL_SSLv23`. It prevents the peers from choosing TLSv1.2 as
+   the protocol version. Available only with openssl version 1.0.1+.
+
+   .. versionadded:: 3.4
 
 .. data:: OP_CIPHER_SERVER_PREFERENCE
 
