@@ -123,7 +123,8 @@ Basic Usage
                    sort_keys=False, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
-   :term:`file-like object`).
+   :term:`file-like object`) using this :ref:`conversion table
+   <py-to-json-table>`.
 
    If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
    of a basic type (:class:`str`, :class:`int`, :class:`float`, :class:`bool`,
@@ -180,8 +181,9 @@ Basic Usage
                     indent=None, separators=None, default=None, \
                     sort_keys=False, **kw)
 
-   Serialize *obj* to a JSON formatted :class:`str`.  The arguments have the
-   same meaning as in :func:`dump`.
+   Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
+   table <py-to-json-table>`.  The arguments have the same meaning as in
+   :func:`dump`.
 
    .. note::
 
@@ -201,7 +203,8 @@ Basic Usage
 .. function:: load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
-   containing a JSON document) to a Python object.
+   containing a JSON document) to a Python object using this :ref:`conversion
+   table <json-to-py-table>`.
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
@@ -246,7 +249,7 @@ Basic Usage
 .. function:: loads(s, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str` instance containing a JSON document) to a
-   Python object.
+   Python object using this :ref:`conversion table <json-to-py-table>`.
 
    The other arguments have the same meaning as in :func:`load`, except
    *encoding* which is ignored and deprecated.
@@ -260,6 +263,8 @@ Encoders and Decoders
    Simple JSON decoder.
 
    Performs the following translations in decoding by default:
+
+   .. _json-to-py-table:
 
    +---------------+-------------------+
    | JSON          | Python            |
@@ -341,6 +346,8 @@ Encoders and Decoders
    Extensible JSON encoder for Python data structures.
 
    Supports the following objects and types by default:
+
+   .. _py-to-json-table:
 
    +-------------------+---------------+
    | Python            | JSON          |
