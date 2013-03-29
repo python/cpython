@@ -546,6 +546,11 @@ class TestUrlopen(unittest.TestCase):
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
+
+        # as indicated by the comment below, this might fail with some ISP,
+        # so we run the test only when -unetwork/-uall is specified to
+        # mitigate the problem a bit (see #17564)
+        support.requires('network')
         self.assertRaises(OSError,
                           # Given that both VeriSign and various ISPs have in
                           # the past or are presently hijacking various invalid
