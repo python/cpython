@@ -297,6 +297,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17540: Added style to formatter configuration by dict.
+
 - Issue #16692: The ssl module now supports TLS 1.1 and TLS 1.2.  Initial
   patch by Michele Orrù.
 
