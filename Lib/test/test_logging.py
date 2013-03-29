@@ -2398,7 +2398,8 @@ class ConfigDictTest(BaseTest):
         "version": 1,
         "formatters": {
             "mySimpleFormatter": {
-                "format": "%(asctime)s (%(name)s) %(levelname)s: %(message)s"
+                "format": "%(asctime)s (%(name)s) %(levelname)s: %(message)s",
+                "style": "$"
             }
         },
         "handlers": {
@@ -2728,6 +2729,8 @@ class ConfigDictTest(BaseTest):
         self.apply_config(self.out_of_order)
         handler = logging.getLogger('mymodule').handlers[0]
         self.assertIsInstance(handler.target, logging.Handler)
+        self.assertIsInstance(handler.formatter._style,
+                              logging.StringTemplateStyle)
 
     def test_baseconfig(self):
         d = {

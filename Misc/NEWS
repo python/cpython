@@ -200,6 +200,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17540: Added style to formatter configuration by dict.
+
 - Issue #17536: Add to webbrowser's browser list: www-browser, x-www-browser,
   iceweasel, iceape.
 
