@@ -2188,6 +2188,11 @@ def test_main(verbose=False):
             (ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO))
         print("          under %s" % plat)
         print("          HAS_SNI = %r" % ssl.HAS_SNI)
+        print("          OP_ALL = 0x%8x" % ssl.OP_ALL)
+        try:
+            print("          OP_NO_TLSv1_1 = 0x%8x" % ssl.OP_NO_TLSv1_1)
+        except AttributeError:
+            pass
 
     for filename in [
         CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, BYTES_CERTFILE,
