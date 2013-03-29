@@ -672,7 +672,8 @@ class DictConfigurator(BaseConfigurator):
         else:
             fmt = config.get('format', None)
             dfmt = config.get('datefmt', None)
-            result = logging.Formatter(fmt, dfmt)
+            style = config.get('style', '%')
+            result = logging.Formatter(fmt, dfmt, style)
         return result
 
     def configure_filter(self, config):
@@ -694,6 +695,7 @@ class DictConfigurator(BaseConfigurator):
 
     def configure_handler(self, config):
         """Configure a handler from a dictionary."""
+        config_copy = dict(config)  # for restoring in case of error
         formatter = config.pop('formatter', None)
         if formatter:
             try:
@@ -717,7 +719,7 @@ class DictConfigurator(BaseConfigurator):
                 try:
                     th = self.config['handlers'][config['target']]
                     if not isinstance(th, logging.Handler):
-                        config['class'] = cname # restore for deferred configuration
+                        config.update(config_copy)  # restore for deferred cfg
                         raise TypeError('target not configured yet')
                     config['target'] = th
                 except Exception as e:
