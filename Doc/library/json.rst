@@ -125,7 +125,8 @@ Basic Usage
                    default=None, sort_keys=False, **kw)
 
    Serialize *obj* as a JSON formatted stream to *fp* (a ``.write()``-supporting
-   :term:`file-like object`).
+   :term:`file-like object`) using this :ref:`conversion table
+   <py-to-json-table>`.
 
    If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
    of a basic type (:class:`str`, :class:`unicode`, :class:`int`, :class:`long`,
@@ -188,9 +189,10 @@ Basic Usage
                     indent=None, separators=None, encoding="utf-8", \
                     default=None, sort_keys=False, **kw)
 
-   Serialize *obj* to a JSON formatted :class:`str`.  If *ensure_ascii* is
-   ``False``, the result may contain non-ASCII characters and the return value
-   may be a :class:`unicode` instance.
+   Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
+   table <py-to-json-table>`.  If *ensure_ascii* is ``False``, the result may
+   contain non-ASCII characters and the return value may be a :class:`unicode`
+   instance.
 
    The arguments have the same meaning as in :func:`dump`.
 
@@ -206,7 +208,8 @@ Basic Usage
 .. function:: load(fp[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_constant[, object_pairs_hook[, **kw]]]]]]]])
 
    Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
-   containing a JSON document) to a Python object.
+   containing a JSON document) to a Python object using this :ref:`conversion
+   table <json-to-py-table>`.
 
    If the contents of *fp* are encoded with an ASCII based encoding other than
    UTF-8 (e.g. latin-1), then an appropriate *encoding* name must be specified.
@@ -257,7 +260,8 @@ Basic Usage
 .. function:: loads(s[, encoding[, cls[, object_hook[, parse_float[, parse_int[, parse_constant[, object_pairs_hook[, **kw]]]]]]]])
 
    Deserialize *s* (a :class:`str` or :class:`unicode` instance containing a JSON
-   document) to a Python object.
+   document) to a Python object using this :ref:`conversion table
+   <json-to-py-table>`.
 
    If *s* is a :class:`str` instance and is encoded with an ASCII based encoding
    other than UTF-8 (e.g. latin-1), then an appropriate *encoding* name must be
@@ -275,6 +279,8 @@ Encoders and Decoders
    Simple JSON decoder.
 
    Performs the following translations in decoding by default:
+
+   .. _json-to-py-table:
 
    +---------------+-------------------+
    | JSON          | Python            |
@@ -363,6 +369,8 @@ Encoders and Decoders
    Extensible JSON encoder for Python data structures.
 
    Supports the following objects and types by default:
+
+   .. _py-to-json-table:
 
    +-------------------+---------------+
    | Python            | JSON          |
