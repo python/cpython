@@ -1385,10 +1385,11 @@ else:
             if support.verbose:
                 sys.stdout.write("\n")
             for protocol in PROTOCOLS:
-                context = ssl.SSLContext(protocol)
-                context.load_cert_chain(CERTFILE)
-                server_params_test(context, context,
-                                   chatty=True, connectionchatty=True)
+                with self.subTest(protocol=ssl._PROTOCOL_NAMES[protocol]):
+                    context = ssl.SSLContext(protocol)
+                    context.load_cert_chain(CERTFILE)
+                    server_params_test(context, context,
+                                       chatty=True, connectionchatty=True)
 
         def test_getpeercert(self):
             if support.verbose:
