@@ -134,7 +134,7 @@ class TestResult(object):
                 errors = self.failures
             else:
                 errors = self.errors
-            errors.append((test, self._exc_info_to_string(err, test)))
+            errors.append((subtest, self._exc_info_to_string(err, test)))
             self._mirrorOutput = True
 
     def addSuccess(self, test):
