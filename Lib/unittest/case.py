@@ -150,23 +150,22 @@ class TestCase(object):
     should not change the signature of their __init__ method, since instances
     of the classes are instantiated automatically by parts of the framework
     in order to be run.
-    """
 
-    # This attribute determines which exception will be raised when
-    # the instance's assertion methods fail; test methods raising this
-    # exception will be deemed to have 'failed' rather than 'errored'
+    When subclassing TestCase, you can set these attributes:
+    * failureException: determines which exception will be raised when
+        the instance's assertion methods fail; test methods raising this
+        exception will be deemed to have 'failed' rather than 'errored'.
+    * longMessage: determines whether long messages (including repr of
+        objects used in assert methods) will be printed on failure in *addition*
+        to any explicit message passed.
+    * maxDiff: sets the maximum length of a diff in failure messages
+        by assert methods using difflib. It is looked up as an instance
+        attribute so can be configured by individual tests if required.
+    """
 
     failureException = AssertionError
 
-    # This attribute determines whether long messages (including repr of
-    # objects used in assert methods) will be printed on failure in *addition*
-    # to any explicit message passed.
-
     longMessage = False
-
-    # This attribute sets the maximum length of a diff in failure messages
-    # by assert methods using difflib. It is looked up as an instance attribute
-    # so can be configured by individual tests if required.
 
     maxDiff = 80*8
 
