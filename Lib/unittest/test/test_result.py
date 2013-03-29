@@ -227,6 +227,40 @@ class Test_TestResult(unittest.TestCase):
         self.assertTrue(test_case is test)
         self.assertIsInstance(formatted_exc, str)
 
+    def test_addSubTest(self):
+        class Foo(unittest.TestCase):
+            def test_1(self):
+                nonlocal subtest
+                with self.subTest(foo=1):
+                    subtest = self._subtest
+                    try:
+                        1/0
+                    except ZeroDivisionError:
+                        exc_info_tuple = sys.exc_info()
+                    # Register an error by hand (to check the API)
+                    result.addSubTest(test, subtest, exc_info_tuple)
+                    # Now trigger a failure
+                    self.fail("some recognizable failure")
+
+        subtest = None
+        test = Foo('test_1')
+        result = unittest.TestResult()
+
+        test.run(result)
+
+        self.assertFalse(result.wasSuccessful())
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEqual(result.testsRun, 1)
+        self.assertEqual(result.shouldStop, False)
+
+        test_case, formatted_exc = result.errors[0]
+        self.assertIs(test_case, subtest)
+        self.assertIn("ZeroDivisionError", formatted_exc)
+        test_case, formatted_exc = result.failures[0]
+        self.assertIs(test_case, subtest)
+        self.assertIn("some recognizable failure", formatted_exc)
+
     def testGetDescriptionWithoutDocstring(self):
         result = unittest.TextTestResult(None, True, 1)
         self.assertEqual(
