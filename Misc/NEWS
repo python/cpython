@@ -297,6 +297,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17435: threading.Timer's __init__ method no longer uses mutable
+  default values for the args and kwargs parameters.
+
 - Issue #17526: fix an IndexError raised while passing code without filename to
   inspect.findsource().  Initial patch by Tyler Doyle.
 
