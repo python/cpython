@@ -11,7 +11,7 @@ try:
     from test.test_support import _2G, _1M, precisionbigmemtest
 except ImportError:
     # this import might fail when run on older Python versions by test_xpickle
-    _2G = _1G = 0
+    _2G = _1M = 0
     def precisionbigmemtest(*args, **kwargs):
         return lambda self: None
 
