@@ -1207,7 +1207,7 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
 #if !HAVE_SNI
         PyErr_SetString(PyExc_NotImplementedError, "setting a socket's "
                         "context is not supported by your OpenSSL library");
-        return NULL;
+        return -1;
 #else
         Py_INCREF(value);
         Py_DECREF(self->ctx);
@@ -2542,6 +2542,7 @@ set_servername_callback(PySSLContext *self, PyObject *args)
                     "The TLS extension servername callback, "
                     "SSL_CTX_set_tlsext_servername_callback, "
                     "is not in the current OpenSSL library.");
+    return NULL;
 #endif
 }
 
@@ -2574,8 +2575,10 @@ static struct PyMethodDef context_methods[] = {
     {"set_ecdh_curve", (PyCFunction) set_ecdh_curve,
                        METH_O, NULL},
 #endif
+#if HAVE_SNI && !defined(OPENSSL_NO_TLSEXT)
     {"set_servername_callback", (PyCFunction) set_servername_callback,
                     METH_VARARGS, PySSL_set_servername_callback_doc},
+#endif
     {NULL, NULL}        /* sentinel */
 };
 
