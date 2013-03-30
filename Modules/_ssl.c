@@ -2499,6 +2499,7 @@ error:
 #endif
     return ret;
 }
+#endif
 
 PyDoc_STRVAR(PySSL_set_servername_callback_doc,
 "set_servername_callback(method)\n\
@@ -2509,7 +2510,6 @@ the SSL/TLS client in the SNI extension.\n\
 If the argument is None then the callback is disabled. The method is called\n\
 with the SSLSocket, the server name as a string, and the SSLContext object.\n\
 See RFC 6066 for details of the SNI");
-#endif
 
 static PyObject *
 set_servername_callback(PySSLContext *self, PyObject *args)
@@ -2575,10 +2575,8 @@ static struct PyMethodDef context_methods[] = {
     {"set_ecdh_curve", (PyCFunction) set_ecdh_curve,
                        METH_O, NULL},
 #endif
-#if HAVE_SNI && !defined(OPENSSL_NO_TLSEXT)
     {"set_servername_callback", (PyCFunction) set_servername_callback,
                     METH_VARARGS, PySSL_set_servername_callback_doc},
-#endif
     {NULL, NULL}        /* sentinel */
 };
 
