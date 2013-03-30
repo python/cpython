@@ -6,8 +6,14 @@ import cStringIO
 import pickletools
 import copy_reg
 
-from test.test_support import (TestFailed, have_unicode, TESTFN, _2G, _1M,
-                               precisionbigmemtest)
+from test.test_support import TestFailed, verbose, have_unicode, TESTFN
+try:
+    from test.test_support import _2G, _1M, precisionbigmemtest
+except ImportError:
+    # this import might fail when run on older Python versions by test_xpickle
+    _2G = _1G = 0
+    def precisionbigmemtest(*args, **kwargs):
+        return lambda self: None
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
