@@ -338,11 +338,11 @@ with.
     ...
     >>> test()
 
-If you are patching a module (including `__builtin__`) then use `patch`
+If you are patching a module (including :mod:`builtins`) then use `patch`
 instead of `patch.object`:
 
-    >>> mock = MagicMock(return_value = sentinel.file_handle)
-    >>> with patch('__builtin__.open', mock):
+    >>> mock = MagicMock(return_value=sentinel.file_handle)
+    >>> with patch('builtins.open', mock):
     ...     handle = open('filename', 'r')
     ...
     >>> mock.assert_called_with('filename', 'r')
