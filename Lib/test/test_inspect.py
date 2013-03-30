@@ -404,6 +404,12 @@ class TestBuggyCases(GetSourceBase):
         self.assertEqual(inspect.findsource(co), (lines,0))
         self.assertEqual(inspect.getsource(co), lines[0])
 
+    def test_findsource_without_filename(self):
+        for fname in ['', '<string>']:
+            co = compile('x=1', fname, "exec")
+            self.assertRaises(IOError, inspect.findsource, co)
+            self.assertRaises(IOError, inspect.getsource, co)
+
 
 class _BrokenDataDescriptor(object):
     """
