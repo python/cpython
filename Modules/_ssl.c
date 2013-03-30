@@ -95,6 +95,15 @@ struct py_ssl_library_code {
 # define HAVE_TLSv1_2 0
 #endif
 
+/* SNI support (client- and server-side) appeared in OpenSSL 0.9.8n.
+ * This includes the SSL_set_SSL_CTX() function.
+ */
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+# define HAVE_SNI 1
+#else
+# define HAVE_SNI 0
+#endif
+
 enum py_ssl_error {
     /* these mirror ssl.h */
     PY_SSL_ERROR_NONE,
@@ -485,7 +494,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     SSL_set_mode(self->ssl, SSL_MODE_AUTO_RETRY);
 #endif
 
-#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+#if HAVE_SNI
     if (server_hostname != NULL)
         SSL_set_tlsext_host_name(self->ssl, server_hostname);
 #endif
@@ -1195,11 +1204,16 @@ static int PySSL_set_context(PySSLSocket *self, PyObject *value,
                                    void *closure) {
 
     if (PyObject_TypeCheck(value, &PySSLContext_Type)) {
-
+#if !HAVE_SNI
+        PyErr_SetString(PyExc_NotImplementedError, "setting a socket's "
+                        "context is not supported by your OpenSSL library");
+        return NULL;
+#else
         Py_INCREF(value);
         Py_DECREF(self->ctx);
         self->ctx = (PySSLContext *) value;
         SSL_set_SSL_CTX(self->ssl, self->ctx->ctx);
+#endif
     } else {
         PyErr_SetString(PyExc_TypeError, "The value must be a SSLContext");
         return -1;
@@ -2307,7 +2321,7 @@ context_wrap_socket(PySSLContext *self, PyObject *args, PyObject *kwds)
             &sock, &server_side,
             "idna", &hostname))
             return NULL;
-#ifndef SSL_CTRL_SET_TLSEXT_HOSTNAME
+#if !HAVE_SNI
         PyMem_Free(hostname);
         PyErr_SetString(PyExc_ValueError, "server_hostname is not supported "
                         "by your OpenSSL library");
@@ -2400,7 +2414,7 @@ set_ecdh_curve(PySSLContext *self, PyObject *name)
 }
 #endif
 
-#ifndef OPENSSL_NO_TLSEXT
+#if HAVE_SNI && !defined(OPENSSL_NO_TLSEXT)
 static int
 _servername_callback(SSL *s, int *al, void *args)
 {
@@ -2500,7 +2514,7 @@ See RFC 6066 for details of the SNI");
 static PyObject *
 set_servername_callback(PySSLContext *self, PyObject *args)
 {
-#ifndef OPENSSL_NO_TLSEXT
+#if HAVE_SNI && !defined(OPENSSL_NO_TLSEXT)
     PyObject *cb;
 
     if (!PyArg_ParseTuple(args, "O", &cb))
@@ -2997,10 +3011,16 @@ PyInit__ssl(void)
     ADD_AD_CONSTANT(INTERNAL_ERROR);
     ADD_AD_CONSTANT(USER_CANCELLED);
     ADD_AD_CONSTANT(NO_RENEGOTIATION);
-    ADD_AD_CONSTANT(UNSUPPORTED_EXTENSION);
-    ADD_AD_CONSTANT(CERTIFICATE_UNOBTAINABLE);
-    ADD_AD_CONSTANT(UNRECOGNIZED_NAME);
     /* Not all constants are in old OpenSSL versions */
+#ifdef SSL_AD_UNSUPPORTED_EXTENSION
+    ADD_AD_CONSTANT(UNSUPPORTED_EXTENSION);
+#endif
+#ifdef SSL_AD_CERTIFICATE_UNOBTAINABLE
+    ADD_AD_CONSTANT(CERTIFICATE_UNOBTAINABLE);
+#endif
+#ifdef SSL_AD_UNRECOGNIZED_NAME
+    ADD_AD_CONSTANT(UNRECOGNIZED_NAME);
+#endif
 #ifdef SSL_AD_BAD_CERTIFICATE_STATUS_RESPONSE
     ADD_AD_CONSTANT(BAD_CERTIFICATE_STATUS_RESPONSE);
 #endif
@@ -3052,7 +3072,7 @@ PyInit__ssl(void)
                             SSL_OP_NO_COMPRESSION);
 #endif
 
-#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+#if HAVE_SNI
     r = Py_True;
 #else
     r = Py_False;
