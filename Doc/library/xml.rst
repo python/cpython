@@ -108,20 +108,22 @@ all known attack vectors with examples and references.
 defused packages
 ----------------
 
+These external packages are recommended for any code that parses
+untrusted XML data.
+
 `defusedxml`_ is a pure Python package with modified subclasses of all stdlib
-XML parsers that prevent any potentially malicious operation. The courses of
-action are recommended for any server code that parses untrusted XML data. The
-package also ships with example exploits and an extended documentation on more
+XML parsers that prevent any potentially malicious operation. The
+package also ships with example exploits and extended documentation on more
 XML exploits like xpath injection.
 
-`defusedexpat`_ provides a modified libexpat and patched replacment
+`defusedexpat`_ provides a modified libexpat and patched replacement
 :mod:`pyexpat` extension module with countermeasures against entity expansion
 DoS attacks. Defusedexpat still allows a sane and configurable amount of entity
 expansions. The modifications will be merged into future releases of Python.
 
 The workarounds and modifications are not included in patch releases as they
 break backward compatibility. After all inline DTD and entity expansion are
-well-definied XML features.
+well-defined XML features.
 
 
 .. _defusedxml: https://pypi.python.org/pypi/defusedxml/
