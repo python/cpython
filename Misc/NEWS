@@ -24,6 +24,8 @@ Library
 - Issue #17531: Fix tests that thought group and user ids were always the int
   type. Also, always allow -1 as a valid group and user id.
 
+- Issue #17533: Fix test_xpickle with older versions of Python 2.5.
+
 Documentation
 -------------
 
