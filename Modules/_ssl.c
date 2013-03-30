@@ -2503,13 +2503,13 @@ error:
 
 PyDoc_STRVAR(PySSL_set_servername_callback_doc,
 "set_servername_callback(method)\n\
-\
+\n\
 This sets a callback that will be called when a server name is provided by\n\
 the SSL/TLS client in the SNI extension.\n\
-\
+\n\
 If the argument is None then the callback is disabled. The method is called\n\
 with the SSLSocket, the server name as a string, and the SSLContext object.\n\
-See RFC 6066 for details of the SNI");
+See RFC 6066 for details of the SNI extension.");
 
 static PyObject *
 set_servername_callback(PySSLContext *self, PyObject *args)
