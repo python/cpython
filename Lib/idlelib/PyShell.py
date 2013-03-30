@@ -15,6 +15,7 @@ import io
 
 import linecache
 from code import InteractiveInterpreter
+from platform import python_version
 
 try:
     from Tkinter import *
@@ -821,7 +822,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 class PyShell(OutputWindow):
 
-    shell_title = "Python Shell"
+    shell_title = "Python " + python_version() + " Shell"
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
