@@ -1,3 +1,10 @@
+What's New in IDLE 3.3.2?
+=========================
+
+- Issue #17390: Display Python version on Idle title bar.
+  Initial patch by Edmond Burnett.
+
+
 What's New in IDLE 3.3.1?
 =========================
 
