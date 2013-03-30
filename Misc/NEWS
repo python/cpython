@@ -5,7 +5,18 @@ Python News
 What's New in Python 3.3.2?
 ===========================
 
+*Release date: XXXX-XX-XX*
+
 *Not yet released, see sections below for changes released in 3.3.0*
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #17526: fix an IndexError raised while passing code without filename to
+  inspect.findsource().  Initial patch by Tyler Doyle.
 
 
 What's New in Python 3.3.1?
