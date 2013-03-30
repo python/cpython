@@ -12,6 +12,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17526: fix an IndexError raised while passing code without filename to
+  inspect.findsource().  Initial patch by Tyler Doyle.
+
 
 What's New in Python 2.7.4?
 ===========================
