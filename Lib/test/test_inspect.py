@@ -416,6 +416,12 @@ class TestBuggyCases(GetSourceBase):
         finally:
             del linecache.cache[co.co_filename]
 
+    def test_findsource_without_filename(self):
+        for fname in ['', '<string>']:
+            co = compile('x=1', fname, "exec")
+            self.assertRaises(IOError, inspect.findsource, co)
+            self.assertRaises(IOError, inspect.getsource, co)
+
 class TestNoEOL(GetSourceBase):
     def __init__(self, *args, **kwargs):
         self.tempdir = TESTFN + '_dir'
