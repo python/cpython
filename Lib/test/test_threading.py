@@ -787,6 +787,32 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertEqual(p.returncode, 0, "Unexpected error: " + stderr.decode())
         self.assertEqual(data, expected_output)
 
+class TimerTests(BaseTestCase):
+
+    def setUp(self):
+        BaseTestCase.setUp(self)
+        self.callback_args = []
+        self.callback_event = threading.Event()
+
+    def test_init_immutable_default_args(self):
+        # Issue 17435: constructor defaults were mutable objects, they could be
+        # mutated via the object attributes and affect other Timer objects.
+        timer1 = threading.Timer(0.01, self._callback_spy)
+        timer1.start()
+        self.callback_event.wait()
+        timer1.args.append("blah")
+        timer1.kwargs["foo"] = "bar"
+        self.callback_event.clear()
+        timer2 = threading.Timer(0.01, self._callback_spy)
+        timer2.start()
+        self.callback_event.wait()
+        self.assertEqual(len(self.callback_args), 2)
+        self.assertEqual(self.callback_args, [((), {}), ((), {})])
+
+    def _callback_spy(self, *args, **kwargs):
+        self.callback_args.append((args[:], kwargs.copy()))
+        self.callback_event.set()
+
 class LockTests(lock_tests.LockTests):
     locktype = staticmethod(threading.Lock)
 
@@ -816,16 +842,5 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
 
-
-def test_main():
-    test.support.run_unittest(LockTests, PyRLockTests, CRLockTests, EventTests,
-                              ConditionAsRLockTests, ConditionTests,
-                              SemaphoreTests, BoundedSemaphoreTests,
-                              ThreadTests,
-                              ThreadJoinOnShutdown,
-                              ThreadingExceptionTests,
-                              BarrierTests,
-                              )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
