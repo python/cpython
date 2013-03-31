@@ -171,8 +171,9 @@ class _ComplexBinder:
                     break
             ishandlerrunning[:] = []
             # Call all functions in doafterhandler and remove them from list
-            while doafterhandler:
-                doafterhandler.pop()()
+            for f in doafterhandler:
+                f()
+            doafterhandler[:] = []
             if r:
                 return r
         return handler
