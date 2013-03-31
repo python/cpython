@@ -12,6 +12,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer
+  raises an exception.
+
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
 
 - Issue #17526: fix an IndexError raised while passing code without filename to
