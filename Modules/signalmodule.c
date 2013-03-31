@@ -9,7 +9,7 @@
 #endif
 
 #ifdef MS_WINDOWS
-#include <Windows.h>
+#include <windows.h>
 #ifdef HAVE_PROCESS_H
 #include <process.h>
 #endif

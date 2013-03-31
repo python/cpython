@@ -1163,6 +1163,9 @@ Tests
 Build
 -----
 
+- Issue #17591: Use lowercase filenames when including Windows header files.
+  Patch by Roumen Petrov.
+
 - Issue #17550: Fix the --enable-profiling configure switch.
 
 - Issue #17425: Build with openssl 1.0.1d on Windows.
