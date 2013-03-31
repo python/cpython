@@ -101,11 +101,6 @@ class TestKQueue(unittest.TestCase):
             pass # FreeBSD doesn't raise an exception here
         server, addr = serverSocket.accept()
 
-        if sys.platform.startswith("darwin"):
-            flags = select.KQ_EV_ADD | select.KQ_EV_ENABLE
-        else:
-            flags = 0
-
         kq = select.kqueue()
         kq2 = select.kqueue.fromfd(kq.fileno())
 
@@ -127,11 +122,10 @@ class TestKQueue(unittest.TestCase):
         kq2.control([ev], 0)
 
         events = kq.control(None, 4, 1)
-        events = [(e.ident, e.filter, e.flags) for e in events]
-        events.sort()
-        self.assertEqual(events, [
-            (client.fileno(), select.KQ_FILTER_WRITE, flags),
-            (server.fileno(), select.KQ_FILTER_WRITE, flags)])
+        events = set((e.ident, e.filter) for e in events)
+        self.assertEqual(events, set([
+            (client.fileno(), select.KQ_FILTER_WRITE),
+            (server.fileno(), select.KQ_FILTER_WRITE)]))
 
         client.send(b"Hello!")
         server.send(b"world!!!")
@@ -145,14 +139,12 @@ class TestKQueue(unittest.TestCase):
         else:
             self.fail('timeout waiting for event notifications')
 
-        events = [(e.ident, e.filter, e.flags) for e in events]
-        events.sort()
-
-        self.assertEqual(events, [
-            (client.fileno(), select.KQ_FILTER_WRITE, flags),
-            (client.fileno(), select.KQ_FILTER_READ, flags),
-            (server.fileno(), select.KQ_FILTER_WRITE, flags),
-            (server.fileno(), select.KQ_FILTER_READ, flags)])
+        events = set((e.ident, e.filter) for e in events)
+        self.assertEqual(events, set([
+            (client.fileno(), select.KQ_FILTER_WRITE),
+            (client.fileno(), select.KQ_FILTER_READ),
+            (server.fileno(), select.KQ_FILTER_WRITE),
+            (server.fileno(), select.KQ_FILTER_READ)]))
 
         # Remove completely client, and server read part
         ev = select.kevent(client.fileno(),
@@ -169,10 +161,9 @@ class TestKQueue(unittest.TestCase):
         kq.control([ev], 0, 0)
 
         events = kq.control([], 4, 0.99)
-        events = [(e.ident, e.filter, e.flags) for e in events]
-        events.sort()
-        self.assertEqual(events, [
-            (server.fileno(), select.KQ_FILTER_WRITE, flags)])
+        events = set((e.ident, e.filter) for e in events)
+        self.assertEqual(events, set([
+            (server.fileno(), select.KQ_FILTER_WRITE)]))
 
         client.close()
         server.close()
