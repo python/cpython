@@ -3,6 +3,7 @@
 OS/2+EMX doesn't support the file locking operations.
 
 """
+import platform
 import os
 import struct
 import sys
@@ -97,6 +98,9 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(OverflowError, fcntl.fcntl, F(_testcapi.INT_MIN - 1),
                                                       fcntl.F_SETFL, os.O_NONBLOCK)
 
+    @unittest.skipIf(
+        platform.machine().startswith('arm') and platform.system() == 'Linux',
+        "ARM Linux returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
         # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
         # C 'long' but not in a C 'int'.
