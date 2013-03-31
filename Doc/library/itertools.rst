@@ -828,6 +828,18 @@ which incur interpreter overhead.
        indices = sorted(random.randrange(n) for i in xrange(r))
        return tuple(pool[i] for i in indices)
 
+   def tee_lookahead(t, i):
+       """Inspect the i-th upcomping value from a tee object
+          while leaving the tee object at its current position.
+
+          Raise an IndexError if the underlying iterator doesn't
+          have enough values.
+
+       """
+       for value in islice(t.__copy__(), i, None):
+           return value
+       raise IndexError(i)
+
 Note, many of the above recipes can be optimized by replacing global lookups
 with local variables defined as default values.  For example, the
 *dotproduct* recipe can be written as::
