@@ -145,7 +145,7 @@ class SocketIO(object):
 
     def exithook(self):
         "override for specific exit action"
-        os._exit()
+        os._exit(0)
 
     def debug(self, *args):
         if not self.debugging:
