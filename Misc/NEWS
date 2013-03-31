@@ -297,6 +297,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer 
+  raises an exception.
+
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
 
 - Issue #17435: threading.Timer's __init__ method no longer uses mutable
