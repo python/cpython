@@ -2327,7 +2327,7 @@ PyObject *PyExc_RecursionErrorInst = NULL;
     }
 
 #ifdef MS_WINDOWS
-#include <Winsock2.h>
+#include <winsock2.h>
 /* The following constants were added to errno.h in VS2010 but have
    preferred WSA equivalents. */
 #undef EADDRINUSE
