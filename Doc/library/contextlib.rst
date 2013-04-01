@@ -96,7 +96,7 @@ Functions and classes provided:
 
 .. function:: ignored(*exceptions)
 
-   Return a context manager that ignores the specified expections if they
+   Return a context manager that ignores the specified exceptions if they
    occur in the body of a with-statement.
 
    For example::
