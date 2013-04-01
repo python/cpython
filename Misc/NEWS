@@ -12,6 +12,8 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17357: Add missing verbosity output when using -v/-vv.
+
 Library
 -------
 

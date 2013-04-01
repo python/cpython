@@ -483,9 +483,9 @@ def _get_sourcefile(bytecode_path):
     return source_path if _path_isfile(source_stats) else bytecode_path
 
 
-def _verbose_message(message, *args):
+def _verbose_message(message, *args, verbosity=1):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
-    if sys.flags.verbose:
+    if sys.flags.verbose >= verbosity:
         if not message.startswith(('#', 'import ')):
             message = '# ' + message
         print(message.format(*args), file=sys.stderr)
@@ -813,6 +813,7 @@ class _LoaderBasics:
         raw_size = data[8:12]
         if magic != _MAGIC_BYTES:
             msg = 'bad magic number in {!r}: {!r}'.format(fullname, magic)
+            _verbose_message(msg)
             raise ImportError(msg, name=fullname, path=bytecode_path)
         elif len(raw_timestamp) != 4:
             message = 'bad timestamp in {}'.format(fullname)
@@ -1382,11 +1383,13 @@ class FileFinder:
                     is_namespace = True
         # Check for a file w/ a proper suffix exists.
         for suffix, loader in self._loaders:
+            full_path = _path_join(self.path, tail_module + suffix)
+            _verbose_message('trying {}'.format(full_path), verbosity=2)
             if cache_module + suffix in cache:
-                full_path = _path_join(self.path, tail_module + suffix)
                 if _path_isfile(full_path):
                     return (loader(fullname, full_path), [])
         if is_namespace:
+            _verbose_message('possible namespace for {}'.format(base_path))
             return (None, [base_path])
         return (None, [])
 
