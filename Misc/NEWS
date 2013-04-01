@@ -12,6 +12,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6698: IDLE now opens just an editor window when configured to do so.
+
 - Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer
   raises an exception.
 
