@@ -13,6 +13,8 @@ Core and Builtins
 - Issue #17357: Add missing verbosity messages for -v/-vv that were lost during
   the importlib transition.
 
+- Issue #17610: Don't rely on non-standard behavior of the C qsort() function.
+
 - Issue #17323: The "[X refs, Y blocks]" printed by debug builds has been
   disabled by default.  It can be re-enabled with the `-X showrefcount` option.
 
