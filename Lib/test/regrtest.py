@@ -127,6 +127,7 @@ import builtins
 import faulthandler
 import io
 import json
+import locale
 import logging
 import os
 import platform
@@ -1061,7 +1062,7 @@ class saved_test_environment:
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
-                 'support.TESTFN',
+                 'support.TESTFN', 'locale'
                 )
 
     def get_sys_argv(self):
@@ -1229,6 +1230,14 @@ class saved_test_environment:
                 os.unlink(support.TESTFN)
             elif os.path.isdir(support.TESTFN):
                 shutil.rmtree(support.TESTFN)
+
+    _locale_categories = [getattr(locale, lc)
+                          for lc in dir(locale) if lc.startswith('LC_')]
+    def get_locale(self):
+        return tuple(map(locale.getlocale, self._locale_categories))
+    def restore_locale(self, saved):
+        for category, setting in zip(self._locale_categories, saved):
+            locale.setlocale(category, setting)
 
     def resource_info(self):
         for name in self.resources:
