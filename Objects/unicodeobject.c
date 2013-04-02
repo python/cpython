@@ -12791,6 +12791,41 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 }
 
 int
+_PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
+                                Py_ssize_t start, Py_ssize_t end)
+{
+    Py_UCS4 maxchar;
+    Py_ssize_t len;
+
+    if (PyUnicode_READY(str) == -1)
+        return -1;
+
+    assert(0 <= start);
+    assert(end <= PyUnicode_GET_LENGTH(str));
+    assert(start <= end);
+
+    if (end == 0)
+        return 0;
+
+    if (start == 0 && end == PyUnicode_GET_LENGTH(str))
+        return _PyUnicodeWriter_WriteStr(writer, str);
+
+    if (PyUnicode_MAX_CHAR_VALUE(str) > writer->maxchar)
+        maxchar = _PyUnicode_FindMaxChar(str, start, end);
+    else
+        maxchar = writer->maxchar;
+    len = end - start;
+
+    if (_PyUnicodeWriter_Prepare(writer, len, maxchar) < 0)
+        return -1;
+
+    _PyUnicode_FastCopyCharacters(writer->buffer, writer->pos,
+                                  str, start, len);
+    writer->pos += len;
+    return 0;
+}
+
+int
 _PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer, const char *str, Py_ssize_t len)
 {
     Py_UCS4 maxchar;
@@ -13963,7 +13998,7 @@ PyUnicode_Format(PyObject *format, PyObject *args)
 
     while (--ctx.fmtcnt >= 0) {
         if (PyUnicode_READ(ctx.fmtkind, ctx.fmtdata, ctx.fmtpos) != '%') {
-            Py_ssize_t nonfmtpos, sublen;
+            Py_ssize_t nonfmtpos;
             Py_UCS4 maxchar;
 
             nonfmtpos = ctx.fmtpos++;
@@ -13976,15 +14011,10 @@ PyUnicode_Format(PyObject *format, PyObject *args)
                 ctx.fmtpos--;
                 ctx.writer.overallocate = 0;
             }
-            sublen = ctx.fmtpos - nonfmtpos;
-            maxchar = _PyUnicode_FindMaxChar(ctx.fmtstr,
-                                             nonfmtpos, nonfmtpos + sublen);
-            if (_PyUnicodeWriter_Prepare(&ctx.writer, sublen, maxchar) == -1)
-                goto onError;
 
-            _PyUnicode_FastCopyCharacters(ctx.writer.buffer, ctx.writer.pos,
-                                          ctx.fmtstr, nonfmtpos, sublen);
-            ctx.writer.pos += sublen;
+            if (_PyUnicodeWriter_WriteSubstring(&ctx.writer, ctx.fmtstr,
+                                                nonfmtpos, ctx.fmtpos) < 0)
+                goto onError;
         }
         else {
             ctx.fmtpos++;

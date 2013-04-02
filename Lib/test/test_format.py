@@ -324,6 +324,9 @@ class FormatTest(unittest.TestCase):
         self.assertIs("{0:1s}".format(text), text)
         self.assertIs("{0:5s}".format(text), text)
 
+        self.assertIs(text % (), text)
+        self.assertIs(text.format(), text)
+
 
 def test_main():
     support.run_unittest(FormatTest)
