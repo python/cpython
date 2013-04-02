@@ -588,6 +588,10 @@ class TestFTPClass(TestCase):
         self.client.storlines('stor foo', f, callback=lambda x: flag.append(None))
         self.assertTrue(flag)
 
+        f = io.StringIO(RETR_DATA.replace('\r\n', '\n'))
+        # storlines() expects a binary file, not a text file
+        self.assertRaises(TypeError, self.client.storlines, 'stor foo', f)
+
     def test_nlst(self):
         self.client.nlst()
         self.assertEqual(self.client.nlst(), NLST_DATA.split('\r\n')[:-1])
