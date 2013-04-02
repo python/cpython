@@ -151,6 +151,9 @@ class Random(_random.Random):
 
 ## -------------------- pickle support  -------------------
 
+    # Issue 17489: Since __reduce__ was defined to fix #759889 this is no
+    # longer called; we leave it here because it has been here since random was
+    # rewritten back in 2001 and why risk breaking something.
     def __getstate__(self): # for pickle
         return self.getstate()
 
