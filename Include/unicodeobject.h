@@ -940,6 +940,15 @@ _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer,
     PyObject *str               /* Unicode string */
     );
 
+/* Append a substring of a Unicode string.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer,
+    PyObject *str,              /* Unicode string */
+    Py_ssize_t start,
+    Py_ssize_t end
+    );
+
 /* Append a latin1-encoded byte string.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int)
