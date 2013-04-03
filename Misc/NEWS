@@ -12,6 +12,8 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17619: Make input() check for Ctrl-C correctly on Windows.
+
 - Issue #17610: Don't rely on non-standard behavior of the C qsort() function.
 
 - Issue #17357: Add missing verbosity output when using -v/-vv.
