@@ -2017,7 +2017,7 @@ tempfile
 --------
 
 :class:`tempfile.SpooledTemporaryFile`\'s
-:meth:`~tempfile.SpooledTemporaryFile.trucate` method now accepts
+:meth:`~tempfile.SpooledTemporaryFile.truncate` method now accepts
 a ``size`` parameter.  (Contributed by Ryan Kelly in :issue:`9957`.)
 
 
