@@ -297,7 +297,7 @@ class Request:
     def _parse(self):
         self.type, rest = splittype(self.full_url)
         if self.type is None:
-            raise ValueError("unknown url type: %s" % self.full_url)
+            raise ValueError("unknown url type: %r" % self.full_url)
         self.host, self.selector = splithost(rest)
         if self.host:
             self.host = unquote(self.host)
