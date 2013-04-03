@@ -326,7 +326,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     bad_directive = "%"
                 del err
                 raise ValueError("'%s' is a bad directive in format '%s'" %
-                                    (bad_directive, format))
+                                    (bad_directive, format)) from None
             # IndexError only occurs when the format string is "%"
             except IndexError:
                 raise ValueError("stray %% in format '%s'" % format)
