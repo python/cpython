@@ -116,12 +116,13 @@ class PyShellEditorWindow(EditorWindow):
         self.breakpointPath = os.path.join(idleConf.GetUserCfgDir(),
                                            'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
-        if self.io.filename: self.restore_file_breaks()
         def filename_changed_hook(old_hook=self.io.filename_change_hook,
                                   self=self):
             self.restore_file_breaks()
             old_hook()
         self.io.set_filename_change_hook(filename_changed_hook)
+        if self.io.filename:
+            self.restore_file_breaks()
 
     rmenu_specs = [
         ("Cut", "<<cut>>", "rmenu_check_cut"),
@@ -237,6 +238,9 @@ class PyShellEditorWindow(EditorWindow):
 
     def restore_file_breaks(self):
         self.text.update()   # this enables setting "BREAK" tags to be visible
+        if self.io is None:
+            # can happen if IDLE closes due to the .update() call
+            return
         filename = self.io.filename
         if filename is None:
             return
