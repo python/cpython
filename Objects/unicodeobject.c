@@ -13777,7 +13777,7 @@ unicode_format_arg_output(struct unicode_formatter_t *ctx,
     Py_ssize_t pindex;
     Py_UCS4 signchar;
     Py_ssize_t buflen;
-    Py_UCS4 maxchar, bufmaxchar;
+    Py_UCS4 maxchar;
     Py_ssize_t sublen;
     _PyUnicodeWriter *writer = &ctx->writer;
     Py_UCS4 fill;
@@ -13830,23 +13830,26 @@ unicode_format_arg_output(struct unicode_formatter_t *ctx,
         arg->width = len;
 
     /* Prepare the writer */
-    bufmaxchar = 127;
+    maxchar = writer->maxchar;
     if (!(arg->flags & F_LJUST)) {
         if (arg->sign) {
             if ((arg->width-1) > len)
-                bufmaxchar = MAX_MAXCHAR(bufmaxchar, fill);
+                maxchar = MAX_MAXCHAR(maxchar, fill);
         }
         else {
             if (arg->width > len)
-                bufmaxchar = MAX_MAXCHAR(bufmaxchar, fill);
+                maxchar = MAX_MAXCHAR(maxchar, fill);
         }
     }
-    maxchar = _PyUnicode_FindMaxChar(str, 0, pindex+len);
-    bufmaxchar = MAX_MAXCHAR(bufmaxchar, maxchar);
+    if (PyUnicode_MAX_CHAR_VALUE(str) > maxchar) {
+        Py_UCS4 strmaxchar = _PyUnicode_FindMaxChar(str, 0, pindex+len);
+        maxchar = MAX_MAXCHAR(maxchar, strmaxchar);
+    }
+
     buflen = arg->width;
     if (arg->sign && len == arg->width)
         buflen++;
-    if (_PyUnicodeWriter_Prepare(writer, buflen, bufmaxchar) == -1)
+    if (_PyUnicodeWriter_Prepare(writer, buflen, maxchar) == -1)
         return -1;
 
     /* Write the sign if needed */
