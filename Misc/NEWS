@@ -12,6 +12,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14254: IDLE now handles readline correctly across shell restarts.
+
 - Issue #17614: IDLE no longer raises exception when quickly closing a file.
 
 - Issue #13163: Rename operands in smtplib.SMTP._get_socket to correct names;

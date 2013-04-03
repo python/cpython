@@ -469,6 +469,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.display_no_subprocess_error()
             return None
         self.transfer_path(with_cwd=with_cwd)
+        console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
         if was_executing:
@@ -908,6 +909,7 @@ class PyShell(OutputWindow):
     canceled = False
     endoffile = False
     closing = False
+    _stop_readline_flag = False
 
     def set_warning_stream(self, stream):
         global warning_stream
@@ -983,8 +985,7 @@ class PyShell(OutputWindow):
                 parent=self.text)
             if response is False:
                 return "cancel"
-        if self.reading:
-            self.top.quit()
+        self.stop_readline()
         self.canceled = True
         self.closing = True
         # Wait for poll_subprocess() rescheduling to stop
@@ -1036,6 +1037,12 @@ class PyShell(OutputWindow):
         Tkinter._default_root = None # 03Jan04 KBK What's this?
         return True
 
+    def stop_readline(self):
+        if not self.reading:  # no nested mainloop to exit.
+            return
+        self._stop_readline_flag = True
+        self.top.quit()
+
     def readline(self):
         save = self.reading
         try:
@@ -1043,6 +1050,9 @@ class PyShell(OutputWindow):
             self.top.mainloop()  # nested mainloop()
         finally:
             self.reading = save
+        if self._stop_readline_flag:
+            self._stop_readline_flag = False
+            return ""
         line = self.text.get("iomark", "end-1c")
         if len(line) == 0:  # may be EOF if we quit our mainloop with Ctrl-C
             line = "\n"
