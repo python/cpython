@@ -218,6 +218,12 @@ class StrptimeTests(unittest.TestCase):
             else:
                 self.fail("'%s' did not raise ValueError" % bad_format)
 
+    def test_strptime_exception_context(self):
+        # check that this doesn't chain exceptions needlessly (see #17572)
+        with self.assertRaises(ValueError) as e:
+            _strptime._strptime_time('', '%D')
+        self.assertIs(e.exception.__suppress_context__, True)
+
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
         self.assertRaises(ValueError, _strptime._strptime_time, "10 12", "%m")
