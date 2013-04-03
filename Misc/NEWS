@@ -1251,6 +1251,8 @@ Build
 Documentation
 -------------
 
+- Issue #15940: Specify effect of locale on time functions.
+
 - Issue 17538: Document XML vulnerabilties
 
 - Issue #16642: sched.scheduler timefunc initial default is time.monotonic.
