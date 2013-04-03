@@ -14002,7 +14002,6 @@ PyUnicode_Format(PyObject *format, PyObject *args)
     while (--ctx.fmtcnt >= 0) {
         if (PyUnicode_READ(ctx.fmtkind, ctx.fmtdata, ctx.fmtpos) != '%') {
             Py_ssize_t nonfmtpos;
-            Py_UCS4 maxchar;
 
             nonfmtpos = ctx.fmtpos++;
             while (ctx.fmtcnt >= 0 &&
