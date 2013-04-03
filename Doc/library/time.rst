@@ -671,8 +671,8 @@ The module defines the following functions and data items:
       More object-oriented interface to dates and times.
 
    Module :mod:`locale`
-      Internationalization services.  The locale settings can affect the return values
-      for some of  the functions in the :mod:`time` module.
+      Internationalization services.  The locale setting affects the interpretation
+	  of many format specifiers in :func:`strftime` and :func:`strptime`.
 
    Module :mod:`calendar`
       General calendar-related functions.   :func:`timegm` is the inverse of
