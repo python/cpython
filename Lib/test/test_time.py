@@ -193,6 +193,12 @@ class TimeTestCase(unittest.TestCase):
         self.assertRaises(TypeError, time.strptime, b'2009', "%Y")
         self.assertRaises(TypeError, time.strptime, '2009', b'%Y')
 
+    def test_strptime_exception_context(self):
+        # check that this doesn't chain exceptions needlessly (see #17572)
+        with self.assertRaises(ValueError) as e:
+            time.strptime('', '%D')
+        self.assertIs(e.exception.__suppress_context__, True)
+
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
 
