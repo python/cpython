@@ -771,9 +771,13 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
 
     calc_padding(len, format->width, format->align, &lpad, &rpad, &total);
 
-    maxchar = _PyUnicode_FindMaxChar(value, 0, len);
+    maxchar = writer->maxchar;
     if (lpad != 0 || rpad != 0)
         maxchar = Py_MAX(maxchar, format->fill_char);
+    if (PyUnicode_MAX_CHAR_VALUE(value) > maxchar) {
+        Py_UCS4 valmaxchar = _PyUnicode_FindMaxChar(value, 0, len);
+        maxchar = Py_MAX(maxchar, valmaxchar);
+    }
 
     /* allocate the resulting string */
     if (_PyUnicodeWriter_Prepare(writer, total, maxchar) == -1)
