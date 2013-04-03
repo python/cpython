@@ -1733,6 +1733,7 @@ builtin_input(PyObject *self, PyObject *args)
         }
         s = PyOS_Readline(stdin, stdout, prompt);
         if (s == NULL) {
+            PyErr_CheckSignals();
             if (!PyErr_Occurred())
                 PyErr_SetNone(PyExc_KeyboardInterrupt);
             goto _readline_errors;

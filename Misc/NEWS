@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17619: Make input() check for Ctrl-C correctly on Windows.
+
 - Issue #17357: Add missing verbosity messages for -v/-vv that were lost during
   the importlib transition.
 
