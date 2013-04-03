@@ -548,7 +548,7 @@ The module defines the following functions and data items:
 
    Module :mod:`locale`
       Internationalization services.  The locale setting affects the interpretation
-	  of many format specifiers in :func:`strftime` and :func:`strptime`.
+      of many format specifiers in :func:`strftime` and :func:`strptime`.
 
    Module :mod:`calendar`
       General calendar-related functions.   :func:`timegm` is the inverse of
