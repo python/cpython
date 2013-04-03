@@ -1039,9 +1039,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 
 - Issue #16692: Added  TLSv1.1 and TLSv1.2 support for the ssl modules.
 
-Extension Modules
------------------
-
 - Issue #17192: Import libffi-3.0.12.
 
 - Issue #12268: The io module file object write methods no longer abort early
