@@ -29,6 +29,11 @@ Library
 - Issue #17526: fix an IndexError raised while passing code without filename to
   inspect.findsource().  Initial patch by Tyler Doyle.
 
+Documentation
+-------------
+
+- Issue #15940: Specify effect of locale on time functions.
+
 
 What's New in Python 2.7.4?
 ===========================
