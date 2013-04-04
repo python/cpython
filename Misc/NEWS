@@ -24,6 +24,8 @@ Library
 - Issue #17572: Avoid chained exceptions while passing bad directives to
   time.strptime().  Initial patch by Claudiu Popa.
 
+- Issue #17625: In IDLE, close the replace dialog after it is used.
+
 - Issue #14254: IDLE now handles readline correctly across shell restarts.
 
 - Issue #17614: IDLE no longer raises exception when quickly closing a file.
