@@ -123,6 +123,7 @@ class ReplaceDialog(SearchDialogBase):
         text.undo_block_stop()
         if first and last:
             self.show_hit(first, last)
+        self.close()
 
     def do_find(self, ok=0):
         if not self.engine.getprog():
