@@ -27,6 +27,8 @@ Core and Builtins
 
 - Use the HTTPS PyPI url for upload, overriding any plain HTTP URL in pypirc.
 
+- Issue #17625: In IDLE, close the replace dialog after it is used.
+
 - Issue #16795: On the ast.arguments object, unify vararg with varargannotation
   and kwarg and kwargannotation. Change the column offset of ast.Attribute to be
   at the attribute name.
