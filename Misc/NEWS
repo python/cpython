@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2.4?
+===========================
+
+*Release date: XX-Apr-2013*
+
+Library
+-------
+
+- Issue #17625: In IDLE, close the replace dialog after it is used.
+
+
 What's New in Python 3.2.4 release candidate 1?
 ===============================================
 
