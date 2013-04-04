@@ -12,6 +12,11 @@ Build
 
 - Issue #17550: Fix the --enable-profiling configure switch.
 
+Library
+-------
+
+- Issue #17625: In IDLE, close the replace dialog after it is used.
+
 
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
