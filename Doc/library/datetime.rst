@@ -597,6 +597,13 @@ Instance methods:
    section :ref:`strftime-strptime-behavior`.
 
 
+.. method:: date.__format__(format)
+
+   Same as :meth:`.date.strftime`. This makes it possible to specify format
+   string for a :class:`.date` object when using :meth:`str.format`.
+   See section :ref:`strftime-strptime-behavior`.
+
+
 Example of counting days to an event::
 
     >>> import time
@@ -647,6 +654,8 @@ Example of working with :class:`date`:
     '11/03/02'
     >>> d.strftime("%A %d. %B %Y")
     'Monday 11. March 2002'
+    >>> 'The {1} is {0:%d}, the {2} is {0:%B}.'.format(d, "day", "month")
+    'The day is 11, the month is March.'
 
 
 .. _datetime-datetime:
@@ -1154,6 +1163,13 @@ Instance methods:
    string.  See section :ref:`strftime-strptime-behavior`.
 
 
+.. method:: datetime.__format__(format)
+
+   Same as :meth:`.datetime.strftime`.  This makes it possible to specify format
+   string for a :class:`.datetime` object when using :meth:`str.format`.
+   See section :ref:`strftime-strptime-behavior`.
+
+
 Examples of working with datetime objects:
 
 .. doctest::
@@ -1198,6 +1214,8 @@ Examples of working with datetime objects:
     >>> # Formatting datetime
     >>> dt.strftime("%A, %d. %B %Y %I:%M%p")
     'Tuesday, 21. November 2006 04:30PM'
+    >>> 'The {1} is {0:%d}, the {2} is {0:%B}, the {3} is {0:%I:%M%p}.'.format(dt, "day", "month", "time")
+    'The day is 21, the month is November, the time is 04:30PM.'
 
 Using datetime with tzinfo:
 
@@ -1385,6 +1403,13 @@ Instance methods:
    See section :ref:`strftime-strptime-behavior`.
 
 
+.. method:: time.__format__(format)
+
+   Same as :meth:`.time.strftime`. This makes it possible to specify format string
+   for a :class:`.time` object when using :meth:`str.format`.
+   See section :ref:`strftime-strptime-behavior`.
+
+
 .. method:: time.utcoffset()
 
    If :attr:`tzinfo` is ``None``, returns ``None``, else returns
@@ -1431,6 +1456,8 @@ Example:
     'Europe/Prague'
     >>> t.strftime("%H:%M:%S %Z")
     '12:10:30 Europe/Prague'
+    >>> 'The {} is {:%H:%M}.'.format("time", t)
+    'The time is 12:10.'
 
 
 .. _datetime-tzinfo:
