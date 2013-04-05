@@ -2811,9 +2811,10 @@ The constructors for both classes work the same:
            frozenset([iterable])
 
    Return a new set or frozenset object whose elements are taken from
-   *iterable*.  The elements of a set must be hashable.  To represent sets of
-   sets, the inner sets must be :class:`frozenset` objects.  If *iterable* is
-   not specified, a new empty set is returned.
+   *iterable*.  The elements of a set must be :term:`hashable`.  To
+   represent sets of sets, the inner sets must be :class:`frozenset`
+   objects.  If *iterable* is not specified, a new empty set is
+   returned.
 
    Instances of :class:`set` and :class:`frozenset` provide the following
    operations:
