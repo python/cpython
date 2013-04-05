@@ -778,6 +778,8 @@ PyObject_Malloc(size_t nbytes)
     poolp next;
     uint size;
 
+    _Py_AllocatedBlocks++;
+
 #ifdef WITH_VALGRIND
     if (UNLIKELY(running_on_valgrind == -1))
         running_on_valgrind = RUNNING_ON_VALGRIND;
@@ -791,10 +793,10 @@ PyObject_Malloc(size_t nbytes)
      * things without checking for overflows or negatives.
      * As size_t is unsigned, checking for nbytes < 0 is not required.
      */
-    if (nbytes > PY_SSIZE_T_MAX)
+    if (nbytes > PY_SSIZE_T_MAX) {
+        _Py_AllocatedBlocks--;
         return NULL;
-
-    _Py_AllocatedBlocks++;
+    }
 
     /*
      * This implicitly redirects malloc(0).
