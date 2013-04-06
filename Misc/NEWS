@@ -11,8 +11,6 @@ Core and Builtins
 
 Library
 -------
-- Issue #14010: Fix a crash when iterating or deleting deeply nested filters
-  in itertools module (i.e. itertools.izip(), itertools.chain(), etc).
 
 - Issue #13163: Rename operands in smtplib.SMTP._get_socket to correct names;
   fixes otherwise misleading output in tracebacks and when when debug is on.
@@ -290,7 +288,7 @@ Library
 
 - Issue #12718: Fix interaction with winpdb overriding __import__ by setting
   importer attribute on BaseConfigurator instance.
-
+  
 - Issue #17521: Corrected non-enabling of logger following two calls to
   fileConfig().
 

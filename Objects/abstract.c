@@ -3104,10 +3104,7 @@ PyObject *
 PyIter_Next(PyObject *iter)
 {
     PyObject *result;
-    if (Py_EnterRecursiveCall(" while iterating"))
-        return NULL;
     result = (*iter->ob_type->tp_iternext)(iter);
-    Py_LeaveRecursiveCall();
     if (result == NULL &&
         PyErr_Occurred() &&
         PyErr_ExceptionMatches(PyExc_StopIteration))
