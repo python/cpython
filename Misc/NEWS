@@ -27,6 +27,15 @@ Library
 - Issue #17572: Avoid chained exceptions while passing bad directives to
   time.strptime().  Initial patch by Claudiu Popa.
 
+- Issue #17435: threading.Timer's __init__ method no longer uses mutable
+  default values for the args and kwargs parameters.
+
+- Issue #17526: fix an IndexError raised while passing code without filename to
+  inspect.findsource().  Initial patch by Tyler Doyle.
+
+IDLE
+----
+
 - Issue #17625: In IDLE, close the replace dialog after it is used.
 
 - Issue #14254: IDLE now handles readline correctly across shell restarts.
@@ -39,12 +48,6 @@ Library
   raises an exception.
 
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
-
-- Issue #17435: threading.Timer's __init__ method no longer uses mutable
-  default values for the args and kwargs parameters.
-
-- Issue #17526: fix an IndexError raised while passing code without filename to
-  inspect.findsource().  Initial patch by Tyler Doyle.
 
 Documentation
 -------------
