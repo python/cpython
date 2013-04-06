@@ -1565,8 +1565,40 @@ class TestSorted(unittest.TestCase):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
         self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
 
+class TestRecursionLimit(unittest.TestCase):
+    # Issue #14010
+    recursionlimit = sys.getrecursionlimit()
+
+    def test_filter(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = filter(bool, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_map(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = map(int, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_zip(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = zip(it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+
 def test_main(verbose=None):
-    test_classes = (BuiltinTest, TestSorted)
+    test_classes = (BuiltinTest, TestSorted, TestRecursionLimit)
 
     run_unittest(*test_classes)
 
