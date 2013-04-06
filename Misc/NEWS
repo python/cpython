@@ -12,6 +12,9 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #14010: Fix a crash when iterating or deleting deeply nested filters
+  (builting and in itertools module, i.e. map(), itertools.chain(), etc).
+
 - Issue #17619: Make input() check for Ctrl-C correctly on Windows.
 
 - Issue #17610: Don't rely on non-standard behavior of the C qsort() function.
