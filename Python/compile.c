@@ -248,8 +248,11 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     }
     plen -= ipriv;
 
-    assert(1 <= PY_SSIZE_T_MAX - nlen);
-    assert(1 + nlen <= PY_SSIZE_T_MAX - plen);
+    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "private identifier too large to be mangled");
+        return NULL;
+    }
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
     if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar)
