@@ -12,14 +12,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #14254: IDLE now handles readline correctly across shell restarts.
-
-- Issue #17614: IDLE no longer raises exception when quickly closing a file.
-
 - Issue #13163: Rename operands in smtplib.SMTP._get_socket to correct names;
   fixes otherwise misleading output in tracebacks and when when debug is on.
-
-- Issue #6698: IDLE now opens just an editor window when configured to do so.
 
 - Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer
   raises an exception.
@@ -28,6 +22,15 @@ Library
 
 - Issue #17526: fix an IndexError raised while passing code without filename to
   inspect.findsource().  Initial patch by Tyler Doyle.
+
+IDLE
+----
+
+- Issue #14254: IDLE now handles readline correctly across shell restarts.
+
+- Issue #17614: IDLE no longer raises exception when quickly closing a file.
+
+- Issue #6698: IDLE now opens just an editor window when configured to do so.
 
 Documentation
 -------------
