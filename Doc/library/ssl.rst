@@ -298,14 +298,30 @@ Functions, Constants, and Exceptions
 SSLSocket Objects
 -----------------
 
-.. method:: SSLSocket.read([nbytes=1024])
+SSL sockets provide the following methods of :ref:`socket-objects`:
 
-   Reads up to ``nbytes`` bytes from the SSL-encrypted channel and returns them.
+- :meth:`~socket.socket.accept()`
+- :meth:`~socket.socket.bind()`
+- :meth:`~socket.socket.close()`
+- :meth:`~socket.socket.connect()`
+- :meth:`~socket.socket.fileno()`
+- :meth:`~socket.socket.getpeername()`, :meth:`~socket.socket.getsockname()`
+- :meth:`~socket.socket.getsockopt()`, :meth:`~socket.socket.setsockopt()`
+- :meth:`~socket.socket.gettimeout()`, :meth:`~socket.socket.settimeout()`,
+  :meth:`~socket.socket.setblocking()`
+- :meth:`~socket.socket.listen()`
+- :meth:`~socket.socket.makefile()`
+- :meth:`~socket.socket.recv()`, :meth:`~socket.socket.recv_into()`
+  (but passing a non-zero ``flags`` argument is not allowed)
+- :meth:`~socket.socket.send()`, :meth:`~socket.socket.sendall()` (with
+  the same limitation)
+- :meth:`~socket.socket.shutdown()`
 
-.. method:: SSLSocket.write(data)
+However, since the SSL (and TLS) protocol has its own framing atop
+of TCP, the SSL sockets abstraction can, in certain respects, diverge from
+the specification of normal, OS-level sockets.
 
-   Writes the ``data`` to the other side of the connection, using the SSL
-   channel to encrypt.  Returns the number of bytes written.
+SSL sockets also have the following additional methods and attributes:
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
