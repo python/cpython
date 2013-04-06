@@ -10,9 +10,6 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #14010: Fix a crash when iterating or deleting deeply nested filters
-  (builting and in itertools module, i.e. map(), itertools.chain(), etc).
-
 - Issue #17469: Fix _Py_GetAllocatedBlocks() and sys.getallocatedblocks()
   when running on valgrind.
 
