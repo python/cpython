@@ -391,9 +391,11 @@ static void
 filter_dealloc(filterobject *lz)
 {
     PyObject_GC_UnTrack(lz);
+    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
+    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -414,7 +416,10 @@ filter_next(filterobject *lz)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
+        if (Py_EnterRecursiveCall(" while iterating"))
+            return NULL;
         item = iternext(it);
+        Py_LeaveRecursiveCall();
         if (item == NULL)
             return NULL;
 
@@ -1031,9 +1036,11 @@ static void
 map_dealloc(mapobject *lz)
 {
     PyObject_GC_UnTrack(lz);
+    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->iters);
     Py_XDECREF(lz->func);
     Py_TYPE(lz)->tp_free(lz);
+    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -2220,9 +2227,11 @@ static void
 zip_dealloc(zipobject *lz)
 {
     PyObject_GC_UnTrack(lz);
+    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->ittuple);
     Py_XDECREF(lz->result);
     Py_TYPE(lz)->tp_free(lz);
+    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -2245,15 +2254,15 @@ zip_next(zipobject *lz)
 
     if (tuplesize == 0)
         return NULL;
+    if (Py_EnterRecursiveCall(" while iterating"))
+        return NULL;
     if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
             item = (*Py_TYPE(it)->tp_iternext)(it);
-            if (item == NULL) {
-                Py_DECREF(result);
-                return NULL;
-            }
+            if (item == NULL)
+                goto error;
             olditem = PyTuple_GET_ITEM(result, i);
             PyTuple_SET_ITEM(result, i, item);
             Py_DECREF(olditem);
@@ -2261,18 +2270,21 @@ zip_next(zipobject *lz)
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)
-            return NULL;
+            goto error;
         for (i=0 ; i < tuplesize ; i++) {
             it = PyTuple_GET_ITEM(lz->ittuple, i);
             item = (*Py_TYPE(it)->tp_iternext)(it);
-            if (item == NULL) {
-                Py_DECREF(result);
-                return NULL;
-            }
+            if (item == NULL)
+                goto error;
             PyTuple_SET_ITEM(result, i, item);
         }
     }
+    Py_LeaveRecursiveCall();
     return result;
+error:
+    Py_XDECREF(result);
+    Py_LeaveRecursiveCall();
+    return NULL;
 }
 
 static PyObject *

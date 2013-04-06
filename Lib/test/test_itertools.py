@@ -1808,6 +1808,121 @@ class SubclassWithKwargsTest(unittest.TestCase):
                 self.assertNotIn("does not take keyword arguments", err.args[0])
 
 
+class TestRecursionLimit(unittest.TestCase):
+    # Issue #14010
+    recursionlimit = sys.getrecursionlimit()
+
+    def test_accumulate(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = accumulate(it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_chain(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = chain(it, ())
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_compress(self):
+        data = (0, 1)
+        selectors = (True, True)
+        it = data
+        for _ in range(self.recursionlimit):
+            it = compress(it, selectors)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+        it = selectors
+        for _ in range(self.recursionlimit):
+            it = compress(data, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_cycle(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = cycle(it)
+        with self.assertRaises(RuntimeError):
+            for _ in range(3):
+                next(it)
+        del it
+
+    def test_dropwhile(self):
+        it = (0, 1, 0)
+        for _ in range(self.recursionlimit):
+            it = dropwhile(bool, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_filterfalse(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = filterfalse(bool, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_groupby(self):
+        key = operator.itemgetter(0)
+        it = ((0, []), (1, []))
+        for _ in range(self.recursionlimit):
+            it = groupby(it, key)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_islice(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = islice(it, 2)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_starmap(self):
+        it = 'ab'
+        for _ in range(self.recursionlimit):
+            it = starmap(tuple, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_takewhile(self):
+        it = (1, 0)
+        for _ in range(self.recursionlimit):
+            it = takewhile(bool, it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+    def test_zip_longest(self):
+        it = (0, 1)
+        for _ in range(self.recursionlimit):
+            it = zip_longest(it)
+        with self.assertRaises(RuntimeError):
+            for _ in it:
+                pass
+        del it
+
+
 libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
 
@@ -2042,7 +2157,7 @@ __test__ = {'libreftest' : libreftest}
 def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
                     RegressionTests, LengthTransparency,
-                    SubclassWithKwargsTest, TestExamples)
+                    SubclassWithKwargsTest, TestExamples, TestRecursionLimit)
     support.run_unittest(*test_classes)
 
     # verify reference counting
