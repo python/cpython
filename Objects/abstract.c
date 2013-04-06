@@ -1238,7 +1238,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
   to be an int or have an __int__ method. Steals integral's
   reference. error_format will be used to create the TypeError if integral
   isn't actually an Integral instance. error_format should be a format string
-  that can accept a char* naming integral's type. 
+  that can accept a char* naming integral's type.
 */
 static PyObject *
 convert_integral_to_int(PyObject *integral, const char *error_format)
@@ -1257,7 +1257,7 @@ convert_integral_to_int(PyObject *integral, const char *error_format)
     }
     PyErr_Format(PyExc_TypeError, error_format, Py_TYPE(integral)->tp_name);
     Py_DECREF(integral);
-    return NULL;    
+    return NULL;
 }
 
 
@@ -2702,7 +2702,10 @@ PyObject *
 PyIter_Next(PyObject *iter)
 {
     PyObject *result;
+    if (Py_EnterRecursiveCall(" while iterating"))
+        return NULL;
     result = (*iter->ob_type->tp_iternext)(iter);
+    Py_LeaveRecursiveCall();
     if (result == NULL &&
         PyErr_Occurred() &&
         PyErr_ExceptionMatches(PyExc_StopIteration))
