@@ -1,6 +1,8 @@
 What's New in IDLE 3.2.4?
 =========================
 
+- Issue #17625: Close the replace dialog after it is used.
+
 - Issue #7163: Propagate return value of sys.stdout.write.
 
 - Issue #15318: Prevent writing to sys.stdin.
@@ -855,8 +857,4 @@ What's New in IDLEfork 0.9 Alpha 1?
 --------------------------------------------------------------------
 Refer to HISTORY.txt for additional information on earlier releases.
 --------------------------------------------------------------------
-
-
-
-
 
