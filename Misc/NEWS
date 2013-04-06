@@ -33,8 +33,6 @@ Core and Builtins
 
 - Use the HTTPS PyPI url for upload, overriding any plain HTTP URL in pypirc.
 
-- Issue #17625: In IDLE, close the replace dialog after it is used.
-
 - Issue #16795: On the ast.arguments object, unify vararg with varargannotation
   and kwarg and kwargannotation. Change the column offset of ast.Attribute to be
   at the attribute name.
@@ -315,17 +313,6 @@ Library
 - Issue #17572: Avoid chained exceptions while passing bad directives to
   time.strptime().  Initial patch by Claudiu Popa.
 
-- Issue #14254: IDLE now handles readline correctly across shell restarts.
-
-- Issue #17614: IDLE no longer raises exception when quickly closing a file.
-
-- Issue #6698: IDLE now opens just an editor window when configured to do so.
-
-- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer 
-  raises an exception.
-
-- Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
-
 - Issue #17435: threading.Timer's __init__ method no longer uses mutable
   default values for the args and kwargs parameters.
 
@@ -527,8 +514,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 
 - Issue #17073: Fix some integer overflows in sqlite3 module.
 
-- Issue #17114: IDLE now uses non-strict config parser.
-
 - Issue #16723: httplib.HTTPResponse no longer marked closed when the connection
   is automatically closed.
 
@@ -590,9 +575,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 - Issue #15505: `unittest.installHandler` no longer assumes SIGINT handler is
   set to a callable object.
 
-- Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
-  interface and support all mandatory methods and properties.
-
 - Issue #13454: Fix a crash when deleting an iterator created by itertools.tee()
   if all other iterators were very advanced before.
 
@@ -621,15 +603,10 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 - Issue #9720: zipfile now writes correct local headers for files larger than
   4 GiB.
 
-- Issue #5066: Update IDLE docs. Patch by Todd Rovito.
-
 - Issue #16955: Fix the poll() method for multiprocessing's socket
   connections on Windows.
 
 - SSLContext.load_dh_params() now properly closes the input file.
-
-- Issue #16829: IDLE printing no longer fails if there are spaces or other
-  special characters in the file path.
 
 - Issue #15031: Refactor some .pyc management code to cut down on code
   duplication. Thanks to Ronan Lamy for the report and taking an initial stab
@@ -646,8 +623,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 - Issue #15545: Fix regression in sqlite3's iterdump method where it was
   failing if the connection used a row factory (such as sqlite3.Row) that
   produced unsortable objects. (Regression was introduced by fix for 9750).
-
-- Issue #16491: IDLE now prints chained exception tracebacks.
 
 - fcntl: add F_DUPFD_CLOEXEC constant, available on Linux 2.6.24+.
 
@@ -685,8 +660,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
   clears previous values stored in the default section. Same goes for
   ``parser.update({'DEFAULT': {}})``.
 
-- Issue #16819: IDLE method completion now correctly works for bytes literals.
-
 - Issue #9586: Redefine SEM_FAILED on MacOSX to keep compiler happy.
 
 - Issue #16787: Increase asyncore and asynchat default output buffers size, to
@@ -710,9 +683,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 - Issue #16641: Default values of sched.scheduler.enter() are no longer
   modifiable.
 
-- Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
-  Roger Serwy.
-
 - Issue #16618: Make glob.glob match consistently across strings and bytes
   regarding leading dots.  Patch by Serhiy Storchaka.
 
@@ -720,9 +690,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 
 - Issue #16702: test_urllib2_localnet tests now correctly ignores proxies for
   localhost tests.
-
-- Issue #16511: Use default IDLE width and height if config param is not valid.
-  Patch Serhiy Storchaka.
 
 - Issue #16713: Parsing of 'tel' urls using urlparse separates params from
   path.
@@ -886,9 +853,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 - Issue #16284: Prevent keeping unnecessary references to worker functions
   in concurrent.futures ThreadPoolExecutor.
 
-- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
-  Patch by Todd Rovito.
-
 - Issue #16230: Fix a crash in select.select() when one the lists changes
   size while iterated on.  Patch by Serhiy Storchaka.
 
@@ -964,9 +928,6 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
   Original patch by Filip Gruszczyński.
 
 - Issue #15417: Add support for csh and fish in venv activation scripts.
-
-- Issue #16123: IDLE - deprecate running without a subprocess.
-  Patch by Roger Serwy.
 
 - Issue #14377: ElementTree.write and some of the module-level functions have
   a new parameter - *short_empty_elements*. It controls how elements with no
@@ -1051,6 +1012,60 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 
 - Issue #12268: The io module file object write methods no longer abort early
   when one of its write system calls is interrupted (EINTR).
+
+IDLE
+----
+
+- Issue #14254: IDLE now handles readline correctly across shell restarts.
+
+- Issue #17614: IDLE no longer raises exception when quickly closing a file.
+
+- Issue #6698: IDLE now opens just an editor window when configured to do so.
+
+- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer 
+  raises an exception.
+
+- Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
+
+- Issue #17625: In IDLE, close the replace dialog after it is used.
+
+- Issue #16123: IDLE - deprecate running without a subprocess.
+  Patch by Roger Serwy.
+
+- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
+  Patch by Todd Rovito.
+
+- Issue #16511: Use default IDLE width and height if config param is not valid.
+  Patch Serhiy Storchaka.
+
+- Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
+  Roger Serwy.
+
+- Issue #16819: IDLE method completion now correctly works for bytes literals.
+
+- Issue #16491: IDLE now prints chained exception tracebacks.
+
+- Issue #16829: IDLE printing no longer fails if there are spaces or other
+  special characters in the file path.
+
+- Issue #5066: Update IDLE docs. Patch by Todd Rovito.
+
+- Issue #9290: In IDLE the sys.std* streams now implement io.TextIOBase
+  interface and support all mandatory methods and properties.
+
+- Issue #17114: IDLE now uses non-strict config parser.
+
+- Issue #14254: IDLE now handles readline correctly across shell restarts.
+
+- Issue #17614: IDLE no longer raises exception when quickly closing a file.
+
+- Issue #6698: IDLE now opens just an editor window when configured to do so.
+
+- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer 
+  raises an exception.
+
+- Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
+
 
 Tests
 -----
