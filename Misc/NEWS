@@ -11,6 +11,8 @@ Core and Builtins
 
 Library
 -------
+- Issue #14010: Fix a crash when iterating or deleting deeply nested filters
+  in itertools module (i.e. itertools.izip(), itertools.chain(), etc).
 
 - Issue #14254: IDLE now handles readline correctly across shell restarts.
 
@@ -285,7 +287,7 @@ Library
 
 - Issue #12718: Fix interaction with winpdb overriding __import__ by setting
   importer attribute on BaseConfigurator instance.
-  
+
 - Issue #17521: Corrected non-enabling of logger following two calls to
   fileConfig().
 
