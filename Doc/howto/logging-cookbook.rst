@@ -1631,7 +1631,7 @@ UTF-8, then you need to do the following:
 
       'ASCII section\ufeffUnicode section'
 
-   The Unicode code point ``'\ufeff'``, when encoded using UTF-8, will be
+   The Unicode code point U+FEFF, when encoded using UTF-8, will be
    encoded as a UTF-8 BOM -- the byte-string ``b'\xef\xbb\xbf'``.
 
 #. Replace the ASCII section with whatever placeholders you like, but make sure
