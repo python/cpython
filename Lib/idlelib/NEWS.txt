@@ -1,6 +1,8 @@
 What's New in IDLE 3.3.1?
 =========================
 
+- Issue #17625: Close the replace dialog after it is used.
+
 - Issue #16226: Fix IDLE Path Browser crash.
   (Patch by Roger Serwy)
 
