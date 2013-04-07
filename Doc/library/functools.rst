@@ -79,7 +79,7 @@ The :mod:`functools` module defines the following functions:
 
    Example of an LRU cache for static web content::
 
-        @lru_cache(maxsize=20)
+        @lru_cache(maxsize=32)
         def get_pep(num):
             'Retrieve text of a Python Enhancement Proposal'
             resource = 'http://www.python.org/dev/peps/pep-%04d/' % num
@@ -93,8 +93,8 @@ The :mod:`functools` module defines the following functions:
         ...     pep = get_pep(n)
         ...     print(n, len(pep))
 
-        >>> print(get_pep.cache_info())
-        CacheInfo(hits=3, misses=8, maxsize=20, currsize=8)
+        >>> get_pep.cache_info()
+        CacheInfo(hits=3, misses=8, maxsize=32, currsize=8)
 
    Example of efficiently computing
    `Fibonacci numbers <http://en.wikipedia.org/wiki/Fibonacci_number>`_
@@ -108,10 +108,10 @@ The :mod:`functools` module defines the following functions:
                 return n
             return fib(n-1) + fib(n-2)
 
-        >>> print([fib(n) for n in range(16)])
+        >>> [fib(n) for n in range(16)]
         [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610]
 
-        >>> print(fib.cache_info())
+        >>> fib.cache_info()
         CacheInfo(hits=28, misses=16, maxsize=None, currsize=16)
 
    .. versionadded:: 3.2
