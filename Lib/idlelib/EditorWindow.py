@@ -1425,6 +1425,7 @@ class EditorWindow(object):
     def tabify_region_event(self, event):
         head, tail, chars, lines = self.get_region()
         tabwidth = self._asktabwidth()
+        if tabwidth is None: return
         for pos in range(len(lines)):
             line = lines[pos]
             if line:
@@ -1436,6 +1437,7 @@ class EditorWindow(object):
     def untabify_region_event(self, event):
         head, tail, chars, lines = self.get_region()
         tabwidth = self._asktabwidth()
+        if tabwidth is None: return
         for pos in range(len(lines)):
             lines[pos] = lines[pos].expandtabs(tabwidth)
         self.set_region(head, tail, chars, lines)
@@ -1529,7 +1531,7 @@ class EditorWindow(object):
             parent=self.text,
             initialvalue=self.indentwidth,
             minvalue=2,
-            maxvalue=16) or self.tabwidth
+            maxvalue=16)
 
     # Guess indentwidth from text content.
     # Return guessed indentwidth.  This should not be believed unless

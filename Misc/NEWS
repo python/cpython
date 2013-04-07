@@ -21,6 +21,8 @@ Library
 IDLE
 ----
 
+- Issue #16887: IDLE now accepts Cancel in tabify/untabify dialog box.
+
 - Issue #14254: IDLE now handles readline correctly across shell restarts.
 
 - Issue #17614: IDLE no longer raises exception when quickly closing a file.
