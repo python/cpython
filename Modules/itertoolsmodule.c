@@ -54,14 +54,12 @@ static void
 groupby_dealloc(groupbyobject *gbo)
 {
     PyObject_GC_UnTrack(gbo);
-    Py_TRASHCAN_SAFE_BEGIN(gbo)
     Py_XDECREF(gbo->it);
     Py_XDECREF(gbo->keyfunc);
     Py_XDECREF(gbo->tgtkey);
     Py_XDECREF(gbo->currkey);
     Py_XDECREF(gbo->currvalue);
     Py_TYPE(gbo)->tp_free(gbo);
-    Py_TRASHCAN_SAFE_END(gbo)
 }
 
 static int
@@ -913,11 +911,9 @@ static void
 cycle_dealloc(cycleobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->saved);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -1092,11 +1088,9 @@ static void
 dropwhile_dealloc(dropwhileobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -1117,10 +1111,7 @@ dropwhile_next(dropwhileobject *lz)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
-        if (Py_EnterRecursiveCall(" while iterating"))
-            return NULL;
         item = iternext(it);
-        Py_LeaveRecursiveCall();
         if (item == NULL)
             return NULL;
         if (lz->start == 1)
@@ -1266,11 +1257,9 @@ static void
 takewhile_dealloc(takewhileobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -1291,10 +1280,7 @@ takewhile_next(takewhileobject *lz)
     if (lz->stop == 1)
         return NULL;
 
-    if (Py_EnterRecursiveCall(" while iterating"))
-        return NULL;
     item = (*Py_TYPE(it)->tp_iternext)(it);
-    Py_LeaveRecursiveCall();
     if (item == NULL)
         return NULL;
 
@@ -1486,10 +1472,8 @@ static void
 islice_dealloc(isliceobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -1510,10 +1494,7 @@ islice_next(isliceobject *lz)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while (lz->cnt < lz->next) {
-        if (Py_EnterRecursiveCall(" while iterating"))
-            return NULL;
         item = iternext(it);
-        Py_LeaveRecursiveCall();
         if (item == NULL)
             return NULL;
         Py_DECREF(item);
@@ -1521,10 +1502,7 @@ islice_next(isliceobject *lz)
     }
     if (stop != -1 && lz->cnt >= stop)
         return NULL;
-    if (Py_EnterRecursiveCall(" while iterating"))
-        return NULL;
     item = iternext(it);
-    Py_LeaveRecursiveCall();
     if (item == NULL)
         return NULL;
     lz->cnt++;
@@ -1675,11 +1653,9 @@ static void
 starmap_dealloc(starmapobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -1697,10 +1673,7 @@ starmap_next(starmapobject *lz)
     PyObject *result;
     PyObject *it = lz->it;
 
-    if (Py_EnterRecursiveCall(" while iterating"))
-        return NULL;
     args = (*Py_TYPE(it)->tp_iternext)(it);
-    Py_LeaveRecursiveCall();
     if (args == NULL)
         return NULL;
     if (!PyTuple_CheckExact(args)) {
@@ -1836,11 +1809,9 @@ static void
 chain_dealloc(chainobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->active);
     Py_XDECREF(lz->source);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -3369,12 +3340,10 @@ static void
 accumulate_dealloc(accumulateobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->binop);
     Py_XDECREF(lz->total);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -3545,11 +3514,9 @@ static void
 compress_dealloc(compressobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->data);
     Py_XDECREF(lz->selectors);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -3576,16 +3543,11 @@ compress_next(compressobject *lz)
            exception first).
         */
 
-        if (Py_EnterRecursiveCall(" while iterating"))
-            return NULL;
         datum = datanext(data);
-        if (datum == NULL) {
-            Py_LeaveRecursiveCall();
+        if (datum == NULL)
             return NULL;
-        }
 
         selector = selectornext(selectors);
-        Py_LeaveRecursiveCall();
         if (selector == NULL) {
             Py_DECREF(datum);
             return NULL;
@@ -3712,11 +3674,9 @@ static void
 filterfalse_dealloc(filterfalseobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->func);
     Py_XDECREF(lz->it);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
@@ -3737,10 +3697,7 @@ filterfalse_next(filterfalseobject *lz)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     for (;;) {
-        if (Py_EnterRecursiveCall(" while iterating"))
-            return NULL;
         item = iternext(it);
-        Py_LeaveRecursiveCall();
         if (item == NULL)
             return NULL;
 
@@ -4304,12 +4261,10 @@ static void
 zip_longest_dealloc(ziplongestobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_TRASHCAN_SAFE_BEGIN(lz)
     Py_XDECREF(lz->ittuple);
     Py_XDECREF(lz->result);
     Py_XDECREF(lz->fillvalue);
     Py_TYPE(lz)->tp_free(lz);
-    Py_TRASHCAN_SAFE_END(lz)
 }
 
 static int
