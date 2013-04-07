@@ -142,6 +142,8 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
     mask = 0;
 
     if (mode != FAST_RSEARCH) {
+        const STRINGLIB_CHAR *ss = s + m - 1;
+        const STRINGLIB_CHAR *pp = p + m - 1;
 
         /* create compressed boyer-moore delta 1 table */
 
@@ -156,7 +158,7 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
 
         for (i = 0; i <= w; i++) {
             /* note: using mlast in the skip path slows things down on x86 */
-            if (s[i+m-1] == p[m-1]) {
+            if (ss[i] == pp[0]) {
                 /* candidate match */
                 for (j = 0; j < mlast; j++)
                     if (s[i+j] != p[j])
@@ -172,13 +174,13 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                     continue;
                 }
                 /* miss: check if next character is part of pattern */
-                if (!STRINGLIB_BLOOM(mask, s[i+m]))
+                if (!STRINGLIB_BLOOM(mask, ss[i+1]))
                     i = i + m;
                 else
                     i = i + skip;
             } else {
                 /* skip: check if next character is part of pattern */
-                if (!STRINGLIB_BLOOM(mask, s[i+m]))
+                if (!STRINGLIB_BLOOM(mask, ss[i+1]))
                     i = i + m;
             }
         }
