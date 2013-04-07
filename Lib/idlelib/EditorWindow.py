@@ -480,7 +480,12 @@ class EditorWindow(object):
         if iswin:
             self.text.config(cursor="arrow")
 
-        for label, eventname, verify_state in self.rmenu_specs:
+        for item in self.rmenu_specs:
+            try:
+                label, eventname, verify_state = item
+            except ValueError: # see issue1207589
+                continue
+
             if verify_state is None:
                 continue
             state = getattr(self, verify_state)()
@@ -497,7 +502,8 @@ class EditorWindow(object):
 
     def make_rmenu(self):
         rmenu = Menu(self.text, tearoff=0)
-        for label, eventname, _ in self.rmenu_specs:
+        for item in self.rmenu_specs:
+            label, eventname = item[0], item[1]
             if label is not None:
                 def command(text=self.text, eventname=eventname):
                     text.event_generate(eventname)
