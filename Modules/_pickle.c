@@ -1881,7 +1881,7 @@ write_utf8(PicklerObject *self, char *data, Py_ssize_t size)
     if (size > 0xffffffffUL) {
         /* string too large */
         PyErr_SetString(PyExc_OverflowError,
-                        "cannot serialize a string larger than 4GB");
+                        "cannot serialize a string larger than 4GiB");
         return -1;
     }
 #endif
