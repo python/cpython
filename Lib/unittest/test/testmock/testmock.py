@@ -906,6 +906,10 @@ class MockTest(unittest.TestCase):
         self.assertRaises(StopIteration, mock)
         self.assertIs(mock.side_effect, this_iter)
 
+    def test_side_effect_iterator_default(self):
+        mock = Mock(return_value=2)
+        mock.side_effect = iter([1, DEFAULT])
+        self.assertEqual([mock(), mock()], [1, 2])
 
     def test_assert_has_calls_any_order(self):
         mock = Mock()
