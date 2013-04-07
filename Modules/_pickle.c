@@ -1873,63 +1873,97 @@ done:
 }
 
 static int
+write_utf8(PicklerObject *self, char *data, Py_ssize_t size)
+{
+    char pdata[5];
+
+#if SIZEOF_SIZE_T > 4
+    if (size > 0xffffffffUL) {
+        /* string too large */
+        PyErr_SetString(PyExc_OverflowError,
+                        "cannot serialize a string larger than 4GB");
+        return -1;
+    }
+#endif
+
+    pdata[0] = BINUNICODE;
+    pdata[1] = (unsigned char)(size & 0xff);
+    pdata[2] = (unsigned char)((size >> 8) & 0xff);
+    pdata[3] = (unsigned char)((size >> 16) & 0xff);
+    pdata[4] = (unsigned char)((size >> 24) & 0xff);
+
+    if (_Pickler_Write(self, pdata, sizeof(pdata)) < 0)
+        return -1;
+
+    if (_Pickler_Write(self, data, size) < 0)
+        return -1;
+
+    return 0;
+}
+
+static int
+write_unicode_binary(PicklerObject *self, PyObject *obj)
+{
+    PyObject *encoded = NULL;
+    Py_ssize_t size;
+    char *data;
+    int r;
+
+    if (PyUnicode_READY(obj))
+        return -1;
+
+    data = PyUnicode_AsUTF8AndSize(obj, &size);
+    if (data != NULL)
+        return write_utf8(self, data, size);
+
+    /* Issue #8383: for strings with lone surrogates, fallback on the
+       "surrogatepass" error handler. */
+    PyErr_Clear();
+    encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
+    if (encoded == NULL)
+        return -1;
+
+    r = write_utf8(self, PyBytes_AS_STRING(encoded),
+                   PyBytes_GET_SIZE(encoded));
+    Py_DECREF(encoded);
+    return r;
+}
+
+static int
 save_unicode(PicklerObject *self, PyObject *obj)
 {
-    Py_ssize_t size;
-    PyObject *encoded = NULL;
-
     if (self->bin) {
-        char pdata[5];
-
-        encoded = PyUnicode_AsEncodedString(obj, "utf-8", "surrogatepass");
-        if (encoded == NULL)
-            goto error;
-
-        size = PyBytes_GET_SIZE(encoded);
-        if (size > 0xffffffffL) {
-            PyErr_SetString(PyExc_OverflowError,
-                            "cannot serialize a string larger than 4 GiB");
-            goto error;          /* string too large */
-        }
-
-        pdata[0] = BINUNICODE;
-        pdata[1] = (unsigned char)(size & 0xff);
-        pdata[2] = (unsigned char)((size >> 8) & 0xff);
-        pdata[3] = (unsigned char)((size >> 16) & 0xff);
-        pdata[4] = (unsigned char)((size >> 24) & 0xff);
-
-        if (_Pickler_Write(self, pdata, 5) < 0)
-            goto error;
-
-        if (_Pickler_Write(self, PyBytes_AS_STRING(encoded), size) < 0)
-            goto error;
+        if (write_unicode_binary(self, obj) < 0)
+            return -1;
     }
     else {
+        PyObject *encoded;
+        Py_ssize_t size;
         const char unicode_op = UNICODE;
 
         encoded = raw_unicode_escape(obj);
         if (encoded == NULL)
-            goto error;
+            return -1;
 
-        if (_Pickler_Write(self, &unicode_op, 1) < 0)
-            goto error;
+        if (_Pickler_Write(self, &unicode_op, 1) < 0) {
+            Py_DECREF(encoded);
+            return -1;
+        }
 
         size = PyBytes_GET_SIZE(encoded);
-        if (_Pickler_Write(self, PyBytes_AS_STRING(encoded), size) < 0)
-            goto error;
+        if (_Pickler_Write(self, PyBytes_AS_STRING(encoded), size) < 0) {
+            Py_DECREF(encoded);
+            return -1;
+        }
+        Py_DECREF(encoded);
 
         if (_Pickler_Write(self, "\n", 1) < 0)
-            goto error;
+            return -1;
     }
     if (memo_put(self, obj) < 0)
-        goto error;
+        return -1;
 
-    Py_DECREF(encoded);
     return 0;
-
-  error:
-    Py_XDECREF(encoded);
-    return -1;
 }
 
 /* A helper for save_tuple.  Push the len elements in tuple t on the stack. */
