@@ -50,6 +50,10 @@ class ColorDelegator(Delegator):
             self.config_colors()
             self.bind("<<toggle-auto-coloring>>", self.toggle_colorize_event)
             self.notify_range("1.0", "end")
+        else:
+            # No delegate - stop any colorizing
+            self.stop_colorizing = True
+            self.allow_colorizing = False
 
     def config_colors(self):
         for tag, cnf in self.tagdefs.items():
