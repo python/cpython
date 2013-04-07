@@ -904,6 +904,8 @@ class CallableMixin(Base):
                 result = next(effect)
                 if _is_exception(result):
                     raise result
+                if result is DEFAULT:
+                    result = self.return_value
                 return result
 
             ret_val = effect(*args, **kwargs)
