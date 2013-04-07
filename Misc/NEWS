@@ -33,6 +33,8 @@ Library
 IDLE
 ----
 
+- Issue #16887: IDLE now accepts Cancel in tabify/untabify dialog box.
+
 - Issue #17625: In IDLE, close the replace dialog after it is used.
 
 - Issue #14254: IDLE now handles readline correctly across shell restarts.
