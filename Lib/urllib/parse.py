@@ -846,7 +846,6 @@ def splittype(url):
     """splittype('type:opaquestring') --> 'type', 'opaquestring'."""
     global _typeprog
     if _typeprog is None:
-        import re
         _typeprog = re.compile('^([^/:]+):')
 
     match = _typeprog.match(url)
@@ -860,7 +859,6 @@ def splithost(url):
     """splithost('//host[:port]/path') --> 'host[:port]', '/path'."""
     global _hostprog
     if _hostprog is None:
-        import re
         _hostprog = re.compile('^//([^/?]*)(.*)$')
 
     match = _hostprog.match(url)
@@ -877,7 +875,6 @@ def splituser(host):
     """splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'."""
     global _userprog
     if _userprog is None:
-        import re
         _userprog = re.compile('^(.*)@(.*)$')
 
     match = _userprog.match(host)
@@ -889,7 +886,6 @@ def splitpasswd(user):
     """splitpasswd('user:passwd') -> 'user', 'passwd'."""
     global _passwdprog
     if _passwdprog is None:
-        import re
         _passwdprog = re.compile('^([^:]*):(.*)$',re.S)
 
     match = _passwdprog.match(user)
@@ -902,7 +898,6 @@ def splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        import re
         _portprog = re.compile('^(.*):([0-9]+)$')
 
     match = _portprog.match(host)
@@ -917,7 +912,6 @@ def splitnport(host, defport=-1):
     Return None if ':' but not a valid number."""
     global _nportprog
     if _nportprog is None:
-        import re
         _nportprog = re.compile('^(.*):(.*)$')
 
     match = _nportprog.match(host)
@@ -936,7 +930,6 @@ def splitquery(url):
     """splitquery('/path?query') --> '/path', 'query'."""
     global _queryprog
     if _queryprog is None:
-        import re
         _queryprog = re.compile('^(.*)\?([^?]*)$')
 
     match = _queryprog.match(url)
@@ -948,7 +941,6 @@ def splittag(url):
     """splittag('/path#tag') --> '/path', 'tag'."""
     global _tagprog
     if _tagprog is None:
-        import re
         _tagprog = re.compile('^(.*)#([^#]*)$')
 
     match = _tagprog.match(url)
@@ -966,7 +958,6 @@ def splitvalue(attr):
     """splitvalue('attr=value') --> 'attr', 'value'."""
     global _valueprog
     if _valueprog is None:
-        import re
         _valueprog = re.compile('^([^=]*)=(.*)$')
 
     match = _valueprog.match(attr)
