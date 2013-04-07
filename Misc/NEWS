@@ -33,6 +33,8 @@ Library
 IDLE
 ----
 
+- Issue #17613: Prevent traceback when removing syntax colorizer in IDLE.
+
 - Issue #1207589: Backwards-compatibility patch for right-click menu in IDLE.
 
 - Issue #16887: IDLE now accepts Cancel in tabify/untabify dialog box.
