@@ -1015,6 +1015,8 @@ _ Issue #17385: Fix quadratic behavior in threading.Condition.  The FIFO
 IDLE
 ----
 
+- Issue #1207589: Backwards-compatibility patch for right-click menu in IDLE.
+
 - Issue #16887: IDLE now accepts Cancel in tabify/untabify dialog box.
 
 - Issue #14254: IDLE now handles readline correctly across shell restarts.
