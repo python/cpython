@@ -14,6 +14,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17666: Fix reading gzip files with an extra field.
+
 - Issue #13150, #17512: sysconfig no longer parses the Makefile and config.h
   files when imported, instead doing it at build time.  This makes importing
   sysconfig faster and reduces Python startup time by 20%.
