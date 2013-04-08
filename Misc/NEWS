@@ -2,6 +2,21 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2.5?
+===========================
+
+*Release date: 13-May-2013*
+
+Library
+-------
+
+- Issue #17192: Restore the patch for Issue #11729 and Issue #10309
+  which were omitted in 3.2.4 when updating the bundled version of
+  libffi used by ctypes.
+
+- Issue #17666: Fix reading gzip files with an extra field.
+
+
 What's New in Python 3.2.4?
 ===========================
 
@@ -9,10 +24,6 @@ What's New in Python 3.2.4?
 
 Library
 -------
-
-- Issue #17192: Restore the patch for Issue #11729 and Issue #10309
-  which were ommitted in 3.2.4 when updating the bundled version of
-  libffi used by ctypes.
 
 - Issue #17625: In IDLE, close the replace dialog after it is used.
 

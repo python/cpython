@@ -280,7 +280,8 @@ class GzipFile(io.BufferedIOBase):
 
         if flag & FEXTRA:
             # Read & discard the extra field, if present
-            self._read_exact(struct.unpack("<H", self._read_exact(2)))
+            extra_len, = struct.unpack("<H", self._read_exact(2))
+            self._read_exact(extra_len)
         if flag & FNAME:
             # Read and discard a null-terminated string containing the filename
             while True:
