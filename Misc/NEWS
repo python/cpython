@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17666: Fix reading gzip files with an extra field.
+
 - Issue #17502: Process DEFAULT values in mock side_effect that returns iterator.
   Patch by Michael Foord.
 
