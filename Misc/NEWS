@@ -14,6 +14,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13150, #17512: sysconfig no longer parses the Makefile and config.h
+  files when imported, instead doing it at build time.  This makes importing
+  sysconfig faster and reduces Python startup time by 20%.
+
 - Issue #13163: Rename operands in smtplib.SMTP._get_socket to correct names;
   fixes otherwise misleading output in tracebacks and when when debug is on.
 

@@ -11,6 +11,7 @@ python
 build
 Makefile.pre
 platform
+pybuilddir.txt
 pyconfig.h
 libpython*.a
 libpython*.so*

@@ -35,6 +35,7 @@ Parser/pgen$
 Parser/pgen.stamp$
 ^core
 ^python-gdb.py
+^pybuilddir.txt
 
 syntax: glob
 python.exe-gdb.py
