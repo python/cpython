@@ -10241,10 +10241,24 @@ unicode_center(PyObject *self, PyObject *args)
 static int
 unicode_compare(PyObject *str1, PyObject *str2)
 {
+#define COMPARE(TYPE1, TYPE2) \
+    do { \
+        TYPE1* p1 = (TYPE1 *)data1; \
+        TYPE2* p2 = (TYPE2 *)data2; \
+        TYPE1* end = p1 + len; \
+        Py_UCS4 c1, c2; \
+        for (; p1 != end; p1++, p2++) { \
+            c1 = *p1; \
+            c2 = *p2; \
+            if (c1 != c2) \
+                return (c1 < c2) ? -1 : 1; \
+        } \
+    } \
+    while (0)
+
     int kind1, kind2;
     void *data1, *data2;
-    Py_ssize_t len1, len2;
-    Py_ssize_t i, len;
+    Py_ssize_t len1, len2, len;
 
     /* a string is equal to itself */
     if (str1 == str2)
@@ -10258,23 +10272,67 @@ unicode_compare(PyObject *str1, PyObject *str2)
     len2 = PyUnicode_GET_LENGTH(str2);
     len = Py_MIN(len1, len2);
 
-    if (kind1 == 1 && kind2 == 1) {
-        int cmp = memcmp(data1, data2, len);
-        /* normalize result of memcmp() into the range [-1; 1] */
-        if (cmp < 0)
-            return -1;
-        if (cmp > 0)
-            return 1;
-    }
-    else {
-        for (i = 0; i < len; ++i) {
-            Py_UCS4 c1, c2;
-            c1 = PyUnicode_READ(kind1, data1, i);
-            c2 = PyUnicode_READ(kind2, data2, i);
-
-            if (c1 != c2)
-                return (c1 < c2) ? -1 : 1;
+    switch(kind1) {
+    case PyUnicode_1BYTE_KIND:
+    {
+        switch(kind2) {
+        case PyUnicode_1BYTE_KIND:
+        {
+            int cmp = memcmp(data1, data2, len);
+            /* normalize result of memcmp() into the range [-1; 1] */
+            if (cmp < 0)
+                return -1;
+            if (cmp > 0)
+                return 1;
+            break;
         }
+        case PyUnicode_2BYTE_KIND:
+            COMPARE(Py_UCS1, Py_UCS2);
+            break;
+        case PyUnicode_4BYTE_KIND:
+            COMPARE(Py_UCS1, Py_UCS4);
+            break;
+        default:
+            assert(0);
+        }
+        break;
+    }
+    case PyUnicode_2BYTE_KIND:
+    {
+        switch(kind2) {
+        case PyUnicode_1BYTE_KIND:
+            COMPARE(Py_UCS2, Py_UCS1);
+            break;
+        case PyUnicode_2BYTE_KIND:
+            COMPARE(Py_UCS2, Py_UCS2);
+            break;
+        case PyUnicode_4BYTE_KIND:
+            COMPARE(Py_UCS2, Py_UCS4);
+            break;
+        default:
+            assert(0);
+        }
+        break;
+    }
+    case PyUnicode_4BYTE_KIND:
+    {
+        switch(kind2) {
+        case PyUnicode_1BYTE_KIND:
+            COMPARE(Py_UCS4, Py_UCS1);
+            break;
+        case PyUnicode_2BYTE_KIND:
+            COMPARE(Py_UCS4, Py_UCS2);
+            break;
+        case PyUnicode_4BYTE_KIND:
+            COMPARE(Py_UCS4, Py_UCS4);
+            break;
+        default:
+            assert(0);
+        }
+        break;
+    }
+    default:
+        assert(0);
     }
 
     if (len1 == len2)
@@ -10283,6 +10341,8 @@ unicode_compare(PyObject *str1, PyObject *str2)
         return -1;
     else
         return 1;
+
+#undef COMPARE
 }
 
 static int
