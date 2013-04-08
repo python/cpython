@@ -40,6 +40,7 @@ def unix_getpass(prompt='Password: ', stream=None):
     """
     fd = None
     tty = None
+    passwd = None
     try:
         # Always try reading and writing directly on the tty first.
         fd = os.open('/dev/tty', os.O_RDWR|os.O_NOCTTY)
