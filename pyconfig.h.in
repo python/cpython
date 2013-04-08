@@ -1118,6 +1118,9 @@
 /* Define to 1 if you have the `wcsxfrm' function. */
 #undef HAVE_WCSXFRM
 
+/* Define to 1 if you have the `wmemcmp' function. */
+#undef HAVE_WMEMCMP
+
 /* Define if tzset() actually switches the local timezone in a meaningful way.
    */
 #undef HAVE_WORKING_TZSET
@@ -1189,9 +1192,6 @@
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
-
-/* Define this to be extension of shared libraries (including the dot!). */
-#undef SHLIB_EXT
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS

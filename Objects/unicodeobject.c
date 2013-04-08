@@ -10304,8 +10304,19 @@ unicode_compare(PyObject *str1, PyObject *str2)
             COMPARE(Py_UCS2, Py_UCS1);
             break;
         case PyUnicode_2BYTE_KIND:
+        {
+#if defined(HAVE_WMEMCMP) && SIZEOF_WCHAR_T == 2
+            int cmp = wmemcmp((wchar_t *)data1, (wchar_t *)data2, len);
+            /* normalize result of wmemcmp() into the range [-1; 1] */
+            if (cmp < 0)
+                return -1;
+            if (cmp > 0)
+                return 1;
+#else
             COMPARE(Py_UCS2, Py_UCS2);
+#endif
             break;
+        }
         case PyUnicode_4BYTE_KIND:
             COMPARE(Py_UCS2, Py_UCS4);
             break;
@@ -10324,8 +10335,19 @@ unicode_compare(PyObject *str1, PyObject *str2)
             COMPARE(Py_UCS4, Py_UCS2);
             break;
         case PyUnicode_4BYTE_KIND:
+        {
+#if defined(HAVE_WMEMCMP) && SIZEOF_WCHAR_T == 4
+            int cmp = wmemcmp((wchar_t *)data1, (wchar_t *)data2, len);
+            /* normalize result of wmemcmp() into the range [-1; 1] */
+            if (cmp < 0)
+                return -1;
+            if (cmp > 0)
+                return 1;
+#else
             COMPARE(Py_UCS4, Py_UCS4);
+#endif
             break;
+        }
         default:
             assert(0);
         }
