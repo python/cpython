@@ -25,8 +25,15 @@ Core and Builtins
 
 - Issue #17522: Add the PyGILState_Check() API.
 
+- Issue #17327: Add PyDict_SetDefault.
+
+Library
+-------
+
 - Issue #16475: Support object instancing, recursion and interned strings
   in marshal
+
+- Issue #17502: Process DEFAULT values in mock side_effect that returns iterator.
 
 - Use the HTTPS PyPI url for upload, overriding any plain HTTP URL in pypirc.
 
@@ -40,19 +47,23 @@ Core and Builtins
 - Issue #17117: Import and @importlib.util.set_loader now set __loader__ when
   it has a value of None or the attribute doesn't exist.
 
-- Issue #17327: Add PyDict_SetDefault.
-
 - Issue #17032: The "global" in the "NameError: global name 'x' is not defined"
   error message has been removed.  Patch by Ram Rachum.
+
+
+What's New in Python 3.3.1 release candidate 1?
+===============================================
+
+*Release date: 24-Mar-2013*
+
+Core and Builtins
+-----------------
 
 - Issue #17328: Fix possible refleak in dict.setdefault.
 
 - Issue #17223: array module: Fix a crasher when converting an array containing
   invalid characters (outside range [U+0000; U+10ffff]) to Unicode:
   repr(array), str(array) and array.tounicode(). Patch written by Manuel Jacob.
-
-- Issue #17223: Fix PyUnicode_FromUnicode() for string of 1 character outside
-  the range U+0000-U+10ffff.
 
 - Issue #17275: Corrected class name in init error messages of the C version of
   BufferedWriter and BufferedRandom.
