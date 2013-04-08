@@ -30,6 +30,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17666: Fix reading gzip files with an extra field.
+
 - Issue #16475: Support object instancing, recursion and interned strings
   in marshal
 
