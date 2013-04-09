@@ -587,10 +587,6 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #undef BLOOM_UPDATE
 }
 
-#define BLOOM_MEMBER(mask, chr, str) \
-    (BLOOM(mask, chr) \
-     && (PyUnicode_FindChar(str, chr, 0, PyUnicode_GET_LENGTH(str), 1) >= 0))
-
 /* Compilation of templated routines */
 
 #include "stringlib/asciilib.h"
@@ -11635,6 +11631,7 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
     int kind;
     Py_ssize_t i, j, len;
     BLOOM_MASK sepmask;
+    Py_ssize_t seplen;
 
     if (PyUnicode_READY(self) == -1 || PyUnicode_READY(sepobj) == -1)
         return NULL;
@@ -11642,24 +11639,35 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
     len = PyUnicode_GET_LENGTH(self);
+    seplen = PyUnicode_GET_LENGTH(sepobj);
     sepmask = make_bloom_mask(PyUnicode_KIND(sepobj),
                               PyUnicode_DATA(sepobj),
-                              PyUnicode_GET_LENGTH(sepobj));
+                              seplen);
 
     i = 0;
     if (striptype != RIGHTSTRIP) {
-        while (i < len &&
-               BLOOM_MEMBER(sepmask, PyUnicode_READ(kind, data, i), sepobj)) {
+        while (i < len) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            if (!BLOOM(sepmask, ch))
+                break;
+            if (PyUnicode_FindChar(sepobj, ch, 0, seplen, 1) < 0)
+                break;
             i++;
         }
     }
 
     j = len;
     if (striptype != LEFTSTRIP) {
-        do {
+        j--;
+        while (j >= i) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, j);
+            if (!BLOOM(sepmask, ch))
+                break;
+            if (PyUnicode_FindChar(sepobj, ch, 0, seplen, 1) < 0)
+                break;
             j--;
-        } while (j >= i &&
-                 BLOOM_MEMBER(sepmask, PyUnicode_READ(kind, data, j), sepobj));
+        }
+
         j++;
     }
 
