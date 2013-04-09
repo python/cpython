@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14439: Python now prints the traceback on runpy failure at startup.
+
 - Issue #17469: Fix _Py_GetAllocatedBlocks() and sys.getallocatedblocks()
   when running on valgrind.
 
@@ -1053,7 +1055,7 @@ IDLE
 
 - Issue #6698: IDLE now opens just an editor window when configured to do so.
 
-- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer 
+- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer
   raises an exception.
 
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
@@ -1092,7 +1094,7 @@ IDLE
 
 - Issue #6698: IDLE now opens just an editor window when configured to do so.
 
-- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer 
+- Issue #8900: Using keyboard shortcuts in IDLE to open a file no longer
   raises an exception.
 
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
