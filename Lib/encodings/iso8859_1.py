@@ -301,7 +301,6 @@ decoding_table = (
     '\xfd'     #  0xFD -> LATIN SMALL LETTER Y WITH ACUTE
     '\xfe'     #  0xFE -> LATIN SMALL LETTER THORN (Icelandic)
     '\xff'     #  0xFF -> LATIN SMALL LETTER Y WITH DIAERESIS
-    '\ufffe'   ## Widen to UCS2 for optimization
 )
 
 ### Encoding table
