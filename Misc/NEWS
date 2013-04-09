@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17678: Fix DeprecationWarning in the http/cookiejar.py by changing the
+  usage of get_origin_req_host() to origin_req_host.
+
 - Issue #17666: Fix reading gzip files with an extra field.
 
 - Issue #17502: Process DEFAULT values in mock side_effect that returns iterator.
