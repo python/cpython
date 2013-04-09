@@ -704,7 +704,7 @@ def is_third_party(request):
 
     """
     req_host = request_host(request)
-    if not domain_match(req_host, reach(request.get_origin_req_host())):
+    if not domain_match(req_host, reach(request.origin_req_host)):
         return True
     else:
         return False
