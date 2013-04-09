@@ -11727,16 +11727,23 @@ do_strip(PyObject *self, int striptype)
 
     i = 0;
     if (striptype != RIGHTSTRIP) {
-        while (i < len && Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, i))) {
+        while (i < len) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            if (!Py_UNICODE_ISSPACE(ch))
+                break;
             i++;
         }
     }
 
     j = len;
     if (striptype != LEFTSTRIP) {
-        do {
+        j--;
+        while (j >= i) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, j);
+            if (!Py_UNICODE_ISSPACE(ch))
+                break;
             j--;
-        } while (j >= i && Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, j)));
+        }
         j++;
     }
 
