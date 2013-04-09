@@ -7281,6 +7281,7 @@ PyUnicode_DecodeCharmap(const char *s,
         enum PyUnicode_Kind mapkind;
         void *mapdata;
         Py_UCS4 x;
+        unsigned char ch;
 
         if (PyUnicode_READY(mapping) == -1)
             return NULL;
@@ -7288,8 +7289,32 @@ PyUnicode_DecodeCharmap(const char *s,
         maplen = PyUnicode_GET_LENGTH(mapping);
         mapdata = PyUnicode_DATA(mapping);
         mapkind = PyUnicode_KIND(mapping);
+
+        if (mapkind == PyUnicode_1BYTE_KIND && maplen >= 256) {
+            /* fast-path for cp037, cp500 and iso8859_1 encodings. iso8859_1
+             * is disabled in encoding aliases, latin1 is preferred because
+             * its implementation is faster. */
+            Py_UCS1 *mapdata_ucs1 = (Py_UCS1 *)mapdata;
+            Py_UCS1 *outdata = (Py_UCS1 *)writer.data;
+            Py_UCS4 maxchar = writer.maxchar;
+
+            assert (writer.kind == PyUnicode_1BYTE_KIND);
+            while (s < e) {
+                ch = *s;
+                x = mapdata_ucs1[ch];
+                if (x > maxchar) {
+                    if (_PyUnicodeWriter_PrepareInternal(&writer, 1, 0xff) == -1)
+                        goto onError;
+                    maxchar = writer.maxchar;
+                    outdata = (Py_UCS1 *)writer.data;
+                }
+                outdata[writer.pos] = x;
+                writer.pos++;
+                ++s;
+            }
+        }
+
         while (s < e) {
-            unsigned char ch;
             if (mapkind == PyUnicode_2BYTE_KIND && maplen >= 256) {
                 enum PyUnicode_Kind outkind = writer.kind;
                 void *outdata = writer.data;
