@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17678: Remove the use of deprecated method in http/cookiejar.py.
+  Changing the usage of get_origin_req_host() to origin_req_host.
+
 - Issue #17666: Fix reading gzip files with an extra field.
 
 - Issue #16475: Support object instancing, recursion and interned strings
