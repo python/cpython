@@ -153,6 +153,10 @@ ABC hierarchy::
       module.  Originally specified in :pep:`302`, this method was meant
       for use in :data:`sys.meta_path` and in the path-based import subsystem.
 
+      .. versionchanged:: 3.4
+         Returns ``None`` when called instead of raising
+         :exc:`NotImplementedError`.
+
 
 .. class:: MetaPathFinder
 
@@ -169,11 +173,18 @@ ABC hierarchy::
       will be the value of :attr:`__path__` from the parent
       package. If a loader cannot be found, ``None`` is returned.
 
+      .. versionchanged:: 3.4
+         Returns ``None`` when called instead of raising
+         :exc:`NotImplementedError`.
+
    .. method:: invalidate_caches()
 
       An optional method which, when called, should invalidate any internal
       cache used by the finder. Used by :func:`importlib.invalidate_caches`
       when invalidating the caches of all finders on :data:`sys.meta_path`.
+
+      .. versionchanged:: 3.4
+         Returns ``None`` when called instead of ``NotImplemented``.
 
 
 .. class:: PathEntryFinder
@@ -182,7 +193,7 @@ ABC hierarchy::
    it bears some similarities to :class:`MetaPathFinder`, ``PathEntryFinder``
    is meant for use only within the path-based import subsystem provided
    by :class:`PathFinder`. This ABC is a subclass of :class:`Finder` for
-   compatibility.
+   compatibility reasons only.
 
    .. versionadded:: 3.3
 
@@ -194,9 +205,12 @@ ABC hierarchy::
       package. The loader may be ``None`` while specifying ``portion`` to
       signify the contribution of the file system locations to a namespace
       package. An empty list can be used for ``portion`` to signify the loader
-      is not part of a package. If ``loader`` is ``None`` and ``portion`` is
-      the empty list then no loader or location for a namespace package were
-      found (i.e. failure to find anything for the module).
+      is not part of a namespace package. If ``loader`` is ``None`` and
+      ``portion`` is the empty list then no loader or location for a namespace
+      package were found (i.e. failure to find anything for the module).
+
+      .. versionchanged:: 3.4
+         Returns ``(None, [])`` instead of raising :exc:`NotImplementedError`.
 
    .. method:: find_module(fullname):
 
@@ -249,20 +263,28 @@ ABC hierarchy::
         - :attr:`__package__`
             The parent package for the module/package. If the module is
             top-level then it has a value of the empty string. The
-            :func:`importlib.util.set_package` decorator can handle the details
-            for :attr:`__package__`.
+            :func:`importlib.util.module_for_loader` decorator can handle the
+            details for :attr:`__package__`.
 
         - :attr:`__loader__`
-            The loader used to load the module.
-            (This is not set by the built-in import machinery,
-            but it should be set whenever a :term:`loader` is used.)
+            The loader used to load the module. The
+            :func:`importlib.util.module_for_loader` decorator can handle the
+            details for :attr:`__package__`.
+
+        .. versionchanged:: 3.4
+           Raise :exc:`ImportError` when called instead of
+           :exc:`NotImplementedError`.
 
     .. method:: module_repr(module)
 
-        An abstract method which when implemented calculates and returns the
-        given module's repr, as a string.
+        An optional method which when implemented calculates and returns the
+        given module's repr, as a string. The module type's default repr() will
+        use the result of this method as appropriate.
 
         .. versionadded: 3.3
+
+        .. versionchanged:: 3.4
+        Made optional instead of an abstractmethod.
 
 
 .. class:: ResourceLoader
@@ -281,6 +303,9 @@ ABC hierarchy::
         be found. The *path* is expected to be constructed using a module's
         :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
 
+        .. versionchanged:: 3.4
+           Raises :exc:`IOError` instead of :exc:`NotImplementedError`.
+
 
 .. class:: InspectLoader
 
@@ -297,6 +322,9 @@ ABC hierarchy::
         .. index::
            single: universal newlines; importlib.abc.InspectLoader.get_source method
 
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+
     .. method:: get_source(fullname)
 
         An abstract method to return the source of a module. It is returned as
@@ -305,11 +333,17 @@ ABC hierarchy::
         if no source is available (e.g. a built-in module). Raises
         :exc:`ImportError` if the loader cannot find the module specified.
 
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+
     .. method:: is_package(fullname)
 
         An abstract method to return a true value if the module is a package, a
         false value otherwise. :exc:`ImportError` is raised if the
         :term:`loader` cannot find the module.
+
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
 
 
 .. class:: ExecutionLoader
@@ -327,6 +361,9 @@ ABC hierarchy::
         If source code is available, then the method should return the path to
         the source file, regardless of whether a bytecode was used to load the
         module.
+
+        .. versionchanged:: 3.4
+           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
 
 
 .. class:: FileLoader(fullname, path)
@@ -392,9 +429,12 @@ ABC hierarchy::
         - ``'size'`` (optional): the size in bytes of the source code.
 
         Any other keys in the dictionary are ignored, to allow for future
-        extensions.
+        extensions. If the path cannot be handled, :exc:`IOError` is raised.
 
         .. versionadded:: 3.3
+
+        .. versionchanged:: 3.4
+           Raise :exc:`IOError` instead of :exc:`NotImplementedError`.
 
     .. method:: path_mtime(path)
 
@@ -404,7 +444,10 @@ ABC hierarchy::
         .. deprecated:: 3.3
            This method is deprecated in favour of :meth:`path_stats`.  You don't
            have to implement it, but it is still available for compatibility
-           purposes.
+           purposes. Raise :exc:`IOError` if the path cannot be handled.
+
+          .. versionchanged:: 3.4
+             Raise :exc:`IOError` instead of :exc:`NotImplementedError`.
 
     .. method:: set_data(path, data)
 
@@ -414,6 +457,9 @@ ABC hierarchy::
 
         When writing to the path fails because the path is read-only
         (:attr:`errno.EACCES`), do not propagate the exception.
+
+        .. versionchanged:: 3.4
+           No longer raises :exc:`NotImplementedError` when called.
 
     .. method:: source_to_code(data, path)
 

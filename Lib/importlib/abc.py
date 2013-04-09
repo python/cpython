@@ -37,9 +37,8 @@ class Finder(metaclass=abc.ABCMeta):
     def find_module(self, fullname, path=None):
         """An abstract method that should find a module.
         The fullname is a str and the optional path is a str or None.
-        Returns a Loader object.
+        Returns a Loader object or None.
         """
-        raise NotImplementedError
 
 
 class MetaPathFinder(Finder):
@@ -49,16 +48,14 @@ class MetaPathFinder(Finder):
     @abc.abstractmethod
     def find_module(self, fullname, path):
         """Abstract method which, when implemented, should find a module.
-        The fullname is a str and the path is a str or None.
-        Returns a Loader object.
+        The fullname is a str and the path is a list of strings or None.
+        Returns a Loader object or None.
         """
-        raise NotImplementedError
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
         This method is used by importlib.invalidate_caches().
         """
-        return NotImplemented
 
 _register(MetaPathFinder, machinery.BuiltinImporter, machinery.FrozenImporter,
           machinery.PathFinder, machinery.WindowsRegistryFinder)
@@ -70,13 +67,14 @@ class PathEntryFinder(Finder):
 
     @abc.abstractmethod
     def find_loader(self, fullname):
-        """Abstract method which, when implemented, returns a module loader.
+        """Abstract method which, when implemented, returns a module loader or
+        a possible part of a namespace.
         The fullname is a str.  Returns a 2-tuple of (Loader, portion) where
         portion is a sequence of file system locations contributing to part of
         a namespace package.  The sequence may be empty and the loader may be
         None.
         """
-        raise NotImplementedError
+        return None, []
 
     find_module = _bootstrap._find_module_shim
 
@@ -84,25 +82,34 @@ class PathEntryFinder(Finder):
         """An optional method for clearing the finder's cache, if any.
         This method is used by PathFinder.invalidate_caches().
         """
-        return NotImplemented
 
 _register(PathEntryFinder, machinery.FileFinder)
 
 
 class Loader(metaclass=abc.ABCMeta):
 
-    """Abstract base class for import loaders."""
+    """Abstract base class for import loaders.
+
+    The optional method module_repr(module) may be defined to provide a
+    repr for a module when appropriate (see PEP 420). The __repr__() method on
+    the module type will use the method as appropriate.
+
+    """
 
     @abc.abstractmethod
     def load_module(self, fullname):
         """Abstract method which when implemented should load a module.
-        The fullname is a str."""
-        raise NotImplementedError
+        The fullname is a str.
 
-    @abc.abstractmethod
+        ImportError is raised on failure.
+        """
+        raise ImportError
+
     def module_repr(self, module):
-        """Abstract method which when implemented calculates and returns the
-        given module's repr."""
+        """Return a module's repr.
+
+        Used by the module type when implemented without raising an exception.
+        """
         raise NotImplementedError
 
 
@@ -119,7 +126,7 @@ class ResourceLoader(Loader):
     def get_data(self, path):
         """Abstract method which when implemented should return the bytes for
         the specified path.  The path must be a str."""
-        raise NotImplementedError
+        raise IOError
 
 
 class InspectLoader(Loader):
@@ -134,20 +141,29 @@ class InspectLoader(Loader):
     @abc.abstractmethod
     def is_package(self, fullname):
         """Abstract method which when implemented should return whether the
-        module is a package.  The fullname is a str.  Returns a bool."""
-        raise NotImplementedError
+        module is a package.  The fullname is a str.  Returns a bool.
+
+        Raises ImportError is the module cannot be found.
+        """
+        raise ImportError
 
     @abc.abstractmethod
     def get_code(self, fullname):
         """Abstract method which when implemented should return the code object
-        for the module.  The fullname is a str.  Returns a types.CodeType."""
-        raise NotImplementedError
+        for the module.  The fullname is a str.  Returns a types.CodeType.
+
+        Raises ImportError if the module cannot be found.
+        """
+        raise ImportError
 
     @abc.abstractmethod
     def get_source(self, fullname):
         """Abstract method which should return the source code for the
-        module.  The fullname is a str.  Returns a str."""
-        raise NotImplementedError
+        module.  The fullname is a str.  Returns a str.
+
+        Raises ImportError if the module cannot be found.
+        """
+        raise ImportError
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter,
             machinery.ExtensionFileLoader)
@@ -165,8 +181,11 @@ class ExecutionLoader(InspectLoader):
     @abc.abstractmethod
     def get_filename(self, fullname):
         """Abstract method which should return the value that __file__ is to be
-        set to."""
-        raise NotImplementedError
+        set to.
+
+        Raises ImportError if the module cannot be found.
+        """
+        raise ImportError
 
 
 class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
@@ -198,7 +217,7 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
         if self.path_stats.__func__ is SourceLoader.path_stats:
-            raise NotImplementedError
+            raise IOError
         return int(self.path_stats(path)['mtime'])
 
     def path_stats(self, path):
@@ -209,7 +228,7 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
         - 'size' (optional) is the size in bytes of the source code.
         """
         if self.path_mtime.__func__ is SourceLoader.path_mtime:
-            raise NotImplementedError
+            raise IOError
         return {'mtime': self.path_mtime(path)}
 
     def set_data(self, path, data):
@@ -220,8 +239,6 @@ class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
         Any needed intermediary directories are to be created. If for some
         reason the file cannot be written because of permissions, fail
         silently.
-
         """
-        raise NotImplementedError
 
 _register(SourceLoader, machinery.SourceFileLoader)
