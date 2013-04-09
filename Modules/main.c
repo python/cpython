@@ -167,17 +167,20 @@ static int RunModule(wchar_t *modname, int set_argv0)
     runpy = PyImport_ImportModule("runpy");
     if (runpy == NULL) {
         fprintf(stderr, "Could not import runpy module\n");
+        PyErr_Print();
         return -1;
     }
     runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
     if (runmodule == NULL) {
         fprintf(stderr, "Could not access runpy._run_module_as_main\n");
+        PyErr_Print();
         Py_DECREF(runpy);
         return -1;
     }
     module = PyUnicode_FromWideChar(modname, wcslen(modname));
     if (module == NULL) {
         fprintf(stderr, "Could not convert module name to unicode\n");
+        PyErr_Print();
         Py_DECREF(runpy);
         Py_DECREF(runmodule);
         return -1;
@@ -186,6 +189,7 @@ static int RunModule(wchar_t *modname, int set_argv0)
     if (runargs == NULL) {
         fprintf(stderr,
             "Could not create arguments for runpy._run_module_as_main\n");
+        PyErr_Print();
         Py_DECREF(runpy);
         Py_DECREF(runmodule);
         Py_DECREF(module);
