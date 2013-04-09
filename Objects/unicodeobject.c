@@ -7351,27 +7351,29 @@ PyUnicode_DecodeCharmap(const char *s,
         while (s < e) {
             if (mapkind == PyUnicode_2BYTE_KIND && maplen >= 256) {
                 enum PyUnicode_Kind outkind = writer.kind;
-                void *outdata = writer.data;
+                Py_UCS2 *mapdata_ucs2 = (Py_UCS2 *)mapdata;
                 if (outkind == PyUnicode_1BYTE_KIND) {
+                    Py_UCS1 *outdata = (Py_UCS1 *)writer.data;
                     Py_UCS4 maxchar = writer.maxchar;
                     while (s < e) {
-                        unsigned char ch = *s;
-                        x = PyUnicode_READ(PyUnicode_2BYTE_KIND, mapdata, ch);
+                        ch = *s;
+                        x = mapdata_ucs2[ch];
                         if (x > maxchar)
                             goto Error;
-                        PyUnicode_WRITE(PyUnicode_1BYTE_KIND, outdata, writer.pos, x);
+                        outdata[writer.pos] = x;
                         writer.pos++;
                         ++s;
                     }
                     break;
                 }
                 else if (outkind == PyUnicode_2BYTE_KIND) {
+                    Py_UCS2 *outdata = (Py_UCS2 *)writer.data;
                     while (s < e) {
-                        unsigned char ch = *s;
-                        x = PyUnicode_READ(PyUnicode_2BYTE_KIND, mapdata, ch);
+                        ch = *s;
+                        x = mapdata_ucs2[ch];
                         if (x == 0xFFFE)
                             goto Error;
-                        PyUnicode_WRITE(PyUnicode_2BYTE_KIND, outdata, writer.pos, x);
+                        outdata[writer.pos] = x;
                         writer.pos++;
                         ++s;
                     }
