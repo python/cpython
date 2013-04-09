@@ -50,7 +50,7 @@ class TrivialTests(unittest.TestCase):
 
         f = urllib.request.urlopen(file_url)
 
-        buf = f.read()
+        f.read()
         f.close()
 
     def test_parse_http_list(self):
@@ -68,192 +68,166 @@ class TrivialTests(unittest.TestCase):
         err = urllib.error.URLError('reason')
         self.assertIn(err.reason, str(err))
 
-def test_request_headers_dict():
-    """
-    The Request.headers dictionary is not a documented interface.  It should
-    stay that way, because the complete set of headers are only accessible
-    through the .get_header(), .has_header(), .header_items() interface.
-    However, .headers pre-dates those methods, and so real code will be using
-    the dictionary.
+class RequestHdrsTests(unittest.TestCase):
 
-    The introduction in 2.4 of those methods was a mistake for the same reason:
-    code that previously saw all (urllib2 user)-provided headers in .headers
-    now sees only a subset (and the function interface is ugly and incomplete).
-    A better change would have been to replace .headers dict with a dict
-    subclass (or UserDict.DictMixin instance?)  that preserved the .headers
-    interface and also provided access to the "unredirected" headers.  It's
-    probably too late to fix that, though.
+    def test_request_headers_dict(self):
+        """
+        The Request.headers dictionary is not a documented interface.  It
+        should stay that way, because the complete set of headers are only
+        accessible through the .get_header(), .has_header(), .header_items()
+        interface.  However, .headers pre-dates those methods, and so real code
+        will be using the dictionary.
 
+        The introduction in 2.4 of those methods was a mistake for the same
+        reason: code that previously saw all (urllib2 user)-provided headers in
+        .headers now sees only a subset.
 
-    Check .capitalize() case normalization:
+        """
+        url = "http://example.com"
+        self.assertEqual(Request(url,
+                                 headers={"Spam-eggs": "blah"}
+                                 ).headers["Spam-eggs"], "blah")
+        self.assertEqual(Request(url,
+                                 headers={"spam-EggS": "blah"}
+                                 ).headers["Spam-eggs"], "blah")
 
-    >>> url = "http://example.com"
-    >>> Request(url, headers={"Spam-eggs": "blah"}).headers["Spam-eggs"]
-    'blah'
-    >>> Request(url, headers={"spam-EggS": "blah"}).headers["Spam-eggs"]
-    'blah'
+    def test_request_headers_methods(self):
+        """
+        Note the case normalization of header names here, to
+        .capitalize()-case.  This should be preserved for
+        backwards-compatibility.  (In the HTTP case, normalization to
+        .title()-case is done by urllib2 before sending headers to
+        http.client).
 
-    Currently, Request(url, "Spam-eggs").headers["Spam-Eggs"] raises KeyError,
-    but that could be changed in future.
+        Note that e.g. r.has_header("spam-EggS") is currently False, and
+        r.get_header("spam-EggS") returns None, but that could be changed in
+        future.
 
-    """
+        Method r.remove_header should remove items both from r.headers and
+        r.unredirected_hdrs dictionaries
+        """
+        url = "http://example.com"
+        req = Request(url, headers={"Spam-eggs": "blah"})
+        self.assertTrue(req.has_header("Spam-eggs"))
+        self.assertEqual(req.header_items(), [('Spam-eggs', 'blah')])
 
-def test_request_headers_methods():
-    """
-    Note the case normalization of header names here, to .capitalize()-case.
-    This should be preserved for backwards-compatibility.  (In the HTTP case,
-    normalization to .title()-case is done by urllib2 before sending headers to
-    http.client).
+        req.add_header("Foo-Bar", "baz")
+        self.assertEqual(sorted(req.header_items()),
+                         [('Foo-bar', 'baz'), ('Spam-eggs', 'blah')])
+        self.assertFalse(req.has_header("Not-there"))
+        self.assertIsNone(req.get_header("Not-there"))
+        self.assertEqual(req.get_header("Not-there", "default"), "default")
 
-    >>> url = "http://example.com"
-    >>> r = Request(url, headers={"Spam-eggs": "blah"})
-    >>> r.has_header("Spam-eggs")
-    True
-    >>> r.header_items()
-    [('Spam-eggs', 'blah')]
-    >>> r.add_header("Foo-Bar", "baz")
-    >>> items = sorted(r.header_items())
-    >>> items
-    [('Foo-bar', 'baz'), ('Spam-eggs', 'blah')]
+        req.remove_header("Spam-eggs")
+        self.assertFalse(req.has_header("Spam-eggs"))
 
-    Note that e.g. r.has_header("spam-EggS") is currently False, and
-    r.get_header("spam-EggS") returns None, but that could be changed in
-    future.
+        req.add_unredirected_header("Unredirected-spam", "Eggs")
+        self.assertTrue(req.has_header("Unredirected-spam"))
 
-    >>> r.has_header("Not-there")
-    False
-    >>> print(r.get_header("Not-there"))
-    None
-    >>> r.get_header("Not-there", "default")
-    'default'
-
-    Method r.remove_header should remove items both from r.headers and
-    r.unredirected_hdrs dictionaries
-
-    >>> r.remove_header("Spam-eggs")
-    >>> r.has_header("Spam-eggs")
-    False
-    >>> r.add_unredirected_header("Unredirected-spam", "Eggs")
-    >>> r.has_header("Unredirected-spam")
-    True
-    >>> r.remove_header("Unredirected-spam")
-    >>> r.has_header("Unredirected-spam")
-    False
-
-    """
+        req.remove_header("Unredirected-spam")
+        self.assertFalse(req.has_header("Unredirected-spam"))
 
 
-def test_password_manager(self):
-    """
-    >>> mgr = urllib.request.HTTPPasswordMgr()
-    >>> add = mgr.add_password
-    >>> add("Some Realm", "http://example.com/", "joe", "password")
-    >>> add("Some Realm", "http://example.com/ni", "ni", "ni")
-    >>> add("c", "http://example.com/foo", "foo", "ni")
-    >>> add("c", "http://example.com/bar", "bar", "nini")
-    >>> add("b", "http://example.com/", "first", "blah")
-    >>> add("b", "http://example.com/", "second", "spam")
-    >>> add("a", "http://example.com", "1", "a")
-    >>> add("Some Realm", "http://c.example.com:3128", "3", "c")
-    >>> add("Some Realm", "d.example.com", "4", "d")
-    >>> add("Some Realm", "e.example.com:3128", "5", "e")
+    def test_password_manager(self):
+        mgr = urllib.request.HTTPPasswordMgr()
+        add = mgr.add_password
+        find_user_pass = mgr.find_user_password
+        add("Some Realm", "http://example.com/", "joe", "password")
+        add("Some Realm", "http://example.com/ni", "ni", "ni")
+        add("c", "http://example.com/foo", "foo", "ni")
+        add("c", "http://example.com/bar", "bar", "nini")
+        add("b", "http://example.com/", "first", "blah")
+        add("b", "http://example.com/", "second", "spam")
+        add("a", "http://example.com", "1", "a")
+        add("Some Realm", "http://c.example.com:3128", "3", "c")
+        add("Some Realm", "d.example.com", "4", "d")
+        add("Some Realm", "e.example.com:3128", "5", "e")
 
-    >>> mgr.find_user_password("Some Realm", "example.com")
-    ('joe', 'password')
-    >>> mgr.find_user_password("Some Realm", "http://example.com")
-    ('joe', 'password')
-    >>> mgr.find_user_password("Some Realm", "http://example.com/")
-    ('joe', 'password')
-    >>> mgr.find_user_password("Some Realm", "http://example.com/spam")
-    ('joe', 'password')
-    >>> mgr.find_user_password("Some Realm", "http://example.com/spam/spam")
-    ('joe', 'password')
-    >>> mgr.find_user_password("c", "http://example.com/foo")
-    ('foo', 'ni')
-    >>> mgr.find_user_password("c", "http://example.com/bar")
-    ('bar', 'nini')
+        self.assertEqual(find_user_pass("Some Realm", "example.com"),
+                         ('joe', 'password'))
 
-    Actually, this is really undefined ATM
-##     Currently, we use the highest-level path where more than one match:
+        #self.assertEqual(find_user_pass("Some Realm", "http://example.com/ni"),
+        #                ('ni', 'ni'))
 
-##     >>> mgr.find_user_password("Some Realm", "http://example.com/ni")
-##     ('joe', 'password')
+        self.assertEqual(find_user_pass("Some Realm", "http://example.com"),
+                         ('joe', 'password'))
+        self.assertEqual(find_user_pass("Some Realm", "http://example.com/"),
+                         ('joe', 'password'))
+        self.assertEqual(
+            find_user_pass("Some Realm", "http://example.com/spam"),
+            ('joe', 'password'))
+        self.assertEqual(
+            find_user_pass("Some Realm", "http://example.com/spam/spam"),
+            ('joe', 'password'))
+        self.assertEqual(find_user_pass("c", "http://example.com/foo"),
+                         ('foo', 'ni'))
+        self.assertEqual(find_user_pass("c", "http://example.com/bar"),
+                         ('bar', 'nini'))
+        self.assertEqual(find_user_pass("b", "http://example.com/"),
+                         ('second', 'spam'))
 
-    Use latest add_password() in case of conflict:
+        # No special relationship between a.example.com and example.com:
 
-    >>> mgr.find_user_password("b", "http://example.com/")
-    ('second', 'spam')
+        self.assertEqual(find_user_pass("a", "http://example.com/"),
+                         ('1', 'a'))
+        self.assertEqual(find_user_pass("a", "http://a.example.com/"),
+                         (None, None))
 
-    No special relationship between a.example.com and example.com:
+        # Ports:
 
-    >>> mgr.find_user_password("a", "http://example.com/")
-    ('1', 'a')
-    >>> mgr.find_user_password("a", "http://a.example.com/")
-    (None, None)
+        self.assertEqual(find_user_pass("Some Realm", "c.example.com"),
+                         (None, None))
+        self.assertEqual(find_user_pass("Some Realm", "c.example.com:3128"),
+                         ('3', 'c'))
+        self.assertEqual(
+            find_user_pass("Some Realm", "http://c.example.com:3128"),
+            ('3', 'c'))
+        self.assertEqual(find_user_pass("Some Realm", "d.example.com"),
+                         ('4', 'd'))
+        self.assertEqual(find_user_pass("Some Realm", "e.example.com:3128"),
+                         ('5', 'e'))
 
-    Ports:
+    def test_password_manager_default_port(self):
+        """
+        The point to note here is that we can't guess the default port if
+        there's no scheme.  This applies to both add_password and
+        find_user_password.
+        """
+        mgr = urllib.request.HTTPPasswordMgr()
+        add = mgr.add_password
+        find_user_pass = mgr.find_user_password
+        add("f", "http://g.example.com:80", "10", "j")
+        add("g", "http://h.example.com", "11", "k")
+        add("h", "i.example.com:80", "12", "l")
+        add("i", "j.example.com", "13", "m")
+        self.assertEqual(find_user_pass("f", "g.example.com:100"),
+                         (None, None))
+        self.assertEqual(find_user_pass("f", "g.example.com:80"),
+                         ('10', 'j'))
+        self.assertEqual(find_user_pass("f", "g.example.com"),
+                         (None, None))
+        self.assertEqual(find_user_pass("f", "http://g.example.com:100"),
+                         (None, None))
+        self.assertEqual(find_user_pass("f", "http://g.example.com:80"),
+                         ('10', 'j'))
+        self.assertEqual(find_user_pass("f", "http://g.example.com"),
+                         ('10', 'j'))
+        self.assertEqual(find_user_pass("g", "h.example.com"), ('11', 'k'))
+        self.assertEqual(find_user_pass("g", "h.example.com:80"), ('11', 'k'))
+        self.assertEqual(find_user_pass("g", "http://h.example.com:80"),
+                         ('11', 'k'))
+        self.assertEqual(find_user_pass("h", "i.example.com"), (None, None))
+        self.assertEqual(find_user_pass("h", "i.example.com:80"), ('12', 'l'))
+        self.assertEqual(find_user_pass("h", "http://i.example.com:80"),
+                         ('12', 'l'))
+        self.assertEqual(find_user_pass("i", "j.example.com"), ('13', 'm'))
+        self.assertEqual(find_user_pass("i", "j.example.com:80"),
+                         (None, None))
+        self.assertEqual(find_user_pass("i", "http://j.example.com"),
+                         ('13', 'm'))
+        self.assertEqual(find_user_pass("i", "http://j.example.com:80"),
+                         (None, None))
 
-    >>> mgr.find_user_password("Some Realm", "c.example.com")
-    (None, None)
-    >>> mgr.find_user_password("Some Realm", "c.example.com:3128")
-    ('3', 'c')
-    >>> mgr.find_user_password("Some Realm", "http://c.example.com:3128")
-    ('3', 'c')
-    >>> mgr.find_user_password("Some Realm", "d.example.com")
-    ('4', 'd')
-    >>> mgr.find_user_password("Some Realm", "e.example.com:3128")
-    ('5', 'e')
-
-    """
-    pass
-
-
-def test_password_manager_default_port(self):
-    """
-    >>> mgr = urllib.request.HTTPPasswordMgr()
-    >>> add = mgr.add_password
-
-    The point to note here is that we can't guess the default port if there's
-    no scheme.  This applies to both add_password and find_user_password.
-
-    >>> add("f", "http://g.example.com:80", "10", "j")
-    >>> add("g", "http://h.example.com", "11", "k")
-    >>> add("h", "i.example.com:80", "12", "l")
-    >>> add("i", "j.example.com", "13", "m")
-    >>> mgr.find_user_password("f", "g.example.com:100")
-    (None, None)
-    >>> mgr.find_user_password("f", "g.example.com:80")
-    ('10', 'j')
-    >>> mgr.find_user_password("f", "g.example.com")
-    (None, None)
-    >>> mgr.find_user_password("f", "http://g.example.com:100")
-    (None, None)
-    >>> mgr.find_user_password("f", "http://g.example.com:80")
-    ('10', 'j')
-    >>> mgr.find_user_password("f", "http://g.example.com")
-    ('10', 'j')
-    >>> mgr.find_user_password("g", "h.example.com")
-    ('11', 'k')
-    >>> mgr.find_user_password("g", "h.example.com:80")
-    ('11', 'k')
-    >>> mgr.find_user_password("g", "http://h.example.com:80")
-    ('11', 'k')
-    >>> mgr.find_user_password("h", "i.example.com")
-    (None, None)
-    >>> mgr.find_user_password("h", "i.example.com:80")
-    ('12', 'l')
-    >>> mgr.find_user_password("h", "http://i.example.com:80")
-    ('12', 'l')
-    >>> mgr.find_user_password("i", "j.example.com")
-    ('13', 'm')
-    >>> mgr.find_user_password("i", "j.example.com:80")
-    (None, None)
-    >>> mgr.find_user_password("i", "http://j.example.com")
-    ('13', 'm')
-    >>> mgr.find_user_password("i", "http://j.example.com:80")
-    (None, None)
-
-    """
 
 class MockOpener:
     addheaders = []
@@ -346,7 +320,6 @@ class MockHTTPClass:
         if body:
             self.data = body
         if self.raise_on_endheaders:
-            import socket
             raise OSError()
     def getresponse(self):
         return MockHTTPResponse(MockFile(), {}, 200, "OK")
@@ -448,7 +421,6 @@ class MockHTTPHandler(urllib.request.BaseHandler):
         self.requests = []
     def http_open(self, req):
         import email, http.client, copy
-        from io import StringIO
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
@@ -508,7 +480,7 @@ class OpenerDirectorTests(unittest.TestCase):
             [("do_open", "return self"), ("proxy_open", "return self")],
             [("redirect_request", "return self")],
             ]
-        handlers = add_ordered_mock_handlers(o, meth_spec)
+        add_ordered_mock_handlers(o, meth_spec)
         o.add_handler(urllib.request.UnknownHandler())
         for scheme in "do", "proxy", "redirect":
             self.assertRaises(URLError, o.open, scheme+"://example.com/")
@@ -552,7 +524,7 @@ class OpenerDirectorTests(unittest.TestCase):
             handlers.append(h)
             o.add_handler(h)
 
-        r = o.open("http://example.com/")
+        o.open("http://example.com/")
         # handlers called in reverse order, thanks to their sort order
         self.assertEqual(o.calls[0][0], handlers[1])
         self.assertEqual(o.calls[1][0], handlers[0])
@@ -587,7 +559,7 @@ class OpenerDirectorTests(unittest.TestCase):
             def __eq__(self, other): return True
 
         req = Request("http://example.com/")
-        r = o.open(req)
+        o.open(req)
         assert len(o.calls) == 2
         calls = [(handlers[0], "http_open", (req,)),
                  (handlers[2], "http_error_302",
@@ -610,7 +582,7 @@ class OpenerDirectorTests(unittest.TestCase):
         handlers = add_ordered_mock_handlers(o, meth_spec)
 
         req = Request("http://example.com/")
-        r = o.open(req)
+        o.open(req)
         # processor methods are called on *all* handlers that define them,
         # not just the first handler that handles the request
         calls = [
@@ -667,7 +639,7 @@ class HandlerTests(unittest.TestCase):
         import ftplib
         data = "rheum rhaponicum"
         h = NullFTPHandler(data)
-        o = h.parent = MockOpener()
+        h.parent = MockOpener()
 
         for url, host, port, user, passwd, type_, dirs, filename, mimetype in [
             ("ftp://localhost/foo/bar/baz.html",
@@ -910,7 +882,7 @@ class HandlerTests(unittest.TestCase):
         # break anything. Previously, a double slash directly after the host
         # could cause incorrect parsing.
         h = urllib.request.AbstractHTTPHandler()
-        o = h.parent = MockOpener()
+        h.parent = MockOpener()
 
         data = b""
         ds_urls = [
@@ -937,7 +909,7 @@ class HandlerTests(unittest.TestCase):
         # start with'/'
 
         h = urllib.request.AbstractHTTPHandler()
-        o = h.parent = MockOpener()
+        h.parent = MockOpener()
 
         weird_url = 'http://www.python.org?getspam'
         req = Request(weird_url)
@@ -980,7 +952,7 @@ class HandlerTests(unittest.TestCase):
     def test_cookies(self):
         cj = MockCookieJar()
         h = urllib.request.HTTPCookieProcessor(cj)
-        o = h.parent = MockOpener()
+        h.parent = MockOpener()
 
         req = Request("http://example.com/")
         r = MockResponse(200, "OK", {}, "")
@@ -1137,7 +1109,7 @@ class HandlerTests(unittest.TestCase):
 
         req = Request("http://acme.example.com/")
         self.assertEqual(req.host, "acme.example.com")
-        r = o.open(req)
+        o.open(req)
         self.assertEqual(req.host, "proxy.example.com:3128")
 
         self.assertEqual([(handlers[0], "http_open")],
@@ -1150,11 +1122,11 @@ class HandlerTests(unittest.TestCase):
         o.add_handler(ph)
         req = Request("http://www.perl.org/")
         self.assertEqual(req.host, "www.perl.org")
-        r = o.open(req)
+        o.open(req)
         self.assertEqual(req.host, "proxy.example.com")
         req = Request("http://www.python.org")
         self.assertEqual(req.host, "www.python.org")
-        r = o.open(req)
+        o.open(req)
         self.assertEqual(req.host, "www.python.org")
         del os.environ['no_proxy']
 
@@ -1165,7 +1137,7 @@ class HandlerTests(unittest.TestCase):
         o.add_handler(ph)
         req = Request("http://www.python.org")
         self.assertEqual(req.host, "www.python.org")
-        r = o.open(req)
+        o.open(req)
         self.assertEqual(req.host, "www.python.org")
         del os.environ['no_proxy']
 
@@ -1181,7 +1153,7 @@ class HandlerTests(unittest.TestCase):
 
         req = Request("https://www.example.com/")
         self.assertEqual(req.host, "www.example.com")
-        r = o.open(req)
+        o.open(req)
         self.assertEqual(req.host, "proxy.example.com:3128")
         self.assertEqual([(handlers[0], "https_open")],
                          [tup[0:2] for tup in o.calls])
@@ -1197,7 +1169,7 @@ class HandlerTests(unittest.TestCase):
         req.add_header("User-Agent","Grail")
         self.assertEqual(req.host, "www.example.com")
         self.assertIsNone(req._tunnel_host)
-        r = o.open(req)
+        o.open(req)
         # Verify Proxy-Authorization gets tunneled to request.
         # httpsconn req_headers do not have the Proxy-Authorization header but
         # the req will have.
@@ -1363,7 +1335,7 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(user, password_manager.user)
         self.assertEqual(password, password_manager.password)
 
-        r = opener.open(request_url)
+        opener.open(request_url)
 
         # should have asked the password manager for the username/password
         self.assertEqual(password_manager.target_realm, realm)
@@ -1383,7 +1355,7 @@ class HandlerTests(unittest.TestCase):
         # handle the HTTP auth error
         password_manager.user = password_manager.password = None
         http_handler.reset()
-        r = opener.open(request_url)
+        opener.open(request_url)
         self.assertEqual(len(http_handler.requests), 1)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
 
@@ -1450,20 +1422,17 @@ class MiscTests(unittest.TestCase):
         """
         Issue 13211 reveals that HTTPError didn't implement the URLError
         interface even though HTTPError is a subclass of URLError.
-
-        >>> msg = 'something bad happened'
-        >>> url = code = fp = None
-        >>> hdrs = 'Content-Length: 42'
-        >>> err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-        >>> assert hasattr(err, 'reason')
-        >>> err.reason
-        'something bad happened'
-        >>> assert hasattr(err, 'headers')
-        >>> err.headers
-        'Content-Length: 42'
-        >>> expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
-        >>> assert str(err) == expected_errmsg
         """
+        msg = 'something bad happened'
+        url = code = fp = None
+        hdrs = 'Content-Length: 42'
+        err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
+        self.assertTrue(hasattr(err, 'reason'))
+        self.assertEqual(err.reason, 'something bad happened')
+        self.assertTrue(hasattr(err, 'headers'))
+        self.assertEqual(err.headers, 'Content-Length: 42')
+        expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
+        self.assertEqual(str(err), expected_errmsg)
 
 class RequestTests(unittest.TestCase):
 
@@ -1552,7 +1521,8 @@ def test_main(verbose=None):
              OpenerDirectorTests,
              HandlerTests,
              MiscTests,
-             RequestTests)
+             RequestTests,
+             RequestHdrsTests)
     support.run_unittest(*tests)
 
 if __name__ == "__main__":
