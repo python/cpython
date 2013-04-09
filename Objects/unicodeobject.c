@@ -1958,13 +1958,17 @@ _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
     assert(size > 0);
     if (size == 1) {
         Py_UCS4 ch = u[0];
+        int kind;
+        void *data;
         if (ch < 256)
             return get_latin1_char((unsigned char)ch);
 
         res = PyUnicode_New(1, ch);
         if (res == NULL)
             return NULL;
-        PyUnicode_WRITE(PyUnicode_KIND(res), PyUnicode_DATA(res), 0, ch);
+        kind = PyUnicode_KIND(res);
+        data = PyUnicode_DATA(res);
+        PyUnicode_WRITE(kind, data, 0, ch);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return res;
     }
@@ -1994,13 +1998,17 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     assert(size > 0);
     if (size == 1) {
         Py_UCS4 ch = u[0];
+        int kind;
+        void *data;
         if (ch < 256)
             return get_latin1_char((unsigned char)ch);
 
         res = PyUnicode_New(1, ch);
         if (res == NULL)
             return NULL;
-        PyUnicode_WRITE(PyUnicode_KIND(res), PyUnicode_DATA(res), 0, ch);
+        kind = PyUnicode_KIND(res);
+        data = PyUnicode_DATA(res);
+        PyUnicode_WRITE(kind, data, 0, ch);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return res;
     }
