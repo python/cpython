@@ -301,7 +301,6 @@ decoding_table = (
     '\xd9'     #  0xFD -> LATIN CAPITAL LETTER U WITH GRAVE
     '\xda'     #  0xFE -> LATIN CAPITAL LETTER U WITH ACUTE
     '\x9f'     #  0xFF -> CONTROL
-    '\ufffe'   ## Widen to UCS2 for optimization
 )
 
 ### Encoding table
