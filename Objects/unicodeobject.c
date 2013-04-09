@@ -468,7 +468,9 @@ unicode_result_ready(PyObject *unicode)
     }
 
     if (length == 1) {
-        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
+        void *data = PyUnicode_DATA(unicode);
+        int kind = PyUnicode_KIND(unicode);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, 0);
         if (ch < 256) {
             PyObject *latin1_char = unicode_latin1[ch];
             if (latin1_char != NULL) {
@@ -2786,6 +2788,9 @@ PyObject *
 PyUnicode_FromOrdinal(int ordinal)
 {
     PyObject *v;
+    void *data;
+    int kind;
+
     if (ordinal < 0 || ordinal > MAX_UNICODE) {
         PyErr_SetString(PyExc_ValueError,
                         "chr() arg not in range(0x110000)");
@@ -2798,7 +2803,9 @@ PyUnicode_FromOrdinal(int ordinal)
     v = PyUnicode_New(1, ordinal);
     if (v == NULL)
         return NULL;
-    PyUnicode_WRITE(PyUnicode_KIND(v), PyUnicode_DATA(v), 0, ordinal);
+    kind = PyUnicode_KIND(v);
+    data = PyUnicode_DATA(v);
+    PyUnicode_WRITE(kind, data, 0, ordinal);
     assert(_PyUnicode_CheckConsistency(v, 1));
     return v;
 }
@@ -3840,6 +3847,9 @@ PyUnicode_GetLength(PyObject *unicode)
 Py_UCS4
 PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
 {
+    void *data;
+    int kind;
+
     if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) == -1) {
         PyErr_BadArgument();
         return (Py_UCS4)-1;
@@ -3848,7 +3858,9 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return (Py_UCS4)-1;
     }
-    return PyUnicode_READ_CHAR(unicode, index);
+    data = PyUnicode_DATA(unicode);
+    kind = PyUnicode_KIND(unicode);
+    return PyUnicode_READ(kind, data, index);
 }
 
 int
@@ -7984,10 +7996,14 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
      * -1=not initialized, 0=unknown, 1=strict, 2=replace,
      * 3=ignore, 4=xmlcharrefreplace */
     int known_errorHandler = -1;
+    void *data;
+    int kind;
 
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
     size = PyUnicode_GET_LENGTH(unicode);
+    data = PyUnicode_DATA(unicode);
+    kind = PyUnicode_KIND(unicode);
 
     /* Default to Latin-1 */
     if (mapping == NULL)
@@ -8002,7 +8018,7 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
         return res;
 
     while (inpos<size) {
-        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, inpos);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
         /* try to encode it */
         charmapencode_result x = charmapencode_output(ch, mapping, &res, &respos);
         if (x==enc_EXCEPTION) /* error */
@@ -9930,11 +9946,11 @@ replace(PyObject *self, PyObject *str1,
             Py_ssize_t index, pos;
             char *src;
 
-            u1 = PyUnicode_READ_CHAR(str1, 0);
+            u1 = PyUnicode_READ(kind1, buf1, 0);
             pos = findchar(sbuf, PyUnicode_KIND(self), slen, u1, 1);
             if (pos < 0)
                 goto nothing;
-            u2 = PyUnicode_READ_CHAR(str2, 0);
+            u2 = PyUnicode_READ(kind2, buf2, 0);
             u = PyUnicode_New(slen, maxchar);
             if (!u)
                 goto error;
