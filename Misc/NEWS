@@ -38,6 +38,9 @@ Library
 IDLE
 ----
 
+- Issue #17657: Show full Tk version in IDLE's about dialog.
+  Patch by Todd Rovito.
+
 - Issue #17613: Prevent traceback when removing syntax colorizer in IDLE.
 
 - Issue #1207589: Backwards-compatibility patch for right-click menu in IDLE.
