@@ -6,6 +6,11 @@ What's New in Python 2.7.5?
 
 *Release date: XXXX-XX-XX*
 
+Build
+-----
+
+- Issue #17682: Add the _io module to Modules/Setup.dist (commented out).
+
 Core and Builtins
 -----------------
 

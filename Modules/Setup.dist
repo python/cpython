@@ -191,6 +191,9 @@ GLHACK=-Dclear=__GLclear
 # access to ISO C locale support
 #_locale _localemodule.c  # -lintl
 
+# Standard I/O baseline
+#_io -I$(srcdir)/Modules/_io _io/bufferedio.c _io/bytesio.c _io/fileio.c _io/iobase.c _io/_iomodule.c _io/stringio.c _io/textio.c
+
 
 # Modules with some UNIX dependencies -- on by default:
 # (If you have a really backward UNIX, select and socket may not be
