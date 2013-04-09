@@ -11722,37 +11722,63 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 static PyObject *
 do_strip(PyObject *self, int striptype)
 {
-    int kind;
-    void *data;
     Py_ssize_t len, i, j;
 
     if (PyUnicode_READY(self) == -1)
         return NULL;
 
-    kind = PyUnicode_KIND(self);
-    data = PyUnicode_DATA(self);
     len = PyUnicode_GET_LENGTH(self);
 
-    i = 0;
-    if (striptype != RIGHTSTRIP) {
-        while (i < len) {
-            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-            if (!Py_UNICODE_ISSPACE(ch))
-                break;
-            i++;
+    if (PyUnicode_IS_ASCII(self)) {
+        Py_UCS1 *data = PyUnicode_1BYTE_DATA(self);
+
+        i = 0;
+        if (striptype != RIGHTSTRIP) {
+            while (i < len) {
+                Py_UCS4 ch = data[i];
+                if (!_Py_ascii_whitespace[ch])
+                    break;
+                i++;
+            }
+        }
+
+        j = len;
+        if (striptype != LEFTSTRIP) {
+            j--;
+            while (j >= i) {
+                Py_UCS4 ch = data[j];
+                if (!_Py_ascii_whitespace[ch])
+                    break;
+                j--;
+            }
+            j++;
         }
     }
+    else {
+        int kind = PyUnicode_KIND(self);
+        void *data = PyUnicode_DATA(self);
 
-    j = len;
-    if (striptype != LEFTSTRIP) {
-        j--;
-        while (j >= i) {
-            Py_UCS4 ch = PyUnicode_READ(kind, data, j);
-            if (!Py_UNICODE_ISSPACE(ch))
-                break;
-            j--;
+        i = 0;
+        if (striptype != RIGHTSTRIP) {
+            while (i < len) {
+                Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+                if (!Py_UNICODE_ISSPACE(ch))
+                    break;
+                i++;
+            }
         }
-        j++;
+
+        j = len;
+        if (striptype != LEFTSTRIP) {
+            j--;
+            while (j >= i) {
+                Py_UCS4 ch = PyUnicode_READ(kind, data, j);
+                if (!Py_UNICODE_ISSPACE(ch))
+                    break;
+                j--;
+            }
+            j++;
+        }
     }
 
     return PyUnicode_Substring(self, i, j);
