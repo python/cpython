@@ -397,11 +397,12 @@ class dispatcher:
         self.accepting = False
         self.connecting = False
         self.del_channel()
-        try:
-            self.socket.close()
-        except OSError as why:
-            if why.args[0] not in (ENOTCONN, EBADF):
-                raise
+        if self.socket is not None:
+            try:
+                self.socket.close()
+            except OSError as why:
+                if why.args[0] not in (ENOTCONN, EBADF):
+                    raise
 
     # cheap inheritance, used to pass all other attribute
     # references to the underlying socket object.
