@@ -893,8 +893,10 @@ class SourceLoader(_LoaderBasics):
     def path_mtime(self, path):
         """Optional method that returns the modification time (an int) for the
         specified path, where path is a str.
+
+        Raises IOError when the path cannot be handled.
         """
-        raise NotImplementedError
+        raise IOError
 
     def path_stats(self, path):
         """Optional method returning a metadata dict for the specified path
@@ -905,6 +907,7 @@ class SourceLoader(_LoaderBasics):
         - 'size' (optional) is the size in bytes of the source code.
 
         Implementing this method allows the loader to read bytecode files.
+        Raises IOError when the path cannot be handled.
         """
         return {'mtime': self.path_mtime(path)}
 
@@ -922,9 +925,7 @@ class SourceLoader(_LoaderBasics):
         """Optional method which writes data (bytes) to a file path (a str).
 
         Implementing this method allows for the writing of bytecode files.
-
         """
-        raise NotImplementedError
 
 
     def get_source(self, fullname):
@@ -973,7 +974,7 @@ class SourceLoader(_LoaderBasics):
         else:
             try:
                 st = self.path_stats(source_path)
-            except NotImplementedError:
+            except IOError:
                 pass
             else:
                 source_mtime = int(st['mtime'])
