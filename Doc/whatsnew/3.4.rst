@@ -209,4 +209,8 @@ Porting to Python 3.4
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* Nothing yet.
+* The ABCs defined in :mod:`importlib.abc` now either raise the appropriate
+  exception or return a default value instead of raising
+  :exc:`NotImplementedError` blindly. This will only affect code calling
+  :func:`super` and falling through all the way to the ABCs. For compatibility,
+  catch both :exc:`NotImplementedError` or the appropriate exception as needed.
