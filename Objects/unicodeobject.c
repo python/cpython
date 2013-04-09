@@ -9972,7 +9972,7 @@ replace(PyObject *self, PyObject *str1,
             Py_UCS4 u1, u2;
             int rkind;
             Py_ssize_t index, pos;
-            char *src;
+            char *src, *rbuf;
 
             u1 = PyUnicode_READ(kind1, buf1, 0);
             pos = findchar(sbuf, PyUnicode_KIND(self), slen, u1, 1);
@@ -9984,8 +9984,9 @@ replace(PyObject *self, PyObject *str1,
                 goto error;
             _PyUnicode_FastCopyCharacters(u, 0, self, 0, slen);
             rkind = PyUnicode_KIND(u);
+            rbuf = PyUnicode_DATA(u);
 
-            PyUnicode_WRITE(rkind, PyUnicode_DATA(u), pos, u2);
+            PyUnicode_WRITE(rkind, rbuf, pos, u2);
             index = 0;
             src = sbuf;
             while (--maxcount)
@@ -9997,7 +9998,7 @@ replace(PyObject *self, PyObject *str1,
                 pos = findchar(src, PyUnicode_KIND(self), slen, u1, 1);
                 if (pos < 0)
                     break;
-                PyUnicode_WRITE(rkind, PyUnicode_DATA(u), index + pos, u2);
+                PyUnicode_WRITE(rkind, rbuf, index + pos, u2);
             }
         }
         else {
