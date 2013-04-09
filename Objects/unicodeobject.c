@@ -468,7 +468,9 @@ unicode_result_ready(PyObject *unicode)
     }
 
     if (length == 1) {
-        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, 0);
+        void *data = PyUnicode_DATA(unicode);
+        int kind = PyUnicode_KIND(unicode);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, 0);
         if (ch < 256) {
             PyObject *latin1_char = unicode_latin1[ch];
             if (latin1_char != NULL) {
@@ -541,7 +543,6 @@ static OSVERSIONINFOEX winver;
 
 static BLOOM_MASK bloom_linebreak = ~(BLOOM_MASK)0;
 
-#define BLOOM_ADD(mask, ch) ((mask |= (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
 #define BLOOM(mask, ch)     ((mask &  (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
 
 #define BLOOM_LINEBREAK(ch)                                             \
@@ -551,21 +552,40 @@ static BLOOM_MASK bloom_linebreak = ~(BLOOM_MASK)0;
 Py_LOCAL_INLINE(BLOOM_MASK)
 make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 {
+#define BLOOM_UPDATE(TYPE, MASK, PTR, LEN)             \
+    do {                                               \
+        TYPE *data = (TYPE *)PTR;                      \
+        TYPE *end = data + LEN;                        \
+        Py_UCS4 ch;                                    \
+        for (; data != end; data++) {                  \
+            ch = *data;                                \
+            MASK |= (1UL << (ch & (BLOOM_WIDTH - 1))); \
+        }                                              \
+        break;                                         \
+    } while (0)
+
     /* calculate simple bloom-style bitmask for a given unicode string */
 
     BLOOM_MASK mask;
-    Py_ssize_t i;
 
     mask = 0;
-    for (i = 0; i < len; i++)
-        BLOOM_ADD(mask, PyUnicode_READ(kind, ptr, i));
-
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND:
+        BLOOM_UPDATE(Py_UCS1, mask, ptr, len);
+        break;
+    case PyUnicode_2BYTE_KIND:
+        BLOOM_UPDATE(Py_UCS2, mask, ptr, len);
+        break;
+    case PyUnicode_4BYTE_KIND:
+        BLOOM_UPDATE(Py_UCS4, mask, ptr, len);
+        break;
+    default:
+        assert(0);
+    }
     return mask;
-}
 
-#define BLOOM_MEMBER(mask, chr, str) \
-    (BLOOM(mask, chr) \
-     && (PyUnicode_FindChar(str, chr, 0, PyUnicode_GET_LENGTH(str), 1) >= 0))
+#undef BLOOM_UPDATE
+}
 
 /* Compilation of templated routines */
 
@@ -1938,13 +1958,17 @@ _PyUnicode_FromUCS2(const Py_UCS2 *u, Py_ssize_t size)
     assert(size > 0);
     if (size == 1) {
         Py_UCS4 ch = u[0];
+        int kind;
+        void *data;
         if (ch < 256)
             return get_latin1_char((unsigned char)ch);
 
         res = PyUnicode_New(1, ch);
         if (res == NULL)
             return NULL;
-        PyUnicode_WRITE(PyUnicode_KIND(res), PyUnicode_DATA(res), 0, ch);
+        kind = PyUnicode_KIND(res);
+        data = PyUnicode_DATA(res);
+        PyUnicode_WRITE(kind, data, 0, ch);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return res;
     }
@@ -1974,13 +1998,17 @@ _PyUnicode_FromUCS4(const Py_UCS4 *u, Py_ssize_t size)
     assert(size > 0);
     if (size == 1) {
         Py_UCS4 ch = u[0];
+        int kind;
+        void *data;
         if (ch < 256)
             return get_latin1_char((unsigned char)ch);
 
         res = PyUnicode_New(1, ch);
         if (res == NULL)
             return NULL;
-        PyUnicode_WRITE(PyUnicode_KIND(res), PyUnicode_DATA(res), 0, ch);
+        kind = PyUnicode_KIND(res);
+        data = PyUnicode_DATA(res);
+        PyUnicode_WRITE(kind, data, 0, ch);
         assert(_PyUnicode_CheckConsistency(res, 1));
         return res;
     }
@@ -2786,6 +2814,9 @@ PyObject *
 PyUnicode_FromOrdinal(int ordinal)
 {
     PyObject *v;
+    void *data;
+    int kind;
+
     if (ordinal < 0 || ordinal > MAX_UNICODE) {
         PyErr_SetString(PyExc_ValueError,
                         "chr() arg not in range(0x110000)");
@@ -2798,7 +2829,9 @@ PyUnicode_FromOrdinal(int ordinal)
     v = PyUnicode_New(1, ordinal);
     if (v == NULL)
         return NULL;
-    PyUnicode_WRITE(PyUnicode_KIND(v), PyUnicode_DATA(v), 0, ordinal);
+    kind = PyUnicode_KIND(v);
+    data = PyUnicode_DATA(v);
+    PyUnicode_WRITE(kind, data, 0, ordinal);
     assert(_PyUnicode_CheckConsistency(v, 1));
     return v;
 }
@@ -3840,6 +3873,9 @@ PyUnicode_GetLength(PyObject *unicode)
 Py_UCS4
 PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
 {
+    void *data;
+    int kind;
+
     if (!PyUnicode_Check(unicode) || PyUnicode_READY(unicode) == -1) {
         PyErr_BadArgument();
         return (Py_UCS4)-1;
@@ -3848,7 +3884,9 @@ PyUnicode_ReadChar(PyObject *unicode, Py_ssize_t index)
         PyErr_SetString(PyExc_IndexError, "string index out of range");
         return (Py_UCS4)-1;
     }
-    return PyUnicode_READ_CHAR(unicode, index);
+    data = PyUnicode_DATA(unicode);
+    kind = PyUnicode_KIND(unicode);
+    return PyUnicode_READ(kind, data, index);
 }
 
 int
@@ -7281,6 +7319,7 @@ PyUnicode_DecodeCharmap(const char *s,
         enum PyUnicode_Kind mapkind;
         void *mapdata;
         Py_UCS4 x;
+        unsigned char ch;
 
         if (PyUnicode_READY(mapping) == -1)
             return NULL;
@@ -7288,31 +7327,57 @@ PyUnicode_DecodeCharmap(const char *s,
         maplen = PyUnicode_GET_LENGTH(mapping);
         mapdata = PyUnicode_DATA(mapping);
         mapkind = PyUnicode_KIND(mapping);
+
+        if (mapkind == PyUnicode_1BYTE_KIND && maplen >= 256) {
+            /* fast-path for cp037, cp500 and iso8859_1 encodings. iso8859_1
+             * is disabled in encoding aliases, latin1 is preferred because
+             * its implementation is faster. */
+            Py_UCS1 *mapdata_ucs1 = (Py_UCS1 *)mapdata;
+            Py_UCS1 *outdata = (Py_UCS1 *)writer.data;
+            Py_UCS4 maxchar = writer.maxchar;
+
+            assert (writer.kind == PyUnicode_1BYTE_KIND);
+            while (s < e) {
+                ch = *s;
+                x = mapdata_ucs1[ch];
+                if (x > maxchar) {
+                    if (_PyUnicodeWriter_PrepareInternal(&writer, 1, 0xff) == -1)
+                        goto onError;
+                    maxchar = writer.maxchar;
+                    outdata = (Py_UCS1 *)writer.data;
+                }
+                outdata[writer.pos] = x;
+                writer.pos++;
+                ++s;
+            }
+        }
+
         while (s < e) {
-            unsigned char ch;
             if (mapkind == PyUnicode_2BYTE_KIND && maplen >= 256) {
                 enum PyUnicode_Kind outkind = writer.kind;
-                void *outdata = writer.data;
+                Py_UCS2 *mapdata_ucs2 = (Py_UCS2 *)mapdata;
                 if (outkind == PyUnicode_1BYTE_KIND) {
+                    Py_UCS1 *outdata = (Py_UCS1 *)writer.data;
                     Py_UCS4 maxchar = writer.maxchar;
                     while (s < e) {
-                        unsigned char ch = *s;
-                        x = PyUnicode_READ(PyUnicode_2BYTE_KIND, mapdata, ch);
+                        ch = *s;
+                        x = mapdata_ucs2[ch];
                         if (x > maxchar)
                             goto Error;
-                        PyUnicode_WRITE(PyUnicode_1BYTE_KIND, outdata, writer.pos, x);
+                        outdata[writer.pos] = x;
                         writer.pos++;
                         ++s;
                     }
                     break;
                 }
                 else if (outkind == PyUnicode_2BYTE_KIND) {
+                    Py_UCS2 *outdata = (Py_UCS2 *)writer.data;
                     while (s < e) {
-                        unsigned char ch = *s;
-                        x = PyUnicode_READ(PyUnicode_2BYTE_KIND, mapdata, ch);
+                        ch = *s;
+                        x = mapdata_ucs2[ch];
                         if (x == 0xFFFE)
                             goto Error;
-                        PyUnicode_WRITE(PyUnicode_2BYTE_KIND, outdata, writer.pos, x);
+                        outdata[writer.pos] = x;
                         writer.pos++;
                         ++s;
                     }
@@ -7959,10 +8024,14 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
      * -1=not initialized, 0=unknown, 1=strict, 2=replace,
      * 3=ignore, 4=xmlcharrefreplace */
     int known_errorHandler = -1;
+    void *data;
+    int kind;
 
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
     size = PyUnicode_GET_LENGTH(unicode);
+    data = PyUnicode_DATA(unicode);
+    kind = PyUnicode_KIND(unicode);
 
     /* Default to Latin-1 */
     if (mapping == NULL)
@@ -7977,7 +8046,7 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
         return res;
 
     while (inpos<size) {
-        Py_UCS4 ch = PyUnicode_READ_CHAR(unicode, inpos);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
         /* try to encode it */
         charmapencode_result x = charmapencode_output(ch, mapping, &res, &respos);
         if (x==enc_EXCEPTION) /* error */
@@ -9903,20 +9972,21 @@ replace(PyObject *self, PyObject *str1,
             Py_UCS4 u1, u2;
             int rkind;
             Py_ssize_t index, pos;
-            char *src;
+            char *src, *rbuf;
 
-            u1 = PyUnicode_READ_CHAR(str1, 0);
+            u1 = PyUnicode_READ(kind1, buf1, 0);
             pos = findchar(sbuf, PyUnicode_KIND(self), slen, u1, 1);
             if (pos < 0)
                 goto nothing;
-            u2 = PyUnicode_READ_CHAR(str2, 0);
+            u2 = PyUnicode_READ(kind2, buf2, 0);
             u = PyUnicode_New(slen, maxchar);
             if (!u)
                 goto error;
             _PyUnicode_FastCopyCharacters(u, 0, self, 0, slen);
             rkind = PyUnicode_KIND(u);
+            rbuf = PyUnicode_DATA(u);
 
-            PyUnicode_WRITE(rkind, PyUnicode_DATA(u), pos, u2);
+            PyUnicode_WRITE(rkind, rbuf, pos, u2);
             index = 0;
             src = sbuf;
             while (--maxcount)
@@ -9928,7 +9998,7 @@ replace(PyObject *self, PyObject *str1,
                 pos = findchar(src, PyUnicode_KIND(self), slen, u1, 1);
                 if (pos < 0)
                     break;
-                PyUnicode_WRITE(rkind, PyUnicode_DATA(u), index + pos, u2);
+                PyUnicode_WRITE(rkind, rbuf, index + pos, u2);
             }
         }
         else {
@@ -11570,6 +11640,7 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
     int kind;
     Py_ssize_t i, j, len;
     BLOOM_MASK sepmask;
+    Py_ssize_t seplen;
 
     if (PyUnicode_READY(self) == -1 || PyUnicode_READY(sepobj) == -1)
         return NULL;
@@ -11577,24 +11648,35 @@ _PyUnicode_XStrip(PyObject *self, int striptype, PyObject *sepobj)
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
     len = PyUnicode_GET_LENGTH(self);
+    seplen = PyUnicode_GET_LENGTH(sepobj);
     sepmask = make_bloom_mask(PyUnicode_KIND(sepobj),
                               PyUnicode_DATA(sepobj),
-                              PyUnicode_GET_LENGTH(sepobj));
+                              seplen);
 
     i = 0;
     if (striptype != RIGHTSTRIP) {
-        while (i < len &&
-               BLOOM_MEMBER(sepmask, PyUnicode_READ(kind, data, i), sepobj)) {
+        while (i < len) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+            if (!BLOOM(sepmask, ch))
+                break;
+            if (PyUnicode_FindChar(sepobj, ch, 0, seplen, 1) < 0)
+                break;
             i++;
         }
     }
 
     j = len;
     if (striptype != LEFTSTRIP) {
-        do {
+        j--;
+        while (j >= i) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, j);
+            if (!BLOOM(sepmask, ch))
+                break;
+            if (PyUnicode_FindChar(sepobj, ch, 0, seplen, 1) < 0)
+                break;
             j--;
-        } while (j >= i &&
-                 BLOOM_MEMBER(sepmask, PyUnicode_READ(kind, data, j), sepobj));
+        }
+
         j++;
     }
 
@@ -11641,30 +11723,63 @@ PyUnicode_Substring(PyObject *self, Py_ssize_t start, Py_ssize_t end)
 static PyObject *
 do_strip(PyObject *self, int striptype)
 {
-    int kind;
-    void *data;
     Py_ssize_t len, i, j;
 
     if (PyUnicode_READY(self) == -1)
         return NULL;
 
-    kind = PyUnicode_KIND(self);
-    data = PyUnicode_DATA(self);
     len = PyUnicode_GET_LENGTH(self);
 
-    i = 0;
-    if (striptype != RIGHTSTRIP) {
-        while (i < len && Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, i))) {
-            i++;
+    if (PyUnicode_IS_ASCII(self)) {
+        Py_UCS1 *data = PyUnicode_1BYTE_DATA(self);
+
+        i = 0;
+        if (striptype != RIGHTSTRIP) {
+            while (i < len) {
+                Py_UCS4 ch = data[i];
+                if (!_Py_ascii_whitespace[ch])
+                    break;
+                i++;
+            }
+        }
+
+        j = len;
+        if (striptype != LEFTSTRIP) {
+            j--;
+            while (j >= i) {
+                Py_UCS4 ch = data[j];
+                if (!_Py_ascii_whitespace[ch])
+                    break;
+                j--;
+            }
+            j++;
         }
     }
+    else {
+        int kind = PyUnicode_KIND(self);
+        void *data = PyUnicode_DATA(self);
 
-    j = len;
-    if (striptype != LEFTSTRIP) {
-        do {
+        i = 0;
+        if (striptype != RIGHTSTRIP) {
+            while (i < len) {
+                Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+                if (!Py_UNICODE_ISSPACE(ch))
+                    break;
+                i++;
+            }
+        }
+
+        j = len;
+        if (striptype != LEFTSTRIP) {
             j--;
-        } while (j >= i && Py_UNICODE_ISSPACE(PyUnicode_READ(kind, data, j)));
-        j++;
+            while (j >= i) {
+                Py_UCS4 ch = PyUnicode_READ(kind, data, j);
+                if (!Py_UNICODE_ISSPACE(ch))
+                    break;
+                j--;
+            }
+            j++;
+        }
     }
 
     return PyUnicode_Substring(self, i, j);
