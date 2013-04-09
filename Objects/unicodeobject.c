@@ -543,7 +543,6 @@ static OSVERSIONINFOEX winver;
 
 static BLOOM_MASK bloom_linebreak = ~(BLOOM_MASK)0;
 
-#define BLOOM_ADD(mask, ch) ((mask |= (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
 #define BLOOM(mask, ch)     ((mask &  (1UL << ((ch) & (BLOOM_WIDTH - 1)))))
 
 #define BLOOM_LINEBREAK(ch)                                             \
@@ -553,16 +552,39 @@ static BLOOM_MASK bloom_linebreak = ~(BLOOM_MASK)0;
 Py_LOCAL_INLINE(BLOOM_MASK)
 make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 {
+#define BLOOM_UPDATE(TYPE, MASK, PTR, LEN)             \
+    do {                                               \
+        TYPE *data = (TYPE *)PTR;                      \
+        TYPE *end = data + LEN;                        \
+        Py_UCS4 ch;                                    \
+        for (; data != end; data++) {                  \
+            ch = *data;                                \
+            MASK |= (1UL << (ch & (BLOOM_WIDTH - 1))); \
+        }                                              \
+        break;                                         \
+    } while (0)
+
     /* calculate simple bloom-style bitmask for a given unicode string */
 
     BLOOM_MASK mask;
-    Py_ssize_t i;
 
     mask = 0;
-    for (i = 0; i < len; i++)
-        BLOOM_ADD(mask, PyUnicode_READ(kind, ptr, i));
-
+    switch (kind) {
+    case PyUnicode_1BYTE_KIND:
+        BLOOM_UPDATE(Py_UCS1, mask, ptr, len);
+        break;
+    case PyUnicode_2BYTE_KIND:
+        BLOOM_UPDATE(Py_UCS2, mask, ptr, len);
+        break;
+    case PyUnicode_4BYTE_KIND:
+        BLOOM_UPDATE(Py_UCS4, mask, ptr, len);
+        break;
+    default:
+        assert(0);
+    }
     return mask;
+
+#undef BLOOM_UPDATE
 }
 
 #define BLOOM_MEMBER(mask, chr, str) \
