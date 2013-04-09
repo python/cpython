@@ -645,9 +645,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #define HAVE_WCSXFRM 1
 #endif
 
-/* Define to 1 if you have the `wmemcmp' function. */
-#define HAVE_WMEMCMP 1
-
 /* Define if the zlib library has inflateCopy */
 #define HAVE_ZLIB_COPY 1
 
