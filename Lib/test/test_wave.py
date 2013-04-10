@@ -58,6 +58,22 @@ class TestWave(unittest.TestCase):
         output = b'\0' * nframes * nchannels * sampwidth
         self.f.writeframes(output)
 
+    def test_getparams(self):
+        self.f = wave.open(TESTFN, 'wb')
+        self.f.setnchannels(nchannels)
+        self.f.setsampwidth(sampwidth)
+        self.f.setframerate(framerate)
+        self.f.close()
+
+        self.f = wave.open(TESTFN, 'rb')
+        params = self.f.getparams()
+        self.assertEqual(params.nchannels, self.f.getnchannels())
+        self.assertEqual(params.nframes, self.f.getnframes())
+        self.assertEqual(params.sampwidth, self.f.getsampwidth())
+        self.assertEqual(params.framerate, self.f.getframerate())
+        self.assertEqual(params.comptype, self.f.getcomptype())
+        self.assertEqual(params.compname, self.f.getcompname())
+
 
 def test_main():
     run_unittest(TestWave)
