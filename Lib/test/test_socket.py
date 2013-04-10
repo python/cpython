@@ -652,8 +652,17 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_repr(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.addCleanup(s.close)
-        self.assertTrue(repr(s).startswith("<socket.socket object"))
+        with s:
+            self.assertIn('fd=%i' % s.fileno(), repr(s))
+            self.assertIn('family=%i' % socket.AF_INET, repr(s))
+            self.assertIn('type=%i' % socket.SOCK_STREAM, repr(s))
+            self.assertIn('proto=0', repr(s))
+            self.assertIn('laddr', repr(s))
+            self.assertNotIn('raddr', repr(s))
+            s.bind(('127.0.0.1', 0))
+            self.assertIn(str(s.getsockname()), repr(s))
+        self.assertIn('[closed]', repr(s))
+        self.assertNotIn('laddr', repr(s))
 
     def test_weakref(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

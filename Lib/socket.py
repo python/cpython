@@ -103,13 +103,32 @@ class socket(_socket.socket):
             self.close()
 
     def __repr__(self):
-        """Wrap __repr__() to reveal the real class name."""
-        s = _socket.socket.__repr__(self)
-        if s.startswith("<socket object"):
-            s = "<%s.%s%s%s" % (self.__class__.__module__,
-                                self.__class__.__name__,
-                                getattr(self, '_closed', False) and " [closed] " or "",
-                                s[7:])
+        """Wrap __repr__() to reveal the real class name and socket
+        address(es).
+        """
+        closed = getattr(self, '_closed', False)
+        s = "<%s.%s%s fd=%i, family=%i, type=%i, proto=%i" \
+            % (self.__class__.__module__,
+               self.__class__.__name__,
+               " [closed]" if closed else "",
+               self.fileno(),
+               self.family,
+               self.type,
+               self.proto)
+        if not closed:
+            try:
+                laddr = self.getsockname()
+                if laddr:
+                    s += ", laddr=%s" % str(laddr)
+            except error:
+                pass
+            try:
+                raddr = self.getpeername()
+                if raddr:
+                    s += ", raddr=%s" % str(raddr)
+            except error:
+                pass
+        s += '>'
         return s
 
     def __getstate__(self):
