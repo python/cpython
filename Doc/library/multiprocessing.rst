@@ -1848,7 +1848,7 @@ multiple connections at the same time.
    then a welcome message is sent to the other end of the connection.  Otherwise
    :exc:`~multiprocessing.AuthenticationError` is raised.
 
-.. function:: answerChallenge(connection, authkey)
+.. function:: answer_challenge(connection, authkey)
 
    Receive a message, calculate the digest of the message using *authkey* as the
    key, and then send the digest back.
