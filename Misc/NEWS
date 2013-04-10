@@ -63,6 +63,12 @@ IDLE
 
 - Issue #6649: Fixed missing exit status in IDLE. Patch by Guilherme Polo.
 
+Tests
+-----
+
+- Issue #12820: add tests for the xml.dom.minicompat module.
+  Patch by John Chandler and Phil Connell.
+
 Documentation
 -------------
 
