@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17675: socket repr() provides local and remote addresses (if any).
+  Patch by Giampaolo Rodola'
+
 - Issue #17093: Make the ABCs in importlib.abc provide default values or raise
   reasonable exceptions for their methods to make them more amenable to super()
   calls.
