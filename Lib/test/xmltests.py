@@ -15,6 +15,7 @@ def runtest(name):
 runtest("test.test_minidom")
 runtest("test.test_pyexpat")
 runtest("test.test_sax")
+runtest("test.test_xml_dom_minicompat")
 runtest("test.test_xml_etree")
 runtest("test.test_xml_etree_c")
 runtest("test.test_xmlrpc")
