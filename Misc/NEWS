@@ -12,6 +12,8 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17669: Fix crash involving finalization of generators using yield from.
+
 - Issue #17619: Make input() check for Ctrl-C correctly on Windows.
 
 - Issue #17610: Don't rely on non-standard behavior of the C qsort() function.
