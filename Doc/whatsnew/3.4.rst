@@ -157,6 +157,12 @@ doctest
 Added ``FAIL_FAST`` flag to halt test running as soon as the first failure is
 detected.  (Contributed by R. David Murray and Daniel Urban in :issue:`16522`.)
 
+wave
+----
+
+The :meth:`~wave.getparams` method now returns a namedtuple rather than a
+plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
+
 
 Optimizations
 =============

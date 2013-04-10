@@ -18,7 +18,7 @@ This returns an instance of a class with the following public methods:
       getcomptype()   -- returns compression type ('NONE' for linear samples)
       getcompname()   -- returns human-readable version of
                          compression type ('not compressed' linear samples)
-      getparams()     -- returns a tuple consisting of all of the
+      getparams()     -- returns a namedtuple consisting of all of the
                          above in the above order
       getmarkers()    -- returns None (for compatibility with the
                          aifc module)
@@ -90,6 +90,10 @@ else:
     big_endian = 0
 
 from chunk import Chunk
+from collections import namedtuple
+
+_result = namedtuple('params',
+                     'nchannels sampwidth framerate nframes comptype compname')
 
 class Wave_read:
     """Variables used in this class:
@@ -206,9 +210,9 @@ class Wave_read:
         return self._compname
 
     def getparams(self):
-        return self.getnchannels(), self.getsampwidth(), \
-               self.getframerate(), self.getnframes(), \
-               self.getcomptype(), self.getcompname()
+        return _result(self.getnchannels(), self.getsampwidth(),
+                       self.getframerate(), self.getnframes(),
+                       self.getcomptype(), self.getcompname())
 
     def getmarkers(self):
         return None
@@ -398,8 +402,8 @@ class Wave_write:
     def getparams(self):
         if not self._nchannels or not self._sampwidth or not self._framerate:
             raise Error('not all parameters set')
-        return self._nchannels, self._sampwidth, self._framerate, \
-              self._nframes, self._comptype, self._compname
+        return _result(self._nchannels, self._sampwidth, self._framerate,
+              self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
         raise Error('setmark() not supported')

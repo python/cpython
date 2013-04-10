@@ -98,8 +98,9 @@ Wave_read objects, as returned by :func:`.open`, have the following methods:
 
 .. method:: Wave_read.getparams()
 
-   Returns a tuple ``(nchannels, sampwidth, framerate, nframes, comptype,
-   compname)``, equivalent to output of the :meth:`get\*` methods.
+   Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
+   framerate, nframes, comptype, compname)``, equivalent to output of the
+   :meth:`get\*` methods.
 
 
 .. method:: Wave_read.readframes(n)
