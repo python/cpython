@@ -465,10 +465,6 @@ class TestLocale(unittest.TestCase):
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 
 
-class _BaseYearTest(unittest.TestCase):
-    def yearstr(self, y):
-        raise NotImplementedError()
-
 class _TestAsctimeYear:
     _format = '%d'
 
@@ -526,7 +522,7 @@ class _TestStrftimeYear:
     del skip_if_not_supported
 
 
-class _Test4dYear(_BaseYearTest):
+class _Test4dYear:
     _format = '%d'
 
     def test_year(self, fmt=None, func=None):
@@ -559,10 +555,10 @@ class _Test4dYear(_BaseYearTest):
         self.assertRaises(OverflowError, self.yearstr, TIME_MINYEAR - 1)
 
 
-class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear):
+class TestAsctime4dyear(_TestAsctimeYear, _Test4dYear, unittest.TestCase):
     pass
 
-class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear):
+class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
     pass
 
 
@@ -679,13 +675,6 @@ class TestPytime(unittest.TestCase):
         self.assertIs(lt.tm_gmtoff, None)
         self.assertIs(lt.tm_zone, None)
 
-def test_main():
-    support.run_unittest(
-        TimeTestCase,
-        TestLocale,
-        TestAsctime4dyear,
-        TestStrftime4dyear,
-        TestPytime)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
