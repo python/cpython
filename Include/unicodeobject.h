@@ -933,6 +933,13 @@ PyAPI_FUNC(int)
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar);
 
+/* Append a Unicode character.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer,
+    Py_UCS4 ch
+    );
+
 /* Append a Unicode string.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int)

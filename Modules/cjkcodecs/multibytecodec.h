@@ -10,12 +10,6 @@
 extern "C" {
 #endif
 
-#ifdef uint32_t
-typedef uint32_t ucs4_t;
-#else
-typedef unsigned int ucs4_t;
-#endif
-
 #ifdef uint16_t
 typedef uint16_t ucs2_t, DBCHAR;
 #else
@@ -27,7 +21,7 @@ typedef union {
     int i;
     unsigned char c[8];
     ucs2_t u2[4];
-    ucs4_t u4[2];
+    Py_UCS4 u4[2];
 } MultibyteCodec_State;
 
 typedef int (*mbcodec_init)(const void *config);
@@ -44,7 +38,7 @@ typedef Py_ssize_t (*mbencodereset_func)(MultibyteCodec_State *state,
 typedef Py_ssize_t (*mbdecode_func)(MultibyteCodec_State *state,
                         const void *config,
                         const unsigned char **inbuf, Py_ssize_t inleft,
-                        Py_UNICODE **outbuf, Py_ssize_t outleft);
+                        _PyUnicodeWriter *writer);
 typedef int (*mbdecodeinit_func)(MultibyteCodec_State *state,
                                  const void *config);
 typedef Py_ssize_t (*mbdecodereset_func)(MultibyteCodec_State *state,

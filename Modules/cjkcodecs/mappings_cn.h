@@ -4049,7 +4049,7 @@ __gb18030ext_encmap+3126,0,100},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0
 
 
 static const struct _gb18030_to_unibmp_ranges {
-    Py_UNICODE   first, last;
+    Py_UCS4   first, last;
     DBCHAR       base;
 } gb18030_to_unibmp_ranges[] = {
 {128,163,0},{165,166,36},{169,175,38},{178,182,45},{184,214,50},{216,223,81},{

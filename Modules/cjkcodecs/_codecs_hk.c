@@ -39,7 +39,7 @@ static const DBCHAR big5hkscs_pairenc_table[4] = {0x8862, 0x8864, 0x88a3, 0x88a5
 ENCODER(big5hkscs)
 {
     while (inleft > 0) {
-        ucs4_t c = **inbuf;
+        Py_UCS4 c = **inbuf;
         DBCHAR code;
         Py_ssize_t insize;
 
@@ -103,26 +103,24 @@ DECODER(big5hkscs)
 {
     while (inleft > 0) {
         unsigned char c = IN1;
-        ucs4_t decoded;
-
-        REQUIRE_OUTBUF(1)
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
-            OUT1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
             continue;
         }
 
         REQUIRE_INBUF(2)
 
         if (0xc6 > c || c > 0xc8 || (c < 0xc7 && IN2 < 0xa1)) {
-            TRYMAP_DEC(big5, **outbuf, c, IN2) {
-                NEXT(2, 1)
+            TRYMAP_DEC(big5, writer, c, IN2) {
+                NEXT_IN(2);
                 continue;
             }
         }
 
-        TRYMAP_DEC(big5hkscs, decoded, c, IN2)
+        TRYMAP_DEC_CHAR(big5hkscs, decoded, c, IN2)
         {
             int s = BH2S(c, IN2);
             const unsigned char *hintbase;
@@ -146,25 +144,25 @@ DECODER(big5hkscs)
                     return MBERR_INTERNAL;
 
             if (hintbase[s >> 3] & (1 << (s & 7))) {
-                    WRITEUCS4(decoded | 0x20000)
-                    NEXT_IN(2)
+                    OUTCHAR(decoded | 0x20000);
+                    NEXT_IN(2);
             }
             else {
-                    OUT1(decoded)
-                    NEXT(2, 1)
+                    OUTCHAR(decoded);
+                    NEXT_IN(2);
             }
             continue;
         }
 
         switch ((c << 8) | IN2) {
-        case 0x8862: WRITE2(0x00ca, 0x0304); break;
-        case 0x8864: WRITE2(0x00ca, 0x030c); break;
-        case 0x88a3: WRITE2(0x00ea, 0x0304); break;
-        case 0x88a5: WRITE2(0x00ea, 0x030c); break;
+        case 0x8862: OUTCHAR2(0x00ca, 0x0304); break;
+        case 0x8864: OUTCHAR2(0x00ca, 0x030c); break;
+        case 0x88a3: OUTCHAR2(0x00ea, 0x0304); break;
+        case 0x88a5: OUTCHAR2(0x00ea, 0x030c); break;
         default: return 1;
         }
 
-        NEXT(2, 2) /* all decoded codepoints are pairs, above. */
+        NEXT_IN(2); /* all decoded codepoints are pairs, above. */
     }
 
     return 0;
