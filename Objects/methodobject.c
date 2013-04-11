@@ -352,6 +352,6 @@ void
 _PyCFunction_DebugMallocStats(FILE *out)
 {
     _PyDebugAllocatorStats(out,
-                           "free PyCFunctionObjects",
+                           "free PyCFunctionObject",
                            numfree, sizeof(PyCFunctionObject));
 }
