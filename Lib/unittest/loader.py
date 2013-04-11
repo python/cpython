@@ -119,7 +119,7 @@ class TestLoader(object):
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
               issubclass(parent, case.TestCase)):
-            name = obj.__name__
+            name = parts[-1]
             inst = parent(name)
             # static methods follow a different path
             if not isinstance(getattr(inst, name), types.FunctionType):
