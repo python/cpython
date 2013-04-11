@@ -14,7 +14,7 @@
 ENCODER(big5)
 {
     while (inleft > 0) {
-        Py_UNICODE c = **inbuf;
+        Py_UCS4 c = **inbuf;
         DBCHAR code;
 
         if (c < 0x80) {
@@ -43,17 +43,15 @@ DECODER(big5)
     while (inleft > 0) {
         unsigned char c = IN1;
 
-        REQUIRE_OUTBUF(1)
-
         if (c < 0x80) {
-            OUT1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
             continue;
         }
 
         REQUIRE_INBUF(2)
-        TRYMAP_DEC(big5, **outbuf, c, IN2) {
-            NEXT(2, 1)
+        TRYMAP_DEC(big5, writer, c, IN2) {
+            NEXT_IN(2);
         }
         else return 1;
     }
@@ -69,7 +67,7 @@ DECODER(big5)
 ENCODER(cp950)
 {
     while (inleft > 0) {
-        Py_UNICODE c = IN1;
+        Py_UCS4 c = IN1;
         DBCHAR code;
 
         if (c < 0x80) {
@@ -97,21 +95,19 @@ DECODER(cp950)
     while (inleft > 0) {
         unsigned char c = IN1;
 
-        REQUIRE_OUTBUF(1)
-
         if (c < 0x80) {
-            OUT1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
             continue;
         }
 
         REQUIRE_INBUF(2)
 
-        TRYMAP_DEC(cp950ext, **outbuf, c, IN2);
-        else TRYMAP_DEC(big5, **outbuf, c, IN2);
+        TRYMAP_DEC(cp950ext, writer, c, IN2);
+        else TRYMAP_DEC(big5, writer, c, IN2);
         else return 1;
 
-        NEXT(2, 1)
+        NEXT_IN(2);
     }
 
     return 0;

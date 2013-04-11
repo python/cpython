@@ -23,12 +23,12 @@
  * A844         undefined                       U+2015 HORIZONTAL BAR
  */
 
-#define GBK_DECODE(dc1, dc2, assi) \
-    if ((dc1) == 0xa1 && (dc2) == 0xaa) (assi) = 0x2014; \
-    else if ((dc1) == 0xa8 && (dc2) == 0x44) (assi) = 0x2015; \
-    else if ((dc1) == 0xa1 && (dc2) == 0xa4) (assi) = 0x00b7; \
-    else TRYMAP_DEC(gb2312, assi, dc1 ^ 0x80, dc2 ^ 0x80); \
-    else TRYMAP_DEC(gbkext, assi, dc1, dc2);
+#define GBK_DECODE(dc1, dc2, writer) \
+    if ((dc1) == 0xa1 && (dc2) == 0xaa) OUTCHAR(0x2014); \
+    else if ((dc1) == 0xa8 && (dc2) == 0x44) OUTCHAR(0x2015); \
+    else if ((dc1) == 0xa1 && (dc2) == 0xa4) OUTCHAR(0x00b7); \
+    else TRYMAP_DEC(gb2312, writer, dc1 ^ 0x80, dc2 ^ 0x80); \
+    else TRYMAP_DEC(gbkext, writer, dc1, dc2);
 
 #define GBK_ENCODE(code, assi) \
     if ((code) == 0x2014) (assi) = 0xa1aa; \
@@ -43,7 +43,7 @@
 ENCODER(gb2312)
 {
     while (inleft > 0) {
-        Py_UNICODE c = IN1;
+        Py_UCS4 c = IN1;
         DBCHAR code;
 
         if (c < 0x80) {
@@ -73,17 +73,15 @@ DECODER(gb2312)
     while (inleft > 0) {
         unsigned char c = **inbuf;
 
-        REQUIRE_OUTBUF(1)
-
         if (c < 0x80) {
-            OUT1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
             continue;
         }
 
         REQUIRE_INBUF(2)
-        TRYMAP_DEC(gb2312, **outbuf, c ^ 0x80, IN2 ^ 0x80) {
-            NEXT(2, 1)
+        TRYMAP_DEC(gb2312, writer, c ^ 0x80, IN2 ^ 0x80) {
+            NEXT_IN(2);
         }
         else return 1;
     }
@@ -99,7 +97,7 @@ DECODER(gb2312)
 ENCODER(gbk)
 {
     while (inleft > 0) {
-        Py_UNICODE c = IN1;
+        Py_UCS4 c = IN1;
         DBCHAR code;
 
         if (c < 0x80) {
@@ -130,20 +128,18 @@ DECODER(gbk)
     while (inleft > 0) {
         unsigned char c = IN1;
 
-        REQUIRE_OUTBUF(1)
-
         if (c < 0x80) {
-            OUT1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
             continue;
         }
 
         REQUIRE_INBUF(2)
 
-        GBK_DECODE(c, IN2, **outbuf)
+        GBK_DECODE(c, IN2, writer)
         else return 1;
 
-        NEXT(2, 1)
+        NEXT_IN(2);
     }
 
     return 0;
@@ -157,7 +153,7 @@ DECODER(gbk)
 ENCODER(gb18030)
 {
     while (inleft > 0) {
-        ucs4_t c = IN1;
+        Py_UCS4 c = IN1;
         DBCHAR code;
 
         if (c < 0x80) {
@@ -174,7 +170,7 @@ ENCODER(gb18030)
             return 1;
 #endif
         else if (c >= 0x10000) {
-            ucs4_t tc = c - 0x10000;
+            Py_UCS4 tc = c - 0x10000;
 
             REQUIRE_OUTBUF(4)
 
@@ -208,7 +204,7 @@ ENCODER(gb18030)
                  utrrange++)
                 if (utrrange->first <= c &&
                     c <= utrrange->last) {
-                    Py_UNICODE tc;
+                    Py_UCS4 tc;
 
                     tc = c - utrrange->first +
                          utrrange->base;
@@ -247,11 +243,9 @@ DECODER(gb18030)
     while (inleft > 0) {
         unsigned char c = IN1, c2;
 
-        REQUIRE_OUTBUF(1)
-
         if (c < 0x80) {
-            OUT1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
             continue;
         }
 
@@ -261,7 +255,7 @@ DECODER(gb18030)
         if (c2 >= 0x30 && c2 <= 0x39) { /* 4 bytes seq */
             const struct _gb18030_to_unibmp_ranges *utr;
             unsigned char c3, c4;
-            ucs4_t lseq;
+            Py_UCS4 lseq;
 
             REQUIRE_INBUF(4)
             c3 = IN3;
@@ -272,34 +266,34 @@ DECODER(gb18030)
             c3 -= 0x81; c4 -= 0x30;
 
             if (c < 4) { /* U+0080 - U+FFFF */
-                lseq = ((ucs4_t)c * 10 + c2) * 1260 +
-                    (ucs4_t)c3 * 10 + c4;
+                lseq = ((Py_UCS4)c * 10 + c2) * 1260 +
+                    (Py_UCS4)c3 * 10 + c4;
                 if (lseq < 39420) {
                     for (utr = gb18030_to_unibmp_ranges;
                          lseq >= (utr + 1)->base;
                          utr++) ;
-                    OUT1(utr->first - utr->base + lseq)
-                    NEXT(4, 1)
+                    OUTCHAR(utr->first - utr->base + lseq);
+                    NEXT_IN(4);
                     continue;
                 }
             }
             else if (c >= 15) { /* U+10000 - U+10FFFF */
-                lseq = 0x10000 + (((ucs4_t)c-15) * 10 + c2)
-                    * 1260 + (ucs4_t)c3 * 10 + c4;
+                lseq = 0x10000 + (((Py_UCS4)c-15) * 10 + c2)
+                    * 1260 + (Py_UCS4)c3 * 10 + c4;
                 if (lseq <= 0x10FFFF) {
-                    WRITEUCS4(lseq);
-                    NEXT_IN(4)
+                    OUTCHAR(lseq);
+                    NEXT_IN(4);
                     continue;
                 }
             }
             return 1;
         }
 
-        GBK_DECODE(c, c2, **outbuf)
-        else TRYMAP_DEC(gb18030ext, **outbuf, c, c2);
+        GBK_DECODE(c, c2, writer)
+        else TRYMAP_DEC(gb18030ext, writer, c, c2);
         else return 1;
 
-        NEXT(2, 1)
+        NEXT_IN(2);
     }
 
     return 0;
@@ -329,7 +323,7 @@ ENCODER_RESET(hz)
 ENCODER(hz)
 {
     while (inleft > 0) {
-        Py_UNICODE c = IN1;
+        Py_UCS4 c = IN1;
         DBCHAR code;
 
         if (c < 0x80) {
@@ -389,8 +383,8 @@ DECODER(hz)
 
             REQUIRE_INBUF(2)
             if (c2 == '~') {
-                WRITE1('~')
-                NEXT(2, 1)
+                OUTCHAR('~');
+                NEXT_IN(2);
                 continue;
             }
             else if (c2 == '{' && state->i == 0)
@@ -401,7 +395,7 @@ DECODER(hz)
                 ; /* line-continuation */
             else
                 return 1;
-            NEXT(2, 0);
+            NEXT_IN(2);
             continue;
         }
 
@@ -409,14 +403,13 @@ DECODER(hz)
             return 1;
 
         if (state->i == 0) { /* ASCII mode */
-            WRITE1(c)
-            NEXT(1, 1)
+            OUTCHAR(c);
+            NEXT_IN(1);
         }
         else { /* GB mode */
             REQUIRE_INBUF(2)
-            REQUIRE_OUTBUF(1)
-            TRYMAP_DEC(gb2312, **outbuf, c, IN2) {
-                NEXT(2, 1)
+            TRYMAP_DEC(gb2312, writer, c, IN2) {
+                NEXT_IN(2);
             }
             else
                 return 1;

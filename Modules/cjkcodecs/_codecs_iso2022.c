@@ -102,8 +102,8 @@
 /*-*- internal data structures -*-*/
 
 typedef int (*iso2022_init_func)(void);
-typedef ucs4_t (*iso2022_decode_func)(const unsigned char *data);
-typedef DBCHAR (*iso2022_encode_func)(const ucs4_t *data, Py_ssize_t *length);
+typedef Py_UCS4 (*iso2022_decode_func)(const unsigned char *data);
+typedef DBCHAR (*iso2022_encode_func)(const Py_UCS4 *data, Py_ssize_t *length);
 
 struct iso2022_designation {
     unsigned char mark;
@@ -158,7 +158,7 @@ ENCODER(iso2022)
     while (inleft > 0) {
         const struct iso2022_designation *dsg;
         DBCHAR encoded;
-        ucs4_t c = **inbuf;
+        Py_UCS4 c = **inbuf;
         Py_ssize_t insize;
 
         if (c < 0x80) {
@@ -196,9 +196,9 @@ ENCODER(iso2022)
                     length = 2;
 #if Py_UNICODE_SIZE == 2
                 if (length == 2) {
-                    ucs4_t u4in[2];
-                    u4in[0] = (ucs4_t)IN1;
-                    u4in[1] = (ucs4_t)IN2;
+                    Py_UCS4 u4in[2];
+                    u4in[0] = (Py_UCS4)IN1;
+                    u4in[1] = (Py_UCS4)IN2;
                     encoded = dsg->encoder(u4in, &length);
                 } else
                     encoded = dsg->encoder(&c, &length);
@@ -277,7 +277,7 @@ ENCODER(iso2022)
             WRITE2(encoded >> 8, encoded & 0xff)
             NEXT_OUT(2)
         }
-        NEXT_IN(insize)
+        NEXT_IN(insize);
     }
 
     return 0;
@@ -376,45 +376,43 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
     return 0;
 }
 
-#define ISO8859_7_DECODE(c, assi)                                       \
-    if ((c) < 0xa0) (assi) = (c);                                       \
-    else if ((c) < 0xc0 && (0x288f3bc9L & (1L << ((c)-0xa0))))          \
-        (assi) = (c);                                                   \
-    else if ((c) >= 0xb4 && (c) <= 0xfe && ((c) >= 0xd4 ||              \
-             (0xbffffd77L & (1L << ((c)-0xb4)))))                       \
-        (assi) = 0x02d0 + (c);                                          \
-    else if ((c) == 0xa1) (assi) = 0x2018;                              \
-    else if ((c) == 0xa2) (assi) = 0x2019;                              \
-    else if ((c) == 0xaf) (assi) = 0x2015;
+#define ISO8859_7_DECODE(c, writer)                               \
+    if ((c) < 0xa0) OUTCHAR(c);                                       \
+    else if ((c) < 0xc0 && (0x288f3bc9L & (1L << ((c)-0xa0))))    \
+        OUTCHAR(c);                                                   \
+    else if ((c) >= 0xb4 && (c) <= 0xfe && ((c) >= 0xd4 ||        \
+             (0xbffffd77L & (1L << ((c)-0xb4)))))                 \
+        OUTCHAR(0x02d0 + (c));                                        \
+    else if ((c) == 0xa1) OUTCHAR(0x2018);                            \
+    else if ((c) == 0xa2) OUTCHAR(0x2019);                            \
+    else if ((c) == 0xaf) OUTCHAR(0x2015);
 
 static Py_ssize_t
 iso2022processg2(const void *config, MultibyteCodec_State *state,
                  const unsigned char **inbuf, Py_ssize_t *inleft,
-                 Py_UNICODE **outbuf, Py_ssize_t *outleft)
+                 _PyUnicodeWriter *writer)
 {
     /* not written to use encoder, decoder functions because only few
      * encodings use G2 designations in CJKCodecs */
     if (STATE_G2 == CHARSET_ISO8859_1) {
         if (IN3 < 0x80)
-            OUT1(IN3 + 0x80)
+            OUTCHAR(IN3 + 0x80);
         else
             return 3;
     }
     else if (STATE_G2 == CHARSET_ISO8859_7) {
-        ISO8859_7_DECODE(IN3 ^ 0x80, **outbuf)
+        ISO8859_7_DECODE(IN3 ^ 0x80, writer)
         else return 3;
     }
     else if (STATE_G2 == CHARSET_ASCII) {
         if (IN3 & 0x80) return 3;
-        else **outbuf = IN3;
+        else OUTCHAR(IN3);
     }
     else
         return MBERR_INTERNAL;
 
     (*inbuf) += 3;
     *inleft -= 3;
-    (*outbuf) += 1;
-    *outleft -= 1;
     return 0;
 }
 
@@ -429,8 +427,8 @@ DECODER(iso2022)
         if (STATE_GETFLAG(F_ESCTHROUGHOUT)) {
             /* ESC throughout mode:
              * for non-iso2022 escape sequences */
-            WRITE1(c) /* assume as ISO-8859-1 */
-            NEXT(1, 1)
+            OUTCHAR(c); /* assume as ISO-8859-1 */
+            NEXT_IN(1);
             if (IS_ESCEND(c)) {
                 STATE_CLEARFLAG(F_ESCTHROUGHOUT)
             }
@@ -449,32 +447,32 @@ DECODER(iso2022)
             else if (CONFIG_ISSET(USE_G2) && IN2 == 'N') {/* SS2 */
                 REQUIRE_INBUF(3)
                 err = iso2022processg2(config, state,
-                    inbuf, &inleft, outbuf, &outleft);
+                                       inbuf, &inleft, writer);
                 if (err != 0)
                     return err;
             }
             else {
-                WRITE1(ESC)
+                OUTCHAR(ESC);
                 STATE_SETFLAG(F_ESCTHROUGHOUT)
-                NEXT(1, 1)
+                NEXT_IN(1);
             }
             break;
         case SI:
             if (CONFIG_ISSET(NO_SHIFT))
                 goto bypass;
             STATE_CLEARFLAG(F_SHIFTED)
-            NEXT_IN(1)
+            NEXT_IN(1);
             break;
         case SO:
             if (CONFIG_ISSET(NO_SHIFT))
                 goto bypass;
             STATE_SETFLAG(F_SHIFTED)
-            NEXT_IN(1)
+            NEXT_IN(1);
             break;
         case LF:
             STATE_CLEARFLAG(F_SHIFTED)
-            WRITE1(LF)
-            NEXT(1, 1)
+            OUTCHAR(LF);
+            NEXT_IN(1);
             break;
         default:
             if (c < 0x20) /* C0 */
@@ -484,7 +482,7 @@ DECODER(iso2022)
             else {
                 const struct iso2022_designation *dsg;
                 unsigned char charset;
-                ucs4_t decoded;
+                Py_UCS4 decoded;
 
                 if (STATE_GETFLAG(F_SHIFTED))
                     charset = STATE_G1;
@@ -492,8 +490,8 @@ DECODER(iso2022)
                     charset = STATE_G0;
 
                 if (charset == CHARSET_ASCII) {
-bypass:                                 WRITE1(c)
-                                        NEXT(1, 1)
+bypass:                                 OUTCHAR(c);
+                                        NEXT_IN(1);
                                         break;
                                 }
 
@@ -518,17 +516,15 @@ bypass:                                 WRITE1(c)
                                         return dsg->width;
 
                                 if (decoded < 0x10000) {
-                                        WRITE1(decoded)
-                                        NEXT_OUT(1)
+                                        OUTCHAR(decoded);
                                 }
                                 else if (decoded < 0x30000) {
-                                        WRITEUCS4(decoded)
+                                        OUTCHAR(decoded);
                                 }
                                 else { /* JIS X 0213 pairs */
-                    WRITE2(decoded >> 16, decoded & 0xffff)
-                    NEXT_OUT(2)
+                    OUTCHAR2(decoded >> 16, decoded & 0xffff);
                 }
-                NEXT_IN(dsg->width)
+                NEXT_IN(dsg->width);
             }
             break;
         }
@@ -577,18 +573,18 @@ ksx1001_init(void)
     return 0;
 }
 
-static ucs4_t
+static Py_UCS4
 ksx1001_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    TRYMAP_DEC(ksx1001, u, data[0], data[1])
+    Py_UCS4 u;
+    TRYMAP_DEC_CHAR(ksx1001, u, data[0], data[1])
         return u;
     else
         return MAP_UNMAPPABLE;
 }
 
 static DBCHAR
-ksx1001_encoder(const ucs4_t *data, Py_ssize_t *length)
+ksx1001_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     assert(*length == 1);
@@ -613,20 +609,20 @@ jisx0208_init(void)
     return 0;
 }
 
-static ucs4_t
+static Py_UCS4
 jisx0208_decoder(const unsigned char *data)
 {
-    ucs4_t u;
+    Py_UCS4 u;
     if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
-    else TRYMAP_DEC(jisx0208, u, data[0], data[1])
+    else TRYMAP_DEC_CHAR(jisx0208, u, data[0], data[1])
         return u;
     else
         return MAP_UNMAPPABLE;
 }
 
 static DBCHAR
-jisx0208_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0208_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     assert(*length == 1);
@@ -654,18 +650,18 @@ jisx0212_init(void)
     return 0;
 }
 
-static ucs4_t
+static Py_UCS4
 jisx0212_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    TRYMAP_DEC(jisx0212, u, data[0], data[1])
+    Py_UCS4 u;
+    TRYMAP_DEC_CHAR(jisx0212, u, data[0], data[1])
         return u;
     else
         return MAP_UNMAPPABLE;
 }
 
 static DBCHAR
-jisx0212_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0212_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     assert(*length == 1);
@@ -705,30 +701,30 @@ jisx0213_init(void)
 }
 
 #define config ((void *)2000)
-static ucs4_t
+static Py_UCS4
 jisx0213_2000_1_decoder(const unsigned char *data)
 {
-    ucs4_t u;
+    Py_UCS4 u;
     EMULATE_JISX0213_2000_DECODE_PLANE1(u, data[0], data[1])
     else if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
-    else TRYMAP_DEC(jisx0208, u, data[0], data[1]);
-    else TRYMAP_DEC(jisx0213_1_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC(jisx0213_1_emp, u, data[0], data[1])
+    else TRYMAP_DEC_CHAR(jisx0208, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_1_bmp, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_1_emp, u, data[0], data[1])
         u |= 0x20000;
-    else TRYMAP_DEC(jisx0213_pair, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_pair, u, data[0], data[1]);
     else
         return MAP_UNMAPPABLE;
     return u;
 }
 
-static ucs4_t
+static Py_UCS4
 jisx0213_2000_2_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    EMULATE_JISX0213_2000_DECODE_PLANE2(u, data[0], data[1])
-    TRYMAP_DEC(jisx0213_2_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC(jisx0213_2_emp, u, data[0], data[1])
+    Py_UCS4 u;
+    EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(u, data[0], data[1])
+    TRYMAP_DEC_CHAR(jisx0213_2_bmp, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_2_emp, u, data[0], data[1])
         u |= 0x20000;
     else
         return MAP_UNMAPPABLE;
@@ -736,28 +732,28 @@ jisx0213_2000_2_decoder(const unsigned char *data)
 }
 #undef config
 
-static ucs4_t
+static Py_UCS4
 jisx0213_2004_1_decoder(const unsigned char *data)
 {
-    ucs4_t u;
+    Py_UCS4 u;
     if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
-    else TRYMAP_DEC(jisx0208, u, data[0], data[1]);
-    else TRYMAP_DEC(jisx0213_1_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC(jisx0213_1_emp, u, data[0], data[1])
+    else TRYMAP_DEC_CHAR(jisx0208, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_1_bmp, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_1_emp, u, data[0], data[1])
         u |= 0x20000;
-    else TRYMAP_DEC(jisx0213_pair, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_pair, u, data[0], data[1]);
     else
         return MAP_UNMAPPABLE;
     return u;
 }
 
-static ucs4_t
+static Py_UCS4
 jisx0213_2004_2_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    TRYMAP_DEC(jisx0213_2_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC(jisx0213_2_emp, u, data[0], data[1])
+    Py_UCS4 u;
+    TRYMAP_DEC_CHAR(jisx0213_2_bmp, u, data[0], data[1]);
+    else TRYMAP_DEC_CHAR(jisx0213_2_emp, u, data[0], data[1])
         u |= 0x20000;
     else
         return MAP_UNMAPPABLE;
@@ -765,7 +761,7 @@ jisx0213_2004_2_decoder(const unsigned char *data)
 }
 
 static DBCHAR
-jisx0213_encoder(const ucs4_t *data, Py_ssize_t *length, void *config)
+jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length, void *config)
 {
     DBCHAR coded;
 
@@ -819,7 +815,7 @@ jisx0213_encoder(const ucs4_t *data, Py_ssize_t *length, void *config)
 }
 
 static DBCHAR
-jisx0213_2000_1_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0213_2000_1_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded = jisx0213_encoder(data, length, (void *)2000);
     if (coded == MAP_UNMAPPABLE || coded == MAP_MULTIPLE_AVAIL)
@@ -831,7 +827,7 @@ jisx0213_2000_1_encoder(const ucs4_t *data, Py_ssize_t *length)
 }
 
 static DBCHAR
-jisx0213_2000_1_encoder_paironly(const ucs4_t *data, Py_ssize_t *length)
+jisx0213_2000_1_encoder_paironly(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     Py_ssize_t ilength = *length;
@@ -854,7 +850,7 @@ jisx0213_2000_1_encoder_paironly(const ucs4_t *data, Py_ssize_t *length)
 }
 
 static DBCHAR
-jisx0213_2000_2_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0213_2000_2_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded = jisx0213_encoder(data, length, (void *)2000);
     if (coded == MAP_UNMAPPABLE || coded == MAP_MULTIPLE_AVAIL)
@@ -866,7 +862,7 @@ jisx0213_2000_2_encoder(const ucs4_t *data, Py_ssize_t *length)
 }
 
 static DBCHAR
-jisx0213_2004_1_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0213_2004_1_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded = jisx0213_encoder(data, length, NULL);
     if (coded == MAP_UNMAPPABLE || coded == MAP_MULTIPLE_AVAIL)
@@ -878,7 +874,7 @@ jisx0213_2004_1_encoder(const ucs4_t *data, Py_ssize_t *length)
 }
 
 static DBCHAR
-jisx0213_2004_1_encoder_paironly(const ucs4_t *data, Py_ssize_t *length)
+jisx0213_2004_1_encoder_paironly(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     Py_ssize_t ilength = *length;
@@ -901,7 +897,7 @@ jisx0213_2004_1_encoder_paironly(const ucs4_t *data, Py_ssize_t *length)
 }
 
 static DBCHAR
-jisx0213_2004_2_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0213_2004_2_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded = jisx0213_encoder(data, length, NULL);
     if (coded == MAP_UNMAPPABLE || coded == MAP_MULTIPLE_AVAIL)
@@ -912,17 +908,17 @@ jisx0213_2004_2_encoder(const ucs4_t *data, Py_ssize_t *length)
         return MAP_UNMAPPABLE;
 }
 
-static ucs4_t
+static Py_UCS4
 jisx0201_r_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    JISX0201_R_DECODE(*data, u)
+    Py_UCS4 u;
+    JISX0201_R_DECODE_CHAR(*data, u)
     else return MAP_UNMAPPABLE;
     return u;
 }
 
 static DBCHAR
-jisx0201_r_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0201_r_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     JISX0201_R_ENCODE(*data, coded)
@@ -930,17 +926,17 @@ jisx0201_r_encoder(const ucs4_t *data, Py_ssize_t *length)
     return coded;
 }
 
-static ucs4_t
+static Py_UCS4
 jisx0201_k_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    JISX0201_K_DECODE(*data ^ 0x80, u)
+    Py_UCS4 u;
+    JISX0201_K_DECODE_CHAR(*data ^ 0x80, u)
     else return MAP_UNMAPPABLE;
     return u;
 }
 
 static DBCHAR
-jisx0201_k_encoder(const ucs4_t *data, Py_ssize_t *length)
+jisx0201_k_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     JISX0201_K_ENCODE(*data, coded)
@@ -961,18 +957,18 @@ gb2312_init(void)
     return 0;
 }
 
-static ucs4_t
+static Py_UCS4
 gb2312_decoder(const unsigned char *data)
 {
-    ucs4_t u;
-    TRYMAP_DEC(gb2312, u, data[0], data[1])
+    Py_UCS4 u;
+    TRYMAP_DEC_CHAR(gb2312, u, data[0], data[1])
         return u;
     else
         return MAP_UNMAPPABLE;
 }
 
 static DBCHAR
-gb2312_encoder(const ucs4_t *data, Py_ssize_t *length)
+gb2312_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     DBCHAR coded;
     assert(*length == 1);
@@ -986,14 +982,14 @@ gb2312_encoder(const ucs4_t *data, Py_ssize_t *length)
 }
 
 
-static ucs4_t
+static Py_UCS4
 dummy_decoder(const unsigned char *data)
 {
     return MAP_UNMAPPABLE;
 }
 
 static DBCHAR
-dummy_encoder(const ucs4_t *data, Py_ssize_t *length)
+dummy_encoder(const Py_UCS4 *data, Py_ssize_t *length)
 {
     return MAP_UNMAPPABLE;
 }

@@ -12948,6 +12948,16 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
 }
 
 int
+_PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
+        return -1;
+    PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
+    writer->pos++;
+    return 0;
+}
+
+int
 _PyUnicodeWriter_WriteStr(_PyUnicodeWriter *writer, PyObject *str)
 {
     Py_UCS4 maxchar;
