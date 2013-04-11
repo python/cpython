@@ -1340,7 +1340,7 @@ class URL2PathNameTests(unittest.TestCase):
                          r'C:\foo\bar\spam.foo'
                          ]
         for path in list_of_paths:
-                self.assertEqual(url2pathname(pathname2url(path)), path)
+            self.assertEqual(url2pathname(pathname2url(path)), path)
 
 class PathName2URLTests(unittest.TestCase):
 
@@ -1368,7 +1368,7 @@ class PathName2URLTests(unittest.TestCase):
                          '/////folder/test/',
                          '///C:/foo/bar/spam.foo']
         for path in list_of_paths:
-                self.assertEqual(pathname2url(url2pathname(path)), path)
+            self.assertEqual(pathname2url(url2pathname(path)), path)
 
 if __name__ == '__main__':
     unittest.main()
