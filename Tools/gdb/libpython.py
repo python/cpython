@@ -1160,7 +1160,9 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # Convert the int code points to unicode characters, and generate a
         # local unicode instance.
         # This splits surrogate pairs if sizeof(Py_UNICODE) is 2 here (in gdb).
-        result = u''.join([_unichr(ucs) for ucs in Py_UNICODEs])
+        result = u''.join([
+            (_unichr(ucs) if ucs <= 0x10ffff else '\ufffd')
+            for ucs in Py_UNICODEs])
         return result
 
     def write_repr(self, out, visited):
