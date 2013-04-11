@@ -2096,7 +2096,8 @@ else:
 
             def servername_cb(ssl_sock, server_name, initial_context):
                 calls.append((server_name, initial_context))
-                ssl_sock.context = other_context
+                if server_name is not None:
+                    ssl_sock.context = other_context
             server_context.set_servername_callback(servername_cb)
 
             stats = server_params_test(client_context, server_context,
@@ -2107,6 +2108,14 @@ else:
             self.assertEqual(calls, [("supermessage", server_context)])
             # CERTFILE4 was selected
             self.check_common_name(stats, 'fakehostname')
+
+            calls = []
+            # The callback is called with server_name=None
+            stats = server_params_test(client_context, server_context,
+                                       chatty=True,
+                                       sni_name=None)
+            self.assertEqual(calls, [(None, server_context)])
+            self.check_common_name(stats, 'localhost')
 
             # Check disabling the callback
             calls = []
