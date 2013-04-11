@@ -81,6 +81,9 @@ Tests
 - Issue #12820: add tests for the xml.dom.minicompat module.
   Patch by John Chandler and Phil Connell.
 
+- Issue #17690: test_time now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
