@@ -176,57 +176,28 @@ class Test_StreamReader(unittest.TestCase):
             support.unlink(TESTFN)
 
 class Test_StreamWriter(unittest.TestCase):
-    if len('\U00012345') == 2: # UCS2
-        def test_gb18030(self):
-            s= io.BytesIO()
-            c = codecs.getwriter('gb18030')(s)
-            c.write('123')
-            self.assertEqual(s.getvalue(), b'123')
-            c.write('\U00012345')
-            self.assertEqual(s.getvalue(), b'123\x907\x959')
-            c.write('\U00012345'[0])
-            self.assertEqual(s.getvalue(), b'123\x907\x959')
-            c.write('\U00012345'[1] + '\U00012345' + '\uac00\u00ac')
-            self.assertEqual(s.getvalue(),
-                    b'123\x907\x959\x907\x959\x907\x959\x827\xcf5\x810\x851')
-            c.write('\U00012345'[0])
-            self.assertEqual(s.getvalue(),
-                    b'123\x907\x959\x907\x959\x907\x959\x827\xcf5\x810\x851')
-            self.assertRaises(UnicodeError, c.reset)
-            self.assertEqual(s.getvalue(),
-                    b'123\x907\x959\x907\x959\x907\x959\x827\xcf5\x810\x851')
+    def test_gb18030(self):
+        s= io.BytesIO()
+        c = codecs.getwriter('gb18030')(s)
+        c.write('123')
+        self.assertEqual(s.getvalue(), b'123')
+        c.write('\U00012345')
+        self.assertEqual(s.getvalue(), b'123\x907\x959')
+        c.write('\uac00\u00ac')
+        self.assertEqual(s.getvalue(),
+                b'123\x907\x959\x827\xcf5\x810\x851')
 
-        def test_utf_8(self):
-            s= io.BytesIO()
-            c = codecs.getwriter('utf-8')(s)
-            c.write('123')
-            self.assertEqual(s.getvalue(), b'123')
-            c.write('\U00012345')
-            self.assertEqual(s.getvalue(), b'123\xf0\x92\x8d\x85')
-
-            # Python utf-8 codec can't buffer surrogate pairs yet.
-            if 0:
-                c.write('\U00012345'[0])
-                self.assertEqual(s.getvalue(), b'123\xf0\x92\x8d\x85')
-                c.write('\U00012345'[1] + '\U00012345' + '\uac00\u00ac')
-                self.assertEqual(s.getvalue(),
-                    b'123\xf0\x92\x8d\x85\xf0\x92\x8d\x85\xf0\x92\x8d\x85'
-                    b'\xea\xb0\x80\xc2\xac')
-                c.write('\U00012345'[0])
-                self.assertEqual(s.getvalue(),
-                    b'123\xf0\x92\x8d\x85\xf0\x92\x8d\x85\xf0\x92\x8d\x85'
-                    b'\xea\xb0\x80\xc2\xac')
-                c.reset()
-                self.assertEqual(s.getvalue(),
-                    b'123\xf0\x92\x8d\x85\xf0\x92\x8d\x85\xf0\x92\x8d\x85'
-                    b'\xea\xb0\x80\xc2\xac\xed\xa0\x88')
-                c.write('\U00012345'[1])
-                self.assertEqual(s.getvalue(),
-                    b'123\xf0\x92\x8d\x85\xf0\x92\x8d\x85\xf0\x92\x8d\x85'
-                    b'\xea\xb0\x80\xc2\xac\xed\xa0\x88\xed\xbd\x85')
-
-    else: # UCS4
-        pass
+    def test_utf_8(self):
+        s= io.BytesIO()
+        c = codecs.getwriter('utf-8')(s)
+        c.write('123')
+        self.assertEqual(s.getvalue(), b'123')
+        c.write('\U00012345')
+        self.assertEqual(s.getvalue(), b'123\xf0\x92\x8d\x85')
+        c.write('\uac00\u00ac')
+        self.assertEqual(s.getvalue(),
+            b'123\xf0\x92\x8d\x85'
+            b'\xea\xb0\x80\xc2\xac')
 
     def test_streamwriter_strwrite(self):
         s = io.BytesIO()
