@@ -281,10 +281,10 @@ ABC hierarchy::
         given module's repr, as a string. The module type's default repr() will
         use the result of this method as appropriate.
 
-        .. versionadded: 3.3
+        .. versionadded:: 3.3
 
         .. versionchanged:: 3.4
-        Made optional instead of an abstractmethod.
+           Made optional instead of an abstractmethod.
 
 
 .. class:: ResourceLoader
