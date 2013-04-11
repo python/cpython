@@ -1,10 +1,18 @@
 import getpass
 import os
-import termios
 import unittest
 from io import StringIO
 from unittest import mock
 from test import support
+
+try:
+    import termios
+except ImportError:
+    termios = None
+try:
+    import pwd
+except ImportError:
+    pwd = None
 
 @mock.patch('os.environ')
 class GetpassGetuserTest(unittest.TestCase):
@@ -16,7 +24,10 @@ class GetpassGetuserTest(unittest.TestCase):
 
     def test_username_priorities_of_env_values(self, environ):
         environ.get.return_value = None
-        getpass.getuser()
+        try:
+            getpass.getuser()
+        except ImportError: # in case there's no pwd module
+            pass
         self.assertEqual(
             environ.get.call_args_list,
             [mock.call(x) for x in ('LOGNAME', 'USER', 'LNAME', 'USERNAME')])
@@ -24,13 +35,16 @@ class GetpassGetuserTest(unittest.TestCase):
     def test_username_falls_back_to_pwd(self, environ):
         expected_name = 'some_name'
         environ.get.return_value = None
-        with mock.patch('os.getuid') as uid, \
-                mock.patch('pwd.getpwuid') as getpw:
-            uid.return_value = 42
-            getpw.return_value = [expected_name]
-            self.assertEqual(expected_name,
-                             getpass.getuser())
-            getpw.assert_called_once_with(42)
+        if pwd:
+            with mock.patch('os.getuid') as uid, \
+                    mock.patch('pwd.getpwuid') as getpw:
+                uid.return_value = 42
+                getpw.return_value = [expected_name]
+                self.assertEqual(expected_name,
+                                 getpass.getuser())
+                getpw.assert_called_once_with(42)
+        else:
+            self.assertRaises(ImportError, getpass.getuser)
 
 
 class GetpassRawinputTest(unittest.TestCase):
@@ -68,9 +82,8 @@ class GetpassRawinputTest(unittest.TestCase):
 # the password input be taken directly from the tty, and that it not be echoed
 # on the screen, unless we are falling back to stderr/stdin.
 
-# Some of these might run on other platforms, but play it safe.
-@unittest.skipUnless(os.name == 'posix',
-                     'tests are for the unix version of getpass')
+# Some of these might run on platforms without termios, but play it safe.
+@unittest.skipUnless(termios, 'tests require system with termios')
 class UnixGetpassTest(unittest.TestCase):
 
     def test_uses_tty_directly(self):
