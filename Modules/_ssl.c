@@ -2448,22 +2448,28 @@ _servername_callback(SSL *s, int *al, void *args)
         goto error;
     }
  
-    servername_o = PyBytes_FromString(servername);
-    if (servername_o == NULL) {
-        PyErr_WriteUnraisable((PyObject *) ssl_ctx);
-        goto error;
+    if (servername == NULL) {
+        result = PyObject_CallFunctionObjArgs(ssl_ctx->set_hostname, ssl_socket,
+                                              Py_None, ssl_ctx, NULL);
     }
-    servername_idna = PyUnicode_FromEncodedObject(servername_o, "idna", NULL);
-    if (servername_idna == NULL) {
-        PyErr_WriteUnraisable(servername_o);
+    else {
+        servername_o = PyBytes_FromString(servername);
+        if (servername_o == NULL) {
+            PyErr_WriteUnraisable((PyObject *) ssl_ctx);
+            goto error;
+        }
+        servername_idna = PyUnicode_FromEncodedObject(servername_o, "idna", NULL);
+        if (servername_idna == NULL) {
+            PyErr_WriteUnraisable(servername_o);
+            Py_DECREF(servername_o);
+            goto error;
+        }
         Py_DECREF(servername_o);
-        goto error;
+        result = PyObject_CallFunctionObjArgs(ssl_ctx->set_hostname, ssl_socket,
+                                              servername_idna, ssl_ctx, NULL);
+        Py_DECREF(servername_idna);
     }
-    Py_DECREF(servername_o);
-    result = PyObject_CallFunctionObjArgs(ssl_ctx->set_hostname, ssl_socket,
-                                          servername_idna, ssl_ctx, NULL);
     Py_DECREF(ssl_socket);
-    Py_DECREF(servername_idna);
 
     if (result == NULL) {
         PyErr_WriteUnraisable(ssl_ctx->set_hostname);
