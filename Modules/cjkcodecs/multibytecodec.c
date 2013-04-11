@@ -17,8 +17,8 @@ typedef struct {
 
 typedef struct {
     const unsigned char *inbuf, *inbuf_top, *inbuf_end;
-    Py_UNICODE          *outbuf, *outbuf_end;
-    PyObject            *excobj, *outobj;
+    PyObject            *excobj;
+    _PyUnicodeWriter    writer;
 } MultibyteDecodeBuffer;
 
 PyDoc_STRVAR(MultibyteCodec_Encode__doc__,
@@ -197,29 +197,6 @@ expand_encodebuffer(MultibyteEncodeBuffer *buf, Py_ssize_t esize)
             goto errorexit;                                             \
 }
 
-static int
-expand_decodebuffer(MultibyteDecodeBuffer *buf, Py_ssize_t esize)
-{
-    Py_ssize_t orgpos, orgsize;
-
-    orgpos = (Py_ssize_t)(buf->outbuf - PyUnicode_AS_UNICODE(buf->outobj));
-    orgsize = PyUnicode_GET_SIZE(buf->outobj);
-    if (PyUnicode_Resize(&buf->outobj, orgsize + (
-        esize < (orgsize >> 1) ? (orgsize >> 1) | 1 : esize)) == -1)
-        return -1;
-
-    buf->outbuf = PyUnicode_AS_UNICODE(buf->outobj) + orgpos;
-    buf->outbuf_end = PyUnicode_AS_UNICODE(buf->outobj)
-                      + PyUnicode_GET_SIZE(buf->outobj);
-
-    return 0;
-}
-#define REQUIRE_DECODEBUFFER(buf, s) {                                  \
-    if ((s) < 1 || (buf)->outbuf + (s) > (buf)->outbuf_end)             \
-        if (expand_decodebuffer(buf, s) == -1)                          \
-            goto errorexit;                                             \
-}
-
 
 /**
  * MultibyteCodec object
@@ -374,7 +351,7 @@ multibytecodec_decerror(MultibyteCodec *codec,
                         PyObject *errors, Py_ssize_t e)
 {
     PyObject *retobj = NULL, *retuni = NULL;
-    Py_ssize_t retunisize, newpos;
+    Py_ssize_t newpos;
     const char *reason;
     Py_ssize_t esize, start, end;
 
@@ -385,7 +362,6 @@ multibytecodec_decerror(MultibyteCodec *codec,
     else {
         switch (e) {
         case MBERR_TOOSMALL:
-            REQUIRE_DECODEBUFFER(buf, -1);
             return 0; /* retry it */
         case MBERR_TOOFEW:
             reason = "incomplete multibyte sequence";
@@ -403,8 +379,9 @@ multibytecodec_decerror(MultibyteCodec *codec,
     }
 
     if (errors == ERROR_REPLACE) {
-        REQUIRE_DECODEBUFFER(buf, 1);
-        *buf->outbuf++ = Py_UNICODE_REPLACEMENT_CHARACTER;
+        if (_PyUnicodeWriter_WriteChar(&buf->writer,
+                                       Py_UNICODE_REPLACEMENT_CHARACTER) < 0)
+            goto errorexit;
     }
     if (errors == ERROR_IGNORE || errors == ERROR_REPLACE) {
         buf->inbuf += esize;
@@ -447,15 +424,8 @@ multibytecodec_decerror(MultibyteCodec *codec,
         goto errorexit;
     }
 
-    if (PyUnicode_AsUnicode(retuni) == NULL)
+    if (_PyUnicodeWriter_WriteStr(&buf->writer, retuni) < 0)
         goto errorexit;
-    retunisize = PyUnicode_GET_SIZE(retuni);
-    if (retunisize > 0) {
-        REQUIRE_DECODEBUFFER(buf, retunisize);
-        memcpy((char *)buf->outbuf, PyUnicode_AS_UNICODE(retuni),
-                        retunisize * Py_UNICODE_SIZE);
-        buf->outbuf += retunisize;
-    }
 
     newpos = PyLong_AsSsize_t(PyTuple_GET_ITEM(retobj, 1));
     if (newpos < 0 && !PyErr_Occurred())
@@ -617,10 +587,10 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
 {
     MultibyteCodec_State state;
     MultibyteDecodeBuffer buf;
-    PyObject *errorcb;
+    PyObject *errorcb, *res;
     Py_buffer pdata;
     const char *data, *errors = NULL;
-    Py_ssize_t datalen, finalsize;
+    Py_ssize_t datalen;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|z:decode",
                             codeckwarglist, &pdata, &errors))
@@ -640,29 +610,22 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
         return make_tuple(PyUnicode_New(0, 0), 0);
     }
 
+    _PyUnicodeWriter_Init(&buf.writer, datalen);
     buf.excobj = NULL;
     buf.inbuf = buf.inbuf_top = (unsigned char *)data;
     buf.inbuf_end = buf.inbuf_top + datalen;
-    buf.outobj = PyUnicode_FromUnicode(NULL, datalen);
-    if (buf.outobj == NULL)
-        goto errorexit;
-    buf.outbuf = PyUnicode_AS_UNICODE(buf.outobj);
-    if (buf.outbuf == NULL)
-        goto errorexit;
-    buf.outbuf_end = buf.outbuf + PyUnicode_GET_SIZE(buf.outobj);
 
     if (self->codec->decinit != NULL &&
         self->codec->decinit(&state, self->codec->config) != 0)
         goto errorexit;
 
     while (buf.inbuf < buf.inbuf_end) {
-        Py_ssize_t inleft, outleft, r;
+        Py_ssize_t inleft, r;
 
         inleft = (Py_ssize_t)(buf.inbuf_end - buf.inbuf);
-        outleft = (Py_ssize_t)(buf.outbuf_end - buf.outbuf);
 
         r = self->codec->decode(&state, self->codec->config,
-                        &buf.inbuf, inleft, &buf.outbuf, outleft);
+                        &buf.inbuf, inleft, &buf.writer);
         if (r == 0)
             break;
         else if (multibytecodec_decerror(self->codec, &state,
@@ -670,23 +633,20 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
             goto errorexit;
     }
 
-    finalsize = (Py_ssize_t)(buf.outbuf -
-                             PyUnicode_AS_UNICODE(buf.outobj));
-
-    if (finalsize != PyUnicode_GET_SIZE(buf.outobj))
-        if (PyUnicode_Resize(&buf.outobj, finalsize) == -1)
-            goto errorexit;
+    res = _PyUnicodeWriter_Finish(&buf.writer);
+    if (res == NULL)
+        goto errorexit;
 
     PyBuffer_Release(&pdata);
     Py_XDECREF(buf.excobj);
     ERROR_DECREF(errorcb);
-    return make_tuple(buf.outobj, datalen);
+    return make_tuple(res, datalen);
 
 errorexit:
     PyBuffer_Release(&pdata);
     ERROR_DECREF(errorcb);
     Py_XDECREF(buf.excobj);
-    Py_XDECREF(buf.outobj);
+    _PyUnicodeWriter_Dealloc(&buf.writer);
 
     return NULL;
 }
@@ -859,17 +819,7 @@ decoder_prepare_buffer(MultibyteDecodeBuffer *buf, const char *data,
 {
     buf->inbuf = buf->inbuf_top = (const unsigned char *)data;
     buf->inbuf_end = buf->inbuf_top + size;
-    if (buf->outobj == NULL) { /* only if outobj is not allocated yet */
-        buf->outobj = PyUnicode_FromUnicode(NULL, size);
-        if (buf->outobj == NULL)
-            return -1;
-        buf->outbuf = PyUnicode_AsUnicode(buf->outobj);
-        if (buf->outbuf == NULL)
-            return -1;
-        buf->outbuf_end = buf->outbuf +
-                          PyUnicode_GET_SIZE(buf->outobj);
-    }
-
+    _PyUnicodeWriter_Init(&buf->writer, size);
     return 0;
 }
 
@@ -878,14 +828,13 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
                     MultibyteDecodeBuffer *buf)
 {
     while (buf->inbuf < buf->inbuf_end) {
-        Py_ssize_t inleft, outleft;
+        Py_ssize_t inleft;
         Py_ssize_t r;
 
         inleft = (Py_ssize_t)(buf->inbuf_end - buf->inbuf);
-        outleft = (Py_ssize_t)(buf->outbuf_end - buf->outbuf);
 
         r = ctx->codec->decode(&ctx->state, ctx->codec->config,
-            &buf->inbuf, inleft, &buf->outbuf, outleft);
+            &buf->inbuf, inleft, &buf->writer);
         if (r == 0 || r == MBERR_TOOFEW)
             break;
         else if (multibytecodec_decerror(ctx->codec, &ctx->state,
@@ -1058,8 +1007,9 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
     MultibyteDecodeBuffer buf;
     char *data, *wdata = NULL;
     Py_buffer pdata;
-    Py_ssize_t wsize, finalsize = 0, size, origpending;
+    Py_ssize_t wsize, size, origpending;
     int final = 0;
+    PyObject *res;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:decode",
                     incrementalkwarglist, &pdata, &final))
@@ -1067,7 +1017,8 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
     data = pdata.buf;
     size = pdata.len;
 
-    buf.outobj = buf.excobj = NULL;
+    _PyUnicodeWriter_Init(&buf.writer, 1);
+    buf.excobj = NULL;
     origpending = self->pendingsize;
 
     if (self->pendingsize == 0) {
@@ -1109,23 +1060,22 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
             goto errorexit;
     }
 
-    finalsize = (Py_ssize_t)(buf.outbuf - PyUnicode_AS_UNICODE(buf.outobj));
-    if (finalsize != PyUnicode_GET_SIZE(buf.outobj))
-        if (PyUnicode_Resize(&buf.outobj, finalsize) == -1)
-            goto errorexit;
+    res = _PyUnicodeWriter_Finish(&buf.writer);
+    if (res == NULL)
+        goto errorexit;
 
     PyBuffer_Release(&pdata);
     if (wdata != data)
         PyMem_Del(wdata);
     Py_XDECREF(buf.excobj);
-    return buf.outobj;
+    return res;
 
 errorexit:
     PyBuffer_Release(&pdata);
     if (wdata != NULL && wdata != data)
         PyMem_Del(wdata);
     Py_XDECREF(buf.excobj);
-    Py_XDECREF(buf.outobj);
+    _PyUnicodeWriter_Dealloc(&buf.writer);
     return NULL;
 }
 
@@ -1265,13 +1215,14 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
                      const char *method, Py_ssize_t sizehint)
 {
     MultibyteDecodeBuffer buf;
-    PyObject *cres;
-    Py_ssize_t rsize, finalsize = 0;
+    PyObject *cres, *res;
+    Py_ssize_t rsize;
 
     if (sizehint == 0)
         return PyUnicode_New(0, 0);
 
-    buf.outobj = buf.excobj = NULL;
+    _PyUnicodeWriter_Init(&buf.writer, 1);
+    buf.excobj = NULL;
     cres = NULL;
 
     for (;;) {
@@ -1340,29 +1291,27 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
                 goto errorexit;
         }
 
-        finalsize = (Py_ssize_t)(buf.outbuf -
-                        PyUnicode_AS_UNICODE(buf.outobj));
         Py_DECREF(cres);
         cres = NULL;
 
-        if (sizehint < 0 || finalsize != 0 || rsize == 0)
+        if (sizehint < 0 || buf.writer.pos != 0 || rsize == 0)
             break;
 
         sizehint = 1; /* read 1 more byte and retry */
     }
 
-    if (finalsize != PyUnicode_GET_SIZE(buf.outobj))
-        if (PyUnicode_Resize(&buf.outobj, finalsize) == -1)
-            goto errorexit;
+    res = _PyUnicodeWriter_Finish(&buf.writer);
+    if (res == NULL)
+        goto errorexit;
 
     Py_XDECREF(cres);
     Py_XDECREF(buf.excobj);
-    return buf.outobj;
+    return res;
 
 errorexit:
     Py_XDECREF(cres);
     Py_XDECREF(buf.excobj);
-    Py_XDECREF(buf.outobj);
+    _PyUnicodeWriter_Dealloc(&buf.writer);
     return NULL;
 }
 

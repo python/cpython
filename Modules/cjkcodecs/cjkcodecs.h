@@ -33,7 +33,7 @@ struct dbcs_index {
 typedef struct dbcs_index decode_map;
 
 struct widedbcs_index {
-    const ucs4_t *map;
+    const Py_UCS4 *map;
     unsigned char bottom, top;
 };
 typedef struct widedbcs_index widedecode_map;
@@ -56,7 +56,7 @@ struct dbcs_map {
 };
 
 struct pair_encodemap {
-    ucs4_t uniseq;
+    Py_UCS4 uniseq;
     DBCHAR code;
 };
 
@@ -86,7 +86,7 @@ static const struct dbcs_map *mapping_list;
     static Py_ssize_t encoding##_decode(                                \
         MultibyteCodec_State *state, const void *config,                \
         const unsigned char **inbuf, Py_ssize_t inleft,                 \
-        Py_UNICODE **outbuf, Py_ssize_t outleft)
+        _PyUnicodeWriter *writer)
 #define DECODER_RESET(encoding)                                         \
     static Py_ssize_t encoding##_decode_reset(                          \
         MultibyteCodec_State *state, const void *config)
@@ -101,13 +101,15 @@ static const struct dbcs_map *mapping_list;
 #endif
 
 #define NEXT_IN(i)                              \
-    (*inbuf) += (i);                            \
-    (inleft) -= (i);
+    do {                                        \
+        (*inbuf) += (i);                        \
+        (inleft) -= (i);                        \
+    } while (0)
 #define NEXT_OUT(o)                             \
     (*outbuf) += (o);                           \
     (outleft) -= (o);
 #define NEXT(i, o)                              \
-    NEXT_IN(i) NEXT_OUT(o)
+    NEXT_IN(i); NEXT_OUT(o)
 
 #define REQUIRE_INBUF(n)                        \
     if (inleft < (n))                           \
@@ -120,6 +122,23 @@ static const struct dbcs_map *mapping_list;
 #define IN2 ((*inbuf)[1])
 #define IN3 ((*inbuf)[2])
 #define IN4 ((*inbuf)[3])
+
+#define OUTCHAR(c)                                                         \
+    do {                                                                   \
+        if (_PyUnicodeWriter_WriteChar(writer, (c)) < 0)                   \
+            return MBERR_TOOSMALL;                                         \
+    } while (0)
+
+#define OUTCHAR2(c1, c2)                                                   \
+    do {                                                                   \
+        Py_UCS4 _c1 = (c1);                                                \
+        Py_UCS4 _c2 = (c2);                                                \
+        if (_PyUnicodeWriter_Prepare(writer, 2, Py_MAX(_c1, c2)) < 0)      \
+            return MBERR_TOOSMALL;                                         \
+        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, _c1);     \
+        PyUnicode_WRITE(writer->kind, writer->data, writer->pos + 1, _c2); \
+        writer->pos += 2;                                                  \
+    } while (0)
 
 #define OUT1(c) ((*outbuf)[0]) = (c);
 #define OUT2(c) ((*outbuf)[1]) = (c);
@@ -145,19 +164,6 @@ static const struct dbcs_map *mapping_list;
     (*outbuf)[2] = (c3);        \
     (*outbuf)[3] = (c4);
 
-#if Py_UNICODE_SIZE == 2
-# define WRITEUCS4(c)                                           \
-    REQUIRE_OUTBUF(2)                                           \
-    (*outbuf)[0] = Py_UNICODE_HIGH_SURROGATE(c);                \
-    (*outbuf)[1] = Py_UNICODE_LOW_SURROGATE(c);                 \
-    NEXT_OUT(2)
-#else
-# define WRITEUCS4(c)                                           \
-    REQUIRE_OUTBUF(1)                                           \
-    **outbuf = (Py_UNICODE)(c);                                 \
-    NEXT_OUT(1)
-#endif
-
 #define _TRYMAP_ENC(m, assi, val)                               \
     ((m)->map != NULL && (val) >= (m)->bottom &&                \
         (val)<= (m)->top && ((assi) = (m)->map[(val) -          \
@@ -167,24 +173,41 @@ static const struct dbcs_map *mapping_list;
 #define TRYMAP_ENC(charset, assi, uni)                          \
     if TRYMAP_ENC_COND(charset, assi, uni)
 
-#define _TRYMAP_DEC(m, assi, val)                               \
-    ((m)->map != NULL && (val) >= (m)->bottom &&                \
-        (val)<= (m)->top && ((assi) = (m)->map[(val) -          \
-        (m)->bottom]) != UNIINV)
-#define TRYMAP_DEC(charset, assi, c1, c2)                       \
-    if _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
+Py_LOCAL_INLINE(int)
+_TRYMAP_DEC_WRITE(_PyUnicodeWriter *writer, Py_UCS4 c)
+{
+    if (c == UNIINV || _PyUnicodeWriter_WriteChar(writer, c) < 0)
+        return UNIINV;
+    else
+        return c;
+}
 
-#define _TRYMAP_ENC_MPLANE(m, assplane, asshi, asslo, val)      \
-    ((m)->map != NULL && (val) >= (m)->bottom &&                \
-        (val)<= (m)->top &&                                     \
-        ((assplane) = (m)->map[((val) - (m)->bottom)*3]) != 0 && \
+#define _TRYMAP_DEC(m, writer, val)                             \
+    ((m)->map != NULL &&                                        \
+     (val) >= (m)->bottom &&                                    \
+     (val)<= (m)->top &&                                        \
+     _TRYMAP_DEC_WRITE(writer, (m)->map[(val) - (m)->bottom]) != UNIINV)
+#define _TRYMAP_DEC_CHAR(m, assi, val)                             \
+    ((m)->map != NULL &&                                        \
+     (val) >= (m)->bottom &&                                    \
+     (val)<= (m)->top &&                                        \
+     ((assi) = (m)->map[(val) - (m)->bottom]) != UNIINV)
+#define TRYMAP_DEC(charset, writer, c1, c2)                     \
+    if _TRYMAP_DEC(&charset##_decmap[c1], writer, c2)
+#define TRYMAP_DEC_CHAR(charset, assi, c1, c2)                     \
+    if _TRYMAP_DEC_CHAR(&charset##_decmap[c1], assi, c2)
+
+#define _TRYMAP_ENC_MPLANE(m, assplane, asshi, asslo, val)        \
+    ((m)->map != NULL && (val) >= (m)->bottom &&                  \
+        (val)<= (m)->top &&                                       \
+        ((assplane) = (m)->map[((val) - (m)->bottom)*3]) != 0 &&  \
         (((asshi) = (m)->map[((val) - (m)->bottom)*3 + 1]), 1) && \
         (((asslo) = (m)->map[((val) - (m)->bottom)*3 + 2]), 1))
 #define TRYMAP_ENC_MPLANE(charset, assplane, asshi, asslo, uni) \
     if _TRYMAP_ENC_MPLANE(&charset##_encmap[(uni) >> 8], \
                        assplane, asshi, asslo, (uni) & 0xff)
-#define TRYMAP_DEC_MPLANE(charset, assi, plane, c1, c2)         \
-    if _TRYMAP_DEC(&charset##_decmap[plane][c1], assi, c2)
+#define TRYMAP_DEC_MPLANE(charset, writer, plane, c1, c2)         \
+    if _TRYMAP_DEC(&charset##_decmap[plane][c1], writer, c2)
 
 #if Py_UNICODE_SIZE == 2
 #define DECODE_SURROGATE(c)                                     \
@@ -323,7 +346,7 @@ find_pairencmap(ucs2_t body, ucs2_t modifier,
                 const struct pair_encodemap *haystack, int haystacksize)
 {
     int pos, min, max;
-    ucs4_t value = body << 16 | modifier;
+    Py_UCS4 value = body << 16 | modifier;
 
     min = 0;
     max = haystacksize;
