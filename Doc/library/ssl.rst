@@ -842,6 +842,7 @@ to speed up repeated connections from the same clients.
    The callback function, *server_name_callback*, will be called with three
    arguments; the first being the :class:`ssl.SSLSocket`, the second is a string
    that represents the server name that the client is intending to communicate
+   (or :const:`None` if the TLS Client Hello does not contain a server name)
    and the third argument is the original :class:`SSLContext`. The server name
    argument is the IDNA decoded server name.
 
