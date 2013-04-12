@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9556: Allowed specifying a time-of-day for a TimedRotatingFileHandler
+  to rotate.
+
 - Issue #14971: unittest test discovery no longer gets confused when a function
   has a different __name__ than its name in the TestCase class dictionary.
 

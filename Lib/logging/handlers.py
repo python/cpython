@@ -1,4 +1,4 @@
-# Copyright 2001-2012 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2013 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2012 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2013 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -196,11 +196,12 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     If backupCount is > 0, when rollover is done, no more than backupCount
     files are kept - the oldest ones are deleted.
     """
-    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False):
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False, atTime=None):
         BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
         self.when = when.upper()
         self.backupCount = backupCount
         self.utc = utc
+        self.atTime = atTime
         # Calculate the real rollover interval, which is just the number of
         # seconds between rollovers.  Also set the filename suffix used when
         # a rollover occurs.  Current 'when' events supported:
@@ -270,9 +271,22 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             currentHour = t[3]
             currentMinute = t[4]
             currentSecond = t[5]
-            # r is the number of seconds left between now and midnight
-            r = _MIDNIGHT - ((currentHour * 60 + currentMinute) * 60 +
-                    currentSecond)
+            currentDay = t[6]
+            # r is the number of seconds left between now and the next rotation
+            if self.atTime is None:
+                rotate_ts = _MIDNIGHT
+            else:
+                rotate_ts = ((self.atTime.hour * 60 + self.atTime.minute)*60 +
+                    self.atTime.second)
+
+            r = rotate_ts - ((currentHour * 60 + currentMinute) * 60 +
+                currentSecond)
+            if r < 0:
+                # Rotate time is before the current time (for example when
+                # self.rotateAt is 13:45 and it now 14:15), rotation is
+                # tomorrow.
+                r += _MIDNIGHT
+                currentDay = (currentDay + 1) % 7
             result = currentTime + r
             # If we are rolling over on a certain day, add in the number of days until
             # the next rollover, but offset by 1 since we just calculated the time
@@ -290,7 +304,7 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
             # This is because the above time calculation takes us to midnight on this
             # day, i.e. the start of the next day.
             if self.when.startswith('W'):
-                day = t[6] # 0 is Monday
+                day = currentDay # 0 is Monday
                 if day != self.dayOfWeek:
                     if day < self.dayOfWeek:
                         daysToWait = self.dayOfWeek - day
