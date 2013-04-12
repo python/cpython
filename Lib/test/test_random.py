@@ -71,7 +71,7 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaises(ValueError):
             random.triangular(low=5, high=2, mode=1)
         with self.assertRaises(ValueError):
-           random.triangular(low=-2, high=-5)
+            random.triangular(low=-2, high=-5)
 
         self.assertEqual(random.triangular(low=10, high=10), 10)
         self.assertEqual(random.triangular(low=10, high=10, mode=10), 10)
