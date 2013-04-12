@@ -87,6 +87,9 @@ Tests
 - Issue #17692: test_sqlite now works with unittest test discovery.
   Patch by Zachary Ware.
 
+- Issue #6696: add documentation for the Profile objects, and improve
+  profile/cProfile docs.  Patch by Tom Pinckney.
+
 
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
