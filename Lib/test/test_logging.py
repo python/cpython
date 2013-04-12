@@ -3949,6 +3949,48 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         assertRaises(ValueError, logging.handlers.TimedRotatingFileHandler,
                      self.fn, 'W7', delay=True)
 
+    def test_compute_rollover_daily_attime(self):
+        currentTime = 0
+        atTime = datetime.time(12, 0, 0)
+        rh = logging.handlers.TimedRotatingFileHandler(
+            self.fn, when='MIDNIGHT', interval=1, backupCount=0, utc=True,
+            atTime=atTime)
+
+        actual = rh.computeRollover(currentTime)
+        self.assertEqual(actual, currentTime + 12 * 60 * 60)
+
+        actual = rh.computeRollover(currentTime + 13 * 60 * 60)
+        self.assertEqual(actual, currentTime + 36 * 60 * 60)
+
+        rh.close()
+
+    def test_compute_rollover_weekly_attime(self):
+        currentTime = 0
+        atTime = datetime.time(12, 0, 0)
+
+        wday = datetime.datetime.fromtimestamp(currentTime).weekday()
+        for day in range(7):
+            rh = logging.handlers.TimedRotatingFileHandler(
+                self.fn, when='W%d' % day, interval=1, backupCount=0, utc=True,
+                atTime=atTime)
+
+            if wday > day:
+                expected = (7 - wday + day)
+            else:
+                expected = (day - wday)
+            expected *= 24 * 60 * 60
+            expected += 12 * 60 * 60
+            actual = rh.computeRollover(currentTime)
+            self.assertEqual(actual, expected)
+            if day == wday:
+                # goes into following week
+                expected += 7 * 24 * 60 * 60
+            actual = rh.computeRollover(currentTime + 13 * 60 * 60)
+            self.assertEqual(actual, expected)
+
+            rh.close()
+
+
 def secs(**kw):
     return datetime.timedelta(**kw) // datetime.timedelta(seconds=1)
 
