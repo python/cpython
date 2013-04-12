@@ -46,6 +46,8 @@ Library
 IDLE
 ----
 
+- Issue #17585: Fixed IDLE regression. Now closes when using exit() or quit().
+
 - Issue #17657: Show full Tk version in IDLE's about dialog.
   Patch by Todd Rovito.
 
