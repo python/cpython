@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13355: Raise ValueError on random.triangular call with invalid params.
+  Initial patch by Yuriy Senko.
+
 - Issue #16658: add missing return to HTTPConnection.send()
   Patch by Jeff Knupp.
 
