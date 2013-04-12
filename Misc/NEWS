@@ -79,6 +79,9 @@ Tests
 - Issue #17690: test_time now works with unittest test discovery.
   Patch by Zachary Ware.
 
+- Issue #17692: test_sqlite now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 Documentation
 -------------
 
