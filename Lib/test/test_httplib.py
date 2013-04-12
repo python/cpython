@@ -371,6 +371,27 @@ class BasicTest(TestCase):
         conn.send(io.BytesIO(expected))
         self.assertEqual(expected, sock.data)
 
+    def test_send_updating_file(self):
+        def data():
+            yield 'data'
+            yield None
+            yield 'data_two'
+
+        class UpdatingFile():
+            mode = 'r'
+            d = data()
+            def read(self, blocksize=-1):
+                return self.d.__next__()
+
+        expected = b'data'
+
+        conn = client.HTTPConnection('example.com')
+        sock = FakeSocket("")
+        conn.sock = sock
+        conn.send(UpdatingFile())
+        self.assertEqual(sock.data, expected)
+
+
     def test_send_iter(self):
         expected = b'GET /foo HTTP/1.1\r\nHost: example.com\r\n' \
                    b'Accept-Encoding: identity\r\nContent-Length: 11\r\n' \
