@@ -65,6 +65,9 @@ Documentation
 
 - Issue #15940: Specify effect of locale on time functions.
 
+- Issue #6696: add documentation for the Profile objects, and improve
+  profile/cProfile docs.  Patch by Tom Pinckney.
+
 
 What's New in Python 2.7.4?
 ===========================
