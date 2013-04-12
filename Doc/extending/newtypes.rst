@@ -1233,7 +1233,7 @@ if an exception was set.
 Here is a sample implementation, for a datatype that is considered equal if the
 size of an internal pointer is equal::
 
-   static int
+   static PyObject *
    newdatatype_richcmp(PyObject *obj1, PyObject *obj2, int op)
    {
        PyObject *result;
