@@ -166,7 +166,7 @@ Server Objects
 
 .. method:: BaseServer.service_actions()
 
-   This is called in the :meth:`serve_forever` loop. This method is can be
+   This is called in the :meth:`serve_forever` loop. This method can be
    overridden by subclasses or mixin classes to perform actions specific to
    a given service, such as cleanup actions.
 
