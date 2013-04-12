@@ -48,6 +48,33 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
 
+    def test_triangular(self):
+        # Check that triangular() correctly handles bad input. See issue 13355.
+        # mode > high.
+        with self.assertRaises(ValueError):
+            random.triangular(mode=2)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=10, mode=11)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=1, mode=11)
+        # mode < low.
+        with self.assertRaises(ValueError):
+            random.triangular(mode=-1)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=10, mode=0)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=1, mode=0)
+        # low > high
+        with self.assertRaises(ValueError):
+            random.triangular(low=5, high=2)
+        with self.assertRaises(ValueError):
+            random.triangular(low=5, high=2, mode=1)
+        with self.assertRaises(ValueError):
+           random.triangular(low=-2, high=-5)
+
+        self.assertEqual(random.triangular(low=10, high=10), 10)
+        self.assertEqual(random.triangular(low=10, high=10, mode=10), 10)
+
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
         # Random.seed() uses time.time() when an operating system specific
@@ -73,7 +100,6 @@ class TestBasicOps(unittest.TestCase):
         for (seq, shuffled_seq) in zip(seqs, shuffled_seqs):
             self.assertEqual(len(seq), len(shuffled_seq))
             self.assertEqual(set(seq), set(shuffled_seq))
-
         # The above tests all would pass if the shuffle was a
         # no-op. The following non-deterministic test covers that.  It
         # asserts that the shuffled sequence of 1000 distinct elements
@@ -597,7 +623,7 @@ class TestDistributions(unittest.TestCase):
         for variate, args, expected in [
                 (g.uniform, (10.0, 10.0), 10.0),
                 (g.triangular, (10.0, 10.0), 10.0),
-                #(g.triangular, (10.0, 10.0, 10.0), 10.0),
+                (g.triangular, (10.0, 10.0, 10.0), 10.0),
                 (g.expovariate, (float('inf'),), 0.0),
                 (g.vonmisesvariate, (3.0, float('inf')), 3.0),
                 (g.gauss, (10.0, 0.0), 10.0),
