@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13355: Raise ValueError on random.triangular call with invalid params.
+  Initial patch by Yuriy Senko.
+
 - Issue #17666: Fix reading gzip files with an extra field.
 
 - Issue #13150, #17512: sysconfig no longer parses the Makefile and config.h

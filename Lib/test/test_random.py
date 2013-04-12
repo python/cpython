@@ -43,6 +43,33 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, self.gen.seed, 1, 2)
         self.assertRaises(TypeError, type(self.gen), [])
 
+    def test_triangular(self):
+        # Check that triangular() correctly handles bad input. See issue 13355.
+        # mode > high.
+        with self.assertRaises(ValueError):
+            random.triangular(mode=2)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=10, mode=11)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=1, mode=11)
+        # mode < low.
+        with self.assertRaises(ValueError):
+            random.triangular(mode=-1)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=10, mode=0)
+        with self.assertRaises(ValueError):
+            random.triangular(low=1, high=1, mode=0)
+        # low > high
+        with self.assertRaises(ValueError):
+            random.triangular(low=5, high=2)
+        with self.assertRaises(ValueError):
+            random.triangular(low=5, high=2, mode=1)
+        with self.assertRaises(ValueError):
+            random.triangular(low=-2, high=-5)
+
+        self.assertEqual(random.triangular(low=10, high=10), 10)
+        self.assertEqual(random.triangular(low=10, high=10, mode=10), 10)
+
     def test_jumpahead(self):
         self.gen.seed()
         state1 = self.gen.getstate()
@@ -543,7 +570,7 @@ class TestDistributions(unittest.TestCase):
         for variate, args, expected in [
                 (g.uniform, (10.0, 10.0), 10.0),
                 (g.triangular, (10.0, 10.0), 10.0),
-                #(g.triangular, (10.0, 10.0, 10.0), 10.0),
+                (g.triangular, (10.0, 10.0, 10.0), 10.0),
                 (g.expovariate, (float('inf'),), 0.0),
                 (g.vonmisesvariate, (3.0, float('inf')), 3.0),
                 (g.gauss, (10.0, 0.0), 10.0),
