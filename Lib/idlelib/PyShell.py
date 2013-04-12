@@ -1368,6 +1368,9 @@ class PseudoInputFile(PseudoFile):
         self._line_buffer = line[size:]
         return line[:size]
 
+    def close(self):
+        self.shell.close()
+
 
 usage_msg = """\
 
