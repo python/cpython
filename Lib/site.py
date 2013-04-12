@@ -369,12 +369,7 @@ def setquit():
             # Shells like IDLE catch the SystemExit, but listen when their
             # stdin wrapper is closed.
             try:
-                fd = -1
-                if hasattr(sys.stdin, "fileno"):
-                    fd = sys.stdin.fileno()
-                if fd != 0:
-                    # Don't close stdin if it wraps fd 0
-                    sys.stdin.close()
+                sys.stdin.close()
             except:
                 pass
             raise SystemExit(code)
