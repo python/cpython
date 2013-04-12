@@ -864,7 +864,7 @@ class HTTPConnection:
                 if encode:
                     datablock = datablock.encode("iso-8859-1")
                 self.sock.sendall(datablock)
-
+            return
         try:
             self.sock.sendall(data)
         except TypeError:
