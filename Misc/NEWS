@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17016: Get rid of possible pointer wraparounds and integer overflows
+  in the re module.  Patch by Nickolai Zeldovich.
+
 - Issue #17536: Add to webbrowser's browser list: xdg-open, gvfs-open,
   www-browser, x-www-browser, chromium browsers, iceweasel, iceape.
 
