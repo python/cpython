@@ -27,10 +27,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    host and port parameters are given, the SMTP :meth:`connect` method is called
    with those parameters during initialization.  If the :meth:`connect` call
    returns anything other than a success code, an :exc:`SMTPConnectError` is
-   raised. The optional
-   *timeout* parameter specifies a timeout in seconds for blocking operations
-   like the connection attempt (if not specified, the global default timeout
-   setting will be used).
+   raised. The optional *timeout* parameter specifies a timeout in seconds for
+   blocking operations like the connection attempt (if not specified, the
+   global default timeout setting will be used).
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
