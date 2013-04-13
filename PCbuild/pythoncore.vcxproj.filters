@@ -378,6 +378,9 @@
     <ClInclude Include="..\Objects\stringlib\partition.h">
       <Filter>Objects</Filter>
     </ClInclude>
+    <ClInclude Include="..\Objects\stringlib\replace.h">
+      <Filter>Objects</Filter>
+    </ClInclude>
     <ClInclude Include="..\Objects\stringlib\split.h">
       <Filter>Objects</Filter>
     </ClInclude>

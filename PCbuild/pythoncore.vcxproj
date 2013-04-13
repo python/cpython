@@ -475,6 +475,7 @@
     <ClInclude Include="..\Objects\stringlib\fastsearch.h" />
     <ClInclude Include="..\Objects\stringlib\find.h" />
     <ClInclude Include="..\Objects\stringlib\partition.h" />
+    <ClInclude Include="..\Objects\stringlib\replace.h" />
     <ClInclude Include="..\Objects\stringlib\split.h" />
     <ClInclude Include="..\Objects\unicodetype_db.h" />
     <ClInclude Include="..\Parser\parser.h" />
