@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17016: Get rid of possible pointer wraparounds and integer overflows
+  in the re module.  Patch by Nickolai Zeldovich.
+
 - Issue #16658: add missing return to HTTPConnection.send()
   Patch by Jeff Knupp.
 
