@@ -551,8 +551,9 @@ Instance methods:
 .. method:: date.strftime(format)
 
    Return a string representing the date, controlled by an explicit format string.
-   Format codes referring to hours, minutes or seconds will see 0 values. See
-   section :ref:`strftime-strptime-behavior`.
+   Format codes referring to hours, minutes or seconds will see 0 values. For a
+   complete list of formatting directives, see section
+   :ref:`strftime-strptime-behavior`.
 
 
 .. method:: date.__format__(format)
@@ -730,7 +731,8 @@ Other constructors, all class methods:
    *format*.  This is equivalent to ``datetime(*(time.strptime(date_string,
    format)[0:6]))``. :exc:`ValueError` is raised if the date_string and format
    can't be parsed by :func:`time.strptime` or if it returns a value which isn't a
-   time tuple. See section :ref:`strftime-strptime-behavior`.
+   time tuple. For a complete list of formatting directives, see section
+   :ref:`strftime-strptime-behavior`.
 
    .. versionadded:: 2.5
 
@@ -1050,7 +1052,8 @@ Instance methods:
 .. method:: datetime.strftime(format)
 
    Return a string representing the date and time, controlled by an explicit format
-   string.  See section :ref:`strftime-strptime-behavior`.
+   string.  For a complete list of formatting directives, see section
+   :ref:`strftime-strptime-behavior`.
 
 
 .. method:: datetime.__format__(format)
@@ -1283,7 +1286,8 @@ Instance methods:
 .. method:: time.strftime(format)
 
    Return a string representing the time, controlled by an explicit format string.
-   See section :ref:`strftime-strptime-behavior`.
+   For a complete list of formatting directives, see section
+   :ref:`strftime-strptime-behavior`.
 
 
 .. method:: time.__format__(format)
@@ -1597,27 +1601,6 @@ For :class:`date` objects, the format codes for hours, minutes, seconds, and
 microseconds should not be used, as :class:`date` objects have no such
 values.  If they're used anyway, ``0`` is substituted for them.
 
-.. versionadded:: 2.6
-   :class:`.time` and :class:`.datetime` objects support a ``%f`` format code
-   which expands to the number of microseconds in the object, zero-padded on
-   the left to six places.
-
-For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
-strings.
-
-For an aware object:
-
-``%z``
-   :meth:`utcoffset` is transformed into a 5-character string of the form +HHMM or
-   -HHMM, where HH is a 2-digit string giving the number of UTC offset hours, and
-   MM is a 2-digit string giving the number of UTC offset minutes.  For example, if
-   :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``, ``%z`` is
-   replaced with the string ``'-0330'``.
-
-``%Z``
-   If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty string.
-   Otherwise ``%Z`` is replaced by the returned value, which must be a string.
-
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
 variations are common.
@@ -1630,105 +1613,101 @@ format codes.
 The exact range of years for which :meth:`strftime` works also varies across
 platforms.  Regardless of platform, years before 1900 cannot be used.
 
-+-----------+--------------------------------+-------+
-| Directive | Meaning                        | Notes |
-+===========+================================+=======+
-| ``%a``    | Locale's abbreviated weekday   |       |
-|           | name.                          |       |
-+-----------+--------------------------------+-------+
-| ``%A``    | Locale's full weekday name.    |       |
-+-----------+--------------------------------+-------+
-| ``%b``    | Locale's abbreviated month     |       |
-|           | name.                          |       |
-+-----------+--------------------------------+-------+
-| ``%B``    | Locale's full month name.      |       |
-+-----------+--------------------------------+-------+
-| ``%c``    | Locale's appropriate date and  |       |
-|           | time representation.           |       |
-+-----------+--------------------------------+-------+
-| ``%d``    | Day of the month as a decimal  |       |
-|           | number [01,31].                |       |
-+-----------+--------------------------------+-------+
-| ``%f``    | Microsecond as a decimal       | \(1)  |
-|           | number [0,999999], zero-padded |       |
-|           | on the left                    |       |
-+-----------+--------------------------------+-------+
-| ``%H``    | Hour (24-hour clock) as a      |       |
-|           | decimal number [00,23].        |       |
-+-----------+--------------------------------+-------+
-| ``%I``    | Hour (12-hour clock) as a      |       |
-|           | decimal number [01,12].        |       |
-+-----------+--------------------------------+-------+
-| ``%j``    | Day of the year as a decimal   |       |
-|           | number [001,366].              |       |
-+-----------+--------------------------------+-------+
-| ``%m``    | Month as a decimal number      |       |
-|           | [01,12].                       |       |
-+-----------+--------------------------------+-------+
-| ``%M``    | Minute as a decimal number     |       |
-|           | [00,59].                       |       |
-+-----------+--------------------------------+-------+
-| ``%p``    | Locale's equivalent of either  | \(2)  |
-|           | AM or PM.                      |       |
-+-----------+--------------------------------+-------+
-| ``%S``    | Second as a decimal number     | \(3)  |
-|           | [00,61].                       |       |
-+-----------+--------------------------------+-------+
-| ``%U``    | Week number of the year        | \(4)  |
-|           | (Sunday as the first day of    |       |
-|           | the week) as a decimal number  |       |
-|           | [00,53].  All days in a new    |       |
-|           | year preceding the first       |       |
-|           | Sunday are considered to be in |       |
-|           | week 0.                        |       |
-+-----------+--------------------------------+-------+
-| ``%w``    | Weekday as a decimal number    |       |
-|           | [0(Sunday),6].                 |       |
-+-----------+--------------------------------+-------+
-| ``%W``    | Week number of the year        | \(4)  |
-|           | (Monday as the first day of    |       |
-|           | the week) as a decimal number  |       |
-|           | [00,53].  All days in a new    |       |
-|           | year preceding the first       |       |
-|           | Monday are considered to be in |       |
-|           | week 0.                        |       |
-+-----------+--------------------------------+-------+
-| ``%x``    | Locale's appropriate date      |       |
-|           | representation.                |       |
-+-----------+--------------------------------+-------+
-| ``%X``    | Locale's appropriate time      |       |
-|           | representation.                |       |
-+-----------+--------------------------------+-------+
-| ``%y``    | Year without century as a      |       |
-|           | decimal number [00,99].        |       |
-+-----------+--------------------------------+-------+
-| ``%Y``    | Year with century as a decimal |       |
-|           | number.                        |       |
-+-----------+--------------------------------+-------+
-| ``%z``    | UTC offset in the form +HHMM   | \(5)  |
-|           | or -HHMM (empty string if the  |       |
-|           | the object is naive).          |       |
-+-----------+--------------------------------+-------+
-| ``%Z``    | Time zone name (empty string   |       |
-|           | if the object is naive).       |       |
-+-----------+--------------------------------+-------+
-| ``%%``    | A literal ``'%'`` character.   |       |
-+-----------+--------------------------------+-------+
++-----------+--------------------------------+------------------------+-------+
+| Directive | Meaning                        | Example                | Notes |
++===========+================================+========================+=======+
+| ``%a``    | Weekday as locale's            | Sun, Mon, ..., Sat     |       |
+|           | abbreviated name.              |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%A``    | Weekday as locale's full name. | Sunday, Monday, ...,   |       |
+|           |                                | Saturday               |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
+|           | where 0 is Sunday and 6 is     |                        |       |
+|           | Saturday.                      |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%d``    | Day of the month as a          | 01, 02, ..., 31        |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%j``    | Day of the year as a           | 001, 002, ..., 366     |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%b``    | Month as locale's abbreviated  | Jan, Feb, ..., Dec     |       |
+|           | name.                          |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%B``    | Month as locale's full name.   | January, February,     |       |
+|           |                                | ..., December          |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        |       |
+|           | decimal number.                |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%y``    | Year without century as a      | 00, 01, ..., 99        |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%Y``    | Year with century as a decimal | 1970, 1988, 2001, 2013 |       |
+|           | number.                        |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%p``    | Locale's equivalent of either  | AM, PM                 | \(1)  |
+|           | AM or PM.                      |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        |       |
+|           | decimal number.                |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%S``    | Second as a zero-padded        | 00, 01, ..., 61        | \(2)  |
+|           | decimal number.                |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(3)  |
+|           | number, zero-padded on the     | 999999                 |       |
+|           | left.                          |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%z``    | UTC offset in the form +HHMM   | (empty), +0000, -0400, | \(4)  |
+|           | or -HHMM (empty string if the  | +1030                  |       |
+|           | the object is naive).          |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
+|           | if the object is naive).       |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(5)  |
+|           | (Sunday as the first day of    |                        |       |
+|           | the week) as a zero padded     |                        |       |
+|           | decimal number. All days in a  |                        |       |
+|           | new year preceding the first   |                        |       |
+|           | Sunday are considered to be in |                        |       |
+|           | week 0.                        |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(5)  |
+|           | (Monday as the first day of    |                        |       |
+|           | the week) as a decimal number. |                        |       |
+|           | All days in a new year         |                        |       |
+|           | preceding the first Monday     |                        |       |
+|           | are considered to be in        |                        |       |
+|           | week 0.                        |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%c``    | Locale's appropriate date and  | Mon Aug  1 16:00:00    |       |
+|           | time representation.           | 1988                   |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%x``    | Locale's appropriate date      | 08/16/88               |       |
+|           | representation.                |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%X``    | Locale's appropriate time      | 16:00:00               |       |
+|           | representation.                |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%%``    | A literal ``'%'`` character.   | %                      |       |
++-----------+--------------------------------+------------------------+-------+
 
 Notes:
 
 (1)
-   When used with the :meth:`strptime` method, the ``%f`` directive
-   accepts from one to six digits and zero pads on the right.  ``%f`` is
-   an extension to the set of format characters in the C standard (but
-   implemented separately in datetime objects, and therefore always
-   available).
-
-(2)
    When used with the :meth:`strptime` method, the ``%p`` directive only affects
    the output hour field if the ``%I`` directive is used to parse the hour.
 
-(3)
+(2)
    The range really is ``0`` to ``61``; according to the Posix standard this
    accounts for leap seconds and the (very rare) double leap seconds.
    The :mod:`time` module may produce and does accept leap seconds since
@@ -1736,13 +1715,36 @@ Notes:
    does not accept leap seconds in :meth:`strptime` input nor will it
    produce them in :func:`strftime` output.
 
+(3)
+   ``%f`` is an extension to the set of format characters in the C standard
+   (but implemented separately in datetime objects, and therefore always
+   available).  When used with the :meth:`strptime` method, the ``%f``
+   directive accepts from one to six digits and zero pads on the right.  
+
+   .. versionadded:: 2.6
+
 (4)
-   When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used in
-   calculations when the day of the week and the year are specified.
+   For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
+   strings.
+
+   For an aware object:
+
+   ``%z``
+      :meth:`utcoffset` is transformed into a 5-character string of the form
+      +HHMM or -HHMM, where HH is a 2-digit string giving the number of UTC
+      offset hours, and MM is a 2-digit string giving the number of UTC offset
+      minutes.  For example, if :meth:`utcoffset` returns
+      ``timedelta(hours=-3, minutes=-30)``, ``%z`` is replaced with the string
+      ``'-0330'``.
+
+   ``%Z``
+      If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty
+      string.  Otherwise ``%Z`` is replaced by the returned value, which must
+      be a string.
 
 (5)
-   For example, if :meth:`utcoffset` returns ``timedelta(hours=-3, minutes=-30)``,
-   ``%z`` is replaced with the string ``'-0330'``.
+   When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used
+   in calculations when the day of the week and the year are specified.
 
 
 .. rubric:: Footnotes
