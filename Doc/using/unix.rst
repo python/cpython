@@ -28,7 +28,7 @@ following links:
 
    http://www.debian.org/doc/manuals/maint-guide/first.en.html
       for Debian users
-   http://linuxmafia.com/pub/linux/suse-linux-internals/chapter35.html
+   http://en.opensuse.org/Portal:Packaging
       for OpenSuse users
    http://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
       for Fedora users
