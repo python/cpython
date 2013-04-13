@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17643: Add __callback__ attribute to weakref.ref.
+
 - Issue #16447: Fixed potential segmentation fault when setting __name__ on a
   class.
 
