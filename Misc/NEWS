@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #16447: Fixed potential segmentation fault when setting __name__ on a
+  class.
+
 - Issue #17669: Fix crash involving finalization of generators using yield from.
 
 - Issue #14439: Python now prints the traceback on runpy failure at startup.
