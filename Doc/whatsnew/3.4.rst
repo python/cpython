@@ -151,11 +151,22 @@ New Modules
 Improved Modules
 ================
 
+
 doctest
 -------
 
 Added ``FAIL_FAST`` flag to halt test running as soon as the first failure is
 detected.  (Contributed by R. David Murray and Daniel Urban in :issue:`16522`.)
+
+
+smtplib
+-------
+
+:exc:`~smtplib.SMTPException` is now a subclass of :exc:`IOError`, which allows
+both socket level errors and SMTP protocol level errors to be caught in one
+try/except statement by code that only cares whether or not an error occurred.
+(:issue:`2118`).
+
 
 wave
 ----
