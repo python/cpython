@@ -802,6 +802,30 @@ class ReferencesTestCase(TestBase):
         del root
         gc.collect()
 
+    def test_callback_attribute(self):
+        x = Object(1)
+        callback = lambda ref: None
+        ref1 = weakref.ref(x, callback)
+        self.assertIs(ref1.__callback__, callback)
+
+        ref2 = weakref.ref(x)
+        self.assertIsNone(ref2.__callback__)
+
+    def test_callback_attribute_after_deletion(self):
+        x = Object(1)
+        ref = weakref.ref(x, self.callback)
+        self.assertIsNotNone(ref.__callback__)
+        del x
+        support.gc_collect()
+        self.assertIsNone(ref.__callback__)
+
+    def test_set_callback_attribute(self):
+        x = Object(1)
+        callback = lambda ref: None
+        ref1 = weakref.ref(x, callback)
+        with self.assertRaises(AttributeError):
+            ref1.__callback__ = lambda ref: None
+
 
 class SubclassableWeakrefTestCase(TestBase):
 

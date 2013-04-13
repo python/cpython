@@ -111,6 +111,15 @@ Extension types can easily be made to support weak references; see
 
    This is a subclassable type rather than a factory function.
 
+   .. attribute:: __callback__
+
+      This read-only attribute returns the callback currently associated to the
+      weakref.  If there is no callback or if the referent of the weakref is
+      no longer alive then this attribute will have value ``None``.
+
+      .. versionadded:: 3.4
+         Added the :attr:`__callback__` attribute.
+
 
 .. function:: proxy(object[, callback])
 
@@ -261,8 +270,9 @@ These method have the same issues as the and :meth:`keyrefs` method of
 Weak Reference Objects
 ----------------------
 
-Weak reference objects have no attributes or methods, but do allow the referent
-to be obtained, if it still exists, by calling it:
+Weak reference objects have no methods and no attributes besides
+:attr:`ref.__callback__`. A weak reference object allows the referent to be
+obtained, if it still exists, by calling it:
 
    >>> import weakref
    >>> class Object:

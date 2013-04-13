@@ -338,6 +338,11 @@ weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 
+static PyMemberDef weakref_members[] = {
+    {"__callback__", T_OBJECT, offsetof(PyWeakReference, wr_callback), READONLY},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject
 _PyWeakref_RefType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -369,7 +374,7 @@ _PyWeakref_RefType = {
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
     0,                          /*tp_methods*/
-    0,                          /*tp_members*/
+    weakref_members,            /*tp_members*/
     0,                          /*tp_getset*/
     0,                          /*tp_base*/
     0,                          /*tp_dict*/
