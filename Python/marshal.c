@@ -33,10 +33,6 @@
 #define TYPE_STOPITER           'S'
 #define TYPE_ELLIPSIS           '.'
 #define TYPE_INT                'i'
-/* TYPE_INT64 is deprecated. It is not
-   generated anymore, and support for reading it
-   will be removed in Python 3.4. */
-#define TYPE_INT64              'I'
 #define TYPE_FLOAT              'f'
 #define TYPE_BINARY_FLOAT       'g'
 #define TYPE_COMPLEX            'x'
@@ -638,42 +634,6 @@ r_long(RFILE *p)
     return x;
 }
 
-/* r_long64 deals with the TYPE_INT64 code.  On a machine with
-   sizeof(long) > 4, it returns a Python int object, else a Python long
-   object.  Note that w_long64 writes out TYPE_INT if 32 bits is enough,
-   so there's no inefficiency here in returning a PyLong on 32-bit boxes
-   for everything written via TYPE_INT64 (i.e., if an int is written via
-   TYPE_INT64, it *needs* more than 32 bits).
-*/
-static PyObject *
-r_long64(RFILE *p)
-{
-    PyObject *result = NULL;
-    long lo4 = r_long(p);
-    long hi4 = r_long(p);
-
-    if (!PyErr_Occurred()) {
-#if SIZEOF_LONG > 4
-        long x = (hi4 << 32) | (lo4 & 0xFFFFFFFFL);
-        result = PyLong_FromLong(x);
-#else
-        unsigned char buf[8];
-        int one = 1;
-        int is_little_endian = (int)*(char*)&one;
-        if (is_little_endian) {
-            memcpy(buf, &lo4, 4);
-            memcpy(buf+4, &hi4, 4);
-        }
-        else {
-            memcpy(buf, &hi4, 4);
-            memcpy(buf+4, &lo4, 4);
-        }
-        result = _PyLong_FromByteArray(buf, 8, is_little_endian, 1);
-#endif
-    }
-    return result;
-}
-
 static PyObject *
 r_PyLong(RFILE *p)
 {
@@ -868,11 +828,6 @@ r_object(RFILE *p)
     case TYPE_INT:
         n = r_long(p);
         retval = PyErr_Occurred() ? NULL : PyLong_FromLong(n);
-        R_REF(retval);
-        break;
-
-    case TYPE_INT64:
-        retval = r_long64(p);
         R_REF(retval);
         break;
 
@@ -1201,7 +1156,7 @@ r_object(RFILE *p)
             PyObject *name = NULL;
             int firstlineno;
             PyObject *lnotab = NULL;
-            
+
             idx = r_ref_reserve(flag, p);
             if (idx < 0) {
                 retval = NULL;
