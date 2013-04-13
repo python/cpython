@@ -28,7 +28,7 @@ class IntTestCase(unittest.TestCase, HelperMixin):
         while n:
             for expected in (-n, n):
                 self.helper(expected)
-                n = n >> 1
+            n = n >> 1
 
     def test_bool(self):
         for b in (True, False):
