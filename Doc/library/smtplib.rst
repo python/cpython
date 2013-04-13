@@ -25,8 +25,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    A :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
    host and port parameters are given, the SMTP :meth:`connect` method is called
-   with those parameters during initialization.  An :exc:`SMTPConnectError` is
-   raised if the specified host doesn't respond correctly. The optional
+   with those parameters during initialization.  If the :meth:`connect` call
+   returns anything other than a success code, an :exc:`SMTPConnectError` is
+   raised. The optional
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
    setting will be used). The optional source_address parameter allows to bind to some
@@ -103,7 +104,8 @@ A nice selection of exceptions is defined as well:
 
 .. exception:: SMTPException
 
-   Base exception class for all exceptions raised by this module.
+   The base exception class for all the other excpetions provided by this
+   module.
 
 
 .. exception:: SMTPServerDisconnected
@@ -182,15 +184,6 @@ An :class:`SMTP` instance has the following methods:
    for connection and for all messages sent to and received from the server.
 
 
-.. method:: SMTP.connect(host='localhost', port=0)
-
-   Connect to a host on a given port.  The defaults are to connect to the local
-   host at the standard SMTP port (25). If the hostname ends with a colon (``':'``)
-   followed by a number, that suffix will be stripped off and the number
-   interpreted as the port number to use. This method is automatically invoked by
-   the constructor if a host is specified during instantiation.
-
-
 .. method:: SMTP.docmd(cmd, args='')
 
    Send a command *cmd* to the server.  The optional argument *args* is simply
@@ -205,6 +198,17 @@ An :class:`SMTP` instance has the following methods:
 
    If the connection to the server is lost while waiting for the reply,
    :exc:`SMTPServerDisconnected` will be raised.
+
+
+.. method:: SMTP.connect(host='localhost', port=0)
+
+   Connect to a host on a given port.  The defaults are to connect to the local
+   host at the standard SMTP port (25). If the hostname ends with a colon (``':'``)
+   followed by a number, that suffix will be stripped off and the number
+   interpreted as the port number to use. This method is automatically invoked by
+   the constructor if a host is specified during instantiation.  Returns a
+   2-tuple of the response code and message sent by the server in its
+   connection response.
 
 
 .. method:: SMTP.helo(name='')
