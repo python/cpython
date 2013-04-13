@@ -1293,6 +1293,8 @@ PyNumber_Long(PyObject *o)
         PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
         PyObject *int_instance;
         Py_DECREF(trunc_func);
+        if (truncated == NULL)
+            return NULL;
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return a int. */
         int_instance = convert_integral_to_int(truncated,
