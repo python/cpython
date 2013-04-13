@@ -1053,7 +1053,10 @@ class ZipFile(object):
         if os.path.sep == '\\':
             # filter illegal characters on Windows
             illegal = ':<>|"?*'
-            table = string.maketrans(illegal, '_' * len(illegal))
+            if isinstance(arcname, unicode):
+                table = {ord(c): ord('_') for c in illegal}
+            else:
+                table = string.maketrans(illegal, '_' * len(illegal))
             arcname = arcname.translate(table)
             # remove trailing dots
             arcname = (x.rstrip('.') for x in arcname.split(os.path.sep))

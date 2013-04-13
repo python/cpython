@@ -18,7 +18,7 @@ from tempfile import TemporaryFile
 from random import randint, random
 from unittest import skipUnless
 
-from test.test_support import TESTFN, run_unittest, findfile, unlink
+from test.test_support import TESTFN, TESTFN_UNICODE, run_unittest, findfile, unlink
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -423,6 +423,25 @@ class TestsWithSourceFile(unittest.TestCase):
         self.assertTrue(os.path.isfile(filename))
         with open(filename, 'rb') as f:
             self.assertEqual(f.read(), content)
+
+    def test_extract_unicode_filenames(self):
+        fnames = [u'foo.txt', os.path.basename(TESTFN_UNICODE)]
+        content = 'Test for unicode filename'
+        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED) as zipfp:
+            for fname in fnames:
+                zipfp.writestr(fname, content)
+
+        with zipfile.ZipFile(TESTFN2, "r") as zipfp:
+            for fname in fnames:
+                writtenfile = zipfp.extract(fname)
+
+                # make sure it was written to the right place
+                correctfile = os.path.join(os.getcwd(), fname)
+                correctfile = os.path.normpath(correctfile)
+                self.assertEqual(writtenfile, correctfile)
+
+                self.check_file(writtenfile, content)
+                os.remove(writtenfile)
 
     def test_extract_hackers_arcnames(self):
         hacknames = [
