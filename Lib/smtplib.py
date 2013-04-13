@@ -221,8 +221,9 @@ class SMTP:
 
         If specified, `host' is the name of the remote host to which to
         connect.  If specified, `port' specifies the port to which to connect.
-        By default, smtplib.SMTP_PORT is used.  An SMTPConnectError is raised
-        if the specified `host' doesn't respond correctly.  If specified,
+        By default, smtplib.SMTP_PORT is used.  If a host is specified the
+        connect method is called, and if it returns anything other than
+        a success code an SMTPConnectError is raised.  If specified,
         `local_hostname` is used as the FQDN of the local host.  By default,
         the local hostname is found using socket.getfqdn(). The
         `source_address` parameter takes a 2-tuple (host, port) for the socket
