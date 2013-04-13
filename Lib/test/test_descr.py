@@ -1743,7 +1743,7 @@ order (MRO) for bases """
             return b"hello"
         def empty_seq(self):
             return []
-        def zero(self, other=None):
+        def zero(self):
             return 0
         def complex_num(self):
             return 1j
