@@ -12,6 +12,9 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17715: Fix segmentation fault from raising an exception in a __trunc__
+  method.
+
 - Issue #16447: Fixed potential segmentation fault when setting __name__ on a
   class.
 

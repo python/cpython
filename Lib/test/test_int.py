@@ -313,6 +313,12 @@ class IntTestCases(unittest.TestCase):
                     return 42
             self.assertEqual(int(JustTrunc()), 42)
 
+            class ExceptionalTrunc(base):
+                def __trunc__(self):
+                    1 / 0
+            with self.assertRaises(ZeroDivisionError):
+                int(ExceptionalTrunc())
+
             for trunc_result_base in (object, Classic):
                 class Integral(trunc_result_base):
                     def __int__(self):
