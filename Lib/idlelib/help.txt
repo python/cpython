@@ -340,7 +340,7 @@ Command line usage:
            script name is -, no script is executed but an interactive Python
            session is started; the arguments are still available in sys.argv.
 
-Running without a subprocess: (DEPRECATED in Python 3.5 see Issue 16123)
+Running without a subprocess: (DEPRECATED in Python 3.4 see Issue 16123)
 
         If IDLE is started with the -n command line switch it will run in a
         single process and will not create the subprocess which runs the RPC
