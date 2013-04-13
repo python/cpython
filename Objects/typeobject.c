@@ -298,10 +298,13 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 
     Py_INCREF(value);
 
-    Py_DECREF(et->ht_name);
+    /* Wait until et is a sane state before Py_DECREF'ing the old et->ht_name
+       value.  (Bug #16447.)  */
+    tmp = et->ht_name;
     et->ht_name = value;
 
     type->tp_name = tp_name;
+    Py_DECREF(tmp);
 
     return 0;
 }
