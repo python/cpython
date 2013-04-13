@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17536: Add to webbrowser's browser list: xdg-open, gvfs-open,
+  www-browser, x-www-browser, chromium browsers, iceweasel, iceape.
+
 - Issue #17656: Fix extraction of zip files with unicode member paths.
 
 - Issue #13355: Raise ValueError on random.triangular call with invalid params.
