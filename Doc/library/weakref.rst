@@ -117,8 +117,8 @@ Extension types can easily be made to support weak references; see
       weakref.  If there is no callback or if the referent of the weakref is
       no longer alive then this attribute will have value ``None``.
 
-      .. versionadded:: 3.4
-         Added the :attr:`__callback__` attribute.
+   .. versionadded:: 3.4
+      Added the :attr:`__callback__` attribute.
 
 
 .. function:: proxy(object[, callback])
