@@ -4136,6 +4136,20 @@ order (MRO) for bases """
         C.__name__ = 'D.E'
         self.assertEqual((C.__module__, C.__name__), (mod, 'D.E'))
 
+    def test_evil_type_name(self):
+        # A badly placed Py_DECREF in type_set_name led to arbitrary code
+        # execution while the type structure was not in a sane state, and a
+        # possible segmentation fault as a result.  See bug #16447.
+        class Nasty(str):
+            def __del__(self):
+                C.__name__ = "other"
+
+        class C(object):
+            pass
+
+        C.__name__ = Nasty("abc")
+        C.__name__ = "normal"
+
     def test_subclass_right_op(self):
         # Testing correct dispatch of subclass overloading __r<op>__...
 

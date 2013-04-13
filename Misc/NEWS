@@ -17,6 +17,9 @@ Build
 Core and Builtins
 -----------------
 
+- Issue #16447: Fixed potential segmentation fault when setting __name__ on a
+  class.
+
 - Issue #17610: Don't rely on non-standard behavior of the C qsort() function.
 
 Library
