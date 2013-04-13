@@ -27,15 +27,14 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    host and port parameters are given, the SMTP :meth:`connect` method is called
    with those parameters during initialization.  If the :meth:`connect` call
    returns anything other than a success code, an :exc:`SMTPConnectError` is
-   raised. The optional
-   *timeout* parameter specifies a timeout in seconds for blocking operations
-   like the connection attempt (if not specified, the global default timeout
-   setting will be used). The optional source_address parameter allows to bind to some
-   specific source address in a machine with multiple network interfaces,
-   and/or to some specific source TCP port. It takes a 2-tuple (host, port),
-   for the socket to bind to as its source address before connecting. If
-   omitted (or if host or port are ``''`` and/or 0 respectively) the OS default
-   behavior will be used.
+   raised. The optional *timeout* parameter specifies a timeout in seconds for
+   blocking operations like the connection attempt (if not specified, the
+   global default timeout setting will be used). The optional source_address
+   parameter allows to bind to some specific source address in a machine with
+   multiple network interfaces, and/or to some specific source TCP port. It
+   takes a 2-tuple (host, port), for the socket to bind to as its source
+   address before connecting. If omitted (or if host or port are ``''`` and/or
+   0 respectively) the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
