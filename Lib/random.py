@@ -367,16 +367,6 @@ class Random(_random.Random):
         http://en.wikipedia.org/wiki/Triangular_distribution
 
         """
-        # Sanity check. According to the doc low must be less or equal to
-        # high. And mode should be somewhere between these bounds.
-        if low > high:
-            raise ValueError('high cannot be less then low.')
-        if mode is not None and (mode < low or mode > high):
-            raise ValueError('mode must be between low and high.')
-
-        if high == low:
-            return low
-
         u = self.random()
         c = 0.5 if mode is None else (mode - low) / (high - low)
         if u > c:
