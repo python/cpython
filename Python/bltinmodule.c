@@ -1810,10 +1810,10 @@ For most object types, eval(repr(object)) == object.");
 static PyObject *
 builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static PyObject *round_str = NULL;
     PyObject *ndigits = NULL;
     static char *kwlist[] = {"number", "ndigits", 0};
-    PyObject *number, *round;
+    PyObject *number, *round, *result;
+    _Py_IDENTIFIER(__round__);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:round",
                                      kwlist, &number, &ndigits))
@@ -1824,24 +1824,21 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
             return NULL;
     }
 
-    if (round_str == NULL) {
-        round_str = PyUnicode_InternFromString("__round__");
-        if (round_str == NULL)
-            return NULL;
-    }
-
-    round = _PyType_Lookup(Py_TYPE(number), round_str);
+    round = _PyObject_LookupSpecial(number, &PyId___round__);
     if (round == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "type %.100s doesn't define __round__ method",
-                     Py_TYPE(number)->tp_name);
+        if (!PyErr_Occurred())
+            PyErr_Format(PyExc_TypeError,
+                         "type %.100s doesn't define __round__ method",
+                         Py_TYPE(number)->tp_name);
         return NULL;
     }
 
     if (ndigits == NULL)
-        return PyObject_CallFunction(round, "O", number);
+        result = PyObject_CallFunctionObjArgs(round, NULL);
     else
-        return PyObject_CallFunction(round, "OO", number, ndigits);
+        result = PyObject_CallFunctionObjArgs(round, ndigits, NULL);
+    Py_DECREF(round);
+    return result;
 }
 
 PyDoc_STRVAR(round_doc,
