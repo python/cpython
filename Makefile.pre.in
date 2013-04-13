@@ -726,6 +726,7 @@ UNICODE_DEPS = \
 		$(srcdir)/Objects/stringlib/find_max_char.h \
 		$(srcdir)/Objects/stringlib/localeutil.h \
 		$(srcdir)/Objects/stringlib/partition.h \
+		$(srcdir)/Objects/stringlib/replace.h \
 		$(srcdir)/Objects/stringlib/split.h \
 		$(srcdir)/Objects/stringlib/ucs1lib.h \
 		$(srcdir)/Objects/stringlib/ucs2lib.h \

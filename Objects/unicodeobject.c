@@ -605,6 +605,7 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #include "stringlib/split.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
+#include "stringlib/replace.h"
 #include "stringlib/find_max_char.h"
 #include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
@@ -615,6 +616,7 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #include "stringlib/split.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
+#include "stringlib/replace.h"
 #include "stringlib/find_max_char.h"
 #include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
@@ -625,6 +627,7 @@ make_bloom_mask(int kind, void* ptr, Py_ssize_t len)
 #include "stringlib/split.h"
 #include "stringlib/count.h"
 #include "stringlib/find.h"
+#include "stringlib/replace.h"
 #include "stringlib/find_max_char.h"
 #include "stringlib/localeutil.h"
 #include "stringlib/undef.h"
@@ -9927,6 +9930,31 @@ anylib_count(int kind, PyObject *sstr, void* sbuf, Py_ssize_t slen,
     return 0;
 }
 
+static void
+replace_1char_inplace(PyObject *u, Py_ssize_t pos,
+                      Py_UCS4 u1, Py_UCS4 u2, Py_ssize_t maxcount)
+{
+    int kind = PyUnicode_KIND(u);
+    void *data = PyUnicode_DATA(u);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(u);
+    if (kind == PyUnicode_1BYTE_KIND) {
+        ucs1lib_replace_1char_inplace((Py_UCS1 *)data + pos,
+                                      (Py_UCS1 *)data + len,
+                                      u1, u2, maxcount);
+    }
+    else if (kind == PyUnicode_2BYTE_KIND) {
+        ucs2lib_replace_1char_inplace((Py_UCS2 *)data + pos,
+                                      (Py_UCS2 *)data + len,
+                                      u1, u2, maxcount);
+    }
+    else {
+        assert(kind == PyUnicode_4BYTE_KIND);
+        ucs4lib_replace_1char_inplace((Py_UCS4 *)data + pos,
+                                      (Py_UCS4 *)data + len,
+                                      u1, u2, maxcount);
+    }
+}
+
 static PyObject *
 replace(PyObject *self, PyObject *str1,
         PyObject *str2, Py_ssize_t maxcount)
@@ -9943,7 +9971,7 @@ replace(PyObject *self, PyObject *str1,
     Py_ssize_t len1 = PyUnicode_GET_LENGTH(str1);
     Py_ssize_t len2 = PyUnicode_GET_LENGTH(str2);
     int mayshrink;
-    Py_UCS4 maxchar, maxchar_str2;
+    Py_UCS4 maxchar, maxchar_str1, maxchar_str2;
 
     if (maxcount < 0)
         maxcount = PY_SSIZE_T_MAX;
@@ -9952,15 +9980,16 @@ replace(PyObject *self, PyObject *str1,
 
     if (str1 == str2)
         goto nothing;
-    if (skind < kind1)
-        /* substring too wide to be present */
-        goto nothing;
 
     maxchar = PyUnicode_MAX_CHAR_VALUE(self);
+    maxchar_str1 = PyUnicode_MAX_CHAR_VALUE(str1);
+    if (maxchar < maxchar_str1)
+        /* substring too wide to be present */
+        goto nothing;
     maxchar_str2 = PyUnicode_MAX_CHAR_VALUE(str2);
     /* Replacing str1 with str2 may cause a maxchar reduction in the
        result string. */
-    mayshrink = (maxchar_str2 < maxchar);
+    mayshrink = (maxchar_str2 < maxchar_str1) && (maxchar == maxchar_str1);
     maxchar = MAX_MAXCHAR(maxchar, maxchar_str2);
 
     if (len1 == len2) {
@@ -9970,36 +9999,19 @@ replace(PyObject *self, PyObject *str1,
         if (len1 == 1) {
             /* replace characters */
             Py_UCS4 u1, u2;
-            int rkind;
-            Py_ssize_t index, pos;
-            char *src, *rbuf;
+            Py_ssize_t pos;
 
             u1 = PyUnicode_READ(kind1, buf1, 0);
-            pos = findchar(sbuf, PyUnicode_KIND(self), slen, u1, 1);
+            pos = findchar(sbuf, skind, slen, u1, 1);
             if (pos < 0)
                 goto nothing;
             u2 = PyUnicode_READ(kind2, buf2, 0);
             u = PyUnicode_New(slen, maxchar);
             if (!u)
                 goto error;
-            _PyUnicode_FastCopyCharacters(u, 0, self, 0, slen);
-            rkind = PyUnicode_KIND(u);
-            rbuf = PyUnicode_DATA(u);
 
-            PyUnicode_WRITE(rkind, rbuf, pos, u2);
-            index = 0;
-            src = sbuf;
-            while (--maxcount)
-            {
-                pos++;
-                src += pos * PyUnicode_KIND(self);
-                slen -= pos;
-                index += pos;
-                pos = findchar(src, PyUnicode_KIND(self), slen, u1, 1);
-                if (pos < 0)
-                    break;
-                PyUnicode_WRITE(rkind, rbuf, index + pos, u2);
-            }
+            _PyUnicode_FastCopyCharacters(u, 0, self, 0, slen);
+            replace_1char_inplace(u, pos, u1, u2, maxcount);
         }
         else {
             int rkind = skind;

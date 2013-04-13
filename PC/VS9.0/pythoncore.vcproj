@@ -1587,6 +1587,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Objects\stringlib\replace.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Objects\setobject.c"
 				>
 			</File>
