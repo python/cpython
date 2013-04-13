@@ -23,36 +23,12 @@ class HelperMixin:
 
 class IntTestCase(unittest.TestCase, HelperMixin):
     def test_ints(self):
-        # Test the full range of Python ints.
-        n = sys.maxsize
+        # Test a range of Python ints larger than the machine word size.
+        n = sys.maxsize ** 2
         while n:
             for expected in (-n, n):
                 self.helper(expected)
-            n = n >> 1
-
-    def test_int64(self):
-        # Simulate int marshaling on a 64-bit box.  This is most interesting if
-        # we're running the test on a 32-bit box, of course.
-
-        def to_little_endian_string(value, nbytes):
-            b = bytearray()
-            for i in range(nbytes):
-                b.append(value & 0xff)
-                value >>= 8
-            return b
-
-        maxint64 = (1 << 63) - 1
-        minint64 = -maxint64-1
-
-        for base in maxint64, minint64, -maxint64, -(minint64 >> 1):
-            while base:
-                s = b'I' + to_little_endian_string(base, 8)
-                got = marshal.loads(s)
-                self.assertEqual(base, got)
-                if base == -1:  # a fixed-point for shifting right 1
-                    base = 0
-                else:
-                    base >>= 1
+                n = n >> 1
 
     def test_bool(self):
         for b in (True, False):
