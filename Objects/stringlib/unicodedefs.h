@@ -21,7 +21,6 @@
 #define STRINGLIB_STR            PyUnicode_AS_UNICODE
 #define STRINGLIB_LEN            PyUnicode_GET_SIZE
 #define STRINGLIB_NEW            PyUnicode_FromUnicode
-#define STRINGLIB_RESIZE         PyUnicode_Resize
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
 
