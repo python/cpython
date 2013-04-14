@@ -11705,7 +11705,7 @@ do_strip(PyObject *self, int striptype)
         i = 0;
         if (striptype != RIGHTSTRIP) {
             while (i < len) {
-                Py_UCS4 ch = data[i];
+                Py_UCS1 ch = data[i];
                 if (!_Py_ascii_whitespace[ch])
                     break;
                 i++;
@@ -11716,7 +11716,7 @@ do_strip(PyObject *self, int striptype)
         if (striptype != LEFTSTRIP) {
             j--;
             while (j >= i) {
-                Py_UCS4 ch = data[j];
+                Py_UCS1 ch = data[j];
                 if (!_Py_ascii_whitespace[ch])
                     break;
                 j--;
