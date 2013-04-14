@@ -9466,41 +9466,49 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
             sep_data = PyUnicode_1BYTE_DATA(sep);
     }
 #endif
-    for (i = 0, res_offset = 0; i < seqlen; ++i) {
-        Py_ssize_t itemlen;
-        item = items[i];
-        /* Copy item, and maybe the separator. */
-        if (i && seplen != 0) {
-            if (use_memcpy) {
+    if (use_memcpy) {
+        for (i = 0; i < seqlen; ++i) {
+            Py_ssize_t itemlen;
+            item = items[i];
+
+            /* Copy item, and maybe the separator. */
+            if (i && seplen != 0) {
                 Py_MEMCPY(res_data,
                           sep_data,
                           kind * seplen);
                 res_data += kind * seplen;
             }
-            else {
-                _PyUnicode_FastCopyCharacters(res, res_offset, sep, 0, seplen);
-                res_offset += seplen;
-            }
-        }
-        itemlen = PyUnicode_GET_LENGTH(item);
-        if (itemlen != 0) {
-            if (use_memcpy) {
+
+            itemlen = PyUnicode_GET_LENGTH(item);
+            if (itemlen != 0) {
                 Py_MEMCPY(res_data,
                           PyUnicode_DATA(item),
                           kind * itemlen);
                 res_data += kind * itemlen;
             }
-            else {
+        }
+        assert(res_data == PyUnicode_1BYTE_DATA(res)
+                           + kind * PyUnicode_GET_LENGTH(res));
+    }
+    else {
+        for (i = 0, res_offset = 0; i < seqlen; ++i) {
+            Py_ssize_t itemlen;
+            item = items[i];
+
+            /* Copy item, and maybe the separator. */
+            if (i && seplen != 0) {
+                _PyUnicode_FastCopyCharacters(res, res_offset, sep, 0, seplen);
+                res_offset += seplen;
+            }
+
+            itemlen = PyUnicode_GET_LENGTH(item);
+            if (itemlen != 0) {
                 _PyUnicode_FastCopyCharacters(res, res_offset, item, 0, itemlen);
                 res_offset += itemlen;
             }
         }
-    }
-    if (use_memcpy)
-        assert(res_data == PyUnicode_1BYTE_DATA(res)
-                           + kind * PyUnicode_GET_LENGTH(res));
-    else
         assert(res_offset == PyUnicode_GET_LENGTH(res));
+    }
 
     Py_DECREF(fseq);
     Py_XDECREF(sep);
