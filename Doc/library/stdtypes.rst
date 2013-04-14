@@ -26,7 +26,7 @@ instances and exceptions.
 
 Some operations are supported by several object types; in particular,
 practically all objects can be compared, tested for truth value, and converted
-to a string (with the :func:`repr` function or the slightly different
+to a string (with the :ref:`repr() <func-repr>` function or the slightly different
 :func:`str` function).  The latter function is implicitly used when an object is
 written by the :func:`print` function.
 
@@ -1452,7 +1452,7 @@ The conversion types are:
 |            | character string).                                  |       |
 +------------+-----------------------------------------------------+-------+
 | ``'r'``    | String (converts any Python object using            | \(5)  |
-|            | :func:`repr`).                                      |       |
+|            | :ref:`repr() <func-repr>`).                         |       |
 +------------+-----------------------------------------------------+-------+
 | ``'s'``    | String (converts any Python object using            | \(6)  |
 |            | :func:`str`).                                       |       |
