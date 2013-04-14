@@ -550,6 +550,6 @@ modules found in a package.
 .. rubric:: Footnotes
 
 .. [#] In fact function definitions are also 'statements' that are 'executed'; the
-   execution of a module-level function enters the function name in the module's
-   global symbol table.
+   execution of a module-level function definition enters the function name in
+   the module's global symbol table.
 
