@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17341: Include the invalid name in the error messages from re about
+  invalid group names.
+
 - Issue #17702: os.environ now raises KeyError with the original environment
   variable name (str on UNIX), instead of using the encoded name (bytes on
   UNIX).
