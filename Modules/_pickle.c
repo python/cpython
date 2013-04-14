@@ -4260,8 +4260,7 @@ load_binbytes(UnpicklerObject *self)
     if (x < 0) {
         PyErr_Format(PyExc_OverflowError,
                      "BINBYTES exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX
-                    );
+                     PY_SSIZE_T_MAX);
         return -1;
     }
 
@@ -4385,8 +4384,7 @@ load_binunicode(UnpicklerObject *self)
     if (size < 0) {
         PyErr_Format(PyExc_OverflowError,
                      "BINUNICODE exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX
-                    );
+                     PY_SSIZE_T_MAX);
         return -1;
     }
 
