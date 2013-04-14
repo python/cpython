@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16804: Fix a bug in the 'site' module that caused running
+  'python -S -m site' to incorrectly throw an exception.
+
 - Issue #17016: Get rid of possible pointer wraparounds and integer overflows
   in the re module.  Patch by Nickolai Zeldovich.
 
