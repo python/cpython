@@ -2,6 +2,7 @@ import imp
 import os
 import py_compile
 import shutil
+import stat
 import tempfile
 import unittest
 
@@ -54,8 +55,18 @@ class PyCompileTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
 
-def test_main():
-    support.run_unittest(PyCompileTests)
+    def test_exceptions_propagate(self):
+        # Make sure that exceptions raised thanks to issues with writing
+        # bytecode.
+        # http://bugs.python.org/issue17244
+        mode = os.stat(self.directory)
+        os.chmod(self.directory, stat.S_IREAD)
+        try:
+            with self.assertRaises(IOError):
+                py_compile.compile(self.source_path, self.pyc_path)
+        finally:
+            os.chmod(self.directory, mode.st_mode)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
