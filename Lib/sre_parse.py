@@ -549,7 +549,8 @@ def _parse(source, state):
                         if not name:
                             raise error("missing group name")
                         if not isname(name):
-                            raise error, "bad character in group name"
+                            raise error("bad character in group name %r" %
+                                        name)
                     elif sourcematch("="):
                         # named backreference
                         name = ""
@@ -563,7 +564,8 @@ def _parse(source, state):
                         if not name:
                             raise error("missing group name")
                         if not isname(name):
-                            raise error, "bad character in group name"
+                            raise error("bad character in backref group name "
+                                        "%r" % name)
                         gid = state.groupdict.get(name)
                         if gid is None:
                             raise error, "unknown group name"

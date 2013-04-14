@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17341: Include the invalid name in the error messages from re about
+  invalid group names.
+
 - Issue #17016: Get rid of possible pointer wraparounds and integer overflows
   in the re module.  Patch by Nickolai Zeldovich.
 

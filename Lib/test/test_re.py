@@ -2,6 +2,7 @@ from test.test_support import verbose, run_unittest, import_module
 from test.test_support import precisionbigmemtest, _2G, cpython_only
 import re
 from re import Scanner
+import sre_constants
 import sys
 import string
 import traceback
@@ -885,6 +886,16 @@ class ReTests(unittest.TestCase):
         self.assertRaises(OverflowError, re.compile, r".{%d}" % MAXREPEAT)
         self.assertRaises(OverflowError, re.compile, r".{,%d}" % MAXREPEAT)
         self.assertRaises(OverflowError, re.compile, r".{%d,}?" % MAXREPEAT)
+
+    def test_backref_group_name_in_exception(self):
+        # Issue 17341: Poor error message when compiling invalid regex
+        with self.assertRaisesRegexp(sre_constants.error, '<foo>'):
+            re.compile('(?P=<foo>)')
+
+    def test_group_name_in_exception(self):
+        # Issue 17341: Poor error message when compiling invalid regex
+        with self.assertRaisesRegexp(sre_constants.error, '\?foo'):
+            re.compile('(?P<?foo>)')
 
 
 def run_re_tests():
