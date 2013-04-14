@@ -88,9 +88,11 @@ creates a "server socket"::
    serversocket.listen(5)
 
 A couple things to notice: we used ``socket.gethostname()`` so that the socket
-would be visible to the outside world. If we had used ``s.bind(('', 80))`` or
-``s.bind(('localhost', 80))`` or ``s.bind(('127.0.0.1', 80))`` we would still
-have a "server" socket, but one that was only visible within the same machine.
+would be visible to the outside world.  If we had used ``s.bind(('localhost',
+80))`` or ``s.bind(('127.0.0.1', 80))`` we would still have a "server" socket,
+but one that was only visible within the same machine.  ``s.bind(('', 80))``
+specifies that the socket is reachable by any address the machine happens to
+have.
 
 A second thing to note: low number ports are usually reserved for "well known"
 services (HTTP, SNMP etc). If you're playing around, use a nice high number (4
