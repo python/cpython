@@ -17,14 +17,15 @@ the IDE and the Package Manager that are worth pointing out.
 Getting and Installing MacPython
 ================================
 
-Mac OS X 10.5 comes with Python 2.5.1 pre-installed by Apple.  If you wish, you
-are invited to install the most recent version of Python from the Python website
-(http://www.python.org).  A current "universal binary" build of Python, which
-runs natively on the Mac's new Intel and legacy PPC CPU's, is available there.
+Mac OS X 10.8 comes with Python 2.7 pre-installed by Apple.  If you wish, you
+are invited to install the most recent version of Python 3 from the Python
+website (http://www.python.org).  A current "universal binary" build of Python,
+which runs natively on the Mac's new Intel and legacy PPC CPU's, is available
+there.
 
 What you get after installing is a number of things:
 
-* A :file:`MacPython 2.5` folder in your :file:`Applications` folder. In here
+* A :file:`MacPython 3.3` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; PythonLauncher, which handles double-clicking Python
   scripts from the Finder; and the "Build Applet" tool, which allows you to
@@ -92,7 +93,7 @@ aware of: programs that talk to the Aqua window manager (in other words,
 anything that has a GUI) need to be run in a special way. Use :program:`pythonw`
 instead of :program:`python` to start such scripts.
 
-With Python 2.5, you can use either :program:`python` or :program:`pythonw`.
+With Python 3.3, you can use either :program:`python` or :program:`pythonw`.
 
 
 Configuration
@@ -125,13 +126,11 @@ Installing Additional Python Packages
 
 There are several methods to install additional Python packages:
 
-* http://pythonmac.org/packages/ contains selected compiled packages for Python
-  2.5, 2.4, and 2.3.
-
 * Packages can be installed via the standard Python distutils mode (``python
   setup.py install``).
 
-* Many packages can also be installed via the :program:`setuptools` extension.
+* Many packages can also be installed via the :program:`setuptools` extension
+  or :program:`pip` wrapper, see http://www.pip-installer.org/.
 
 
 GUI Programming on the Mac
@@ -159,7 +158,7 @@ http://www.riverbankcomputing.co.uk/software/pyqt/intro.
 Distributing Python Applications on the Mac
 ===========================================
 
-The "Build Applet" tool that is placed in the MacPython 2.5 folder is fine for
+The "Build Applet" tool that is placed in the MacPython 3.3 folder is fine for
 packaging small Python scripts on your own machine to run as a standard Mac
 application. This tool, however, is not robust enough to distribute Python
 applications to other users.
