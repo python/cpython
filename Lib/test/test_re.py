@@ -3,6 +3,7 @@ from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
 import io
 import re
 from re import Scanner
+import sre_constants
 import sys
 import string
 import traceback
@@ -1028,6 +1029,16 @@ class ReTests(unittest.TestCase):
         self.assertRaises(OverflowError, re.compile, r".{%d}" % MAXREPEAT)
         self.assertRaises(OverflowError, re.compile, r".{,%d}" % MAXREPEAT)
         self.assertRaises(OverflowError, re.compile, r".{%d,}?" % MAXREPEAT)
+
+    def test_backref_group_name_in_exception(self):
+        # Issue 17341: Poor error message when compiling invalid regex
+        with self.assertRaisesRegex(sre_constants.error, '<foo>'):
+            re.compile('(?P=<foo>)')
+
+    def test_group_name_in_exception(self):
+        # Issue 17341: Poor error message when compiling invalid regex
+        with self.assertRaisesRegex(sre_constants.error, '\?foo'):
+            re.compile('(?P<?foo>)')
 
 
 def run_re_tests():
