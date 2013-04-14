@@ -2,6 +2,7 @@ from test.support import run_unittest, unload, check_warnings
 import unittest
 import sys
 import imp
+import importlib
 import pkgutil
 import os
 import os.path
@@ -186,6 +187,44 @@ class ExtendPathTests(unittest.TestCase):
         del sys.modules['foo']
         del sys.modules['foo.bar']
         del sys.modules['foo.baz']
+
+
+    # Another awful testing hack to be cleaned up once the test_runpy
+    # helpers are factored out to a common location
+    def test_iter_importers(self):
+        iter_importers = pkgutil.iter_importers
+        get_importer = pkgutil.get_importer
+
+        pkgname = 'spam'
+        modname = 'eggs'
+        dirname = self.create_init(pkgname)
+        pathitem = os.path.join(dirname, pkgname)
+        fullname = '{}.{}'.format(pkgname, modname)
+        try:
+            self.create_submodule(dirname, pkgname, modname, 0)
+
+            importlib.import_module(fullname)
+
+            importers = list(iter_importers(fullname))
+            expected_importer = get_importer(pathitem)
+            for finder in importers:
+                self.assertIsInstance(finder, importlib.machinery.FileFinder)
+                self.assertEqual(finder, expected_importer)
+                self.assertIsInstance(finder.find_module(fullname),
+                                      importlib.machinery.SourceFileLoader)
+                self.assertIsNone(finder.find_module(pkgname))
+
+            with self.assertRaises(ImportError):
+                list(iter_importers('invalid.module'))
+
+            with self.assertRaises(ImportError):
+                list(iter_importers('.spam'))
+        finally:
+            shutil.rmtree(dirname)
+            del sys.path[0]
+            del sys.modules['spam']
+            del sys.modules['spam.eggs']
+
 
     def test_mixed_namespace(self):
         pkgname = 'foo'
