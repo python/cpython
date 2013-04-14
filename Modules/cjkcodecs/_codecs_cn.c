@@ -42,16 +42,18 @@
 
 ENCODER(gb2312)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
 
         if (c < 0x80) {
-            WRITE1((unsigned char)c)
-            NEXT(1, 1)
+            WRITEBYTE1((unsigned char)c)
+            NEXT(1, 1);
             continue;
         }
-        UCS4INVALID(c)
+
+        if (c > 0xFFFF)
+            return 1;
 
         REQUIRE_OUTBUF(2)
         TRYMAP_ENC(gbcommon, code, c);
@@ -60,9 +62,9 @@ ENCODER(gb2312)
         if (code & 0x8000) /* MSB set: GBK */
             return 1;
 
-        OUT1((code >> 8) | 0x80)
-        OUT2((code & 0xFF) | 0x80)
-        NEXT(1, 2)
+        OUTBYTE1((code >> 8) | 0x80)
+        OUTBYTE2((code & 0xFF) | 0x80)
+        NEXT(1, 2);
     }
 
     return 0;
@@ -80,7 +82,7 @@ DECODER(gb2312)
         }
 
         REQUIRE_INBUF(2)
-        TRYMAP_DEC(gb2312, writer, c ^ 0x80, IN2 ^ 0x80) {
+        TRYMAP_DEC(gb2312, writer, c ^ 0x80, INBYTE2 ^ 0x80) {
             NEXT_IN(2);
         }
         else return 1;
@@ -96,28 +98,30 @@ DECODER(gb2312)
 
 ENCODER(gbk)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
 
         if (c < 0x80) {
-            WRITE1((unsigned char)c)
-            NEXT(1, 1)
+            WRITEBYTE1((unsigned char)c)
+            NEXT(1, 1);
             continue;
         }
-        UCS4INVALID(c)
+
+        if (c > 0xFFFF)
+            return 1;
 
         REQUIRE_OUTBUF(2)
 
         GBK_ENCODE(c, code)
         else return 1;
 
-        OUT1((code >> 8) | 0x80)
+        OUTBYTE1((code >> 8) | 0x80)
         if (code & 0x8000)
-            OUT2((code & 0xFF)) /* MSB set: GBK */
+            OUTBYTE2((code & 0xFF)) /* MSB set: GBK */
         else
-            OUT2((code & 0xFF) | 0x80) /* MSB unset: GB2312 */
-        NEXT(1, 2)
+            OUTBYTE2((code & 0xFF) | 0x80) /* MSB unset: GB2312 */
+        NEXT(1, 2);
     }
 
     return 0;
@@ -126,7 +130,7 @@ ENCODER(gbk)
 DECODER(gbk)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -136,7 +140,7 @@ DECODER(gbk)
 
         REQUIRE_INBUF(2)
 
-        GBK_DECODE(c, IN2, writer)
+        GBK_DECODE(c, INBYTE2, writer)
         else return 1;
 
         NEXT_IN(2);
@@ -152,41 +156,31 @@ DECODER(gbk)
 
 ENCODER(gb18030)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
 
         if (c < 0x80) {
-            WRITE1(c)
-            NEXT(1, 1)
+            WRITEBYTE1(c)
+            NEXT(1, 1);
             continue;
         }
 
-        DECODE_SURROGATE(c)
-        if (c > 0x10FFFF)
-#if Py_UNICODE_SIZE == 2
-            return 2; /* surrogates pair */
-#else
-            return 1;
-#endif
-        else if (c >= 0x10000) {
+        if (c >= 0x10000) {
             Py_UCS4 tc = c - 0x10000;
+            assert (c <= 0x10FFFF);
 
             REQUIRE_OUTBUF(4)
 
-            OUT4((unsigned char)(tc % 10) + 0x30)
+            OUTBYTE4((unsigned char)(tc % 10) + 0x30)
             tc /= 10;
-            OUT3((unsigned char)(tc % 126) + 0x81)
+            OUTBYTE3((unsigned char)(tc % 126) + 0x81)
             tc /= 126;
-            OUT2((unsigned char)(tc % 10) + 0x30)
+            OUTBYTE2((unsigned char)(tc % 10) + 0x30)
             tc /= 10;
-            OUT1((unsigned char)(tc + 0x90))
+            OUTBYTE1((unsigned char)(tc + 0x90))
 
-#if Py_UNICODE_SIZE == 2
-            NEXT(2, 4) /* surrogates pair */
-#else
-            NEXT(1, 4)
-#endif
+            NEXT(1, 4);
             continue;
         }
 
@@ -209,15 +203,15 @@ ENCODER(gb18030)
                     tc = c - utrrange->first +
                          utrrange->base;
 
-                    OUT4((unsigned char)(tc % 10) + 0x30)
+                    OUTBYTE4((unsigned char)(tc % 10) + 0x30)
                     tc /= 10;
-                    OUT3((unsigned char)(tc % 126) + 0x81)
+                    OUTBYTE3((unsigned char)(tc % 126) + 0x81)
                     tc /= 126;
-                    OUT2((unsigned char)(tc % 10) + 0x30)
+                    OUTBYTE2((unsigned char)(tc % 10) + 0x30)
                     tc /= 10;
-                    OUT1((unsigned char)tc + 0x81)
+                    OUTBYTE1((unsigned char)tc + 0x81)
 
-                    NEXT(1, 4)
+                    NEXT(1, 4);
                     break;
                 }
 
@@ -226,13 +220,13 @@ ENCODER(gb18030)
             continue;
         }
 
-        OUT1((code >> 8) | 0x80)
+        OUTBYTE1((code >> 8) | 0x80)
         if (code & 0x8000)
-            OUT2((code & 0xFF)) /* MSB set: GBK or GB18030ext */
+            OUTBYTE2((code & 0xFF)) /* MSB set: GBK or GB18030ext */
         else
-            OUT2((code & 0xFF) | 0x80) /* MSB unset: GB2312 */
+            OUTBYTE2((code & 0xFF) | 0x80) /* MSB unset: GB2312 */
 
-        NEXT(1, 2)
+        NEXT(1, 2);
     }
 
     return 0;
@@ -241,7 +235,7 @@ ENCODER(gb18030)
 DECODER(gb18030)
 {
     while (inleft > 0) {
-        unsigned char c = IN1, c2;
+        unsigned char c = INBYTE1, c2;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -251,15 +245,15 @@ DECODER(gb18030)
 
         REQUIRE_INBUF(2)
 
-        c2 = IN2;
+        c2 = INBYTE2;
         if (c2 >= 0x30 && c2 <= 0x39) { /* 4 bytes seq */
             const struct _gb18030_to_unibmp_ranges *utr;
             unsigned char c3, c4;
             Py_UCS4 lseq;
 
             REQUIRE_INBUF(4)
-            c3 = IN3;
-            c4 = IN4;
+            c3 = INBYTE3;
+            c4 = INBYTE4;
             if (c < 0x81 || c3 < 0x81 || c4 < 0x30 || c4 > 0x39)
                 return 1;
             c -= 0x81;  c2 -= 0x30;
@@ -313,33 +307,34 @@ ENCODER_INIT(hz)
 ENCODER_RESET(hz)
 {
     if (state->i != 0) {
-        WRITE2('~', '}')
+        WRITEBYTE2('~', '}')
         state->i = 0;
-        NEXT_OUT(2)
+        NEXT_OUT(2);
     }
     return 0;
 }
 
 ENCODER(hz)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
 
         if (c < 0x80) {
             if (state->i == 0) {
-                WRITE1((unsigned char)c)
-                NEXT(1, 1)
+                WRITEBYTE1((unsigned char)c)
+                NEXT(1, 1);
             }
             else {
-                WRITE3('~', '}', (unsigned char)c)
-                NEXT(1, 3)
+                WRITEBYTE3('~', '}', (unsigned char)c)
+                NEXT(1, 3);
                 state->i = 0;
             }
             continue;
         }
 
-        UCS4INVALID(c)
+        if (c > 0xFFFF)
+            return 1;
 
         TRYMAP_ENC(gbcommon, code, c);
         else return 1;
@@ -348,13 +343,13 @@ ENCODER(hz)
             return 1;
 
         if (state->i == 0) {
-            WRITE4('~', '{', code >> 8, code & 0xff)
-            NEXT(1, 4)
+            WRITEBYTE4('~', '{', code >> 8, code & 0xff)
+            NEXT(1, 4);
             state->i = 1;
         }
         else {
-            WRITE2(code >> 8, code & 0xff)
-            NEXT(1, 2)
+            WRITEBYTE2(code >> 8, code & 0xff)
+            NEXT(1, 2);
         }
     }
 
@@ -376,10 +371,10 @@ DECODER_RESET(hz)
 DECODER(hz)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
 
         if (c == '~') {
-            unsigned char c2 = IN2;
+            unsigned char c2 = INBYTE2;
 
             REQUIRE_INBUF(2)
             if (c2 == '~') {
@@ -408,7 +403,7 @@ DECODER(hz)
         }
         else { /* GB mode */
             REQUIRE_INBUF(2)
-            TRYMAP_DEC(gb2312, writer, c, IN2) {
+            TRYMAP_DEC(gb2312, writer, c, INBYTE2) {
                 NEXT_IN(2);
             }
             else

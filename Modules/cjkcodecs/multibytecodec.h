@@ -27,7 +27,8 @@ typedef union {
 typedef int (*mbcodec_init)(const void *config);
 typedef Py_ssize_t (*mbencode_func)(MultibyteCodec_State *state,
                         const void *config,
-                        const Py_UNICODE **inbuf, Py_ssize_t inleft,
+                        int kind, void *data,
+                        Py_ssize_t *inpos, Py_ssize_t inlen,
                         unsigned char **outbuf, Py_ssize_t outleft,
                         int flags);
 typedef int (*mbencodeinit_func)(MultibyteCodec_State *state,
@@ -75,8 +76,7 @@ typedef struct {
 #define MAXENCPENDING   2
 #define _MultibyteStatefulEncoder_HEAD          \
     _MultibyteStatefulCodec_HEAD                \
-    Py_UNICODE pending[MAXENCPENDING];          \
-    Py_ssize_t pendingsize;
+    PyObject *pending;
 typedef struct {
     _MultibyteStatefulEncoder_HEAD
 } MultibyteStatefulEncoderContext;
