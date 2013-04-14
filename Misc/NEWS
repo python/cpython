@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17702: os.environ now raises KeyError with the original environment
+  variable name (str on UNIX), instead of using the encoded name (bytes on
+  UNIX).
+
 - Issue #16163: Make the importlib based version of pkgutil.iter_importers
   work for submodules. Initial patch by Berker Peksag.
 
