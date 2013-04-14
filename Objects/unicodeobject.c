@@ -10671,7 +10671,8 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         return;
     }
     left = *p_left;
-    if (right == NULL || left == NULL || !PyUnicode_Check(left)) {
+    if (right == NULL || left == NULL
+        || !PyUnicode_Check(left) || !PyUnicode_Check(right)) {
         if (!PyErr_Occurred())
             PyErr_BadInternalCall();
         goto error;
@@ -10711,17 +10712,12 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         && !(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right)))
     {
         /* append inplace */
-        if (unicode_resize(p_left, new_len) != 0) {
-            /* XXX if _PyUnicode_Resize() fails, 'left' has been
-             * deallocated so it cannot be put back into
-             * 'variable'.  The MemoryError is raised when there
-             * is no value in 'variable', which might (very
-             * remotely) be a cause of incompatibilities.
-             */
+        res = resize_compact(left, new_len);
+        if (res == NULL)
             goto error;
-        }
-        /* copy 'right' into the newly allocated area of 'left' */
-        _PyUnicode_FastCopyCharacters(*p_left, left_len, right, 0, right_len);
+
+        /* copy 'right' into the newly allocated area of 'res' (left) */
+        _PyUnicode_FastCopyCharacters(res, left_len, right, 0, right_len);
     }
     else {
         maxchar = PyUnicode_MAX_CHAR_VALUE(left);
@@ -10735,8 +10731,8 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         _PyUnicode_FastCopyCharacters(res, 0, left, 0, left_len);
         _PyUnicode_FastCopyCharacters(res, left_len, right, 0, right_len);
         Py_DECREF(left);
-        *p_left = res;
     }
+    *p_left = res;
     assert(_PyUnicode_CheckConsistency(*p_left, 1));
     return;
 
@@ -14520,12 +14516,12 @@ PyUnicode_InternInPlace(PyObject **p)
     t = PyDict_GetItem(interned, s);
     Py_END_ALLOW_RECURSION
 
-        if (t) {
-            Py_INCREF(t);
-            Py_DECREF(*p);
-            *p = t;
-            return;
-        }
+    if (t) {
+        Py_INCREF(t);
+        Py_DECREF(*p);
+        *p = t;
+        return;
+    }
 
     PyThreadState_GET()->recursion_critical = 1;
     if (PyDict_SetItem(interned, s, s) < 0) {
