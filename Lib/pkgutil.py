@@ -449,8 +449,8 @@ def iter_importers(fullname=""):
     if '.' in fullname:
         # Get the containing package's __path__
         pkg_name = fullname.rpartition(".")[0]
-        pkg = importlib.import_module(pkg)
-        path = getattr(sys.modules[pkg], '__path__', None)
+        pkg = importlib.import_module(pkg_name)
+        path = getattr(pkg, '__path__', None)
         if path is None:
             return
     else:
