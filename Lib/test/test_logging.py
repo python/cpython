@@ -3955,41 +3955,48 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         rh = logging.handlers.TimedRotatingFileHandler(
             self.fn, when='MIDNIGHT', interval=1, backupCount=0, utc=True,
             atTime=atTime)
+        try:
+            actual = rh.computeRollover(currentTime)
+            self.assertEqual(actual, currentTime + 12 * 60 * 60)
 
-        actual = rh.computeRollover(currentTime)
-        self.assertEqual(actual, currentTime + 12 * 60 * 60)
+            actual = rh.computeRollover(currentTime + 13 * 60 * 60)
+            self.assertEqual(actual, currentTime + 36 * 60 * 60)
+        finally:
+            rh.close()
 
-        actual = rh.computeRollover(currentTime + 13 * 60 * 60)
-        self.assertEqual(actual, currentTime + 36 * 60 * 60)
-
-        rh.close()
-
-    @unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
     def test_compute_rollover_weekly_attime(self):
-        currentTime = 0
+        currentTime = int(time.time())
+        today = currentTime - currentTime % 86400
+
         atTime = datetime.time(12, 0, 0)
 
-        wday = datetime.datetime.fromtimestamp(currentTime).weekday()
+        wday = datetime.datetime.fromtimestamp(currentTime + time.timezone).weekday()
         for day in range(7):
             rh = logging.handlers.TimedRotatingFileHandler(
                 self.fn, when='W%d' % day, interval=1, backupCount=0, utc=True,
                 atTime=atTime)
-
-            if wday > day:
-                expected = (7 - wday + day)
-            else:
-                expected = (day - wday)
-            expected *= 24 * 60 * 60
-            expected += 12 * 60 * 60
-            actual = rh.computeRollover(currentTime)
-            self.assertEqual(actual, expected)
-            if day == wday:
-                # goes into following week
-                expected += 7 * 24 * 60 * 60
-            actual = rh.computeRollover(currentTime + 13 * 60 * 60)
-            self.assertEqual(actual, expected)
-
-            rh.close()
+            try:
+                if wday > day:
+                    # The rollover day has already passed this week, so we
+                    # go over into next week
+                    expected = (7 - wday + day)
+                else:
+                    expected = (day - wday)
+                # At this point expected is in days from now, convert to seconds
+                expected *= 24 * 60 * 60
+                # Add in the rollover time
+                expected += 12 * 60 * 60
+                # Add in adjustment for today
+                expected += today
+                actual = rh.computeRollover(currentTime)
+                self.assertEqual(actual, expected)
+                if day == wday:
+                    # goes into following week
+                    expected += 7 * 24 * 60 * 60
+                actual = rh.computeRollover(currentTime + 13 * 60 * 60)
+                self.assertEqual(actual, expected)
+            finally:
+                rh.close()
 
 
 def secs(**kw):
