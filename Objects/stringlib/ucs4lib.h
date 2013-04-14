@@ -19,7 +19,6 @@
 #define STRINGLIB_STR            PyUnicode_4BYTE_DATA
 #define STRINGLIB_LEN            PyUnicode_GET_LENGTH
 #define STRINGLIB_NEW            _PyUnicode_FromUCS4
-#define STRINGLIB_RESIZE         not_supported
 #define STRINGLIB_CHECK          PyUnicode_Check
 #define STRINGLIB_CHECK_EXACT    PyUnicode_CheckExact
 
