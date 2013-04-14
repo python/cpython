@@ -636,19 +636,13 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         missing = 'missingkey'
         self.assertNotIn(missing, os.environ)
 
-        try:
+        with self.assertRaises(KeyError) as cm:
             os.environ[missing]
-        except KeyError as err:
-            self.assertIs(err.args[0], missing)
-        else:
-            self.fail("KeyError not raised")
+        self.assertIs(cm.exception.args[0], missing)
 
-        try:
+        with self.assertRaises(KeyError) as cm:
             del os.environ[missing]
-        except KeyError as err:
-            self.assertIs(err.args[0], missing)
-        else:
-            self.fail("KeyError not raised")
+        self.assertIs(cm.exception.args[0], missing)
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
