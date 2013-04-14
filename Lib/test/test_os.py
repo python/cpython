@@ -632,6 +632,24 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
             key = 'key='
             self.assertRaises(OSError, os.environ.__delitem__, key)
 
+    def test_key_type(self):
+        missing = 'missingkey'
+        self.assertNotIn(missing, os.environ)
+
+        try:
+            os.environ[missing]
+        except KeyError as err:
+            self.assertIs(err.args[0], missing)
+        else:
+            self.fail("KeyError not raised")
+
+        try:
+            del os.environ[missing]
+        except KeyError as err:
+            self.assertIs(err.args[0], missing)
+        else:
+            self.fail("KeyError not raised")
+
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
 
