@@ -196,6 +196,10 @@ static PyObject *unicode_empty = NULL;
         return unicode_empty;                           \
     } while (0)
 
+/* Forward declaration */
+Py_LOCAL_INLINE(int)
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch);
+
 /* List of static strings. */
 static _Py_Identifier *static_strings = NULL;
 
@@ -2432,10 +2436,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
                             "character argument not in range(0x110000)");
             return NULL;
         }
-        if (_PyUnicodeWriter_Prepare(writer, 1, ordinal) == -1)
+        if (_PyUnicodeWriter_WriteCharInline(writer, ordinal) < 0)
             return NULL;
-        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ordinal);
-        writer->pos++;
         break;
     }
 
@@ -2636,10 +2638,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     }
 
     case '%':
-        if (_PyUnicodeWriter_Prepare(writer, 1, '%') == 1)
+        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
             return NULL;
-        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, '%');
-        writer->pos++;
         break;
 
     default:
@@ -4282,18 +4282,14 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                         /* expecting a second surrogate */
                         if (Py_UNICODE_IS_LOW_SURROGATE(outCh)) {
                             Py_UCS4 ch2 = Py_UNICODE_JOIN_SURROGATES(surrogate, outCh);
-                            if (_PyUnicodeWriter_Prepare(&writer, 1, ch2) == -1)
+                            if (_PyUnicodeWriter_WriteCharInline(&writer, ch2) < 0)
                                 goto onError;
-                            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch2);
-                            writer.pos++;
                             surrogate = 0;
                             continue;
                         }
                         else {
-                            if (_PyUnicodeWriter_Prepare(&writer, 1, surrogate) == -1)
+                            if (_PyUnicodeWriter_WriteCharInline(&writer, surrogate) < 0)
                                 goto onError;
-                            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, surrogate);
-                            writer.pos++;
                             surrogate = 0;
                         }
                     }
@@ -4302,10 +4298,8 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                         surrogate = outCh;
                     }
                     else {
-                        if (_PyUnicodeWriter_Prepare(&writer, 1, outCh) == -1)
+                        if (_PyUnicodeWriter_WriteCharInline(&writer, outCh) < 0)
                             goto onError;
-                        PyUnicode_WRITE(writer.kind, writer.data, writer.pos, outCh);
-                        writer.pos++;
                     }
                 }
             }
@@ -4313,10 +4307,8 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                 inShift = 0;
                 s++;
                 if (surrogate) {
-                    if (_PyUnicodeWriter_Prepare(&writer, 1, surrogate) == -1)
+                    if (_PyUnicodeWriter_WriteCharInline(&writer, surrogate) < 0)
                         goto onError;
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, surrogate);
-                    writer.pos++;
                     surrogate = 0;
                 }
                 if (base64bits > 0) { /* left-over bits */
@@ -4336,10 +4328,8 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                 if (ch != '-') {
                     /* '-' is absorbed; other terminating
                        characters are preserved */
-                    if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
+                    if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
                         goto onError;
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-                    writer.pos++;
                 }
             }
         }
@@ -4348,10 +4338,8 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
             s++; /* consume '+' */
             if (s < e && *s == '-') { /* '+-' encodes '+' */
                 s++;
-                if (_PyUnicodeWriter_Prepare(&writer, 1, '+') == -1)
+                if (_PyUnicodeWriter_WriteCharInline(&writer, '+') < 0)
                     goto onError;
-                PyUnicode_WRITE(writer.kind, writer.data, writer.pos, '+');
-                writer.pos++;
             }
             else { /* begin base64-encoded section */
                 inShift = 1;
@@ -4361,10 +4349,8 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
         }
         else if (DECODE_DIRECT(ch)) { /* character decodes as itself */
             s++;
-            if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-            writer.pos++;
         }
         else {
             startinpos = s-starts;
@@ -4711,10 +4697,8 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             endinpos = startinpos + ch - 1;
             break;
         default:
-            if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-            writer.pos++;
             continue;
         }
 
@@ -4970,10 +4954,8 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
         }
         else {
             if (ch < 0x110000) {
-                if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
+                if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
                     goto onError;
-                PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-                writer.pos++;
                 q += 4;
                 continue;
             }
@@ -5227,10 +5209,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
             endinpos = startinpos + 2;
             break;
         default:
-            if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-            writer.pos++;
             continue;
         }
 
@@ -5469,10 +5449,8 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
         if (*s != '\\') {
             x = (unsigned char)*s;
             s++;
-            if (_PyUnicodeWriter_Prepare(&writer, 1, x) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, x);
-            writer.pos++;
             continue;
         }
 
@@ -5492,10 +5470,8 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
             /* \x escapes */
 #define WRITECHAR(ch)                                                      \
             do {                                                           \
-                if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)        \
+                if (_PyUnicodeWriter_WriteCharInline(&writer, (ch)) < 0)    \
                     goto onError;                                          \
-                PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch); \
-                writer.pos++;                                              \
             } while(0)
 
         case '\n': break;
@@ -5825,10 +5801,8 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
         /* Non-escape characters are interpreted as Unicode ordinals */
         if (*s != '\\') {
             x = (unsigned char)*s++;
-            if (_PyUnicodeWriter_Prepare(&writer, 1, x) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, x);
-            writer.pos++;
             continue;
         }
         startinpos = s-starts;
@@ -5840,10 +5814,8 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
             if (*s != '\\')
                 break;
             x = (unsigned char)*s++;
-            if (_PyUnicodeWriter_Prepare(&writer, 1, x) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, x);
-            writer.pos++;
         }
         if (((s - bs) & 1) == 0 ||
             s >= end ||
@@ -5876,10 +5848,8 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
                 x += 10 + c - 'A';
         }
         if (x <= MAX_UNICODE) {
-            if (_PyUnicodeWriter_Prepare(&writer, 1, x) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, x);
-            writer.pos++;
         }
         else {
             endinpos = s-starts;
@@ -6059,10 +6029,8 @@ _PyUnicode_DecodeUnicodeInternal(const char *s,
         }
 #endif
 
-        if (_PyUnicodeWriter_Prepare(&writer, 1, ch) == -1)
+        if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
             goto onError;
-        PyUnicode_WRITE(writer.kind, writer.data, writer.pos, ch);
-        writer.pos++;
         continue;
 
   error:
@@ -7409,10 +7377,8 @@ Error:
                 continue;
             }
 
-            if (_PyUnicodeWriter_Prepare(&writer, 1, x) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(&writer, x) < 0)
                 goto onError;
-            PyUnicode_WRITE(writer.kind, writer.data, writer.pos, x);
-            writer.pos++;
             ++s;
         }
     }
@@ -7451,12 +7417,10 @@ Error:
                     goto onError;
                 }
 
-                if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1) {
+                if (_PyUnicodeWriter_WriteCharInline(&writer, value) < 0) {
                     Py_DECREF(x);
                     goto onError;
                 }
-                PyUnicode_WRITE(writer.kind, writer.data, writer.pos, value);
-                writer.pos++;
             }
             else if (PyUnicode_Check(x)) {
                 if (PyUnicode_READY(x) == -1) {
@@ -7467,12 +7431,10 @@ Error:
                     Py_UCS4 value = PyUnicode_READ_CHAR(x, 0);
                     if (value == 0xFFFE)
                         goto Undefined;
-                    if (_PyUnicodeWriter_Prepare(&writer, 1, value) == -1) {
+                    if (_PyUnicodeWriter_WriteCharInline(&writer, value) < 0) {
                         Py_DECREF(x);
                         goto onError;
                     }
-                    PyUnicode_WRITE(writer.kind, writer.data, writer.pos, value);
-                    writer.pos++;
                 }
                 else {
                     writer.overallocate = 1;
@@ -12959,14 +12921,20 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     return 0;
 }
 
-int
-_PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer, Py_UCS4 ch)
+Py_LOCAL_INLINE(int)
+_PyUnicodeWriter_WriteCharInline(_PyUnicodeWriter *writer, Py_UCS4 ch)
 {
     if (_PyUnicodeWriter_Prepare(writer, 1, ch) < 0)
         return -1;
     PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
     writer->pos++;
     return 0;
+}
+
+int
+_PyUnicodeWriter_WriteChar(_PyUnicodeWriter *writer, Py_UCS4 ch)
+{
+    return _PyUnicodeWriter_WriteCharInline(writer, ch);
 }
 
 int
@@ -13873,10 +13841,8 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
         ctx->writer.overallocate = 0;
 
     if (arg->ch == '%') {
-        if (_PyUnicodeWriter_Prepare(writer, 1, '%') == -1)
+        if (_PyUnicodeWriter_WriteCharInline(writer, '%') < 0)
             return -1;
-        PyUnicode_WRITE(writer->kind, writer->data, writer->pos, '%');
-        writer->pos += 1;
         return 1;
     }
 
@@ -13951,10 +13917,8 @@ unicode_format_arg_format(struct unicode_formatter_t *ctx,
             return -1;
         if (arg->width == -1 && arg->prec == -1) {
             /* Fast path */
-            if (_PyUnicodeWriter_Prepare(writer, 1, ch) == -1)
+            if (_PyUnicodeWriter_WriteCharInline(writer, ch) < 0)
                 return -1;
-            PyUnicode_WRITE(writer->kind, writer->data, writer->pos, ch);
-            writer->pos += 1;
             return 1;
         }
         *p_str = PyUnicode_FromOrdinal(ch);
