@@ -474,6 +474,18 @@ def _get_sourcefile(bytecode_path):
     return source_path if _path_isfile(source_stats) else bytecode_path
 
 
+def _calc_mode(path):
+    """Calculate the mode permissions for a bytecode file."""
+    try:
+        mode = _os.stat(path).st_mode
+    except OSError:
+        mode = 0o666
+    # We always ensure write access so we can update cached files
+    # later even when the source files are read-only on Windows (#6074)
+    mode |= 0o200
+    return mode
+
+
 def _verbose_message(message, *args, verbosity=1):
     """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
     if sys.flags.verbose >= verbosity:
@@ -1060,13 +1072,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
 
     def _cache_bytecode(self, source_path, bytecode_path, data):
         # Adapt between the two APIs
-        try:
-            mode = _os.stat(source_path).st_mode
-        except OSError:
-            mode = 0o666
-        # We always ensure write access so we can update cached files
-        # later even when the source files are read-only on Windows (#6074)
-        mode |= 0o200
+        mode = _calc_mode(source_path)
         return self.set_data(bytecode_path, data, _mode=mode)
 
     def set_data(self, path, data, *, _mode=0o666):
