@@ -6499,7 +6499,7 @@ _PyUnicode_AsASCIIString(PyObject *unicode, const char *errors)
         return NULL;
     /* Fast path: if it is an ASCII-only string, construct bytes object
        directly. Else defer to above function to raise the exception. */
-    if (PyUnicode_MAX_CHAR_VALUE(unicode) < 128)
+    if (PyUnicode_IS_ASCII(unicode))
         return PyBytes_FromStringAndSize(PyUnicode_DATA(unicode),
                                          PyUnicode_GET_LENGTH(unicode));
     return unicode_encode_ucs1(unicode, errors, 128);
