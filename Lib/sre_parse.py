@@ -225,13 +225,25 @@ class Tokenizer:
     def seek(self, index):
         self.index, self.next = index
 
+# The following three functions are not used in this module anymore, but we keep
+# them here (with DeprecationWarnings) for backwards compatibility.
+
 def isident(char):
+    import warnings
+    warnings.warn('sre_parse.isident() will be removed in 3.5',
+                  DeprecationWarning, stacklevel=2)
     return "a" <= char <= "z" or "A" <= char <= "Z" or char == "_"
 
 def isdigit(char):
+    import warnings
+    warnings.warn('sre_parse.isdigit() will be removed in 3.5',
+                  DeprecationWarning, stacklevel=2)
     return "0" <= char <= "9"
 
 def isname(name):
+    import warnings
+    warnings.warn('sre_parse.isname() will be removed in 3.5',
+                  DeprecationWarning, stacklevel=2)
     # check that group name is a valid string
     if not isident(name[0]):
         return False
@@ -587,7 +599,7 @@ def _parse(source, state):
                         group = 1
                         if not name:
                             raise error("missing group name")
-                        if not isname(name):
+                        if not name.isidentifier():
                             raise error("bad character in group name")
                     elif sourcematch("="):
                         # named backreference
@@ -601,7 +613,7 @@ def _parse(source, state):
                             name = name + char
                         if not name:
                             raise error("missing group name")
-                        if not isname(name):
+                        if not name.isidentifier():
                             raise error("bad character in group name")
                         gid = state.groupdict.get(name)
                         if gid is None:
@@ -655,7 +667,7 @@ def _parse(source, state):
                     group = 2
                     if not condname:
                         raise error("missing group name")
-                    if isname(condname):
+                    if condname.isidentifier():
                         condgroup = state.groupdict.get(condname)
                         if condgroup is None:
                             raise error("unknown group name")
@@ -792,7 +804,7 @@ def parse_template(source, pattern):
                     if index < 0:
                         raise error("negative group number")
                 except ValueError:
-                    if not isname(name):
+                    if not name.isidentifier():
                         raise error("bad character in group name")
                     try:
                         index = pattern.groupindex[name]
