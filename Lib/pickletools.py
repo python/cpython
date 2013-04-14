@@ -13,6 +13,7 @@ dis(pickle, out=None, memo=None, indentlevel=4)
 import codecs
 import pickle
 import re
+import sys
 
 __all__ = ['dis', 'genops', 'optimize']
 
@@ -164,8 +165,9 @@ UP_TO_NEWLINE = -1
 
 # Represents the number of bytes consumed by a two-argument opcode where
 # the first argument gives the number of bytes in the second argument.
-TAKEN_FROM_ARGUMENT1 = -2   # num bytes is 1-byte unsigned int
-TAKEN_FROM_ARGUMENT4 = -3   # num bytes is 4-byte signed little-endian int
+TAKEN_FROM_ARGUMENT1  = -2   # num bytes is 1-byte unsigned int
+TAKEN_FROM_ARGUMENT4  = -3   # num bytes is 4-byte signed little-endian int
+TAKEN_FROM_ARGUMENT4U = -4   # num bytes is 4-byte unsigned little-endian int
 
 class ArgumentDescriptor(object):
     __slots__ = (
@@ -193,7 +195,8 @@ class ArgumentDescriptor(object):
         assert isinstance(n, int) and (n >= 0 or
                                        n in (UP_TO_NEWLINE,
                                              TAKEN_FROM_ARGUMENT1,
-                                             TAKEN_FROM_ARGUMENT4))
+                                             TAKEN_FROM_ARGUMENT4,
+                                             TAKEN_FROM_ARGUMENT4U))
         self.n = n
 
         self.reader = reader
@@ -262,6 +265,27 @@ int4 = ArgumentDescriptor(
            n=4,
            reader=read_int4,
            doc="Four-byte signed integer, little-endian, 2's complement.")
+
+
+def read_uint4(f):
+    r"""
+    >>> import io
+    >>> read_uint4(io.BytesIO(b'\xff\x00\x00\x00'))
+    255
+    >>> read_uint4(io.BytesIO(b'\x00\x00\x00\x80')) == 2**31
+    True
+    """
+
+    data = f.read(4)
+    if len(data) == 4:
+        return _unpack("<I", data)[0]
+    raise ValueError("not enough data in stream to read uint4")
+
+uint4 = ArgumentDescriptor(
+            name='uint4',
+            n=4,
+            reader=read_uint4,
+            doc="Four-byte unsigned integer, little-endian.")
 
 
 def read_stringnl(f, decode=True, stripquotes=True):
@@ -420,6 +444,67 @@ string1 = ArgumentDescriptor(
               """)
 
 
+def read_bytes1(f):
+    r"""
+    >>> import io
+    >>> read_bytes1(io.BytesIO(b"\x00"))
+    b''
+    >>> read_bytes1(io.BytesIO(b"\x03abcdef"))
+    b'abc'
+    """
+
+    n = read_uint1(f)
+    assert n >= 0
+    data = f.read(n)
+    if len(data) == n:
+        return data
+    raise ValueError("expected %d bytes in a bytes1, but only %d remain" %
+                     (n, len(data)))
+
+bytes1 = ArgumentDescriptor(
+              name="bytes1",
+              n=TAKEN_FROM_ARGUMENT1,
+              reader=read_bytes1,
+              doc="""A counted bytes string.
+
+              The first argument is a 1-byte unsigned int giving the number
+              of bytes, and the second argument is that many bytes.
+              """)
+
+
+def read_bytes4(f):
+    r"""
+    >>> import io
+    >>> read_bytes4(io.BytesIO(b"\x00\x00\x00\x00abc"))
+    b''
+    >>> read_bytes4(io.BytesIO(b"\x03\x00\x00\x00abcdef"))
+    b'abc'
+    >>> read_bytes4(io.BytesIO(b"\x00\x00\x00\x03abcdef"))
+    Traceback (most recent call last):
+    ...
+    ValueError: expected 50331648 bytes in a bytes4, but only 6 remain
+    """
+
+    n = read_uint4(f)
+    if n > sys.maxsize:
+        raise ValueError("bytes4 byte count > sys.maxsize: %d" % n)
+    data = f.read(n)
+    if len(data) == n:
+        return data
+    raise ValueError("expected %d bytes in a bytes4, but only %d remain" %
+                     (n, len(data)))
+
+bytes4 = ArgumentDescriptor(
+              name="bytes4",
+              n=TAKEN_FROM_ARGUMENT4U,
+              reader=read_bytes4,
+              doc="""A counted bytes string.
+
+              The first argument is a 4-byte little-endian unsigned int giving
+              the number of bytes, and the second argument is that many bytes.
+              """)
+
+
 def read_unicodestringnl(f):
     r"""
     >>> import io
@@ -463,9 +548,9 @@ def read_unicodestring4(f):
     ValueError: expected 7 bytes in a unicodestring4, but only 6 remain
     """
 
-    n = read_int4(f)
-    if n < 0:
-        raise ValueError("unicodestring4 byte count < 0: %d" % n)
+    n = read_uint4(f)
+    if n > sys.maxsize:
+        raise ValueError("unicodestring4 byte count > sys.maxsize: %d" % n)
     data = f.read(n)
     if len(data) == n:
         return str(data, 'utf-8', 'surrogatepass')
@@ -474,7 +559,7 @@ def read_unicodestring4(f):
 
 unicodestring4 = ArgumentDescriptor(
                     name="unicodestring4",
-                    n=TAKEN_FROM_ARGUMENT4,
+                    n=TAKEN_FROM_ARGUMENT4U,
                     reader=read_unicodestring4,
                     doc="""A counted Unicode string.
 
@@ -871,7 +956,7 @@ class OpcodeInfo(object):
             assert isinstance(x, StackObject)
         self.stack_after = stack_after
 
-        assert isinstance(proto, int) and 0 <= proto <= 3
+        assert isinstance(proto, int) and 0 <= proto <= pickle.HIGHEST_PROTOCOL
         self.proto = proto
 
         assert isinstance(doc, str)
@@ -1037,28 +1122,28 @@ opcodes = [
 
     I(name='BINBYTES',
       code='B',
-      arg=string4,
+      arg=bytes4,
       stack_before=[],
       stack_after=[pybytes],
       proto=3,
       doc="""Push a Python bytes object.
 
-      There are two arguments:  the first is a 4-byte little-endian signed int
-      giving the number of bytes in the string, and the second is that many
-      bytes, which are taken literally as the bytes content.
+      There are two arguments:  the first is a 4-byte little-endian unsigned int
+      giving the number of bytes, and the second is that many bytes, which are
+      taken literally as the bytes content.
       """),
 
     I(name='SHORT_BINBYTES',
       code='C',
-      arg=string1,
+      arg=bytes1,
       stack_before=[],
       stack_after=[pybytes],
       proto=3,
-      doc="""Push a Python string object.
+      doc="""Push a Python bytes object.
 
       There are two arguments:  the first is a 1-byte unsigned int giving
-      the number of bytes in the string, and the second is that many bytes,
-      which are taken literally as the string content.
+      the number of bytes, and the second is that many bytes, which are taken
+      literally as the string content.
       """),
 
     # Ways to spell None.
@@ -1117,7 +1202,7 @@ opcodes = [
       proto=1,
       doc="""Push a Python Unicode string object.
 
-      There are two arguments:  the first is a 4-byte little-endian signed int
+      There are two arguments:  the first is a 4-byte little-endian unsigned int
       giving the number of bytes in the string.  The second is that many
       bytes, and is the UTF-8 encoding of the Unicode string.
       """),
@@ -1421,13 +1506,13 @@ opcodes = [
 
     I(name='LONG_BINGET',
       code='j',
-      arg=int4,
+      arg=uint4,
       stack_before=[],
       stack_after=[anyobject],
       proto=1,
       doc="""Read an object from the memo and push it on the stack.
 
-      The index of the memo object to push is given by the 4-byte signed
+      The index of the memo object to push is given by the 4-byte unsigned
       little-endian integer following.
       """),
 
@@ -1458,14 +1543,14 @@ opcodes = [
 
     I(name='LONG_BINPUT',
       code='r',
-      arg=int4,
+      arg=uint4,
       stack_before=[],
       stack_after=[],
       proto=1,
       doc="""Store the stack top into the memo.  The stack is not popped.
 
       The index of the memo location to write into is given by the 4-byte
-      signed little-endian integer following.
+      unsigned little-endian integer following.
       """),
 
     # Access the extension registry (predefined objects).  Akin to the GET
