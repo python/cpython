@@ -738,7 +738,6 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
     PyObject *inbuf = NULL;
     Py_ssize_t inpos, datalen;
     PyObject *origpending = NULL;
-    wchar_t *data;
 
     if (PyUnicode_Check(unistr))
         ucvt = NULL;
@@ -753,10 +752,6 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
             return NULL;
         }
     }
-
-    data = PyUnicode_AsUnicodeAndSize(unistr, &datalen);
-    if (data == NULL)
-        goto errorexit;
 
     if (ctx->pending) {
         PyObject *inbuf_tmp;
@@ -793,6 +788,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
         origpending = NULL;
         goto errorexit;
     }
+    Py_XDECREF(origpending);
 
     if (inpos < datalen) {
         if (datalen - inpos > MAXENCPENDING) {
@@ -808,6 +804,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
         }
     }
 
+    Py_DECREF(inbuf);
     Py_XDECREF(ucvt);
     return r;
 
@@ -815,6 +812,7 @@ errorexit:
     Py_XDECREF(r);
     Py_XDECREF(ucvt);
     Py_XDECREF(origpending);
+    Py_XDECREF(inbuf);
     return NULL;
 }
 
