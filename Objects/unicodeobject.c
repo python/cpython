@@ -11968,7 +11968,7 @@ unicode_repr(PyObject *unicode)
     Py_ssize_t isize;
     Py_ssize_t osize, squote, dquote, i, o;
     Py_UCS4 max, quote;
-    int ikind, okind;
+    int ikind, okind, unchanged;
     void *idata, *odata;
 
     if (PyUnicode_READY(unicode) == -1)
@@ -11979,7 +11979,7 @@ unicode_repr(PyObject *unicode)
 
     /* Compute length of output, quote characters, and
        maximum character */
-    osize = 2; /* quotes */
+    osize = 0;
     max = 127;
     squote = dquote = 0;
     ikind = PyUnicode_KIND(unicode);
@@ -12010,7 +12010,9 @@ unicode_repr(PyObject *unicode)
     }
 
     quote = '\'';
+    unchanged = (osize == isize);
     if (squote) {
+        unchanged = 0;
         if (dquote)
             /* Both squote and dquote present. Use squote,
                and escape them */
@@ -12018,6 +12020,7 @@ unicode_repr(PyObject *unicode)
         else
             quote = '"';
     }
+    osize += 2;   /* quotes */
 
     repr = PyUnicode_New(osize, max);
     if (repr == NULL)
@@ -12027,81 +12030,87 @@ unicode_repr(PyObject *unicode)
 
     PyUnicode_WRITE(okind, odata, 0, quote);
     PyUnicode_WRITE(okind, odata, osize-1, quote);
+    if (unchanged) {
+        _PyUnicode_FastCopyCharacters(repr, 1,
+                                      unicode, 0,
+                                      isize);
+    }
+    else {
+        for (i = 0, o = 1; i < isize; i++) {
+            Py_UCS4 ch = PyUnicode_READ(ikind, idata, i);
 
-    for (i = 0, o = 1; i < isize; i++) {
-        Py_UCS4 ch = PyUnicode_READ(ikind, idata, i);
-
-        /* Escape quotes and backslashes */
-        if ((ch == quote) || (ch == '\\')) {
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, ch);
-            continue;
-        }
-
-        /* Map special whitespace to '\t', \n', '\r' */
-        if (ch == '\t') {
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, 't');
-        }
-        else if (ch == '\n') {
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, 'n');
-        }
-        else if (ch == '\r') {
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, 'r');
-        }
-
-        /* Map non-printable US ASCII to '\xhh' */
-        else if (ch < ' ' || ch == 0x7F) {
-            PyUnicode_WRITE(okind, odata, o++, '\\');
-            PyUnicode_WRITE(okind, odata, o++, 'x');
-            PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
-            PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
-        }
-
-        /* Copy ASCII characters as-is */
-        else if (ch < 0x7F) {
-            PyUnicode_WRITE(okind, odata, o++, ch);
-        }
-
-        /* Non-ASCII characters */
-        else {
-            /* Map Unicode whitespace and control characters
-               (categories Z* and C* except ASCII space)
-            */
-            if (!Py_UNICODE_ISPRINTABLE(ch)) {
+            /* Escape quotes and backslashes */
+            if ((ch == quote) || (ch == '\\')) {
                 PyUnicode_WRITE(okind, odata, o++, '\\');
-                /* Map 8-bit characters to '\xhh' */
-                if (ch <= 0xff) {
-                    PyUnicode_WRITE(okind, odata, o++, 'x');
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
-                }
-                /* Map 16-bit characters to '\uxxxx' */
-                else if (ch <= 0xffff) {
-                    PyUnicode_WRITE(okind, odata, o++, 'u');
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
-                }
-                /* Map 21-bit characters to '\U00xxxxxx' */
-                else {
-                    PyUnicode_WRITE(okind, odata, o++, 'U');
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 28) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 24) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 20) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 16) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
-                    PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
-                }
-            }
-            /* Copy characters as-is */
-            else {
                 PyUnicode_WRITE(okind, odata, o++, ch);
+                continue;
+            }
+
+            /* Map special whitespace to '\t', \n', '\r' */
+            if (ch == '\t') {
+                PyUnicode_WRITE(okind, odata, o++, '\\');
+                PyUnicode_WRITE(okind, odata, o++, 't');
+            }
+            else if (ch == '\n') {
+                PyUnicode_WRITE(okind, odata, o++, '\\');
+                PyUnicode_WRITE(okind, odata, o++, 'n');
+            }
+            else if (ch == '\r') {
+                PyUnicode_WRITE(okind, odata, o++, '\\');
+                PyUnicode_WRITE(okind, odata, o++, 'r');
+            }
+
+            /* Map non-printable US ASCII to '\xhh' */
+            else if (ch < ' ' || ch == 0x7F) {
+                PyUnicode_WRITE(okind, odata, o++, '\\');
+                PyUnicode_WRITE(okind, odata, o++, 'x');
+                PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
+                PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
+            }
+
+            /* Copy ASCII characters as-is */
+            else if (ch < 0x7F) {
+                PyUnicode_WRITE(okind, odata, o++, ch);
+            }
+
+            /* Non-ASCII characters */
+            else {
+                /* Map Unicode whitespace and control characters
+                   (categories Z* and C* except ASCII space)
+                */
+                if (!Py_UNICODE_ISPRINTABLE(ch)) {
+                    PyUnicode_WRITE(okind, odata, o++, '\\');
+                    /* Map 8-bit characters to '\xhh' */
+                    if (ch <= 0xff) {
+                        PyUnicode_WRITE(okind, odata, o++, 'x');
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0x000F]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0x000F]);
+                    }
+                    /* Map 16-bit characters to '\uxxxx' */
+                    else if (ch <= 0xffff) {
+                        PyUnicode_WRITE(okind, odata, o++, 'u');
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
+                    }
+                    /* Map 21-bit characters to '\U00xxxxxx' */
+                    else {
+                        PyUnicode_WRITE(okind, odata, o++, 'U');
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 28) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 24) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 20) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 16) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 12) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 8) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[(ch >> 4) & 0xF]);
+                        PyUnicode_WRITE(okind, odata, o++, Py_hexdigits[ch & 0xF]);
+                    }
+                }
+                /* Copy characters as-is */
+                else {
+                    PyUnicode_WRITE(okind, odata, o++, ch);
+                }
             }
         }
     }
