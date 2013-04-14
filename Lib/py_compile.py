@@ -106,7 +106,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     source_bytes = loader.get_data(file)
     try:
         code = loader.source_to_code(source_bytes, dfile or file,
-                _optimize=optimize)
+                                     _optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
         if doraise:
@@ -121,10 +121,12 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     except FileExistsError:
         pass
     source_stats = loader.path_stats(file)
-    bytecode = importlib._bootstrap._code_to_bytecode(code,
-        source_stats['mtime'], len(source_bytes))
-    loader._cache_bytecode(file, cfile, bytecode)
+    bytecode = importlib._bootstrap._code_to_bytecode(
+            code, source_stats['mtime'], source_stats['size'])
+    mode = importlib._bootstrap._calc_mode(file)
+    importlib._bootstrap._write_atomic(cfile, bytecode, mode)
     return cfile
+
 
 def main(args=None):
     """Compile several source files.
