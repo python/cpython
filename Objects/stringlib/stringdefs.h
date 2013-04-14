@@ -21,7 +21,6 @@
 #define STRINGLIB_STR            PyBytes_AS_STRING
 #define STRINGLIB_LEN            PyBytes_GET_SIZE
 #define STRINGLIB_NEW            PyBytes_FromStringAndSize
-#define STRINGLIB_RESIZE         _PyBytes_Resize
 #define STRINGLIB_CHECK          PyBytes_Check
 #define STRINGLIB_CHECK_EXACT    PyBytes_CheckExact
 #define STRINGLIB_TOSTR          PyObject_Str
