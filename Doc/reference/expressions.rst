@@ -84,14 +84,13 @@ exception.
 definition begins with two or more underscore characters and does not end in two
 or more underscores, it is considered a :dfn:`private name` of that class.
 Private names are transformed to a longer form before code is generated for
-them.  The transformation inserts the class name in front of the name, with
-leading underscores removed, and a single underscore inserted in front of the
-class name.  For example, the identifier ``__spam`` occurring in a class named
-``Ham`` will be transformed to ``_Ham__spam``.  This transformation is
-independent of the syntactical context in which the identifier is used.  If the
-transformed name is extremely long (longer than 255 characters), implementation
-defined truncation may happen.  If the class name consists only of underscores,
-no transformation is done.
+them.  The transformation inserts the class name, with leading underscores
+removed and a single underscore inserted, in front of the name.  For example,
+the identifier ``__spam`` occurring in a class named ``Ham`` will be transformed
+to ``_Ham__spam``.  This transformation is independent of the syntactical
+context in which the identifier is used.  If the transformed name is extremely
+long (longer than 255 characters), implementation defined truncation may happen.
+If the class name consists only of underscores, no transformation is done.
 
 
 .. _atom-literals:
