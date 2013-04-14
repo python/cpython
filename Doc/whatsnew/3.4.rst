@@ -162,7 +162,7 @@ detected.  (Contributed by R. David Murray and Daniel Urban in :issue:`16522`.)
 smtplib
 -------
 
-:exc:`~smtplib.SMTPException` is now a subclass of :exc:`IOError`, which allows
+:exc:`~smtplib.SMTPException` is now a subclass of :exc:`OSError`, which allows
 both socket level errors and SMTP protocol level errors to be caught in one
 try/except statement by code that only cares whether or not an error occurred.
 (:issue:`2118`).

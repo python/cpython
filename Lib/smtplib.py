@@ -66,7 +66,7 @@ bCRLF = b"\r\n"
 OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
 
 # Exception classes used by this module.
-class SMTPException(IOError):
+class SMTPException(OSError):
     """Base class for all exceptions raised by this module."""
 
 class SMTPServerDisconnected(SMTPException):

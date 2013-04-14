@@ -103,7 +103,7 @@ A nice selection of exceptions is defined as well:
 
 .. exception:: SMTPException
 
-   Subclass of :exc:`IOError` that is the base exception class for all
+   Subclass of :exc:`OSError` that is the base exception class for all
    the other excpetions provided by this module.
 
 
