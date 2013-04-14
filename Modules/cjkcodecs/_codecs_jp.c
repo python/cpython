@@ -19,38 +19,39 @@
 
 ENCODER(cp932)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
         unsigned char c1, c2;
 
         if (c <= 0x80) {
-            WRITE1((unsigned char)c)
-            NEXT(1, 1)
+            WRITEBYTE1((unsigned char)c)
+            NEXT(1, 1);
             continue;
         }
         else if (c >= 0xff61 && c <= 0xff9f) {
-            WRITE1(c - 0xfec0)
-            NEXT(1, 1)
+            WRITEBYTE1(c - 0xfec0)
+            NEXT(1, 1);
             continue;
         }
         else if (c >= 0xf8f0 && c <= 0xf8f3) {
             /* Windows compatibility */
             REQUIRE_OUTBUF(1)
             if (c == 0xf8f0)
-                OUT1(0xa0)
+                OUTBYTE1(0xa0)
             else
-                OUT1(c - 0xfef1 + 0xfd)
-            NEXT(1, 1)
+                OUTBYTE1(c - 0xfef1 + 0xfd)
+            NEXT(1, 1);
             continue;
         }
 
-        UCS4INVALID(c)
+        if (c > 0xFFFF)
+            return 1;
         REQUIRE_OUTBUF(2)
 
         TRYMAP_ENC(cp932ext, code, c) {
-            OUT1(code >> 8)
-            OUT2(code & 0xff)
+            OUTBYTE1(code >> 8)
+            OUTBYTE2(code & 0xff)
         }
         else TRYMAP_ENC(jisxcommon, code, c) {
             if (code & 0x8000) /* MSB set: JIS X 0212 */
@@ -61,20 +62,20 @@ ENCODER(cp932)
             c2 = code & 0xff;
             c2 = (((c1 - 0x21) & 1) ? 0x5e : 0) + (c2 - 0x21);
             c1 = (c1 - 0x21) >> 1;
-            OUT1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1)
-            OUT2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
+            OUTBYTE1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1)
+            OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
         }
         else if (c >= 0xe000 && c < 0xe758) {
             /* User-defined area */
             c1 = (Py_UCS4)(c - 0xe000) / 188;
             c2 = (Py_UCS4)(c - 0xe000) % 188;
-            OUT1(c1 + 0xf0)
-            OUT2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
+            OUTBYTE1(c1 + 0xf0)
+            OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
         }
         else
             return 1;
 
-        NEXT(1, 2)
+        NEXT(1, 2);
     }
 
     return 0;
@@ -83,7 +84,7 @@ ENCODER(cp932)
 DECODER(cp932)
 {
     while (inleft > 0) {
-        unsigned char c = IN1, c2;
+        unsigned char c = INBYTE1, c2;
 
         if (c <= 0x80) {
             OUTCHAR(c);
@@ -106,7 +107,7 @@ DECODER(cp932)
         }
 
         REQUIRE_INBUF(2)
-        c2 = IN2;
+        c2 = INBYTE2;
 
         TRYMAP_DEC(cp932ext, writer, c, c2);
         else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xea)){
@@ -145,25 +146,24 @@ DECODER(cp932)
 
 ENCODER(euc_jis_2004)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
         Py_ssize_t insize;
 
         if (c < 0x80) {
-            WRITE1(c)
-            NEXT(1, 1)
+            WRITEBYTE1(c)
+            NEXT(1, 1);
             continue;
         }
 
-        DECODE_SURROGATE(c)
-        insize = GET_INSIZE(c);
+        insize = 1;
 
         if (c <= 0xFFFF) {
             EMULATE_JISX0213_2000_ENCODE_BMP(code, c)
             else TRYMAP_ENC(jisx0213_bmp, code, c) {
                 if (code == MULTIC) {
-                    if (inleft < 2) {
+                    if (inlen - *inpos < 2) {
                         if (flags & MBENC_FLUSH) {
                             code = find_pairencmap(
                                 (ucs2_t)c, 0,
@@ -176,8 +176,9 @@ ENCODER(euc_jis_2004)
                             return MBERR_TOOFEW;
                     }
                     else {
+                        Py_UCS4 c2 = INCHAR2;
                         code = find_pairencmap(
-                            (ucs2_t)c, (*inbuf)[1],
+                            (ucs2_t)c, c2,
                             jisx0213_pair_encmap,
                             JISX0213_ENCPAIRS);
                         if (code == DBCINV) {
@@ -195,8 +196,8 @@ ENCODER(euc_jis_2004)
             else TRYMAP_ENC(jisxcommon, code, c);
             else if (c >= 0xff61 && c <= 0xff9f) {
                 /* JIS X 0201 half-width katakana */
-                WRITE2(0x8e, c - 0xfec0)
-                NEXT(1, 2)
+                WRITEBYTE2(0x8e, c - 0xfec0)
+                NEXT(1, 2);
                 continue;
             }
             else if (c == 0xff3c)
@@ -218,12 +219,12 @@ ENCODER(euc_jis_2004)
 
         if (code & 0x8000) {
             /* Codeset 2 */
-            WRITE3(0x8f, code >> 8, (code & 0xFF) | 0x80)
-            NEXT(insize, 3)
+            WRITEBYTE3(0x8f, code >> 8, (code & 0xFF) | 0x80)
+            NEXT(insize, 3);
         } else {
             /* Codeset 1 */
-            WRITE2((code >> 8) | 0x80, (code & 0xFF) | 0x80)
-            NEXT(insize, 2)
+            WRITEBYTE2((code >> 8) | 0x80, (code & 0xFF) | 0x80)
+            NEXT(insize, 2);
         }
     }
 
@@ -233,7 +234,7 @@ ENCODER(euc_jis_2004)
 DECODER(euc_jis_2004)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
         Py_UCS4 code;
 
         if (c < 0x80) {
@@ -247,7 +248,7 @@ DECODER(euc_jis_2004)
             unsigned char c2;
 
             REQUIRE_INBUF(2)
-            c2 = IN2;
+            c2 = INBYTE2;
             if (c2 >= 0xa1 && c2 <= 0xdf) {
                 OUTCHAR(0xfec0 + c2);
                 NEXT_IN(2);
@@ -259,8 +260,8 @@ DECODER(euc_jis_2004)
             unsigned char c2, c3;
 
             REQUIRE_INBUF(3)
-            c2 = IN2 ^ 0x80;
-            c3 = IN3 ^ 0x80;
+            c2 = INBYTE2 ^ 0x80;
+            c3 = INBYTE3 ^ 0x80;
 
             /* JIS X 0213 Plane 2 or JIS X 0212 (see NOTES) */
             EMULATE_JISX0213_2000_DECODE_PLANE2(writer, c2, c3)
@@ -279,7 +280,7 @@ DECODER(euc_jis_2004)
 
             REQUIRE_INBUF(2)
             c ^= 0x80;
-            c2 = IN2 ^ 0x80;
+            c2 = INBYTE2 ^ 0x80;
 
             /* JIS X 0213 Plane 1 */
             EMULATE_JISX0213_2000_DECODE_PLANE1(writer, c, c2)
@@ -312,35 +313,36 @@ DECODER(euc_jis_2004)
 
 ENCODER(euc_jp)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
 
         if (c < 0x80) {
-            WRITE1((unsigned char)c)
-            NEXT(1, 1)
+            WRITEBYTE1((unsigned char)c)
+            NEXT(1, 1);
             continue;
         }
 
-        UCS4INVALID(c)
+        if (c > 0xFFFF)
+            return 1;
 
         TRYMAP_ENC(jisxcommon, code, c);
         else if (c >= 0xff61 && c <= 0xff9f) {
             /* JIS X 0201 half-width katakana */
-            WRITE2(0x8e, c - 0xfec0)
-            NEXT(1, 2)
+            WRITEBYTE2(0x8e, c - 0xfec0)
+            NEXT(1, 2);
             continue;
         }
 #ifndef STRICT_BUILD
         else if (c == 0xff3c) /* FULL-WIDTH REVERSE SOLIDUS */
             code = 0x2140;
         else if (c == 0xa5) { /* YEN SIGN */
-            WRITE1(0x5c);
-            NEXT(1, 1)
+            WRITEBYTE1(0x5c);
+            NEXT(1, 1);
             continue;
         } else if (c == 0x203e) { /* OVERLINE */
-            WRITE1(0x7e);
-            NEXT(1, 1)
+            WRITEBYTE1(0x7e);
+            NEXT(1, 1);
             continue;
         }
 #endif
@@ -349,12 +351,12 @@ ENCODER(euc_jp)
 
         if (code & 0x8000) {
             /* JIS X 0212 */
-            WRITE3(0x8f, code >> 8, (code & 0xFF) | 0x80)
-            NEXT(1, 3)
+            WRITEBYTE3(0x8f, code >> 8, (code & 0xFF) | 0x80)
+            NEXT(1, 3);
         } else {
             /* JIS X 0208 */
-            WRITE2((code >> 8) | 0x80, (code & 0xFF) | 0x80)
-            NEXT(1, 2)
+            WRITEBYTE2((code >> 8) | 0x80, (code & 0xFF) | 0x80)
+            NEXT(1, 2);
         }
     }
 
@@ -364,7 +366,7 @@ ENCODER(euc_jp)
 DECODER(euc_jp)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -377,7 +379,7 @@ DECODER(euc_jp)
             unsigned char c2;
 
             REQUIRE_INBUF(2)
-            c2 = IN2;
+            c2 = INBYTE2;
             if (c2 >= 0xa1 && c2 <= 0xdf) {
                 OUTCHAR(0xfec0 + c2);
                 NEXT_IN(2);
@@ -389,8 +391,8 @@ DECODER(euc_jp)
             unsigned char c2, c3;
 
             REQUIRE_INBUF(3)
-            c2 = IN2;
-            c3 = IN3;
+            c2 = INBYTE2;
+            c3 = INBYTE3;
             /* JIS X 0212 */
             TRYMAP_DEC(jisx0212, writer, c2 ^ 0x80, c3 ^ 0x80) {
                 NEXT_IN(3);
@@ -402,7 +404,7 @@ DECODER(euc_jp)
             unsigned char c2;
 
             REQUIRE_INBUF(2)
-            c2 = IN2;
+            c2 = INBYTE2;
             /* JIS X 0208 */
 #ifndef STRICT_BUILD
             if (c == 0xa1 && c2 == 0xc0)
@@ -427,8 +429,8 @@ DECODER(euc_jp)
 
 ENCODER(shift_jis)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
         unsigned char c1, c2;
 
@@ -440,14 +442,16 @@ ENCODER(shift_jis)
         else if (c == 0x203e) code = 0x7e; /* OVERLINE */
 #endif
         else JISX0201_K_ENCODE(c, code)
-        else UCS4INVALID(c)
-        else code = NOCHAR;
+        else if (c > 0xFFFF)
+            return 1;
+        else
+            code = NOCHAR;
 
         if (code < 0x80 || (code >= 0xa1 && code <= 0xdf)) {
             REQUIRE_OUTBUF(1)
 
-            OUT1((unsigned char)code)
-            NEXT(1, 1)
+            OUTBYTE1((unsigned char)code)
+            NEXT(1, 1);
             continue;
         }
 
@@ -470,9 +474,9 @@ ENCODER(shift_jis)
         c2 = code & 0xff;
         c2 = (((c1 - 0x21) & 1) ? 0x5e : 0) + (c2 - 0x21);
         c1 = (c1 - 0x21) >> 1;
-        OUT1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1)
-        OUT2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
-        NEXT(1, 2)
+        OUTBYTE1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1)
+        OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
+        NEXT(1, 2);
     }
 
     return 0;
@@ -481,7 +485,7 @@ ENCODER(shift_jis)
 DECODER(shift_jis)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
 
 #ifdef STRICT_BUILD
         JISX0201_R_DECODE(c, writer)
@@ -493,7 +497,7 @@ DECODER(shift_jis)
             unsigned char c1, c2;
 
             REQUIRE_INBUF(2)
-            c2 = IN2;
+            c2 = INBYTE2;
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
                 return 1;
 
@@ -533,30 +537,29 @@ DECODER(shift_jis)
 
 ENCODER(shift_jis_2004)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = IN1;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code = NOCHAR;
         int c1, c2;
         Py_ssize_t insize;
 
         JISX0201_ENCODE(c, code)
-        else DECODE_SURROGATE(c)
 
         if (code < 0x80 || (code >= 0xa1 && code <= 0xdf)) {
-            WRITE1((unsigned char)code)
-            NEXT(1, 1)
+            WRITEBYTE1((unsigned char)code)
+            NEXT(1, 1);
             continue;
         }
 
         REQUIRE_OUTBUF(2)
-        insize = GET_INSIZE(c);
+        insize = 1;
 
         if (code == NOCHAR) {
             if (c <= 0xffff) {
                 EMULATE_JISX0213_2000_ENCODE_BMP(code, c)
                 else TRYMAP_ENC(jisx0213_bmp, code, c) {
                     if (code == MULTIC) {
-                        if (inleft < 2) {
+                        if (inlen - *inpos < 2) {
                             if (flags & MBENC_FLUSH) {
                             code = find_pairencmap
                                 ((ucs2_t)c, 0,
@@ -569,8 +572,9 @@ ENCODER(shift_jis_2004)
                                 return MBERR_TOOFEW;
                         }
                         else {
+                            Py_UCS4 ch2 = INCHAR2;
                             code = find_pairencmap(
-                                (ucs2_t)c, IN2,
+                                (ucs2_t)c, ch2,
                               jisx0213_pair_encmap,
                                 JISX0213_ENCPAIRS);
                             if (code == DBCINV) {
@@ -615,10 +619,10 @@ ENCODER(shift_jis_2004)
 
         if (c1 & 1) c2 += 0x5e;
         c1 >>= 1;
-        OUT1(c1 + (c1 < 0x1f ? 0x81 : 0xc1))
-        OUT2(c2 + (c2 < 0x3f ? 0x40 : 0x41))
+        OUTBYTE1(c1 + (c1 < 0x1f ? 0x81 : 0xc1))
+        OUTBYTE2(c2 + (c2 < 0x3f ? 0x40 : 0x41))
 
-        NEXT(insize, 2)
+        NEXT(insize, 2);
     }
 
     return 0;
@@ -627,7 +631,7 @@ ENCODER(shift_jis_2004)
 DECODER(shift_jis_2004)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
 
         JISX0201_DECODE(c, writer)
         else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xfc)){
@@ -635,7 +639,7 @@ DECODER(shift_jis_2004)
             Py_UCS4 code;
 
             REQUIRE_INBUF(2)
-            c2 = IN2;
+            c2 = INBYTE2;
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
                 return 1;
 
