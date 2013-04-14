@@ -451,6 +451,9 @@ PyObject_ASCII(PyObject *v)
     if (repr == NULL)
         return NULL;
 
+    if (PyUnicode_IS_ASCII(repr))
+        return repr;
+
     /* repr is guaranteed to be a PyUnicode object by PyObject_Repr */
     ascii = _PyUnicode_AsASCIIString(repr, "backslashreplace");
     Py_DECREF(repr);
