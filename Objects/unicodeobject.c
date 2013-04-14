@@ -10532,7 +10532,7 @@ int
 PyUnicode_Contains(PyObject *container, PyObject *element)
 {
     PyObject *str, *sub;
-    int kind1, kind2, kind;
+    int kind1, kind2;
     void *buf1, *buf2;
     Py_ssize_t len1, len2;
     int result;
@@ -10551,23 +10551,18 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
         Py_DECREF(sub);
         return -1;
     }
-    if (PyUnicode_READY(sub) == -1 || PyUnicode_READY(str) == -1) {
-        Py_DECREF(sub);
-        Py_DECREF(str);
-    }
 
     kind1 = PyUnicode_KIND(str);
     kind2 = PyUnicode_KIND(sub);
-    kind = kind1;
     buf1 = PyUnicode_DATA(str);
     buf2 = PyUnicode_DATA(sub);
-    if (kind2 != kind) {
-        if (kind2 > kind) {
+    if (kind2 != kind1) {
+        if (kind2 > kind1) {
             Py_DECREF(sub);
             Py_DECREF(str);
             return 0;
         }
-        buf2 = _PyUnicode_AsKind(sub, kind);
+        buf2 = _PyUnicode_AsKind(sub, kind1);
     }
     if (!buf2) {
         Py_DECREF(sub);
@@ -10577,7 +10572,7 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
     len1 = PyUnicode_GET_LENGTH(str);
     len2 = PyUnicode_GET_LENGTH(sub);
 
-    switch (kind) {
+    switch (kind1) {
     case PyUnicode_1BYTE_KIND:
         result = ucs1lib_find(buf1, len1, buf2, len2, 0) != -1;
         break;
@@ -10595,7 +10590,7 @@ PyUnicode_Contains(PyObject *container, PyObject *element)
     Py_DECREF(str);
     Py_DECREF(sub);
 
-    if (kind2 != kind)
+    if (kind2 != kind1)
         PyMem_Free(buf2);
 
     return result;
