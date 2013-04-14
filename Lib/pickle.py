@@ -933,7 +933,7 @@ class _Unpickler:
         n = mloads(b'i' + self.read(4))
         if n < 0:
             # Corrupt or hostile pickle -- we never write one like this
-            raise UnpicklingError("LONG pickle has negative byte count");
+            raise UnpicklingError("LONG pickle has negative byte count")
         data = self.read(n)
         self.append(decode_long(data))
     dispatch[LONG4[0]] = load_long4
@@ -965,7 +965,7 @@ class _Unpickler:
         # Deprecated BINSTRING uses signed 32-bit length
         len = mloads(b'i' + self.read(4))
         if len < 0:
-            raise UnpicklingError("BINSTRING pickle has negative byte count");
+            raise UnpicklingError("BINSTRING pickle has negative byte count")
         data = self.read(len)
         value = str(data, self.encoding, self.errors)
         self.append(value)
@@ -974,7 +974,8 @@ class _Unpickler:
     def load_binbytes(self, unpack=struct.unpack, maxsize=sys.maxsize):
         len, = unpack('<I', self.read(4))
         if len > maxsize:
-            raise UnpicklingError("BINBYTES exceeds system's maximum size of %d bytes" % maxsize);
+            raise UnpicklingError("BINBYTES exceeds system's maximum size "
+                                  "of %d bytes" % maxsize)
         self.append(self.read(len))
     dispatch[BINBYTES[0]] = load_binbytes
 
@@ -985,7 +986,8 @@ class _Unpickler:
     def load_binunicode(self, unpack=struct.unpack, maxsize=sys.maxsize):
         len, = unpack('<I', self.read(4))
         if len > maxsize:
-            raise UnpicklingError("BINUNICODE exceeds system's maximum size of %d bytes" % maxsize);
+            raise UnpicklingError("BINUNICODE exceeds system's maximum size "
+                                  "of %d bytes" % maxsize)
         self.append(str(self.read(len), 'utf-8', 'surrogatepass'))
     dispatch[BINUNICODE[0]] = load_binunicode
 
@@ -1118,7 +1120,7 @@ class _Unpickler:
         if not key:
             if code <= 0: # note that 0 is forbidden
                 # Corrupt or hostile pickle.
-                raise UnpicklingError("EXT specifies code <= 0");
+                raise UnpicklingError("EXT specifies code <= 0")
             raise ValueError("unregistered extension code %d" % code)
         obj = self.find_class(*key)
         _extension_cache[code] = obj
