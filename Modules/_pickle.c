@@ -2992,7 +2992,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     if (listitems == Py_None)
         listitems = NULL;
     else if (!PyIter_Check(listitems)) {
-        PyErr_Format(PicklingError, "Fourth element of tuple"
+        PyErr_Format(PicklingError, "fourth element of the tuple "
                      "returned by __reduce__ must be an iterator, not %s",
                      Py_TYPE(listitems)->tp_name);
         return -1;
@@ -3001,7 +3001,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     if (dictitems == Py_None)
         dictitems = NULL;
     else if (!PyIter_Check(dictitems)) {
-        PyErr_Format(PicklingError, "Fifth element of tuple"
+        PyErr_Format(PicklingError, "fifth element of the tuple "
                      "returned by __reduce__ must be an iterator, not %s",
                      Py_TYPE(dictitems)->tp_name);
         return -1;
