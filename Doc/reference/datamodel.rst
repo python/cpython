@@ -623,9 +623,8 @@ Callable types
          single: im_self (method attribute)
 
       When a user-defined method object is created by retrieving a class method object
-      from a class or instance, its :attr:`im_self` attribute is the class itself (the
-      same as the :attr:`im_class` attribute), and its :attr:`im_func` attribute is
-      the function object underlying the class method.
+      from a class or instance, its :attr:`im_self` attribute is the class itself, and
+      its :attr:`im_func` attribute is the function object underlying the class method.
 
       When an unbound user-defined method object is called, the underlying function
       (:attr:`im_func`) is called, with the restriction that the first argument must
@@ -797,8 +796,8 @@ Classes
    associated class is either :class:`C` or one of its base classes, it is
    transformed into an unbound user-defined method object whose :attr:`im_class`
    attribute is :class:`C`. When it would yield a class method object, it is
-   transformed into a bound user-defined method object whose :attr:`im_class`
-   and :attr:`im_self` attributes are both :class:`C`.  When it would yield a
+   transformed into a bound user-defined method object whose
+   :attr:`im_self` attribute is :class:`C`.  When it would yield a
    static method object, it is transformed into the object wrapped by the static
    method object. See section :ref:`descriptors` for another way in which
    attributes retrieved from a class may differ from those actually contained in
