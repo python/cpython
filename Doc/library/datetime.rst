@@ -1616,11 +1616,19 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 +-----------+--------------------------------+------------------------+-------+
 | Directive | Meaning                        | Example                | Notes |
 +===========+================================+========================+=======+
-| ``%a``    | Weekday as locale's            | Sun, Mon, ..., Sat     |       |
-|           | abbreviated name.              |                        |       |
+| ``%a``    | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
+|           | abbreviated name.              |  (en_US);              |       |
+|           |                                || So, Mo, ..., Sa       |       |
+|           |                                |  (de_DE);              |       |
+|           |                                || 日, 月, ..., 土       |       |
+|           |                                |  (ja_JP)               |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%A``    | Weekday as locale's full name. | Sunday, Monday, ...,   |       |
-|           |                                | Saturday               |       |
+| ``%A``    | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
+|           |                                |  Saturday (en_US);     |       |
+|           |                                || Sonntag, Montag, ..., |       |
+|           |                                |  Samstag (de_DE);      |       |
+|           |                                || 日曜日, 月曜日, ...,  |       |
+|           |                                |  土曜日 (ja_JP)        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
 |           | where 0 is Sunday and 6 is     |                        |       |
@@ -1629,14 +1637,18 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%d``    | Day of the month as a          | 01, 02, ..., 31        |       |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%j``    | Day of the year as a           | 001, 002, ..., 366     |       |
-|           | zero-padded decimal number.    |                        |       |
+| ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
+|           | name.                          |  (en_US);              |       |
+|           |                                || Jan, Feb, ..., Dez    |       |
+|           |                                |  (de_DE);              |       |
+|           |                                || 1, 2, ..., 12 (ja_JP) |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%b``    | Month as locale's abbreviated  | Jan, Feb, ..., Dec     |       |
-|           | name.                          |                        |       |
-+-----------+--------------------------------+------------------------+-------+
-| ``%B``    | Month as locale's full name.   | January, February,     |       |
-|           |                                | ..., December          |       |
+| ``%B``    | Month as locale's full name.   || January, February,    | \(1)  |
+|           |                                |  ..., December (en_US);|       |
+|           |                                || Januar, Februar, ..., |       |
+|           |                                |  Dezember (de_DE);     |       |
+|           |                                || 1月, 2月, ..., 12月   |       |
+|           |                                |  (ja_JP)               |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        |       |
 |           | decimal number.                |                        |       |
@@ -1653,27 +1665,31 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%I``    | Hour (12-hour clock) as a      | 01, 02, ..., 12        |       |
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%p``    | Locale's equivalent of either  | AM, PM                 | \(1)  |
-|           | AM or PM.                      |                        |       |
+| ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
+|           | AM or PM.                      || am, pm (de_DE);       | \(2)  |
+|           |                                || AM, PM (ja_JP)        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        |       |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%S``    | Second as a zero-padded        | 00, 01, ..., 61        | \(2)  |
+| ``%S``    | Second as a zero-padded        | 00, 01, ..., 61        | \(3)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(3)  |
+| ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(4)  |
 |           | number, zero-padded on the     | 999999                 |       |
 |           | left.                          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%z``    | UTC offset in the form +HHMM   | (empty), +0000, -0400, | \(4)  |
+| ``%z``    | UTC offset in the form +HHMM   | (empty), +0000, -0400, | \(5)  |
 |           | or -HHMM (empty string if the  | +1030                  |       |
 |           | the object is naive).          |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(5)  |
+| ``%j``    | Day of the year as a           | 001, 002, ..., 366     |       |
+|           | zero-padded decimal number.    |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%U``    | Week number of the year        | 00, 01, ..., 53        | \(6)  |
 |           | (Sunday as the first day of    |                        |       |
 |           | the week) as a zero padded     |                        |       |
 |           | decimal number. All days in a  |                        |       |
@@ -1681,7 +1697,7 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 |           | Sunday are considered to be in |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(5)  |
+| ``%W``    | Week number of the year        | 00, 01, ..., 53        | \(6)  |
 |           | (Monday as the first day of    |                        |       |
 |           | the week) as a decimal number. |                        |       |
 |           | All days in a new year         |                        |       |
@@ -1689,14 +1705,21 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 |           | are considered to be in        |                        |       |
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%c``    | Locale's appropriate date and  | Mon Aug  1 16:00:00    |       |
-|           | time representation.           | 1988                   |       |
+| ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
+|           | time representation.           |  1988 (en_US),         |       |
+|           |                                || Di 16 Aug 21:30:00    |       |
+|           |                                |  1988 (de_DE),         |       |
+|           |                                || 火  8/16 21:30:00     |       |
+|           |                                |  1988 (ja_JP)          |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%x``    | Locale's appropriate date      | 08/16/88               |       |
-|           | representation.                |                        |       |
+| ``%x``    | Locale's appropriate date      || 08/16/88 (None),      | \(1)  |
+|           | representation.                || 08/16/1988 (en_US),   |       |
+|           |                                || 16.08.1988 (de_DE),   |       |
+|           |                                || 1988/08/16 (ja_JP)    |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%X``    | Locale's appropriate time      | 16:00:00               |       |
-|           | representation.                |                        |       |
+| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US),     | \(1)  |
+|           | representation.                || 21:30:00 (de_DE),     |       |
+|           |                                || 21時30分00秒 (ja_JP)  |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%%``    | A literal ``'%'`` character.   | %                      |       |
 +-----------+--------------------------------+------------------------+-------+
@@ -1704,10 +1727,17 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 Notes:
 
 (1)
+   Because the format depends on the current locale, care should be taken when
+   making assumptions about the output value. Field orderings will vary (for
+   example, "month/day/year" versus "day/month/year"), and the output may
+   contain UTF-8 encoded unicode characters (for example, the ``ja_JP`` locale
+   may include Japanese characters).
+
+(2)
    When used with the :meth:`strptime` method, the ``%p`` directive only affects
    the output hour field if the ``%I`` directive is used to parse the hour.
 
-(2)
+(3)
    The range really is ``0`` to ``61``; according to the Posix standard this
    accounts for leap seconds and the (very rare) double leap seconds.
    The :mod:`time` module may produce and does accept leap seconds since
@@ -1715,7 +1745,7 @@ Notes:
    does not accept leap seconds in :meth:`strptime` input nor will it
    produce them in :func:`strftime` output.
 
-(3)
+(4)
    ``%f`` is an extension to the set of format characters in the C standard
    (but implemented separately in datetime objects, and therefore always
    available).  When used with the :meth:`strptime` method, the ``%f``
@@ -1723,7 +1753,7 @@ Notes:
 
    .. versionadded:: 2.6
 
-(4)
+(5)
    For a naive object, the ``%z`` and ``%Z`` format codes are replaced by empty
    strings.
 
@@ -1742,7 +1772,7 @@ Notes:
       string.  Otherwise ``%Z`` is replaced by the returned value, which must
       be a string.
 
-(5)
+(6)
    When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used
    in calculations when the day of the week and the year are specified.
 
