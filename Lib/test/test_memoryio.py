@@ -379,8 +379,8 @@ class MemoryTestMixin:
                 self.assertEqual(obj.__class__, obj2.__class__)
                 self.assertEqual(obj.foo, obj2.foo)
                 self.assertEqual(obj.tell(), obj2.tell())
-                obj.close()
-                self.assertRaises(ValueError, pickle.dumps, obj, proto)
+                obj2.close()
+                self.assertRaises(ValueError, pickle.dumps, obj2, proto)
         del __main__.PickleTestMemIO
 
 
