@@ -38,35 +38,39 @@ static const DBCHAR big5hkscs_pairenc_table[4] = {0x8862, 0x8864, 0x88a3, 0x88a5
 
 ENCODER(big5hkscs)
 {
-    while (inleft > 0) {
-        Py_UCS4 c = **inbuf;
+    while (*inpos < inlen) {
+        Py_UCS4 c = INCHAR1;
         DBCHAR code;
         Py_ssize_t insize;
 
         if (c < 0x80) {
             REQUIRE_OUTBUF(1)
             **outbuf = (unsigned char)c;
-            NEXT(1, 1)
+            NEXT(1, 1);
             continue;
         }
 
-        DECODE_SURROGATE(c)
-        insize = GET_INSIZE(c);
-
+        insize = 1;
         REQUIRE_OUTBUF(2)
 
         if (c < 0x10000) {
             TRYMAP_ENC(big5hkscs_bmp, code, c) {
                 if (code == MULTIC) {
-                    if (inleft >= 2 &&
+                    Py_UCS4 c2;
+                    if (inlen - *inpos >= 2)
+                        c2 = INCHAR2;
+                    else
+                        c2 = 0;
+
+                    if (inlen - *inpos >= 2 &&
                         ((c & 0xffdf) == 0x00ca) &&
-                        (((*inbuf)[1] & 0xfff7) == 0x0304)) {
+                        ((c2 & 0xfff7) == 0x0304)) {
                         code = big5hkscs_pairenc_table[
                             ((c >> 4) |
-                             ((*inbuf)[1] >> 3)) & 3];
+                             (c2 >> 3)) & 3];
                         insize = 2;
                     }
-                    else if (inleft < 2 &&
+                    else if (inlen - *inpos < 2 &&
                              !(flags & MBENC_FLUSH))
                         return MBERR_TOOFEW;
                     else {
@@ -89,9 +93,9 @@ ENCODER(big5hkscs)
         else
             return insize;
 
-        OUT1(code >> 8)
-        OUT2(code & 0xFF)
-        NEXT(insize, 2)
+        OUTBYTE1(code >> 8)
+        OUTBYTE2(code & 0xFF)
+        NEXT(insize, 2);
     }
 
     return 0;
@@ -102,7 +106,7 @@ ENCODER(big5hkscs)
 DECODER(big5hkscs)
 {
     while (inleft > 0) {
-        unsigned char c = IN1;
+        unsigned char c = INBYTE1;
         Py_UCS4 decoded;
 
         if (c < 0x80) {
@@ -113,20 +117,20 @@ DECODER(big5hkscs)
 
         REQUIRE_INBUF(2)
 
-        if (0xc6 > c || c > 0xc8 || (c < 0xc7 && IN2 < 0xa1)) {
-            TRYMAP_DEC(big5, writer, c, IN2) {
+        if (0xc6 > c || c > 0xc8 || (c < 0xc7 && INBYTE2 < 0xa1)) {
+            TRYMAP_DEC(big5, writer, c, INBYTE2) {
                 NEXT_IN(2);
                 continue;
             }
         }
 
-        TRYMAP_DEC_CHAR(big5hkscs, decoded, c, IN2)
+        TRYMAP_DEC_CHAR(big5hkscs, decoded, c, INBYTE2)
         {
-            int s = BH2S(c, IN2);
+            int s = BH2S(c, INBYTE2);
             const unsigned char *hintbase;
 
             assert(0x87 <= c && c <= 0xfe);
-            assert(0x40 <= IN2 && IN2 <= 0xfe);
+            assert(0x40 <= INBYTE2 && INBYTE2 <= 0xfe);
 
             if (BH2S(0x87, 0x40) <= s && s <= BH2S(0xa0, 0xfe)) {
                     hintbase = big5hkscs_phint_0;
@@ -154,7 +158,7 @@ DECODER(big5hkscs)
             continue;
         }
 
-        switch ((c << 8) | IN2) {
+        switch ((c << 8) | INBYTE2) {
         case 0x8862: OUTCHAR2(0x00ca, 0x0304); break;
         case 0x8864: OUTCHAR2(0x00ca, 0x030c); break;
         case 0x88a3: OUTCHAR2(0x00ea, 0x0304); break;

@@ -72,7 +72,8 @@ static const struct dbcs_map *mapping_list;
 #define ENCODER(encoding)                                               \
     static Py_ssize_t encoding##_encode(                                \
         MultibyteCodec_State *state, const void *config,                \
-        const Py_UNICODE **inbuf, Py_ssize_t inleft,                    \
+        int kind, void *data,                          \
+        Py_ssize_t *inpos, Py_ssize_t inlen,                            \
         unsigned char **outbuf, Py_ssize_t outleft, int flags)
 #define ENCODER_RESET(encoding)                                         \
     static Py_ssize_t encoding##_encode_reset(                          \
@@ -91,25 +92,25 @@ static const struct dbcs_map *mapping_list;
     static Py_ssize_t encoding##_decode_reset(                          \
         MultibyteCodec_State *state, const void *config)
 
-#if Py_UNICODE_SIZE == 4
-#define UCS4INVALID(code)       \
-    if ((code) > 0xFFFF)        \
-    return 1;
-#else
-#define UCS4INVALID(code)       \
-    if (0) ;
-#endif
-
 #define NEXT_IN(i)                              \
     do {                                        \
         (*inbuf) += (i);                        \
         (inleft) -= (i);                        \
     } while (0)
+#define NEXT_INCHAR(i)                          \
+    do {                                        \
+        (*inpos) += (i);                        \
+    } while (0)
 #define NEXT_OUT(o)                             \
-    (*outbuf) += (o);                           \
-    (outleft) -= (o);
+    do {                                        \
+        (*outbuf) += (o);                       \
+        (outleft) -= (o);                       \
+    } while (0)
 #define NEXT(i, o)                              \
-    NEXT_IN(i); NEXT_OUT(o)
+    do {                                        \
+        NEXT_INCHAR(i);                        \
+        NEXT_OUT(o);                        \
+    } while (0)
 
 #define REQUIRE_INBUF(n)                        \
     if (inleft < (n))                           \
@@ -118,10 +119,13 @@ static const struct dbcs_map *mapping_list;
     if (outleft < (n))                          \
         return MBERR_TOOSMALL;
 
-#define IN1 ((*inbuf)[0])
-#define IN2 ((*inbuf)[1])
-#define IN3 ((*inbuf)[2])
-#define IN4 ((*inbuf)[3])
+#define INBYTE1 ((*inbuf)[0])
+#define INBYTE2 ((*inbuf)[1])
+#define INBYTE3 ((*inbuf)[2])
+#define INBYTE4 ((*inbuf)[3])
+
+#define INCHAR1 PyUnicode_READ(kind, data, *inpos)
+#define INCHAR2 PyUnicode_READ(kind, data, *inpos + 1)
 
 #define OUTCHAR(c)                                                         \
     do {                                                                   \
@@ -140,24 +144,24 @@ static const struct dbcs_map *mapping_list;
         writer->pos += 2;                                                  \
     } while (0)
 
-#define OUT1(c) ((*outbuf)[0]) = (c);
-#define OUT2(c) ((*outbuf)[1]) = (c);
-#define OUT3(c) ((*outbuf)[2]) = (c);
-#define OUT4(c) ((*outbuf)[3]) = (c);
+#define OUTBYTE1(c) ((*outbuf)[0]) = (c);
+#define OUTBYTE2(c) ((*outbuf)[1]) = (c);
+#define OUTBYTE3(c) ((*outbuf)[2]) = (c);
+#define OUTBYTE4(c) ((*outbuf)[3]) = (c);
 
-#define WRITE1(c1)              \
+#define WRITEBYTE1(c1)              \
     REQUIRE_OUTBUF(1)           \
     (*outbuf)[0] = (c1);
-#define WRITE2(c1, c2)          \
+#define WRITEBYTE2(c1, c2)          \
     REQUIRE_OUTBUF(2)           \
     (*outbuf)[0] = (c1);        \
     (*outbuf)[1] = (c2);
-#define WRITE3(c1, c2, c3)      \
+#define WRITEBYTE3(c1, c2, c3)      \
     REQUIRE_OUTBUF(3)           \
     (*outbuf)[0] = (c1);        \
     (*outbuf)[1] = (c2);        \
     (*outbuf)[2] = (c3);
-#define WRITE4(c1, c2, c3, c4)  \
+#define WRITEBYTE4(c1, c2, c3, c4)  \
     REQUIRE_OUTBUF(4)           \
     (*outbuf)[0] = (c1);        \
     (*outbuf)[1] = (c2);        \
@@ -208,20 +212,6 @@ _TRYMAP_DEC_WRITE(_PyUnicodeWriter *writer, Py_UCS4 c)
                        assplane, asshi, asslo, (uni) & 0xff)
 #define TRYMAP_DEC_MPLANE(charset, writer, plane, c1, c2)         \
     if _TRYMAP_DEC(&charset##_decmap[plane][c1], writer, c2)
-
-#if Py_UNICODE_SIZE == 2
-#define DECODE_SURROGATE(c)                                     \
-    if (Py_UNICODE_IS_HIGH_SURROGATE(c)) {                      \
-        REQUIRE_INBUF(2)                                        \
-        if (Py_UNICODE_IS_LOW_SURROGATE(IN2)) {                 \
-            c = Py_UNICODE_JOIN_SURROGATES(c, IN2);             \
-        }                                                       \
-    }
-#define GET_INSIZE(c)   ((c) > 0xffff ? 2 : 1)
-#else
-#define DECODE_SURROGATE(c) {;}
-#define GET_INSIZE(c)   1
-#endif
 
 #define BEGIN_MAPPINGS_LIST static const struct dbcs_map _mapping_list[] = {
 #define MAPPING_ENCONLY(enc) {#enc, (void*)enc##_encmap, NULL},
