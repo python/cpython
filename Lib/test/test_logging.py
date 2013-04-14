@@ -3993,7 +3993,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 if day == wday:
                     # goes into following week
                     expected += 7 * 24 * 60 * 60
-                actual = rh.computeRollover(currentTime + 13 * 60 * 60)
+                actual = rh.computeRollover(today + 13 * 60 * 60)
                 self.assertEqual(actual, expected)
             finally:
                 rh.close()
