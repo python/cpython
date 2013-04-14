@@ -255,8 +255,10 @@ sets all items of a list (actually, any mutable sequence) to a given item::
            PyObject *index = PyInt_FromLong(i);
            if (!index)
                return -1;
-           if (PyObject_SetItem(target, index, item) < 0)
+           if (PyObject_SetItem(target, index, item) < 0) {
+               Py_DECREF(index);
                return -1;
+       }
            Py_DECREF(index);
        }
        return 0;
