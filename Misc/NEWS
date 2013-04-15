@@ -17,6 +17,9 @@ Build
 Core and Builtins
 -----------------
 
+- Issue #17703: Fix a regression where an illegal use of Py_DECREF() after
+  interpreter finalization can cause a crash.
+
 - Issue #16447: Fixed potential segmentation fault when setting __name__ on a
   class.
 
