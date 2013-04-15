@@ -538,6 +538,8 @@ class AbstractPickleTests(unittest.TestCase):
                     "'abc\"", # open quote and close quote don't match
                     "'abc'   ?", # junk after close quote
                     "'\\'", # trailing backslash
+                    "'",    # issue #17710
+                    "' ",   # issue #17710
                     # some tests of the quoting rules
                     #"'abc\"\''",
                     #"'\\\\a\'\'\'\\\'\\\\\''",
