@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17710: Fix pickle raising a SystemError on bogus input.
+
 - Issue #17341: Include the invalid name in the error messages from re about
   invalid group names.
 

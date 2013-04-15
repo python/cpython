@@ -903,7 +903,7 @@ class _Unpickler:
         orig = self.readline()
         rep = orig[:-1]
         # Strip outermost quotes
-        if rep[0] == rep[-1] and rep[0] in b'"\'':
+        if len(rep) >= 2 and rep[0] == rep[-1] and rep[0] in b'"\'':
             rep = rep[1:-1]
         else:
             raise ValueError("insecure string pickle")
