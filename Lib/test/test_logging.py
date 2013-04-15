@@ -3988,12 +3988,16 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 expected += 12 * 60 * 60
                 # Add in adjustment for today
                 expected += today
-                actual = rh.computeRollover(currentTime)
+                actual = rh.computeRollover(today)
+                if actual != expected:
+                    print('failed in timezone: %d' % time.timezone)
                 self.assertEqual(actual, expected)
                 if day == wday:
                     # goes into following week
                     expected += 7 * 24 * 60 * 60
                 actual = rh.computeRollover(today + 13 * 60 * 60)
+                if actual != expected:
+                    print('failed in timezone: %d' % time.timezone)
                 self.assertEqual(actual, expected)
             finally:
                 rh.close()
