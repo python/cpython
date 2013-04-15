@@ -4171,7 +4171,7 @@ load_string(UnpicklerObject *self)
 
     if ((len = _Unpickler_Readline(self, &s)) < 0)
         return -1;
-    if (len < 3)
+    if (len < 2)
         return bad_readline();
     if ((s = strdup(s)) == NULL) {
         PyErr_NoMemory();
@@ -4179,14 +4179,14 @@ load_string(UnpicklerObject *self)
     }
 
     /* Strip outermost quotes */
-    while (s[len - 1] <= ' ')
+    while (len > 0 && s[len - 1] <= ' ')
         len--;
-    if (s[0] == '"' && s[len - 1] == '"') {
+    if (len > 1 && s[0] == '"' && s[len - 1] == '"') {
         s[len - 1] = '\0';
         p = s + 1;
         len -= 2;
     }
-    else if (s[0] == '\'' && s[len - 1] == '\'') {
+    else if (len > 1 && s[0] == '\'' && s[len - 1] == '\'') {
         s[len - 1] = '\0';
         p = s + 1;
         len -= 2;
