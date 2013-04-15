@@ -43,6 +43,7 @@ def _ready_to_import(name=None, source=""):
     # sets up a temporary directory and removes it
     # creates the module file
     # temporarily clears the module from sys.modules (if any)
+    # reverts or removes the module when cleaning up
     name = name or "spam"
     with script_helper.temp_dir() as tempdir:
         path = script_helper.make_script(tempdir, name, source)
@@ -54,6 +55,8 @@ def _ready_to_import(name=None, source=""):
         finally:
             if old_module is not None:
                 sys.modules[name] = old_module
+            elif name in sys.modules:
+                del sys.modules[name]
 
 
 class ImportTests(unittest.TestCase):
