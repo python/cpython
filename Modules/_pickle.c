@@ -4205,36 +4205,23 @@ load_string(UnpicklerObject *self)
 
     if ((len = _Unpickler_Readline(self, &s)) < 0)
         return -1;
-    if (len < 2)
-        return bad_readline();
-    if ((s = strdup(s)) == NULL) {
-        PyErr_NoMemory();
-        return -1;
-    }
-
+    /* Strip the newline */
+    len--;
     /* Strip outermost quotes */
-    while (len > 0 && s[len - 1] <= ' ')
-        len--;
-    if (len > 1 && s[0] == '"' && s[len - 1] == '"') {
-        s[len - 1] = '\0';
-        p = s + 1;
-        len -= 2;
-    }
-    else if (len > 1 && s[0] == '\'' && s[len - 1] == '\'') {
-        s[len - 1] = '\0';
+    if (len >= 2 && s[0] == s[len - 1] && (s[0] == '\'' || s[0] == '"')) {
         p = s + 1;
         len -= 2;
     }
     else {
-        free(s);
-        PyErr_SetString(PyExc_ValueError, "insecure string pickle");
+        PyErr_SetString(UnpicklingError,
+                        "the STRING opcode argument must be quoted");
         return -1;
     }
+    assert(len >= 0);
 
     /* Use the PyBytes API to decode the string, since that is what is used
        to encode, and then coerce the result to Unicode. */
     bytes = PyBytes_DecodeEscape(p, len, NULL, 0, NULL);
-    free(s);
     if (bytes == NULL)
         return -1;
     str = PyUnicode_FromEncodedObject(bytes, self->encoding, self->errors);
