@@ -24,6 +24,7 @@ import warnings
 
 from test import support
 from test.support import TESTFN, check_warnings, captured_stdout, requires_zlib
+from unittest.mock import patch
 
 try:
     import bz2
@@ -1351,6 +1352,26 @@ class TestWhich(unittest.TestCase):
         # it gets found properly with the extension.
         rv = shutil.which(self.file[:-4], path=self.dir)
         self.assertEqual(rv, self.temp_file.name[:-4] + ".EXE")
+
+    def test_environ_path(self):
+        with support.EnvironmentVarGuard() as env:
+            env['PATH'] = self.dir
+            rv = shutil.which(self.file)
+            self.assertEqual(rv, self.temp_file.name)
+
+    def test_empty_path(self):
+        base_dir = os.path.dirname(self.dir)
+        with support.temp_cwd(path=self.dir), \
+             support.EnvironmentVarGuard() as env:
+            env['PATH'] = self.dir
+            rv = shutil.which(self.file, path='')
+            self.assertIsNone(rv)
+
+    def test_empty_path_no_PATH(self):
+        with support.EnvironmentVarGuard() as env:
+            env.pop('PATH', None)
+            rv = shutil.which(self.file)
+            self.assertIsNone(rv)
 
 
 class TestMove(unittest.TestCase):
