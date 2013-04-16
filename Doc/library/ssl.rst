@@ -621,7 +621,7 @@ SSL sockets also have the following additional methods and attributes:
    If there is no certificate for the peer on the other end of the connection,
    returns ``None``.
 
-   If the parameter ``binary_form`` is :const:`False`, and a certificate was
+   If the ``binary_form`` parameter is :const:`False`, and a certificate was
    received from the peer, this method returns a :class:`dict` instance.  If the
    certificate was not validated, the dict is empty.  If the certificate was
    validated, it returns a dict with several keys, amongst them ``subject``
@@ -661,10 +661,16 @@ SSL sockets also have the following additional methods and attributes:
    If the ``binary_form`` parameter is :const:`True`, and a certificate was
    provided, this method returns the DER-encoded form of the entire certificate
    as a sequence of bytes, or :const:`None` if the peer did not provide a
-   certificate.  This return value is independent of validation; if validation
-   was required (:const:`CERT_OPTIONAL` or :const:`CERT_REQUIRED`), it will have
-   been validated, but if :const:`CERT_NONE` was used to establish the
-   connection, the certificate, if present, will not have been validated.
+   certificate.  Whether the peer provides a certificate depends on the SSL
+   socket's role:
+
+   * for a client SSL socket, the server will always provide a certificate,
+     regardless of whether validation was required;
+
+   * for a server SSL socket, the client will only provide a certificate
+     when requested by the server; therefore :meth:`getpeercert` will return
+     :const:`None` if you used :const:`CERT_NONE` (rather than
+     :const:`CERT_OPTIONAL` or :const:`CERT_REQUIRED`).
 
    .. versionchanged:: 3.2
       The returned dictionary includes additional items such as ``issuer``
