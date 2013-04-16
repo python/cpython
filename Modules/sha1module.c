@@ -320,13 +320,8 @@ SHA1_copy(SHA1object *self, PyObject *unused)
 {
     SHA1object *newobj;
 
-    if (Py_TYPE(self) == &SHA1type) {
-        if ( (newobj = newSHA1object())==NULL)
-            return NULL;
-    } else {
-        if ( (newobj = newSHA1object())==NULL)
-            return NULL;
-    }
+    if ((newobj = newSHA1object()) == NULL)
+        return NULL;
 
     newobj->hash_state = self->hash_state;
     return (PyObject *)newobj;
