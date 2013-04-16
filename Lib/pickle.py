@@ -900,14 +900,13 @@ class _Unpickler:
     dispatch[BINFLOAT[0]] = load_binfloat
 
     def load_string(self):
-        orig = self.readline()
-        rep = orig[:-1]
+        data = self.readline()[:-1]
         # Strip outermost quotes
-        if len(rep) >= 2 and rep[0] == rep[-1] and rep[0] in b'"\'':
-            rep = rep[1:-1]
+        if len(data) >= 2 and data[0] == data[-1] and data[0] in b'"\'':
+            data = data[1:-1]
         else:
-            raise ValueError("insecure string pickle")
-        self.append(codecs.escape_decode(rep)[0]
+            raise UnpicklingError("the STRING opcode argument must be quoted")
+        self.append(codecs.escape_decode(data)[0]
                     .decode(self.encoding, self.errors))
     dispatch[STRING[0]] = load_string
 
