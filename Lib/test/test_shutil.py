@@ -25,7 +25,6 @@ import warnings
 
 from test import support
 from test.support import TESTFN, check_warnings, captured_stdout, requires_zlib
-from unittest.mock import patch
 
 try:
     import bz2
