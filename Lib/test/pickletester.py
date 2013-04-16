@@ -601,30 +601,6 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertRaises(KeyError, self.loads, b'g0\np0')
         self.assertEqual(self.loads(b'((Kdtp0\nh\x00l.))'), [(100,), (100,)])
 
-    def test_insecure_strings(self):
-        # XXX Some of these tests are temporarily disabled
-        insecure = [b"abc", b"2 + 2", # not quoted
-                    ## b"'abc' + 'def'", # not a single quoted string
-                    b"'abc", # quote is not closed
-                    b"'abc\"", # open quote and close quote don't match
-                    b"'abc'   ?", # junk after close quote
-                    b"'\\'", # trailing backslash
-                    # Variations on issue #17710
-                    b"'",
-                    b'"',
-                    b"' ",
-                    b"'  ",
-                    b"'   ",
-                    b"'    ",
-                    b'"    ',
-                    # some tests of the quoting rules
-                    ## b"'abc\"\''",
-                    ## b"'\\\\a\'\'\'\\\'\\\\\''",
-                    ]
-        for b in insecure:
-            buf = b"S" + b + b"\012p0\012."
-            self.assertRaises(ValueError, self.loads, buf)
-
     def test_unicode(self):
         endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',
                     '<\\>', '<\\\U00012345>',
@@ -1213,6 +1189,35 @@ class AbstractPickleTests(unittest.TestCase):
             self.skipTest("test is only meaningful on 32-bit builds")
         dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
         self.assertRaises(ValueError, self.loads, dumped)
+
+    def test_badly_escaped_string(self):
+        self.assertRaises(ValueError, self.loads, b"S'\\'\n.")
+
+    def test_badly_quoted_string(self):
+        # Issue #17710
+        badpickles = [b"S'\n.",
+                      b'S"\n.',
+                      b'S\' \n.',
+                      b'S" \n.',
+                      b'S\'"\n.',
+                      b'S"\'\n.',
+                      b"S' ' \n.",
+                      b'S" " \n.',
+                      b"S ''\n.",
+                      b'S ""\n.',
+                      b'S \n.',
+                      b'S\n.',
+                      b'S.']
+        for p in badpickles:
+            self.assertRaises(pickle.UnpicklingError, self.loads, p)
+
+    def test_correctly_quoted_string(self):
+        goodpickles = [(b"S''\n.", ''),
+                       (b'S""\n.', ''),
+                       (b'S"\\n"\n.', '\n'),
+                       (b"S'\\n'\n.", '\n')]
+        for p, expected in goodpickles:
+            self.assertEqual(self.loads(p), expected)
 
 
 class BigmemPickleTests(unittest.TestCase):
