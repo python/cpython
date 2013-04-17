@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17707: multiprocessing.Queue's get() method does not block for short
+  timeouts.
+
 - Issue #17012: shutil.which() no longer fallbacks to the PATH environment
   variable if empty path argument is specified.  Patch by Serhiy Storchaka.
 
