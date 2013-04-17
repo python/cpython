@@ -4071,6 +4071,7 @@ unicode_decode_call_errorhandler_writer(
     PyObject *repunicode = NULL;
     Py_ssize_t insize;
     Py_ssize_t newpos;
+    Py_ssize_t replen;
     PyObject *inputobj = NULL;
 
     if (*errorHandler == NULL) {
@@ -4121,7 +4122,9 @@ unicode_decode_call_errorhandler_writer(
 
     if (PyUnicode_READY(repunicode) < 0)
         goto onError;
-    if (PyUnicode_GET_LENGTH(repunicode) > 1)
+    replen = PyUnicode_GET_LENGTH(repunicode);
+    writer->min_length += replen;
+    if (replen > 1)
         writer->overallocate = 1;
     if (_PyUnicodeWriter_WriteStr(writer, repunicode) == -1)
         goto onError;
@@ -4660,7 +4663,8 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     }
 
     _PyUnicodeWriter_Init(&writer);
-    if (_PyUnicodeWriter_Prepare(&writer, size, 127) == -1)
+    writer.min_length = size;
+    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
         goto onError;
 
     writer.pos = ascii_decode(s, end, writer.data);
@@ -4915,7 +4919,8 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
 #endif
 
     _PyUnicodeWriter_Init(&writer);
-    if (_PyUnicodeWriter_Prepare(&writer, (e - q + 3) / 4, 127) == -1)
+    writer.min_length = (e - q + 3) / 4;
+    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
         goto onError;
 
     while (1) {
@@ -5154,7 +5159,8 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
     /* Note: size will always be longer than the resulting Unicode
        character count */
     _PyUnicodeWriter_Init(&writer);
-    if (_PyUnicodeWriter_Prepare(&writer, (e - q + 1) / 2, 127) == -1)
+    writer.min_length = (e - q + 1) / 2;
+    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
         goto onError;
 
     while (1) {
@@ -6428,7 +6434,8 @@ PyUnicode_DecodeASCII(const char *s,
         return get_latin1_char((unsigned char)s[0]);
 
     _PyUnicodeWriter_Init(&writer);
-    if (_PyUnicodeWriter_Prepare(&writer, size, 127) < 0)
+    writer.min_length = size;
+    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) < 0)
         return NULL;
 
     e = s + size;
@@ -7279,7 +7286,8 @@ PyUnicode_DecodeCharmap(const char *s,
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
     _PyUnicodeWriter_Init(&writer);
-    if (_PyUnicodeWriter_Prepare(&writer, size, 127) == -1)
+    writer.min_length = size;
+    if (_PyUnicodeWriter_Prepare(&writer, writer.min_length, 127) == -1)
         goto onError;
 
     e = s + size;
