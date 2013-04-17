@@ -865,7 +865,7 @@ else:
     if hasattr(select, 'poll'):
         def _poll(fds, timeout):
             if timeout is not None:
-                timeout = int(timeout) * 1000  # timeout is in milliseconds
+                timeout = int(timeout * 1000)  # timeout is in milliseconds
             fd_map = {}
             pollster = select.poll()
             for fd in fds:
