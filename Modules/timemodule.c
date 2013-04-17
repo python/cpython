@@ -195,14 +195,18 @@ time_clock_settime(PyObject *self, PyObject *args)
 {
     int clk_id;
     PyObject *obj;
+    time_t tv_sec;
+    long tv_nsec;
     struct timespec tp;
     int ret;
 
     if (!PyArg_ParseTuple(args, "iO:clock_settime", &clk_id, &obj))
         return NULL;
 
-    if (_PyTime_ObjectToTimespec(obj, &tp.tv_sec, &tp.tv_nsec) == -1)
+    if (_PyTime_ObjectToTimespec(obj, &tv_sec, &tv_nsec) == -1)
         return NULL;
+    tp.tv_sec = tv_sec;
+    tp.tv_nsec = tv_nsec;
 
     ret = clock_settime((clockid_t)clk_id, &tp);
     if (ret != 0) {
