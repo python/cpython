@@ -277,8 +277,7 @@ Completions:
 Python Shell window:
 
         Control-c interrupts executing command.
-        Control-d sends end-of-file; closes window if typed at >>> prompt
-                (this is Control-z on Windows).
+        Control-d sends end-of-file; closes window if typed at >>> prompt.
         Alt-/ expand word is also useful to reduce typing.
 
     Command history:
