@@ -12,6 +12,9 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17782: Fix undefined behaviour on platforms where
+  ``struct timespec``'s "tv_nsec" member is not a C long.
+
 - Issue #17715: Fix segmentation fault from raising an exception in a __trunc__
   method.
 
