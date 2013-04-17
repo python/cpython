@@ -28,7 +28,7 @@ want to refer to :rfc:`3493` titled Basic Socket Interface Extensions for IPv6.
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
-:func:`socket` function returns a :dfn:`socket object` whose methods implement
+:func:`.socket` function returns a :dfn:`socket object` whose methods implement
 the various socket system calls.  Parameter types are somewhat higher-level than
 in the C interface: as with :meth:`read` and :meth:`write` operations on Python
 files, buffer allocation on receive operations is automatic, and buffer length
@@ -146,7 +146,7 @@ The module :mod:`socket` exports the following constants and functions:
           AF_INET6
 
    These constants represent the address (and protocol) families, used for the
-   first argument to :func:`socket`.  If the :const:`AF_UNIX` constant is not
+   first argument to :func:`.socket`.  If the :const:`AF_UNIX` constant is not
    defined then this protocol is unsupported.
 
 
@@ -252,7 +252,7 @@ The module :mod:`socket` exports the following constants and functions:
    ``(family, socktype, proto, canonname, sockaddr)``
 
    In these tuples, *family*, *socktype*, *proto* are all integers and are
-   meant to be passed to the :func:`socket` function.  *canonname* will be
+   meant to be passed to the :func:`.socket` function.  *canonname* will be
    a string representing the canonical name of the *host* if
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
@@ -343,7 +343,7 @@ The module :mod:`socket` exports the following constants and functions:
 .. function:: getprotobyname(protocolname)
 
    Translate an Internet protocol name (for example, ``'icmp'``) to a constant
-   suitable for passing as the (optional) third argument to the :func:`socket`
+   suitable for passing as the (optional) third argument to the :func:`.socket`
    function.  This is usually only needed for sockets opened in "raw" mode
    (:const:`SOCK_RAW`); for the normal socket modes, the correct protocol is chosen
    automatically if the protocol is omitted or zero.
@@ -377,7 +377,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Build a pair of connected socket objects using the given address family, socket
    type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`socket` function above. The default family is :const:`AF_UNIX`
+   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
    if defined on the platform; otherwise, the default is :const:`AF_INET`.
    Availability: Unix.
 
@@ -388,7 +388,7 @@ The module :mod:`socket` exports the following constants and functions:
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
    :meth:`fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`socket` function
+   family, socket type and protocol number are as for the :func:`.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
    This function is rarely needed, but can be used to get or set socket options on
@@ -861,10 +861,10 @@ Example
 
 Here are four minimal example programs using the TCP/IP protocol: a server that
 echoes all data that it receives back (servicing only one client), and a client
-using it.  Note that a server must perform the sequence :func:`socket`,
+using it.  Note that a server must perform the sequence :func:`.socket`,
 :meth:`~socket.bind`, :meth:`~socket.listen`, :meth:`~socket.accept` (possibly
 repeating the :meth:`~socket.accept` to service more than one client), while a
-client only needs the sequence :func:`socket`, :meth:`~socket.connect`.  Also
+client only needs the sequence :func:`.socket`, :meth:`~socket.connect`.  Also
 note that the server does not :meth:`~socket.sendall`/:meth:`~socket.recv` on
 the socket it is listening on but on the new socket returned by
 :meth:`~socket.accept`.
