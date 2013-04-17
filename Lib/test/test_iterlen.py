@@ -60,7 +60,7 @@ def len(obj):
         except AttributeError:
             raise TypeError
 
-class TestInvariantWithoutMutations(unittest.TestCase):
+class TestInvariantWithoutMutations:
 
     def test_invariant(self):
         it = self.it
@@ -87,7 +87,7 @@ class TestTemporarilyImmutable(TestInvariantWithoutMutations):
 
 ## ------- Concrete Type Tests -------
 
-class TestRepeat(TestInvariantWithoutMutations):
+class TestRepeat(TestInvariantWithoutMutations, unittest.TestCase):
 
     def setUp(self):
         self.it = repeat(None, n)
@@ -96,59 +96,59 @@ class TestRepeat(TestInvariantWithoutMutations):
         # The repeat() object can also be infinite
         self.assertRaises(TypeError, len, repeat(None))
 
-class TestXrange(TestInvariantWithoutMutations):
+class TestXrange(TestInvariantWithoutMutations, unittest.TestCase):
 
     def setUp(self):
         self.it = iter(range(n))
 
-class TestXrangeCustomReversed(TestInvariantWithoutMutations):
+class TestXrangeCustomReversed(TestInvariantWithoutMutations, unittest.TestCase):
 
     def setUp(self):
         self.it = reversed(range(n))
 
-class TestTuple(TestInvariantWithoutMutations):
+class TestTuple(TestInvariantWithoutMutations, unittest.TestCase):
 
     def setUp(self):
         self.it = iter(tuple(range(n)))
 
 ## ------- Types that should not be mutated during iteration -------
 
-class TestDeque(TestTemporarilyImmutable):
+class TestDeque(TestTemporarilyImmutable, unittest.TestCase):
 
     def setUp(self):
         d = deque(range(n))
         self.it = iter(d)
         self.mutate = d.pop
 
-class TestDequeReversed(TestTemporarilyImmutable):
+class TestDequeReversed(TestTemporarilyImmutable, unittest.TestCase):
 
     def setUp(self):
         d = deque(range(n))
         self.it = reversed(d)
         self.mutate = d.pop
 
-class TestDictKeys(TestTemporarilyImmutable):
+class TestDictKeys(TestTemporarilyImmutable, unittest.TestCase):
 
     def setUp(self):
         d = dict.fromkeys(range(n))
         self.it = iter(d)
         self.mutate = d.popitem
 
-class TestDictItems(TestTemporarilyImmutable):
+class TestDictItems(TestTemporarilyImmutable, unittest.TestCase):
 
     def setUp(self):
         d = dict.fromkeys(range(n))
         self.it = iter(d.items())
         self.mutate = d.popitem
 
-class TestDictValues(TestTemporarilyImmutable):
+class TestDictValues(TestTemporarilyImmutable, unittest.TestCase):
 
     def setUp(self):
         d = dict.fromkeys(range(n))
         self.it = iter(d.values())
         self.mutate = d.popitem
 
-class TestSet(TestTemporarilyImmutable):
+class TestSet(TestTemporarilyImmutable, unittest.TestCase):
 
     def setUp(self):
         d = set(range(n))
@@ -157,7 +157,7 @@ class TestSet(TestTemporarilyImmutable):
 
 ## ------- Types that can mutate during iteration -------
 
-class TestList(TestInvariantWithoutMutations):
+class TestList(TestInvariantWithoutMutations, unittest.TestCase):
 
     def setUp(self):
         self.it = iter(range(n))
@@ -176,7 +176,7 @@ class TestList(TestInvariantWithoutMutations):
         d.extend(range(20))
         self.assertEqual(len(it), 0)
 
-class TestListReversed(TestInvariantWithoutMutations):
+class TestListReversed(TestInvariantWithoutMutations, unittest.TestCase):
 
     def setUp(self):
         self.it = reversed(range(n))
@@ -229,23 +229,5 @@ class TestLengthHintExceptions(unittest.TestCase):
         self.assertEqual(list(NoneLengthHint()), list(range(10)))
 
 
-def test_main():
-    unittests = [
-        TestRepeat,
-        TestXrange,
-        TestXrangeCustomReversed,
-        TestTuple,
-        TestDeque,
-        TestDequeReversed,
-        TestDictKeys,
-        TestDictItems,
-        TestDictValues,
-        TestSet,
-        TestList,
-        TestListReversed,
-        TestLengthHintExceptions,
-    ]
-    support.run_unittest(*unittests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
