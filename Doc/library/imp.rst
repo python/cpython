@@ -1,5 +1,8 @@
-:mod:`imp` --- Access the :keyword:`import` internals
-=====================================================
+:mod:`imp` --- Access the :ref:`import <importsystem>` internals
+================================================================
+
+.. deprecated:: 3.4
+   The :mod:`imp` package has been deprecated in favor of :mod:`importlib`.
 
 .. module:: imp
    :synopsis: Access the implementation of the import statement.
