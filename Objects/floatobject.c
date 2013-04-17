@@ -1711,7 +1711,7 @@ float__format__(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
         return NULL;
 
-    _PyUnicodeWriter_Init(&writer, 0);
+    _PyUnicodeWriter_Init(&writer);
     ret = _PyFloat_FormatAdvancedWriter(
         &writer,
         self,

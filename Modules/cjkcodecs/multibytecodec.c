@@ -633,7 +633,8 @@ MultibyteCodec_Decode(MultibyteCodecObject *self,
         return make_tuple(PyUnicode_New(0, 0), 0);
     }
 
-    _PyUnicodeWriter_Init(&buf.writer, datalen);
+    _PyUnicodeWriter_Init(&buf.writer);
+    buf.writer.min_length = datalen;
     buf.excobj = NULL;
     buf.inbuf = buf.inbuf_top = (unsigned char *)data;
     buf.inbuf_end = buf.inbuf_top + datalen;
@@ -839,7 +840,7 @@ decoder_prepare_buffer(MultibyteDecodeBuffer *buf, const char *data,
 {
     buf->inbuf = buf->inbuf_top = (const unsigned char *)data;
     buf->inbuf_end = buf->inbuf_top + size;
-    _PyUnicodeWriter_Init(&buf->writer, size);
+    buf->writer.min_length += size;
     return 0;
 }
 
@@ -1037,7 +1038,7 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
     data = pdata.buf;
     size = pdata.len;
 
-    _PyUnicodeWriter_Init(&buf.writer, 1);
+    _PyUnicodeWriter_Init(&buf.writer);
     buf.excobj = NULL;
     origpending = self->pendingsize;
 
@@ -1241,7 +1242,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
     if (sizehint == 0)
         return PyUnicode_New(0, 0);
 
-    _PyUnicodeWriter_Init(&buf.writer, 1);
+    _PyUnicodeWriter_Init(&buf.writer);
     buf.excobj = NULL;
     cres = NULL;
 
