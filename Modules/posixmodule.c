@@ -4507,6 +4507,8 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     if (times && (times != Py_None)) {
+        time_t a_sec, m_sec;
+        long a_nsec, m_nsec;
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'times' must be either"
@@ -4515,11 +4517,15 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
         }
         utime.now = 0;
         if (_PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 0),
-                                     &utime.atime_s, &utime.atime_ns) == -1 ||
+                                     &a_sec, &a_nsec) == -1 ||
             _PyTime_ObjectToTimespec(PyTuple_GET_ITEM(times, 1),
-                                     &utime.mtime_s, &utime.mtime_ns) == -1) {
+                                     &m_sec, &m_nsec) == -1) {
             goto exit;
         }
+        utime.atime_s = a_sec;
+        utime.atime_ns = a_nsec;
+        utime.mtime_s = m_sec;
+        utime.mtime_ns = m_nsec;
     }
     else if (ns) {
         if (!PyTuple_CheckExact(ns) || (PyTuple_Size(ns) != 2)) {
