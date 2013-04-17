@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17782: Fix undefined behaviour on platforms where
+  ``struct timespec``'s "tv_nsec" member is not a C long.
+
 - Issue #17722: When looking up __round__, resolve descriptors.
 
 - Issue #16061: Speed up str.replace() for replacing 1-character strings.
