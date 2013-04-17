@@ -779,14 +779,18 @@ signal_sigtimedwait(PyObject *self, PyObject *args)
     struct timespec buf;
     sigset_t set;
     siginfo_t si;
+    time_t tv_sec;
+    long tv_nsec;
     int err;
 
     if (!PyArg_ParseTuple(args, "OO:sigtimedwait",
                           &signals, &timeout))
         return NULL;
 
-    if (_PyTime_ObjectToTimespec(timeout, &buf.tv_sec, &buf.tv_nsec) == -1)
+    if (_PyTime_ObjectToTimespec(timeout, &tv_sec, &tv_nsec) == -1)
         return NULL;
+    buf.tv_sec = tv_sec;
+    buf.tv_nsec = tv_nsec;
 
     if (buf.tv_sec < 0 || buf.tv_nsec < 0) {
         PyErr_SetString(PyExc_ValueError, "timeout must be non-negative");
