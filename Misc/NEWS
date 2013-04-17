@@ -56,6 +56,8 @@ Library
 IDLE
 ----
 
+- Issue #14735: Update IDLE docs to omit "Control-z on Windows".
+
 - Issue #17585: Fixed IDLE regression. Now closes when using exit() or quit().
 
 - Issue #17657: Show full Tk version in IDLE's about dialog.
