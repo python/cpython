@@ -4124,7 +4124,7 @@ unicode_decode_call_errorhandler_writer(
     if (PyUnicode_GET_LENGTH(repunicode) > 1)
         writer->overallocate = 1;
     if (_PyUnicodeWriter_WriteStr(writer, repunicode) == -1)
-        return
+        goto onError;
 
     *endinpos = newpos;
     *inptr = *input + newpos;
