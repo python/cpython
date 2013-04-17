@@ -699,6 +699,13 @@ class _TestQueue(BaseTestCase):
         for p in workers:
             p.join()
 
+    def test_timeout(self):
+        q = multiprocessing.Queue()
+        start = time.time()
+        self.assertRaises(pyqueue.Empty, q.get, True, 0.2)
+        delta = time.time() - start
+        self.assertGreaterEqual(delta, 0.19)
+
 #
 #
 #
