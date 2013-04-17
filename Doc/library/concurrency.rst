@@ -8,7 +8,7 @@ The modules described in this chapter provide support for concurrent
 execution of code. The appropriate choice of tool will depend on the
 task to be executed (CPU bound vs IO bound) and preferred style of
 development (event driven cooperative multitasking vs preemptive
-multitasking) Here's an overview:
+multitasking). Here's an overview:
 
 
 .. toctree::
