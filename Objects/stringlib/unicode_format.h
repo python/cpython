@@ -906,7 +906,6 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
              int recursion_depth, AutoNumber *auto_number)
 {
     _PyUnicodeWriter writer;
-    Py_ssize_t minlen;
 
     /* check the recursion level */
     if (recursion_depth <= 0) {
@@ -915,8 +914,9 @@ build_string(SubString *input, PyObject *args, PyObject *kwargs,
         return NULL;
     }
 
-    minlen = PyUnicode_GET_LENGTH(input->str) + 100;
-    _PyUnicodeWriter_Init(&writer, minlen);
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    writer.min_length = PyUnicode_GET_LENGTH(input->str) + 100;
 
     if (!do_markup(input, args, kwargs, &writer, recursion_depth,
                    auto_number)) {

@@ -898,22 +898,28 @@ typedef struct {
     Py_UCS4 maxchar;
     Py_ssize_t size;
     Py_ssize_t pos;
-    /* minimum length of the buffer when overallocation is enabled,
-       see _PyUnicodeWriter_Init() */
+
+    /* minimum number of allocated characters (default: 0) */
     Py_ssize_t min_length;
+
+    /* minimum character (default: 127, ASCII) */
+    Py_UCS4 min_char;
+
+    /* If non-zero, overallocate the buffer by 25% (default: 0). */
     unsigned char overallocate;
+
     /* If readonly is 1, buffer is a shared string (cannot be modified)
        and size is set to 0. */
     unsigned char readonly;
 } _PyUnicodeWriter ;
 
 /* Initialize a Unicode writer.
-
-   If min_length is greater than zero, _PyUnicodeWriter_Prepare()
-   overallocates the buffer and min_length is the minimum length in characters
-   of the buffer. */
+ *
+ * By default, the minimum buffer size is 0 character and overallocation is
+ * disabled. Set min_length, min_char and overallocate attributes to control
+ * the allocation of the buffer. */
 PyAPI_FUNC(void)
-_PyUnicodeWriter_Init(_PyUnicodeWriter *writer, Py_ssize_t min_length);
+_PyUnicodeWriter_Init(_PyUnicodeWriter *writer);
 
 /* Prepare the buffer to write 'length' characters
    with the specified maximum character.
