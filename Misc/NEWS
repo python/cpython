@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17555: Fix ForkAwareThreadLock so that size of after fork
+  registry does not grow exponentially with generation of process.
+
 - Issue #17710: Fix cPickle raising a SystemError on bogus input.
 
 - Issue #17341: Include the invalid name in the error messages from re about
