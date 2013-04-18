@@ -1,5 +1,5 @@
-:mod:`imp` --- Access the :keyword:`import` internals
-=====================================================
+:mod:`imp` --- Access the :ref:`import <importsystem>` internals
+================================================================
 
 .. module:: imp
    :synopsis: Access the implementation of the import statement.
@@ -9,6 +9,10 @@
 
 This module provides an interface to the mechanisms used to implement the
 :keyword:`import` statement.  It defines the following constants and functions:
+
+
+.. note::
+   New programs should use :mod:`importlib` rather than this module.
 
 
 .. function:: get_magic()
