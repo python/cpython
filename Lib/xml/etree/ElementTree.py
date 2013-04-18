@@ -1216,84 +1216,85 @@ def iterparse(source, events=None, parser=None):
     if not hasattr(source, "read"):
         source = open(source, "rb")
         close_source = True
-    if not parser:
-        parser = XMLParser(target=TreeBuilder())
     return _IterParseIterator(source, events, parser, close_source)
 
-class _IterParseIterator:
 
-    def __init__(self, source, events, parser, close_source=False):
-        self._file = source
-        self._close_file = close_source
-        self._events = []
+class IncrementalParser:
+
+    def __init__(self, events=None, parser=None):
+        # _elementtree.c expects a list, not a deque
+        self._events_queue = []
         self._index = 0
-        self._error = None
         self.root = self._root = None
+        if not parser:
+            parser = XMLParser(target=TreeBuilder())
         self._parser = parser
         # wire up the parser for event reporting
-        parser = self._parser._parser
-        append = self._events.append
         if events is None:
-            events = ["end"]
-        for event in events:
-            if event == "start":
-                try:
-                    parser.ordered_attributes = 1
-                    parser.specified_attributes = 1
-                    def handler(tag, attrib_in, event=event, append=append,
-                                start=self._parser._start_list):
-                        append((event, start(tag, attrib_in)))
-                    parser.StartElementHandler = handler
-                except AttributeError:
-                    def handler(tag, attrib_in, event=event, append=append,
-                                start=self._parser._start):
-                        append((event, start(tag, attrib_in)))
-                    parser.StartElementHandler = handler
-            elif event == "end":
-                def handler(tag, event=event, append=append,
-                            end=self._parser._end):
-                    append((event, end(tag)))
-                parser.EndElementHandler = handler
-            elif event == "start-ns":
-                def handler(prefix, uri, event=event, append=append):
-                    append((event, (prefix or "", uri or "")))
-                parser.StartNamespaceDeclHandler = handler
-            elif event == "end-ns":
-                def handler(prefix, event=event, append=append):
-                    append((event, None))
-                parser.EndNamespaceDeclHandler = handler
+            events = ("end",)
+        self._parser._setevents(self._events_queue, events)
+
+    def data_received(self, data):
+        if self._parser is None:
+            raise ValueError("data_received() called after end of stream")
+        if data:
+            try:
+                self._parser.feed(data)
+            except SyntaxError as exc:
+                self._events_queue.append(exc)
+
+    def eof_received(self):
+        self._root = self._parser.close()
+        self._parser = None
+        if self._index >= len(self._events_queue):
+            self.root = self._root
+
+    def events(self):
+        events = self._events_queue
+        while True:
+            index = self._index
+            try:
+                event = events[self._index]
+                # Avoid retaining references to past events
+                events[self._index] = None
+            except IndexError:
+                break
+            index += 1
+            # Compact the list in a O(1) amortized fashion
+            if index * 2 >= len(events):
+                events[:index] = []
+                self._index = 0
             else:
-                raise ValueError("unknown event %r" % event)
+                self._index = index
+            if isinstance(event, Exception):
+                raise event
+            else:
+                yield event
+        if self._parser is None:
+            self.root = self._root
+
+
+class _IterParseIterator(IncrementalParser):
+
+    def __init__(self, source, events, parser, close_source=False):
+        IncrementalParser.__init__(self, events, parser)
+        self._file = source
+        self._close_file = close_source
 
     def __next__(self):
         while 1:
-            try:
-                item = self._events[self._index]
-                self._index += 1
-                return item
-            except IndexError:
-                pass
-            if self._error:
-                e = self._error
-                self._error = None
-                raise e
+            for event in self.events():
+                return event
             if self._parser is None:
-                self.root = self._root
                 if self._close_file:
                     self._file.close()
                 raise StopIteration
             # load event buffer
-            del self._events[:]
-            self._index = 0
             data = self._file.read(16384)
             if data:
-                try:
-                    self._parser.feed(data)
-                except SyntaxError as exc:
-                    self._error = exc
+                self.data_received(data)
             else:
-                self._root = self._parser.close()
-                self._parser = None
+                self.eof_received()
 
     def __iter__(self):
         return self
@@ -1498,6 +1499,40 @@ class XMLParser:
         except AttributeError:
             pass # unknown
 
+    def _setevents(self, event_list, events):
+        # Internal API for IncrementalParser
+        parser = self._parser
+        append = event_list.append
+        for event in events:
+            if event == "start":
+                try:
+                    parser.ordered_attributes = 1
+                    parser.specified_attributes = 1
+                    def handler(tag, attrib_in, event=event, append=append,
+                                start=self._start_list):
+                        append((event, start(tag, attrib_in)))
+                    parser.StartElementHandler = handler
+                except AttributeError:
+                    def handler(tag, attrib_in, event=event, append=append,
+                                start=self._start):
+                        append((event, start(tag, attrib_in)))
+                    parser.StartElementHandler = handler
+            elif event == "end":
+                def handler(tag, event=event, append=append,
+                            end=self._end):
+                    append((event, end(tag)))
+                parser.EndElementHandler = handler
+            elif event == "start-ns":
+                def handler(prefix, uri, event=event, append=append):
+                    append((event, (prefix or "", uri or "")))
+                parser.StartNamespaceDeclHandler = handler
+            elif event == "end-ns":
+                def handler(prefix, event=event, append=append):
+                    append((event, None))
+                parser.EndNamespaceDeclHandler = handler
+            else:
+                raise ValueError("unknown event %r" % event)
+
     def _raiseerror(self, value):
         err = ParseError(value)
         err.code = value.code
@@ -1635,7 +1670,7 @@ try:
 except ImportError:
     pass
 else:
-    # Overwrite 'ElementTree.parse' and 'iterparse' to use the C XMLParser
+    # Overwrite 'ElementTree.parse' to use the C XMLParser
 
     class ElementTree(ElementTree):
         __doc__ = ElementTree.__doc__
@@ -1661,56 +1696,6 @@ else:
                 if close_source:
                     source.close()
 
-    class iterparse:
-        __doc__ = iterparse.__doc__
-        root = None
-        def __init__(self, source, events=None, parser=None):
-            self._close_file = False
-            if not hasattr(source, 'read'):
-                source = open(source, 'rb')
-                self._close_file = True
-            self._file = source
-            self._events = []
-            self._index = 0
-            self._error = None
-            self.root = self._root = None
-            if parser is None:
-                parser = XMLParser(target=TreeBuilder())
-            self._parser = parser
-            self._parser._setevents(self._events, events)
-
-        def __next__(self):
-            while True:
-                try:
-                    item = self._events[self._index]
-                    self._index += 1
-                    return item
-                except IndexError:
-                    pass
-                if self._error:
-                    e = self._error
-                    self._error = None
-                    raise e
-                if self._parser is None:
-                    self.root = self._root
-                    if self._close_file:
-                        self._file.close()
-                    raise StopIteration
-                # load event buffer
-                del self._events[:]
-                self._index = 0
-                data = self._file.read(16384)
-                if data:
-                    try:
-                        self._parser.feed(data)
-                    except SyntaxError as exc:
-                        self._error = exc
-                else:
-                    self._root = self._parser.close()
-                    self._parser = None
-
-        def __iter__(self):
-            return self
 
 # compatibility
 XMLTreeBuilder = XMLParser

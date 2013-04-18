@@ -397,6 +397,9 @@ Functions
 
       If you need a fully populated element, look for "end" events instead.
 
+   .. note::
+      For real event-driven parsing, see :class:`IncrementalParser`.
+
 
 .. function:: parse(source, parser=None)
 
@@ -831,6 +834,48 @@ QName Objects
    is given, the URI part of a QName.  If *tag* is given, the first argument is
    interpreted as an URI, and this argument is interpreted as a local name.
    :class:`QName` instances are opaque.
+
+
+IncrementalParser Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. class:: IncrementalParser(events=None, parser=None)
+
+   An incremental, event-driven parser suitable for non-blocking applications.
+   *events* is a list of events to report back.  The supported events are the
+   strings ``"start"``, ``"end"``, ``"start-ns"`` and ``"end-ns"`` (the "ns"
+   events are used to get detailed namespace information).  If *events* is
+   omitted, only ``"end"`` events are reported.  *parser* is an optional
+   parser instance.  If not given, the standard :class:`XMLParser` parser is
+   used.
+
+   .. method:: data_received(data)
+
+      Feed the given bytes data to the incremental parser.
+
+   .. method:: eof_received()
+
+      Signal the incremental parser that the data stream is terminated.
+
+   .. method:: events()
+
+      Iterate over the events which have been encountered in the data fed
+      to the parser.  This method yields ``(event, elem)`` pairs, where
+      *event* is a string representing the type of event (e.g. ``"end"``)
+      and *elem* is the encountered :class:`Element` object.
+
+   .. note::
+
+      :class:`IncrementalParser` only guarantees that it has seen the ">"
+      character of a starting tag when it emits a "start" event, so the
+      attributes are defined, but the contents of the text and tail attributes
+      are undefined at that point.  The same applies to the element children;
+      they may or may not be present.
+
+      If you need a fully populated element, look for "end" events instead.
+
+   .. versionadded:: 3.4
 
 
 .. _elementtree-treebuilder-objects:
