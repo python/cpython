@@ -10748,12 +10748,11 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         && !(PyUnicode_IS_ASCII(left) && !PyUnicode_IS_ASCII(right)))
     {
         /* append inplace */
-        res = resize_compact(left, new_len);
-        if (res == NULL)
+        if (unicode_resize(p_left, new_len) != 0)
             goto error;
 
-        /* copy 'right' into the newly allocated area of 'res' (left) */
-        _PyUnicode_FastCopyCharacters(res, left_len, right, 0, right_len);
+        /* copy 'right' into the newly allocated area of 'left' */
+        _PyUnicode_FastCopyCharacters(*p_left, left_len, right, 0, right_len);
     }
     else {
         maxchar = PyUnicode_MAX_CHAR_VALUE(left);
@@ -10767,8 +10766,8 @@ PyUnicode_Append(PyObject **p_left, PyObject *right)
         _PyUnicode_FastCopyCharacters(res, 0, left, 0, left_len);
         _PyUnicode_FastCopyCharacters(res, left_len, right, 0, right_len);
         Py_DECREF(left);
+        *p_left = res;
     }
-    *p_left = res;
     assert(_PyUnicode_CheckConsistency(*p_left, 1));
     return;
 
