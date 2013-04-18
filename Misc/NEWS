@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11182: remove the unused and undocumented pydoc.Scanner class.
+  Patch by Martin Morrison.
+
 - Issue #17741: Add ElementTree.IncrementalParser, an event-driven parser
   for non-blocking applications.
 
