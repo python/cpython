@@ -970,7 +970,7 @@ _PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer,
     Py_ssize_t len              /* length in bytes */
     );
 
-/* Get the value of the write as an Unicode string. Clear the
+/* Get the value of the writer as an Unicode string. Clear the
    buffer of the writer. Raise an exception and return NULL
    on error. */
 PyAPI_FUNC(PyObject *)
