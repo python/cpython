@@ -458,6 +458,29 @@ class RaisingTraceFuncTestCase(unittest.TestCase):
             self.fail("exception not propagated")
 
 
+    def test_exception_arguments(self):
+        def f():
+            x = 0
+            # this should raise an error
+            x.no_such_attr
+        def g(frame, event, arg):
+            if (event == 'exception'):
+                type, exception, trace = arg
+                self.assertIsInstance(exception, Exception)
+            return g
+
+        existing = sys.gettrace()
+        try:
+            sys.settrace(g)
+            try:
+                f()
+            except AttributeError:
+                # this is expected
+                pass
+        finally:
+            sys.settrace(existing)
+
+
 # 'Jump' tests: assigning to frame.f_lineno within a trace function
 # moves the execution position - it's how debuggers implement a Jump
 # command (aka. "Set next statement").
