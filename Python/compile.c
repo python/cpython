@@ -2146,13 +2146,13 @@ compiler_try_except(struct compiler *c, stmt_ty s)
 
             /*
               try:
-              # body
+                  # body
               except type as name:
-              try:
-              # body
-              finally:
-              name = None
-              del name
+                  try:
+                      # body
+                  finally:
+                      name = None
+                      del name
             */
 
             /* second try: */
