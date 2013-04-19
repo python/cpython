@@ -10,7 +10,7 @@ from functools import partial
 from math import log, exp, pi, fsum, sin
 from test import support
 
-class TestBasicOps(unittest.TestCase):
+class TestBasicOps:
     # Superclass with tests common to all generators.
     # Subclasses must arrange for self.gen to retrieve the Random instance
     # to be tested.
@@ -188,7 +188,15 @@ class TestBasicOps(unittest.TestCase):
         k = sum(randrange(6755399441055744) % 3 == 2 for i in range(n))
         self.assertTrue(0.30 < k/n < .37, (k/n))
 
-class SystemRandom_TestBasicOps(TestBasicOps):
+try:
+    random.SystemRandom().random()
+except NotImplementedError:
+    SystemRandom_available = False
+else:
+    SystemRandom_available = True
+
+@unittest.skipUnless(SystemRandom_available, "random.SystemRandom not available")
+class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
     gen = random.SystemRandom()
 
     def test_autoseed(self):
@@ -304,7 +312,7 @@ class SystemRandom_TestBasicOps(TestBasicOps):
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
 
 
-class MersenneTwister_TestBasicOps(TestBasicOps):
+class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
     gen = random.Random()
 
     def test_guaranteed_stable(self):
@@ -749,28 +757,5 @@ class TestModule(unittest.TestCase):
         Subclass(newarg=1)
 
 
-def test_main(verbose=None):
-    testclasses =    [MersenneTwister_TestBasicOps,
-                      TestDistributions,
-                      TestModule]
-
-    try:
-        random.SystemRandom().random()
-    except NotImplementedError:
-        pass
-    else:
-        testclasses.append(SystemRandom_TestBasicOps)
-
-    support.run_unittest(*testclasses)
-
-    # verify reference counting
-    import sys
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*testclasses)
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()
