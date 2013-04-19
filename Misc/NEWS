@@ -120,6 +120,9 @@ Tests
 - Issue #12820: add tests for the xml.dom.minicompat module.
   Patch by John Chandler and Phil Connell.
 
+- Issue #17790: test_set now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #17789: test_random now works with unittest test discovery.
   Patch by Zachary Ware.
 
