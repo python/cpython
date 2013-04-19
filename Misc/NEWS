@@ -12,6 +12,10 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17413: sys.settrace callbacks were being passed a string instead of an
+  exception instance for the 'value' element of the arg tuple if the exception
+  originated from C code; now an exception instance is always provided.
+
 - Issue #17782: Fix undefined behaviour on platforms where
   ``struct timespec``'s "tv_nsec" member is not a C long.
 
