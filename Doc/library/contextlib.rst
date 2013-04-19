@@ -259,7 +259,7 @@ Functions and classes provided:
 
          with ExitStack() as stack:
              files = [stack.enter_context(open(fname)) for fname in filenames]
-             close_files = stack.pop_all().close
+             close_files = stack.pop_all().close()
              # If opening any file fails, all previously opened files will be
              # closed automatically. If all files are opened successfully,
              # they will remain open even after the with statement ends.
