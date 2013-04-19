@@ -72,12 +72,12 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
         super(uploadTestCase, self).setUp()
-        self.old_class = httpclient.HTTPSConnection
+        if hasattr(httpclient, 'HTTPSConnection'):
+            self.addCleanup(setattr, httpclient, 'HTTPSConnection',
+                            httpclient.HTTPSConnection)
+        else:
+            self.addCleanup(delattr, httpclient, 'HTTPSConnection')
         self.conn = httpclient.HTTPSConnection = FakeConnection()
-
-    def tearDown(self):
-        httpclient.HTTPSConnection = self.old_class
-        super(uploadTestCase, self).tearDown()
 
     def test_finalize_options(self):
 
