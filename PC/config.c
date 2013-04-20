@@ -17,7 +17,7 @@ extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit_math(void);
 extern PyObject* PyInit__md5(void);
 extern PyObject* PyInit_nt(void);
-extern PyObject* PyInit_operator(void);
+extern PyObject* PyInit__operator(void);
 extern PyObject* PyInit_signal(void);
 extern PyObject* PyInit__sha1(void);
 extern PyObject* PyInit__sha256(void);
@@ -87,7 +87,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"gc", PyInit_gc},
     {"math", PyInit_math},
     {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
-    {"operator", PyInit_operator},
+    {"_operator", PyInit__operator},
     {"signal", PyInit_signal},
     {"_md5", PyInit__md5},
     {"_sha1", PyInit__sha1},

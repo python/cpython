@@ -4,7 +4,7 @@ Implements the HMAC algorithm as described by RFC 2104.
 """
 
 import warnings as _warnings
-from operator import _compare_digest as compare_digest
+from _operator import _compare_digest as compare_digest
 
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
 trans_36 = bytes((x ^ 0x36) for x in range(256))
