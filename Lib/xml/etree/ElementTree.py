@@ -1504,18 +1504,12 @@ class XMLParser:
         append = event_list.append
         for event in events:
             if event == "start":
-                try:
-                    parser.ordered_attributes = 1
-                    parser.specified_attributes = 1
-                    def handler(tag, attrib_in, event=event, append=append,
-                                start=self._start_list):
-                        append((event, start(tag, attrib_in)))
-                    parser.StartElementHandler = handler
-                except AttributeError:
-                    def handler(tag, attrib_in, event=event, append=append,
-                                start=self._start):
-                        append((event, start(tag, attrib_in)))
-                    parser.StartElementHandler = handler
+                parser.ordered_attributes = 1
+                parser.specified_attributes = 1
+                def handler(tag, attrib_in, event=event, append=append,
+                            start=self._start_list):
+                    append((event, start(tag, attrib_in)))
+                parser.StartElementHandler = handler
             elif event == "end":
                 def handler(tag, event=event, append=append,
                             end=self._end):
