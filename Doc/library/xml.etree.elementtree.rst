@@ -105,6 +105,38 @@ Children are nested, and we can access specific child nodes by index::
    >>> root[0][1].text
    '2008'
 
+Incremental parsing
+^^^^^^^^^^^^^^^^^^^
+
+It's possible to parse XML incrementally (i.e. not the whole document at once).
+The most powerful tool for doing this is :class:`IncrementalParser`.  It does
+not require a blocking read to obtain the XML data, and is instead fed with
+data incrementally with :meth:`IncrementalParser.data_received` calls.  To get
+the parsed XML elements, call :meth:`IncrementalParser.events`.  Here's an
+example::
+
+    >>> incparser = ET.IncrementalParser(['start', 'end'])
+    >>> incparser.data_received('<mytag>sometext')
+    >>> list(incparser.events())
+    [('start', <Element 'mytag' at 0x7fba3f2a8688>)]
+    >>> incparser.data_received(' more text</mytag>')
+    >>> for event, elem in incparser.events():
+    ...   print(event)
+    ...   print(elem.tag, 'text=', elem.text)
+    ...
+    end
+    mytag text= sometext more text
+
+The obvious use case is applications that operate in an asynchronous fashion
+where the XML data is being received from a socket or read incrementally from
+some storage device.  In such cases, blocking reads are unacceptable.
+
+Because it's so flexible, :class:`IncrementalParser` can be inconvenient
+to use for simpler use-cases.  If you don't mind your application blocking on
+reading XML data but would still like to have incremental parsing capabilities,
+take a look at :func:`iterparse`.  It can be useful when you're reading a large
+XML document and don't want to hold it wholly in memory.
+
 Finding interesting elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -840,7 +872,6 @@ QName Objects
 IncrementalParser Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 .. class:: IncrementalParser(events=None, parser=None)
 
    An incremental, event-driven parser suitable for non-blocking applications.
@@ -864,7 +895,9 @@ IncrementalParser Objects
       Iterate over the events which have been encountered in the data fed
       to the parser.  This method yields ``(event, elem)`` pairs, where
       *event* is a string representing the type of event (e.g. ``"end"``)
-      and *elem* is the encountered :class:`Element` object.
+      and *elem* is the encountered :class:`Element` object.  Events
+      provided in a previous call to :meth:`events` will not be yielded
+      again.
 
    .. note::
 
