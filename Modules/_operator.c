@@ -322,17 +322,15 @@ compare_digest(PyObject *self, PyObject *args)
 /* operator methods **********************************************************/
 
 #define spam1(OP,DOC) {#OP, OP, METH_VARARGS, PyDoc_STR(DOC)},
-#define spam2(OP,ALTOP,DOC) {#OP, op_##OP, METH_VARARGS, PyDoc_STR(DOC)}, \
-                           {#ALTOP, op_##OP, METH_VARARGS, PyDoc_STR(DOC)},
+#define spam2(OP,DOC) {#OP, op_##OP, METH_VARARGS, PyDoc_STR(DOC)},
 #define spam1o(OP,DOC) {#OP, OP, METH_O, PyDoc_STR(DOC)},
-#define spam2o(OP,ALTOP,DOC) {#OP, op_##OP, METH_O, PyDoc_STR(DOC)}, \
-                           {#ALTOP, op_##OP, METH_O, PyDoc_STR(DOC)},
+#define spam2o(OP,DOC) {#OP, op_##OP, METH_O, PyDoc_STR(DOC)},
 
 static struct PyMethodDef operator_methods[] = {
 
 spam1o(truth,
  "truth(a) -- Return True if a is true, False otherwise.")
-spam2(contains,__contains__,
+spam2(contains,
  "contains(a, b) -- Same as b in a (note reversed operands).")
 spam1(indexOf,
  "indexOf(a, b) -- Return the first index of b in a.")
@@ -341,53 +339,53 @@ spam1(countOf,
 
 spam1(is_, "is_(a, b) -- Same as a is b.")
 spam1(is_not, "is_not(a, b) -- Same as a is not b.")
-spam2o(index, __index__, "index(a) -- Same as a.__index__()")
-spam2(add,__add__, "add(a, b) -- Same as a + b.")
-spam2(sub,__sub__, "sub(a, b) -- Same as a - b.")
-spam2(mul,__mul__, "mul(a, b) -- Same as a * b.")
-spam2(floordiv,__floordiv__, "floordiv(a, b) -- Same as a // b.")
-spam2(truediv,__truediv__, "truediv(a, b) -- Same as a / b.")
-spam2(mod,__mod__, "mod(a, b) -- Same as a % b.")
-spam2o(neg,__neg__, "neg(a) -- Same as -a.")
-spam2o(pos,__pos__, "pos(a) -- Same as +a.")
-spam2o(abs,__abs__, "abs(a) -- Same as abs(a).")
-spam2o(inv,__inv__, "inv(a) -- Same as ~a.")
-spam2o(invert,__invert__, "invert(a) -- Same as ~a.")
-spam2(lshift,__lshift__, "lshift(a, b) -- Same as a << b.")
-spam2(rshift,__rshift__, "rshift(a, b) -- Same as a >> b.")
-spam2o(not_,__not__, "not_(a) -- Same as not a.")
-spam2(and_,__and__, "and_(a, b) -- Same as a & b.")
-spam2(xor,__xor__, "xor(a, b) -- Same as a ^ b.")
-spam2(or_,__or__, "or_(a, b) -- Same as a | b.")
-spam2(iadd,__iadd__, "a = iadd(a, b) -- Same as a += b.")
-spam2(isub,__isub__, "a = isub(a, b) -- Same as a -= b.")
-spam2(imul,__imul__, "a = imul(a, b) -- Same as a *= b.")
-spam2(ifloordiv,__ifloordiv__, "a = ifloordiv(a, b) -- Same as a //= b.")
-spam2(itruediv,__itruediv__, "a = itruediv(a, b) -- Same as a /= b")
-spam2(imod,__imod__, "a = imod(a, b) -- Same as a %= b.")
-spam2(ilshift,__ilshift__, "a = ilshift(a, b) -- Same as a <<= b.")
-spam2(irshift,__irshift__, "a = irshift(a, b) -- Same as a >>= b.")
-spam2(iand,__iand__, "a = iand(a, b) -- Same as a &= b.")
-spam2(ixor,__ixor__, "a = ixor(a, b) -- Same as a ^= b.")
-spam2(ior,__ior__, "a = ior(a, b) -- Same as a |= b.")
-spam2(concat,__concat__,
+spam2o(index, "index(a) -- Same as a.__index__()")
+spam2(add, "add(a, b) -- Same as a + b.")
+spam2(sub, "sub(a, b) -- Same as a - b.")
+spam2(mul, "mul(a, b) -- Same as a * b.")
+spam2(floordiv, "floordiv(a, b) -- Same as a // b.")
+spam2(truediv, "truediv(a, b) -- Same as a / b.")
+spam2(mod, "mod(a, b) -- Same as a % b.")
+spam2o(neg, "neg(a) -- Same as -a.")
+spam2o(pos, "pos(a) -- Same as +a.")
+spam2o(abs, "abs(a) -- Same as abs(a).")
+spam2o(inv, "inv(a) -- Same as ~a.")
+spam2o(invert, "invert(a) -- Same as ~a.")
+spam2(lshift, "lshift(a, b) -- Same as a << b.")
+spam2(rshift, "rshift(a, b) -- Same as a >> b.")
+spam2o(not_, "not_(a) -- Same as not a.")
+spam2(and_, "and_(a, b) -- Same as a & b.")
+spam2(xor, "xor(a, b) -- Same as a ^ b.")
+spam2(or_, "or_(a, b) -- Same as a | b.")
+spam2(iadd, "a = iadd(a, b) -- Same as a += b.")
+spam2(isub, "a = isub(a, b) -- Same as a -= b.")
+spam2(imul, "a = imul(a, b) -- Same as a *= b.")
+spam2(ifloordiv, "a = ifloordiv(a, b) -- Same as a //= b.")
+spam2(itruediv, "a = itruediv(a, b) -- Same as a /= b")
+spam2(imod, "a = imod(a, b) -- Same as a %= b.")
+spam2(ilshift, "a = ilshift(a, b) -- Same as a <<= b.")
+spam2(irshift, "a = irshift(a, b) -- Same as a >>= b.")
+spam2(iand, "a = iand(a, b) -- Same as a &= b.")
+spam2(ixor, "a = ixor(a, b) -- Same as a ^= b.")
+spam2(ior, "a = ior(a, b) -- Same as a |= b.")
+spam2(concat,
  "concat(a, b) -- Same as a + b, for a and b sequences.")
-spam2(iconcat,__iconcat__,
+spam2(iconcat,
  "a = iconcat(a, b) -- Same as a += b, for a and b sequences.")
-spam2(getitem,__getitem__,
+spam2(getitem,
  "getitem(a, b) -- Same as a[b].")
-spam2(setitem,__setitem__,
+spam2(setitem,
  "setitem(a, b, c) -- Same as a[b] = c.")
-spam2(delitem,__delitem__,
+spam2(delitem,
  "delitem(a, b) -- Same as del a[b].")
-spam2(pow,__pow__, "pow(a, b) -- Same as a ** b.")
-spam2(ipow,__ipow__, "a = ipow(a, b) -- Same as a **= b.")
-spam2(lt,__lt__, "lt(a, b) -- Same as a<b.")
-spam2(le,__le__, "le(a, b) -- Same as a<=b.")
-spam2(eq,__eq__, "eq(a, b) -- Same as a==b.")
-spam2(ne,__ne__, "ne(a, b) -- Same as a!=b.")
-spam2(gt,__gt__, "gt(a, b) -- Same as a>b.")
-spam2(ge,__ge__, "ge(a, b) -- Same as a>=b.")
+spam2(pow, "pow(a, b) -- Same as a ** b.")
+spam2(ipow, "a = ipow(a, b) -- Same as a **= b.")
+spam2(lt, "lt(a, b) -- Same as a<b.")
+spam2(le, "le(a, b) -- Same as a<=b.")
+spam2(eq, "eq(a, b) -- Same as a==b.")
+spam2(ne, "ne(a, b) -- Same as a!=b.")
+spam2(gt, "gt(a, b) -- Same as a>b.")
+spam2(ge, "ge(a, b) -- Same as a>=b.")
 
     {"_compare_digest", (PyCFunction)compare_digest, METH_VARARGS,
      compare_digest__doc__},
@@ -487,8 +485,8 @@ PyDoc_STRVAR(itemgetter_doc,
 "itemgetter(item, ...) --> itemgetter object\n\
 \n\
 Return a callable object that fetches the given item(s) from its operand.\n\
-After, f=itemgetter(2), the call f(r) returns r[2].\n\
-After, g=itemgetter(2,5,3), the call g(r) returns (r[2], r[5], r[3])");
+After f=itemgetter(2), the call f(r) returns r[2].\n\
+After g=itemgetter(2,5,3), the call g(r) returns (r[2], r[5], r[3])");
 
 static PyTypeObject itemgetter_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -739,9 +737,9 @@ PyDoc_STRVAR(attrgetter_doc,
 "attrgetter(attr, ...) --> attrgetter object\n\
 \n\
 Return a callable object that fetches the given attribute(s) from its operand.\n\
-After, f=attrgetter('name'), the call f(r) returns r.name.\n\
-After, g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
-After, h=attrgetter('name.first', 'name.last'), the call h(r) returns\n\
+After f=attrgetter('name'), the call f(r) returns r.name.\n\
+After g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).\n\
+After h=attrgetter('name.first', 'name.last'), the call h(r) returns\n\
 (r.name.first, r.name.last).");
 
 static PyTypeObject attrgetter_type = {
@@ -871,8 +869,8 @@ PyDoc_STRVAR(methodcaller_doc,
 "methodcaller(name, ...) --> methodcaller object\n\
 \n\
 Return a callable object that calls the given method on its operand.\n\
-After, f = methodcaller('name'), the call f(r) returns r.name().\n\
-After, g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\
+After f = methodcaller('name'), the call f(r) returns r.name().\n\
+After g = methodcaller('name', 'date', foo=1), the call g(r) returns\n\
 r.name('date', foo=1).");
 
 static PyTypeObject methodcaller_type = {
@@ -919,12 +917,12 @@ static PyTypeObject methodcaller_type = {
 };
 
 
-/* Initialization function for the module (*must* be called PyInit_operator) */
+/* Initialization function for the module (*must* be called PyInit__operator) */
 
 
 static struct PyModuleDef operatormodule = {
     PyModuleDef_HEAD_INIT,
-    "operator",
+    "_operator",
     operator_doc,
     -1,
     operator_methods,
@@ -935,7 +933,7 @@ static struct PyModuleDef operatormodule = {
 };
 
 PyMODINIT_FUNC
-PyInit_operator(void)
+PyInit__operator(void)
 {
     PyObject *m;
 
