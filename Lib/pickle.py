@@ -1208,8 +1208,14 @@ class _Unpickler:
     def load_appends(self):
         stack = self.stack
         mark = self.marker()
-        list = stack[mark - 1]
-        list.extend(stack[mark + 1:])
+        list_obj = stack[mark - 1]
+        items = stack[mark + 1:]
+        if isinstance(list_obj, list):
+            list_obj.extend(items)
+        else:
+            append = list_obj.append
+            for item in items:
+                append(item)
         del stack[mark:]
     dispatch[APPENDS[0]] = load_appends
 
