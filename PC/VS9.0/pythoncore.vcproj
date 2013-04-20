@@ -1119,7 +1119,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\operator.c"
+				RelativePath="..\..\Modules\_operator.c"
 				>
 			</File>
 			<File

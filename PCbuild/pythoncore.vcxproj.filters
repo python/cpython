@@ -501,7 +501,7 @@
     <ClCompile Include="..\Modules\mmapmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\operator.c">
+    <ClCompile Include="..\Modules\_operator.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\parsermodule.c">
