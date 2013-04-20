@@ -1,56 +1,18 @@
-/*
- * ElementTree
- * $Id: _elementtree.c 3473 2009-01-11 22:53:55Z fredrik $
+/*--------------------------------------------------------------------
+ * Licensed to PSF under a Contributor Agreement.
+ * See http://www.python.org/psf/license for licensing details.
  *
- * elementtree accelerator
- *
- * History:
- * 1999-06-20 fl  created (as part of sgmlop)
- * 2001-05-29 fl  effdom edition
- * 2003-02-27 fl  elementtree edition (alpha)
- * 2004-06-03 fl  updates for elementtree 1.2
- * 2005-01-05 fl  major optimization effort
- * 2005-01-11 fl  first public release (cElementTree 0.8)
- * 2005-01-12 fl  split element object into base and extras
- * 2005-01-13 fl  use tagged pointers for tail/text (cElementTree 0.9)
- * 2005-01-17 fl  added treebuilder close method
- * 2005-01-17 fl  fixed crash in getchildren
- * 2005-01-18 fl  removed observer api, added iterparse (cElementTree 0.9.3)
- * 2005-01-23 fl  revised iterparse api; added namespace event support (0.9.8)
- * 2005-01-26 fl  added VERSION module property (cElementTree 1.0)
- * 2005-01-28 fl  added remove method (1.0.1)
- * 2005-03-01 fl  added iselement function; fixed makeelement aliasing (1.0.2)
- * 2005-03-13 fl  export Comment and ProcessingInstruction/PI helpers
- * 2005-03-26 fl  added Comment and PI support to XMLParser
- * 2005-03-27 fl  event optimizations; complain about bogus events
- * 2005-08-08 fl  fixed read error handling in parse
- * 2005-08-11 fl  added runtime test for copy workaround (1.0.3)
- * 2005-12-13 fl  added expat_capi support (for xml.etree) (1.0.4)
- * 2005-12-16 fl  added support for non-standard encodings
- * 2006-03-08 fl  fixed a couple of potential null-refs and leaks
- * 2006-03-12 fl  merge in 2.5 ssize_t changes
- * 2007-08-25 fl  call custom builder's close method from XMLParser
- * 2007-08-31 fl  added iter, extend from ET 1.3
- * 2007-09-01 fl  fixed ParseError exception, setslice source type, etc
- * 2007-09-03 fl  fixed handling of negative insert indexes
- * 2007-09-04 fl  added itertext from ET 1.3
- * 2007-09-06 fl  added position attribute to ParseError exception
- * 2008-06-06 fl  delay error reporting in iterparse (from Hrvoje Niksic)
- *
+ * _elementtree - C accelerator for xml.etree.ElementTree
  * Copyright (c) 1999-2009 by Secret Labs AB.  All rights reserved.
  * Copyright (c) 1999-2009 by Fredrik Lundh.
  *
  * info@pythonware.com
  * http://www.pythonware.com
+ *--------------------------------------------------------------------
  */
-
-/* Licensed to PSF under a Contributor Agreement. */
-/* See http://www.python.org/psf/license for licensing details. */
 
 #include "Python.h"
 #include "structmember.h"
-
-#define VERSION "1.0.6"
 
 /* -------------------------------------------------------------------- */
 /* configuration */
