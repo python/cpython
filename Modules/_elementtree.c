@@ -17,9 +17,6 @@
 /* -------------------------------------------------------------------- */
 /* configuration */
 
-/* Leave defined to include the expat-based XMLParser type */
-#define USE_EXPAT
-
 /* An element can hold this many children without extra memory
    allocations. */
 #define STATIC_CHILDREN 4
@@ -2645,8 +2642,6 @@ static PyTypeObject TreeBuilder_Type = {
 /* ==================================================================== */
 /* the expat interface */
 
-#if defined(USE_EXPAT)
-
 #include "expat.h"
 #include "pyexpat.h"
 static struct PyExpat_CAPI *expat_capi;
@@ -3604,8 +3599,6 @@ static PyTypeObject XMLParser_Type = {
     0,                                              /* tp_free */
 };
 
-#endif
-
 /* ==================================================================== */
 /* python module interface */
 
@@ -3637,10 +3630,8 @@ PyInit__elementtree(void)
         return NULL;
     if (PyType_Ready(&Element_Type) < 0)
         return NULL;
-#if defined(USE_EXPAT)
     if (PyType_Ready(&XMLParser_Type) < 0)
         return NULL;
-#endif
 
     m = PyModule_Create(&_elementtreemodule);
     if (!m)
@@ -3683,10 +3674,8 @@ PyInit__elementtree(void)
     Py_INCREF((PyObject *)&TreeBuilder_Type);
     PyModule_AddObject(m, "TreeBuilder", (PyObject *)&TreeBuilder_Type);
 
-#if defined(USE_EXPAT)
     Py_INCREF((PyObject *)&XMLParser_Type);
     PyModule_AddObject(m, "XMLParser", (PyObject *)&XMLParser_Type);
-#endif
 
     return m;
 }
