@@ -64,6 +64,9 @@ Library
 - Issue #17707: multiprocessing.Queue's get() method does not block for short
   timeouts.
 
+- Isuse #17720: Fix the Python implementation of pickle.Unpickler to correctly
+  process the APPENDS opcode when it is used on non-list objects.
+
 - Issue #17012: shutil.which() no longer fallbacks to the PATH environment
   variable if empty path argument is specified.  Patch by Serhiy Storchaka.
 
