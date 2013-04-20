@@ -29,6 +29,8 @@ class Test_iskeyword(unittest.TestCase):
     # This is probably an accident of the current implementation, but should be
     # preserved for backward compatibility.
     def test_changing_the_kwlist_does_not_affect_iskeyword(self):
+        oldlist = keyword.kwlist
+        self.addCleanup(lambda: setattr(keyword, 'kwlist', oldlist))
         keyword.kwlist = ['its', 'all', 'eggs', 'beans', 'and', 'a', 'slice']
         self.assertFalse(keyword.iskeyword('eggs'))
 
