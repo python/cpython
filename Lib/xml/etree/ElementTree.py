@@ -33,13 +33,15 @@
 
 """
 
+#---------------------------------------------------------------------
+# Licensed to PSF under a Contributor Agreement.
+# See http://www.python.org/psf/license for licensing details.
 #
 # ElementTree
 # Copyright (c) 1999-2008 by Fredrik Lundh.  All rights reserved.
 #
 # fredrik@pythonware.com
 # http://www.pythonware.com
-#
 # --------------------------------------------------------------------
 # The ElementTree toolkit is
 #
@@ -67,9 +69,6 @@
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 # --------------------------------------------------------------------
-
-# Licensed to PSF under a Contributor Agreement.
-# See http://www.python.org/psf/license for licensing details.
 
 __all__ = [
     # public symbols
