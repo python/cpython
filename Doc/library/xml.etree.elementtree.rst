@@ -387,6 +387,11 @@ Functions
    :class:`XMLParser` parser is used.  Returns an :term:`iterator` providing
    ``(event, elem)`` pairs.
 
+   Note that while :func:`iterparse` builds the tree incrementally, it issues
+   blocking reads on *source* (or the file it names).  As such, it's unsuitable
+   for asynchronous applications where blocking reads can't be made.  For fully
+   asynchronous parsing, see :class:`IncrementalParser`. 
+
    .. note::
 
       :func:`iterparse` only guarantees that it has seen the ">"
@@ -396,10 +401,6 @@ Functions
       they may or may not be present.
 
       If you need a fully populated element, look for "end" events instead.
-
-   .. note::
-      For real event-driven parsing, see :class:`IncrementalParser`.
-
 
 .. function:: parse(source, parser=None)
 
