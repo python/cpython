@@ -714,27 +714,6 @@ class CommonTest(BaseTest):
 
         self.checkraises(TypeError, 'hello', 'capitalize', 42)
 
-    def test_lower(self):
-        self.checkequal('hello', 'HeLLo', 'lower')
-        self.checkequal('hello', 'hello', 'lower')
-        self.checkraises(TypeError, 'hello', 'lower', 42)
-
-    def test_upper(self):
-        self.checkequal('HELLO', 'HeLLo', 'upper')
-        self.checkequal('HELLO', 'HELLO', 'upper')
-        self.checkraises(TypeError, 'hello', 'upper', 42)
-
-    def test_expandtabs(self):
-        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
-        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
-        self.checkequal('abc\rab  def\ng   hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 4)
-        self.checkequal('abc\r\nab  def\ng   hi', 'abc\r\nab\tdef\ng\thi', 'expandtabs', 4)
-        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs')
-        self.checkequal('abc\rab      def\ng       hi', 'abc\rab\tdef\ng\thi', 'expandtabs', 8)
-        self.checkequal('abc\r\nab\r\ndef\ng\r\nhi', 'abc\r\nab\r\ndef\ng\r\nhi', 'expandtabs', 4)
-
-        self.checkraises(TypeError, 'hello', 'expandtabs', 42, 42)
-
     def test_additional_split(self):
         self.checkequal(['this', 'is', 'the', 'split', 'function'],
             'this is the split function', 'split')
