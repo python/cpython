@@ -124,6 +124,9 @@ IDLE
 Tests
 -----
 
+- Issue #17065: Use process-unique key for winreg tests to avoid failures if
+  test is run multiple times in parallel (eg: on a buildbot host).
+
 - Issue #12820: add tests for the xml.dom.minicompat module.
   Patch by John Chandler and Phil Connell.
 
