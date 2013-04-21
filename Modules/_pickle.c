@@ -5039,11 +5039,13 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SIZE(self->stack) = x;
+                Py_DECREF(append_func);
                 return -1;
             }
             Py_DECREF(result);
         }
         Py_SIZE(self->stack) = x;
+        Py_DECREF(append_func);
     }
 
     return 0;
