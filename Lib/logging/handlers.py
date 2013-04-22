@@ -758,13 +758,17 @@ class SysLogHandler(logging.Handler):
     }
 
     def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
-                 facility=LOG_USER, socktype=socket.SOCK_DGRAM):
+                 facility=LOG_USER, socktype=None):
         """
         Initialize a handler.
 
         If address is specified as a string, a UNIX socket is used. To log to a
         local syslogd, "SysLogHandler(address="/dev/log")" can be used.
-        If facility is not specified, LOG_USER is used.
+        If facility is not specified, LOG_USER is used. If socktype is
+        specified as socket.SOCK_DGRAM or socket.SOCK_STREAM, that specific
+        socket type will be used. For Unix sockets, you can also specify a
+        socktype of None, in which case socket.SOCK_DGRAM will be used, falling
+        back to socket.SOCK_STREAM.
         """
         logging.Handler.__init__(self)
 
@@ -777,18 +781,37 @@ class SysLogHandler(logging.Handler):
             self._connect_unixsocket(address)
         else:
             self.unixsocket = False
+            if socktype is None:
+                socktype = socket.SOCK_DGRAM
             self.socket = socket.socket(socket.AF_INET, socktype)
             if socktype == socket.SOCK_STREAM:
                 self.socket.connect(address)
+            self.socktype = socktype
         self.formatter = None
 
     def _connect_unixsocket(self, address):
-        self.socket = socket.socket(socket.AF_UNIX, self.socktype)
+        use_socktype = self.socktype
+        if use_socktype is None:
+            use_socktype = socket.SOCK_DGRAM
+        self.socket = socket.socket(socket.AF_UNIX, use_socktype)
         try:
             self.socket.connect(address)
+            # it worked, so set self.socktype to the used type
+            self.socktype = use_socktype
         except OSError:
             self.socket.close()
-            raise
+            if self.socktype is not None:
+                # user didn't specify falling back, so fail
+                raise
+            use_socktype = socket.SOCK_STREAM
+            self.socket = socket.socket(socket.AF_UNIX, use_socktype)
+            try:
+                self.socket.connect(address)
+                # it worked, so set self.socktype to the used type
+                self.socktype = use_socktype
+            except OSError:
+                self.socket.close()
+                raise
 
     def encodePriority(self, facility, priority):
         """
