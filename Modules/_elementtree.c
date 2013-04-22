@@ -271,7 +271,9 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
  * This is required by some constructors/functions in this module that can
  * either accept attrib as a keyword argument or all attributes splashed
  * directly into *kwds.
- * If there is no 'attrib' keyword, return an empty dict.
+ *
+ * Return a dictionary with the content of kwds merged into the content of
+ * attrib. If there is no attrib keyword, return a copy of kwds.
  */
 static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
