@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11714: Use 'with' statements to assure a Semaphore releases a
+  condition variable.  Original patch by Thomas Rachel.
+
 - Issue #17795: Reverted backwards-incompatible change in SysLogHandler with
   Unix domain sockets.
 
