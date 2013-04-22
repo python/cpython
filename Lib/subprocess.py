@@ -175,6 +175,9 @@ check_output(*popenargs, **kwargs):
 
     >>> output = subprocess.check_output(["ls", "-l", "/dev/null"])
 
+    There is an additional optional argument, "input", allowing you to
+    pass a string to the subprocess's stdin.  If you use this argument
+    you may not also use the Popen constructor's "stdin" argument.
 
 Exceptions
 ----------
@@ -563,14 +566,31 @@ def check_output(*popenargs, timeout=None, **kwargs):
     ...              stderr=STDOUT)
     b'ls: non_existent_file: No such file or directory\n'
 
+    There is an additional optional argument, "input", allowing you to
+    pass a string to the subprocess's stdin.  If you use this argument
+    you may not also use the Popen constructor's "stdin" argument, as
+    it too will be used internally.  Example:
+
+    >>> check_output(["sed", "-e", "s/foo/bar/"],
+    ...              input=b"when in the course of fooman events\n")
+    b'when in the course of barman events\n'
+
     If universal_newlines=True is passed, the return value will be a
     string rather than bytes.
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
+    if 'input' in kwargs:
+        if 'stdin' in kwargs:
+            raise ValueError('stdin and input arguments may not both be used.')
+        inputdata = kwargs['input']
+        del kwargs['input']
+        kwargs['stdin'] = PIPE
+    else:
+        inputdata = None
     with Popen(*popenargs, stdout=PIPE, **kwargs) as process:
         try:
-            output, unused_err = process.communicate(timeout=timeout)
+            output, unused_err = process.communicate(inputdata, timeout=timeout)
         except TimeoutExpired:
             process.kill()
             output, unused_err = process.communicate()

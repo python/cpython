@@ -158,14 +158,48 @@ class ProcessTestCase(BaseTestCase):
                 stderr=subprocess.STDOUT)
         self.assertIn(b'BDFL', output)
 
+    def test_check_output_stdin_arg(self):
+        # check_output() can be called with stdin set to a file
+        tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
+        tf.write(b'pear')
+        tf.seek(0)
+        output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; sys.stdout.write(sys.stdin.read().upper())"],
+                stdin=tf)
+        self.assertIn(b'PEAR', output)
+
+    def test_check_output_input_arg(self):
+        # check_output() can be called with input set to a string
+        output = subprocess.check_output(
+                [sys.executable, "-c",
+                 "import sys; sys.stdout.write(sys.stdin.read().upper())"],
+                input=b'pear')
+        self.assertIn(b'PEAR', output)
+
     def test_check_output_stdout_arg(self):
-        # check_output() function stderr redirected to stdout
+        # check_output() refuses to accept 'stdout' argument
         with self.assertRaises(ValueError) as c:
             output = subprocess.check_output(
                     [sys.executable, "-c", "print('will not be run')"],
                     stdout=sys.stdout)
             self.fail("Expected ValueError when stdout arg supplied.")
         self.assertIn('stdout', c.exception.args[0])
+
+    def test_check_output_stdin_with_input_arg(self):
+        # check_output() refuses to accept 'stdin' with 'input'
+        tf = tempfile.TemporaryFile()
+        self.addCleanup(tf.close)
+        tf.write(b'pear')
+        tf.seek(0)
+        with self.assertRaises(ValueError) as c:
+            output = subprocess.check_output(
+                    [sys.executable, "-c", "print('will not be run')"],
+                    stdin=tf, input=b'hare')
+            self.fail("Expected ValueError when stdin and input args supplied.")
+        self.assertIn('stdin', c.exception.args[0])
+        self.assertIn('input', c.exception.args[0])
 
     def test_check_output_timeout(self):
         # check_output() function with timeout arg
