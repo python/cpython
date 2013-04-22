@@ -116,7 +116,7 @@ use cases, the underlying :class:`Popen` interface can be used directly.
       *timeout* was added.
 
 
-.. function:: check_output(args, *, stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=None)
+.. function:: check_output(args, *, input=None, stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=None)
 
    Run command with arguments and return its output.
 
@@ -129,14 +129,20 @@ use cases, the underlying :class:`Popen` interface can be used directly.
    in :ref:`frequently-used-arguments` (hence the use of keyword-only notation
    in the abbreviated signature). The full function signature is largely the
    same as that of the :class:`Popen` constructor - this functions passes all
-   supplied arguments other than *timeout* directly through to that interface.
-   In addition, *stdout* is not permitted as an argument, as it is used
-   internally to collect the output from the subprocess.
+   supplied arguments other than *input* and *timeout* directly through to
+   that interface.  In addition, *stdout* is not permitted as an argument, as
+   it is used internally to collect the output from the subprocess.
 
    The *timeout* argument is passed to :meth:`Popen.wait`. If the timeout
    expires, the child process will be killed and then waited for again.  The
    :exc:`TimeoutExpired` exception will be re-raised after the child process
    has terminated.
+
+   The *input* argument is passed to :meth:`Popen.communicate` and thus to the
+   subprocess's stdin.  If used it must be a byte sequence, or a string if
+   ``universal_newlines=True``.  When used, the internal :class:`Popen` object
+   is automatically created with ``stdin=PIPE``, and the *stdin* argument may
+   not be used as well.
 
    Examples::
 
@@ -145,6 +151,10 @@ use cases, the underlying :class:`Popen` interface can be used directly.
 
       >>> subprocess.check_output(["echo", "Hello World!"], universal_newlines=True)
       'Hello World!\n'
+
+      >>> subprocess.check_output(["sed", "-e", "s/foo/bar/"],
+      ...                         input=b"when in the course of fooman events\n")
+      b'when in the course of barman events\n'
 
       >>> subprocess.check_output("exit 1", shell=True)
       Traceback (most recent call last):
@@ -167,10 +177,6 @@ use cases, the underlying :class:`Popen` interface can be used directly.
       ...     shell=True)
       'ls: non_existent_file: No such file or directory\n'
 
-   .. versionadded:: 3.1
-
-   ..
-
    .. warning::
 
       Invoking the system shell with ``shell=True`` can be a security hazard
@@ -183,9 +189,13 @@ use cases, the underlying :class:`Popen` interface can be used directly.
       read in the current process, the child process may block if it
       generates enough output to the pipe to fill up the OS pipe buffer.
 
+   .. versionadded:: 3.1
+
    .. versionchanged:: 3.3
       *timeout* was added.
 
+   .. versionchanged:: 3.4
+      *input* was added.
 
 .. data:: DEVNULL
 
