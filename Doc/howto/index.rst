@@ -13,7 +13,6 @@ Currently, the HOWTOs are:
 .. toctree::
    :maxdepth: 1
 
-   advocacy.rst
    pyporting.rst
    cporting.rst
    curses.rst
