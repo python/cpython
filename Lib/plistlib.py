@@ -262,8 +262,8 @@ class PlistWriter(DumbXMLWriter):
     def writeData(self, data):
         self.beginElement("data")
         self.indentLevel -= 1
-        maxlinelength = 76 - len(self.indent.replace("\t", " " * 8) *
-                                 self.indentLevel)
+        maxlinelength = max(16, 76 - len(self.indent.replace("\t", " " * 8) *
+                                 self.indentLevel))
         for line in data.asBase64(maxlinelength).split("\n"):
             if line:
                 self.writeln(line)
