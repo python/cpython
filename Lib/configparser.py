@@ -456,7 +456,7 @@ class ExtendedInterpolation(Interpolation):
         tmp_value = self._KEYCRE.sub('', tmp_value) # valid syntax
         if '$' in tmp_value:
             raise ValueError("invalid interpolation syntax in %r at "
-                             "position %d" % (value, tmp_value.find('%')))
+                             "position %d" % (value, tmp_value.find('$')))
         return value
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
