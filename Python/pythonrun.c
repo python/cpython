@@ -36,7 +36,8 @@
 #endif
 
 #ifdef Py_REF_DEBUG
-void _print_total_refs() {
+static
+void _print_total_refs(void) {
     PyObject *xoptions, *key, *value;
     xoptions = PySys_GetXOptions();
     if (xoptions == NULL)
