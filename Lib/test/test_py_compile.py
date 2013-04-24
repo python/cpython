@@ -55,6 +55,8 @@ class PyCompileTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
 
+    @unittest.skipIf(os.name == 'nt',
+                     'cannot control directory permissions on Windows')
     def test_exceptions_propagate(self):
         # Make sure that exceptions raised thanks to issues with writing
         # bytecode.
