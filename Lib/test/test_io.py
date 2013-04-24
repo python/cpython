@@ -3061,7 +3061,7 @@ class SignalsTest(unittest.TestCase):
             # The buffered IO layer must check for pending signal
             # handlers, which in this case will invoke alarm_interrupt().
             self.assertRaises(ZeroDivisionError,
-                        wio.write, item * (support.PIPE_MAX_SIZE // len(item)))
+                        wio.write, item * (support.PIPE_MAX_SIZE // len(item) + 1))
             t.join()
             # We got one byte, get another one and check that it isn't a
             # repeat of the first one.
@@ -3160,7 +3160,7 @@ class SignalsTest(unittest.TestCase):
         select = support.import_module("select")
         # A quantity that exceeds the buffer size of an anonymous pipe's
         # write end.
-        N = 1024 * 1024
+        N = support.PIPE_MAX_SIZE
         r, w = os.pipe()
         fdopen_kwargs["closefd"] = False
         # We need a separate thread to read from the pipe and allow the
