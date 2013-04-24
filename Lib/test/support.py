@@ -575,10 +575,12 @@ def _is_ipv6_enabled():
 IPV6_ENABLED = _is_ipv6_enabled()
 
 
-# A constant likely larger than the underlying OS pipe buffer size.
-# Windows limit seems to be around 512B, and many Unix kernels have a 64K pipe
-# buffer size or 16*PAGE_SIZE: take a few megs to be sure.  This
-PIPE_MAX_SIZE = 3 * 1000 * 1000
+# A constant likely larger than the underlying OS pipe buffer size, to
+# make writes blocking.
+# Windows limit seems to be around 512 B, and many Unix kernels have a
+# 64 KiB pipe buffer size or 16 * PAGE_SIZE: take a few megs to be sure.
+# (see issue #17835 for a discussion of this number).
+PIPE_MAX_SIZE = 4 *1024 * 1024 + 1
 
 
 # decorator for skipping tests on non-IEEE 754 platforms
