@@ -278,25 +278,30 @@ element_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject*
 get_attrib_from_keywords(PyObject *kwds)
 {
-    const char* ATTRIB_KEY = "attrib";
-    PyObject *attrib = PyDict_GetItemString(kwds, ATTRIB_KEY);
+    PyObject *attrib_str = PyUnicode_FromString("attrib");
+    PyObject *attrib = PyDict_GetItem(kwds, attrib_str);
 
     if (attrib) {
         /* If attrib was found in kwds, copy its value and remove it from
          * kwds
          */
         if (!PyDict_Check(attrib)) {
+            Py_DECREF(attrib_str);
             PyErr_Format(PyExc_TypeError, "attrib must be dict, not %.100s",
                          Py_TYPE(attrib)->tp_name);
             return NULL;
         }
         attrib = PyDict_Copy(attrib);
-        PyDict_DelItemString(kwds, ATTRIB_KEY);
+        PyDict_DelItem(kwds, attrib_str);
     } else {
         attrib = PyDict_New();
     }
-    assert(attrib);
-    PyDict_Update(attrib, kwds);
+
+    Py_DECREF(attrib_str);
+
+    /* attrib can be NULL if PyDict_New failed */
+    if (attrib)
+        PyDict_Update(attrib, kwds);
     return attrib;
 }
 
