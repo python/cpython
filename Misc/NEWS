@@ -153,6 +153,9 @@ Library
 Tests
 -----
 
+- Issue #17835: Fix test_io when the default OS pipe buffer size is larger
+  than one million bytes.
+
 - Issue #17065: Use process-unique key for winreg tests to avoid failures if
   test is run multiple times in parallel (eg: on a buildbot host).
 
