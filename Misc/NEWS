@@ -131,6 +131,9 @@ IDLE
 Tests
 -----
 
+- Issue #17835: Fix test_io when the default OS pipe buffer size is larger
+  than one million bytes.
+
 - Issue #17531: Fix tests that thought group and user ids were always the int
   type. Also, always allow -1 as a valid group and user id.
 
