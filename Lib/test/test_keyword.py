@@ -9,7 +9,8 @@ import shutil
 import textwrap
 
 KEYWORD_FILE             = support.findfile('keyword.py')
-GRAMMAR_FILE             = os.path.join('..', '..', 'Python', 'graminit.c')
+GRAMMAR_FILE             = os.path.join(os.path.split(__file__)[0],
+                                        '..', '..', 'Python', 'graminit.c')
 TEST_PY_FILE             = 'keyword_test.py'
 GRAMMAR_TEST_FILE        = 'graminit_test.c'
 PY_FILE_WITHOUT_KEYWORDS = 'minimal_keyword.py'
@@ -30,7 +31,7 @@ class Test_iskeyword(unittest.TestCase):
     # preserved for backward compatibility.
     def test_changing_the_kwlist_does_not_affect_iskeyword(self):
         oldlist = keyword.kwlist
-        self.addCleanup(lambda: setattr(keyword, 'kwlist', oldlist))
+        self.addCleanup(setattr, keyword, 'kwlist', oldlist)
         keyword.kwlist = ['its', 'all', 'eggs', 'beans', 'and', 'a', 'slice']
         self.assertFalse(keyword.iskeyword('eggs'))
 
@@ -38,11 +39,12 @@ class Test_iskeyword(unittest.TestCase):
 class TestKeywordGeneration(unittest.TestCase):
 
     def _copy_file_without_generated_keywords(self, source_file, dest_file):
-        with open(source_file) as fp:
+        with open(source_file, 'rb') as fp:
             lines = fp.readlines()
-        with open(dest_file, 'w') as fp:
-            fp.writelines(lines[:lines.index("#--start keywords--\n") + 1])
-            fp.writelines(lines[lines.index("#--end keywords--\n"):])
+        nl = lines[0][len(lines[0].strip()):]
+        with open(dest_file, 'wb') as fp:
+            fp.writelines(lines[:lines.index(b"#--start keywords--" + nl) + 1])
+            fp.writelines(lines[lines.index(b"#--end keywords--" + nl):])
 
     def _generate_keywords(self, grammar_file, target_keyword_py_file):
         proc = subprocess.Popen([sys.executable,
@@ -56,15 +58,15 @@ class TestKeywordGeneration(unittest.TestCase):
                      'test only works from source build directory')
     def test_real_grammar_and_keyword_file(self):
         self._copy_file_without_generated_keywords(KEYWORD_FILE, TEST_PY_FILE)
-        self.addCleanup(lambda: support.unlink(TEST_PY_FILE))
+        self.addCleanup(support.unlink, TEST_PY_FILE)
         self.assertFalse(filecmp.cmp(KEYWORD_FILE, TEST_PY_FILE))
-        self.assertEqual(0, self._generate_keywords(GRAMMAR_FILE,
-                                                    TEST_PY_FILE)[0])
+        self.assertEqual((0, b''), self._generate_keywords(GRAMMAR_FILE,
+                                                           TEST_PY_FILE))
         self.assertTrue(filecmp.cmp(KEYWORD_FILE, TEST_PY_FILE))
 
     def test_grammar(self):
         self._copy_file_without_generated_keywords(KEYWORD_FILE, TEST_PY_FILE)
-        self.addCleanup(lambda: support.unlink(TEST_PY_FILE))
+        self.addCleanup(support.unlink, TEST_PY_FILE)
         with open(GRAMMAR_TEST_FILE, 'w') as fp:
             # Some of these are probably implementation accidents.
             fp.writelines(textwrap.dedent("""\
@@ -86,40 +88,40 @@ class TestKeywordGeneration(unittest.TestCase):
                     {1, 'no good'}
                     {283, 0},
                     {1,  "too many spaces"}"""))
-        self.addCleanup(lambda: support.unlink(GRAMMAR_TEST_FILE))
+        self.addCleanup(support.unlink, GRAMMAR_TEST_FILE)
         self._generate_keywords(GRAMMAR_TEST_FILE, TEST_PY_FILE)
         expected = [
-            "        'This one is tab indented',\n",
-            "        'also legal',\n",
-            "        'continue',\n",
-            "        'crazy but legal',\n",
-            "        'jello',\n",
-            "        'lemon',\n",
-            "        'tomato',\n",
-            "        'turnip',\n",
-            "        'wigii',\n",
+            "        'This one is tab indented',",
+            "        'also legal',",
+            "        'continue',",
+            "        'crazy but legal',",
+            "        'jello',",
+            "        'lemon',",
+            "        'tomato',",
+            "        'turnip',",
+            "        'wigii',",
             ]
         with open(TEST_PY_FILE) as fp:
-            lines = fp.readlines()
-        start = lines.index("#--start keywords--\n") + 1
-        end = lines.index("#--end keywords--\n")
+            lines = fp.read().splitlines()
+        start = lines.index("#--start keywords--") + 1
+        end = lines.index("#--end keywords--")
         actual = lines[start:end]
         self.assertEqual(actual, expected)
 
     def test_empty_grammar_results_in_no_keywords(self):
         self._copy_file_without_generated_keywords(KEYWORD_FILE,
                                                    PY_FILE_WITHOUT_KEYWORDS)
-        self.addCleanup(lambda: support.unlink(PY_FILE_WITHOUT_KEYWORDS))
+        self.addCleanup(support.unlink, PY_FILE_WITHOUT_KEYWORDS)
         shutil.copyfile(KEYWORD_FILE, TEST_PY_FILE)
-        self.addCleanup(lambda: support.unlink(TEST_PY_FILE))
-        self.assertEqual(0, self._generate_keywords(os.devnull,
-                                                    TEST_PY_FILE)[0])
+        self.addCleanup(support.unlink, TEST_PY_FILE)
+        self.assertEqual((0, b''), self._generate_keywords(os.devnull,
+                                                           TEST_PY_FILE))
         self.assertTrue(filecmp.cmp(TEST_PY_FILE, PY_FILE_WITHOUT_KEYWORDS))
 
     def test_keywords_py_without_markers_produces_error(self):
         rc, stderr = self._generate_keywords(os.devnull, os.devnull)
         self.assertNotEqual(rc, 0)
-        self.assertEqual(stderr, b'target does not contain format markers\n')
+        self.assertRegex(stderr, b'does not contain format markers')
 
     def test_missing_grammar_file_produces_error(self):
         rc, stderr = self._generate_keywords(NONEXISTENT_FILE, KEYWORD_FILE)

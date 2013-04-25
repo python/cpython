@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17830: When keyword.py is used to update a keyword file, it now
+  preserves the line endings of the original file.
+
 - Issue #17272: Making the urllib.request's Request.full_url a descriptor.
   Fixes bugs with assignment to full_url. Patch by Demian Brecht.
 

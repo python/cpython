@@ -60,6 +60,12 @@ def main():
     if len(args) > 1: optfile = args[1]
     else: optfile = "Lib/keyword.py"
 
+    # load the output skeleton from the target, taking care to preserve its
+    # newline convention.
+    with open(optfile, newline='') as fp:
+        format = fp.readlines()
+    nl = format[0][len(format[0].strip()):] if format else '\n'
+
     # scan the source file for keywords
     with open(iptfile) as fp:
         strprog = re.compile('"([^"]+)"')
@@ -68,25 +74,21 @@ def main():
             if '{1, "' in line:
                 match = strprog.search(line)
                 if match:
-                    lines.append("        '" + match.group(1) + "',\n")
+                    lines.append("        '" + match.group(1) + "'," + nl)
     lines.sort()
 
-    # load the output skeleton from the target
-    with open(optfile) as fp:
-        format = fp.readlines()
-
-    # insert the lines of keywords
+    # insert the lines of keywords into the skeleton
     try:
-        start = format.index("#--start keywords--\n") + 1
-        end = format.index("#--end keywords--\n")
+        start = format.index("#--start keywords--" + nl) + 1
+        end = format.index("#--end keywords--" + nl)
         format[start:end] = lines
     except ValueError:
         sys.stderr.write("target does not contain format markers\n")
         sys.exit(1)
 
     # write the output file
-    with open(optfile, 'w') as fp:
-        fp.write(''.join(format))
+    with open(optfile, 'w', newline='') as fp:
+        fp.writelines(format)
 
 if __name__ == "__main__":
     main()
