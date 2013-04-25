@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17272: Making the urllib.request's Request.full_url a descriptor.
+  Fixes bugs with assignment to full_url. Patch by Demian Brecht.
+
 - Issue #17353: Plistlib emitted empty data tags with deeply nested datastructures
 
 - Issue #11714: Use 'with' statements to assure a Semaphore releases a

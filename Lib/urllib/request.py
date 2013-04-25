@@ -259,9 +259,7 @@ class Request:
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False,
                  method=None):
-        # unwrap('<URL:type://host/path>') --> 'type://host/path'
-        self.full_url = unwrap(url)
-        self.full_url, self.fragment = splittag(self.full_url)
+        self.full_url = url
         self.headers = {}
         self.unredirected_hdrs = {}
         self._data = None
@@ -274,7 +272,23 @@ class Request:
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
         self.method = method
+
+    @property
+    def full_url(self):
+        return self._full_url
+
+    @full_url.setter
+    def full_url(self, url):
+        # unwrap('<URL:type://host/path>') --> 'type://host/path'
+        self._full_url = unwrap(url)
+        self._full_url, self.fragment = splittag(self._full_url)
         self._parse()
+
+    @full_url.deleter
+    def full_url(self):
+        self._full_url = None
+        self.fragment = None
+        self.selector = ''
 
     @property
     def data(self):
@@ -295,7 +309,7 @@ class Request:
         self.data = None
 
     def _parse(self):
-        self.type, rest = splittype(self.full_url)
+        self.type, rest = splittype(self._full_url)
         if self.type is None:
             raise ValueError("unknown url type: %r" % self.full_url)
         self.host, self.selector = splithost(rest)
@@ -313,9 +327,8 @@ class Request:
 
     def get_full_url(self):
         if self.fragment:
-            return '%s#%s' % (self.full_url, self.fragment)
-        else:
-            return self.full_url
+            return '{}#{}'.format(self.full_url, self.fragment)
+        return self.full_url
 
     def set_proxy(self, host, type):
         if self.type == 'https' and not self._tunnel_host:
