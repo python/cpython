@@ -1,4 +1,6 @@
+from collections import abc
 import array
+import operator
 import unittest
 import struct
 import sys
@@ -593,8 +595,78 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0s', 1)
         self.check_sizeof('0c', 0)
 
+
+class UnpackIteratorTest(unittest.TestCase):
+    """
+    Tests for iterative unpacking (struct.Struct.iter_unpack).
+    """
+
+    def test_construct(self):
+        def _check_iterator(it):
+            self.assertIsInstance(it, abc.Iterator)
+            self.assertIsInstance(it, abc.Iterable)
+        s = struct.Struct('>ibcp')
+        it = s.iter_unpack(b"")
+        _check_iterator(it)
+        it = s.iter_unpack(b"1234567")
+        _check_iterator(it)
+        # Wrong bytes length
+        with self.assertRaises(struct.error):
+            s.iter_unpack(b"123456")
+        with self.assertRaises(struct.error):
+            s.iter_unpack(b"12345678")
+        # Zero-length struct
+        s = struct.Struct('>')
+        with self.assertRaises(struct.error):
+            s.iter_unpack(b"")
+        with self.assertRaises(struct.error):
+            s.iter_unpack(b"12")
+
+    def test_iterate(self):
+        s = struct.Struct('>IB')
+        b = bytes(range(1, 16))
+        it = s.iter_unpack(b)
+        self.assertEqual(next(it), (0x01020304, 5))
+        self.assertEqual(next(it), (0x06070809, 10))
+        self.assertEqual(next(it), (0x0b0c0d0e, 15))
+        self.assertRaises(StopIteration, next, it)
+        self.assertRaises(StopIteration, next, it)
+
+    def test_arbitrary_buffer(self):
+        s = struct.Struct('>IB')
+        b = bytes(range(1, 11))
+        it = s.iter_unpack(memoryview(b))
+        self.assertEqual(next(it), (0x01020304, 5))
+        self.assertEqual(next(it), (0x06070809, 10))
+        self.assertRaises(StopIteration, next, it)
+        self.assertRaises(StopIteration, next, it)
+
+    def test_length_hint(self):
+        lh = operator.length_hint
+        s = struct.Struct('>IB')
+        b = bytes(range(1, 16))
+        it = s.iter_unpack(b)
+        self.assertEqual(lh(it), 3)
+        next(it)
+        self.assertEqual(lh(it), 2)
+        next(it)
+        self.assertEqual(lh(it), 1)
+        next(it)
+        self.assertEqual(lh(it), 0)
+        self.assertRaises(StopIteration, next, it)
+        self.assertEqual(lh(it), 0)
+
+    def test_module_func(self):
+        # Sanity check for the global struct.iter_unpack()
+        it = struct.iter_unpack('>IB', bytes(range(1, 11)))
+        self.assertEqual(next(it), (0x01020304, 5))
+        self.assertEqual(next(it), (0x06070809, 10))
+        self.assertRaises(StopIteration, next, it)
+        self.assertRaises(StopIteration, next, it)
+
+
 def test_main():
-    support.run_unittest(StructTest)
+    support.run_unittest(__name__)
 
 if __name__ == '__main__':
     test_main()

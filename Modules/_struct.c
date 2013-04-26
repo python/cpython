@@ -1247,6 +1247,9 @@ align(Py_ssize_t size, char c, const formatdef *e)
     return size;
 }
 
+/*
+ * Struct object implementation.
+ */
 
 /* calculate the size of a format string */
 
@@ -1556,6 +1559,142 @@ s_unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 
+/* Unpack iterator type */
+
+typedef struct {
+    PyObject_HEAD
+    PyStructObject *so;
+    Py_buffer buf;
+    Py_ssize_t index;
+} unpackiterobject;
+
+static void
+unpackiter_dealloc(unpackiterobject *self)
+{
+    Py_XDECREF(self->so);
+    PyBuffer_Release(&self->buf);
+    PyObject_GC_Del(self);
+}
+
+static int
+unpackiter_traverse(unpackiterobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->so);
+    Py_VISIT(self->buf.obj);
+    return 0;
+}
+
+static PyObject *
+unpackiter_len(unpackiterobject *self)
+{
+    Py_ssize_t len;
+    if (self->so == NULL)
+        len = 0;
+    else
+        len = (self->buf.len - self->index) / self->so->s_size;
+    return PyLong_FromSsize_t(len);
+}
+
+static PyMethodDef unpackiter_methods[] = {
+    {"__length_hint__", (PyCFunction) unpackiter_len, METH_NOARGS, NULL},
+    {NULL,              NULL}           /* sentinel */
+};
+
+static PyObject *
+unpackiter_iternext(unpackiterobject *self)
+{
+    PyObject *result;
+    if (self->so == NULL)
+        return NULL;
+    if (self->index >= self->buf.len) {
+        /* Iterator exhausted */
+        Py_CLEAR(self->so);
+        PyBuffer_Release(&self->buf);
+        return NULL;
+    }
+    assert(self->index + self->so->s_size <= self->buf.len);
+    result = s_unpack_internal(self->so,
+                               (char*) self->buf.buf + self->index);
+    self->index += self->so->s_size;
+    return result;
+}
+
+PyTypeObject unpackiter_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "unpack_iterator",                          /* tp_name */
+    sizeof(unpackiterobject),                   /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    (destructor)unpackiter_dealloc,             /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_reserved */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)unpackiter_traverse,          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)unpackiter_iternext,          /* tp_iternext */
+    unpackiter_methods                          /* tp_methods */
+};
+
+PyDoc_STRVAR(s_iter_unpack__doc__,
+"S.iter_unpack(buffer) -> iterator(v1, v2, ...)\n\
+\n\
+Return an iterator yielding tuples unpacked from the given bytes\n\
+source, like a repeated invocation of unpack_from().  Requires\n\
+that the bytes length be a multiple of the struct size.");
+
+static PyObject *
+s_iter_unpack(PyObject *_so, PyObject *input)
+{
+    PyStructObject *so = (PyStructObject *) _so;
+    unpackiterobject *self;
+
+    assert(PyStruct_Check(_so));
+    assert(so->s_codes != NULL);
+
+    if (so->s_size == 0) {
+        PyErr_Format(StructError,
+                     "cannot iteratively unpack with a struct of length 0");
+        return NULL;
+    }
+
+    self = (unpackiterobject *) PyType_GenericAlloc(&unpackiter_type, 0);
+    if (self == NULL)
+        return NULL;
+
+    if (PyObject_GetBuffer(input, &self->buf, PyBUF_SIMPLE) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+    if (self->buf.len % so->s_size != 0) {
+        PyErr_Format(StructError,
+                     "iterative unpacking requires a bytes length "
+                     "multiple of %zd",
+                     so->s_size);
+        Py_DECREF(self);
+        return NULL;
+    }
+    Py_INCREF(so);
+    self->so = so;
+    self->index = 0;
+    return (PyObject *) self;
+}
+
+
 /*
  * Guts of the pack function.
  *
@@ -1776,6 +1915,7 @@ s_sizeof(PyStructObject *self, void *unused)
 /* List of functions */
 
 static struct PyMethodDef s_methods[] = {
+    {"iter_unpack",     s_iter_unpack,  METH_O, s_iter_unpack__doc__},
     {"pack",            s_pack,         METH_VARARGS, s_pack__doc__},
     {"pack_into",       s_pack_into,    METH_VARARGS, s_pack_into__doc__},
     {"unpack",          s_unpack,       METH_O, s_unpack__doc__},
@@ -2025,9 +2165,34 @@ unpack_from(PyObject *self, PyObject *args, PyObject *kwds)
     return result;
 }
 
+PyDoc_STRVAR(iter_unpack_doc,
+"iter_unpack(fmt, buffer) -> iterator(v1, v2, ...)\n\
+\n\
+Return an iterator yielding tuples unpacked from the given bytes\n\
+source according to the format string, like a repeated invocation of\n\
+unpack_from().  Requires that the bytes length be a multiple of the\n\
+format struct size.");
+
+static PyObject *
+iter_unpack(PyObject *self, PyObject *args)
+{
+    PyObject *s_object, *fmt, *input, *result;
+
+    if (!PyArg_ParseTuple(args, "OO:iter_unpack", &fmt, &input))
+        return NULL;
+
+    s_object = cache_struct(fmt);
+    if (s_object == NULL)
+        return NULL;
+    result = s_iter_unpack(s_object, input);
+    Py_DECREF(s_object);
+    return result;
+}
+
 static struct PyMethodDef module_functions[] = {
     {"_clearcache",     (PyCFunction)clearcache,        METH_NOARGS,    clearcache_doc},
     {"calcsize",        calcsize,       METH_O, calcsize_doc},
+    {"iter_unpack",     iter_unpack,    METH_VARARGS,   iter_unpack_doc},
     {"pack",            pack,           METH_VARARGS,   pack_doc},
     {"pack_into",       pack_into,      METH_VARARGS,   pack_into_doc},
     {"unpack",          unpack, METH_VARARGS,   unpack_doc},
