@@ -66,6 +66,19 @@ The module defines the following exception and functions:
    format (``len(buffer[offset:])`` must be at least ``calcsize(fmt)``).
 
 
+.. function:: iter_unpack(fmt, buffer)
+
+   Iteratively unpack from the buffer *buffer* according to the format
+   string *fmt*.  This function returns an iterator which will read
+   equally-sized chunks from the buffer until all its contents have been
+   consumed.  The buffer's size in bytes must be a multiple of the amount
+   of data required by the format, as reflected by :func:`calcsize`.
+
+   Each iteration yields a tuple as specified by the format string.
+
+   .. versionadded:: 3.4
+
+
 .. function:: calcsize(fmt)
 
    Return the size of the struct (and hence of the bytes object produced by
@@ -387,6 +400,13 @@ The :mod:`struct` module also defines the following type:
       Identical to the :func:`unpack_from` function, using the compiled format.
       (``len(buffer[offset:])`` must be at least :attr:`self.size`).
 
+
+   .. method:: iter_unpack(buffer)
+
+      Identical to the :func:`iter_unpack` function, using the compiled format.
+      (``len(buffer)`` must be a multiple of :attr:`self.size`).
+
+      .. versionadded:: 3.4
 
    .. attribute:: format
 
