@@ -904,6 +904,30 @@ class HandlerTests(unittest.TestCase):
             p_ds_req = h.do_request_(ds_req)
             self.assertEqual(p_ds_req.unredirected_hdrs["Host"],"example.com")
 
+    def test_full_url_setter(self):
+        # Checks to ensure that components are set correctly after setting the
+        # full_url of a Request object
+
+        urls = [
+            'http://example.com?foo=bar#baz',
+            'http://example.com?foo=bar&spam=eggs#bash',
+            'http://example.com',
+        ]
+
+        # testing a reusable request instance, but the url parameter is
+        # required, so just use a dummy one to instantiate
+        r = Request('http://example.com')
+        for url in urls:
+            r.full_url = url
+            self.assertEqual(r.get_full_url(), url)
+
+    def test_full_url_deleter(self):
+        r = Request('http://www.example.com')
+        del r.full_url
+        self.assertIsNone(r.full_url)
+        self.assertIsNone(r.fragment)
+        self.assertEqual(r.selector, '')
+
     def test_fixpath_in_weirdurls(self):
         # Issue4493: urllib2 to supply '/' when to urls where path does not
         # start with'/'
