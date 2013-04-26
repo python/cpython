@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17804: New function ``struct.iter_unpack`` allows for streaming
+  struct unpacking.
+
 - Issue #17830: When keyword.py is used to update a keyword file, it now
   preserves the line endings of the original file.
 
