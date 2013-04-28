@@ -19,6 +19,12 @@ Library
 - Issue #15535: Fix namedtuple pickles which were picking up the OrderedDict
   instead of just the underlying tuple.
 
+Build
+-----
+
+- Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
+  such as was shipped with Centos 5 and Mac OS X 10.4.
+
 Tests
 -----
 
