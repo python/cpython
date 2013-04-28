@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17358: Modules loaded by imp.load_source() and load_compiled() (and by
+  extention load_module()) now have a better chance of working when reloaded.
+
 - Issue #17804: New function ``struct.iter_unpack`` allows for streaming
   struct unpacking.
 

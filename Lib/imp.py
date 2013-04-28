@@ -111,7 +111,12 @@ def load_source(name, pathname, file=None):
            'importlib.machinery.SourceFileLoader(name, pathname).load_module()'
            ' instead')
     warnings.warn(msg, DeprecationWarning, 2)
-    return _LoadSourceCompatibility(name, pathname, file).load_module(name)
+    _LoadSourceCompatibility(name, pathname, file).load_module(name)
+    module = sys.modules[name]
+    # To allow reloading to potentially work, use a non-hacked loader which
+    # won't rely on a now-closed file object.
+    module.__loader__ = _bootstrap.SourceFileLoader(name, pathname)
+    return module
 
 
 class _LoadCompiledCompatibility(_HackedGetData,
@@ -125,7 +130,12 @@ def load_compiled(name, pathname, file=None):
            'importlib.machinery.SourcelessFileLoader(name, pathname).'
            'load_module() instead ')
     warnings.warn(msg, DeprecationWarning, 2)
-    return _LoadCompiledCompatibility(name, pathname, file).load_module(name)
+    _LoadCompiledCompatibility(name, pathname, file).load_module(name)
+    module = sys.modules[name]
+    # To allow reloading to potentially work, use a non-hacked loader which
+    # won't rely on a now-closed file object.
+    module.__loader__ = _bootstrap.SourcelessFileLoader(name, pathname)
+    return module
 
 
 def load_package(name, path):
