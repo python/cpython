@@ -45,7 +45,7 @@ class LegacyBase64TestCase(unittest.TestCase):
 
     def test_encode(self):
         eq = self.assertEqual
-        from io import BytesIO
+        from io import BytesIO, StringIO
         infp = BytesIO(b'abcdefghijklmnopqrstuvwxyz'
                        b'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                        b'0123456789!@#0^&*();:<>,. []{}')
@@ -55,13 +55,21 @@ class LegacyBase64TestCase(unittest.TestCase):
            b'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNE'
            b'RUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNT'
            b'Y3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n')
+        # Non-binary files
+        self.assertRaises(TypeError, base64.encode, StringIO('abc'), BytesIO())
+        self.assertRaises(TypeError, base64.encode, BytesIO(b'abc'), StringIO())
+        self.assertRaises(TypeError, base64.encode, StringIO('abc'), StringIO())
 
     def test_decode(self):
-        from io import BytesIO
+        from io import BytesIO, StringIO
         infp = BytesIO(b'd3d3LnB5dGhvbi5vcmc=')
         outfp = BytesIO()
         base64.decode(infp, outfp)
         self.assertEqual(outfp.getvalue(), b'www.python.org')
+        # Non-binary files
+        self.assertRaises(TypeError, base64.encode, StringIO('YWJj\n'), BytesIO())
+        self.assertRaises(TypeError, base64.encode, BytesIO(b'YWJj\n'), StringIO())
+        self.assertRaises(TypeError, base64.encode, StringIO('YWJj\n'), StringIO())
 
 
 class BaseXYTestCase(unittest.TestCase):
