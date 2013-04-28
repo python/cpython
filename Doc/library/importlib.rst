@@ -103,9 +103,9 @@ Functions
 
    Invalidate the internal caches of finders stored at
    :data:`sys.meta_path`. If a finder implements ``invalidate_caches()`` then it
-   will be called to perform the invalidation.  This function may be needed if
-   some modules are installed while your program is running and you expect the
-   program to notice the changes.
+   will be called to perform the invalidation.  This function should be called
+   if any modules are created/installed while your program is running to
+   guarantee all finders will notice the new module's existence.
 
    .. versionadded:: 3.3
 
@@ -182,7 +182,7 @@ ABC hierarchy::
 
    .. versionadded:: 3.3
 
-   .. method:: find_loader(fullname):
+   .. method:: find_loader(fullname)
 
       An abstract method for finding a :term:`loader` for the specified
       module.  Returns a 2-tuple of ``(loader, portion)`` where ``portion``
@@ -194,7 +194,7 @@ ABC hierarchy::
       the empty list then no loader or location for a namespace package were
       found (i.e. failure to find anything for the module).
 
-   .. method:: find_module(fullname):
+   .. method:: find_module(fullname)
 
       A concrete implementation of :meth:`Finder.find_module` which is
       equivalent to ``self.find_loader(fullname)[0]``.
