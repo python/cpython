@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17843: Removed test data file that was triggering false-positive virus
+  warnings with certain antivirus software.
+
 - Issue #17353: Plistlib emitted empty data tags with deeply nested datastructures
 
 - Issue #11714: Use 'with' statements to assure a Semaphore releases a
