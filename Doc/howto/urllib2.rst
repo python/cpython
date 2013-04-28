@@ -507,7 +507,7 @@ than the URL you pass to .add_password() will also match. ::
     -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`http_proxy`
     environment variable is set), ``UnknownHandler``, ``HTTPHandler``,
     ``HTTPDefaultErrorHandler``, ``HTTPRedirectHandler``, ``FTPHandler``,
-    ``FileHandler``, ``DataHandler``, ``HTTPErrorProcessor``.
+    ``FileHandler``, ``HTTPErrorProcessor``.
 
 ``top_level_url`` is in fact *either* a full URL (including the 'http:' scheme
 component and the hostname and optionally the port number)
