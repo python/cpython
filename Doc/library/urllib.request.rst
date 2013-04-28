@@ -129,10 +129,9 @@ The :mod:`urllib.request` module defines the following functions:
    the constructor without any parameters).  Instances of the following classes
    will be in front of the *handler*\s, unless the *handler*\s contain them,
    instances of them or subclasses of them: :class:`ProxyHandler` (if proxy
-   settings are detected),
-   :class:`UnknownHandler`, :class:`HTTPHandler`, :class:`HTTPDefaultErrorHandler`,
-   :class:`HTTPRedirectHandler`, :class:`FTPHandler`, :class:`FileHandler`,
-   :class:`HTTPErrorProcessor`.
+   settings are detected), :class:`UnknownHandler`, :class:`HTTPHandler`,
+   :class:`HTTPDefaultErrorHandler`, :class:`HTTPRedirectHandler`,
+   :class:`FTPHandler`, :class:`FileHandler`, :class:`HTTPErrorProcessor`.
 
    If the Python installation has SSL support (i.e., if the :mod:`ssl` module
    can be imported), :class:`HTTPSHandler` will also be added.
@@ -257,12 +256,12 @@ The following classes are provided:
 .. class:: ProxyHandler(proxies=None)
 
    Cause requests to go through a proxy. If *proxies* is given, it must be a
-   dictionary mapping protocol names to URLs of proxies. The default is to read the
-   list of proxies from the environment variables :envvar:`<protocol>_proxy`.
-   If no proxy environment variables are set, then in a Windows environment proxy
-   settings are obtained from the registry's Internet Settings section, and in a
-   Mac OS X environment proxy information is retrieved from the OS X System
-   Configuration Framework.
+   dictionary mapping protocol names to URLs of proxies. The default is to read
+   the list of proxies from the environment variables
+   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, then
+   in a Windows environment proxy settings are obtained from the registry's
+   Internet Settings section, and in a Mac OS X environment proxy information
+   is retrieved from the OS X System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
 
