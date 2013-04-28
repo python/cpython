@@ -12,6 +12,9 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
+  such as was shipped with Centos 5 and Mac OS X 10.4.
+
 - Issue #17413: sys.settrace callbacks were being passed a string instead of an
   exception instance for the 'value' element of the arg tuple if the exception
   originated from C code; now an exception instance is always provided.
