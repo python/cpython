@@ -489,9 +489,10 @@ than the URL you pass to .add_password() will also match. ::
 
     In the above example we only supplied our ``HTTPBasicAuthHandler`` to
     ``build_opener``. By default openers have the handlers for normal situations
-    -- ``ProxyHandler``, ``UnknownHandler``, ``HTTPHandler``,
+    -- ``ProxyHandler`` (if a proxy setting such as an :envvar:`http_proxy`
+    environment variable is set), ``UnknownHandler``, ``HTTPHandler``,
     ``HTTPDefaultErrorHandler``, ``HTTPRedirectHandler``, ``FTPHandler``,
-    ``FileHandler``, ``HTTPErrorProcessor``.
+    ``FileHandler``, ``DataHandler``, ``HTTPErrorProcessor``.
 
 ``top_level_url`` is in fact *either* a full URL (including the 'http:' scheme
 component and the hostname and optionally the port number)
@@ -506,7 +507,8 @@ Proxies
 =======
 
 **urllib2** will auto-detect your proxy settings and use those. This is through
-the ``ProxyHandler`` which is part of the normal handler chain. Normally that's
+the ``ProxyHandler``, which is part of the normal handler chain when a proxy
+setting is detected.  Normally that's
 a good thing, but there are occasions when it may not be helpful [#]_. One way
 to do this is to setup our own ``ProxyHandler``, with no proxies defined. This
 is done using similar steps to setting up a `Basic Authentication`_ handler : ::
