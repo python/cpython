@@ -111,7 +111,7 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 #endif
 
 PyObject *
-_pysqlite_long_from_int64(sqlite3_int64 value)
+_pysqlite_long_from_int64(sqlite_int64 value)
 {
 #ifdef HAVE_LONG_LONG
 # if SIZEOF_LONG_LONG < 8
@@ -135,7 +135,7 @@ _pysqlite_long_from_int64(sqlite3_int64 value)
     return PyInt_FromLong(value);
 }
 
-sqlite3_int64
+sqlite_int64
 _pysqlite_long_as_int64(PyObject * py_val)
 {
     int overflow;
@@ -158,8 +158,8 @@ _pysqlite_long_as_int64(PyObject * py_val)
 #endif
             return value;
     }
-    else if (sizeof(value) < sizeof(sqlite3_int64)) {
-        sqlite3_int64 int64val;
+    else if (sizeof(value) < sizeof(sqlite_int64)) {
+        sqlite_int64 int64val;
         if (_PyLong_AsByteArray((PyLongObject *)py_val,
                                 (unsigned char *)&int64val, sizeof(int64val),
                                 IS_LITTLE_ENDIAN, 1 /* signed */) >= 0) {

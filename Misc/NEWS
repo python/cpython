@@ -17,6 +17,9 @@ Build
 Core and Builtins
 -----------------
 
+- Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
+  such as was shipped with Centos 5 and Mac OS X 10.4.
+
 - Issue #17703: Fix a regression where an illegal use of Py_DECREF() after
   interpreter finalization can cause a crash.
 
