@@ -508,10 +508,10 @@ Proxies
 
 **urllib2** will auto-detect your proxy settings and use those. This is through
 the ``ProxyHandler``, which is part of the normal handler chain when a proxy
-setting is detected.  Normally that's
-a good thing, but there are occasions when it may not be helpful [#]_. One way
-to do this is to setup our own ``ProxyHandler``, with no proxies defined. This
-is done using similar steps to setting up a `Basic Authentication`_ handler : ::
+setting is detected.  Normally that's a good thing, but there are occasions
+when it may not be helpful [#]_. One way to do this is to setup our own
+``ProxyHandler``, with no proxies defined. This is done using similar steps to
+setting up a `Basic Authentication`_ handler : ::
 
     >>> proxy_support = urllib2.ProxyHandler({})
     >>> opener = urllib2.build_opener(proxy_support)
