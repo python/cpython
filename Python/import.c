@@ -1389,7 +1389,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     if (builtins_import == NULL) {
         builtins_import = _PyDict_GetItemId(interp->builtins, &PyId___import__);
         if (builtins_import == NULL) {
-            Py_FatalError("__import__ missing");
+            PyErr_SetString(PyExc_ImportError, "__import__ not found");
+            goto error_with_unlock;
         }
     }
     Py_INCREF(builtins_import);

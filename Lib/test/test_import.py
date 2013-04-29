@@ -324,6 +324,13 @@ class ImportTests(unittest.TestCase):
         except ImportError:
             self.fail("fromlist must allow bogus names")
 
+    @cpython_only
+    def test_delete_builtins_import(self):
+        args = ["-c", "del __builtins__.__import__; import os"]
+        popen = script_helper.spawn_python(*args)
+        stdout, stderr = popen.communicate()
+        self.assertIn(b"ImportError", stdout)
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
