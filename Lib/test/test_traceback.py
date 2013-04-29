@@ -160,11 +160,26 @@ class TracebackFormatTests(unittest.TestCase):
             file_ = StringIO()
             traceback_print(tb, file_)
             python_fmt  = file_.getvalue()
+            # Call all _tb and _exc functions
+            with captured_output("stderr") as tbstderr:
+                traceback.print_tb(tb)
+            tbfile = StringIO()
+            traceback.print_tb(tb, file=tbfile)
+            with captured_output("stderr") as excstderr:
+                traceback.print_exc()
+            excfmt = traceback.format_exc()
+            excfile = StringIO()
+            traceback.print_exc(file=excfile)
         else:
             raise Error("unable to create test traceback string")
 
         # Make sure that Python and the traceback module format the same thing
         self.assertEqual(traceback_fmt, python_fmt)
+        # Now verify the _tb func output
+        self.assertEqual(tbstderr.getvalue(), tbfile.getvalue())
+        # Now verify the _exc func output
+        self.assertEqual(excstderr.getvalue(), excfile.getvalue())
+        self.assertEqual(excfmt, excfile.getvalue())
 
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
@@ -173,6 +188,19 @@ class TracebackFormatTests(unittest.TestCase):
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))
         self.assertTrue(source_line.startswith('    raise'))
+
+    def test_stack_format(self):
+        # Verify _stack functions. Note we have to use _getframe(1) to
+        # compare them without this frame appearing in the output
+        with captured_output("stderr") as ststderr:
+            traceback.print_stack(sys._getframe(1))
+        stfile = StringIO()
+        traceback.print_stack(sys._getframe(1), file=stfile)
+        self.assertEqual(ststderr.getvalue(), stfile.getvalue())
+
+        stfmt = traceback.format_stack(sys._getframe(1))
+
+        self.assertEqual(ststderr.getvalue(), "".join(stfmt))
 
 
 cause_message = (
