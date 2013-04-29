@@ -1237,16 +1237,15 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
     _Py_IDENTIFIER(encoding);
 
     if (fp == stdin) {
-        /* Fetch encoding from sys.stdin */
+        /* Fetch encoding from sys.stdin if possible. */
         v = PySys_GetObject("stdin");
-        if (v == NULL || v == Py_None)
-            return -1;
-        oenc = _PyObject_GetAttrId(v, &PyId_encoding);
-        if (!oenc)
-            return -1;
-        enc = _PyUnicode_AsString(oenc);
-        if (enc == NULL)
-            return -1;
+        if (v && v != Py_None) {
+            oenc = _PyObject_GetAttrId(v, &PyId_encoding);
+            if (oenc)
+                enc = _PyUnicode_AsString(oenc);
+            if (!enc)
+                PyErr_Clear();
+        }
     }
     v = PySys_GetObject("ps1");
     if (v != NULL) {

@@ -12,6 +12,9 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17863: In the interactive console, don't loop forever if the encoding
+  can't be fetched from stdin.
+
 - Issue #17867: Raise an ImportError if __import__ is not found in __builtins__.
 
 - Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
