@@ -1075,6 +1075,8 @@ Test cases
       sorted(actual))`` but it works with sequences of unhashable objects as
       well.
 
+      In Python 3, this method is named ``assertCountEqual``.
+
       .. versionadded:: 2.7
 
 
