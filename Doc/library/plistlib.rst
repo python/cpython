@@ -47,8 +47,8 @@ This module defines the following functions:
 
 .. function:: readPlist(pathOrFile)
 
-   Read a plist file. *pathOrFile* may either be a file name or a (readable)
-   file object.  Return the unpacked root object (which usually is a
+   Read a plist file. *pathOrFile* may either be a file name or a (readable and
+   binary) file object.  Return the unpacked root object (which usually is a
    dictionary).
 
    The XML data is parsed using the Expat parser from :mod:`xml.parsers.expat`
@@ -59,7 +59,7 @@ This module defines the following functions:
 .. function:: writePlist(rootObject, pathOrFile)
 
     Write *rootObject* to a plist file. *pathOrFile* may either be a file name
-    or a (writable) file object.
+    or a (writable and binary) file object.
 
     A :exc:`TypeError` will be raised if the object is of an unsupported type or
     a container that contains objects of unsupported types.
