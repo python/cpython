@@ -8,6 +8,7 @@
 /* { dg-excess-errors "" { target x86_64-*-mingw* x86_64-*-cygwin* } } */
 /* { dg-do run { xfail strongarm*-*-* xscale*-*-* } } */
 /* { dg-options -mlong-double-128 { target powerpc64*-*-linux* } } */
+/* { dg-options -Wformat=0 { target moxie*-*-elf } } */
 /* { dg-output "" { xfail x86_64-*-mingw* x86_64-*-cygwin* } } */
 
 #include "ffitest.h"
@@ -295,7 +296,7 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	CHECK(ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 50, &ret_struct_type, argTypes) == FFI_OK);
 
 	ffi_call(&cif, FFI_FN(test_large_fn), &retVal, argValues);
-	// { dg-output "1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
+	/* { dg-output "1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
 	printf("res: %" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
 		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
 		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
@@ -308,7 +309,7 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	       retVal.ee, retVal.ff, retVal.gg, retVal.hh, retVal.ii, (unsigned long)retVal.jj,
 		retVal.kk, retVal.ll, retVal.mm, retVal.nn, retVal.oo, retVal.pp,
 	       retVal.qq, retVal.rr, retVal.ss, retVal.tt, retVal.uu, (unsigned long)retVal.vv, retVal.ww, retVal.xx);
-	// { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
+	/* { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
 
 	CHECK(ffi_prep_closure_loc(pcl, &cif, cls_large_fn, NULL, code) == FFI_OK);
 
@@ -323,7 +324,7 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 		ui8, si8, ui16, si16, ui32, si32, ui64, si64, f, d, ld, p,
 		ui8, si8, ui16, si16, ui32, si32, ui64, si64, f, d, ld, p,
 		ui8, si8);
-	// { dg-output "\n1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
+	/* { dg-output "\n1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2 3 4 5 6 7 8 9 10 11 0x12345678 1 2: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
 	printf("res: %" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
 		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
 		"%" PRIu8 " %" PRId8 " %hu %hd %u %d %" PRIu64 " %" PRId64 " %.0f %.0f %.0Lf %#lx "
@@ -336,7 +337,7 @@ main(int argc __UNUSED__, const char** argv __UNUSED__)
 	       retVal.ee, retVal.ff, retVal.gg, retVal.hh, retVal.ii, (unsigned long)retVal.jj,
 		retVal.kk, retVal.ll, retVal.mm, retVal.nn, retVal.oo, retVal.pp,
 	       retVal.qq, retVal.rr, retVal.ss, retVal.tt, retVal.uu, (unsigned long)retVal.vv, retVal.ww, retVal.xx);
-	// { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" }
+	/* { dg-output "\nres: 2 3 4 5 6 7 8 9 10 11 12 0x12345679 3 4 5 6 7 8 9 10 11 12 13 0x1234567a 4 5 6 7 8 9 10 11 12 13 14 0x1234567b 5 6 7 8 9 10 11 12 13 14 15 0x1234567c 6 7" } */
 
     return 0;
 }
