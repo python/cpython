@@ -722,6 +722,13 @@ the more significant byte last.
    Pushes a reference to the object the cell contains on the stack.
 
 
+.. opcode:: LOAD_CLASSDEREF (i)
+
+   Much like :opcode:`LOAD_DEREF` but first checks the locals dictionary before
+   consulting the cell.  This is used for loading free variables in class
+   bodies.
+
+
 .. opcode:: STORE_DEREF (i)
 
    Stores TOS into the cell contained in slot *i* of the cell and free variable

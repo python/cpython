@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17853: Ensure locals of a class that shadow free variables always win
+  over the closures.
+
 - Issue #17863: In the interactive console, don't loop forever if the encoding
   can't be fetched from stdin.
 
