@@ -457,6 +457,11 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
 #define LACKS_ERRNO_H
 #define MALLOC_FAILURE_ACTION
 #define MMAP_CLEARS 0 /* WINCE and some others apparently don't clear */
+#elif !defined _GNU_SOURCE
+/* mremap() on Linux requires this via sys/mman.h
+ * See roundup issue 10309
+ */
+#define _GNU_SOURCE 1
 #endif  /* WIN32 */
 
 #ifdef __OS2__
