@@ -17,6 +17,9 @@ Build
 Core and Builtins
 -----------------
 
+- Issue #17192: Restore the patch for Issue #10309 which was ommitted
+  in 2.7.4 when updating the bundled version of libffi.
+
 - Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
   such as was shipped with Centos 5 and Mac OS X 10.4.
 
