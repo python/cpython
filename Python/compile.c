@@ -970,6 +970,7 @@ opcode_stack_effect(int opcode, int oparg)
         case LOAD_CLOSURE:
             return 1;
         case LOAD_DEREF:
+        case LOAD_CLASSDEREF:
             return 1;
         case STORE_DEREF:
             return -1;
@@ -2677,7 +2678,9 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     switch (optype) {
     case OP_DEREF:
         switch (ctx) {
-        case Load: op = LOAD_DEREF; break;
+        case Load:
+            op = (c->u->u_ste->ste_type == ClassBlock) ? LOAD_CLASSDEREF : LOAD_DEREF;
+            break;
         case Store: op = STORE_DEREF; break;
         case AugLoad:
         case AugStore:
