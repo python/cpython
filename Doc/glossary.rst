@@ -78,6 +78,10 @@ Glossary
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
       <http://www.python.org/~guido/>`_, Python's creator.
 
+   bytes-like object
+      An object that supports the :ref:`bufferobjects`, like :class:`bytes` or
+      :class:`bytearray`.
+
    bytecode
       Python source code is compiled into bytecode, the internal representation
       of a Python program in the CPython interpreter.  The bytecode is also
