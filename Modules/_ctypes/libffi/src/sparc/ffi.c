@@ -1,5 +1,5 @@
 /* -----------------------------------------------------------------------
-   ffi.c - Copyright (c) 2011 Anthony Green
+   ffi.c - Copyright (c) 2011, 2013 Anthony Green
            Copyright (c) 1996, 2003-2004, 2007-2008 Red Hat, Inc.
    
    SPARC Foreign Function Interface 
@@ -376,6 +376,10 @@ extern int ffi_call_v8(void *, extended_cif *, unsigned,
 		       unsigned, unsigned *, void (*fn)(void));
 #endif
 
+#ifndef __GNUC__
+void ffi_flush_icache (void *, size_t);
+#endif
+
 void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 {
   extended_cif ecif;
@@ -417,7 +421,7 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 	  /* behind "call", so we alloc some executable space for it. */
 	  /* l7 is used, we need to make sure v8.S doesn't use %l7.   */
 	  unsigned int *call_struct = NULL;
-	  ffi_closure_alloc(32, &call_struct);
+	  ffi_closure_alloc(32, (void **)&call_struct);
 	  if (call_struct)
 	    {
 	      unsigned long f = (unsigned long)fn;
@@ -432,10 +436,14 @@ void ffi_call(ffi_cif *cif, void (*fn)(void), void *rvalue, void **avalue)
 		call_struct[5] = 0x01000000;	     	 /* nop			 */
 	      call_struct[6] = 0x81c7e008;		 /* ret			 */
 	      call_struct[7] = 0xbe100017;		 /* mov   %l7, %i7	 */
+#ifdef __GNUC__
 	      asm volatile ("iflush %0; iflush %0+8; iflush %0+16; iflush %0+24" : :
 			    "r" (call_struct) : "memory");
 	      /* SPARC v8 requires 5 instructions for flush to be visible */
 	      asm volatile ("nop; nop; nop; nop; nop");
+#else
+	      ffi_flush_icache (call_struct, 32);
+#endif
 	      ffi_call_v8(ffi_prep_args_v8, &ecif, cif->bytes,
 			  cif->flags, rvalue, call_struct);
 	      ffi_closure_free(call_struct);
@@ -513,12 +521,16 @@ ffi_prep_closure_loc (ffi_closure* closure,
   closure->user_data = user_data;
 
   /* Flush the Icache.  closure is 8 bytes aligned.  */
+#ifdef __GNUC__
 #ifdef SPARC64
   asm volatile ("flush	%0; flush %0+8" : : "r" (closure) : "memory");
 #else
   asm volatile ("iflush	%0; iflush %0+8" : : "r" (closure) : "memory");
   /* SPARC v8 requires 5 instructions for flush to be visible */
   asm volatile ("nop; nop; nop; nop; nop");
+#endif
+#else
+  ffi_flush_icache (closure, 16);
 #endif
 
   return FFI_OK;
