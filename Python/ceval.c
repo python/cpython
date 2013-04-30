@@ -2260,6 +2260,39 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        TARGET(LOAD_CLASSDEREF) {
+            PyObject *name, *value, *locals = f->f_locals;
+            int idx;
+            assert(locals);
+            assert(oparg >= PyTuple_GET_SIZE(co->co_cellvars));
+            idx = oparg - PyTuple_GET_SIZE(co->co_cellvars);
+            assert(idx >= 0 && idx < PyTuple_GET_SIZE(co->co_freevars));
+            name = PyTuple_GET_ITEM(co->co_freevars, idx);
+            if (PyDict_CheckExact(locals)) {
+                value = PyDict_GetItem(locals, name);
+                Py_XINCREF(value);
+            }
+            else {
+                value = PyObject_GetItem(locals, name);
+                if (value == NULL && PyErr_Occurred()) {
+                    if (!PyErr_ExceptionMatches(PyExc_KeyError))
+                        goto error;
+                    PyErr_Clear();
+                }
+            }
+            if (!value) {
+                PyObject *cell = freevars[oparg];
+                value = PyCell_GET(cell);
+                if (value == NULL) {
+                    format_exc_unbound(co, oparg);
+                    goto error;
+                }
+                Py_INCREF(value);
+            }
+            PUSH(value);
+            DISPATCH();
+        }
+
         TARGET(LOAD_DEREF) {
             PyObject *cell = freevars[oparg];
             PyObject *value = PyCell_GET(cell);

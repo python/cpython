@@ -714,6 +714,19 @@ class ScopeTests(unittest.TestCase):
             global a
 
 
+    def testClassNamespaceOverridesClosure(self):
+        # See #17853.
+        x = 42
+        class X:
+            locals()["x"] = 43
+            y = x
+        self.assertEqual(X.y, 43)
+        class X:
+            locals()["x"] = 43
+            del x
+        self.assertFalse(hasattr(X, "x"))
+        self.assertEqual(x, 42)
+
 
 def test_main():
     run_unittest(ScopeTests)
