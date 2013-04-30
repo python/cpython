@@ -76,6 +76,8 @@ Library
 Tests
 -----
 
+- Issue #17712: Fix test_gdb failures on Ubuntu 13.04.
+
 - Issue #17065: Use process-unique key for winreg tests to avoid failures if
   test is run multiple times in parallel (eg: on a buildbot host).
 
