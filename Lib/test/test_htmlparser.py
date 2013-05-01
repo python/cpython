@@ -535,6 +535,20 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         ]
         self._run_check(html, expected)
 
+    def test_EOF_in_charref(self):
+        # see #17802
+        # This test checks that the UnboundLocalError reported in the issue
+        # is not raised, however I'm not sure the returned values are correct.
+        # Maybe HTMLParser should use self.unescape for these
+        data = [
+            ('a&', [('data', 'a&')]),
+            ('a&b', [('data', 'ab')]),
+            ('a&b ', [('data', 'a'), ('entityref', 'b'), ('data', ' ')]),
+            ('a&b;', [('data', 'a'), ('entityref', 'b')]),
+        ]
+        for html, expected in data:
+            self._run_check(html, expected)
+
     def test_unescape_function(self):
         p = self.get_collector()
         self.assertEqual(p.unescape('&#bad;'),'&#bad;')

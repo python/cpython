@@ -249,6 +249,7 @@ class HTMLParser(_markupbase.ParserBase):
                         if self.strict:
                             self.error("EOF in middle of entity or char ref")
                         else:
+                            k = match.end()
                             if k <= i:
                                 k = n
                             i = self.updatepos(i, i + 1)
