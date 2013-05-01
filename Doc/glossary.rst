@@ -78,8 +78,8 @@ Glossary
       <http://www.python.org/~guido/>`_, Python's creator.
 
    bytes-like object
-      An object that supports the :ref:`bufferobjects`, like :class:`bytes` or
-      :class:`bytearray`.
+      An object that supports the :ref:`buffer protocol <bufferobjects>`,
+      like :class:`str` or :class:`bytearray`.
 
    bytecode
       Python source code is compiled into bytecode, the internal representation
