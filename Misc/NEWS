@@ -60,6 +60,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #14679: add an __all__ (that contains only HTMLParser) to html.parser.
+
 - Issue #17358: Modules loaded by imp.load_source() and load_compiled() (and by
   extention load_module()) now have a better chance of working when reloaded.
 
