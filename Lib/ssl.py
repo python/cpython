@@ -299,7 +299,6 @@ class SSLSocket(socket):
         self.server_hostname = server_hostname
         self.do_handshake_on_connect = do_handshake_on_connect
         self.suppress_ragged_eofs = suppress_ragged_eofs
-        connected = False
         if sock is not None:
             socket.__init__(self,
                             family=sock.family,
@@ -307,19 +306,21 @@ class SSLSocket(socket):
                             proto=sock.proto,
                             fileno=sock.fileno())
             self.settimeout(sock.gettimeout())
-            # see if it's connected
-            try:
-                sock.getpeername()
-            except OSError as e:
-                if e.errno != errno.ENOTCONN:
-                    raise
-            else:
-                connected = True
             sock.detach()
         elif fileno is not None:
             socket.__init__(self, fileno=fileno)
         else:
             socket.__init__(self, family=family, type=type, proto=proto)
+
+        # See if we are connected
+        try:
+            self.getpeername()
+        except OSError as e:
+            if e.errno != errno.ENOTCONN:
+                raise
+            connected = False
+        else:
+            connected = True
 
         self._closed = False
         self._sslobj = None
@@ -339,6 +340,7 @@ class SSLSocket(socket):
             except OSError as x:
                 self.close()
                 raise x
+
     @property
     def context(self):
         return self._context
@@ -355,6 +357,14 @@ class SSLSocket(socket):
     def _checkClosed(self, msg=None):
         # raise an exception here if you wish to check for spurious closes
         pass
+
+    def _check_connected(self):
+        if not self._connected:
+            # getpeername() will raise ENOTCONN if the socket is really
+            # not connected; note that we can be connected even without
+            # _connected being set, e.g. if connect() first returned
+            # EAGAIN.
+            self.getpeername()
 
     def read(self, len=0, buffer=None):
         """Read up to LEN bytes and return them.
@@ -390,6 +400,7 @@ class SSLSocket(socket):
         certificate was provided, but not validated."""
 
         self._checkClosed()
+        self._check_connected()
         return self._sslobj.peer_certificate(binary_form)
 
     def selected_npn_protocol(self):
@@ -538,12 +549,11 @@ class SSLSocket(socket):
 
     def _real_close(self):
         self._sslobj = None
-        # self._closed = True
         socket._real_close(self)
 
     def do_handshake(self, block=False):
         """Perform a TLS/SSL handshake."""
-
+        self._check_connected()
         timeout = self.gettimeout()
         try:
             if timeout == 0.0 and block:
@@ -567,9 +577,9 @@ class SSLSocket(socket):
                 rc = None
                 socket.connect(self, addr)
             if not rc:
+                self._connected = True
                 if self.do_handshake_on_connect:
                     self.do_handshake()
-                self._connected = True
             return rc
         except OSError:
             self._sslobj = None

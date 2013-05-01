@@ -17,6 +17,7 @@ import asyncore
 import weakref
 import platform
 import functools
+from unittest import mock
 
 ssl = support.import_module("ssl")
 
@@ -1930,6 +1931,20 @@ else:
             # Sanity checks.
             self.assertIsInstance(remote, ssl.SSLSocket)
             self.assertEqual(peer, client_addr)
+
+        def test_getpeercert_enotconn(self):
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            with context.wrap_socket(socket.socket()) as sock:
+                with self.assertRaises(OSError) as cm:
+                    sock.getpeercert()
+                self.assertEqual(cm.exception.errno, errno.ENOTCONN)
+
+        def test_do_handshake_enotconn(self):
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            with context.wrap_socket(socket.socket()) as sock:
+                with self.assertRaises(OSError) as cm:
+                    sock.do_handshake()
+                self.assertEqual(cm.exception.errno, errno.ENOTCONN)
 
         def test_default_ciphers(self):
             context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
