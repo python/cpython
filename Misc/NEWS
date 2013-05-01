@@ -60,6 +60,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #13721: SSLSocket.getpeercert() and SSLSocket.do_handshake() now
+  raise an OSError with ENOTCONN, instead of an AttributeError, when the
+  SSLSocket is not connected.
+
 - Issue #14679: add an __all__ (that contains only HTMLParser) to html.parser.
 
 - Issue #17802: Fix an UnboundLocalError in html.parser.  Initial tests by
