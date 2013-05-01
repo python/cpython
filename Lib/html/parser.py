@@ -12,6 +12,8 @@ import _markupbase
 import re
 import warnings
 
+__all__ = ['HTMLParser']
+
 # Regular expressions used for parsing
 
 interesting_normal = re.compile('[&<]')
