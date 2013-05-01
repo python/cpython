@@ -176,6 +176,9 @@ Library
 Tests
 -----
 
+- Issue #11078: test___all__ now checks for duplicates in __all__.
+  Initial patch by R. David Murray.
+
 - Issue #17712: Fix test_gdb failures on Ubuntu 13.04.
 
 - Issue #17835: Fix test_io when the default OS pipe buffer size is larger
