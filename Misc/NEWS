@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #14679: add an __all__ (that contains only HTMLParser) to html.parser.
+
 - Issue #17853: Ensure locals of a class that shadow free variables always win
   over the closures.
 
