@@ -999,9 +999,8 @@ as internal buffering of data.
    On Mac OS X and FreeBSD, a value of 0 for *nbytes* specifies to send until
    the end of *in* is reached.
 
-   On Solaris, *out* may be the file descriptor of a regular file or the file
-   descriptor of a socket. On all other platforms, *out* must be the file
-   descriptor of an open socket.
+   All platforms support sockets as *out* file descriptor, and some platforms
+   allow other types (e.g. regular file, pipe) as well.
 
    Availability: Unix.
 
