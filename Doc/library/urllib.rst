@@ -280,6 +280,13 @@ Utility functions
    find it, looks for proxy information from Mac OSX System Configuration for
    Mac OS X and Windows Systems Registry for Windows.
 
+.. note::
+    urllib also exposes certain utility functions like splittype, splithost and
+    others parsing url into various components. But it is recommended to use
+    :mod:`urlparse` for parsing urls than using these functions directly.
+    Python 3 does not expose these helper functions from :mod:`urllib.parse`
+    module.
+
 
 URL Opener objects
 ------------------
