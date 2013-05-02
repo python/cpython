@@ -339,10 +339,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(PyObject *o,
                                                        PyObject *method, ...);
-     PyAPI_FUNC(PyObject *) _PyObject_CallMethodObjIdArgs(PyObject *o,
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethodIdObjArgs(PyObject *o,
                                                struct _Py_Identifier *method,
                                                ...);
-
 
        /*
      Call the method named m of object o with a variable number of
