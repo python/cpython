@@ -704,7 +704,7 @@ PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
                           "no interpreter!");
         }
 
-        pathobj = _PyObject_CallMethodObjIdArgs(interp->importlib,
+        pathobj = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                                 &PyId__get_sourcefile, cpathobj,
                                                 NULL);
         if (pathobj == NULL)
@@ -1441,7 +1441,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         }
         if (initializing > 0) {
             /* _bootstrap._lock_unlock_module() releases the import lock */
-            value = _PyObject_CallMethodObjIdArgs(interp->importlib,
+            value = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__lock_unlock_module, abs_name,
                                             NULL);
             if (value == NULL)
@@ -1459,7 +1459,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     }
     else {
         /* _bootstrap._find_and_load() releases the import lock */
-        mod = _PyObject_CallMethodObjIdArgs(interp->importlib,
+        mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                             &PyId__find_and_load, abs_name,
                                             builtins_import, NULL);
         if (mod == NULL) {
@@ -1528,7 +1528,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         }
     }
     else {
-        final_mod = _PyObject_CallMethodObjIdArgs(interp->importlib,
+        final_mod = _PyObject_CallMethodIdObjArgs(interp->importlib,
                                                   &PyId__handle_fromlist, mod,
                                                   fromlist, builtins_import,
                                                   NULL);

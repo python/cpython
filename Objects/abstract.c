@@ -2343,7 +2343,7 @@ PyObject_CallMethodObjArgs(PyObject *callable, PyObject *name, ...)
 }
 
 PyObject *
-_PyObject_CallMethodObjIdArgs(PyObject *callable,
+_PyObject_CallMethodIdObjArgs(PyObject *callable,
         struct _Py_Identifier *name, ...)
 {
     PyObject *args, *tmp;
