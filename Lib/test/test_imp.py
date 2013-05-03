@@ -1,3 +1,7 @@
+try:
+    import _thread
+except ImportError:
+    _thread = None
 import imp
 import importlib
 import os
@@ -17,6 +21,7 @@ def requires_load_dynamic(meth):
                            'imp.load_dynamic() required')(meth)
 
 
+@unittest.skipIf(_thread is None, '_thread module is required')
 class LockTests(unittest.TestCase):
 
     """Very basic test of import lock functions."""
@@ -446,20 +451,5 @@ class NullImporterTests(unittest.TestCase):
             os.rmdir(name)
 
 
-def test_main():
-    tests = [
-        ImportTests,
-        PEP3147Tests,
-        ReloadTests,
-        NullImporterTests,
-        ]
-    try:
-        import _thread
-    except ImportError:
-        pass
-    else:
-        tests.append(LockTests)
-    support.run_unittest(*tests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
