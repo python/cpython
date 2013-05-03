@@ -305,6 +305,7 @@ class TestNamedTuple(unittest.TestCase):
                 q = loads(dumps(p, protocol))
                 self.assertEqual(p, q)
                 self.assertEqual(p._fields, q._fields)
+                self.assertNotIn(b'OrderedDict', dumps(p, protocol))
 
     def test_copy(self):
         p = TestNT(x=10, y=20, z=30)
