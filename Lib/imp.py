@@ -168,7 +168,7 @@ def load_module(name, file, filename, details):
         warnings.simplefilter('ignore')
         if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
             raise ValueError('invalid file open mode {!r}'.format(mode))
-        elif file is None and type_ in {PY_SOURCE, PY_COMPILED, C_EXTENSION}:
+        elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
             msg = 'file object required for import (type code {})'.format(type_)
             raise ValueError(msg)
         elif type_ == PY_SOURCE:
@@ -176,7 +176,11 @@ def load_module(name, file, filename, details):
         elif type_ == PY_COMPILED:
             return load_compiled(name, filename, file)
         elif type_ == C_EXTENSION and load_dynamic is not None:
-            return load_dynamic(name, filename, file)
+            if file is None:
+                with open(filename, 'rb') as opened_file:
+                    return load_dynamic(name, filename, opened_file)
+            else:
+                return load_dynamic(name, filename, file)
         elif type_ == PKG_DIRECTORY:
             return load_package(name, filename)
         elif type_ == C_BUILTIN:
