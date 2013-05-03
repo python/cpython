@@ -47,6 +47,9 @@ Library
 - Issue #17802: Fix an UnboundLocalError in html.parser.  Initial tests by
   Thomas Barlow.
 
+- Issue #15535: Fix namedtuple pickles which were picking up the OrderedDict
+  instead of just the underlying tuple.
+
 - Issue #17192: Restore the patch for Issue #11729 which was ommitted in
   3.3.1 when updating the bundled version of libffi used by ctypes.  Update
   many libffi files that were missed in 3.3.1's update to libffi-3.0.13.

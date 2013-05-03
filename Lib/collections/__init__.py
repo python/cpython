@@ -281,6 +281,10 @@ class {typename}(tuple):
         'Return self as a plain tuple.  Used by copy and pickle.'
         return tuple(self)
 
+    def __getstate__(self):
+        'Exclude the OrderedDict from pickling'
+        return None
+
 {field_defs}
 '''
 
