@@ -17,6 +17,9 @@ Build
 Core and Builtins
 -----------------
 
+- Issue #15535: Fixed regression in the pickling of named tuples by 
+  removing the __dict__ property introduced in 2.7.4.
+
 - Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
   such as was shipped with Centos 5 and Mac OS X 10.4.
 
