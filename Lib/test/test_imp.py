@@ -8,6 +8,15 @@ from test import support
 import unittest
 import warnings
 
+
+def requires_load_dynamic(meth):
+    """Decorator to skip a test if not running under CPython or lacking
+    imp.load_dynamic()."""
+    meth = support.cpython_only(meth)
+    return unittest.skipIf(not hasattr(imp, 'load_dynamic'),
+                           'imp.load_dynamic() required')(meth)
+
+
 class LockTests(unittest.TestCase):
 
     """Very basic test of import lock functions."""
@@ -207,9 +216,7 @@ class ImportTests(unittest.TestCase):
             self.assertIs(orig_path, new_os.path)
             self.assertIsNot(orig_getenv, new_os.getenv)
 
-    @support.cpython_only
-    @unittest.skipIf(not hasattr(imp, 'load_dynamic'),
-                     'imp.load_dynamic() required')
+    @requires_load_dynamic
     def test_issue15828_load_extensions(self):
         # Issue 15828 picked up that the adapter between the old imp API
         # and importlib couldn't handle C extensions
@@ -221,6 +228,7 @@ class ImportTests(unittest.TestCase):
         mod = imp.load_module(example, *x)
         self.assertEqual(mod.__name__, example)
 
+    @requires_load_dynamic
     def test_issue16421_multiple_modules_in_one_dll(self):
         # Issue 16421: loading several modules from the same compiled file fails
         m = '_testimportmultiple'
@@ -235,6 +243,7 @@ class ImportTests(unittest.TestCase):
         with self.assertRaises(ImportError):
             imp.load_dynamic('nonexistent', pathname)
 
+    @requires_load_dynamic
     def test_load_dynamic_ImportError_path(self):
         # Issue #1559549 added `name` and `path` attributes to ImportError
         # in order to provide better detail. Issue #10854 implemented those
@@ -246,9 +255,7 @@ class ImportTests(unittest.TestCase):
         self.assertIn(path, err.exception.path)
         self.assertEqual(name, err.exception.name)
 
-    @support.cpython_only
-    @unittest.skipIf(not hasattr(imp, 'load_dynamic'),
-                     'imp.load_dynamic() required')
+    @requires_load_dynamic
     def test_load_module_extension_file_is_None(self):
         # When loading an extension module and the file is None, open one
         # on the behalf of imp.load_dynamic().
