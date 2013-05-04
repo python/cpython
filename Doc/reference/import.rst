@@ -423,8 +423,8 @@ Here are the exact rules used:
  * If the module has a ``__file__`` attribute, this is used as part of the
    module's repr.
 
- * If the module has no ``__file__`` but does have a ``__loader__``, then the
-   loader's repr is used as part of the module's repr.
+ * If the module has no ``__file__`` but does have a ``__loader__`` that is not
+   ``None``, then the loader's repr is used as part of the module's repr.
 
  * Otherwise, just use the module's ``__name__`` in the repr.
 

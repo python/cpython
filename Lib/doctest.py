@@ -215,7 +215,7 @@ def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
         filename = _module_relative_path(package, filename)
-        if hasattr(package, '__loader__'):
+        if getattr(package, '__loader__', None) is not None:
             if hasattr(package.__loader__, 'get_data'):
                 file_contents = package.__loader__.get_data(filename)
                 file_contents = file_contents.decode(encoding)

@@ -33,7 +33,10 @@ class ModuleTests(unittest.TestCase):
         foo = ModuleType("foo")
         self.assertEqual(foo.__name__, "foo")
         self.assertEqual(foo.__doc__, None)
-        self.assertEqual(foo.__dict__, {"__name__": "foo", "__doc__": None})
+        self.assertIs(foo.__loader__, None)
+        self.assertIs(foo.__package__, None)
+        self.assertEqual(foo.__dict__, {"__name__": "foo", "__doc__": None,
+                                        "__loader__": None, "__package__": None})
 
     def test_ascii_docstring(self):
         # ASCII docstring
@@ -41,7 +44,8 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(foo.__name__, "foo")
         self.assertEqual(foo.__doc__, "foodoc")
         self.assertEqual(foo.__dict__,
-                         {"__name__": "foo", "__doc__": "foodoc"})
+                         {"__name__": "foo", "__doc__": "foodoc",
+                          "__loader__": None, "__package__": None})
 
     def test_unicode_docstring(self):
         # Unicode docstring
@@ -49,7 +53,8 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(foo.__name__, "foo")
         self.assertEqual(foo.__doc__, "foodoc\u1234")
         self.assertEqual(foo.__dict__,
-                         {"__name__": "foo", "__doc__": "foodoc\u1234"})
+                         {"__name__": "foo", "__doc__": "foodoc\u1234",
+                          "__loader__": None, "__package__": None})
 
     def test_reinit(self):
         # Reinitialization should not replace the __dict__
@@ -61,7 +66,8 @@ class ModuleTests(unittest.TestCase):
         self.assertEqual(foo.__doc__, "foodoc")
         self.assertEqual(foo.bar, 42)
         self.assertEqual(foo.__dict__,
-              {"__name__": "foo", "__doc__": "foodoc", "bar": 42})
+              {"__name__": "foo", "__doc__": "foodoc", "bar": 42,
+               "__loader__": None, "__package__": None})
         self.assertTrue(foo.__dict__ is d)
 
     @unittest.expectedFailure
@@ -110,13 +116,19 @@ a = A(destroyed)"""
         m.__file__ = '/tmp/foo.py'
         self.assertEqual(repr(m), "<module '?' from '/tmp/foo.py'>")
 
+    def test_module_repr_with_loader_as_None(self):
+        m = ModuleType('foo')
+        assert m.__loader__ is None
+        self.assertEqual(repr(m), "<module 'foo'>")
+
     def test_module_repr_with_bare_loader_but_no_name(self):
         m = ModuleType('foo')
         del m.__name__
         # Yes, a class not an instance.
         m.__loader__ = BareLoader
+        loader_repr = repr(BareLoader)
         self.assertEqual(
-            repr(m), "<module '?' (<class 'test.test_module.BareLoader'>)>")
+            repr(m), "<module '?' ({})>".format(loader_repr))
 
     def test_module_repr_with_full_loader_but_no_name(self):
         # m.__loader__.module_repr() will fail because the module has no
@@ -126,15 +138,17 @@ a = A(destroyed)"""
         del m.__name__
         # Yes, a class not an instance.
         m.__loader__ = FullLoader
+        loader_repr = repr(FullLoader)
         self.assertEqual(
-            repr(m), "<module '?' (<class 'test.test_module.FullLoader'>)>")
+            repr(m), "<module '?' ({})>".format(loader_repr))
 
     def test_module_repr_with_bare_loader(self):
         m = ModuleType('foo')
         # Yes, a class not an instance.
         m.__loader__ = BareLoader
+        module_repr = repr(BareLoader)
         self.assertEqual(
-            repr(m), "<module 'foo' (<class 'test.test_module.BareLoader'>)>")
+            repr(m), "<module 'foo' ({})>".format(module_repr))
 
     def test_module_repr_with_full_loader(self):
         m = ModuleType('foo')
