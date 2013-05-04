@@ -519,9 +519,8 @@ class`. In addition, it provides one more method:
         >>> int.from_bytes([255, 0, 0], byteorder='big')
         16711680
 
-    The argument *bytes* must either support the buffer protocol or be an
-    iterable producing bytes. :class:`bytes` and :class:`bytearray` are
-    examples of built-in objects that support the buffer protocol.
+    The argument *bytes* must either be a :term:`bytes-like object` or an
+    iterable producing bytes.
 
     The *byteorder* argument determines the byte order used to represent the
     integer.  If *byteorder* is ``"big"``, the most significant byte is at the
@@ -1417,10 +1416,9 @@ multiple fragments.
       single: bytes; str (built-in class)
 
    If at least one of *encoding* or *errors* is given, *object* should be a
-   :class:`bytes` or :class:`bytearray` object, or more generally any object
-   that supports the :ref:`buffer protocol <bufferobjects>`.  In this case, if
-   *object* is a :class:`bytes` (or :class:`bytearray`) object, then
-   ``str(bytes, encoding, errors)`` is equivalent to
+   :term:`bytes-like object` (e.g. :class:`bytes` or :class:`bytearray`).  In
+   this case, if *object* is a :class:`bytes` (or :class:`bytearray`) object,
+   then ``str(bytes, encoding, errors)`` is equivalent to
    :meth:`bytes.decode(encoding, errors) <bytes.decode>`.  Otherwise, the bytes
    object underlying the buffer object is obtained before calling
    :meth:`bytes.decode`.  See :ref:`binaryseq` and

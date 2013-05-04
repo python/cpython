@@ -40,7 +40,7 @@ Direct API functions
 .. c:function:: PyObject* PyByteArray_FromObject(PyObject *o)
 
    Return a new bytearray object from any object, *o*, that implements the
-   buffer protocol.
+   :ref:`buffer protocol <bufferobjects>`.
 
    .. XXX expand about the buffer protocol, at least somewhere
 
