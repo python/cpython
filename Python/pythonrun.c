@@ -843,7 +843,7 @@ Py_GetPythonHome(void)
 static void
 initmain(PyInterpreterState *interp)
 {
-    PyObject *m, *d;
+    PyObject *m, *d, *loader;
     m = PyImport_AddModule("__main__");
     if (m == NULL)
         Py_FatalError("can't create __main__ module");
@@ -864,7 +864,7 @@ initmain(PyInterpreterState *interp)
      * be set if __main__ gets further initialized later in the startup
      * process.
      */
-    PyObject *loader = PyDict_GetItemString(d, "__loader__");
+    loader = PyDict_GetItemString(d, "__loader__");
     if (loader == NULL || loader == Py_None) {
         PyObject *loader = PyObject_GetAttrString(interp->importlib,
                                                   "BuiltinImporter");
