@@ -26,10 +26,6 @@ try:
 except ImportError:
     threading = None
 
-# Just in case sys.modules["test"] has the optional attribute __loader__.
-if hasattr(pydoc_mod, "__loader__"):
-    del pydoc_mod.__loader__
-
 if test.support.HAVE_DOCSTRINGS:
     expected_data_docstrings = (
         'dictionary for instance variables (if defined)',
