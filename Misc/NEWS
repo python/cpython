@@ -188,6 +188,9 @@ Library
 Tests
 -----
 
+- Issue #7855: Add tests for ctypes/winreg for issues found in IronPython.
+  Initial patch by Dino Viehland.
+
 - Issue #11078: test___all__ now checks for duplicates in __all__.
   Initial patch by R. David Murray.
 
