@@ -800,8 +800,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
 
    .. method:: send_bytes(buffer[, offset[, size]])
 
-      Send byte data from an object supporting the buffer interface as a
-      complete message.
+      Send byte data from a :term:`bytes-like object` as a complete message.
 
       If *offset* is given then data is read from that position in *buffer*.  If
       *size* is given then that many bytes will be read from buffer.  Very large
@@ -832,7 +831,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
       :exc:`EOFError` if there is nothing left to receive and the other end was
       closed.
 
-      *buffer* must be an object satisfying the writable buffer interface.  If
+      *buffer* must be a writable :term:`bytes-like object`.  If
       *offset* is given then the message will be written into the buffer from
       that position.  Offset must be a non-negative integer less than the
       length of *buffer* (in bytes).
