@@ -62,7 +62,7 @@ def get_tests(package, mask, verbosity, exclude=()):
             continue
         try:
             mod = __import__(modname, globals(), locals(), ['*'])
-        except ResourceDenied as detail:
+        except (ResourceDenied, unittest.SkipTest) as detail:
             skipped.append(modname)
             if verbosity > 1:
                 print("Skipped %s: %s" % (modname, detail), file=sys.stderr)
