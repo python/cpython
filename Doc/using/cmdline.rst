@@ -147,7 +147,12 @@ source.
 
 If no interface option is given, :option:`-i` is implied, ``sys.argv[0]`` is
 an empty string (``""``) and the current directory will be added to the
-start of :data:`sys.path`.
+start of :data:`sys.path`.  Also, tab-completion and history editing is
+automatically enabled, if available on your platform (see
+:ref:`rlcompleter-config`).
+
+.. versionchanged:: 3.4
+   Automatic enabling of tab-completion and history editing.
 
 .. seealso::  :ref:`tut-invoking`
 
@@ -438,7 +443,7 @@ conflict.
    is executed in the same namespace where interactive commands are executed so
    that objects defined or imported in it can be used without qualification in
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
-   :data:`sys.ps2` in this file.
+   :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
 
 .. envvar:: PYTHONY2K

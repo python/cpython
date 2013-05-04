@@ -190,28 +190,32 @@ Example
 
 The following example demonstrates how to use the :mod:`readline` module's
 history reading and writing functions to automatically load and save a history
-file named :file:`.pyhist` from the user's home directory.  The code below would
-normally be executed automatically during interactive sessions from the user's
-:envvar:`PYTHONSTARTUP` file. ::
+file named :file:`.python_history` from the user's home directory.  The code
+below would normally be executed automatically during interactive sessions
+from the user's :envvar:`PYTHONSTARTUP` file. ::
 
+   import atexit
    import os
    import readline
-   histfile = os.path.join(os.path.expanduser("~"), ".pyhist")
+
+   histfile = os.path.join(os.path.expanduser("~"), ".python_history")
    try:
        readline.read_history_file(histfile)
    except FileNotFoundError:
        pass
-   import atexit
+
    atexit.register(readline.write_history_file, histfile)
-   del os, histfile
+
+This code is actually automatically run when Python is run in
+:ref:`interactive mode <tut-interactive>` (see :ref:`rlcompleter-config`).
 
 The following example extends the :class:`code.InteractiveConsole` class to
 support history save/restore. ::
 
-   import code
-   import readline
    import atexit
+   import code
    import os
+   import readline
 
    class HistoryConsole(code.InteractiveConsole):
        def __init__(self, locals=None, filename="<console>",

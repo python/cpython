@@ -679,6 +679,16 @@ always available.
    .. versionadded:: 3.1
 
 
+.. data:: __interactivehook__
+
+   When present, this function is automatically called (with no arguments)
+   when the interpreter is launched in :ref:`interactive mode <tut-interactive>`.
+   This is done after the :envvar:`PYTHONSTARTUP` file is read, so that you
+   can set this hook there.
+
+   .. versionadded:: 3.4
+
+
 .. function:: intern(string)
 
    Enter *string* in the table of "interned" strings and return the interned string

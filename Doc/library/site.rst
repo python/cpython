@@ -111,6 +111,23 @@ empty, and the path manipulations are skipped; however the import of
 :mod:`sitecustomize` and :mod:`usercustomize` is still attempted.
 
 
+.. _rlcompleter-config:
+
+Readline configuration
+----------------------
+
+On systems that support :mod:`readline`, this module will also import and
+configure the :mod:`rlcompleter` module, if Python is started in
+:ref:`interactive mode <tut-interactive>` and without the :option:`-S` option.
+The default behavior is enable tab-completion and to use
+:file:`~/.python_history` as the history save file.  To disable it, override
+the :data:`sys.__interactivehook__` attribute in your :mod:`sitecustomize`
+or :mod:`usercustomize` module or your :envvar:`PYTHONSTARTUP` file.
+
+
+Module contents
+---------------
+
 .. data:: PREFIXES
 
    A list of prefixes for site-packages directories.
@@ -153,8 +170,7 @@ empty, and the path manipulations are skipped; however the import of
 
    Adds all the standard site-specific directories to the module search
    path.  This function is called automatically when this module is imported,
-   unless the :program:`python` interpreter was started with the :option:`-S`
-   flag.
+   unless the Python interpreter was started with the :option:`-S` flag.
 
    .. versionchanged:: 3.3
       This function used to be called unconditionnally.
