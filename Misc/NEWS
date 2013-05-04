@@ -69,6 +69,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14173: Avoid crashing when reading a signal handler during
+  interpreter shutdown.
+
 - Issue #15902: Fix imp.load_module() accepting None as a file when loading an
   extension module.
 
