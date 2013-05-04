@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14173: Avoid crashing when reading a signal handler during
+  interpreter shutdown.
+
 - Issue #16316: mimetypes now recognizes the .xz and .txz (.tar.xz) extensions.
 
 - Issue #17192: Restore the patch for Issue #10309 which was ommitted
