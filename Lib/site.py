@@ -58,11 +58,14 @@ Note that bletch is omitted because it doesn't exist; bar precedes foo
 because bar.pth comes alphabetically before foo.pth; and spam is
 omitted because it is not mentioned in either path configuration file.
 
-After these path manipulations, an attempt is made to import a module
+The readline module is also automatically configured to enable
+completion for systems that support it.  This can be overriden in
+sitecustomize, usercustomize or PYTHONSTARTUP.
+
+After these operations, an attempt is made to import a module
 named sitecustomize, which can perform arbitrary additional
 site-specific customizations.  If this import fails with an
 ImportError exception, it is silently ignored.
-
 """
 
 import sys
@@ -452,6 +455,40 @@ class _Helper(object):
 def sethelper():
     builtins.help = _Helper()
 
+def enablerlcompleter():
+    """Enable default readline configuration on interactive prompts, by
+    registering a sys.__interactivehook__.
+
+    If the readline module can be imported, the hook will set the Tab key
+    as completion key and register ~/.python_history as history file.
+    This can be overriden in the sitecustomize or usercustomize module,
+    or in a PYTHONSTARTUP file.
+    """
+    def register_readline():
+        import atexit
+        try:
+            import readline
+            import rlcompleter
+        except ImportError:
+            return
+
+        # Reading the initialization (config) file may not be enough to set a
+        # completion key, so we set one first and then read the file
+        if 'libedit' in getattr(readline, '__doc__', ''):
+            readline.parse_and_bind('bind ^I rl_complete')
+        else:
+            readline.parse_and_bind('tab: complete')
+        readline.read_init_file()
+
+        history = os.path.join(os.path.expanduser('~'), '.python_history')
+        try:
+            readline.read_history_file(history)
+        except IOError:
+            pass
+        atexit.register(readline.write_history_file, history)
+
+    sys.__interactivehook__ = register_readline
+
 def aliasmbcs():
     """On Windows, some default encodings are not provided by Python,
     while they are always available as "mbcs" in each locale. Make
@@ -571,6 +608,7 @@ def main():
     setquit()
     setcopyright()
     sethelper()
+    enablerlcompleter()
     aliasmbcs()
     execsitecustomize()
     if ENABLE_USER_SITE:
