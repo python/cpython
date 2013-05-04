@@ -44,6 +44,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16316: mimetypes now recognizes the .xz and .txz (.tar.xz) extensions.
+
 - Issue #15902: Fix imp.load_module() accepting None as a file when loading an
   extension module.
 
