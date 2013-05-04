@@ -265,10 +265,11 @@ class ImportTests(unittest.TestCase):
         # When loading an extension module and the file is None, open one
         # on the behalf of imp.load_dynamic().
         # Issue #15902
-        name = '_heapq'
+        name = '_testimportmultiple'
         found = imp.find_module(name)
-        assert found[2][2] == imp.C_EXTENSION
         found[0].close()
+        if found[2][2] != imp.C_EXTENSION:
+            return
         imp.load_module(name, None, *found[1:])
 
 
