@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17115,17116: Module initialization now includes setting __package__ and
+  __loader__ attributes to None.
+
 - Issue #17853: Ensure locals of a class that shadow free variables always win
   over the closures.
 

@@ -26,6 +26,27 @@ static PyTypeObject moduledef_type = {
 };
 
 
+static int
+module_init_dict(PyObject *md_dict, PyObject *name, PyObject *doc)
+{
+    if (md_dict == NULL)
+        return -1;
+    if (doc == NULL)
+        doc = Py_None;
+
+    if (PyDict_SetItemString(md_dict, "__name__", name) != 0)
+        return -1;
+    if (PyDict_SetItemString(md_dict, "__doc__", doc) != 0)
+        return -1;
+    if (PyDict_SetItemString(md_dict, "__package__", Py_None) != 0)
+        return -1;
+    if (PyDict_SetItemString(md_dict, "__loader__", Py_None) != 0)
+        return -1;
+
+    return 0;
+}
+
+
 PyObject *
 PyModule_NewObject(PyObject *name)
 {
@@ -36,13 +57,7 @@ PyModule_NewObject(PyObject *name)
     m->md_def = NULL;
     m->md_state = NULL;
     m->md_dict = PyDict_New();
-    if (m->md_dict == NULL)
-        goto fail;
-    if (PyDict_SetItemString(m->md_dict, "__name__", name) != 0)
-        goto fail;
-    if (PyDict_SetItemString(m->md_dict, "__doc__", Py_None) != 0)
-        goto fail;
-    if (PyDict_SetItemString(m->md_dict, "__package__", Py_None) != 0)
+    if (module_init_dict(m->md_dict, name, NULL) != 0)
         goto fail;
     PyObject_GC_Track(m);
     return (PyObject *)m;
@@ -347,9 +362,7 @@ module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
             return -1;
         m->md_dict = dict;
     }
-    if (PyDict_SetItemString(dict, "__name__", name) < 0)
-        return -1;
-    if (PyDict_SetItemString(dict, "__doc__", doc) < 0)
+    if (module_init_dict(dict, name, doc) < 0)
         return -1;
     return 0;
 }
@@ -380,7 +393,7 @@ module_repr(PyModuleObject *m)
     if (m->md_dict != NULL) {
         loader = PyDict_GetItemString(m->md_dict, "__loader__");
     }
-    if (loader != NULL) {
+    if (loader != NULL && loader != Py_None) {
         repr = PyObject_CallMethod(loader, "module_repr", "(O)",
                                    (PyObject *)m, NULL);
         if (repr == NULL) {
@@ -404,10 +417,10 @@ module_repr(PyModuleObject *m)
     filename = PyModule_GetFilenameObject((PyObject *)m);
     if (filename == NULL) {
         PyErr_Clear();
-        /* There's no m.__file__, so if there was an __loader__, use that in
+        /* There's no m.__file__, so if there was a __loader__, use that in
          * the repr, otherwise, the only thing you can use is m.__name__
          */
-        if (loader == NULL) {
+        if (loader == NULL || loader == Py_None) {
             repr = PyUnicode_FromFormat("<module %R>", name);
         }
         else {

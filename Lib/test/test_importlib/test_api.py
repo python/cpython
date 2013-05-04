@@ -197,14 +197,12 @@ class StartupTests(unittest.TestCase):
         # Issue #17098: all modules should have __loader__ defined.
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
-                if name in sys.builtin_module_names:
-                    self.assertIn(module.__loader__,
-                            (importlib.machinery.BuiltinImporter,
-                             importlib._bootstrap.BuiltinImporter))
-                elif imp.is_frozen(name):
-                    self.assertIn(module.__loader__,
-                            (importlib.machinery.FrozenImporter,
-                             importlib._bootstrap.FrozenImporter))
+                self.assertTrue(hasattr(module, '__loader__'),
+                                '{!r} lacks a __loader__ attribute'.format(name))
+                if importlib.machinery.BuiltinImporter.find_module(name):
+                    self.assertIsNot(module.__loader__, None)
+                elif importlib.machinery.FrozenImporter.find_module(name):
+                    self.assertIsNot(module.__loader__, None)
 
 
 if __name__ == '__main__':

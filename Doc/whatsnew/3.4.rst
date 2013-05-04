@@ -231,3 +231,8 @@ that may require changes to your code.
   :exc:`NotImplementedError` blindly. This will only affect code calling
   :func:`super` and falling through all the way to the ABCs. For compatibility,
   catch both :exc:`NotImplementedError` or the appropriate exception as needed.
+
+* The module type now initializes the :attr:`__package__` and :attr:`__loader__`
+  attributes to ``None`` by default. To determine if these attributes were set
+  in a backwards-compatible fashion, use e.g.
+  ``getattr(module, '__loader__', None) is not None``.

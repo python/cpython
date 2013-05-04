@@ -35,12 +35,19 @@ There are only a few functions special to module objects.
       single: __name__ (module attribute)
       single: __doc__ (module attribute)
       single: __file__ (module attribute)
+      single: __package__ (module attribute)
+      single: __loader__ (module attribute)
 
    Return a new module object with the :attr:`__name__` attribute set to *name*.
-   Only the module's :attr:`__doc__` and :attr:`__name__` attributes are filled in;
-   the caller is responsible for providing a :attr:`__file__` attribute.
+   The module's :attr:`__name__`, :attr:`__doc__`, :attr:`__package__`, and
+   :attr:`__loader__` attributes are filled in (all but :attr:`__name__` are set
+   to ``None``); the caller is responsible for providing a :attr:`__file__`
+   attribute.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.4
+      :attr:`__package__` and :attr:`__loader__` are set to ``None``.
 
 
 .. c:function:: PyObject* PyModule_New(const char *name)
