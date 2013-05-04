@@ -524,9 +524,6 @@ Py_Finalize(void)
     /* Disable signal handling */
     PyOS_FiniInterrupts();
 
-    /* Clear type lookup cache */
-    PyType_ClearCache();
-
     /* Collect garbage.  This may call finalizers; it's nice to call these
      * before all modules are destroyed.
      * XXX If a __del__ or weakref callback is triggered here, and tries to
@@ -632,6 +629,7 @@ Py_Finalize(void)
     PyFloat_Fini();
     PyDict_Fini();
     PySlice_Fini();
+    _PyType_Fini();
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();

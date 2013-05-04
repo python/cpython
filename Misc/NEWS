@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17408: Avoid using an obsolete instance of the copyreg module when
+  the interpreter is shutdown and then started again.
+
 - Issue #5845: Enable tab-completion in the interactive interpreter by
   default, thanks to a new sys.__interactivehook__.
 
