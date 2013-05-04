@@ -73,8 +73,8 @@ The module defines the following type:
 .. class:: array(typecode[, initializer])
 
    A new array whose items are restricted by *typecode*, and initialized
-   from the optional *initializer* value, which must be a list, object
-   supporting the buffer interface, or iterable over elements of the
+   from the optional *initializer* value, which must be a list, a
+   :term:`bytes-like object`, or iterable over elements of the
    appropriate type.
 
    If given a list or string, the initializer is passed to the new array's
@@ -91,7 +91,7 @@ Array objects support the ordinary sequence operations of indexing, slicing,
 concatenation, and multiplication.  When using slice assignment, the assigned
 value must be an array object with the same type code; in all other cases,
 :exc:`TypeError` is raised. Array objects also implement the buffer interface,
-and may be used wherever buffer objects are supported.
+and may be used wherever :term:`bytes-like object`\ s are supported.
 
 The following data items and methods are also supported:
 
