@@ -158,6 +158,9 @@ IDLE
 Tests
 -----
 
+- Issue #7855: Add tests for ctypes/winreg for issues found in IronPython.
+  Initial patch by Dino Viehland.
+
 - Issue #17712: Fix test_gdb failures on Ubuntu 13.04.
 
 - Issue #17835: Fix test_io when the default OS pipe buffer size is larger
