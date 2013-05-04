@@ -21,8 +21,9 @@ higher-level modules.
 .. note::
 
    ``a2b_*`` functions accept Unicode strings containing only ASCII characters.
-   Other functions only accept bytes and bytes-compatible objects (such as
-   bytearray objects and other objects implementing the buffer API).
+   Other functions only accept :term:`bytes-like object`\ s (such as
+   :class:`bytes`, :class:`bytearray` and other objects that support the buffer
+   protocol).
 
    .. versionchanged:: 3.3
       ASCII-only unicode strings are now accepted by the ``a2b_*`` functions.

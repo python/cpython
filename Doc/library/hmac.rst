@@ -74,8 +74,7 @@ This module also provides the following helper function:
    timing analysis by avoiding content-based short circuiting behaviour,
    making it appropriate for cryptography.  *a* and *b* must both be of the
    same type: either :class:`str` (ASCII only, as e.g. returned by
-   :meth:`HMAC.hexdigest`), or any type that supports the buffer protocol
-   (e.g. :class:`bytes`).
+   :meth:`HMAC.hexdigest`), or a :term:`bytes-like object`.
 
    .. note::
 
