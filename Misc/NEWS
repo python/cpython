@@ -12,6 +12,9 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17408: Avoid using an obsolete instance of the copyreg module when
+  the interpreter is shutdown and then started again.
+
 - Issue #17863: In the interactive console, don't loop forever if the encoding
   can't be fetched from stdin.
 

@@ -7,6 +7,10 @@
 #include <ctype.h>
 
 
+/* Cached lookup of the copyreg module, for faster __reduce__ calls */
+
+static PyObject *cached_copyreg_module = NULL;
+
 /* Support type attribute cache */
 
 /* The cache can keep references to the names alive for longer than
@@ -66,6 +70,15 @@ PyType_ClearCache(void)
     /* mark all version tags as invalid */
     PyType_Modified(&PyBaseObject_Type);
     return cur_version_tag;
+}
+
+void
+_PyType_Fini(void)
+{
+    PyType_ClearCache();
+    /* Need to forget our obsolete instance of the copyreg module at
+     * interpreter shutdown (issue #17408). */
+    Py_CLEAR(cached_copyreg_module);
 }
 
 void
@@ -3339,19 +3352,18 @@ static PyObject *
 import_copyreg(void)
 {
     static PyObject *copyreg_str;
-    static PyObject *mod_copyreg = NULL;
 
     if (!copyreg_str) {
         copyreg_str = PyUnicode_InternFromString("copyreg");
         if (copyreg_str == NULL)
             return NULL;
     }
-    if (!mod_copyreg) {
-        mod_copyreg = PyImport_Import(copyreg_str);
+    if (!cached_copyreg_module) {
+        cached_copyreg_module = PyImport_Import(copyreg_str);
     }
 
-    Py_XINCREF(mod_copyreg);
-    return mod_copyreg;
+    Py_XINCREF(cached_copyreg_module);
+    return cached_copyreg_module;
 }
 
 static PyObject *
