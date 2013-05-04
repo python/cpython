@@ -442,6 +442,11 @@ class Win64WinregTests(BaseWinregTests):
             DeleteKeyEx(HKEY_CURRENT_USER, test_reflect_key_name,
                         KEY_WOW64_32KEY, 0)
 
+    def test_exception_numbers(self):
+        with self.assertRaises(WindowsError) as ctx:
+            QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
+
+        self.assertEqual(ctx.exception.errno, 2)
 
 def test_main():
     test_support.run_unittest(LocalWinregTests, RemoteWinregTests,
