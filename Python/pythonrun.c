@@ -866,7 +866,8 @@ initmain(PyInterpreterState *interp)
      * be set if __main__ gets further initialized later in the startup
      * process.
      */
-    if (PyDict_GetItemString(d, "__loader__") == NULL) {
+    PyObject *loader = PyDict_GetItemString(d, "__loader__");
+    if (loader == NULL || loader == Py_None) {
         PyObject *loader = PyObject_GetAttrString(interp->importlib,
                                                   "BuiltinImporter");
         if (loader == NULL) {

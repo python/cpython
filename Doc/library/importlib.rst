@@ -827,7 +827,7 @@ an :term:`importer`.
       decorator as it subsumes this functionality.
 
    .. versionchanged:: 3.4
-      Set ``__loader__`` if set to ``None`` as well if the attribute does not
+      Set ``__loader__`` if set to ``None``, as if the attribute does not
       exist.
 
 

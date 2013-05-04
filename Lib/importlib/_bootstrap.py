@@ -1726,7 +1726,7 @@ def _setup(sys_module, _imp_module):
     module_type = type(sys)
     for name, module in sys.modules.items():
         if isinstance(module, module_type):
-            if not hasattr(module, '__loader__'):
+            if getattr(module, '__loader__', None) is None:
                 if name in sys.builtin_module_names:
                     module.__loader__ = BuiltinImporter
                 elif _imp.is_frozen(name):
