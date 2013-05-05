@@ -362,29 +362,28 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     drop_gil(tstate);
 }
 
-/* This function is called from PyOS_AfterFork to ensure that newly
-   created child processes don't hold locks referring to threads which
-   are not running in the child process.  (This could also be done using
-   pthread_atfork mechanism, at least for the pthreads implementation.) */
+/* This function is called from PyOS_AfterFork to destroy all threads which are
+ * not running in the child process, and clear internal locks which might be
+ * held by those threads. (This could also be done using pthread_atfork
+ * mechanism, at least for the pthreads implementation.) */
 
 void
 PyEval_ReInitThreads(void)
 {
     _Py_IDENTIFIER(_after_fork);
     PyObject *threading, *result;
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *current_tstate = PyThreadState_GET();
 
     if (!gil_created())
         return;
     recreate_gil();
     pending_lock = PyThread_allocate_lock();
-    take_gil(tstate);
+    take_gil(current_tstate);
     main_thread = PyThread_get_thread_ident();
 
     /* Update the threading module with the new state.
      */
-    tstate = PyThreadState_GET();
-    threading = PyMapping_GetItemString(tstate->interp->modules,
+    threading = PyMapping_GetItemString(current_tstate->interp->modules,
                                         "threading");
     if (threading == NULL) {
         /* threading not imported */
@@ -397,6 +396,9 @@ PyEval_ReInitThreads(void)
     else
         Py_DECREF(result);
     Py_DECREF(threading);
+
+    /* Destroy all threads except the current one */
+    _PyThreadState_DeleteExcept(current_tstate);
 }
 
 #else

@@ -728,6 +728,31 @@ class ThreadJoinOnShutdown(BaseTestCase):
         for t in threads:
             t.join()
 
+    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
+    def test_clear_threads_states_after_fork(self):
+        # Issue #17094: check that threads states are cleared after fork()
+
+        # start a bunch of threads
+        threads = []
+        for i in range(16):
+            t = threading.Thread(target=lambda : time.sleep(0.3))
+            threads.append(t)
+            t.start()
+
+        pid = os.fork()
+        if pid == 0:
+            # check that threads states have been cleared
+            if len(sys._current_frames()) == 1:
+                os._exit(0)
+            else:
+                os._exit(1)
+        else:
+            _, status = os.waitpid(pid, 0)
+            self.assertEqual(0, status)
+
+        for t in threads:
+            t.join()
+
 
 class ThreadingExceptionTests(BaseTestCase):
     # A RuntimeError should be raised if Thread.start() is called
