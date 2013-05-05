@@ -321,6 +321,8 @@ class EditorWindow(object):
                         per.insertfilter(color)
             else:
                 io.set_filename(filename)
+                self.good_load = True
+
         self.ResetColorizer()
         self.saved_change_hook()
         self.update_recent_files_list()
