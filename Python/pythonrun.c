@@ -576,6 +576,9 @@ Py_Finalize(void)
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
     _PyImport_Fini();
 
+    /* Cleanup typeobject.c's internal caches. */
+    _PyType_Fini();
+
     /* unload faulthandler module */
     _PyFaulthandler_Fini();
 
@@ -596,7 +599,7 @@ Py_Finalize(void)
         _Py_PrintReferences(stderr);
 #endif /* Py_TRACE_REFS */
 
-    /* Clear interpreter state */
+    /* Clear interpreter state and all thread states. */
     PyInterpreterState_Clear(interp);
 
     /* Now we decref the exception classes.  After this point nothing
@@ -612,10 +615,6 @@ Py_Finalize(void)
     _PyGILState_Fini();
 #endif /* WITH_THREAD */
 
-    /* Delete current thread */
-    PyThreadState_Swap(NULL);
-    PyInterpreterState_Delete(interp);
-
     /* Sundry finalizers */
     PyMethod_Fini();
     PyFrame_Fini();
@@ -629,10 +628,13 @@ Py_Finalize(void)
     PyFloat_Fini();
     PyDict_Fini();
     PySlice_Fini();
-    _PyType_Fini();
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
+
+    /* Delete current thread. After this, many C API calls become crashy. */
+    PyThreadState_Swap(NULL);
+    PyInterpreterState_Delete(interp);
 
     /* reset file system default encoding */
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
