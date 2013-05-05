@@ -74,6 +74,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15528: Add weakref.finalize to support finalization using
+  weakref callbacks.
+
 - Issue #14173: Avoid crashing when reading a signal handler during
   interpreter shutdown.
 
