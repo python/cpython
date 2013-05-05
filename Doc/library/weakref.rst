@@ -51,15 +51,10 @@ garbage collection.  :class:`WeakSet` implements the :class:`set` interface,
 but keeps weak references to its elements, just like a
 :class:`WeakKeyDictionary` does.
 
-:class:`finalize` provides a straight forward way to register a
-cleanup function to be called when an object is garbage collected.
-This is simpler to use than setting up a callback function on a raw
-weak reference.
-
-Most programs should find that using one of these weak container types
-or :class:`finalize` is all they need -- it's not usually necessary to
-create your own weak references directly.  The low-level machinery is
-exposed by the :mod:`weakref` module for the benefit of advanced uses.
+Most programs should find that using one of these weak container types is all
+they need -- it's not usually necessary to create your own weak references
+directly.  The low-level machinery used by the weak dictionary implementations
+is exposed by the :mod:`weakref` module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can include class
 instances, functions written in Python (but not in C), instance methods, sets,
@@ -122,16 +117,7 @@ Extension types can easily be made to support weak references; see
       weakref.  If there is no callback or if the referent of the weakref is
       no longer alive then this attribute will have value ``None``.
 
-   .. note::
-
-      Like :meth:`__del__` methods, weak reference callbacks can be
-      called during interpreter shutdown when module globals have been
-      overwritten with :const:`None`.  This can make writing robust
-      weak reference callbacks a challenge.  Callbacks registered
-      using :class:`finalize` do not have to worry about this issue
-      because they will not be run after module teardown has begun.
-
-   .. versionchanged:: 3.4
+   .. versionadded:: 3.4
       Added the :attr:`__callback__` attribute.
 
 
@@ -240,66 +226,6 @@ These method have the same issues as the and :meth:`keyrefs` method of
       0
       >>> r()
       >>>
-
-   .. versionadded:: 3.4
-
-.. class:: finalize(obj, func, *args, **kwargs)
-
-   Return a callable finalizer object which will be called when *obj*
-   is garbage collected.  A finalizer is *alive* until it is called
-   (either explicitly or at garbage collection), and after that it is
-   *dead*.  Calling a live finalizer returns the result of evaluating
-   ``func(*arg, **kwargs)``, whereas calling a dead finalizer returns
-   :const:`None`.
-
-   Exceptions raised by finalizer callbacks during garbage collection
-   will be shown on the standard error output, but cannot be
-   propagated.  They are handled in the same way as exceptions raised
-   from an object's :meth:`__del__` method or a weak reference's
-   callback.
-
-   When the program exits, each remaining live finalizer is called
-   unless its :attr:`atexit` attribute has been set to false.  They
-   are called in reverse order of creation.
-
-   A finalizer will never invoke its callback during the later part of
-   the interpreter shutdown when module globals are liable to have
-   been replaced by :const:`None`.
-
-   .. method:: __call__()
-
-      If *self* is alive then mark it as dead and return the result of
-      calling ``func(*args, **kwargs)``.  If *self* is dead then return
-      :const:`None`.
-
-   .. method:: detach()
-
-      If *self* is alive then mark it as dead and return the tuple
-      ``(obj, func, args, kwargs)``.  If *self* is dead then return
-      :const:`None`.
-
-   .. method:: peek()
-
-      If *self* is alive then return the tuple ``(obj, func, args,
-      kwargs)``.  If *self* is dead then return :const:`None`.
-
-   .. attribute:: alive
-
-      Property which is true if the finalizer is alive, false otherwise.
-
-   .. attribute:: atexit
-
-      A writable boolean property which by default is true.  When the
-      program exits, it calls all remaining live finalizers for which
-      :attr:`.atexit` is true.  They are called in reverse order of
-      creation.
-
-   .. note::
-
-      It is important to ensure that *func*, *args* and *kwargs* do
-      not own any references to *obj*, either directly or indirectly,
-      since otherwise *obj* will never be garbage collected.  In
-      particular, *func* should not be a bound method of *obj*.
 
    .. versionadded:: 3.4
 
@@ -439,134 +365,3 @@ objects can still be retrieved by ID if they do.
    def id2obj(oid):
        return _id2obj_dict[oid]
 
-
-.. _finalize-examples:
-
-Finalizer Objects
------------------
-
-Often one uses :class:`finalize` to register a callback without
-bothering to keep the returned finalizer object.  For instance
-
-    >>> import weakref
-    >>> class Object:
-    ...     pass
-    ...
-    >>> kenny = Object()
-    >>> weakref.finalize(kenny, print, "You killed Kenny!")  #doctest:+ELLIPSIS
-    <finalize object at ...; for 'Object' at ...>
-    >>> del kenny
-    You killed Kenny!
-
-The finalizer can be called directly as well.  However the finalizer
-will invoke the callback at most once.
-
-    >>> def callback(x, y, z):
-    ...     print("CALLBACK")
-    ...     return x + y + z
-    ...
-    >>> obj = Object()
-    >>> f = weakref.finalize(obj, callback, 1, 2, z=3)
-    >>> assert f.alive
-    >>> assert f() == 6
-    CALLBACK
-    >>> assert not f.alive
-    >>> f()                     # callback not called because finalizer dead
-    >>> del obj                 # callback not called because finalizer dead
-
-You can unregister a finalizer using its :meth:`~finalize.detach`
-method.  This kills the finalizer and returns the arguments passed to
-the constructor when it was created.
-
-    >>> obj = Object()
-    >>> f = weakref.finalize(obj, callback, 1, 2, z=3)
-    >>> f.detach()                                           #doctest:+ELLIPSIS
-    (<__main__.Object object ...>, <function callback ...>, (1, 2), {'z': 3})
-    >>> newobj, func, args, kwargs = _
-    >>> assert not f.alive
-    >>> assert newobj is obj
-    >>> assert func(*args, **kwargs) == 6
-    CALLBACK
-
-Unless you set the :attr:`~finalize.atexit` attribute to
-:const:`False`, a finalizer will be called when the program exit if it
-is still alive.  For instance
-
-    >>> obj = Object()
-    >>> weakref.finalize(obj, print, "obj dead or exiting")  #doctest:+ELLIPSIS
-    <finalize object at ...; for 'Object' at ...>
-    >>> exit()                                               #doctest:+SKIP
-    obj dead or exiting
-
-
-Comparing finalizers with :meth:`__del__` methods
--------------------------------------------------
-
-Suppose we want to create a class whose instances represent temporary
-directories.  The directories should be deleted with their contents
-when the first of the following events occurs:
-
-* the object is garbage collected,
-* the object's :meth:`remove` method is called, or
-* the program exits.
-
-We might try to implement the class using a :meth:`__del__` method as
-follows::
-
-    class TempDir:
-        def __init__(self):
-            self.name = tempfile.mkdtemp()
-
-        def remove(self):
-            if self.name is not None:
-                shutil.rmtree(self.name)
-                self.name = None
-
-        @property
-        def removed(self):
-            return self.name is None
-
-        def __del__(self):
-            self.remove()
-
-This solution has a couple of serious problems:
-
-* There is no guarantee that the object will be garbage collected
-  before the program exists, so the directory might be left.  This is
-  because reference cycles containing an object with a :meth:`__del__`
-  method can never be collected.  And even if the :class:`TempDir`
-  object is not itself part of a reference cycle, it may still be kept
-  alive by some unkown uncollectable reference cycle.
-
-* The :meth:`__del__` method may be called at shutdown after the
-  :mod:`shutil` module has been cleaned up, in which case
-  :attr:`shutil.rmtree` will have been replaced by :const:`None`.
-  This will cause the :meth:`__del__` method to fail and the directory
-  will not be removed.
-
-Using finalizers we can avoid these problems::
-
-    class TempDir:
-        def __init__(self):
-            self.name = tempfile.mkdtemp()
-            self._finalizer = weakref.finalize(self, shutil.rmtree, self.name)
-
-        def remove(self):
-            self._finalizer()
-
-        @property
-        def removed(self):
-            return not self._finalizer.alive
-
-Defined like this, even if a :class:`TempDir` object is part of a
-reference cycle, that reference cycle can still be garbage collected.
-If the object never gets garbage collected the finalizer will still be
-called at exit.
-
-.. note::
-
-   If you create a finalizer object in a daemonic thread just as the
-   the program exits then there is the possibility that the finalizer
-   does not get called at exit.  However, in a daemonic thread
-   :func:`atexit.register`, ``try: ... finally: ...`` and ``with: ...``
-   do not guarantee that cleanup occurs either.
