@@ -10,6 +10,11 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17094: Clear stale thread states after fork().  Note that this
+  is a potentially disruptive change since it may release some system
+  resources which would otherwise remain perpetually alive (e.g. database
+  connections kept in thread-local storage).
+
 - Issue #17408: Avoid using an obsolete instance of the copyreg module when
   the interpreter is shutdown and then started again.
 
