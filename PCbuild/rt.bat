@@ -30,7 +30,7 @@ set prefix=.\
 set suffix=
 set qmode=
 set dashO=
-set tcltk=
+set tcltk=tcltk
 
 :CheckOpts
 if "%1"=="-O" (set dashO=-O)     & shift & goto CheckOpts
@@ -38,7 +38,7 @@ if "%1"=="-q" (set qmode=yes)    & shift & goto CheckOpts
 if "%1"=="-d" (set suffix=_d)    & shift & goto CheckOpts
 if "%1"=="-x64" (set prefix=amd64) & (set tcltk=tcltk64) & shift & goto CheckOpts
 
-PATH %PATH%;..\..\%tcltk%\bin
+PATH %PATH%;%~dp0..\..\%tcltk%\bin
 set exe=%prefix%\python%suffix%
 set cmd=%exe% %dashO% -Wd -3 -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 if defined qmode goto Qmode

@@ -84,6 +84,9 @@ Library
 Tests
 -----
 
+- Issue #17883: Fix buildbot testing of Tkinter on Windows.
+  Patch by Zachary Ware.
+
 - Issue #7855: Add tests for ctypes/winreg for issues found in IronPython.
   Initial patch by Dino Viehland.
 
