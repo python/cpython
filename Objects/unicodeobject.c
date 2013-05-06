@@ -7459,7 +7459,7 @@ charmap_decode_mapping(const char *s,
     Py_ssize_t startinpos, endinpos;
     PyObject *errorHandler = NULL, *exc = NULL;
     unsigned char ch;
-    PyObject *key, *item;
+    PyObject *key, *item = NULL;
 
     e = s + size;
 
