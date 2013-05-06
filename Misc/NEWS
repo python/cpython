@@ -77,6 +77,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12181: select module: Fix struct kevent definition on OpenBSD 64-bit
+  platforms. Patch by Federico Schwindt.
+
 - Issue #11816: multiple improvements to the dis module: get_instructions
   generator, ability to redirect output to a file, Bytecode and Instruction
   abstractions. Patch by Nick Coghlan, Ryan Kelly and Thomas Kluyver.
