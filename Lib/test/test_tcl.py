@@ -148,7 +148,7 @@ class TclTest(unittest.TestCase):
             env.unset("TCL_LIBRARY")
             f = os.popen('%s -c "import Tkinter; print Tkinter"' % (unc_name,))
 
-        self.assertTrue('Tkinter.py' in f.read())
+        self.assertIn('Tkinter.py', f.read())
         # exit code must be zero
         self.assertEqual(f.close(), None)
 
