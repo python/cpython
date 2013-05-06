@@ -316,9 +316,6 @@ class EditorWindow(object):
                     self.good_load = True
                     is_py_src = self.ispythonsource(filename)
                     self.set_indentation_params(is_py_src)
-                    if is_py_src:
-                        self.color = color = self.ColorDelegator()
-                        per.insertfilter(color)
             else:
                 io.set_filename(filename)
                 self.good_load = True
