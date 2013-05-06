@@ -257,6 +257,8 @@ C-API
 IDLE
 ----
 
+- Issue #13495: Avoid loading the color delegator twice in IDLE.
+
 - Issue #17798: Allow IDLE to edit new files when specified on command line.
 
 - Issue #14735: Update IDLE docs to omit "Control-z on Windows".
