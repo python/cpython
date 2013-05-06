@@ -597,6 +597,8 @@ class ApplyResult(object):
         self._event.set()
         del self._cache[self._job]
 
+AsyncResult = ApplyResult       # create alias -- see #17805
+
 #
 # Class whose instances are returned by `Pool.map_async()`
 #
