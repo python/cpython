@@ -74,6 +74,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #11816: multiple improvements to the dis module: get_instructions
+  generator, ability to redirect output to a file, Bytecode and Instruction
+  abstractions. Patch by Nick Coghlan, Ryan Kelly and Thomas Kluyver.
+
 - Issue #13831: Embed stringification of remote traceback in local
   traceback raised when pool task raises an exception.
 
