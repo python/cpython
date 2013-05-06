@@ -215,6 +215,9 @@ Library
 Tests
 -----
 
+- Issue #17833: Fix test_gdb failures seen on machines where debug symbols
+  for glibc are available (seen on PPC64 Linux).
+
 - Issue #7855: Add tests for ctypes/winreg for issues found in IronPython.
   Initial patch by Dino Viehland.
 
