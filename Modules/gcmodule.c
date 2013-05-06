@@ -1544,8 +1544,9 @@ PyGC_Collect(void)
     return n;
 }
 
+
 void
-_PyGC_Fini(void)
+_PyGC_DumpShutdownStats(void)
 {
     if (!(debug & DEBUG_SAVEALL)
         && garbage != NULL && PyList_GET_SIZE(garbage) > 0) {
@@ -1574,6 +1575,11 @@ _PyGC_Fini(void)
             Py_XDECREF(bytes);
         }
     }
+}
+
+void
+_PyGC_Fini(void)
+{
     Py_CLEAR(callbacks);
 }
 

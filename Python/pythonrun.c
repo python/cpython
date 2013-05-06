@@ -544,10 +544,6 @@ Py_Finalize(void)
     while (PyGC_Collect() > 0)
         /* nothing */;
 #endif
-    /* We run this while most interpreter state is still alive, so that
-       debug information can be printed out */
-    _PyGC_Fini();
-
     /* Destroy all modules */
     PyImport_Cleanup();
 
@@ -628,6 +624,7 @@ Py_Finalize(void)
     PyFloat_Fini();
     PyDict_Fini();
     PySlice_Fini();
+    _PyGC_Fini();
 
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
