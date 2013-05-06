@@ -252,6 +252,16 @@ Glossary
       the execution of the body. See also :term:`parameter`, :term:`method`,
       and the :ref:`function` section.
 
+   function annotation
+      An arbitrary metadata value associated with a function parameter or return
+      value. Its syntax is explained in section :ref:`function`.  Annotations
+      may be accessed via the :attr:`__annotations__` special attribute of a
+      function object.
+
+      Python itself does not assign any particular meaning to function
+      annotations. They are intended to be interpreted by third-party libraries
+      or tools.  See :pep:`3107`, which describes some of their potential uses.
+
    __future__
       A pseudo-module which programmers can use to enable new language features
       which are not compatible with the current interpreter.
