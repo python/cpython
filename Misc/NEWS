@@ -74,6 +74,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13813: Embed stringification of remote traceback in local
+  traceback raised when pool task raises an exception.
+
 - Issue #15528: Add weakref.finalize to support finalization using
   weakref callbacks.
 
