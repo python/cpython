@@ -344,17 +344,21 @@ class SSLSocket(socket):
         SSL channel, and the address of the remote client."""
 
         newsock, addr = socket.accept(self)
-        return (SSLSocket(newsock,
-                          keyfile=self.keyfile,
-                          certfile=self.certfile,
-                          server_side=True,
-                          cert_reqs=self.cert_reqs,
-                          ssl_version=self.ssl_version,
-                          ca_certs=self.ca_certs,
-                          ciphers=self.ciphers,
-                          do_handshake_on_connect=self.do_handshake_on_connect,
-                          suppress_ragged_eofs=self.suppress_ragged_eofs),
-                addr)
+        try:
+            return (SSLSocket(newsock,
+                              keyfile=self.keyfile,
+                              certfile=self.certfile,
+                              server_side=True,
+                              cert_reqs=self.cert_reqs,
+                              ssl_version=self.ssl_version,
+                              ca_certs=self.ca_certs,
+                              ciphers=self.ciphers,
+                              do_handshake_on_connect=self.do_handshake_on_connect,
+                              suppress_ragged_eofs=self.suppress_ragged_eofs),
+                    addr)
+        except socket_error as e:
+            newsock.close()
+            raise e
 
     def makefile(self, mode='r', bufsize=-1):
 
