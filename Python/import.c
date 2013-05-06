@@ -403,6 +403,14 @@ PyImport_Cleanup(void)
         }
     }
 
+    /* Collect garbage remaining after deleting the modules. Mostly
+       reference cycles created by classes. */
+    PyGC_Collect();
+
+    /* Dump GC stats before it's too late, since it uses the warnings
+       machinery. */
+    _PyGC_DumpShutdownStats();
+
     /* Next, delete sys and builtins (in that order) */
     value = PyDict_GetItemString(modules, "sys");
     if (value != NULL && PyModule_Check(value)) {
