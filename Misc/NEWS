@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #12181: select module: Fix struct kevent definition on OpenBSD 64-bit
+  platforms. Patch by Federico Schwindt.
+
 - Issue #14173: Avoid crashing when reading a signal handler during
   interpreter shutdown.
 
