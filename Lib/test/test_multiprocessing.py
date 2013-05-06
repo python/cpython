@@ -1757,6 +1757,35 @@ class _TestPool(BaseTestCase):
                 self.assertEqual(r.get(), expected)
             self.assertRaises(ValueError, p.map_async, sqr, L)
 
+    @classmethod
+    def _test_traceback(cls):
+        raise RuntimeError(123) # some comment
+
+    def test_traceback(self):
+        # We want ensure that the traceback from the child process is
+        # contained in the traceback raised in the main process.
+        if self.TYPE == 'processes':
+            with self.Pool(1) as p:
+                try:
+                    p.apply(self._test_traceback)
+                except Exception as e:
+                    exc = e
+                else:
+                    raise AssertionError('expected RuntimeError')
+            self.assertIs(type(exc), RuntimeError)
+            self.assertEqual(exc.args, (123,))
+            cause = exc.__cause__
+            self.assertIs(type(cause), multiprocessing.pool.RemoteTraceback)
+            self.assertIn('raise RuntimeError(123) # some comment', cause.tb)
+
+            with test.support.captured_stderr() as f1:
+                try:
+                    raise exc
+                except RuntimeError:
+                    sys.excepthook(*sys.exc_info())
+            self.assertIn('raise RuntimeError(123) # some comment',
+                          f1.getvalue())
+
 def raising():
     raise KeyError("key")
 
