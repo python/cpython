@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #7330: Implement width and precision (ex: "%5.3s") for the format
+  string of PyUnicode_FromFormat() function, original patch written by Ysj Ray.
+
 - Issue #1545463: Global variables caught in reference cycles are now
   garbage-collected at shutdown.
 

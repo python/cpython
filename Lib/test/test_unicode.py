@@ -2007,9 +2007,13 @@ class UnicodeTest(string_tests.CommonTest,
                 for arg in args)
             return _PyUnicode_FromFormat(format, *cargs)
 
+        def check_format(expected, format, *args):
+            text = PyUnicode_FromFormat(format, *args)
+            self.assertEqual(expected, text)
+
         # ascii format, non-ascii argument
-        text = PyUnicode_FromFormat(b'ascii\x7f=%U', 'unicode\xe9')
-        self.assertEqual(text, 'ascii\x7f=unicode\xe9')
+        check_format('ascii\x7f=unicode\xe9',
+                     b'ascii\x7f=%U', 'unicode\xe9')
 
         # non-ascii format, ascii argument: ensure that PyUnicode_FromFormatV()
         # raises an error
@@ -2019,83 +2023,200 @@ class UnicodeTest(string_tests.CommonTest,
             PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
 
         # test "%c"
-        self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0xabcd)), '\uabcd')
-        self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0x10ffff)), '\U0010ffff')
+        check_format('\uabcd',
+                     b'%c', c_int(0xabcd))
+        check_format('\U0010ffff',
+                     b'%c', c_int(0x10ffff))
 
         # test "%"
-        self.assertEqual(PyUnicode_FromFormat(b'%'), '%')
-        self.assertEqual(PyUnicode_FromFormat(b'%%'), '%')
-        self.assertEqual(PyUnicode_FromFormat(b'%%s'), '%s')
-        self.assertEqual(PyUnicode_FromFormat(b'[%%]'), '[%]')
-        self.assertEqual(PyUnicode_FromFormat(b'%%%s', b'abc'), '%abc')
+        check_format('%',
+                     b'%')
+        check_format('%',
+                     b'%%')
+        check_format('%s',
+                     b'%%s')
+        check_format('[%]',
+                     b'[%%]')
+        check_format('%abc',
+                     b'%%%s', b'abc')
+
+        # truncated string
+        check_format('abc',
+                     b'%.3s', b'abcdef')
+        check_format('abc[\ufffd',
+                     b'%.5s', 'abc[\u20ac]'.encode('utf8'))
+        check_format("'\\u20acABC'",
+                     b'%A', '\u20acABC')
+        check_format("'\\u20",
+                     b'%.5A', '\u20acABCDEF')
+        check_format("'\u20acABC'",
+                     b'%R', '\u20acABC')
+        check_format("'\u20acA",
+                     b'%.3R', '\u20acABCDEF')
+        check_format('\u20acAB',
+                     b'%.3S', '\u20acABCDEF')
+        check_format('\u20acAB',
+                     b'%.3U', '\u20acABCDEF')
+        check_format('\u20acAB',
+                     b'%.3V', '\u20acABCDEF', None)
+        check_format('abc[\ufffd',
+                     b'%.5V', None, 'abc[\u20ac]'.encode('utf8'))
+
+        # following tests comes from #7330
+        # test width modifier and precision modifier with %S
+        check_format("repr=  abc",
+                     b'repr=%5S', 'abc')
+        check_format("repr=ab",
+                     b'repr=%.2S', 'abc')
+        check_format("repr=   ab",
+                     b'repr=%5.2S', 'abc')
+
+        # test width modifier and precision modifier with %R
+        check_format("repr=   'abc'",
+                     b'repr=%8R', 'abc')
+        check_format("repr='ab",
+                     b'repr=%.3R', 'abc')
+        check_format("repr=  'ab",
+                     b'repr=%5.3R', 'abc')
+
+        # test width modifier and precision modifier with %A
+        check_format("repr=   'abc'",
+                     b'repr=%8A', 'abc')
+        check_format("repr='ab",
+                     b'repr=%.3A', 'abc')
+        check_format("repr=  'ab",
+                     b'repr=%5.3A', 'abc')
+
+        # test width modifier and precision modifier with %s
+        check_format("repr=  abc",
+                     b'repr=%5s', b'abc')
+        check_format("repr=ab",
+                     b'repr=%.2s', b'abc')
+        check_format("repr=   ab",
+                     b'repr=%5.2s', b'abc')
+
+        # test width modifier and precision modifier with %U
+        check_format("repr=  abc",
+                     b'repr=%5U', 'abc')
+        check_format("repr=ab",
+                     b'repr=%.2U', 'abc')
+        check_format("repr=   ab",
+                     b'repr=%5.2U', 'abc')
+
+        # test width modifier and precision modifier with %V
+        check_format("repr=  abc",
+                     b'repr=%5V', 'abc', b'123')
+        check_format("repr=ab",
+                     b'repr=%.2V', 'abc', b'123')
+        check_format("repr=   ab",
+                     b'repr=%5.2V', 'abc', b'123')
+        check_format("repr=  123",
+                     b'repr=%5V', None, b'123')
+        check_format("repr=12",
+                     b'repr=%.2V', None, b'123')
+        check_format("repr=   12",
+                     b'repr=%5.2V', None, b'123')
 
         # test integer formats (%i, %d, %u)
-        self.assertEqual(PyUnicode_FromFormat(b'%03i', c_int(10)), '010')
-        self.assertEqual(PyUnicode_FromFormat(b'%0.4i', c_int(10)), '0010')
-        self.assertEqual(PyUnicode_FromFormat(b'%i', c_int(-123)), '-123')
-        self.assertEqual(PyUnicode_FromFormat(b'%li', c_long(-123)), '-123')
-        self.assertEqual(PyUnicode_FromFormat(b'%lli', c_longlong(-123)), '-123')
-        self.assertEqual(PyUnicode_FromFormat(b'%zi', c_ssize_t(-123)), '-123')
+        check_format('010',
+                     b'%03i', c_int(10))
+        check_format('0010',
+                     b'%0.4i', c_int(10))
+        check_format('-123',
+                     b'%i', c_int(-123))
+        check_format('-123',
+                     b'%li', c_long(-123))
+        check_format('-123',
+                     b'%lli', c_longlong(-123))
+        check_format('-123',
+                     b'%zi', c_ssize_t(-123))
 
-        self.assertEqual(PyUnicode_FromFormat(b'%d', c_int(-123)), '-123')
-        self.assertEqual(PyUnicode_FromFormat(b'%ld', c_long(-123)), '-123')
-        self.assertEqual(PyUnicode_FromFormat(b'%lld', c_longlong(-123)), '-123')
-        self.assertEqual(PyUnicode_FromFormat(b'%zd', c_ssize_t(-123)), '-123')
+        check_format('-123',
+                     b'%d', c_int(-123))
+        check_format('-123',
+                     b'%ld', c_long(-123))
+        check_format('-123',
+                     b'%lld', c_longlong(-123))
+        check_format('-123',
+                     b'%zd', c_ssize_t(-123))
 
-        self.assertEqual(PyUnicode_FromFormat(b'%u', c_uint(123)), '123')
-        self.assertEqual(PyUnicode_FromFormat(b'%lu', c_ulong(123)), '123')
-        self.assertEqual(PyUnicode_FromFormat(b'%llu', c_ulonglong(123)), '123')
-        self.assertEqual(PyUnicode_FromFormat(b'%zu', c_size_t(123)), '123')
+        check_format('123',
+                     b'%u', c_uint(123))
+        check_format('123',
+                     b'%lu', c_ulong(123))
+        check_format('123',
+                     b'%llu', c_ulonglong(123))
+        check_format('123',
+                     b'%zu', c_size_t(123))
 
         # test long output
         min_longlong = -(2 ** (8 * sizeof(c_longlong) - 1))
         max_longlong = -min_longlong - 1
-        self.assertEqual(PyUnicode_FromFormat(b'%lld', c_longlong(min_longlong)), str(min_longlong))
-        self.assertEqual(PyUnicode_FromFormat(b'%lld', c_longlong(max_longlong)), str(max_longlong))
+        check_format(str(min_longlong),
+                     b'%lld', c_longlong(min_longlong))
+        check_format(str(max_longlong),
+                     b'%lld', c_longlong(max_longlong))
         max_ulonglong = 2 ** (8 * sizeof(c_ulonglong)) - 1
-        self.assertEqual(PyUnicode_FromFormat(b'%llu', c_ulonglong(max_ulonglong)), str(max_ulonglong))
+        check_format(str(max_ulonglong),
+                     b'%llu', c_ulonglong(max_ulonglong))
         PyUnicode_FromFormat(b'%p', c_void_p(-1))
 
         # test padding (width and/or precision)
-        self.assertEqual(PyUnicode_FromFormat(b'%010i', c_int(123)), '123'.rjust(10, '0'))
-        self.assertEqual(PyUnicode_FromFormat(b'%100i', c_int(123)), '123'.rjust(100))
-        self.assertEqual(PyUnicode_FromFormat(b'%.100i', c_int(123)), '123'.rjust(100, '0'))
-        self.assertEqual(PyUnicode_FromFormat(b'%100.80i', c_int(123)), '123'.rjust(80, '0').rjust(100))
+        check_format('123'.rjust(10, '0'),
+                     b'%010i', c_int(123))
+        check_format('123'.rjust(100),
+                     b'%100i', c_int(123))
+        check_format('123'.rjust(100, '0'),
+                     b'%.100i', c_int(123))
+        check_format('123'.rjust(80, '0').rjust(100),
+                     b'%100.80i', c_int(123))
 
-        self.assertEqual(PyUnicode_FromFormat(b'%010u', c_uint(123)), '123'.rjust(10, '0'))
-        self.assertEqual(PyUnicode_FromFormat(b'%100u', c_uint(123)), '123'.rjust(100))
-        self.assertEqual(PyUnicode_FromFormat(b'%.100u', c_uint(123)), '123'.rjust(100, '0'))
-        self.assertEqual(PyUnicode_FromFormat(b'%100.80u', c_uint(123)), '123'.rjust(80, '0').rjust(100))
+        check_format('123'.rjust(10, '0'),
+                     b'%010u', c_uint(123))
+        check_format('123'.rjust(100),
+                     b'%100u', c_uint(123))
+        check_format('123'.rjust(100, '0'),
+                     b'%.100u', c_uint(123))
+        check_format('123'.rjust(80, '0').rjust(100),
+                     b'%100.80u', c_uint(123))
 
-        self.assertEqual(PyUnicode_FromFormat(b'%010x', c_int(0x123)), '123'.rjust(10, '0'))
-        self.assertEqual(PyUnicode_FromFormat(b'%100x', c_int(0x123)), '123'.rjust(100))
-        self.assertEqual(PyUnicode_FromFormat(b'%.100x', c_int(0x123)), '123'.rjust(100, '0'))
-        self.assertEqual(PyUnicode_FromFormat(b'%100.80x', c_int(0x123)), '123'.rjust(80, '0').rjust(100))
+        check_format('123'.rjust(10, '0'),
+                     b'%010x', c_int(0x123))
+        check_format('123'.rjust(100),
+                     b'%100x', c_int(0x123))
+        check_format('123'.rjust(100, '0'),
+                     b'%.100x', c_int(0x123))
+        check_format('123'.rjust(80, '0').rjust(100),
+                     b'%100.80x', c_int(0x123))
 
         # test %A
-        text = PyUnicode_FromFormat(b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
-        self.assertEqual(text, r"%A:'abc\xe9\uabcd\U0010ffff'")
+        check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
+                     b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
 
         # test %V
-        text = PyUnicode_FromFormat(b'repr=%V', 'abc', b'xyz')
-        self.assertEqual(text, 'repr=abc')
+        check_format('repr=abc',
+                     b'repr=%V', 'abc', b'xyz')
 
         # Test string decode from parameter of %s using utf-8.
         # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
         # '\u4eba\u6c11'
-        text = PyUnicode_FromFormat(b'repr=%V', None, b'\xe4\xba\xba\xe6\xb0\x91')
-        self.assertEqual(text, 'repr=\u4eba\u6c11')
+        check_format('repr=\u4eba\u6c11',
+                     b'repr=%V', None, b'\xe4\xba\xba\xe6\xb0\x91')
 
         #Test replace error handler.
-        text = PyUnicode_FromFormat(b'repr=%V', None, b'abc\xff')
-        self.assertEqual(text, 'repr=abc\ufffd')
+        check_format('repr=abc\ufffd',
+                     b'repr=%V', None, b'abc\xff')
 
         # not supported: copy the raw format string. these tests are just here
         # to check for crashs and should not be considered as specifications
-        self.assertEqual(PyUnicode_FromFormat(b'%1%s', b'abc'), '%s')
-        self.assertEqual(PyUnicode_FromFormat(b'%1abc'), '%1abc')
-        self.assertEqual(PyUnicode_FromFormat(b'%+i', c_int(10)), '%+i')
-        self.assertEqual(PyUnicode_FromFormat(b'%.%s', b'abc'), '%.%s')
+        check_format('%s',
+                     b'%1%s', b'abc')
+        check_format('%1abc',
+                     b'%1abc')
+        check_format('%+i',
+                     b'%+i', c_int(10))
+        check_format('%.%s',
+                     b'%.%s', b'abc')
 
     # Test PyUnicode_AsWideChar()
     def test_aswidechar(self):
