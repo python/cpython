@@ -478,7 +478,15 @@ def enablerlcompleter():
             readline.parse_and_bind('bind ^I rl_complete')
         else:
             readline.parse_and_bind('tab: complete')
-        readline.read_init_file()
+
+        try:
+            readline.read_init_file()
+        except OSError:
+            # An OSError here could have many causes, but the most likely one
+            # is that there's no .inputrc file (or .editrc file in the case of
+            # Mac OS X + libedit) in the expected location.  In that case, we
+            # want to ignore the exception.
+            pass
 
         history = os.path.join(os.path.expanduser('~'), '.python_history')
         try:
