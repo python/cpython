@@ -686,16 +686,21 @@ class _Environ(MutableMapping):
             self[key] = value
         return self[key]
 
-# if putenv or unsetenv exist they should already be in __all__
 try:
     _putenv = putenv
 except NameError:
     _putenv = lambda key, value: None
+else:
+    if "putenv" not in __all__:
+        __all__.append("putenv")
 
 try:
     _unsetenv = unsetenv
 except NameError:
     _unsetenv = lambda key: _putenv(key, "")
+else:
+    if "unsetenv" not in __all__:
+        __all__.append("unsetenv")
 
 def _createenviron():
     if name == 'nt':
