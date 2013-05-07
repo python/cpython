@@ -1194,7 +1194,9 @@ The following codecs provide bytes-to-bytes mappings.
 | Codec              | Aliases                   | Purpose                   |
 +====================+===========================+===========================+
 | base64_codec       | base64, base-64           | Convert operand to MIME   |
-|                    |                           | base64                    |
+|                    |                           | base64 (the result always |
+|                    |                           | includes a trailing       |
+|                    |                           | ``'\n'``)                 |
 +--------------------+---------------------------+---------------------------+
 | bz2_codec          | bz2                       | Compress the operand      |
 |                    |                           | using bz2                 |
