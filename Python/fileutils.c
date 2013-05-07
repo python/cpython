@@ -254,9 +254,9 @@ _Py_char2wchar(const char* arg, size_t *size)
     wchar_t *res;
     size_t argsize;
     size_t count;
+#ifdef HAVE_MBRTOWC
     unsigned char *in;
     wchar_t *out;
-#ifdef HAVE_MBRTOWC
     mbstate_t mbs;
 #endif
 
