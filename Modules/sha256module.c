@@ -274,7 +274,7 @@ sha_update(SHAobject *sha_info, SHA_BYTE *buffer, Py_ssize_t count)
         memcpy(((SHA_BYTE *) sha_info->data) + sha_info->local, buffer, i);
         count -= i;
         buffer += i;
-        sha_info->local += i;
+        sha_info->local += (int)i;
         if (sha_info->local == SHA_BLOCKSIZE) {
             sha_transform(sha_info);
         }
@@ -289,7 +289,7 @@ sha_update(SHAobject *sha_info, SHA_BYTE *buffer, Py_ssize_t count)
         sha_transform(sha_info);
     }
     memcpy(sha_info->data, buffer, count);
-    sha_info->local = count;
+    sha_info->local = (int)count;
 }
 
 /* finish computing the SHA digest */
