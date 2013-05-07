@@ -1850,7 +1850,8 @@ Loading and running tests
    instead of repeatedly creating new instances.
 
 
-.. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, runnerclass=None, warnings=None)
+.. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
+                          buffer=False, resultclass=None, warnings=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
