@@ -4,6 +4,7 @@ import unittest
 import sys
 import os
 from test import test_support
+from subprocess import Popen, PIPE
 
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = test_support.import_module('_tkinter')
@@ -146,11 +147,20 @@ class TclTest(unittest.TestCase):
 
         with test_support.EnvironmentVarGuard() as env:
             env.unset("TCL_LIBRARY")
-            f = os.popen('%s -c "import Tkinter; print Tkinter"' % (unc_name,))
+            cmd = '%s -c "import Tkinter; print Tkinter"' % (unc_name,)
 
-        self.assertIn('Tkinter.py', f.read())
-        # exit code must be zero
-        self.assertEqual(f.close(), None)
+            p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+            out_data, err_data = p.communicate()
+
+            msg = '\n\n'.join(['"Tkinter.py" not in output',
+                               'Command:', cmd,
+                               'stdout:', out_data,
+                               'stderr:', err_data])
+
+            self.assertIn('Tkinter.py', out_data, msg)
+
+            self.assertEqual(p.wait(), 0, 'Non-zero exit code')
+
 
     def test_passing_values(self):
         def passValue(value):
