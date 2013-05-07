@@ -2909,8 +2909,8 @@ The constructors for both classes work the same:
    based on their members.  For example, ``set('abc') == frozenset('abc')``
    returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
 
-   The subset and equality comparisons do not generalize to a complete ordering
-   function.  For example, any two disjoint sets are not equal and are not
+   The subset and equality comparisons do not generalize to a total ordering
+   function.  For example, any two nonempty disjoint sets are not equal and are not
    subsets of each other, so *all* of the following return ``False``: ``a<b``,
    ``a==b``, or ``a>b``.
 
