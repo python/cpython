@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17926: Fix dbm.__contains__ on 64-bit big-endian machines.
+
 - Issue #17918: When using SSLSocket.accept(), if the SSL handshake failed
   on the new socket, the socket would linger indefinitely.  Thanks to
   Peter Saveliev for reporting.

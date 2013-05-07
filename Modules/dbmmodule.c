@@ -168,11 +168,13 @@ static int
 dbm_contains(register dbmobject *dp, PyObject *v)
 {
     datum key, val;
+    char *ptr;
+    Py_ssize_t size;
 
-    if (PyString_AsStringAndSize(v, (char **)&key.dptr,
-                                 (Py_ssize_t *)&key.dsize)) {
+    if (PyString_AsStringAndSize(v, &ptr, &size))
         return -1;
-    }
+    key.dptr = ptr;
+    key.dsize = size;
 
     /* Expand check_dbmobject_open to return -1 */
     if (dp->di_dbm == NULL) {
