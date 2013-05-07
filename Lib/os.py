@@ -686,19 +686,16 @@ class _Environ(MutableMapping):
             self[key] = value
         return self[key]
 
+# if putenv or unsetenv exist they should already be in __all__
 try:
     _putenv = putenv
 except NameError:
     _putenv = lambda key, value: None
-else:
-    __all__.append("putenv")
 
 try:
     _unsetenv = unsetenv
 except NameError:
     _unsetenv = lambda key: _putenv(key, "")
-else:
-    __all__.append("unsetenv")
 
 def _createenviron():
     if name == 'nt':
@@ -883,6 +880,10 @@ If mode == P_WAIT return the process's exit code if it exits normally;
 otherwise return -SIG, where SIG is the signal that killed it. """
         return _spawnvef(mode, file, args, env, execvpe)
 
+
+    __all__.extend(["spawnv", "spawnve", "spawnvp", "spawnvpe"])
+
+
 if _exists("spawnv"):
     # These aren't supplied by the basic Windows code
     # but can be easily implemented in Python
@@ -908,7 +909,7 @@ otherwise return -SIG, where SIG is the signal that killed it. """
         return spawnve(mode, file, args[:-1], env)
 
 
-    __all__.extend(["spawnv", "spawnve", "spawnl", "spawnle",])
+    __all__.extend(["spawnl", "spawnle"])
 
 
 if _exists("spawnvp"):
@@ -936,7 +937,8 @@ otherwise return -SIG, where SIG is the signal that killed it. """
         return spawnvpe(mode, file, args[:-1], env)
 
 
-    __all__.extend(["spawnvp", "spawnvpe", "spawnlp", "spawnlpe",])
+    __all__.extend(["spawnlp", "spawnlpe"])
+
 
 import copyreg as _copyreg
 
