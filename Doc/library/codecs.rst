@@ -1113,7 +1113,9 @@ the table.
 | Codec              | Aliases                   | Operand type   | Purpose                   |
 +====================+===========================+================+===========================+
 | base64_codec       | base64, base-64           | byte string    | Convert operand to MIME   |
-|                    |                           |                | base64                    |
+|                    |                           |                | base64 (the result always |
+|                    |                           |                | includes a trailing       |
+|                    |                           |                | ``'\n'``)                 |
 +--------------------+---------------------------+----------------+---------------------------+
 | bz2_codec          | bz2                       | byte string    | Compress the operand      |
 |                    |                           |                | using bz2                 |
