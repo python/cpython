@@ -37,7 +37,7 @@ fbound(double val, double minval, double maxval)
         val = maxval;
     else if (val < minval + 1)
         val = minval;
-    return val;
+    return (int)val;
 }
 
 
