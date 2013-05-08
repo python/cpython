@@ -1,3 +1,55 @@
+import gc
+import sys
+import unittest
+import weakref
+
+from test import support
+
+
+class FinalizationTest(unittest.TestCase):
+
+    def test_frame_resurrect(self):
+        # A generator frame can be resurrected by a generator's finalization.
+        def gen():
+            nonlocal frame
+            try:
+                yield
+            finally:
+                frame = sys._getframe()
+
+        g = gen()
+        wr = weakref.ref(g)
+        next(g)
+        del g
+        support.gc_collect()
+        self.assertIs(wr(), None)
+        self.assertTrue(frame)
+        del frame
+        support.gc_collect()
+
+    def test_refcycle(self):
+        # A generator caught in a refcycle gets finalized anyway.
+        old_garbage = gc.garbage[:]
+        finalized = False
+        def gen():
+            nonlocal finalized
+            try:
+                g = yield
+                yield 1
+            finally:
+                finalized = True
+
+        g = gen()
+        next(g)
+        g.send(g)
+        self.assertGreater(sys.getrefcount(g), 2)
+        self.assertFalse(finalized)
+        del g
+        support.gc_collect()
+        self.assertTrue(finalized)
+        self.assertEqual(gc.garbage, old_garbage)
+
+
 tutorial_tests = """
 Let's try a simple generator:
 
@@ -1880,6 +1932,7 @@ __test__ = {"tut":      tutorial_tests,
 # so this works as expected in both ways of running regrtest.
 def test_main(verbose=None):
     from test import support, test_generators
+    support.run_unittest(__name__)
     support.run_doctest(test_generators, verbose)
 
 # This part isn't needed for regrtest, but for running the test directly.
