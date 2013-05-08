@@ -1557,8 +1557,12 @@ _PyGC_DumpShutdownStats(void)
         else
             message = "gc: %zd uncollectable objects at " \
                 "shutdown; use gc.set_debug(gc.DEBUG_UNCOLLECTABLE) to list them";
-        if (PyErr_WarnFormat(PyExc_ResourceWarning, 0, message,
-                             PyList_GET_SIZE(garbage)) < 0)
+        /* PyErr_WarnFormat does too many things and we are at shutdown,
+           the warnings module's dependencies (e.g. linecache) may be gone
+           already. */
+        if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
+                                     "gc", NULL, message,
+                                     PyList_GET_SIZE(garbage)))
             PyErr_WriteUnraisable(NULL);
         if (debug & DEBUG_UNCOLLECTABLE) {
             PyObject *repr = NULL, *bytes = NULL;
@@ -1567,7 +1571,7 @@ _PyGC_DumpShutdownStats(void)
                 PyErr_WriteUnraisable(garbage);
             else {
                 PySys_WriteStderr(
-                    "    %s\n",
+                    "      %s\n",
                     PyBytes_AS_STRING(bytes)
                     );
             }
