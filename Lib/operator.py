@@ -223,9 +223,9 @@ def length_hint(obj, default=0):
 class attrgetter:
     """
     Return a callable object that fetches the given attribute(s) from its operand.
-    After f=attrgetter('name'), the call f(r) returns r.name.
-    After g=attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).
-    After h=attrgetter('name.first', 'name.last'), the call h(r) returns
+    After f = attrgetter('name'), the call f(r) returns r.name.
+    After g = attrgetter('name', 'date'), the call g(r) returns (r.name, r.date).
+    After h = attrgetter('name.first', 'name.last'), the call h(r) returns
     (r.name.first, r.name.last).
     """
     def __init__(self, attr, *attrs):
@@ -250,8 +250,8 @@ class attrgetter:
 class itemgetter:
     """
     Return a callable object that fetches the given item(s) from its operand.
-    After f=itemgetter(2), the call f(r) returns r[2].
-    After g=itemgetter(2,5,3), the call g(r) returns (r[2], r[5], r[3])
+    After f = itemgetter(2), the call f(r) returns r[2].
+    After g = itemgetter(2, 5, 3), the call g(r) returns (r[2], r[5], r[3])
     """
     def __init__(self, item, *items):
         if not items:
