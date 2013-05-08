@@ -295,6 +295,30 @@ static char* sys_files[] = {
     NULL
 };
 
+static int
+is_essential_module(PyObject *name)
+{
+    Py_ssize_t name_len;
+    char *name_str = PyUnicode_AsUTF8AndSize(name, &name_len);
+
+    if (name_str == NULL) {
+        PyErr_Clear();
+        return 0;
+    }
+    if (strcmp(name_str, "builtins") == 0)
+        return 1;
+    if (strcmp(name_str, "sys") == 0)
+        return 1;
+    /* These are all needed for stderr to still function */
+    if (strcmp(name_str, "codecs") == 0)
+        return 1;
+    if (strcmp(name_str, "_codecs") == 0)
+        return 1;
+    if (strncmp(name_str, "encodings.", 10) == 0)
+        return 1;
+    return 0;
+}
+
 
 /* Un-initialize things, as good as we can */
 
@@ -374,9 +398,7 @@ PyImport_Cleanup(void)
             if (value->ob_refcnt != 1)
                 continue;
             if (PyUnicode_Check(key) && PyModule_Check(value)) {
-                if (PyUnicode_CompareWithASCIIString(key, "builtins") == 0)
-                    continue;
-                if (PyUnicode_CompareWithASCIIString(key, "sys") == 0)
+                if (is_essential_module(key))
                     continue;
                 if (Py_VerboseFlag)
                     PySys_FormatStderr(
@@ -392,9 +414,7 @@ PyImport_Cleanup(void)
     pos = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
         if (PyUnicode_Check(key) && PyModule_Check(value)) {
-            if (PyUnicode_CompareWithASCIIString(key, "builtins") == 0)
-                continue;
-            if (PyUnicode_CompareWithASCIIString(key, "sys") == 0)
+            if (is_essential_module(key))
                 continue;
             if (Py_VerboseFlag)
                 PySys_FormatStderr("# cleanup[2] %U\n", key);
@@ -411,20 +431,15 @@ PyImport_Cleanup(void)
        machinery. */
     _PyGC_DumpShutdownStats();
 
-    /* Next, delete sys and builtins (in that order) */
-    value = PyDict_GetItemString(modules, "sys");
-    if (value != NULL && PyModule_Check(value)) {
-        if (Py_VerboseFlag)
-            PySys_WriteStderr("# cleanup sys\n");
-        _PyModule_Clear(value);
-        PyDict_SetItemString(modules, "sys", Py_None);
-    }
-    value = PyDict_GetItemString(modules, "builtins");
-    if (value != NULL && PyModule_Check(value)) {
-        if (Py_VerboseFlag)
-            PySys_WriteStderr("# cleanup builtins\n");
-        _PyModule_Clear(value);
-        PyDict_SetItemString(modules, "builtins", Py_None);
+    /* Next, delete all remaining modules */
+    pos = 0;
+    while (PyDict_Next(modules, &pos, &key, &value)) {
+        if (PyUnicode_Check(key) && PyModule_Check(value)) {
+            if (Py_VerboseFlag)
+                PySys_FormatStderr("# cleanup[3] %U\n", key);
+            _PyModule_Clear(value);
+            PyDict_SetItem(modules, key, Py_None);
+        }
     }
 
     /* Finally, clear and delete the modules directory */

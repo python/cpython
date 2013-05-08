@@ -25,6 +25,12 @@ PyAPI_FUNC(int) PyErr_WarnExplicit(
     const char *module,         /* UTF-8 encoded string */
     PyObject *registry);
 
+PyAPI_FUNC(int)
+PyErr_WarnExplicitFormat(PyObject *category,
+                         const char *filename, int lineno,
+                         const char *module, PyObject *registry,
+                         const char *format, ...);
+
 /* DEPRECATED: Use PyErr_WarnEx() instead. */
 #ifndef Py_LIMITED_API
 #define PyErr_Warn(category, msg) PyErr_WarnEx(category, msg, 1)

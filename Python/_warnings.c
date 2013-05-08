@@ -800,8 +800,8 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
         goto exit;
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
-            if (module == NULL)
-                goto exit;
+        if (module == NULL)
+            goto exit;
     }
 
     if (category == NULL)
@@ -815,6 +815,49 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
 
  exit:
     Py_XDECREF(message);
+    Py_XDECREF(module);
+    Py_XDECREF(filename);
+    return ret;
+}
+
+int
+PyErr_WarnExplicitFormat(PyObject *category,
+                         const char *filename_str, int lineno,
+                         const char *module_str, PyObject *registry,
+                         const char *format, ...)
+{
+    PyObject *message;
+    PyObject *module = NULL;
+    PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
+    int ret = -1;
+    va_list vargs;
+
+    if (filename == NULL)
+        goto exit;
+    if (module_str != NULL) {
+        module = PyUnicode_FromString(module_str);
+        if (module == NULL)
+            goto exit;
+    }
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    message = PyUnicode_FromFormatV(format, vargs);
+    if (message != NULL) {
+        PyObject *res;
+        res = warn_explicit(category, message, filename, lineno,
+                            module, registry, NULL);
+        Py_DECREF(message);
+        if (res != NULL) {
+            Py_DECREF(res);
+            ret = 0;
+        }
+    }
+    va_end(vargs);
+exit:
     Py_XDECREF(module);
     Py_XDECREF(filename);
     return ret;
