@@ -524,10 +524,7 @@ untrack_dicts(PyGC_Head *head)
 static int
 has_finalizer(PyObject *op)
 {
-    if (PyGen_CheckExact(op))
-        return PyGen_NeedsFinalizing((PyGenObject *)op);
-    else
-        return op->ob_type->tp_del != NULL;
+    return op->ob_type->tp_del != NULL;
 }
 
 /* Move the objects in unreachable with __del__ methods into `finalizers`.
