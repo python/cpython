@@ -97,6 +97,8 @@ Library
 Tests
 -----
 
+- Issue #17928: Fix test_structmembers on 64-bit big-endian machines.
+
 - Issue #17883: Fix buildbot testing of Tkinter on Windows.
   Patch by Zachary Ware.
 

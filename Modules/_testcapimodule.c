@@ -1813,7 +1813,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         ;
     test_structmembers *ob;
     const char *s = NULL;
-    Py_ssize_t string_len = 0;
+    int string_len = 0;
     ob = PyObject_New(test_structmembers, type);
     if (ob == NULL)
         return NULL;
