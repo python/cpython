@@ -6,14 +6,6 @@ What's New in Python 2.7.5?
 
 *Release date: XXXX-XX-XX*
 
-Build
------
-
-- Issue #17682: Add the _io module to Modules/Setup.dist (commented out).
-
-- Issue #17086: Search the include and library directories provided by the
-  compiler.
-
 Core and Builtins
 -----------------
 
@@ -93,6 +85,14 @@ Library
 
 - Issue #17526: fix an IndexError raised while passing code without filename to
   inspect.findsource().  Initial patch by Tyler Doyle.
+
+Build
+-----
+
+- Issue #17682: Add the _io module to Modules/Setup.dist (commented out).
+
+- Issue #17086: Search the include and library directories provided by the
+  compiler.
 
 Tests
 -----
