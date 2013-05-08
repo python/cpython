@@ -213,7 +213,10 @@ new_threadstate(PyInterpreterState *interp, int init)
             _PyThreadState_Init(tstate);
 
         HEAD_LOCK();
+        tstate->prev = NULL;
         tstate->next = interp->tstate_head;
+        if (tstate->next)
+            tstate->next->prev = tstate;
         interp->tstate_head = tstate;
         HEAD_UNLOCK();
     }
@@ -349,35 +352,18 @@ static void
 tstate_delete_common(PyThreadState *tstate)
 {
     PyInterpreterState *interp;
-    PyThreadState **p;
-    PyThreadState *prev_p = NULL;
     if (tstate == NULL)
         Py_FatalError("PyThreadState_Delete: NULL tstate");
     interp = tstate->interp;
     if (interp == NULL)
         Py_FatalError("PyThreadState_Delete: NULL interp");
     HEAD_LOCK();
-    for (p = &interp->tstate_head; ; p = &(*p)->next) {
-        if (*p == NULL)
-            Py_FatalError(
-                "PyThreadState_Delete: invalid tstate");
-        if (*p == tstate)
-            break;
-        /* Sanity check.  These states should never happen but if
-         * they do we must abort.  Otherwise we'll end up spinning in
-         * in a tight loop with the lock held.  A similar check is done
-         * in thread.c find_key().  */
-        if (*p == prev_p)
-            Py_FatalError(
-                "PyThreadState_Delete: small circular list(!)"
-                " and tstate not found.");
-        prev_p = *p;
-        if ((*p)->next == interp->tstate_head)
-            Py_FatalError(
-                "PyThreadState_Delete: circular list(!) and"
-                " tstate not found.");
-    }
-    *p = tstate->next;
+    if (tstate->prev)
+        tstate->prev->next = tstate->next;
+    else
+        interp->tstate_head = tstate->next;
+    if (tstate->next)
+        tstate->next->prev = tstate->prev;
     HEAD_UNLOCK();
     free(tstate);
 }
@@ -429,26 +415,16 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     HEAD_LOCK();
     /* Remove all thread states, except tstate, from the linked list of
        thread states.  This will allow calling PyThreadState_Clear()
-       without holding the lock.
-       XXX This would be simpler with a doubly-linked list. */
+       without holding the lock. */
     garbage = interp->tstate_head;
+    if (garbage == tstate)
+        garbage = tstate->next;
+    if (tstate->prev)
+        tstate->prev->next = tstate->next;
+    if (tstate->next)
+        tstate->next->prev = tstate->prev;
+    tstate->prev = tstate->next = NULL;
     interp->tstate_head = tstate;
-    if (garbage == tstate) {
-        garbage = garbage->next;
-        tstate->next = NULL;
-    }
-    else {
-        for (p = garbage; p; p = p->next) {
-            if (p->next == tstate) {
-                p->next = tstate->next;
-                tstate->next = NULL;
-                break;
-            }
-        }
-    }
-    if (tstate->next != NULL)
-        Py_FatalError("_PyThreadState_DeleteExcept: tstate not found "
-                      "in interpreter thread states");
     HEAD_UNLOCK();
     /* Clear and deallocate all stale thread states.  Even if this
        executes Python code, we should be safe since it executes

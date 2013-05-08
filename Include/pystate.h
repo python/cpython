@@ -69,6 +69,7 @@ typedef struct _ts PyThreadState;
 typedef struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
+    struct _ts *prev;
     struct _ts *next;
     PyInterpreterState *interp;
 
