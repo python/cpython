@@ -261,7 +261,8 @@ class PosixPathTest(unittest.TestCase):
                 # expanduser should fall back to using the password database
                 del env['HOME']
                 home = pwd.getpwuid(os.getuid()).pw_dir
-                self.assertEqual(posixpath.expanduser("~"), home)
+                # $HOME can end with a trailing /, so strip it (see #17809)
+                self.assertEqual(posixpath.expanduser("~"), home.rstrip("/"))
 
     def test_normpath(self):
         self.assertEqual(posixpath.normpath(""), ".")
