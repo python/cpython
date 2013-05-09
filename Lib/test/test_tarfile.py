@@ -345,6 +345,14 @@ class MiscReadTest(CommonReadTest):
         finally:
             os.remove(empty)
 
+    def test_parallel_iteration(self):
+        # Issue #16601: Restarting iteration over tarfile continued
+        # from where it left off.
+        with tarfile.open(self.tarname) as tar:
+            for m1, m2 in zip(tar, tar):
+                self.assertEqual(m1.offset, m2.offset)
+                self.assertEqual(m1.name, m2.name)
+
 
 class StreamReadTest(CommonReadTest):
 
