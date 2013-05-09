@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 16584: in filecomp._cmp, catch IOError as well as os.error.
+  Patch by Till Maas.
+
 - Issue #17926: Fix dbm.__contains__ on 64-bit big-endian machines.
 
 - Issue #17918: When using SSLSocket.accept(), if the SSL handshake failed
