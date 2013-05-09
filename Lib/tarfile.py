@@ -2398,16 +2398,18 @@ class TarIter:
         # Fix for SF #1100429: Under rare circumstances it can
         # happen that getmembers() is called during iteration,
         # which will cause TarIter to stop prematurely.
-        if not self.tarfile._loaded:
+
+        if self.index == 0 and self.tarfile.firstmember is not None:
+            tarinfo = self.tarfile.next()
+        elif self.index < len(self.tarfile.members):
+            tarinfo = self.tarfile.members[self.index]
+        elif not self.tarfile._loaded:
             tarinfo = self.tarfile.next()
             if not tarinfo:
                 self.tarfile._loaded = True
                 raise StopIteration
         else:
-            try:
-                tarinfo = self.tarfile.members[self.index]
-            except IndexError:
-                raise StopIteration
+            raise StopIteration
         self.index += 1
         return tarinfo
 
