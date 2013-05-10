@@ -1,3 +1,4 @@
+import gc
 import unittest
 from test.support import check_syntax_error, cpython_only, run_unittest
 
@@ -713,7 +714,6 @@ class ScopeTests(unittest.TestCase):
         def b():
             global a
 
-
     def testClassNamespaceOverridesClosure(self):
         # See #17853.
         x = 42
@@ -726,6 +726,45 @@ class ScopeTests(unittest.TestCase):
             del x
         self.assertFalse(hasattr(X, "x"))
         self.assertEqual(x, 42)
+
+    @cpython_only
+    def testCellLeak(self):
+        # Issue 17927.
+        #
+        # The issue was that if self was part of a cycle involving the
+        # frame of a method call, *and* the method contained a nested
+        # function referencing self, thereby forcing 'self' into a
+        # cell, setting self to None would not be enough to break the
+        # frame -- the frame had another reference to the instance,
+        # which could not be cleared by the code running in the frame
+        # (though it will be cleared when the frame is collected).
+        # Without the lambda, setting self to None is enough to break
+        # the cycle.
+        logs = []
+        class Canary:
+            def __del__(self):
+                logs.append('canary')
+        class Base:
+            def dig(self):
+                pass
+        class Tester(Base):
+            def __init__(self):
+                self.canary = Canary()
+            def dig(self):
+                if 0:
+                    lambda: self
+                try:
+                    1/0
+                except Exception as exc:
+                    self.exc = exc
+                super().dig()
+                self = None  # Break the cycle
+        tester = Tester()
+        tester.dig()
+        del tester
+        logs.append('collect')
+        gc.collect()
+        self.assertEqual(logs, ['canary', 'collect'])
 
 
 def test_main():
