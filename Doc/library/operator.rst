@@ -523,9 +523,6 @@ expect a function argument.
           return obj
 
 
-.. function:: itemgetter(item)
-              itemgetter(*items)
-
    .. versionadded:: 2.4
 
    .. versionchanged:: 2.5
@@ -534,6 +531,9 @@ expect a function argument.
    .. versionchanged:: 2.6
       Added support for dotted attributes.
 
+
+.. function:: itemgetter(item)
+              itemgetter(*items)
 
    Return a callable object that fetches *item* from its operand using the
    operand's :meth:`__getitem__` method.  If multiple items are specified,
