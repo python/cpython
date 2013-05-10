@@ -6510,6 +6510,10 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
             return -1;
         }
         obj = f->f_localsplus[0];
+        if (obj != NULL && PyCell_Check(obj)) {
+            /* It might be a cell.  See cell var initialization in ceval.c. */
+            obj = PyCell_GET(obj);
+        }
         if (obj == NULL) {
             PyErr_SetString(PyExc_RuntimeError,
                             "super(): arg[0] deleted");

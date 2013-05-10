@@ -3519,12 +3519,20 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         int arg;
         /* Possibly account for the cell variable being an argument. */
         if (co->co_cell2arg != NULL &&
-            (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG)
+            (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG) {
             c = PyCell_New(GETLOCAL(arg));
-        else
+            if (c == NULL)
+                goto fail;
+            /* Reference the cell from the argument slot, for super().
+               See typeobject.c. */
+            Py_INCREF(c);
+            SETLOCAL(arg, c);
+        }
+        else {
             c = PyCell_New(NULL);
-        if (c == NULL)
-            goto fail;
+            if (c == NULL)
+                goto fail;
+        }
         SETLOCAL(co->co_nlocals + i, c);
     }
     for (i = 0; i < PyTuple_GET_SIZE(co->co_freevars); ++i) {
