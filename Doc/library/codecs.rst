@@ -1188,44 +1188,44 @@ particular, the following variants typically exist:
 
 The following codecs provide bytes-to-bytes mappings.
 
-.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
+.. tabularcolumns:: |l|L|
 
-+--------------------+---------------------------+---------------------------+
-| Codec              | Aliases                   | Purpose                   |
-+====================+===========================+===========================+
-| base64_codec       | base64, base-64           | Convert operand to MIME   |
-|                    |                           | base64 (the result always |
-|                    |                           | includes a trailing       |
-|                    |                           | ``'\n'``)                 |
-+--------------------+---------------------------+---------------------------+
-| bz2_codec          | bz2                       | Compress the operand      |
-|                    |                           | using bz2                 |
-+--------------------+---------------------------+---------------------------+
-| hex_codec          | hex                       | Convert operand to        |
-|                    |                           | hexadecimal               |
-|                    |                           | representation, with two  |
-|                    |                           | digits per byte           |
-+--------------------+---------------------------+---------------------------+
-| quopri_codec       | quopri, quoted-printable, | Convert operand to MIME   |
-|                    | quotedprintable           | quoted printable          |
-+--------------------+---------------------------+---------------------------+
-| uu_codec           | uu                        | Convert the operand using |
-|                    |                           | uuencode                  |
-+--------------------+---------------------------+---------------------------+
-| zlib_codec         | zip, zlib                 | Compress the operand      |
-|                    |                           | using gzip                |
-+--------------------+---------------------------+---------------------------+
++--------------------+---------------------------+
+| Codec              | Purpose                   |
++====================+===========================+
+| base64_codec       | Convert operand to MIME   |
+|                    | base64 (the result always |
+|                    | includes a trailing       |
+|                    | ``'\n'``)                 |
++--------------------+---------------------------+
+| bz2_codec          | Compress the operand      |
+|                    | using bz2                 |
++--------------------+---------------------------+
+| hex_codec          | Convert operand to        |
+|                    | hexadecimal               |
+|                    | representation, with two  |
+|                    | digits per byte           |
++--------------------+---------------------------+
+| quopri_codec       | Convert operand to MIME   |
+|                    | quoted printable          |
++--------------------+---------------------------+
+| uu_codec           | Convert the operand using |
+|                    | uuencode                  |
++--------------------+---------------------------+
+| zlib_codec         | Compress the operand      |
+|                    | using gzip                |
++--------------------+---------------------------+
 
 The following codecs provide string-to-string mappings.
 
-.. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
+.. tabularcolumns:: |l|L|
 
-+--------------------+---------------------------+---------------------------+
-| Codec              | Aliases                   | Purpose                   |
-+====================+===========================+===========================+
-| rot_13             | rot13                     | Returns the Caesar-cypher |
-|                    |                           | encryption of the operand |
-+--------------------+---------------------------+---------------------------+
++--------------------+---------------------------+
+| Codec              | Purpose                   |
++====================+===========================+
+| rot_13             | Returns the Caesar-cypher |
+|                    | encryption of the operand |
++--------------------+---------------------------+
 
 .. versionadded:: 3.2
    bytes-to-bytes and string-to-string codecs.
