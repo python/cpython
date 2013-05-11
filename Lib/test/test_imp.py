@@ -267,7 +267,8 @@ class ImportTests(unittest.TestCase):
         # Issue #15902
         name = '_testimportmultiple'
         found = imp.find_module(name)
-        found[0].close()
+        if found[0] is not None:
+            found[0].close()
         if found[2][2] != imp.C_EXTENSION:
             return
         imp.load_module(name, None, *found[1:])
