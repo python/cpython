@@ -1,5 +1,7 @@
 import gc
 import unittest
+import weakref
+
 from test.support import check_syntax_error, cpython_only, run_unittest
 
 
@@ -740,16 +742,7 @@ class ScopeTests(unittest.TestCase):
         # (though it will be cleared when the frame is collected).
         # Without the lambda, setting self to None is enough to break
         # the cycle.
-        logs = []
-        class Canary:
-            def __del__(self):
-                logs.append('canary')
-        class Base:
-            def dig(self):
-                pass
-        class Tester(Base):
-            def __init__(self):
-                self.canary = Canary()
+        class Tester:
             def dig(self):
                 if 0:
                     lambda: self
@@ -757,14 +750,12 @@ class ScopeTests(unittest.TestCase):
                     1/0
                 except Exception as exc:
                     self.exc = exc
-                super().dig()
                 self = None  # Break the cycle
         tester = Tester()
         tester.dig()
+        ref = weakref.ref(tester)
         del tester
-        logs.append('collect')
-        gc.collect()
-        self.assertEqual(logs, ['canary', 'collect'])
+        self.assertIsNone(ref())
 
 
 def test_main():
