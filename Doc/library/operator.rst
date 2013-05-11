@@ -11,6 +11,9 @@
    import operator
    from operator import itemgetter, iadd
 
+**Source code:** :source:`Lib/operator.py`
+
+--------------
 
 The :mod:`operator` module exports a set of efficient functions corresponding to
 the intrinsic operators of Python.  For example, ``operator.add(x, y)`` is
