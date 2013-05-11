@@ -12,6 +12,8 @@ What's New in Python 3.3.2?
 Core and Builtins
 -----------------
 
+- Issue #17237: Fix crash in the ASCII decoder on m68k.
+
 - Issue #17408: Avoid using an obsolete instance of the copyreg module when
   the interpreter is shutdown and then started again.
 
