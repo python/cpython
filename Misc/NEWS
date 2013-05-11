@@ -300,6 +300,12 @@ IDLE
 
 - Issue #14735: Update IDLE docs to omit "Control-z on Windows".
 
+Build
+-----
+
+- Issue #17547: In configure, explicitly pass -Wformat for the benefit for GCC
+  4.8.
+
 
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
