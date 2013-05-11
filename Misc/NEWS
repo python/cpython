@@ -223,6 +223,12 @@ Documentation
 - Issue #6696: add documentation for the Profile objects, and improve
   profile/cProfile docs.  Patch by Tom Pinckney.
 
+Build
+-----
+
+- Issue #17547: In configure, explicitly pass -Wformat for the benefit for GCC
+  4.8.
+
 
 What's New in Python 3.3.1?
 ===========================
