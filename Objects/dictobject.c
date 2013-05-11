@@ -2473,10 +2473,10 @@ PyDoc_STRVAR(popitem__doc__,
 2-tuple; but raise KeyError if D is empty.");
 
 PyDoc_STRVAR(update__doc__,
-"D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n"
-"If E present and has a .keys() method, does:     for k in E: D[k] = E[k]\n\
-If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v\n\
-In either case, this is followed by: for k in F: D[k] = F[k]");
+"D.update([E, ]**F) -> None.  Update D from dict/iterable E and F.\n\
+If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]\n\
+If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
+In either case, this is followed by: for k in F:  D[k] = F[k]");
 
 PyDoc_STRVAR(fromkeys__doc__,
 "dict.fromkeys(S[,v]) -> New dict with keys from S and values equal to v.\n\
