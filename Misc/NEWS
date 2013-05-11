@@ -95,6 +95,9 @@ Library
 Build
 -----
 
+- Issue #17547: In configure, explicitly pass -Wformat for the benefit for GCC
+  4.8.
+
 - Issue #17682: Add the _io module to Modules/Setup.dist (commented out).
 
 - Issue #17086: Search the include and library directories provided by the
