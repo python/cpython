@@ -4647,6 +4647,14 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     const char *p = start;
     const char *aligned_end = (const char *) _Py_ALIGN_DOWN(end, SIZEOF_LONG);
 
+    /*
+     * Issue #17237: m68k is a bit different from most architectures in
+     * that objects do not use "natural alignment" - for example, int and
+     * long are only aligned at 2-byte boundaries.  Therefore the assert()
+     * won't work; also, tests have shown that skipping the "optimised
+     * version" will even speed up m68k.
+     */
+#if !defined(__m68k__)
 #if SIZEOF_LONG <= SIZEOF_VOID_P
     assert(_Py_IS_ALIGNED(dest, SIZEOF_LONG));
     if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
@@ -4671,6 +4679,7 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         }
         return p - start;
     }
+#endif
 #endif
     while (p < end) {
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
