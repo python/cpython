@@ -1333,7 +1333,7 @@ if test "$GCC" = "yes"
 then
   AC_MSG_CHECKING(whether gcc supports ParseTuple __format__)
   save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -Werror"
+  CFLAGS="$CFLAGS -Werror -Wformat"
   AC_COMPILE_IFELSE([
     AC_LANG_PROGRAM([[void f(char*,...)__attribute((format(PyArg_ParseTuple, 1, 2)));]], [[]])
   ],[
