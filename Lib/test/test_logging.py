@@ -3964,7 +3964,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         finally:
             rh.close()
 
-    @unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
+    #@unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
     def test_compute_rollover_weekly_attime(self):
         currentTime = int(time.time())
         today = currentTime - currentTime % 86400
@@ -3992,6 +3992,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 actual = rh.computeRollover(today)
                 if actual != expected:
                     print('failed in timezone: %d' % time.timezone)
+                    print('local vars: %s' % locals())
                 self.assertEqual(actual, expected)
                 if day == wday:
                     # goes into following week
@@ -3999,6 +4000,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 actual = rh.computeRollover(today + 13 * 60 * 60)
                 if actual != expected:
                     print('failed in timezone: %d' % time.timezone)
+                    print('local vars: %s' % locals())
                 self.assertEqual(actual, expected)
             finally:
                 rh.close()
