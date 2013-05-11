@@ -539,9 +539,6 @@ Library
 - Issue #13454: Fix a crash when deleting an iterator created by itertools.tee()
   if all other iterators were very advanced before.
 
-- Issue #1159051: GzipFile now raises EOFError when reading a corrupted file
-  with truncated header or footer.
-
 - Issue #16992: On Windows in signal.set_wakeup_fd, validate the file
   descriptor argument.
 

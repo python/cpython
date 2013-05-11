@@ -21,6 +21,9 @@ def write32u(output, value):
     # or unsigned.
     output.write(struct.pack("<L", value))
 
+def read32(input):
+    return struct.unpack("<I", input.read(4))[0]
+
 def open(filename, mode="rb", compresslevel=9):
     """Shorthand for GzipFile(filename, mode, compresslevel).
 
@@ -181,29 +184,24 @@ class GzipFile(io.BufferedIOBase):
         self.crc = zlib.crc32("") & 0xffffffffL
         self.size = 0
 
-    def _read_exact(self, n):
-        data = self.fileobj.read(n)
-        while len(data) < n:
-            b = self.fileobj.read(n - len(data))
-            if not b:
-                raise EOFError("Compressed file ended before the "
-                               "end-of-stream marker was reached")
-            data += b
-        return data
-
     def _read_gzip_header(self):
         magic = self.fileobj.read(2)
         if magic != '\037\213':
             raise IOError, 'Not a gzipped file'
-
-        method, flag, self.mtime = struct.unpack("<BBIxx", self._read_exact(8))
+        method = ord( self.fileobj.read(1) )
         if method != 8:
             raise IOError, 'Unknown compression method'
+        flag = ord( self.fileobj.read(1) )
+        self.mtime = read32(self.fileobj)
+        # extraflag = self.fileobj.read(1)
+        # os = self.fileobj.read(1)
+        self.fileobj.read(2)
 
         if flag & FEXTRA:
             # Read & discard the extra field, if present
-            extra_len, = struct.unpack("<H", self._read_exact(2))
-            self._read_exact(extra_len)
+            xlen = ord(self.fileobj.read(1))
+            xlen = xlen + 256*ord(self.fileobj.read(1))
+            self.fileobj.read(xlen)
         if flag & FNAME:
             # Read and discard a null-terminated string containing the filename
             while True:
@@ -217,7 +215,7 @@ class GzipFile(io.BufferedIOBase):
                 if not s or s=='\000':
                     break
         if flag & FHCRC:
-            self._read_exact(2)     # Read & discard the 16-bit header CRC
+            self.fileobj.read(2)     # Read & discard the 16-bit header CRC
 
     def write(self,data):
         self._check_closed()
@@ -251,16 +249,20 @@ class GzipFile(io.BufferedIOBase):
 
         readsize = 1024
         if size < 0:        # get the whole thing
-            while self._read(readsize):
-                readsize = min(self.max_read_chunk, readsize * 2)
-            size = self.extrasize
+            try:
+                while True:
+                    self._read(readsize)
+                    readsize = min(self.max_read_chunk, readsize * 2)
+            except EOFError:
+                size = self.extrasize
         else:               # just get some more of it
-            while size > self.extrasize:
-                if not self._read(readsize):
-                    if size > self.extrasize:
-                        size = self.extrasize
-                    break
-                readsize = min(self.max_read_chunk, readsize * 2)
+            try:
+                while size > self.extrasize:
+                    self._read(readsize)
+                    readsize = min(self.max_read_chunk, readsize * 2)
+            except EOFError:
+                if size > self.extrasize:
+                    size = self.extrasize
 
         offset = self.offset - self.extrastart
         chunk = self.extrabuf[offset: offset + size]
@@ -275,7 +277,7 @@ class GzipFile(io.BufferedIOBase):
 
     def _read(self, size=1024):
         if self.fileobj is None:
-            return False
+            raise EOFError, "Reached EOF"
 
         if self._new_member:
             # If the _new_member flag is set, we have to
@@ -286,7 +288,7 @@ class GzipFile(io.BufferedIOBase):
             pos = self.fileobj.tell()   # Save current position
             self.fileobj.seek(0, 2)     # Seek to end of file
             if pos == self.fileobj.tell():
-                return False
+                raise EOFError, "Reached EOF"
             else:
                 self.fileobj.seek( pos ) # Return to original position
 
@@ -303,10 +305,9 @@ class GzipFile(io.BufferedIOBase):
 
         if buf == "":
             uncompress = self.decompress.flush()
-            self.fileobj.seek(-len(self.decompress.unused_data), 1)
             self._read_eof()
             self._add_read_data( uncompress )
-            return False
+            raise EOFError, 'Reached EOF'
 
         uncompress = self.decompress.decompress(buf)
         self._add_read_data( uncompress )
@@ -316,14 +317,13 @@ class GzipFile(io.BufferedIOBase):
             # so seek back to the start of the unused data, finish up
             # this member, and read a new gzip header.
             # (The number of bytes to seek back is the length of the unused
-            # data)
-            self.fileobj.seek(-len(self.decompress.unused_data), 1)
+            # data, minus 8 because _read_eof() will rewind a further 8 bytes)
+            self.fileobj.seek( -len(self.decompress.unused_data)+8, 1)
 
             # Check the CRC and file size, and set the flag so we read
             # a new member on the next call
             self._read_eof()
             self._new_member = True
-        return True
 
     def _add_read_data(self, data):
         self.crc = zlib.crc32(data, self.crc) & 0xffffffffL
@@ -334,11 +334,14 @@ class GzipFile(io.BufferedIOBase):
         self.size = self.size + len(data)
 
     def _read_eof(self):
-        # We've read to the end of the file.
+        # We've read to the end of the file, so we have to rewind in order
+        # to reread the 8 bytes containing the CRC and the file size.
         # We check the that the computed CRC and size of the
         # uncompressed data matches the stored values.  Note that the size
         # stored is the true file size mod 2**32.
-        crc32, isize = struct.unpack("<II", self._read_exact(8))
+        self.fileobj.seek(-8, 1)
+        crc32 = read32(self.fileobj)
+        isize = read32(self.fileobj)  # may exceed 2GB
         if crc32 != self.crc:
             raise IOError("CRC check failed %s != %s" % (hex(crc32),
                                                          hex(self.crc)))
