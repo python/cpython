@@ -343,6 +343,18 @@ Common commands: (see '--help-commands' for more)
     def parse_config_files(self, filenames=None):
         from configparser import ConfigParser
 
+        # Ignore install directory options if we have a venv
+        if sys.prefix != sys.base_prefix:
+            ignore_options = [
+                'install-base', 'install-platbase', 'install-lib',
+                'install-platlib', 'install-purelib', 'install-headers',
+                'install-scripts', 'install-data', 'prefix', 'exec-prefix',
+                'home', 'user', 'root']
+        else:
+            ignore_options = []
+
+        ignore_options = frozenset(ignore_options)
+
         if filenames is None:
             filenames = self.find_config_files()
 
@@ -359,7 +371,7 @@ Common commands: (see '--help-commands' for more)
                 opt_dict = self.get_option_dict(section)
 
                 for opt in options:
-                    if opt != '__name__':
+                    if opt != '__name__' and opt not in ignore_options:
                         val = parser.get(section,opt)
                         opt = opt.replace('-', '_')
                         opt_dict[opt] = (filename, val)
