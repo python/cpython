@@ -319,6 +319,24 @@ class XmlgenTest:
 
         self.assertEqual(result.getvalue(), self.xml("<doc> </doc>"))
 
+    def test_xmlgen_encoding_bytes(self):
+        encodings = ('iso-8859-15', 'utf-8', 'utf-8-sig',
+                     'utf-16', 'utf-16be', 'utf-16le',
+                     'utf-32', 'utf-32be', 'utf-32le')
+        for encoding in encodings:
+            result = self.ioclass()
+            gen = XMLGenerator(result, encoding=encoding)
+
+            gen.startDocument()
+            gen.startElement("doc", {"a": '\u20ac'})
+            gen.characters("\u20ac".encode(encoding))
+            gen.ignorableWhitespace(" ".encode(encoding))
+            gen.endElement("doc")
+            gen.endDocument()
+
+            self.assertEqual(result.getvalue(),
+                self.xml('<doc a="\u20ac">\u20ac </doc>', encoding=encoding))
+
     def test_xmlgen_ns(self):
         result = self.ioclass()
         gen = XMLGenerator(result)
