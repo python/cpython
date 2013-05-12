@@ -6,6 +6,8 @@ import unittest
 import warnings
 import textwrap
 
+from unittest import mock
+
 from distutils.dist import Distribution, fix_help_options
 from distutils.cmd import Command
 
@@ -18,7 +20,7 @@ class test_dist(Command):
 
     user_options = [
         ("sample-option=", "S", "help text"),
-        ]
+    ]
 
     def initialize_options(self):
         self.sample_option = None
@@ -76,6 +78,64 @@ class DistributionTestCase(support.LoggingSilencer,
         cmd = d.get_command_obj("test_dist")
         self.assertIsInstance(cmd, test_dist)
         self.assertEqual(cmd.sample_option, "sometext")
+
+    def test_venv_install_options(self):
+        sys.argv.append("install")
+        self.addCleanup(os.unlink, TESTFN)
+
+        fakepath = '/somedir'
+
+        with open(TESTFN, "w") as f:
+            print(("[install]\n"
+                   "install-base = {0}\n"
+                   "install-platbase = {0}\n"
+                   "install-lib = {0}\n"
+                   "install-platlib = {0}\n"
+                   "install-purelib = {0}\n"
+                   "install-headers = {0}\n"
+                   "install-scripts = {0}\n"
+                   "install-data = {0}\n"
+                   "prefix = {0}\n"
+                   "exec-prefix = {0}\n"
+                   "home = {0}\n"
+                   "user = {0}\n"
+                   "root = {0}").format(fakepath), file=f)
+
+        # Base case: Not in a Virtual Environment
+        with mock.patch.multiple(sys, prefix='/a', base_prefix='/a') as values:
+            d = self.create_distribution([TESTFN])
+
+        option_tuple = (TESTFN, fakepath)
+
+        result_dict = {
+            'install_base': option_tuple,
+            'install_platbase': option_tuple,
+            'install_lib': option_tuple,
+            'install_platlib': option_tuple,
+            'install_purelib': option_tuple,
+            'install_headers': option_tuple,
+            'install_scripts': option_tuple,
+            'install_data': option_tuple,
+            'prefix': option_tuple,
+            'exec_prefix': option_tuple,
+            'home': option_tuple,
+            'user': option_tuple,
+            'root': option_tuple,
+        }
+
+        self.assertEqual(
+            sorted(d.command_options.get('install').keys()),
+            sorted(result_dict.keys()))
+
+        for (key, value) in d.command_options.get('install').items():
+            self.assertEqual(value, result_dict[key])
+
+        # Test case: In a Virtual Environment
+        with mock.patch.multiple(sys, prefix='/a', base_prefix='/b') as values:
+            d = self.create_distribution([TESTFN])
+
+        for key in result_dict.keys():
+            self.assertNotIn(key, d.command_options.get('install', {}))
 
     def test_command_packages_configfile(self):
         sys.argv.append("build")
@@ -304,7 +364,7 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                 os.environ['HOME'] = temp_dir
                 files = dist.find_config_files()
                 self.assertIn(user_filename, files,
-                             '%r not found in %r' % (user_filename, files))
+                              '%r not found in %r' % (user_filename, files))
         finally:
             os.remove(user_filename)
 
