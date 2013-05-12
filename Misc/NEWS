@@ -628,9 +628,6 @@ Library
   current directory on Unix and no longer searches a relative file path with
   a directory part in PATH directories.  Patch by Thomas Kluyver.
 
-- Issue #1159051: GzipFile now raises EOFError when reading a corrupted file
-  with truncated header or footer.
-
 - Issue #16993: shutil.which() now preserves the case of the path and extension
   on Windows.
 
