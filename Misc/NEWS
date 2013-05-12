@@ -16,6 +16,9 @@ Library
 
 - Issue #17666: Fix reading gzip files with an extra field.
 
+- Issue #15535: Fix namedtuple pickles which were picking up the OrderedDict
+  instead of just the underlying tuple.
+
 
 What's New in Python 3.2.4?
 ===========================
