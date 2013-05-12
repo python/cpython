@@ -250,6 +250,8 @@ Build
 - Issue #17547: In configure, explicitly pass -Wformat for the benefit for GCC
   4.8.
 
+- Issue #17962: Build with OpenSSL 1.0.1e on Windows.
+
 
 What's New in Python 3.3.1?
 ===========================
