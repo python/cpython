@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17732: Ignore distutils.cfg options pertaining to install paths if a
+  virtual environment is active.
+
 - Issue #1159051: Back out a fix for handling corrupted gzip files that
   broke backwards compatibility.
 
