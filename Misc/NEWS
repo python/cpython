@@ -14,10 +14,11 @@ Library
   which were omitted in 3.2.4 when updating the bundled version of
   libffi used by ctypes.
 
-- Issue #17666: Fix reading gzip files with an extra field.
-
 - Issue #15535: Fix namedtuple pickles which were picking up the OrderedDict
   instead of just the underlying tuple.
+
+- Issue #1159051: Back out a fix for handling corrupted gzip files that
+  broke backwards compatibility.
 
 Build
 -----
