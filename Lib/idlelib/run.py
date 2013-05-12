@@ -297,6 +297,11 @@ class MyHandler(rpc.RPCHandler):
         # page help() text to shell.
         import pydoc # import must be done here to capture i/o binding
         pydoc.pager = pydoc.plainpager
+
+        # Keep a reference to stdin so that it won't try to exit IDLE if
+        # sys.stdin gets changed from within IDLE's shell. See issue17838.
+        self._keep_stdin = sys.stdin
+
         self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
 

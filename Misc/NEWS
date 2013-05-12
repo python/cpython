@@ -294,6 +294,8 @@ C-API
 IDLE
 ----
 
+- Issue #17838: Allow sys.stdin to be reassigned.
+
 - Issue #13495: Avoid loading the color delegator twice in IDLE.
 
 - Issue #17798: Allow IDLE to edit new files when specified on command line.
