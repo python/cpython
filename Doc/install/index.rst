@@ -645,6 +645,11 @@ environment variables, such as Mac OS 9, the configuration variables supplied by
 the Distutils are the only ones you can use.) See section :ref:`inst-config-files`
 for details.
 
+.. note:: When a :ref:`virtual environment <venv-def>` is activated, any options
+   that change the installation path will be ignored from all distutils configuration
+   files to prevent inadvertently installing projects outside of the virtual
+   environment.
+
 .. XXX need some Windows examples---when would custom installation schemes be
    needed on those platforms?
 

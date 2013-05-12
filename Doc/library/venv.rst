@@ -57,6 +57,10 @@ Creating virtual environments
    :attr:`sys.exec_prefix` is the same as :attr:`sys.base_exec_prefix` (they
    all point to a non-venv Python installation).
 
+   When a venv is active, any options that change the installation path will be
+   ignored from all distutils configuration files to prevent projects being
+   inadvertently installed outside of the virtual environment.
+
 
 API
 ---
