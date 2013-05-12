@@ -91,6 +91,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17915: Fix interoperability of xml.sax with file objects returned by
+  codecs.open().
+
 - Issue #16601: Restarting iteration over tarfile no more continues from where
   it left off.  Patch by Michael Birtwell.
 
@@ -279,6 +282,12 @@ Tests
 
 - Issue #17692: test_sqlite now works with unittest test discovery.
   Patch by Zachary Ware.
+
+
+Documentation
+-------------
+
+- Issue #15940: Specify effect of locale on time functions.
 
 - Issue #6696: add documentation for the Profile objects, and improve
   profile/cProfile docs.  Patch by Tom Pinckney.
