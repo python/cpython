@@ -91,6 +91,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17606: Fixed support of encoded byte strings in the XMLGenerator
+ .characters() and ignorableWhitespace() methods.  Original patch by Sebastian
+  Ortiz Vasquez.
+
 - Issue #17732: Ignore distutils.cfg options pertaining to install paths if a
   virtual environment is active.
 
