@@ -20,6 +20,9 @@ Library
 - Issue #1159051: Back out a fix for handling corrupted gzip files that
   broke backwards compatibility.
 
+- Issue #17915: Fix interoperability of xml.sax with file objects returned by
+  codecs.open().
+
 Build
 -----
 
