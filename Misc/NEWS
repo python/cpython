@@ -118,6 +118,8 @@ Library
 IDLE
 ----
 
+- Issue #17838: Allow sys.stdin to be reassigned.
+
 - Issue #14735: Update IDLE docs to omit "Control-z on Windows".
 
 - Issue #17585: Fixed IDLE regression. Now closes when using exit() or quit().
