@@ -234,6 +234,9 @@ Documentation
 - Issue #6696: add documentation for the Profile objects, and improve
   profile/cProfile docs.  Patch by Tom Pinckney.
 
+- Issue #17915: Fix interoperability of xml.sax with file objects returned by
+  codecs.open().
+
 Build
 -----
 

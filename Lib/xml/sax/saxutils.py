@@ -5,6 +5,7 @@ convenience of application and driver writers.
 
 import os, urllib.parse, urllib.request
 import io
+import codecs
 from . import handler
 from . import xmlreader
 
@@ -75,6 +76,10 @@ def _gettextwriter(out, encoding):
 
     if isinstance(out, io.TextIOBase):
         # use a text writer as is
+        return out
+
+    if isinstance(out, (codecs.StreamWriter, codecs.StreamReaderWriter)):
+        # use a codecs stream writer as is
         return out
 
     # wrap a binary writer with TextIOWrapper
