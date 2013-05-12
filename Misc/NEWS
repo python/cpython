@@ -19,6 +19,12 @@ Library
 - Issue #15535: Fix namedtuple pickles which were picking up the OrderedDict
   instead of just the underlying tuple.
 
+Tests
+-----
+
+- Issue #17843: Removed bz2 test data file that was triggering false-positive
+  virus warnings with certain antivirus software.
+
 
 What's New in Python 3.2.4?
 ===========================
