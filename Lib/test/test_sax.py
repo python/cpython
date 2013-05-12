@@ -15,6 +15,7 @@ from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
+import codecs
 import os.path
 import shutil
 from test import support
@@ -538,6 +539,34 @@ class WriterXmlgenTest(BytesXmlgenTest):
         def getvalue(self):
             return b''.join(self)
 
+class StreamWriterXmlgenTest(XmlgenTest, unittest.TestCase):
+    def ioclass(self):
+        raw = BytesIO()
+        writer = codecs.getwriter('ascii')(raw, 'xmlcharrefreplace')
+        writer.getvalue = raw.getvalue
+        return writer
+
+    def xml(self, doc, encoding='iso-8859-1'):
+        return ('<?xml version="1.0" encoding="%s"?>\n%s' %
+                (encoding, doc)).encode('ascii', 'xmlcharrefreplace')
+
+class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
+    fname = support.TESTFN + '-codecs'
+
+    def ioclass(self):
+        writer = codecs.open(self.fname, 'w', encoding='ascii',
+                             errors='xmlcharrefreplace', buffering=0)
+        self.addCleanup(support.unlink, self.fname)
+        writer.getvalue = self.getvalue
+        return writer
+
+    def getvalue(self):
+        with open(self.fname, 'rb') as f:
+            return f.read()
+
+    def xml(self, doc, encoding='iso-8859-1'):
+        return ('<?xml version="1.0" encoding="%s"?>\n%s' %
+                (encoding, doc)).encode('ascii', 'xmlcharrefreplace')
 
 start = b'<?xml version="1.0" encoding="iso-8859-1"?>\n'
 
@@ -946,6 +975,8 @@ def test_main():
                  StringXmlgenTest,
                  BytesXmlgenTest,
                  WriterXmlgenTest,
+                 StreamWriterXmlgenTest,
+                 StreamReaderWriterXmlgenTest,
                  ExpatReaderTest,
                  ErrorReportingTest,
                  XmlReaderTest)
