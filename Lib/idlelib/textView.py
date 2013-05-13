@@ -80,7 +80,8 @@ if __name__ == '__main__':
     root=Tk()
     root.title('textView test')
     filename = './textView.py'
-    text = open(filename, 'r').read()
+    with open(filename, 'r') as f:
+        text = f.read()
     btn1 = Button(root, text='view_text',
                   command=lambda:view_text(root, 'view_text', text))
     btn1.pack(side=LEFT)
