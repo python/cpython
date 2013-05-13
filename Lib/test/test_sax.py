@@ -574,7 +574,10 @@ class StreamReaderWriterXmlgenTest(XmlgenTest, unittest.TestCase):
     def ioclass(self):
         writer = codecs.open(self.fname, 'w', encoding='ascii',
                              errors='xmlcharrefreplace', buffering=0)
-        self.addCleanup(support.unlink, self.fname)
+        def cleanup():
+            writer.close()
+            support.unlink(self.fname)
+        self.addCleanup(cleanup)
         writer.getvalue = self.getvalue
         return writer
 
