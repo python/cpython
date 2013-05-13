@@ -1328,24 +1328,6 @@ then
 	BASECFLAGS="$BASECFLAGS $ac_arch_flags"
 fi
 
-# Check whether GCC supports PyArg_ParseTuple format
-if test "$GCC" = "yes"
-then
-  AC_MSG_CHECKING(whether gcc supports ParseTuple __format__)
-  save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -Wformat"
-  AC_COMPILE_IFELSE([
-    AC_LANG_PROGRAM([[void f(char*,...)__attribute((format(PyArg_ParseTuple, 1, 2)));]], [[]])
-  ],[
-    AC_DEFINE(HAVE_ATTRIBUTE_FORMAT_PARSETUPLE, 1,
-      [Define if GCC supports __attribute__((format(PyArg_ParseTuple, 2, 3)))])
-    AC_MSG_RESULT(yes)
-  ],[
-    AC_MSG_RESULT(no)
-  ])
-  CFLAGS=$save_CFLAGS
-fi
-
 # On some compilers, pthreads are available without further options
 # (e.g. MacOS X). On some of these systems, the compiler will not
 # complain if unaccepted options are passed (e.g. gcc on Mac OS X).

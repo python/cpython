@@ -832,15 +832,6 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #endif
 
 /*
- * Add PyArg_ParseTuple format where available.
- */
-#ifdef HAVE_ATTRIBUTE_FORMAT_PARSETUPLE
-#define Py_FORMAT_PARSETUPLE(func,p1,p2) __attribute__((format(func,p1,p2)))
-#else
-#define Py_FORMAT_PARSETUPLE(func,p1,p2)
-#endif
-
-/*
  * Specify alignment on compilers that support it.
  */
 #if defined(__GNUC__) && __GNUC__ >= 3
