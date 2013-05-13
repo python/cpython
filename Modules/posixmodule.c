@@ -10625,8 +10625,10 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         Py_END_ALLOW_THREADS;
 
         if (length < 0) {
-            if (errno == ERANGE)
+            if (errno == ERANGE) {
+                PyMem_FREE(buffer);
                 continue;
+            }
             path_error("listxattr", &path);
             break;
         }
