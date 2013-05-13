@@ -26,7 +26,7 @@ PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
 /* Due to a glitch in 3.2, the _SizeT versions weren't exported from the DLL. */
 #if !defined(PY_SSIZE_T_CLEAN) || !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(int) PyArg_Parse(PyObject *, const char *, ...);
-PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...) Py_FORMAT_PARSETUPLE(PyArg_ParseTuple, 2, 3);
+PyAPI_FUNC(int) PyArg_ParseTuple(PyObject *, const char *, ...);
 PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   const char *, char **, ...);
 PyAPI_FUNC(int) PyArg_ValidateKeywordArguments(PyObject *);

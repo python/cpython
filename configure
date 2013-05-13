@@ -6523,44 +6523,6 @@ then
 	BASECFLAGS="$BASECFLAGS $ac_arch_flags"
 fi
 
-# Check whether GCC supports PyArg_ParseTuple format
-if test "$GCC" = "yes"
-then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc supports ParseTuple __format__" >&5
-$as_echo_n "checking whether gcc supports ParseTuple __format__... " >&6; }
-  save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -Werror -Wformat"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    void f(char*,...)__attribute((format(PyArg_ParseTuple, 1, 2)));
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-
-$as_echo "#define HAVE_ATTRIBUTE_FORMAT_PARSETUPLE 1" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  CFLAGS=$save_CFLAGS
-fi
-
 # On some compilers, pthreads are available without further options
 # (e.g. MacOS X). On some of these systems, the compiler will not
 # complain if unaccepted options are passed (e.g. gcc on Mac OS X).
