@@ -238,6 +238,9 @@ Tests
 Documentation
 -------------
 
+- Issue #17977: The documentation for the cadefault argument's default value
+  in urllib.request.urlopen() is fixed to match the code.
+
 - Issue #15940: Specify effect of locale on time functions.
 
 - Issue #6696: add documentation for the Profile objects, and improve
