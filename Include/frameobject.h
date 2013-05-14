@@ -36,8 +36,6 @@ typedef struct _frame {
            non-generator frames. See the save_exc_state and swap_exc_state
            functions in ceval.c for details of their use. */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
-    /* Borrowed referenced to a generator, or NULL */
-    PyObject *f_gen;
 
     PyThreadState *f_tstate;
     int f_lasti;                /* Last instruction if called */
@@ -85,13 +83,6 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 /* Return the line of code the frame is currently executing. */
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
-
-/* Generator support */
-PyAPI_FUNC(PyObject *) _PyFrame_YieldingFrom(PyFrameObject *);
-PyAPI_FUNC(PyObject *) _PyFrame_GeneratorSend(PyFrameObject *, PyObject *, int exc);
-PyAPI_FUNC(PyObject *) _PyFrame_Finalize(PyFrameObject *);
-PyAPI_FUNC(int) _PyFrame_CloseIterator(PyObject *);
-
 
 #ifdef __cplusplus
 }
