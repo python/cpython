@@ -10627,6 +10627,7 @@ posix_listxattr(PyObject *self, PyObject *args, PyObject *kwargs)
         if (length < 0) {
             if (errno == ERANGE) {
                 PyMem_FREE(buffer);
+                buffer = NULL;
                 continue;
             }
             path_error("listxattr", &path);
