@@ -31,195 +31,6 @@ frame_getlocals(PyFrameObject *f, void *closure)
     return f->f_locals;
 }
 
-/*
- * Generator support.
- */
-
-PyObject *
-_PyFrame_YieldingFrom(PyFrameObject *f)
-{
-    PyObject *yf = NULL;
-
-    if (f && f->f_stacktop) {
-        PyObject *bytecode = f->f_code->co_code;
-        unsigned char *code = (unsigned char *)PyBytes_AS_STRING(bytecode);
-
-        if (code[f->f_lasti + 1] != YIELD_FROM)
-            return NULL;
-        yf = f->f_stacktop[-1];
-        Py_INCREF(yf);
-    }
-    return yf;
-}
-
-PyObject *
-_PyFrame_GeneratorSend(PyFrameObject *f, PyObject *arg, int exc)
-{
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *result;
-    PyGenObject *gen = (PyGenObject *) f->f_gen;
-
-    assert(gen == NULL || PyGen_CheckExact(gen));
-    if (gen && gen->gi_running) {
-        PyErr_SetString(PyExc_ValueError,
-                        "generator already executing");
-        return NULL;
-    }
-    if (f->f_stacktop == NULL) {
-        /* Only set exception if send() called, not throw() or next() */
-        if (arg && !exc)
-            PyErr_SetNone(PyExc_StopIteration);
-        return NULL;
-    }
-
-    if (f->f_lasti == -1) {
-        if (arg && arg != Py_None) {
-            PyErr_SetString(PyExc_TypeError,
-                            "can't send non-None value to a "
-                            "just-started generator");
-            return NULL;
-        }
-    } else {
-        /* Push arg onto the frame's value stack */
-        result = arg ? arg : Py_None;
-        Py_INCREF(result);
-        *(f->f_stacktop++) = result;
-    }
-
-    /* Generators always return to their most recent caller, not
-     * necessarily their creator. */
-    Py_XINCREF(tstate->frame);
-    assert(f->f_back == NULL);
-    f->f_back = tstate->frame;
-
-    if (gen) {
-        Py_INCREF(gen);
-        gen->gi_running = 1;
-    }
-    result = PyEval_EvalFrameEx(f, exc);
-    if (gen) {
-        gen->gi_running = 0;
-        /* In case running the frame has lost all external references
-         * to gen, we must be careful not to hold on an invalid object. */
-        if (Py_REFCNT(gen) == 1)
-            Py_CLEAR(gen);
-        else
-            Py_DECREF(gen);
-    }
-
-    /* Don't keep the reference to f_back any longer than necessary.  It
-     * may keep a chain of frames alive or it could create a reference
-     * cycle. */
-    assert(f->f_back == tstate->frame);
-    Py_CLEAR(f->f_back);
-
-    /* If the generator just returned (as opposed to yielding), signal
-     * that the generator is exhausted. */
-    if (result && f->f_stacktop == NULL) {
-        if (result == Py_None) {
-            /* Delay exception instantiation if we can */
-            PyErr_SetNone(PyExc_StopIteration);
-        } else {
-            PyObject *e = PyObject_CallFunctionObjArgs(
-                               PyExc_StopIteration, result, NULL);
-            if (e != NULL) {
-                PyErr_SetObject(PyExc_StopIteration, e);
-                Py_DECREF(e);
-            }
-        }
-        Py_CLEAR(result);
-    }
-
-    if (f->f_stacktop == NULL) {
-        /* generator can't be rerun, so release the frame */
-        /* first clean reference cycle through stored exception traceback */
-        PyObject *t, *v, *tb;
-        t = f->f_exc_type;
-        v = f->f_exc_value;
-        tb = f->f_exc_traceback;
-        f->f_exc_type = NULL;
-        f->f_exc_value = NULL;
-        f->f_exc_traceback = NULL;
-        Py_XDECREF(t);
-        Py_XDECREF(v);
-        Py_XDECREF(tb);
-        if (gen) {
-            f->f_gen = NULL;
-            Py_CLEAR(gen->gi_frame);
-        }
-    }
-
-    return result;
-}
-
-int
-_PyFrame_CloseIterator(PyObject *yf)
-{
-    PyObject *retval = NULL;
-    _Py_IDENTIFIER(close);
-
-    if (PyGen_CheckExact(yf)) {
-        PyFrameObject *f = ((PyGenObject *) yf)->gi_frame;
-        assert(f != NULL);
-        retval = _PyFrame_Finalize(f);
-        if (retval == NULL)
-            return -1;
-    } else {
-        PyObject *meth = _PyObject_GetAttrId(yf, &PyId_close);
-        if (meth == NULL) {
-            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-                PyErr_WriteUnraisable(yf);
-            PyErr_Clear();
-        } else {
-            retval = PyObject_CallFunction(meth, "");
-            Py_DECREF(meth);
-            if (retval == NULL)
-                return -1;
-        }
-    }
-    Py_XDECREF(retval);
-    return 0;
-}
-
-PyObject *
-_PyFrame_Finalize(PyFrameObject *f)
-{
-    int err = 0;
-    PyObject *retval;
-    PyGenObject *gen = (PyGenObject *) f->f_gen;
-    PyObject *yf = _PyFrame_YieldingFrom(f);
-
-    assert(gen == NULL || PyGen_CheckExact(gen));
-    if (yf) {
-        if (gen)
-            gen->gi_running = 1;
-        err = _PyFrame_CloseIterator(yf);
-        if (gen)
-            gen->gi_running = 0;
-        Py_DECREF(yf);
-    }
-    if (err == 0)
-        PyErr_SetNone(PyExc_GeneratorExit);
-    retval = _PyFrame_GeneratorSend(f, Py_None, 1);
-    if (retval) {
-        Py_DECREF(retval);
-        PyErr_SetString(PyExc_RuntimeError,
-                        "generator ignored GeneratorExit");
-        return NULL;
-    }
-    if (PyErr_ExceptionMatches(PyExc_StopIteration)
-        || PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
-        PyErr_Clear();          /* ignore these errors */
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    return NULL;
-}
-
-/*
- * Line number support.
- */
-
 int
 PyFrame_GetLineNumber(PyFrameObject *f)
 {
@@ -609,43 +420,32 @@ static int numfree = 0;         /* number of frames currently in free_list */
 #define PyFrame_MAXFREELIST 200
 
 static void
-frame_clear(PyFrameObject *f);
-
-static void
 frame_dealloc(PyFrameObject *f)
 {
+    PyObject **p, **valuestack;
     PyCodeObject *co;
-
-    Py_REFCNT(f)++;
-    frame_clear(f);
-    Py_REFCNT(f)--;
-    if (Py_REFCNT(f) > 0) {
-        /* Frame resurrected! */
-        Py_ssize_t refcnt = Py_REFCNT(f);
-        _Py_NewReference((PyObject *) f);
-        Py_REFCNT(f) = refcnt;
-        /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
-         * we need to undo that. */
-        _Py_DEC_REFTOTAL;
-        /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
-         * chain, so no more to do there.
-         * If COUNT_ALLOCS, the original decref bumped tp_frees, and
-         * _Py_NewReference bumped tp_allocs:  both of those need to be
-         * undone.
-         */
-#ifdef COUNT_ALLOCS
-        --(Py_TYPE(self)->tp_frees);
-        --(Py_TYPE(self)->tp_allocs);
-#endif
-    }
 
     PyObject_GC_UnTrack(f);
     Py_TRASHCAN_SAFE_BEGIN(f)
+    /* Kill all local variables */
+    valuestack = f->f_valuestack;
+    for (p = f->f_localsplus; p < valuestack; p++)
+        Py_CLEAR(*p);
+
+    /* Free stack */
+    if (f->f_stacktop != NULL) {
+        for (p = valuestack; p < f->f_stacktop; p++)
+            Py_XDECREF(*p);
+    }
 
     Py_XDECREF(f->f_back);
     Py_DECREF(f->f_builtins);
     Py_DECREF(f->f_globals);
     Py_CLEAR(f->f_locals);
+    Py_CLEAR(f->f_trace);
+    Py_CLEAR(f->f_exc_type);
+    Py_CLEAR(f->f_exc_value);
+    Py_CLEAR(f->f_exc_traceback);
 
     co = f->f_code;
     if (co->co_zombieframe == NULL)
@@ -697,25 +497,12 @@ frame_clear(PyFrameObject *f)
 {
     PyObject **fastlocals, **p, **oldtop;
     Py_ssize_t i, slots;
-    PyObject *retval;
 
-    if (f->f_back == NULL) {
-        PyObject *t, *v, *tb;
-        PyErr_Fetch(&t, &v, &tb);
-        /* Note that this can finalize a suspended generator frame even
-         * if the generator object was disposed of (i.e. if f_gen is NULL).
-         */
-        retval = _PyFrame_Finalize(f);
-        if (retval == NULL) {
-            if (PyErr_Occurred())
-                PyErr_WriteUnraisable((PyObject *) f);
-        }
-        else
-            Py_DECREF(retval);
-        PyErr_Restore(t, v, tb);
-    }
-
-    /* Make sure the frame is now clearly marked as being defunct */
+    /* Before anything else, make sure that this frame is clearly marked
+     * as being defunct!  Else, e.g., a generator reachable from this
+     * frame may also point to this frame, believe itself to still be
+     * active, and try cleaning up this frame again.
+     */
     oldtop = f->f_stacktop;
     f->f_stacktop = NULL;
 
@@ -926,7 +713,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     f->f_lasti = -1;
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
-    f->f_gen = NULL;
 
     _PyObject_GC_TRACK(f);
     return f;
