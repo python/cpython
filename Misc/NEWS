@@ -15,9 +15,6 @@ Core and Builtins
 - Issue #17927: Frame objects kept arguments alive if they had been
   copied into a cell, even if the cell was cleared.
 
-- Issue #17807: Generators can now be finalized even when they are part of
-  a reference cycle.
-
 - Issue #1545463: At shutdown, defer finalization of codec modules so
   that stderr remains usable.
 
