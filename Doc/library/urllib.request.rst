@@ -16,7 +16,7 @@ authentication, redirections, cookies and more.
 The :mod:`urllib.request` module defines the following functions:
 
 
-.. function:: urlopen(url, data=None[, timeout], *, cafile=None, capath=None, cadefault=True)
+.. function:: urlopen(url, data=None[, timeout], *, cafile=None, capath=None, cadefault=False)
 
    Open the URL *url*, which can be either a string or a
    :class:`Request` object.
