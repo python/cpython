@@ -14,6 +14,8 @@ Library
 
 - Issue #17754: Make ctypes.util.find_library() independent of the locale.
 
+- Fix typos in the multiprocessing module.
+
 What's New in Python 2.7.5?
 ===========================
 
