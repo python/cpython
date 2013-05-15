@@ -743,6 +743,10 @@ class ScopeTests(unittest.TestCase):
         del tester
         self.assertIsNone(ref())
 
+    def test__Class__Global(self):
+        s = "class X:\n    global __class__\n    def f(self): super()"
+        self.assertRaises(SyntaxError, exec, s)
+
 
 def test_main():
     run_unittest(ScopeTests)
