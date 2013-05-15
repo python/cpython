@@ -12,6 +12,7 @@ Core and Builtins
 Library
 -------
 
+- Issue #17754: Make ctypes.util.find_library() independent of the locale.
 
 What's New in Python 2.7.5?
 ===========================
