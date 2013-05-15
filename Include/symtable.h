@@ -53,6 +53,9 @@ typedef struct _symtable_entry {
     unsigned ste_varkeywords : 1; /* true if block has varkeywords */
     unsigned ste_returns_value : 1;  /* true if namespace uses return with
                                         an argument */
+    unsigned ste_needs_class_closure : 1; /* for class scopes, true if a
+                                             closure over __class__
+                                             should be created */
     int ste_lineno;          /* first line of block */
     int ste_col_offset;      /* offset of first line of block */
     int ste_opt_lineno;      /* lineno of last exec or import * */

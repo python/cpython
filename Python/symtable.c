@@ -77,6 +77,7 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_child_free = 0;
     ste->ste_generator = 0;
     ste->ste_returns_value = 0;
+    ste->ste_needs_class_closure = 0;
 
     if (PyDict_SetItem(st->st_blocks, ste->ste_id, (PyObject *)ste) < 0)
         goto fail;
@@ -514,13 +515,10 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
 
    Note that the current block's free variables are included in free.
    That's safe because no name can be free and local in the same scope.
-
-   The 'restricted' argument may be set to a string to restrict the analysis
-   to the one variable whose name equals that string (e.g. "__class__").
 */
 
 static int
-analyze_cells(PyObject *scopes, PyObject *free, const char *restricted)
+analyze_cells(PyObject *scopes, PyObject *free)
 {
     PyObject *name, *v, *v_cell;
     int success = 0;
@@ -537,9 +535,6 @@ analyze_cells(PyObject *scopes, PyObject *free, const char *restricted)
             continue;
         if (!PySet_Contains(free, name))
             continue;
-        if (restricted != NULL &&
-            PyUnicode_CompareWithASCIIString(name, restricted))
-            continue;
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
            in the dict, because it will not cause a resize.
@@ -553,6 +548,20 @@ analyze_cells(PyObject *scopes, PyObject *free, const char *restricted)
  error:
     Py_DECREF(v_cell);
     return success;
+}
+
+static int
+drop_class_free(PySTEntryObject *ste, PyObject *free)
+{
+    int res;
+    if (!GET_IDENTIFIER(__class__))
+        return 0;
+    res = PySet_Discard(free, __class__);
+    if (res < 0)
+        return 0;
+    if (res)
+        ste->ste_needs_class_closure = 1;
+    return 1;
 }
 
 /* Check for illegal statements in unoptimized namespaces */
@@ -785,7 +794,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         /* Special-case __class__ */
         if (!GET_IDENTIFIER(__class__))
             goto error;
-        assert(PySet_Contains(local, __class__) == 1);
         if (PySet_Add(newbound, __class__) < 0)
             goto error;
     }
@@ -818,11 +826,9 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     Py_DECREF(temp);
 
     /* Check if any local variables must be converted to cell variables */
-    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree,
-                                                         NULL))
+    if (ste->ste_type == FunctionBlock && !analyze_cells(scopes, newfree))
         goto error;
-    else if (ste->ste_type == ClassBlock && !analyze_cells(scopes, newfree,
-                                                           "__class__"))
+    else if (ste->ste_type == ClassBlock && !drop_class_free(ste, newfree))
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
@@ -1179,9 +1185,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, s->lineno, s->col_offset))
             VISIT_QUIT(st, 0);
-        if (!GET_IDENTIFIER(__class__) ||
-            !symtable_add_def(st, __class__, DEF_LOCAL) ||
-            !GET_IDENTIFIER(__locals__) ||
+        if (!GET_IDENTIFIER(__locals__) ||
             !symtable_add_def(st, __locals__, DEF_PARAM)) {
             symtable_exit_block(st, s);
             VISIT_QUIT(st, 0);

@@ -81,8 +81,7 @@ class TestSuper(unittest.TestCase):
 
         self.assertEqual(E().f(), 'AE')
 
-    @unittest.expectedFailure
-    def test___class___set(self):
+    def test_various___class___pathologies(self):
         # See issue #12370
         class X(A):
             def f(self):
@@ -91,6 +90,31 @@ class TestSuper(unittest.TestCase):
         x = X()
         self.assertEqual(x.f(), 'A')
         self.assertEqual(x.__class__, 413)
+        class X:
+            x = __class__
+            def f():
+                __class__
+        self.assertIs(X.x, type(self))
+        with self.assertRaises(NameError) as e:
+            exec("""class X:
+                __class__
+                def f():
+                    __class__""", globals(), {})
+        self.assertIs(type(e.exception), NameError) # Not UnboundLocalError
+        class X:
+            global __class__
+            __class__ = 42
+            def f():
+                __class__
+        self.assertEqual(globals()["__class__"], 42)
+        del globals()["__class__"]
+        self.assertNotIn("__class__", X.__dict__)
+        class X:
+            nonlocal __class__
+            __class__ = 42
+            def f():
+                __class__
+        self.assertEqual(__class__, 42)
 
     def test___class___instancemethod(self):
         # See issue #14857

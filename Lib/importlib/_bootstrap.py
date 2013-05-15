@@ -390,12 +390,13 @@ def _call_with_frames_removed(f, *args, **kwds):
 #                        keyword-only defaults)
 #     Python 3.4a1  3260 (add LOAD_CLASSDEREF; allow locals of class to override
 #                        free vars)
+#     Python 3.4a1  3270 (various tweaks to the __class_ closure)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 
-_MAGIC_BYTES = (3260).to_bytes(2, 'little') + b'\r\n'
+_MAGIC_BYTES = (3270).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(_MAGIC_BYTES, 'little')
 
 _PYCACHE = '__pycache__'
