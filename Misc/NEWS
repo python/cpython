@@ -2,6 +2,29 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.3?
+===========================
+
+*Release date: TBD*
+
+Core and Builtins
+-----------------
+
+- Issue #17927: Frame objects kept arguments alive if they had been copied into
+  a cell, even if the cell was cleared.
+
+Library
+-------
+
+- Issue #17968: Fix memory leak in os.listxattr().
+
+Documentation
+-------------
+
+- Issue #17977: The documentation for the cadefault argument's default value
+  in urllib.request.urlopen() is fixed to match the code.
+
+
 What's New in Python 3.3.2?
 ===========================
 
@@ -11,9 +34,6 @@ What's New in Python 3.3.2?
 
 Core and Builtins
 -----------------
-
-- Issue #17927: Frame objects kept arguments alive if they had been copied into
-  a cell, even if the cell was cleared.
 
 - Issue #17237: Fix crash in the ASCII decoder on m68k.
 
@@ -51,8 +71,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #17968: Fix memory leak in os.listxattr().
 
 - Issue #17606: Fixed support of encoded byte strings in the XMLGenerator
   characters() and ignorableWhitespace() methods.  Original patch by Sebastian
@@ -240,9 +258,6 @@ Tests
 
 Documentation
 -------------
-
-- Issue #17977: The documentation for the cadefault argument's default value
-  in urllib.request.urlopen() is fixed to match the code.
 
 - Issue #15940: Specify effect of locale on time functions.
 
