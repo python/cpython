@@ -1,4 +1,6 @@
 import unittest
+import weakref
+
 from test.support import check_syntax_error, cpython_only, run_unittest
 
 
@@ -713,6 +715,33 @@ class ScopeTests(unittest.TestCase):
         def b():
             global a
 
+    @cpython_only
+    def testCellLeak(self):
+        # Issue 17927.
+        #
+        # The issue was that if self was part of a cycle involving the
+        # frame of a method call, *and* the method contained a nested
+        # function referencing self, thereby forcing 'self' into a
+        # cell, setting self to None would not be enough to break the
+        # frame -- the frame had another reference to the instance,
+        # which could not be cleared by the code running in the frame
+        # (though it will be cleared when the frame is collected).
+        # Without the lambda, setting self to None is enough to break
+        # the cycle.
+        class Tester:
+            def dig(self):
+                if 0:
+                    lambda: self
+                try:
+                    1/0
+                except Exception as exc:
+                    self.exc = exc
+                self = None  # Break the cycle
+        tester = Tester()
+        tester.dig()
+        ref = weakref.ref(tester)
+        del tester
+        self.assertIsNone(ref())
 
 
 def test_main():

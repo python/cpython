@@ -3403,10 +3403,14 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
         int arg;
         /* Possibly account for the cell variable being an argument. */
         if (co->co_cell2arg != NULL &&
-            (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG)
+            (arg = co->co_cell2arg[i]) != CO_CELL_NOT_AN_ARG) {
             c = PyCell_New(GETLOCAL(arg));
-        else
+            /* Clear the local copy. */
+            SETLOCAL(arg, NULL);
+        }
+        else {
             c = PyCell_New(NULL);
+        }
         if (c == NULL)
             goto fail;
         SETLOCAL(co->co_nlocals + i, c);
