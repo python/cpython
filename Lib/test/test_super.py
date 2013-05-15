@@ -130,6 +130,19 @@ class TestSuper(unittest.TestCase):
                 super()
         self.assertRaises(RuntimeError, X().f)
 
+    def test_cell_as_self(self):
+        class X:
+            def meth(self):
+                super()
+
+        def f():
+            k = X()
+            def g():
+                return k
+            return g
+        c = f().__closure__[0]
+        self.assertRaises(TypeError, X.meth, c)
+
 
 def test_main():
     support.run_unittest(TestSuper)
