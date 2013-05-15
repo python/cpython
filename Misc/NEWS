@@ -10,6 +10,8 @@ What's New in Python 3.3.3?
 Core and Builtins
 -----------------
 
+- Issue #17754: Make ctypes.util.find_library() independent of the locale.
+
 - Issue #17927: Frame objects kept arguments alive if they had been copied into
   a cell, even if the cell was cleared.
 
