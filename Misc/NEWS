@@ -88,6 +88,8 @@ Core and Builtins
 Library
 -------
 
+- Fix typos in the multiprocessing module.
+
 - Issue #17754: Make ctypes.util.find_library() independent of the locale.
 
 - Issue #17968: Fix memory leak in os.listxattr().

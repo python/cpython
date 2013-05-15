@@ -44,7 +44,7 @@ _PyMp_SetError(PyObject *Type, int num)
         break;
     default:
         PyErr_Format(PyExc_RuntimeError,
-                     "unkown error number %d", num);
+                     "unknown error number %d", num);
     }
     return NULL;
 }
