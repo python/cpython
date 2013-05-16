@@ -1360,10 +1360,11 @@ compiler_mod(struct compiler *c, mod_ty mod)
 static int
 get_ref_type(struct compiler *c, PyObject *name)
 {
+    int scope;
     if (c->u->u_scope_type == COMPILER_SCOPE_CLASS &&
         !PyUnicode_CompareWithASCIIString(name, "__class__"))
         return CELL;
-    int scope = PyST_GetScope(c->u->u_ste, name);
+    scope = PyST_GetScope(c->u->u_ste, name);
     if (scope == 0) {
         char buf[350];
         PyOS_snprintf(buf, sizeof(buf),
