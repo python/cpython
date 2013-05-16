@@ -893,8 +893,6 @@ opcode_stack_effect(int opcode, int oparg)
             return 7;
         case WITH_CLEANUP:
             return -1; /* XXX Sometimes more */
-        case STORE_LOCALS:
-            return -1;
         case RETURN_VALUE:
             return -1;
         case IMPORT_STAR:
@@ -1696,12 +1694,6 @@ compiler_class(struct compiler *c, stmt_ty s)
         Py_INCREF(s->v.ClassDef.name);
         Py_XDECREF(c->u->u_private);
         c->u->u_private = s->v.ClassDef.name;
-        /* force it to have one mandatory argument */
-        c->u->u_argcount = 1;
-        /* load the first argument (__locals__) ... */
-        ADDOP_I(c, LOAD_FAST, 0);
-        /* ... and store it into f_locals */
-        ADDOP_IN_SCOPE(c, STORE_LOCALS);
         /* load (global) __name__ ... */
         str = PyUnicode_InternFromString("__name__");
         if (!str || !compiler_nameop(c, str, Load)) {
@@ -4110,9 +4102,8 @@ compute_code_flags(struct compiler *c)
 {
     PySTEntryObject *ste = c->u->u_ste;
     int flags = 0, n;
-    if (ste->ste_type != ModuleBlock)
-        flags |= CO_NEWLOCALS;
     if (ste->ste_type == FunctionBlock) {
+        flags |= CO_NEWLOCALS;
         if (!ste->ste_unoptimized)
             flags |= CO_OPTIMIZED;
         if (ste->ste_nested)
