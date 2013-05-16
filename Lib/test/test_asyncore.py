@@ -20,7 +20,7 @@ except ImportError:
     threading = None
 
 HOST = support.HOST
-
+TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
 
 class dummysocket:
@@ -397,7 +397,10 @@ class DispatcherWithSendTests(unittest.TestCase):
 
             self.assertEqual(cap.getvalue(), data*2)
         finally:
-            t.join()
+            t.join(timeout=TIMEOUT)
+            if t.is_alive():
+                self.fail("join() timed out")
+
 
 
 class DispatcherWithSendTests_UsePoll(DispatcherWithSendTests):
@@ -789,7 +792,11 @@ class BaseTestAPI:
             t = threading.Thread(target=lambda: asyncore.loop(timeout=0.1,
                                                               count=500))
             t.start()
-            self.addCleanup(t.join)
+            def cleanup():
+                t.join(timeout=TIMEOUT)
+                if t.is_alive():
+                    self.fail("join() timed out")
+            self.addCleanup(cleanup)
 
             s = socket.socket(self.family, socket.SOCK_STREAM)
             s.settimeout(.2)
