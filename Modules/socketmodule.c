@@ -1662,8 +1662,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             struct sockaddr_can *addr;
             PyObject *interfaceName;
             struct ifreq ifr;
-            addr = (struct sockaddr_can *)addr_ret;
             Py_ssize_t len;
+
+            addr = (struct sockaddr_can *)addr_ret;
 
             if (!PyArg_ParseTuple(args, "O&", PyUnicode_FSConverter,
                                               &interfaceName))
