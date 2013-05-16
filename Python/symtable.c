@@ -192,7 +192,7 @@ static int symtable_visit_withitem(struct symtable *st, withitem_ty item);
 
 static identifier top = NULL, lambda = NULL, genexpr = NULL,
     listcomp = NULL, setcomp = NULL, dictcomp = NULL,
-    __class__ = NULL, __locals__ = NULL;
+    __class__ = NULL;
 
 #define GET_IDENTIFIER(VAR) \
     ((VAR) ? (VAR) : ((VAR) = PyUnicode_InternFromString(# VAR)))
@@ -1185,11 +1185,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
                                   (void *)s, s->lineno, s->col_offset))
             VISIT_QUIT(st, 0);
-        if (!GET_IDENTIFIER(__locals__) ||
-            !symtable_add_def(st, __locals__, DEF_PARAM)) {
-            symtable_exit_block(st, s);
-            VISIT_QUIT(st, 0);
-        }
         tmp = st->st_private;
         st->st_private = s->v.ClassDef.name;
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
