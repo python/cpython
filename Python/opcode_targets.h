@@ -68,7 +68,7 @@ static void *opcode_targets[256] = {
     &&TARGET_BINARY_OR,
     &&TARGET_INPLACE_POWER,
     &&TARGET_GET_ITER,
-    &&TARGET_STORE_LOCALS,
+    &&_unknown_opcode,
     &&TARGET_PRINT_EXPR,
     &&TARGET_LOAD_BUILD_CLASS,
     &&TARGET_YIELD_FROM,

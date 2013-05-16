@@ -596,12 +596,6 @@ the stack so that it is available for further iterations of the loop.
    .. XXX explain the WHY stuff!
 
 
-.. opcode:: STORE_LOCALS
-
-   Pops TOS from the stack and stores it as the current frame's ``f_locals``.
-   This is used in class construction.
-
-
 All of the following opcodes expect arguments.  An argument is two bytes, with
 the more significant byte last.
 

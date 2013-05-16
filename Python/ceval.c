@@ -1873,14 +1873,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             goto error;
         }
 
-        TARGET(STORE_LOCALS) {
-            PyObject *locals = POP();
-            PyObject *old = f->f_locals;
-            Py_XDECREF(old);
-            f->f_locals = locals;
-            DISPATCH();
-        }
-
         TARGET(RETURN_VALUE) {
             retval = POP();
             why = WHY_RETURN;

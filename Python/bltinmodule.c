@@ -57,6 +57,11 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     func = PyTuple_GET_ITEM(args, 0); /* Better be callable */
+    if (!PyFunction_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__build__class__: func must be a function");
+        return NULL;
+    }
     name = PyTuple_GET_ITEM(args, 1);
     if (!PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -155,7 +160,9 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(bases);
         return NULL;
     }
-    cell = PyObject_CallFunctionObjArgs(func, ns, NULL);
+    cell = PyEval_EvalCodeEx(PyFunction_GET_CODE(func), PyFunction_GET_GLOBALS(func), ns,
+                             NULL, 0, NULL, 0, NULL, 0, NULL,
+                             PyFunction_GET_CLOSURE(func));
     if (cell != NULL) {
         PyObject *margs;
         margs = PyTuple_Pack(3, name, bases, ns);
