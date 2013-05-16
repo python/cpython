@@ -91,6 +91,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17981: Closed socket on error in SysLogHandler.
+
 - Issue #17964: Fix os.sysconf(): the return type of the C sysconf() function
   is long, not int.
 
