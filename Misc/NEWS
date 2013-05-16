@@ -91,6 +91,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17964: Fix os.sysconf(): the return type of the C sysconf() function
+  is long, not int.
+
 - Fix typos in the multiprocessing module.
 
 - Issue #17754: Make ctypes.util.find_library() independent of the locale.

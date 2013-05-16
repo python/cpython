@@ -9550,7 +9550,7 @@ posix_sysconf(PyObject *self, PyObject *args)
     int name;
 
     if (PyArg_ParseTuple(args, "O&:sysconf", conv_sysconf_confname, &name)) {
-        int value;
+        long value;
 
         errno = 0;
         value = sysconf(name);
