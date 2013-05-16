@@ -55,7 +55,7 @@ typedef struct {
 
 /* Forward */
 static int vgetargs1(PyObject *, const char *, va_list *, int);
-static void seterror(int, const char *, int *, const char *, const char *);
+static void seterror(Py_ssize_t, const char *, int *, const char *, const char *);
 static char *convertitem(PyObject *, const char **, va_list *, int, int *,
                          char *, size_t, freelist_t *);
 static char *converttuple(PyObject *, const char **, va_list *, int,
@@ -357,7 +357,7 @@ vgetargs1(PyObject *args, const char *format, va_list *p_va, int flags)
 
 
 static void
-seterror(int iarg, const char *msg, int *levels, const char *fname,
+seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
          const char *message)
 {
     char buf[512];
@@ -373,7 +373,7 @@ seterror(int iarg, const char *msg, int *levels, const char *fname,
         }
         if (iarg != 0) {
             PyOS_snprintf(p, sizeof(buf) - (p - buf),
-                          "argument %d", iarg);
+                          "argument %zd", iarg);
             i = 0;
             p += strlen(p);
             while (levels[i] > 0 && i < 32 && (int)(p-buf) < 220) {

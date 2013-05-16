@@ -13,7 +13,7 @@
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
-#define PUTS(fd, str) write(fd, str, strlen(str))
+#define PUTS(fd, str) write(fd, str, (int)strlen(str))
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100
