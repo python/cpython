@@ -1127,6 +1127,8 @@ AC_SUBST(UNIVERSAL_ARCH_FLAGS)
 # tweak BASECFLAGS based on compiler and platform
 case $GCC in
 yes)
+    BASECFLAGS="$BASECFLAGS -Werror=declaration-after-statement"
+
     # Python doesn't violate C99 aliasing rules, but older versions of
     # GCC produce warnings for legal Python code.  Enable
     # -fno-strict-aliasing on versions of GCC that support but produce
