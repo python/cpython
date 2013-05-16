@@ -315,7 +315,7 @@ calc_padding(Py_ssize_t nchars, Py_ssize_t width, Py_UCS4 align,
 
 /* Do the padding, and return a pointer to where the caller-supplied
    content goes. */
-static Py_ssize_t
+static int
 fill_padding(_PyUnicodeWriter *writer,
              Py_ssize_t nchars,
              Py_UCS4 fill_char, Py_ssize_t n_lpadding,
