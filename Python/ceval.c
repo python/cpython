@@ -2256,7 +2256,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(LOAD_CLASSDEREF) {
             PyObject *name, *value, *locals = f->f_locals;
-            int idx;
+            Py_ssize_t idx;
             assert(locals);
             assert(oparg >= PyTuple_GET_SIZE(co->co_cellvars));
             idx = oparg - PyTuple_GET_SIZE(co->co_cellvars);
