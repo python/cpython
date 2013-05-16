@@ -2261,9 +2261,9 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     PyObject *data;
     size_t datalen;
     WINDOW *win;
+    _Py_IDENTIFIER(read);
 
     PyCursesInitialised;
-    _Py_IDENTIFIER(read);
 
     strcpy(fn, "/tmp/py.curses.getwin.XXXXXX");
     fd = mkstemp(fn);
