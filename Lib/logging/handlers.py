@@ -856,6 +856,7 @@ class SysLogHandler(logging.Handler):
                 try:
                     self.socket.send(msg)
                 except socket.error:
+                    self.socket.close() # See issue 17981
                     self._connect_unixsocket(self.address)
                     self.socket.send(msg)
             elif self.socktype == socket.SOCK_DGRAM:

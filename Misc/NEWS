@@ -12,6 +12,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17981: Closed socket on error in SysLogHandler.
+
 - Issue #17754: Make ctypes.util.find_library() independent of the locale.
 
 - Fix typos in the multiprocessing module.
