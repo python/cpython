@@ -943,6 +943,8 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual("{0:.0s}".format("ABC\u0410\u0411\u0412"),
                          '')
 
+        self.assertEqual("{[{}]}".format({"{}": 5}), "5")
+
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
         self.assertEqual('a'.format_map({}), 'a')
