@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #12370: Prevent class bodies from interfering with the __class__
   closure.
 
+- Issue #17644: Fix a crash in str.format when curly braces are used in square
+  brackets.
+
 - Issue #17237: Fix crash in the ASCII decoder on m68k.
 
 - Issue #17927: Frame objects kept arguments alive if they had been
