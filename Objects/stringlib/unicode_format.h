@@ -638,7 +638,7 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
                     SubString *format_spec, Py_UCS4 *conversion,
                     int *format_spec_needs_expanding)
 {
-    int at_end;
+    int at_end, hit_format_spec;
     Py_UCS4 c = 0;
     Py_ssize_t start;
     int count;
@@ -723,12 +723,18 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
 
     /* we know we can't have a zero length string, so don't worry
        about that case */
+    hit_format_spec = 0;
     while (self->str.start < self->str.end) {
         switch (c = PyUnicode_READ_CHAR(self->str.str, self->str.start++)) {
+        case ':':
+            hit_format_spec = 1;
+            count = 1;
+            break;
         case '{':
             /* the format spec needs to be recursively expanded.
                this is an optimization, and not strictly needed */
-            *format_spec_needs_expanding = 1;
+            if (hit_format_spec)
+                *format_spec_needs_expanding = 1;
             count++;
             break;
         case '}':
