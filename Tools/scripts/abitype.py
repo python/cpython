@@ -126,8 +126,8 @@ typeslots = [
     'tp_cache',
     'tp_subclasses',
     'tp_weaklist',
-    'tp_del'
-    'tp_version_tag'
+    'tp_del',
+    'tp_version_tag',
 ]
 
 # Generate a PyType_Spec definition
@@ -194,7 +194,7 @@ if __name__ == '__main__':
             break
         start = m.start()
         end = m.end()
-        name, fields = get_fields(start, m)
+        name, fields = get_fields(start, end)
         tokens[start:end] = [('',make_slots(name, fields))]
 
     # Output result to stdout
