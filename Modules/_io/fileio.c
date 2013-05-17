@@ -632,7 +632,7 @@ fileio_readall(fileio *self)
             if (bufsize > PY_SSIZE_T_MAX || bufsize <= 0) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "unbounded read returned more bytes "
-                                "than a Python string can hold ");
+                                "than a Python string can hold");
                 Py_DECREF(result);
                 return NULL;
             }
