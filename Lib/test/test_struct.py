@@ -8,7 +8,6 @@ import sys
 from test import support
 
 ISBIGENDIAN = sys.byteorder == "big"
-IS32BIT = sys.maxsize == 0x7fffffff
 
 integer_codes = 'b', 'B', 'h', 'H', 'i', 'I', 'l', 'L', 'q', 'Q', 'n', 'N'
 byteorders = '', '@', '=', '<', '>', '!'
@@ -538,10 +537,6 @@ class StructTest(unittest.TestCase):
         hugecount2 = '{}b{}H'.format(sys.maxsize//2, sys.maxsize//2)
         self.assertRaises(struct.error, struct.calcsize, hugecount2)
 
-    if IS32BIT:
-        def test_crasher(self):
-            self.assertRaises(MemoryError, struct.pack, "357913941b", "a")
-
     def test_trailing_counter(self):
         store = array.array('b', b' '*100)
 
@@ -578,7 +573,7 @@ class StructTest(unittest.TestCase):
         # The size of 'PyStructObject'
         totalsize = support.calcobjsize('2n3P')
         # The size taken up by the 'formatcode' dynamic array
-        totalsize += struct.calcsize('P2n0P') * (number_of_codes + 1)
+        totalsize += struct.calcsize('P3n0P') * (number_of_codes + 1)
         support.check_sizeof(self, struct.Struct(format_str), totalsize)
 
     @support.cpython_only
@@ -589,7 +584,7 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('B' * 1234, 1234)
         self.check_sizeof('fd', 2)
         self.check_sizeof('xxxxxxxxxxxxxx', 0)
-        self.check_sizeof('100H', 100)
+        self.check_sizeof('100H', 1)
         self.check_sizeof('187s', 1)
         self.check_sizeof('20p', 1)
         self.check_sizeof('0s', 1)
