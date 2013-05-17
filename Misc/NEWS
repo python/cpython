@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #17644: Fix a crash in str.format when curly braces are used in square
+  brackets.
+
 - Issue #17983: Raise a SyntaxError for a ``global __class__`` statement in a
   class body.
 
