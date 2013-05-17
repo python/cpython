@@ -363,10 +363,7 @@ def namedtuple(typename, field_names, verbose=False, rename=False):
     # Execute the template string in a temporary namespace and support
     # tracing utilities by setting a value for frame.f_globals['__name__']
     namespace = dict(__name__='namedtuple_%s' % typename)
-    try:
-        exec(class_definition, namespace)
-    except SyntaxError as e:
-        raise SyntaxError(e.msg + ':\n\n' + class_definition)
+    exec(class_definition, namespace)
     result = namespace[typename]
     result._source = class_definition
     if verbose:
