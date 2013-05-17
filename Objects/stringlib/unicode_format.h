@@ -543,7 +543,7 @@ done:
 
 static int
 parse_field(SubString *str, SubString *field_name, SubString *format_spec,
-            Py_UCS4 *conversion)
+            int *format_spec_needs_expanding, Py_UCS4 *conversion)
 {
     /* Note this function works if the field name is zero length,
        which is good.  Zero length field names are handled later, in
@@ -561,6 +561,15 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
     field_name->start = str->start;
     while (str->start < str->end) {
         switch ((c = PyUnicode_READ_CHAR(str->str, str->start++))) {
+        case '{':
+            PyErr_SetString(PyExc_ValueError, "unexpected '{' in field name");
+            return 0;
+        case '[':
+            for (; str->start < str->end; str->start++)
+                if (PyUnicode_READ_CHAR(str->str, str->start) == ']')
+                    break;
+            continue;
+        case '}':
         case ':':
         case '!':
             break;
@@ -570,41 +579,62 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
         break;
     }
 
+    field_name->end = str->start - 1;
     if (c == '!' || c == ':') {
+        Py_ssize_t count;
         /* we have a format specifier and/or a conversion */
         /* don't include the last character */
-        field_name->end = str->start-1;
-
-        /* the format specifier is the rest of the string */
-        format_spec->str = str->str;
-        format_spec->start = str->start;
-        format_spec->end = str->end;
 
         /* see if there's a conversion specifier */
         if (c == '!') {
             /* there must be another character present */
-            if (format_spec->start >= format_spec->end) {
+            if (str->start >= str->end) {
                 PyErr_SetString(PyExc_ValueError,
-                                "end of format while looking for conversion "
+                                "end of string while looking for conversion "
                                 "specifier");
                 return 0;
             }
-            *conversion = PyUnicode_READ_CHAR(format_spec->str, format_spec->start++);
+            *conversion = PyUnicode_READ_CHAR(str->str, str->start++);
 
-            /* if there is another character, it must be a colon */
-            if (format_spec->start < format_spec->end) {
-                c = PyUnicode_READ_CHAR(format_spec->str, format_spec->start++);
+            if (str->start < str->end) {
+                c = PyUnicode_READ_CHAR(str->str, str->start++);
+                if (c == '}')
+                    return 1;
                 if (c != ':') {
                     PyErr_SetString(PyExc_ValueError,
-                                    "expected ':' after format specifier");
+                                    "expected ':' after conversion specifier");
                     return 0;
                 }
             }
         }
+        format_spec->str = str->str;
+        format_spec->start = str->start;
+        count = 1;
+        while (str->start < str->end) {
+            switch ((c = PyUnicode_READ_CHAR(str->str, str->start++))) {
+            case '{':
+                *format_spec_needs_expanding = 1;
+                count++;
+                break;
+            case '}':
+                count--;
+                if (count == 0) {
+                    format_spec->end = str->start - 1;
+                    return 1;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+
+        PyErr_SetString(PyExc_ValueError, "unmatched '{' in format spec");
+        return 0;
     }
-    else
-        /* end of string, there's no format_spec or conversion */
-        field_name->end = str->start;
+    else if (c != '}') {
+        PyErr_SetString(PyExc_ValueError, "expected '}' before end of string");
+        return 0;
+    }
 
     return 1;
 }
@@ -638,10 +668,9 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
                     SubString *format_spec, Py_UCS4 *conversion,
                     int *format_spec_needs_expanding)
 {
-    int at_end, hit_format_spec;
+    int at_end;
     Py_UCS4 c = 0;
     Py_ssize_t start;
-    int count;
     Py_ssize_t len;
     int markup_follows = 0;
 
@@ -713,50 +742,12 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
     if (!markup_follows)
         return 2;
 
-    /* this is markup, find the end of the string by counting nested
-       braces.  note that this prohibits escaped braces, so that
-       format_specs cannot have braces in them. */
+    /* this is markup; parse the field */
     *field_present = 1;
-    count = 1;
-
-    start = self->str.start;
-
-    /* we know we can't have a zero length string, so don't worry
-       about that case */
-    hit_format_spec = 0;
-    while (self->str.start < self->str.end) {
-        switch (c = PyUnicode_READ_CHAR(self->str.str, self->str.start++)) {
-        case ':':
-            hit_format_spec = 1;
-            count = 1;
-            break;
-        case '{':
-            /* the format spec needs to be recursively expanded.
-               this is an optimization, and not strictly needed */
-            if (hit_format_spec)
-                *format_spec_needs_expanding = 1;
-            count++;
-            break;
-        case '}':
-            count--;
-            if (count <= 0) {
-                /* we're done.  parse and get out */
-                SubString s;
-
-                SubString_init(&s, self->str.str, start, self->str.start - 1);
-                if (parse_field(&s, field_name, format_spec, conversion) == 0)
-                    return 0;
-
-                /* success */
-                return 2;
-            }
-            break;
-        }
-    }
-
-    /* end of string while searching for matching '}' */
-    PyErr_SetString(PyExc_ValueError, "unmatched '{' in format");
-    return 0;
+    if (!parse_field(&self->str, field_name, format_spec,
+                     format_spec_needs_expanding, conversion))
+        return 0;
+    return 2;
 }
 
 
