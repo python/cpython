@@ -44,6 +44,11 @@ class G(A):
 
 class TestSuper(unittest.TestCase):
 
+    def tearDown(self):
+        # This fixes the damage that test_various___class___pathologies does.
+        nonlocal __class__
+        __class__ = TestSuper
+
     def test_basics_working(self):
         self.assertEqual(D().f(), 'ABCD')
 
