@@ -305,14 +305,18 @@ PyDict_Fini(void)
  * #define USABLE_FRACTION(n) (((n) >> 1) + ((n) >> 2) - ((n) >> 3))
 */
 
-/* GROWTH_RATE. Growth rate upon hitting maximum load.  Currently set to *2.
- * Raising this to *4 doubles memory consumption depending on the size of
+/* GROWTH_RATE. Growth rate upon hitting maximum load. 
+ * Currently set to used*2 + capacity/2. 
+ * This means that dicts double in size when growing without deletions, 
+ * but have more head room when the number of deletions is on a par with the
+ * number of insertions.
+ * Raising this to used*4 doubles memory consumption depending on the size of
  * the dictionary, but results in half the number of resizes, less effort to
- * resize and better sparseness for some (but not all dict sizes).
- * Setting to *4 eliminates every other resize step.
- * GROWTH_RATE was set to *4 up to version 3.2.
+ * resize.
+ * GROWTH_RATE was set to used*4 up to version 3.2.
+ * GROWTH_RATE was set to used*2 in version 3.3.0
  */
-#define GROWTH_RATE(x) ((x) * 2)
+#define GROWTH_RATE(d) (((d)->ma_used*2)+((d)->ma_keys->dk_size>>1))
 
 #define ENSURE_ALLOWS_DELETIONS(d) \
     if ((d)->ma_keys->dk_lookup == lookdict_unicode_nodummy) { \
@@ -790,7 +794,7 @@ find_empty_slot(PyDictObject *mp, PyObject *key, Py_hash_t hash,
 static int
 insertion_resize(PyDictObject *mp)
 {
-    return dictresize(mp, GROWTH_RATE(mp->ma_used));
+    return dictresize(mp, GROWTH_RATE(mp));
 }
 
 /*
