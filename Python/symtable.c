@@ -1236,13 +1236,14 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         asdl_seq *seq = s->v.Global.names;
         for (i = 0; i < asdl_seq_LEN(seq); i++) {
             identifier name = (identifier)asdl_seq_GET(seq, i);
+            long cur;
             if (st->st_cur->ste_type == ClassBlock &&
                 !PyUnicode_CompareWithASCIIString(name, "__class__")) {
                 PyErr_SetString(PyExc_SyntaxError, "cannot make __class__ global");
                 PyErr_SyntaxLocationEx(st->st_filename, s->lineno, s->col_offset);
                 return 0;
             }
-            long cur = symtable_lookup(st, name);
+            cur = symtable_lookup(st, name);
             if (cur < 0)
                 VISIT_QUIT(st, 0);
             if (cur & (DEF_LOCAL | USE)) {
