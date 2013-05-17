@@ -26,6 +26,7 @@ typedef struct _formatcode {
     const struct _formatdef *fmtdef;
     Py_ssize_t offset;
     Py_ssize_t size;
+    Py_ssize_t repeat;
 } formatcode;
 
 /* Struct object interface */
@@ -1263,7 +1264,7 @@ prepare_s(PyStructObject *self)
     const char *s;
     const char *fmt;
     char c;
-    Py_ssize_t size, len, num, itemsize;
+    Py_ssize_t size, len, ncodes, num, itemsize;
 
     fmt = PyBytes_AS_STRING(self->s_format);
 
@@ -1272,6 +1273,7 @@ prepare_s(PyStructObject *self)
     s = fmt;
     size = 0;
     len = 0;
+    ncodes = 0;
     while ((c = *s++) != '\0') {
         if (Py_ISSPACE(Py_CHARMASK(c)))
             continue;
@@ -1301,9 +1303,9 @@ prepare_s(PyStructObject *self)
 
         switch (c) {
             case 's': /* fall through */
-            case 'p': len++; break;
+            case 'p': len++; ncodes++; break;
             case 'x': break;
-            default: len += num; break;
+            default: len += num; if (num) ncodes++; break;
         }
 
         itemsize = e->size;
@@ -1318,14 +1320,14 @@ prepare_s(PyStructObject *self)
     }
 
     /* check for overflow */
-    if ((len + 1) > (PY_SSIZE_T_MAX / sizeof(formatcode))) {
+    if ((ncodes + 1) > (PY_SSIZE_T_MAX / sizeof(formatcode))) {
         PyErr_NoMemory();
         return -1;
     }
 
     self->s_size = size;
     self->s_len = len;
-    codes = PyMem_MALLOC((len + 1) * sizeof(formatcode));
+    codes = PyMem_MALLOC((ncodes + 1) * sizeof(formatcode));
     if (codes == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -1357,23 +1359,24 @@ prepare_s(PyStructObject *self)
             codes->offset = size;
             codes->size = num;
             codes->fmtdef = e;
+            codes->repeat = 1;
             codes++;
             size += num;
         } else if (c == 'x') {
             size += num;
-        } else {
-            while (--num >= 0) {
-                codes->offset = size;
-                codes->size = e->size;
-                codes->fmtdef = e;
-                codes++;
-                size += e->size;
-            }
+        } else if (num) {
+            codes->offset = size;
+            codes->size = e->size;
+            codes->fmtdef = e;
+            codes->repeat = num;
+            codes++;
+            size += e->size * num;
         }
     }
     codes->fmtdef = NULL;
     codes->offset = size;
     codes->size = 0;
+    codes->repeat = 0;
 
     return 0;
 
@@ -1462,22 +1465,26 @@ s_unpack_internal(PyStructObject *soself, char *startfrom) {
         return NULL;
 
     for (code = soself->s_codes; code->fmtdef != NULL; code++) {
-        PyObject *v;
         const formatdef *e = code->fmtdef;
         const char *res = startfrom + code->offset;
-        if (e->format == 's') {
-            v = PyBytes_FromStringAndSize(res, code->size);
-        } else if (e->format == 'p') {
-            Py_ssize_t n = *(unsigned char*)res;
-            if (n >= code->size)
-                n = code->size - 1;
-            v = PyBytes_FromStringAndSize(res + 1, n);
-        } else {
-            v = e->unpack(res, e);
+        Py_ssize_t j = code->repeat;
+        while (j--) {
+            PyObject *v;
+            if (e->format == 's') {
+                v = PyBytes_FromStringAndSize(res, code->size);
+            } else if (e->format == 'p') {
+                Py_ssize_t n = *(unsigned char*)res;
+                if (n >= code->size)
+                    n = code->size - 1;
+                v = PyBytes_FromStringAndSize(res + 1, n);
+            } else {
+                v = e->unpack(res, e);
+            }
+            if (v == NULL)
+                goto fail;
+            PyTuple_SET_ITEM(result, i++, v);
+            res += code->size;
         }
-        if (v == NULL)
-            goto fail;
-        PyTuple_SET_ITEM(result, i++, v);
     }
 
     return result;
@@ -1716,62 +1723,67 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
     memset(buf, '\0', soself->s_size);
     i = offset;
     for (code = soself->s_codes; code->fmtdef != NULL; code++) {
-        Py_ssize_t n;
-        PyObject *v = PyTuple_GET_ITEM(args, i++);
         const formatdef *e = code->fmtdef;
         char *res = buf + code->offset;
-        if (e->format == 's') {
-            int isstring;
-            void *p;
-            isstring = PyBytes_Check(v);
-            if (!isstring && !PyByteArray_Check(v)) {
-                PyErr_SetString(StructError,
-                                "argument for 's' must be a bytes object");
-                return -1;
-            }
-            if (isstring) {
-                n = PyBytes_GET_SIZE(v);
-                p = PyBytes_AS_STRING(v);
-            }
-            else {
-                n = PyByteArray_GET_SIZE(v);
-                p = PyByteArray_AS_STRING(v);
-            }
-            if (n > code->size)
-                n = code->size;
-            if (n > 0)
-                memcpy(res, p, n);
-        } else if (e->format == 'p') {
-            int isstring;
-            void *p;
-            isstring = PyBytes_Check(v);
-            if (!isstring && !PyByteArray_Check(v)) {
-                PyErr_SetString(StructError,
-                                "argument for 'p' must be a bytes object");
-                return -1;
-            }
-            if (isstring) {
-                n = PyBytes_GET_SIZE(v);
-                p = PyBytes_AS_STRING(v);
-            }
-            else {
-                n = PyByteArray_GET_SIZE(v);
-                p = PyByteArray_AS_STRING(v);
-            }
-            if (n > (code->size - 1))
-                n = code->size - 1;
-            if (n > 0)
-                memcpy(res + 1, p, n);
-            if (n > 255)
-                n = 255;
-            *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
-        } else {
-            if (e->pack(res, v, e) < 0) {
-                if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
+        Py_ssize_t j = code->repeat;
+        while (j--) {
+            PyObject *v = PyTuple_GET_ITEM(args, i++);
+            if (e->format == 's') {
+                Py_ssize_t n;
+                int isstring;
+                void *p;
+                isstring = PyBytes_Check(v);
+                if (!isstring && !PyByteArray_Check(v)) {
                     PyErr_SetString(StructError,
-                                    "long too large to convert to int");
-                return -1;
+                                    "argument for 's' must be a bytes object");
+                    return -1;
+                }
+                if (isstring) {
+                    n = PyBytes_GET_SIZE(v);
+                    p = PyBytes_AS_STRING(v);
+                }
+                else {
+                    n = PyByteArray_GET_SIZE(v);
+                    p = PyByteArray_AS_STRING(v);
+                }
+                if (n > code->size)
+                    n = code->size;
+                if (n > 0)
+                    memcpy(res, p, n);
+            } else if (e->format == 'p') {
+                Py_ssize_t n;
+                int isstring;
+                void *p;
+                isstring = PyBytes_Check(v);
+                if (!isstring && !PyByteArray_Check(v)) {
+                    PyErr_SetString(StructError,
+                                    "argument for 'p' must be a bytes object");
+                    return -1;
+                }
+                if (isstring) {
+                    n = PyBytes_GET_SIZE(v);
+                    p = PyBytes_AS_STRING(v);
+                }
+                else {
+                    n = PyByteArray_GET_SIZE(v);
+                    p = PyByteArray_AS_STRING(v);
+                }
+                if (n > (code->size - 1))
+                    n = code->size - 1;
+                if (n > 0)
+                    memcpy(res + 1, p, n);
+                if (n > 255)
+                    n = 255;
+                *res = Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char);
+            } else {
+                if (e->pack(res, v, e) < 0) {
+                    if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
+                        PyErr_SetString(StructError,
+                                        "long too large to convert to int");
+                    return -1;
+                }
             }
+            res += code->size;
         }
     }
 
@@ -1907,8 +1919,11 @@ static PyObject *
 s_sizeof(PyStructObject *self, void *unused)
 {
     Py_ssize_t size;
+    formatcode *code;
 
-    size = sizeof(PyStructObject) + sizeof(formatcode) * (self->s_len + 1);
+    size = sizeof(PyStructObject) + sizeof(formatcode);
+    for (code = self->s_codes; code->fmtdef != NULL; code++)
+        size += sizeof(formatcode);
     return PyLong_FromSsize_t(size);
 }
 
