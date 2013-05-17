@@ -1,7 +1,7 @@
 .gdb_history
 .purify
 .svn/
-DS_Store
+.DS_Store
 Makefile$
 Makefile.pre$
 TAGS$
