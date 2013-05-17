@@ -556,33 +556,27 @@ fileio_readinto(fileio *self, PyObject *args)
     return PyLong_FromSsize_t(n);
 }
 
+#ifndef HAVE_FSTAT
+
+static PyObject *
+fileio_readall(fileio *self)
+{
+    _Py_IDENTIFIER(readall);
+    return _PyObject_CallMethodId((PyObject*)&PyRawIOBase_Type,
+                                  &PyId_readall, "O", self);
+}
+
+#else
+
 static size_t
-new_buffersize(fileio *self, size_t currentsize
-#ifdef HAVE_FSTAT
-               , Py_off_t pos, Py_off_t end
-#endif
-               )
+new_buffersize(fileio *self, size_t currentsize)
 {
     size_t addend;
-#ifdef HAVE_FSTAT
-    if (end != (Py_off_t)-1) {
-        /* Files claiming a size smaller than SMALLCHUNK may
-           actually be streaming pseudo-files. In this case, we
-           apply the more aggressive algorithm below.
-        */
-        if (end >= SMALLCHUNK && end >= pos && pos >= 0) {
-            /* Add 1 so if the file were to grow we'd notice. */
-            Py_off_t bufsize = currentsize + end - pos + 1;
-            if (bufsize < PY_SSIZE_T_MAX)
-                return (size_t)bufsize;
-            else
-                return PY_SSIZE_T_MAX;
-        }
-    }
-#endif
+
     /* Expand the buffer by an amount proportional to the current size,
        giving us amortized linear-time behavior.  For bigger sizes, use a
        less-than-double growth factor to avoid excessive allocation. */
+    assert(currentsize <= PY_SSIZE_T_MAX);
     if (currentsize > 65536)
         addend = currentsize >> 3;
     else
@@ -596,25 +590,18 @@ new_buffersize(fileio *self, size_t currentsize
 static PyObject *
 fileio_readall(fileio *self)
 {
-#ifdef HAVE_FSTAT
     struct stat st;
     Py_off_t pos, end;
-#endif
     PyObject *result;
-    Py_ssize_t total = 0;
+    Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
-    size_t newsize;
+    size_t bufsize;
 
     if (self->fd < 0)
         return err_closed();
     if (!_PyVerify_fd(self->fd))
         return PyErr_SetFromErrno(PyExc_IOError);
 
-    result = PyBytes_FromStringAndSize(NULL, SMALLCHUNK);
-    if (result == NULL)
-        return NULL;
-
-#ifdef HAVE_FSTAT
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
     pos = _lseeki64(self->fd, 0L, SEEK_CUR);
 #else
@@ -624,44 +611,46 @@ fileio_readall(fileio *self)
         end = st.st_size;
     else
         end = (Py_off_t)-1;
-#endif
-    while (1) {
-#ifdef HAVE_FSTAT
-        newsize = new_buffersize(self, total, pos, end);
-#else
-        newsize = new_buffersize(self, total);
-#endif
-        if (newsize > PY_SSIZE_T_MAX || newsize <= 0) {
-            PyErr_SetString(PyExc_OverflowError,
-                "unbounded read returned more bytes "
-                "than a Python string can hold ");
-            Py_DECREF(result);
-            return NULL;
-        }
 
-        if (PyBytes_GET_SIZE(result) < (Py_ssize_t)newsize) {
-            if (_PyBytes_Resize(&result, newsize) < 0) {
-                if (total == 0) {
-                    Py_DECREF(result);
+    if (end > 0 && end >= pos && pos >= 0 && end - pos < PY_SSIZE_T_MAX) {
+        /* This is probably a real file, so we try to allocate a
+           buffer one byte larger than the rest of the file.  If the
+           calculation is right then we should get EOF without having
+           to enlarge the buffer. */
+        bufsize = (size_t)(end - pos + 1);
+    } else {
+        bufsize = SMALLCHUNK;
+    }
+
+    result = PyBytes_FromStringAndSize(NULL, bufsize);
+    if (result == NULL)
+        return NULL;
+
+    while (1) {
+        if (bytes_read >= (Py_ssize_t)bufsize) {
+            bufsize = new_buffersize(self, bytes_read);
+            if (bufsize > PY_SSIZE_T_MAX || bufsize <= 0) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "unbounded read returned more bytes "
+                                "than a Python string can hold ");
+                Py_DECREF(result);
+                return NULL;
+            }
+
+            if (PyBytes_GET_SIZE(result) < (Py_ssize_t)bufsize) {
+                if (_PyBytes_Resize(&result, bufsize) < 0)
                     return NULL;
-                }
-                PyErr_Clear();
-                break;
             }
         }
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = newsize - total;
+        n = bufsize - bytes_read;
 #if defined(MS_WIN64) || defined(MS_WINDOWS)
         if (n > INT_MAX)
             n = INT_MAX;
-        n = read(self->fd,
-                 PyBytes_AS_STRING(result) + total,
-                 (int)n);
+        n = read(self->fd, PyBytes_AS_STRING(result) + bytes_read, (int)n);
 #else
-        n = read(self->fd,
-                 PyBytes_AS_STRING(result) + total,
-                 n);
+        n = read(self->fd, PyBytes_AS_STRING(result) + bytes_read, n);
 #endif
         Py_END_ALLOW_THREADS
         if (n == 0)
@@ -674,7 +663,7 @@ fileio_readall(fileio *self)
                 }
                 continue;
             }
-            if (total > 0)
+            if (bytes_read > 0)
                 break;
             if (errno == EAGAIN) {
                 Py_DECREF(result);
@@ -684,21 +673,18 @@ fileio_readall(fileio *self)
             PyErr_SetFromErrno(PyExc_IOError);
             return NULL;
         }
-        total += n;
-#ifdef HAVE_FSTAT
+        bytes_read += n;
         pos += n;
-#endif
     }
 
-    if (PyBytes_GET_SIZE(result) > total) {
-        if (_PyBytes_Resize(&result, total) < 0) {
-            /* This should never happen, but just in case */
-            Py_DECREF(result);
+    if (PyBytes_GET_SIZE(result) > bytes_read) {
+        if (_PyBytes_Resize(&result, bytes_read) < 0)
             return NULL;
-        }
     }
     return result;
 }
+
+#endif /* HAVE_FSTAT */
 
 static PyObject *
 fileio_read(fileio *self, PyObject *args)
