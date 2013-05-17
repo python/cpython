@@ -236,7 +236,7 @@ class OrderedDict(dict):
 ### namedtuple
 ################################################################################
 
-_class_template = '''\
+_class_template = """\
 from builtins import property as _property, tuple as _tuple
 from operator import itemgetter as _itemgetter
 from collections import OrderedDict
@@ -260,22 +260,27 @@ class {typename}(tuple):
             raise TypeError('Expected {num_fields:d} arguments, got %d' % len(result))
         return result
 
-    def __repr__(self):
-        'Return a nicely formatted representation string'
-        return self.__class__.__name__ + '({repr_fmt})' % self
-
-    def _asdict(self):
-        'Return a new OrderedDict which maps field names to their values'
-        return OrderedDict(zip(self._fields, self))
-
-    __dict__ = property(_asdict)
-
     def _replace(_self, **kwds):
         'Return a new {typename} object replacing specified fields with new values'
         result = _self._make(map(kwds.pop, {field_names!r}, _self))
         if kwds:
             raise ValueError('Got unexpected field names: %r' % list(kwds))
         return result
+
+    def __repr__(self):
+        'Return a nicely formatted representation string'
+        return self.__class__.__name__ + '({repr_fmt})' % self
+
+    @property
+    def __dict__(self):
+        'A new OrderedDict mapping field names to their values'
+        return OrderedDict(zip(self._fields, self))
+
+    def _asdict(self):
+        '''Return a new OrderedDict which maps field names to their values.
+           This method is obsolete.  Use vars(nt) or nt.__dict__ instead.
+        '''
+        return self.__dict__
 
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'
@@ -286,7 +291,7 @@ class {typename}(tuple):
         return None
 
 {field_defs}
-'''
+"""
 
 _repr_template = '{name}=%r'
 
