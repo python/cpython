@@ -892,7 +892,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(ValueError, "{0".format)
         self.assertRaises(IndexError, "{0.}".format)
         self.assertRaises(ValueError, "{0.}".format, 0)
-        self.assertRaises(IndexError, "{0[}".format)
+        self.assertRaises(ValueError, "{0[}".format)
         self.assertRaises(ValueError, "{0[}".format, [])
         self.assertRaises(KeyError,   "{0]}".format)
         self.assertRaises(ValueError, "{0.[]}".format, 0)
@@ -944,6 +944,14 @@ class UnicodeTest(string_tests.CommonTest,
                          '')
 
         self.assertEqual("{[{}]}".format({"{}": 5}), "5")
+        self.assertEqual("{[{}]}".format({"{}" : "a"}), "a")
+        self.assertEqual("{[{]}".format({"{" : "a"}), "a")
+        self.assertEqual("{[}]}".format({"}" : "a"}), "a")
+        self.assertEqual("{[[]}".format({"[" : "a"}), "a")
+        self.assertEqual("{[!]}".format({"!" : "a"}), "a")
+        self.assertRaises(ValueError, "{a{}b}".format, 42)
+        self.assertRaises(ValueError, "{a{b}".format, 42)
+        self.assertRaises(ValueError, "{[}".format, 42)
 
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
