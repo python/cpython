@@ -1768,17 +1768,16 @@ element_getattro(ElementObject* self, PyObject* nameobj)
     return res;
 }
 
-static PyObject*
+static int
 element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
 {
     char *name = "";
     if (PyUnicode_Check(nameobj))
         name = _PyUnicode_AsString(nameobj);
 
-    if (name == NULL)
-        return NULL;
-
-    if (strcmp(name, "tag") == 0) {
+    if (name == NULL) {
+        return -1;
+    } else if (strcmp(name, "tag") == 0) {
         Py_DECREF(self->tag);
         self->tag = value;
         Py_INCREF(self->tag);
@@ -1797,11 +1796,12 @@ element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
         self->extra->attrib = value;
         Py_INCREF(self->extra->attrib);
     } else {
-        PyErr_SetString(PyExc_AttributeError, name);
-        return NULL;
+        PyErr_SetString(PyExc_AttributeError,
+            "Can't set arbitraty attributes on Element");
+        return -1;
     }
 
-    return NULL;
+    return 0;
 }
 
 static PySequenceMethods element_as_sequence = {
