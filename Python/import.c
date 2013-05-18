@@ -444,6 +444,7 @@ PyImport_Cleanup(void)
 
     /* Finally, clear and delete the modules directory */
     PyDict_Clear(modules);
+    _PyGC_CollectNoFail();
     interp->modules = NULL;
     Py_DECREF(modules);
 }
