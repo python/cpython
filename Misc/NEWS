@@ -94,6 +94,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
+  service using certificates with many wildcards (CVE-2013-2099).
+
 - Issue #15758: Fix FileIO.readall() so it no longer has O(n**2) complexity.
 
 - Issue #14596: The struct.Struct() objects now use more compact implementation.
