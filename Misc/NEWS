@@ -96,9 +96,6 @@ Library
 
 - Issue #15758: Fix FileIO.readall() so it no longer has O(n**2) complexity.
 
-- Deprecated the _asdict() method on named tuples.  Use __dict__ or vars(nt)
-  instead.
-
 - Issue #14596: The struct.Struct() objects now use more compact implementation.
 
 - Issue #17981: Closed socket on error in SysLogHandler.
