@@ -2381,7 +2381,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
         self->data = NULL;
     }
 
-    if (self->element_factory) {
+    if (self->element_factory && self->element_factory != Py_None) {
         node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
     } else {
         node = create_new_element(tag, attrib);
