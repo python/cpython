@@ -373,7 +373,7 @@ seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
         }
         if (iarg != 0) {
             PyOS_snprintf(p, sizeof(buf) - (p - buf),
-                          "argument %zd", iarg);
+                          "argument %" PY_FORMAT_SIZE_T "d", iarg);
             i = 0;
             p += strlen(p);
             while (levels[i] > 0 && i < 32 && (int)(p-buf) < 220) {
