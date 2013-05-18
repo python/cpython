@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
+  service using certificates with many wildcards (CVE-2013-2099).
+
 - Issue #17981: Closed socket on error in SysLogHandler.
 
 - Fix typos in the multiprocessing module.
