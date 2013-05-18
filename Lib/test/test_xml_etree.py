@@ -1762,6 +1762,12 @@ class TreeBuilderTest(unittest.TestCase):
         parser.feed(self.sample1)
         self.assertIsNone(parser.close())
 
+    def test_treebuilder_elementfactory_none(self):
+        parser = ET.XMLParser(target=ET.TreeBuilder(element_factory=None))
+        parser.feed(self.sample1)
+        e = parser.close()
+        self._check_sample1_element(e)
+
     def test_subclass(self):
         class MyTreeBuilder(ET.TreeBuilder):
             def foobar(self, x):
