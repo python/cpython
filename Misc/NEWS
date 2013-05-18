@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17937: Try harder to collect cyclic garbage at shutdown.
+
 - Issue #12370: Prevent class bodies from interfering with the __class__
   closure.
 

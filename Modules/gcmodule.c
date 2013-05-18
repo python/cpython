@@ -853,7 +853,8 @@ get_time(void)
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
-collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable)
+collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
+        int nofail)
 {
     int i;
     Py_ssize_t m = 0; /* # objects collected */
@@ -1000,10 +1001,15 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable)
     }
 
     if (PyErr_Occurred()) {
-        if (gc_str == NULL)
-            gc_str = PyUnicode_FromString("garbage collection");
-        PyErr_WriteUnraisable(gc_str);
-        Py_FatalError("unexpected exception during garbage collection");
+        if (nofail) {
+            PyErr_Clear();
+        }
+        else {
+            if (gc_str == NULL)
+                gc_str = PyUnicode_FromString("garbage collection");
+            PyErr_WriteUnraisable(gc_str);
+            Py_FatalError("unexpected exception during garbage collection");
+        }
     }
 
     /* Update stats */
@@ -1062,7 +1068,7 @@ collect_with_callback(int generation)
 {
     Py_ssize_t result, collected, uncollectable;
     invoke_gc_callback("start", generation, 0, 0);
-    result = collect(generation, &collected, &uncollectable);
+    result = collect(generation, &collected, &uncollectable, 0);
     invoke_gc_callback("stop", generation, collected, uncollectable);
     return result;
 }
@@ -1544,6 +1550,19 @@ PyGC_Collect(void)
     return n;
 }
 
+Py_ssize_t
+_PyGC_CollectNoFail(void)
+{
+    Py_ssize_t n;
+
+    /* This function should only be called on interpreter shutdown, and
+       therefore not recursively. */
+    assert(!collecting);
+    collecting = 1;
+    n = collect(NUM_GENERATIONS - 1, NULL, NULL, 1);
+    collecting = 0;
+    return n;
+}
 
 void
 _PyGC_DumpShutdownStats(void)
