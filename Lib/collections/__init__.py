@@ -280,9 +280,6 @@ class {typename}(tuple):
         '''Return a new OrderedDict which maps field names to their values.
            This method is obsolete.  Use vars(nt) or nt.__dict__ instead.
         '''
-        import warnings
-        warnings.warn('_asdict() is deprecated.  Use vars(nt) instead.',
-                      DeprecationWarning, stacklevel=2)
         return self.__dict__
 
     def __getnewargs__(self):
