@@ -829,6 +829,9 @@ field names, the method and attribute names start with an underscore.
     .. versionchanged:: 3.1
         Returns an :class:`OrderedDict` instead of a regular :class:`dict`.
 
+    .. deprecated:: 3.4
+       Use ``vars(nt)`` or ``nt.__dict__`` instead.
+
 .. method:: somenamedtuple._replace(kwargs)
 
     Return a new instance of the named tuple replacing specified fields with new
@@ -845,8 +848,8 @@ field names, the method and attribute names start with an underscore.
 
     A string with the pure Python source code used to create the named
     tuple class.  The source makes the named tuple self-documenting.
-    It can be printed, executed using :func:`exec`, or saved to a file
-    and imported.
+    It can be printed, executed using :func:`exec`, customized, or saved
+    to a file and imported.
 
     .. versionadded:: 3.3
 
