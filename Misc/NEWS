@@ -10,6 +10,9 @@ What's New in Python 3.2.5?
 Library
 -------
 
+- Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
+  service using certificates with many wildcards (CVE-2013-2099).
+
 - Issue #17192: Restore the patch for Issue #11729 and Issue #10309
   which were omitted in 3.2.4 when updating the bundled version of
   libffi used by ctypes.
