@@ -3964,14 +3964,14 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         finally:
             rh.close()
 
-    @unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
+    #@unittest.skipIf(True, 'Temporarily skipped while failures investigated.')
     def test_compute_rollover_weekly_attime(self):
         currentTime = int(time.time())
         today = currentTime - currentTime % 86400
 
         atTime = datetime.time(12, 0, 0)
 
-        wday = datetime.datetime.fromtimestamp(currentTime + time.timezone).weekday()
+        wday = time.gmtime(today).tm_wday
         for day in range(7):
             rh = logging.handlers.TimedRotatingFileHandler(
                 self.fn, when='W%d' % day, interval=1, backupCount=0, utc=True,
