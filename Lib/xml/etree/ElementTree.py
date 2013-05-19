@@ -1682,10 +1682,3 @@ try:
 except ImportError:
     pass
 
-
-# workaround circular import.
-try:
-    from ElementC14N import _serialize_c14n
-    _serialize["c14n"] = _serialize_c14n
-except ImportError:
-    pass
