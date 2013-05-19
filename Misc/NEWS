@@ -37,6 +37,11 @@ Library
 
 - Issue #17968: Fix memory leak in os.listxattr().
 
+Tests
+-----
+
+- Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
+
 Documentation
 -------------
 

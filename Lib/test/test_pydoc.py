@@ -1,10 +1,12 @@
 import os
 import sys
 import builtins
+import contextlib
 import difflib
 import inspect
 import pydoc
 import keyword
+import pkgutil
 import re
 import string
 import test.support
@@ -17,7 +19,8 @@ from collections import namedtuple
 from test.script_helper import assert_python_ok
 from test.support import (
     TESTFN, rmtree,
-    reap_children, reap_threads, captured_output, captured_stdout, unlink
+    reap_children, reap_threads, captured_output, captured_stdout,
+    captured_stderr, unlink
 )
 from test import pydoc_mod
 
@@ -259,6 +262,29 @@ def get_html_title(text):
     return title
 
 
+class PydocBaseTest(unittest.TestCase):
+
+    def _restricted_walk_packages(self, walk_packages, path=None):
+        """
+        A version of pkgutil.walk_packages() that will restrict itself to
+        a given path.
+        """
+        default_path = path or [os.path.dirname(__file__)]
+        def wrapper(path=None, prefix='', onerror=None):
+            return walk_packages(path or default_path, prefix, onerror)
+        return wrapper
+
+    @contextlib.contextmanager
+    def restrict_walk_packages(self, path=None):
+        walk_packages = pkgutil.walk_packages
+        pkgutil.walk_packages = self._restricted_walk_packages(walk_packages,
+                                                               path)
+        try:
+            yield
+        finally:
+            pkgutil.walk_packages = walk_packages
+
+
 class PydocDocTest(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -420,7 +446,7 @@ class PydocDocTest(unittest.TestCase):
         self.assertDictEqual(methods, expected)
 
 
-class PydocImportTest(unittest.TestCase):
+class PydocImportTest(PydocBaseTest):
 
     def setUp(self):
         self.test_dir = os.mkdir(TESTFN)
@@ -454,8 +480,19 @@ class PydocImportTest(unittest.TestCase):
         badsyntax = os.path.join(pkgdir, "__init__") + os.extsep + "py"
         with open(badsyntax, 'w') as f:
             f.write("invalid python syntax = $1\n")
-        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
-        self.assertEqual(b'', result)
+        with self.restrict_walk_packages(path=[TESTFN]):
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('xyzzy')
+            # No result, no error
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), '')
+            # The package name is still matched
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('syntaxerr')
+            self.assertEqual(out.getvalue().strip(), 'syntaxerr')
+            self.assertEqual(err.getvalue(), '')
 
     def test_apropos_with_unreadable_dir(self):
         # Issue 7367 - pydoc -k failed when unreadable dir on path
@@ -464,8 +501,13 @@ class PydocImportTest(unittest.TestCase):
         self.addCleanup(os.rmdir, self.unreadable_dir)
         # Note, on Windows the directory appears to be still
         #   readable so this is not really testing the issue there
-        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
-        self.assertEqual(b'', result)
+        with self.restrict_walk_packages(path=[TESTFN]):
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('SOMEKEY')
+        # No result, no error
+        self.assertEqual(out.getvalue(), '')
+        self.assertEqual(err.getvalue(), '')
 
 
 class TestDescriptions(unittest.TestCase):
@@ -527,7 +569,7 @@ class PydocServerTest(unittest.TestCase):
         self.assertEqual(serverthread.error, None)
 
 
-class PydocUrlHandlerTest(unittest.TestCase):
+class PydocUrlHandlerTest(PydocBaseTest):
     """Tests for pydoc._url_handler"""
 
     def test_content_type_err(self):
@@ -554,17 +596,18 @@ class PydocUrlHandlerTest(unittest.TestCase):
             ("getfile?key=foobar", "Pydoc: Error - getfile?key=foobar"),
             ]
 
-        for url, title in requests:
+        with self.restrict_walk_packages():
+            for url, title in requests:
+                text = pydoc._url_handler(url, "text/html")
+                result = get_html_title(text)
+                self.assertEqual(result, title, text)
+
+            path = string.__file__
+            title = "Pydoc: getfile " + path
+            url = "getfile?key=" + path
             text = pydoc._url_handler(url, "text/html")
             result = get_html_title(text)
             self.assertEqual(result, title)
-
-        path = string.__file__
-        title = "Pydoc: getfile " + path
-        url = "getfile?key=" + path
-        text = pydoc._url_handler(url, "text/html")
-        result = get_html_title(text)
-        self.assertEqual(result, title)
 
 
 class TestHelper(unittest.TestCase):
