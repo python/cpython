@@ -166,7 +166,7 @@ def b32encode(s):
     if leftover:
         s = s + bytes(5 - leftover)  # Don't use += !
         quanta += 1
-    encoded = bytes()
+    encoded = bytearray()
     for i in range(quanta):
         # c1 and c2 are 16 bits wide, c3 is 8 bits wide.  The intent of this
         # code is to process the 40 bits in units of 5 bits.  So we take the 1
@@ -187,14 +187,14 @@ def b32encode(s):
                           ])
     # Adjust for any leftover partial quanta
     if leftover == 1:
-        return encoded[:-6] + b'======'
+        encoded[-6:] = b'======'
     elif leftover == 2:
-        return encoded[:-4] + b'===='
+        encoded[-4:] = b'===='
     elif leftover == 3:
-        return encoded[:-3] + b'==='
+        encoded[-3:] = b'==='
     elif leftover == 4:
-        return encoded[:-1] + b'='
-    return encoded
+        encoded[-1:] = b'='
+    return bytes(encoded)
 
 
 def b32decode(s, casefold=False, map01=None):
