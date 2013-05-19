@@ -1498,33 +1498,38 @@ class XMLParser:
         except AttributeError:
             pass # unknown
 
-    def _setevents(self, event_list, events):
+    def _setevents(self, events_queue, events_to_report):
         # Internal API for IncrementalParser
+        # events_to_report: a list of events to report during parsing (same as
+        # the *events* of IncrementalParser's constructor.
+        # events_queue: a list of actual parsing events that will be populated
+        # by the underlying parser.
+        #
         parser = self._parser
-        append = event_list.append
-        for event in events:
-            if event == "start":
+        append = events_queue.append
+        for event_name in events_to_report:
+            if event_name == "start":
                 parser.ordered_attributes = 1
                 parser.specified_attributes = 1
-                def handler(tag, attrib_in, event=event, append=append,
+                def handler(tag, attrib_in, event=event_name, append=append,
                             start=self._start_list):
                     append((event, start(tag, attrib_in)))
                 parser.StartElementHandler = handler
-            elif event == "end":
-                def handler(tag, event=event, append=append,
+            elif event_name == "end":
+                def handler(tag, event=event_name, append=append,
                             end=self._end):
                     append((event, end(tag)))
                 parser.EndElementHandler = handler
-            elif event == "start-ns":
-                def handler(prefix, uri, event=event, append=append):
+            elif event_name == "start-ns":
+                def handler(prefix, uri, event=event_name, append=append):
                     append((event, (prefix or "", uri or "")))
                 parser.StartNamespaceDeclHandler = handler
-            elif event == "end-ns":
-                def handler(prefix, event=event, append=append):
+            elif event_name == "end-ns":
+                def handler(prefix, event=event_name, append=append):
                     append((event, None))
                 parser.EndNamespaceDeclHandler = handler
             else:
-                raise ValueError("unknown event %r" % event)
+                raise ValueError("unknown event %r" % event_name)
 
     def _raiseerror(self, value):
         err = ParseError(value)
