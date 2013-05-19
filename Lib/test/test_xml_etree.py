@@ -979,6 +979,21 @@ class IncrementalParserTest(unittest.TestCase):
         parser.eof_received()
         self.assertEqual(parser.root.tag, '{namespace}root')
 
+    def test_ns_events(self):
+        parser = ET.IncrementalParser(events=('start-ns', 'end-ns'))
+        self._feed(parser, "<!-- comment -->\n")
+        self._feed(parser, "<root xmlns='namespace'>\n")
+        self.assertEqual(
+            list(parser.events()),
+            [('start-ns', ('', 'namespace'))])
+        self._feed(parser, "<element key='value'>text</element")
+        self._feed(parser, ">\n")
+        self._feed(parser, "<element>text</element>tail\n")
+        self._feed(parser, "<empty-element/>\n")
+        self._feed(parser, "</root>\n")
+        self.assertEqual(list(parser.events()), [('end-ns', None)])
+        parser.eof_received()
+
     def test_events(self):
         parser = ET.IncrementalParser(events=())
         self._feed(parser, "<root/>\n")
@@ -1025,6 +1040,26 @@ class IncrementalParserTest(unittest.TestCase):
         self._feed(parser, "</root>")
         parser.eof_received()
         self.assertEqual(parser.root.tag, 'root')
+
+    def test_events_sequence(self):
+        # Test that events can be some sequence that's not just a tuple or list
+        eventset = {'end', 'start'}
+        parser = ET.IncrementalParser(events=eventset)
+        self._feed(parser, "<foo>bar</foo>")
+        self.assert_event_tags(parser, [('start', 'foo'), ('end', 'foo')])
+
+        class DummyIter:
+            def __init__(self):
+                self.events = iter(['start', 'end', 'start-ns'])
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return next(self.events)
+
+        parser = ET.IncrementalParser(events=DummyIter())
+        self._feed(parser, "<foo>bar</foo>")
+        self.assert_event_tags(parser, [('start', 'foo'), ('end', 'foo')])
+
 
     def test_unknown_event(self):
         with self.assertRaises(ValueError):
