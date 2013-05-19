@@ -240,7 +240,6 @@ class ElementTreeTest(unittest.TestCase):
 
         self.assertEqual(ET.XML, ET.fromstring)
         self.assertEqual(ET.PI, ET.ProcessingInstruction)
-        self.assertEqual(ET.XMLParser, ET.XMLTreeBuilder)
 
     def test_simpleops(self):
         # Basic method sanity checks.
@@ -425,15 +424,6 @@ class ElementTreeTest(unittest.TestCase):
 
         parser = ET.XMLParser()
         self.assertRegex(parser.version, r'^Expat ')
-        parser.feed(data)
-        self.serialize_check(parser.close(),
-                '<root>\n'
-                '   <element key="value">text</element>\n'
-                '   <element>text</element>tail\n'
-                '   <empty-element />\n'
-                '</root>')
-
-        parser = ET.XMLTreeBuilder() # 1.2 compatibility
         parser.feed(data)
         self.serialize_check(parser.close(),
                 '<root>\n'
@@ -1407,7 +1397,7 @@ class BugsTest(unittest.TestCase):
         # Don't crash when using custom entities.
 
         ENTITIES = {'rsquo': '\u2019', 'lsquo': '\u2018'}
-        parser = ET.XMLTreeBuilder()
+        parser = ET.XMLParser()
         parser.entity.update(ENTITIES)
         parser.feed("""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE patent-application-publication SYSTEM "pap-v15-2001-01-31.dtd" []>

@@ -85,7 +85,7 @@ __all__ = [
     "TreeBuilder",
     "VERSION",
     "XML", "XMLID",
-    "XMLParser", "XMLTreeBuilder",
+    "XMLParser",
     "register_namespace",
     ]
 
@@ -1654,9 +1654,7 @@ try:
 
     # Element, SubElement, ParseError, TreeBuilder, XMLParser
     from _elementtree import *
-except ImportError:
-    pass
-else:
+
     # Overwrite 'ElementTree.parse' to use the C XMLParser
     class ElementTree(ElementTree):
         __doc__ = ElementTree.__doc__
@@ -1681,10 +1679,9 @@ else:
             finally:
                 if close_source:
                     source.close()
+except ImportError:
+    pass
 
-
-# compatibility
-XMLTreeBuilder = XMLParser
 
 # workaround circular import.
 try:
