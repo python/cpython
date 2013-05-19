@@ -331,13 +331,17 @@ Documentation
 - Issue #6696: add documentation for the Profile objects, and improve
   profile/cProfile docs.  Patch by Tom Pinckney.
 
+Tests
+-----
+
+- Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
+
 C-API
 -----
 
 - Issue #17522: Add the PyGILState_Check() API.
 
 - Issue #17327: Add PyDict_SetDefault.
-
 
 IDLE
 ----
