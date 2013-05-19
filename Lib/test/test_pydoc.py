@@ -4,15 +4,17 @@ import difflib
 import __builtin__
 import re
 import pydoc
+import contextlib
 import inspect
 import keyword
+import pkgutil
 import unittest
 import xml.etree
 import test.test_support
 from collections import namedtuple
 from test.script_helper import assert_python_ok
 from test.test_support import (
-    TESTFN, rmtree, reap_children, captured_stdout)
+    TESTFN, rmtree, reap_children, captured_stdout, captured_stderr)
 
 from test import pydoc_mod
 
@@ -228,7 +230,30 @@ def print_diffs(text1, text2):
     print '\n' + ''.join(diffs)
 
 
-class PyDocDocTest(unittest.TestCase):
+class PydocBaseTest(unittest.TestCase):
+
+    def _restricted_walk_packages(self, walk_packages, path=None):
+        """
+        A version of pkgutil.walk_packages() that will restrict itself to
+        a given path.
+        """
+        default_path = path or [os.path.dirname(__file__)]
+        def wrapper(path=None, prefix='', onerror=None):
+            return walk_packages(path or default_path, prefix, onerror)
+        return wrapper
+
+    @contextlib.contextmanager
+    def restrict_walk_packages(self, path=None):
+        walk_packages = pkgutil.walk_packages
+        pkgutil.walk_packages = self._restricted_walk_packages(walk_packages,
+                                                               path)
+        try:
+            yield
+        finally:
+            pkgutil.walk_packages = walk_packages
+
+
+class PydocDocTest(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -303,7 +328,7 @@ class PyDocDocTest(unittest.TestCase):
                          "<type 'exceptions.Exception'>")
 
 
-class PydocImportTest(unittest.TestCase):
+class PydocImportTest(PydocBaseTest):
 
     def setUp(self):
         self.test_dir = os.mkdir(TESTFN)
@@ -338,8 +363,19 @@ class PydocImportTest(unittest.TestCase):
         badsyntax = os.path.join(pkgdir, "__init__") + os.extsep + "py"
         with open(badsyntax, 'w') as f:
             f.write("invalid python syntax = $1\n")
-        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
-        self.assertEqual('', result)
+        with self.restrict_walk_packages(path=[TESTFN]):
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('xyzzy')
+            # No result, no error
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue(), '')
+            # The package name is still matched
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('syntaxerr')
+            self.assertEqual(out.getvalue().strip(), 'syntaxerr')
+            self.assertEqual(err.getvalue(), '')
 
     def test_apropos_with_unreadable_dir(self):
         # Issue 7367 - pydoc -k failed when unreadable dir on path
@@ -348,8 +384,13 @@ class PydocImportTest(unittest.TestCase):
         self.addCleanup(os.rmdir, self.unreadable_dir)
         # Note, on Windows the directory appears to be still
         #   readable so this is not really testing the issue there
-        result = run_pydoc('zqwykjv', '-k', PYTHONPATH=TESTFN)
-        self.assertEqual('', result)
+        with self.restrict_walk_packages(path=[TESTFN]):
+            with captured_stdout() as out:
+                with captured_stderr() as err:
+                    pydoc.apropos('SOMEKEY')
+        # No result, no error
+        self.assertEqual(out.getvalue(), '')
+        self.assertEqual(err.getvalue(), '')
 
 
 class TestDescriptions(unittest.TestCase):
@@ -412,7 +453,7 @@ class TestHelper(unittest.TestCase):
 
 def test_main():
     try:
-        test.test_support.run_unittest(PyDocDocTest,
+        test.test_support.run_unittest(PydocDocTest,
                                        PydocImportTest,
                                        TestDescriptions,
                                        TestHelper)

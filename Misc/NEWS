@@ -18,6 +18,12 @@ Library
 
 - Fix typos in the multiprocessing module.
 
+Tests
+-----
+
+- Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
+
+
 What's New in Python 2.7.5?
 ===========================
 
