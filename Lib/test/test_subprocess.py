@@ -982,10 +982,10 @@ class ProcessTestCase(BaseTestCase):
 
     def test_wait_timeout(self):
         p = subprocess.Popen([sys.executable,
-                              "-c", "import time; time.sleep(0.1)"])
+                              "-c", "import time; time.sleep(0.3)"])
         with self.assertRaises(subprocess.TimeoutExpired) as c:
-            p.wait(timeout=0.01)
-        self.assertIn("0.01", str(c.exception))  # For coverage of __str__.
+            p.wait(timeout=0.0001)
+        self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
         # Some heavily loaded buildbots (sparc Debian 3.x) require this much
         # time to start.
         self.assertEqual(p.wait(timeout=3), 0)
