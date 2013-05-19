@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17812: Fixed quadratic complexity of base64.b32encode().
+
 - Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
   service using certificates with many wildcards (CVE-2013-2099).
 
