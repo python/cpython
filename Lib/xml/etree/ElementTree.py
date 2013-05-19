@@ -1382,11 +1382,9 @@ class TreeBuilder:
                     self._last.text = text
             self._data = []
 
-
     def data(self, data):
         """Add text to current element."""
         self._data.append(data)
-
 
     def start(self, tag, attrs):
         """Open new element and return it.
@@ -1402,7 +1400,6 @@ class TreeBuilder:
         self._elem.append(elem)
         self._tail = 0
         return elem
-
 
     def end(self, tag):
         """Close and return current Element.
@@ -1681,4 +1678,3 @@ try:
                     source.close()
 except ImportError:
     pass
-
