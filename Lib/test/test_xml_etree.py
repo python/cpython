@@ -1983,7 +1983,7 @@ class TreeBuilderTest(unittest.TestCase):
         # Mimick SimpleTAL's behaviour (issue #16089): both versions of
         # TreeBuilder should be able to cope with a subclass of the
         # pure Python Element class.
-        base = ET._Element
+        base = ET._Element_Py
         # Not from a C extension
         self.assertEqual(base.__module__, 'xml.etree.ElementTree')
         # Force some multiple inheritance with a C class to make things

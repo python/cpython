@@ -246,7 +246,6 @@ class Element:
             self._assert_is_element(element)
         self._children.extend(elements)
 
-
     def insert(self, index, subelement):
         """Insert *subelement* at position *index*."""
         self._assert_is_element(subelement)
@@ -255,9 +254,8 @@ class Element:
     def _assert_is_element(self, e):
         # Need to refer to the actual Python implementation, not the
         # shadowing C implementation.
-        if not isinstance(e, _Element):
+        if not isinstance(e, _Element_Py):
             raise TypeError('expected an Element, not %s' % type(e).__name__)
-
 
     def remove(self, subelement):
         """Remove matching subelement.
@@ -287,7 +285,6 @@ class Element:
             )
         return self._children
 
-
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
 
@@ -298,7 +295,6 @@ class Element:
 
         """
         return ElementPath.find(self, path, namespaces)
-
 
     def findtext(self, path, default=None, namespaces=None):
         """Find text for first matching element by tag name or path.
@@ -314,7 +310,6 @@ class Element:
         """
         return ElementPath.findtext(self, path, default, namespaces)
 
-
     def findall(self, path, namespaces=None):
         """Find all matching subelements by tag name or path.
 
@@ -325,7 +320,6 @@ class Element:
 
         """
         return ElementPath.findall(self, path, namespaces)
-
 
     def iterfind(self, path, namespaces=None):
         """Find all matching subelements by tag name or path.
@@ -338,7 +332,6 @@ class Element:
         """
         return ElementPath.iterfind(self, path, namespaces)
 
-
     def clear(self):
         """Reset element.
 
@@ -349,7 +342,6 @@ class Element:
         self.attrib.clear()
         self._children = []
         self.text = self.tail = None
-
 
     def get(self, key, default=None):
         """Get element attribute.
@@ -364,7 +356,6 @@ class Element:
         """
         return self.attrib.get(key, default)
 
-
     def set(self, key, value):
         """Set element attribute.
 
@@ -375,7 +366,6 @@ class Element:
         """
         self.attrib[key] = value
 
-
     def keys(self):
         """Get list of attribute names.
 
@@ -384,7 +374,6 @@ class Element:
 
         """
         return self.attrib.keys()
-
 
     def items(self):
         """Get element attributes as a sequence.
@@ -396,7 +385,6 @@ class Element:
 
         """
         return self.attrib.items()
-
 
     def iter(self, tag=None):
         """Create tree iterator.
@@ -430,7 +418,6 @@ class Element:
         )
         return list(self.iter(tag))
 
-
     def itertext(self):
         """Create text iterator.
 
@@ -447,9 +434,6 @@ class Element:
             yield from e.itertext()
             if e.tail:
                 yield e.tail
-
-# compatibility
-_Element = _ElementInterface = Element
 
 
 def SubElement(parent, tag, attrib={}, **extra):
@@ -1663,13 +1647,17 @@ class XMLParser:
 
 # Import the C accelerators
 try:
+    # Element is going to be shadowed by the C implementation. We need to keep
+    # the Python version of it accessible for some "creative" by external code
+    # (see tests)
+    _Element_Py = Element
+
     # Element, SubElement, ParseError, TreeBuilder, XMLParser
     from _elementtree import *
 except ImportError:
     pass
 else:
     # Overwrite 'ElementTree.parse' to use the C XMLParser
-
     class ElementTree(ElementTree):
         __doc__ = ElementTree.__doc__
         def parse(self, source, parser=None):
