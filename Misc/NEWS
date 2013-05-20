@@ -9,6 +9,9 @@ What's New in Python 2.7.6?
 Core and Builtins
 -----------------
 
+- Issue #18019: Fix crash in the repr of dictionaries containing their own
+  views.
+
 Library
 -------
 

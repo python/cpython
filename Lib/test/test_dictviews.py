@@ -144,6 +144,11 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(d1.viewitems() ^ d3.viewitems(),
                          {('a', 1), ('b', 2), ('d', 4), ('e', 5)})
 
+    def test_recursive_repr(self):
+        d = {}
+        d[42] = d.viewvalues()
+        self.assertRaises(RuntimeError, repr, d)
+
 
 
 
