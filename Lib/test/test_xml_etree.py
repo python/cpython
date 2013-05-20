@@ -10,6 +10,7 @@ import io
 import operator
 import pickle
 import sys
+import types
 import unittest
 import weakref
 
@@ -2398,8 +2399,11 @@ class NoAcceleratorTest(unittest.TestCase):
 
     # Test that the C accelerator was not imported for pyET
     def test_correct_import_pyET(self):
-        self.assertEqual(pyET.Element.__module__, 'xml.etree.ElementTree')
-        self.assertEqual(pyET.SubElement.__module__, 'xml.etree.ElementTree')
+        # The type of methods defined in Python code is types.FunctionType,
+        # while the type of methods defined inside _elementtree is
+        # <class 'wrapper_descriptor'>
+        self.assertIsInstance(pyET.Element.__init__, types.FunctionType)
+        self.assertIsInstance(pyET.XMLParser.__init__, types.FunctionType)
 
 # --------------------------------------------------------------------
 
