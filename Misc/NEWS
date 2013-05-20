@@ -323,6 +323,8 @@ Tests
 Documentation
 -------------
 
+- Issue #14097: improve the "introduction" page of the tutorial.
+
 - Issue #17977: The documentation for the cadefault argument's default value
   in urllib.request.urlopen() is fixed to match the code.
 
