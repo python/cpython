@@ -1103,6 +1103,89 @@ Use a list comprehension::
    result = [obj.method() for obj in mylist]
 
 
+Why does a_tuple[i] += ['item'] raise an exception when the addition works?
+---------------------------------------------------------------------------
+
+This is because of a combination of the fact that augmented assignment
+operators are *assignment* operators, and the difference between mutable and
+immutable objects in Python.
+
+This discussion applies in general when augmented assignment operators are
+applied to elements of a tuple that point to mutable objects, but we'll use
+a ``list`` and ``+=`` as our exemplar.
+
+If you wrote::
+
+   >>> a_tuple = (1, 2)
+   >>> a_tuple[0] += 1
+   Traceback (most recent call last):
+      ...
+   TypeError: 'tuple' object does not support item assignment
+
+The reason for the exception should be immediately clear: ``1`` is added to the
+object ``a_tuple[0]`` points to (``1``), producing the result object, ``2``,
+but when we attempt to assign the result of the computation, ``2``, to element
+``0`` of the tuple, we get an error because we can't change what an element of
+a tuple points to.
+
+Under the covers, what this augmented assignment statement is doing is
+approximately this::
+
+   >>> result = a_tuple[0].__iadd__(1)
+   >>> a_tuple[0] = result
+   Traceback (most recent call last):
+     ...
+   TypeError: 'tuple' object does not support item assignment
+
+It is the assignment part of the operation that produces the error, since a
+tuple is immutable.
+
+When you write something like::
+
+   >>> a_tuple = (['foo'], 'bar')
+   >>> a_tuple[0] += ['item']
+   Traceback (most recent call last):
+     ...
+   TypeError: 'tuple' object does not support item assignment
+
+The exception is a bit more surprising, and even more surprising is the fact
+that even though there was an error, the append worked::
+
+    >>> a_tuple[0]
+    ['foo', 'item']
+
+To see why this happens, you need to know that for lists, ``__iadd__`` is equivalent
+to calling ``extend`` on the list and returning the list.  That's why we say
+that for lists, ``+=`` is a "shorthand" for ``list.extend``::
+
+    >>> a_list = []
+    >>> a_list += [1]
+    >>> a_list
+    [1]
+
+is equivalent to::
+
+    >>> result = a_list.__iadd__([1])
+    >>> a_list = result
+
+The object pointed to by a_list has been mutated, and the pointer to the
+mutated object is assigned back to ``a_list``.  The end result of the
+assignment is a no-op, since it is a pointer to the same object that ``a_list``
+was previously pointing to, but the assignment still happens.
+
+Thus, in our tuple example what is happening is equivalent to::
+
+   >>> result = a_tuple[0].__iadd__(['item'])
+   >>> a_tuple[0] = result
+   Traceback (most recent call last):
+     ...
+   TypeError: 'tuple' object does not support item assignment
+
+The ``__iadd__`` succeeds, and thus the list is extended, but even though
+``result`` points to the same object that ``a_tuple[0]`` already points to,
+that final assignment still results in an error, because tuples are immutable.
+
+
 Dictionaries
 ============
 
