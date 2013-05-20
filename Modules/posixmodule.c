@@ -10319,27 +10319,6 @@ PyDoc_STRVAR(posix_cpu_count__doc__,
 Return the number of CPUs in the system, or None if this value cannot be\n\
 established.");
 
-#if defined(__DragonFly__) || \
-    defined(__OpenBSD__)   || \
-    defined(__FreeBSD__)   || \
-    defined(__NetBSD__)    || \
-    defined(__APPLE__)
-static int
-_bsd_cpu_count(void)
-{
-    int ncpu = 0;
-    int mib[2];
-    size_t len = sizeof(ncpu);
-
-    mib[0] = CTL_HW;
-    mib[1] = HW_NCPU;
-    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) == 0)
-        return ncpu;
-    else
-        return 0;
-}
-#endif
-
 static PyObject *
 posix_cpu_count(PyObject *self)
 {
@@ -10357,7 +10336,12 @@ posix_cpu_count(PyObject *self)
       defined(__FreeBSD__)   || \
       defined(__NetBSD__)    || \
       defined(__APPLE__)
-    ncpu = _bsd_cpu_count();
+    int mib[2];
+    size_t len = sizeof(ncpu);
+    mib[0] = CTL_HW;
+    mib[1] = HW_NCPU;
+    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) != 0)
+        ncpu = 0;
 #endif
     if (ncpu >= 1)
         return PyLong_FromLong(ncpu);
