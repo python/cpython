@@ -3347,10 +3347,9 @@ xmlparser_feed(XMLParserObject* self, PyObject* args)
 }
 
 static PyObject*
-xmlparser_parse(XMLParserObject* self, PyObject* args)
+xmlparser_parse_whole(XMLParserObject* self, PyObject* args)
 {
-    /* (internal) parse until end of input stream */
-
+    /* (internal) parse the whole input, until end of stream */
     PyObject* reader;
     PyObject* buffer;
     PyObject* temp;
@@ -3526,7 +3525,7 @@ xmlparser_setevents(XMLParserObject *self, PyObject* args)
 static PyMethodDef xmlparser_methods[] = {
     {"feed", (PyCFunction) xmlparser_feed, METH_VARARGS},
     {"close", (PyCFunction) xmlparser_close, METH_VARARGS},
-    {"_parse", (PyCFunction) xmlparser_parse, METH_VARARGS},
+    {"_parse_whole", (PyCFunction) xmlparser_parse_whole, METH_VARARGS},
     {"_setevents", (PyCFunction) xmlparser_setevents, METH_VARARGS},
     {"doctype", (PyCFunction) xmlparser_doctype, METH_VARARGS},
     {NULL, NULL}
