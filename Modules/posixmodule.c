@@ -10800,12 +10800,6 @@ static PyMethodDef posix_methods[] = {
 };
 
 
-static int
-ins(PyObject *module, char *symbol, long value)
-{
-    return PyModule_AddIntConstant(module, symbol, value);
-}
-
 #if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
 static int
 enable_symlink()
@@ -10836,376 +10830,376 @@ enable_symlink()
 #endif /* defined(HAVE_SYMLINK) && defined(MS_WINDOWS) */
 
 static int
-all_ins(PyObject *d)
+all_ins(PyObject *m)
 {
 #ifdef F_OK
-    if (ins(d, "F_OK", (long)F_OK)) return -1;
+    if (PyModule_AddIntMacro(m, F_OK)) return -1;
 #endif
 #ifdef R_OK
-    if (ins(d, "R_OK", (long)R_OK)) return -1;
+    if (PyModule_AddIntMacro(m, R_OK)) return -1;
 #endif
 #ifdef W_OK
-    if (ins(d, "W_OK", (long)W_OK)) return -1;
+    if (PyModule_AddIntMacro(m, W_OK)) return -1;
 #endif
 #ifdef X_OK
-    if (ins(d, "X_OK", (long)X_OK)) return -1;
+    if (PyModule_AddIntMacro(m, X_OK)) return -1;
 #endif
 #ifdef NGROUPS_MAX
-    if (ins(d, "NGROUPS_MAX", (long)NGROUPS_MAX)) return -1;
+    if (PyModule_AddIntMacro(m, NGROUPS_MAX)) return -1;
 #endif
 #ifdef TMP_MAX
-    if (ins(d, "TMP_MAX", (long)TMP_MAX)) return -1;
+    if (PyModule_AddIntMacro(m, TMP_MAX)) return -1;
 #endif
 #ifdef WCONTINUED
-    if (ins(d, "WCONTINUED", (long)WCONTINUED)) return -1;
+    if (PyModule_AddIntMacro(m, WCONTINUED)) return -1;
 #endif
 #ifdef WNOHANG
-    if (ins(d, "WNOHANG", (long)WNOHANG)) return -1;
+    if (PyModule_AddIntMacro(m, WNOHANG)) return -1;
 #endif
 #ifdef WUNTRACED
-    if (ins(d, "WUNTRACED", (long)WUNTRACED)) return -1;
+    if (PyModule_AddIntMacro(m, WUNTRACED)) return -1;
 #endif
 #ifdef O_RDONLY
-    if (ins(d, "O_RDONLY", (long)O_RDONLY)) return -1;
+    if (PyModule_AddIntMacro(m, O_RDONLY)) return -1;
 #endif
 #ifdef O_WRONLY
-    if (ins(d, "O_WRONLY", (long)O_WRONLY)) return -1;
+    if (PyModule_AddIntMacro(m, O_WRONLY)) return -1;
 #endif
 #ifdef O_RDWR
-    if (ins(d, "O_RDWR", (long)O_RDWR)) return -1;
+    if (PyModule_AddIntMacro(m, O_RDWR)) return -1;
 #endif
 #ifdef O_NDELAY
-    if (ins(d, "O_NDELAY", (long)O_NDELAY)) return -1;
+    if (PyModule_AddIntMacro(m, O_NDELAY)) return -1;
 #endif
 #ifdef O_NONBLOCK
-    if (ins(d, "O_NONBLOCK", (long)O_NONBLOCK)) return -1;
+    if (PyModule_AddIntMacro(m, O_NONBLOCK)) return -1;
 #endif
 #ifdef O_APPEND
-    if (ins(d, "O_APPEND", (long)O_APPEND)) return -1;
+    if (PyModule_AddIntMacro(m, O_APPEND)) return -1;
 #endif
 #ifdef O_DSYNC
-    if (ins(d, "O_DSYNC", (long)O_DSYNC)) return -1;
+    if (PyModule_AddIntMacro(m, O_DSYNC)) return -1;
 #endif
 #ifdef O_RSYNC
-    if (ins(d, "O_RSYNC", (long)O_RSYNC)) return -1;
+    if (PyModule_AddIntMacro(m, O_RSYNC)) return -1;
 #endif
 #ifdef O_SYNC
-    if (ins(d, "O_SYNC", (long)O_SYNC)) return -1;
+    if (PyModule_AddIntMacro(m, O_SYNC)) return -1;
 #endif
 #ifdef O_NOCTTY
-    if (ins(d, "O_NOCTTY", (long)O_NOCTTY)) return -1;
+    if (PyModule_AddIntMacro(m, O_NOCTTY)) return -1;
 #endif
 #ifdef O_CREAT
-    if (ins(d, "O_CREAT", (long)O_CREAT)) return -1;
+    if (PyModule_AddIntMacro(m, O_CREAT)) return -1;
 #endif
 #ifdef O_EXCL
-    if (ins(d, "O_EXCL", (long)O_EXCL)) return -1;
+    if (PyModule_AddIntMacro(m, O_EXCL)) return -1;
 #endif
 #ifdef O_TRUNC
-    if (ins(d, "O_TRUNC", (long)O_TRUNC)) return -1;
+    if (PyModule_AddIntMacro(m, O_TRUNC)) return -1;
 #endif
 #ifdef O_BINARY
-    if (ins(d, "O_BINARY", (long)O_BINARY)) return -1;
+    if (PyModule_AddIntMacro(m, O_BINARY)) return -1;
 #endif
 #ifdef O_TEXT
-    if (ins(d, "O_TEXT", (long)O_TEXT)) return -1;
+    if (PyModule_AddIntMacro(m, O_TEXT)) return -1;
 #endif
 #ifdef O_XATTR
-    if (ins(d, "O_XATTR", (long)O_XATTR)) return -1;
+    if (PyModule_AddIntMacro(m, O_XATTR)) return -1;
 #endif
 #ifdef O_LARGEFILE
-    if (ins(d, "O_LARGEFILE", (long)O_LARGEFILE)) return -1;
+    if (PyModule_AddIntMacro(m, O_LARGEFILE)) return -1;
 #endif
 #ifdef O_SHLOCK
-    if (ins(d, "O_SHLOCK", (long)O_SHLOCK)) return -1;
+    if (PyModule_AddIntMacro(m, O_SHLOCK)) return -1;
 #endif
 #ifdef O_EXLOCK
-    if (ins(d, "O_EXLOCK", (long)O_EXLOCK)) return -1;
+    if (PyModule_AddIntMacro(m, O_EXLOCK)) return -1;
 #endif
 #ifdef O_EXEC
-    if (ins(d, "O_EXEC", (long)O_EXEC)) return -1;
+    if (PyModule_AddIntMacro(m, O_EXEC)) return -1;
 #endif
 #ifdef O_SEARCH
-    if (ins(d, "O_SEARCH", (long)O_SEARCH)) return -1;
+    if (PyModule_AddIntMacro(m, O_SEARCH)) return -1;
 #endif
 #ifdef O_PATH
-    if (ins(d, "O_PATH", (long)O_PATH)) return -1;
+    if (PyModule_AddIntMacro(m, O_PATH)) return -1;
 #endif
 #ifdef O_TTY_INIT
-    if (ins(d, "O_TTY_INIT", (long)O_TTY_INIT)) return -1;
+    if (PyModule_AddIntMacro(m, O_TTY_INIT)) return -1;
 #endif
 #ifdef PRIO_PROCESS
-    if (ins(d, "PRIO_PROCESS", (long)PRIO_PROCESS)) return -1;
+    if (PyModule_AddIntMacro(m, PRIO_PROCESS)) return -1;
 #endif
 #ifdef PRIO_PGRP
-    if (ins(d, "PRIO_PGRP", (long)PRIO_PGRP)) return -1;
+    if (PyModule_AddIntMacro(m, PRIO_PGRP)) return -1;
 #endif
 #ifdef PRIO_USER
-    if (ins(d, "PRIO_USER", (long)PRIO_USER)) return -1;
+    if (PyModule_AddIntMacro(m, PRIO_USER)) return -1;
 #endif
 #ifdef O_CLOEXEC
-    if (ins(d, "O_CLOEXEC", (long)O_CLOEXEC)) return -1;
+    if (PyModule_AddIntMacro(m, O_CLOEXEC)) return -1;
 #endif
 #ifdef O_ACCMODE
-    if (ins(d, "O_ACCMODE", (long)O_ACCMODE)) return -1;
+    if (PyModule_AddIntMacro(m, O_ACCMODE)) return -1;
 #endif
 
 
 #ifdef SEEK_HOLE
-    if (ins(d, "SEEK_HOLE", (long)SEEK_HOLE)) return -1;
+    if (PyModule_AddIntMacro(m, SEEK_HOLE)) return -1;
 #endif
 #ifdef SEEK_DATA
-    if (ins(d, "SEEK_DATA", (long)SEEK_DATA)) return -1;
+    if (PyModule_AddIntMacro(m, SEEK_DATA)) return -1;
 #endif
 
 /* MS Windows */
 #ifdef O_NOINHERIT
     /* Don't inherit in child processes. */
-    if (ins(d, "O_NOINHERIT", (long)O_NOINHERIT)) return -1;
+    if (PyModule_AddIntMacro(m, O_NOINHERIT)) return -1;
 #endif
 #ifdef _O_SHORT_LIVED
     /* Optimize for short life (keep in memory). */
     /* MS forgot to define this one with a non-underscore form too. */
-    if (ins(d, "O_SHORT_LIVED", (long)_O_SHORT_LIVED)) return -1;
+    if (PyModule_AddIntConstant(m, "O_SHORT_LIVED", _O_SHORT_LIVED)) return -1;
 #endif
 #ifdef O_TEMPORARY
     /* Automatically delete when last handle is closed. */
-    if (ins(d, "O_TEMPORARY", (long)O_TEMPORARY)) return -1;
+    if (PyModule_AddIntMacro(m, O_TEMPORARY)) return -1;
 #endif
 #ifdef O_RANDOM
     /* Optimize for random access. */
-    if (ins(d, "O_RANDOM", (long)O_RANDOM)) return -1;
+    if (PyModule_AddIntMacro(m, O_RANDOM)) return -1;
 #endif
 #ifdef O_SEQUENTIAL
     /* Optimize for sequential access. */
-    if (ins(d, "O_SEQUENTIAL", (long)O_SEQUENTIAL)) return -1;
+    if (PyModule_AddIntMacro(m, O_SEQUENTIAL)) return -1;
 #endif
 
 /* GNU extensions. */
 #ifdef O_ASYNC
     /* Send a SIGIO signal whenever input or output
        becomes available on file descriptor */
-    if (ins(d, "O_ASYNC", (long)O_ASYNC)) return -1;
+    if (PyModule_AddIntMacro(m, O_ASYNC)) return -1;
 #endif
 #ifdef O_DIRECT
     /* Direct disk access. */
-    if (ins(d, "O_DIRECT", (long)O_DIRECT)) return -1;
+    if (PyModule_AddIntMacro(m, O_DIRECT)) return -1;
 #endif
 #ifdef O_DIRECTORY
     /* Must be a directory.      */
-    if (ins(d, "O_DIRECTORY", (long)O_DIRECTORY)) return -1;
+    if (PyModule_AddIntMacro(m, O_DIRECTORY)) return -1;
 #endif
 #ifdef O_NOFOLLOW
     /* Do not follow links.      */
-    if (ins(d, "O_NOFOLLOW", (long)O_NOFOLLOW)) return -1;
+    if (PyModule_AddIntMacro(m, O_NOFOLLOW)) return -1;
 #endif
 #ifdef O_NOLINKS
     /* Fails if link count of the named file is greater than 1 */
-    if (ins(d, "O_NOLINKS", (long)O_NOLINKS)) return -1;
+    if (PyModule_AddIntMacro(m, O_NOLINKS)) return -1;
 #endif
 #ifdef O_NOATIME
     /* Do not update the access time. */
-    if (ins(d, "O_NOATIME", (long)O_NOATIME)) return -1;
+    if (PyModule_AddIntMacro(m, O_NOATIME)) return -1;
 #endif
 
     /* These come from sysexits.h */
 #ifdef EX_OK
-    if (ins(d, "EX_OK", (long)EX_OK)) return -1;
+    if (PyModule_AddIntMacro(m, EX_OK)) return -1;
 #endif /* EX_OK */
 #ifdef EX_USAGE
-    if (ins(d, "EX_USAGE", (long)EX_USAGE)) return -1;
+    if (PyModule_AddIntMacro(m, EX_USAGE)) return -1;
 #endif /* EX_USAGE */
 #ifdef EX_DATAERR
-    if (ins(d, "EX_DATAERR", (long)EX_DATAERR)) return -1;
+    if (PyModule_AddIntMacro(m, EX_DATAERR)) return -1;
 #endif /* EX_DATAERR */
 #ifdef EX_NOINPUT
-    if (ins(d, "EX_NOINPUT", (long)EX_NOINPUT)) return -1;
+    if (PyModule_AddIntMacro(m, EX_NOINPUT)) return -1;
 #endif /* EX_NOINPUT */
 #ifdef EX_NOUSER
-    if (ins(d, "EX_NOUSER", (long)EX_NOUSER)) return -1;
+    if (PyModule_AddIntMacro(m, EX_NOUSER)) return -1;
 #endif /* EX_NOUSER */
 #ifdef EX_NOHOST
-    if (ins(d, "EX_NOHOST", (long)EX_NOHOST)) return -1;
+    if (PyModule_AddIntMacro(m, EX_NOHOST)) return -1;
 #endif /* EX_NOHOST */
 #ifdef EX_UNAVAILABLE
-    if (ins(d, "EX_UNAVAILABLE", (long)EX_UNAVAILABLE)) return -1;
+    if (PyModule_AddIntMacro(m, EX_UNAVAILABLE)) return -1;
 #endif /* EX_UNAVAILABLE */
 #ifdef EX_SOFTWARE
-    if (ins(d, "EX_SOFTWARE", (long)EX_SOFTWARE)) return -1;
+    if (PyModule_AddIntMacro(m, EX_SOFTWARE)) return -1;
 #endif /* EX_SOFTWARE */
 #ifdef EX_OSERR
-    if (ins(d, "EX_OSERR", (long)EX_OSERR)) return -1;
+    if (PyModule_AddIntMacro(m, EX_OSERR)) return -1;
 #endif /* EX_OSERR */
 #ifdef EX_OSFILE
-    if (ins(d, "EX_OSFILE", (long)EX_OSFILE)) return -1;
+    if (PyModule_AddIntMacro(m, EX_OSFILE)) return -1;
 #endif /* EX_OSFILE */
 #ifdef EX_CANTCREAT
-    if (ins(d, "EX_CANTCREAT", (long)EX_CANTCREAT)) return -1;
+    if (PyModule_AddIntMacro(m, EX_CANTCREAT)) return -1;
 #endif /* EX_CANTCREAT */
 #ifdef EX_IOERR
-    if (ins(d, "EX_IOERR", (long)EX_IOERR)) return -1;
+    if (PyModule_AddIntMacro(m, EX_IOERR)) return -1;
 #endif /* EX_IOERR */
 #ifdef EX_TEMPFAIL
-    if (ins(d, "EX_TEMPFAIL", (long)EX_TEMPFAIL)) return -1;
+    if (PyModule_AddIntMacro(m, EX_TEMPFAIL)) return -1;
 #endif /* EX_TEMPFAIL */
 #ifdef EX_PROTOCOL
-    if (ins(d, "EX_PROTOCOL", (long)EX_PROTOCOL)) return -1;
+    if (PyModule_AddIntMacro(m, EX_PROTOCOL)) return -1;
 #endif /* EX_PROTOCOL */
 #ifdef EX_NOPERM
-    if (ins(d, "EX_NOPERM", (long)EX_NOPERM)) return -1;
+    if (PyModule_AddIntMacro(m, EX_NOPERM)) return -1;
 #endif /* EX_NOPERM */
 #ifdef EX_CONFIG
-    if (ins(d, "EX_CONFIG", (long)EX_CONFIG)) return -1;
+    if (PyModule_AddIntMacro(m, EX_CONFIG)) return -1;
 #endif /* EX_CONFIG */
 #ifdef EX_NOTFOUND
-    if (ins(d, "EX_NOTFOUND", (long)EX_NOTFOUND)) return -1;
+    if (PyModule_AddIntMacro(m, EX_NOTFOUND)) return -1;
 #endif /* EX_NOTFOUND */
 
     /* statvfs */
 #ifdef ST_RDONLY
-    if (ins(d, "ST_RDONLY", (long)ST_RDONLY)) return -1;
+    if (PyModule_AddIntMacro(m, ST_RDONLY)) return -1;
 #endif /* ST_RDONLY */
 #ifdef ST_NOSUID
-    if (ins(d, "ST_NOSUID", (long)ST_NOSUID)) return -1;
+    if (PyModule_AddIntMacro(m, ST_NOSUID)) return -1;
 #endif /* ST_NOSUID */
 
     /* FreeBSD sendfile() constants */
 #ifdef SF_NODISKIO
-    if (ins(d, "SF_NODISKIO", (long)SF_NODISKIO)) return -1;
+    if (PyModule_AddIntMacro(m, SF_NODISKIO)) return -1;
 #endif
 #ifdef SF_MNOWAIT
-    if (ins(d, "SF_MNOWAIT", (long)SF_MNOWAIT)) return -1;
+    if (PyModule_AddIntMacro(m, SF_MNOWAIT)) return -1;
 #endif
 #ifdef SF_SYNC
-    if (ins(d, "SF_SYNC", (long)SF_SYNC)) return -1;
+    if (PyModule_AddIntMacro(m, SF_SYNC)) return -1;
 #endif
 
     /* constants for posix_fadvise */
 #ifdef POSIX_FADV_NORMAL
-    if (ins(d, "POSIX_FADV_NORMAL", (long)POSIX_FADV_NORMAL)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_FADV_NORMAL)) return -1;
 #endif
 #ifdef POSIX_FADV_SEQUENTIAL
-    if (ins(d, "POSIX_FADV_SEQUENTIAL", (long)POSIX_FADV_SEQUENTIAL)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_FADV_SEQUENTIAL)) return -1;
 #endif
 #ifdef POSIX_FADV_RANDOM
-    if (ins(d, "POSIX_FADV_RANDOM", (long)POSIX_FADV_RANDOM)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_FADV_RANDOM)) return -1;
 #endif
 #ifdef POSIX_FADV_NOREUSE
-    if (ins(d, "POSIX_FADV_NOREUSE", (long)POSIX_FADV_NOREUSE)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_FADV_NOREUSE)) return -1;
 #endif
 #ifdef POSIX_FADV_WILLNEED
-    if (ins(d, "POSIX_FADV_WILLNEED", (long)POSIX_FADV_WILLNEED)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_FADV_WILLNEED)) return -1;
 #endif
 #ifdef POSIX_FADV_DONTNEED
-    if (ins(d, "POSIX_FADV_DONTNEED", (long)POSIX_FADV_DONTNEED)) return -1;
+    if (PyModule_AddIntMacro(m, POSIX_FADV_DONTNEED)) return -1;
 #endif
 
     /* constants for waitid */
 #if defined(HAVE_SYS_WAIT_H) && defined(HAVE_WAITID)
-    if (ins(d, "P_PID", (long)P_PID)) return -1;
-    if (ins(d, "P_PGID", (long)P_PGID)) return -1;
-    if (ins(d, "P_ALL", (long)P_ALL)) return -1;
+    if (PyModule_AddIntMacro(m, P_PID)) return -1;
+    if (PyModule_AddIntMacro(m, P_PGID)) return -1;
+    if (PyModule_AddIntMacro(m, P_ALL)) return -1;
 #endif
 #ifdef WEXITED
-    if (ins(d, "WEXITED", (long)WEXITED)) return -1;
+    if (PyModule_AddIntMacro(m, WEXITED)) return -1;
 #endif
 #ifdef WNOWAIT
-    if (ins(d, "WNOWAIT", (long)WNOWAIT)) return -1;
+    if (PyModule_AddIntMacro(m, WNOWAIT)) return -1;
 #endif
 #ifdef WSTOPPED
-    if (ins(d, "WSTOPPED", (long)WSTOPPED)) return -1;
+    if (PyModule_AddIntMacro(m, WSTOPPED)) return -1;
 #endif
 #ifdef CLD_EXITED
-    if (ins(d, "CLD_EXITED", (long)CLD_EXITED)) return -1;
+    if (PyModule_AddIntMacro(m, CLD_EXITED)) return -1;
 #endif
 #ifdef CLD_DUMPED
-    if (ins(d, "CLD_DUMPED", (long)CLD_DUMPED)) return -1;
+    if (PyModule_AddIntMacro(m, CLD_DUMPED)) return -1;
 #endif
 #ifdef CLD_TRAPPED
-    if (ins(d, "CLD_TRAPPED", (long)CLD_TRAPPED)) return -1;
+    if (PyModule_AddIntMacro(m, CLD_TRAPPED)) return -1;
 #endif
 #ifdef CLD_CONTINUED
-    if (ins(d, "CLD_CONTINUED", (long)CLD_CONTINUED)) return -1;
+    if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;
 #endif
 
     /* constants for lockf */
 #ifdef F_LOCK
-    if (ins(d, "F_LOCK", (long)F_LOCK)) return -1;
+    if (PyModule_AddIntMacro(m, F_LOCK)) return -1;
 #endif
 #ifdef F_TLOCK
-    if (ins(d, "F_TLOCK", (long)F_TLOCK)) return -1;
+    if (PyModule_AddIntMacro(m, F_TLOCK)) return -1;
 #endif
 #ifdef F_ULOCK
-    if (ins(d, "F_ULOCK", (long)F_ULOCK)) return -1;
+    if (PyModule_AddIntMacro(m, F_ULOCK)) return -1;
 #endif
 #ifdef F_TEST
-    if (ins(d, "F_TEST", (long)F_TEST)) return -1;
+    if (PyModule_AddIntMacro(m, F_TEST)) return -1;
 #endif
 
 #ifdef HAVE_SPAWNV
-    if (ins(d, "P_WAIT", (long)_P_WAIT)) return -1;
-    if (ins(d, "P_NOWAIT", (long)_P_NOWAIT)) return -1;
-    if (ins(d, "P_OVERLAY", (long)_OLD_P_OVERLAY)) return -1;
-    if (ins(d, "P_NOWAITO", (long)_P_NOWAITO)) return -1;
-    if (ins(d, "P_DETACH", (long)_P_DETACH)) return -1;
+    if (PyModule_AddIntConstant(m, "P_WAIT", _P_WAIT)) return -1;
+    if (PyModule_AddIntConstant(m, "P_NOWAIT", _P_NOWAIT)) return -1;
+    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
+    if (PyModule_AddIntConstant(m, "P_NOWAITO", _P_NOWAITO)) return -1;
+    if (PyModule_AddIntConstant(m, "P_DETACH", _P_DETACH)) return -1;
 #endif
 
 #ifdef HAVE_SCHED_H
-    if (ins(d, "SCHED_OTHER", (long)SCHED_OTHER)) return -1;
-    if (ins(d, "SCHED_FIFO", (long)SCHED_FIFO)) return -1;
-    if (ins(d, "SCHED_RR", (long)SCHED_RR)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_OTHER)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_FIFO)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_RR)) return -1;
 #ifdef SCHED_SPORADIC
-    if (ins(d, "SCHED_SPORADIC", (long)SCHED_SPORADIC) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_SPORADIC) return -1;
 #endif
 #ifdef SCHED_BATCH
-    if (ins(d, "SCHED_BATCH", (long)SCHED_BATCH)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_BATCH)) return -1;
 #endif
 #ifdef SCHED_IDLE
-    if (ins(d, "SCHED_IDLE", (long)SCHED_IDLE)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_IDLE)) return -1;
 #endif
 #ifdef SCHED_RESET_ON_FORK
-    if (ins(d, "SCHED_RESET_ON_FORK", (long)SCHED_RESET_ON_FORK)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_RESET_ON_FORK)) return -1;
 #endif
 #ifdef SCHED_SYS
-    if (ins(d, "SCHED_SYS", (long)SCHED_SYS)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_SYS)) return -1;
 #endif
 #ifdef SCHED_IA
-    if (ins(d, "SCHED_IA", (long)SCHED_IA)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_IA)) return -1;
 #endif
 #ifdef SCHED_FSS
-    if (ins(d, "SCHED_FSS", (long)SCHED_FSS)) return -1;
+    if (PyModule_AddIntMacro(m, SCHED_FSS)) return -1;
 #endif
 #ifdef SCHED_FX
-    if (ins(d, "SCHED_FX", (long)SCHED_FSS)) return -1;
+    if (PyModule_AddIntConstant(m, "SCHED_FX", SCHED_FSS)) return -1;
 #endif
 #endif
 
 #ifdef USE_XATTRS
-    if (ins(d, "XATTR_CREATE", (long)XATTR_CREATE)) return -1;
-    if (ins(d, "XATTR_REPLACE", (long)XATTR_REPLACE)) return -1;
-    if (ins(d, "XATTR_SIZE_MAX", (long)XATTR_SIZE_MAX)) return -1;
+    if (PyModule_AddIntMacro(m, XATTR_CREATE)) return -1;
+    if (PyModule_AddIntMacro(m, XATTR_REPLACE)) return -1;
+    if (PyModule_AddIntMacro(m, XATTR_SIZE_MAX)) return -1;
 #endif
 
 #ifdef RTLD_LAZY
-    if (PyModule_AddIntMacro(d, RTLD_LAZY)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_LAZY)) return -1;
 #endif
 #ifdef RTLD_NOW
-    if (PyModule_AddIntMacro(d, RTLD_NOW)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_NOW)) return -1;
 #endif
 #ifdef RTLD_GLOBAL
-    if (PyModule_AddIntMacro(d, RTLD_GLOBAL)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_GLOBAL)) return -1;
 #endif
 #ifdef RTLD_LOCAL
-    if (PyModule_AddIntMacro(d, RTLD_LOCAL)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_LOCAL)) return -1;
 #endif
 #ifdef RTLD_NODELETE
-    if (PyModule_AddIntMacro(d, RTLD_NODELETE)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_NODELETE)) return -1;
 #endif
 #ifdef RTLD_NOLOAD
-    if (PyModule_AddIntMacro(d, RTLD_NOLOAD)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_NOLOAD)) return -1;
 #endif
 #ifdef RTLD_DEEPBIND
-    if (PyModule_AddIntMacro(d, RTLD_DEEPBIND)) return -1;
+    if (PyModule_AddIntMacro(m, RTLD_DEEPBIND)) return -1;
 #endif
 
     return 0;
