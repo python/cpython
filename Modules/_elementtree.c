@@ -1797,7 +1797,7 @@ element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
         Py_INCREF(self->extra->attrib);
     } else {
         PyErr_SetString(PyExc_AttributeError,
-            "Can't set arbitraty attributes on Element");
+            "Can't set arbitrary attributes on Element");
         return -1;
     }
 
