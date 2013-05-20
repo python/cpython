@@ -1274,7 +1274,7 @@ returns the full pathname, but since there is no predefined naming scheme a call
 like ``find_library("c")`` will fail and return ``None``.
 
 If wrapping a shared library with :mod:`ctypes`, it *may* be better to determine
-the shared library name at development type, and hardcode that into the wrapper
+the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`find_library` to locate the library at runtime.
 
 
