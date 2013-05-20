@@ -2,6 +2,7 @@
 import sys, struct
 from test import support
 from test.support import import_fresh_module
+import types
 import unittest
 
 cET = import_fresh_module('xml.etree.ElementTree',
@@ -33,13 +34,21 @@ class TestAliasWorking(unittest.TestCase):
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
+@support.cpython_only
 class TestAcceleratorImported(unittest.TestCase):
     # Test that the C accelerator was imported, as expected
     def test_correct_import_cET(self):
+        # SubElement is a function so it retains _elementtree as its module.
         self.assertEqual(cET.SubElement.__module__, '_elementtree')
 
     def test_correct_import_cET_alias(self):
         self.assertEqual(cET_alias.SubElement.__module__, '_elementtree')
+
+    def test_parser_comes_from_C(self):
+        # The type of methods defined in Python code is types.FunctionType,
+        # while the type of methods defined inside _elementtree is
+        # <class 'wrapper_descriptor'>
+        self.assertNotIsInstance(cET.Element.__init__, types.FunctionType)
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
