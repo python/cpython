@@ -1011,7 +1011,7 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!m) return NULL;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
-        self.emit('if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
         self.emit("return NULL;", 2)
         for dfn in mod.dfns:
             self.visit(dfn)
