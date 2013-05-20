@@ -5299,8 +5299,8 @@ PyInit__datetime(void)
       return NULL;
 
     /* module initialization */
-    PyModule_AddIntConstant(m, "MINYEAR", MINYEAR);
-    PyModule_AddIntConstant(m, "MAXYEAR", MAXYEAR);
+    PyModule_AddIntMacro(m, MINYEAR);
+    PyModule_AddIntMacro(m, MAXYEAR);
 
     Py_INCREF(&PyDateTime_DateType);
     PyModule_AddObject(m, "date", (PyObject *) &PyDateTime_DateType);
