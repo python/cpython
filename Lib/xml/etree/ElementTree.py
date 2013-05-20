@@ -587,9 +587,17 @@ class ElementTree:
             source = open(source, "rb")
             close_source = True
         try:
-            if not parser:
-                parser = XMLParser(target=TreeBuilder())
-            while 1:
+            if parser is None:
+                # If no parser was specified, create a default XMLParser
+                parser = XMLParser()
+                if hasattr(parser, '_parse_whole'):
+                    # The default XMLParser, when it comes from an accelerator,
+                    # can define an internal _parse_whole API for efficiency.
+                    # It can be used to parse the whole source without feeding
+                    # it with chunks.
+                    self._root = parser._parse_whole(source)
+                    return self._root
+            while True:
                 data = source.read(65536)
                 if not data:
                     break
@@ -1651,30 +1659,5 @@ try:
 
     # Element, SubElement, ParseError, TreeBuilder, XMLParser
     from _elementtree import *
-
-    # Overwrite 'ElementTree.parse' to use the C XMLParser
-    class ElementTree(ElementTree):
-        __doc__ = ElementTree.__doc__
-        def parse(self, source, parser=None):
-            __doc__ = ElementTree.parse.__doc__
-            close_source = False
-            if not hasattr(source, 'read'):
-                source = open(source, 'rb')
-                close_source = True
-            try:
-                if parser is not None:
-                    while True:
-                        data = source.read(65536)
-                        if not data:
-                            break
-                        parser.feed(data)
-                    self._root = parser.close()
-                else:
-                    parser = XMLParser()
-                    self._root = parser._parse(source)
-                return self._root
-            finally:
-                if close_source:
-                    source.close()
 except ImportError:
     pass
