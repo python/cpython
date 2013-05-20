@@ -2618,8 +2618,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
     def _testFDPassCMSG_LEN(self):
         self.createAndSendFDs(1)
 
-    # Issue #12958: The following test has problems on Mac OS X
-    @support.anticipate_failure(sys.platform == "darwin")
+    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
         # Pass two FDs in two separate arrays.  Arrays may be combined
@@ -2629,7 +2628,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2)
 
     @testFDPassSeparate.client_skip
-    @support.anticipate_failure(sys.platform == "darwin")
+    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
@@ -2641,8 +2640,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                                           array.array("i", [fd1]))]),
             len(MSG))
 
-    # Issue #12958: The following test has problems on Mac OS X
-    @support.anticipate_failure(sys.platform == "darwin")
+    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
         # Pass two FDs in two separate arrays, receiving them into the
@@ -2654,7 +2652,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
                              maxcmsgs=2, ignoreflags=socket.MSG_CTRUNC)
 
     @testFDPassSeparateMinSpace.client_skip
-    @support.anticipate_failure(sys.platform == "darwin")
+    @unittest.skipIf(sys.platform == "darwin", "skipping, see issue #12958")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)
         self.assertEqual(
