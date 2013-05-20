@@ -3,7 +3,7 @@
 ********************************
 
 :Author: A. M. Kuchling
-:Release: 0.31
+:Release: 0.32
 
 In this document, we'll take a tour of Python's features suitable for
 implementing programs in a functional style.  After an introduction to the
@@ -15,9 +15,9 @@ concepts of functional programming, we'll look at language features such as
 Introduction
 ============
 
-This section explains the basic concept of functional programming; if you're
-just interested in learning about Python language features, skip to the next
-section.
+This section explains the basic concept of functional programming; if
+you're just interested in learning about Python language features,
+skip to the next section on :ref:`functional-howto-iterators`.
 
 Programming languages support decomposing problems in several different ways:
 
@@ -172,6 +172,8 @@ Over time you'll form a personal library of utilities.  Often you'll assemble
 new programs by arranging existing functions in a new configuration and writing
 a few functions specialized for the current task.
 
+
+.. _functional-howto-iterators:
 
 Iterators
 =========
@@ -670,7 +672,7 @@ indexes at which certain conditions are met::
 
 :func:`sorted(iterable, key=None, reverse=False) <sorted>` collects all the
 elements of the iterable into a list, sorts the list, and returns the sorted
-result.  The *key*, and *reverse* arguments are passed through to the
+result.  The *key* and *reverse* arguments are passed through to the
 constructed list's :meth:`~list.sort` method. ::
 
     >>> import random
@@ -836,7 +838,8 @@ Another group of functions chooses a subset of an iterator's elements based on a
 predicate.
 
 :func:`itertools.filterfalse(predicate, iter) <itertools.filterfalse>` is the
-opposite, returning all elements for which the predicate returns false::
+opposite of :func:`filter`, returning all elements for which the predicate
+returns false::
 
     itertools.filterfalse(is_even, itertools.count()) =>
       1, 3, 5, 7, 9, 11, 13, 15, ...
@@ -863,6 +866,77 @@ iterable's results. ::
 
     itertools.dropwhile(is_even, itertools.count()) =>
       1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ...
+
+:func:`itertools.compress(data, selectors) <itertools.compress>` takes two
+iterators and returns only those elements of *data* for which the corresponding
+element of *selectors* is true, stopping whenever either one is exhausted::
+
+    itertools.compress([1,2,3,4,5], [True, True, False, False, True]) =>
+       1, 2, 5
+
+
+Combinatoric functions
+----------------------
+
+The :func:`itertools.combinations(iterable, r) <itertools.combinations>`
+returns an iterator giving all possible *r*-tuple combinations of the
+elements contained in *iterable*.  ::
+
+    itertools.combinations([1, 2, 3, 4, 5], 2) =>
+      (1, 2), (1, 3), (1, 4), (1, 5),
+      (2, 3), (2, 4), (2, 5),
+      (3, 4), (3, 5),
+      (4, 5)
+
+    itertools.combinations([1, 2, 3, 4, 5], 3) =>
+      (1, 2, 3), (1, 2, 4), (1, 2, 5), (1, 3, 4), (1, 3, 5), (1, 4, 5),
+      (2, 3, 4), (2, 3, 5), (2, 4, 5),
+      (3, 4, 5)
+
+The elements within each tuple remain in the same order as
+*iterable* returned them.  For example, the number 1 is always before
+2, 3, 4, or 5 in the examples above.  A similar function,
+:func:`itertools.permutations(iterable, r=None) <itertools.permutations>`,
+removes this constraint on the order, returning all possible
+arrangements of length *r*::
+
+    itertools.permutations([1, 2, 3, 4, 5], 2) =>
+      (1, 2), (1, 3), (1, 4), (1, 5),
+      (2, 1), (2, 3), (2, 4), (2, 5),
+      (3, 1), (3, 2), (3, 4), (3, 5),
+      (4, 1), (4, 2), (4, 3), (4, 5),
+      (5, 1), (5, 2), (5, 3), (5, 4)
+
+    itertools.permutations([1, 2, 3, 4, 5]) =>
+      (1, 2, 3, 4, 5), (1, 2, 3, 5, 4), (1, 2, 4, 3, 5),
+      ...
+      (5, 4, 3, 2, 1)
+
+If you don't supply a value for *r* the length of the iterable is used,
+meaning that all the elements are permuted.
+
+Note that these functions produce all of the possible combinations by
+position and don't require that the contents of *iterable* are unique::
+
+    itertools.permutations('aba', 3) =>
+      ('a', 'b', 'a'), ('a', 'a', 'b'), ('b', 'a', 'a'),
+      ('b', 'a', 'a'), ('a', 'a', 'b'), ('a', 'b', 'a')
+
+The identical tuple ``('a', 'a', 'b')`` occurs twice, but the two 'a'
+strings came from different positions.
+
+The :func:`itertools.combinations_with_replacement(iterable, r) <itertools.combinations_with_replacement>`
+function relaxes a different constraint: elements can be repeated
+within a single tuple.  Conceptually an element is selected for the
+first position of each tuple and then is replaced before the second
+element is selected.  ::
+
+    itertools.combinations_with_replacement([1, 2, 3, 4, 5], 2) =>
+      (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),
+      (2, 2), (2, 3), (2, 4), (2, 5),
+      (3, 3), (3, 4), (3, 5),
+      (4, 4), (4, 5),
+      (5, 5)
 
 
 Grouping elements
@@ -985,6 +1059,17 @@ write the obvious :keyword:`for` loop::
    product = 1
    for i in [1,2,3]:
        product *= i
+
+A related function is `itertools.accumulate(iterable, func=operator.add) <itertools.accumulate`.
+It performs the same calculation, but instead of returning only the
+final result, :func:`accumulate` returns an iterator that also yields
+each partial result::
+
+    itertools.accumulate([1,2,3,4,5]) =>
+      1, 3, 6, 10, 15
+
+    itertools.accumulate([1,2,3,4,5], operator.mul) =>
+      1, 2, 6, 24, 120
 
 
 The operator module
@@ -1159,51 +1244,6 @@ features in Python 2.5.
 
 .. comment
 
-    Topics to place
-    -----------------------------
-
-    XXX os.walk()
-
-    XXX Need a large example.
-
-    But will an example add much?  I'll post a first draft and see
-    what the comments say.
-
-.. comment
-
-    Original outline:
-    Introduction
-            Idea of FP
-                    Programs built out of functions
-                    Functions are strictly input-output, no internal state
-            Opposed to OO programming, where objects have state
-
-            Why FP?
-                    Formal provability
-                            Assignment is difficult to reason about
-                            Not very relevant to Python
-                    Modularity
-                            Small functions that do one thing
-                    Debuggability:
-                            Easy to test due to lack of state
-                            Easy to verify output from intermediate steps
-                    Composability
-                            You assemble a toolbox of functions that can be mixed
-
-    Tackling a problem
-            Need a significant example
-
-    Iterators
-    Generators
-    The itertools module
-    List comprehensions
-    Small functions and the lambda statement
-    Built-in functions
-            map
-            filter
-
-.. comment
-
     Handy little function for printing part of an iterator -- used
     while writing this document.
 
@@ -1214,5 +1254,3 @@ features in Python 2.5.
              sys.stdout.write(str(elem))
              sys.stdout.write(', ')
         print(elem[-1])
-
-
