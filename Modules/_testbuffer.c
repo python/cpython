@@ -2837,36 +2837,36 @@ PyInit__testbuffer(void)
     if (simple_format == NULL)
         return NULL;
 
-    PyModule_AddIntConstant(m, "ND_MAX_NDIM", ND_MAX_NDIM);
-    PyModule_AddIntConstant(m, "ND_VAREXPORT", ND_VAREXPORT);
-    PyModule_AddIntConstant(m, "ND_WRITABLE", ND_WRITABLE);
-    PyModule_AddIntConstant(m, "ND_FORTRAN", ND_FORTRAN);
-    PyModule_AddIntConstant(m, "ND_SCALAR", ND_SCALAR);
-    PyModule_AddIntConstant(m, "ND_PIL", ND_PIL);
-    PyModule_AddIntConstant(m, "ND_GETBUF_FAIL", ND_GETBUF_FAIL);
-    PyModule_AddIntConstant(m, "ND_GETBUF_UNDEFINED", ND_GETBUF_UNDEFINED);
-    PyModule_AddIntConstant(m, "ND_REDIRECT", ND_REDIRECT);
+    PyModule_AddIntMacro(m, ND_MAX_NDIM);
+    PyModule_AddIntMacro(m, ND_VAREXPORT);
+    PyModule_AddIntMacro(m, ND_WRITABLE);
+    PyModule_AddIntMacro(m, ND_FORTRAN);
+    PyModule_AddIntMacro(m, ND_SCALAR);
+    PyModule_AddIntMacro(m, ND_PIL);
+    PyModule_AddIntMacro(m, ND_GETBUF_FAIL);
+    PyModule_AddIntMacro(m, ND_GETBUF_UNDEFINED);
+    PyModule_AddIntMacro(m, ND_REDIRECT);
 
-    PyModule_AddIntConstant(m, "PyBUF_SIMPLE", PyBUF_SIMPLE);
-    PyModule_AddIntConstant(m, "PyBUF_WRITABLE", PyBUF_WRITABLE);
-    PyModule_AddIntConstant(m, "PyBUF_FORMAT", PyBUF_FORMAT);
-    PyModule_AddIntConstant(m, "PyBUF_ND", PyBUF_ND);
-    PyModule_AddIntConstant(m, "PyBUF_STRIDES", PyBUF_STRIDES);
-    PyModule_AddIntConstant(m, "PyBUF_INDIRECT", PyBUF_INDIRECT);
-    PyModule_AddIntConstant(m, "PyBUF_C_CONTIGUOUS", PyBUF_C_CONTIGUOUS);
-    PyModule_AddIntConstant(m, "PyBUF_F_CONTIGUOUS", PyBUF_F_CONTIGUOUS);
-    PyModule_AddIntConstant(m, "PyBUF_ANY_CONTIGUOUS", PyBUF_ANY_CONTIGUOUS);
-    PyModule_AddIntConstant(m, "PyBUF_FULL", PyBUF_FULL);
-    PyModule_AddIntConstant(m, "PyBUF_FULL_RO", PyBUF_FULL_RO);
-    PyModule_AddIntConstant(m, "PyBUF_RECORDS", PyBUF_RECORDS);
-    PyModule_AddIntConstant(m, "PyBUF_RECORDS_RO", PyBUF_RECORDS_RO);
-    PyModule_AddIntConstant(m, "PyBUF_STRIDED", PyBUF_STRIDED);
-    PyModule_AddIntConstant(m, "PyBUF_STRIDED_RO", PyBUF_STRIDED_RO);
-    PyModule_AddIntConstant(m, "PyBUF_CONTIG", PyBUF_CONTIG);
-    PyModule_AddIntConstant(m, "PyBUF_CONTIG_RO", PyBUF_CONTIG_RO);
+    PyModule_AddIntMacro(m, PyBUF_SIMPLE);
+    PyModule_AddIntMacro(m, PyBUF_WRITABLE);
+    PyModule_AddIntMacro(m, PyBUF_FORMAT);
+    PyModule_AddIntMacro(m, PyBUF_ND);
+    PyModule_AddIntMacro(m, PyBUF_STRIDES);
+    PyModule_AddIntMacro(m, PyBUF_INDIRECT);
+    PyModule_AddIntMacro(m, PyBUF_C_CONTIGUOUS);
+    PyModule_AddIntMacro(m, PyBUF_F_CONTIGUOUS);
+    PyModule_AddIntMacro(m, PyBUF_ANY_CONTIGUOUS);
+    PyModule_AddIntMacro(m, PyBUF_FULL);
+    PyModule_AddIntMacro(m, PyBUF_FULL_RO);
+    PyModule_AddIntMacro(m, PyBUF_RECORDS);
+    PyModule_AddIntMacro(m, PyBUF_RECORDS_RO);
+    PyModule_AddIntMacro(m, PyBUF_STRIDED);
+    PyModule_AddIntMacro(m, PyBUF_STRIDED_RO);
+    PyModule_AddIntMacro(m, PyBUF_CONTIG);
+    PyModule_AddIntMacro(m, PyBUF_CONTIG_RO);
 
-    PyModule_AddIntConstant(m, "PyBUF_READ", PyBUF_READ);
-    PyModule_AddIntConstant(m, "PyBUF_WRITE", PyBUF_WRITE);
+    PyModule_AddIntMacro(m, PyBUF_READ);
+    PyModule_AddIntMacro(m, PyBUF_WRITE);
 
     return m;
 }

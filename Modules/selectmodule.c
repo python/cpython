@@ -2183,7 +2183,7 @@ PyInit_select(void)
 #undef PIPE_BUF
 #define PIPE_BUF 512
 #endif
-    PyModule_AddIntConstant(m, "PIPE_BUF", PIPE_BUF);
+    PyModule_AddIntMacro(m, PIPE_BUF);
 #endif
 
 #if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
@@ -2198,27 +2198,27 @@ PyInit_select(void)
 #endif
         if (PyType_Ready(&poll_Type) < 0)
             return NULL;
-        PyModule_AddIntConstant(m, "POLLIN", POLLIN);
-        PyModule_AddIntConstant(m, "POLLPRI", POLLPRI);
-        PyModule_AddIntConstant(m, "POLLOUT", POLLOUT);
-        PyModule_AddIntConstant(m, "POLLERR", POLLERR);
-        PyModule_AddIntConstant(m, "POLLHUP", POLLHUP);
-        PyModule_AddIntConstant(m, "POLLNVAL", POLLNVAL);
+        PyModule_AddIntMacro(m, POLLIN);
+        PyModule_AddIntMacro(m, POLLPRI);
+        PyModule_AddIntMacro(m, POLLOUT);
+        PyModule_AddIntMacro(m, POLLERR);
+        PyModule_AddIntMacro(m, POLLHUP);
+        PyModule_AddIntMacro(m, POLLNVAL);
 
 #ifdef POLLRDNORM
-        PyModule_AddIntConstant(m, "POLLRDNORM", POLLRDNORM);
+        PyModule_AddIntMacro(m, POLLRDNORM);
 #endif
 #ifdef POLLRDBAND
-        PyModule_AddIntConstant(m, "POLLRDBAND", POLLRDBAND);
+        PyModule_AddIntMacro(m, POLLRDBAND);
 #endif
 #ifdef POLLWRNORM
-        PyModule_AddIntConstant(m, "POLLWRNORM", POLLWRNORM);
+        PyModule_AddIntMacro(m, POLLWRNORM);
 #endif
 #ifdef POLLWRBAND
-        PyModule_AddIntConstant(m, "POLLWRBAND", POLLWRBAND);
+        PyModule_AddIntMacro(m, POLLWRBAND);
 #endif
 #ifdef POLLMSG
-        PyModule_AddIntConstant(m, "POLLMSG", POLLMSG);
+        PyModule_AddIntMacro(m, POLLMSG);
 #endif
     }
 #endif /* HAVE_POLL */
@@ -2236,25 +2236,25 @@ PyInit_select(void)
     Py_INCREF(&pyEpoll_Type);
     PyModule_AddObject(m, "epoll", (PyObject *) &pyEpoll_Type);
 
-    PyModule_AddIntConstant(m, "EPOLLIN", EPOLLIN);
-    PyModule_AddIntConstant(m, "EPOLLOUT", EPOLLOUT);
-    PyModule_AddIntConstant(m, "EPOLLPRI", EPOLLPRI);
-    PyModule_AddIntConstant(m, "EPOLLERR", EPOLLERR);
-    PyModule_AddIntConstant(m, "EPOLLHUP", EPOLLHUP);
-    PyModule_AddIntConstant(m, "EPOLLET", EPOLLET);
+    PyModule_AddIntMacro(m, EPOLLIN);
+    PyModule_AddIntMacro(m, EPOLLOUT);
+    PyModule_AddIntMacro(m, EPOLLPRI);
+    PyModule_AddIntMacro(m, EPOLLERR);
+    PyModule_AddIntMacro(m, EPOLLHUP);
+    PyModule_AddIntMacro(m, EPOLLET);
 #ifdef EPOLLONESHOT
     /* Kernel 2.6.2+ */
-    PyModule_AddIntConstant(m, "EPOLLONESHOT", EPOLLONESHOT);
+    PyModule_AddIntMacro(m, EPOLLONESHOT);
 #endif
     /* PyModule_AddIntConstant(m, "EPOLL_RDHUP", EPOLLRDHUP); */
-    PyModule_AddIntConstant(m, "EPOLLRDNORM", EPOLLRDNORM);
-    PyModule_AddIntConstant(m, "EPOLLRDBAND", EPOLLRDBAND);
-    PyModule_AddIntConstant(m, "EPOLLWRNORM", EPOLLWRNORM);
-    PyModule_AddIntConstant(m, "EPOLLWRBAND", EPOLLWRBAND);
-    PyModule_AddIntConstant(m, "EPOLLMSG", EPOLLMSG);
+    PyModule_AddIntMacro(m, EPOLLRDNORM);
+    PyModule_AddIntMacro(m, EPOLLRDBAND);
+    PyModule_AddIntMacro(m, EPOLLWRNORM);
+    PyModule_AddIntMacro(m, EPOLLWRBAND);
+    PyModule_AddIntMacro(m, EPOLLMSG);
 
 #ifdef EPOLL_CLOEXEC
-    PyModule_AddIntConstant(m, "EPOLL_CLOEXEC", EPOLL_CLOEXEC);
+    PyModule_AddIntMacro(m, EPOLL_CLOEXEC);
 #endif
 #endif /* HAVE_EPOLL */
 

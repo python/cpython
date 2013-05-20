@@ -5556,184 +5556,184 @@ PyInit__socket(void)
 
     /* Address families (we only support AF_INET and AF_UNIX) */
 #ifdef AF_UNSPEC
-    PyModule_AddIntConstant(m, "AF_UNSPEC", AF_UNSPEC);
+    PyModule_AddIntMacro(m, AF_UNSPEC);
 #endif
-    PyModule_AddIntConstant(m, "AF_INET", AF_INET);
+    PyModule_AddIntMacro(m, AF_INET);
 #ifdef AF_INET6
-    PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);
+    PyModule_AddIntMacro(m, AF_INET6);
 #endif /* AF_INET6 */
 #if defined(AF_UNIX)
-    PyModule_AddIntConstant(m, "AF_UNIX", AF_UNIX);
+    PyModule_AddIntMacro(m, AF_UNIX);
 #endif /* AF_UNIX */
 #ifdef AF_AX25
     /* Amateur Radio AX.25 */
-    PyModule_AddIntConstant(m, "AF_AX25", AF_AX25);
+    PyModule_AddIntMacro(m, AF_AX25);
 #endif
 #ifdef AF_IPX
-    PyModule_AddIntConstant(m, "AF_IPX", AF_IPX); /* Novell IPX */
+    PyModule_AddIntMacro(m, AF_IPX); /* Novell IPX */
 #endif
 #ifdef AF_APPLETALK
     /* Appletalk DDP */
-    PyModule_AddIntConstant(m, "AF_APPLETALK", AF_APPLETALK);
+    PyModule_AddIntMacro(m, AF_APPLETALK);
 #endif
 #ifdef AF_NETROM
     /* Amateur radio NetROM */
-    PyModule_AddIntConstant(m, "AF_NETROM", AF_NETROM);
+    PyModule_AddIntMacro(m, AF_NETROM);
 #endif
 #ifdef AF_BRIDGE
     /* Multiprotocol bridge */
-    PyModule_AddIntConstant(m, "AF_BRIDGE", AF_BRIDGE);
+    PyModule_AddIntMacro(m, AF_BRIDGE);
 #endif
 #ifdef AF_ATMPVC
     /* ATM PVCs */
-    PyModule_AddIntConstant(m, "AF_ATMPVC", AF_ATMPVC);
+    PyModule_AddIntMacro(m, AF_ATMPVC);
 #endif
 #ifdef AF_AAL5
     /* Reserved for Werner's ATM */
-    PyModule_AddIntConstant(m, "AF_AAL5", AF_AAL5);
+    PyModule_AddIntMacro(m, AF_AAL5);
 #endif
 #ifdef AF_X25
     /* Reserved for X.25 project */
-    PyModule_AddIntConstant(m, "AF_X25", AF_X25);
+    PyModule_AddIntMacro(m, AF_X25);
 #endif
 #ifdef AF_INET6
-    PyModule_AddIntConstant(m, "AF_INET6", AF_INET6); /* IP version 6 */
+    PyModule_AddIntMacro(m, AF_INET6); /* IP version 6 */
 #endif
 #ifdef AF_ROSE
     /* Amateur Radio X.25 PLP */
-    PyModule_AddIntConstant(m, "AF_ROSE", AF_ROSE);
+    PyModule_AddIntMacro(m, AF_ROSE);
 #endif
 #ifdef AF_DECnet
     /* Reserved for DECnet project */
-    PyModule_AddIntConstant(m, "AF_DECnet", AF_DECnet);
+    PyModule_AddIntMacro(m, AF_DECnet);
 #endif
 #ifdef AF_NETBEUI
     /* Reserved for 802.2LLC project */
-    PyModule_AddIntConstant(m, "AF_NETBEUI", AF_NETBEUI);
+    PyModule_AddIntMacro(m, AF_NETBEUI);
 #endif
 #ifdef AF_SECURITY
     /* Security callback pseudo AF */
-    PyModule_AddIntConstant(m, "AF_SECURITY", AF_SECURITY);
+    PyModule_AddIntMacro(m, AF_SECURITY);
 #endif
 #ifdef AF_KEY
     /* PF_KEY key management API */
-    PyModule_AddIntConstant(m, "AF_KEY", AF_KEY);
+    PyModule_AddIntMacro(m, AF_KEY);
 #endif
 #ifdef AF_NETLINK
     /*  */
-    PyModule_AddIntConstant(m, "AF_NETLINK", AF_NETLINK);
-    PyModule_AddIntConstant(m, "NETLINK_ROUTE", NETLINK_ROUTE);
+    PyModule_AddIntMacro(m, AF_NETLINK);
+    PyModule_AddIntMacro(m, NETLINK_ROUTE);
 #ifdef NETLINK_SKIP
-    PyModule_AddIntConstant(m, "NETLINK_SKIP", NETLINK_SKIP);
+    PyModule_AddIntMacro(m, NETLINK_SKIP);
 #endif
 #ifdef NETLINK_W1
-    PyModule_AddIntConstant(m, "NETLINK_W1", NETLINK_W1);
+    PyModule_AddIntMacro(m, NETLINK_W1);
 #endif
-    PyModule_AddIntConstant(m, "NETLINK_USERSOCK", NETLINK_USERSOCK);
-    PyModule_AddIntConstant(m, "NETLINK_FIREWALL", NETLINK_FIREWALL);
+    PyModule_AddIntMacro(m, NETLINK_USERSOCK);
+    PyModule_AddIntMacro(m, NETLINK_FIREWALL);
 #ifdef NETLINK_TCPDIAG
-    PyModule_AddIntConstant(m, "NETLINK_TCPDIAG", NETLINK_TCPDIAG);
+    PyModule_AddIntMacro(m, NETLINK_TCPDIAG);
 #endif
 #ifdef NETLINK_NFLOG
-    PyModule_AddIntConstant(m, "NETLINK_NFLOG", NETLINK_NFLOG);
+    PyModule_AddIntMacro(m, NETLINK_NFLOG);
 #endif
 #ifdef NETLINK_XFRM
-    PyModule_AddIntConstant(m, "NETLINK_XFRM", NETLINK_XFRM);
+    PyModule_AddIntMacro(m, NETLINK_XFRM);
 #endif
 #ifdef NETLINK_ARPD
-    PyModule_AddIntConstant(m, "NETLINK_ARPD", NETLINK_ARPD);
+    PyModule_AddIntMacro(m, NETLINK_ARPD);
 #endif
 #ifdef NETLINK_ROUTE6
-    PyModule_AddIntConstant(m, "NETLINK_ROUTE6", NETLINK_ROUTE6);
+    PyModule_AddIntMacro(m, NETLINK_ROUTE6);
 #endif
-    PyModule_AddIntConstant(m, "NETLINK_IP6_FW", NETLINK_IP6_FW);
+    PyModule_AddIntMacro(m, NETLINK_IP6_FW);
 #ifdef NETLINK_DNRTMSG
-    PyModule_AddIntConstant(m, "NETLINK_DNRTMSG", NETLINK_DNRTMSG);
+    PyModule_AddIntMacro(m, NETLINK_DNRTMSG);
 #endif
 #ifdef NETLINK_TAPBASE
-    PyModule_AddIntConstant(m, "NETLINK_TAPBASE", NETLINK_TAPBASE);
+    PyModule_AddIntMacro(m, NETLINK_TAPBASE);
 #endif
 #endif /* AF_NETLINK */
 #ifdef AF_ROUTE
     /* Alias to emulate 4.4BSD */
-    PyModule_AddIntConstant(m, "AF_ROUTE", AF_ROUTE);
+    PyModule_AddIntMacro(m, AF_ROUTE);
 #endif
 #ifdef AF_ASH
     /* Ash */
-    PyModule_AddIntConstant(m, "AF_ASH", AF_ASH);
+    PyModule_AddIntMacro(m, AF_ASH);
 #endif
 #ifdef AF_ECONET
     /* Acorn Econet */
-    PyModule_AddIntConstant(m, "AF_ECONET", AF_ECONET);
+    PyModule_AddIntMacro(m, AF_ECONET);
 #endif
 #ifdef AF_ATMSVC
     /* ATM SVCs */
-    PyModule_AddIntConstant(m, "AF_ATMSVC", AF_ATMSVC);
+    PyModule_AddIntMacro(m, AF_ATMSVC);
 #endif
 #ifdef AF_SNA
     /* Linux SNA Project (nutters!) */
-    PyModule_AddIntConstant(m, "AF_SNA", AF_SNA);
+    PyModule_AddIntMacro(m, AF_SNA);
 #endif
 #ifdef AF_IRDA
     /* IRDA sockets */
-    PyModule_AddIntConstant(m, "AF_IRDA", AF_IRDA);
+    PyModule_AddIntMacro(m, AF_IRDA);
 #endif
 #ifdef AF_PPPOX
     /* PPPoX sockets */
-    PyModule_AddIntConstant(m, "AF_PPPOX", AF_PPPOX);
+    PyModule_AddIntMacro(m, AF_PPPOX);
 #endif
 #ifdef AF_WANPIPE
     /* Wanpipe API Sockets */
-    PyModule_AddIntConstant(m, "AF_WANPIPE", AF_WANPIPE);
+    PyModule_AddIntMacro(m, AF_WANPIPE);
 #endif
 #ifdef AF_LLC
     /* Linux LLC */
-    PyModule_AddIntConstant(m, "AF_LLC", AF_LLC);
+    PyModule_AddIntMacro(m, AF_LLC);
 #endif
 
 #ifdef USE_BLUETOOTH
-    PyModule_AddIntConstant(m, "AF_BLUETOOTH", AF_BLUETOOTH);
-    PyModule_AddIntConstant(m, "BTPROTO_L2CAP", BTPROTO_L2CAP);
-    PyModule_AddIntConstant(m, "BTPROTO_HCI", BTPROTO_HCI);
-    PyModule_AddIntConstant(m, "SOL_HCI", SOL_HCI);
+    PyModule_AddIntMacro(m, AF_BLUETOOTH);
+    PyModule_AddIntMacro(m, BTPROTO_L2CAP);
+    PyModule_AddIntMacro(m, BTPROTO_HCI);
+    PyModule_AddIntMacro(m, SOL_HCI);
 #if !defined(__NetBSD__) && !defined(__DragonFly__)
-    PyModule_AddIntConstant(m, "HCI_FILTER", HCI_FILTER);
+    PyModule_AddIntMacro(m, HCI_FILTER);
 #endif
 #if !defined(__FreeBSD__)
 #if !defined(__NetBSD__) && !defined(__DragonFly__)
-    PyModule_AddIntConstant(m, "HCI_TIME_STAMP", HCI_TIME_STAMP);
+    PyModule_AddIntMacro(m, HCI_TIME_STAMP);
 #endif
-    PyModule_AddIntConstant(m, "HCI_DATA_DIR", HCI_DATA_DIR);
-    PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
+    PyModule_AddIntMacro(m, HCI_DATA_DIR);
+    PyModule_AddIntMacro(m, BTPROTO_SCO);
 #endif
-    PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);
+    PyModule_AddIntMacro(m, BTPROTO_RFCOMM);
     PyModule_AddStringConstant(m, "BDADDR_ANY", "00:00:00:00:00:00");
     PyModule_AddStringConstant(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
 #endif
 
 #ifdef AF_CAN
     /* Controller Area Network */
-    PyModule_AddIntConstant(m, "AF_CAN", AF_CAN);
+    PyModule_AddIntMacro(m, AF_CAN);
 #endif
 #ifdef PF_CAN
     /* Controller Area Network */
-    PyModule_AddIntConstant(m, "PF_CAN", PF_CAN);
+    PyModule_AddIntMacro(m, PF_CAN);
 #endif
 
 /* Reliable Datagram Sockets */
 #ifdef AF_RDS
-    PyModule_AddIntConstant(m, "AF_RDS", AF_RDS);
+    PyModule_AddIntMacro(m, AF_RDS);
 #endif
 #ifdef PF_RDS
-    PyModule_AddIntConstant(m, "PF_RDS", PF_RDS);
+    PyModule_AddIntMacro(m, PF_RDS);
 #endif
 
 /* Kernel event messages */
 #ifdef PF_SYSTEM
-    PyModule_AddIntConstant(m, "PF_SYSTEM", PF_SYSTEM);
+    PyModule_AddIntMacro(m, PF_SYSTEM);
 #endif
 #ifdef AF_SYSTEM
-    PyModule_AddIntConstant(m, "AF_SYSTEM", AF_SYSTEM);
+    PyModule_AddIntMacro(m, AF_SYSTEM);
 #endif
 
 #ifdef AF_PACKET
@@ -5765,134 +5765,129 @@ PyInit__socket(void)
 #endif
 
 #ifdef HAVE_LINUX_TIPC_H
-    PyModule_AddIntConstant(m, "AF_TIPC", AF_TIPC);
+    PyModule_AddIntMacro(m, AF_TIPC);
 
     /* for addresses */
-    PyModule_AddIntConstant(m, "TIPC_ADDR_NAMESEQ", TIPC_ADDR_NAMESEQ);
-    PyModule_AddIntConstant(m, "TIPC_ADDR_NAME", TIPC_ADDR_NAME);
-    PyModule_AddIntConstant(m, "TIPC_ADDR_ID", TIPC_ADDR_ID);
+    PyModule_AddIntMacro(m, TIPC_ADDR_NAMESEQ);
+    PyModule_AddIntMacro(m, TIPC_ADDR_NAME);
+    PyModule_AddIntMacro(m, TIPC_ADDR_ID);
 
-    PyModule_AddIntConstant(m, "TIPC_ZONE_SCOPE", TIPC_ZONE_SCOPE);
-    PyModule_AddIntConstant(m, "TIPC_CLUSTER_SCOPE", TIPC_CLUSTER_SCOPE);
-    PyModule_AddIntConstant(m, "TIPC_NODE_SCOPE", TIPC_NODE_SCOPE);
+    PyModule_AddIntMacro(m, TIPC_ZONE_SCOPE);
+    PyModule_AddIntMacro(m, TIPC_CLUSTER_SCOPE);
+    PyModule_AddIntMacro(m, TIPC_NODE_SCOPE);
 
     /* for setsockopt() */
-    PyModule_AddIntConstant(m, "SOL_TIPC", SOL_TIPC);
-    PyModule_AddIntConstant(m, "TIPC_IMPORTANCE", TIPC_IMPORTANCE);
-    PyModule_AddIntConstant(m, "TIPC_SRC_DROPPABLE", TIPC_SRC_DROPPABLE);
-    PyModule_AddIntConstant(m, "TIPC_DEST_DROPPABLE",
-                    TIPC_DEST_DROPPABLE);
-    PyModule_AddIntConstant(m, "TIPC_CONN_TIMEOUT", TIPC_CONN_TIMEOUT);
+    PyModule_AddIntMacro(m, SOL_TIPC);
+    PyModule_AddIntMacro(m, TIPC_IMPORTANCE);
+    PyModule_AddIntMacro(m, TIPC_SRC_DROPPABLE);
+    PyModule_AddIntMacro(m, TIPC_DEST_DROPPABLE);
+    PyModule_AddIntMacro(m, TIPC_CONN_TIMEOUT);
 
-    PyModule_AddIntConstant(m, "TIPC_LOW_IMPORTANCE",
-                    TIPC_LOW_IMPORTANCE);
-    PyModule_AddIntConstant(m, "TIPC_MEDIUM_IMPORTANCE",
-                    TIPC_MEDIUM_IMPORTANCE);
-    PyModule_AddIntConstant(m, "TIPC_HIGH_IMPORTANCE",
-                    TIPC_HIGH_IMPORTANCE);
-    PyModule_AddIntConstant(m, "TIPC_CRITICAL_IMPORTANCE",
-                    TIPC_CRITICAL_IMPORTANCE);
+    PyModule_AddIntMacro(m, TIPC_LOW_IMPORTANCE);
+    PyModule_AddIntMacro(m, TIPC_MEDIUM_IMPORTANCE);
+    PyModule_AddIntMacro(m, TIPC_HIGH_IMPORTANCE);
+    PyModule_AddIntMacro(m, TIPC_CRITICAL_IMPORTANCE);
 
     /* for subscriptions */
-    PyModule_AddIntConstant(m, "TIPC_SUB_PORTS", TIPC_SUB_PORTS);
-    PyModule_AddIntConstant(m, "TIPC_SUB_SERVICE", TIPC_SUB_SERVICE);
+    PyModule_AddIntMacro(m, TIPC_SUB_PORTS);
+    PyModule_AddIntMacro(m, TIPC_SUB_SERVICE);
 #ifdef TIPC_SUB_CANCEL
     /* doesn't seem to be available everywhere */
-    PyModule_AddIntConstant(m, "TIPC_SUB_CANCEL", TIPC_SUB_CANCEL);
+    PyModule_AddIntMacro(m, TIPC_SUB_CANCEL);
 #endif
-    PyModule_AddIntConstant(m, "TIPC_WAIT_FOREVER", TIPC_WAIT_FOREVER);
-    PyModule_AddIntConstant(m, "TIPC_PUBLISHED", TIPC_PUBLISHED);
-    PyModule_AddIntConstant(m, "TIPC_WITHDRAWN", TIPC_WITHDRAWN);
-    PyModule_AddIntConstant(m, "TIPC_SUBSCR_TIMEOUT", TIPC_SUBSCR_TIMEOUT);
-    PyModule_AddIntConstant(m, "TIPC_CFG_SRV", TIPC_CFG_SRV);
-    PyModule_AddIntConstant(m, "TIPC_TOP_SRV", TIPC_TOP_SRV);
+    PyModule_AddIntMacro(m, TIPC_WAIT_FOREVER);
+    PyModule_AddIntMacro(m, TIPC_PUBLISHED);
+    PyModule_AddIntMacro(m, TIPC_WITHDRAWN);
+    PyModule_AddIntMacro(m, TIPC_SUBSCR_TIMEOUT);
+    PyModule_AddIntMacro(m, TIPC_CFG_SRV);
+    PyModule_AddIntMacro(m, TIPC_TOP_SRV);
 #endif
 
     /* Socket types */
-    PyModule_AddIntConstant(m, "SOCK_STREAM", SOCK_STREAM);
-    PyModule_AddIntConstant(m, "SOCK_DGRAM", SOCK_DGRAM);
+    PyModule_AddIntMacro(m, SOCK_STREAM);
+    PyModule_AddIntMacro(m, SOCK_DGRAM);
 /* We have incomplete socket support. */
-    PyModule_AddIntConstant(m, "SOCK_RAW", SOCK_RAW);
-    PyModule_AddIntConstant(m, "SOCK_SEQPACKET", SOCK_SEQPACKET);
+    PyModule_AddIntMacro(m, SOCK_RAW);
+    PyModule_AddIntMacro(m, SOCK_SEQPACKET);
 #if defined(SOCK_RDM)
-    PyModule_AddIntConstant(m, "SOCK_RDM", SOCK_RDM);
+    PyModule_AddIntMacro(m, SOCK_RDM);
 #endif
 #ifdef SOCK_CLOEXEC
-    PyModule_AddIntConstant(m, "SOCK_CLOEXEC", SOCK_CLOEXEC);
+    PyModule_AddIntMacro(m, SOCK_CLOEXEC);
 #endif
 #ifdef SOCK_NONBLOCK
-    PyModule_AddIntConstant(m, "SOCK_NONBLOCK", SOCK_NONBLOCK);
+    PyModule_AddIntMacro(m, SOCK_NONBLOCK);
 #endif
 
 #ifdef  SO_DEBUG
-    PyModule_AddIntConstant(m, "SO_DEBUG", SO_DEBUG);
+    PyModule_AddIntMacro(m, SO_DEBUG);
 #endif
 #ifdef  SO_ACCEPTCONN
-    PyModule_AddIntConstant(m, "SO_ACCEPTCONN", SO_ACCEPTCONN);
+    PyModule_AddIntMacro(m, SO_ACCEPTCONN);
 #endif
 #ifdef  SO_REUSEADDR
-    PyModule_AddIntConstant(m, "SO_REUSEADDR", SO_REUSEADDR);
+    PyModule_AddIntMacro(m, SO_REUSEADDR);
 #endif
 #ifdef SO_EXCLUSIVEADDRUSE
-    PyModule_AddIntConstant(m, "SO_EXCLUSIVEADDRUSE", SO_EXCLUSIVEADDRUSE);
+    PyModule_AddIntMacro(m, SO_EXCLUSIVEADDRUSE);
 #endif
 
 #ifdef  SO_KEEPALIVE
-    PyModule_AddIntConstant(m, "SO_KEEPALIVE", SO_KEEPALIVE);
+    PyModule_AddIntMacro(m, SO_KEEPALIVE);
 #endif
 #ifdef  SO_DONTROUTE
-    PyModule_AddIntConstant(m, "SO_DONTROUTE", SO_DONTROUTE);
+    PyModule_AddIntMacro(m, SO_DONTROUTE);
 #endif
 #ifdef  SO_BROADCAST
-    PyModule_AddIntConstant(m, "SO_BROADCAST", SO_BROADCAST);
+    PyModule_AddIntMacro(m, SO_BROADCAST);
 #endif
 #ifdef  SO_USELOOPBACK
-    PyModule_AddIntConstant(m, "SO_USELOOPBACK", SO_USELOOPBACK);
+    PyModule_AddIntMacro(m, SO_USELOOPBACK);
 #endif
 #ifdef  SO_LINGER
-    PyModule_AddIntConstant(m, "SO_LINGER", SO_LINGER);
+    PyModule_AddIntMacro(m, SO_LINGER);
 #endif
 #ifdef  SO_OOBINLINE
-    PyModule_AddIntConstant(m, "SO_OOBINLINE", SO_OOBINLINE);
+    PyModule_AddIntMacro(m, SO_OOBINLINE);
 #endif
 #ifdef  SO_REUSEPORT
-    PyModule_AddIntConstant(m, "SO_REUSEPORT", SO_REUSEPORT);
+    PyModule_AddIntMacro(m, SO_REUSEPORT);
 #endif
 #ifdef  SO_SNDBUF
-    PyModule_AddIntConstant(m, "SO_SNDBUF", SO_SNDBUF);
+    PyModule_AddIntMacro(m, SO_SNDBUF);
 #endif
 #ifdef  SO_RCVBUF
-    PyModule_AddIntConstant(m, "SO_RCVBUF", SO_RCVBUF);
+    PyModule_AddIntMacro(m, SO_RCVBUF);
 #endif
 #ifdef  SO_SNDLOWAT
-    PyModule_AddIntConstant(m, "SO_SNDLOWAT", SO_SNDLOWAT);
+    PyModule_AddIntMacro(m, SO_SNDLOWAT);
 #endif
 #ifdef  SO_RCVLOWAT
-    PyModule_AddIntConstant(m, "SO_RCVLOWAT", SO_RCVLOWAT);
+    PyModule_AddIntMacro(m, SO_RCVLOWAT);
 #endif
 #ifdef  SO_SNDTIMEO
-    PyModule_AddIntConstant(m, "SO_SNDTIMEO", SO_SNDTIMEO);
+    PyModule_AddIntMacro(m, SO_SNDTIMEO);
 #endif
 #ifdef  SO_RCVTIMEO
-    PyModule_AddIntConstant(m, "SO_RCVTIMEO", SO_RCVTIMEO);
+    PyModule_AddIntMacro(m, SO_RCVTIMEO);
 #endif
 #ifdef  SO_ERROR
-    PyModule_AddIntConstant(m, "SO_ERROR", SO_ERROR);
+    PyModule_AddIntMacro(m, SO_ERROR);
 #endif
 #ifdef  SO_TYPE
-    PyModule_AddIntConstant(m, "SO_TYPE", SO_TYPE);
+    PyModule_AddIntMacro(m, SO_TYPE);
 #endif
 #ifdef  SO_SETFIB
-    PyModule_AddIntConstant(m, "SO_SETFIB", SO_SETFIB);
+    PyModule_AddIntMacro(m, SO_SETFIB);
 #endif
 #ifdef  SO_PASSCRED
-    PyModule_AddIntConstant(m, "SO_PASSCRED", SO_PASSCRED);
+    PyModule_AddIntMacro(m, SO_PASSCRED);
 #endif
 #ifdef  SO_PEERCRED
-    PyModule_AddIntConstant(m, "SO_PEERCRED", SO_PEERCRED);
+    PyModule_AddIntMacro(m, SO_PEERCRED);
 #endif
 #ifdef  LOCAL_PEERCRED
-    PyModule_AddIntConstant(m, "LOCAL_PEERCRED", LOCAL_PEERCRED);
+    PyModule_AddIntMacro(m, LOCAL_PEERCRED);
 #endif
 #ifdef  SO_BINDTODEVICE
     PyModule_AddIntMacro(m, SO_BINDTODEVICE);
@@ -5900,142 +5895,142 @@ PyInit__socket(void)
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
-    PyModule_AddIntConstant(m, "SOMAXCONN", SOMAXCONN);
+    PyModule_AddIntMacro(m, SOMAXCONN);
 #else
     PyModule_AddIntConstant(m, "SOMAXCONN", 5); /* Common value */
 #endif
 
     /* Ancilliary message types */
 #ifdef  SCM_RIGHTS
-    PyModule_AddIntConstant(m, "SCM_RIGHTS", SCM_RIGHTS);
+    PyModule_AddIntMacro(m, SCM_RIGHTS);
 #endif
 #ifdef  SCM_CREDENTIALS
-    PyModule_AddIntConstant(m, "SCM_CREDENTIALS", SCM_CREDENTIALS);
+    PyModule_AddIntMacro(m, SCM_CREDENTIALS);
 #endif
 #ifdef  SCM_CREDS
-    PyModule_AddIntConstant(m, "SCM_CREDS", SCM_CREDS);
+    PyModule_AddIntMacro(m, SCM_CREDS);
 #endif
 
     /* Flags for send, recv */
 #ifdef  MSG_OOB
-    PyModule_AddIntConstant(m, "MSG_OOB", MSG_OOB);
+    PyModule_AddIntMacro(m, MSG_OOB);
 #endif
 #ifdef  MSG_PEEK
-    PyModule_AddIntConstant(m, "MSG_PEEK", MSG_PEEK);
+    PyModule_AddIntMacro(m, MSG_PEEK);
 #endif
 #ifdef  MSG_DONTROUTE
-    PyModule_AddIntConstant(m, "MSG_DONTROUTE", MSG_DONTROUTE);
+    PyModule_AddIntMacro(m, MSG_DONTROUTE);
 #endif
 #ifdef  MSG_DONTWAIT
-    PyModule_AddIntConstant(m, "MSG_DONTWAIT", MSG_DONTWAIT);
+    PyModule_AddIntMacro(m, MSG_DONTWAIT);
 #endif
 #ifdef  MSG_EOR
-    PyModule_AddIntConstant(m, "MSG_EOR", MSG_EOR);
+    PyModule_AddIntMacro(m, MSG_EOR);
 #endif
 #ifdef  MSG_TRUNC
-    PyModule_AddIntConstant(m, "MSG_TRUNC", MSG_TRUNC);
+    PyModule_AddIntMacro(m, MSG_TRUNC);
 #endif
 #ifdef  MSG_CTRUNC
-    PyModule_AddIntConstant(m, "MSG_CTRUNC", MSG_CTRUNC);
+    PyModule_AddIntMacro(m, MSG_CTRUNC);
 #endif
 #ifdef  MSG_WAITALL
-    PyModule_AddIntConstant(m, "MSG_WAITALL", MSG_WAITALL);
+    PyModule_AddIntMacro(m, MSG_WAITALL);
 #endif
 #ifdef  MSG_BTAG
-    PyModule_AddIntConstant(m, "MSG_BTAG", MSG_BTAG);
+    PyModule_AddIntMacro(m, MSG_BTAG);
 #endif
 #ifdef  MSG_ETAG
-    PyModule_AddIntConstant(m, "MSG_ETAG", MSG_ETAG);
+    PyModule_AddIntMacro(m, MSG_ETAG);
 #endif
 #ifdef  MSG_NOSIGNAL
-    PyModule_AddIntConstant(m, "MSG_NOSIGNAL", MSG_NOSIGNAL);
+    PyModule_AddIntMacro(m, MSG_NOSIGNAL);
 #endif
 #ifdef  MSG_NOTIFICATION
-    PyModule_AddIntConstant(m, "MSG_NOTIFICATION", MSG_NOTIFICATION);
+    PyModule_AddIntMacro(m, MSG_NOTIFICATION);
 #endif
 #ifdef  MSG_CMSG_CLOEXEC
-    PyModule_AddIntConstant(m, "MSG_CMSG_CLOEXEC", MSG_CMSG_CLOEXEC);
+    PyModule_AddIntMacro(m, MSG_CMSG_CLOEXEC);
 #endif
 #ifdef  MSG_ERRQUEUE
-    PyModule_AddIntConstant(m, "MSG_ERRQUEUE", MSG_ERRQUEUE);
+    PyModule_AddIntMacro(m, MSG_ERRQUEUE);
 #endif
 #ifdef  MSG_CONFIRM
-    PyModule_AddIntConstant(m, "MSG_CONFIRM", MSG_CONFIRM);
+    PyModule_AddIntMacro(m, MSG_CONFIRM);
 #endif
 #ifdef  MSG_MORE
-    PyModule_AddIntConstant(m, "MSG_MORE", MSG_MORE);
+    PyModule_AddIntMacro(m, MSG_MORE);
 #endif
 #ifdef  MSG_EOF
-    PyModule_AddIntConstant(m, "MSG_EOF", MSG_EOF);
+    PyModule_AddIntMacro(m, MSG_EOF);
 #endif
 #ifdef  MSG_BCAST
-    PyModule_AddIntConstant(m, "MSG_BCAST", MSG_BCAST);
+    PyModule_AddIntMacro(m, MSG_BCAST);
 #endif
 #ifdef  MSG_MCAST
-    PyModule_AddIntConstant(m, "MSG_MCAST", MSG_MCAST);
+    PyModule_AddIntMacro(m, MSG_MCAST);
 #endif
 #ifdef MSG_FASTOPEN
-    PyModule_AddIntConstant(m, "MSG_FASTOPEN", MSG_FASTOPEN);
+    PyModule_AddIntMacro(m, MSG_FASTOPEN);
 #endif
 
     /* Protocol level and numbers, usable for [gs]etsockopt */
 #ifdef  SOL_SOCKET
-    PyModule_AddIntConstant(m, "SOL_SOCKET", SOL_SOCKET);
+    PyModule_AddIntMacro(m, SOL_SOCKET);
 #endif
 #ifdef  SOL_IP
-    PyModule_AddIntConstant(m, "SOL_IP", SOL_IP);
+    PyModule_AddIntMacro(m, SOL_IP);
 #else
     PyModule_AddIntConstant(m, "SOL_IP", 0);
 #endif
 #ifdef  SOL_IPX
-    PyModule_AddIntConstant(m, "SOL_IPX", SOL_IPX);
+    PyModule_AddIntMacro(m, SOL_IPX);
 #endif
 #ifdef  SOL_AX25
-    PyModule_AddIntConstant(m, "SOL_AX25", SOL_AX25);
+    PyModule_AddIntMacro(m, SOL_AX25);
 #endif
 #ifdef  SOL_ATALK
-    PyModule_AddIntConstant(m, "SOL_ATALK", SOL_ATALK);
+    PyModule_AddIntMacro(m, SOL_ATALK);
 #endif
 #ifdef  SOL_NETROM
-    PyModule_AddIntConstant(m, "SOL_NETROM", SOL_NETROM);
+    PyModule_AddIntMacro(m, SOL_NETROM);
 #endif
 #ifdef  SOL_ROSE
-    PyModule_AddIntConstant(m, "SOL_ROSE", SOL_ROSE);
+    PyModule_AddIntMacro(m, SOL_ROSE);
 #endif
 #ifdef  SOL_TCP
-    PyModule_AddIntConstant(m, "SOL_TCP", SOL_TCP);
+    PyModule_AddIntMacro(m, SOL_TCP);
 #else
     PyModule_AddIntConstant(m, "SOL_TCP", 6);
 #endif
 #ifdef  SOL_UDP
-    PyModule_AddIntConstant(m, "SOL_UDP", SOL_UDP);
+    PyModule_AddIntMacro(m, SOL_UDP);
 #else
     PyModule_AddIntConstant(m, "SOL_UDP", 17);
 #endif
 #ifdef SOL_CAN_BASE
-    PyModule_AddIntConstant(m, "SOL_CAN_BASE", SOL_CAN_BASE);
+    PyModule_AddIntMacro(m, SOL_CAN_BASE);
 #endif
 #ifdef SOL_CAN_RAW
-    PyModule_AddIntConstant(m, "SOL_CAN_RAW", SOL_CAN_RAW);
-    PyModule_AddIntConstant(m, "CAN_RAW", CAN_RAW);
+    PyModule_AddIntMacro(m, SOL_CAN_RAW);
+    PyModule_AddIntMacro(m, CAN_RAW);
 #endif
 #ifdef HAVE_LINUX_CAN_H
-    PyModule_AddIntConstant(m, "CAN_EFF_FLAG", CAN_EFF_FLAG);
-    PyModule_AddIntConstant(m, "CAN_RTR_FLAG", CAN_RTR_FLAG);
-    PyModule_AddIntConstant(m, "CAN_ERR_FLAG", CAN_ERR_FLAG);
+    PyModule_AddIntMacro(m, CAN_EFF_FLAG);
+    PyModule_AddIntMacro(m, CAN_RTR_FLAG);
+    PyModule_AddIntMacro(m, CAN_ERR_FLAG);
 
-    PyModule_AddIntConstant(m, "CAN_SFF_MASK", CAN_SFF_MASK);
-    PyModule_AddIntConstant(m, "CAN_EFF_MASK", CAN_EFF_MASK);
-    PyModule_AddIntConstant(m, "CAN_ERR_MASK", CAN_ERR_MASK);
+    PyModule_AddIntMacro(m, CAN_SFF_MASK);
+    PyModule_AddIntMacro(m, CAN_EFF_MASK);
+    PyModule_AddIntMacro(m, CAN_ERR_MASK);
 #endif
 #ifdef HAVE_LINUX_CAN_RAW_H
-    PyModule_AddIntConstant(m, "CAN_RAW_FILTER", CAN_RAW_FILTER);
-    PyModule_AddIntConstant(m, "CAN_RAW_ERR_FILTER", CAN_RAW_ERR_FILTER);
-    PyModule_AddIntConstant(m, "CAN_RAW_LOOPBACK", CAN_RAW_LOOPBACK);
-    PyModule_AddIntConstant(m, "CAN_RAW_RECV_OWN_MSGS", CAN_RAW_RECV_OWN_MSGS);
+    PyModule_AddIntMacro(m, CAN_RAW_FILTER);
+    PyModule_AddIntMacro(m, CAN_RAW_ERR_FILTER);
+    PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
+    PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
 #ifdef HAVE_LINUX_CAN_BCM_H
-    PyModule_AddIntConstant(m, "CAN_BCM", CAN_BCM);
+    PyModule_AddIntMacro(m, CAN_BCM);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_SETUP", TX_SETUP);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_DELETE", TX_DELETE);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_READ", TX_READ);
@@ -6050,180 +6045,180 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "CAN_BCM_RX_CHANGED", RX_CHANGED);
 #endif
 #ifdef SOL_RDS
-    PyModule_AddIntConstant(m, "SOL_RDS", SOL_RDS);
+    PyModule_AddIntMacro(m, SOL_RDS);
 #endif
 #ifdef RDS_CANCEL_SENT_TO
-    PyModule_AddIntConstant(m, "RDS_CANCEL_SENT_TO", RDS_CANCEL_SENT_TO);
+    PyModule_AddIntMacro(m, RDS_CANCEL_SENT_TO);
 #endif
 #ifdef RDS_GET_MR
-    PyModule_AddIntConstant(m, "RDS_GET_MR", RDS_GET_MR);
+    PyModule_AddIntMacro(m, RDS_GET_MR);
 #endif
 #ifdef RDS_FREE_MR
-    PyModule_AddIntConstant(m, "RDS_FREE_MR", RDS_FREE_MR);
+    PyModule_AddIntMacro(m, RDS_FREE_MR);
 #endif
 #ifdef RDS_RECVERR
-    PyModule_AddIntConstant(m, "RDS_RECVERR", RDS_RECVERR);
+    PyModule_AddIntMacro(m, RDS_RECVERR);
 #endif
 #ifdef RDS_CONG_MONITOR
-    PyModule_AddIntConstant(m, "RDS_CONG_MONITOR", RDS_CONG_MONITOR);
+    PyModule_AddIntMacro(m, RDS_CONG_MONITOR);
 #endif
 #ifdef RDS_GET_MR_FOR_DEST
-    PyModule_AddIntConstant(m, "RDS_GET_MR_FOR_DEST", RDS_GET_MR_FOR_DEST);
+    PyModule_AddIntMacro(m, RDS_GET_MR_FOR_DEST);
 #endif
 #ifdef  IPPROTO_IP
-    PyModule_AddIntConstant(m, "IPPROTO_IP", IPPROTO_IP);
+    PyModule_AddIntMacro(m, IPPROTO_IP);
 #else
     PyModule_AddIntConstant(m, "IPPROTO_IP", 0);
 #endif
 #ifdef  IPPROTO_HOPOPTS
-    PyModule_AddIntConstant(m, "IPPROTO_HOPOPTS", IPPROTO_HOPOPTS);
+    PyModule_AddIntMacro(m, IPPROTO_HOPOPTS);
 #endif
 #ifdef  IPPROTO_ICMP
-    PyModule_AddIntConstant(m, "IPPROTO_ICMP", IPPROTO_ICMP);
+    PyModule_AddIntMacro(m, IPPROTO_ICMP);
 #else
     PyModule_AddIntConstant(m, "IPPROTO_ICMP", 1);
 #endif
 #ifdef  IPPROTO_IGMP
-    PyModule_AddIntConstant(m, "IPPROTO_IGMP", IPPROTO_IGMP);
+    PyModule_AddIntMacro(m, IPPROTO_IGMP);
 #endif
 #ifdef  IPPROTO_GGP
-    PyModule_AddIntConstant(m, "IPPROTO_GGP", IPPROTO_GGP);
+    PyModule_AddIntMacro(m, IPPROTO_GGP);
 #endif
 #ifdef  IPPROTO_IPV4
-    PyModule_AddIntConstant(m, "IPPROTO_IPV4", IPPROTO_IPV4);
+    PyModule_AddIntMacro(m, IPPROTO_IPV4);
 #endif
 #ifdef  IPPROTO_IPV6
-    PyModule_AddIntConstant(m, "IPPROTO_IPV6", IPPROTO_IPV6);
+    PyModule_AddIntMacro(m, IPPROTO_IPV6);
 #endif
 #ifdef  IPPROTO_IPIP
-    PyModule_AddIntConstant(m, "IPPROTO_IPIP", IPPROTO_IPIP);
+    PyModule_AddIntMacro(m, IPPROTO_IPIP);
 #endif
 #ifdef  IPPROTO_TCP
-    PyModule_AddIntConstant(m, "IPPROTO_TCP", IPPROTO_TCP);
+    PyModule_AddIntMacro(m, IPPROTO_TCP);
 #else
     PyModule_AddIntConstant(m, "IPPROTO_TCP", 6);
 #endif
 #ifdef  IPPROTO_EGP
-    PyModule_AddIntConstant(m, "IPPROTO_EGP", IPPROTO_EGP);
+    PyModule_AddIntMacro(m, IPPROTO_EGP);
 #endif
 #ifdef  IPPROTO_PUP
-    PyModule_AddIntConstant(m, "IPPROTO_PUP", IPPROTO_PUP);
+    PyModule_AddIntMacro(m, IPPROTO_PUP);
 #endif
 #ifdef  IPPROTO_UDP
-    PyModule_AddIntConstant(m, "IPPROTO_UDP", IPPROTO_UDP);
+    PyModule_AddIntMacro(m, IPPROTO_UDP);
 #else
     PyModule_AddIntConstant(m, "IPPROTO_UDP", 17);
 #endif
 #ifdef  IPPROTO_IDP
-    PyModule_AddIntConstant(m, "IPPROTO_IDP", IPPROTO_IDP);
+    PyModule_AddIntMacro(m, IPPROTO_IDP);
 #endif
 #ifdef  IPPROTO_HELLO
-    PyModule_AddIntConstant(m, "IPPROTO_HELLO", IPPROTO_HELLO);
+    PyModule_AddIntMacro(m, IPPROTO_HELLO);
 #endif
 #ifdef  IPPROTO_ND
-    PyModule_AddIntConstant(m, "IPPROTO_ND", IPPROTO_ND);
+    PyModule_AddIntMacro(m, IPPROTO_ND);
 #endif
 #ifdef  IPPROTO_TP
-    PyModule_AddIntConstant(m, "IPPROTO_TP", IPPROTO_TP);
+    PyModule_AddIntMacro(m, IPPROTO_TP);
 #endif
 #ifdef  IPPROTO_IPV6
-    PyModule_AddIntConstant(m, "IPPROTO_IPV6", IPPROTO_IPV6);
+    PyModule_AddIntMacro(m, IPPROTO_IPV6);
 #endif
 #ifdef  IPPROTO_ROUTING
-    PyModule_AddIntConstant(m, "IPPROTO_ROUTING", IPPROTO_ROUTING);
+    PyModule_AddIntMacro(m, IPPROTO_ROUTING);
 #endif
 #ifdef  IPPROTO_FRAGMENT
-    PyModule_AddIntConstant(m, "IPPROTO_FRAGMENT", IPPROTO_FRAGMENT);
+    PyModule_AddIntMacro(m, IPPROTO_FRAGMENT);
 #endif
 #ifdef  IPPROTO_RSVP
-    PyModule_AddIntConstant(m, "IPPROTO_RSVP", IPPROTO_RSVP);
+    PyModule_AddIntMacro(m, IPPROTO_RSVP);
 #endif
 #ifdef  IPPROTO_GRE
-    PyModule_AddIntConstant(m, "IPPROTO_GRE", IPPROTO_GRE);
+    PyModule_AddIntMacro(m, IPPROTO_GRE);
 #endif
 #ifdef  IPPROTO_ESP
-    PyModule_AddIntConstant(m, "IPPROTO_ESP", IPPROTO_ESP);
+    PyModule_AddIntMacro(m, IPPROTO_ESP);
 #endif
 #ifdef  IPPROTO_AH
-    PyModule_AddIntConstant(m, "IPPROTO_AH", IPPROTO_AH);
+    PyModule_AddIntMacro(m, IPPROTO_AH);
 #endif
 #ifdef  IPPROTO_MOBILE
-    PyModule_AddIntConstant(m, "IPPROTO_MOBILE", IPPROTO_MOBILE);
+    PyModule_AddIntMacro(m, IPPROTO_MOBILE);
 #endif
 #ifdef  IPPROTO_ICMPV6
-    PyModule_AddIntConstant(m, "IPPROTO_ICMPV6", IPPROTO_ICMPV6);
+    PyModule_AddIntMacro(m, IPPROTO_ICMPV6);
 #endif
 #ifdef  IPPROTO_NONE
-    PyModule_AddIntConstant(m, "IPPROTO_NONE", IPPROTO_NONE);
+    PyModule_AddIntMacro(m, IPPROTO_NONE);
 #endif
 #ifdef  IPPROTO_DSTOPTS
-    PyModule_AddIntConstant(m, "IPPROTO_DSTOPTS", IPPROTO_DSTOPTS);
+    PyModule_AddIntMacro(m, IPPROTO_DSTOPTS);
 #endif
 #ifdef  IPPROTO_XTP
-    PyModule_AddIntConstant(m, "IPPROTO_XTP", IPPROTO_XTP);
+    PyModule_AddIntMacro(m, IPPROTO_XTP);
 #endif
 #ifdef  IPPROTO_EON
-    PyModule_AddIntConstant(m, "IPPROTO_EON", IPPROTO_EON);
+    PyModule_AddIntMacro(m, IPPROTO_EON);
 #endif
 #ifdef  IPPROTO_PIM
-    PyModule_AddIntConstant(m, "IPPROTO_PIM", IPPROTO_PIM);
+    PyModule_AddIntMacro(m, IPPROTO_PIM);
 #endif
 #ifdef  IPPROTO_IPCOMP
-    PyModule_AddIntConstant(m, "IPPROTO_IPCOMP", IPPROTO_IPCOMP);
+    PyModule_AddIntMacro(m, IPPROTO_IPCOMP);
 #endif
 #ifdef  IPPROTO_VRRP
-    PyModule_AddIntConstant(m, "IPPROTO_VRRP", IPPROTO_VRRP);
+    PyModule_AddIntMacro(m, IPPROTO_VRRP);
 #endif
 #ifdef  IPPROTO_SCTP
-    PyModule_AddIntConstant(m, "IPPROTO_SCTP", IPPROTO_SCTP);
+    PyModule_AddIntMacro(m, IPPROTO_SCTP);
 #endif
 #ifdef  IPPROTO_BIP
-    PyModule_AddIntConstant(m, "IPPROTO_BIP", IPPROTO_BIP);
+    PyModule_AddIntMacro(m, IPPROTO_BIP);
 #endif
 /**/
 #ifdef  IPPROTO_RAW
-    PyModule_AddIntConstant(m, "IPPROTO_RAW", IPPROTO_RAW);
+    PyModule_AddIntMacro(m, IPPROTO_RAW);
 #else
     PyModule_AddIntConstant(m, "IPPROTO_RAW", 255);
 #endif
 #ifdef  IPPROTO_MAX
-    PyModule_AddIntConstant(m, "IPPROTO_MAX", IPPROTO_MAX);
+    PyModule_AddIntMacro(m, IPPROTO_MAX);
 #endif
 
 #ifdef  SYSPROTO_CONTROL
-    PyModule_AddIntConstant(m, "SYSPROTO_CONTROL", SYSPROTO_CONTROL);
+    PyModule_AddIntMacro(m, SYSPROTO_CONTROL);
 #endif
 
     /* Some port configuration */
 #ifdef  IPPORT_RESERVED
-    PyModule_AddIntConstant(m, "IPPORT_RESERVED", IPPORT_RESERVED);
+    PyModule_AddIntMacro(m, IPPORT_RESERVED);
 #else
     PyModule_AddIntConstant(m, "IPPORT_RESERVED", 1024);
 #endif
 #ifdef  IPPORT_USERRESERVED
-    PyModule_AddIntConstant(m, "IPPORT_USERRESERVED", IPPORT_USERRESERVED);
+    PyModule_AddIntMacro(m, IPPORT_USERRESERVED);
 #else
     PyModule_AddIntConstant(m, "IPPORT_USERRESERVED", 5000);
 #endif
 
     /* Some reserved IP v.4 addresses */
 #ifdef  INADDR_ANY
-    PyModule_AddIntConstant(m, "INADDR_ANY", INADDR_ANY);
+    PyModule_AddIntMacro(m, INADDR_ANY);
 #else
     PyModule_AddIntConstant(m, "INADDR_ANY", 0x00000000);
 #endif
 #ifdef  INADDR_BROADCAST
-    PyModule_AddIntConstant(m, "INADDR_BROADCAST", INADDR_BROADCAST);
+    PyModule_AddIntMacro(m, INADDR_BROADCAST);
 #else
     PyModule_AddIntConstant(m, "INADDR_BROADCAST", 0xffffffff);
 #endif
 #ifdef  INADDR_LOOPBACK
-    PyModule_AddIntConstant(m, "INADDR_LOOPBACK", INADDR_LOOPBACK);
+    PyModule_AddIntMacro(m, INADDR_LOOPBACK);
 #else
     PyModule_AddIntConstant(m, "INADDR_LOOPBACK", 0x7F000001);
 #endif
 #ifdef  INADDR_UNSPEC_GROUP
-    PyModule_AddIntConstant(m, "INADDR_UNSPEC_GROUP", INADDR_UNSPEC_GROUP);
+    PyModule_AddIntMacro(m, INADDR_UNSPEC_GROUP);
 #else
     PyModule_AddIntConstant(m, "INADDR_UNSPEC_GROUP", 0xe0000000);
 #endif
@@ -6234,356 +6229,353 @@ PyInit__socket(void)
     PyModule_AddIntConstant(m, "INADDR_ALLHOSTS_GROUP", 0xe0000001);
 #endif
 #ifdef  INADDR_MAX_LOCAL_GROUP
-    PyModule_AddIntConstant(m, "INADDR_MAX_LOCAL_GROUP",
-                            INADDR_MAX_LOCAL_GROUP);
+    PyModule_AddIntMacro(m, INADDR_MAX_LOCAL_GROUP);
 #else
     PyModule_AddIntConstant(m, "INADDR_MAX_LOCAL_GROUP", 0xe00000ff);
 #endif
 #ifdef  INADDR_NONE
-    PyModule_AddIntConstant(m, "INADDR_NONE", INADDR_NONE);
+    PyModule_AddIntMacro(m, INADDR_NONE);
 #else
     PyModule_AddIntConstant(m, "INADDR_NONE", 0xffffffff);
 #endif
 
     /* IPv4 [gs]etsockopt options */
 #ifdef  IP_OPTIONS
-    PyModule_AddIntConstant(m, "IP_OPTIONS", IP_OPTIONS);
+    PyModule_AddIntMacro(m, IP_OPTIONS);
 #endif
 #ifdef  IP_HDRINCL
-    PyModule_AddIntConstant(m, "IP_HDRINCL", IP_HDRINCL);
+    PyModule_AddIntMacro(m, IP_HDRINCL);
 #endif
 #ifdef  IP_TOS
-    PyModule_AddIntConstant(m, "IP_TOS", IP_TOS);
+    PyModule_AddIntMacro(m, IP_TOS);
 #endif
 #ifdef  IP_TTL
-    PyModule_AddIntConstant(m, "IP_TTL", IP_TTL);
+    PyModule_AddIntMacro(m, IP_TTL);
 #endif
 #ifdef  IP_RECVOPTS
-    PyModule_AddIntConstant(m, "IP_RECVOPTS", IP_RECVOPTS);
+    PyModule_AddIntMacro(m, IP_RECVOPTS);
 #endif
 #ifdef  IP_RECVRETOPTS
-    PyModule_AddIntConstant(m, "IP_RECVRETOPTS", IP_RECVRETOPTS);
+    PyModule_AddIntMacro(m, IP_RECVRETOPTS);
 #endif
 #ifdef  IP_RECVDSTADDR
-    PyModule_AddIntConstant(m, "IP_RECVDSTADDR", IP_RECVDSTADDR);
+    PyModule_AddIntMacro(m, IP_RECVDSTADDR);
 #endif
 #ifdef  IP_RETOPTS
-    PyModule_AddIntConstant(m, "IP_RETOPTS", IP_RETOPTS);
+    PyModule_AddIntMacro(m, IP_RETOPTS);
 #endif
 #ifdef  IP_MULTICAST_IF
-    PyModule_AddIntConstant(m, "IP_MULTICAST_IF", IP_MULTICAST_IF);
+    PyModule_AddIntMacro(m, IP_MULTICAST_IF);
 #endif
 #ifdef  IP_MULTICAST_TTL
-    PyModule_AddIntConstant(m, "IP_MULTICAST_TTL", IP_MULTICAST_TTL);
+    PyModule_AddIntMacro(m, IP_MULTICAST_TTL);
 #endif
 #ifdef  IP_MULTICAST_LOOP
-    PyModule_AddIntConstant(m, "IP_MULTICAST_LOOP", IP_MULTICAST_LOOP);
+    PyModule_AddIntMacro(m, IP_MULTICAST_LOOP);
 #endif
 #ifdef  IP_ADD_MEMBERSHIP
-    PyModule_AddIntConstant(m, "IP_ADD_MEMBERSHIP", IP_ADD_MEMBERSHIP);
+    PyModule_AddIntMacro(m, IP_ADD_MEMBERSHIP);
 #endif
 #ifdef  IP_DROP_MEMBERSHIP
-    PyModule_AddIntConstant(m, "IP_DROP_MEMBERSHIP", IP_DROP_MEMBERSHIP);
+    PyModule_AddIntMacro(m, IP_DROP_MEMBERSHIP);
 #endif
 #ifdef  IP_DEFAULT_MULTICAST_TTL
-    PyModule_AddIntConstant(m, "IP_DEFAULT_MULTICAST_TTL",
-                            IP_DEFAULT_MULTICAST_TTL);
+    PyModule_AddIntMacro(m, IP_DEFAULT_MULTICAST_TTL);
 #endif
 #ifdef  IP_DEFAULT_MULTICAST_LOOP
-    PyModule_AddIntConstant(m, "IP_DEFAULT_MULTICAST_LOOP",
-                            IP_DEFAULT_MULTICAST_LOOP);
+    PyModule_AddIntMacro(m, IP_DEFAULT_MULTICAST_LOOP);
 #endif
 #ifdef  IP_MAX_MEMBERSHIPS
-    PyModule_AddIntConstant(m, "IP_MAX_MEMBERSHIPS", IP_MAX_MEMBERSHIPS);
+    PyModule_AddIntMacro(m, IP_MAX_MEMBERSHIPS);
 #endif
 #ifdef  IP_TRANSPARENT
-    PyModule_AddIntConstant(m, "IP_TRANSPARENT", IP_TRANSPARENT);
+    PyModule_AddIntMacro(m, IP_TRANSPARENT);
 #endif
 
     /* IPv6 [gs]etsockopt options, defined in RFC2553 */
 #ifdef  IPV6_JOIN_GROUP
-    PyModule_AddIntConstant(m, "IPV6_JOIN_GROUP", IPV6_JOIN_GROUP);
+    PyModule_AddIntMacro(m, IPV6_JOIN_GROUP);
 #endif
 #ifdef  IPV6_LEAVE_GROUP
-    PyModule_AddIntConstant(m, "IPV6_LEAVE_GROUP", IPV6_LEAVE_GROUP);
+    PyModule_AddIntMacro(m, IPV6_LEAVE_GROUP);
 #endif
 #ifdef  IPV6_MULTICAST_HOPS
-    PyModule_AddIntConstant(m, "IPV6_MULTICAST_HOPS", IPV6_MULTICAST_HOPS);
+    PyModule_AddIntMacro(m, IPV6_MULTICAST_HOPS);
 #endif
 #ifdef  IPV6_MULTICAST_IF
-    PyModule_AddIntConstant(m, "IPV6_MULTICAST_IF", IPV6_MULTICAST_IF);
+    PyModule_AddIntMacro(m, IPV6_MULTICAST_IF);
 #endif
 #ifdef  IPV6_MULTICAST_LOOP
-    PyModule_AddIntConstant(m, "IPV6_MULTICAST_LOOP", IPV6_MULTICAST_LOOP);
+    PyModule_AddIntMacro(m, IPV6_MULTICAST_LOOP);
 #endif
 #ifdef  IPV6_UNICAST_HOPS
-    PyModule_AddIntConstant(m, "IPV6_UNICAST_HOPS", IPV6_UNICAST_HOPS);
+    PyModule_AddIntMacro(m, IPV6_UNICAST_HOPS);
 #endif
     /* Additional IPV6 socket options, defined in RFC 3493 */
 #ifdef IPV6_V6ONLY
-    PyModule_AddIntConstant(m, "IPV6_V6ONLY", IPV6_V6ONLY);
+    PyModule_AddIntMacro(m, IPV6_V6ONLY);
 #endif
     /* Advanced IPV6 socket options, from RFC 3542 */
 #ifdef IPV6_CHECKSUM
-    PyModule_AddIntConstant(m, "IPV6_CHECKSUM", IPV6_CHECKSUM);
+    PyModule_AddIntMacro(m, IPV6_CHECKSUM);
 #endif
 #ifdef IPV6_DONTFRAG
-    PyModule_AddIntConstant(m, "IPV6_DONTFRAG", IPV6_DONTFRAG);
+    PyModule_AddIntMacro(m, IPV6_DONTFRAG);
 #endif
 #ifdef IPV6_DSTOPTS
-    PyModule_AddIntConstant(m, "IPV6_DSTOPTS", IPV6_DSTOPTS);
+    PyModule_AddIntMacro(m, IPV6_DSTOPTS);
 #endif
 #ifdef IPV6_HOPLIMIT
-    PyModule_AddIntConstant(m, "IPV6_HOPLIMIT", IPV6_HOPLIMIT);
+    PyModule_AddIntMacro(m, IPV6_HOPLIMIT);
 #endif
 #ifdef IPV6_HOPOPTS
-    PyModule_AddIntConstant(m, "IPV6_HOPOPTS", IPV6_HOPOPTS);
+    PyModule_AddIntMacro(m, IPV6_HOPOPTS);
 #endif
 #ifdef IPV6_NEXTHOP
-    PyModule_AddIntConstant(m, "IPV6_NEXTHOP", IPV6_NEXTHOP);
+    PyModule_AddIntMacro(m, IPV6_NEXTHOP);
 #endif
 #ifdef IPV6_PATHMTU
-    PyModule_AddIntConstant(m, "IPV6_PATHMTU", IPV6_PATHMTU);
+    PyModule_AddIntMacro(m, IPV6_PATHMTU);
 #endif
 #ifdef IPV6_PKTINFO
-    PyModule_AddIntConstant(m, "IPV6_PKTINFO", IPV6_PKTINFO);
+    PyModule_AddIntMacro(m, IPV6_PKTINFO);
 #endif
 #ifdef IPV6_RECVDSTOPTS
-    PyModule_AddIntConstant(m, "IPV6_RECVDSTOPTS", IPV6_RECVDSTOPTS);
+    PyModule_AddIntMacro(m, IPV6_RECVDSTOPTS);
 #endif
 #ifdef IPV6_RECVHOPLIMIT
-    PyModule_AddIntConstant(m, "IPV6_RECVHOPLIMIT", IPV6_RECVHOPLIMIT);
+    PyModule_AddIntMacro(m, IPV6_RECVHOPLIMIT);
 #endif
 #ifdef IPV6_RECVHOPOPTS
-    PyModule_AddIntConstant(m, "IPV6_RECVHOPOPTS", IPV6_RECVHOPOPTS);
+    PyModule_AddIntMacro(m, IPV6_RECVHOPOPTS);
 #endif
 #ifdef IPV6_RECVPKTINFO
-    PyModule_AddIntConstant(m, "IPV6_RECVPKTINFO", IPV6_RECVPKTINFO);
+    PyModule_AddIntMacro(m, IPV6_RECVPKTINFO);
 #endif
 #ifdef IPV6_RECVRTHDR
-    PyModule_AddIntConstant(m, "IPV6_RECVRTHDR", IPV6_RECVRTHDR);
+    PyModule_AddIntMacro(m, IPV6_RECVRTHDR);
 #endif
 #ifdef IPV6_RECVTCLASS
-    PyModule_AddIntConstant(m, "IPV6_RECVTCLASS", IPV6_RECVTCLASS);
+    PyModule_AddIntMacro(m, IPV6_RECVTCLASS);
 #endif
 #ifdef IPV6_RTHDR
-    PyModule_AddIntConstant(m, "IPV6_RTHDR", IPV6_RTHDR);
+    PyModule_AddIntMacro(m, IPV6_RTHDR);
 #endif
 #ifdef IPV6_RTHDRDSTOPTS
-    PyModule_AddIntConstant(m, "IPV6_RTHDRDSTOPTS", IPV6_RTHDRDSTOPTS);
+    PyModule_AddIntMacro(m, IPV6_RTHDRDSTOPTS);
 #endif
 #ifdef IPV6_RTHDR_TYPE_0
-    PyModule_AddIntConstant(m, "IPV6_RTHDR_TYPE_0", IPV6_RTHDR_TYPE_0);
+    PyModule_AddIntMacro(m, IPV6_RTHDR_TYPE_0);
 #endif
 #ifdef IPV6_RECVPATHMTU
-    PyModule_AddIntConstant(m, "IPV6_RECVPATHMTU", IPV6_RECVPATHMTU);
+    PyModule_AddIntMacro(m, IPV6_RECVPATHMTU);
 #endif
 #ifdef IPV6_TCLASS
-    PyModule_AddIntConstant(m, "IPV6_TCLASS", IPV6_TCLASS);
+    PyModule_AddIntMacro(m, IPV6_TCLASS);
 #endif
 #ifdef IPV6_USE_MIN_MTU
-    PyModule_AddIntConstant(m, "IPV6_USE_MIN_MTU", IPV6_USE_MIN_MTU);
+    PyModule_AddIntMacro(m, IPV6_USE_MIN_MTU);
 #endif
 
     /* TCP options */
 #ifdef  TCP_NODELAY
-    PyModule_AddIntConstant(m, "TCP_NODELAY", TCP_NODELAY);
+    PyModule_AddIntMacro(m, TCP_NODELAY);
 #endif
 #ifdef  TCP_MAXSEG
-    PyModule_AddIntConstant(m, "TCP_MAXSEG", TCP_MAXSEG);
+    PyModule_AddIntMacro(m, TCP_MAXSEG);
 #endif
 #ifdef  TCP_CORK
-    PyModule_AddIntConstant(m, "TCP_CORK", TCP_CORK);
+    PyModule_AddIntMacro(m, TCP_CORK);
 #endif
 #ifdef  TCP_KEEPIDLE
-    PyModule_AddIntConstant(m, "TCP_KEEPIDLE", TCP_KEEPIDLE);
+    PyModule_AddIntMacro(m, TCP_KEEPIDLE);
 #endif
 #ifdef  TCP_KEEPINTVL
-    PyModule_AddIntConstant(m, "TCP_KEEPINTVL", TCP_KEEPINTVL);
+    PyModule_AddIntMacro(m, TCP_KEEPINTVL);
 #endif
 #ifdef  TCP_KEEPCNT
-    PyModule_AddIntConstant(m, "TCP_KEEPCNT", TCP_KEEPCNT);
+    PyModule_AddIntMacro(m, TCP_KEEPCNT);
 #endif
 #ifdef  TCP_SYNCNT
-    PyModule_AddIntConstant(m, "TCP_SYNCNT", TCP_SYNCNT);
+    PyModule_AddIntMacro(m, TCP_SYNCNT);
 #endif
 #ifdef  TCP_LINGER2
-    PyModule_AddIntConstant(m, "TCP_LINGER2", TCP_LINGER2);
+    PyModule_AddIntMacro(m, TCP_LINGER2);
 #endif
 #ifdef  TCP_DEFER_ACCEPT
-    PyModule_AddIntConstant(m, "TCP_DEFER_ACCEPT", TCP_DEFER_ACCEPT);
+    PyModule_AddIntMacro(m, TCP_DEFER_ACCEPT);
 #endif
 #ifdef  TCP_WINDOW_CLAMP
-    PyModule_AddIntConstant(m, "TCP_WINDOW_CLAMP", TCP_WINDOW_CLAMP);
+    PyModule_AddIntMacro(m, TCP_WINDOW_CLAMP);
 #endif
 #ifdef  TCP_INFO
-    PyModule_AddIntConstant(m, "TCP_INFO", TCP_INFO);
+    PyModule_AddIntMacro(m, TCP_INFO);
 #endif
 #ifdef  TCP_QUICKACK
-    PyModule_AddIntConstant(m, "TCP_QUICKACK", TCP_QUICKACK);
+    PyModule_AddIntMacro(m, TCP_QUICKACK);
 #endif
 #ifdef  TCP_FASTOPEN
-    PyModule_AddIntConstant(m, "TCP_FASTOPEN", TCP_FASTOPEN);
+    PyModule_AddIntMacro(m, TCP_FASTOPEN);
 #endif
 
     /* IPX options */
 #ifdef  IPX_TYPE
-    PyModule_AddIntConstant(m, "IPX_TYPE", IPX_TYPE);
+    PyModule_AddIntMacro(m, IPX_TYPE);
 #endif
 
 /* Reliable Datagram Sockets */
 #ifdef RDS_CMSG_RDMA_ARGS
-    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_ARGS", RDS_CMSG_RDMA_ARGS);
+    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_ARGS);
 #endif
 #ifdef RDS_CMSG_RDMA_DEST
-    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_DEST", RDS_CMSG_RDMA_DEST);
+    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_DEST);
 #endif
 #ifdef RDS_CMSG_RDMA_MAP
-    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_MAP", RDS_CMSG_RDMA_MAP);
+    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_MAP);
 #endif
 #ifdef RDS_CMSG_RDMA_STATUS
-    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_STATUS", RDS_CMSG_RDMA_STATUS);
+    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_STATUS);
 #endif
 #ifdef RDS_CMSG_RDMA_UPDATE
-    PyModule_AddIntConstant(m, "RDS_CMSG_RDMA_UPDATE", RDS_CMSG_RDMA_UPDATE);
+    PyModule_AddIntMacro(m, RDS_CMSG_RDMA_UPDATE);
 #endif
 #ifdef RDS_RDMA_READWRITE
-    PyModule_AddIntConstant(m, "RDS_RDMA_READWRITE", RDS_RDMA_READWRITE);
+    PyModule_AddIntMacro(m, RDS_RDMA_READWRITE);
 #endif
 #ifdef RDS_RDMA_FENCE
-    PyModule_AddIntConstant(m, "RDS_RDMA_FENCE", RDS_RDMA_FENCE);
+    PyModule_AddIntMacro(m, RDS_RDMA_FENCE);
 #endif
 #ifdef RDS_RDMA_INVALIDATE
-    PyModule_AddIntConstant(m, "RDS_RDMA_INVALIDATE", RDS_RDMA_INVALIDATE);
+    PyModule_AddIntMacro(m, RDS_RDMA_INVALIDATE);
 #endif
 #ifdef RDS_RDMA_USE_ONCE
-    PyModule_AddIntConstant(m, "RDS_RDMA_USE_ONCE", RDS_RDMA_USE_ONCE);
+    PyModule_AddIntMacro(m, RDS_RDMA_USE_ONCE);
 #endif
 #ifdef RDS_RDMA_DONTWAIT
-    PyModule_AddIntConstant(m, "RDS_RDMA_DONTWAIT", RDS_RDMA_DONTWAIT);
+    PyModule_AddIntMacro(m, RDS_RDMA_DONTWAIT);
 #endif
 #ifdef RDS_RDMA_NOTIFY_ME
-    PyModule_AddIntConstant(m, "RDS_RDMA_NOTIFY_ME", RDS_RDMA_NOTIFY_ME);
+    PyModule_AddIntMacro(m, RDS_RDMA_NOTIFY_ME);
 #endif
 #ifdef RDS_RDMA_SILENT
-    PyModule_AddIntConstant(m, "RDS_RDMA_SILENT", RDS_RDMA_SILENT);
+    PyModule_AddIntMacro(m, RDS_RDMA_SILENT);
 #endif
 
     /* get{addr,name}info parameters */
 #ifdef EAI_ADDRFAMILY
-    PyModule_AddIntConstant(m, "EAI_ADDRFAMILY", EAI_ADDRFAMILY);
+    PyModule_AddIntMacro(m, EAI_ADDRFAMILY);
 #endif
 #ifdef EAI_AGAIN
-    PyModule_AddIntConstant(m, "EAI_AGAIN", EAI_AGAIN);
+    PyModule_AddIntMacro(m, EAI_AGAIN);
 #endif
 #ifdef EAI_BADFLAGS
-    PyModule_AddIntConstant(m, "EAI_BADFLAGS", EAI_BADFLAGS);
+    PyModule_AddIntMacro(m, EAI_BADFLAGS);
 #endif
 #ifdef EAI_FAIL
-    PyModule_AddIntConstant(m, "EAI_FAIL", EAI_FAIL);
+    PyModule_AddIntMacro(m, EAI_FAIL);
 #endif
 #ifdef EAI_FAMILY
-    PyModule_AddIntConstant(m, "EAI_FAMILY", EAI_FAMILY);
+    PyModule_AddIntMacro(m, EAI_FAMILY);
 #endif
 #ifdef EAI_MEMORY
-    PyModule_AddIntConstant(m, "EAI_MEMORY", EAI_MEMORY);
+    PyModule_AddIntMacro(m, EAI_MEMORY);
 #endif
 #ifdef EAI_NODATA
-    PyModule_AddIntConstant(m, "EAI_NODATA", EAI_NODATA);
+    PyModule_AddIntMacro(m, EAI_NODATA);
 #endif
 #ifdef EAI_NONAME
-    PyModule_AddIntConstant(m, "EAI_NONAME", EAI_NONAME);
+    PyModule_AddIntMacro(m, EAI_NONAME);
 #endif
 #ifdef EAI_OVERFLOW
-    PyModule_AddIntConstant(m, "EAI_OVERFLOW", EAI_OVERFLOW);
+    PyModule_AddIntMacro(m, EAI_OVERFLOW);
 #endif
 #ifdef EAI_SERVICE
-    PyModule_AddIntConstant(m, "EAI_SERVICE", EAI_SERVICE);
+    PyModule_AddIntMacro(m, EAI_SERVICE);
 #endif
 #ifdef EAI_SOCKTYPE
-    PyModule_AddIntConstant(m, "EAI_SOCKTYPE", EAI_SOCKTYPE);
+    PyModule_AddIntMacro(m, EAI_SOCKTYPE);
 #endif
 #ifdef EAI_SYSTEM
-    PyModule_AddIntConstant(m, "EAI_SYSTEM", EAI_SYSTEM);
+    PyModule_AddIntMacro(m, EAI_SYSTEM);
 #endif
 #ifdef EAI_BADHINTS
-    PyModule_AddIntConstant(m, "EAI_BADHINTS", EAI_BADHINTS);
+    PyModule_AddIntMacro(m, EAI_BADHINTS);
 #endif
 #ifdef EAI_PROTOCOL
-    PyModule_AddIntConstant(m, "EAI_PROTOCOL", EAI_PROTOCOL);
+    PyModule_AddIntMacro(m, EAI_PROTOCOL);
 #endif
 #ifdef EAI_MAX
-    PyModule_AddIntConstant(m, "EAI_MAX", EAI_MAX);
+    PyModule_AddIntMacro(m, EAI_MAX);
 #endif
 #ifdef AI_PASSIVE
-    PyModule_AddIntConstant(m, "AI_PASSIVE", AI_PASSIVE);
+    PyModule_AddIntMacro(m, AI_PASSIVE);
 #endif
 #ifdef AI_CANONNAME
-    PyModule_AddIntConstant(m, "AI_CANONNAME", AI_CANONNAME);
+    PyModule_AddIntMacro(m, AI_CANONNAME);
 #endif
 #ifdef AI_NUMERICHOST
-    PyModule_AddIntConstant(m, "AI_NUMERICHOST", AI_NUMERICHOST);
+    PyModule_AddIntMacro(m, AI_NUMERICHOST);
 #endif
 #ifdef AI_NUMERICSERV
-    PyModule_AddIntConstant(m, "AI_NUMERICSERV", AI_NUMERICSERV);
+    PyModule_AddIntMacro(m, AI_NUMERICSERV);
 #endif
 #ifdef AI_MASK
-    PyModule_AddIntConstant(m, "AI_MASK", AI_MASK);
+    PyModule_AddIntMacro(m, AI_MASK);
 #endif
 #ifdef AI_ALL
-    PyModule_AddIntConstant(m, "AI_ALL", AI_ALL);
+    PyModule_AddIntMacro(m, AI_ALL);
 #endif
 #ifdef AI_V4MAPPED_CFG
-    PyModule_AddIntConstant(m, "AI_V4MAPPED_CFG", AI_V4MAPPED_CFG);
+    PyModule_AddIntMacro(m, AI_V4MAPPED_CFG);
 #endif
 #ifdef AI_ADDRCONFIG
-    PyModule_AddIntConstant(m, "AI_ADDRCONFIG", AI_ADDRCONFIG);
+    PyModule_AddIntMacro(m, AI_ADDRCONFIG);
 #endif
 #ifdef AI_V4MAPPED
-    PyModule_AddIntConstant(m, "AI_V4MAPPED", AI_V4MAPPED);
+    PyModule_AddIntMacro(m, AI_V4MAPPED);
 #endif
 #ifdef AI_DEFAULT
-    PyModule_AddIntConstant(m, "AI_DEFAULT", AI_DEFAULT);
+    PyModule_AddIntMacro(m, AI_DEFAULT);
 #endif
 #ifdef NI_MAXHOST
-    PyModule_AddIntConstant(m, "NI_MAXHOST", NI_MAXHOST);
+    PyModule_AddIntMacro(m, NI_MAXHOST);
 #endif
 #ifdef NI_MAXSERV
-    PyModule_AddIntConstant(m, "NI_MAXSERV", NI_MAXSERV);
+    PyModule_AddIntMacro(m, NI_MAXSERV);
 #endif
 #ifdef NI_NOFQDN
-    PyModule_AddIntConstant(m, "NI_NOFQDN", NI_NOFQDN);
+    PyModule_AddIntMacro(m, NI_NOFQDN);
 #endif
 #ifdef NI_NUMERICHOST
-    PyModule_AddIntConstant(m, "NI_NUMERICHOST", NI_NUMERICHOST);
+    PyModule_AddIntMacro(m, NI_NUMERICHOST);
 #endif
 #ifdef NI_NAMEREQD
-    PyModule_AddIntConstant(m, "NI_NAMEREQD", NI_NAMEREQD);
+    PyModule_AddIntMacro(m, NI_NAMEREQD);
 #endif
 #ifdef NI_NUMERICSERV
-    PyModule_AddIntConstant(m, "NI_NUMERICSERV", NI_NUMERICSERV);
+    PyModule_AddIntMacro(m, NI_NUMERICSERV);
 #endif
 #ifdef NI_DGRAM
-    PyModule_AddIntConstant(m, "NI_DGRAM", NI_DGRAM);
+    PyModule_AddIntMacro(m, NI_DGRAM);
 #endif
 
     /* shutdown() parameters */
 #ifdef SHUT_RD
-    PyModule_AddIntConstant(m, "SHUT_RD", SHUT_RD);
+    PyModule_AddIntMacro(m, SHUT_RD);
 #elif defined(SD_RECEIVE)
     PyModule_AddIntConstant(m, "SHUT_RD", SD_RECEIVE);
 #else
     PyModule_AddIntConstant(m, "SHUT_RD", 0);
 #endif
 #ifdef SHUT_WR
-    PyModule_AddIntConstant(m, "SHUT_WR", SHUT_WR);
+    PyModule_AddIntMacro(m, SHUT_WR);
 #elif defined(SD_SEND)
     PyModule_AddIntConstant(m, "SHUT_WR", SD_SEND);
 #else
     PyModule_AddIntConstant(m, "SHUT_WR", 1);
 #endif
 #ifdef SHUT_RDWR
-    PyModule_AddIntConstant(m, "SHUT_RDWR", SHUT_RDWR);
+    PyModule_AddIntMacro(m, SHUT_RDWR);
 #elif defined(SD_BOTH)
     PyModule_AddIntConstant(m, "SHUT_RDWR", SD_BOTH);
 #else
@@ -6603,14 +6595,14 @@ PyInit__socket(void)
             PyModule_AddObject(m, names[i], tmp);
         }
     }
-    PyModule_AddIntConstant(m, "RCVALL_OFF", RCVALL_OFF);
-    PyModule_AddIntConstant(m, "RCVALL_ON", RCVALL_ON);
-    PyModule_AddIntConstant(m, "RCVALL_SOCKETLEVELONLY", RCVALL_SOCKETLEVELONLY);
+    PyModule_AddIntMacro(m, RCVALL_OFF);
+    PyModule_AddIntMacro(m, RCVALL_ON);
+    PyModule_AddIntMacro(m, RCVALL_SOCKETLEVELONLY);
 #ifdef RCVALL_IPLEVEL
-    PyModule_AddIntConstant(m, "RCVALL_IPLEVEL", RCVALL_IPLEVEL);
+    PyModule_AddIntMacro(m, RCVALL_IPLEVEL);
 #endif
 #ifdef RCVALL_MAX
-    PyModule_AddIntConstant(m, "RCVALL_MAX", RCVALL_MAX);
+    PyModule_AddIntMacro(m, RCVALL_MAX);
 #endif
 #endif /* _MSTCPIP_ */
 

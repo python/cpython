@@ -6977,7 +6977,7 @@ PyInit__ast(void)
         d = PyModule_GetDict(m);
         if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return
             NULL;
-        if (PyModule_AddIntConstant(m, "PyCF_ONLY_AST", PyCF_ONLY_AST) < 0)
+        if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
                 return NULL;
         if (PyDict_SetItemString(d, "mod", (PyObject*)mod_type) < 0) return
             NULL;
