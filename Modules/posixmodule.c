@@ -10324,12 +10324,12 @@ established.");
     defined(__FreeBSD__)   || \
     defined(__NetBSD__)    || \
     defined(__APPLE__)
-static long
+static int
 _bsd_cpu_count(void)
 {
-    long ncpu = 0;
+    int ncpu = 0;
     int mib[2];
-    size_t len = sizeof(int);
+    size_t len = sizeof(ncpu);
 
     mib[0] = CTL_HW;
     mib[1] = HW_NCPU;
@@ -10343,7 +10343,7 @@ _bsd_cpu_count(void)
 static PyObject *
 posix_cpu_count(PyObject *self)
 {
-    long ncpu = 0;
+    int ncpu = 0;
 #ifdef MS_WINDOWS
     SYSTEM_INFO sysinfo;
     GetSystemInfo(&sysinfo);
@@ -10352,14 +10352,11 @@ posix_cpu_count(PyObject *self)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     ncpu = sysconf(_SC_NPROCESSORS_ONLN);
-#elif defined(__APPLE__)
-    size_t len = sizeof(int);
-    if (sysctlnametomib("hw.logicalcpu", &ncpu, &len, NULL, 0) != 0)
-        ncpu = _bsd_cpu_count();
 #elif defined(__DragonFly__) || \
       defined(__OpenBSD__)   || \
       defined(__FreeBSD__)   || \
-      defined(__NetBSD__)
+      defined(__NetBSD__)    || \
+      defined(__APPLE__)
     ncpu = _bsd_cpu_count();
 #endif
     if (ncpu >= 1)
