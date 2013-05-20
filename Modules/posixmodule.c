@@ -113,6 +113,18 @@ corresponding Unix manual entries for more information on calls.");
 #include <dlfcn.h>
 #endif
 
+#ifdef __hpux
+#include <sys/mpctl.h>
+#endif
+
+#if defined(__DragonFly__) || \
+    defined(__OpenBSD__)   || \
+    defined(__FreeBSD__)   || \
+    defined(__NetBSD__)    || \
+    defined(__APPLE__)
+#include <sys/sysctl.h>
+#endif
+
 #if defined(MS_WINDOWS)
 #  define TERMSIZE_USE_CONIO
 #elif defined(HAVE_SYS_IOCTL_H)
@@ -10302,6 +10314,60 @@ get_terminal_size(PyObject *self, PyObject *args)
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
 
+PyDoc_STRVAR(posix_cpu_count__doc__,
+"cpu_count() -> integer\n\n\
+Return the number of CPUs in the system, or None if this value cannot be\n\
+established.");
+
+#if defined(__DragonFly__) || \
+    defined(__OpenBSD__)   || \
+    defined(__FreeBSD__)   || \
+    defined(__NetBSD__)    || \
+    defined(__APPLE__)
+static long
+_bsd_cpu_count(void)
+{
+    long ncpu = 0;
+    int mib[2];
+    size_t len = sizeof(int);
+
+    mib[0] = CTL_HW;
+    mib[1] = HW_NCPU;
+    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) == 0)
+        return ncpu;
+    else
+        return 0;
+}
+#endif
+
+static PyObject *
+posix_cpu_count(PyObject *self)
+{
+    long ncpu = 0;
+#ifdef MS_WINDOWS
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    ncpu = sysinfo.dwNumberOfProcessors;
+#elif defined(__hpux)
+    ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
+#elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
+    ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(__APPLE__)
+    size_t len = sizeof(int);
+    if (sysctlnametomib("hw.logicalcpu", &ncpu, &len, NULL, 0) != 0)
+        ncpu = _bsd_cpu_count();
+#elif defined(__DragonFly__) || \
+      defined(__OpenBSD__)   || \
+      defined(__FreeBSD__)   || \
+      defined(__NetBSD__)
+    ncpu = _bsd_cpu_count();
+#endif
+    if (ncpu >= 1)
+        return PyLong_FromLong(ncpu);
+    else
+        Py_RETURN_NONE;
+}
+
 
 static PyMethodDef posix_methods[] = {
     {"access",          (PyCFunction)posix_access,
@@ -10747,6 +10813,8 @@ static PyMethodDef posix_methods[] = {
 #if defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)
     {"get_terminal_size", get_terminal_size, METH_VARARGS, termsize__doc__},
 #endif
+    {"cpu_count", (PyCFunction)posix_cpu_count,
+                  METH_NOARGS, posix_cpu_count__doc__},
     {NULL,              NULL}            /* Sentinel */
 };
 

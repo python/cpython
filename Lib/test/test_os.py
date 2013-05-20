@@ -2216,6 +2216,15 @@ class OSErrorTests(unittest.TestCase):
                 else:
                     self.fail("No exception thrown by {}".format(func))
 
+class CPUCountTests(unittest.TestCase):
+    def test_cpu_count(self):
+        cpus = os.cpu_count()
+        if cpus is not None:
+            self.assertIsInstance(cpus, int)
+            self.assertGreater(cpus, 0)
+        else:
+            self.skipTest("Could not determine the number of CPUs")
+
 @support.reap_threads
 def test_main():
     support.run_unittest(
@@ -2246,6 +2255,7 @@ def test_main():
         TermsizeTests,
         OSErrorTests,
         RemoveDirsTests,
+        CPUCountTests,
     )
 
 if __name__ == "__main__":

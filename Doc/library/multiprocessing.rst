@@ -702,6 +702,9 @@ Miscellaneous
    Return the number of CPUs in the system.  May raise
    :exc:`NotImplementedError`.
 
+   .. seealso::
+      :func:`os.cpu_count`
+
 .. function:: current_process()
 
    Return the :class:`Process` object corresponding to the current process.
