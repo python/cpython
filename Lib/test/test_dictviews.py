@@ -179,6 +179,11 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(de.items().isdisjoint(de.items()))
         self.assertTrue(de.items().isdisjoint([1]))
 
+    def test_recursive_repr(self):
+        d = {}
+        d[42] = d.values()
+        self.assertRaises(RuntimeError, repr, d)
+
 
 def test_main():
     support.run_unittest(DictSetTest)
