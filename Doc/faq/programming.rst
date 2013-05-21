@@ -1251,7 +1251,7 @@ a tuple points to.
 Under the covers, what this augmented assignment statement is doing is
 approximately this::
 
-   >>> result = a_tuple[0].__iadd__(1)
+   >>> result = a_tuple[0] + 1
    >>> a_tuple[0] = result
    Traceback (most recent call last):
      ...
@@ -1274,16 +1274,19 @@ that even though there was an error, the append worked::
     >>> a_tuple[0]
     ['foo', 'item']
 
-To see why this happens, you need to know that for lists, ``__iadd__`` is equivalent
-to calling ``extend`` on the list and returning the list.  That's why we say
-that for lists, ``+=`` is a "shorthand" for ``list.extend``::
+To see why this happens, you need to know that (a) if an object implements an
+``__iadd__`` magic method, it gets called when the ``+=`` augmented assignment
+is executed, and its return value is what gets used in the assignment statement;
+and (b) for lists, ``__iadd__`` is equivalent to calling ``extend`` on the list
+and returning the list.  That's why we say that for lists, ``+=`` is a
+"shorthand" for ``list.extend``::
 
     >>> a_list = []
     >>> a_list += [1]
     >>> a_list
     [1]
 
-is equivalent to::
+This is equivalent to::
 
     >>> result = a_list.__iadd__([1])
     >>> a_list = result
