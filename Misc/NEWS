@@ -351,6 +351,8 @@ C-API
 IDLE
 ----
 
+- Issue #14146: Highlight source line while debugging on Windows.
+
 - Issue #17838: Allow sys.stdin to be reassigned.
 
 - Issue #13495: Avoid loading the color delegator twice in IDLE.
