@@ -4451,7 +4451,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
     UNIX_PATH_MAX = 108
 
     def testLinuxAbstractNamespace(self):
-        address = b"\x00python-test-hello\x00\xff"
+        address = "\x00python-test-hello\x00\xff"
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s1:
             s1.bind(address)
             s1.listen(1)
@@ -4462,7 +4462,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
                     self.assertEqual(s2.getpeername(), address)
 
     def testMaxName(self):
-        address = b"\x00" + b"h" * (self.UNIX_PATH_MAX - 1)
+        address = "\x00" + "h" * (self.UNIX_PATH_MAX - 1)
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
             s.bind(address)
             self.assertEqual(s.getsockname(), address)
@@ -4472,12 +4472,12 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
             self.assertRaises(OSError, s.bind, address)
 
-    def testStrName(self):
-        # Check that an abstract name can be passed as a string.
+    def testBytesName(self):
+        # Check that an abstract name can be passed as bytes.
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            s.bind("\x00python\x00test\x00")
-            self.assertEqual(s.getsockname(), b"\x00python\x00test\x00")
+            s.bind(b"\x00python\x00test\x00")
+            self.assertEqual(s.getsockname(), "\x00python\x00test\x00")
         finally:
             s.close()
 
