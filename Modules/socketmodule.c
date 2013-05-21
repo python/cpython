@@ -5658,6 +5658,9 @@ PyInit__socket(void)
     /* Alias to emulate 4.4BSD */
     PyModule_AddIntMacro(m, AF_ROUTE);
 #endif
+#ifdef AF_LINK
+    PyModule_AddIntMacro(m, AF_LINK);
+#endif
 #ifdef AF_ASH
     /* Ash */
     PyModule_AddIntMacro(m, AF_ASH);
