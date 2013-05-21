@@ -99,9 +99,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #17683: socket module: return AF_UNIX addresses in Linux abstract
-  namespace as string.
-
 - Issue #17914: Add os.cpu_count(). Patch by Yogesh Chaudhari, based on an
   initial patch by Trent Nelson.
 
