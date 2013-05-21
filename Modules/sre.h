@@ -23,8 +23,8 @@
 #  define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX + 1u)
 # endif
 #else
-# define SRE_CODE unsigned long
-# if SIZEOF_SIZE_T > SIZEOF_LONG
+# define SRE_CODE unsigned int
+# if SIZEOF_SIZE_T > SIZEOF_INT
 #  define SRE_MAXREPEAT (~(SRE_CODE)0)
 # else
 #  define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX + 1u)

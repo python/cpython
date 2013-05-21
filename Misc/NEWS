@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17979: Fixed the re module in build with --disable-unicode.
+
 - Issue #17606: Fixed support of encoded byte strings in the XMLGenerator
  .characters() and ignorableWhitespace() methods.  Original patch by Sebastian
   Ortiz Vasquez.
