@@ -37,6 +37,12 @@ Library
 
 - Issue #17968: Fix memory leak in os.listxattr().
 
+IDLE
+----
+
+- Issue #14146: Highlight source line while debugging on Windows.
+
+
 Tests
 -----
 
