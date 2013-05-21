@@ -99,6 +99,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17900: Allowed pickling of recursive OrderedDicts.  Decreased pickled
+  size and pickling time.
+
 - Issue #17914: Add os.cpu_count(). Patch by Yogesh Chaudhari, based on an
   initial patch by Trent Nelson.
 
