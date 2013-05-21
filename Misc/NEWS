@@ -21,6 +21,12 @@ Library
 
 - Fix typos in the multiprocessing module.
 
+IDLE
+----
+
+- Issue #14146: Highlight source line while debugging on Windows.
+
+
 Tests
 -----
 
