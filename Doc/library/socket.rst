@@ -293,6 +293,11 @@ The module :mod:`socket` exports the following constants and functions:
    TIPC related constants, matching the ones exported by the C socket API. See
    the TIPC documentation for more information.
 
+.. data:: AF_LINK
+
+  Availability: BSD, OSX.
+
+  .. versionadded:: 3.4
 
 .. data:: has_ipv6
 
