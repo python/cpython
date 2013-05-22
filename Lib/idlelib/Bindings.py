@@ -98,6 +98,10 @@ if macosxSupport.runningAsOSXApp():
     # menu
     del menudefs[-1][1][0:2]
 
+    # Remove the 'Configure' entry from the options menu, it is in the
+    # application menu as 'Preferences'
+    del menudefs[-2][1][0:2]
+
 default_keydefs = idleConf.GetCurrentKeySet()
 
 del sys
