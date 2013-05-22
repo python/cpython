@@ -42,7 +42,6 @@ IDLE
 
 - Issue #14146: Highlight source line while debugging on Windows.
 
-
 Tests
 -----
 
@@ -50,6 +49,8 @@ Tests
 
 Documentation
 -------------
+
+- Issue #17844: Add links to encoders and decoders for bytes-to-bytes codecs.
 
 - Issue #14097: improve the "introduction" page of the tutorial.
 
