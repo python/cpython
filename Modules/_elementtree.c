@@ -3330,7 +3330,7 @@ xmlparser_dealloc(XMLParserObject* self)
 }
 
 LOCAL(PyObject*)
-expat_parse(XMLParserObject* self, char* data, int data_len, int final)
+expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
 {
     int ok;
 
@@ -3376,16 +3376,37 @@ xmlparser_close(XMLParserObject* self, PyObject* args)
 }
 
 static PyObject*
-xmlparser_feed(XMLParserObject* self, PyObject* args)
+xmlparser_feed(XMLParserObject* self, PyObject* arg)
 {
     /* feed data to parser */
 
-    char* data;
-    int data_len;
-    if (!PyArg_ParseTuple(args, "s#:feed", &data, &data_len))
-        return NULL;
-
-    return expat_parse(self, data, data_len, 0);
+    if (PyUnicode_Check(arg)) {
+        Py_ssize_t data_len;
+        const char *data = PyUnicode_AsUTF8AndSize(arg, &data_len);
+        if (data == NULL)
+            return NULL;
+        if (data_len > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
+            return NULL;
+        }
+        /* Explicitly set UTF-8 encoding. Return code ignored. */
+        (void)EXPAT(SetEncoding)(self->parser, "utf-8");
+        return expat_parse(self, data, (int)data_len, 0);
+    }
+    else {
+        Py_buffer view;
+        PyObject *res;
+        if (PyObject_GetBuffer(arg, &view, PyBUF_SIMPLE) < 0)
+            return NULL;
+        if (view.len > INT_MAX) {
+            PyBuffer_Release(&view);
+            PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
+            return NULL;
+        }
+        res = expat_parse(self, view.buf, (int)view.len, 0);
+        PyBuffer_Release(&view);
+        return res;
+    }
 }
 
 static PyObject*
@@ -3570,7 +3591,7 @@ xmlparser_setevents(XMLParserObject *self, PyObject* args)
 }
 
 static PyMethodDef xmlparser_methods[] = {
-    {"feed", (PyCFunction) xmlparser_feed, METH_VARARGS},
+    {"feed", (PyCFunction) xmlparser_feed, METH_O},
     {"close", (PyCFunction) xmlparser_close, METH_VARARGS},
     {"_parse", (PyCFunction) xmlparser_parse, METH_VARARGS},
     {"_setevents", (PyCFunction) xmlparser_setevents, METH_VARARGS},

@@ -677,15 +677,18 @@ class ElementTreeTest(unittest.TestCase):
         elem = ET.fromstring("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
 
-    def test_encoding(encoding):
-        def check(encoding):
-            ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
-        check("ascii")
-        check("us-ascii")
-        check("iso-8859-1")
-        check("iso-8859-15")
-        check("cp437")
-        check("mac-roman")
+    def test_encoding(self):
+        def check(encoding, body=''):
+            xml = ("<?xml version='1.0' encoding='%s'?><xml>%s</xml>" %
+                   (encoding, body))
+            self.assertEqual(ET.XML(xml.encode(encoding)).text, body)
+            self.assertEqual(ET.XML(xml).text, body)
+        check("ascii", 'a')
+        check("us-ascii", 'a')
+        check("iso-8859-1", '\xbd')
+        check("iso-8859-15", '\u20ac')
+        check("cp437", '\u221a')
+        check("mac-roman", '\u02da')
 
     def test_methods(self):
         # Test serialization methods.
@@ -1842,11 +1845,13 @@ class TreeBuilderTest(unittest.TestCase):
 
 
 class XMLParserTest(unittest.TestCase):
-    sample1 = '<file><line>22</line></file>'
-    sample2 = ('<!DOCTYPE html PUBLIC'
-        ' "-//W3C//DTD XHTML 1.0 Transitional//EN"'
-        ' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
-        '<html>text</html>')
+    sample1 = b'<file><line>22</line></file>'
+    sample2 = (b'<!DOCTYPE html PUBLIC'
+        b' "-//W3C//DTD XHTML 1.0 Transitional//EN"'
+        b' "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+        b'<html>text</html>')
+    sample3 = ('<?xml version="1.0" encoding="iso-8859-1"?>\n'
+        '<money value="$\xa3\u20ac\U0001017b">$\xa3\u20ac\U0001017b</money>')
 
     def _check_sample_element(self, e):
         self.assertEqual(e.tag, 'file')
@@ -1882,11 +1887,20 @@ class XMLParserTest(unittest.TestCase):
                 _doctype = (name, pubid, system)
 
         parser = MyParserWithDoctype()
-        parser.feed(self.sample2)
+        with self.assertWarns(DeprecationWarning):
+            parser.feed(self.sample2)
         parser.close()
         self.assertEqual(_doctype,
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+    def test_parse_string(self):
+        parser = ET.XMLParser(target=ET.TreeBuilder())
+        parser.feed(self.sample3)
+        e = parser.close()
+        self.assertEqual(e.tag, 'money')
+        self.assertEqual(e.attrib['value'], '$\xa3\u20ac\U0001017b')
+        self.assertEqual(e.text, '$\xa3\u20ac\U0001017b')
 
 
 class NamespaceParseTest(unittest.TestCase):
@@ -2297,6 +2311,7 @@ def test_main(module=None):
         ElementFindTest,
         ElementIterTest,
         TreeBuilderTest,
+        XMLParserTest,
         BugsTest,
         ]
 

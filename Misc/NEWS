@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16986: ElementTree now correctly parses a string input not only when
+  an internal XML encoding is UTF-8 or US-ASCII.
+
 - Issue #17812: Fixed quadratic complexity of base64.b32encode().
 
 - Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
