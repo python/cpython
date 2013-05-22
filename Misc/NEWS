@@ -26,11 +26,16 @@ IDLE
 
 - Issue #14146: Highlight source line while debugging on Windows.
 
-
 Tests
 -----
 
 - Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
+
+Documentation
+-------------
+
+- Issue #17844: Refactor a documentation of Python specific encodings.
+  Add links to encoders and decoders for binary-to-binary codecs.
 
 
 What's New in Python 2.7.5?
