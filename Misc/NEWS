@@ -96,6 +96,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16986: ElementTree now correctly parses a string input not only when
+  an internal XML encoding is UTF-8 or US-ASCII.
+
 - Issue #17996: socket module now exposes AF_LINK constant on BSD and OSX.
 
 - Issue #17900: Allowed pickling of recursive OrderedDicts.  Decreased pickled
