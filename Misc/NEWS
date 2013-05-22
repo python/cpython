@@ -370,6 +370,9 @@ IDLE
 
 - Issue #14735: Update IDLE docs to omit "Control-z on Windows".
 
+- Issue #17532: Always include Options menu for IDLE on OS X.
+  Patch by Guilherme Simões.
+
 Build
 -----
 
