@@ -1188,33 +1188,33 @@ particular, the following variants typically exist:
 
 The following codecs provide bytes-to-bytes mappings.
 
-.. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|L|
 
-+--------------------+---------------------------+
-| Codec              | Purpose                   |
-+====================+===========================+
-| base64_codec       | Convert operand to MIME   |
-|                    | base64 (the result always |
-|                    | includes a trailing       |
-|                    | ``'\n'``)                 |
-+--------------------+---------------------------+
-| bz2_codec          | Compress the operand      |
-|                    | using bz2                 |
-+--------------------+---------------------------+
-| hex_codec          | Convert operand to        |
-|                    | hexadecimal               |
-|                    | representation, with two  |
-|                    | digits per byte           |
-+--------------------+---------------------------+
-| quopri_codec       | Convert operand to MIME   |
-|                    | quoted printable          |
-+--------------------+---------------------------+
-| uu_codec           | Convert the operand using |
-|                    | uuencode                  |
-+--------------------+---------------------------+
-| zlib_codec         | Compress the operand      |
-|                    | using gzip                |
-+--------------------+---------------------------+
++--------------------+---------------------------+------------------------------+
+| Codec              | Purpose                   | Encoder/decoder              |
++====================+===========================+==============================+
+| base64_codec       | Convert operand to MIME   | :meth:`base64.b64encode`,    |
+|                    | base64 (the result always | :meth:`base64.b64decode`     |
+|                    | includes a trailing       |                              |
+|                    | ``'\n'``)                 |                              |
++--------------------+---------------------------+------------------------------+
+| bz2_codec          | Compress the operand      | :meth:`bz2.compress`,        |
+|                    | using bz2                 | :meth:`bz2.decompress`       |
++--------------------+---------------------------+------------------------------+
+| hex_codec          | Convert operand to        | :meth:`base64.b16encode`,    |
+|                    | hexadecimal               | :meth:`base64.b16decode`     |
+|                    | representation, with two  |                              |
+|                    | digits per byte           |                              |
++--------------------+---------------------------+------------------------------+
+| quopri_codec       | Convert operand to MIME   | :meth:`quopri.encodestring`, |
+|                    | quoted printable          | :meth:`quopri.decodestring`  |
++--------------------+---------------------------+------------------------------+
+| uu_codec           | Convert the operand using | :meth:`uu.encode`,           |
+|                    | uuencode                  | :meth:`uu.decode`            |
++--------------------+---------------------------+------------------------------+
+| zlib_codec         | Compress the operand      | :meth:`zlib.compress`,       |
+|                    | using gzip                | :meth:`zlib.decompress`      |
++--------------------+---------------------------+------------------------------+
 
 The following codecs provide string-to-string mappings.
 
