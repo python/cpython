@@ -28,6 +28,9 @@ IDLE
 
 - Issue #14146: Highlight source line while debugging on Windows.
 
+- Issue #17532: Always include Options menu for IDLE on OS X.
+  Patch by Guilherme Simões.
+
 Tests
 -----
 
