@@ -822,7 +822,6 @@ class PyShell(OutputWindow):
     ]
 
     if macosxSupport.runningAsOSXApp():
-        del menu_specs[-3]
         menu_specs[-2] = ("windows", "_Window")
 
 
