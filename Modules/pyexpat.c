@@ -1937,6 +1937,7 @@ MODULE_INITFUNC(void)
     capi.SetUnknownEncodingHandler = XML_SetUnknownEncodingHandler;
     capi.SetUserData = XML_SetUserData;
     capi.SetStartDoctypeDeclHandler = XML_SetStartDoctypeDeclHandler;
+    capi.SetEncoding = XML_SetEncoding;
 
     /* export using capsule */
     capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);

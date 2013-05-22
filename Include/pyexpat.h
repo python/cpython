@@ -45,6 +45,7 @@ struct PyExpat_CAPI
     void (*SetUserData)(XML_Parser parser, void *userData);
     void (*SetStartDoctypeDeclHandler)(XML_Parser parser,
                                        XML_StartDoctypeDeclHandler start);
+    enum XML_Status (*SetEncoding)(XML_Parser parser, const XML_Char *encoding);
     /* always add new stuff to the end! */
 };
 
