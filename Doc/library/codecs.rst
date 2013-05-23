@@ -1142,7 +1142,19 @@ particular, the following variants typically exist:
 | utf_8_sig       |                                | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
 
-.. XXX fix here, should be in above table
+Python Specific Encodings
+-------------------------
+
+A number of predefined codecs are specific to Python, so their codec names have
+no meaning outside Python.  These are listed in the tables below based on the
+expected input and output types (note that while text encodings are the most
+common use case for codecs, the underlying codec infrastructure supports
+arbitrary data transforms rather than just text encodings).  For asymmetric
+codecs, the stated purpose describes the encoding direction.
+
+The following codecs provide :class:`str` to :class:`bytes` encoding and
+:term:`bytes-like object` to :class:`str` decoding, similar to the Unicode text
+encodings.
 
 .. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
 
@@ -1186,37 +1198,45 @@ particular, the following variants typically exist:
 |                    |         | .. deprecated:: 3.3       |
 +--------------------+---------+---------------------------+
 
-The following codecs provide bytes-to-bytes mappings.
+The following codecs provide :term:`bytes-like object` to :class:`bytes`
+mappings.
+
 
 .. tabularcolumns:: |l|L|L|
 
-+--------------------+---------------------------+------------------------------+
-| Codec              | Purpose                   | Encoder/decoder              |
-+====================+===========================+==============================+
-| base64_codec       | Convert operand to MIME   | :meth:`base64.b64encode`,    |
-|                    | base64 (the result always | :meth:`base64.b64decode`     |
-|                    | includes a trailing       |                              |
-|                    | ``'\n'``)                 |                              |
-+--------------------+---------------------------+------------------------------+
-| bz2_codec          | Compress the operand      | :meth:`bz2.compress`,        |
-|                    | using bz2                 | :meth:`bz2.decompress`       |
-+--------------------+---------------------------+------------------------------+
-| hex_codec          | Convert operand to        | :meth:`base64.b16encode`,    |
-|                    | hexadecimal               | :meth:`base64.b16decode`     |
-|                    | representation, with two  |                              |
-|                    | digits per byte           |                              |
-+--------------------+---------------------------+------------------------------+
-| quopri_codec       | Convert operand to MIME   | :meth:`quopri.encodestring`, |
-|                    | quoted printable          | :meth:`quopri.decodestring`  |
-+--------------------+---------------------------+------------------------------+
-| uu_codec           | Convert the operand using | :meth:`uu.encode`,           |
-|                    | uuencode                  | :meth:`uu.decode`            |
-+--------------------+---------------------------+------------------------------+
-| zlib_codec         | Compress the operand      | :meth:`zlib.compress`,       |
-|                    | using gzip                | :meth:`zlib.decompress`      |
-+--------------------+---------------------------+------------------------------+
++----------------------+---------------------------+------------------------------+
+| Codec                | Purpose                   | Encoder/decoder              |
++======================+===========================+==============================+
+| base64_codec [#b64]_ | Convert operand to MIME   | :meth:`base64.b64encode`,    |
+|                      | base64 (the result always | :meth:`base64.b64decode`     |
+|                      | includes a trailing       |                              |
+|                      | ``'\n'``)                 |                              |
++----------------------+---------------------------+------------------------------+
+| bz2_codec            | Compress the operand      | :meth:`bz2.compress`,        |
+|                      | using bz2                 | :meth:`bz2.decompress`       |
++----------------------+---------------------------+------------------------------+
+| hex_codec            | Convert operand to        | :meth:`base64.b16encode`,    |
+|                      | hexadecimal               | :meth:`base64.b16decode`     |
+|                      | representation, with two  |                              |
+|                      | digits per byte           |                              |
++----------------------+---------------------------+------------------------------+
+| quopri_codec         | Convert operand to MIME   | :meth:`quopri.encodestring`, |
+|                      | quoted printable          | :meth:`quopri.decodestring`  |
++----------------------+---------------------------+------------------------------+
+| uu_codec             | Convert the operand using | :meth:`uu.encode`,           |
+|                      | uuencode                  | :meth:`uu.decode`            |
++----------------------+---------------------------+------------------------------+
+| zlib_codec           | Compress the operand      | :meth:`zlib.compress`,       |
+|                      | using gzip                | :meth:`zlib.decompress`      |
++----------------------+---------------------------+------------------------------+
 
-The following codecs provide string-to-string mappings.
+.. [#b64] Rather than accepting any :term:`bytes-like object`,
+   ``'base64_codec'`` accepts only :class:`bytes` and :class:`bytearray` for
+   encoding and only :class:`bytes`, :class:`bytearray`, and ASCII-only
+   instances of :class:`str` for decoding
+
+
+The following codecs provide :class:`str` to :class:`str` mappings.
 
 .. tabularcolumns:: |l|L|
 
@@ -1228,7 +1248,7 @@ The following codecs provide string-to-string mappings.
 +--------------------+---------------------------+
 
 .. versionadded:: 3.2
-   bytes-to-bytes and string-to-string codecs.
+   bytes-to-bytes and str-to-str codecs.
 
 
 :mod:`encodings.idna` --- Internationalized Domain Names in Applications
