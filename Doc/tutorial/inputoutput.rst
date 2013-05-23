@@ -215,10 +215,6 @@ operation. For example::
    >>> print 'The value of PI is approximately %5.3f.' % math.pi
    The value of PI is approximately 3.142.
 
-Since :meth:`str.format` is quite new, a lot of Python code still uses the ``%``
-operator. However, because this old style of formatting will eventually be
-removed from the language, :meth:`str.format` should generally be used.
-
 More information can be found in the :ref:`string-formatting` section.
 
 
