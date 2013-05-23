@@ -1718,10 +1718,10 @@ Notes:
    Because the format depends on the current locale, care should be taken when
    making assumptions about the output value. Field orderings will vary (for
    example, "month/day/year" versus "day/month/year"), and the output may
-   contain Unicode characters (encoded, by default, using UTF-8, but this may
-   vary based on the locale; for example, the ``ja_JP`` locale contains UTF-8
-   encoded Japanese characters, but ``ja_JP.SJIS`` contains Shift JIS encoded
-   Japanese characters).
+   contain Unicode characters encoded using the locale's default encoding (for
+   example, if the current locale is ``js_JP``, the default encoding could be
+   any one of ``eucJP``, ``SJIS``, or ``utf-8``; use :meth:`locale.getlocale`
+   to determine the current locale's encoding).
 
 (2)
    When used with the :meth:`strptime` method, the ``%p`` directive only affects
