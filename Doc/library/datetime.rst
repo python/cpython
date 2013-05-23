@@ -1619,16 +1619,12 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%a``    | Weekday as locale's            || Sun, Mon, ..., Sat    | \(1)  |
 |           | abbreviated name.              |  (en_US);              |       |
 |           |                                || So, Mo, ..., Sa       |       |
-|           |                                |  (de_DE);              |       |
-|           |                                || 日, 月, ..., 土       |       |
-|           |                                |  (ja_JP)               |       |
+|           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%A``    | Weekday as locale's full name. || Sunday, Monday, ...,  | \(1)  |
 |           |                                |  Saturday (en_US);     |       |
 |           |                                || Sonntag, Montag, ..., |       |
-|           |                                |  Samstag (de_DE);      |       |
-|           |                                || 日曜日, 月曜日, ...,  |       |
-|           |                                |  土曜日 (ja_JP)        |       |
+|           |                                |  Samstag (de_DE)       |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%w``    | Weekday as a decimal number,   | 0, 1, ..., 6           |       |
 |           | where 0 is Sunday and 6 is     |                        |       |
@@ -1640,15 +1636,12 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%b``    | Month as locale's abbreviated  || Jan, Feb, ..., Dec    | \(1)  |
 |           | name.                          |  (en_US);              |       |
 |           |                                || Jan, Feb, ..., Dez    |       |
-|           |                                |  (de_DE);              |       |
-|           |                                || 1, 2, ..., 12 (ja_JP) |       |
+|           |                                |  (de_DE)               |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%B``    | Month as locale's full name.   || January, February,    | \(1)  |
 |           |                                |  ..., December (en_US);|       |
 |           |                                || Januar, Februar, ..., |       |
-|           |                                |  Dezember (de_DE);     |       |
-|           |                                || 1月, 2月, ..., 12月   |       |
-|           |                                |  (ja_JP)               |       |
+|           |                                |  Dezember (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%m``    | Month as a zero-padded         | 01, 02, ..., 12        |       |
 |           | decimal number.                |                        |       |
@@ -1666,8 +1659,7 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%p``    | Locale's equivalent of either  || AM, PM (en_US);       | \(1), |
-|           | AM or PM.                      || am, pm (de_DE);       | \(2)  |
-|           |                                || AM, PM (ja_JP)        |       |
+|           | AM or PM.                      || am, pm (de_DE)        | \(2)  |
 +-----------+--------------------------------+------------------------+-------+
 | ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        |       |
 |           | decimal number.                |                        |       |
@@ -1706,20 +1698,16 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 |           | week 0.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%c``    | Locale's appropriate date and  || Tue Aug 16 21:30:00   | \(1)  |
-|           | time representation.           |  1988 (en_US),         |       |
+|           | time representation.           |  1988 (en_US);         |       |
 |           |                                || Di 16 Aug 21:30:00    |       |
-|           |                                |  1988 (de_DE),         |       |
-|           |                                || 火  8/16 21:30:00     |       |
-|           |                                |  1988 (ja_JP)          |       |
+|           |                                |  1988 (de_DE)          |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%x``    | Locale's appropriate date      || 08/16/88 (None),      | \(1)  |
-|           | representation.                || 08/16/1988 (en_US),   |       |
-|           |                                || 16.08.1988 (de_DE),   |       |
-|           |                                || 1988/08/16 (ja_JP)    |       |
+| ``%x``    | Locale's appropriate date      || 08/16/88 (None);      | \(1)  |
+|           | representation.                || 08/16/1988 (en_US);   |       |
+|           |                                || 16.08.1988 (de_DE)    |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US),     | \(1)  |
-|           | representation.                || 21:30:00 (de_DE),     |       |
-|           |                                || 21時30分00秒 (ja_JP)  |       |
+| ``%X``    | Locale's appropriate time      || 21:30:00 (en_US);     | \(1)  |
+|           | representation.                || 21:30:00 (de_DE)      |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%%``    | A literal ``'%'`` character.   | %                      |       |
 +-----------+--------------------------------+------------------------+-------+
