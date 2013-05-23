@@ -215,10 +215,6 @@ operation. For example::
    >>> print 'The value of PI is approximately %5.3f.' % math.pi
    The value of PI is approximately 3.142.
 
-Since :meth:`str.format` is quite new, a lot of Python code still uses the ``%``
-operator. However, because this old style of formatting will eventually be
-removed from the language, :meth:`str.format` should generally be used.
-
 More information can be found in the :ref:`string-formatting` section.
 
 
@@ -295,18 +291,8 @@ containing only a single newline.   ::
    >>> f.readline()
    ''
 
-``f.readlines()`` returns a list containing all the lines of data in the file.
-If given an optional parameter *sizehint*, it reads that many bytes from the
-file and enough more to complete a line, and returns the lines from that.  This
-is often used to allow efficient reading of a large file by lines, but without
-having to load the entire file in memory.  Only complete lines will be returned.
-::
-
-   >>> f.readlines()
-   ['This is the first line of the file.\n', 'Second line of the file\n']
-
-An alternative approach to reading lines is to loop over the file object. This is
-memory efficient, fast, and leads to simpler code::
+For reading lines from a file, you can loop over the file object. This is memory
+efficient, fast, and leads to simple code::
 
    >>> for line in f:
            print line,
@@ -314,9 +300,8 @@ memory efficient, fast, and leads to simpler code::
    This is the first line of the file.
    Second line of the file
 
-The alternative approach is simpler but does not provide as fine-grained
-control.  Since the two approaches manage line buffering differently, they
-should not be mixed.
+If you want to read all the lines of a file in a list you can also use
+``list(f)`` or ``f.readlines()``.
 
 ``f.write(string)`` writes the contents of *string* to the file, returning
 ``None``.   ::

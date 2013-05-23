@@ -296,6 +296,9 @@ I/O Base Classes
       to control the number of lines read: no more lines will be read if the
       total size (in bytes/characters) of all lines so far exceeds *hint*.
 
+      Note that it's already possible to iterate on file objects using ``for
+      line in file: ...`` without calling ``file.readlines()``.
+
    .. method:: seek(offset, whence=SEEK_SET)
 
       Change the stream position to the given byte *offset*.  *offset* is

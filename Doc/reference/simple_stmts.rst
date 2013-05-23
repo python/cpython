@@ -511,6 +511,9 @@ reference count or by being garbage collected), the generator-iterator's
 :meth:`close` method will be called, allowing any pending :keyword:`finally`
 clauses to execute.
 
+For full details of :keyword:`yield` semantics, refer to the :ref:`yieldexpr`
+section.
+
 .. note::
 
    In Python 2.2, the :keyword:`yield` statement was only allowed when the

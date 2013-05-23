@@ -127,7 +127,7 @@ subdirectory and all its subdirectories::
 
    # Perform same compilation, excluding files in .svn directories.
    import re
-   compileall.compile_dir('Lib/', rx=re.compile('/[.]svn'), force=True)
+   compileall.compile_dir('Lib/', rx=re.compile(r'[/\\][.]svn'), force=True)
 
 
 .. seealso::

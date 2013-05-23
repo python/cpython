@@ -910,8 +910,8 @@ There are several reasons to allow this.
 
 When you have a literal value for a list, tuple, or dictionary spread across
 multiple lines, it's easier to add more elements because you don't have to
-remember to add a comma to the previous line.  The lines can also be sorted in
-your editor without creating a syntax error.
+remember to add a comma to the previous line.  The lines can also be reordered
+without creating a syntax error.
 
 Accidentally omitting the comma can lead to errors that are hard to diagnose.
 For example::

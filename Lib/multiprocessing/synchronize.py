@@ -226,7 +226,7 @@ class Condition(object):
             num_waiters = (self._sleeping_count._semlock._get_value() -
                            self._woken_count._semlock._get_value())
         except Exception:
-            num_waiters = 'unkown'
+            num_waiters = 'unknown'
         return '<Condition(%s, %s)>' % (self._lock, num_waiters)
 
     def wait(self, timeout=None):

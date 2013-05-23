@@ -93,7 +93,7 @@ elif os.name == "posix":
         fdout, ccout = tempfile.mkstemp()
         os.close(fdout)
         cmd = 'if type gcc >/dev/null 2>&1; then CC=gcc; elif type cc >/dev/null 2>&1; then CC=cc;else exit 10; fi;' \
-              '$CC -Wl,-t -o ' + ccout + ' 2>&1 -l' + name
+              'LANG=C LC_ALL=C $CC -Wl,-t -o ' + ccout + ' 2>&1 -l' + name
         try:
             f = os.popen(cmd)
             try:

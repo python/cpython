@@ -268,7 +268,7 @@ def cmpfiles(a, b, common, shallow=1):
 def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
-    except os.error:
+    except (os.error, IOError):
         return 2
 
 

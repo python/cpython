@@ -77,6 +77,14 @@ Glossary
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
       <http://www.python.org/~guido/>`_, Python's creator.
 
+   bytes-like object
+      An object that supports the :ref:`buffer protocol <bufferobjects>`,
+      like :class:`str`, :class:`bytearray` or :class:`memoryview`.
+      Bytes-like objects can be used for various operations that expect
+      binary data, such as compression, saving to a binary file or sending
+      over a socket. Some operations need the binary data to be mutable,
+      in which case not all bytes-like objects can apply.
+
    bytecode
       Python source code is compiled into bytecode, the internal representation
       of a Python program in the CPython interpreter.  The bytecode is also

@@ -264,6 +264,11 @@ class MyHandler(rpc.RPCHandler):
                 IOBinding.encoding)
         sys.stderr = PyShell.PseudoOutputFile(self.console, "stderr",
                 IOBinding.encoding)
+
+        # Keep a reference to stdin so that it won't try to exit IDLE if
+        # sys.stdin gets changed from within IDLE's shell. See issue17838.
+        self._keep_stdin = sys.stdin
+
         self.interp = self.get_remote_proxy("interp")
         rpc.RPCHandler.getresponse(self, myseq=None, wait=0.05)
 

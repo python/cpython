@@ -490,13 +490,22 @@ lookups.  These are useful for making fast field extractors as arguments for
 expect a function argument.
 
 
-.. function:: attrgetter(attr[, args...])
+.. function:: attrgetter(attr)
+              attrgetter(*attrs)
 
-   Return a callable object that fetches *attr* from its operand. If more than one
-   attribute is requested, returns a tuple of attributes. After,
-   ``f = attrgetter('name')``, the call ``f(b)`` returns ``b.name``.  After,
-   ``f = attrgetter('name', 'date')``, the call ``f(b)`` returns ``(b.name,
-   b.date)``.  Equivalent to::
+   Return a callable object that fetches *attr* from its operand.
+   If more than one attribute is requested, returns a tuple of attributes.
+   The attribute names can also contain dots. For example:
+
+   * After ``f = attrgetter('name')``, the call ``f(b)`` returns ``b.name``.
+
+   * After ``f = attrgetter('name', 'date')``, the call ``f(b)`` returns
+     ``(b.name, b.date)``.
+
+   * After ``f = attrgetter('name.first', 'name.last')``, the call ``f(b)``
+     returns ``(r.name.first, r.name.last)``.
+
+   Equivalent to::
 
       def attrgetter(*items):
           if len(items) == 1:
@@ -514,9 +523,6 @@ expect a function argument.
           return obj
 
 
-   The attribute names can also contain dots; after ``f = attrgetter('date.month')``,
-   the call ``f(b)`` returns ``b.date.month``.
-
    .. versionadded:: 2.4
 
    .. versionchanged:: 2.5
@@ -526,11 +532,19 @@ expect a function argument.
       Added support for dotted attributes.
 
 
-.. function:: itemgetter(item[, args...])
+.. function:: itemgetter(item)
+              itemgetter(*items)
 
    Return a callable object that fetches *item* from its operand using the
    operand's :meth:`__getitem__` method.  If multiple items are specified,
-   returns a tuple of lookup values.  Equivalent to::
+   returns a tuple of lookup values.  For example:
+
+   * After ``f = itemgetter(2)``, the call ``f(r)`` returns ``r[2]``.
+
+   * After ``g = itemgetter(2, 5, 3)``, the call ``g(r)`` returns
+     ``(r[2], r[5], r[3])``.
+
+   Equivalent to::
 
       def itemgetter(*items):
           if len(items) == 1:
@@ -573,9 +587,14 @@ expect a function argument.
 
    Return a callable object that calls the method *name* on its operand.  If
    additional arguments and/or keyword arguments are given, they will be given
-   to the method as well.  After ``f = methodcaller('name')``, the call ``f(b)``
-   returns ``b.name()``.  After ``f = methodcaller('name', 'foo', bar=1)``, the
-   call ``f(b)`` returns ``b.name('foo', bar=1)``.  Equivalent to::
+   to the method as well.  For example:
+
+   * After ``f = methodcaller('name')``, the call ``f(b)`` returns ``b.name()``.
+
+   * After ``f = methodcaller('name', 'foo', bar=1)``, the call ``f(b)``
+     returns ``b.name('foo', bar=1)``.
+
+   Equivalent to::
 
       def methodcaller(name, *args, **kwargs):
           def caller(obj):

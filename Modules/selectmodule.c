@@ -1203,6 +1203,23 @@ static PyTypeObject kqueue_queue_Type;
 #   error uintptr_t does not match int, long, or long long!
 #endif
 
+/*
+ * kevent is not standard and its members vary across BSDs.
+ */
+#if !defined(__OpenBSD__)
+#   define IDENT_TYPE	T_UINTPTRT
+#   define IDENT_CAST	Py_intptr_t
+#   define DATA_TYPE	T_INTPTRT
+#   define DATA_FMT_UNIT INTPTRT_FMT_UNIT
+#   define IDENT_AsType	PyLong_AsUintptr_t
+#else
+#   define IDENT_TYPE	T_UINT
+#   define IDENT_CAST	int
+#   define DATA_TYPE	T_INT
+#   define DATA_FMT_UNIT "i"
+#   define IDENT_AsType	PyLong_AsUnsignedLong
+#endif
+
 /* Unfortunately, we can't store python objects in udata, because
  * kevents in the kernel can be removed without warning, which would
  * forever lose the refcount on the object stored with it.
@@ -1210,11 +1227,11 @@ static PyTypeObject kqueue_queue_Type;
 
 #define KQ_OFF(x) offsetof(kqueue_event_Object, x)
 static struct PyMemberDef kqueue_event_members[] = {
-    {"ident",           T_UINTPTRT,     KQ_OFF(e.ident)},
+    {"ident",           IDENT_TYPE,     KQ_OFF(e.ident)},
     {"filter",          T_SHORT,        KQ_OFF(e.filter)},
     {"flags",           T_USHORT,       KQ_OFF(e.flags)},
     {"fflags",          T_UINT,         KQ_OFF(e.fflags)},
-    {"data",            T_INTPTRT,      KQ_OFF(e.data)},
+    {"data",            DATA_TYPE,      KQ_OFF(e.data)},
     {"udata",           T_UINTPTRT,     KQ_OFF(e.udata)},
     {NULL} /* Sentinel */
 };
@@ -1240,7 +1257,7 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
     PyObject *pfd;
     static char *kwlist[] = {"ident", "filter", "flags", "fflags",
                              "data", "udata", NULL};
-    static char *fmt = "O|hhi" INTPTRT_FMT_UNIT UINTPTRT_FMT_UNIT ":kevent";
+    static char *fmt = "O|hhi" DATA_FMT_UNIT UINTPTRT_FMT_UNIT ":kevent";
 
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */
 
@@ -1250,8 +1267,12 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (PyLong_Check(pfd)) {
-        self->e.ident = PyLong_AsUintptr_t(pfd);
+    if (PyLong_Check(pfd)
+#if IDENT_TYPE == T_UINT
+	&& PyLong_AsUnsignedLong(pfd) <= UINT_MAX
+#endif
+    ) {
+        self->e.ident = IDENT_AsType(pfd);
     }
     else {
         self->e.ident = PyObject_AsFileDescriptor(pfd);
@@ -1279,10 +1300,10 @@ kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
             Py_TYPE(s)->tp_name, Py_TYPE(o)->tp_name);
         return NULL;
     }
-    if (((result = s->e.ident - o->e.ident) == 0) &&
+    if (((result = (IDENT_CAST)(s->e.ident - o->e.ident)) == 0) &&
         ((result = s->e.filter - o->e.filter) == 0) &&
         ((result = s->e.flags - o->e.flags) == 0) &&
-        ((result = s->e.fflags - o->e.fflags) == 0) &&
+        ((result = (int)(s->e.fflags - o->e.fflags)) == 0) &&
         ((result = s->e.data - o->e.data) == 0) &&
         ((result = s->e.udata - o->e.udata) == 0)
        ) {

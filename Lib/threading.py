@@ -457,21 +457,20 @@ class _Semaphore(_Verbose):
 
         """
         rc = False
-        self.__cond.acquire()
-        while self.__value == 0:
-            if not blocking:
-                break
-            if __debug__:
-                self._note("%s.acquire(%s): blocked waiting, value=%s",
-                           self, blocking, self.__value)
-            self.__cond.wait()
-        else:
-            self.__value = self.__value - 1
-            if __debug__:
-                self._note("%s.acquire: success, value=%s",
-                           self, self.__value)
-            rc = True
-        self.__cond.release()
+        with self.__cond:
+            while self.__value == 0:
+                if not blocking:
+                    break
+                if __debug__:
+                    self._note("%s.acquire(%s): blocked waiting, value=%s",
+                            self, blocking, self.__value)
+                self.__cond.wait()
+            else:
+                self.__value = self.__value - 1
+                if __debug__:
+                    self._note("%s.acquire: success, value=%s",
+                            self, self.__value)
+                rc = True
         return rc
 
     __enter__ = acquire
@@ -483,13 +482,12 @@ class _Semaphore(_Verbose):
         to become larger than zero again, wake up that thread.
 
         """
-        self.__cond.acquire()
-        self.__value = self.__value + 1
-        if __debug__:
-            self._note("%s.release: success, value=%s",
-                       self, self.__value)
-        self.__cond.notify()
-        self.__cond.release()
+        with self.__cond:
+            self.__value = self.__value + 1
+            if __debug__:
+                self._note("%s.release: success, value=%s",
+                        self, self.__value)
+            self.__cond.notify()
 
     def __exit__(self, t, v, tb):
         self.release()

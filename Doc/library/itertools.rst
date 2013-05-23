@@ -732,9 +732,9 @@ which incur interpreter overhead.
        next(b, None)
        return izip(a, b)
 
-   def grouper(n, iterable, fillvalue=None):
+   def grouper(iterable, n, fillvalue=None):
        "Collect data into fixed-length chunks or blocks"
-       # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
+       # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
        args = [iter(iterable)] * n
        return izip_longest(fillvalue=fillvalue, *args)
 

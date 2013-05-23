@@ -2430,13 +2430,43 @@ class TestFlags(unittest.TestCase):
             [sys.executable, '-E', '-B', '-O', '-c', prog])
         child_flags, grandchild_flags = json.loads(data.decode('ascii'))
         self.assertEqual(child_flags, grandchild_flags)
+
+#
+# Issue #17555: ForkAwareThreadLock
+#
+
+class TestForkAwareThreadLock(unittest.TestCase):
+    # We recurisvely start processes.  Issue #17555 meant that the
+    # after fork registry would get duplicate entries for the same
+    # lock.  The size of the registry at generation n was ~2**n.
+
+    @classmethod
+    def child(cls, n, conn):
+        if n > 1:
+            p = multiprocessing.Process(target=cls.child, args=(n-1, conn))
+            p.start()
+            p.join()
+        else:
+            conn.send(len(util._afterfork_registry))
+        conn.close()
+
+    def test_lock(self):
+        r, w = multiprocessing.Pipe(False)
+        l = util.ForkAwareThreadLock()
+        old_size = len(util._afterfork_registry)
+        p = multiprocessing.Process(target=self.child, args=(5, w))
+        p.start()
+        new_size = r.recv()
+        p.join()
+        self.assertLessEqual(new_size, old_size)
+
 #
 #
 #
 
 testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
                    TestStdinBadfiledescriptor, TestTimeouts, TestNoForkBomb,
-                   TestFlags]
+                   TestFlags, TestForkAwareThreadLock]
 
 #
 #

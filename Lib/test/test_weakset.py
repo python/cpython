@@ -351,6 +351,12 @@ class TestWeakSet(unittest.TestCase):
         self.assertFalse(self.s == tuple(self.items))
         self.assertFalse(self.s == 1)
 
+    def test_ne(self):
+        self.assertTrue(self.s != set(self.items))
+        s1 = WeakSet()
+        s2 = WeakSet()
+        self.assertFalse(s1 != s2)
+
     def test_weak_destroy_while_iterating(self):
         # Issue #7105: iterators shouldn't crash when a key is implicitly removed
         # Create new items to be sure no-one else holds a reference

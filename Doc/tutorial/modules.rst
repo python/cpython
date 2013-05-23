@@ -71,7 +71,8 @@ More on Modules
 
 A module can contain executable statements as well as function definitions.
 These statements are intended to initialize the module. They are executed only
-the *first* time the module is imported somewhere. [#]_
+the *first* time the module name is encountered in an import statement. [#]_
+(They are also run if the file is executed as a script.)
 
 Each module has its own private symbol table, which is used as the global symbol
 table by all functions defined in the module. Thus, the author of a module can
@@ -550,6 +551,6 @@ modules found in a package.
 .. rubric:: Footnotes
 
 .. [#] In fact function definitions are also 'statements' that are 'executed'; the
-   execution of a module-level function enters the function name in the module's
-   global symbol table.
+   execution of a module-level function definition enters the function name in
+   the module's global symbol table.
 

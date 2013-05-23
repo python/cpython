@@ -135,6 +135,18 @@ class TestPlistlib(unittest.TestCase):
         data2 = plistlib.writePlistToString(pl2)
         self.assertEqual(data, data2)
 
+    def test_indentation_array(self):
+        data = [[[[[[[[{'test': plistlib.Data(b'aaaaaa')}]]]]]]]]
+        self.assertEqual(plistlib.readPlistFromString(plistlib.writePlistToString(data)), data)
+
+    def test_indentation_dict(self):
+        data = {'1': {'2': {'3': {'4': {'5': {'6': {'7': {'8': {'9': plistlib.Data(b'aaaaaa')}}}}}}}}}
+        self.assertEqual(plistlib.readPlistFromString(plistlib.writePlistToString(data)), data)
+
+    def test_indentation_dict_mix(self):
+        data = {'1': {'2': [{'3': [[[[[{'test': plistlib.Data(b'aaaaaa')}]]]]]}]}}
+        self.assertEqual(plistlib.readPlistFromString(plistlib.writePlistToString(data)), data)
+
     def test_appleformatting(self):
         pl = plistlib.readPlistFromString(TESTDATA)
         data = plistlib.writePlistToString(pl)

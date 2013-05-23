@@ -3643,17 +3643,19 @@ load_string(Unpicklerobject *self)
 
 
     /* Strip outermost quotes */
-    while (s[len-1] <= ' ')
+    while (len > 0 && s[len-1] <= ' ')
         len--;
-    if(s[0]=='"' && s[len-1]=='"'){
+    if (len > 1 && s[0]=='"' && s[len-1]=='"') {
         s[len-1] = '\0';
         p = s + 1 ;
         len -= 2;
-    } else if(s[0]=='\'' && s[len-1]=='\''){
+    }
+    else if (len > 1 && s[0]=='\'' && s[len-1]=='\'') {
         s[len-1] = '\0';
         p = s + 1 ;
         len -= 2;
-    } else
+    }
+    else
         goto insecure;
     /********************************************/
 

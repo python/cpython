@@ -6253,7 +6253,7 @@ then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether gcc supports ParseTuple __format__" >&5
 $as_echo_n "checking whether gcc supports ParseTuple __format__... " >&6; }
   save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -Werror"
+  CFLAGS="$CFLAGS -Werror -Wformat"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 

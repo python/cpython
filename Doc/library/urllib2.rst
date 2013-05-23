@@ -60,8 +60,10 @@ The :mod:`urllib2` module defines the following functions:
    default installed global :class:`OpenerDirector` uses :class:`UnknownHandler` to
    ensure this never happens).
 
-   In addition, default installed :class:`ProxyHandler` makes sure the requests
-   are handled through the proxy when they are set.
+   In addition, if proxy settings are detected (for example, when a ``*_proxy``
+   environment variable like :envvar:`http_proxy` is set),
+   :class:`ProxyHandler` is default installed and makes sure the requests are
+   handled through the proxy.
 
    .. versionchanged:: 2.6
       *timeout* was added.
@@ -83,7 +85,8 @@ The :mod:`urllib2` module defines the following functions:
    subclasses of :class:`BaseHandler` (in which case it must be possible to call
    the constructor without any parameters).  Instances of the following classes
    will be in front of the *handler*\s, unless the *handler*\s contain them,
-   instances of them or subclasses of them: :class:`ProxyHandler`,
+   instances of them or subclasses of them: :class:`ProxyHandler` (if proxy
+   settings are detected),
    :class:`UnknownHandler`, :class:`HTTPHandler`, :class:`HTTPDefaultErrorHandler`,
    :class:`HTTPRedirectHandler`, :class:`FTPHandler`, :class:`FileHandler`,
    :class:`HTTPErrorProcessor`.
@@ -202,9 +205,9 @@ The following classes are provided:
    Cause requests to go through a proxy. If *proxies* is given, it must be a
    dictionary mapping protocol names to URLs of proxies. The default is to read
    the list of proxies from the environment variables
-   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, in a
-   Windows environment, proxy settings are obtained from the registry's
-   Internet Settings section and in a Mac OS X  environment, proxy information
+   :envvar:`<protocol>_proxy`.  If no proxy environment variables are set, then
+   in a Windows environment proxy settings are obtained from the registry's
+   Internet Settings section, and in a Mac OS X environment proxy information
    is retrieved from the OS X System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.

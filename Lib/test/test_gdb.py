@@ -142,30 +142,32 @@ class DebuggerTests(unittest.TestCase):
         # Use "args" to invoke gdb, capturing stdout, stderr:
         out, err = run_gdb(*args, PYTHONHASHSEED='0')
 
-        # Ignore some noise on stderr due to the pending breakpoint:
-        err = err.replace('Function "%s" not defined.\n' % breakpoint, '')
-        # Ignore some other noise on stderr (http://bugs.python.org/issue8600)
-        err = err.replace("warning: Unable to find libthread_db matching"
-                          " inferior's thread library, thread debugging will"
-                          " not be available.\n",
-                          '')
-        err = err.replace("warning: Cannot initialize thread debugging"
-                          " library: Debugger service failed\n",
-                          '')
-        err = err.replace('warning: Could not load shared library symbols for '
-                          'linux-vdso.so.1.\n'
-                          'Do you need "set solib-search-path" or '
-                          '"set sysroot"?\n',
-                          '')
-        err = err.replace('warning: Could not load shared library symbols for '
-                          'linux-gate.so.1.\n'
-                          'Do you need "set solib-search-path" or '
-                          '"set sysroot"?\n',
-                          '')
+        errlines = err.splitlines()
+        unexpected_errlines = []
+
+        # Ignore some benign messages on stderr.
+        ignore_patterns = (
+            'Function "%s" not defined.' % breakpoint,
+            "warning: no loadable sections found in added symbol-file"
+            " system-supplied DSO",
+            "warning: Unable to find libthread_db matching"
+            " inferior's thread library, thread debugging will"
+            " not be available.",
+            "warning: Cannot initialize thread debugging"
+            " library: Debugger service failed",
+            'warning: Could not load shared library symbols for '
+            'linux-vdso.so',
+            'warning: Could not load shared library symbols for '
+            'linux-gate.so',
+            'Do you need "set solib-search-path" or '
+            '"set sysroot"?',
+            )
+        for line in errlines:
+            if not line.startswith(ignore_patterns):
+                unexpected_errlines.append(line)
 
         # Ensure no unexpected error messages:
-        self.assertEqual(err, '')
-
+        self.assertEqual(unexpected_errlines, [])
         return out
 
     def get_gdb_repr(self, source,

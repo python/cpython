@@ -18,7 +18,14 @@ from tempfile import TemporaryFile
 from random import randint, random
 from unittest import skipUnless
 
-from test.test_support import TESTFN, TESTFN_UNICODE, run_unittest, findfile, unlink
+from test.test_support import TESTFN, TESTFN_UNICODE, TESTFN_ENCODING, \
+                              run_unittest, findfile, unlink
+try:
+    TESTFN_UNICODE.encode(TESTFN_ENCODING)
+except (UnicodeError, TypeError):
+    # Either the file system encoding is None, or the file name
+    # cannot be encoded in the file system encoding.
+    TESTFN_UNICODE = None
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -424,6 +431,7 @@ class TestsWithSourceFile(unittest.TestCase):
         with open(filename, 'rb') as f:
             self.assertEqual(f.read(), content)
 
+    @skipUnless(TESTFN_UNICODE, "No Unicode filesystem semantics on this platform.")
     def test_extract_unicode_filenames(self):
         fnames = [u'foo.txt', os.path.basename(TESTFN_UNICODE)]
         content = 'Test for unicode filename'

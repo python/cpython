@@ -25,9 +25,6 @@ class BaseTest(unittest.TestCase):
     DATA_CRLF = 'BZh91AY&SY\xaez\xbbN\x00\x01H\xdf\x80\x00\x12@\x02\xff\xf0\x01\x07n\x00?\xe7\xff\xe0@\x01\xbc\xc6`\x86*\x8d=M\xa9\x9a\x86\xd0L@\x0fI\xa6!\xa1\x13\xc8\x88jdi\x8d@\x03@\x1a\x1a\x0c\x0c\x83 \x00\xc4h2\x19\x01\x82D\x84e\t\xe8\x99\x89\x19\x1ah\x00\r\x1a\x11\xaf\x9b\x0fG\xf5(\x1b\x1f?\t\x12\xcf\xb5\xfc\x95E\x00ps\x89\x12^\xa4\xdd\xa2&\x05(\x87\x04\x98\x89u\xe40%\xb6\x19\'\x8c\xc4\x89\xca\x07\x0e\x1b!\x91UIFU%C\x994!DI\xd2\xfa\xf0\xf1N8W\xde\x13A\xf5\x9cr%?\x9f3;I45A\xd1\x8bT\xb1<l\xba\xcb_\xc00xY\x17r\x17\x88\x08\x08@\xa0\ry@\x10\x04$)`\xf2\xce\x89z\xb0s\xec\x9b.iW\x9d\x81\xb5-+t\x9f\x1a\'\x97dB\xf5x\xb5\xbe.[.\xd7\x0e\x81\xe7\x08\x1cN`\x88\x10\xca\x87\xc3!"\x80\x92R\xa1/\xd1\xc0\xe6mf\xac\xbd\x99\xcca\xb3\x8780>\xa4\xc7\x8d\x1a\\"\xad\xa1\xabyBg\x15\xb9l\x88\x88\x91k"\x94\xa4\xd4\x89\xae*\xa6\x0b\x10\x0c\xd6\xd4m\xe86\xec\xb5j\x8a\x86j\';\xca.\x01I\xf2\xaaJ\xe8\x88\x8cU+t3\xfb\x0c\n\xa33\x13r2\r\x16\xe0\xb3(\xbf\x1d\x83r\xe7M\xf0D\x1365\xd8\x88\xd3\xa4\x92\xcb2\x06\x04\\\xc1\xb0\xea//\xbek&\xd8\xe6+t\xe5\xa1\x13\xada\x16\xder5"w]\xa2i\xb7[\x97R \xe2IT\xcd;Z\x04dk4\xad\x8a\t\xd3\x81z\x10\xf1:^`\xab\x1f\xc5\xdc\x91N\x14$+\x9e\xae\xd3\x80'
     EMPTY_DATA = 'BZh9\x17rE8P\x90\x00\x00\x00\x00'
 
-    with open(findfile("testbz2_bigmem.bz2"), "rb") as f:
-        DATA_BIGMEM = f.read()
-
     if has_cmdline_bunzip2:
         def decompress(self, data):
             pop = subprocess.Popen("bunzip2", shell=True,
@@ -328,24 +325,6 @@ class BZ2FileTest(BaseTest):
             self.assertRaises(ValueError, f.readline)
             self.assertRaises(ValueError, f.readlines)
 
-    def test_read_truncated(self):
-        # Drop the eos_magic field (6 bytes) and CRC (4 bytes).
-        truncated = self.DATA[:-10]
-        with open(self.filename, 'wb') as f:
-            f.write(truncated)
-        with BZ2File(self.filename) as f:
-            self.assertRaises(EOFError, f.read)
-        with BZ2File(self.filename) as f:
-            self.assertEqual(f.read(len(self.TEXT)), self.TEXT)
-            self.assertRaises(EOFError, f.read, 1)
-        # Incomplete 4-byte file header, and block header of at least 146 bits.
-        for i in range(22):
-            with open(self.filename, 'wb') as f:
-                f.write(truncated[:i])
-            with BZ2File(self.filename) as f:
-                self.assertRaises(EOFError, f.read, 1)
-
-
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
         # "Test BZ2Compressor.compress()/flush()"
@@ -431,9 +410,10 @@ class BZ2DecompressorTest(BaseTest):
         # Issue #14398: decompression fails when output data is >=2GB.
         if size < _4G:
             self.skipTest("Test needs 5GB of memory to run.")
-        text = bz2.BZ2Decompressor().decompress(self.DATA_BIGMEM)
+        compressed = bz2.compress("a" * _4G)
+        text = bz2.BZ2Decompressor().decompress(compressed)
         self.assertEqual(len(text), _4G)
-        self.assertEqual(text.strip("\0"), "")
+        self.assertEqual(text.strip("a"), "")
 
 
 class FuncTest(BaseTest):
@@ -482,9 +462,10 @@ class FuncTest(BaseTest):
         # Issue #14398: decompression fails when output data is >=2GB.
         if size < _4G:
             self.skipTest("Test needs 5GB of memory to run.")
-        text = bz2.decompress(self.DATA_BIGMEM)
+        compressed = bz2.compress("a" * _4G)
+        text = bz2.decompress(compressed)
         self.assertEqual(len(text), _4G)
-        self.assertEqual(text.strip("\0"), "")
+        self.assertEqual(text.strip("a"), "")
 
 def test_main():
     test_support.run_unittest(
