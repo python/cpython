@@ -59,6 +59,9 @@ Tests
 Documentation
 -------------
 
+- Issue #17953: Mention that you shouldn't replace sys.modules and deleting key
+  items will cause Python to not be happy.
+
 - Issue #17844: Add links to encoders and decoders for bytes-to-bytes codecs.
 
 - Issue #14097: improve the "introduction" page of the tutorial.
