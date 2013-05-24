@@ -40,6 +40,9 @@ Library
 
 - Issue #17968: Fix memory leak in os.listxattr().
 
+- Issue #17269: Workaround for socket.getaddrinfo crash on MacOS X
+  with port None or "0" and flags AI_NUMERICSERV.
+
 IDLE
 ----
 

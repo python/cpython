@@ -1166,6 +1166,9 @@ class GeneralModuleTests(unittest.TestCase):
         # Issue #6697.
         self.assertRaises(UnicodeEncodeError, socket.getaddrinfo, 'localhost', '\uD800')
 
+        # Issue 17269
+        socket.getaddrinfo("localhost", None, 0, 0, 0, socket.AI_NUMERICSERV)
+
     def test_getnameinfo(self):
         # only IP addresses are allowed
         self.assertRaises(socket.error, socket.getnameinfo, ('mail.python.org',0), 0)
