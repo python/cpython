@@ -5041,6 +5041,15 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
         PyErr_SetString(PyExc_OSError, "Int or String expected");
         goto err;
     }
+#ifdef __APPLE__
+    if ((flags & AI_NUMERICSERV) && (pptr == NULL || (pptr[0] == '0' && pptr[1] == 0))) {
+        /* On OSX upto at least OSX 10.8 getaddrinfo crashes
+	 * if AI_NUMERICSERV is set and the servname is NULL or "0".
+	 * This workaround avoids a segfault in libsystem.
+	 */
+        pptr = "00";
+    }
+#endif
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = family;
     hints.ai_socktype = socktype;
