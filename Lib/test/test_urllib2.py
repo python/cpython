@@ -11,6 +11,7 @@ import urllib.request
 # The proxy bypass method imported below has logic specific to the OSX
 # proxy config data structure but is testable on all platforms.
 from urllib.request import Request, OpenerDirector, _proxy_bypass_macosx_sysconf
+from urllib.parse import urlparse
 import urllib.error
 
 # XXX
@@ -919,7 +920,13 @@ class HandlerTests(unittest.TestCase):
         r = Request('http://example.com')
         for url in urls:
             r.full_url = url
+            parsed = urlparse(url)
+
             self.assertEqual(r.get_full_url(), url)
+            # full_url setter uses splittag to split into components.
+            # splittag sets the fragment as None while urlparse sets it to ''
+            self.assertEqual(r.fragment or '', parsed.fragment)
+            self.assertEqual(urlparse(r.get_full_url()).query, parsed.query)
 
     def test_full_url_deleter(self):
         r = Request('http://www.example.com')
@@ -1536,6 +1543,14 @@ class RequestTests(unittest.TestCase):
         url = 'http://docs.python.org/library/urllib2.html#OK'
         req = Request(url)
         self.assertEqual(req.get_full_url(), url)
+
+    def test_url_fullurl_get_full_url(self):
+        urls = ['http://docs.python.org',
+                'http://docs.python.org/library/urllib2.html#OK',
+                'http://www.python.org/?qs=query#fragment=true' ]
+        for url in urls:
+            req = Request(url)
+            self.assertEqual(req.get_full_url(), req.full_url)
 
 def test_main(verbose=None):
     from test import test_urllib2
