@@ -7838,7 +7838,7 @@ posix_lseek(PyObject *self, PyObject *args)
 
 
 PyDoc_STRVAR(posix_read__doc__,
-"read(fd, buffersize) -> string\n\n\
+"read(fd, buffersize) -> bytes\n\n\
 Read a file descriptor.");
 
 static PyObject *
@@ -8008,8 +8008,8 @@ posix_pread(PyObject *self, PyObject *args)
 #endif
 
 PyDoc_STRVAR(posix_write__doc__,
-"write(fd, string) -> byteswritten\n\n\
-Write a string to a file descriptor.");
+"write(fd, data) -> byteswritten\n\n\
+Write bytes to a file descriptor.");
 
 static PyObject *
 posix_write(PyObject *self, PyObject *args)
