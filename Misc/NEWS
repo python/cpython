@@ -23,6 +23,9 @@ Library
 
 - Fix typos in the multiprocessing module.
 
+- Issue #17269: Workaround for socket.getaddrinfo crash on MacOS X
+  with port None or "0" and flags AI_NUMERICSERV.
+
 IDLE
 ----
 
@@ -51,7 +54,7 @@ What's New in Python 2.7.5?
 Core and Builtins
 -----------------
 
-- Issue #15535: Fixed regression in the pickling of named tuples by 
+- Issue #15535: Fixed regression in the pickling of named tuples by
   removing the __dict__ property introduced in 2.7.4.
 
 - Issue #17857: Prevent build failures with pre-3.5.0 versions of sqlite3,
