@@ -396,6 +396,12 @@ request.
 
    The original URL passed to the constructor.
 
+   .. versionchanged:: 3.4
+
+   Request.full_url is a property with setter, getter and a deleter. Getting
+   :attr:`~Request.full_url` returns the original request URL with the
+   fragment, if it was present.
+
 .. attribute:: Request.type
 
    The URI scheme.
@@ -481,6 +487,10 @@ request.
 .. method:: Request.get_full_url()
 
    Return the URL given in the constructor.
+
+   .. versionchanged:: 3.4
+
+   Returns :attr:`Request.full_url`
 
 
 .. method:: Request.set_proxy(host, type)

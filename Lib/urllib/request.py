@@ -275,6 +275,8 @@ class Request:
 
     @property
     def full_url(self):
+        if self.fragment:
+            return '{}#{}'.format(self._full_url, self.fragment)
         return self._full_url
 
     @full_url.setter
@@ -326,8 +328,6 @@ class Request:
             return "GET"
 
     def get_full_url(self):
-        if self.fragment:
-            return '{}#{}'.format(self.full_url, self.fragment)
         return self.full_url
 
     def set_proxy(self, host, type):
