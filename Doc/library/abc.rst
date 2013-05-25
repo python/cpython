@@ -58,6 +58,10 @@ This module provides the following classes:
       .. versionchanged:: 3.3
          Returns the registered subclass, to allow usage as a class decorator.
 
+      .. versionchanged:: 3.4
+         To detect calls to :meth:`register`, you can use the
+         :func:`get_cache_token` function.
+
    You can also override this method in an abstract base class:
 
    .. method:: __subclasshook__(subclass)
@@ -306,6 +310,19 @@ The :mod:`abc` module also provides the following decorators:
        It is now possible to use :class:`property`, :meth:`property.getter`,
        :meth:`property.setter` and :meth:`property.deleter` with
        :func:`abstractmethod`, making this decorator redundant.
+
+
+The :mod:`abc` module also provides the following functions:
+
+.. function:: get_cache_token()
+
+   Returns the current abstract base class cache token.
+
+   The token is an opaque integer identifying the current version of the
+   abstract base class cache for virtual subclasses. This number changes
+   with every call to :meth:`ABCMeta.register` on any ABC.
+
+   .. versionadded:: 3.4
 
 
 .. rubric:: Footnotes
