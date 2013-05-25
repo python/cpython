@@ -490,9 +490,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     PySSL_END_ALLOW_THREADS
     SSL_set_app_data(self->ssl,self);
     SSL_set_fd(self->ssl, sock->sock_fd);
+    SSL_set_mode(self->ssl, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER
 #ifdef SSL_MODE_AUTO_RETRY
-    SSL_set_mode(self->ssl, SSL_MODE_AUTO_RETRY);
+                 | SSL_MODE_AUTO_RETRY
 #endif
+                 );
 
 #if HAVE_SNI
     if (server_hostname != NULL)
