@@ -470,6 +470,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 {
     PySSLSocket *self;
     SSL_CTX *ctx = sslctx->ctx;
+    long mode;
 
     self = PyObject_New(PySSLSocket, &PySSLSocket_Type);
     if (self == NULL)
@@ -490,11 +491,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     PySSL_END_ALLOW_THREADS
     SSL_set_app_data(self->ssl,self);
     SSL_set_fd(self->ssl, sock->sock_fd);
-    SSL_set_mode(self->ssl, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER
+    mode = SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER;
 #ifdef SSL_MODE_AUTO_RETRY
-                 | SSL_MODE_AUTO_RETRY
+    mode |= SSL_MODE_AUTO_RETRY;
 #endif
-                 );
+    SSL_set_mode(self->ssl, mode);
 
 #if HAVE_SNI
     if (server_hostname != NULL)
