@@ -468,7 +468,7 @@ the `new_callable` argument to `patch`.
         mock and unless the function returns the :data:`DEFAULT` singleton the
         call to the mock will then return whatever the function returns. If the
         function returns :data:`DEFAULT` then the mock will return its normal
-        value (from the :attr:`return_value`.
+        value (from the :attr:`return_value`).
 
         An example of a mock that raises an exception (to test exception
         handling of an API):
