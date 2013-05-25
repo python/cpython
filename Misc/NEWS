@@ -1325,7 +1325,10 @@ Library
 - ctypes.call_commethod was removed, since its only usage was in the defunct
   samples directory.
 
-- Issue #16692: Added  TLSv1.1 and TLSv1.2 support for the ssl modules.
+- Issue #16692: Added TLSv1.1 and TLSv1.2 support for the ssl modules.
+
+- Issue #16832: add abc.get_cache_token() to expose cache validity checking
+  support in ABCMeta.
 
 IDLE
 ----
