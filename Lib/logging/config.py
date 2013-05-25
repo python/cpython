@@ -144,7 +144,7 @@ def _install_handlers(cp, formatters):
         h = klass(*args)
         if "level" in section:
             level = section["level"]
-            h.setLevel(logging._levelNames[level])
+            h.setLevel(level)
         if len(fmt):
             h.setFormatter(formatters[fmt])
         if issubclass(klass, logging.handlers.MemoryHandler):
@@ -191,7 +191,7 @@ def _install_loggers(cp, handlers, disable_existing):
     log = root
     if "level" in section:
         level = section["level"]
-        log.setLevel(logging._levelNames[level])
+        log.setLevel(level)
     for h in root.handlers[:]:
         root.removeHandler(h)
     hlist = section["handlers"]
@@ -237,7 +237,7 @@ def _install_loggers(cp, handlers, disable_existing):
             existing.remove(qn)
         if "level" in section:
             level = section["level"]
-            logger.setLevel(logging._levelNames[level])
+            logger.setLevel(level)
         for h in logger.handlers[:]:
             logger.removeHandler(h)
         logger.propagate = propagate
