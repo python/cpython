@@ -5,6 +5,7 @@
 
 from _weakrefset import WeakSet
 
+
 def abstractmethod(funcobj):
     """A decorator indicating abstract methods.
 
@@ -124,6 +125,8 @@ class ABCMeta(type):
     # A global counter that is incremented each time a class is
     # registered as a virtual subclass of anything.  It forces the
     # negative cache to be cleared before its next use.
+    # Note: this counter is private. Use `abc.get_cache_token()` for
+    #       external code.
     _abc_invalidation_counter = 0
 
     def __new__(mcls, name, bases, namespace):
@@ -227,8 +230,19 @@ class ABCMeta(type):
         cls._abc_negative_cache.add(subclass)
         return False
 
+
 class ABC(metaclass=ABCMeta):
     """Helper class that provides a standard way to create an ABC using
     inheritance.
     """
     pass
+
+
+def get_cache_token():
+    """Returns the current ABC cache token.
+
+    The token is an opaque integer identifying the current version of
+    the ABC cache for virtual subclasses. This number changes with
+    every call to ``register()`` on any ABC.
+    """
+    return ABCMeta._abc_invalidation_counter
