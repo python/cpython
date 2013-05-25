@@ -116,7 +116,10 @@ class urlopenNetworkTests(unittest.TestCase):
         bogus_domain = "sadflkjsasf.i.nvali.d"
         try:
             socket.gethostbyname(bogus_domain)
-        except socket.gaierror:
+        except OSError:
+            # socket.gaierror is too narrow, since getaddrinfo() may also
+            # fail with EAI_SYSTEM and ETIMEDOUT (seen on Ubuntu 13.04),
+            # i.e. Python's TimeoutError.
             pass
         else:
             # This happens with some overzealous DNS providers such as OpenDNS
