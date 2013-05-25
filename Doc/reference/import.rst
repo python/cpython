@@ -353,7 +353,11 @@ Loaders must satisfy the following requirements:
  * The loader may set the ``__file__`` attribute of the module.  If set, this
    attribute's value must be a string.  The loader may opt to leave
    ``__file__`` unset if it has no semantic meaning (e.g. a module loaded from
-   a database).
+   a database). If ``__file__`` is set, it may also be appropriate to set the
+   ``__cached__`` attribute which is the path to any compiled version of the
+   code (e.g. byte-compiled file). The file does not need to exist to set this
+   attribute; the path can simply point to whether the compiled file would
+   exist (see :pep:`3147`).
 
  * The loader may set the ``__name__`` attribute of the module.  While not
    required, setting this attribute is highly recommended so that the
