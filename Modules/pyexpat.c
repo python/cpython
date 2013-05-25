@@ -1111,53 +1111,49 @@ static struct PyMethodDef xmlparse_methods[] = {
    Make it as simple as possible.
 */
 
-static char template_buffer[257];
-
-static void
-init_template_buffer(void)
-{
-    int i;
-    for (i = 0; i < 256; i++) {
-        template_buffer[i] = i;
-    }
-    template_buffer[256] = 0;
-}
-
 static int
 PyUnknownEncodingHandler(void *encodingHandlerData,
                          const XML_Char *name,
                          XML_Encoding *info)
 {
-    PyUnicodeObject *_u_string = NULL;
-    int result = 0;
+    static unsigned char template_buffer[256] = {0};
+    PyObject* u;
     int i;
-    int kind;
     void *data;
+    unsigned int kind;
 
-    /* Yes, supports only 8bit encodings */
-    _u_string = (PyUnicodeObject *)
-        PyUnicode_Decode(template_buffer, 256, name, "replace");
-
-    if (_u_string == NULL || PyUnicode_READY(_u_string) == -1)
-        return result;
-
-    kind = PyUnicode_KIND(_u_string);
-    data = PyUnicode_DATA(_u_string);
-
-    for (i = 0; i < 256; i++) {
-        /* Stupid to access directly, but fast */
-        Py_UCS4 c = PyUnicode_READ(kind, data, i);
-        if (c == Py_UNICODE_REPLACEMENT_CHARACTER)
-            info->map[i] = -1;
-        else
-            info->map[i] = c;
+    if (template_buffer[1] == 0) {
+        for (i = 0; i < 256; i++)
+            template_buffer[i] = i;
     }
+
+    u = PyUnicode_Decode((char*) template_buffer, 256, name, "replace");
+    if (u == NULL || PyUnicode_READY(u))
+        return XML_STATUS_ERROR;
+
+    if (PyUnicode_GET_LENGTH(u) != 256) {
+        Py_DECREF(u);
+        PyErr_SetString(PyExc_ValueError,
+                        "multi-byte encodings are not supported");
+        return XML_STATUS_ERROR;
+    }
+
+    kind = PyUnicode_KIND(u);
+    data = PyUnicode_DATA(u);
+    for (i = 0; i < 256; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if (ch != Py_UNICODE_REPLACEMENT_CHARACTER)
+            info->map[i] = ch;
+        else
+            info->map[i] = -1;
+    }
+
     info->data = NULL;
     info->convert = NULL;
     info->release = NULL;
-    result = 1;
-    Py_DECREF(_u_string);
-    return result;
+    Py_DECREF(u);
+
+    return XML_STATUS_OK;
 }
 
 
@@ -1752,7 +1748,6 @@ MODULE_INITFUNC(void)
                            Py_BuildValue("(iii)", info.major,
                                          info.minor, info.micro));
     }
-    init_template_buffer();
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding
        appropriately.
@@ -1938,6 +1933,7 @@ MODULE_INITFUNC(void)
     capi.SetUserData = XML_SetUserData;
     capi.SetStartDoctypeDeclHandler = XML_SetStartDoctypeDeclHandler;
     capi.SetEncoding = XML_SetEncoding;
+    capi.DefaultUnknownEncodingHandler = PyUnknownEncodingHandler;
 
     /* export using capsule */
     capi_object = PyCapsule_New(&capi, PyExpat_CAPSULE_NAME, NULL);
