@@ -3136,47 +3136,6 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     }
 }
 
-static int
-expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
-                               XML_Encoding *info)
-{
-    PyObject* u;
-    unsigned char s[256];
-    int i;
-    void *data;
-    unsigned int kind;
-
-    memset(info, 0, sizeof(XML_Encoding));
-
-    for (i = 0; i < 256; i++)
-        s[i] = i;
-
-    u = PyUnicode_Decode((char*) s, 256, name, "replace");
-    if (!u)
-        return XML_STATUS_ERROR;
-    if (PyUnicode_READY(u))
-        return XML_STATUS_ERROR;
-
-    if (PyUnicode_GET_LENGTH(u) != 256) {
-        Py_DECREF(u);
-        return XML_STATUS_ERROR;
-    }
-
-    kind = PyUnicode_KIND(u);
-    data = PyUnicode_DATA(u);
-    for (i = 0; i < 256; i++) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
-        if (ch != Py_UNICODE_REPLACEMENT_CHARACTER)
-            info->map[i] = ch;
-        else
-            info->map[i] = -1;
-    }
-
-    Py_DECREF(u);
-
-    return XML_STATUS_OK;
-}
-
 /* -------------------------------------------------------------------- */
 
 static PyObject *
@@ -3278,7 +3237,7 @@ xmlparser_init(PyObject *self, PyObject *args, PyObject *kwds)
         );
     EXPAT(SetUnknownEncodingHandler)(
         self_xp->parser,
-        (XML_UnknownEncodingHandler) expat_unknown_encoding_handler, NULL
+        EXPAT(DefaultUnknownEncodingHandler), NULL
         );
 
     return 0;
