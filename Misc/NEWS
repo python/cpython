@@ -96,6 +96,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8240: Set the SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER flag on SSL
+  sockets.
+
 - Issue #17269: Workaround for socket.getaddrinfo crash on MacOS X
   with port None or "0" and flags AI_NUMERICSERV.
 
