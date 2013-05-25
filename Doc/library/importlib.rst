@@ -256,6 +256,10 @@ ABC hierarchy::
             The path to where the module data is stored (not set for built-in
             modules).
 
+        - :attr:`__cached__`
+            The path to where a compiled version of the module is/should be
+            stored (not set when the attribute would be inappropriate).
+
         - :attr:`__path__`
             A list of strings specifying the search path within a
             package. This attribute is not set on modules.
@@ -456,7 +460,8 @@ ABC hierarchy::
         automatically.
 
         When writing to the path fails because the path is read-only
-        (:attr:`errno.EACCES`), do not propagate the exception.
+        (:attr:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
+        exception.
 
         .. versionchanged:: 3.4
            No longer raises :exc:`NotImplementedError` when called.
@@ -595,8 +600,8 @@ find and load modules.
      specified by *fullname* on :data:`sys.path` or, if defined, on
      *path*. For each path entry that is searched,
      :data:`sys.path_importer_cache` is checked. If a non-false object is
-     found then it is used as the :term:`finder` to look for the module
-     being searched for. If no entry is found in
+     found then it is used as the :term:`path entry finder` to look for the
+     module being searched for. If no entry is found in
      :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
      searched for a finder for the path entry and, if found, is stored in
      :data:`sys.path_importer_cache` along with being queried about the
