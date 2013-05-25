@@ -703,13 +703,13 @@ class SizeofTest(unittest.TestCase):
         class C(object): pass
         check(C.__dict__, size('P'))
         # BaseException
-        check(BaseException(), size('5Pi'))
+        check(BaseException(), size('5Pb'))
         # UnicodeEncodeError
-        check(UnicodeEncodeError("", "", 0, 0, ""), size('5Pi 2P2nP'))
+        check(UnicodeEncodeError("", "", 0, 0, ""), size('5Pb 2P2nP'))
         # UnicodeDecodeError
-        check(UnicodeDecodeError("", b"", 0, 0, ""), size('5Pi 2P2nP'))
+        check(UnicodeDecodeError("", b"", 0, 0, ""), size('5Pb 2P2nP'))
         # UnicodeTranslateError
-        check(UnicodeTranslateError("", 0, 1, ""), size('5Pi 2P2nP'))
+        check(UnicodeTranslateError("", 0, 1, ""), size('5Pb 2P2nP'))
         # ellipses
         check(Ellipsis, size(''))
         # EncodingMap
@@ -851,7 +851,7 @@ class SizeofTest(unittest.TestCase):
         samples = ['1'*100, '\xff'*50,
                    '\u0100'*40, '\uffff'*100,
                    '\U00010000'*30, '\U0010ffff'*100]
-        asciifields = "nniP"
+        asciifields = "nnbP"
         compactfields = asciifields + "nPn"
         unicodefields = compactfields + "P"
         for s in samples:
