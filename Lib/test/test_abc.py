@@ -329,7 +329,10 @@ class TestABC(unittest.TestCase):
         b = B()
         self.assertFalse(isinstance(b, A))
         self.assertFalse(isinstance(b, (A,)))
+        token_old = abc.get_cache_token()
         A.register(B)
+        token_new = abc.get_cache_token()
+        self.assertNotEqual(token_old, token_new)
         self.assertTrue(isinstance(b, A))
         self.assertTrue(isinstance(b, (A,)))
 
