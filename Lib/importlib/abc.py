@@ -165,6 +165,13 @@ class InspectLoader(Loader):
         """
         raise ImportError
 
+    def source_to_code(self, data, path='<string>'):
+        """Compile 'data' into a code object.
+
+        The 'data' argument can be anything that compile() can handle. The'path'
+        argument should be where the data was retrieved (when applicable)."""
+        return compile(data, path, 'exec', dont_inherit=True)
+
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter,
             machinery.ExtensionFileLoader)
 
