@@ -1111,7 +1111,7 @@ Library
 
 - Issue #16522: added FAIL_FAST flag to doctest.
 
-- Issue #15627: Add the importlib.abc.SourceLoader.source_to_code() method.
+- Issue #15627: Add the importlib.abc.InspectLoader.source_to_code() method.
 
 - Issue #16408: Fix file descriptors not being closed in error conditions
   in the zipfile module.  Patch by Serhiy Storchaka.

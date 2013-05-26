@@ -349,6 +349,17 @@ ABC hierarchy::
         .. versionchanged:: 3.4
            Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
 
+    .. method:: source_to_code(data, path='<string>')
+
+        Create a code object from Python source.
+
+        The *data* argument can be whatever the :func:`compile` function
+        supports (i.e. string or bytes). The *path* argument should be
+        the "path" to where the source code originated from, which can be an
+        abstract concept (e.g. location in a zip file).
+
+        .. versionadded:: 3.4
+
 
 .. class:: ExecutionLoader
 
@@ -465,17 +476,6 @@ ABC hierarchy::
 
         .. versionchanged:: 3.4
            No longer raises :exc:`NotImplementedError` when called.
-
-    .. method:: source_to_code(data, path)
-
-        Create a code object from Python source.
-
-        The *data* argument can be whatever the :func:`compile` function
-        supports (i.e. string or bytes). The *path* argument should be
-        the "path" to where the source code originated from, which can be an
-        abstract concept (e.g. location in a zip file).
-
-        .. versionadded:: 3.4
 
     .. method:: get_code(fullname)
 

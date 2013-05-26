@@ -12,7 +12,7 @@ import unittest
 
 from . import util
 
-##### Inheritance
+##### Inheritance ##############################################################
 class InheritanceTests:
 
     """Test that the specified class is a subclass/superclass of the expected
@@ -81,7 +81,7 @@ class SourceLoader(InheritanceTests, unittest.TestCase):
     subclasses = [machinery.SourceFileLoader]
 
 
-##### Default semantics
+##### Default return values ####################################################
 class MetaPathFinderSubclass(abc.MetaPathFinder):
 
     def find_module(self, fullname, path):
@@ -205,7 +205,50 @@ class ExecutionLoaderDefaultsTests(unittest.TestCase):
             self.ins.get_filename('blah')
 
 
-##### SourceLoader
+##### InspectLoader concrete methods ###########################################
+class InspectLoaderConcreteMethodTests(unittest.TestCase):
+
+    def source_to_module(self, data, path=None):
+        """Help with source_to_code() tests."""
+        module = imp.new_module('blah')
+        loader = InspectLoaderSubclass()
+        if path is None:
+            code = loader.source_to_code(data)
+        else:
+            code = loader.source_to_code(data, path)
+        exec(code, module.__dict__)
+        return module
+
+    def test_source_to_code_source(self):
+        # Since compile() can handle strings, so should source_to_code().
+        source = 'attr = 42'
+        module = self.source_to_module(source)
+        self.assertTrue(hasattr(module, 'attr'))
+        self.assertEqual(module.attr, 42)
+
+    def test_source_to_code_bytes(self):
+        # Since compile() can handle bytes, so should source_to_code().
+        source = b'attr = 42'
+        module = self.source_to_module(source)
+        self.assertTrue(hasattr(module, 'attr'))
+        self.assertEqual(module.attr, 42)
+
+    def test_source_to_code_path(self):
+        # Specifying a path should set it for the code object.
+        path = 'path/to/somewhere'
+        loader = InspectLoaderSubclass()
+        code = loader.source_to_code('', path)
+        self.assertEqual(code.co_filename, path)
+
+    def test_source_to_code_no_path(self):
+        # Not setting a path should still work and be set to <string> since that
+        # is a pre-existing practice as a default to compile().
+        loader = InspectLoaderSubclass()
+        code = loader.source_to_code('')
+        self.assertEqual(code.co_filename, '<string>')
+
+
+##### SourceLoader concrete methods ############################################
 class SourceOnlyLoaderMock(abc.SourceLoader):
 
     # Globals that should be defined for all modules.
@@ -496,6 +539,7 @@ class SourceLoaderGetSourceTests(unittest.TestCase):
         mock.source = source.encode('utf-8')
         expect = io.IncrementalNewlineDecoder(None, True).decode(source)
         self.assertEqual(mock.get_source(name), expect)
+
 
 
 if __name__ == '__main__':
