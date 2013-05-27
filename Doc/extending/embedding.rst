@@ -285,14 +285,14 @@ be directly useful to you:
 * ``pythonX.Y-config --cflags`` will give you the recommended flags when
   compiling::
 
-   $ /opt/bin/python3.2-config --cflags
-   -I/opt/include/python3.2m -I/opt/include/python3.2m -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+   $ /opt/bin/python3.4-config --cflags
+   -I/opt/include/python3.4m -I/opt/include/python3.4m -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
 
 * ``pythonX.Y-config --ldflags`` will give you the recommended flags when
   linking::
 
-   $ /opt/bin/python3.2-config --ldflags
-   -I/opt/lib/python3.2/config-3.2m -lpthread -ldl -lutil -lm -lpython3.2m -Xlinker -export-dynamic
+   $ /opt/bin/python3.4-config --ldflags
+   -L/opt/lib/python3.4/config-3.4m -lpthread -ldl -lutil -lm -lpython3.4m -Xlinker -export-dynamic
 
 .. note::
    To avoid confusion between several Python installations (and especially
