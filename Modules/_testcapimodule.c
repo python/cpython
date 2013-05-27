@@ -2468,6 +2468,48 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
     return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
 }
 
+static PyObject *
+_test_incref(PyObject *ob)
+{
+    Py_INCREF(ob);
+    return ob;
+}
+
+static PyObject *
+test_xincref_doesnt_leak(PyObject *ob)
+{
+    PyObject *obj = PyLong_FromLong(0);
+    Py_XINCREF(_test_incref(obj));
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_incref_doesnt_leak(PyObject *ob)
+{
+    PyObject *obj = PyLong_FromLong(0);
+    Py_INCREF(_test_incref(obj));
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_DECREF(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_xdecref_doesnt_leak(PyObject *ob)
+{
+    Py_XDECREF(PyLong_FromLong(0));
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_decref_doesnt_leak(PyObject *ob)
+{
+    Py_DECREF(PyLong_FromLong(0));
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -2478,6 +2520,10 @@ static PyMethodDef TestMethods[] = {
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"test_lazy_hash_inheritance",      (PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
     {"test_long_api",           (PyCFunction)test_long_api,      METH_NOARGS},
+    {"test_xincref_doesnt_leak",(PyCFunction)test_xincref_doesnt_leak,      METH_NOARGS},
+    {"test_incref_doesnt_leak", (PyCFunction)test_incref_doesnt_leak,      METH_NOARGS},
+    {"test_xdecref_doesnt_leak",(PyCFunction)test_xdecref_doesnt_leak,      METH_NOARGS},
+    {"test_decref_doesnt_leak", (PyCFunction)test_decref_doesnt_leak,      METH_NOARGS},
     {"test_long_and_overflow", (PyCFunction)test_long_and_overflow,
      METH_NOARGS},
     {"test_long_as_double",     (PyCFunction)test_long_as_double,METH_NOARGS},
