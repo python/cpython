@@ -680,12 +680,6 @@ is not considered to be a reference to the type object, to save
 complications in the deallocation function.  (This is actually a
 decision that's up to the implementer of each new type so if you want,
 you can count such references to the type object.)
-
-*** WARNING*** The Py_DECREF macro must have a side-effect-free argument
-since it may evaluate its argument multiple times.  (The alternative
-would be to mace it a proper function or assign it to a global temporary
-variable first, both of which are slower; and in a multi-threaded
-environment the global variable trick is not safe.)
 */
 
 /* First define a pile of simple helper macros, one set per special
@@ -764,15 +758,16 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 #define Py_INCREF(op) (                         \
     _Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-    ((PyObject*)(op))->ob_refcnt++)
+    ((PyObject *)(op))->ob_refcnt++)
 
 #define Py_DECREF(op)                                   \
     do {                                                \
+        PyObject *_py_decref_tmp = (PyObject *)(op);    \
         if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA       \
-        --((PyObject*)(op))->ob_refcnt != 0)            \
-            _Py_CHECK_REFCNT(op)                        \
+        --(_py_decref_tmp)->ob_refcnt != 0)             \
+            _Py_CHECK_REFCNT(_py_decref_tmp)            \
         else                                            \
-        _Py_Dealloc((PyObject *)(op));                  \
+        _Py_Dealloc(_py_decref_tmp);                    \
     } while (0)
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
@@ -811,16 +806,27 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
  */
 #define Py_CLEAR(op)                            \
     do {                                        \
-        if (op) {                               \
-            PyObject *_py_tmp = (PyObject *)(op);               \
+        PyObject *_py_tmp = (PyObject *)(op);   \
+        if (_py_tmp != NULL) {                  \
             (op) = NULL;                        \
             Py_DECREF(_py_tmp);                 \
         }                                       \
     } while (0)
 
 /* Macros to use in case the object pointer may be NULL: */
-#define Py_XINCREF(op) do { if ((op) == NULL) ; else Py_INCREF(op); } while (0)
-#define Py_XDECREF(op) do { if ((op) == NULL) ; else Py_DECREF(op); } while (0)
+#define Py_XINCREF(op)                                \
+    do {                                              \
+        PyObject *_py_xincref_tmp = (PyObject *)(op); \
+        if (_py_xincref_tmp != NULL)                  \
+            Py_INCREF(_py_xincref_tmp);               \
+    } while (0)                                    
+
+#define Py_XDECREF(op)                                \
+    do {                                              \
+        PyObject *_py_xdecref_tmp = (PyObject *)(op); \
+        if (_py_xdecref_tmp != NULL)                  \
+            Py_DECREF(_py_xdecref_tmp);               \
+    } while (0)
 
 /*
 These are provided as conveniences to Python runtime embedders, so that
