@@ -270,6 +270,12 @@ class {typename}(tuple):
         'Return self as a plain tuple.  Used by copy and pickle.'
         return tuple(self)
 
+    __dict__ = _property(_asdict)
+
+    def __getstate__(self):
+        'Exclude the OrderedDict from pickling'
+        pass
+
 {field_defs}
 '''
 

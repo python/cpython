@@ -639,6 +639,12 @@ Example:
            'Return self as a plain tuple.   Used by copy and pickle.'
            return tuple(self)
    <BLANKLINE>
+       __dict__ = _property(_asdict)
+   <BLANKLINE>
+       def __getstate__(self):
+           'Exclude the OrderedDict from pickling'
+           pass
+   <BLANKLINE>
        x = _property(_itemgetter(0), doc='Alias for field number 0')
    <BLANKLINE>
        y = _property(_itemgetter(1), doc='Alias for field number 1')
