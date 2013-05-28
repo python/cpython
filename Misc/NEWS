@@ -28,6 +28,11 @@ Library
 - Issue #17269: Workaround for socket.getaddrinfo crash on MacOS X
   with port None or "0" and flags AI_NUMERICSERV.
 
+- Issue #18080: When building a C extension module on OS X, if the compiler
+  is overriden with the CC environment variable, use the new compiler as
+  the default for linking if LDSHARED is not also overriden.  This restores
+  Distutils behavior introduced in 2.7.3 and inadvertently dropped in 2.7.4.
+
 IDLE
 ----
 

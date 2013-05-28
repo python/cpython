@@ -175,9 +175,15 @@ def customize_compiler(compiler):
                             'CCSHARED', 'LDSHARED', 'SO', 'AR',
                             'ARFLAGS')
 
-        newcc = None
         if 'CC' in os.environ:
-            cc = os.environ['CC']
+            newcc = os.environ['CC']
+            if (sys.platform == 'darwin'
+                    and 'LDSHARED' not in os.environ
+                    and ldshared.startswith(cc)):
+                # On OS X, if CC is overridden, use that as the default
+                #       command for LDSHARED as well
+                ldshared = newcc + ldshared[len(cc):]
+            cc = newcc
         if 'CXX' in os.environ:
             cxx = os.environ['CXX']
         if 'LDSHARED' in os.environ:
