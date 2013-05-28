@@ -687,7 +687,7 @@ class WalkTests(unittest.TestCase):
             f.close()
         if support.can_symlink():
             os.symlink(os.path.abspath(t2_path), link_path)
-            symlink_to_dir('broken', broken_link_path, True)
+            os.symlink('broken', broken_link_path, True)
             sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
         else:
             sub2_tree = (sub2_path, [], ["tmp3"])
