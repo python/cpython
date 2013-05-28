@@ -3027,6 +3027,15 @@ class MiscIOTest(unittest.TestCase):
 class CMiscIOTest(MiscIOTest):
     io = io
 
+    def test_readinto_buffer_overflow(self):
+        # Issue #18025
+        class BadReader(self.io.BufferedIOBase):
+            def read(self, n=-1):
+                return b'x' * 10**6
+        bufio = BadReader()
+        b = bytearray(2)
+        self.assertRaises(ValueError, bufio.readinto, b)
+
 class PyMiscIOTest(MiscIOTest):
     io = pyio
 
