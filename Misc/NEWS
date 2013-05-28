@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18025: Fixed a segfault in io.BufferedIOBase.readinto() when raw
+  stream's read() returns more bytes than requested.
+
 - Issue #18011: base64.b32decode() now raises a binascii.Error if there are
   non-alphabet characters present in the input string to conform a docstring.
   Updated the module documentation.

@@ -69,6 +69,14 @@ bufferediobase_readinto(PyObject *self, PyObject *args)
     }
 
     len = Py_SIZE(data);
+    if (len > buf.len) {
+        PyErr_Format(PyExc_ValueError,
+                     "read() returned too much data: "
+                     "%zd bytes requested, %zd returned",
+                     buf.len, len);
+        Py_DECREF(data);
+        goto error;
+    }
     memcpy(buf.buf, PyBytes_AS_STRING(data), len);
 
     PyBuffer_Release(&buf);
