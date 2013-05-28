@@ -686,13 +686,8 @@ class WalkTests(unittest.TestCase):
             f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
             f.close()
         if support.can_symlink():
-            if os.name == 'nt':
-                def symlink_to_dir(src, dest):
-                    os.symlink(src, dest, True)
-            else:
-                symlink_to_dir = os.symlink
-            symlink_to_dir(os.path.abspath(t2_path), link_path)
-            symlink_to_dir('broken', broken_link_path)
+            os.symlink(os.path.abspath(t2_path), link_path)
+            symlink_to_dir('broken', broken_link_path, True)
             sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
         else:
             sub2_tree = (sub2_path, [], ["tmp3"])
@@ -1516,7 +1511,7 @@ class Win32SymlinkTests(unittest.TestCase):
             os.remove(self.missing_link)
 
     def test_directory_link(self):
-        os.symlink(self.dirlink_target, self.dirlink, True)
+        os.symlink(self.dirlink_target, self.dirlink)
         self.assertTrue(os.path.exists(self.dirlink))
         self.assertTrue(os.path.isdir(self.dirlink))
         self.assertTrue(os.path.islink(self.dirlink))
@@ -1608,6 +1603,38 @@ class Win32SymlinkTests(unittest.TestCase):
         finally:
             os.remove(file1)
             shutil.rmtree(level1)
+
+
+@support.skip_unless_symlink
+class NonLocalSymlinkTests(unittest.TestCase):
+
+    def setUp(self):
+        """
+        Create this structure:
+
+        base
+         \___ some_dir
+        """
+        os.makedirs('base/some_dir')
+
+    def tearDown(self):
+        shutil.rmtree('base')
+
+    def test_directory_link_nonlocal(self):
+        """
+        The symlink target should resolve relative to the link, not relative
+        to the current directory.
+
+        Then, link base/some_link -> base/some_dir and ensure that some_link
+        is resolved as a directory.
+
+        In issue13772, it was discovered that directory detection failed if
+        the symlink target was not specified relative to the current
+        directory, which was a defect in the implementation.
+        """
+        src = os.path.join('base', 'some_link')
+        os.symlink('some_dir', src)
+        assert os.path.isdir(src)
 
 
 class FSEncodingTests(unittest.TestCase):
@@ -2137,6 +2164,7 @@ def test_main():
         Pep383Tests,
         Win32KillTests,
         Win32SymlinkTests,
+        NonLocalSymlinkTests,
         FSEncodingTests,
         DeviceEncodingTests,
         PidTests,
