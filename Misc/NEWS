@@ -100,6 +100,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18072: Implement importlib.abc.InspectLoader.get_code() and
+  importlib.abc.ExecutionLoader.get_code().
+
 - Issue #8240: Set the SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER flag on SSL
   sockets.
 
