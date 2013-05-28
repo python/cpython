@@ -103,7 +103,7 @@ The modern interface provides:
    digit 0 is always mapped to the letter O).  For security purposes the default is
    ``None``, so that 0 and 1 are not allowed in the input.
 
-   The decoded byte string is returned.  A :exc:`TypeError` is raised if *s* were
+   The decoded byte string is returned.  A :exc:`binascii.Error` is raised if *s* were
    incorrectly padded or if there are non-alphabet characters present in the
    string.
 
