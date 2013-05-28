@@ -103,6 +103,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18011: base64.b32decode() now raises a binascii.Error if there are
+  non-alphabet characters present in the input string to conform a docstring.
+  Updated the module documentation.
+
 - Issue #18072: Implement importlib.abc.InspectLoader.get_code() and
   importlib.abc.ExecutionLoader.get_code().
 
