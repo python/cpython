@@ -1327,9 +1327,13 @@ class TestWhich(unittest.TestCase):
                 # Other platforms: shouldn't match in the current directory.
                 self.assertIsNone(rv)
 
+    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                     'non-root user required')
     def test_non_matching_mode(self):
         # Set the file read-only and ask for writeable files.
         os.chmod(self.temp_file.name, stat.S_IREAD)
+        if os.access(self.temp_file.name, os.W_OK):
+            self.skipTest("can't set the file read-only")
         rv = shutil.which(self.file, path=self.dir, mode=os.W_OK)
         self.assertIsNone(rv)
 
