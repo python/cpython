@@ -9,6 +9,7 @@ import marshal
 import os
 import sys
 import unittest
+from unittest import mock
 
 from . import util
 
@@ -166,9 +167,6 @@ class InspectLoaderSubclass(LoaderSubclass, abc.InspectLoader):
     def is_package(self, fullname):
         return super().is_package(fullname)
 
-    def get_code(self, fullname):
-        return super().get_code(fullname)
-
     def get_source(self, fullname):
         return super().get_source(fullname)
 
@@ -180,10 +178,6 @@ class InspectLoaderDefaultsTests(unittest.TestCase):
     def test_is_package(self):
         with self.assertRaises(ImportError):
             self.ins.is_package('blah')
-
-    def test_get_code(self):
-        with self.assertRaises(ImportError):
-            self.ins.get_code('blah')
 
     def test_get_source(self):
         with self.assertRaises(ImportError):
@@ -206,7 +200,7 @@ class ExecutionLoaderDefaultsTests(unittest.TestCase):
 
 
 ##### InspectLoader concrete methods ###########################################
-class InspectLoaderConcreteMethodTests(unittest.TestCase):
+class InspectLoaderSourceToCodeTests(unittest.TestCase):
 
     def source_to_module(self, data, path=None):
         """Help with source_to_code() tests."""
@@ -246,6 +240,92 @@ class InspectLoaderConcreteMethodTests(unittest.TestCase):
         loader = InspectLoaderSubclass()
         code = loader.source_to_code('')
         self.assertEqual(code.co_filename, '<string>')
+
+
+class InspectLoaderGetCodeTests(unittest.TestCase):
+
+    def test_get_code(self):
+        # Test success.
+        module = imp.new_module('blah')
+        with mock.patch.object(InspectLoaderSubclass, 'get_source') as mocked:
+            mocked.return_value = 'attr = 42'
+            loader = InspectLoaderSubclass()
+            code = loader.get_code('blah')
+        exec(code, module.__dict__)
+        self.assertEqual(module.attr, 42)
+
+    def test_get_code_source_is_None(self):
+        # If get_source() is None then this should be None.
+        with mock.patch.object(InspectLoaderSubclass, 'get_source') as mocked:
+            mocked.return_value = None
+            loader = InspectLoaderSubclass()
+            code = loader.get_code('blah')
+        self.assertIsNone(code)
+
+    def test_get_code_source_not_found(self):
+        # If there is no source then there is no code object.
+        loader = InspectLoaderSubclass()
+        with self.assertRaises(ImportError):
+            loader.get_code('blah')
+
+
+##### ExecutionLoader concrete methods #########################################
+class ExecutionLoaderGetCodeTests(unittest.TestCase):
+
+    def mock_methods(self, *, get_source=False, get_filename=False):
+        source_mock_context, filename_mock_context = None, None
+        if get_source:
+            source_mock_context = mock.patch.object(ExecutionLoaderSubclass,
+                                                    'get_source')
+        if get_filename:
+            filename_mock_context = mock.patch.object(ExecutionLoaderSubclass,
+                                                      'get_filename')
+        return source_mock_context, filename_mock_context
+
+    def test_get_code(self):
+        path = 'blah.py'
+        source_mock_context, filename_mock_context = self.mock_methods(
+                get_source=True, get_filename=True)
+        with source_mock_context as source_mock, filename_mock_context as name_mock:
+            source_mock.return_value = 'attr = 42'
+            name_mock.return_value = path
+            loader = ExecutionLoaderSubclass()
+            code = loader.get_code('blah')
+        self.assertEqual(code.co_filename, path)
+        module = imp.new_module('blah')
+        exec(code, module.__dict__)
+        self.assertEqual(module.attr, 42)
+
+    def test_get_code_source_is_None(self):
+        # If get_source() is None then this should be None.
+        source_mock_context, _ = self.mock_methods(get_source=True)
+        with source_mock_context as mocked:
+            mocked.return_value = None
+            loader = ExecutionLoaderSubclass()
+            code = loader.get_code('blah')
+        self.assertIsNone(code)
+
+    def test_get_code_source_not_found(self):
+        # If there is no source then there is no code object.
+        loader = ExecutionLoaderSubclass()
+        with self.assertRaises(ImportError):
+            loader.get_code('blah')
+
+    def test_get_code_no_path(self):
+        # If get_filename() raises ImportError then simply skip setting the path
+        # on the code object.
+        source_mock_context, filename_mock_context = self.mock_methods(
+                get_source=True, get_filename=True)
+        with source_mock_context as source_mock, filename_mock_context as name_mock:
+            source_mock.return_value = 'attr = 42'
+            name_mock.side_effect = ImportError
+            loader = ExecutionLoaderSubclass()
+            code = loader.get_code('blah')
+        self.assertEqual(code.co_filename, '<string>')
+        module = imp.new_module('blah')
+        exec(code, module.__dict__)
+        self.assertEqual(module.attr, 42)
+
 
 
 ##### SourceLoader concrete methods ############################################

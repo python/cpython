@@ -147,14 +147,18 @@ class InspectLoader(Loader):
         """
         raise ImportError
 
-    @abc.abstractmethod
     def get_code(self, fullname):
-        """Abstract method which when implemented should return the code object
-        for the module.  The fullname is a str.  Returns a types.CodeType.
+        """Method which returns the code object for the module.
 
-        Raises ImportError if the module cannot be found.
+        The fullname is a str.  Returns a types.CodeType if possible, else
+        returns None if a code object does not make sense
+        (e.g. built-in module). Raises ImportError if the module cannot be
+        found.
         """
-        raise ImportError
+        source = self.get_source(fullname)
+        if source is None:
+            return None
+        return self.source_to_code(source)
 
     @abc.abstractmethod
     def get_source(self, fullname):
@@ -193,6 +197,22 @@ class ExecutionLoader(InspectLoader):
         Raises ImportError if the module cannot be found.
         """
         raise ImportError
+
+    def get_code(self, fullname):
+        """Method to return the code object for fullname.
+
+        Should return None if not applicable (e.g. built-in module).
+        Raise ImportError if the module cannot be found.
+        """
+        source = self.get_source(fullname)
+        if source is None:
+            return None
+        try:
+            path = self.get_filename(fullname)
+        except ImportError:
+            return self.source_to_code(source)
+        else:
+            return self.source_to_code(source, path)
 
 
 class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
