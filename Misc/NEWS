@@ -10,13 +10,6 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #17206: Py_CLEAR(), Py_DECREF(), Py_XINCREF() and Py_XDECREF() now
-  expand their arguments once instead of multiple times.  Patch written by Illia
-  Polosukhin.
-- Issue #15392: Create a unittest framework for IDLE.
-  Rajagopalasarma Jayakrishnan
-  
-
 - Issue #17937: Try harder to collect cyclic garbage at shutdown.
 
 - Issue #12370: Prevent class bodies from interfering with the __class__
@@ -309,6 +302,9 @@ Library
 Tests
 -----
 
+- Issue #15392: Create a unittest framework for IDLE.
+  Rajagopalasarma Jayakrishnan
+
 - Issue #17992: Add timeouts to asyncore and asynchat tests so that they won't
   accidentally hang.
 
@@ -372,6 +368,10 @@ Tests
 
 C-API
 -----
+
+- Issue #17206: Py_CLEAR(), Py_DECREF(), Py_XINCREF() and Py_XDECREF() now
+  expand their arguments once instead of multiple times.  Patch written by Illia
+  Polosukhin.
 
 - Issue #17522: Add the PyGILState_Check() API.
 
