@@ -318,16 +318,20 @@ ABC hierarchy::
 
     .. method:: get_code(fullname)
 
-        An abstract method to return the :class:`code` object for a module.
-        ``None`` is returned if the module does not have a code object
+        Return the code object for a module.
+        ``None`` should be returned if the module does not have a code object
         (e.g. built-in module).  :exc:`ImportError` is raised if loader cannot
         find the requested module.
+
+        .. note::
+           While the method has a default implementation, it is suggested that
+           it be overridden if possible for performance.
 
         .. index::
            single: universal newlines; importlib.abc.InspectLoader.get_source method
 
         .. versionchanged:: 3.4
-           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+           No longer abstract and a concrete implementation is provided.
 
     .. method:: get_source(fullname)
 
@@ -410,7 +414,7 @@ ABC hierarchy::
 
    .. method:: get_data(path)
 
-      Returns the open, binary file for *path*.
+      Reads *path* as a binary file and returns the bytes from it.
 
 
 .. class:: SourceLoader
