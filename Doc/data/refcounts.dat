@@ -927,7 +927,7 @@ PyObject_CallMethod::...::
 
 PyObject_CallMethodObjArgs:PyObject*::+1:
 PyObject_CallMethodObjArgs:PyObject*:o:0:
-PyObject_CallMethodObjArgs:char*:name::
+PyObject_CallMethodObjArgs:PyObject*:name:0:
 PyObject_CallMethodObjArgs::...::
 
 PyObject_CallObject:PyObject*::+1:
