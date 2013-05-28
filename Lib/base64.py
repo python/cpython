@@ -222,7 +222,7 @@ def b32decode(s, casefold=False, map01=None):
             for c in quanta:
                 acc = (acc << 5) + b32rev[c]
         except KeyError:
-            raise TypeError('Non-base32 digit found')
+            raise binascii.Error('Non-base32 digit found')
         decoded += acc.to_bytes(5, 'big')
     # Process the last, partial quanta
     if padchars:
