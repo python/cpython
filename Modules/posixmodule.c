@@ -7200,6 +7200,124 @@ check_CreateSymbolicLink()
     return (Py_CreateSymbolicLinkW && Py_CreateSymbolicLinkA);
 }
 
+void _dirnameW(WCHAR *path) {
+    /* Remove the last portion of the path */
+
+    WCHAR *ptr;
+
+    /* walk the path from the end until a backslash is encountered */
+    for(ptr = path + wcslen(path); ptr != path; ptr--)
+    {
+        if(*ptr == *L"\\" || *ptr == *L"/") {
+            break;
+        }
+    }
+    *ptr = 0;
+}
+
+void _dirnameA(char *path) {
+    /* Remove the last portion of the path */
+
+    char *ptr;
+
+    /* walk the path from the end until a backslash is encountered */
+    for(ptr = path + strlen(path); ptr != path; ptr--)
+    {
+        if(*ptr == '\\' || *ptr == '/') {
+            break;
+        }
+    }
+    *ptr = 0;
+}
+
+int _is_absW(WCHAR *path) {
+    /* Is this path absolute? */
+
+    return path[0] == L'\\' || path[0] == L'/' || path[1] == L':';
+
+}
+
+int _is_absA(char *path) {
+    /* Is this path absolute? */
+
+    return path[0] == '\\' || path[0] == '/' || path[1] == ':';
+
+}
+
+void _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest) {
+    /* join root and rest with a backslash */
+    int root_len;
+
+    if(_is_absW(rest)) {
+        wcscpy(dest_path, rest);
+        return;
+    }
+
+    root_len = wcslen(root);
+
+    wcscpy(dest_path, root);
+    if(root_len) {
+        dest_path[root_len] = *L"\\";
+        root_len += 1;
+    }
+    wcscpy(dest_path+root_len, rest);
+}
+
+void _joinA(char *dest_path, const char *root, const char *rest) {
+    /* join root and rest with a backslash */
+    int root_len;
+
+    if(_is_absA(rest)) {
+        strcpy(dest_path, rest);
+        return;
+    }
+
+    root_len = strlen(root);
+
+    strcpy(dest_path, root);
+    if(root_len) {
+        dest_path[root_len] = '\\';
+        root_len += 1;
+    }
+    strcpy(dest_path+root_len, rest);
+}
+
+int _check_dirW(WCHAR *src, WCHAR *dest)
+{
+    /* Return True if the path at src relative to dest is a directory */
+    WIN32_FILE_ATTRIBUTE_DATA src_info;
+    WCHAR dest_parent[MAX_PATH];
+    WCHAR src_resolved[MAX_PATH] = L"";
+
+    /* dest_parent = os.path.dirname(dest) */
+    wcscpy(dest_parent, dest);
+    _dirnameW(dest_parent);
+    /* src_resolved = os.path.join(dest_parent, src) */
+    _joinW(src_resolved, dest_parent, src);
+    return (
+        GetFileAttributesExW(src_resolved, GetFileExInfoStandard, &src_info)
+        && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
+    );
+}
+
+int _check_dirA(char *src, char *dest)
+{
+    /* Return True if the path at src relative to dest is a directory */
+    WIN32_FILE_ATTRIBUTE_DATA src_info;
+    char dest_parent[MAX_PATH];
+    char src_resolved[MAX_PATH] = "";
+
+    /* dest_parent = os.path.dirname(dest) */
+    strcpy(dest_parent, dest);
+    _dirnameW(dest_parent);
+    /* src_resolved = os.path.join(dest_parent, src) */
+    _joinW(src_resolved, dest_parent, src);
+    return (
+        GetFileAttributesExA(src_resolved, GetFileExInfoStandard, &src_info)
+        && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
+    );
+}
+
 #endif
 
 static PyObject *
@@ -7256,13 +7374,20 @@ posix_symlink(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
 #ifdef MS_WINDOWS
+
     Py_BEGIN_ALLOW_THREADS
-    if (dst.wide)
+    if (dst.wide) {
+        /* if src is a directory, ensure target_is_directory==1 */
+        target_is_directory |= _check_dirW(src.wide, dst.wide);
         result = Py_CreateSymbolicLinkW(dst.wide, src.wide,
                                         target_is_directory);
-    else
+    }
+    else {
+        /* if src is a directory, ensure target_is_directory==1 */
+        target_is_directory |= _check_dirA(src.narrow, dst.narrow);
         result = Py_CreateSymbolicLinkA(dst.narrow, src.narrow,
                                         target_is_directory);
+    }
     Py_END_ALLOW_THREADS
 
     if (!result) {
