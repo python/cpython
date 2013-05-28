@@ -9,7 +9,7 @@ work. One should use importlib as the public-facing version of this module.
 #
 # IMPORTANT: Whenever making changes to this module, be sure to run
 # a top-level make in order to get the frozen version of the module
-# update. Not doing so, will result in the Makefile to fail for
+# update. Not doing so will result in the Makefile to fail for
 # all others who don't have a ./python around to freeze the module
 # in the early stages of compilation.
 #
@@ -19,10 +19,6 @@ work. One should use importlib as the public-facing version of this module.
 # When editing this code be aware that code executed at import time CANNOT
 # reference any injected objects! This includes not only global code but also
 # anything specified at the class level.
-
-# XXX Make sure all public names have no single leading underscore and all
-#     others do.
-
 
 # Bootstrap-related code ######################################################
 
@@ -496,6 +492,38 @@ def _verbose_message(message, *args, verbosity=1):
         if not message.startswith(('#', 'import ')):
             message = '# ' + message
         print(message.format(*args), file=sys.stderr)
+
+
+class ModuleManager:
+
+    """Context manager which returns the module to be loaded.
+
+    Does the proper unloading from sys.modules upon failure.
+
+    """
+
+    def __init__(self, name):
+        self._name = name
+
+    def __enter__(self):
+        self._module = sys.modules.get(self._name)
+        self._is_reload = self._module is not None
+        if not self._is_reload:
+            # This must be done before open() is called as the 'io' module
+            # implicitly imports 'locale' and would otherwise trigger an
+            # infinite loop.
+            self._module = new_module(self._name)
+            # This must be done before putting the module in sys.modules
+            # (otherwise an optimization shortcut in import.c becomes wrong)
+            self._module.__initializing__ = True
+            sys.modules[self._name] = self._module
+        return self._module
+
+    def __exit__(self, *args):
+        self._module.__initializing__ = False
+        del self._module
+        if any(arg is not None for arg in args) and not self._is_reload:
+            del sys.modules[self._name]
 
 
 def set_package(fxn):

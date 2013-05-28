@@ -96,6 +96,9 @@ Core and Builtins
 Library
 -------
 
+- Add importlib.util.ModuleManager as a context manager to provide the proper
+  module object to load.
+
 - Issue #18025: Fixed a segfault in io.BufferedIOBase.readinto() when raw
   stream's read() returns more bytes than requested.
 
