@@ -85,12 +85,23 @@ class ModuleForLoaderTests(unittest.TestCase):
 
     def test_reload(self):
         # Test that a module is reused if already in sys.modules.
+        class FakeLoader:
+            def is_package(self, name):
+                return True
+            @util.module_for_loader
+            def load_module(self, module):
+                return module
         name = 'a.b.c'
         module = imp.new_module('a.b.c')
+        module.__loader__ = 42
+        module.__package__ = 42
         with test_util.uncache(name):
             sys.modules[name] = module
-            returned_module = self.return_module(name)
+            loader = FakeLoader()
+            returned_module = loader.load_module(name)
             self.assertIs(returned_module, sys.modules[name])
+            self.assertEqual(module.__loader__, loader)
+            self.assertEqual(module.__package__, name)
 
     def test_new_module_failure(self):
         # Test that a module is removed from sys.modules if added but an
