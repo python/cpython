@@ -96,6 +96,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18070: Have importlib.util.module_for_loader() set attributes
+  unconditionally in order to properly support reloading.
+
 - Add importlib.util.ModuleManager as a context manager to provide the proper
   module object to load.
 
