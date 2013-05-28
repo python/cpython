@@ -244,8 +244,8 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b32decode(data, True), res)
             eq(base64.b32decode(data.decode('ascii'), True), res)
 
-        self.assertRaises(TypeError, base64.b32decode, b'me======')
-        self.assertRaises(TypeError, base64.b32decode, 'me======')
+        self.assertRaises(binascii.Error, base64.b32decode, b'me======')
+        self.assertRaises(binascii.Error, base64.b32decode, 'me======')
 
         # Mapping zero and one
         eq(base64.b32decode(b'MLO23456'), b'b\xdd\xad\xf3\xbe')
@@ -262,9 +262,11 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.b32decode(data_str, map01=map01), res)
             eq(base64.b32decode(data, map01=map01_str), res)
             eq(base64.b32decode(data_str, map01=map01_str), res)
+            self.assertRaises(binascii.Error, base64.b32decode, data)
+            self.assertRaises(binascii.Error, base64.b32decode, data_str)
 
     def test_b32decode_error(self):
-        for data in [b'abc', b'ABCDEF==']:
+        for data in [b'abc', b'ABCDEF==', b'==ABCDEF']:
             with self.assertRaises(binascii.Error):
                 base64.b32decode(data)
             with self.assertRaises(binascii.Error):

@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18011: base64.b32decode() now raises a binascii.Error if there are
+  non-alphabet characters present in the input string to conform a docstring.
+  Updated the module documentation.
+
 - Issue #13772: Restored directory detection of targets in ``os.symlink`` on
   Windows, which was temporarily removed in Python 3.2.3 due to an incomplete
   implementation. The implementation now works even if the symlink is created
