@@ -2024,9 +2024,10 @@ features:
    Create a symbolic link pointing to *source* named *link_name*.
 
    On Windows, a symlink represents either a file or a directory, and does not
-   morph to the target dynamically.  If *target_is_directory* is set to ``True``,
-   the symlink will be created as a directory symlink, otherwise as a file symlink
-   (the default).  On non-Window platforms, *target_is_directory* is ignored.
+   morph to the target dynamically.  If the target is present, the type of the
+   symlink will be created to match. Otherwise, the symlink will be created
+   as a directory if *target_is_directory* is ``True`` or a file symlink (the
+   default) otherwise.  On non-Window platforms, *target_is_directory* is ignored.
 
    Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
    will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
@@ -2041,6 +2042,7 @@ features:
       regular users but is available to accounts which can escalate privileges
       to the administrator level. Either obtaining the privilege or running your
       application as an administrator are ways to successfully create symlinks.
+
 
       :exc:`OSError` is raised when the function is called by an unprivileged
       user.
