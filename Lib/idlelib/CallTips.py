@@ -264,4 +264,6 @@ def main():
     print("%d of %d tests failed" % (num_fail, num_tests))
 
 if __name__ == '__main__':
-    main()
+    #main()
+    from unittest import main
+    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
