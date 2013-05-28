@@ -811,12 +811,11 @@ an :term:`importer`.
 
     The decorated method will take in the **name** of the module to be loaded
     as expected for a :term:`loader`. If the module is not found in
-    :data:`sys.modules` then a new one is constructed with its
-    :attr:`__name__` attribute set to **name**, :attr:`__loader__` set to
-    **self**, and :attr:`__package__` set based on what
-    :meth:`importlib.abc.InspectLoader.is_package` returns (if available). If a
-    new module is not needed then the module found in :data:`sys.modules` will
-    be passed into the method.
+    :data:`sys.modules` then a new one is constructed. Regardless of where the
+    module came from, :attr:`__loader__` set to **self** and :attr:`__package__`
+    is set based on what :meth:`importlib.abc.InspectLoader.is_package` returns
+    (if available). These attributes are set unconditionally to support
+    reloading.
 
     If an exception is raised by the decorated method and a module was added to
     :data:`sys.modules` it will be removed to prevent a partially initialized
@@ -831,6 +830,10 @@ an :term:`importer`.
        :attr:`__loader__` and :attr:`__package__` are automatically set
        (when possible).
 
+    .. versionchanged:: 3.4
+       Set :attr:`__loader__` :attr:`__package__` unconditionally to support
+       reloading.
+
 .. decorator:: set_loader
 
    A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
@@ -843,11 +846,12 @@ an :term:`importer`.
    .. note::
       As this decorator sets :attr:`__loader__` after loading the module, it is
       recommended to use :func:`module_for_loader` instead when appropriate.
+      This decorator is also redundant as of Python 3.3 as import itself will
+      set these attributes post-import if necessary.
 
    .. versionchanged:: 3.4
       Set ``__loader__`` if set to ``None``, as if the attribute does not
       exist.
-
 
 .. decorator:: set_package
 
@@ -856,4 +860,6 @@ an :term:`importer`.
 
    .. note::
       As this decorator sets :attr:`__package__` after loading the module, it is
-      recommended to use :func:`module_for_loader` instead when appropriate.
+      recommended to use :func:`module_for_loader` instead when appropriate. As
+      of Python 3.3 this decorator is also redundant as import will set
+      :attr:`__package__` post-import if necessary.

@@ -37,23 +37,13 @@ def _make_relax_case():
     return _relax_case
 
 
-# TODO: Expose from marshal
 def _w_long(x):
-    """Convert a 32-bit integer to little-endian.
-
-    XXX Temporary until marshal's long functions are exposed.
-
-    """
+    """Convert a 32-bit integer to little-endian."""
     return (int(x) & 0xFFFFFFFF).to_bytes(4, 'little')
 
 
-# TODO: Expose from marshal
 def _r_long(int_bytes):
-    """Convert 4 bytes in little-endian to an integer.
-
-    XXX Temporary until marshal's long function are exposed.
-
-    """
+    """Convert 4 bytes in little-endian to an integer."""
     return int.from_bytes(int_bytes, 'little')
 
 
@@ -569,17 +559,7 @@ def module_for_loader(fxn):
 
     """
     def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        module = sys.modules.get(fullname)
-        is_reload = module is not None
-        if not is_reload:
-            # This must be done before open() is called as the 'io' module
-            # implicitly imports 'locale' and would otherwise trigger an
-            # infinite loop.
-            module = new_module(fullname)
-            # This must be done before putting the module in sys.modules
-            # (otherwise an optimization shortcut in import.c becomes wrong)
-            module.__initializing__ = True
-            sys.modules[fullname] = module
+        with ModuleManager(fullname) as module:
             module.__loader__ = self
             try:
                 is_package = self.is_package(fullname)
@@ -590,17 +570,8 @@ def module_for_loader(fxn):
                     module.__package__ = fullname
                 else:
                     module.__package__ = fullname.rpartition('.')[0]
-        else:
-            module.__initializing__ = True
-        try:
             # If __package__ was not set above, __import__() will do it later.
             return fxn(self, module, *args, **kwargs)
-        except:
-            if not is_reload:
-                del sys.modules[fullname]
-            raise
-        finally:
-            module.__initializing__ = False
     _wrap(module_for_loader_wrapper, fxn)
     return module_for_loader_wrapper
 
