@@ -800,7 +800,7 @@ an :term:`importer`.
 
 .. decorator:: module_for_loader
 
-    A :term:`decorator` for a :term:`loader` method,
+    A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
     to handle selecting the proper
     module object to load with. The decorated method is expected to have a call
     signature taking two positional arguments
@@ -813,19 +813,15 @@ an :term:`importer`.
     as expected for a :term:`loader`. If the module is not found in
     :data:`sys.modules` then a new one is constructed with its
     :attr:`__name__` attribute set to **name**, :attr:`__loader__` set to
-    **self**, and :attr:`__package__` set if
-    :meth:`importlib.abc.InspectLoader.is_package` is defined for **self** and
-    does not raise :exc:`ImportError` for **name**. If a new module is not
-    needed then the module found in :data:`sys.modules` will be passed into the
-    method.
+    **self**, and :attr:`__package__` set based on what
+    :meth:`importlib.abc.InspectLoader.is_package` returns (if available). If a
+    new module is not needed then the module found in :data:`sys.modules` will
+    be passed into the method.
 
     If an exception is raised by the decorated method and a module was added to
     :data:`sys.modules` it will be removed to prevent a partially initialized
     module from being in left in :data:`sys.modules`. If the module was already
     in :data:`sys.modules` then it is left alone.
-
-    Use of this decorator handles all the details of which module object a
-    loader should initialize as specified by :pep:`302` as best as possible.
 
     .. note::
        :class:`ModuleManager` subsumes the module management aspect of this
@@ -837,16 +833,16 @@ an :term:`importer`.
 
 .. decorator:: set_loader
 
-    A :term:`decorator` for a :term:`loader` method,
-    to set the :attr:`__loader__`
-    attribute on loaded modules. If the attribute is already set the decorator
-    does nothing. It is assumed that the first positional argument to the
-    wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set to.
+   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
+   to set the :attr:`__loader__`
+   attribute on the returned module. If the attribute is already set the
+   decorator does nothing. It is assumed that the first positional argument to
+   the wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set
+   to.
 
    .. note::
-
-      It is recommended that :func:`module_for_loader` be used over this
-      decorator as it subsumes this functionality.
+      As this decorator sets :attr:`__loader__` after loading the module, it is
+      recommended to use :func:`module_for_loader` instead when appropriate.
 
    .. versionchanged:: 3.4
       Set ``__loader__`` if set to ``None``, as if the attribute does not
@@ -855,19 +851,9 @@ an :term:`importer`.
 
 .. decorator:: set_package
 
-    A :term:`decorator` for a :term:`loader` to set the :attr:`__package__`
-    attribute on the module returned by the loader. If :attr:`__package__` is
-    set and has a value other than ``None`` it will not be changed.
-    Note that the module returned by the loader is what has the attribute
-    set on and not the module found in :data:`sys.modules`.
-
-    Reliance on this decorator is discouraged when it is possible to set
-    :attr:`__package__` before importing. By
-    setting it beforehand the code for the module is executed with the
-    attribute set and thus can be used by global level code during
-    initialization.
+   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the :attr:`__package__` attribute on the returned module. If :attr:`__package__`
+   is set and has a value other than ``None`` it will not be changed.
 
    .. note::
-
-      It is recommended that :func:`module_for_loader` be used over this
-      decorator as it subsumes this functionality.
+      As this decorator sets :attr:`__package__` after loading the module, it is
+      recommended to use :func:`module_for_loader` instead when appropriate.
