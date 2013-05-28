@@ -245,7 +245,7 @@ def b32decode(s, casefold=False, map01=None):
     for c in s:
         val = _b32rev.get(c)
         if val is None:
-            raise TypeError('Non-base32 digit found')
+            raise binascii.Error('Non-base32 digit found')
         acc += _b32rev[c] << shift
         shift -= 5
         if shift < 0:
