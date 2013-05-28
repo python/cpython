@@ -1,7 +1,8 @@
 """Tests for distutils.unixccompiler."""
+import os
 import sys
 import unittest
-from test.support import run_unittest
+from test.support import EnvironmentVarGuard, run_unittest
 
 from distutils import sysconfig
 from distutils.unixccompiler import UnixCCompiler
@@ -94,7 +95,6 @@ class UnixCCompilerTestCase(unittest.TestCase):
         sysconfig.get_config_var = gcv
         self.assertEqual(self.cc.rpath_foo(), '-Wl,--enable-new-dtags,-R/foo')
 
-
         # non-GCC GNULD
         sys.platform = 'bar'
         def gcv(v):
@@ -114,6 +114,38 @@ class UnixCCompilerTestCase(unittest.TestCase):
                 return 'no'
         sysconfig.get_config_var = gcv
         self.assertEqual(self.cc.rpath_foo(), '-R/foo')
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for OS X')
+    def test_osx_cc_overrides_ldshared(self):
+        # Issue #18080:
+        # ensure that setting CC env variable also changes default linker
+        def gcv(v):
+            if v == 'LDSHARED':
+                return 'gcc-4.2 -bundle -undefined dynamic_lookup '
+            return 'gcc-4.2'
+        sysconfig.get_config_var = gcv
+        with EnvironmentVarGuard() as env:
+            env['CC'] = 'my_cc'
+            del env['LDSHARED']
+            sysconfig.customize_compiler(self.cc)
+        self.assertEqual(self.cc.linker_so[0], 'my_cc')
+
+    @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for OS X')
+    def test_osx_explict_ldshared(self):
+        # Issue #18080:
+        # ensure that setting CC env variable does not change
+        #   explicit LDSHARED setting for linker
+        def gcv(v):
+            if v == 'LDSHARED':
+                return 'gcc-4.2 -bundle -undefined dynamic_lookup '
+            return 'gcc-4.2'
+        sysconfig.get_config_var = gcv
+        with EnvironmentVarGuard() as env:
+            env['CC'] = 'my_cc'
+            env['LDSHARED'] = 'my_ld -bundle -dynamic'
+            sysconfig.customize_compiler(self.cc)
+        self.assertEqual(self.cc.linker_so[0], 'my_ld')
+
 
 def test_suite():
     return unittest.makeSuite(UnixCCompilerTestCase)
