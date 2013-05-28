@@ -846,8 +846,6 @@ an :term:`importer`.
    .. note::
       As this decorator sets :attr:`__loader__` after loading the module, it is
       recommended to use :func:`module_for_loader` instead when appropriate.
-      This decorator is also redundant as of Python 3.3 as import itself will
-      set these attributes post-import if necessary.
 
    .. versionchanged:: 3.4
       Set ``__loader__`` if set to ``None``, as if the attribute does not
@@ -860,6 +858,4 @@ an :term:`importer`.
 
    .. note::
       As this decorator sets :attr:`__package__` after loading the module, it is
-      recommended to use :func:`module_for_loader` instead when appropriate. As
-      of Python 3.3 this decorator is also redundant as import will set
-      :attr:`__package__` post-import if necessary.
+      recommended to use :func:`module_for_loader` instead when appropriate.
