@@ -2,8 +2,58 @@ from importlib import util
 from . import util as test_util
 import imp
 import sys
+from test import support
 import types
 import unittest
+
+
+class ModuleManagerTests(unittest.TestCase):
+
+    module_name = 'ModuleManagerTest_module'
+
+    def setUp(self):
+        support.unload(self.module_name)
+        self.addCleanup(support.unload, self.module_name)
+
+    def test_new_module(self):
+        # Test a new module is created, inserted into sys.modules, has
+        # __initializing__ set to True after entering the context manager,
+        # and __initializing__ set to False after exiting.
+        with util.ModuleManager(self.module_name) as module:
+            self.assertIn(self.module_name, sys.modules)
+            self.assertIs(sys.modules[self.module_name], module)
+            self.assertTrue(module.__initializing__)
+        self.assertFalse(module.__initializing__)
+
+    def test_new_module_failed(self):
+        # Test the module is removed from sys.modules.
+        try:
+            with util.ModuleManager(self.module_name) as module:
+                self.assertIn(self.module_name, sys.modules)
+                raise exception
+        except Exception:
+            self.assertNotIn(self.module_name, sys.modules)
+        else:
+            self.fail('importlib.util.ModuleManager swallowed an exception')
+
+    def test_reload(self):
+        # Test that the same module is in sys.modules.
+        created_module = imp.new_module(self.module_name)
+        sys.modules[self.module_name] = created_module
+        with util.ModuleManager(self.module_name) as module:
+            self.assertIs(module, created_module)
+
+    def test_reload_failed(self):
+        # Test that the module was left in sys.modules.
+        created_module = imp.new_module(self.module_name)
+        sys.modules[self.module_name] = created_module
+        try:
+            with util.ModuleManager(self.module_name) as module:
+                raise Exception
+        except Exception:
+            self.assertIn(self.module_name, sys.modules)
+        else:
+            self.fail('importlib.util.ModuleManager swallowed an exception')
 
 
 class ModuleForLoaderTests(unittest.TestCase):
