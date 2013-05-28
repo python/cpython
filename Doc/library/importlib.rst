@@ -789,6 +789,15 @@ an :term:`importer`.
 
    .. versionadded:: 3.3
 
+.. class:: ModuleManager(name)
+
+    A :term:`context manager` which provides the module to load. The module will
+    either come from :attr:`sys.modules` in the case of reloading or a fresh
+    module if loading a new module. Proper cleanup of :attr:`sys.modules` occurs
+    if the module was new and an exception was raised.
+
+    .. versionadded:: 3.4
+
 .. decorator:: module_for_loader
 
     A :term:`decorator` for a :term:`loader` method,
@@ -817,6 +826,10 @@ an :term:`importer`.
 
     Use of this decorator handles all the details of which module object a
     loader should initialize as specified by :pep:`302` as best as possible.
+
+    .. note::
+       :class:`ModuleManager` subsumes the module management aspect of this
+       decorator.
 
     .. versionchanged:: 3.3
        :attr:`__loader__` and :attr:`__package__` are automatically set
