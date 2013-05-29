@@ -6138,7 +6138,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?:\.(?P<precision>0|(?!0)\d+))?
 (?P<type>[eEfFgGn%])?
 \Z
-""", re.VERBOSE)
+""", re.VERBOSE|re.DOTALL)
 
 del re
 
