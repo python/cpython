@@ -144,6 +144,29 @@ the same library that the Python runtime is using.
    (:func:`sys.getfilesystemencoding`).  Returns ``0`` at EOF.
 
 
+.. c:var:: int (*PyOS_InputHook)(void)
+
+   Can be set to point to a function with the prototype
+   ``int func(void)``.  The function will be called when Python's
+   interpreter prompt is about to become idle and wait for user input
+   from the terminal.  The return value is ignored.  Overriding this
+   hook can be used to integrate the interpreter's prompt with other
+   event loops, as done in the :file:`Modules/_tkinter.c` in the
+   Python source code.
+
+
+.. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, char *)
+
+   Can be set to point to a function with the prototype
+   ``char *func(FILE *stdin, FILE *stdout, char *prompt)``,
+   overriding the default function used to read a single line of input
+   at the interpreter's prompt.  The function is expected to output
+   the string *prompt* if it's not *NULL*, and then read a line of
+   input from the provided standard input file, returning the
+   resulting string.  For example, The :mod:`readline` module sets
+   this hook to provide line-editing and tab-completion features.
+
+
 .. c:function:: struct _node* PyParser_SimpleParseString(const char *str, int start)
 
    This is a simplified interface to
@@ -338,4 +361,3 @@ the same library that the Python runtime is using.
 
    This bit can be set in *flags* to cause division operator ``/`` to be
    interpreted as "true division" according to :pep:`238`.
-
