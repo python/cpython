@@ -96,6 +96,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17403: urllib.parse.robotparser normalizes the urls before adding to
+  ruleline. This helps in handling certain types invalid urls in a conservative
+  manner. Patch contributed by Mher Movsisyan.
+
 - Issue #18070: Have importlib.util.module_for_loader() set attributes
   unconditionally in order to properly support reloading.
 
