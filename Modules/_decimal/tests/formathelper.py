@@ -215,8 +215,6 @@ def check_fillchar(i):
         c = chr(i)
         c.encode('utf-8').decode()
         format(P.Decimal(0), c + '<19g')
-        if c in ("'", '"', '\\'):
-            return None
         return c
     except:
         return None
@@ -224,14 +222,14 @@ def check_fillchar(i):
 # Generate all unicode characters that are accepted as
 # fill characters by decimal.py.
 def all_fillchars():
-    for i in range(32, 0x110002):
+    for i in range(0, 0x110002):
         c = check_fillchar(i)
         if c: yield c
 
 # Return random fill character.
 def rand_fillchar():
     while 1:
-        i = random.randrange(32, 0x110002)
+        i = random.randrange(0, 0x110002)
         c = check_fillchar(i)
         if c: return c
 
