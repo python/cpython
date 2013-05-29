@@ -5373,6 +5373,19 @@ class CWhitebox(unittest.TestCase):
             x = (1, (0, 1), "N")
             self.assertEqual(str(Decimal(x)), '-sNaN1')
 
+    def test_sizeof(self):
+        Decimal = C.Decimal
+        HAVE_CONFIG_64 = (C.MAX_PREC > 425000000)
+
+        self.assertGreater(Decimal(0).__sizeof__(), 0)
+        if HAVE_CONFIG_64:
+            x = Decimal(10**(19*24)).__sizeof__()
+            y = Decimal(10**(19*25)).__sizeof__()
+            self.assertEqual(y, x+8)
+        else:
+            x = Decimal(10**(9*24)).__sizeof__()
+            y = Decimal(10**(9*25)).__sizeof__()
+            self.assertEqual(y, x+4)
 
 all_tests = [
   CExplicitConstructionTest, PyExplicitConstructionTest,
