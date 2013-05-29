@@ -4469,10 +4469,10 @@ _dec_hash(PyDecObject *v)
             goto malloc_error;
         }
         else {
-            PyErr_SetString(PyExc_RuntimeError,
-                "dec_hash: internal error: please report");
+            PyErr_SetString(PyExc_RuntimeError, /* GCOV_NOT_REACHED */
+                "dec_hash: internal error: please report"); /* GCOV_NOT_REACHED */
         }
-        result = -1;
+        result = -1; /* GCOV_NOT_REACHED */
     }
 
 
@@ -5623,7 +5623,7 @@ PyInit__decimal(void)
         }
 
         if (base == NULL) {
-            goto error;
+            goto error; /* GCOV_NOT_REACHED */
         }
 
         ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname, base, NULL));
@@ -5655,7 +5655,7 @@ PyInit__decimal(void)
             base = PyTuple_Pack(1, signal_map[0].ex);
         }
         if (base == NULL) {
-            goto error;
+            goto error; /* GCOV_NOT_REACHED */
         }
 
         ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname, base, NULL));
