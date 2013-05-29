@@ -3096,6 +3096,29 @@ dec_repr(PyObject *dec)
     return res;
 }
 
+/* Return a duplicate of src, copy embedded null characters. */
+static char *
+dec_strdup(const char *src, Py_ssize_t size)
+{
+    char *dest = PyMem_Malloc(size+1);
+    if (dest == NULL) {
+        return NULL;
+    }
+
+    memcpy(dest, src, size);
+    dest[size] = '\0';
+    return dest;
+}
+
+static void
+dec_replace_fillchar(char *dest)
+{
+     while (*dest != '\0') {
+         if (*dest == '\xff') *dest = '\0';
+         dest++;
+     }
+}
+
 /* Convert decimal_point or thousands_sep, which may be multibyte or in
    the range [128, 255], to a UTF8 string. */
 static PyObject *
@@ -3131,13 +3154,14 @@ dec_format(PyObject *dec, PyObject *args)
     PyObject *dot = NULL;
     PyObject *sep = NULL;
     PyObject *grouping = NULL;
-    PyObject *fmt = NULL;
     PyObject *fmtarg;
     PyObject *context;
     mpd_spec_t spec;
-    char *decstring= NULL;
+    char *fmt;
+    char *decstring = NULL;
     uint32_t status = 0;
-    size_t n;
+    int replace_fillchar = 0;
+    Py_ssize_t size;
 
 
     CURRENT_CONTEXT(context);
@@ -3146,9 +3170,19 @@ dec_format(PyObject *dec, PyObject *args)
     }
 
     if (PyUnicode_Check(fmtarg)) {
-        fmt = PyUnicode_AsUTF8String(fmtarg);
+        fmt = PyUnicode_AsUTF8AndSize(fmtarg, &size);
         if (fmt == NULL) {
             return NULL;
+        }
+        if (size > 0 && fmt[0] == '\0') {
+            /* NUL fill character: must be replaced with a valid UTF-8 char
+               before calling mpd_parse_fmt_str(). */
+            replace_fillchar = 1;
+            fmt = dec_strdup(fmt, size);
+            if (fmt == NULL) {
+                return NULL;
+            }
+            fmt[0] = '_';
         }
     }
     else {
@@ -3157,12 +3191,19 @@ dec_format(PyObject *dec, PyObject *args)
         return NULL;
     }
 
-    if (!mpd_parse_fmt_str(&spec, PyBytes_AS_STRING(fmt),
-                           CtxCaps(context))) {
+    if (!mpd_parse_fmt_str(&spec, fmt, CtxCaps(context))) {
         PyErr_SetString(PyExc_ValueError,
             "invalid format string");
         goto finish;
     }
+    if (replace_fillchar) {
+        /* In order to avoid clobbering parts of UTF-8 thousands separators or
+           decimal points when the substitution is reversed later, the actual
+           placeholder must be an invalid UTF-8 byte. */
+        spec.fill[0] = '\xff';
+        spec.fill[1] = '\0';
+    }
+
     if (override) {
         /* Values for decimal_point, thousands_sep and grouping can
            be explicitly specified in the override dict. These values
@@ -3199,7 +3240,7 @@ dec_format(PyObject *dec, PyObject *args)
         }
     }
     else {
-        n = strlen(spec.dot);
+        size_t n = strlen(spec.dot);
         if (n > 1 || (n == 1 && !isascii((uchar)spec.dot[0]))) {
             /* fix locale dependent non-ascii characters */
             dot = dotsep_as_utf8(spec.dot);
@@ -3231,14 +3272,19 @@ dec_format(PyObject *dec, PyObject *args)
         }
         goto finish;
     }
-    result = PyUnicode_DecodeUTF8(decstring, strlen(decstring), NULL);
+    size = strlen(decstring);
+    if (replace_fillchar) {
+        dec_replace_fillchar(decstring);
+    }
+
+    result = PyUnicode_DecodeUTF8(decstring, size, NULL);
 
 
 finish:
     Py_XDECREF(grouping);
     Py_XDECREF(sep);
     Py_XDECREF(dot);
-    Py_XDECREF(fmt);
+    if (replace_fillchar) PyMem_Free(fmt);
     if (decstring) mpd_free(decstring);
     return result;
 }
