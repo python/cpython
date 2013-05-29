@@ -2142,7 +2142,7 @@ call_function_tail(PyObject *callable, PyObject *args)
 }
 
 PyObject *
-PyObject_CallFunction(PyObject *callable, char *format, ...)
+PyObject_CallFunction(PyObject *callable, const char *format, ...)
 {
     va_list va;
     PyObject *args;
@@ -2162,7 +2162,7 @@ PyObject_CallFunction(PyObject *callable, char *format, ...)
 }
 
 PyObject *
-_PyObject_CallFunction_SizeT(PyObject *callable, char *format, ...)
+_PyObject_CallFunction_SizeT(PyObject *callable, const char *format, ...)
 {
     va_list va;
     PyObject *args;
@@ -2182,7 +2182,7 @@ _PyObject_CallFunction_SizeT(PyObject *callable, char *format, ...)
 }
 
 static PyObject*
-callmethod(PyObject* func, char *format, va_list va, int is_size_t)
+callmethod(PyObject* func, const char *format, va_list va, int is_size_t)
 {
     PyObject *retval = NULL;
     PyObject *args;
@@ -2211,7 +2211,7 @@ callmethod(PyObject* func, char *format, va_list va, int is_size_t)
 }
 
 PyObject *
-PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
+PyObject_CallMethod(PyObject *o, const char *name, const char *format, ...)
 {
     va_list va;
     PyObject *func = NULL;
@@ -2232,7 +2232,8 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 }
 
 PyObject *
-_PyObject_CallMethodId(PyObject *o, _Py_Identifier *name, char *format, ...)
+_PyObject_CallMethodId(PyObject *o, _Py_Identifier *name,
+                       const char *format, ...)
 {
     va_list va;
     PyObject *func = NULL;
@@ -2253,7 +2254,8 @@ _PyObject_CallMethodId(PyObject *o, _Py_Identifier *name, char *format, ...)
 }
 
 PyObject *
-_PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...)
+_PyObject_CallMethod_SizeT(PyObject *o, const char *name,
+                           const char *format, ...)
 {
     va_list va;
     PyObject *func = NULL;
@@ -2273,7 +2275,8 @@ _PyObject_CallMethod_SizeT(PyObject *o, char *name, char *format, ...)
 }
 
 PyObject *
-_PyObject_CallMethodId_SizeT(PyObject *o, _Py_Identifier *name, char *format, ...)
+_PyObject_CallMethodId_SizeT(PyObject *o, _Py_Identifier *name,
+                             const char *format, ...)
 {
     va_list va;
     PyObject *func = NULL;

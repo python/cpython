@@ -218,7 +218,7 @@ PyDict_GetItem:PyObject*:key:0:
 
 PyDict_GetItemString:PyObject*::0:
 PyDict_GetItemString:PyObject*:p:0:
-PyDict_GetItemString:char*:key::
+PyDict_GetItemString:const char*:key::
 
 PyDict_SetDefault:PyObject*::0:
 PyDict_SetDefault:PyObject*:p:0:
@@ -917,7 +917,7 @@ PyObject_Call:PyObject*:kw:0:
 
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:
-PyObject_CallFunction:char*:format::
+PyObject_CallFunction:const char*:format::
 PyObject_CallFunction::...::
 
 PyObject_CallFunctionObjArgs:PyObject*::+1:
@@ -926,8 +926,8 @@ PyObject_CallFunctionObjArgs::...::
 
 PyObject_CallMethod:PyObject*::+1:
 PyObject_CallMethod:PyObject*:o:0:
-PyObject_CallMethod:char*:m::
-PyObject_CallMethod:char*:format::
+PyObject_CallMethod:const char*:m::
+PyObject_CallMethod:const char*:format::
 PyObject_CallMethod::...::
 
 PyObject_CallMethodObjArgs:PyObject*::+1:

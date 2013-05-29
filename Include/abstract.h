@@ -284,7 +284,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
      PyAPI_FUNC(PyObject *) PyObject_CallFunction(PyObject *callable_object,
-                                                  char *format, ...);
+                                                  const char *format, ...);
 
        /*
      Call a callable Python object, callable_object, with a
@@ -296,8 +296,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *o, char *method,
-                                                char *format, ...);
+     PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *o,
+                                                const char *method,
+                                                const char *format, ...);
 
        /*
      Call the method named m of object o with a variable number of
@@ -308,8 +309,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      Python expression: o.method(args).
        */
 
-     PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *o, _Py_Identifier *method,
-                                                  char *format, ...);
+     PyAPI_FUNC(PyObject *) _PyObject_CallMethodId(PyObject *o,
+                                                   _Py_Identifier *method,
+                                                   const char *format, ...);
 
        /*
          Like PyObject_CallMethod, but expect a _Py_Identifier* as the
@@ -317,13 +319,16 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
      PyAPI_FUNC(PyObject *) _PyObject_CallFunction_SizeT(PyObject *callable,
-                                                         char *format, ...);
+                                                         const char *format,
+                                                         ...);
      PyAPI_FUNC(PyObject *) _PyObject_CallMethod_SizeT(PyObject *o,
-                                                       char *name,
-                                                       char *format, ...);
+                                                       const char *name,
+                                                       const char *format,
+                                                       ...);
      PyAPI_FUNC(PyObject *) _PyObject_CallMethodId_SizeT(PyObject *o,
                                                        _Py_Identifier *name,
-                                                       char *format, ...);
+                                                       const char *format,
+                                                       ...);
 
      PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
                                                          ...);

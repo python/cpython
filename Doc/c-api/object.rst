@@ -240,7 +240,7 @@ is considered sufficient for this determination.
    of the Python expression ``callable_object(*args)``.
 
 
-.. c:function:: PyObject* PyObject_CallFunction(PyObject *callable, char *format, ...)
+.. c:function:: PyObject* PyObject_CallFunction(PyObject *callable, const char *format, ...)
 
    Call a callable Python object *callable*, with a variable number of C arguments.
    The C arguments are described using a :c:func:`Py_BuildValue` style format
@@ -250,8 +250,11 @@ is considered sufficient for this determination.
    pass :c:type:`PyObject \*` args, :c:func:`PyObject_CallFunctionObjArgs` is a
    faster alternative.
 
+   .. versionchanged:: 3.4
+      The type of *format* was changed from ``char *``.
 
-.. c:function:: PyObject* PyObject_CallMethod(PyObject *o, char *method, char *format, ...)
+
+.. c:function:: PyObject* PyObject_CallMethod(PyObject *o, const char *method, const char *format, ...)
 
    Call the method named *method* of object *o* with a variable number of C
    arguments.  The C arguments are described by a :c:func:`Py_BuildValue` format
@@ -260,6 +263,9 @@ is considered sufficient for this determination.
    on failure.  This is the equivalent of the Python expression ``o.method(args)``.
    Note that if you only pass :c:type:`PyObject \*` args,
    :c:func:`PyObject_CallMethodObjArgs` is a faster alternative.
+
+   .. versionchanged:: 3.4
+      The types of *method* and *format* were changed from ``char *``.
 
 
 .. c:function:: PyObject* PyObject_CallFunctionObjArgs(PyObject *callable, ..., NULL)
