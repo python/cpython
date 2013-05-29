@@ -9,8 +9,9 @@
 # Requirements: valgrind
 #
 
-# Set additional CFLAGS for ./configure
+# Set additional CFLAGS and LDFLAGS for ./configure
 ADD_CFLAGS=
+ADD_LDFLAGS=
 
 
 CONFIGS_64="x64 uint128 ansi64 universal"
@@ -74,7 +75,7 @@ for args in "--without-threads" ""; do
 
         cd ../../
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" --with-pydebug $args > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --with-pydebug $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== refleak tests ===========================\n\n"
@@ -86,7 +87,7 @@ for args in "--without-threads" ""; do
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" $args > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== regular tests ===========================\n\n"
@@ -106,7 +107,7 @@ for args in "--without-threads" ""; do
         print_config "valgrind tests: config=$config" $args
         printf "\nbuilding python ...\n\n"
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" --without-pymalloc $args > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --without-pymalloc $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== valgrind tests ===========================\n\n"
@@ -132,7 +133,7 @@ for config in $CONFIGS; do
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" --with-pydebug $args > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --with-pydebug $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ========================== debug ===========================\n\n"
@@ -143,7 +144,7 @@ for config in $CONFIGS; do
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" $args > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== regular ===========================\n\n"
@@ -163,7 +164,7 @@ for config in $CONFIGS; do
         printf "\nbuilding python ...\n\n"
 
         $GMAKE distclean > /dev/null 2>&1
-        ./configure CFLAGS="$ADD_CFLAGS" --without-pymalloc $args > /dev/null 2>&1
+        ./configure CFLAGS="$ADD_CFLAGS" LDFLAGS="$ADD_LDFLAGS" --without-pymalloc $args > /dev/null 2>&1
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== valgrind ==========================\n\n"
