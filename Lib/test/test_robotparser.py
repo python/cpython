@@ -228,6 +228,18 @@ bad = ['/some/path']
 
 RobotTest(15, doc, good, bad)
 
+# 16. Empty query (issue #17403). Normalizing the url first.
+doc = """
+User-agent: *
+Allow: /some/path?
+Disallow: /another/path?
+"""
+
+good = ['/some/path?']
+bad = ['/another/path?']
+
+RobotTest(16, doc, good, bad)
+
 
 class NetworkTestCase(unittest.TestCase):
 

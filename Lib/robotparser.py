@@ -160,6 +160,7 @@ class RuleLine:
         if path == '' and not allowance:
             # an empty value means allow all
             allowance = True
+        path = urlparse.urlunparse(urlparse.urlparse(path))
         self.path = urllib.quote(path)
         self.allowance = allowance
 

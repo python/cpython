@@ -15,6 +15,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17403: urllib.parse.robotparser normalizes the urls before adding to
+  ruleline. This helps in handling certain types invalid urls in a conservative
+  manner. Patch contributed by Mher Movsisyan.
+
 - Implement inequality on weakref.WeakSet.
 
 - Issue #17981: Closed socket on error in SysLogHandler.
