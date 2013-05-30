@@ -202,15 +202,22 @@ install_IDLE:
 	cd IDLE && make install
 
 install_BuildApplet:
-	$(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) $(srcdir)/scripts/BuildApplet.py \
-		--destroot "$(DESTDIR)" \
-		--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
-		--output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app" \
-		$(srcdir)/scripts/BuildApplet.py
-ifneq ($(LIPO_32BIT_FLAGS),)
-	rm "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app/Contents/MacOS/Python"
-	lipo $(LIPO_32BIT_FLAGS) -output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app/Contents/MacOS/Python" $(BUILDPYTHON)
-endif   
+	if ! $(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) \
+			-c 'import EasyDialogs' 2>/dev/null ; then \
+		echo "EasyDialogs not available in this Python - skipping Build Applet.app" ; \
+	else \
+		$(RUNSHARED) @ARCH_RUN_32BIT@ $(BUILDPYTHON) $(srcdir)/scripts/BuildApplet.py \
+			--destroot "$(DESTDIR)" \
+			--python=$(prefix)/Resources/Python.app/Contents/MacOS/Python \
+			--output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app" \
+			$(srcdir)/scripts/BuildApplet.py && \
+		if [ -n "$(LIPO_32BIT_FLAGS)" ] ; then \
+			rm "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app/Contents/MacOS/Python" && \
+			lipo $(LIPO_32BIT_FLAGS) \
+				-output "$(DESTDIR)$(PYTHONAPPSDIR)/Build Applet.app/Contents/MacOS/Python" \
+				$(BUILDPYTHON) ; \
+		fi \
+	fi
 
 MACLIBDEST=$(LIBDEST)/plat-mac
 MACTOOLSDEST=$(prefix)/Mac/Tools

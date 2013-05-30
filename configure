@@ -2981,6 +2981,7 @@ fi
 
 
 
+ARCH_RUN_32BIT=""
 
 UNIVERSAL_ARCHS="32-bit"
 
@@ -7996,7 +7997,6 @@ case $ac_sys_system/$ac_sys_release in
 esac
 
 
-ARCH_RUN_32BIT=""
 
 case $ac_sys_system/$ac_sys_release in
   Darwin/[01567]\..*)

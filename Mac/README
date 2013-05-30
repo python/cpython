@@ -209,9 +209,11 @@ script to set runtime options. These options can be set once and for all
 through PythonLauncher's preferences dialog.
 
 "BuildApplet.app" creates an applet from a Python script. Drop the script on it
-and out comes a full-featured MacOS application. There is much more to this,
-to be supplied later. Some useful (but outdated) info can be found in
-Mac/Demo.
+and out comes a full-featured MacOS application.  BuildApplet.app is now
+deprecated and has been removed in Python 3.  As of OS X 10.8, Xcode 4 no
+longer supplies the headers for the deprecated QuickDraw APIs used by
+the EasyDialogs module making BuildApplet unusable as an app.  It will
+not be built by the Mac/Makefile in this case.
 
 The commandline scripts /usr/local/bin/python and pythonw can be used to run
 non-GUI and GUI python scripts from the command line, respectively.

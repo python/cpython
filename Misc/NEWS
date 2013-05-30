@@ -37,6 +37,13 @@ Library
   the default for linking if LDSHARED is not also overriden.  This restores
   Distutils behavior introduced in 2.7.3 and inadvertently dropped in 2.7.4.
 
+Build
+-----
+
+- Issue #18098: The deprecated OS X Build Applet.app fails to build on
+  OS X 10.8 systems because the Apple-deprecated QuickDraw headers have
+  been removed from Xcode 4.  Skip building it in this case.
+
 IDLE
 ----
 

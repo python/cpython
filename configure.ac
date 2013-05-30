@@ -145,6 +145,7 @@ fi
 AC_SUBST(UNIVERSALSDK)
 
 AC_SUBST(ARCH_RUN_32BIT)
+ARCH_RUN_32BIT=""
 
 UNIVERSAL_ARCHS="32-bit"
 AC_SUBST(LIPO_32BIT_FLAGS)
@@ -1801,7 +1802,6 @@ case $ac_sys_system/$ac_sys_release in
 esac
 
 
-ARCH_RUN_32BIT=""
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/@<:@01567@:>@\..*) 

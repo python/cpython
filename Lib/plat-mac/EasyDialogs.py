@@ -243,8 +243,15 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 
 
 
+# The deprecated Carbon QuickDraw APIs are no longer available as of
+# OS X 10.8.  Raise an ImportError here in that case so that callers
+# of EasyDialogs, like BuildApplet, will do the right thing.
 
-screenbounds = Qd.GetQDGlobalsScreenBits().bounds
+try:
+    screenbounds = Qd.GetQDGlobalsScreenBits().bounds
+except AttributeError:
+    raise ImportError("QuickDraw APIs not available")
+
 screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
     screenbounds[2]-4, screenbounds[3]-4
 
