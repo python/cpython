@@ -484,7 +484,8 @@ def _verbose_message(message, *args, verbosity=1):
         print(message.format(*args), file=sys.stderr)
 
 
-class ModuleManager:
+# Written as a class only because contextlib is not available.
+class _ModuleManager:
 
     """Context manager which returns the module to be loaded.
 
@@ -514,6 +515,12 @@ class ModuleManager:
         del self._module
         if any(arg is not None for arg in args) and not self._is_reload:
             del sys.modules[self._name]
+
+
+def module_to_load(name):
+    """Return a context manager which provides the module object to load."""
+    # Hiding _ModuleManager behind a function for better naming.
+    return _ModuleManager(name)
 
 
 def set_package(fxn):
@@ -559,7 +566,7 @@ def module_for_loader(fxn):
 
     """
     def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        with ModuleManager(fullname) as module:
+        with module_to_load(fullname) as module:
             module.__loader__ = self
             try:
                 is_package = self.is_package(fullname)
