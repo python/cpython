@@ -92,4 +92,5 @@ def main():
         mainloop()
 
 if __name__ == "__main__":
-    main()
+    from unittest import main
+    main('idlelib.idle_test.test_pathbrowser', verbosity=2, exit=False)

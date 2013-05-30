@@ -223,4 +223,6 @@ if __name__=='__main__':
     tests = (t1, t2, t3, t4, t5, t6, t7,
              TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6, tc.t7)
 
-    test(tests)
+    # test(tests)
+    from unittest import main
+    main('idlelib.idle_test.test_calltips', verbosity=2, exit=False)
