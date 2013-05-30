@@ -1,11 +1,8 @@
 # Skip test if _tkinter or _thread wasn't built or idlelib was deleted.
-try:
-    import Tkinter
-    import threading  # imported by PyShell, imports _thread
-    import idlelib.idle_test as idletest
-except ImportError:
-    import unittest
-    raise unittest.SkipTest
+from test.test_support import import_module
+import_module('Tkinter')
+import_module('threading')  # imported by PyShell, imports _thread
+idletest = import_module('idlelib.idle_test')
 
 # Without test_main present, regrtest.runtest_inner (line1219) calls
 # unittest.TestLoader().loadTestsFromModule(this_module) which calls
