@@ -789,12 +789,13 @@ an :term:`importer`.
 
    .. versionadded:: 3.3
 
-.. class:: ModuleManager(name)
+.. function:: module_to_load(name)
 
-    A :term:`context manager` which provides the module to load. The module will
-    either come from :attr:`sys.modules` in the case of reloading or a fresh
-    module if loading a new module. Proper cleanup of :attr:`sys.modules` occurs
-    if the module was new and an exception was raised.
+    Returns a :term:`context manager` which provides the module to load. The
+    module will either come from :attr:`sys.modules` in the case of reloading or
+    a fresh module if loading a new module. Proper cleanup of
+    :attr:`sys.modules` occurs if the module was new and an exception was
+    raised.
 
     .. versionadded:: 3.4
 
@@ -823,7 +824,7 @@ an :term:`importer`.
     in :data:`sys.modules` then it is left alone.
 
     .. note::
-       :class:`ModuleManager` subsumes the module management aspect of this
+       :func:`module_to_load` subsumes the module management aspect of this
        decorator.
 
     .. versionchanged:: 3.3
