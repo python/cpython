@@ -242,8 +242,7 @@ ABC hierarchy::
         from the import. If the loader inserted a module and the load fails, it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
-        alone. The :func:`importlib.util.module_for_loader` decorator handles
-        all of these details.
+        alone (see :func:`importlib.util.module_to_load`).
 
         The loader should set several attributes on the module.
         (Note that some of these attributes can change when a module is
