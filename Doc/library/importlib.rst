@@ -246,7 +246,7 @@ ABC hierarchy::
 
         The loader should set several attributes on the module.
         (Note that some of these attributes can change when a module is
-        reloaded.)
+        reloaded; see :meth:`init_module_attrs`):
 
         - :attr:`__name__`
             The name of the module.
@@ -288,6 +288,17 @@ ABC hierarchy::
 
         .. versionchanged:: 3.4
            Made optional instead of an abstractmethod.
+
+    .. method:: init_module_attrs(module)
+
+        Set the :attr:`__loader__` attribute on the module.
+
+        Subclasses overriding this method should set whatever appropriate
+        attributes it can, getting the module's name from :attr:`__name__` when
+        needed. All values should also be overridden so that reloading works as
+        expected.
+
+        .. versionadded:: 3.4
 
 
 .. class:: ResourceLoader
@@ -363,6 +374,18 @@ ABC hierarchy::
 
         .. versionadded:: 3.4
 
+    .. method:: init_module_attrs(module)
+
+        Set the :attr:`__package__` attribute and :attr:`__path__` attribute to
+        the empty list if appropriate along with what
+        :meth:`importlib.abc.Loader.init_module_attrs` sets.
+
+        .. versionadded:: 3.4
+
+    .. method:: load_module(fullname)
+
+        Implementation of :meth:`Loader.load_module`.
+
 
 .. class:: ExecutionLoader
 
@@ -382,6 +405,15 @@ ABC hierarchy::
 
         .. versionchanged:: 3.4
            Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
+
+    .. method:: init_module_attrs(module)
+
+        Set :attr:`__file__` and if initializing a package then set
+        :attr:`__path__` to ``[os.path.dirname(__file__)]`` along with
+        all attributes set by
+        :meth:`importlib.abc.InspectLoader.init_module_attrs`.
+
+        .. versionadded:: 3.4
 
 
 .. class:: FileLoader(fullname, path)
@@ -499,6 +531,14 @@ ABC hierarchy::
         :meth:`ExecutionLoader.get_filename`) is a file named
         ``__init__`` when the file extension is removed **and** the module name
         itself does not end in ``__init__``.
+
+    .. method:: init_module_attr(module)
+
+        Set :attr:`__cached__` using :func:`imp.cache_from_source`. Other
+        attributes set by
+        :meth:`importlib.abc.ExecutionLoader.init_module_attrs`.
+
+        .. versionadded:: 3.4
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
@@ -826,17 +866,18 @@ an :term:`importer`.
     module from being in left in :data:`sys.modules`. If the module was already
     in :data:`sys.modules` then it is left alone.
 
-    .. note::
-       :func:`module_to_load` subsumes the module management aspect of this
-       decorator.
-
     .. versionchanged:: 3.3
        :attr:`__loader__` and :attr:`__package__` are automatically set
        (when possible).
 
     .. versionchanged:: 3.4
-       Set :attr:`__loader__` :attr:`__package__` unconditionally to support
-       reloading.
+       Set :attr:`__name__`, :attr:`__loader__` :attr:`__package__`
+       unconditionally to support reloading.
+
+    .. deprecated:: 3.4
+        For the benefit of :term:`loader` subclasses, please use
+        :func:`module_to_load` and
+        :meth:`importlib.abc.Loader.init_module_attrs` instead.
 
 .. decorator:: set_loader
 
@@ -849,7 +890,8 @@ an :term:`importer`.
 
    .. note::
       As this decorator sets :attr:`__loader__` after loading the module, it is
-      recommended to use :func:`module_for_loader` instead when appropriate.
+      recommended to use :meth:`importlib.abc.Loader.init_module_attrs` instead
+      when appropriate.
 
    .. versionchanged:: 3.4
       Set ``__loader__`` if set to ``None``, as if the attribute does not
@@ -862,4 +904,5 @@ an :term:`importer`.
 
    .. note::
       As this decorator sets :attr:`__package__` after loading the module, it is
-      recommended to use :func:`module_for_loader` instead when appropriate.
+      recommended to use :meth:`importlib.abc.Loader.init_module_attrs` instead
+      when appropriate.

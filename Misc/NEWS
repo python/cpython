@@ -97,6 +97,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #18089: Implement importlib.abc.InspectLoader.load_module.
+
+- Issue #18088: Introduce importlib.abc.Loader.init_module_attrs for setting
+  module attributes. Leads to the pending deprecation of
+  importlib.util.module_for_loader.
+
 - Issue #17403: urllib.parse.robotparser normalizes the urls before adding to
   ruleline. This helps in handling certain types invalid urls in a conservative
   manner. Patch contributed by Mher Movsisyan.
@@ -104,7 +110,7 @@ Library
 - Issue #18070: Have importlib.util.module_for_loader() set attributes
   unconditionally in order to properly support reloading.
 
-- Add importlib.util.module_to_load to return a context manager to provide the
+- Added importlib.util.module_to_load to return a context manager to provide the
   proper module object to load.
 
 - Issue #18025: Fixed a segfault in io.BufferedIOBase.readinto() when raw
