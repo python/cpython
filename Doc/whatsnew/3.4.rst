@@ -255,4 +255,4 @@ that may require changes to your code.
 * :meth:`importlib.util.module_for_loader` now sets ``__loader__`` and
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
-  :class:`importlib.util.ModuleManager` for module management.
+  :func:`importlib.util.module_to_load` for module management.
