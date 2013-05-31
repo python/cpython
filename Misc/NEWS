@@ -78,6 +78,8 @@ IDLE
 Tests
 -----
 
+- Issue #18094: test_uuid no more reports skipped tests as passed.
+
 - Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
 
 Documentation
