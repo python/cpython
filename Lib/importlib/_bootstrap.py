@@ -493,8 +493,14 @@ class _ModuleManager:
 
     """
 
-    def __init__(self, name):
+    def __init__(self, name, *, reset_name=True):
+        """Prepare the context manager.
+
+        The reset_name argument specifies whether to unconditionally reset
+        the __name__ attribute if the module is found to be a reload.
+        """
         self._name = name
+        self._reset_name = reset_name
 
     def __enter__(self):
         self._module = sys.modules.get(self._name)
@@ -508,6 +514,12 @@ class _ModuleManager:
             # (otherwise an optimization shortcut in import.c becomes wrong)
             self._module.__initializing__ = True
             sys.modules[self._name] = self._module
+        elif self._reset_name:
+            try:
+                self._module.__name__ = self._name
+            except AttributeError:
+                pass
+
         return self._module
 
     def __exit__(self, *args):
