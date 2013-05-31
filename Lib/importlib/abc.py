@@ -8,11 +8,6 @@ except ImportError as exc:
         raise
     _frozen_importlib = None
 import abc
-import imp
-import marshal
-import sys
-import tokenize
-import warnings
 
 
 def _register(abstract_cls, *classes):
@@ -113,6 +108,10 @@ class Loader(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
+    def init_module_attrs(self, module):
+        """Set the module's __loader__ attribute."""
+        module.__loader__ = self
+
 
 class ResourceLoader(Loader):
 
@@ -177,6 +176,17 @@ class InspectLoader(Loader):
         argument should be where the data was retrieved (when applicable)."""
         return compile(data, path, 'exec', dont_inherit=True)
 
+    def init_module_attrs(self, module):
+        """Initialize the __loader__ and __package__ attributes of the module.
+
+        The name of the module is gleaned from module.__name__. The __package__
+        attribute is set based on self.is_package().
+        """
+        super().init_module_attrs(module)
+        _bootstrap._init_package_attrs(self, module)
+
+    load_module = _bootstrap._LoaderBasics.load_module
+
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter,
             machinery.ExtensionFileLoader)
 
@@ -214,6 +224,18 @@ class ExecutionLoader(InspectLoader):
             return self.source_to_code(source)
         else:
             return self.source_to_code(source, path)
+
+    def init_module_attrs(self, module):
+        """Initialize the module's attributes.
+
+        It is assumed that the module's name has been set on module.__name__.
+        It is also assumed that any path returned by self.get_filename() uses
+        (one of) the operating system's path separator(s) to separate filenames
+        from directories in order to set __path__ intelligently.
+        InspectLoader.init_module_attrs() sets __loader__ and __package__.
+        """
+        super().init_module_attrs(module)
+        _bootstrap._init_file_attrs(self, module)
 
 
 class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):

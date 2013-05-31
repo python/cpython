@@ -5,6 +5,7 @@ import sys
 from test import support
 import types
 import unittest
+import warnings
 
 
 class ModuleToLoadTests(unittest.TestCase):
@@ -72,14 +73,27 @@ class ModuleForLoaderTests(unittest.TestCase):
 
     """Tests for importlib.util.module_for_loader."""
 
+    @staticmethod
+    def module_for_loader(func):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', PendingDeprecationWarning)
+            return util.module_for_loader(func)
+
+    def test_warning(self):
+        # Should raise a PendingDeprecationWarning when used.
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', PendingDeprecationWarning)
+            with self.assertRaises(PendingDeprecationWarning):
+                func = util.module_for_loader(lambda x: x)
+
     def return_module(self, name):
-        fxn = util.module_for_loader(lambda self, module: module)
+        fxn = self.module_for_loader(lambda self, module: module)
         return fxn(self, name)
 
     def raise_exception(self, name):
         def to_wrap(self, module):
             raise ImportError
-        fxn = util.module_for_loader(to_wrap)
+        fxn = self.module_for_loader(to_wrap)
         try:
             fxn(self, name)
         except ImportError:
@@ -100,7 +114,7 @@ class ModuleForLoaderTests(unittest.TestCase):
         class FakeLoader:
             def is_package(self, name):
                 return True
-            @util.module_for_loader
+            @self.module_for_loader
             def load_module(self, module):
                 return module
         name = 'a.b.c'
@@ -134,7 +148,7 @@ class ModuleForLoaderTests(unittest.TestCase):
 
     def test_decorator_attrs(self):
         def fxn(self, module): pass
-        wrapped = util.module_for_loader(fxn)
+        wrapped = self.module_for_loader(fxn)
         self.assertEqual(wrapped.__name__, fxn.__name__)
         self.assertEqual(wrapped.__qualname__, fxn.__qualname__)
 
@@ -160,7 +174,7 @@ class ModuleForLoaderTests(unittest.TestCase):
                 self._pkg = is_package
             def is_package(self, name):
                 return self._pkg
-            @util.module_for_loader
+            @self.module_for_loader
             def load_module(self, module):
                 return module
 
