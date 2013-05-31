@@ -68,7 +68,7 @@ IDLE
 ----
 
 - Issue #15392: Create a unittest framework for IDLE.
-  Rajagopalasarma Jayakrishnan
+  Initial patch by Rajagopalasarma Jayakrishnan.
   
 - Issue #14146: Highlight source line while debugging on Windows.
 
