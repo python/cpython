@@ -402,6 +402,9 @@ C-API
 IDLE
 ----
 
+- Issue #15392: Create a unittest framework for IDLE.
+  Initial patch by Rajagopalasarma Jayakrishnan.
+  
 - Issue #14146: Highlight source line while debugging on Windows.
 
 - Issue #17838: Allow sys.stdin to be reassigned.
