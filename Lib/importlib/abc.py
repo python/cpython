@@ -71,7 +71,7 @@ class PathEntryFinder(Finder):
         a possible part of a namespace.
         The fullname is a str.  Returns a 2-tuple of (Loader, portion) where
         portion is a sequence of file system locations contributing to part of
-        a namespace package.  The sequence may be empty and the loader may be
+        a namespace package. The sequence may be empty and the loader may be
         None.
         """
         return None, []
@@ -108,7 +108,8 @@ class Loader(metaclass=abc.ABCMeta):
     def module_repr(self, module):
         """Return a module's repr.
 
-        Used by the module type when implemented without raising an exception.
+        Used by the module type when the method does not raise
+        NotImplementedError.
         """
         raise NotImplementedError
 
