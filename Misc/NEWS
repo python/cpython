@@ -320,9 +320,6 @@ Library
 Tests
 -----
 
-- Issue #15392: Create a unittest framework for IDLE.
-  Rajagopalasarma Jayakrishnan
-
 - Issue #17992: Add timeouts to asyncore and asynchat tests so that they won't
   accidentally hang.
 
