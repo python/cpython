@@ -788,13 +788,17 @@ an :term:`importer`.
 
    .. versionadded:: 3.3
 
-.. function:: module_to_load(name)
+.. function:: module_to_load(name, *, reset_name=True)
 
     Returns a :term:`context manager` which provides the module to load. The
     module will either come from :attr:`sys.modules` in the case of reloading or
     a fresh module if loading a new module. Proper cleanup of
     :attr:`sys.modules` occurs if the module was new and an exception was
     raised.
+
+    If **reset_name** is true and the module requested is being reloaded then
+    the module's :attr:`__name__` attribute will
+    be reset to **name**, else it will be left untouched.
 
     .. versionadded:: 3.4
 

@@ -55,6 +55,18 @@ class ModuleToLoadTests(unittest.TestCase):
         else:
             self.fail('importlib.util.module_to_load swallowed an exception')
 
+    def test_reset_name(self):
+        # If reset_name is true then module.__name__ = name, else leave it be.
+        odd_name = 'not your typical name'
+        created_module = imp.new_module(self.module_name)
+        created_module.__name__ = odd_name
+        sys.modules[self.module_name] = created_module
+        with util.module_to_load(self.module_name) as module:
+            self.assertEqual(module.__name__, self.module_name)
+        created_module.__name__ = odd_name
+        with util.module_to_load(self.module_name, reset_name=False) as module:
+            self.assertEqual(module.__name__, odd_name)
+
 
 class ModuleForLoaderTests(unittest.TestCase):
 
