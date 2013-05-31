@@ -538,6 +538,32 @@ def module_to_load(name, *, reset_name=True):
     return _ModuleManager(name, reset_name=reset_name)
 
 
+def _init_package_attrs(loader, module):
+    """Set __package__ and __path__ based on what loader.is_package() says."""
+    name = module.__name__
+    try:
+        is_package = loader.is_package(name)
+    except ImportError:
+        pass
+    else:
+        if is_package:
+            module.__package__ = name
+            module.__path__ = []
+        else:
+            module.__package__ = name.rpartition('.')[0]
+
+
+def _init_file_attrs(loader, module):
+    """Set __file__ and __path__ based on loader.get_filename()."""
+    try:
+        module.__file__ = loader.get_filename(module.__name__)
+    except ImportError:
+        pass
+    else:
+        if module.__name__ == module.__package__:
+            module.__path__.append(_path_split(module.__file__)[0])
+
+
 def set_package(fxn):
     """Set __package__ on the returned module."""
     def set_package_wrapper(*args, **kwargs):
@@ -560,42 +586,6 @@ def set_loader(fxn):
         return module
     _wrap(set_loader_wrapper, fxn)
     return set_loader_wrapper
-
-
-def module_for_loader(fxn):
-    """Decorator to handle selecting the proper module for loaders.
-
-    The decorated function is passed the module to use instead of the module
-    name. The module passed in to the function is either from sys.modules if
-    it already exists or is a new module. If the module is new, then __name__
-    is set the first argument to the method, __loader__ is set to self, and
-    __package__ is set accordingly (if self.is_package() is defined) will be set
-    before it is passed to the decorated function (if self.is_package() does
-    not work for the module it will be set post-load).
-
-    If an exception is raised and the decorator created the module it is
-    subsequently removed from sys.modules.
-
-    The decorator assumes that the decorated function takes the module name as
-    the second argument.
-
-    """
-    def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        with module_to_load(fullname) as module:
-            module.__loader__ = self
-            try:
-                is_package = self.is_package(fullname)
-            except (ImportError, AttributeError):
-                pass
-            else:
-                if is_package:
-                    module.__package__ = fullname
-                else:
-                    module.__package__ = fullname.rpartition('.')[0]
-            # If __package__ was not set above, __import__() will do it later.
-            return fxn(self, module, *args, **kwargs)
-    _wrap(module_for_loader_wrapper, fxn)
-    return module_for_loader_wrapper
 
 
 def _check_name(method):
@@ -904,25 +894,32 @@ class _LoaderBasics:
         tail_name = fullname.rpartition('.')[2]
         return filename_base == '__init__' and tail_name != '__init__'
 
-    @module_for_loader
-    def _load_module(self, module, *, sourceless=False):
-        """Helper for load_module able to handle either source or sourceless
-        loading."""
-        name = module.__name__
-        code_object = self.get_code(name)
-        module.__file__ = self.get_filename(name)
-        if not sourceless:
+    def init_module_attrs(self, module):
+        """Set various attributes on the module.
+
+        ExecutionLoader.init_module_attrs() is used to set __loader__,
+        __package__, __file__, and optionally __path__. The __cached__ attribute
+        is set using imp.cache_from_source() and __file__.
+        """
+        module.__loader__ = self  # Loader
+        _init_package_attrs(self, module)  # InspectLoader
+        _init_file_attrs(self, module)  # ExecutionLoader
+        if hasattr(module, '__file__'):  # SourceLoader
             try:
                 module.__cached__ = cache_from_source(module.__file__)
             except NotImplementedError:
-                module.__cached__ = module.__file__
-        else:
-            module.__cached__ = module.__file__
-        if self.is_package(name):
-            module.__path__ = [_path_split(module.__file__)[0]]
-        # __package__ and __loader set by @module_for_loader.
-        _call_with_frames_removed(exec, code_object, module.__dict__)
-        return module
+                pass
+
+    def load_module(self, fullname):
+        """Load the specified module into sys.modules and return it."""
+        with module_to_load(fullname) as module:
+            self.init_module_attrs(module)
+            code = self.get_code(fullname)
+            if code is None:
+                raise ImportError('cannot load module {!r} when get_code() '
+                                  'returns None'.format(fullname))
+            _call_with_frames_removed(exec, code, module.__dict__)
+            return module
 
 
 class SourceLoader(_LoaderBasics):
@@ -1046,16 +1043,6 @@ class SourceLoader(_LoaderBasics):
                 pass
         return code_object
 
-    def load_module(self, fullname):
-        """Concrete implementation of Loader.load_module.
-
-        Requires ExecutionLoader.get_filename and ResourceLoader.get_data to be
-        implemented to load source code. Use of bytecode is dictated by whether
-        get_code uses/writes bytecode.
-
-        """
-        return self._load_module(fullname)
-
 
 class FileLoader:
 
@@ -1133,8 +1120,9 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
 
     """Loader which handles sourceless file imports."""
 
-    def load_module(self, fullname):
-        return self._load_module(fullname, sourceless=True)
+    def init_module_attrs(self, module):
+        super().init_module_attrs(module)
+        module.__cached__ = module.__file__
 
     def get_code(self, fullname):
         path = self.get_filename(fullname)
@@ -1259,12 +1247,13 @@ class NamespaceLoader:
     def module_repr(cls, module):
         return "<module '{}' (namespace)>".format(module.__name__)
 
-    @module_for_loader
-    def load_module(self, module):
+    def load_module(self, fullname):
         """Load a namespace module."""
         _verbose_message('namespace module loaded with path {!r}', self._path)
-        module.__path__ = self._path
-        return module
+        with module_to_load(fullname) as module:
+            module.__path__ = self._path
+            module.__package__ = fullname
+            return module
 
 
 # Finders #####################################################################

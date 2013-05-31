@@ -15,7 +15,7 @@ import stat
 import sys
 import unittest
 
-from test.support import make_legacy_pyc
+from test.support import make_legacy_pyc, unload
 
 
 class SimpleTest(unittest.TestCase):
@@ -26,23 +26,13 @@ class SimpleTest(unittest.TestCase):
     """
 
     def test_load_module_API(self):
-        # If fullname is not specified that assume self.name is desired.
-        class TesterMixin(importlib.abc.Loader):
-            def load_module(self, fullname): return fullname
-            def module_repr(self, module): return '<module>'
+        class Tester(importlib.abc.FileLoader):
+            def get_source(self, _): return 'attr = 42'
+            def is_package(self, _): return False
 
-        class Tester(importlib.abc.FileLoader, TesterMixin):
-            def get_code(self, _): pass
-            def get_source(self, _): pass
-            def is_package(self, _): pass
-
-        name = 'mod_name'
-        loader = Tester(name, 'some_path')
-        self.assertEqual(name, loader.load_module())
-        self.assertEqual(name, loader.load_module(None))
-        self.assertEqual(name, loader.load_module(name))
-        with self.assertRaises(ImportError):
-            loader.load_module(loader.name + 'XXX')
+        loader = Tester('blah', 'blah.py')
+        self.addCleanup(unload, 'blah')
+        module = loader.load_module()  # Should not raise an exception.
 
     def test_get_filename_API(self):
         # If fullname is not set then assume self.path is desired.
@@ -473,13 +463,6 @@ class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
         self._test_non_code_marshal(del_source=True)
 
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(SimpleTest,
-                 SourceLoaderBadBytecodeTest,
-                 SourcelessLoaderBadBytecodeTest
-                )
-
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
