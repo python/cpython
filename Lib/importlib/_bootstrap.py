@@ -529,10 +529,13 @@ class _ModuleManager:
             del sys.modules[self._name]
 
 
-def module_to_load(name):
-    """Return a context manager which provides the module object to load."""
+def module_to_load(name, *, reset_name=True):
+    """Return a context manager which provides the module object to load.
+
+    If reset_name is true, reset the module's __name__ to 'name'.
+    """
     # Hiding _ModuleManager behind a function for better naming.
-    return _ModuleManager(name)
+    return _ModuleManager(name, reset_name=reset_name)
 
 
 def set_package(fxn):
