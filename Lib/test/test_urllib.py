@@ -227,13 +227,13 @@ Content-Type: text/html; charset=iso-8859-1
                 'file://localhost/a/missing/file.py')
         fd, tmp_file = tempfile.mkstemp()
         tmp_fileurl = 'file://localhost/' + tmp_file.replace(os.path.sep, '/')
+        self.assertTrue(os.path.exists(tmp_file))
         try:
-            self.assertTrue(os.path.exists(tmp_file))
             fp = urllib.urlopen(tmp_fileurl)
+            fp.close()
         finally:
             os.close(fd)
-            fp.close()
-        os.unlink(tmp_file)
+            os.unlink(tmp_file)
 
         self.assertFalse(os.path.exists(tmp_file))
         self.assertRaises(IOError, urllib.urlopen, tmp_fileurl)
