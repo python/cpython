@@ -24,7 +24,7 @@ class LoaderTests(abc.LoaderTests):
             module = machinery.FrozenImporter.load_module('__phello__')
             check = {'__name__': '__phello__',
                      '__package__': '__phello__',
-                     '__path__': ['__phello__'],
+                     '__path__': [],
                      '__loader__': machinery.FrozenImporter,
                      }
             for attr, value in check.items():

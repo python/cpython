@@ -259,3 +259,10 @@ that may require changes to your code.
   ``__package__`` unconditionally to properly support reloading. If this is not
   desired then you will need to set these attributes manually. You can use
   :func:`importlib.util.module_to_load` for module management.
+
+* Import now resets relevant attributes (e.g. ``__name__``, ``__loader__``,
+  ``__package__``, ``__file__``, ``__cached__``) unconditionally when reloading.
+
+* Frozen packages no longer set ``__path__`` to a list containg the package name
+  but an empty list instead. Determing if a module is a package should be done
+  using ``hasattr(module, '__path__')``.
