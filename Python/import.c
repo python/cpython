@@ -1107,19 +1107,17 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
         goto err_return;
     }
     if (ispackage) {
-        /* Set __path__ to the package name */
+        /* Set __path__ to the empty list */
         PyObject *d, *l;
         int err;
         m = PyImport_AddModuleObject(name);
         if (m == NULL)
             goto err_return;
         d = PyModule_GetDict(m);
-        l = PyList_New(1);
+        l = PyList_New(0);
         if (l == NULL) {
             goto err_return;
         }
-        Py_INCREF(name);
-        PyList_SET_ITEM(l, 0, name);
         err = PyDict_SetItemString(d, "__path__", l);
         Py_DECREF(l);
         if (err != 0)
