@@ -870,8 +870,7 @@ class ftpwrapper:
         self.ftp = ftplib.FTP()
         self.ftp.connect(self.host, self.port, self.timeout)
         self.ftp.login(self.user, self.passwd)
-        for dir in self.dirs:
-            self.ftp.cwd(dir)
+        self.ftp.cwd(os.path.join(*self.dirs))
 
     def retrfile(self, file, type):
         import ftplib
