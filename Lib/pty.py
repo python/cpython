@@ -47,18 +47,7 @@ def master_open():
     return _open_terminal()
 
 def _open_terminal():
-    """Open pty master and return (master_fd, tty_name).
-    SGI and generic BSD version, for when openpty() fails."""
-    try:
-        import sgi
-    except ImportError:
-        pass
-    else:
-        try:
-            tty_name, master_fd = sgi._getpty(os.O_RDWR, 0o666, 0)
-        except OSError as msg:
-            raise OSError(msg)
-        return master_fd, tty_name
+    """Open pty master and return (master_fd, tty_name)."""
     for x in 'pqrstuvwxyzPQRST':
         for y in '0123456789abcdef':
             pty_name = '/dev/pty' + x + y
