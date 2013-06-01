@@ -10,6 +10,12 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18065: Don't set __path__ to the package name for frozen packages.
+
+- Issue #18088: When reloading a module, unconditionally reset all relevant
+  attributes on the module (e.g. __name__, __loader__, __package__, __file__,
+  __cached__).
+
 - Issue #17937: Try harder to collect cyclic garbage at shutdown.
 
 - Issue #12370: Prevent class bodies from interfering with the __class__
