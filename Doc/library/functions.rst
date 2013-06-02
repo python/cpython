@@ -1365,14 +1365,18 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: vars([object])
 
-   Without an argument, act like :func:`locals`.
+   Return the :attr:`__dict__` attribute for a module, class, instance,
+   or any other object with a :attr:`__dict__` attribute.
 
-   With a module, class or class instance object as argument (or anything else that
-   has a :attr:`__dict__` attribute), return that attribute.
+   Objects such as modules and instances have an updateable :attr:`__dict__`
+   attribute; however, other objects may have write restrictions on their
+   :attr:`__dict__` attributes (for example, classes use a
+   dictproxy to prevent direct dictionary updates).
 
-   .. note::
-      The returned dictionary should not be modified:
-      the effects on the corresponding symbol table are undefined. [#]_
+   Without an argument, :func:`vars` acts like :func:`locals`.  Note, the
+   locals dictionary is only useful for reads since updates to the locals
+   dictionary are ignored.
+
 
 .. function:: zip(*iterables)
 
@@ -1491,7 +1495,3 @@ are always available.  They are listed here in alphabetical order.
 .. [#] Note that the parser only accepts the Unix-style end of line convention.
    If you are reading the code from a file, make sure to use newline conversion
    mode to convert Windows or Mac-style newlines.
-
-.. [#] In the current implementation, local variable bindings cannot normally be
-   affected this way, but variables retrieved from other scopes (such as modules)
-   can be.  This may change.
