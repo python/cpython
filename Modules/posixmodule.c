@@ -4514,7 +4514,7 @@ posix_uname(PyObject *self, PyObject *noargs)
 
 #define SET(i, field) \
     { \
-    PyObject *o = PyUnicode_DecodeASCII(field, strlen(field), NULL); \
+    PyObject *o = PyUnicode_DecodeFSDefault(field); \
     if (!o) { \
         Py_DECREF(value); \
         return NULL; \
