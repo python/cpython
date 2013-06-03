@@ -1702,7 +1702,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
 #endif
-            
+
 #ifdef PF_SYSTEM
     case PF_SYSTEM:
         switch (s->sock_proto) {
@@ -1710,10 +1710,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         case SYSPROTO_CONTROL:
         {
             struct sockaddr_ctl *addr;
-            
+
             addr = (struct sockaddr_ctl *)addr_ret;
             addr->sc_family = AF_SYSTEM;
-            addr->ss_sysaddr = AF_SYS_CONTROL; 
+            addr->ss_sysaddr = AF_SYS_CONTROL;
 
             if (PyUnicode_Check(args)) {
                 struct ctl_info info;
@@ -1739,17 +1739,17 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                           "cannot find kernel control with provided name");
                     return 0;
                 }
-                
+
                 addr->sc_id = info.ctl_id;
                 addr->sc_unit = 0;
             } else if (!PyArg_ParseTuple(args, "II",
                                          &(addr->sc_id), &(addr->sc_unit))) {
                 PyErr_SetString(PyExc_TypeError, "getsockaddrarg: "
                                 "expected str or tuple of two ints");
-                
+
                 return 0;
             }
-              
+
             *len_ret = sizeof(*addr);
             return 1;
         }
@@ -1866,7 +1866,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         return 1;
     }
 #endif
-            
+
 #ifdef PF_SYSTEM
     case PF_SYSTEM:
         switch(s->sock_proto) {
@@ -4111,7 +4111,7 @@ socket_gethostname(PyObject *self, PyObject *unused)
     if (res < 0)
         return set_error();
     buf[sizeof buf - 1] = '\0';
-    return PyUnicode_FromString(buf);
+    return PyUnicode_DecodeFSDefault(buf);
 #endif
 }
 
