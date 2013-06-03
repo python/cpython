@@ -103,6 +103,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18109: os.uname() now decodes fields from the locale encoding, and
+  socket.gethostname() now decodes the hostname from the locale encoding,
+  instead of using the UTF-8 encoding in strict mode.
+
 - Issue #18089: Implement importlib.abc.InspectLoader.load_module.
 
 - Issue #18088: Introduce importlib.abc.Loader.init_module_attrs for setting
@@ -416,7 +420,7 @@ IDLE
 
 - Issue #15392: Create a unittest framework for IDLE.
   Initial patch by Rajagopalasarma Jayakrishnan.
-  
+
 - Issue #14146: Highlight source line while debugging on Windows.
 
 - Issue #17838: Allow sys.stdin to be reassigned.
