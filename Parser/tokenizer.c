@@ -660,7 +660,8 @@ translate_into_utf8(const char* str, const char* enc) {
 
 static char *
 translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
-    int skip_next_lf = 0, needed_length = strlen(s) + 2, final_length;
+    int skip_next_lf = 0;
+    size_t needed_length = strlen(s) + 2, final_length;
     char *buf, *current;
     char c = '\0';
     buf = PyMem_MALLOC(needed_length);
