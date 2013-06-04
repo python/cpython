@@ -91,10 +91,6 @@ typedef struct {
        (y)[3] = (unsigned char)(((x)>>24)&255); (y)[2] = (unsigned char)(((x)>>16)&255);   \
        (y)[1] = (unsigned char)(((x)>>8)&255); (y)[0] = (unsigned char)((x)&255); }
 
-#ifndef MIN
-   #define MIN(x, y) ( ((x)<(y))?(x):(y) )
-#endif
-
 
 /* MD5 macros */
 
@@ -244,7 +240,7 @@ md5_process(struct md5_state *md5, const unsigned char *in, Py_ssize_t inlen)
            in             += MD5_BLOCKSIZE;
            inlen          -= MD5_BLOCKSIZE;
         } else {
-           n = MIN(inlen, (Py_ssize_t)(MD5_BLOCKSIZE - md5->curlen));
+           n = Py_MIN(inlen, (Py_ssize_t)(MD5_BLOCKSIZE - md5->curlen));
            memcpy(md5->buf + md5->curlen, in, (size_t)n);
            md5->curlen    += (MD5_INT32)n;
            in             += n;
