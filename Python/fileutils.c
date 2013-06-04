@@ -707,7 +707,8 @@ wchar_t*
 _Py_wgetcwd(wchar_t *buf, size_t size)
 {
 #ifdef MS_WINDOWS
-    return _wgetcwd(buf, size);
+    int isize = (int)Py_MIN(size, INT_MAX);
+    return _wgetcwd(buf, isize);
 #else
     char fname[PATH_MAX];
     wchar_t *wname;
