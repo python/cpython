@@ -4,7 +4,7 @@
 
 typedef struct {
     PyObject_HEAD
-    long      it_index;
+    Py_ssize_t it_index;
     PyObject *it_seq; /* Set to NULL when iterator is exhausted */
 } seqiterobject;
 
