@@ -6765,7 +6765,7 @@ void _dirnameA(char *path) {
     *ptr = 0;
 }
 
-int _is_absW(WCHAR *path) {
+int _is_absW(const WCHAR *path) {
     /* Is this path absolute? */
 
     return path[0] == L'\\' || path[0] == L'/' || path[1] == L':';
@@ -6781,7 +6781,7 @@ int _is_absA(char *path) {
 
 void _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest) {
     /* join root and rest with a backslash */
-    int root_len;
+    size_t root_len;
 
     if(_is_absW(rest)) {
         wcscpy(dest_path, rest);
@@ -6800,7 +6800,7 @@ void _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest) {
 
 void _joinA(char *dest_path, const char *root, const char *rest) {
     /* join root and rest with a backslash */
-    int root_len;
+    size_t root_len;
 
     if(_is_absA(rest)) {
         strcpy(dest_path, rest);
