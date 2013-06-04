@@ -44,7 +44,7 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
     if (args != NULL) {
         Py_ssize_t argcount = PyObject_Size(args);
         if (argcount < 0)
-            return argcount;
+            return -1;
         else if (argcount > 0) {
             PyErr_Format(PyExc_TypeError, "no positional arguments expected");
             return -1;
