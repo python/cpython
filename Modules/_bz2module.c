@@ -36,8 +36,6 @@
 #define RELEASE_LOCK(obj)
 #endif
 
-#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
-
 
 typedef struct {
     PyObject_HEAD
@@ -157,7 +155,7 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
         /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
            Do compression in chunks of no more than UINT_MAX bytes each. */
         if (c->bzs.avail_in == 0 && len > 0) {
-            c->bzs.avail_in = MIN(len, UINT_MAX);
+            c->bzs.avail_in = Py_MIN(len, UINT_MAX);
             len -= c->bzs.avail_in;
         }
 
@@ -173,7 +171,7 @@ compress(BZ2Compressor *c, char *data, size_t len, int action)
                 c->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
                 buffer_left = PyBytes_GET_SIZE(result) - data_size;
             }
-            c->bzs.avail_out = MIN(buffer_left, UINT_MAX);
+            c->bzs.avail_out = Py_MIN(buffer_left, UINT_MAX);
         }
 
         Py_BEGIN_ALLOW_THREADS
@@ -370,7 +368,7 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
     d->bzs.next_in = data;
     /* On a 64-bit system, len might not fit in avail_in (an unsigned int).
        Do decompression in chunks of no more than UINT_MAX bytes each. */
-    d->bzs.avail_in = MIN(len, UINT_MAX);
+    d->bzs.avail_in = Py_MIN(len, UINT_MAX);
     len -= d->bzs.avail_in;
     d->bzs.next_out = PyBytes_AS_STRING(result);
     d->bzs.avail_out = PyBytes_GET_SIZE(result);
@@ -399,7 +397,7 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
         if (d->bzs.avail_in == 0) {
             if (len == 0)
                 break;
-            d->bzs.avail_in = MIN(len, UINT_MAX);
+            d->bzs.avail_in = Py_MIN(len, UINT_MAX);
             len -= d->bzs.avail_in;
         }
         if (d->bzs.avail_out == 0) {
@@ -410,7 +408,7 @@ decompress(BZ2Decompressor *d, char *data, size_t len)
                 d->bzs.next_out = PyBytes_AS_STRING(result) + data_size;
                 buffer_left = PyBytes_GET_SIZE(result) - data_size;
             }
-            d->bzs.avail_out = MIN(buffer_left, UINT_MAX);
+            d->bzs.avail_out = Py_MIN(buffer_left, UINT_MAX);
         }
     }
     if (data_size != PyBytes_GET_SIZE(result))
