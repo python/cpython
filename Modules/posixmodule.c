@@ -6772,7 +6772,7 @@ int _is_absW(const WCHAR *path) {
 
 }
 
-int _is_absA(char *path) {
+int _is_absA(const char *path) {
     /* Is this path absolute? */
 
     return path[0] == '\\' || path[0] == '/' || path[1] == ':';
