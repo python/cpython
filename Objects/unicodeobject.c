@@ -6725,7 +6725,8 @@ decode_code_page_errors(UINT code_page,
     /* each step cannot decode more than 1 character, but a character can be
        represented as a surrogate pair */
     wchar_t buffer[2], *startout, *out;
-    int insize, outsize;
+    int insize;
+    Py_ssize_t outsize;
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     PyObject *encoding_obj = NULL;
@@ -6995,10 +6996,11 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
         Py_DECREF(substring);
         return -1;
     }
+    assert(size <= INT_MAX);
 
     /* First get the size of the result */
     outsize = WideCharToMultiByte(code_page, flags,
-                                  p, size,
+                                  p, (int)size,
                                   NULL, 0,
                                   NULL, pusedDefaultChar);
     if (outsize <= 0)
@@ -7035,7 +7037,7 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
 
     /* Do the conversion */
     outsize = WideCharToMultiByte(code_page, flags,
-                                  p, size,
+                                  p, (int)size,
                                   out, outsize,
                                   NULL, pusedDefaultChar);
     Py_CLEAR(substring);
