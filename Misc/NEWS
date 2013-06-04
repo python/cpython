@@ -13,6 +13,9 @@ Core and Builtins
 - Tweak the exception message when the magic number or size value in a bytecode
   file is truncated.
 
+- Issue #17932: Fix an integer overflow issue on Windows 64-bit in iterators:
+  change the C type of seqiterobject.it_index from long to Py_ssize_t.
+
 - Issue #18065: Don't set __path__ to the package name for frozen packages.
 
 - Issue #18088: When reloading a module, unconditionally reset all relevant

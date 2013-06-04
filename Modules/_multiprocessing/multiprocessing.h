@@ -99,13 +99,4 @@ PyObject *_PyMp_SetError(PyObject *Type, int num);
 
 extern PyTypeObject _PyMp_SemLockType;
 
-/*
- * Miscellaneous
- */
-
-#ifndef MIN
-#  define MIN(x, y) ((x) < (y) ? x : y)
-#  define MAX(x, y) ((x) > (y) ? x : y)
-#endif
-
 #endif /* MULTIPROCESSING_H */
