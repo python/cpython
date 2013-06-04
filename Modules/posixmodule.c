@@ -6720,8 +6720,9 @@ dir_fd may not be implemented on your platform.\n\
 /* Grab CreateSymbolicLinkW dynamically from kernel32 */
 static DWORD (CALLBACK *Py_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD) = NULL;
 static DWORD (CALLBACK *Py_CreateSymbolicLinkA)(LPSTR, LPSTR, DWORD) = NULL;
+
 static int
-check_CreateSymbolicLink()
+check_CreateSymbolicLink(void)
 {
     HINSTANCE hKernel32;
     /* only recheck */
@@ -6735,55 +6736,57 @@ check_CreateSymbolicLink()
     return (Py_CreateSymbolicLinkW && Py_CreateSymbolicLinkA);
 }
 
-void _dirnameW(WCHAR *path) {
-    /* Remove the last portion of the path */
-
+/* Remove the last portion of the path */
+static void
+_dirnameW(WCHAR *path)
+{
     WCHAR *ptr;
 
     /* walk the path from the end until a backslash is encountered */
-    for(ptr = path + wcslen(path); ptr != path; ptr--)
-    {
-        if(*ptr == *L"\\" || *ptr == *L"/") {
+    for(ptr = path + wcslen(path); ptr != path; ptr--) {
+        if (*ptr == *L"\\" || *ptr == *L"/")
             break;
-        }
     }
     *ptr = 0;
 }
 
-void _dirnameA(char *path) {
-    /* Remove the last portion of the path */
-
+/* Remove the last portion of the path */
+static void
+_dirnameA(char *path)
+{
     char *ptr;
 
     /* walk the path from the end until a backslash is encountered */
-    for(ptr = path + strlen(path); ptr != path; ptr--)
-    {
-        if(*ptr == '\\' || *ptr == '/') {
+    for(ptr = path + strlen(path); ptr != path; ptr--) {
+        if (*ptr == '\\' || *ptr == '/')
             break;
-        }
     }
     *ptr = 0;
 }
 
-int _is_absW(const WCHAR *path) {
-    /* Is this path absolute? */
-
+/* Is this path absolute? */
+static int
+_is_absW(const WCHAR *path)
+{
     return path[0] == L'\\' || path[0] == L'/' || path[1] == L':';
 
 }
 
-int _is_absA(const char *path) {
-    /* Is this path absolute? */
-
+/* Is this path absolute? */
+static int
+_is_absA(const char *path)
+{
     return path[0] == '\\' || path[0] == '/' || path[1] == ':';
 
 }
 
-void _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest) {
-    /* join root and rest with a backslash */
+/* join root and rest with a backslash */
+static void
+_joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest)
+{
     size_t root_len;
 
-    if(_is_absW(rest)) {
+    if (_is_absW(rest)) {
         wcscpy(dest_path, rest);
         return;
     }
@@ -6792,17 +6795,19 @@ void _joinW(WCHAR *dest_path, const WCHAR *root, const WCHAR *rest) {
 
     wcscpy(dest_path, root);
     if(root_len) {
-        dest_path[root_len] = *L"\\";
-        root_len += 1;
+        dest_path[root_len] = L'\\';
+        root_len++;
     }
     wcscpy(dest_path+root_len, rest);
 }
 
-void _joinA(char *dest_path, const char *root, const char *rest) {
-    /* join root and rest with a backslash */
+/* join root and rest with a backslash */
+static void
+_joinA(char *dest_path, const char *root, const char *rest)
+{
     size_t root_len;
 
-    if(_is_absA(rest)) {
+    if (_is_absA(rest)) {
         strcpy(dest_path, rest);
         return;
     }
@@ -6812,14 +6817,15 @@ void _joinA(char *dest_path, const char *root, const char *rest) {
     strcpy(dest_path, root);
     if(root_len) {
         dest_path[root_len] = '\\';
-        root_len += 1;
+        root_len++;
     }
     strcpy(dest_path+root_len, rest);
 }
 
-int _check_dirW(WCHAR *src, WCHAR *dest)
+/* Return True if the path at src relative to dest is a directory */
+static int
+_check_dirW(WCHAR *src, WCHAR *dest)
 {
-    /* Return True if the path at src relative to dest is a directory */
     WIN32_FILE_ATTRIBUTE_DATA src_info;
     WCHAR dest_parent[MAX_PATH];
     WCHAR src_resolved[MAX_PATH] = L"";
@@ -6835,9 +6841,10 @@ int _check_dirW(WCHAR *src, WCHAR *dest)
     );
 }
 
-int _check_dirA(char *src, char *dest)
+/* Return True if the path at src relative to dest is a directory */
+static int
+_check_dirA(char *src, char *dest)
 {
-    /* Return True if the path at src relative to dest is a directory */
     WIN32_FILE_ATTRIBUTE_DATA src_info;
     char dest_parent[MAX_PATH];
     char src_resolved[MAX_PATH] = "";
