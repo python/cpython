@@ -168,10 +168,6 @@ static char *screen_encoding = NULL;
                         "must call start_color() first");       \
         return 0; }
 
-#ifndef MIN
-#define MIN(x,y) ((x) < (y) ? (x) : (y))
-#endif
-
 /* Utility Functions */
 
 /*
@@ -1212,7 +1208,7 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
         if (!PyArg_ParseTuple(args,"i;n", &n))
             return NULL;
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = wgetnstr(self->win,rtn,MIN(n, 1023));
+        rtn2 = wgetnstr(self->win, rtn, Py_MIN(n, 1023));
         Py_END_ALLOW_THREADS
         break;
     case 2:
@@ -1232,11 +1228,11 @@ PyCursesWindow_GetStr(PyCursesWindowObject *self, PyObject *args)
 #ifdef STRICT_SYSV_CURSES
         Py_BEGIN_ALLOW_THREADS
         rtn2 = wmove(self->win,y,x)==ERR ? ERR :
-        wgetnstr(self->win, rtn, MIN(n, 1023));
+        wgetnstr(self->win, rtn, Py_MIN(n, 1023));
         Py_END_ALLOW_THREADS
 #else
         Py_BEGIN_ALLOW_THREADS
-        rtn2 = mvwgetnstr(self->win, y, x, rtn, MIN(n, 1023));
+        rtn2 = mvwgetnstr(self->win, y, x, rtn, Py_MIN(n, 1023));
         Py_END_ALLOW_THREADS
 #endif
         break;
@@ -1374,7 +1370,7 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
     case 1:
         if (!PyArg_ParseTuple(args,"i;n", &n))
             return NULL;
-        rtn2 = winnstr(self->win,rtn,MIN(n,1023));
+        rtn2 = winnstr(self->win, rtn, Py_MIN(n, 1023));
         break;
     case 2:
         if (!PyArg_ParseTuple(args,"ii;y,x",&y,&x))
@@ -1384,7 +1380,7 @@ PyCursesWindow_InStr(PyCursesWindowObject *self, PyObject *args)
     case 3:
         if (!PyArg_ParseTuple(args, "iii;y,x,n", &y, &x, &n))
             return NULL;
-        rtn2 = mvwinnstr(self->win, y, x, rtn, MIN(n,1023));
+        rtn2 = mvwinnstr(self->win, y, x, rtn, Py_MIN(n,1023));
         break;
     default:
         PyErr_SetString(PyExc_TypeError, "instr requires 0 or 3 arguments");
