@@ -570,7 +570,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 "size does not fit in an int"); \
             return converterr("", arg, msgbuf, bufsize); \
         } \
-        *q=s; \
+        *q = (int)s; \
     }
 #define BUFFER_LEN      ((flags & FLAG_SIZE_T) ? *q2:*q)
 #define RETURN_ERR_OCCURRED return msgbuf
