@@ -9,11 +9,6 @@
 #include <ctype.h>
 #include <float.h>
 
-#undef MAX
-#undef MIN
-#define MAX(x, y) ((x) < (y) ? (y) : (x))
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-
 
 /* Special free list
    free_list is a singly-linked list of available PyFloatObjects, linked
@@ -1131,7 +1126,7 @@ float_hex(PyObject *v)
     }
 
     m = frexp(fabs(x), &e);
-    shift = 1 - MAX(DBL_MIN_EXP - e, 0);
+    shift = 1 - Py_MAX(DBL_MIN_EXP - e, 0);
     m = ldexp(m, shift);
     e -= shift;
 
@@ -1285,8 +1280,8 @@ float_fromhex(PyObject *cls, PyObject *arg)
     fdigits = coeff_end - s_store;
     if (ndigits == 0)
         goto parse_error;
-    if (ndigits > MIN(DBL_MIN_EXP - DBL_MANT_DIG - LONG_MIN/2,
-                      LONG_MAX/2 + 1 - DBL_MAX_EXP)/4)
+    if (ndigits > Py_MIN(DBL_MIN_EXP - DBL_MANT_DIG - LONG_MIN/2,
+                         LONG_MAX/2 + 1 - DBL_MAX_EXP)/4)
         goto insane_length_error;
 
     /* [p <exponent>] */
@@ -1342,7 +1337,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
 
     /* lsb = exponent of least significant bit of the *rounded* value.
        This is top_exp - DBL_MANT_DIG unless result is subnormal. */
-    lsb = MAX(top_exp, (long)DBL_MIN_EXP) - DBL_MANT_DIG;
+    lsb = Py_MAX(top_exp, (long)DBL_MIN_EXP) - DBL_MANT_DIG;
 
     x = 0.0;
     if (exp >= lsb) {
