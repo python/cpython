@@ -6844,9 +6844,9 @@ int _check_dirA(char *src, char *dest)
 
     /* dest_parent = os.path.dirname(dest) */
     strcpy(dest_parent, dest);
-    _dirnameW(dest_parent);
+    _dirnameA(dest_parent);
     /* src_resolved = os.path.join(dest_parent, src) */
-    _joinW(src_resolved, dest_parent, src);
+    _joinA(src_resolved, dest_parent, src);
     return (
         GetFileAttributesExA(src_resolved, GetFileExInfoStandard, &src_info)
         && src_info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
