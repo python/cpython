@@ -95,9 +95,6 @@ Local naming conventions:
 #include "Python.h"
 #include "structmember.h"
 
-#undef MAX
-#define MAX(x, y) ((x) < (y) ? (y) : (x))
-
 /* Socket object documentation */
 PyDoc_STRVAR(sock_doc,
 "socket([family[, type[, proto]]]) -> socket object\n\
@@ -4819,7 +4816,7 @@ socket_inet_pton(PyObject *self, PyObject *args)
     char* ip;
     int retval;
 #ifdef ENABLE_IPV6
-    char packed[MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
+    char packed[Py_MAX(sizeof(struct in_addr), sizeof(struct in6_addr))];
 #else
     char packed[sizeof(struct in_addr)];
 #endif
@@ -4870,7 +4867,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     int len;
     const char* retval;
 #ifdef ENABLE_IPV6
-    char ip[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+    char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
 #else
     char ip[INET_ADDRSTRLEN + 1];
 #endif

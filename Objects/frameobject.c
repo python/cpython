@@ -7,11 +7,6 @@
 #include "opcode.h"
 #include "structmember.h"
 
-#undef MIN
-#undef MAX
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
 #define OFF(x) offsetof(PyFrameObject, x)
 
 static PyMemberDef frame_memberlist[] = {
@@ -160,8 +155,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 
     /* We're now ready to look at the bytecode. */
     PyBytes_AsStringAndSize(f->f_code->co_code, (char **)&code, &code_len);
-    min_addr = MIN(new_lasti, f->f_lasti);
-    max_addr = MAX(new_lasti, f->f_lasti);
+    min_addr = Py_MIN(new_lasti, f->f_lasti);
+    max_addr = Py_MAX(new_lasti, f->f_lasti);
 
     /* You can't jump onto a line with an 'except' statement on it -
      * they expect to have an exception on the top of the stack, which
@@ -293,7 +288,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
             break;
         }
 
-        min_delta_iblock = MIN(min_delta_iblock, delta_iblock);
+        min_delta_iblock = Py_MIN(min_delta_iblock, delta_iblock);
 
         if (op >= HAVE_ARGUMENT) {
             addr += 2;

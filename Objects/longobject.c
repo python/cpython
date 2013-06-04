@@ -89,11 +89,6 @@ maybe_small_long(PyLongObject *v)
  */
 #define FIVEARY_CUTOFF 8
 
-#undef MIN
-#undef MAX
-#define MAX(x, y) ((x) < (y) ? (y) : (x))
-#define MIN(x, y) ((x) > (y) ? (y) : (x))
-
 #define SIGCHECK(PyTryBlock)                    \
     do {                                        \
         if (PyErr_CheckSignals()) PyTryBlock    \
@@ -3029,7 +3024,7 @@ kmul_split(PyLongObject *n,
     Py_ssize_t size_lo, size_hi;
     const Py_ssize_t size_n = ABS(Py_SIZE(n));
 
-    size_lo = MIN(size_n, size);
+    size_lo = Py_MIN(size_n, size);
     size_hi = size_n - size_lo;
 
     if ((hi = _PyLong_New(size_hi)) == NULL)
@@ -3300,7 +3295,7 @@ k_lopsided_mul(PyLongObject *a, PyLongObject *b)
     nbdone = 0;
     while (bsize > 0) {
         PyLongObject *product;
-        const Py_ssize_t nbtouse = MIN(bsize, asize);
+        const Py_ssize_t nbtouse = Py_MIN(bsize, asize);
 
         /* Multiply the next slice of b by a. */
         memcpy(bslice->ob_digit, b->ob_digit + nbdone,
@@ -3591,7 +3586,7 @@ long_true_divide(PyObject *v, PyObject *w)
         goto underflow_or_zero;
 
     /* Choose value for shift; see comments for step 1 above. */
-    shift = MAX(diff, DBL_MIN_EXP) - DBL_MANT_DIG - 2;
+    shift = Py_MAX(diff, DBL_MIN_EXP) - DBL_MANT_DIG - 2;
 
     inexact = 0;
 
@@ -3662,7 +3657,7 @@ long_true_divide(PyObject *v, PyObject *w)
     x_bits = (x_size-1)*PyLong_SHIFT+bits_in_digit(x->ob_digit[x_size-1]);
 
     /* The number of extra bits that have to be rounded away. */
-    extra_bits = MAX(x_bits, DBL_MIN_EXP - shift) - DBL_MANT_DIG;
+    extra_bits = Py_MAX(x_bits, DBL_MIN_EXP - shift) - DBL_MANT_DIG;
     assert(extra_bits == 2 || extra_bits == 3);
 
     /* Round by directly modifying the low digit of x. */
