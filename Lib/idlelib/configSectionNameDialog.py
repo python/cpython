@@ -91,7 +91,7 @@ class GetCfgSectionNameDialog(Toplevel):
 if __name__ == '__main__':
     import unittest
     unittest.main('idlelib.idle_test.test_config_name', verbosity=2, exit=False)
-    
+
     # also human test the dialog
     root = Tk()
     def run():
