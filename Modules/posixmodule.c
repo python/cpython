@@ -5014,11 +5014,7 @@ posix_spawnv(PyObject *self, PyObject *args)
     if (spawnval == -1)
         return posix_error();
     else
-#if SIZEOF_LONG == SIZEOF_VOID_P
-        return Py_BuildValue("l", (long) spawnval);
-#else
-        return Py_BuildValue("L", (PY_LONG_LONG) spawnval);
-#endif
+        return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 }
 
 
@@ -5104,11 +5100,7 @@ posix_spawnve(PyObject *self, PyObject *args)
     if (spawnval == -1)
         (void) posix_error();
     else
-#if SIZEOF_LONG == SIZEOF_VOID_P
-        res = Py_BuildValue("l", (long) spawnval);
-#else
-        res = Py_BuildValue("L", (PY_LONG_LONG) spawnval);
-#endif
+        res = Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 
     while (--envc >= 0)
         PyMem_DEL(envlist[envc]);
@@ -6178,16 +6170,17 @@ static PyObject *
 win32_kill(PyObject *self, PyObject *args)
 {
     PyObject *result;
-    DWORD pid, sig, err;
+    pid_t pid;
+    DWORD sig, err;
     HANDLE handle;
 
-    if (!PyArg_ParseTuple(args, "kk:kill", &pid, &sig))
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "k:kill", &pid, &sig))
         return NULL;
 
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
-        if (GenerateConsoleCtrlEvent(sig, pid) == 0) {
+        if (GenerateConsoleCtrlEvent(sig, (DWORD)pid) == 0) {
             err = GetLastError();
             PyErr_SetFromWindowsErr(err);
         }
@@ -6197,7 +6190,7 @@ win32_kill(PyObject *self, PyObject *args)
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
-    handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+    handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
     if (handle == NULL) {
         err = GetLastError();
         return PyErr_SetFromWindowsErr(err);
@@ -6603,7 +6596,7 @@ posix_waitpid(PyObject *self, PyObject *args)
     Py_intptr_t pid;
     int status, options;
 
-    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i:waitpid", &pid, &options))
+    if (!PyArg_ParseTuple(args, _Py_PARSE_INTPTR "i:waitpid", &pid, &options))
         return NULL;
     Py_BEGIN_ALLOW_THREADS
     pid = _cwait(&status, pid, options);
@@ -6612,7 +6605,7 @@ posix_waitpid(PyObject *self, PyObject *args)
         return posix_error();
 
     /* shift the status left a byte so this is more like the POSIX waitpid */
-    return Py_BuildValue("Ni", PyLong_FromPid(pid), status << 8);
+    return Py_BuildValue(_Py_PARSE_INTPTR "i", pid, status << 8);
 }
 #endif /* HAVE_WAITPID || HAVE_CWAIT */
 

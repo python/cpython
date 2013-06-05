@@ -113,11 +113,12 @@ os.O_BINARY.");
 static PyObject *
 msvcrt_open_osfhandle(PyObject *self, PyObject *args)
 {
-    long handle;
+    Py_intptr_t handle;
     int flags;
     int fd;
 
-    if (!PyArg_ParseTuple(args, "li:open_osfhandle", &handle, &flags))
+    if (!PyArg_ParseTuple(args, _Py_PARSE_INTPTR "i:open_osfhandle",
+                          &handle, &flags))
         return NULL;
 
     fd = _open_osfhandle(handle, flags);

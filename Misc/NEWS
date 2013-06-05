@@ -10,9 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
-- Issue #17931: Fix PyLong_FromPid() on Windows 64-bit: processes are
-  identified by their HANDLE which is a pointer (and not a long, which is
-  smaller).
+- Issue #17931: Resolve confusion on Windows between pids and process
+  handles.
 
 - Tweak the exception message when the magic number or size value in a bytecode
   file is truncated.
