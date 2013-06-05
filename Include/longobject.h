@@ -52,6 +52,19 @@ PyAPI_FUNC(PyObject *) PyLong_GetInfo(void);
 #error "sizeof(pid_t) is neither sizeof(int), sizeof(long) or sizeof(long long)"
 #endif /* SIZEOF_PID_T */
 
+#if SIZEOF_VOID_P == SIZEOF_INT
+#  define _Py_PARSE_INTPTR "i"
+#  define _Py_PARSE_UINTPTR "I"
+#elif SIZEOF_VOID_P == SIZEOF_LONG
+#  define _Py_PARSE_INTPTR "l"
+#  define _Py_PARSE_UINTPTR "k"
+#elif defined(SIZEOF_LONG_LONG) && SIZEOF_VOID_P == SIZEOF_LONG_LONG
+#  define _Py_PARSE_INTPTR "L"
+#  define _Py_PARSE_UINTPTR "K"
+#else
+#  error "void* different in size from int, long and long long"
+#endif /* SIZEOF_VOID_P */
+
 /* Used by Python/mystrtoul.c. */
 #ifndef Py_LIMITED_API
 PyAPI_DATA(unsigned char) _PyLong_DigitValue[256];
