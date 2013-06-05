@@ -6744,7 +6744,7 @@ _dirnameW(WCHAR *path)
 
     /* walk the path from the end until a backslash is encountered */
     for(ptr = path + wcslen(path); ptr != path; ptr--) {
-        if (*ptr == *L"\\" || *ptr == *L"/")
+        if (*ptr == L'\\' || *ptr == L'/')
             break;
     }
     *ptr = 0;
