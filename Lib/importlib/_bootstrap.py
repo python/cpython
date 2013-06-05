@@ -668,11 +668,11 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
         _verbose_message(message)
         raise ImportError(message, **exc_details)
     elif len(raw_timestamp) != 4:
-        message = 'reached EOF while reading magic number in {!r}'.format(name)
+        message = 'reached EOF while reading timestamp in {!r}'.format(name)
         _verbose_message(message)
         raise EOFError(message)
     elif len(raw_size) != 4:
-        message = 'reached EOF while reading size in {!r}'.format(name)
+        message = 'reached EOF while reading size of source in {!r}'.format(name)
         _verbose_message(message)
         raise EOFError(message)
     if source_stats is not None:
