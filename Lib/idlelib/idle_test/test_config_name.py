@@ -24,7 +24,7 @@ showerror = Mbox.showerror
 
 class TestConfigName(unittest.TestCase):
     dialog = Dummy_name_dialog()
-   
+
     @classmethod
     def setUpClass(cls):
         name_dialog_module.tkMessageBox = Mbox
@@ -38,13 +38,13 @@ class TestConfigName(unittest.TestCase):
         self.assertEqual(self.dialog.name_ok(), '')
         self.assertEqual(showerror.title, 'Name Error')
         self.assertIn('No', showerror.message)
-        
+
     def test_used_name(self):
         self.dialog.name.set('used')
         self.assertEqual(self.dialog.name_ok(), '')
         self.assertEqual(showerror.title, 'Name Error')
         self.assertIn('use', showerror.message)
-        
+
     def test_long_name(self):
         self.dialog.name.set('good'*8)
         self.assertEqual(self.dialog.name_ok(), '')
@@ -56,7 +56,7 @@ class TestConfigName(unittest.TestCase):
         showerror.title = 'No Error'  # should not be called
         self.assertEqual(self.dialog.name_ok(), 'good')
         self.assertEqual(showerror.title, 'No Error')
-        
+
     def test_ok(self):
         self.dialog.destroyed = False
         self.dialog.name.set('good')
@@ -69,7 +69,7 @@ class TestConfigName(unittest.TestCase):
         self.dialog.Cancel()
         self.assertEqual(self.dialog.result, '')
         self.assertTrue(self.dialog.destroyed)
-        
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=False)
