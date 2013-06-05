@@ -723,8 +723,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* The size of `wchar_t', as computed by sizeof. */
 #define SIZEOF_WCHAR_T 2
 
-/* The size of `pid_t' (HANDLE). */
-#define SIZEOF_PID_T SIZEOF_VOID_P
+/* The size of `pid_t', as computed by sizeof. */
+#define SIZEOF_PID_T SIZEOF_INT
 
 /* Define if you have the dl library (-ldl).  */
 /* #undef HAVE_LIBDL */
