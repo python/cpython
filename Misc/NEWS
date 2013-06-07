@@ -112,6 +112,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17314: Move multiprocessing.forking over to importlib.
+
 - Issue #11959: SMTPServer and SMTPChannel now take an optional map, use of
   which avoids affecting global state.
 
