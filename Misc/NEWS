@@ -71,6 +71,8 @@ Library
 IDLE
 ----
 
+- Issue #18055: Move IDLE off of imp and on to importlib.
+
 - Issue #15392: Create a unittest framework for IDLE.
   Initial patch by Rajagopalasarma Jayakrishnan.
 
