@@ -1,5 +1,5 @@
-import imp
 import importlib
+import importlib.abc
 import os
 import re
 import string
@@ -34,34 +34,6 @@ def _sphinx_version():
     elif level != 'final':
         release += '%s%s' % (level[0], serial)
     return release
-
-def _find_module(fullname, path=None):
-    """Version of imp.find_module() that handles hierarchical module names"""
-
-    file = None
-    for tgt in fullname.split('.'):
-        if file is not None:
-            file.close()            # close intermediate files
-        (file, filename, descr) = imp.find_module(tgt, path)
-        if descr[2] == imp.PY_SOURCE:
-            break                   # find but not load the source file
-        module = imp.load_module(tgt, file, filename, descr)
-        try:
-            path = module.__path__
-        except AttributeError:
-            raise ImportError('No source for module ' + module.__name__)
-    if descr[2] != imp.PY_SOURCE:
-        # If all of the above fails and didn't raise an exception,fallback
-        # to a straight import which can find __init__.py in a package.
-        m = __import__(fullname)
-        try:
-            filename = m.__file__
-        except AttributeError:
-            pass
-        else:
-            file = None
-            descr = os.path.splitext(filename)[1], None, imp.PY_SOURCE
-    return file, filename, descr
 
 
 class HelpDialog(object):
@@ -687,20 +659,29 @@ class EditorWindow(object):
             return
         # XXX Ought to insert current file's directory in front of path
         try:
-            (f, file, (suffix, mode, type)) = _find_module(name)
-        except (NameError, ImportError) as msg:
+            loader = importlib.find_loader(name)
+        except (ValueError, ImportError) as msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
-        if type != imp.PY_SOURCE:
-            tkMessageBox.showerror("Unsupported type",
-                "%s is not a source module" % name, parent=self.text)
+        if loader is None:
+            tkMessageBox.showerror("Import error", "module not found",
+                                   parent=self.text)
             return
-        if f:
-            f.close()
+        if not isinstance(loader, importlib.abc.SourceLoader):
+            tkMessageBox.showerror("Import error", "not a source-based module",
+                                   parent=self.text)
+            return
+        try:
+            file_path = loader.get_filename(name)
+        except AttributeError:
+            tkMessageBox.showerror("Import error",
+                                   "loader does not support get_filename",
+                                   parent=self.text)
+            return
         if self.flist:
-            self.flist.open(file)
+            self.flist.open(file_path)
         else:
-            self.io.loadfile(file)
+            self.io.loadfile(file_path)
 
     def open_class_browser(self, event=None):
         filename = self.io.filename
