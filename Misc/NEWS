@@ -112,6 +112,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11959: SMTPServer and SMTPChannel now take an optional map, use of
+  which avoids affecting global state.
+
 - Issue #18109: os.uname() now decodes fields from the locale encoding, and
   socket.gethostname() now decodes the hostname from the locale encoding,
   instead of using the UTF-8 encoding in strict mode.
