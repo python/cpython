@@ -27,7 +27,8 @@ SMTPServer Objects
 ------------------
 
 
-.. class:: SMTPServer(localaddr, remoteaddr, data_size_limit=33554432)
+.. class:: SMTPServer(localaddr, remoteaddr, data_size_limit=33554432,
+                      map=None)
 
    Create a new :class:`SMTPServer` object, which binds to local address
    *localaddr*.  It will treat *remoteaddr* as an upstream SMTP relayer.  It
@@ -37,6 +38,8 @@ SMTPServer Objects
    *data_size_limit* specifies the maximum number of bytes that will be
    accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
    limit.
+
+   A dictionary can be specified in *map* to avoid using a global socket map.
 
    .. method:: process_message(peer, mailfrom, rcpttos, data)
 
@@ -52,6 +55,9 @@ SMTPServer Objects
 
       Override this in subclasses to use a custom :class:`SMTPChannel` for
       managing SMTP clients.
+
+   .. versionchanged:: 3.4
+      The *map* argument was added.
 
 
 DebuggingServer Objects
@@ -90,10 +96,19 @@ MailmanProxy Objects
 SMTPChannel Objects
 -------------------
 
-.. class:: SMTPChannel(server, conn, addr)
+.. class:: SMTPChannel(server, conn, addr, data_size_limit=33554432,
+                       map=None))
 
    Create a new :class:`SMTPChannel` object which manages the communication
    between the server and a single SMTP client.
+
+   *conn* and *addr* are as per the instance variables described below.
+
+   *data_size_limit* specifies the maximum number of bytes that will be
+   accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
+   limit.
+
+   A dictionary can be specified in *map* to avoid using a global socket map.
 
    To use a custom SMTPChannel implementation you need to override the
    :attr:`SMTPServer.channel_class` of your :class:`SMTPServer`.
