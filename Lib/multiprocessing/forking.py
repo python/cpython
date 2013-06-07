@@ -450,6 +450,7 @@ def prepare(data):
             # Main modules not actually called __main__.py may
             # contain additional code that should still be executed
             import imp
+            import importlib
 
             if main_path is None:
                 dirs = None
@@ -460,16 +461,17 @@ def prepare(data):
 
             assert main_name not in sys.modules, main_name
             sys.modules.pop('__mp_main__', None)
-            file, path_name, etc = imp.find_module(main_name, dirs)
+            # We should not try to load __main__
+            # since that would execute 'if __name__ == "__main__"'
+            # clauses, potentially causing a psuedo fork bomb.
+            loader = importlib.find_loader(main_name, path=dirs)
+            main_module = imp.new_module(main_name)
             try:
-                # We should not do 'imp.load_module("__main__", ...)'
-                # since that would execute 'if __name__ == "__main__"'
-                # clauses, potentially causing a psuedo fork bomb.
-                main_module = imp.load_module(
-                    '__mp_main__', file, path_name, etc
-                    )
-            finally:
-                if file:
-                    file.close()
+                loader.init_module_attrs(main_module)
+            except AttributeError:  # init_module_attrs is optional
+                pass
+            main_module.__name__ = '__mp_main__'
+            code = loader.get_code(main_name)
+            exec(code, main_module.__dict__)
 
             sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
