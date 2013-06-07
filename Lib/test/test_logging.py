@@ -659,41 +659,6 @@ class StreamHandlerTest(BaseTest):
 # -- if it proves to be of wider utility than just test_logging
 
 if threading:
-    class TestSMTPChannel(smtpd.SMTPChannel):
-        """
-        This derived class has had to be created because smtpd does not
-        support use of custom channel maps, although they are allowed by
-        asyncore's design. Issue #11959 has been raised to address this,
-        and if resolved satisfactorily, some of this code can be removed.
-        """
-        def __init__(self, server, conn, addr, sockmap):
-            asynchat.async_chat.__init__(self, conn, sockmap)
-            self.smtp_server = server
-            self.conn = conn
-            self.addr = addr
-            self.data_size_limit = None
-            self.received_lines = []
-            self.smtp_state = self.COMMAND
-            self.seen_greeting = ''
-            self.mailfrom = None
-            self.rcpttos = []
-            self.received_data = ''
-            self.fqdn = socket.getfqdn()
-            self.num_bytes = 0
-            try:
-                self.peer = conn.getpeername()
-            except OSError as err:
-                # a race condition  may occur if the other end is closing
-                # before we can get the peername
-                self.close()
-                if err.args[0] != errno.ENOTCONN:
-                    raise
-                return
-            self.push('220 %s %s' % (self.fqdn, smtpd.__version__))
-            self.set_terminator(b'\r\n')
-            self.extended_smtp = False
-
-
     class TestSMTPServer(smtpd.SMTPServer):
         """
         This class implements a test SMTP server.
@@ -714,36 +679,13 @@ if threading:
                         :func:`asyncore.loop`. This avoids changing the
                         :mod:`asyncore` module's global state.
         """
-        channel_class = TestSMTPChannel
 
         def __init__(self, addr, handler, poll_interval, sockmap):
-            self._localaddr = addr
-            self._remoteaddr = None
-            self.data_size_limit = None
-            self.sockmap = sockmap
-            asyncore.dispatcher.__init__(self, map=sockmap)
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.setblocking(0)
-                self.set_socket(sock, map=sockmap)
-                # try to re-use a server port if possible
-                self.set_reuse_addr()
-                self.bind(addr)
-                self.port = sock.getsockname()[1]
-                self.listen(5)
-            except:
-                self.close()
-                raise
+            smtpd.SMTPServer.__init__(self, addr, None, map=sockmap)
+            self.port = self.socket.getsockname()[1]
             self._handler = handler
             self._thread = None
             self.poll_interval = poll_interval
-
-        def handle_accepted(self, conn, addr):
-            """
-            Redefined only because the base class does not pass in a
-            map, forcing use of a global in :mod:`asyncore`.
-            """
-            channel = self.channel_class(self, conn, addr, self.sockmap)
 
         def process_message(self, peer, mailfrom, rcpttos, data):
             """
@@ -775,7 +717,7 @@ if threading:
                                   :func:`asyncore.loop`.
             """
             try:
-                asyncore.loop(poll_interval, map=self.sockmap)
+                asyncore.loop(poll_interval, map=self._map)
             except OSError:
                 # On FreeBSD 8, closing the server repeatably
                 # raises this error. We swallow it if the

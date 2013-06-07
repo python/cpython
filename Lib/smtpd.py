@@ -121,8 +121,9 @@ class SMTPChannel(asynchat.async_chat):
         })
     max_command_size_limit = max(command_size_limits.values())
 
-    def __init__(self, server, conn, addr, data_size_limit=DATA_SIZE_DEFAULT):
-        asynchat.async_chat.__init__(self, conn)
+    def __init__(self, server, conn, addr, data_size_limit=DATA_SIZE_DEFAULT,
+                 map=None):
+        asynchat.async_chat.__init__(self, conn, map=map)
         self.smtp_server = server
         self.conn = conn
         self.addr = addr
@@ -576,11 +577,11 @@ class SMTPServer(asyncore.dispatcher):
     channel_class = SMTPChannel
 
     def __init__(self, localaddr, remoteaddr,
-                 data_size_limit=DATA_SIZE_DEFAULT):
+                 data_size_limit=DATA_SIZE_DEFAULT, map=None):
         self._localaddr = localaddr
         self._remoteaddr = remoteaddr
         self.data_size_limit = data_size_limit
-        asyncore.dispatcher.__init__(self)
+        asyncore.dispatcher.__init__(self, map=map)
         try:
             self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
             # try to re-use a server port if possible
@@ -597,7 +598,8 @@ class SMTPServer(asyncore.dispatcher):
 
     def handle_accepted(self, conn, addr):
         print('Incoming connection from %s' % repr(addr), file=DEBUGSTREAM)
-        channel = self.channel_class(self, conn, addr, self.data_size_limit)
+        channel = self.channel_class(self, conn, addr, self.data_size_limit,
+                                     self._map)
 
     # API for "doing something useful with the message"
     def process_message(self, peer, mailfrom, rcpttos, data):
