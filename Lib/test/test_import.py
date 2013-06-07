@@ -127,16 +127,6 @@ class ImportTests(unittest.TestCase):
         finally:
             del sys.path[0]
 
-    @skip_if_dont_write_bytecode
-    def test_bug7732(self):
-        source = TESTFN + '.py'
-        os.mkdir(source)
-        try:
-            self.assertRaisesRegex(ImportError, '^No module',
-                imp.find_module, TESTFN, ["."])
-        finally:
-            os.rmdir(source)
-
     def test_module_with_large_stack(self, module='longlist'):
         # Regression test for http://bugs.python.org/issue561858.
         filename = module + '.py'
