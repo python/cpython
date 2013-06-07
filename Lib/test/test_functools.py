@@ -868,29 +868,24 @@ class TestSingleDispatch(unittest.TestCase):
         @functools.singledispatch
         def g(obj):
             return "base"
-        class C:
+        class A:
             pass
-        class D(C):
+        class C(A):
             pass
-        def g_C(c):
-            return "C"
-        g.register(C, g_C)
-        self.assertEqual(g(C()), "C")
-        self.assertEqual(g(D()), "C")
-
-    def test_classic_classes(self):
-        @functools.singledispatch
-        def g(obj):
-            return "base"
-        class C:
+        class B(A):
             pass
-        class D(C):
+        class D(C, B):
             pass
-        def g_C(c):
-            return "C"
-        g.register(C, g_C)
-        self.assertEqual(g(C()), "C")
-        self.assertEqual(g(D()), "C")
+        def g_A(a):
+            return "A"
+        def g_B(b):
+            return "B"
+        g.register(A, g_A)
+        g.register(B, g_B)
+        self.assertEqual(g(A()), "A")
+        self.assertEqual(g(B()), "B")
+        self.assertEqual(g(C()), "A")
+        self.assertEqual(g(D()), "B")
 
     def test_register_decorator(self):
         @functools.singledispatch
