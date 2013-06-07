@@ -189,12 +189,8 @@ The :mod:`functools` module defines the following functions:
 
 .. decorator:: singledispatch(default)
 
-   Transforms a function into a single-dispatch generic function.  A **generic
-   function** is composed of multiple functions implementing the same operation
-   for different types. Which implementation should be used during a call is
-   determined by the dispatch algorithm.  When the implementation is chosen
-   based on the type of a single argument, this is known as **single
-   dispatch**.
+   Transforms a function into a :term:`single-dispatch <single
+   dispatch>` :term:`generic function`.
 
    To define a generic function, decorate it with the ``@singledispatch``
    decorator. Note that the dispatch happens on the type of the first argument,

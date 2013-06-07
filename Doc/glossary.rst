@@ -302,6 +302,15 @@ Glossary
          >>> sum(i*i for i in range(10))         # sum of squares 0, 1, 4, ... 81
          285
 
+   generic function
+      A function composed of multiple functions implementing the same operation
+      for different types. Which implementation should be used during a call is
+      determined by the dispatch algorithm.
+
+      See also the :term:`single dispatch` glossary entry, the
+      :func:`functools.singledispatch` decorator, and :pep:`443`.
+
+
    GIL
       See :term:`global interpreter lock`.
 
@@ -744,6 +753,10 @@ Glossary
       supports :meth:`__getitem__` and :meth:`__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
       :term:`immutable` keys rather than integers.
+
+   single dispatch
+      A form of :term:`generic function` dispatch where the implementation is
+      chosen based on the type of a single argument.
 
    slice
       An object usually containing a portion of a :term:`sequence`.  A slice is
