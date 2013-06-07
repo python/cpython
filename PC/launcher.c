@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2012 Vinay Sajip.
+ * Copyright (C) 2011-2013 Vinay Sajip.
  * Licensed to PSF under a contributor agreement.
  *
  * Based on the work of:
@@ -18,7 +18,7 @@
 
 /* Build options. */
 #define SKIP_PREFIX
-/* #define SEARCH_PATH */
+#define SEARCH_PATH
 
 /* Just for now - static definition */
 
@@ -595,12 +595,17 @@ invoke_child(wchar_t * executable, wchar_t * suffix, wchar_t * cmdline)
     }
 }
 
-static wchar_t * builtin_virtual_paths [] = {
-    L"/usr/bin/env python",
-    L"/usr/bin/python",
-    L"/usr/local/bin/python",
-    L"python",
-    NULL
+typedef struct {
+    wchar_t *shebang;
+    BOOL search;
+} SHEBANG;
+
+static SHEBANG builtin_virtual_paths [] = {
+    { L"/usr/bin/env python", TRUE },
+    { L"/usr/bin/python", FALSE },
+    { L"/usr/local/bin/python", FALSE },
+    { L"python", FALSE },
+    { NULL, FALSE },
 };
 
 /* For now, a static array of commands. */
@@ -776,10 +781,10 @@ static void read_commands()
 
 static BOOL
 parse_shebang(wchar_t * shebang_line, int nchars, wchar_t ** command,
-              wchar_t ** suffix)
+              wchar_t ** suffix, BOOL *search)
 {
     BOOL rc = FALSE;
-    wchar_t ** vpp;
+    SHEBANG * vpp;
     size_t plen;
     wchar_t * p;
     wchar_t zapped;
@@ -789,15 +794,17 @@ parse_shebang(wchar_t * shebang_line, int nchars, wchar_t ** command,
 
     *command = NULL;    /* failure return */
     *suffix = NULL;
+    *search = FALSE;
 
     if ((*shebang_line++ == L'#') && (*shebang_line++ == L'!')) {
         shebang_line = skip_whitespace(shebang_line);
         if (*shebang_line) {
             *command = shebang_line;
-            for (vpp = builtin_virtual_paths; *vpp; ++vpp) {
-                plen = wcslen(*vpp);
-                if (wcsncmp(shebang_line, *vpp, plen) == 0) {
+            for (vpp = builtin_virtual_paths; vpp->shebang; ++vpp) {
+                plen = wcslen(vpp->shebang);
+                if (wcsncmp(shebang_line, vpp->shebang, plen) == 0) {
                     rc = TRUE;
+                    *search = vpp->search;
                     /* We can do this because all builtin commands contain
                      * "python".
                      */
@@ -805,7 +812,7 @@ parse_shebang(wchar_t * shebang_line, int nchars, wchar_t ** command,
                     break;
                 }
             }
-            if (*vpp == NULL) {
+            if (vpp->shebang == NULL) {
                 /*
                  * Not found in builtins - look in customised commands.
                  *
@@ -1012,8 +1019,10 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
     int i, j, nchars = 0;
     int header_len;
     BOOL is_virt;
+    BOOL search;
     wchar_t * command;
     wchar_t * suffix;
+    COMMAND *cmd = NULL;
     INSTALLED_PYTHON * ip;
 
     if (rc == 0) {
@@ -1125,7 +1134,7 @@ of bytes: %d\n", header_len);
             if (nchars > 0) {
                 shebang_line[--nchars] = L'\0';
                 is_virt = parse_shebang(shebang_line, nchars, &command,
-                                        &suffix);
+                                        &suffix, &search);
                 if (command != NULL) {
                     debug(L"parse_shebang: found command: %s\n", command);
                     if (!is_virt) {
@@ -1141,6 +1150,23 @@ of bytes: %d\n", header_len);
                             error(RC_BAD_VIRTUAL_PATH, L"Unknown virtual \
 path '%s'", command);
                         command += 6;   /* skip past "python" */
+                        if (search && ((*command == L'\0') || isspace(*command))) {
+                            /* Command is eligible for path search, and there
+                             * is no version specification.
+                             */
+                            debug(L"searching PATH for python executable\n");
+                            cmd = find_on_path(L"python");
+                            debug(L"Python on path: %s\n", cmd ? cmd->value : L"<not found>");
+                            if (cmd) {
+                                debug(L"located python on PATH: %s\n", cmd->value);
+                                invoke_child(cmd->value, suffix, cmdline);
+                                /* Exit here, as we have found the command */
+                                return;
+                            }
+                            /* FALL THROUGH: No python found on PATH, so fall
+                             * back to locating the correct installed python.
+                             */
+                        }
                         if (*command && !validate_version(command))
                             error(RC_BAD_VIRTUAL_PATH, L"Invalid version \
 specification: '%s'.\nIn the first line of the script, 'python' needs to be \
