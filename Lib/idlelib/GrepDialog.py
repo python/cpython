@@ -82,7 +82,7 @@ class GrepDialog(SearchDialogBase):
         for fn in list:
             try:
                 f = open(fn, errors='replace')
-            except IOError as msg:
+            except OSError as msg:
                 print(msg)
                 continue
             lineno = 0
