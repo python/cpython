@@ -901,7 +901,7 @@ class EditorWindow(object):
             with open(self.recent_files_path, 'w',
                         encoding='utf_8', errors='replace') as rf_file:
                 rf_file.writelines(rf_list)
-        except IOError as err:
+        except OSError as err:
             if not getattr(self.root, "recentfilelist_error_displayed", False):
                 self.root.recentfilelist_error_displayed = True
                 tkMessageBox.showerror(title='IDLE Error',

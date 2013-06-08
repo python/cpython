@@ -213,7 +213,7 @@ class IOBinding:
             f.seek(0)
             bytes = f.read()
             f.close()
-        except IOError as msg:
+        except OSError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
         chars, converted = self._decode(two_lines, bytes)
@@ -378,7 +378,7 @@ class IOBinding:
             f.flush()
             f.close()
             return True
-        except IOError as msg:
+        except OSError as msg:
             tkMessageBox.showerror("I/O Error", str(msg),
                                    master=self.text)
             return False

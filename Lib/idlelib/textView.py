@@ -66,7 +66,7 @@ def view_file(parent, title, filename, encoding=None, modal=True):
     try:
         with open(filename, 'r', encoding=encoding) as file:
             contents = file.read()
-    except IOError:
+    except OSError:
         import tkinter.messagebox as tkMessageBox
         tkMessageBox.showerror(title='File Load Error',
                                message='Unable to load file %r .' % filename,
