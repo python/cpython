@@ -84,6 +84,9 @@ IDLE
 Tests
 -----
 
+- Issue #17691: test_univnewlines now works with unittest test discovery.
+  Patch by Zachary Ware.
+
 - Issue #18094: test_uuid no more reports skipped tests as passed.
 
 - Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
