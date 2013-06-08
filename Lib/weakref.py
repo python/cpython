@@ -23,7 +23,6 @@ from _weakrefset import WeakSet, _IterationGuard
 import collections  # Import after _weakref to avoid circular import.
 import sys
 import itertools
-import atexit
 
 ProxyTypes = (ProxyType, CallableProxyType)
 
@@ -464,11 +463,18 @@ class finalize:
     _shutdown = False
     _index_iter = itertools.count()
     _dirty = False
+    _registered_with_atexit = False
 
     class _Info:
         __slots__ = ("weakref", "func", "args", "kwargs", "atexit", "index")
 
     def __init__(self, obj, func, *args, **kwargs):
+        if not self._registered_with_atexit:
+            # We may register the exit function more than once because
+            # of a thread race, but that is harmless
+            import atexit
+            atexit.register(self._exitfunc)
+            finalize._registered_with_atexit = True
         info = self._Info()
         info.weakref = ref(obj, self)
         info.func = func
@@ -569,5 +575,3 @@ class finalize:
             finalize._shutdown = True
             if reenable_gc:
                 gc.enable()
-
-atexit.register(finalize._exitfunc)
