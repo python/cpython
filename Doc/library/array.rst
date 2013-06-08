@@ -268,9 +268,7 @@ Examples::
       Packing and unpacking of External Data Representation (XDR) data as used in some
       remote procedure call systems.
 
-   `The Numerical Python Manual <http://numpy.sourceforge.net/numdoc/HTML/numdoc.htm>`_
+   `The Numerical Python Documentation <http://docs.scipy.org/doc/>`_
       The Numeric Python extension (NumPy) defines another array type; see
-      http://numpy.sourceforge.net/ for further information about Numerical Python.
-      (A PDF version of the NumPy manual is available at
-      http://numpy.sourceforge.net/numdoc/numdoc.pdf).
+      http://www.numpy.org/ for further information about Numerical Python.
 

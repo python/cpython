@@ -1204,7 +1204,7 @@ use a list comprehension::
    A = [[None] * w for i in range(h)]
 
 Or, you can use an extension that provides a matrix datatype; `Numeric Python
-<http://numpy.scipy.org/>`_ is the best known.
+<http://www.numpy.org/>`_ is the best known.
 
 
 How do I apply a method to a sequence of objects?
