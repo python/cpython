@@ -142,7 +142,7 @@ class IdleUserConfParser(IdleConfParser):
             fname = self.file
             try:
                 cfgFile = open(fname, 'w')
-            except IOError:
+            except OSError:
                 os.unlink(fname)
                 cfgFile = open(fname, 'w')
             with cfgFile:
@@ -207,7 +207,7 @@ class IdleConf:
                         userDir+',\n but the path does not exist.\n')
                 try:
                     sys.stderr.write(warn)
-                except IOError:
+                except OSError:
                     pass
                 userDir = '~'
         if userDir == "~": # still no path to home!
@@ -217,7 +217,7 @@ class IdleConf:
         if not os.path.exists(userDir):
             try:
                 os.mkdir(userDir)
-            except (OSError, IOError):
+            except OSError:
                 warn = ('\n Warning: unable to create user config directory\n'+
                         userDir+'\n Check path and permissions.\n Exiting!\n\n')
                 sys.stderr.write(warn)
@@ -251,7 +251,7 @@ class IdleConf:
                                                      raw=raw)))
             try:
                 sys.stderr.write(warning)
-            except IOError:
+            except OSError:
                 pass
         try:
             if self.defaultCfg[configType].has_option(section,option):
@@ -268,13 +268,11 @@ class IdleConf:
                        (option, section, default))
             try:
                 sys.stderr.write(warning)
-            except IOError:
+            except OSError:
                 pass
         return default
-
     def SetOption(self, configType, section, option, value):
         """In user's config file, set section's option to value.
-
         """
         self.userCfg[configType].SetOption(section, option, value)
 
@@ -380,7 +378,7 @@ class IdleConf:
                            (element, themeName, theme[element]))
                 try:
                     sys.stderr.write(warning)
-                except IOError:
+                except OSError:
                     pass
             colour=cfgParser.Get(themeName,element,default=theme[element])
             theme[element]=colour
@@ -637,13 +635,11 @@ class IdleConf:
                                (event, keySetName, keyBindings[event]))
                     try:
                         sys.stderr.write(warning)
-                    except IOError:
+                    except OSError:
                         pass
         return keyBindings
-
     def GetExtraHelpSourceList(self,configSet):
         """Fetch list of extra help sources from a given configSet.
-
         Valid configSets are 'user' or 'default'.  Return a list of tuples of
         the form (menu_item , path_to_help_file , option), or return the empty
         list.  'option' is the sequence number of the help resource.  'option'
