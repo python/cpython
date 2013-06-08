@@ -30,7 +30,13 @@ DATA_CRLF = "\r\n".join(DATA_TEMPLATE) + "\r\n"
 DATA_MIXED = "\n".join(DATA_TEMPLATE) + "\r"
 DATA_SPLIT = [x + "\n" for x in DATA_TEMPLATE]
 
-class TestGenericUnivNewlines(unittest.TestCase):
+class CTest:
+    open = io.open
+
+class PyTest:
+    open = staticmethod(pyio.open)
+
+class TestGenericUnivNewlines:
     # use a class variable DATA to define the data to write to the file
     # and a class variable NEWLINE to set the expected newlines value
     READMODE = 'r'
@@ -85,10 +91,14 @@ class TestGenericUnivNewlines(unittest.TestCase):
 class TestCRNewlines(TestGenericUnivNewlines):
     NEWLINE = '\r'
     DATA = DATA_CR
+class CTestCRNewlines(CTest, TestCRNewlines, unittest.TestCase): pass
+class PyTestCRNewlines(PyTest, TestCRNewlines, unittest.TestCase): pass
 
 class TestLFNewlines(TestGenericUnivNewlines):
     NEWLINE = '\n'
     DATA = DATA_LF
+class CTestLFNewlines(CTest, TestLFNewlines, unittest.TestCase): pass
+class PyTestLFNewlines(PyTest, TestLFNewlines, unittest.TestCase): pass
 
 class TestCRLFNewlines(TestGenericUnivNewlines):
     NEWLINE = '\r\n'
@@ -100,29 +110,14 @@ class TestCRLFNewlines(TestGenericUnivNewlines):
             data = fp.readline()
             pos = fp.tell()
         self.assertEqual(repr(fp.newlines), repr(self.NEWLINE))
+class CTestCRLFNewlines(CTest, TestCRLFNewlines, unittest.TestCase): pass
+class PyTestCRLFNewlines(PyTest, TestCRLFNewlines, unittest.TestCase): pass
 
 class TestMixedNewlines(TestGenericUnivNewlines):
     NEWLINE = ('\r', '\n')
     DATA = DATA_MIXED
-
-
-def test_main():
-    base_tests = (TestCRNewlines,
-                  TestLFNewlines,
-                  TestCRLFNewlines,
-                  TestMixedNewlines)
-    tests = []
-    # Test the C and Python implementations.
-    for test in base_tests:
-        class CTest(test):
-            open = io.open
-        CTest.__name__ = "C" + test.__name__
-        class PyTest(test):
-            open = staticmethod(pyio.open)
-        PyTest.__name__ = "Py" + test.__name__
-        tests.append(CTest)
-        tests.append(PyTest)
-    support.run_unittest(*tests)
+class CTestMixedNewlines(CTest, TestMixedNewlines, unittest.TestCase): pass
+class PyTestMixedNewlines(PyTest, TestMixedNewlines, unittest.TestCase): pass
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
