@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18038: SyntaxError raised during compilation sources with illegal
+  encoding now always contains an encoding name.
+
 - Issue #17931: Resolve confusion on Windows between pids and process
   handles.
 

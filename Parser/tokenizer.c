@@ -291,19 +291,19 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
                     tok->encoding = cs;
                     tok->decoding_state = STATE_NORMAL;
                 }
-                else
+                else {
+                    PyErr_Format(PyExc_SyntaxError,
+                                 "encoding problem: %s", cs);
                     PyMem_FREE(cs);
+                }
             }
         } else {                /* then, compare cs with BOM */
             r = (strcmp(tok->encoding, cs) == 0);
+            if (!r)
+                PyErr_Format(PyExc_SyntaxError,
+                             "encoding problem: %s with BOM", cs);
             PyMem_FREE(cs);
         }
-    }
-    if (!r) {
-        cs = tok->encoding;
-        if (!cs)
-            cs = "with BOM";
-        PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
     }
     return r;
 }
