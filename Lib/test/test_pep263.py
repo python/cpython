@@ -55,6 +55,24 @@ class PEP263Test(unittest.TestCase):
         # two bytes in common with the UTF-8 BOM
         self.assertRaises(SyntaxError, eval, b'\xef\xbb\x20')
 
+    def test_error_message(self):
+        compile(b'# -*- coding: iso-8859-15 -*-\n', 'dummy', 'exec')
+        compile(b'\xef\xbb\xbf\n', 'dummy', 'exec')
+        compile(b'\xef\xbb\xbf# -*- coding: utf-8 -*-\n', 'dummy', 'exec')
+        with self.assertRaisesRegexp(SyntaxError, 'fake'):
+            compile(b'# -*- coding: fake -*-\n', 'dummy', 'exec')
+        with self.assertRaisesRegexp(SyntaxError, 'iso-8859-15'):
+            compile(b'\xef\xbb\xbf# -*- coding: iso-8859-15 -*-\n',
+                    'dummy', 'exec')
+        with self.assertRaisesRegexp(SyntaxError, 'BOM'):
+            compile(b'\xef\xbb\xbf# -*- coding: iso-8859-15 -*-\n',
+                    'dummy', 'exec')
+        with self.assertRaisesRegexp(SyntaxError, 'fake'):
+            compile(b'\xef\xbb\xbf# -*- coding: fake -*-\n', 'dummy', 'exec')
+        with self.assertRaisesRegexp(SyntaxError, 'BOM'):
+            compile(b'\xef\xbb\xbf# -*- coding: fake -*-\n', 'dummy', 'exec')
+
+
 def test_main():
     support.run_unittest(PEP263Test)
 
