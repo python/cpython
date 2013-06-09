@@ -1,4 +1,5 @@
-import re, unicodedata, sys
+import re, sys
+from unicodedata import ucd_3_2_0 as unicodedata
 
 if sys.maxunicode == 65535:
     raise RuntimeError("need UCS-4 Python")
@@ -37,16 +38,20 @@ def compact_set(l):
         tuple.append((prev,prev+span+1))
     else:
         single.append(prev)
-    tuple = " + ".join(["list(range(%d,%d))" % t for t in tuple])
+    if not single and len(tuple) == 1:
+        tuple = "range(%d,%d)" % tuple[0]
+    else:
+        tuple = " + ".join("list(range(%d,%d))" % t for t in tuple)
     if not single:
         return "set(%s)" % tuple
     if not tuple:
-        return "set(%s)" % repr(single)
-    return "set(%s + %s)" % (repr(single),tuple)
+        return "set(%r)" % (single,)
+    return "set(%r + %s)" % (single, tuple)
 
 ############## Read the tables in the RFC #######################
 
-data = open("rfc3454.txt").readlines()
+with open("rfc3454.txt") as f:
+    data = f.readlines()
 
 tables = []
 curname = None
@@ -55,8 +60,7 @@ for l in data:
     if not l:
         continue
     # Skip RFC page breaks
-    if l.startswith("Hoffman & Blanchet") or\
-       l.startswith("RFC 3454"):
+    if l.startswith(("Hoffman & Blanchet", "RFC 3454")):
         continue
     # Find start/end lines
     m = re.match("----- (Start|End) Table ([A-Z](.[0-9])+) -----", l)
@@ -71,6 +75,8 @@ for l in data:
         else:
             if not curname:
                 raise RuntimeError("End without start", l)
+            if curname != m.group(2):
+                raise RuntimeError("Unexpected end", l)
             curname = None
             continue
     if not curname:
@@ -113,10 +119,10 @@ There are two kinds of tables: sets, for which a member test is provided,
 and mappings, for which a mapping function is provided.
 \"\"\"
 
-import unicodedata
+from unicodedata import ucd_3_2_0 as unicodedata
 """)
 
-print("assert unicodedata.unidata_version == %s" % repr(unicodedata.unidata_version))
+print("assert unicodedata.unidata_version == %r" % (unicodedata.unidata_version,))
 
 # A.1 is the table of unassigned characters
 # XXX Plane 15 PUA is listed as unassigned in Python.
@@ -173,15 +179,15 @@ assert name == "B.3"
 b3_exceptions = {}
 
 for k,v in table_b2.items():
-    if map(ord, unichr(k).lower()) != v:
-        b3_exceptions[k] = u"".join(map(unichr,v))
+    if list(map(ord, chr(k).lower())) != v:
+        b3_exceptions[k] = "".join(map(chr,v))
 
 b3 = sorted(b3_exceptions.items())
 
 print("""
 b3_exceptions = {""")
-for i,(k,v) in enumerate(b3):
-    print("0x%x:%s," % (k, repr(v)), end=' ')
+for i, kv in enumerate(b3):
+    print("0x%x:%a," % kv, end=' ')
     if i % 4 == 3:
         print()
 print("}")
@@ -224,7 +230,7 @@ print("""
 def map_table_b2(a):
     al = map_table_b3(a)
     b = unicodedata.normalize("NFKC", al)
-    bl = u"".join([map_table_b3(ch) for ch in b])
+    bl = "".join([map_table_b3(ch) for ch in b])
     c = unicodedata.normalize("NFKC", bl)
     if b != c:
         return c
@@ -240,7 +246,7 @@ assert table == {0x20:0x20}
 
 print("""
 def in_table_c11(code):
-    return code == u" "
+    return code == " "
 """)
 
 # C.1.2 is the rest of all space characters
@@ -249,12 +255,12 @@ del tables[0]
 assert name == "C.1.2"
 
 # table = set(table.keys())
-# Zs = set(gen_category(["Zs"])) - set([0x20])
+# Zs = set(gen_category(["Zs"])) - {0x20}
 # assert Zs == table
 
 print("""
 def in_table_c12(code):
-    return unicodedata.category(code) == "Zs" and code != u" "
+    return unicodedata.category(code) == "Zs" and code != " "
 
 def in_table_c11_c12(code):
     return unicodedata.category(code) == "Zs"
