@@ -407,6 +407,29 @@ class BasicSocketTests(unittest.TestCase):
             self.assertEqual(paths.capath, CAPATH)
 
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    def test_enum_cert_store(self):
+        self.assertEqual(ssl.X509_ASN_ENCODING, 1)
+        self.assertEqual(ssl.PKCS_7_ASN_ENCODING, 0x00010000)
+
+        self.assertEqual(ssl.enum_cert_store("CA"),
+            ssl.enum_cert_store("CA", "certificate"))
+        ssl.enum_cert_store("CA", "crl")
+        self.assertEqual(ssl.enum_cert_store("ROOT"),
+            ssl.enum_cert_store("ROOT", "certificate"))
+        ssl.enum_cert_store("ROOT", "crl")
+
+        self.assertRaises(TypeError, ssl.enum_cert_store)
+        self.assertRaises(WindowsError, ssl.enum_cert_store, "")
+        self.assertRaises(ValueError, ssl.enum_cert_store, "CA", "wrong")
+
+        ca = ssl.enum_cert_store("CA")
+        self.assertIsInstance(ca, list)
+        self.assertIsInstance(ca[0], tuple)
+        self.assertEqual(len(ca[0]), 2)
+        self.assertIsInstance(ca[0][0], bytes)
+        self.assertIsInstance(ca[0][1], int)
+
 class ContextTests(unittest.TestCase):
 
     @skip_if_broken_ubuntu_ssl

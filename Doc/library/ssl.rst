@@ -359,6 +359,20 @@ Certificate handling
 
    .. versionadded:: 3.4
 
+.. function:: enum_cert_store(store_name, cert_type='certificate')
+
+   Retrieve certificates from Windows' system cert store. *store_name* may be
+   one of ``CA``, ``ROOT`` or ``MY``. Windows may provide additional cert
+   stores, too. *cert_type* is either ``certificate`` for X.509 certificates
+   or ``crl`` for X.509 certificate revocation lists.
+
+   The function returns a list of (bytes, encoding_type) tuples. The
+   encoding_type flag can be interpreted with :const:`X509_ASN_ENCODING` or
+   :const:`PKCS_7_ASN_ENCODING`.
+
+   Availability: Windows.
+
+   .. versionadded:: 3.4
 
 Constants
 ^^^^^^^^^
@@ -595,6 +609,15 @@ Constants
 
    Used as the return value of the callback function in
    :meth:`SSLContext.set_servername_callback`.
+
+   .. versionadded:: 3.4
+
+.. data:: X509_ASN_ENCODING
+          PKCS_7_ASN_ENCODING
+
+   Encoding flags for :func:`enum_cert_store`.
+
+   Availability: Windows.
 
    .. versionadded:: 3.4
 
