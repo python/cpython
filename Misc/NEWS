@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16102: Make uuid._netbios_getnode() work again on Python 3.
+
 - Issue #18109: os.uname() now decodes fields from the locale encoding, and
   socket.gethostname() now decodes the hostname from the locale encoding,
   instead of using the UTF-8 encoding in strict mode.
