@@ -89,6 +89,8 @@ ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 
 import textwrap
 import re
+import os
+import collections
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -220,6 +222,24 @@ def match_hostname(cert, hostname):
     else:
         raise CertificateError("no appropriate commonName or "
             "subjectAltName fields were found")
+
+
+DefaultVerifyPaths = collections.namedtuple("DefaultVerifyPaths",
+    "cafile capath openssl_cafile_env openssl_cafile openssl_capath_env "
+    "openssl_capath")
+
+def get_default_verify_paths():
+    """Return paths to default cafile and capath.
+    """
+    parts = _ssl.get_default_verify_paths()
+
+    # environment vars shadow paths
+    cafile = os.environ.get(parts[0], parts[1])
+    capath = os.environ.get(parts[2], parts[3])
+
+    return DefaultVerifyPaths(cafile if os.path.isfile(cafile) else None,
+                              capath if os.path.isdir(capath) else None,
+                              *parts)
 
 
 class SSLContext(_SSLContext):
