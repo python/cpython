@@ -1787,6 +1787,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #15239: Make mkstringprep.py work again on Python 3.
+
 - Issue #17028: Allowed Python arguments to be supplied to the Windows
   launcher.
 
