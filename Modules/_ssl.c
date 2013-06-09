@@ -2819,9 +2819,9 @@ static PyMethodDef PySSL_methods[] = {
      PySSL_RAND_egd_doc},
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
+#endif
     {"get_default_verify_paths", (PyCFunction)get_default_verify_paths,
      METH_NOARGS, PySSL_get_default_verify_paths_doc},
-#endif
     {NULL,                  NULL}            /* Sentinel */
 };
 
