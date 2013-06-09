@@ -406,7 +406,7 @@ def _netbios_getnode():
         if win32wnet.Netbios(ncb) != 0:
             continue
         status._unpack()
-        bytes = map(ord, status.adapter_address)
+        bytes = status.adapter_address
         return ((bytes[0]<<40) + (bytes[1]<<32) + (bytes[2]<<24) +
                 (bytes[3]<<16) + (bytes[4]<<8) + bytes[5])
 
