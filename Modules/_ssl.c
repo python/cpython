@@ -2761,6 +2761,46 @@ fails or if it does provide enough data to seed PRNG.");
 
 #endif
 
+PyDoc_STRVAR(PySSL_get_default_verify_paths_doc,
+"get_default_verify_paths() -> tuple\n\
+\n\
+Return search paths and environment vars that are used by SSLContext's\n\
+set_default_verify_paths() to load default CAs. The values are\n\
+'cert_file_env', 'cert_file', 'cert_dir_env', 'cert_dir'.");
+
+static PyObject *
+get_default_verify_paths(PyObject *self)
+{
+    PyObject *ofile_env = NULL;
+    PyObject *ofile = NULL;
+    PyObject *odir_env = NULL;
+    PyObject *odir = NULL;
+
+#define convert(info, target) { \
+        const char *tmp = (info); \
+        target = NULL; \
+        if (!tmp) { Py_INCREF(Py_None); target = Py_None; } \
+        else if ((target = PyUnicode_DecodeFSDefault(tmp)) == NULL) { \
+            target = PyBytes_FromString(tmp); } \
+        if (!target) goto error; \
+    } while(0)
+
+    convert(X509_get_default_cert_file_env(), ofile_env);
+    convert(X509_get_default_cert_file(), ofile);
+    convert(X509_get_default_cert_dir_env(), odir_env);
+    convert(X509_get_default_cert_dir(), odir);
+#undef convert
+
+    return Py_BuildValue("(OOOO)", ofile_env, ofile, odir_env, odir);
+
+  error:
+    Py_XDECREF(ofile_env);
+    Py_XDECREF(ofile);
+    Py_XDECREF(odir_env);
+    Py_XDECREF(odir);
+    return NULL;
+}
+
 
 
 /* List of functions exported by this module. */
@@ -2779,6 +2819,8 @@ static PyMethodDef PySSL_methods[] = {
      PySSL_RAND_egd_doc},
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
+    {"get_default_verify_paths", (PyCFunction)get_default_verify_paths,
+     METH_NOARGS, PySSL_get_default_verify_paths_doc},
 #endif
     {NULL,                  NULL}            /* Sentinel */
 };
