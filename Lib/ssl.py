@@ -89,6 +89,7 @@ ALERT_DESCRIPTION_UNKNOWN_PSK_IDENTITY
 
 import textwrap
 import re
+import sys
 import os
 import collections
 
@@ -138,6 +139,9 @@ except ImportError:
 else:
     _PROTOCOL_NAMES[PROTOCOL_TLSv1_1] = "TLSv1.1"
     _PROTOCOL_NAMES[PROTOCOL_TLSv1_2] = "TLSv1.2"
+
+if sys.platform == "win32":
+    from _ssl import enum_cert_store, X509_ASN_ENCODING, PKCS_7_ASN_ENCODING
 
 from socket import getnameinfo as _getnameinfo
 from socket import socket, AF_INET, SOCK_STREAM, create_connection

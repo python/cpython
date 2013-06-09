@@ -54,7 +54,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 			/>
 			<Tool
@@ -115,7 +115,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 			/>
 			<Tool
@@ -176,7 +176,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 			/>
 			<Tool
@@ -238,7 +238,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 			/>
 			<Tool
@@ -299,7 +299,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 			/>
 			<Tool
@@ -361,7 +361,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 				TargetMachine="17"
 			/>
@@ -423,7 +423,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 			/>
 			<Tool
@@ -485,7 +485,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib;crypt32.lib"
 				BaseAddress="0x1e1D0000"
 				TargetMachine="17"
 			/>

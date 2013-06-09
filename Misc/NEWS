@@ -115,6 +115,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17134: Add ssl.enum_cert_store() as interface to Windows' cert store.
+
 - Issue #18143: Implement ssl.get_default_verify_paths() in order to debug
   the default locations for cafile and capath.
 
