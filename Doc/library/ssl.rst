@@ -804,8 +804,7 @@ to speed up repeated connections from the same clients.
    other peers' certificates when :data:`verify_mode` is other than
    :data:`CERT_NONE`.  At least one of *cafile* or *capath* must be specified.
 
-   The *cafile* string, if present, is the p
-   ath to a file of concatenated
+   The *cafile* string, if present, is the path to a file of concatenated
    CA certificates in PEM format. See the discussion of
    :ref:`ssl-certificates` for more information about how to arrange the
    certificates in this file.
