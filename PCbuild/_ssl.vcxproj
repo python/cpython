@@ -158,7 +158,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -173,7 +173,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -185,7 +185,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -200,7 +200,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
@@ -212,7 +212,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
@@ -227,7 +227,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -240,7 +240,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out32\libeay32.lib;$(opensslDir)\out32\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
@@ -255,7 +255,7 @@
       </Command>
     </PreLinkEvent>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;$(opensslDir)\out64\libeay32.lib;$(opensslDir)\out64\ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
