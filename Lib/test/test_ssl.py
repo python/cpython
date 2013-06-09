@@ -394,6 +394,19 @@ class BasicSocketTests(unittest.TestCase):
             support.gc_collect()
         self.assertIn(r, str(cm.warning.args[0]))
 
+    def test_get_default_verify_paths(self):
+        paths = ssl.get_default_verify_paths()
+        self.assertEqual(len(paths), 6)
+        self.assertIsInstance(paths, ssl.DefaultVerifyPaths)
+
+        with support.EnvironmentVarGuard() as env:
+            env["SSL_CERT_DIR"] = CAPATH
+            env["SSL_CERT_FILE"] = CERTFILE
+            paths = ssl.get_default_verify_paths()
+            self.assertEqual(paths.cafile, CERTFILE)
+            self.assertEqual(paths.capath, CAPATH)
+
+
 class ContextTests(unittest.TestCase):
 
     @skip_if_broken_ubuntu_ssl

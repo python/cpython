@@ -343,6 +343,23 @@ Certificate handling
    Given a certificate as an ASCII PEM string, returns a DER-encoded sequence of
    bytes for that same certificate.
 
+.. function:: get_default_verify_paths()
+
+   Returns a named tuple with paths to OpenSSL's default cafile and capath.
+   The paths are the same as used by
+   :meth:`SSLContext.set_default_verify_paths`. The return value is a
+   :term:`named tuple` ``DefaultVerifyPaths``:
+
+   * :attr:`cafile` - resolved path to cafile or None if the file doesn't exist,
+   * :attr:`capath` - resolved path to capath or None if the directory doesn't exist,
+   * :attr:`openssl_cafile_env` - OpenSSL's environment key that points to a cafile,
+   * :attr:`openssl_cafile` - hard coded path to a cafile,
+   * :attr:`openssl_capath_env` - OpenSSL's environment key that points to a capath,
+   * :attr:`openssl_capath` - hard coded path to a capath directory
+
+   .. versionadded:: 3.4
+
+
 Constants
 ^^^^^^^^^
 
@@ -787,7 +804,8 @@ to speed up repeated connections from the same clients.
    other peers' certificates when :data:`verify_mode` is other than
    :data:`CERT_NONE`.  At least one of *cafile* or *capath* must be specified.
 
-   The *cafile* string, if present, is the path to a file of concatenated
+   The *cafile* string, if present, is the p
+   ath to a file of concatenated
    CA certificates in PEM format. See the discussion of
    :ref:`ssl-certificates` for more information about how to arrange the
    certificates in this file.
