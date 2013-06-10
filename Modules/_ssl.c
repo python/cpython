@@ -2775,6 +2775,7 @@ get_default_verify_paths(PyObject *self)
     PyObject *ofile = NULL;
     PyObject *odir_env = NULL;
     PyObject *odir = NULL;
+    PyObject *tup = NULL;
 
 #define convert(info, target) { \
         const char *tmp = (info); \
@@ -2791,7 +2792,14 @@ get_default_verify_paths(PyObject *self)
     convert(X509_get_default_cert_dir(), odir);
 #undef convert
 
-    return Py_BuildValue("(OOOO)", ofile_env, ofile, odir_env, odir);
+    if ((tup = PyTuple_New(4)) == NULL) {
+        goto error;
+    }
+    PyTuple_SET_ITEM(tup, 0, ofile_env);
+    PyTuple_SET_ITEM(tup, 1, ofile);
+    PyTuple_SET_ITEM(tup, 2, odir_env);
+    PyTuple_SET_ITEM(tup, 3, odir);
+    return tup;
 
   error:
     Py_XDECREF(ofile_env);
