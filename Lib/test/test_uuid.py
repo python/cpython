@@ -448,6 +448,7 @@ class TestUUID(unittest.TestCase):
 
         else:
             os.close(fds[1])
+            self.addCleanup(os.close, fds[0])
             parent_value = uuid.uuid4().hex
             os.waitpid(pid, 0)
             child_value = os.read(fds[0], 100)
