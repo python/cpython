@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18183: Fix various unicode operations on strings with large unicode
+  codepoints.
+
 - Issue #18180: Fix ref leak in _PyImport_GetDynLoadWindows().
 
 - Issue #18038: SyntaxError raised during compilation sources with illegal
