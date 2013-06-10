@@ -577,6 +577,9 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('\U0008fffe'.lower(), '\U0008fffe')
         self.assertEqual('\u2177'.lower(), '\u2177')
 
+        # See issue #18183 for this one.
+        '\U00010000\U00100000'.lower()
+
     def test_casefold(self):
         self.assertEqual('hello'.casefold(), 'hello')
         self.assertEqual('hELlo'.casefold(), 'hello')
