@@ -1263,7 +1263,8 @@ class POSIXProcessTestCase(BaseTestCase):
                                      self.stderr.fileno()),
                                 msg="At least one fd was closed early.")
                 finally:
-                    map(os.close, devzero_fds)
+                    for fd in devzero_fds:
+                        os.close(fd)
 
     @unittest.skipIf(not os.path.exists("/dev/zero"), "/dev/zero required.")
     def test_preexec_errpipe_does_not_double_close_pipes(self):
