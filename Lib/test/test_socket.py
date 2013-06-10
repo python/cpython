@@ -666,7 +666,8 @@ class GeneralModuleTests(unittest.TestCase):
                            socket.AI_PASSIVE)
 
         # Issue 17269
-        socket.getaddrinfo("localhost", None, 0, 0, 0, socket.AI_NUMERICSERV)
+        if hasattr(socket, 'AI_NUMERICSERV'):
+            socket.getaddrinfo("localhost", None, 0, 0, 0, socket.AI_NUMERICSERV)
 
     def check_sendall_interrupted(self, with_timeout):
         # socketpair() is not stricly required, but it makes things easier.
