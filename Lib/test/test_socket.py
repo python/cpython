@@ -1167,7 +1167,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, socket.getaddrinfo, 'localhost', '\uD800')
 
         # Issue 17269
-        socket.getaddrinfo("localhost", None, 0, 0, 0, socket.AI_NUMERICSERV)
+        if hasattr(socket, 'AI_NUMERICSERV'):
+            socket.getaddrinfo("localhost", None, 0, 0, 0, socket.AI_NUMERICSERV)
 
     def test_getnameinfo(self):
         # only IP addresses are allowed
