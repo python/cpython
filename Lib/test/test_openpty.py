@@ -10,6 +10,8 @@ if not hasattr(os, "openpty"):
 class OpenptyTest(unittest.TestCase):
     def test(self):
         master, slave = os.openpty()
+        self.addCleanup(os.close, master)
+        self.addCleanup(os.close, slave)
         if not os.isatty(slave):
             self.fail("Slave-end of pty is not a terminal.")
 
