@@ -81,6 +81,9 @@ Library
 IDLE
 ----
 
+- Issue #17511: Keep IDLE find dialog open after clicking "Find Next".
+  Original patch by Sarah K.
+
 - Issue #18055: Move IDLE off of imp and on to importlib.
 
 - Issue #15392: Create a unittest framework for IDLE.
