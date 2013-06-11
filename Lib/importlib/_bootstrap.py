@@ -384,7 +384,7 @@ def _call_with_frames_removed(f, *args, **kwds):
 # due to the addition of new opcodes).
 
 _MAGIC_BYTES = (3280).to_bytes(2, 'little') + b'\r\n'
-_RAW_MAGIC_NUMBER = int.from_bytes(_MAGIC_BYTES, 'little')
+_RAW_MAGIC_NUMBER = int.from_bytes(_MAGIC_BYTES, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
 
