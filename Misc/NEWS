@@ -50,6 +50,9 @@ Build
 IDLE
 ----
 
+- Issue #17511: Keep IDLE find dialog open after clicking "Find Next".
+  Original patch by Sarah K.
+
 - Issue #15392: Create a unittest framework for IDLE.
   Preliminary patch by Rajagopalasarma Jayakrishnan
 
