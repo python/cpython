@@ -11,7 +11,7 @@
 
 .. versionadded:: 3.3
 
-**Source code:** :source:`Lib/venv.py`
+**Source code:** :source:`Lib/venv`
 
 --------------
 
