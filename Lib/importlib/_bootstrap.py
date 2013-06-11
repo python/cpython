@@ -376,7 +376,7 @@ def _call_with_frames_removed(f, *args, **kwds):
 #                        keyword-only defaults)
 #     Python 3.4a1  3260 (add LOAD_CLASSDEREF; allow locals of class to override
 #                        free vars)
-#     Python 3.4a1  3270 (various tweaks to the __class_ closure)
+#     Python 3.4a1  3270 (various tweaks to the __class__ closure)
 #     Python 3.4a1  3280 (remove implicit class argument)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
