@@ -339,6 +339,10 @@ class Executive(object):
                 exec(code, self.locals)
             finally:
                 interruptable = False
+        except SystemExit:
+            # Scripts that raise SystemExit should just
+            # return to the interactive prompt
+            pass
         except:
             self.usr_exc_info = sys.exc_info()
             if quitting:
