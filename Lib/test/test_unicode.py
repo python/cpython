@@ -577,9 +577,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual('\U0008fffe'.lower(), '\U0008fffe')
         self.assertEqual('\u2177'.lower(), '\u2177')
 
-        # See issue #18183 for this one.
-        '\U00010000\U00100000'.lower()
-
     def test_casefold(self):
         self.assertEqual('hello'.casefold(), 'hello')
         self.assertEqual('hELlo'.casefold(), 'hello')
@@ -696,6 +693,17 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertNotIn('asdf', '')
 
         self.assertRaises(TypeError, "abc".__contains__)
+
+    def test_issue18183(self):
+        '\U00010000\U00100000'.lower()
+        '\U00010000\U00100000'.casefold()
+        '\U00010000\U00100000'.upper()
+        '\U00010000\U00100000'.capitalize()
+        '\U00010000\U00100000'.title()
+        '\U00010000\U00100000'.swapcase()
+        '\U00100000'.center(3, '\U00010000')
+        '\U00100000'.ljust(3, '\U00010000')
+        '\U00100000'.rjust(3, '\U00010000')
 
     def test_format(self):
         self.assertEqual(''.format(), '')
@@ -2040,6 +2048,9 @@ class UnicodeTest(string_tests.CommonTest,
                      b'%c', c_int(0xabcd))
         check_format('\U0010ffff',
                      b'%c', c_int(0x10ffff))
+        # Issue #18183
+        check_format('\U00010000\U00100000',
+                     b'%c%c', c_int(0x10000), c_int(0x100000))
 
         # test "%"
         check_format('%',
