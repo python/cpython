@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #15767: Introduce ModuleNotFoundError which is raised when a module
+  could not be found.
+
 - Issue #18183: Fix various unicode operations on strings with large unicode
   codepoints.
 

@@ -317,7 +317,7 @@ def safeimport(path, forceload=0, cache={}):
         elif exc is SyntaxError:
             # A SyntaxError occurred before we could execute the module.
             raise ErrorDuringImport(value.filename, info)
-        elif exc is ImportError and value.name == path:
+        elif issubclass(exc, ImportError) and value.name == path:
             # No such module in the path.
             return None
         else:
