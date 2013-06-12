@@ -81,6 +81,8 @@ Library
 IDLE
 ----
 
+- Issue #18196: Avoid displaying spurious SystemExit tracebacks.
+
 - Issue #5492: Avoid traceback when exiting IDLE caused by a race condition.
 
 - Issue #17511: Keep IDLE find dialog open after clicking "Find Next".
