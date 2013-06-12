@@ -7,7 +7,6 @@ import time
 import unittest
 
 from test import support
-from test.test_importhooks import ImportHooksBaseTestCase, test_src, test_co
 
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
@@ -17,6 +16,14 @@ import doctest
 import inspect
 import io
 from traceback import extract_tb, extract_stack, print_tb
+
+test_src = """\
+def get_name():
+    return __name__
+def get_file():
+    return __file__
+"""
+test_co = compile(test_src, "<???>", "exec")
 raise_src = 'def do_raise(): raise TypeError\n'
 
 def make_pyc(co, mtime, size):
@@ -44,6 +51,23 @@ TEMP_ZIP = os.path.abspath("junk95142.zip")
 
 pyc_file = imp.cache_from_source(TESTMOD + '.py')
 pyc_ext = ('.pyc' if __debug__ else '.pyo')
+
+
+class ImportHooksBaseTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.path = sys.path[:]
+        self.meta_path = sys.meta_path[:]
+        self.path_hooks = sys.path_hooks[:]
+        sys.path_importer_cache.clear()
+        self.modules_before = support.modules_setup()
+
+    def tearDown(self):
+        sys.path[:] = self.path
+        sys.meta_path[:] = self.meta_path
+        sys.path_hooks[:] = self.path_hooks
+        sys.path_importer_cache.clear()
+        support.modules_cleanup(*self.modules_before)
 
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
