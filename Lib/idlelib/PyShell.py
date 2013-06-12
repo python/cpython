@@ -367,6 +367,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.port = PORT
         self.original_compiler_flags = self.compile.compiler.flags
 
+    _afterid = None
     rpcclt = None
     rpcsubproc = None
 
@@ -486,6 +487,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         threading.Thread(target=self.__request_interrupt).start()
 
     def kill_subprocess(self):
+        if self._afterid is not None:
+            self.tkconsole.text.after_cancel(self._afterid)
         try:
             self.rpcclt.listening_sock.close()
         except AttributeError:  # no socket
@@ -561,8 +564,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 pass
         # Reschedule myself
         if not self.tkconsole.closing:
-            self.tkconsole.text.after(self.tkconsole.pollinterval,
-                                      self.poll_subprocess)
+            self._afterid = self.tkconsole.text.after(
+                self.tkconsole.pollinterval, self.poll_subprocess)
 
     debugger = None
 
@@ -973,10 +976,6 @@ class PyShell(OutputWindow):
         self.stop_readline()
         self.canceled = True
         self.closing = True
-        # Wait for poll_subprocess() rescheduling to stop
-        self.text.after(2 * self.pollinterval, self.close2)
-
-    def close2(self):
         return EditorWindow.close(self)
 
     def _close(self):
