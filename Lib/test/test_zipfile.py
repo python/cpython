@@ -1911,11 +1911,5 @@ class UniversalNewlineTests(unittest.TestCase):
         unlink(TESTFN2)
 
 
-def test_main():
-    run_unittest(TestsWithSourceFile, TestZip64InSmallFiles, OtherTests,
-                 PyZipFileTests, DecryptionTests, TestsWithMultipleOpens,
-                 TestWithDirectory, UniversalNewlineTests,
-                 TestsWithRandomBinaryFiles)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
