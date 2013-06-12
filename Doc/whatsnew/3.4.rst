@@ -137,6 +137,9 @@ Some smaller changes made to the core Python language are:
 
 * Unicode database updated to UCD version 6.2.
 
+* Import now raises the new exception :exc:`ModuleNotFoundError` (subclass of
+  :exc:`ImportError`) when it cannot find something.
+
 
 
 New Modules

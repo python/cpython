@@ -1553,11 +1553,7 @@ def _find_and_load_unlocked(name, import_):
             raise ImportError(msg, name=name)
     loader = _find_module(name, path)
     if loader is None:
-        exc = ImportError(_ERR_MSG.format(name), name=name)
-        # TODO(brett): switch to a proper ModuleNotFound exception in Python
-        # 3.4.
-        exc._not_found = True
-        raise exc
+        raise ModuleNotFoundError(_ERR_MSG.format(name), name=name)
     elif name not in sys.modules:
         # The parent import may have already imported this module.
         loader.load_module(name)
@@ -1643,15 +1639,12 @@ def _handle_fromlist(module, fromlist, import_):
                 from_name = '{}.{}'.format(module.__name__, x)
                 try:
                     _call_with_frames_removed(import_, from_name)
-                except ImportError as exc:
+                except ModuleNotFoundError as exc:
                     # Backwards-compatibility dictates we ignore failed
                     # imports triggered by fromlist for modules that don't
                     # exist.
-                    # TODO(brett): In Python 3.4, have import raise
-                    #   ModuleNotFound and catch that.
-                    if getattr(exc, '_not_found', False):
-                        if exc.name == from_name:
-                            continue
+                    if exc.name == from_name:
+                        continue
                     raise
     return module
 
