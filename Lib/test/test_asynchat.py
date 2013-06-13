@@ -283,9 +283,5 @@ class TestFifo(unittest.TestCase):
         self.assertEqual(f.pop(), (0, None))
 
 
-def test_main(verbose=None):
-    support.run_unittest(TestAsynchat, TestAsynchat_WithPoll,
-                              TestHelperFunctions, TestFifo)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

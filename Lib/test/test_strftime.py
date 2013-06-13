@@ -176,8 +176,6 @@ class StrftimeTest(unittest.TestCase):
                            (e[0], e[2]))
                     print("  Expected %s, but got %s" % (e[1], result))
 
-def test_main():
-    support.run_unittest(StrftimeTest)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

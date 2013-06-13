@@ -951,9 +951,6 @@ class ASTValidatorTests(unittest.TestCase):
             compile(mod, fn, "exec")
 
 
-def test_main():
-    support.run_unittest(AST_Tests, ASTHelpers_Test, ASTValidatorTests)
-
 def main():
     if __name__ != '__main__':
         return
@@ -966,7 +963,7 @@ def main():
             print("]")
         print("main()")
         raise SystemExit
-    test_main()
+    unittest.main()
 
 #### EVERYTHING BELOW IS GENERATED #####
 exec_results = [

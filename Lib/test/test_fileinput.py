@@ -835,22 +835,6 @@ class Test_hook_encoded(unittest.TestCase):
         self.assertIs(kwargs.pop('encoding'), encoding)
         self.assertFalse(kwargs)
 
-def test_main():
-    run_unittest(
-        BufferSizesTests,
-        FileInputTests,
-        Test_fileinput_input,
-        Test_fileinput_close,
-        Test_fileinput_nextfile,
-        Test_fileinput_filename,
-        Test_fileinput_lineno,
-        Test_fileinput_filelineno,
-        Test_fileinput_fileno,
-        Test_fileinput_isfirstline,
-        Test_fileinput_isstdin,
-        Test_hook_compressed,
-        Test_hook_encoded,
-    )
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

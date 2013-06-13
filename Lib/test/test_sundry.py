@@ -54,8 +54,5 @@ class TestUntestedModules(unittest.TestCase):
                     print("skipping tty")
 
 
-def test_main():
-    support.run_unittest(TestUntestedModules)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
