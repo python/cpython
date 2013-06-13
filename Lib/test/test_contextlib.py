@@ -617,9 +617,5 @@ class TestIgnored(unittest.TestCase):
             'Hello'[50]
 
 
-# This is needed to make the test actually run under regrtest.py!
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

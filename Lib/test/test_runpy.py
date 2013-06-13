@@ -575,12 +575,5 @@ s = "non-ASCII: h\xe9"
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
 
 
-def test_main():
-    run_unittest(
-                 ExecutionLayerTestCase,
-                 RunModuleTestCase,
-                 RunPathTestCase
-                 )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

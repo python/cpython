@@ -86,8 +86,6 @@ class IoctlTests(unittest.TestCase):
             os.close(mfd)
             os.close(sfd)
 
-def test_main():
-    run_unittest(IoctlTests)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

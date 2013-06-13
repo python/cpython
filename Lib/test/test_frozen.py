@@ -72,8 +72,6 @@ class FrozenTests(unittest.TestCase):
         del sys.modules['__phello__']
         del sys.modules['__phello__.spam']
 
-def test_main():
-    run_unittest(FrozenTests)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

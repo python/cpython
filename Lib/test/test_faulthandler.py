@@ -588,8 +588,5 @@ sys.exit(exitcode)
         self.check_register(chain=True)
 
 
-def test_main():
-    support.run_unittest(FaultHandlerTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -1,6 +1,10 @@
 import unittest
 from test import support
 from _testcapi import getargs_keywords, getargs_keyword_only
+try:
+    from _testcapi import getargs_L, getargs_K
+except ImportError:
+    getargs_L = None # PY_LONG_LONG not available
 
 # > How about the following counterproposal. This also changes some of
 # > the other format codes to be a little more regular.
@@ -182,6 +186,7 @@ class Signed_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_n, VERY_LARGE)
 
 
+@unittest.skipIf(getargs_L is None, 'PY_LONG_LONG is not available')
 class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
         from _testcapi import getargs_L
@@ -534,24 +539,5 @@ class Unicode_TestCase(unittest.TestCase):
         self.assertIsNone(getargs_Z_hash(None))
 
 
-def test_main():
-    tests = [
-        Signed_TestCase,
-        Unsigned_TestCase,
-        Boolean_TestCase,
-        Tuple_TestCase,
-        Keywords_TestCase,
-        KeywordOnly_TestCase,
-        Bytes_TestCase,
-        Unicode_TestCase,
-    ]
-    try:
-        from _testcapi import getargs_L, getargs_K
-    except ImportError:
-        pass # PY_LONG_LONG not available
-    else:
-        tests.append(LongLong_TestCase)
-    support.run_unittest(*tests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

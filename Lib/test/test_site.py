@@ -401,8 +401,6 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
-def test_main():
-    run_unittest(HelperFunctionsTests, ImportSideEffectTests)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

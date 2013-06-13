@@ -338,13 +338,6 @@ class TimeoutTest(unittest.TestCase):
             self.assertEqual(u.fp.fp.raw._sock.gettimeout(), 60)
 
 
-def test_main():
-    support.requires("network")
-    support.run_unittest(AuthTests,
-                         OtherNetworkTests,
-                         CloseSocketTest,
-                         TimeoutTest,
-                         )
-
 if __name__ == "__main__":
-    test_main()
+    support.requires("network")
+    unittest.main()
