@@ -146,11 +146,11 @@ from inspect import isabstract
 
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     threading = None
 try:
     import multiprocessing.process
-except ImportError:
+except ModuleNotFoundError:
     multiprocessing = None
 
 
@@ -180,7 +180,7 @@ for module in sys.modules.values():
 if sys.platform == 'darwin':
     try:
         import resource
-    except ImportError:
+    except ModuleNotFoundError:
         pass
     else:
         soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
@@ -571,7 +571,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if findleaks:
         try:
             import gc
-        except ImportError:
+        except ModuleNotFoundError:
             print('No GC available, disabling findleaks.')
             findleaks = False
         else:
@@ -692,7 +692,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     if use_mp:
         try:
             from threading import Thread
-        except ImportError:
+        except ModuleNotFoundError:
             print("Multiprocess option requires thread support")
             sys.exit(2)
         from queue import Queue
@@ -1396,7 +1396,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     pic = sys.path_importer_cache.copy()
     try:
         import zipimport
-    except ImportError:
+    except ModuleNotFoundError:
         zdc = None # Run unmodified on platforms without zipimport support
     else:
         zdc = zipimport._zip_directory_cache.copy()
@@ -1473,7 +1473,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     sys.path_importer_cache.update(pic)
     try:
         import zipimport
-    except ImportError:
+    except ModuleNotFoundError:
         pass # Run unmodified on platforms without zipimport support
     else:
         zipimport._zip_directory_cache.clear()
@@ -1510,7 +1510,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     doctest.master = None
     try:
         import ctypes
-    except ImportError:
+    except ModuleNotFoundError:
         # Don't worry about resetting the cache if ctypes is not supported
         pass
     else:

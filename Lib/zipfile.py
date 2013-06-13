@@ -18,18 +18,18 @@ import binascii
 try:
     import zlib # We may need its compression method
     crc32 = zlib.crc32
-except ImportError:
+except ModuleNotFoundError:
     zlib = None
     crc32 = binascii.crc32
 
 try:
     import bz2 # We may need its compression method
-except ImportError:
+except ModuleNotFoundError:
     bz2 = None
 
 try:
     import lzma # We may need its compression method
-except ImportError:
+except ModuleNotFoundError:
     lzma = None
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
