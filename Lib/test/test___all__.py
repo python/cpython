@@ -75,7 +75,7 @@ class AllTest(unittest.TestCase):
         try:
             import rlcompleter
             import locale
-        except ImportError:
+        except ModuleNotFoundError:
             pass
         else:
             locale.setlocale(locale.LC_CTYPE, 'C')
@@ -113,8 +113,5 @@ class AllTest(unittest.TestCase):
             print('Following modules failed to be imported:', failed_imports)
 
 
-def test_main():
-    support.run_unittest(AllTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
