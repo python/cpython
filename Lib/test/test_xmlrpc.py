@@ -14,8 +14,12 @@ import contextlib
 from test import support
 
 try:
+    import gzip
+except ModuleNotFoundError:
+    gzip = None
+try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     threading = None
 
 alist = [{'astring': 'foo@bar.baz.spam',
@@ -785,6 +789,7 @@ class KeepaliveServerTestCase2(BaseKeepaliveServerTestCase):
 
 #A test case that verifies that gzip encoding works in both directions
 #(for a request and the response)
+@unittest.skipIf(gzip is None, 'requires gzip')
 class GzipServerTestCase(BaseServerTestCase):
     #a request handler that supports keep-alive and logs requests into a
     #class variable
@@ -1074,25 +1079,5 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
-@support.reap_threads
-def test_main():
-    xmlrpc_tests = [XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
-         BinaryTestCase, FaultTestCase]
-    xmlrpc_tests.append(UseBuiltinTypesTestCase)
-    xmlrpc_tests.append(SimpleServerTestCase)
-    xmlrpc_tests.append(KeepaliveServerTestCase1)
-    xmlrpc_tests.append(KeepaliveServerTestCase2)
-    try:
-        import gzip
-        xmlrpc_tests.append(GzipServerTestCase)
-    except ImportError:
-        pass #gzip not supported in this build
-    xmlrpc_tests.append(MultiPathServerTestCase)
-    xmlrpc_tests.append(ServerProxyTestCase)
-    xmlrpc_tests.append(FailingServerTestCase)
-    xmlrpc_tests.append(CGIHandlerTestCase)
-
-    support.run_unittest(*xmlrpc_tests)
-
 if __name__ == "__main__":
-    test_main()
+    support.reap_threads(unittest.main)()
