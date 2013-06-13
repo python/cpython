@@ -1079,5 +1079,15 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
         self.assertTrue(server.use_builtin_types)
 
 
+@support.reap_threads
+def test_main():
+    support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
+            BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
+            SimpleServerTestCase, KeepaliveServerTestCase1,
+            KeepaliveServerTestCase2, GzipServerTestCase,
+            MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
+            CGIHandlerTestCase)
+
+
 if __name__ == "__main__":
-    support.reap_threads(unittest.main)()
+    test_main()
