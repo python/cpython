@@ -269,3 +269,6 @@ that may require changes to your code.
 * Frozen packages no longer set ``__path__`` to a list containg the package name
   but an empty list instead. Determing if a module is a package should be done
   using ``hasattr(module, '__path__')``.
+
+* :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
+  argument is not set. Previously only ``NULL`` was returned.

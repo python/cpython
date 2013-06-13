@@ -185,7 +185,8 @@ The following exceptions are the exceptions that are usually raised.
    A subclass of :exc:`ImportError` which is raised by :keyword:`import` when a
    module could not be located. This includes ``from ... import`` statements as
    the specific attribute being requested cannot be known a priori to be a module
-   or some other type of object.
+   or some other type of object. It is also raised when ``None`` is found in
+   :data:`sys.modules`.
 
    .. versionadded:: 3.4
 
