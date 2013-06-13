@@ -1614,7 +1614,7 @@ def _gcd_import(name, package=None, level=0):
         _imp.release_lock()
         message = ("import of {} halted; "
                     "None in sys.modules".format(name))
-        raise ImportError(message, name=name)
+        raise ModuleNotFoundError(message, name=name)
     _lock_unlock_module(name)
     return module
 

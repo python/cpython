@@ -443,6 +443,10 @@ Tests
 C-API
 -----
 
+- Issue #15767: Added PyErr_SetImportErrorSubclass().
+
+- PyErr_SetImportError() now sets TypeError when its msg argument is set.
+
 - Issue #9369: The types of `char*` arguments of PyObject_CallFunction() and
   PyObject_CallMethod() now changed to `const char*`.  Based on patches by
   Jörg Müller and Lars Buitinck.
