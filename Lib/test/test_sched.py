@@ -197,8 +197,5 @@ class TestCase(unittest.TestCase):
         self.assertEqual(l, [])
 
 
-def test_main():
-    support.run_unittest(TestCase)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
