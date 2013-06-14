@@ -126,6 +126,11 @@ Tools/Demos
 
 - Issue #15239: Make mkstringprep.py work again on Python 3.
 
+Build
+-----
+
+- Issue #15172: Document NASM 2.10+ as requirement for building OpenSSL 1.0.1
+  on Windows.
 
 What's New in Python 3.3.2?
 ===========================
