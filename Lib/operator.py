@@ -360,7 +360,7 @@ def ixor(a, b):
 
 try:
     from _operator import *
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     from _operator import __doc__

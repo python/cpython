@@ -846,7 +846,7 @@ if __name__ == '__main__':
     if options.setuid:
         try:
             import pwd
-        except ImportError:
+        except ModuleNotFoundError:
             print('Cannot import module "pwd"; try running with -n option.', file=sys.stderr)
             sys.exit(1)
         nobody = pwd.getpwnam('nobody')[2]

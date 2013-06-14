@@ -51,7 +51,7 @@ import os, sys, io
 
 try:
     import errno
-except ImportError:
+except ModuleNotFoundError:
     errno = None
 EBADF = getattr(errno, 'EBADF', 9)
 EAGAIN = getattr(errno, 'EAGAIN', 11)

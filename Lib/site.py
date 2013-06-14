@@ -469,7 +469,7 @@ def enablerlcompleter():
         try:
             import readline
             import rlcompleter
-        except ImportError:
+        except ModuleNotFoundError:
             return
 
         # Reading the initialization (config) file may not be enough to set a
@@ -570,7 +570,7 @@ def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
         import sitecustomize
-    except ImportError:
+    except ModuleNotFoundError:
         pass
     except Exception as err:
         if os.environ.get("PYTHONVERBOSE"):
@@ -586,7 +586,7 @@ def execusercustomize():
     """Run custom user specific code, if available."""
     try:
         import usercustomize
-    except ImportError:
+    except ModuleNotFoundError:
         pass
     except Exception as err:
         if os.environ.get("PYTHONVERBOSE"):

@@ -35,7 +35,7 @@ import sys
 import sysconfig
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     threading = None
 
 logger = logging.getLogger(__name__)

@@ -25,7 +25,7 @@ import unittest
 import sqlite3 as sqlite
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     threading = None
 
 from test.support import TESTFN, unlink

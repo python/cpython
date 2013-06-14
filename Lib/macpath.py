@@ -187,7 +187,7 @@ def realpath(path):
     path = abspath(path)
     try:
         import Carbon.File
-    except ImportError:
+    except ModuleNotFoundError:
         return path
     if not path:
         return path

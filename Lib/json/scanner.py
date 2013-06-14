@@ -3,7 +3,7 @@
 import re
 try:
     from _json import make_scanner as c_make_scanner
-except ImportError:
+except ModuleNotFoundError:
     c_make_scanner = None
 
 __all__ = ['make_scanner']

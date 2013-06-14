@@ -353,7 +353,7 @@ import warnings
 import errno
 try:
     from time import monotonic as _time
-except ImportError:
+except ModuleNotFoundError:
     from time import time as _time
 
 # Exception classes used by this module.

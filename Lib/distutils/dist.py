@@ -4,11 +4,11 @@ Provides the Distribution class, which represents the module distribution
 being built/installed/distributed.
 """
 
-import sys, os, re
+import importlib, sys, os, re
 
 try:
     import warnings
-except ImportError:
+except ModuleNotFoundError:
     warnings = None
 
 from distutils.errors import *
@@ -788,9 +788,8 @@ Common commands: (see '--help-commands' for more)
             klass_name = command
 
             try:
-                __import__ (module_name)
-                module = sys.modules[module_name]
-            except ImportError:
+                module = importlib.import_module(module_name)
+            except ModuleNotFoundError:
                 continue
 
             try:

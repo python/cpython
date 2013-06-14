@@ -149,7 +149,7 @@ import sys
 try:
     from collections import namedtuple as _namedtuple
     DecimalTuple = _namedtuple('DecimalTuple', 'sign digits exponent')
-except ImportError:
+except ModuleNotFoundError:
     DecimalTuple = lambda *args: args
 
 # Rounding
@@ -430,7 +430,7 @@ _rounding_modes = (ROUND_DOWN, ROUND_HALF_UP, ROUND_HALF_EVEN, ROUND_CEILING,
 
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     # Python was compiled without threads; create a mock object instead
     class MockThreading(object):
         def local(self, sys=sys):
@@ -6147,7 +6147,7 @@ del re
 # don't care too much if locale isn't present.
 try:
     import locale as _locale
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 def _parse_format_specifier(format_spec, _localeconv=None):
@@ -6391,7 +6391,7 @@ del sys
 
 try:
     import _decimal
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     s1 = set(dir())
