@@ -151,6 +151,18 @@ class FindLoaderTests(unittest.TestCase):
         self.assertIsNone(importlib.find_loader('nevergoingtofindthismodule'))
 
 
+class ReloadTests(unittest.TestCase):
+
+    """Test module reloading for builtin and extension modules."""
+
+    def test_reload_modules(self):
+        for mod in ('tokenize', 'time', 'marshal'):
+            with self.subTest(module=mod):
+                with support.CleanImport(mod):
+                    module = importlib.import_module(mod)
+                    importlib.reload(module)
+
+
 class InvalidateCacheTests(unittest.TestCase):
 
     def test_method_called(self):

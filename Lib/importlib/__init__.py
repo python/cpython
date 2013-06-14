@@ -1,5 +1,5 @@
 """A pure Python implementation of import."""
-__all__ = ['__import__', 'import_module', 'invalidate_caches']
+__all__ = ['__import__', 'import_module', 'invalidate_caches', 'reload']
 
 # Bootstrap help #####################################################
 
@@ -11,6 +11,7 @@ __all__ = ['__import__', 'import_module', 'invalidate_caches']
 # initialised below if the frozen one is not available).
 import _imp  # Just the builtin component, NOT the full Python module
 import sys
+import types
 
 try:
     import _frozen_importlib as _bootstrap
@@ -90,3 +91,34 @@ def import_module(name, package=None):
                 break
             level += 1
     return _bootstrap._gcd_import(name[level:], package, level)
+
+
+_RELOADING = {}
+
+
+def reload(module):
+    """Reload the module and return it.
+
+    The module must have been successfully imported before.
+
+    """
+    if not module or not isinstance(module, types.ModuleType):
+        raise TypeError("reload() argument must be module")
+    name = module.__name__
+    if name not in sys.modules:
+        msg = "module {} not in sys.modules"
+        raise ImportError(msg.format(name), name=name)
+    if name in _RELOADING:
+        return _RELOADING[name]
+    _RELOADING[name] = module
+    try:
+        parent_name = name.rpartition('.')[0]
+        if parent_name and parent_name not in sys.modules:
+            msg = "parent {!r} not in sys.modules"
+            raise ImportError(msg.format(parentname), name=parent_name)
+        return module.__loader__.load_module(name)
+    finally:
+        try:
+            del _RELOADING[name]
+        except KeyError:
+            pass
