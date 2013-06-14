@@ -23,6 +23,7 @@ from importlib._bootstrap import cache_from_source, source_from_cache
 
 from importlib import _bootstrap
 from importlib import machinery
+from importlib import util
 import importlib
 import os
 import sys
@@ -44,8 +45,11 @@ IMP_HOOK = 9
 
 
 def get_magic():
-    """Return the magic number for .pyc or .pyo files."""
-    return _bootstrap._MAGIC_BYTES
+    """**DEPRECATED**
+
+    Return the magic number for .pyc or .pyo files.
+    """
+    return util.MAGIC_NUMBER
 
 
 def get_tag():

@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18192: Introduce importlib.util.MAGIC_NUMBER and document as deprecated
+  imp.get_magic().
+
 - Issue #18149: Add filecmp.clear_cache() to manually clear the filecmp cache.
   Patch by Mark Levitt
 

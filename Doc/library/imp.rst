@@ -21,6 +21,9 @@ This module provides an interface to the mechanisms used to implement the
    Return the magic string value used to recognize byte-compiled code files
    (:file:`.pyc` files).  (This value may be different for each Python version.)
 
+   .. deprecated:: 3.4
+       Use :attr:`importlib.util.MAGIC_NUMBER` instead.
+
 
 .. function:: get_suffixes()
 
