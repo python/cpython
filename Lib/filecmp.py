@@ -6,6 +6,7 @@ Classes:
 Functions:
     cmp(f1, f2, shallow=True) -> int
     cmpfiles(a, b, common) -> ([], [], [])
+    clear_cache()
 
 """
 
@@ -13,7 +14,7 @@ import os
 import stat
 from itertools import filterfalse
 
-__all__ = ['cmp', 'dircmp', 'cmpfiles', 'DEFAULT_IGNORES']
+__all__ = ['clear_cache', 'cmp', 'dircmp', 'cmpfiles', 'DEFAULT_IGNORES']
 
 _cache = {}
 BUFSIZE = 8*1024
@@ -21,6 +22,9 @@ BUFSIZE = 8*1024
 DEFAULT_IGNORES = [
     'RCS', 'CVS', 'tags', '.git', '.hg', '.bzr', '_darcs', '__pycache__']
 
+def clear_cache():
+    """Clear the filecmp cache."""
+    _cache.clear()
 
 def cmp(f1, f2, shallow=True):
     """Compare two files.
@@ -39,7 +43,8 @@ def cmp(f1, f2, shallow=True):
     True if the files are the same, False otherwise.
 
     This function uses a cache for past comparisons and the results,
-    with a cache invalidation mechanism relying on stale signatures.
+    with a cache invalidation mechanism relying on stale signatures
+    or by explicitly calling clear_cache().
 
     """
 
@@ -56,7 +61,7 @@ def cmp(f1, f2, shallow=True):
     if outcome is None:
         outcome = _do_cmp(f1, f2)
         if len(_cache) > 100:      # limit the maximum size of the cache
-            _cache.clear()
+            clear_cache()
         _cache[f1, f2, s1, s2] = outcome
     return outcome
 

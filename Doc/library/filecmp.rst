@@ -27,6 +27,10 @@ The :mod:`filecmp` module defines the following functions:
    Note that no external programs are called from this function, giving it
    portability and efficiency.
 
+   This function uses a cache for past comparisons and the results,
+   with a cache invalidation mechanism relying on stale signatures
+   or by explicitly calling :func:`clear_cache`.
+
 
 .. function:: cmpfiles(dir1, dir2, common, shallow=True)
 
@@ -46,6 +50,15 @@ The :mod:`filecmp` module defines the following functions:
    For example, ``cmpfiles('a', 'b', ['c', 'd/e'])`` will compare ``a/c`` with
    ``b/c`` and ``a/d/e`` with ``b/d/e``.  ``'c'`` and ``'d/e'`` will each be in
    one of the three returned lists.
+
+
+.. function:: clear_cache()
+
+   .. versionadded:: 3.4
+
+   Clear the filecmp cache. This may be useful if a file is compared so quickly
+   after it is modified that it is within the mtime resolution of
+   the underlying filesystem.
 
 
 .. _dircmp-objects:
