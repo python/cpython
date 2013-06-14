@@ -94,9 +94,9 @@ PyObject_{New, NewVar, Del}.
    the object gets initialized via PyObject_{Init, InitVar} after obtaining
    the raw memory.
 */
-PyAPI_FUNC(void *) PyObject_Malloc(size_t);
-PyAPI_FUNC(void *) PyObject_Realloc(void *, size_t);
-PyAPI_FUNC(void) PyObject_Free(void *);
+PyAPI_FUNC(void *) PyObject_Malloc(size_t size);
+PyAPI_FUNC(void *) PyObject_Realloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyObject_Free(void *ptr);
 
 /* This function returns the number of allocated memory blocks, regardless of size */
 PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
@@ -106,41 +106,46 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetAllocatedBlocks(void);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyObject_DebugMallocStats(FILE *out);
 #endif /* #ifndef Py_LIMITED_API */
-#ifdef PYMALLOC_DEBUG   /* WITH_PYMALLOC && PYMALLOC_DEBUG */
-PyAPI_FUNC(void *) _PyObject_DebugMalloc(size_t nbytes);
-PyAPI_FUNC(void *) _PyObject_DebugRealloc(void *p, size_t nbytes);
-PyAPI_FUNC(void) _PyObject_DebugFree(void *p);
-PyAPI_FUNC(void) _PyObject_DebugDumpAddress(const void *p);
-PyAPI_FUNC(void) _PyObject_DebugCheckAddress(const void *p);
-PyAPI_FUNC(void *) _PyObject_DebugMallocApi(char api, size_t nbytes);
-PyAPI_FUNC(void *) _PyObject_DebugReallocApi(char api, void *p, size_t nbytes);
-PyAPI_FUNC(void) _PyObject_DebugFreeApi(char api, void *p);
-PyAPI_FUNC(void) _PyObject_DebugCheckAddressApi(char api, const void *p);
-PyAPI_FUNC(void *) _PyMem_DebugMalloc(size_t nbytes);
-PyAPI_FUNC(void *) _PyMem_DebugRealloc(void *p, size_t nbytes);
-PyAPI_FUNC(void) _PyMem_DebugFree(void *p);
-#define PyObject_MALLOC         _PyObject_DebugMalloc
-#define PyObject_Malloc         _PyObject_DebugMalloc
-#define PyObject_REALLOC        _PyObject_DebugRealloc
-#define PyObject_Realloc        _PyObject_DebugRealloc
-#define PyObject_FREE           _PyObject_DebugFree
-#define PyObject_Free           _PyObject_DebugFree
+#endif
 
-#else   /* WITH_PYMALLOC && ! PYMALLOC_DEBUG */
+/* Macros */
 #define PyObject_MALLOC         PyObject_Malloc
 #define PyObject_REALLOC        PyObject_Realloc
 #define PyObject_FREE           PyObject_Free
-#endif
-
-#else   /* ! WITH_PYMALLOC */
-#define PyObject_MALLOC         PyMem_MALLOC
-#define PyObject_REALLOC        PyMem_REALLOC
-#define PyObject_FREE           PyMem_FREE
-
-#endif  /* WITH_PYMALLOC */
-
 #define PyObject_Del            PyObject_Free
-#define PyObject_DEL            PyObject_FREE
+#define PyObject_DEL            PyObject_Free
+
+/* Get internal functions of PyObject_Malloc(), PyObject_Realloc() and
+   PyObject_Free(). *ctx_p is an arbitrary user value. */
+PyAPI_FUNC(void) PyObject_GetAllocators(PyMemAllocators *allocators);
+
+/* Set internal functions of PyObject_Malloc(), PyObject_Realloc() and PyObject_Free().
+   ctx is an arbitrary user value.
+
+   malloc(ctx, 0) and realloc(ctx, ptr, 0) must not return NULL: it would be
+   treated as an error.
+
+   PyMem_SetupDebugHooks() should be called to reinstall debug hooks if new
+   functions do no call original functions anymore. */
+PyAPI_FUNC(void) PyObject_SetAllocators(PyMemAllocators *allocators);
+
+/* Get internal functions allocating and deallocating arenas for
+   PyObject_Malloc(), PyObject_Realloc() and PyObject_Free().
+   *ctx_p is an arbitrary user value. */
+PyAPI_FUNC(void) _PyObject_GetArenaAllocators(
+    void **ctx_p,
+    void* (**malloc_p) (void *ctx, size_t size),
+    void (**free_p) (void *ctx, void *ptr, size_t size)
+    );
+
+/* Get internal functions allocating and deallocating arenas for
+   PyObject_Malloc(), PyObject_Realloc() and PyObject_Free().
+   ctx is an arbitrary user value. */
+PyAPI_FUNC(void) _PyObject_SetArenaAllocators(
+    void *ctx,
+    void* (*malloc) (void *ctx, size_t size),
+    void (*free) (void *ctx, void *ptr, size_t size)
+    );
 
 /*
  * Generic object allocator interface
