@@ -41,6 +41,13 @@ byte-code cache files in the directory containing the source code.
    is raised.  This function returns the path to byte-compiled file, i.e.
    whatever *cfile* value was used.
 
+   If the path that *cfile* becomes (either explicitly specified or computed)
+   is a symlink or non-regular file, :exc:`FileExistsError` will be raised.
+   This is to act as a warning that import will turn those paths into regular
+   files if it is allowed to write byte-compiled files to those paths. This is
+   a side-effect of import using file renaming to place the final byte-compiled
+   file into place to prevent concurrent file writing issues.
+
    *optimize* controls the optimization level and is passed to the built-in
    :func:`compile` function.  The default of ``-1`` selects the optimization
    level of the current interpreter.
@@ -53,7 +60,9 @@ byte-code cache files in the directory containing the source code.
    .. versionchanged:: 3.4
       Changed code to use :mod:`importlib` for the byte-code cache file writing.
       This means file creation/writing semantics now match what :mod:`importlib`
-      does, e.g. permissions, write-and-move semantics, etc.
+      does, e.g. permissions, write-and-move semantics, etc. Also added the
+      caveat that :exc:`FileExistsError` is raised if *cfile* is a symlink or
+      non-regular file.
 
 
 .. function:: main(args=None)
