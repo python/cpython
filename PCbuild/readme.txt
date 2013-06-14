@@ -152,9 +152,12 @@ _ssl
     You can (theoretically) use any version of OpenSSL you like - the
     build process will automatically select the latest version.
 
-    You must install the NASM assembler from
+    You must install the NASM assembler 2.10 or newer from
         http://nasm.sf.net
-    for x86 builds.  Put nasmw.exe anywhere in your PATH.
+    for x86 builds.  Put nasmw.exe anywhere in your PATH. More recent
+    versions of OpenSSL may need a later version of NASM. If OpenSSL's self
+    tests don't pass, you should first try to update NASM and do a full
+    rebuild of OpenSSL.
     Note: recent releases of nasm only have nasm.exe. Just rename it to 
     nasmw.exe.
 
