@@ -123,6 +123,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18193: Add importlib.reload().
+
 - Issue #18157: Stop using imp.load_module() in pydoc.
 
 - Issue #16102: Make uuid._netbios_getnode() work again on Python 3.
