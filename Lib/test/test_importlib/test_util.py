@@ -313,5 +313,16 @@ class ResolveNameTests(unittest.TestCase):
             util.resolve_name('..bacon', 'spam')
 
 
+class MagicNumberTests(unittest.TestCase):
+
+    def test_length(self):
+        # Should be 4 bytes.
+        self.assertEqual(len(util.MAGIC_NUMBER), 4)
+
+    def test_incorporates_rn(self):
+        # The magic number uses \r\n to come out wrong when splitting on lines.
+        self.assertTrue(util.MAGIC_NUMBER.endswith(b'\r\n'))
+
+
 if __name__ == '__main__':
     unittest.main()

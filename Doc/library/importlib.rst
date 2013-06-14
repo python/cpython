@@ -879,6 +879,13 @@ find and load modules.
 This module contains the various objects that help in the construction of
 an :term:`importer`.
 
+.. attribute:: MAGIC_NUMBER
+
+   The bytes which represent the bytecode version number. If you need help with
+   loading/writing bytecode then consider :class:`importlib.abc.SourceLoader`.
+
+   .. versionadded:: 3.4
+
 .. function:: resolve_name(name, package)
 
    Resolve a relative module name to an absolute one.
