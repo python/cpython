@@ -2511,6 +2511,176 @@ test_decref_doesnt_leak(PyObject *ob)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_pymem_alloc0(PyObject *self)
+{
+    void *ptr;
+
+    ptr = PyMem_Malloc(0);
+    if (ptr == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "PyMem_Malloc(0) returns NULL");
+        return NULL;
+    }
+    PyMem_Free(ptr);
+
+    ptr = PyObject_Malloc(0);
+    if (ptr == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "PyObject_Malloc(0) returns NULL");
+        return NULL;
+    }
+    PyObject_Free(ptr);
+
+    Py_RETURN_NONE;
+}
+
+typedef struct {
+    PyMemAllocators alloc;
+
+    size_t malloc_size;
+    void *realloc_ptr;
+    size_t realloc_new_size;
+    void *free_ptr;
+} alloc_hook_t;
+
+static void* hook_malloc (void* ctx, size_t size)
+{
+    alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->malloc_size = size;
+    return hook->alloc.malloc(hook->alloc.ctx, size);
+}
+
+static void* hook_realloc (void* ctx, void* ptr, size_t new_size)
+{
+    alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    hook->realloc_ptr = ptr;
+    hook->realloc_new_size = new_size;
+    return hook->alloc.realloc(hook->alloc.ctx, ptr, new_size);
+}
+
+static void hook_free (void *ctx, void *ptr)
+{
+    alloc_hook_t *hook = (alloc_hook_t *)ctx;
+    printf("HOOK\n");
+    hook->free_ptr = ptr;
+    hook->alloc.free(hook->alloc.ctx, ptr);
+}
+
+static PyObject *
+test_setallocators(char api)
+{
+    PyObject *res = NULL;
+    const char *error_msg;
+    alloc_hook_t hook;
+    PyMemAllocators alloc;
+    size_t size, size2;
+    void *ptr, *ptr2;
+
+    hook.malloc_size = 0;
+    hook.realloc_ptr = NULL;
+    hook.realloc_new_size = 0;
+    hook.free_ptr = NULL;
+
+    alloc.ctx = &hook;
+    alloc.malloc = &hook_malloc;
+    alloc.realloc = &hook_realloc;
+    alloc.free = &hook_free;
+    if (api == 'o') {
+        PyObject_GetAllocators(&hook.alloc);
+        PyObject_SetAllocators(&alloc);
+    }
+    else if (api == 'r') {
+        PyMem_GetRawAllocators(&hook.alloc);
+        PyMem_SetRawAllocators(&alloc);
+    }
+    else {
+        PyMem_GetAllocators(&hook.alloc);
+        PyMem_SetAllocators(&alloc);
+    }
+
+    size = 42;
+    if (api == 'o')
+        ptr = PyObject_Malloc(size);
+    else if (api == 'r')
+        ptr = PyMem_RawMalloc(size);
+    else
+        ptr = PyMem_Malloc(size);
+    if (ptr == NULL) {
+        error_msg = "malloc failed";
+        goto fail;
+    }
+
+    if (hook.malloc_size != size) {
+        error_msg = "malloc invalid size";
+        goto fail;
+    }
+
+    size2 = 200;
+    if (api == 'o')
+        ptr2 = PyObject_Realloc(ptr, size2);
+    else if (api == 'r')
+        ptr2 = PyMem_RawRealloc(ptr, size2);
+    else
+        ptr2 = PyMem_Realloc(ptr, size2);
+    if (ptr2 == NULL) {
+        error_msg = "realloc failed";
+        goto fail;
+    }
+
+    if (hook.realloc_ptr != ptr
+        || hook.realloc_new_size != size2) {
+        error_msg = "realloc invalid parameters";
+        goto fail;
+    }
+
+    if (api == 'o')
+        PyObject_Free(ptr2);
+    else if (api == 'r')
+        PyMem_RawFree(ptr2);
+    else {
+        printf("PyMem_Free\n");
+        PyMem_Free(ptr2);
+    }
+
+    if (hook.free_ptr != ptr2) {
+        error_msg = "free invalid pointer";
+        goto fail;
+    }
+
+    Py_INCREF(Py_None);
+    res = Py_None;
+    goto finally;
+
+fail:
+    PyErr_SetString(PyExc_RuntimeError, error_msg);
+
+finally:
+    if (api == 'o')
+        PyObject_SetAllocators(&hook.alloc);
+    else if (api == 'r')
+        PyMem_SetRawAllocators(&hook.alloc);
+    else
+        PyMem_SetAllocators(&hook.alloc);
+    return res;
+}
+
+static PyObject *
+test_pymem_setrawallocators(PyObject *self)
+{
+    return test_setallocators('r');
+}
+
+static PyObject *
+test_pymem_setallocators(PyObject *self)
+{
+    return test_setallocators('m');
+}
+
+static PyObject *
+test_pyobject_setallocators(PyObject *self)
+{
+    return test_setallocators('o');
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -2611,6 +2781,14 @@ static PyMethodDef TestMethods[] = {
     {"pytime_object_to_time_t", test_pytime_object_to_time_t,  METH_VARARGS},
     {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
+    {"test_pymem",
+     (PyCFunction)test_pymem_alloc0, METH_NOARGS},
+    {"test_pymem_alloc0",
+     (PyCFunction)test_pymem_setrawallocators, METH_NOARGS},
+    {"test_pymem_setallocators",
+     (PyCFunction)test_pymem_setallocators, METH_NOARGS},
+    {"test_pyobject_setallocators",
+     (PyCFunction)test_pyobject_setallocators, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
