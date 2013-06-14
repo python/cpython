@@ -30,3 +30,4 @@ The following modules are documented in this chapter:
    copy.rst
    pprint.rst
    reprlib.rst
+   enum.rst
