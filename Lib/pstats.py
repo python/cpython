@@ -528,7 +528,7 @@ if __name__ == '__main__':
     import cmd
     try:
         import readline
-    except ImportError:
+    except ModuleNotFoundError:
         pass
 
     class ProfileBrowser(cmd.Cmd):

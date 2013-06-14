@@ -127,14 +127,14 @@ _PROTOCOL_NAMES = {
 try:
     from _ssl import PROTOCOL_SSLv2
     _SSLv2_IF_EXISTS = PROTOCOL_SSLv2
-except ImportError:
+except ModuleNotFoundError:
     _SSLv2_IF_EXISTS = None
 else:
     _PROTOCOL_NAMES[PROTOCOL_SSLv2] = "SSLv2"
 
 try:
     from _ssl import PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     _PROTOCOL_NAMES[PROTOCOL_TLSv1_1] = "TLSv1.1"

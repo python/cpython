@@ -51,7 +51,7 @@ from collections import namedtuple, OrderedDict
 # back to hardcording so the dependency is optional
 try:
     from dis import COMPILER_FLAG_NAMES as _flag_names
-except ImportError:
+except ModuleNotFoundError:
     CO_OPTIMIZED, CO_NEWLOCALS = 0x1, 0x2
     CO_VARARGS, CO_VARKEYWORDS = 0x4, 0x8
     CO_NESTED, CO_GENERATOR, CO_NOFREE = 0x10, 0x20, 0x40

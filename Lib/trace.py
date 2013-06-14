@@ -61,12 +61,12 @@ import pickle
 from warnings import warn as _warn
 try:
     from time import monotonic as _time
-except ImportError:
+except ModuleNotFoundError:
     from time import time as _time
 
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     _settrace = sys.settrace
 
     def _unsettrace():

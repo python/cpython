@@ -47,7 +47,7 @@ try:
 
     from _locale import *
 
-except ImportError:
+except ModuleNotFoundError:
 
     # Locale emulation
 

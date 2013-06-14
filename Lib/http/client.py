@@ -1156,7 +1156,7 @@ class HTTPConnection:
 
 try:
     import ssl
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     class HTTPSConnection(HTTPConnection):

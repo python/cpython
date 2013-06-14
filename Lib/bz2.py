@@ -14,7 +14,7 @@ import warnings
 
 try:
     from threading import RLock
-except ImportError:
+except ModuleNotFoundError:
     from dummy_threading import RLock
 
 from _bz2 import BZ2Compressor, BZ2Decompressor

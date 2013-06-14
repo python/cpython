@@ -2116,7 +2116,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 try:
     from _datetime import *
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     # Clean up unused names

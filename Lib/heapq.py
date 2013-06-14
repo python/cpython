@@ -343,7 +343,7 @@ def _siftup_max(heap, pos):
 # If available, use C implementation
 try:
     from _heapq import *
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 def merge(*iterables):

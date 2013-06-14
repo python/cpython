@@ -26,7 +26,7 @@ import unittest
 import sqlite3 as sqlite
 try:
     import zlib
-except ImportError:
+except ModuleNotFoundError:
     zlib = None
 
 

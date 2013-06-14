@@ -171,7 +171,7 @@ def _fix_eols(data):
 
 try:
     import ssl
-except ImportError:
+except ModuleNotFoundError:
     _have_ssl = False
 else:
     _have_ssl = True

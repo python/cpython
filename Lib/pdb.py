@@ -158,7 +158,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             import readline
             # remove some common file name delimiters
             readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
-        except ImportError:
+        except ModuleNotFoundError:
             pass
         self.allow_kbdint = False
         self.nosigint = nosigint

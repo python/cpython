@@ -388,7 +388,7 @@ def byte_compile (py_files,
         try:
             from tempfile import mkstemp
             (script_fd, script_name) = mkstemp(".py")
-        except ImportError:
+        except ModuleNotFoundError:
             from tempfile import mktemp
             (script_fd, script_name) = None, mktemp(".py")
         log.info("writing byte-compilation script '%s'", script_name)

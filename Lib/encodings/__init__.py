@@ -29,11 +29,11 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """#"
 
 import codecs
+import importlib
 from . import aliases
 
 _cache = {}
 _unknown = '--unknown--'
-_import_tail = ['*']
 _aliases = aliases.aliases
 
 class CodecRegistryError(LookupError, SystemError):
@@ -94,9 +94,8 @@ def search_function(encoding):
         try:
             # Import is absolute to prevent the possibly malicious import of a
             # module with side-effects that is not in the 'encodings' package.
-            mod = __import__('encodings.' + modname, fromlist=_import_tail,
-                             level=0)
-        except ImportError:
+            mod = importlib.import_module('encodings.' + modname)
+        except ModuleNotFoundError:
             pass
         else:
             break

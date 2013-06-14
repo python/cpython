@@ -71,7 +71,7 @@ import warnings
 
 try:
     import ssl
-except ImportError:
+except ModuleNotFoundError:
     _have_ssl = False
 else:
     _have_ssl = True

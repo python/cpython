@@ -17,17 +17,17 @@ try:
     import bz2
     del bz2
     _BZ2_SUPPORTED = True
-except ImportError:
+except ModuleNotFoundError:
     _BZ2_SUPPORTED = False
 
 try:
     from pwd import getpwnam
-except ImportError:
+except ModuleNotFoundError:
     getpwnam = None
 
 try:
     from grp import getgrnam
-except ImportError:
+except ModuleNotFoundError:
     getgrnam = None
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
@@ -668,7 +668,7 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
     # command.
     try:
         import zipfile
-    except ImportError:
+    except ModuleNotFoundError:
         zipfile = None
 
     if zipfile is None:
@@ -858,7 +858,7 @@ def _unpack_zipfile(filename, extract_dir):
     """
     try:
         import zipfile
-    except ImportError:
+    except ModuleNotFoundError:
         raise ReadError('zlib not supported, cannot unpack this archive.')
 
     if not zipfile.is_zipfile(filename):

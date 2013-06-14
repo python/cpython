@@ -9,7 +9,7 @@ import errno
 # Import _thread instead of threading to reduce startup cost
 try:
     from _thread import allocate_lock as Lock
-except ImportError:
+except ModuleNotFoundError:
     from _dummy_thread import allocate_lock as Lock
 
 import io
@@ -1486,7 +1486,7 @@ class TextIOWrapper(TextIOBase):
             if encoding is None:
                 try:
                     import locale
-                except ImportError:
+                except ModuleNotFoundError:
                     # Importing locale may fail if Python is being built
                     encoding = "ascii"
                 else:

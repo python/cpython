@@ -395,7 +395,7 @@ def _count_elements(mapping, iterable):
 
 try:                                    # Load C helper function if available
     from _collections import _count_elements
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 class Counter(dict):

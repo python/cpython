@@ -20,7 +20,7 @@ del sys
 
 try:
     from xml.parsers import expat
-except ImportError:
+except ModuleNotFoundError:
     raise SAXReaderNotAvailable("expat not supported", None)
 else:
     if not hasattr(expat, "ParserCreate"):
@@ -30,18 +30,7 @@ from xml.sax import xmlreader, saxutils, handler
 AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
 
-# If we're using a sufficiently recent version of Python, we can use
-# weak references to avoid cycles between the parser and content
-# handler, otherwise we'll just have to pretend.
-try:
-    import _weakref
-except ImportError:
-    def _mkproxy(o):
-        return o
-else:
-    import weakref
-    _mkproxy = weakref.proxy
-    del weakref, _weakref
+import weakref
 
 # --- ExpatLocator
 
@@ -52,7 +41,7 @@ class ExpatLocator(xmlreader.Locator):
     a circular reference between the parser and the content handler.
     """
     def __init__(self, parser):
-        self._ref = _mkproxy(parser)
+        self._ref = weakref.proxy(parser)
 
     def getColumnNumber(self):
         parser = self._ref
