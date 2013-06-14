@@ -36,6 +36,26 @@ class PyCompileTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
 
+    def test_do_not_overwrite_symlinks(self):
+        # In the face of a cfile argument being a symlink, bail out.
+        # Issue #17222
+        try:
+            os.symlink(self.pyc_path + '.actual', self.pyc_path)
+        except OSError:
+            self.skipTest('need to be able to create a symlink for a file')
+        else:
+            assert os.path.islink(self.pyc_path)
+            with self.assertRaises(FileExistsError):
+                py_compile.compile(self.source_path, self.pyc_path)
+
+    @unittest.skipIf(not os.path.exists(os.devnull) or os.path.isfile(os.devnull),
+                     'requires os.devnull and for it to be a non-regular file')
+    def test_do_not_overwrite_nonregular_files(self):
+        # In the face of a cfile argument being a non-regular file, bail out.
+        # Issue #17222
+        with self.assertRaises(FileExistsError):
+            py_compile.compile(self.source_path, os.devnull)
+
     def test_cache_path(self):
         py_compile.compile(self.source_path)
         self.assertTrue(os.path.exists(self.cache_path))

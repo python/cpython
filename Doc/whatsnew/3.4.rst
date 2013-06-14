@@ -272,3 +272,8 @@ that may require changes to your code.
 
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned.
+
+* :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
+  it would write to is a symlink or a non-regular file. This is to act as a
+  warning that import will overwrite those files with a regular file regardless
+  of what type of file path they were originally.
