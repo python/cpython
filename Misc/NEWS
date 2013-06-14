@@ -493,6 +493,8 @@ Build
 - Issue #17547: In configure, explicitly pass -Wformat for the benefit for GCC
   4.8.
 
+- Issue #15172: Document NASM 2.10+ as requirement for building OpenSSL 1.0.1
+  on Windows.
 
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
