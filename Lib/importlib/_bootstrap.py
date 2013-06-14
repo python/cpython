@@ -383,8 +383,8 @@ def _call_with_frames_removed(f, *args, **kwds):
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 
-_MAGIC_BYTES = (3280).to_bytes(2, 'little') + b'\r\n'
-_RAW_MAGIC_NUMBER = int.from_bytes(_MAGIC_BYTES, 'little')  # For import.c
+MAGIC_NUMBER = (3280).to_bytes(2, 'little') + b'\r\n'
+_RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
 
@@ -663,7 +663,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
     magic = data[:4]
     raw_timestamp = data[4:8]
     raw_size = data[8:12]
-    if magic != _MAGIC_BYTES:
+    if magic != MAGIC_NUMBER:
         message = 'bad magic number in {!r}: {!r}'.format(name, magic)
         _verbose_message(message)
         raise ImportError(message, **exc_details)
@@ -711,7 +711,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
 def _code_to_bytecode(code, mtime=0, source_size=0):
     """Compile a code object into bytecode for writing out to a byte-compiled
     file."""
-    data = bytearray(_MAGIC_BYTES)
+    data = bytearray(MAGIC_NUMBER)
     data.extend(_w_long(mtime))
     data.extend(_w_long(source_size))
     data.extend(marshal.dumps(code))
