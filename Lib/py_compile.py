@@ -7,6 +7,7 @@ import imp
 import importlib._bootstrap
 import importlib.machinery
 import os
+import os.path
 import sys
 import traceback
 
@@ -96,12 +97,25 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     See compileall.py for a script/module that uses this module to
     byte-compile all installed files (or all files in selected
     directories).
+
+    Do note that FileExistsError is raised if cfile ends up pointing at a
+    non-regular file or symlink. Because the compilation uses a file renaming,
+    the resulting file would be regular and thus not the same type of file as
+    it was previously.
     """
     if cfile is None:
         if optimize >= 0:
             cfile = imp.cache_from_source(file, debug_override=not optimize)
         else:
             cfile = imp.cache_from_source(file)
+    if os.path.islink(cfile):
+        msg = ('{} is a symlink and will be changed into a regular file if '
+               'import writes a byte-compiled file to it')
+        raise FileExistsError(msg.format(file, cfile))
+    elif os.path.exists(cfile) and not os.path.isfile(cfile):
+        msg = ('{} is a non-regular file and will be changed into a regular '
+               'one if import writes a byte-compiled file to it')
+        raise FileExistsError(msg.format(file, cfile))
     loader = importlib.machinery.SourceFileLoader('<py_compile>', file)
     source_bytes = loader.get_data(file)
     try:
