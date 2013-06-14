@@ -23,6 +23,7 @@ from importlib._bootstrap import cache_from_source, source_from_cache
 
 from importlib import _bootstrap
 from importlib import machinery
+import importlib
 import os
 import sys
 import tokenize
@@ -246,31 +247,12 @@ def find_module(name, path=None):
     return file, file_path, (suffix, mode, type_)
 
 
-_RELOADING = {}
-
 def reload(module):
-    """Reload the module and return it.
+    """**DEPRECATED**
+
+    Reload the module and return it.
 
     The module must have been successfully imported before.
 
     """
-    if not module or type(module) != type(sys):
-        raise TypeError("reload() argument must be module")
-    name = module.__name__
-    if name not in sys.modules:
-        msg = "module {} not in sys.modules"
-        raise ImportError(msg.format(name), name=name)
-    if name in _RELOADING:
-        return _RELOADING[name]
-    _RELOADING[name] = module
-    try:
-        parent_name = name.rpartition('.')[0]
-        if parent_name and parent_name not in sys.modules:
-            msg = "parent {!r} not in sys.modules"
-            raise ImportError(msg.format(parentname), name=parent_name)
-        return module.__loader__.load_module(name)
-    finally:
-        try:
-            del _RELOADING[name]
-        except KeyError:
-            pass
+    return importlib.reload(module)
