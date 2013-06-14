@@ -112,6 +112,9 @@ This module provides an interface to the mechanisms used to implement the
    Return a new empty module object called *name*.  This object is *not* inserted
    in ``sys.modules``.
 
+   .. deprecated:: 3.4
+      Use :class:`types.ModuleType` instead.
+
 
 .. function:: reload(module)
 

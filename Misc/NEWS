@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17907: Document imp.new_module() as deprecated in favour of
+  types.ModuleType.
+
 - Issue #18192: Introduce importlib.util.MAGIC_NUMBER and document as deprecated
   imp.get_magic().
 
