@@ -180,8 +180,6 @@ class UsageTests(unittest.TestCase):
         # Catching a string is bad.
         self.catch_fails("spam")
 
-def test_main():
-    run_unittest(ExceptionClassTests, UsageTests)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
