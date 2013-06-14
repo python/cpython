@@ -667,7 +667,7 @@ class FTP:
 
 try:
     import ssl
-except ImportError:
+except ModuleNotFoundError:
     _SSLSocket = None
 else:
     _SSLSocket = ssl.SSLSocket

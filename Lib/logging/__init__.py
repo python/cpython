@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
 
 try:
     import threading
-except ImportError: #pragma: no cover
+except ModuleNotFoundError: #pragma: no cover
     threading = None
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"

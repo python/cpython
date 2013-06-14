@@ -36,7 +36,7 @@ from random import Random as _Random
 
 try:
     import fcntl as _fcntl
-except ImportError:
+except ModuleNotFoundError:
     def _set_cloexec(fd):
         pass
 else:
@@ -53,7 +53,7 @@ else:
 
 try:
     import _thread
-except ImportError:
+except ModuleNotFoundError:
     import _dummy_thread as _thread
 _allocate_lock = _thread.allocate_lock
 

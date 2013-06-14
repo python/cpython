@@ -98,7 +98,7 @@ def __get_builtin_constructor(name):
                 return _sha3.sha3_384
             elif bs == '512':
                 return _sha3.sha3_512
-    except ImportError:
+    except ModuleNotFoundError:
         pass  # no extension module, this hash is unsupported.
 
     raise ValueError('unsupported hash type ' + name)
@@ -143,7 +143,7 @@ try:
     __get_hash = __get_openssl_constructor
     algorithms_available = algorithms_available.union(
             _hashlib.openssl_md_meth_names)
-except ImportError:
+except ModuleNotFoundError:
     new = __py_new
     __get_hash = __get_builtin_constructor
 

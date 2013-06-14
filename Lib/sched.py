@@ -33,11 +33,11 @@ import heapq
 from collections import namedtuple
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     import dummy_threading as threading
 try:
     from time import monotonic as _time
-except ImportError:
+except ModuleNotFoundError:
     from time import time as _time
 
 __all__ = ["scheduler"]

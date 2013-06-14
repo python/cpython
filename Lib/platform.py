@@ -460,7 +460,7 @@ def _win32_getvalue(key,name,default=''):
     try:
         # Use win32api if available
         from win32api import RegQueryValueEx
-    except ImportError:
+    except ModuleNotFoundError:
         # On Python 2.0 and later, emulate using winreg
         import winreg
         RegQueryValueEx = winreg.QueryValueEx
@@ -503,7 +503,7 @@ def win32_ver(release='',version='',csd='',ptype=''):
              RegCloseKey, GetVersionEx
         from win32con import HKEY_LOCAL_MACHINE, VER_PLATFORM_WIN32_NT, \
              VER_PLATFORM_WIN32_WINDOWS, VER_NT_WORKSTATION
-    except ImportError:
+    except ModuleNotFoundError:
         # Emulate the win32api module using Python APIs
         try:
             sys.getwindowsversion
@@ -661,7 +661,7 @@ def _mac_ver_gestalt():
     # Check whether the version info module is available
     try:
         import _gestalt
-    except ImportError:
+    except ModuleNotFoundError:
         return None
     # Get the infos
     sysv, sysa = _mac_ver_lookup(('sysv','sysa'))
@@ -697,7 +697,7 @@ def _mac_ver_xml():
 
     try:
         import plistlib
-    except ImportError:
+    except ModuleNotFoundError:
         return None
 
     pl = plistlib.readPlist(fn)
@@ -762,7 +762,7 @@ def java_ver(release='',vendor='',vminfo=('','',''),osinfo=('','','')):
     # Import the needed APIs
     try:
         import java.lang
-    except ImportError:
+    except ModuleNotFoundError:
         return release,vendor,vminfo,osinfo
 
     vendor = _java_getprop('java.vendor', vendor)
@@ -874,7 +874,7 @@ def _node(default=''):
     """
     try:
         import socket
-    except ImportError:
+    except ModuleNotFoundError:
         # No sockets...
         return default
     try:
@@ -1138,7 +1138,7 @@ def uname():
         # Get processor information
         try:
             import vms_lib
-        except ImportError:
+        except ModuleNotFoundError:
             pass
         else:
             csid, cpu_number = vms_lib.getsyi('SYI$_CPU',0)

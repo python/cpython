@@ -35,7 +35,7 @@ import time
 import urllib.parse, urllib.request
 try:
     import threading as _threading
-except ImportError:
+except ModuleNotFoundError:
     import dummy_threading as _threading
 import http.client  # only for the default HTTP port
 from calendar import timegm

@@ -14,7 +14,7 @@ import sys
 
 try:
     import _frozen_importlib as _bootstrap
-except ImportError:
+except ModuleNotFoundError:
     from . import _bootstrap
     _bootstrap._setup(sys, _imp)
 else:

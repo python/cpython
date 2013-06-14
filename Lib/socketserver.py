@@ -136,7 +136,7 @@ import os
 import errno
 try:
     import threading
-except ImportError:
+except ModuleNotFoundError:
     import dummy_threading as threading
 
 __all__ = ["TCPServer","UDPServer","ForkingUDPServer","ForkingTCPServer",

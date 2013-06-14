@@ -110,7 +110,7 @@ from urllib.response import addinfourl, addclosehook
 # check for SSL
 try:
     import ssl
-except ImportError:
+except ModuleNotFoundError:
     _have_ssl = False
 else:
     _have_ssl = True
@@ -2512,7 +2512,7 @@ elif os.name == 'nt':
         proxies = {}
         try:
             import winreg
-        except ImportError:
+        except ModuleNotFoundError:
             # Std module, so should be around - but you never know!
             return proxies
         try:
@@ -2560,7 +2560,7 @@ elif os.name == 'nt':
     def proxy_bypass_registry(host):
         try:
             import winreg
-        except ImportError:
+        except ModuleNotFoundError:
             # Std modules, so should be around - but you never know!
             return 0
         try:

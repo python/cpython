@@ -706,7 +706,7 @@ class MultiprocessRefactoringTool(RefactoringTool):
                 items, write, doctests_only)
         try:
             import multiprocessing
-        except ImportError:
+        except ModuleNotFoundError:
             raise MultiprocessingUnsupported
         if self.queue is not None:
             raise RuntimeError("already doing multiple processes")

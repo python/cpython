@@ -50,7 +50,7 @@ import re
 
 try:
     import grp, pwd
-except ImportError:
+except ModuleNotFoundError:
     grp = pwd = None
 
 # os.symlink on Windows prior to 6.0 raises NotImplementedError
@@ -381,7 +381,7 @@ class _Stream:
             if comptype == "gz":
                 try:
                     import zlib
-                except ImportError:
+                except ModuleNotFoundError:
                     raise CompressionError("zlib module is not available")
                 self.zlib = zlib
                 self.crc = zlib.crc32(b"")
@@ -394,7 +394,7 @@ class _Stream:
             elif comptype == "bz2":
                 try:
                     import bz2
-                except ImportError:
+                except ModuleNotFoundError:
                     raise CompressionError("bz2 module is not available")
                 if mode == "r":
                     self.dbuf = b""
@@ -406,7 +406,7 @@ class _Stream:
             elif comptype == "xz":
                 try:
                     import lzma
-                except ImportError:
+                except ModuleNotFoundError:
                     raise CompressionError("lzma module is not available")
                 if mode == "r":
                     self.dbuf = b""
@@ -1654,7 +1654,7 @@ class TarFile(object):
 
         try:
             import bz2
-        except ImportError:
+        except ModuleNotFoundError:
             raise CompressionError("bz2 module is not available")
 
         fileobj = bz2.BZ2File(fileobj or name, mode,
@@ -1678,7 +1678,7 @@ class TarFile(object):
 
         try:
             import lzma
-        except ImportError:
+        except ModuleNotFoundError:
             raise CompressionError("lzma module is not available")
 
         fileobj = lzma.LZMAFile(fileobj or name, mode, preset=preset)

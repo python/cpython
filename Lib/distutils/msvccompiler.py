@@ -28,7 +28,7 @@ try:
     RegEnumValue = winreg.EnumValue
     RegError = winreg.error
 
-except ImportError:
+except ModuleNotFoundError:
     try:
         import win32api
         import win32con
@@ -39,7 +39,7 @@ except ImportError:
         RegEnumKey = win32api.RegEnumKey
         RegEnumValue = win32api.RegEnumValue
         RegError = win32api.error
-    except ImportError:
+    except ModuleNotFoundError:
         log.info("Warning: Can't read registry to find the "
                  "necessary compiler setting\n"
                  "Make sure that Python modules winreg, "
