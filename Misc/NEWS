@@ -381,6 +381,8 @@ Library
 
 - Implement PEP 443 "Single-dispatch generic functions".
 
+- Implement PEP 435 "Adding an Enum type to the Python standard library".
+
 
 Tests
 -----
