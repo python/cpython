@@ -2769,13 +2769,12 @@ set_default_verify_paths() to load default CAs. The values are\n\
 'cert_file_env', 'cert_file', 'cert_dir_env', 'cert_dir'.");
 
 static PyObject *
-get_default_verify_paths(PyObject *self)
+PySSL_get_default_verify_paths(PyObject *self)
 {
     PyObject *ofile_env = NULL;
     PyObject *ofile = NULL;
     PyObject *odir_env = NULL;
     PyObject *odir = NULL;
-    PyObject *tup = NULL;
 
 #define convert(info, target) { \
         const char *tmp = (info); \
@@ -2792,14 +2791,7 @@ get_default_verify_paths(PyObject *self)
     convert(X509_get_default_cert_dir(), odir);
 #undef convert
 
-    if ((tup = PyTuple_New(4)) == NULL) {
-        goto error;
-    }
-    PyTuple_SET_ITEM(tup, 0, ofile_env);
-    PyTuple_SET_ITEM(tup, 1, ofile);
-    PyTuple_SET_ITEM(tup, 2, odir_env);
-    PyTuple_SET_ITEM(tup, 3, odir);
-    return tup;
+    return Py_BuildValue("NNNN", ofile_env, ofile, odir_env, odir);
 
   error:
     Py_XDECREF(ofile_env);
@@ -2950,7 +2942,7 @@ static PyMethodDef PySSL_methods[] = {
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
 #endif
-    {"get_default_verify_paths", (PyCFunction)get_default_verify_paths,
+    {"get_default_verify_paths", (PyCFunction)PySSL_get_default_verify_paths,
      METH_NOARGS, PySSL_get_default_verify_paths_doc},
 #ifdef _MSC_VER
     {"enum_cert_store", (PyCFunction)PySSL_enum_cert_store,
