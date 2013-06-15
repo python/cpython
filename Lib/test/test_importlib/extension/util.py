@@ -1,4 +1,3 @@
-import imp
 from importlib import machinery
 import os
 import sys

@@ -1,15 +1,16 @@
 import importlib
+import importlib.util
 from importlib import abc
 from importlib import machinery
 
 import contextlib
-import imp
 import inspect
 import io
 import marshal
 import os
 import sys
 from test import support
+import types
 import unittest
 from unittest import mock
 
@@ -140,7 +141,7 @@ class LoaderDefaultsTests(unittest.TestCase):
             self.ins.load_module('something')
 
     def test_module_repr(self):
-        mod = imp.new_module('blah')
+        mod = types.ModuleType('blah')
         with self.assertRaises(NotImplementedError):
             self.ins.module_repr(mod)
         original_repr = repr(mod)
@@ -205,7 +206,7 @@ class LoaderConcreteMethodTests(unittest.TestCase):
 
     def test_init_module_attrs(self):
         loader = LoaderSubclass()
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         loader.init_module_attrs(module)
         self.assertEqual(module.__loader__, loader)
 
@@ -215,7 +216,7 @@ class InspectLoaderSourceToCodeTests(unittest.TestCase):
 
     def source_to_module(self, data, path=None):
         """Help with source_to_code() tests."""
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         loader = InspectLoaderSubclass()
         if path is None:
             code = loader.source_to_code(data)
@@ -257,7 +258,7 @@ class InspectLoaderGetCodeTests(unittest.TestCase):
 
     def test_get_code(self):
         # Test success.
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         with mock.patch.object(InspectLoaderSubclass, 'get_source') as mocked:
             mocked.return_value = 'attr = 42'
             loader = InspectLoaderSubclass()
@@ -289,7 +290,7 @@ class InspectLoaderInitModuleTests(unittest.TestCase):
 
     def init_module_attrs(self, name):
         loader = InspectLoaderSubclass()
-        module = imp.new_module(name)
+        module = types.ModuleType(name)
         loader.init_module_attrs(module)
         self.assertEqual(module.__loader__, loader)
         return module
@@ -390,7 +391,7 @@ class ExecutionLoaderGetCodeTests(unittest.TestCase):
             loader = ExecutionLoaderSubclass()
             code = loader.get_code('blah')
         self.assertEqual(code.co_filename, path)
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         exec(code, module.__dict__)
         self.assertEqual(module.attr, 42)
 
@@ -420,7 +421,7 @@ class ExecutionLoaderGetCodeTests(unittest.TestCase):
             loader = ExecutionLoaderSubclass()
             code = loader.get_code('blah')
         self.assertEqual(code.co_filename, '<string>')
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         exec(code, module.__dict__)
         self.assertEqual(module.attr, 42)
 
@@ -444,7 +445,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         path = os.path.join('some', 'path', '{}.py'.format(name))
         with self.mock_methods(False, path):
             loader = ExecutionLoaderSubclass()
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertIs(module.__loader__, loader)
         self.assertEqual(module.__file__, path)
@@ -457,7 +458,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         path = os.path.join('some', 'pkg', '__init__.py')
         with self.mock_methods(True, path):
             loader = ExecutionLoaderSubclass()
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertIs(module.__loader__, loader)
         self.assertEqual(module.__file__, path)
@@ -471,7 +472,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         path = os.path.join('some', 'pkg', 'submodule.py')
         with self.mock_methods(False, path):
             loader = ExecutionLoaderSubclass()
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertEqual(module.__package__, 'pkg')
         self.assertEqual(module.__file__, path)
@@ -484,7 +485,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         with self.mock_methods(False, path) as mocked_methods:
             mocked_methods['get_filename'].side_effect = ImportError
             loader = ExecutionLoaderSubclass()
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertFalse(hasattr(module, '__file__'))
 
@@ -515,9 +516,9 @@ class SourceLoaderMock(SourceOnlyLoaderMock):
 
     source_mtime = 1
 
-    def __init__(self, path, magic=imp.get_magic()):
+    def __init__(self, path, magic=importlib.util.MAGIC_NUMBER):
         super().__init__(path)
-        self.bytecode_path = imp.cache_from_source(self.path)
+        self.bytecode_path = importlib.util.cache_from_source(self.path)
         self.source_size = len(self.source)
         data = bytearray(magic)
         data.extend(importlib._w_long(self.source_mtime))
@@ -557,7 +558,7 @@ class SourceLoaderTestHarness(unittest.TestCase):
             module_name = 'mod'
             self.path = os.path.join(self.package, '.'.join(['mod', 'py']))
             self.name = '.'.join([self.package, module_name])
-        self.cached = imp.cache_from_source(self.path)
+        self.cached = importlib.util.cache_from_source(self.path)
         self.loader = self.loader_mock(self.path, **kwargs)
 
     def verify_module(self, module):
@@ -574,7 +575,7 @@ class SourceLoaderTestHarness(unittest.TestCase):
         self.assertEqual(values[4], repr(self.loader))
 
     def verify_code(self, code_object):
-        module = imp.new_module(self.name)
+        module = types.ModuleType(self.name)
         module.__file__ = self.path
         module.__cached__ = self.cached
         module.__package__ = self.package
@@ -673,7 +674,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         super().verify_code(code_object)
         if bytecode_written:
             self.assertIn(self.cached, self.loader.written)
-            data = bytearray(imp.get_magic())
+            data = bytearray(importlib.util.MAGIC_NUMBER)
             data.extend(importlib._w_long(self.loader.source_mtime))
             data.extend(importlib._w_long(self.loader.source_size))
             data.extend(marshal.dumps(code_object))
@@ -689,7 +690,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         self.loader.bytecode_path = "<does not exist>"
         # Sanity check
         with self.assertRaises(OSError):
-            bytecode_path = imp.cache_from_source(self.path)
+            bytecode_path = importlib.util.cache_from_source(self.path)
             self.loader.get_data(bytecode_path)
         code_object = self.loader.get_code(self.name)
         self.verify_code(code_object, bytecode_written=True)
@@ -787,26 +788,26 @@ class SourceLoaderInitModuleAttrTests(unittest.TestCase):
     """Tests for importlib.abc.SourceLoader.init_module_attrs()."""
 
     def test_init_module_attrs(self):
-        # If __file__ set, __cached__ == imp.cached_from_source(__file__).
+        # If __file__ set, __cached__ == importlib.util.cached_from_source(__file__).
         name = 'blah'
         path = 'blah.py'
         loader = SourceOnlyLoaderMock(path)
-        module = imp.new_module(name)
+        module = types.ModuleType(name)
         loader.init_module_attrs(module)
         self.assertEqual(module.__loader__, loader)
         self.assertEqual(module.__package__, '')
         self.assertEqual(module.__file__, path)
-        self.assertEqual(module.__cached__, imp.cache_from_source(path))
+        self.assertEqual(module.__cached__, importlib.util.cache_from_source(path))
 
     @mock.patch('importlib._bootstrap.cache_from_source')
     def test_cache_from_source_NotImplementedError(self, mock_cache_from_source):
-        # If imp.cache_from_source() raises NotImplementedError don't set
+        # If importlib.util.cache_from_source() raises NotImplementedError don't set
         # __cached__.
         mock_cache_from_source.side_effect = NotImplementedError
         name = 'blah'
         path = 'blah.py'
         loader = SourceOnlyLoaderMock(path)
-        module = imp.new_module(name)
+        module = types.ModuleType(name)
         loader.init_module_attrs(module)
         self.assertEqual(module.__file__, path)
         self.assertFalse(hasattr(module, '__cached__'))
@@ -817,7 +818,7 @@ class SourceLoaderInitModuleAttrTests(unittest.TestCase):
             mocked.side_effect = ImportError
             name = 'blah'
             loader = SourceOnlyLoaderMock('blah.py')
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertFalse(hasattr(module, '__file__'))
         self.assertFalse(hasattr(module, '__cached__'))
