@@ -225,6 +225,11 @@ Deprecated Python modules, functions and methods
   :meth:`difflib.SequenceMatcher.isbpopulur`: use ``x in sm.bjunk`` and
   ``x in sm.bpopular``, where sm is a :class:`~difflib.SequenceMatcher` object.
 
+* :func:`importlib.util.module_for_loader` is pending deprecation. Using
+  :func:`importlib.util.module_to_load` and
+  :meth:`importlib.abc.Loader.init_module_attrs` allows subclasses of a loader
+  to more easily customize module loading.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------
@@ -235,10 +240,7 @@ Deprecated functions and types of the C API
 Deprecated features
 -------------------
 
-* :func:`importlib.util.module_for_loader` is pending deprecation. Using
-  :func:`importlib.util.module_to_load` and
-  :meth:`importlib.abc.Loader.init_module_attrs` allows subclasses of a loader
-  to more easily customize module loading.
+* None yet.
 
 
 Porting to Python 3.4
