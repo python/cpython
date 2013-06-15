@@ -16,8 +16,7 @@ except ModuleNotFoundError:
     # Platform doesn't support dynamic loading.
     load_dynamic = None
 
-from importlib._bootstrap import (cache_from_source, source_from_cache,
-                                  SourcelessFileLoader, _ERR_MSG)
+from importlib._bootstrap import SourcelessFileLoader, _ERR_MSG
 
 from importlib import machinery
 from importlib import util
@@ -64,6 +63,38 @@ def get_magic():
 def get_tag():
     """Return the magic tag for .pyc or .pyo files."""
     return sys.implementation.cache_tag
+
+
+def cache_from_source(path, debug_override=None):
+    """**DEPRECATED**
+
+    Given the path to a .py file, return the path to its .pyc/.pyo file.
+
+    The .py file does not need to exist; this simply returns the path to the
+    .pyc/.pyo file calculated as if the .py file were imported.  The extension
+    will be .pyc unless sys.flags.optimize is non-zero, then it will be .pyo.
+
+    If debug_override is not None, then it must be a boolean and is used in
+    place of sys.flags.optimize.
+
+    If sys.implementation.cache_tag is None then NotImplementedError is raised.
+
+    """
+    return util.cache_from_source(path, debug_override)
+
+
+def source_from_cache(path):
+    """**DEPRECATED**
+
+    Given the path to a .pyc./.pyo file, return the path to its .py file.
+
+    The .pyc/.pyo file does not need to exist; this simply returns the path to
+    the .py file calculated to correspond to the .pyc/.pyo file.  If path does
+    not conform to PEP 3147 format, ValueError will be raised. If
+    sys.implementation.cache_tag is None then NotImplementedError is raised.
+
+    """
+    return util.source_from_cache(path)
 
 
 def get_suffixes():
