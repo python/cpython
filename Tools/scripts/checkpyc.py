@@ -5,11 +5,11 @@
 import sys
 import os
 from stat import ST_MTIME
-import imp
+import importlib.util
 
 # PEP 3147 compatibility (PYC Repository Directories)
-cache_from_source = (imp.cache_from_source if hasattr(imp, 'get_tag') else
-                     lambda path: path + 'c')
+cache_from_source = (importlib.util.cache_from_source if sys.implementation.cache_tag
+                     else lambda path: path + 'c')
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
         silent = (sys.argv[1] == '-s')
     else:
         verbose = silent = False
-    MAGIC = imp.get_magic()
+    MAGIC = importlib.util.MAGIC_NUMBER
     if not silent:
         print('Using MAGIC word', repr(MAGIC))
     for dirname in sys.path:
