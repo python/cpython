@@ -123,6 +123,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18194: Introduce importlib.util.cache_from_source() and
+  source_from_cache() while documenting the equivalent functions in imp as
+  deprecated.
+
 - Issue #17907: Document imp.new_module() as deprecated in favour of
   types.ModuleType.
 
