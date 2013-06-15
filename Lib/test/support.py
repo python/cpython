@@ -15,10 +15,10 @@ import shutil
 import warnings
 import unittest
 import importlib
+import importlib.util
 import collections.abc
 import re
 import subprocess
-import imp
 import time
 import sysconfig
 import fnmatch
@@ -316,7 +316,7 @@ def make_legacy_pyc(source):
         does not need to exist, however the PEP 3147 pyc file must exist.
     :return: The file system path to the legacy pyc file.
     """
-    pyc_file = imp.cache_from_source(source)
+    pyc_file = importlib.util.cache_from_source(source)
     up_one = os.path.dirname(os.path.abspath(source))
     legacy_pyc = os.path.join(up_one, source + ('c' if __debug__ else 'o'))
     os.rename(pyc_file, legacy_pyc)
@@ -335,8 +335,8 @@ def forget(modname):
         # combinations of PEP 3147 and legacy pyc and pyo files.
         unlink(source + 'c')
         unlink(source + 'o')
-        unlink(imp.cache_from_source(source, debug_override=True))
-        unlink(imp.cache_from_source(source, debug_override=False))
+        unlink(importlib.util.cache_from_source(source, debug_override=True))
+        unlink(importlib.util.cache_from_source(source, debug_override=False))
 
 # On some platforms, should not run gui test even if it is allowed
 # in `use_resources'.

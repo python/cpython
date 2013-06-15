@@ -6,7 +6,7 @@ import random
 import tempfile
 import unittest
 
-from imp import cache_from_source
+from importlib.util import cache_from_source
 from test.support import run_unittest, create_empty_file
 
 class TestImport(unittest.TestCase):

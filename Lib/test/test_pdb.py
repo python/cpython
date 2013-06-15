@@ -1,9 +1,9 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
 import doctest
-import imp
 import pdb
 import sys
+import types
 import unittest
 import subprocess
 import textwrap
@@ -464,7 +464,7 @@ def test_pdb_skip_modules():
 
 
 # Module for testing skipping of module that makes a callback
-mod = imp.new_module('module_to_skip')
+mod = types.ModuleType('module_to_skip')
 exec('def foo_pony(callback): x = 1; callback(); return None', mod.__dict__)
 
 
