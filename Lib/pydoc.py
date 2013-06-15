@@ -44,17 +44,16 @@ Richard Chamberlain, for the first implementation of textdoc.
 """
 
 # Known bugs that can't be fixed here:
-#   - imp.load_module() cannot be prevented from clobbering existing
-#     loaded modules, so calling synopsis() on a binary module file
-#     changes the contents of any existing module with the same name.
+#   - synopsis() cannot be prevented from clobbering existing
+#     loaded modules.
 #   - If the __file__ attribute on a module is a relative path and
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
 import builtins
-import imp
 import importlib._bootstrap
 import importlib.machinery
+import importlib.util
 import inspect
 import io
 import os
@@ -268,7 +267,7 @@ class ErrorDuringImport(Exception):
 
 def importfile(path):
     """Import a Python source file or compiled file given its path."""
-    magic = imp.get_magic()
+    magic = importlib.util.MAGIC_NUMBER
     with open(path, 'rb') as file:
         is_bytecode = magic == file.read(len(magic))
     filename = os.path.basename(path)
