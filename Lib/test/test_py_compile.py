@@ -1,4 +1,4 @@
-import imp
+import importlib.util
 import os
 import py_compile
 import shutil
@@ -14,7 +14,7 @@ class PyCompileTests(unittest.TestCase):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
         self.pyc_path = self.source_path + 'c'
-        self.cache_path = imp.cache_from_source(self.source_path)
+        self.cache_path = importlib.util.cache_from_source(self.source_path)
         self.cwd_drive = os.path.splitdrive(os.getcwd())[0]
         # In these tests we compute relative paths.  When using Windows, the
         # current working directory path and the 'self.source_path' might be
