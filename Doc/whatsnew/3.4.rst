@@ -222,8 +222,8 @@ Deprecated Python modules, functions and methods
 ------------------------------------------------
 
 * :meth:`difflib.SequenceMatcher.isbjunk` and
-  :meth:`difflib.SequenceMatcher.isbpopulur`: use ``x in sm.bjunk`` and
-  ``x in sm.bpopular``, where sm is a :class:`~difflib.SequenceMatcher` object.
+  :meth:`difflib.SequenceMatcher.isbpopular` were removed: use ``x in sm.bjunk`` and
+  ``x in sm.bpopular``, where *sm* is a :class:`~difflib.SequenceMatcher` object.
 
 * :func:`importlib.util.module_for_loader` is pending deprecation. Using
   :func:`importlib.util.module_to_load` and
