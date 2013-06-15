@@ -449,8 +449,8 @@ def prepare(data):
         elif main_name != 'ipython':
             # Main modules not actually called __main__.py may
             # contain additional code that should still be executed
-            import imp
             import importlib
+            import types
 
             if main_path is None:
                 dirs = None
@@ -465,7 +465,7 @@ def prepare(data):
             # since that would execute 'if __name__ == "__main__"'
             # clauses, potentially causing a psuedo fork bomb.
             loader = importlib.find_loader(main_name, path=dirs)
-            main_module = imp.new_module(main_name)
+            main_module = types.ModuleType(main_name)
             try:
                 loader.init_module_attrs(main_module)
             except AttributeError:  # init_module_attrs is optional
