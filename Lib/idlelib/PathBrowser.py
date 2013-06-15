@@ -1,6 +1,5 @@
 import os
 import sys
-import imp
 import importlib.machinery
 
 from idlelib.TreeWidget import TreeItem
