@@ -2,8 +2,8 @@
 ========================================
 
 .. module:: enum
-.. :synopsis: enumerations are sets of symbolic names bound to unique, constant
-  values.
+   :synopsis: Implementation of an enumeration class.
+
 .. :moduleauthor:: Ethan Furman <ethan@stoneleaf.us>
 .. :sectionauthor:: Barry Warsaw <barry@python.org>,
 .. :sectionauthor:: Eli Bendersky <eliben@gmail.com>,
