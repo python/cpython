@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17907: Document imp.new_module() as deprecated in favour of
+  types.ModuleType.
+
 - Issue #18192: Introduce importlib.util.MAGIC_NUMBER and document as deprecated
   imp.get_magic().
 
@@ -377,6 +380,8 @@ Library
   Distutils behavior introduced in 3.2.3 and inadvertently dropped in 3.3.0.
 
 - Implement PEP 443 "Single-dispatch generic functions".
+
+- Implement PEP 435 "Adding an Enum type to the Python standard library".
 
 
 Tests
