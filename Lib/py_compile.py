@@ -3,9 +3,9 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
-import imp
 import importlib._bootstrap
 import importlib.machinery
+import importlib.util
 import os
 import os.path
 import sys
@@ -105,9 +105,10 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     """
     if cfile is None:
         if optimize >= 0:
-            cfile = imp.cache_from_source(file, debug_override=not optimize)
+            cfile = importlib.util.cache_from_source(file,
+                                                     debug_override=not optimize)
         else:
-            cfile = imp.cache_from_source(file)
+            cfile = importlib.util.cache_from_source(file)
     if os.path.islink(cfile):
         msg = ('{} is a symlink and will be changed into a regular file if '
                'import writes a byte-compiled file to it')
