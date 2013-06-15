@@ -6,7 +6,7 @@ XXX references to utf-8 need further investigation.
 import io
 import os
 import re
-import imp
+import importlib.util
 import sys
 import time
 import stat
@@ -1645,8 +1645,8 @@ class PyZipFile(ZipFile):
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
         file_pyo = pathname + ".pyo"
-        pycache_pyc = imp.cache_from_source(file_py, True)
-        pycache_pyo = imp.cache_from_source(file_py, False)
+        pycache_pyc = importlib.util.cache_from_source(file_py, True)
+        pycache_pyo = importlib.util.cache_from_source(file_py, False)
         if self._optimize == -1:
             # legacy mode: use whatever file is present
             if (os.path.isfile(file_pyo) and

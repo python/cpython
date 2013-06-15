@@ -1,7 +1,7 @@
 import io
 import os
 import sys
-import imp
+import importlib.util
 import time
 import shutil
 import struct
@@ -869,7 +869,7 @@ class PyZipFileTests(unittest.TestCase):
                 if os.altsep is not None:
                     path_split.extend(fn.split(os.altsep))
                 if '__pycache__' in path_split:
-                    fn = imp.source_from_cache(fn)
+                    fn = importlib.util.source_from_cache(fn)
                 else:
                     fn = fn[:-1]
 
