@@ -6,7 +6,7 @@ from tkinter import *
 from idlelib.Percolator import Percolator
 from idlelib.ColorDelegator import ColorDelegator
 from idlelib.textView import view_file # TextViewer
-from imp import reload
+from importlib import reload
 
 import turtle
 import time
