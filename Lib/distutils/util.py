@@ -6,7 +6,7 @@ one of the other *util.py modules.
 
 import os
 import re
-import imp
+import importlib.util
 import sys
 import string
 from distutils.errors import DistutilsPlatformError
@@ -453,9 +453,10 @@ byte_compile(files, optimize=%r, force=%r,
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
             if optimize >= 0:
-                cfile = imp.cache_from_source(file, debug_override=not optimize)
+                cfile = importlib.util.cache_from_source(
+                    file, debug_override=not optimize)
             else:
-                cfile = imp.cache_from_source(file)
+                cfile = importlib.util.cache_from_source(file)
             dfile = file
             if prefix:
                 if file[:len(prefix)] != prefix:

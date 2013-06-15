@@ -1,7 +1,6 @@
 """Tests for distutils.command.install."""
 
 import os
-import imp
 import sys
 import unittest
 import site
@@ -193,7 +192,8 @@ class InstallTestCase(support.TempdirManager,
             f.close()
 
         found = [os.path.basename(line) for line in content.splitlines()]
-        expected = ['hello.py', 'hello.%s.pyc' % imp.get_tag(), 'sayhi',
+        expected = ['hello.py', 'hello.%s.pyc' % sys.implementation.cache_tag,
+                    'sayhi',
                     'UNKNOWN-0.0.0-py%s.%s.egg-info' % sys.version_info[:2]]
         self.assertEqual(found, expected)
 

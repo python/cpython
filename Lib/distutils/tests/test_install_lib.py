@@ -1,7 +1,7 @@
 """Tests for distutils.command.install_data."""
 import sys
 import os
-import imp
+import importlib.util
 import unittest
 
 from distutils.command.install_lib import install_lib
@@ -44,8 +44,10 @@ class InstallLibTestCase(support.TempdirManager,
         f = os.path.join(project_dir, 'foo.py')
         self.write_file(f, '# python file')
         cmd.byte_compile([f])
-        pyc_file = imp.cache_from_source('foo.py', debug_override=True)
-        pyo_file = imp.cache_from_source('foo.py', debug_override=False)
+        pyc_file = importlib.util.cache_from_source('foo.py',
+                                                    debug_override=True)
+        pyo_file = importlib.util.cache_from_source('foo.py',
+                                                    debug_override=False)
         self.assertTrue(os.path.exists(pyc_file))
         self.assertTrue(os.path.exists(pyo_file))
 
