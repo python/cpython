@@ -1,6 +1,7 @@
 from importlib import util
 from . import util as test_util
 import imp
+import os
 import sys
 from test import support
 import types
@@ -322,6 +323,121 @@ class MagicNumberTests(unittest.TestCase):
     def test_incorporates_rn(self):
         # The magic number uses \r\n to come out wrong when splitting on lines.
         self.assertTrue(util.MAGIC_NUMBER.endswith(b'\r\n'))
+
+
+class PEP3147Tests(unittest.TestCase):
+    """Tests of PEP 3147-related functions:
+    cache_from_source and source_from_cache.
+
+    """
+
+    tag = imp.get_tag()
+
+    @unittest.skipUnless(sys.implementation.cache_tag is not None,
+                         'requires sys.implementation.cache_tag not be None')
+    def test_cache_from_source(self):
+        # Given the path to a .py file, return the path to its PEP 3147
+        # defined .pyc file (i.e. under __pycache__).
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                              'qux.{}.pyc'.format(self.tag))
+        self.assertEqual(util.cache_from_source(path, True), expect)
+
+    def test_cache_from_source_no_cache_tag(self):
+        # No cache tag means NotImplementedError.
+        with support.swap_attr(sys.implementation, 'cache_tag', None):
+            with self.assertRaises(NotImplementedError):
+                util.cache_from_source('whatever.py')
+
+    def test_cache_from_source_no_dot(self):
+        # Directory with a dot, filename without dot.
+        path = os.path.join('foo.bar', 'file')
+        expect = os.path.join('foo.bar', '__pycache__',
+                              'file{}.pyc'.format(self.tag))
+        self.assertEqual(util.cache_from_source(path, True), expect)
+
+    def test_cache_from_source_optimized(self):
+        # Given the path to a .py file, return the path to its PEP 3147
+        # defined .pyo file (i.e. under __pycache__).
+        path = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        expect = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                              'qux.{}.pyo'.format(self.tag))
+        self.assertEqual(util.cache_from_source(path, False), expect)
+
+    def test_cache_from_source_cwd(self):
+        path = 'foo.py'
+        expect = os.path.join('__pycache__', 'foo.{}.pyc'.format(self.tag))
+        self.assertEqual(util.cache_from_source(path, True), expect)
+
+    def test_cache_from_source_override(self):
+        # When debug_override is not None, it can be any true-ish or false-ish
+        # value.
+        path = os.path.join('foo', 'bar', 'baz.py')
+        partial_expect = os.path.join('foo', 'bar', '__pycache__',
+                                      'baz.{}.py'.format(self.tag))
+        self.assertEqual(util.cache_from_source(path, []), partial_expect + 'o')
+        self.assertEqual(util.cache_from_source(path, [17]),
+                         partial_expect + 'c')
+        # However if the bool-ishness can't be determined, the exception
+        # propagates.
+        class Bearish:
+            def __bool__(self): raise RuntimeError
+        with self.assertRaises(RuntimeError):
+            util.cache_from_source('/foo/bar/baz.py', Bearish())
+
+    @unittest.skipUnless(os.sep == '\\' and os.altsep == '/',
+                     'test meaningful only where os.altsep is defined')
+    def test_sep_altsep_and_sep_cache_from_source(self):
+        # Windows path and PEP 3147 where sep is right of altsep.
+        self.assertEqual(
+            util.cache_from_source('\\foo\\bar\\baz/qux.py', True),
+            '\\foo\\bar\\baz\\__pycache__\\qux.{}.pyc'.format(self.tag))
+
+    @unittest.skipUnless(sys.implementation.cache_tag is not None,
+                         'requires sys.implementation.cache_tag to not be '
+                         'None')
+    def test_source_from_cache(self):
+        # Given the path to a PEP 3147 defined .pyc file, return the path to
+        # its source.  This tests the good path.
+        path = os.path.join('foo', 'bar', 'baz', '__pycache__',
+                            'qux.{}.pyc'.format(self.tag))
+        expect = os.path.join('foo', 'bar', 'baz', 'qux.py')
+        self.assertEqual(util.source_from_cache(path), expect)
+
+    def test_source_from_cache_no_cache_tag(self):
+        # If sys.implementation.cache_tag is None, raise NotImplementedError.
+        path = os.path.join('blah', '__pycache__', 'whatever.pyc')
+        with support.swap_attr(sys.implementation, 'cache_tag', None):
+            with self.assertRaises(NotImplementedError):
+                util.source_from_cache(path)
+
+    def test_source_from_cache_bad_path(self):
+        # When the path to a pyc file is not in PEP 3147 format, a ValueError
+        # is raised.
+        self.assertRaises(
+            ValueError, util.source_from_cache, '/foo/bar/bazqux.pyc')
+
+    def test_source_from_cache_no_slash(self):
+        # No slashes at all in path -> ValueError
+        self.assertRaises(
+            ValueError, util.source_from_cache, 'foo.cpython-32.pyc')
+
+    def test_source_from_cache_too_few_dots(self):
+        # Too few dots in final path component -> ValueError
+        self.assertRaises(
+            ValueError, util.source_from_cache, '__pycache__/foo.pyc')
+
+    def test_source_from_cache_too_many_dots(self):
+        # Too many dots in final path component -> ValueError
+        self.assertRaises(
+            ValueError, util.source_from_cache,
+            '__pycache__/foo.cpython-32.foo.pyc')
+
+    def test_source_from_cache_no__pycache__(self):
+        # Another problem with the path -> ValueError
+        self.assertRaises(
+            ValueError, util.source_from_cache,
+            '/foo/bar/foo.cpython-32.foo.pyc')
 
 
 if __name__ == '__main__':

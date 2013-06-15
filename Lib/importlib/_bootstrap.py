@@ -121,15 +121,6 @@ def _wrap(new, old):
 _code_type = type(_wrap.__code__)
 
 
-def new_module(name):
-    """Create a new module.
-
-    The module is not entered into sys.modules.
-
-    """
-    return type(_io)(name)
-
-
 # Module-level locking ########################################################
 
 # A dict mapping module names to weakrefs of _ModuleLock instances
@@ -509,7 +500,7 @@ class _ModuleManager:
             # This must be done before open() is called as the 'io' module
             # implicitly imports 'locale' and would otherwise trigger an
             # infinite loop.
-            self._module = new_module(self._name)
+            self._module = type(_io)(self._name)
             # This must be done before putting the module in sys.modules
             # (otherwise an optimization shortcut in import.c becomes wrong)
             self._module.__initializing__ = True
