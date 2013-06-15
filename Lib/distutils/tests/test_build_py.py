@@ -2,7 +2,6 @@
 
 import os
 import sys
-import imp
 import unittest
 
 from distutils.command.build_py import build_py
@@ -63,7 +62,8 @@ class BuildPyTestCase(support.TempdirManager,
             self.assertFalse(os.path.exists(pycache_dir))
         else:
             pyc_files = os.listdir(pycache_dir)
-            self.assertIn("__init__.%s.pyc" % imp.get_tag(), pyc_files)
+            self.assertIn("__init__.%s.pyc" % sys.implementation.cache_tag,
+                          pyc_files)
 
     def test_empty_package_dir(self):
         # See bugs #1668596/#1720897
@@ -102,7 +102,8 @@ class BuildPyTestCase(support.TempdirManager,
         found = os.listdir(cmd.build_lib)
         self.assertEqual(sorted(found), ['__pycache__', 'boiledeggs.py'])
         found = os.listdir(os.path.join(cmd.build_lib, '__pycache__'))
-        self.assertEqual(found, ['boiledeggs.%s.pyc' % imp.get_tag()])
+        self.assertEqual(found,
+                         ['boiledeggs.%s.pyc' % sys.implementation.cache_tag])
 
     @unittest.skipIf(sys.dont_write_bytecode, 'byte-compile disabled')
     def test_byte_compile_optimized(self):
@@ -119,7 +120,8 @@ class BuildPyTestCase(support.TempdirManager,
         found = os.listdir(cmd.build_lib)
         self.assertEqual(sorted(found), ['__pycache__', 'boiledeggs.py'])
         found = os.listdir(os.path.join(cmd.build_lib, '__pycache__'))
-        self.assertEqual(sorted(found), ['boiledeggs.%s.pyo' % imp.get_tag()])
+        self.assertEqual(sorted(found),
+                         ['boiledeggs.%s.pyo' % sys.implementation.cache_tag])
 
     def test_dont_write_bytecode(self):
         # makes sure byte_compile is not used
