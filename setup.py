@@ -1,7 +1,7 @@
 # Autodetecting setup.py script for building the Python extensions
 #
 
-import sys, os, imp, re, optparse
+import sys, os, importlib.machinery, re, optparse
 from glob import glob
 import sysconfig
 
@@ -325,8 +325,9 @@ class PyBuildExt(build_ext):
         if cross_compiling:
             return
 
+        loader = importlib.machinery.ExtensionFileLoader(ext.name, ext_filename)
         try:
-            imp.load_dynamic(ext.name, ext_filename)
+            loader.load_module()
         except ImportError as why:
             self.failed.append(ext.name)
             self.announce('*** WARNING: renaming "%s" since importing it'
