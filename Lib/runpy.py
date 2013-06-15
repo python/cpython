@@ -14,6 +14,7 @@ import os
 import sys
 import importlib.machinery # importlib first so we can test #15386 via -m
 import imp
+import types
 from pkgutil import read_code, get_loader, get_importer
 
 __all__ = [
@@ -24,7 +25,7 @@ class _TempModule(object):
     """Temporarily replace a module in sys.modules with an empty namespace"""
     def __init__(self, mod_name):
         self.mod_name = mod_name
-        self.module = imp.new_module(mod_name)
+        self.module = types.ModuleType(mod_name)
         self._saved_module = []
 
     def __enter__(self):
