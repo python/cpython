@@ -1,9 +1,11 @@
 """Utility code for constructing importers, etc."""
 
 from ._bootstrap import MAGIC_NUMBER
+from ._bootstrap import cache_from_source
 from ._bootstrap import module_to_load
 from ._bootstrap import set_loader
 from ._bootstrap import set_package
+from ._bootstrap import source_from_cache
 from ._bootstrap import _resolve_name
 
 import functools

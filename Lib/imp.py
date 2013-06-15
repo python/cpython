@@ -17,7 +17,6 @@ except ModuleNotFoundError:
     load_dynamic = None
 
 # Directly exposed by this module
-from importlib._bootstrap import new_module
 from importlib._bootstrap import cache_from_source, source_from_cache
 
 
@@ -28,6 +27,7 @@ import importlib
 import os
 import sys
 import tokenize
+import types
 import warnings
 
 
@@ -42,6 +42,17 @@ C_BUILTIN = 6
 PY_FROZEN = 7
 PY_CODERESOURCE = 8
 IMP_HOOK = 9
+
+
+def new_module(name):
+    """**DEPRECATED**
+
+    Create a new module.
+
+    The module is not entered into sys.modules.
+
+    """
+    return types.ModuleType(name)
 
 
 def get_magic():

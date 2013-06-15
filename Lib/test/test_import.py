@@ -859,7 +859,6 @@ class ImportlibBootstrapTests(unittest.TestCase):
         from importlib import machinery
         mod = sys.modules['_frozen_importlib']
         self.assertIs(machinery.FileFinder, mod.FileFinder)
-        self.assertIs(imp.new_module, mod.new_module)
 
 
 class ImportTracebackTests(unittest.TestCase):

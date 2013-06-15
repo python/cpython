@@ -205,6 +205,9 @@ file paths.
       If :attr:`sys.implementation.cache_tag` is ``None``, then
       :exc:`NotImplementedError` is raised.
 
+   .. deprecated:: 3.4
+      Use :func:`importlib.util.cache_from_source` instead.
+
 
 .. function:: source_from_cache(path)
 
@@ -219,6 +222,9 @@ file paths.
    .. versionchanged:: 3.3
       Raise :exc:`NotImplementedError` when
       :attr:`sys.implementation.cache_tag` is not defined.
+
+   .. deprecated:: 3.4
+      Use :func:`importlib.util.source_from_cache` instead.
 
 
 .. function:: get_tag()

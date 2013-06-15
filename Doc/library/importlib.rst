@@ -886,6 +886,36 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
+.. function:: cache_from_source(path, debug_override=None)
+
+   Return the :pep:`3147` path to the byte-compiled file associated with the
+   source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
+   value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
+   The ``cpython-32`` string comes from the current magic tag (see
+   :func:`get_tag`; if :attr:`sys.implementation.cache_tag` is not defined then
+   :exc:`NotImplementedError` will be raised).  The returned path will end in
+   ``.pyc`` when ``__debug__`` is True or ``.pyo`` for an optimized Python
+   (i.e. ``__debug__`` is False).  By passing in True or False for
+   *debug_override* you can override the system's value for ``__debug__`` for
+   extension selection.
+
+   *path* need not exist.
+
+   .. versionadded:: 3.4
+
+
+.. function:: source_from_cache(path)
+
+   Given the *path* to a :pep:`3147` file name, return the associated source code
+   file path.  For example, if *path* is
+   ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
+   ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
+   to :pep:`3147` format, a ``ValueError`` is raised. If
+   :attr:`sys.implementation.cache_tag` is not defined,
+   :exc:`NotImplementedError` is raised.
+
+   .. versionadded:: 3.4
+
 .. function:: resolve_name(name, package)
 
    Resolve a relative module name to an absolute one.
