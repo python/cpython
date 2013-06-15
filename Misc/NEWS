@@ -78,6 +78,9 @@ Library
   the default for linking if LDSHARED is not also overriden.  This restores
   Distutils behavior introduced in 3.2.3 and inadvertently dropped in 3.3.0.
 
+- Issue #18113: Fixed a refcount leak in the curses.panel module's
+  set_userptr() method.  Reported by Atsuo Ishimoto.
+
 IDLE
 ----
 
