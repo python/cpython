@@ -1,11 +1,12 @@
 import sys
 import compileall
-import imp
+import importlib.util
 import os
 import py_compile
 import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -18,11 +19,11 @@ class CompileallTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.mkdtemp()
         self.source_path = os.path.join(self.directory, '_test.py')
-        self.bc_path = imp.cache_from_source(self.source_path)
+        self.bc_path = importlib.util.cache_from_source(self.source_path)
         with open(self.source_path, 'w') as file:
             file.write('x = 123\n')
         self.source_path2 = os.path.join(self.directory, '_test2.py')
-        self.bc_path2 = imp.cache_from_source(self.source_path2)
+        self.bc_path2 = importlib.util.cache_from_source(self.source_path2)
         shutil.copyfile(self.source_path, self.source_path2)
         self.subdirectory = os.path.join(self.directory, '_subdir')
         os.mkdir(self.subdirectory)
@@ -36,7 +37,7 @@ class CompileallTests(unittest.TestCase):
         with open(self.bc_path, 'rb') as file:
             data = file.read(8)
         mtime = int(os.stat(self.source_path).st_mtime)
-        compare = struct.pack('<4sl', imp.get_magic(), mtime)
+        compare = struct.pack('<4sl', importlib.util.MAGIC_NUMBER, mtime)
         return data, compare
 
     def recreation_check(self, metadata):
@@ -57,7 +58,8 @@ class CompileallTests(unittest.TestCase):
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
-        self.recreation_check(struct.pack('<4sl', imp.get_magic(), 1))
+        self.recreation_check(struct.pack('<4sl', importlib.util.MAGIC_NUMBER,
+                                          1))
 
     def test_magic_number(self):
         # Test a change in mtime leads to a new .pyc.
@@ -97,14 +99,14 @@ class CompileallTests(unittest.TestCase):
         # interpreter's creates the correct file names
         optimize = 1 if __debug__ else 0
         compileall.compile_dir(self.directory, quiet=True, optimize=optimize)
-        cached = imp.cache_from_source(self.source_path,
-                                       debug_override=not optimize)
+        cached = importlib.util.cache_from_source(self.source_path,
+                                                  debug_override=not optimize)
         self.assertTrue(os.path.isfile(cached))
-        cached2 = imp.cache_from_source(self.source_path2,
-                                       debug_override=not optimize)
+        cached2 = importlib.util.cache_from_source(self.source_path2,
+                                                   debug_override=not optimize)
         self.assertTrue(os.path.isfile(cached2))
-        cached3 = imp.cache_from_source(self.source_path3,
-                                       debug_override=not optimize)
+        cached3 = importlib.util.cache_from_source(self.source_path3,
+                                                   debug_override=not optimize)
         self.assertTrue(os.path.isfile(cached3))
 
 
@@ -152,10 +154,12 @@ class CommandLineTests(unittest.TestCase):
         return rc, out, err
 
     def assertCompiled(self, fn):
-        self.assertTrue(os.path.exists(imp.cache_from_source(fn)))
+        path = importlib.util.cache_from_source(fn)
+        self.assertTrue(os.path.exists(path))
 
     def assertNotCompiled(self, fn):
-        self.assertFalse(os.path.exists(imp.cache_from_source(fn)))
+        path = importlib.util.cache_from_source(fn)
+        self.assertFalse(os.path.exists(path))
 
     def setUp(self):
         self.addCleanup(self._cleanup)
@@ -190,8 +194,8 @@ class CommandLineTests(unittest.TestCase):
                 ['-m', 'compileall', '-q', self.pkgdir]))
             # Verify the __pycache__ directory contents.
             self.assertTrue(os.path.exists(self.pkgdir_cachedir))
-            expected = sorted(base.format(imp.get_tag(), ext) for base in
-                              ('__init__.{}.{}', 'bar.{}.{}'))
+            expected = sorted(base.format(sys.implementation.cache_tag, ext)
+                              for base in ('__init__.{}.{}', 'bar.{}.{}'))
             self.assertEqual(sorted(os.listdir(self.pkgdir_cachedir)), expected)
             # Make sure there are no .pyc files in the source directory.
             self.assertFalse([fn for fn in os.listdir(self.pkgdir)
@@ -224,7 +228,7 @@ class CommandLineTests(unittest.TestCase):
 
     def test_force(self):
         self.assertRunOK('-q', self.pkgdir)
-        pycpath = imp.cache_from_source(self.barfn)
+        pycpath = importlib.util.cache_from_source(self.barfn)
         # set atime/mtime backward to avoid file timestamp resolution issues
         os.utime(pycpath, (time.time()-60,)*2)
         mtime = os.stat(pycpath).st_mtime
@@ -288,7 +292,7 @@ class CommandLineTests(unittest.TestCase):
         bazfn = script_helper.make_script(self.pkgdir, 'baz', 'raise Exception')
         self.assertRunOK('-q', '-d', 'dinsdale', self.pkgdir)
         fn = script_helper.make_script(self.pkgdir, 'bing', 'import baz')
-        pyc = imp.cache_from_source(bazfn)
+        pyc = importlib.util.cache_from_source(bazfn)
         os.rename(pyc, os.path.join(self.pkgdir, 'baz.pyc'))
         os.remove(bazfn)
         rc, out, err = script_helper.assert_python_failure(fn)
@@ -299,7 +303,7 @@ class CommandLineTests(unittest.TestCase):
             '-i', os.path.join(self.directory, 'nosuchfile'), self.pkgdir)
         self.assertRegex(out, b'rror.*nosuchfile')
         self.assertNotRegex(err, b'Traceback')
-        self.assertFalse(os.path.exists(imp.cache_from_source(
+        self.assertFalse(os.path.exists(importlib.util.cache_from_source(
                                             self.pkgdir_cachedir)))
 
     def test_include_file_with_arg(self):
@@ -356,13 +360,5 @@ class CommandLineTests(unittest.TestCase):
         self.assertRegex(out, b"Can't list 'badfilename'")
 
 
-def test_main():
-    support.run_unittest(
-        CommandLineTests,
-        CompileallTests,
-        EncodingTest,
-        )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
