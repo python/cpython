@@ -252,6 +252,18 @@ def test_userptr_without_set(stdscr):
     except curses.panel.error:
         pass
 
+def test_userptr_memory_leak(stdscr):
+    w = curses.newwin(10, 10)
+    p = curses.panel.new_panel(w)
+    obj = object()
+    nrefs = sys.getrefcount(obj)
+    for i in range(100):
+        p.set_userptr(obj)
+
+    p.set_userptr(None)
+    if sys.getrefcount(obj) != nrefs:
+        raise RuntimeError("set_userptr leaked references")
+
 def test_resize_term(stdscr):
     if hasattr(curses, 'resizeterm'):
         lines, cols = curses.LINES, curses.COLS
@@ -317,6 +329,7 @@ def main(stdscr):
         module_funcs(stdscr)
         window_funcs(stdscr)
         test_userptr_without_set(stdscr)
+        test_userptr_memory_leak(stdscr)
         test_resize_term(stdscr)
         test_issue6243(stdscr)
         test_unget_wch(stdscr)
