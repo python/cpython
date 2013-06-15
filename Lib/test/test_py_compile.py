@@ -41,7 +41,7 @@ class PyCompileTests(unittest.TestCase):
         # Issue #17222
         try:
             os.symlink(self.pyc_path + '.actual', self.pyc_path)
-        except OSError:
+        except (NotImplementedError, OSError):
             self.skipTest('need to be able to create a symlink for a file')
         else:
             assert os.path.islink(self.pyc_path)
