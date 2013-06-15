@@ -383,8 +383,8 @@ def _generate_posix_vars():
     # get_platform() succeeds.
     name = '_sysconfigdata'
     if 'darwin' in sys.platform:
-        import imp
-        module = imp.new_module(name)
+        import types
+        module = types.ModuleType(name)
         module.build_time_vars = vars
         sys.modules[name] = module
 
