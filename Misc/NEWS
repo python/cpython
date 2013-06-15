@@ -81,6 +81,8 @@ Library
 IDLE
 ----
 
+- Remove dead imports of imp.
+
 - Issue #18196: Avoid displaying spurious SystemExit tracebacks.
 
 - Issue #5492: Avoid traceback when exiting IDLE caused by a race condition.

@@ -16,7 +16,6 @@
 
 import os
 from tkinter import *
-import imp
 
 from idlelib import ZoomHeight
 from idlelib.configHandler import idleConf
