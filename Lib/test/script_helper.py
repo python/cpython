@@ -12,7 +12,7 @@ import contextlib
 import shutil
 import zipfile
 
-from imp import source_from_cache
+from importlib.util import source_from_cache
 from test.support import make_legacy_pyc, strip_python_stderr
 
 # Executing the interpreter in a subprocess

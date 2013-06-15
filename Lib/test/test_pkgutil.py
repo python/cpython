@@ -1,12 +1,12 @@
 from test.support import run_unittest, unload, check_warnings
 import unittest
 import sys
-import imp
 import importlib
 import pkgutil
 import os
 import os.path
 import tempfile
+import types
 import shutil
 import zipfile
 
@@ -105,7 +105,7 @@ class PkgutilPEP302Tests(unittest.TestCase):
     class MyTestLoader(object):
         def load_module(self, fullname):
             # Create an empty module
-            mod = sys.modules.setdefault(fullname, imp.new_module(fullname))
+            mod = sys.modules.setdefault(fullname, types.ModuleType(fullname))
             mod.__file__ = "<%s>" % self.__class__.__name__
             mod.__loader__ = self
             # Make it a package

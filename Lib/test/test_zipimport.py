@@ -1,7 +1,7 @@
 import sys
 import os
 import marshal
-import imp
+import importlib.util
 import struct
 import time
 import unittest
@@ -34,7 +34,8 @@ def make_pyc(co, mtime, size):
             mtime = int(mtime)
         else:
             mtime = int(-0x100000000 + int(mtime))
-    pyc = imp.get_magic() + struct.pack("<ii", int(mtime), size & 0xFFFFFFFF) + data
+    pyc = (importlib.util.MAGIC_NUMBER +
+        struct.pack("<ii", int(mtime), size & 0xFFFFFFFF) + data)
     return pyc
 
 def module_path_to_dotted_name(path):
@@ -49,7 +50,7 @@ TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
 TEMP_ZIP = os.path.abspath("junk95142.zip")
 
-pyc_file = imp.cache_from_source(TESTMOD + '.py')
+pyc_file = importlib.util.cache_from_source(TESTMOD + '.py')
 pyc_ext = ('.pyc' if __debug__ else '.pyo')
 
 
