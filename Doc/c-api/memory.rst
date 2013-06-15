@@ -84,46 +84,6 @@ the C library allocator as shown in the previous example, the allocated memory
 for the I/O buffer escapes completely the Python memory manager.
 
 
-Raw Memory Interface
-====================
-
-The following function are wrappers to system allocators: :c:func:`malloc`,
-:c:func:`realloc`, :c:func:`free`. These functions are thread-safe, the
-:term:`GIL <global interpreter lock>` does not need to be held to use these
-functions.
-
-The behaviour of requesting zero bytes is not defined: return *NULL* or a
-distinct non-*NULL* pointer depending on the platform. Use
-:c:func:`PyMem_Malloc` and :c:func:`PyMem_Realloc` to have a well defined
-behaviour.
-
-.. versionadded:: 3.4
-
-.. c:function:: void* PyMem_RawMalloc(size_t n)
-
-   Allocates *n* bytes and returns a pointer of type :c:type:`void\*` to the
-   allocated memory, or *NULL* if the request fails. The memory
-   will not have been initialized in any way.
-
-
-.. c:function:: void* PyMem_RawRealloc(void *p, size_t n)
-
-   Resizes the memory block pointed to by *p* to *n* bytes. The contents will
-   be unchanged to the minimum of the old and the new sizes. If *p* is *NULL*,
-   the call is equivalent to ``PyMem_RawMalloc(n)``. Unless *p* is *NULL*, it
-   must have been returned by a previous call to :c:func:`PyMem_RawMalloc` or
-   :c:func:`PyMem_RawRealloc`. If the request fails, :c:func:`PyMem_RawRealloc`
-   returns *NULL* and *p* remains a valid pointer to the previous memory area.
-
-
-.. c:function:: void PyMem_RawFree(void *p)
-
-   Frees the memory block pointed to by *p*, which must have been returned by a
-   previous call to :c:func:`PyMem_RawMalloc` or :c:func:`PyMem_RawRealloc`.
-   Otherwise, or if ``PyMem_Free(p)`` has been called before, undefined
-   behavior occurs. If *p* is *NULL*, no operation is performed.
-
-
 .. _memoryinterface:
 
 Memory Interface
@@ -131,12 +91,8 @@ Memory Interface
 
 The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
-memory from the Python heap.
+memory from the Python heap:
 
-.. warning::
-
-   The :term:`GIL <global interpreter lock>` must be held when using these
-   functions.
 
 .. c:function:: void* PyMem_Malloc(size_t n)
 
@@ -197,81 +153,6 @@ versions and is therefore deprecated in extension modules.
 :c:func:`PyMem_MALLOC`, :c:func:`PyMem_REALLOC`, :c:func:`PyMem_FREE`.
 
 :c:func:`PyMem_NEW`, :c:func:`PyMem_RESIZE`, :c:func:`PyMem_DEL`.
-
-
-Customize Memory Allocators
-===========================
-
-.. versionadded:: 3.4
-
-.. c:type:: PyMemAllocators
-
-   Structure used to describe memory allocator.  This structure has
-   four fields:
-
-   +----------------------------------------------------------+-----------------+
-   | Field                                                    | Meaning         |
-   +==========================================================+=================+
-   | ``void *ctx``                                            | user data       |
-   +----------------------------------------------------------+-----------------+
-   | ``void* malloc(void *ctx, size_t size)``                 | allocate memory |
-   +----------------------------------------------------------+-----------------+
-   | ``void* realloc(void *ctx, void *ptr, size_t new_size)`` | allocate memory |
-   |                                                          | or resize a     |
-   |                                                          | memory block    |
-   +----------------------------------------------------------+-----------------+
-   | ``void free(void *ctx, void *ptr)``                      | release memory  |
-   +----------------------------------------------------------+-----------------+
-
-.. c:function:: void PyMem_GetRawAllocators(PyMemAllocators *allocators)
-
-   Get internal functions of :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc`
-   and :c:func:`PyMem_RawFree`.
-
-.. c:function:: void PyMem_SetRawAllocators(PyMemAllocators *allocators)
-
-   Set internal functions of :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc`
-   and :c:func:`PyMem_RawFree`.
-
-   :c:func:`PyMem_SetupDebugHooks` should be called to reinstall debug hooks if
-   new functions do no call original functions anymore.
-
-.. c:function:: void PyMem_GetAllocators(PyMemAllocators *allocators)
-
-   Get internal functions of :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`
-   and :c:func:`PyMem_Free`.
-
-.. c:function:: void PyMem_SetAllocators(PyMemAllocators *allocators)
-
-   Set internal functions of :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`
-   and :c:func:`PyMem_Free`.
-
-   ``malloc(ctx, 0)`` and ``realloc(ctx, ptr, 0)`` must not return *NULL*: it
-   would be treated as an error.
-
-   :c:func:`PyMem_SetupDebugHooks` should be called to reinstall debug hooks if
-   new functions do no call original functions anymore.
-
-.. c:function:: void PyMem_SetupDebugHooks(void)
-
-   Setup hooks to detect bugs in the following Python memory allocator
-   functions:
-
-   - :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc`,
-     :c:func:`PyMem_RawFree`
-   - :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`, :c:func:`PyMem_Free`
-   - :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`,
-     :c:func:`PyObject_Free`
-
-   Newly allocated memory is filled with the byte ``0xCB``, freed memory is
-   filled with the byte ``0xDB``. Additionnal checks:
-
-   - detect API violations, ex: :c:func:`PyObject_Free` called on a buffer
-     allocated by :c:func:`PyMem_Malloc`
-   - detect write before the start of the buffer (buffer underflow)
-   - detect write after the end of the buffer (buffer overflow)
-
-   The function does nothing if Python is not compiled is debug mode.
 
 
 .. _memoryexamples:
