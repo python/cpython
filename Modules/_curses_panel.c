@@ -293,6 +293,10 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
 static PyObject *
 PyCursesPanel_set_panel_userptr(PyCursesPanelObject *self, PyObject *obj)
 {
+    PyObject *oldobj;
+    PyCursesInitialised;
+    oldobj = (PyObject *) panel_userptr(self->pan);
+    Py_XDECREF(oldobj);
     Py_INCREF(obj);
     return PyCursesCheckERR(set_panel_userptr(self->pan, (void*)obj),
                             "set_panel_userptr");
