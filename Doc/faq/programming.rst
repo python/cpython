@@ -1738,12 +1738,12 @@ When I edit an imported module and reimport it, the changes don't show up.  Why 
 For reasons of efficiency as well as consistency, Python only reads the module
 file on the first time a module is imported.  If it didn't, in a program
 consisting of many modules where each one imports the same basic module, the
-basic module would be parsed and re-parsed many times.  To force rereading of a
+basic module would be parsed and re-parsed many times.  To force re-reading of a
 changed module, do this::
 
-   import imp
+   import importlib
    import modname
-   imp.reload(modname)
+   importlib.reload(modname)
 
 Warning: this technique is not 100% fool-proof.  In particular, modules
 containing statements like ::
@@ -1755,10 +1755,10 @@ module contains class definitions, existing class instances will *not* be
 updated to use the new class definition.  This can result in the following
 paradoxical behaviour:
 
-   >>> import imp
+   >>> import importlib
    >>> import cls
    >>> c = cls.C()                # Create an instance of C
-   >>> imp.reload(cls)
+   >>> importlib.reload(cls)
    <module 'cls' from 'cls.py'>
    >>> isinstance(c, cls.C)       # isinstance is false?!?
    False
