@@ -1,6 +1,7 @@
 from importlib import machinery
 import importlib
 import importlib.abc
+import importlib.util
 from .. import abc
 from .. import util
 from . import util as source_util
@@ -13,6 +14,7 @@ import py_compile
 import shutil
 import stat
 import sys
+import types
 import unittest
 
 from test.support import make_legacy_pyc, unload
@@ -112,7 +114,7 @@ class SimpleTest(unittest.TestCase):
         value = '<test>'
         name = '_temp'
         with source_util.create_modules(name) as mapping:
-            orig_module = imp.new_module(name)
+            orig_module = types.ModuleType(name)
             for attr in attributes:
                 setattr(orig_module, attr, value)
             with open(mapping[name], 'w') as file:
@@ -144,11 +146,11 @@ class SimpleTest(unittest.TestCase):
                 loader = machinery.SourceFileLoader('_temp', file_path)
                 mod = loader.load_module('_temp')
                 self.assertEqual(file_path, mod.__file__)
-                self.assertEqual(imp.cache_from_source(file_path),
+                self.assertEqual(importlib.util.cache_from_source(file_path),
                                  mod.__cached__)
         finally:
             os.unlink(file_path)
-            pycache = os.path.dirname(imp.cache_from_source(file_path))
+            pycache = os.path.dirname(importlib.util.cache_from_source(file_path))
             if os.path.exists(pycache):
                 shutil.rmtree(pycache)
 
@@ -157,7 +159,7 @@ class SimpleTest(unittest.TestCase):
         # truncated rather than raise an OverflowError.
         with source_util.create_modules('_temp') as mapping:
             source = mapping['_temp']
-            compiled = imp.cache_from_source(source)
+            compiled = importlib.util.cache_from_source(source)
             with open(source, 'w') as f:
                 f.write("x = 5")
             try:
@@ -194,7 +196,7 @@ class BadBytecodeTest(unittest.TestCase):
             pass
         py_compile.compile(mapping[name])
         if not del_source:
-            bytecode_path = imp.cache_from_source(mapping[name])
+            bytecode_path = importlib.util.cache_from_source(mapping[name])
         else:
             os.unlink(mapping[name])
             bytecode_path = make_legacy_pyc(mapping[name])
@@ -322,7 +324,8 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         def test(name, mapping, bytecode_path):
             self.import_(mapping[name], name)
             with open(bytecode_path, 'rb') as bytecode_file:
-                self.assertEqual(bytecode_file.read(4), imp.get_magic())
+                self.assertEqual(bytecode_file.read(4),
+                                 importlib.util.MAGIC_NUMBER)
 
         self._test_bad_magic(test)
 
@@ -372,7 +375,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         zeros = b'\x00\x00\x00\x00'
         with source_util.create_modules('_temp') as mapping:
             py_compile.compile(mapping['_temp'])
-            bytecode_path = imp.cache_from_source(mapping['_temp'])
+            bytecode_path = importlib.util.cache_from_source(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
                 bytecode_file.seek(4)
                 bytecode_file.write(zeros)
@@ -390,7 +393,7 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
         with source_util.create_modules('_temp') as mapping:
             # Create bytecode that will need to be re-created.
             py_compile.compile(mapping['_temp'])
-            bytecode_path = imp.cache_from_source(mapping['_temp'])
+            bytecode_path = importlib.util.cache_from_source(mapping['_temp'])
             with open(bytecode_path, 'r+b') as bytecode_file:
                 bytecode_file.seek(0)
                 bytecode_file.write(b'\x00\x00\x00\x00')

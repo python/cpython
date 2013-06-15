@@ -1,9 +1,9 @@
 """Test case-sensitivity (PEP 235)."""
-from importlib import _bootstrap
-from importlib import machinery
 from .. import util
 from . import util as source_util
-import imp
+
+from importlib import _bootstrap
+from importlib import machinery
 import os
 import sys
 from test import support as test_support

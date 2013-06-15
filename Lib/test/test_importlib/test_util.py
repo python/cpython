@@ -1,6 +1,6 @@
 from importlib import util
 from . import util as test_util
-import imp
+
 import os
 import sys
 from test import support
@@ -40,14 +40,14 @@ class ModuleToLoadTests(unittest.TestCase):
 
     def test_reload(self):
         # Test that the same module is in sys.modules.
-        created_module = imp.new_module(self.module_name)
+        created_module = types.ModuleType(self.module_name)
         sys.modules[self.module_name] = created_module
         with util.module_to_load(self.module_name) as module:
             self.assertIs(module, created_module)
 
     def test_reload_failed(self):
         # Test that the module was left in sys.modules.
-        created_module = imp.new_module(self.module_name)
+        created_module = types.ModuleType(self.module_name)
         sys.modules[self.module_name] = created_module
         try:
             with util.module_to_load(self.module_name) as module:
@@ -60,7 +60,7 @@ class ModuleToLoadTests(unittest.TestCase):
     def test_reset_name(self):
         # If reset_name is true then module.__name__ = name, else leave it be.
         odd_name = 'not your typical name'
-        created_module = imp.new_module(self.module_name)
+        created_module = types.ModuleType(self.module_name)
         created_module.__name__ = odd_name
         sys.modules[self.module_name] = created_module
         with util.module_to_load(self.module_name) as module:
@@ -119,7 +119,7 @@ class ModuleForLoaderTests(unittest.TestCase):
             def load_module(self, module):
                 return module
         name = 'a.b.c'
-        module = imp.new_module('a.b.c')
+        module = types.ModuleType('a.b.c')
         module.__loader__ = 42
         module.__package__ = 42
         with test_util.uncache(name):
@@ -141,7 +141,7 @@ class ModuleForLoaderTests(unittest.TestCase):
     def test_reload_failure(self):
         # Test that a failure on reload leaves the module in-place.
         name = 'a.b.c'
-        module = imp.new_module(name)
+        module = types.ModuleType(name)
         with test_util.uncache(name):
             sys.modules[name] = module
             self.raise_exception(name)
@@ -212,26 +212,26 @@ class SetPackageTests(unittest.TestCase):
     def test_top_level(self):
         # __package__ should be set to the empty string if a top-level module.
         # Implicitly tests when package is set to None.
-        module = imp.new_module('module')
+        module = types.ModuleType('module')
         module.__package__ = None
         self.verify(module, '')
 
     def test_package(self):
         # Test setting __package__ for a package.
-        module = imp.new_module('pkg')
+        module = types.ModuleType('pkg')
         module.__path__ = ['<path>']
         module.__package__ = None
         self.verify(module, 'pkg')
 
     def test_submodule(self):
         # Test __package__ for a module in a package.
-        module = imp.new_module('pkg.mod')
+        module = types.ModuleType('pkg.mod')
         module.__package__ = None
         self.verify(module, 'pkg')
 
     def test_setting_if_missing(self):
         # __package__ should be set if it is missing.
-        module = imp.new_module('mod')
+        module = types.ModuleType('mod')
         if hasattr(module, '__package__'):
             delattr(module, '__package__')
         self.verify(module, '')
@@ -239,7 +239,7 @@ class SetPackageTests(unittest.TestCase):
     def test_leaving_alone(self):
         # If __package__ is set and not None then leave it alone.
         for value in (True, False):
-            module = imp.new_module('mod')
+            module = types.ModuleType('mod')
             module.__package__ = value
             self.verify(module, value)
 
@@ -261,7 +261,7 @@ class SetLoaderTests(unittest.TestCase):
 
     def test_no_attribute(self):
         loader = self.DummyLoader()
-        loader.module = imp.new_module('blah')
+        loader.module = types.ModuleType('blah')
         try:
             del loader.module.__loader__
         except AttributeError:
@@ -270,13 +270,13 @@ class SetLoaderTests(unittest.TestCase):
 
     def test_attribute_is_None(self):
         loader = self.DummyLoader()
-        loader.module = imp.new_module('blah')
+        loader.module = types.ModuleType('blah')
         loader.module.__loader__ = None
         self.assertEqual(loader, loader.load_module('blah').__loader__)
 
     def test_not_reset(self):
         loader = self.DummyLoader()
-        loader.module = imp.new_module('blah')
+        loader.module = types.ModuleType('blah')
         loader.module.__loader__ = 42
         self.assertEqual(42, loader.load_module('blah').__loader__)
 
@@ -331,7 +331,7 @@ class PEP3147Tests(unittest.TestCase):
 
     """
 
-    tag = imp.get_tag()
+    tag = sys.implementation.cache_tag
 
     @unittest.skipUnless(sys.implementation.cache_tag is not None,
                          'requires sys.implementation.cache_tag not be None')

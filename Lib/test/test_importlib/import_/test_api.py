@@ -2,6 +2,7 @@ from .. import util as importlib_test_util
 from . import util
 import imp
 import sys
+import types
 import unittest
 
 
@@ -48,7 +49,7 @@ class APITest(unittest.TestCase):
     def test_nonexistent_fromlist_entry(self):
         # If something in fromlist doesn't exist, that's okay.
         # issue15715
-        mod = imp.new_module('fine')
+        mod = types.ModuleType('fine')
         mod.__path__ = ['XXX']
         with importlib_test_util.import_state(meta_path=[BadLoaderFinder]):
             with importlib_test_util.uncache('fine'):
@@ -59,7 +60,7 @@ class APITest(unittest.TestCase):
         # If something in fromlist triggers an exception not related to not
         # existing, let that exception propagate.
         # issue15316
-        mod = imp.new_module('fine')
+        mod = types.ModuleType('fine')
         mod.__path__ = ['XXX']
         with importlib_test_util.import_state(meta_path=[BadLoaderFinder]):
             with importlib_test_util.uncache('fine'):

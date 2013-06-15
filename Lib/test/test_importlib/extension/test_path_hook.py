@@ -2,7 +2,6 @@ from importlib import machinery
 from . import util
 
 import collections
-import imp
 import sys
 import unittest
 

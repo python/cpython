@@ -1,7 +1,6 @@
 """Test that the semantics relating to the 'fromlist' argument are correct."""
 from .. import util
 from . import util as import_util
-import imp
 import unittest
 
 class ReturnValue(unittest.TestCase):
