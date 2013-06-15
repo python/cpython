@@ -16,11 +16,9 @@ except ModuleNotFoundError:
     # Platform doesn't support dynamic loading.
     load_dynamic = None
 
-# Directly exposed by this module
-from importlib._bootstrap import cache_from_source, source_from_cache
+from importlib._bootstrap import (cache_from_source, source_from_cache,
+                                  SourcelessFileLoader, _ERR_MSG)
 
-
-from importlib import _bootstrap
 from importlib import machinery
 from importlib import util
 import importlib
@@ -117,7 +115,7 @@ class _HackedGetData:
             return super().get_data(path)
 
 
-class _LoadSourceCompatibility(_HackedGetData, _bootstrap.SourceFileLoader):
+class _LoadSourceCompatibility(_HackedGetData, machinery.SourceFileLoader):
 
     """Compatibility support for implementing load_source()."""
 
@@ -131,12 +129,11 @@ def load_source(name, pathname, file=None):
     module = sys.modules[name]
     # To allow reloading to potentially work, use a non-hacked loader which
     # won't rely on a now-closed file object.
-    module.__loader__ = _bootstrap.SourceFileLoader(name, pathname)
+    module.__loader__ = machinery.SourceFileLoader(name, pathname)
     return module
 
 
-class _LoadCompiledCompatibility(_HackedGetData,
-        _bootstrap.SourcelessFileLoader):
+class _LoadCompiledCompatibility(_HackedGetData, SourcelessFileLoader):
 
     """Compatibility support for implementing load_compiled()."""
 
@@ -150,7 +147,7 @@ def load_compiled(name, pathname, file=None):
     module = sys.modules[name]
     # To allow reloading to potentially work, use a non-hacked loader which
     # won't rely on a now-closed file object.
-    module.__loader__ = _bootstrap.SourcelessFileLoader(name, pathname)
+    module.__loader__ = SourcelessFileLoader(name, pathname)
     return module
 
 
@@ -168,7 +165,7 @@ def load_package(name, path):
                 break
         else:
             raise ValueError('{!r} is not a package'.format(path))
-    return _bootstrap.SourceFileLoader(name, path).load_module(name)
+    return machinery.SourceFileLoader(name, path).load_module(name)
 
 
 def load_module(name, file, filename, details):
@@ -252,7 +249,7 @@ def find_module(name, path=None):
                 continue
             break  # Break out of outer loop when breaking out of inner loop.
     else:
-        raise ImportError(_bootstrap._ERR_MSG.format(name), name=name)
+        raise ImportError(_ERR_MSG.format(name), name=name)
 
     encoding = None
     if mode == 'U':
