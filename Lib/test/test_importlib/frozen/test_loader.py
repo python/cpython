@@ -1,9 +1,11 @@
-from importlib import machinery
-import imp
-import unittest
 from .. import abc
 from .. import util
+
+from importlib import machinery
+import unittest
 from test.support import captured_stdout
+import types
+
 
 class LoaderTests(abc.LoaderTests):
 
@@ -85,7 +87,7 @@ class InspectLoaderTests(unittest.TestCase):
         name = '__hello__'
         with captured_stdout() as stdout:
             code = machinery.FrozenImporter.get_code(name)
-            mod = imp.new_module(name)
+            mod = types.ModuleType(name)
             exec(code, mod.__dict__)
             self.assertTrue(hasattr(mod, 'initialized'))
             self.assertEqual(stdout.getvalue(), 'Hello world!\n')

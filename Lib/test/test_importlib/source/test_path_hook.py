@@ -1,7 +1,6 @@
 from . import util as source_util
 
 from importlib import machinery
-import imp
 import unittest
 
 

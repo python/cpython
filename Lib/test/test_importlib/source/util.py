@@ -2,7 +2,6 @@ from .. import util
 import contextlib
 import errno
 import functools
-import imp
 import os
 import os.path
 import sys

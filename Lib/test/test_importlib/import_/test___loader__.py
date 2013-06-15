@@ -1,5 +1,5 @@
-import imp
 import sys
+import types
 import unittest
 
 from .. import util
@@ -19,7 +19,7 @@ class LoaderMock:
 class LoaderAttributeTests(unittest.TestCase):
 
     def test___loader___missing(self):
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         try:
             del module.__loader__
         except AttributeError:
@@ -31,7 +31,7 @@ class LoaderAttributeTests(unittest.TestCase):
         self.assertEqual(loader, module.__loader__)
 
     def test___loader___is_None(self):
-        module = imp.new_module('blah')
+        module = types.ModuleType('blah')
         module.__loader__ = None
         loader = LoaderMock()
         loader.module = module

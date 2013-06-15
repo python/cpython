@@ -3,7 +3,6 @@ from . import util as source_util
 
 from importlib import machinery
 import errno
-import imp
 import os
 import py_compile
 import stat

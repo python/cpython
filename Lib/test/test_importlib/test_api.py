@@ -1,5 +1,5 @@
 from . import util
-import imp
+
 import importlib
 from importlib import _bootstrap
 from importlib import machinery
@@ -99,7 +99,7 @@ class FindLoaderTests(unittest.TestCase):
         # If a module with __loader__ is in sys.modules, then return it.
         name = 'some_mod'
         with util.uncache(name):
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             loader = 'a loader!'
             module.__loader__ = loader
             sys.modules[name] = module
@@ -110,7 +110,7 @@ class FindLoaderTests(unittest.TestCase):
         # If sys.modules[name].__loader__ is None, raise ValueError.
         name = 'some_mod'
         with util.uncache(name):
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             module.__loader__ = None
             sys.modules[name] = module
             with self.assertRaises(ValueError):
@@ -121,7 +121,7 @@ class FindLoaderTests(unittest.TestCase):
         # Issue #17099
         name = 'some_mod'
         with util.uncache(name):
-            module = imp.new_module(name)
+            module = types.ModuleType(name)
             try:
                 del module.__loader__
             except AttributeError:
@@ -189,7 +189,7 @@ class InvalidateCacheTests(unittest.TestCase):
     def test_method_lacking(self):
         # There should be no issues if the method is not defined.
         key = 'gobbledeegook'
-        sys.path_importer_cache[key] = imp.NullImporter('abc')
+        sys.path_importer_cache[key] = None
         self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
         importlib.invalidate_caches()  # Shouldn't trigger an exception.
 
