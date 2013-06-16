@@ -828,6 +828,7 @@ class Popen(object):
             if universal_newlines:
                 self.stderr = io.TextIOWrapper(self.stderr)
 
+        self._closed_child_pipe_fds = False
         try:
             self._execute_child(args, executable, preexec_fn, close_fds,
                                 pass_fds, cwd, env,
@@ -844,19 +845,21 @@ class Popen(object):
                 except OSError:
                     pass  # Ignore EBADF or other errors.
 
-            # Make sure the child pipes are closed as well.
-            to_close = []
-            if stdin == PIPE:
-                to_close.append(p2cread)
-            if stdout == PIPE:
-                to_close.append(c2pwrite)
-            if stderr == PIPE:
-                to_close.append(errwrite)
-            for fd in to_close:
-                try:
-                    os.close(fd)
-                except OSError:
-                    pass
+            if not self._closed_child_pipe_fds:
+                to_close = []
+                if stdin == PIPE:
+                    to_close.append(p2cread)
+                if stdout == PIPE:
+                    to_close.append(c2pwrite)
+                if stderr == PIPE:
+                    to_close.append(errwrite)
+                if hasattr(self, '_devnull'):
+                    to_close.append(self._devnull)
+                for fd in to_close:
+                    try:
+                        os.close(fd)
+                    except OSError:
+                        pass
 
             raise
 
@@ -1363,14 +1366,18 @@ class Popen(object):
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
 
-                if p2cread != -1 and p2cwrite != -1:
+                # self._devnull is not always defined.
+                devnull_fd = getattr(self, '_devnull', None)
+                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
                     os.close(p2cread)
-                if c2pwrite != -1 and c2pread != -1:
+                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
                     os.close(c2pwrite)
-                if errwrite != -1 and errread != -1:
+                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
                     os.close(errwrite)
-                if hasattr(self, '_devnull'):
-                    os.close(self._devnull)
+                if devnull_fd is not None:
+                    os.close(devnull_fd)
+                # Prevent a double close of these fds from __init__ on error.
+                self._closed_child_pipe_fds = True
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
