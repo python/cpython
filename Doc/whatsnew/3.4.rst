@@ -282,3 +282,12 @@ that may require changes to your code.
   it would write to is a symlink or a non-regular file. This is to act as a
   warning that import will overwrite those files with a regular file regardless
   of what type of file path they were originally.
+
+* :meth:`importlib.abc.SourceLoader.get_source` no longer raises
+  :exc:`ImportError` when the source code being loaded triggers a
+  :exc:`SyntaxError` or :exc:`UnicodeDecodeError`. As :exc:`ImportError` is
+  meant to be raised only when source code cannot be found but it should, it was
+  felt to be over-reaching/overloading of that meaning when the source code is
+  found but improperly structured. If you were catching ImportError before and
+  wish to continue to ignore syntax or decoding issues, catch all three
+  exceptions now.

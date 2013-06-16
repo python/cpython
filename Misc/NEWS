@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- importlib.abc.SourceLoader.get_source() no longer changes SyntaxError or
+  UnicodeDecodeError into ImportError.
+
 - Issue #18058, 18057: Make the namespace package loader meet the
   importlib.abc.InspectLoader ABC, allowing for namespace packages to work with
   runpy.
