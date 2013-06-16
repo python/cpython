@@ -123,6 +123,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18058, 18057: Make the namespace package loader meet the
+  importlib.abc.InspectLoader ABC, allowing for namespace packages to work with
+  runpy.
+
 - Issue #17177: The imp module is pending deprecation.
 
 - subprocess: Prevent a possible double close of parent pipe fds when the

@@ -1238,12 +1238,25 @@ class NamespaceLoader:
     def module_repr(cls, module):
         return "<module '{}' (namespace)>".format(module.__name__)
 
+    def is_package(self, fullname):
+        return True
+
+    def get_source(self, fullname):
+        return ''
+
+    def get_code(self, fullname):
+        return compile('', '<string>', 'exec', dont_inherit=True)
+
+    def init_module_attrs(self, module):
+        module.__loader__ = self
+        module.__package__ = module.__name__
+
     def load_module(self, fullname):
         """Load a namespace module."""
         _verbose_message('namespace module loaded with path {!r}', self._path)
         with module_to_load(fullname) as module:
+            self.init_module_attrs(module)
             module.__path__ = self._path
-            module.__package__ = fullname
             return module
 
 
