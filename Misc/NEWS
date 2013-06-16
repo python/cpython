@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- subprocess: Prevent a possible double close of parent pipe fds when the
+  subprocess exec runs into an error.  Prevent a regular multi-close of the
+  /dev/null fd when any of stdin, stdout and stderr was set to DEVNULL.
+
 - Issue #16102: Make uuid._netbios_getnode() work again on Python 3.
 
 - Issue #18109: os.uname() now decodes fields from the locale encoding, and
