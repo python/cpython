@@ -1361,12 +1361,12 @@ class FileFinder:
 
     """
 
-    def __init__(self, path, *details):
+    def __init__(self, path, *loader_details):
         """Initialize with the path to search on and a variable number of
         2-tuples containing the loader and the file suffixes the loader
         recognizes."""
         loaders = []
-        for loader, suffixes in details:
+        for loader, suffixes in loader_details:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
