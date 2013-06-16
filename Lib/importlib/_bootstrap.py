@@ -723,6 +723,18 @@ def _code_to_bytecode(code, mtime=0, source_size=0):
     return data
 
 
+def decode_source(source_bytes):
+    """Decode bytes representing source code and return the string.
+
+    Universal newline support is used in the decoding.
+    """
+    import tokenize  # To avoid bootstrap issues.
+    source_bytes_readline = _io.BytesIO(source_bytes).readline
+    encoding = tokenize.detect_encoding(source_bytes_readline)
+    newline_decoder = _io.IncrementalNewlineDecoder(None, True)
+    return newline_decoder.decode(source_bytes.decode(encoding[0]))
+
+
 # Loaders #####################################################################
 
 class BuiltinImporter:
@@ -965,11 +977,7 @@ class SourceLoader(_LoaderBasics):
         except OSError as exc:
             raise ImportError("source not available through get_data()",
                               name=fullname) from exc
-        import tokenize
-        readsource = _io.BytesIO(source_bytes).readline
-        encoding = tokenize.detect_encoding(readsource)
-        newline_decoder = _io.IncrementalNewlineDecoder(None, True)
-        return newline_decoder.decode(source_bytes.decode(encoding[0]))
+        return decode_source(source_bytes)
 
     def source_to_code(self, data, path, *, _optimize=-1):
         """Return the code object compiled from source.

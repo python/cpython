@@ -916,6 +916,14 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
+.. function:: decode_source(source_bytes)
+
+   Decode the given bytes representing source code and return it as a string
+   with universal newlines (as required by
+   :meth:`importlib.abc.InspectLoader.get_source`).
+
+   .. versionadded:: 3.4
+
 .. function:: resolve_name(name, package)
 
    Resolve a relative module name to an absolute one.
