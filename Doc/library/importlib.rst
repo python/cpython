@@ -524,8 +524,7 @@ ABC hierarchy::
     * :meth:`ResourceLoader.get_data`
     * :meth:`ExecutionLoader.get_filename`
           Should only return the path to the source file; sourceless
-          loading is not supported (see :class:`SourcelessLoader` if that
-          functionality is required)
+          loading is not supported.
 
     The abstract methods defined by this class are to add optional bytecode
     file support. Not implementing these optional methods (or causing them to
