@@ -584,7 +584,10 @@ class BuiltinTest(unittest.TestCase):
                 raise frozendict_error("frozendict is readonly")
 
         # read-only builtins
-        frozen_builtins = frozendict(__builtins__)
+        if isinstance(__builtins__, types.ModuleType):
+            frozen_builtins = frozendict(__builtins__.__dict__)
+        else:
+            frozen_builtins = frozendict(__builtins__)
         code = compile("__builtins__['superglobal']=2; print(superglobal)", "test", "exec")
         self.assertRaises(frozendict_error,
                           exec, code, {'__builtins__': frozen_builtins})
