@@ -751,7 +751,7 @@ find and load modules.
 
       The path the finder will search in.
 
-   .. method:: find_module(fullname)
+   .. method:: find_loader(fullname)
 
       Attempt to find the loader to handle *fullname* within :attr:`path`.
 
