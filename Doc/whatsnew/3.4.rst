@@ -230,6 +230,9 @@ Deprecated Python modules, functions and methods
   :meth:`importlib.abc.Loader.init_module_attrs` allows subclasses of a loader
   to more easily customize module loading.
 
+* The :mod:`imp` module is pending deprecation. To keep compatibility with
+  Python 2/3 code bases, the module's removal is currently not scheduled.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------

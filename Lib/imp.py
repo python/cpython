@@ -27,6 +27,9 @@ import tokenize
 import types
 import warnings
 
+warnings.warn("the imp module is deprecated in favour of importlib; "
+              "see the module's documentation for alternative uses",
+              PendingDeprecationWarning)
 
 # DEPRECATED
 SEARCH_ERROR = 0
@@ -98,9 +101,7 @@ def source_from_cache(path):
 
 
 def get_suffixes():
-    warnings.warn('imp.get_suffixes() is deprecated; use the constants '
-                  'defined on importlib.machinery instead',
-                  DeprecationWarning, 2)
+    """**DEPRECATED**"""
     extensions = [(s, 'rb', C_EXTENSION) for s in machinery.EXTENSION_SUFFIXES]
     source = [(s, 'U', PY_SOURCE) for s in machinery.SOURCE_SUFFIXES]
     bytecode = [(s, 'rb', PY_COMPILED) for s in machinery.BYTECODE_SUFFIXES]
@@ -110,7 +111,11 @@ def get_suffixes():
 
 class NullImporter:
 
-    """Null import object."""
+    """**DEPRECATED**
+
+    Null import object.
+
+    """
 
     def __init__(self, path):
         if path == '':
@@ -152,10 +157,6 @@ class _LoadSourceCompatibility(_HackedGetData, machinery.SourceFileLoader):
 
 
 def load_source(name, pathname, file=None):
-    msg = ('imp.load_source() is deprecated; use '
-           'importlib.machinery.SourceFileLoader(name, pathname).load_module()'
-           ' instead')
-    warnings.warn(msg, DeprecationWarning, 2)
     _LoadSourceCompatibility(name, pathname, file).load_module(name)
     module = sys.modules[name]
     # To allow reloading to potentially work, use a non-hacked loader which
@@ -170,10 +171,7 @@ class _LoadCompiledCompatibility(_HackedGetData, SourcelessFileLoader):
 
 
 def load_compiled(name, pathname, file=None):
-    msg = ('imp.load_compiled() is deprecated; use '
-           'importlib.machinery.SourcelessFileLoader(name, pathname).'
-           'load_module() instead ')
-    warnings.warn(msg, DeprecationWarning, 2)
+    """**DEPRECATED**"""
     _LoadCompiledCompatibility(name, pathname, file).load_module(name)
     module = sys.modules[name]
     # To allow reloading to potentially work, use a non-hacked loader which
@@ -183,10 +181,7 @@ def load_compiled(name, pathname, file=None):
 
 
 def load_package(name, path):
-    msg = ('imp.load_package() is deprecated; use either '
-           'importlib.machinery.SourceFileLoader() or '
-           'importlib.machinery.SourcelessFileLoader() instead')
-    warnings.warn(msg, DeprecationWarning, 2)
+    """**DEPRECATED**"""
     if os.path.isdir(path):
         extensions = (machinery.SOURCE_SUFFIXES[:] +
                       machinery.BYTECODE_SUFFIXES[:])
@@ -208,32 +203,30 @@ def load_module(name, file, filename, details):
 
     """
     suffix, mode, type_ = details
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
-            raise ValueError('invalid file open mode {!r}'.format(mode))
-        elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
-            msg = 'file object required for import (type code {})'.format(type_)
-            raise ValueError(msg)
-        elif type_ == PY_SOURCE:
-            return load_source(name, filename, file)
-        elif type_ == PY_COMPILED:
-            return load_compiled(name, filename, file)
-        elif type_ == C_EXTENSION and load_dynamic is not None:
-            if file is None:
-                with open(filename, 'rb') as opened_file:
-                    return load_dynamic(name, filename, opened_file)
-            else:
-                return load_dynamic(name, filename, file)
-        elif type_ == PKG_DIRECTORY:
-            return load_package(name, filename)
-        elif type_ == C_BUILTIN:
-            return init_builtin(name)
-        elif type_ == PY_FROZEN:
-            return init_frozen(name)
+    if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
+        raise ValueError('invalid file open mode {!r}'.format(mode))
+    elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
+        msg = 'file object required for import (type code {})'.format(type_)
+        raise ValueError(msg)
+    elif type_ == PY_SOURCE:
+        return load_source(name, filename, file)
+    elif type_ == PY_COMPILED:
+        return load_compiled(name, filename, file)
+    elif type_ == C_EXTENSION and load_dynamic is not None:
+        if file is None:
+            with open(filename, 'rb') as opened_file:
+                return load_dynamic(name, filename, opened_file)
         else:
-            msg =  "Don't know how to import {} (type code {})".format(name, type_)
-            raise ImportError(msg, name=name)
+            return load_dynamic(name, filename, file)
+    elif type_ == PKG_DIRECTORY:
+        return load_package(name, filename)
+    elif type_ == C_BUILTIN:
+        return init_builtin(name)
+    elif type_ == PY_FROZEN:
+        return init_frozen(name)
+    else:
+        msg =  "Don't know how to import {} (type code {})".format(name, type_)
+        raise ImportError(msg, name=name)
 
 
 def find_module(name, path=None):
@@ -269,16 +262,14 @@ def find_module(name, path=None):
             file_path = os.path.join(package_directory, package_file_name)
             if os.path.isfile(file_path):
                 return None, package_directory, ('', '', PKG_DIRECTORY)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            for suffix, mode, type_ in get_suffixes():
-                file_name = name + suffix
-                file_path = os.path.join(entry, file_name)
-                if os.path.isfile(file_path):
-                    break
-            else:
-                continue
-            break  # Break out of outer loop when breaking out of inner loop.
+        for suffix, mode, type_ in get_suffixes():
+            file_name = name + suffix
+            file_path = os.path.join(entry, file_name)
+            if os.path.isfile(file_path):
+                break
+        else:
+            continue
+        break  # Break out of outer loop when breaking out of inner loop.
     else:
         raise ImportError(_ERR_MSG.format(name), name=name)
 
