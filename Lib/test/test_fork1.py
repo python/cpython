@@ -1,7 +1,7 @@
 """This test checks for correct fork() behavior.
 """
 
-import imp
+import _imp as imp
 import os
 import signal
 import sys

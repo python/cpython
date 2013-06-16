@@ -5,8 +5,8 @@
 # complains several times about module random having no attribute
 # randrange, and then Python hangs.
 
+import _imp as imp
 import os
-import imp
 import importlib
 import sys
 import time

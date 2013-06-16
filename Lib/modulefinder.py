@@ -1,13 +1,16 @@
 """Find modules used by a script, using introspection."""
 
 import dis
-import imp
 import importlib.machinery
 import marshal
 import os
 import sys
 import types
 import struct
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', PendingDeprecationWarning)
+    import imp
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])

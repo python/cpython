@@ -1,13 +1,13 @@
 """Utilities to support packages."""
 
 from functools import singledispatch as simplegeneric
-import imp
 import importlib
+import importlib.util
 import os
 import os.path
 import sys
 from types import ModuleType
-from warnings import warn
+import warnings
 
 __all__ = [
     'get_importer', 'iter_importers', 'get_loader', 'find_loader',
@@ -21,7 +21,7 @@ def read_code(stream):
     import marshal
 
     magic = stream.read(4)
-    if magic != imp.get_magic():
+    if magic != importlib.util.MAGIC_NUMBER:
         return None
 
     stream.read(8) # Skip timestamp and size
@@ -160,6 +160,13 @@ def _iter_file_finder_modules(importer, prefix=''):
 iter_importer_modules.register(
     importlib.machinery.FileFinder, _iter_file_finder_modules)
 
+
+def _import_imp():
+    global imp
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', PendingDeprecationWarning)
+        imp = importlib.import_module('imp')
+
 class ImpImporter:
     """PEP 302 Importer that wraps Python's "classic" import algorithm
 
@@ -172,8 +179,10 @@ class ImpImporter:
     """
 
     def __init__(self, path=None):
-        warn("This emulation is deprecated, use 'importlib' instead",
+        global imp
+        warnings.warn("This emulation is deprecated, use 'importlib' instead",
              DeprecationWarning)
+        _import_imp()
         self.path = path
 
     def find_module(self, fullname, path=None):
@@ -238,8 +247,9 @@ class ImpLoader:
     code = source = None
 
     def __init__(self, fullname, file, filename, etc):
-        warn("This emulation is deprecated, use 'importlib' instead",
-             DeprecationWarning)
+        warnings.warn("This emulation is deprecated, use 'importlib' instead",
+                      DeprecationWarning)
+        _import_imp()
         self.file = file
         self.filename = filename
         self.fullname = fullname

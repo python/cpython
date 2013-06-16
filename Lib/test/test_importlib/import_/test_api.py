@@ -1,6 +1,5 @@
 from .. import util as importlib_test_util
 from . import util
-import imp
 import sys
 import types
 import unittest
