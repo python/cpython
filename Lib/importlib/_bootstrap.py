@@ -475,8 +475,24 @@ def _verbose_message(message, *args, verbosity=1):
         print(message.format(*args), file=sys.stderr)
 
 
+class _ManageReload:
+
+    def __init__(self, name):
+        self._name = name
+
+    def __enter__(self):
+        self._is_reload = self._name in sys.modules
+
+    def __exit__(self, *args):
+        if any(arg is not None for arg in args) and not self._is_reload:
+            try:
+                del sys.modules[self._name]
+            except KeyError:
+                pass
+
+
 # Written as a class only because contextlib is not available.
-class _ModuleManager:
+class _ModuleManager(_ManageReload):
 
     """Context manager which returns the module to be loaded.
 
@@ -490,12 +506,12 @@ class _ModuleManager:
         The reset_name argument specifies whether to unconditionally reset
         the __name__ attribute if the module is found to be a reload.
         """
-        self._name = name
+        super().__init__(name)
         self._reset_name = reset_name
 
     def __enter__(self):
+        super().__enter__()
         self._module = sys.modules.get(self._name)
-        self._is_reload = self._module is not None
         if not self._is_reload:
             # This must be done before open() is called as the 'io' module
             # implicitly imports 'locale' and would otherwise trigger an
@@ -510,14 +526,12 @@ class _ModuleManager:
                 self._module.__name__ = self._name
             except AttributeError:
                 pass
-
         return self._module
 
     def __exit__(self, *args):
         self._module.__initializing__ = False
         del self._module
-        if any(arg is not None for arg in args) and not self._is_reload:
-            del sys.modules[self._name]
+        super().__exit__(*args)
 
 
 def module_to_load(name, *, reset_name=True):
@@ -741,13 +755,8 @@ class BuiltinImporter:
     @_requires_builtin
     def load_module(cls, fullname):
         """Load a built-in module."""
-        is_reload = fullname in sys.modules
-        try:
+        with _ManageReload(fullname):
             return _call_with_frames_removed(_imp.init_builtin, fullname)
-        except:
-            if not is_reload and fullname in sys.modules:
-                del sys.modules[fullname]
-            raise
 
     @classmethod
     @_requires_builtin
@@ -792,16 +801,11 @@ class FrozenImporter:
     @_requires_frozen
     def load_module(cls, fullname):
         """Load a frozen module."""
-        is_reload = fullname in sys.modules
-        try:
+        with _ManageReload(fullname):
             m = _call_with_frames_removed(_imp.init_frozen, fullname)
             # Let our own module_repr() method produce a suitable repr.
             del m.__file__
             return m
-        except:
-            if not is_reload and fullname in sys.modules:
-                del sys.modules[fullname]
-            raise
 
     @classmethod
     @_requires_frozen
@@ -1147,18 +1151,13 @@ class ExtensionFileLoader:
     @set_loader
     def load_module(self, fullname):
         """Load an extension module."""
-        is_reload = fullname in sys.modules
-        try:
+        with _ManageReload(fullname):
             module = _call_with_frames_removed(_imp.load_dynamic,
                                                fullname, self.path)
             _verbose_message('extension module loaded from {!r}', self.path)
             if self.is_package(fullname) and not hasattr(module, '__path__'):
                 module.__path__ = [_path_split(self.path)[0]]
             return module
-        except:
-            if not is_reload and fullname in sys.modules:
-                del sys.modules[fullname]
-            raise
 
     def is_package(self, fullname):
         """Return True if the extension module is a package."""
