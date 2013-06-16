@@ -31,7 +31,6 @@ Here are some of the useful functions provided by this module:
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
-import imp
 import importlib.machinery
 import itertools
 import linecache
@@ -440,6 +439,9 @@ def getmoduleinfo(path):
     """Get the module name, suffix, mode, and module type for a given file."""
     warnings.warn('inspect.getmoduleinfo() is deprecated', DeprecationWarning,
                   2)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', PendingDeprecationWarning)
+        import imp
     filename = os.path.basename(path)
     suffixes = [(-len(suffix), suffix, mode, mtype)
                     for suffix, mode, mtype in imp.get_suffixes()]

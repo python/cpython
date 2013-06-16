@@ -13,7 +13,6 @@ importers when locating support scripts as well as when importing modules.
 import os
 import sys
 import importlib.machinery # importlib first so we can test #15386 via -m
-import imp
 import types
 from pkgutil import read_code, get_loader, get_importer
 
@@ -224,7 +223,12 @@ def run_path(path_name, init_globals=None, run_name=None):
         run_name = "<run_path>"
     pkg_name = run_name.rpartition(".")[0]
     importer = get_importer(path_name)
-    if isinstance(importer, (type(None), imp.NullImporter)):
+    # Trying to avoid importing imp so as to not consume the deprecation warning.
+    is_NullImporter = False
+    if type(importer).__module__ == 'imp':
+        if type(importer).__name__ == 'NullImporter':
+            is_NullImporter = True
+    if isinstance(importer, type(None)) or is_NullImporter:
         # Not a valid sys.path entry, so run the code directly
         # execfile() doesn't help as we want to allow compiled files
         code, mod_loader = _get_code_from_file(run_name, path_name)

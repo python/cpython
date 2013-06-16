@@ -2,8 +2,8 @@
 Test suite for socketserver.
 """
 
+import _imp as imp
 import contextlib
-import imp
 import os
 import select
 import signal

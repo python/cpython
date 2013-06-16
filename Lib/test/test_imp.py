@@ -2,7 +2,6 @@ try:
     import _thread
 except ImportError:
     _thread = None
-import imp
 import importlib
 import os
 import os.path
@@ -11,6 +10,9 @@ import sys
 from test import support
 import unittest
 import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', PendingDeprecationWarning)
+    import imp
 
 
 def requires_load_dynamic(meth):

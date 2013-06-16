@@ -2,7 +2,7 @@
 ================================================================
 
 .. deprecated:: 3.4
-   The :mod:`imp` package has been deprecated in favor of :mod:`importlib`.
+   The :mod:`imp` package is pending deprecation in favor of :mod:`importlib`.
 
 .. module:: imp
    :synopsis: Access the implementation of the import statement.
@@ -232,7 +232,7 @@ file paths.
    Return the :pep:`3147` magic tag string matching this version of Python's
    magic number, as returned by :func:`get_magic`.
 
-   .. note::
+   .. deprecated:: 3.4
       You may use :attr:`sys.implementation.cache_tag` directly starting
       in Python 3.3.
 
@@ -354,6 +354,9 @@ to indicate the search result of :func:`find_module`.
    .. versionchanged:: 3.3
       ``None`` is inserted into ``sys.path_importer_cache`` instead of an
       instance of :class:`NullImporter`.
+
+   .. deprecated:: 3.4
+      Insert ``None`` into ``sys.path_importer_cache`` instead.
 
 
 .. _examples-imp:

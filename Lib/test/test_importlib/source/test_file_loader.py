@@ -7,7 +7,6 @@ from .. import util
 from . import util as source_util
 
 import errno
-import imp
 import marshal
 import os
 import py_compile
