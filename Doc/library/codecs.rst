@@ -78,7 +78,11 @@ It defines the following functions:
      reference (for encoding only)
    * ``'backslashreplace'``: replace with backslashed escape sequences (for
      encoding only)
-   * ``'surrogateescape'``: replace with surrogate U+DCxx, see :pep:`383`
+   * ``'surrogateescape'``: on decoding, replace with code points in the Unicode
+     Private Use Area ranging from U+DC80 to U+DCFF.  These private code
+     points will then be turned back into the same bytes when the
+     ``surrogateescape`` error handler is used when encoding the data.
+     (See :pep:`383` for more.)
 
    as well as any other error handling name defined via :func:`register_error`.
 
