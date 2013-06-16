@@ -123,6 +123,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18076: Introduce importlib.util.decode_source().
+
 - importlib.abc.SourceLoader.get_source() no longer changes SyntaxError or
   UnicodeDecodeError into ImportError.
 

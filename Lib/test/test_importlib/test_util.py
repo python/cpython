@@ -9,6 +9,27 @@ import unittest
 import warnings
 
 
+class DecodeSourceBytesTests(unittest.TestCase):
+
+    source = "string ='ü'"
+
+    def test_ut8_default(self):
+        source_bytes = self.source.encode('utf-8')
+        self.assertEqual(util.decode_source(source_bytes), self.source)
+
+    def test_specified_encoding(self):
+        source = '# coding=latin-1\n' + self.source
+        source_bytes = source.encode('latin-1')
+        assert source_bytes != source.encode('utf-8')
+        self.assertEqual(util.decode_source(source_bytes), source)
+
+    def test_universal_newlines(self):
+        source = '\r\n'.join([self.source, self.source])
+        source_bytes = source.encode('utf-8')
+        self.assertEqual(util.decode_source(source_bytes),
+                         '\n'.join([self.source, self.source]))
+
+
 class ModuleToLoadTests(unittest.TestCase):
 
     module_name = 'ModuleManagerTest_module'
