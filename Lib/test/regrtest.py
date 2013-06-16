@@ -1062,7 +1062,7 @@ class saved_test_environment:
                  'sys.warnoptions', 'threading._dangling',
                  'multiprocessing.process._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
-                 'support.TESTFN', 'locale',
+                 'support.TESTFN', 'locale', 'warnings.showwarning',
                 )
 
     def get_sys_argv(self):
@@ -1243,6 +1243,11 @@ class saved_test_environment:
     def restore_locale(self, saved):
         for lc, setting in saved:
             locale.setlocale(lc, setting)
+
+    def get_warnings_showwarning(self):
+        return warnings.showwarning
+    def restore_warnings_showwarning(self, fxn):
+        warnings.showwarning = fxn
 
     def resource_info(self):
         for name in self.resources:
