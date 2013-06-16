@@ -905,16 +905,36 @@ are always available.  They are listed here in alphabetical order.
    the list of supported encodings.
 
    *errors* is an optional string that specifies how encoding and decoding
-   errors are to be handled--this cannot be used in binary mode.  Pass
-   ``'strict'`` to raise a :exc:`ValueError` exception if there is an encoding
-   error (the default of ``None`` has the same effect), or pass ``'ignore'`` to
-   ignore errors.  (Note that ignoring encoding errors can lead to data loss.)
-   ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
-   where there is malformed data.  When writing, ``'xmlcharrefreplace'``
-   (replace with the appropriate XML character reference) or
-   ``'backslashreplace'`` (replace with backslashed escape sequences) can be
-   used.  Any other error handling name that has been registered with
-   :func:`codecs.register_error` is also valid.
+   errors are to be handled--this cannot be used in binary mode.
+   A variety of standard error handlers are available, though any
+   error handling name that has been registered with
+   :func:`codecs.register_error` is also valid.  The standard names
+   are:
+
+   * ``'strict'`` to raise a :exc:`ValueError` exception if there is
+     an encoding error.  The default value of ``None`` has the same
+     effect.
+
+   * ``'ignore'`` ignores errors.  Note that ignoring encoding errors
+     can lead to data loss.
+
+   * ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
+     where there is malformed data.
+
+   * ``'surrogateescape'`` will represent any incorrect bytes as code
+     points in the Unicode Private Use Area ranging from U+DC80 to
+     U+DCFF.  These private code points will then be turned back into
+     the same bytes when the ``surrogateescape`` error handler is used
+     when writing data.  This is useful for processing files in an
+     unknown encoding.
+
+   * ``'xmlcharrefreplace'`` is only supported when writing to a file.
+     Characters not supported by the encoding are replaced with the
+     appropriate XML character reference ``&#nnn;``.
+
+   * ``'backslashreplace'`` (also only supported when writing)
+     replaces unsupported characters with Python's backslashed escape
+     sequences.
 
    .. index::
       single: universal newlines; open() built-in function
