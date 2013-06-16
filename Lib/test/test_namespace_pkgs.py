@@ -1,7 +1,11 @@
-import sys
 import contextlib
-import unittest
+from importlib._bootstrap import NamespaceLoader
+import importlib.abc
+import importlib.machinery
 import os
+import sys
+import types
+import unittest
 
 from test.test_importlib import util
 from test.support import run_unittest
@@ -286,9 +290,24 @@ class ModuleAndNamespacePackageInSameDir(NamespacePackageTest):
         self.assertEqual(a_test.attr, 'in module')
 
 
-def test_main():
-    run_unittest(*NamespacePackageTest.__subclasses__())
+class ABCTests(unittest.TestCase):
+
+    def setUp(self):
+        self.loader = NamespaceLoader('foo', ['pkg'],
+                                      importlib.machinery.PathFinder)
+
+    def test_is_package(self):
+        self.assertTrue(self.loader.is_package('foo'))
+
+    def test_get_code(self):
+        self.assertTrue(isinstance(self.loader.get_code('foo'), types.CodeType))
+
+    def test_get_source(self):
+        self.assertEqual(self.loader.get_source('foo'), '')
+
+    def test_abc_isinstance(self):
+        self.assertTrue(isinstance(self.loader, importlib.abc.InspectLoader))
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
