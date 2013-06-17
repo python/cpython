@@ -705,6 +705,10 @@ class PendingSignalsTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
+    # Issue #18238: sigwaitinfo() can be interrupted on Linux (raises
+    # InterruptedError), but not on AIX
+    @unittest.skipIf(sys.platform.startswith("aix"),
+                     'signal.sigwaitinfo() cannot be interrupted on AIX')
     def test_sigwaitinfo_interrupted(self):
         self.wait_helper(signal.SIGUSR1, '''
         def test(signum):
