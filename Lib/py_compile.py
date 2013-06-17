@@ -112,11 +112,11 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     if os.path.islink(cfile):
         msg = ('{} is a symlink and will be changed into a regular file if '
                'import writes a byte-compiled file to it')
-        raise FileExistsError(msg.format(file, cfile))
+        raise FileExistsError(msg.format(cfile))
     elif os.path.exists(cfile) and not os.path.isfile(cfile):
         msg = ('{} is a non-regular file and will be changed into a regular '
                'one if import writes a byte-compiled file to it')
-        raise FileExistsError(msg.format(file, cfile))
+        raise FileExistsError(msg.format(cfile))
     loader = importlib.machinery.SourceFileLoader('<py_compile>', file)
     source_bytes = loader.get_data(file)
     try:
