@@ -75,6 +75,7 @@
 
 #include <ffi.h>
 #include "ctypes.h"
+#include <alloca.h>
 
 #if defined(_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.
