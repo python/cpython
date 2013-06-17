@@ -127,6 +127,9 @@ Library
   lists all loaded CA certificates and cert_store_stats() returns amount of
   loaded X.509 certs, X.509 CA certs and CRLs.
 
+- Issue #18167: cgi.FieldStorage no more fails to handle multipart/form-data
+  when \r\n appears at end of 65535 bytes without other newlines.
+
 - Issue #18076: Introduce importlib.util.decode_source().
 
 - importlib.abc.SourceLoader.get_source() no longer changes SyntaxError or
