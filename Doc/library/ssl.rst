@@ -791,6 +791,19 @@ to speed up repeated connections from the same clients.
 
 :class:`SSLContext` objects have the following methods and attributes:
 
+.. method:: SSLContext.cert_store_stats()
+
+   Get statistics about quantities of loaded X.509 certificates, count of
+   X.509 certificates flagged as CA certificates and certificate revocation
+   lists as dictionary.
+
+   Example for a context with one CA cert and one other cert::
+
+      >>> context.cert_store_stats()
+      {'crl': 0, 'x509_ca': 1, 'x509': 2}
+
+   .. versionadded:: 3.4
+
 .. method:: SSLContext.load_cert_chain(certfile, keyfile=None, password=None)
 
    Load a private key and the corresponding certificate.  The *certfile*
@@ -836,6 +849,17 @@ to speed up repeated connections from the same clients.
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
    <http://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
+
+.. method:: SSLContext.get_ca_certs(binary_form=False)
+
+   Get a list of loaded "certification authority" (CA) certificates. If the
+   ``binary_form`` parameter is :const:`False` each list
+   entry is a dict like the output of :meth:`SSLSocket.getpeercert`. Otherwise
+   the method returns a list of DER-encoded certificates. The returned list
+   does not contain certificates from *capath* unless a certificate was
+   requested and loaded by a SSL connection.
+
+   ..versionadded:: 3.4
 
 .. method:: SSLContext.set_default_verify_paths()
 
