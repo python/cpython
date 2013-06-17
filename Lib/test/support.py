@@ -43,6 +43,11 @@ except ModuleNotFoundError:
     zlib = None
 
 try:
+    import gzip
+except ModuleNotFoundError:
+    gzip = None
+
+try:
     import bz2
 except ModuleNotFoundError:
     bz2 = None
@@ -71,7 +76,7 @@ __all__ = [
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
     "skip_unless_xattr", "import_fresh_module", "requires_zlib",
     "PIPE_MAX_SIZE", "failfast", "anticipate_failure", "run_with_tz",
-    "requires_bz2", "requires_lzma", "suppress_crash_popup",
+    "requires_gzip", "requires_bz2", "requires_lzma", "suppress_crash_popup",
     ]
 
 class Error(Exception):
@@ -589,6 +594,8 @@ requires_IEEE_754 = unittest.skipUnless(
     "test requires IEEE 754 doubles")
 
 requires_zlib = unittest.skipUnless(zlib, 'requires zlib')
+
+requires_gzip = unittest.skipUnless(gzip, 'requires gzip')
 
 requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 
