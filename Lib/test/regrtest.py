@@ -1231,13 +1231,14 @@ class saved_test_environment:
             elif os.path.isdir(support.TESTFN):
                 shutil.rmtree(support.TESTFN)
 
-    _lc = [getattr(locale, lc) for lc in dir(locale) if lc.startswith('LC_')]
+    _lc = [getattr(locale, lc) for lc in dir(locale)
+           if lc.startswith('LC_') and lc != 'LC_ALL']
     def get_locale(self):
         pairings = []
         for lc in self._lc:
             try:
                 pairings.append((lc, locale.getlocale(lc)))
-            except TypeError:
+            except (TypeError, ValueError):
                 continue
         return pairings
     def restore_locale(self, saved):
