@@ -536,13 +536,13 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             # join it with the saved CWD so it ends up where the user expects.
             testdir = os.path.join(support.SAVEDCWD, a)
         elif o == '--timeout':
-            if hasattr(faulthandler, 'dump_tracebacks_later'):
+            if hasattr(faulthandler, 'dump_traceback_later'):
                 timeout = float(a)
                 if timeout <= 0:
                     timeout = None
             else:
                 print("Warning: The timeout option requires "
-                      "faulthandler.dump_tracebacks_later")
+                      "faulthandler.dump_traceback_later")
                 timeout = None
         elif o == '--wait':
             input("Press any key to continue...")
@@ -972,7 +972,7 @@ def runtest(test, verbose, quiet,
         support.use_resources = use_resources
     use_timeout = (timeout is not None)
     if use_timeout:
-        faulthandler.dump_tracebacks_later(timeout, exit=True)
+        faulthandler.dump_traceback_later(timeout, exit=True)
     try:
         support.match_tests = match_tests
         if failfast:
