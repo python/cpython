@@ -1232,12 +1232,12 @@ class saved_test_environment:
                 shutil.rmtree(support.TESTFN)
 
     _lc = [getattr(locale, lc) for lc in dir(locale)
-           if lc.startswith('LC_') and lc != 'LC_ALL']
+           if lc.startswith('LC_')]
     def get_locale(self):
         pairings = []
         for lc in self._lc:
             try:
-                pairings.append((lc, locale.getlocale(lc)))
+                pairings.append((lc, locale.setlocale(lc, None)))
             except (TypeError, ValueError):
                 continue
         return pairings
