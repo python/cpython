@@ -1023,6 +1023,24 @@ _decode_certificate(X509 *certificate) {
     return NULL;
 }
 
+static PyObject *
+_certificate_to_der(X509 *certificate)
+{
+    unsigned char *bytes_buf = NULL;
+    int len;
+    PyObject *retval;
+
+    bytes_buf = NULL;
+    len = i2d_X509(certificate, &bytes_buf);
+    if (len < 0) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    /* this is actually an immutable bytes sequence */
+    retval = PyBytes_FromStringAndSize((const char *) bytes_buf, len);
+    OPENSSL_free(bytes_buf);
+    return retval;
+}
 
 static PyObject *
 PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
@@ -1068,8 +1086,6 @@ PySSL_test_decode_certificate (PyObject *mod, PyObject *args) {
 static PyObject *
 PySSL_peercert(PySSLSocket *self, PyObject *args)
 {
-    PyObject *retval = NULL;
-    int len;
     int verification;
     int binary_mode = 0;
 
@@ -1081,21 +1097,7 @@ PySSL_peercert(PySSLSocket *self, PyObject *args)
 
     if (binary_mode) {
         /* return cert in DER-encoded format */
-
-        unsigned char *bytes_buf = NULL;
-
-        bytes_buf = NULL;
-        len = i2d_X509(self->peer_cert, &bytes_buf);
-        if (len < 0) {
-            PySSL_SetError(self, len, __FILE__, __LINE__);
-            return NULL;
-        }
-        /* this is actually an immutable bytes sequence */
-        retval = PyBytes_FromStringAndSize
-          ((const char *) bytes_buf, len);
-        OPENSSL_free(bytes_buf);
-        return retval;
-
+        return _certificate_to_der(self->peer_cert);
     } else {
         verification = SSL_CTX_get_verify_mode(SSL_get_SSL_CTX(self->ssl));
         if ((verification & SSL_VERIFY_PEER) == 0)
@@ -2555,6 +2557,110 @@ set_servername_callback(PySSLContext *self, PyObject *args)
 #endif
 }
 
+PyDoc_STRVAR(PySSL_get_stats_doc,
+"cert_store_stats() -> {'crl': int, 'x509_ca': int, 'x509': int}\n\
+\n\
+Returns quantities of loaded X.509 certificates. X.509 certificates with a\n\
+CA extension and certificate revocation lists inside the context's cert\n\
+store.\n\
+NOTE: Certificates in a capath directory aren't loaded unless they have\n\
+been used at least once.");
+
+static PyObject *
+cert_store_stats(PySSLContext *self)
+{
+    X509_STORE *store;
+    X509_OBJECT *obj;
+    int x509 = 0, crl = 0, pkey = 0, ca = 0, i;
+
+    store = SSL_CTX_get_cert_store(self->ctx);
+    for (i = 0; i < sk_X509_OBJECT_num(store->objs); i++) {
+        obj = sk_X509_OBJECT_value(store->objs, i);
+        switch (obj->type) {
+            case X509_LU_X509:
+                x509++;
+                if (X509_check_ca(obj->data.x509)) {
+                    ca++;
+                }
+                break;
+            case X509_LU_CRL:
+                crl++;
+                break;
+            case X509_LU_PKEY:
+                pkey++;
+                break;
+            default:
+                /* Ignore X509_LU_FAIL, X509_LU_RETRY, X509_LU_PKEY.
+                 * As far as I can tell they are internal states and never
+                 * stored in a cert store */
+                break;
+        }
+    }
+    return Py_BuildValue("{sisisi}", "x509", x509, "crl", crl,
+        "x509_ca", ca);
+}
+
+PyDoc_STRVAR(PySSL_get_ca_certs_doc,
+"get_ca_certs([der=False]) -> list of loaded certificate\n\
+\n\
+Returns a list of dicts with information of loaded CA certs. If the\n\
+optional argument is True, returns a DER-encoded copy of the CA certificate.\n\
+NOTE: Certificates in a capath directory aren't loaded unless they have\n\
+been used at least once.");
+
+static PyObject *
+get_ca_certs(PySSLContext *self, PyObject *args)
+{
+    X509_STORE *store;
+    PyObject *ci = NULL, *rlist = NULL;
+    int i;
+    int binary_mode = 0;
+
+    if (!PyArg_ParseTuple(args, "|p:get_ca_certs", &binary_mode)) {
+        return NULL;
+    }
+
+    if ((rlist = PyList_New(0)) == NULL) {
+        return NULL;
+    }
+
+    store = SSL_CTX_get_cert_store(self->ctx);
+    for (i = 0; i < sk_X509_OBJECT_num(store->objs); i++) {
+        X509_OBJECT *obj;
+        X509 *cert;
+
+        obj = sk_X509_OBJECT_value(store->objs, i);
+        if (obj->type != X509_LU_X509) {
+            /* not a x509 cert */
+            continue;
+        }
+        /* CA for any purpose */
+        cert = obj->data.x509;
+        if (!X509_check_ca(cert)) {
+            continue;
+        }
+        if (binary_mode) {
+            ci = _certificate_to_der(cert);
+        } else {
+            ci = _decode_certificate(cert);
+        }
+        if (ci == NULL) {
+            goto error;
+        }
+        if (PyList_Append(rlist, ci) == -1) {
+            goto error;
+        }
+        Py_CLEAR(ci);
+    }
+    return rlist;
+
+  error:
+    Py_XDECREF(ci);
+    Py_XDECREF(rlist);
+    return NULL;
+}
+
+
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
@@ -2586,6 +2692,10 @@ static struct PyMethodDef context_methods[] = {
 #endif
     {"set_servername_callback", (PyCFunction) set_servername_callback,
                     METH_VARARGS, PySSL_set_servername_callback_doc},
+    {"cert_store_stats", (PyCFunction) cert_store_stats,
+                    METH_NOARGS, PySSL_get_stats_doc},
+    {"get_ca_certs", (PyCFunction) get_ca_certs,
+                    METH_VARARGS, PySSL_get_ca_certs_doc},
     {NULL, NULL}        /* sentinel */
 };
 

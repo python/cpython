@@ -680,6 +680,47 @@ class ContextTests(unittest.TestCase):
         gc.collect()
         self.assertIs(wr(), None)
 
+    def test_cert_store_stats(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.cert_store_stats(),
+            {'x509_ca': 0, 'crl': 0, 'x509': 0})
+        ctx.load_cert_chain(CERTFILE)
+        self.assertEqual(ctx.cert_store_stats(),
+            {'x509_ca': 0, 'crl': 0, 'x509': 0})
+        ctx.load_verify_locations(CERTFILE)
+        self.assertEqual(ctx.cert_store_stats(),
+            {'x509_ca': 0, 'crl': 0, 'x509': 1})
+        ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+        self.assertEqual(ctx.cert_store_stats(),
+            {'x509_ca': 1, 'crl': 0, 'x509': 2})
+
+    def test_get_ca_certs(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.get_ca_certs(), [])
+        # CERTFILE is not flagged as X509v3 Basic Constraints: CA:TRUE
+        ctx.load_verify_locations(CERTFILE)
+        self.assertEqual(ctx.get_ca_certs(), [])
+        # but SVN_PYTHON_ORG_ROOT_CERT is a CA cert
+        ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+        self.assertEqual(ctx.get_ca_certs(),
+            [{'issuer': ((('organizationName', 'Root CA'),),
+                         (('organizationalUnitName', 'http://www.cacert.org'),),
+                         (('commonName', 'CA Cert Signing Authority'),),
+                         (('emailAddress', 'support@cacert.org'),)),
+              'notAfter': asn1time('Mar 29 12:29:49 2033 GMT'),
+              'notBefore': asn1time('Mar 30 12:29:49 2003 GMT'),
+              'serialNumber': '00',
+              'subject': ((('organizationName', 'Root CA'),),
+                          (('organizationalUnitName', 'http://www.cacert.org'),),
+                          (('commonName', 'CA Cert Signing Authority'),),
+                          (('emailAddress', 'support@cacert.org'),)),
+              'version': 3}])
+
+        with open(SVN_PYTHON_ORG_ROOT_CERT) as f:
+            pem = f.read()
+        der = ssl.PEM_cert_to_DER_cert(pem)
+        self.assertEqual(ctx.get_ca_certs(True), [der])
+
 
 class SSLErrorTests(unittest.TestCase):
 
@@ -994,6 +1035,22 @@ class NetworkedTests(unittest.TestCase):
                                      pprint.pformat(s.getpeercert()))
             finally:
                 s.close()
+
+    def test_get_ca_certs_capath(self):
+        # capath certs are loaded on request
+        with support.transient_internet("svn.python.org"):
+            ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            ctx.verify_mode = ssl.CERT_REQUIRED
+            ctx.load_verify_locations(capath=CAPATH)
+            self.assertEqual(ctx.get_ca_certs(), [])
+            s = ctx.wrap_socket(socket.socket(socket.AF_INET))
+            s.connect(("svn.python.org", 443))
+            try:
+                cert = s.getpeercert()
+                self.assertTrue(cert)
+            finally:
+                s.close()
+            self.assertEqual(len(ctx.get_ca_certs()), 1)
 
 
 try:
