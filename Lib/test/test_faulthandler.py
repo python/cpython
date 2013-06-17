@@ -206,20 +206,20 @@ faulthandler._read_null(True)
 import faulthandler
 output = open({filename}, 'wb')
 faulthandler.enable(output)
-faulthandler._read_null()
+faulthandler._sigsegv()
 """.strip().format(filename=repr(filename)),
                 4,
-                '(?:Segmentation fault|Bus error|Illegal instruction)',
+                'Segmentation fault',
                 filename=filename)
 
     def test_enable_single_thread(self):
         self.check_fatal_error("""
 import faulthandler
 faulthandler.enable(all_threads=False)
-faulthandler._read_null()
+faulthandler._sigsegv()
 """.strip(),
             3,
-            '(?:Segmentation fault|Bus error|Illegal instruction)',
+            'Segmentation fault',
             all_threads=False)
 
     def test_disable(self):
@@ -227,7 +227,7 @@ faulthandler._read_null()
 import faulthandler
 faulthandler.enable()
 faulthandler.disable()
-faulthandler._read_null()
+faulthandler._sigsegv()
 """.strip()
         not_expected = 'Fatal Python error'
         with support.suppress_crash_popup():
