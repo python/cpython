@@ -786,6 +786,9 @@ class FieldStorage:
             if not line:
                 self.done = -1
                 break
+            if delim == b"\r":
+                line = delim + line
+                delim = b""
             if line.startswith(b"--") and last_line_lfend:
                 strippedline = line.rstrip()
                 if strippedline == next_boundary:
@@ -802,6 +805,12 @@ class FieldStorage:
                 delim = b"\n"
                 line = line[:-1]
                 last_line_lfend = True
+            elif line.endswith(b"\r"):
+                # We may interrupt \r\n sequences if they span the 2**16
+                # byte boundary
+                delim = b"\r"
+                line = line[:-1]
+                last_line_lfend = False
             else:
                 delim = b""
                 last_line_lfend = False

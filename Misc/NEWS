@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18167: cgi.FieldStorage no more fails to handle multipart/form-data
+  when \r\n appears at end of 65535 bytes without other newlines.
+
 - subprocess: Prevent a possible double close of parent pipe fds when the
   subprocess exec runs into an error.  Prevent a regular multi-close of the
   /dev/null fd when any of stdin, stdout and stderr was set to DEVNULL.
