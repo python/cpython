@@ -944,7 +944,7 @@ def runtest(test, verbose, quiet,
         return result
     finally:
         if use_timeout:
-            faulthandler.cancel_dump_tracebacks_later()
+            faulthandler.cancel_dump_traceback_later()
         cleanup_test_droppings(test, verbose)
 runtest.stringio = None
 
