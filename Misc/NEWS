@@ -409,6 +409,9 @@ Library
 Tests
 -----
 
+- Issue #18207: Fix test_ssl for some versions of OpenSSL that ignore seconds
+  in ASN1_TIME fields.
+
 - Issue #18094: test_uuid no more reports skipped tests as passed.
 
 - Issue #17992: Add timeouts to asyncore and asynchat tests so that they won't

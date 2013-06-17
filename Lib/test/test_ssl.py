@@ -6,6 +6,7 @@ from test import support
 import socket
 import select
 import time
+import datetime
 import gc
 import os
 import errno
@@ -73,6 +74,19 @@ def no_sslv2_implies_sslv3_hello():
     # 0.9.7h or higher
     return ssl.OPENSSL_VERSION_INFO >= (0, 9, 7, 8, 15)
 
+def asn1time(cert_time):
+    # Some versions of OpenSSL ignore seconds, see #18207
+    # 0.9.8.i
+    if ssl._OPENSSL_API_VERSION == (0, 9, 8, 9, 15):
+        fmt = "%b %d %H:%M:%S %Y GMT"
+        dt = datetime.datetime.strptime(cert_time, fmt)
+        dt = dt.replace(second=0)
+        cert_time = dt.strftime(fmt)
+        # %d adds leading zero but ASN1_TIME_print() uses leading space
+        if cert_time[4] == "0":
+            cert_time = cert_time[:4] + " " + cert_time[5:]
+
+    return cert_time
 
 # Issue #9415: Ubuntu hijacks their OpenSSL and forcefully disables SSLv2
 def skip_if_broken_ubuntu_ssl(func):
@@ -142,8 +156,8 @@ class BasicSocketTests(unittest.TestCase):
                           (('commonName', 'localhost'),))
                         )
         # Note the next three asserts will fail if the keys are regenerated
-        self.assertEqual(p['notAfter'], 'Oct  5 23:01:56 2020 GMT')
-        self.assertEqual(p['notBefore'], 'Oct  8 23:01:56 2010 GMT')
+        self.assertEqual(p['notAfter'], asn1time('Oct  5 23:01:56 2020 GMT'))
+        self.assertEqual(p['notBefore'], asn1time('Oct  8 23:01:56 2010 GMT'))
         self.assertEqual(p['serialNumber'], 'D7C7381919AFC24E')
         self.assertEqual(p['subject'],
                          ((('countryName', 'XY'),),
