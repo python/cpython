@@ -49,6 +49,9 @@ Library
 Build
 -----
 
+- Issue #18256: Compilation fix for recent AIX releases.  Patch by
+  David Edelsohn.
+
 - Issue #18098: The deprecated OS X Build Applet.app fails to build on
   OS X 10.8 systems because the Apple-deprecated QuickDraw headers have
   been removed from Xcode 4.  Skip building it in this case.
