@@ -141,6 +141,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #18256: Compilation fix for recent AIX releases.  Patch by
+  David Edelsohn.
+
 - Issue #15172: Document NASM 2.10+ as requirement for building OpenSSL 1.0.1
   on Windows.
 
