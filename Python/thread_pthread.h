@@ -170,6 +170,7 @@ static void
 PyThread__init_thread(void)
 {
 #if defined(_AIX) && defined(__GNUC__)
+    extern void pthread_init(void);
     pthread_init();
 #endif
 }
@@ -444,6 +445,7 @@ PyThread_free_lock(PyThread_type_lock lock)
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_free_lock(%p) called\n", lock));
 
     /* some pthread-like implementations tie the mutex to the cond
@@ -530,6 +532,7 @@ PyThread_release_lock(PyThread_type_lock lock)
     pthread_lock *thelock = (pthread_lock *)lock;
     int status, error = 0;
 
+    (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_release_lock(%p) called\n", lock));
 
     status = pthread_mutex_lock( &thelock->mut );
