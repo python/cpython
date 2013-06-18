@@ -70,7 +70,10 @@
 
 #include <ffi.h>
 #include "ctypes.h"
+#ifdef HAVE_ALLOCA_H
+/* AIX needs alloca.h for alloca() */
 #include <alloca.h>
+#endif
 
 #if defined(_DEBUG) || defined(__MINGW32__)
 /* Don't use structured exception handling on Windows if this is defined.

@@ -1532,7 +1532,7 @@ sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-bluetooth/bluetooth.h linux/tipc.h spawn.h util.h)
+bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h)
 CPPFLAGS=$ac_save_cppflags
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
