@@ -6654,7 +6654,7 @@ sys/param.h sys/poll.h sys/select.h sys/socket.h sys/statvfs.h sys/stat.h \
 sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h \
 sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-bluetooth/bluetooth.h linux/tipc.h spawn.h util.h
+bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

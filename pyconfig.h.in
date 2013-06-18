@@ -55,6 +55,9 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
+/* Define to 1 if you have the <alloca.h> header file. */
+#undef HAVE_ALLOCA_H
+
 /* Define this if your time.h defines altzone. */
 #undef HAVE_ALTZONE
 
