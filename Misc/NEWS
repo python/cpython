@@ -32,6 +32,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18259: Declare sethostname in socketmodule.c for AIX
+
 - Issue #18167: cgi.FieldStorage no more fails to handle multipart/form-data
   when \r\n appears at end of 65535 bytes without other newlines.
 
