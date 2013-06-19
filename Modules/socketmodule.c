@@ -4132,6 +4132,11 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
+#ifdef _AIX
+/* issue #18259, not declared in any useful header file */
+extern int sethostname(const char *, size_t);
+#endif
+
     if (!PyArg_ParseTuple(args, "S:sethostname", &hnobj)) {
         PyErr_Clear();
         if (!PyArg_ParseTuple(args, "O&:sethostname",
