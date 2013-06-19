@@ -539,6 +539,9 @@ IDLE
 Build
 -----
 
+- Issue #18256: Compilation fix for recent AIX releases.  Patch by
+  David Edelsohn.
+
 - Issue #17547: In configure, explicitly pass -Wformat for the benefit for GCC
   4.8.
 
