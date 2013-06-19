@@ -103,8 +103,10 @@ This module provides an interface to the mechanisms used to implement the
    using a :keyword:`try` ... :keyword:`finally` statement.
 
    .. deprecated:: 3.3
-      Unneeded as loaders should be used to load modules and
-      :func:`find_module` is deprecated.
+      If previously used in conjunction with :func:`imp.find_module` then
+      call ``load_module()`` on the returned loader. If you wish to load a
+      module from a specific file, then use one of the file-based loaders found
+      in :mod:`importlib.machinery`.
 
 
 .. function:: new_module(name)
@@ -233,7 +235,7 @@ file paths.
    magic number, as returned by :func:`get_magic`.
 
    .. deprecated:: 3.4
-      You may use :attr:`sys.implementation.cache_tag` directly starting
+      Use :attr:`sys.implementation.cache_tag` directly starting
       in Python 3.3.
 
 
@@ -261,6 +263,8 @@ that circular imports work without any deadlocks.
    the most part.  A global import lock is kept for some critical tasks,
    such as initializing the per-module locks.
 
+.. deprecated:: 3.4
+
 
 .. function:: acquire_lock()
 
@@ -279,6 +283,8 @@ that circular imports work without any deadlocks.
    the most part.  A global import lock is kept for some critical tasks,
    such as initializing the per-module locks.
 
+.. deprecated:: 3.4
+
 
 .. function:: release_lock()
 
@@ -289,6 +295,8 @@ that circular imports work without any deadlocks.
    The locking scheme has changed to per-module locks for
    the most part.  A global import lock is kept for some critical tasks,
    such as initializing the per-module locks.
+
+.. deprecated:: 3.4
 
 
 The following constants with integer values, defined in this module, are used
