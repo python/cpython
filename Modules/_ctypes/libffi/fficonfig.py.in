@@ -16,7 +16,7 @@ ffi_platforms = {
     'M32R': ['src/m32r/sysv.S', 'src/m32r/ffi.c'],
     'M68K': ['src/m68k/ffi.c', 'src/m68k/sysv.S'],
     'POWERPC': ['src/powerpc/ffi.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S', 'src/powerpc/linux64.S', 'src/powerpc/linux64_closure.S'],
-    'POWERPC_AIX': ['src/powerpc/ffi.c', 'src/powerpc/aix.S', 'src/powerpc/aix_closure.S'],
+    'POWERPC_AIX': ['src/powerpc/ffi_darwin.c', 'src/powerpc/aix.S', 'src/powerpc/aix_closure.S'],
     'POWERPC_FREEBSD': ['src/powerpc/ffi.c', 'src/powerpc/sysv.S', 'src/powerpc/ppc_closure.S'],
     'ARM': ['src/arm/sysv.S', 'src/arm/ffi.c'],
     'LIBFFI_CRIS': ['src/cris/sysv.S', 'src/cris/ffi.c'],
