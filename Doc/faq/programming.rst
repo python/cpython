@@ -214,9 +214,9 @@ Why do lambdas defined in a loop with different values all return the same resul
 Assume you use a for loop to define a few different lambdas (or even plain
 functions), e.g.::
 
-   squares = []
-   for x in range(5):
-      squares.append(lambda: x**2)
+   >>> squares = []
+   >>> for x in range(5):
+   ...    squares.append(lambda: x**2)
 
 This gives you a list that contains 5 lambdas that calculate ``x**2``.  You
 might expect that, when called, they would return, respectively, ``0``, ``1``,
@@ -241,9 +241,9 @@ changing the value of ``x`` and see how the results of the lambdas change::
 In order to avoid this, you need to save the values in variables local to the
 lambdas, so that they don't rely on the value of the global ``x``::
 
-   squares = []
-   for x in range(5):
-      squares.append(lambda n=x: n**2)
+   >>> squares = []
+   >>> for x in range(5):
+   ...    squares.append(lambda n=x: n**2)
 
 Here, ``n=x`` creates a new variable ``n`` local to the lambda and computed
 when the lambda is defined so that it has the same value that ``x`` had at
@@ -592,11 +592,11 @@ Comma is not an operator in Python.  Consider this session::
 Since the comma is not an operator, but a separator between expressions the
 above is evaluated as if you had entered::
 
-    >>> ("a" in "b"), "a"
+    ("a" in "b"), "a"
 
 not::
 
-    >>> "a" in ("b", "a")
+    "a" in ("b", "a")
 
 The same is true of the various assignment operators (``=``, ``+=`` etc).  They
 are not truly operators but syntactic delimiters in assignment statements.
@@ -744,6 +744,7 @@ it from.  However, if you need an object with the ability to modify in-place
 unicode data, try using a :class:`io.StringIO` object or the :mod:`array`
 module::
 
+   >>> import io
    >>> s = "Hello, world"
    >>> sio = io.StringIO(s)
    >>> sio.getvalue()
@@ -761,7 +762,7 @@ module::
    array('u', 'Hello, world')
    >>> a[0] = 'y'
    >>> print(a)
-   array('u', 'yello world')
+   array('u', 'yello, world')
    >>> a.tounicode()
    'yello, world'
 
@@ -1060,7 +1061,7 @@ How do I create a multidimensional list?
 
 You probably tried to make a multidimensional array like this::
 
-   A = [[None] * 2] * 3
+   >>> A = [[None] * 2] * 3
 
 This looks correct if you print it::
 
@@ -1615,13 +1616,13 @@ file is automatic if you're importing a module and Python has the ability
 (permissions, free space, etc...) to write the compiled module back to the
 directory.
 
-Running Python on a top level script is not considered an import and no ``.pyc``
-will be created.  For example, if you have a top-level module ``abc.py`` that
-imports another module ``xyz.py``, when you run abc, ``xyz.pyc`` will be created
-since xyz is imported, but no ``abc.pyc`` file will be created since ``abc.py``
-isn't being imported.
+Running Python on a top level script is not considered an import and no
+``.pyc`` will be created.  For example, if you have a top-level module
+``foo.py`` that imports another module ``xyz.py``, when you run ``foo``,
+``xyz.pyc`` will be created since ``xyz`` is imported, but no ``foo.pyc`` file
+will be created since ``foo.py`` isn't being imported.
 
-If you need to create abc.pyc -- that is, to create a .pyc file for a module
+If you need to create ``foo.pyc`` -- that is, to create a ``.pyc`` file for a module
 that is not imported -- you can, using the :mod:`py_compile` and
 :mod:`compileall` modules.
 
@@ -1629,9 +1630,9 @@ The :mod:`py_compile` module can manually compile any module.  One way is to use
 the ``compile()`` function in that module interactively::
 
    >>> import py_compile
-   >>> py_compile.compile('abc.py')
+   >>> py_compile.compile('foo.py')                 # doctest: +SKIP
 
-This will write the ``.pyc`` to the same location as ``abc.py`` (or you can
+This will write the ``.pyc`` to the same location as ``foo.py`` (or you can
 override that with the optional parameter ``cfile``).
 
 You can also automatically compile all files in a directory or directories using
