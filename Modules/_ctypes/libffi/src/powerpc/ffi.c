@@ -146,12 +146,14 @@ ffi_prep_args_SYSV (extended_cif *ecif, unsigned *const stack)
   } p_argv;
   size_t struct_copy_size;
   unsigned gprvalue;
+#ifndef __NO_FPRS__
+  double double_tmp;
+#endif
 
   stacktop.c = (char *) stack + bytes;
   gpr_base.u = stacktop.u - ASM_NEEDS_REGISTERS - NUM_GPR_ARG_REGISTERS;
   intarg_count = 0;
 #ifndef __NO_FPRS__
-  double double_tmp;
   fpr_base.d = gpr_base.d - NUM_FPR_ARG_REGISTERS;
   fparg_count = 0;
   copy_space.c = ((flags & FLAG_FP_ARGUMENTS) ? fpr_base.c : gpr_base.c);
