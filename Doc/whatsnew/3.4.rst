@@ -177,6 +177,12 @@ Added ``FAIL_FAST`` flag to halt test running as soon as the first failure is
 detected.  (Contributed by R. David Murray and Daniel Urban in :issue:`16522`.)
 
 
+functools
+---------
+
+New :func:`functools.singledispatch` decorator: see the :pep:`443`.
+
+
 smtplib
 -------
 
