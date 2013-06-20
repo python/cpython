@@ -28,15 +28,15 @@ which required accented characters couldn't be faithfully represented in ASCII.
 as 'naïve' and 'café', and some publications have house styles which require
 spellings such as 'coöperate'.)
 
-For a while people just wrote programs that didn't display accents.  I remember
-looking at Apple ][ BASIC programs, published in French-language publications in
-the mid-1980s, that had lines like these::
+For a while people just wrote programs that didn't display accents.
+In the mid-1980s an Apple II BASIC program written by a French speaker
+might have lines like these::
 
    PRINT "FICHIER EST COMPLETE."
    PRINT "CARACTERE NON ACCEPTE."
 
-Those messages should contain accents, and they just look wrong to someone who
-can read French.
+Those messages should contain accents (completé, caractère, accepté),
+and they just look wrong to someone who can read French.
 
 In the 1980s, almost all personal computers were 8-bit, meaning that bytes could
 hold values ranging from 0 to 255.  ASCII codes only went up to 127, so some
@@ -69,9 +69,12 @@ There's a related ISO standard, ISO 10646.  Unicode and ISO 10646 were
 originally separate efforts, but the specifications were merged with the 1.1
 revision of Unicode.
 
-(This discussion of Unicode's history is highly simplified.  I don't think the
-average Python programmer needs to worry about the historical details; consult
-the Unicode consortium site listed in the References for more information.)
+(This discussion of Unicode's history is highly simplified.  The
+precise historical details aren't necessary for understanding how to
+use Unicode effectively, but if you're curious, consult the Unicode
+consortium site listed in the References or
+the `Wikipedia entry for Unicode <http://en.wikipedia.org/wiki/Unicode#History>`_
+for more information.)
 
 
 Definitions
@@ -216,10 +219,8 @@ Unicode character tables.
 
 Another `good introductory article <http://www.joelonsoftware.com/articles/Unicode.html>`_
 was written by Joel Spolsky.
-If this introduction didn't make things clear to you, you should try reading this
-alternate article before continuing.
-
-.. Jason Orendorff XXX http://www.jorendorff.com/articles/unicode/ is broken
+If this introduction didn't make things clear to you, you should try
+reading this alternate article before continuing.
 
 Wikipedia entries are often helpful; see the entries for "`character encoding
 <http://en.wikipedia.org/wiki/Character_encoding>`_" and `UTF-8
@@ -239,8 +240,31 @@ Since Python 3.0, the language features a :class:`str` type that contain Unicode
 characters, meaning any string created using ``"unicode rocks!"``, ``'unicode
 rocks!'``, or the triple-quoted string syntax is stored as Unicode.
 
-To insert a non-ASCII Unicode character, e.g., any letters with
-accents, one can use escape sequences in their string literals as such::
+The default encoding for Python source code is UTF-8, so you can simply
+include a Unicode character in a string literal::
+
+   try:
+       with open('/tmp/input.txt', 'r') as f:
+           ...
+   except IOError:
+       # 'File not found' error message.
+       print("Fichier non trouvé")
+
+You can use a different encoding from UTF-8 by putting a specially-formatted
+comment as the first or second line of the source code::
+
+   # -*- coding: <encoding name> -*-
+
+Side note: Python 3 also supports using Unicode characters in identifiers::
+
+   répertoire = "/tmp/records.log"
+   with open(répertoire, "w") as f:
+       f.write("test\n")
+
+If you can't enter a particular character in your editor or want to
+keep the source code ASCII-only for some reason, you can also use
+escape sequences in string literals. (Depending on your system,
+you may see the actual capital-delta glyph instead of a \u escape.) ::
 
    >>> "\N{GREEK CAPITAL LETTER DELTA}"  # Using the character name
    '\u0394'
@@ -251,7 +275,7 @@ accents, one can use escape sequences in their string literals as such::
 
 In addition, one can create a string using the :func:`~bytes.decode` method of
 :class:`bytes`.  This method takes an *encoding* argument, such as ``UTF-8``,
-and optionally, an *errors* argument.
+and optionally an *errors* argument.
 
 The *errors* argument specifies the response when the input string can't be
 converted according to the encoding's rules.  Legal values for this argument are
@@ -295,11 +319,15 @@ Converting to Bytes
 
 The opposite method of :meth:`bytes.decode` is :meth:`str.encode`,
 which returns a :class:`bytes` representation of the Unicode string, encoded in the
-requested *encoding*.  The *errors* parameter is the same as the parameter of
-the :meth:`~bytes.decode` method, with one additional possibility; as well as
-``'strict'``, ``'ignore'``, and ``'replace'`` (which in this case inserts a
-question mark instead of the unencodable character), you can also pass
-``'xmlcharrefreplace'`` which uses XML's character references.
+requested *encoding*.
+
+The *errors* parameter is the same as the parameter of the
+:meth:`~bytes.decode` method but supports a few more possible handlers. As well as
+``'strict'``, ``'ignore'``, and ``'replace'`` (which in this case
+inserts a question mark instead of the unencodable character), there is
+also ``'xmlcharrefreplace'`` (inserts an XML character reference) and
+``backslashreplace`` (inserts a ``\uNNNN`` escape sequence).
+
 The following example shows the different results::
 
     >>> u = chr(40960) + 'abcd' + chr(1972)
@@ -316,16 +344,15 @@ The following example shows the different results::
     b'?abcd?'
     >>> u.encode('ascii', 'xmlcharrefreplace')
     b'&#40960;abcd&#1972;'
+    >>> u.encode('ascii', 'backslashreplace')
+    b'\\ua000abcd\\u07b4'
 
-.. XXX mention the surrogate* error handlers
-
-The low-level routines for registering and accessing the available encodings are
-found in the :mod:`codecs` module.  However, the encoding and decoding functions
-returned by this module are usually more low-level than is comfortable, so I'm
-not going to describe the :mod:`codecs` module here.  If you need to implement a
-completely new encoding, you'll need to learn about the :mod:`codecs` module
-interfaces, but implementing encodings is a specialized task that also won't be
-covered here.  Consult the Python documentation to learn more about this module.
+The low-level routines for registering and accessing the available
+encodings are found in the :mod:`codecs` module.  Implementing new
+encodings also requires understanding the :mod:`codecs` module.
+However, the encoding and decoding functions returned by this module
+are usually more low-level than is comfortable, and writing new encodings
+is a specialized task, so the module won't be covered in this HOWTO.
 
 
 Unicode Literals in Python Source Code
@@ -415,11 +442,49 @@ These are grouped into categories such as "Letter", "Number", "Punctuation", or
 from the above output, ``'Ll'`` means 'Letter, lowercase', ``'No'`` means
 "Number, other", ``'Mn'`` is "Mark, nonspacing", and ``'So'`` is "Symbol,
 other".  See
-<http://www.unicode.org/reports/tr44/#General_Category_Values> for a
+`the General Category Values section of the Unicode Character Database documentation <http://www.unicode.org/reports/tr44/#General_Category_Values>`_ for a
 list of category codes.
+
+
+Unicode Regular Expressions
+---------------------------
+
+The regular expressions supported by the :mod:`re` module can be provided
+either as bytes or strings.  Some of the special character sequences such as
+``\d`` and ``\w`` have different meanings depending on whether
+the pattern is supplied as bytes or a string.  For example,
+``\d`` will match the characters ``[0-9]`` in bytes but
+in strings will match any character that's in the ``'Nd'`` category.
+
+The string in this example has the number 57 written in both Thai and
+Arabic numerals::
+
+   import re
+   p = re.compile('\d+')
+
+   s = "Over \u0e55\u0e57 57 flavours"
+   m = p.search(s)
+   print(repr(m.group()))
+
+When executed, ``\d+`` will match the Thai numerals and print them
+out.  If you supply the :const:`re.ASCII` flag to
+:func:`~re.compile`, ``\d+`` will match the substring "57" instead.
+
+Similarly, ``\w`` matches a wide variety of Unicode characters but
+only ``[a-zA-Z0-9_]`` in bytes or if :const:`re.ASCII` is supplied,
+and ``\s`` will match either Unicode whitespace characters or
+``[ \t\n\r\f\v]``.
+
 
 References
 ----------
+
+.. comment should these be mentioned earlier, e.g. at the start of the "introduction to Unicode" first section?
+
+Some good alternative discussions of Python's Unicode support are:
+
+* `Processing Text Files in Python 3 <http://python-notes.curiousefficiency.org/en/latest/python3/text_file_processing.html>`_, by Nick Coghlan.
+* `Pragmatic Unicode <http://nedbatchelder.com/text/unipain.html>`_, a PyCon 2012 presentation by Ned Batchelder.
 
 The :class:`str` type is described in the Python library reference at
 :ref:`textseq`.
@@ -428,12 +493,10 @@ The documentation for the :mod:`unicodedata` module.
 
 The documentation for the :mod:`codecs` module.
 
-Marc-André Lemburg gave a presentation at EuroPython 2002 titled "Python and
-Unicode".  A PDF version of his slides is available at
-<http://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>, and is an
-excellent overview of the design of Python's Unicode features (based on Python
-2, where the Unicode string type is called ``unicode`` and literals start with
-``u``).
+Marc-André Lemburg gave `a presentation titled "Python and Unicode" (PDF slides) <http://downloads.egenix.com/python/Unicode-EPC2002-Talk.pdf>`_ at
+EuroPython 2002.  The slides are an excellent overview of the design
+of Python 2's Unicode features (where the Unicode string type is
+called ``unicode`` and literals start with ``u``).
 
 
 Reading and Writing Unicode Data
@@ -512,7 +575,7 @@ example, Mac OS X uses UTF-8 while Windows uses a configurable encoding; on
 Windows, Python uses the name "mbcs" to refer to whatever the currently
 configured encoding is.  On Unix systems, there will only be a filesystem
 encoding if you've set the ``LANG`` or ``LC_CTYPE`` environment variables; if
-you haven't, the default encoding is ASCII.
+you haven't, the default encoding is UTF-8.
 
 The :func:`sys.getfilesystemencoding` function returns the encoding to use on
 your current system, in case you want to do the encoding manually, but there's
@@ -527,13 +590,13 @@ automatically converted to the right encoding for you::
 Functions in the :mod:`os` module such as :func:`os.stat` will also accept Unicode
 filenames.
 
-Function :func:`os.listdir`, which returns filenames, raises an issue: should it return
+The :func:`os.listdir` function returns filenames and raises an issue: should it return
 the Unicode version of filenames, or should it return bytes containing
 the encoded versions?  :func:`os.listdir` will do both, depending on whether you
 provided the directory path as bytes or a Unicode string.  If you pass a
 Unicode string as the path, filenames will be decoded using the filesystem's
 encoding and a list of Unicode strings will be returned, while passing a byte
-path will return the bytes versions of the filenames.  For example,
+path will return the filenames as bytes.  For example,
 assuming the default filesystem encoding is UTF-8, running the following
 program::
 
@@ -548,13 +611,13 @@ program::
 will produce the following output::
 
    amk:~$ python t.py
-   [b'.svn', b'filename\xe4\x94\x80abc', ...]
-   ['.svn', 'filename\u4500abc', ...]
+   [b'filename\xe4\x94\x80abc', ...]
+   ['filename\u4500abc', ...]
 
 The first list contains UTF-8-encoded filenames, and the second list contains
 the Unicode versions.
 
-Note that in most occasions, the Unicode APIs should be used.  The bytes APIs
+Note that on most occasions, the Unicode APIs should be used.  The bytes APIs
 should only be used on systems where undecodable file names can be present,
 i.e. Unix systems.
 
@@ -585,65 +648,69 @@ data also specifies the encoding, since the attacker can then choose a
 clever way to hide malicious text in the encoded bytestream.
 
 
+Converting Between File Encodings
+'''''''''''''''''''''''''''''''''
+
+The :class:`~codecs.StreamRecoder` class can transparently convert between
+encodings, taking a stream that returns data in encoding #1
+and behaving like a stream returning data in encoding #2.
+
+For example, if you have an input file *f* that's in Latin-1, you
+can wrap it with a :class:`StreamRecoder` to return bytes encoded in UTF-8::
+
+    new_f = codecs.StreamRecoder(f,
+        # en/decoder: used by read() to encode its results and
+        # by write() to decode its input.
+        codecs.getencoder('utf-8'), codecs.getdecoder('utf-8'),
+
+        # reader/writer: used to read and write to the stream.
+        codecs.getreader('latin-1'), codecs.getwriter('latin-1') )
+
+
+Files in an Unknown Encoding
+''''''''''''''''''''''''''''
+
+What can you do if you need to make a change to a file, but don't know
+the file's encoding?  If you know the encoding is ASCII-compatible and
+only want to examine or modify the ASCII parts, you can open the file
+with the ``surrogateescape`` error handler::
+
+   with open(fname, 'r', encoding="ascii", errors="surrogateescape") as f:
+       data = f.read()
+
+   # make changes to the string 'data'
+
+   with open(fname + '.new', 'w',
+              encoding="ascii", errors="surrogateescape") as f:
+       f.write(data)
+
+The ``surrogateescape`` error handler will decode any non-ASCII bytes
+as code points in the Unicode Private Use Area ranging from U+DC80 to
+U+DCFF.  These private code points will then be turned back into the
+same bytes when the ``surrogateescape`` error handler is used when
+encoding the data and writing it back out.
+
+
 References
 ----------
 
-The PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware
-Applications in Python" are available at
-<http://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>
-and discuss questions of character encodings as well as how to internationalize
+One section of `Mastering Python 3 Input/Output <http://pyvideo.org/video/289/pycon-2010--mastering-python-3-i-o>`_,  a PyCon 2010 talk by David Beazley, discusses text processing and binary data handling.
+
+The `PDF slides for Marc-André Lemburg's presentation "Writing Unicode-aware Applications in Python" <http://downloads.egenix.com/python/LSM2005-Developing-Unicode-aware-applications-in-Python.pdf>`_
+discuss questions of character encodings as well as how to internationalize
 and localize an application.  These slides cover Python 2.x only.
+
+`The Guts of Unicode in Python <http://pyvideo.org/video/1768/the-guts-of-unicode-in-python>`_ is a PyCon 2013 talk by Benjamin Peterson that discusses the internal Unicode representation in Python 3.3.
 
 
 Acknowledgements
 ================
 
-Thanks to the following people who have noted errors or offered suggestions on
-this article: Nicholas Bastin, Marius Gedminas, Kent Johnson, Ken Krugler,
-Marc-André Lemburg, Martin von Löwis, Chad Whitacre.
+The initial draft of this document was written by Andrew Kuchling.
+It has since been revised further by Alexander Belopolsky, Georg Brandl,
+Andrew Kuchling, and Ezio Melotti.
 
-.. comment
-   Revision History
-
-   Version 1.0: posted August 5 2005.
-
-   Version 1.01: posted August 7 2005.  Corrects factual and markup errors; adds
-   several links.
-
-   Version 1.02: posted August 16 2005.  Corrects factual errors.
-
-   Version 1.1: Feb-Nov 2008.  Updates the document with respect to Python 3 changes.
-
-   Version 1.11: posted June 20 2010.  Notes that Python 3.x is not covered,
-   and that the HOWTO only covers 2.x.
-
-.. comment Describe Python 3.x support (new section? new document?)
-.. comment Describe use of codecs.StreamRecoder and StreamReaderWriter
-
-.. comment
-   Original outline:
-
-   - [ ] Unicode introduction
-       - [ ] ASCII
-       - [ ] Terms
-           - [ ] Character
-           - [ ] Code point
-         - [ ] Encodings
-            - [ ] Common encodings: ASCII, Latin-1, UTF-8
-       - [ ] Unicode Python type
-           - [ ] Writing unicode literals
-               - [ ] Obscurity: -U switch
-           - [ ] Built-ins
-               - [ ] unichr()
-               - [ ] ord()
-               - [ ] unicode() constructor
-           - [ ] Unicode type
-               - [ ] encode(), decode() methods
-       - [ ] Unicodedata module for character properties
-       - [ ] I/O
-           - [ ] Reading/writing Unicode data into files
-               - [ ] Byte-order marks
-           - [ ] Unicode filenames
-       - [ ] Writing Unicode programs
-           - [ ] Do everything in Unicode
-           - [ ] Declaring source code encodings (PEP 263)
+Thanks to the following people who have noted errors or offered
+suggestions on this article: Éric Araujo, Nicholas Bastin, Nick
+Coghlan, Marius Gedminas, Kent Johnson, Ken Krugler, Marc-André
+Lemburg, Martin von Löwis, Terry J. Reedy, Chad Whitacre.
