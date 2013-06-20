@@ -11,6 +11,9 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-B
 ]
 [
+.B \-b
+]
+[
 .B \-d
 ]
 [
@@ -23,14 +26,14 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-i
 ]
 [
-.B \-m 
+.B \-m
 .I module-name
-]
-[
-.B \-q
 ]
 .br
        [
+.B \-q
+]
+[
 .B \-O
 ]
 [
@@ -60,6 +63,10 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-x
 ]
 [
+[
+.B \-X
+.I option
+]
 .B \-?
 ]
 .br
@@ -104,6 +111,10 @@ program.
 Don't write
 .I .py[co]
 files on import. See also PYTHONDONTWRITEBYTECODE.
+.TP
+.B \-b
+Issue warnings about str(bytes_instance), str(bytearray_instance)
+and comparing bytes/bytearray with str. (-bb: issue errors)
 .TP
 .BI "\-c " command
 Specify the command to execute (see next section).
@@ -242,6 +253,9 @@ case-sensitive.  The
 .I line
 field matches the line number, where zero matches all line numbers and
 is thus equivalent to an omitted line number.
+.TP
+.BI "\-X " option
+Set implementation specific option.
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
