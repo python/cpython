@@ -90,7 +90,7 @@ New syntax features:
 
 New library modules:
 
-* None yet.
+* :mod:`enum`: Implementation of the :pep:`435`.
 
 New built-in features:
 
