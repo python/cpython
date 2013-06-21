@@ -762,7 +762,7 @@ which incur interpreter overhead.
        """ Call a function repeatedly until an exception is raised.
 
        Converts a call-until-exception interface to an iterator interface.
-       Like __builtin__.iter(func, sentinel) but uses an exception instead
+       Like builtins.iter(func, sentinel) but uses an exception instead
        of a sentinel to end the loop.
 
        Examples:
