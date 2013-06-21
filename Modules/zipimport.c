@@ -1258,7 +1258,7 @@ normalize_line_endings(PyObject *source)
 }
 
 /* Given a string buffer containing Python source code, compile it
-   return and return a code object as a new reference. */
+   and return a code object as a new reference. */
 static PyObject *
 compile_source(PyObject *pathname, PyObject *source)
 {
