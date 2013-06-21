@@ -158,7 +158,7 @@ This module provides an interface to the mechanisms used to implement the
           cache = {}
 
    It is legal though generally not very useful to reload built-in or dynamically
-   loaded modules, except for :mod:`sys`, :mod:`__main__` and :mod:`__builtin__`.
+   loaded modules, except for :mod:`sys`, :mod:`__main__` and :mod:`builtins`.
    In many cases, however, extension modules are not designed to be initialized
    more than once, and may fail in arbitrary ways when reloaded.
 
