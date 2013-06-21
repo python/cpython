@@ -4452,7 +4452,7 @@ PyDoc_STRVAR(module_doc,
 "Functional tools for creating and using iterators.\n\
 \n\
 Infinite iterators:\n\
-count([n]) --> n, n+1, n+2, ...\n\
+count(start=0, step=1) --> start, start+step, start+2*step, ...\n\
 cycle(p) --> p0, p1, ... plast, p0, p1, ...\n\
 repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 \n\
