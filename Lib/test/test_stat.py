@@ -152,7 +152,8 @@ class TestFilemode(unittest.TestCase):
             st_mode, modestr = self.get_mode(os.devnull)
             self.assertEqual(modestr[0], 'c')
             self.assertS_IS("CHR", st_mode)
-        for blockdev in ("/dev/sda", "/dev/hda", "/dev/da0", "/dev/ad0"):
+        # needs block devices in BSD, /dev/da0, /dev/ad0 are links
+        for blockdev in ("/dev/sda", "/dev/hda"):
             if os.path.exists(blockdev):
                 st_mode, modestr = self.get_mode(blockdev)
                 self.assertEqual(modestr[0], 'b')
