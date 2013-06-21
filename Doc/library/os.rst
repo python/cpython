@@ -851,11 +851,11 @@ as internal buffering of data.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
-   this module too (see :ref:`open-constants`).  In particular, on Windows adding
+   the :mod:`os` module.  In particular, on Windows adding
    :const:`O_BINARY` is needed to open files in binary mode.
 
    This function can support :ref:`paths relative to directory descriptors
-   <dir_fd>`.
+   <dir_fd>` with the *dir_fd* parameter.
 
    Availability: Unix, Windows.
 
@@ -868,6 +868,60 @@ as internal buffering of data.
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
+
+The following constants are options for the *flags* parameter to the
+:func:`~os.open` function.  They can be combined using the bitwise OR operator
+``|``.  Some of them are not available on all platforms.  For descriptions of
+their availability and use, consult the :manpage:`open(2)` manual page on Unix
+or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windows.
+
+
+.. data:: O_RDONLY
+          O_WRONLY
+          O_RDWR
+          O_APPEND
+          O_CREAT
+          O_EXCL
+          O_TRUNC
+
+   These constants are available on Unix and Windows.
+
+
+.. data:: O_DSYNC
+          O_RSYNC
+          O_SYNC
+          O_NDELAY
+          O_NONBLOCK
+          O_NOCTTY
+          O_SHLOCK
+          O_EXLOCK
+          O_CLOEXEC
+
+   These constants are only available on Unix.
+
+   .. versionchanged:: 3.3
+      Add :data:`O_CLOEXEC` constant.
+
+.. data:: O_BINARY
+          O_NOINHERIT
+          O_SHORT_LIVED
+          O_TEMPORARY
+          O_RANDOM
+          O_SEQUENTIAL
+          O_TEXT
+
+   These constants are only available on Windows.
+
+
+.. data:: O_ASYNC
+          O_DIRECT
+          O_DIRECTORY
+          O_NOFOLLOW
+          O_NOATIME
+          O_PATH
+
+   These constants are GNU extensions and not present if they are not defined by
+   the C library.
 
 
 .. function:: openpty()
@@ -1078,79 +1132,6 @@ as internal buffering of data.
    Returns the total number of bytes written.
 
    Availability: Unix.
-
-   .. versionadded:: 3.3
-
-
-.. _open-constants:
-
-``open()`` flag constants
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The following constants are options for the *flags* parameter to the
-:func:`~os.open` function.  They can be combined using the bitwise OR operator
-``|``.  Some of them are not available on all platforms.  For descriptions of
-their availability and use, consult the :manpage:`open(2)` manual page on Unix
-or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windows.
-
-
-.. data:: O_RDONLY
-          O_WRONLY
-          O_RDWR
-          O_APPEND
-          O_CREAT
-          O_EXCL
-          O_TRUNC
-
-   These constants are available on Unix and Windows.
-
-
-.. data:: O_DSYNC
-          O_RSYNC
-          O_SYNC
-          O_NDELAY
-          O_NONBLOCK
-          O_NOCTTY
-          O_SHLOCK
-          O_EXLOCK
-          O_CLOEXEC
-
-   These constants are only available on Unix.
-
-   .. versionchanged:: 3.3
-      Add :data:`O_CLOEXEC` constant.
-
-.. data:: O_BINARY
-          O_NOINHERIT
-          O_SHORT_LIVED
-          O_TEMPORARY
-          O_RANDOM
-          O_SEQUENTIAL
-          O_TEXT
-
-   These constants are only available on Windows.
-
-
-.. data:: O_ASYNC
-          O_DIRECT
-          O_DIRECTORY
-          O_NOFOLLOW
-          O_NOATIME
-          O_PATH
-
-   These constants are GNU extensions and not present if they are not defined by
-   the C library.
-
-
-.. data:: RTLD_LAZY
-          RTLD_NOW
-          RTLD_GLOBAL
-          RTLD_LOCAL
-          RTLD_NODELETE
-          RTLD_NOLOAD
-          RTLD_DEEPBIND
-
-   See the Unix manual page :manpage:`dlopen(3)`.
 
    .. versionadded:: 3.3
 
@@ -3048,7 +3029,7 @@ information, consult your Unix manpages.
 
 .. versionadded:: 3.3
 
-The following scheduling policies are exposed if they are a supported by the
+The following scheduling policies are exposed if they are supported by the
 operating system.
 
 .. data:: SCHED_OTHER
@@ -3298,6 +3279,19 @@ Higher-level operations on pathnames are defined in the :mod:`os.path` module.
    The file path of the null device. For example: ``'/dev/null'`` for
    POSIX, ``'nul'`` for Windows.  Also available via :mod:`os.path`.
 
+.. data:: RTLD_LAZY
+          RTLD_NOW
+          RTLD_GLOBAL
+          RTLD_LOCAL
+          RTLD_NODELETE
+          RTLD_NOLOAD
+          RTLD_DEEPBIND
+
+   Flags for use with the :func:`~sys.setdlopenflags` and
+   :func:`~sys.getdlopenflags` functions.  See the Unix manual page
+   :manpage:`dlopen(3)` for what the different flags mean.
+
+   .. versionadded:: 3.3
 
 .. _os-miscfunc:
 
