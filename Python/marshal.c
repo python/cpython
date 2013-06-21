@@ -979,20 +979,25 @@ r_object(RFILE *p)
             retval = NULL;
             break;
         }
-        buffer = PyMem_NEW(char, n);
-        if (buffer == NULL) {
-            retval = PyErr_NoMemory();
-            break;
-        }
-        if (r_string(buffer, n, p) != n) {
+        if (n != 0) {
+            buffer = PyMem_NEW(char, n);
+            if (buffer == NULL) {
+                retval = PyErr_NoMemory();
+                break;
+            }
+            if (r_string(buffer, n, p) != n) {
+                PyMem_DEL(buffer);
+                PyErr_SetString(PyExc_EOFError,
+                    "EOF read where object expected");
+                retval = NULL;
+                break;
+            }
+            v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
             PyMem_DEL(buffer);
-            PyErr_SetString(PyExc_EOFError,
-                "EOF read where object expected");
-            retval = NULL;
-            break;
         }
-        v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
-        PyMem_DEL(buffer);
+        else {
+            v = PyUnicode_New(0, 0);
+        }
         if (type == TYPE_INTERNED)
             PyUnicode_InternInPlace(&v);
         retval = v;
