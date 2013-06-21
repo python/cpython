@@ -774,7 +774,7 @@ Set the flags used by the interpreter for dlopen calls, such as when the\n\
 interpreter loads extension modules.  Among other things, this will enable\n\
 a lazy resolving of symbols when importing a module, if called as\n\
 sys.setdlopenflags(0).  To share symbols across extension modules, call as\n\
-sys.setdlopenflags(ctypes.RTLD_GLOBAL).  Symbolic names for the flag modules\n\
+sys.setdlopenflags(os.RTLD_GLOBAL).  Symbolic names for the flag modules\n\
 can be found in the os module (RTLD_xxx constants, e.g. os.RTLD_LAZY).");
 
 static PyObject *
@@ -790,7 +790,7 @@ PyDoc_STRVAR(getdlopenflags_doc,
 "getdlopenflags() -> int\n\
 \n\
 Return the current value of the flags that are used for dlopen calls.\n\
-The flag constants are defined in the ctypes and DLFCN modules.");
+The flag constants are defined in the os module.");
 
 #endif  /* HAVE_DLOPEN */
 
