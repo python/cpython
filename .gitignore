@@ -15,6 +15,7 @@ Doc/tools/jinja2/
 Doc/tools/pygments/
 Doc/tools/sphinx/
 Lib/lib2to3/*.pickle
+Lib/test/data/*
 Lib/_sysconfigdata.py
 Lib/plat-mac/errors.rsrc.df.rsrc
 Makefile
