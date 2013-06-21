@@ -278,7 +278,7 @@ loops that truncate the stream.
 
 .. function:: count(start=0, step=1)
 
-   Make an iterator that returns evenly spaced values starting with *n*. Often
+   Make an iterator that returns evenly spaced values starting with number *start*. Often
    used as an argument to :func:`map` to generate consecutive data points.
    Also, used with :func:`zip` to add sequence numbers.  Equivalent to::
 
