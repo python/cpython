@@ -435,7 +435,7 @@ remote server into a single request [#]_.
    is a :term:`generator`; iterating over this generator yields the individual
    results.
 
-A usage example of this class follows.  The server code ::
+A usage example of this class follows.  The server code::
 
    from xmlrpc.server import SimpleXMLRPCServer
 
@@ -449,7 +449,7 @@ A usage example of this class follows.  The server code ::
        return x*y
 
    def divide(x, y):
-       return x/y
+       return x // y
 
    # A simple server with simple arithmetic functions
    server = SimpleXMLRPCServer(("localhost", 8000))
