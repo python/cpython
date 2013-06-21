@@ -411,9 +411,10 @@ always available.
 
 .. function:: getdlopenflags()
 
-   Return the current value of the flags that are used for :c:func:`dlopen` calls.
-   The flag constants are defined in the :mod:`ctypes` and :mod:`DLFCN` modules.
-   Availability: Unix.
+   Return the current value of the flags that are used for
+   :c:func:`dlopen` calls.  Symbolic names for the flag values can be
+   found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   :data:`os.RTLD_LAZY`).  Availability: Unix.
 
 
 .. function:: getfilesystemencoding()
@@ -906,7 +907,7 @@ always available.
    the interpreter loads extension modules.  Among other things, this will enable a
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
-   ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag modules
+   ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
    can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
    :data:`os.RTLD_LAZY`).
 
