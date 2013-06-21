@@ -733,6 +733,8 @@ find and load modules.
 
    The *loader_details* argument is a variable number of 2-item tuples each
    containing a loader and a sequence of file suffixes the loader recognizes.
+   The loaders are expected to be callables which accept two arguments of
+   the module's name and the path to the file found.
 
    The finder will cache the directory contents as necessary, making stat calls
    for each module search to verify the cache is not outdated. Because cache
