@@ -406,6 +406,14 @@ typedef size_t Py_uhash_t;
 #define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
 #endif
 
+#ifndef S_ISCHR
+#define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
+#endif
+
+#ifndef S_ISBLK
+#define S_ISBLK(x) (((x) & S_IFMT) == S_IFBLK)
+#endif
+
 
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included

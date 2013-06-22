@@ -26,6 +26,10 @@ extern "C" {
 #include <sys/stat.h>
 #endif /* HAVE_SYS_STAT_H */
 
+#ifdef MS_WINDOWS
+typedef unsigned short mode_t;
+#endif
+
 /* From Python's stat.py */
 #ifndef S_IMODE
 #  define S_IMODE 07777
