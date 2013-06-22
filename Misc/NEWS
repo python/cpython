@@ -123,6 +123,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11016: Add C implementation of the stat module as _stat.
+
 - Issue #18248: Fix libffi build on AIX.
 
 - Issue #18259: Declare sethostname in socketmodule.c for AIX

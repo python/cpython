@@ -1155,6 +1155,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\_stat.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\symtablemodule.c"
 				>
 			</File>

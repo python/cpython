@@ -182,7 +182,6 @@ functools
 
 New :func:`functools.singledispatch` decorator: see the :pep:`443`.
 
-
 smtplib
 -------
 
@@ -213,6 +212,12 @@ wave
 The :meth:`~wave.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 
+stat
+---
+
+The stat module is now backed by a C implementation in :mod:`_stat`. A C
+implementation is required as most of the values aren't standardized and
+platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
 Optimizations
 =============
