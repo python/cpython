@@ -8,13 +8,12 @@
 */
 
 /* The block length may be set to any number over 1.  Larger numbers
- * reduce the number of calls to the memory allocator, give faster
- * indexing and rotation, and reduce the link::data overhead ratio.
- * Ideally, the block length should be a power-of-two for faster
- * division/modulo computations during indexing.
+ * reduce the number of calls to the memory allocator but take more
+ * memory.  Ideally, BLOCKLEN should be set with an eye to the
+ * length of a cache line.
  */
 
-#define BLOCKLEN 64
+#define BLOCKLEN 62
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
@@ -59,8 +58,13 @@ static block *freeblocks[MAXFREEBLOCKS];
 static block *
 newblock(block *leftlink, block *rightlink, Py_ssize_t len) {
     block *b;
-    /* To prevent len from overflowing PY_SSIZE_T_MAX on 32-bit machines, we
-     * refuse to allocate new blocks if the current len is nearing overflow. */
+    /* To prevent len from overflowing PY_SSIZE_T_MAX on 64-bit machines, we
+     * refuse to allocate new blocks if the current len is dangerously
+     * close.  There is some extra margin to prevent spurious arithmetic
+     * overflows at various places.  The following check ensures that
+     * the blocks allocated to the deque, in the worst case, can only
+     * have PY_SSIZE_T_MAX-2 entries in total.
+     */
     if (len >= PY_SSIZE_T_MAX - 2*BLOCKLEN) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot add more blocks to the deque");
