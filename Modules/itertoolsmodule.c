@@ -2229,7 +2229,7 @@ static PyMethodDef product_methods[] = {
 };
 
 PyDoc_STRVAR(product_doc,
-"product(*iterables) --> product object\n\
+"product(*iterables, repeat=1) --> product object\n\
 \n\
 Cartesian product of input iterables.  Equivalent to nested for-loops.\n\n\
 For example, product(A, B) returns the same as:  ((x,y) for x in A for y in B).\n\
