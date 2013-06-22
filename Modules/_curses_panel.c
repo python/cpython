@@ -323,12 +323,17 @@ static PyObject *
 PyCursesPanel_set_panel_userptr(PyCursesPanelObject *self, PyObject *obj)
 {
     PyObject *oldobj;
+    int rc;
     PyCursesInitialised;
-    oldobj = (PyObject *) panel_userptr(self->pan);
-    Py_XDECREF(oldobj);
     Py_INCREF(obj);
-    return PyCursesCheckERR(set_panel_userptr(self->pan, (void*)obj),
-                            "set_panel_userptr");
+    oldobj = (PyObject *) panel_userptr(self->pan);
+    rc = set_panel_userptr(self->pan, (void*)obj);
+    if (rc == ERR) {
+        /* In case of an ncurses error, decref the new object again */
+        Py_DECREF(obj);
+    }
+    Py_XDECREF(oldobj);
+    return PyCursesCheckERR(rc, "set_panel_userptr");
 }
 
 static PyObject *
