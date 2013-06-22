@@ -81,31 +81,19 @@ class GrepDialog(SearchDialogBase):
         hits = 0
         for fn in list:
             try:
-                f = open(fn)
-            except IOError, msg:
+                with open(fn) as f:
+                    for lineno, line in enumerate(f, 1):
+                        if line[-1:] == '\n':
+                            line = line[:-1]
+                        if prog.search(line):
+                            sys.stdout.write("%s: %s: %s\n" %
+                                             (fn, lineno, line))
+                            hits += 1
+            except IOError as msg:
                 print msg
-                continue
-            lineno = 0
-            while 1:
-                block = f.readlines(100000)
-                if not block:
-                    break
-                for line in block:
-                    lineno = lineno + 1
-                    if line[-1:] == '\n':
-                        line = line[:-1]
-                    if prog.search(line):
-                        sys.stdout.write("%s: %s: %s\n" % (fn, lineno, line))
-                        hits = hits + 1
-        if hits:
-            if hits == 1:
-                s = ""
-            else:
-                s = "s"
-            print "Found", hits, "hit%s." % s
-            print "(Hint: right-click to open locations.)"
-        else:
-            print "No hits."
+        print(("Hits found: %s\n"
+              "(Hint: right-click to open locations.)"
+              % hits) if hits else "No hits.")
 
     def findfiles(self, dir, base, rec):
         try:
@@ -131,3 +119,9 @@ class GrepDialog(SearchDialogBase):
         if self.top:
             self.top.grab_release()
             self.top.withdraw()
+
+if __name__ == "__main__":
+    # A human test is a bit tricky since EditorWindow() imports this module.
+    # Hence Idle must be restarted after editing this file for a live test.
+    import unittest
+    unittest.main('idlelib.idle_test.test_grep', verbosity=2, exit=False)
