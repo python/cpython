@@ -194,6 +194,9 @@ try/except statement by code that only cares whether or not an error occurred.
 ssl
 ---
 
+TLSv1.1 and TLSv1.2 support (Contributed by Michele Orrù and Antoine Pitrou
+in :issue:`16692`)
+
 New diagnostic functions :func:`~ssl.get_default_verify_paths`,
 :meth:`~ssl.SSLContext.cert_store_stats` and
 :meth:`~ssl.SSLContext.get_ca_certs`
