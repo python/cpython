@@ -1554,7 +1554,8 @@ static PyMethodDef islice_methods[] = {
 };
 
 PyDoc_STRVAR(islice_doc,
-"islice(iterable, [start,] stop [, step]) --> islice object\n\
+"islice(iterable, stop) --> islice object\n\
+islice(iterable, start, stop[, step]) --> islice object\n\
 \n\
 Return an iterator whose next() method returns selected values from an\n\
 iterable.  If start is specified, will skip all preceding elements;\n\
@@ -2229,7 +2230,7 @@ static PyMethodDef product_methods[] = {
 };
 
 PyDoc_STRVAR(product_doc,
-"product(*iterables) --> product object\n\
+"product(*iterables, repeat=1) --> product object\n\
 \n\
 Cartesian product of input iterables.  Equivalent to nested for-loops.\n\n\
 For example, product(A, B) returns the same as:  ((x,y) for x in A for y in B).\n\
