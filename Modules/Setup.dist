@@ -117,6 +117,7 @@ _operator _operator.c	        # operator.add() and similar goodies
 _collections _collectionsmodule.c # Container types
 itertools itertoolsmodule.c    # Functions creating iterators for efficient looping 
 atexit atexitmodule.c      # Register functions to be run at interpreter-shutdown
+_stat _stat.c			# stat.h interface
 
 # access to ISO C locale support
 _locale _localemodule.c  # -lintl

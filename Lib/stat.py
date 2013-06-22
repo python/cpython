@@ -147,3 +147,9 @@ def filemode(mode):
         else:
             perm.append("-")
     return "".join(perm)
+
+# If available, use C implementation
+try:
+    from _stat import *
+except ModuleNotFoundError:
+    pass
