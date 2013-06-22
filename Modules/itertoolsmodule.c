@@ -1554,7 +1554,8 @@ static PyMethodDef islice_methods[] = {
 };
 
 PyDoc_STRVAR(islice_doc,
-"islice(iterable, [start,] stop [, step]) --> islice object\n\
+"islice(iterable, stop) --> islice object\n\
+islice(iterable, start, stop[, step]) --> islice object\n\
 \n\
 Return an iterator whose next() method returns selected values from an\n\
 iterable.  If start is specified, will skip all preceding elements;\n\
