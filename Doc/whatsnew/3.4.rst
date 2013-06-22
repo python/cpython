@@ -191,6 +191,18 @@ both socket level errors and SMTP protocol level errors to be caught in one
 try/except statement by code that only cares whether or not an error occurred.
 (:issue:`2118`).
 
+ssl
+---
+
+New diagnostic functions :func:`~ssl.get_default_verify_paths`,
+:meth:`~ssl.SSLContext.cert_store_stats` and
+:meth:`~ssl.SSLContext.get_ca_certs`
+
+Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
+cert store.
+
+(Contributed by Christian Heimes in :issue:`18143`, :issue:`18147` and
+:issue:`17134`)
 
 wave
 ----
