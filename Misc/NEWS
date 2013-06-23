@@ -35,6 +35,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18135: Fix a possible integer overflow in ssl.SSLSocket.write()
+  and in ssl.SSLContext.load_cert_chain() for strings and passwords longer than
+  2 gigabytes.
+
 - Issue #18248: Fix libffi build on AIX.
 
 - Issue #18259: Declare sethostname in socketmodule.c for AIX

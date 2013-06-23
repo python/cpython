@@ -1284,8 +1284,9 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         goto error;
     }
     do {
+        len = (int)Py_MIN(buf.len, INT_MAX);
         PySSL_BEGIN_ALLOW_THREADS
-        len = SSL_write(self->ssl, buf.buf, buf.len);
+        len = SSL_write(self->ssl, buf.buf, len);
         err = SSL_get_error(self->ssl, len);
         PySSL_END_ALLOW_THREADS
         if (PyErr_CheckSignals()) {
@@ -1576,7 +1577,7 @@ PySSL_tls_unique_cb(PySSLSocket *self)
 {
     PyObject *retval = NULL;
     char buf[PySSL_CB_MAXLEN];
-    int len;
+    size_t len;
 
     if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
         /* if session is resumed XOR we are the client */
@@ -1588,7 +1589,6 @@ PySSL_tls_unique_cb(PySSLSocket *self)
     }
 
     /* It cannot be negative in current OpenSSL version as of July 2011 */
-    assert(len >= 0);
     if (len == 0)
         Py_RETURN_NONE;
 
@@ -1915,7 +1915,7 @@ typedef struct {
     PyThreadState *thread_state;
     PyObject *callable;
     char *password;
-    Py_ssize_t size;
+    int size;
     int error;
 } _PySSLPasswordInfo;
 
@@ -1949,6 +1949,12 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
         goto error;
     }
 
+    if (size > (Py_ssize_t)INT_MAX) {
+        PyErr_Format(PyExc_ValueError,
+                     "password cannot be longer than %d bytes", INT_MAX);
+        goto error;
+    }
+
     free(pw_info->password);
     pw_info->password = malloc(size);
     if (!pw_info->password) {
@@ -1957,7 +1963,7 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
         goto error;
     }
     memcpy(pw_info->password, data, size);
-    pw_info->size = size;
+    pw_info->size = (int)size;
 
     Py_XDECREF(password_bytes);
     return 1;
