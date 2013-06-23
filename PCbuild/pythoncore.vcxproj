@@ -501,6 +501,7 @@
     <ClCompile Include="..\Modules\_pickle.c" />
     <ClCompile Include="..\Modules\_randommodule.c" />
     <ClCompile Include="..\Modules\_sre.c" />
+    <ClCompile Include="..\Modules\_stat.c" />
     <ClCompile Include="..\Modules\_struct.c" />
     <ClCompile Include="..\Modules\_weakref.c" />
     <ClCompile Include="..\Modules\arraymodule.c" />
@@ -525,7 +526,6 @@
     <ClCompile Include="..\Modules\sha256module.c" />
     <ClCompile Include="..\Modules\sha512module.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
-    <ClCompile Include="..\Modules\_stat.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
