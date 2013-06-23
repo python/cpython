@@ -24,20 +24,20 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    A :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
-   host and port parameters are given, the SMTP :meth:`connect` method is called
-   with those parameters during initialization.  If specified, *local_hostname* is
-   used as the FQDN of the local host in the HELO/EHLO command.  Otherwise, the
-   local hostname is found using :func:`socket.getfqdn`.  If the
-   :meth:`connect` call
-   returns anything other than a success code, an :exc:`SMTPConnectError` is
-   raised. The optional *timeout* parameter specifies a timeout in seconds for
-   blocking operations like the connection attempt (if not specified, the
-   global default timeout setting will be used). The optional source_address
-   parameter allows to bind to some specific source address in a machine with
-   multiple network interfaces, and/or to some specific source TCP port. It
-   takes a 2-tuple (host, port), for the socket to bind to as its source
-   address before connecting. If omitted (or if host or port are ``''`` and/or
-   0 respectively) the OS default behavior will be used.
+   host and port parameters are given, the SMTP :meth:`connect` method is
+   called with those parameters during initialization.  If specified,
+   *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
+   command.  Otherwise, the local hostname is found using
+   :func:`socket.getfqdn`.  If the :meth:`connect` call returns anything other
+   than a success code, an :exc:`SMTPConnectError` is raised. The optional
+   *timeout* parameter specifies a timeout in seconds for blocking operations
+   like the connection attempt (if not specified, the global default timeout
+   setting will be used). The optional source_address parameter allows to bind
+   to some specific source address in a machine with multiple network
+   interfaces, and/or to some specific source TCP port. It takes a 2-tuple
+   (host, port), for the socket to bind to as its source address before
+   connecting. If omitted (or if host or port are ``''`` and/or 0 respectively)
+   the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
@@ -70,11 +70,11 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    not appropriate. If *host* is not specified, the local host is used. If
    *port* is zero, the standard SMTP-over-SSL port (465) is used.  The optional
    arguments *local_hostname* and *source_address* have the same meaning as
-   they do in the :class:`SMTP` class.  *keyfile*
-   and *certfile* are also optional, and can contain a PEM formatted private key
-   and certificate chain file for the SSL connection. *context* also optional, can contain
-   a SSLContext, and is an alternative to keyfile and certfile; If it is specified both
-   keyfile and certfile must be None.  The optional *timeout*
+   they do in the :class:`SMTP` class.  *keyfile* and *certfile* are also
+   optional, and can contain a PEM formatted private key and certificate chain
+   file for the SSL connection. *context* also optional, can contain a
+   SSLContext, and is an alternative to keyfile and certfile; If it is
+   specified both keyfile and certfile must be None.  The optional *timeout*
    parameter specifies a timeout in seconds for blocking operations like the
    connection attempt (if not specified, the global default timeout setting
    will be used). The optional source_address parameter allows to bind to some
@@ -97,12 +97,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
    :meth:`connect` method must support that as well as a regular host:port
    server. The optional arguments local_hostname and source_address have the
-   same meaning as they do in the :class:`SMTP` class. To specify a Unix socket, you must use
-   an absolute path for *host*, starting with a '/'.
+   same meaning as they do in the :class:`SMTP` class. To specify a Unix
+   socket, you must use an absolute path for *host*, starting with a '/'.
 
-   Authentication is supported, using the regular SMTP mechanism. When using a Unix
-   socket, LMTP generally don't support or require any authentication, but your
-   mileage might vary.
+   Authentication is supported, using the regular SMTP mechanism. When using a
+   Unix socket, LMTP generally don't support or require any authentication, but
+   your mileage might vary.
 
 
 A nice selection of exceptions is defined as well:
