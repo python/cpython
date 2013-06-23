@@ -302,6 +302,23 @@ class FormatTest(unittest.TestCase):
 def test_main():
     test_support.run_unittest(FormatTest)
 
+    def test_precision(self):
+        INT_MAX = 2147483647
+
+        f = 1.2
+        self.assertEqual(format(f, ".0f"), "1")
+        self.assertEqual(format(f, ".3f"), "1.200")
+        with self.assertRaises(ValueError) as cm:
+            format(f, ".%sf" % (INT_MAX + 1))
+        self.assertEqual(str(cm.exception), "precision too big")
+
+        c = complex(f)
+        self.assertEqual(format(f, ".0f"), "1")
+        self.assertEqual(format(f, ".3f"), "1.200")
+        with self.assertRaises(ValueError) as cm:
+            format(f, ".%sf" % (INT_MAX + 1))
+        self.assertEqual(str(cm.exception), "precision too big")
+
 
 if __name__ == "__main__":
     unittest.main()

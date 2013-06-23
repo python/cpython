@@ -9,6 +9,9 @@ What's New in Python 2.7.6?
 Core and Builtins
 -----------------
 
+- Issue #18137: Detect integer overflow on precision in float.__format__()
+  and complex.__format__().
+
 - Issue #18038: SyntaxError raised during compilation sources with illegal
   encoding now always contains an encoding name.
 
