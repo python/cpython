@@ -626,15 +626,15 @@ boolean {0[0]} NO
                     oops{equals}this won't
                 """.format(equals=self.delimiters[0])), source='<foo-bar>')
             e = cm.exception
-            self.assertEqual(str(e), "While reading from <foo-bar> [line  5]: "
-                                     "section 'Foo' already exists")
+            self.assertEqual(str(e), "While reading from '<foo-bar>' "
+                                     "[line  5]: section 'Foo' already exists")
             self.assertEqual(e.args, ("Foo", '<foo-bar>', 5))
 
             with self.assertRaises(configparser.DuplicateOptionError) as cm:
                 cf.read_dict({'Bar': {'opt': 'val', 'OPT': 'is really `opt`'}})
             e = cm.exception
-            self.assertEqual(str(e), "While reading from <dict>: option 'opt' "
-                                     "in section 'Bar' already exists")
+            self.assertEqual(str(e), "While reading from '<dict>': option "
+                                     "'opt' in section 'Bar' already exists")
             self.assertEqual(e.args, ("Bar", "opt", "<dict>", None))
 
     def test_write(self):
@@ -1419,13 +1419,18 @@ def readline_generator(f):
 
 class ReadFileTestCase(unittest.TestCase):
     def test_file(self):
-        file_path = support.findfile("cfgparser.1")
-        parser = configparser.ConfigParser()
-        with open(file_path) as f:
-            parser.read_file(f)
-        self.assertIn("Foo Bar", parser)
-        self.assertIn("foo", parser["Foo Bar"])
-        self.assertEqual(parser["Foo Bar"]["foo"], "newbar")
+        file_paths = [support.findfile("cfgparser.1")]
+        try:
+            file_paths.append(file_paths[0].encode('utf8'))
+        except UnicodeEncodeError:
+            pass   # unfortunately we can't test bytes on this path
+        for file_path in file_paths:
+            parser = configparser.ConfigParser()
+            with open(file_path) as f:
+                parser.read_file(f)
+            self.assertIn("Foo Bar", parser)
+            self.assertIn("foo", parser["Foo Bar"])
+            self.assertEqual(parser["Foo Bar"]["foo"], "newbar")
 
     def test_iterable(self):
         lines = textwrap.dedent("""
@@ -1446,6 +1451,53 @@ class ReadFileTestCase(unittest.TestCase):
         self.assertIn("Foo Bar", parser)
         self.assertIn("foo", parser["Foo Bar"])
         self.assertEqual(parser["Foo Bar"]["foo"], "newbar")
+
+    def test_source_as_bytes(self):
+        """Issue #18260."""
+        lines = textwrap.dedent("""
+        [badbad]
+        [badbad]""").strip().split('\n')
+        parser = configparser.ConfigParser()
+        with self.assertRaises(configparser.DuplicateSectionError) as dse:
+            parser.read_file(lines, source=b"badbad")
+        self.assertEqual(
+            str(dse.exception),
+            "While reading from b'badbad' [line  2]: section 'badbad' "
+            "already exists"
+        )
+        lines = textwrap.dedent("""
+        [badbad]
+        bad = bad
+        bad = bad""").strip().split('\n')
+        parser = configparser.ConfigParser()
+        with self.assertRaises(configparser.DuplicateOptionError) as dse:
+            parser.read_file(lines, source=b"badbad")
+        self.assertEqual(
+            str(dse.exception),
+            "While reading from b'badbad' [line  3]: option 'bad' in section "
+            "'badbad' already exists"
+        )
+        lines = textwrap.dedent("""
+        [badbad]
+        = bad""").strip().split('\n')
+        parser = configparser.ConfigParser()
+        with self.assertRaises(configparser.ParsingError) as dse:
+            parser.read_file(lines, source=b"badbad")
+        self.assertEqual(
+            str(dse.exception),
+            "Source contains parsing errors: b'badbad'\n\t[line  2]: '= bad'"
+        )
+        lines = textwrap.dedent("""
+        [badbad
+        bad = bad""").strip().split('\n')
+        parser = configparser.ConfigParser()
+        with self.assertRaises(configparser.MissingSectionHeaderError) as dse:
+            parser.read_file(lines, source=b"badbad")
+        self.assertEqual(
+            str(dse.exception),
+            "File contains no section headers.\nfile: b'badbad', line: 1\n"
+            "'[badbad'"
+        )
 
 
 class CoverageOneHundredTestCase(unittest.TestCase):
