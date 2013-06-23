@@ -58,8 +58,11 @@ class TestFilemode(unittest.TestCase):
                 pass
     tearDown = setUp
 
-    def get_mode(self, fname=TESTFN):
-        st_mode = os.lstat(fname).st_mode
+    def get_mode(self, fname=TESTFN, lstat=True):
+        if lstat:
+            st_mode = os.lstat(fname).st_mode
+        else:
+            st_mode = os.stat(fname).st_mode
         modestr = stat.filemode(st_mode)
         return st_mode, modestr
 
@@ -149,13 +152,13 @@ class TestFilemode(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_devices(self):
         if os.path.exists(os.devnull):
-            st_mode, modestr = self.get_mode(os.devnull)
+            st_mode, modestr = self.get_mode(os.devnull, lstat=False)
             self.assertEqual(modestr[0], 'c')
             self.assertS_IS("CHR", st_mode)
         # Linux block devices, BSD has no block devices anymore
         for blockdev in ("/dev/sda", "/dev/hda"):
             if os.path.exists(blockdev):
-                st_mode, modestr = self.get_mode(blockdev)
+                st_mode, modestr = self.get_mode(blockdev, lstat=False)
                 self.assertEqual(modestr[0], 'b')
                 self.assertS_IS("BLK", st_mode)
                 break
