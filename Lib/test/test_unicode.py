@@ -2024,6 +2024,8 @@ class UnicodeTest(string_tests.CommonTest,
         # test "%c"
         self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0xabcd)), '\uabcd')
         self.assertEqual(PyUnicode_FromFormat(b'%c', c_int(0x10ffff)), '\U0010ffff')
+        with self.assertRaises(OverflowError):
+            PyUnicode_FromFormat(b'%c', c_int(0x110000))
         # Issue #18183
         self.assertEqual(
             PyUnicode_FromFormat(b'%c%c', c_int(0x10000), c_int(0x100000)),
