@@ -2489,8 +2489,13 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
             switch (*f) {
             case 'c':
             {
-                Py_UCS4 ordinal = va_arg(count, int);
-                maxchar = Py_MAX(maxchar, ordinal);
+                int ordinal = va_arg(count, int);
+                if (ordinal < 0 || ordinal > MAX_UNICODE) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "%c arg not in range(0x110000)");
+                    goto fail;
+                }
+                maxchar = Py_MAX(maxchar, (Py_UCS4)ordinal);
                 n++;
                 break;
             }
