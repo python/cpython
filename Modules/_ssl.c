@@ -1172,7 +1172,7 @@ static PyObject *PySSL_selected_npn_protocol(PySSLSocket *self) {
     const unsigned char *out;
     unsigned int outlen;
 
-    SSL_get0_next_proto_negotiated(self->ssl, 
+    SSL_get0_next_proto_negotiated(self->ssl,
                                    &out, &outlen);
 
     if (out == NULL)
@@ -1358,8 +1358,9 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         goto error;
     }
     do {
+        len = (int)Py_MIN(buf.len, INT_MAX);
         PySSL_BEGIN_ALLOW_THREADS
-        len = SSL_write(self->ssl, buf.buf, buf.len);
+        len = SSL_write(self->ssl, buf.buf, len);
         err = SSL_get_error(self->ssl, len);
         PySSL_END_ALLOW_THREADS
         if (PyErr_CheckSignals()) {
@@ -1650,7 +1651,7 @@ PySSL_tls_unique_cb(PySSLSocket *self)
 {
     PyObject *retval = NULL;
     char buf[PySSL_CB_MAXLEN];
-    int len;
+    size_t len;
 
     if (SSL_session_reused(self->ssl) ^ !self->socket_type) {
         /* if session is resumed XOR we are the client */
@@ -1662,7 +1663,6 @@ PySSL_tls_unique_cb(PySSLSocket *self)
     }
 
     /* It cannot be negative in current OpenSSL version as of July 2011 */
-    assert(len >= 0);
     if (len == 0)
         Py_RETURN_NONE;
 
@@ -1873,8 +1873,8 @@ set_ciphers(PySSLContext *self, PyObject *args)
 #ifdef OPENSSL_NPN_NEGOTIATED
 /* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
 static int
-_advertiseNPN_cb(SSL *s, 
-                 const unsigned char **data, unsigned int *len, 
+_advertiseNPN_cb(SSL *s,
+                 const unsigned char **data, unsigned int *len,
                  void *args)
 {
     PySSLContext *ssl_ctx = (PySSLContext *) args;
@@ -1891,7 +1891,7 @@ _advertiseNPN_cb(SSL *s,
 }
 /* this callback gets passed to SSL_CTX_set_next_proto_select_cb */
 static int
-_selectNPN_cb(SSL *s, 
+_selectNPN_cb(SSL *s,
               unsigned char **out, unsigned char *outlen,
               const unsigned char *server, unsigned int server_len,
               void *args)
@@ -2025,7 +2025,7 @@ typedef struct {
     PyThreadState *thread_state;
     PyObject *callable;
     char *password;
-    Py_ssize_t size;
+    int size;
     int error;
 } _PySSLPasswordInfo;
 
@@ -2059,6 +2059,12 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
         goto error;
     }
 
+    if (size > (Py_ssize_t)INT_MAX) {
+        PyErr_Format(PyExc_ValueError,
+                     "password cannot be longer than %d bytes", INT_MAX);
+        goto error;
+    }
+
     free(pw_info->password);
     pw_info->password = malloc(size);
     if (!pw_info->password) {
@@ -2067,7 +2073,7 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
         goto error;
     }
     memcpy(pw_info->password, data, size);
-    pw_info->size = size;
+    pw_info->size = (int)size;
 
     Py_XDECREF(password_bytes);
     return 1;
@@ -3441,7 +3447,7 @@ PyInit__ssl(void)
     }
     if (PyModule_AddObject(m, "lib_codes_to_names", lib_codes_to_names))
         return NULL;
-    
+
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
        which could be different from the headers version.
