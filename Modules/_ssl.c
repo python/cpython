@@ -1212,8 +1212,13 @@ static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
         goto error;
     }
     do {
+        if (buf.len <= INT_MAX)
+            len = (int)buf.len;
+        else
+            len = INT_MAX;
+
         PySSL_BEGIN_ALLOW_THREADS
-        len = SSL_write(self->ssl, buf.buf, buf.len);
+        len = SSL_write(self->ssl, buf.buf, len);
         err = SSL_get_error(self->ssl, len);
         PySSL_END_ALLOW_THREADS
         if (PyErr_CheckSignals()) {
