@@ -919,6 +919,9 @@
       <Filter>PC</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\namespaceobject.c" />
+    <ClCompile Include="..\Modules\_stat.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc">
