@@ -8,9 +8,10 @@
 */
 
 /* The block length may be set to any number over 1.  Larger numbers
- * reduce the number of calls to the memory allocator but take more
- * memory.  Ideally, (BLOCKLEN+2) should be set to a multiple of the
- * length of a cache line.
+ * reduce the number of calls to the memory allocator, give faster
+ * indexing and rotation, and reduce the link::data overhead ratio.
+ * If the block length is a power-of-two, we also get faster
+ * division/modulo computations during indexing.
  */
 
 #define BLOCKLEN 62
@@ -47,8 +48,8 @@
 
 typedef struct BLOCK {
     struct BLOCK *leftlink;
-    struct BLOCK *rightlink;
     PyObject *data[BLOCKLEN];
+    struct BLOCK *rightlink;
 } block;
 
 #define MAXFREEBLOCKS 10
@@ -58,13 +59,8 @@ static block *freeblocks[MAXFREEBLOCKS];
 static block *
 newblock(block *leftlink, block *rightlink, Py_ssize_t len) {
     block *b;
-    /* To prevent len from overflowing PY_SSIZE_T_MAX on 64-bit machines, we
-     * refuse to allocate new blocks if the current len is dangerously
-     * close.  There is some extra margin to prevent spurious arithmetic
-     * overflows at various places.  The following check ensures that
-     * the blocks allocated to the deque, in the worst case, can only
-     * have PY_SSIZE_T_MAX-2 entries in total.
-     */
+    /* To prevent len from overflowing PY_SSIZE_T_MAX, we refuse to
+     * allocate new blocks if the current len is nearing overflow. */
     if (len >= PY_SSIZE_T_MAX - 2*BLOCKLEN) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot add more blocks to the deque");
@@ -413,7 +409,12 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
-    Py_ssize_t m, len=deque->len, halflen=len>>1;
+    block *leftblock = deque->leftblock;
+    block *rightblock = deque->rightblock;
+    Py_ssize_t leftindex = deque->leftindex;
+    Py_ssize_t rightindex = deque->rightindex;
+    Py_ssize_t len=deque->len, halflen=len>>1;
+    int rv = 0;
 
     if (len <= 1)
         return 0;
@@ -429,76 +430,96 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
 
     deque->state++;
     while (n > 0) {
-        if (deque->leftindex == 0) {
-            block *b = newblock(NULL, deque->leftblock, len);
-            if (b == NULL)
-                return -1;
-            assert(deque->leftblock->leftlink == NULL);
-            deque->leftblock->leftlink = b;
-            deque->leftblock = b;
-            deque->leftindex = BLOCKLEN;
+        if (leftindex == 0) {
+            block *b = newblock(NULL, leftblock, len);
+            if (b == NULL) {
+                rv = -1;
+                goto done;
+            }
+            assert(leftblock->leftlink == NULL);
+            leftblock->leftlink = b;
+            leftblock = b;
+            leftindex = BLOCKLEN;
         }
-        assert(deque->leftindex > 0);
+        assert(leftindex > 0);
 
-        m = n;
-        if (m > deque->rightindex + 1)
-            m = deque->rightindex + 1;
-        if (m > deque->leftindex)
-            m = deque->leftindex;
-        assert (m > 0 && m <= len);
-        memcpy(&deque->leftblock->data[deque->leftindex - m],
-               &deque->rightblock->data[deque->rightindex + 1 - m],
-               m * sizeof(PyObject *));
-        deque->rightindex -= m;
-        deque->leftindex -= m;
-        n -= m;
+        {
+            PyObject **src, **dest;
+            Py_ssize_t m = n;
 
-        if (deque->rightindex == -1) {
-            block *prevblock = deque->rightblock->leftlink;
-            assert(deque->rightblock != NULL);
-            assert(deque->leftblock != deque->rightblock);
-            freeblock(deque->rightblock);
+            if (m > rightindex + 1)
+                m = rightindex + 1;
+            if (m > leftindex)
+                m = leftindex;
+            assert (m > 0 && m <= len);
+            src = &rightblock->data[rightindex];
+            dest = &leftblock->data[leftindex - 1];
+            rightindex -= m;
+            leftindex -= m;
+            n -= m;
+            while (m--)
+                *(dest--) = *(src--);
+        }
+
+        if (rightindex == -1) {
+            block *prevblock = rightblock->leftlink;
+            assert(rightblock != NULL);
+            assert(leftblock != rightblock);
+            freeblock(rightblock);
             prevblock->rightlink = NULL;
-            deque->rightblock = prevblock;
-            deque->rightindex = BLOCKLEN - 1;
+            rightblock = prevblock;
+            rightindex = BLOCKLEN - 1;
         }
     }
     while (n < 0) {
-        if (deque->rightindex == BLOCKLEN - 1) {
-            block *b = newblock(deque->rightblock, NULL, len);
-            if (b == NULL)
-                return -1;
-            assert(deque->rightblock->rightlink == NULL);
-            deque->rightblock->rightlink = b;
-            deque->rightblock = b;
-            deque->rightindex = -1;
+        if (rightindex == BLOCKLEN - 1) {
+            block *b = newblock(rightblock, NULL, len);
+            if (b == NULL) {
+                rv = -1;
+                goto done;
+            }
+            assert(rightblock->rightlink == NULL);
+            rightblock->rightlink = b;
+            rightblock = b;
+            rightindex = -1;
         }
-        assert (deque->rightindex < BLOCKLEN - 1);
+        assert (rightindex < BLOCKLEN - 1);
 
-        m = -n;
-        if (m > BLOCKLEN - deque->leftindex)
-            m = BLOCKLEN - deque->leftindex;
-        if (m > BLOCKLEN - 1 - deque->rightindex)
-            m = BLOCKLEN - 1 - deque->rightindex;
-        assert (m > 0 && m <= len);
-        memcpy(&deque->rightblock->data[deque->rightindex + 1],
-               &deque->leftblock->data[deque->leftindex],
-               m * sizeof(PyObject *));
-        deque->leftindex += m;
-        deque->rightindex += m;
-        n += m;
+        {
+            PyObject **src, **dest;
+            Py_ssize_t m = -n;
 
-        if (deque->leftindex == BLOCKLEN) {
-            block *nextblock = deque->leftblock->rightlink;
-            assert(deque->leftblock != deque->rightblock);
-            freeblock(deque->leftblock);
+            if (m > BLOCKLEN - leftindex)
+                m = BLOCKLEN - leftindex;
+            if (m > BLOCKLEN - 1 - rightindex)
+                m = BLOCKLEN - 1 - rightindex;
+            assert (m > 0 && m <= len);
+            src = &leftblock->data[leftindex];
+            dest = &rightblock->data[rightindex + 1];
+            leftindex += m;
+            rightindex += m;
+            n += m;
+            while (m--)
+                *(dest++) = *(src++);
+        }
+
+        if (leftindex == BLOCKLEN) {
+            block *nextblock = leftblock->rightlink;
+            assert(leftblock != rightblock);
+            freeblock(leftblock);
             assert(nextblock != NULL);
             nextblock->leftlink = NULL;
-            deque->leftblock = nextblock;
-            deque->leftindex = 0;
+            leftblock = nextblock;
+            leftindex = 0;
         }
     }
-    return 0;
+done:
+    deque->leftblock = leftblock;
+    deque->rightblock = rightblock;
+    deque->leftindex = leftindex;
+    deque->rightindex = rightindex;
+
+    return rv;
 }
 
 static PyObject *
