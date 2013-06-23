@@ -173,8 +173,15 @@ instructions.
 doctest
 -------
 
-Added ``FAIL_FAST`` flag to halt test running as soon as the first failure is
-detected.  (Contributed by R. David Murray and Daniel Urban in :issue:`16522`.)
+Added :data:`~doctest.FAIL_FAST` flag to halt test running as soon as the first
+failure is detected.  (Contributed by R. David Murray and Daniel Urban in
+:issue:`16522`.)
+
+Updated the doctest command line interface to use :mod:`argparse`, and added
+``-o`` and ``-f`` options to the interface.  ``-o`` allows doctest options to
+be specified on the command line, and ``-f`` is a shorthand for ``-o
+FAIL_FAST`` (to parallel the similar option supported by the :mod:`unittest`
+CLI).  (Contributed by R. David Murray in :issue:`11390`.)
 
 
 functools
