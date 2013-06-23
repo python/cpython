@@ -171,7 +171,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 dircheck(fileio* self, PyObject *nameobj)
 {
-#if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
+#if defined(HAVE_FSTAT) && defined(S_ISDIR) && defined(EISDIR)
     struct stat buf;
     if (self->fd < 0)
         return 0;
