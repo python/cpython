@@ -39,33 +39,16 @@ typedef unsigned short mode_t;
  *
  * Only the names are defined by POSIX but not their value. All common file
  * types seems to have the same numeric value on all platforms, though.
+ *
+ * pyport.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
  */
-#ifndef S_IFMT
-#  define S_IFMT 0170000
-#endif
-
-#ifndef S_IFDIR
-#  define S_IFDIR 0040000
-#endif
-
-#ifndef S_IFCHR
-#  define S_IFCHR 0020000
-#endif
 
 #ifndef S_IFBLK
 #  define S_IFBLK 0060000
 #endif
 
-#ifndef S_IFREG
-#  define S_IFREG 0100000
-#endif
-
 #ifndef S_IFIFO
 #  define S_IFIFO 0010000
-#endif
-
-#ifndef S_IFLNK
-#  define S_IFLNK 0120000
 #endif
 
 #ifndef S_IFSOCK
@@ -85,21 +68,12 @@ typedef unsigned short mode_t;
 #endif
 
 
-/* S_ISXXX() */
-#ifndef S_ISDIR
-#  define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
-#endif
-
-#ifndef S_ISCHR
-#  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
-#endif
+/* S_ISXXX()
+ * pyport.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
+ */
 
 #ifndef S_ISBLK
 #  define S_ISBLK(mode) (((mode) & S_IFMT) == S_IFBLK)
-#endif
-
-#ifndef S_ISREG
-#  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 #endif
 
 #ifndef S_ISFIFO
