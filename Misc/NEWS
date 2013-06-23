@@ -129,6 +129,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11390: Add -o and -f command line options to the doctest CLI to
+  specify doctest options (and convert it to using argparse).
+
 - Issue #18135: Fix a possible integer overflow in ssl.SSLSocket.write()
   and in ssl.SSLContext.load_cert_chain() for strings and passwords longer than
   2 gigabytes.

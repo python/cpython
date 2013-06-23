@@ -495,7 +495,10 @@ Option Flags
 A number of option flags control various aspects of doctest's behavior.
 Symbolic names for the flags are supplied as module constants, which can be
 or'ed together and passed to various functions.  The names can also be used in
-:ref:`doctest directives <doctest-directives>`.
+:ref:`doctest directives <doctest-directives>`, and may be passed to the
+doctest command line interface via the ``-o`` option.
+
+.. versionadded:: 3.4 the ``-o`` command line option
 
 The first group of options define test semantics, controlling aspects of how
 doctest decides whether actual output matches an example's expected output:
@@ -639,6 +642,9 @@ The second group of options controls how test failures are reported:
    the remaining examples. Thus, the number of failures reported will be at most
    1.  This flag may be useful during debugging, since examples after the first
    failure won't even produce debugging output.
+
+   The doctest command line accepts the option ``-f`` as a shorthand for ``-o
+   FAIL_FAST``.
 
    .. versionadded:: 3.4
 
