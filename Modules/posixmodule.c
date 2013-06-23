@@ -1405,9 +1405,9 @@ attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag, stru
     result->st_ino = (((__int64)info->nFileIndexHigh)<<32) + info->nFileIndexLow;
     if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
         /* first clear the S_IFMT bits */
-        result->st_mode ^= (result->st_mode & 0170000);
+        result->st_mode ^= (result->st_mode & S_IFMT);
         /* now set the bits that make this a symlink */
-        result->st_mode |= 0120000;
+        result->st_mode |= S_IFLNK;
     }
 
     return 0;
