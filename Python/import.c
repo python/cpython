@@ -19,14 +19,6 @@
 extern "C" {
 #endif
 
-#ifdef MS_WINDOWS
-/* for stat.st_mode */
-typedef unsigned short mode_t;
-/* for _mkdir */
-#include <direct.h>
-#endif
-
-
 #define CACHEDIR "__pycache__"
 
 /* See _PyImport_FixupExtensionObject() below */
