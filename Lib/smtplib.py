@@ -224,7 +224,8 @@ class SMTP:
         By default, smtplib.SMTP_PORT is used.  If a host is specified the
         connect method is called, and if it returns anything other than
         a success code an SMTPConnectError is raised.  If specified,
-        `local_hostname` is used as the FQDN of the local host.  By default,
+        `local_hostname` is used as the FQDN of the local host in the
+        HELO/EHLO command.  Otherwise,
         the local hostname is found using socket.getfqdn(). The
         `source_address` parameter takes a 2-tuple (host, port) for the socket
         to bind to as its source address before connecting. If the host is ''
@@ -855,8 +856,8 @@ if _have_ssl:
         """ This is a subclass derived from SMTP that connects over an SSL encrypted
         socket (to use this class you need a socket module that was compiled with SSL
         support). If host is not specified, '' (the local host) is used. If port is
-        omitted, the standard SMTP-over-SSL port (465) is used. The optional
-        source_address takes a two-tuple (host,port) for socket to bind to. keyfile and certfile
+        omitted, the standard SMTP-over-SSL port (465) is used.  local_hostname and
+        source_address have the same meaning as they do in the SMTP class.  keyfile and certfile
         are also optional - they can contain a PEM formatted private key and
         certificate chain file for the SSL connection. context also optional, can contain
         a SSLContext, and is an alternative to keyfile and certfile; If it is specified both
@@ -905,7 +906,9 @@ class LMTP(SMTP):
     The LMTP protocol, which is very similar to ESMTP, is heavily based
     on the standard SMTP client. It's common to use Unix sockets for LMTP,
     so our connect() method must support that as well as a regular
-    host:port server. To specify a Unix socket, you must use an absolute
+    host:port server.  local_hostname and source_address have the same
+    meaning as they do in the SMTP class.
+    To specify a Unix socket, you must use an absolute
     path as the host, starting with a '/'.
 
     Authentication is supported, using the regular SMTP mechanism. When
