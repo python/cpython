@@ -24,15 +24,15 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    A :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
-   host and port parameters are given, the SMTP :meth:`connect` method is called
-   with those parameters during initialization.  If specified, *local_hostname* is
-   used as the FQDN of the local host in the HELO/EHLO command.  Otherwise, the
-   local hostname is found using :func:`socket.getfqdn`.  If the
-   :meth:`connect` call
-   returns anything other than a success code, an :exc:`SMTPConnectError` is
-   raised. The optional *timeout* parameter specifies a timeout in seconds for
-   blocking operations like the connection attempt (if not specified, the
-   global default timeout setting will be used).
+   host and port parameters are given, the SMTP :meth:`connect` method is
+   called with those parameters during initialization.  If specified,
+   *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
+   command.  Otherwise, the local hostname is found using
+   :func:`socket.getfqdn`.  If the :meth:`connect` call returns anything other
+   than a success code, an :exc:`SMTPConnectError` is raised. The optional
+   *timeout* parameter specifies a timeout in seconds for blocking operations
+   like the connection attempt (if not specified, the global default timeout
+   setting will be used).
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`~smtplib.quit` methods.
@@ -49,13 +49,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    required from the beginning of the connection and using :meth:`starttls` is
    not appropriate. If *host* is not specified, the local host is used. If
    *port* is omitted, the standard SMTP-over-SSL port (465) is used.
-   *local_hostname* has the same meaning as it does for the :class:`SMTP` class.
-   *keyfile*
-   and *certfile* are also optional, and can contain a PEM formatted private key
-   and certificate chain file for the SSL connection. The optional *timeout*
-   parameter specifies a timeout in seconds for blocking operations like the
-   connection attempt (if not specified, the global default timeout setting
-   will be used).
+   *local_hostname* has the same meaning as it does for the :class:`SMTP`
+   class.  *keyfile* and *certfile* are also optional, and can contain a PEM
+   formatted private key and certificate chain file for the SSL connection. The
+   optional *timeout* parameter specifies a timeout in seconds for blocking
+   operations like the connection attempt (if not specified, the global default
+   timeout setting will be used).
 
    .. versionadded:: 2.6
 
@@ -63,14 +62,15 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 .. class:: LMTP([host[, port[, local_hostname]]])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
-   standard SMTP client. It's common to use Unix sockets for LMTP, so our :meth:`connect`
-   method must support that as well as a regular host:port server.  *local_hostname*
-   has the same meaning as it does for the :class:`SMTP` class.  To specify a
-   Unix socket, you must use an absolute path for *host*, starting with a '/'.
+   standard SMTP client. It's common to use Unix sockets for LMTP, so our
+   :meth:`connect` method must support that as well as a regular host:port
+   server.  *local_hostname* has the same meaning as it does for the
+   :class:`SMTP` class.  To specify a Unix socket, you must use an absolute
+   path for *host*, starting with a '/'.
 
-   Authentication is supported, using the regular SMTP mechanism. When using a Unix
-   socket, LMTP generally don't support or require any authentication, but your
-   mileage might vary.
+   Authentication is supported, using the regular SMTP mechanism. When using a
+   Unix socket, LMTP generally don't support or require any authentication, but
+   your mileage might vary.
 
    .. versionadded:: 2.6
 
