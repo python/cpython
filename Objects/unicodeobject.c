@@ -740,8 +740,25 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 
             switch (*f) {
             case 'c':
-                (void)va_arg(count, int);
+            {
+                int ordinal = va_arg(count, int);
+#ifdef Py_UNICODE_WIDE
+                if (ordinal < 0 || ordinal > 0x10ffff) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "%c arg not in range(0x110000) "
+                                    "(wide Python build)");
+                    goto fail;
+                }
+#else
+                if (ordinal < 0 || ordinal > 0xffff) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "%c arg not in range(0x10000) "
+                                    "(narrow Python build)");
+                    goto fail;
+                }
+#endif
                 /* fall through... */
+            }
             case '%':
                 n++;
                 break;

@@ -9,6 +9,9 @@ What's New in Python 2.7.6?
 Core and Builtins
 -----------------
 
+- Issue #18184: PyUnicode_FromFormat() and PyUnicode_FromFormatV() now raise
+  OverflowError when an argument of %c format is out of range.
+
 - Issue #18137: Detect integer overflow on precision in float.__format__()
   and complex.__format__().
 
