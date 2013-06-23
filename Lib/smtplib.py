@@ -238,10 +238,11 @@ class SMTP:
         If specified, `host' is the name of the remote host to which to
         connect.  If specified, `port' specifies the port to which to connect.
         By default, smtplib.SMTP_PORT is used.  If a host is specified the
-        connect method is called, and if it returns anything other than
-        a success code an SMTPConnectError is raised.  If specified,
-        `local_hostname` is used as the FQDN of the local host.  By default,
-        the local hostname is found using socket.getfqdn().
+        connect method is called, and if it returns anything other than a
+        success code an SMTPConnectError is raised.  If specified,
+        `local_hostname` is used as the FQDN of the local host for the
+        HELO/EHLO command.  Otherwise, the local hostname is found using
+        socket.getfqdn().
 
         """
         self.timeout = timeout
@@ -759,12 +760,15 @@ class SMTP:
 if _have_ssl:
 
     class SMTP_SSL(SMTP):
-        """ This is a subclass derived from SMTP that connects over an SSL encrypted
-        socket (to use this class you need a socket module that was compiled with SSL
-        support). If host is not specified, '' (the local host) is used. If port is
-        omitted, the standard SMTP-over-SSL port (465) is used. keyfile and certfile
-        are also optional - they can contain a PEM formatted private key and
-        certificate chain file for the SSL connection.
+        """ This is a subclass derived from SMTP that connects over an SSL
+        encrypted socket (to use this class you need a socket module that was
+        compiled with SSL support). If host is not specified, '' (the local
+        host) is used. If port is omitted, the standard SMTP-over-SSL port
+        (465) is used.  local_hostname has the same meaning as it does in the
+        SMTP class.  keyfile and certfile are also optional - they can contain
+        a PEM formatted private key and certificate chain file for the SSL
+        connection.
+
         """
 
         default_port = SMTP_SSL_PORT
@@ -795,9 +799,10 @@ class LMTP(SMTP):
     """LMTP - Local Mail Transfer Protocol
 
     The LMTP protocol, which is very similar to ESMTP, is heavily based
-    on the standard SMTP client. It's common to use Unix sockets for LMTP,
-    so our connect() method must support that as well as a regular
-    host:port server. To specify a Unix socket, you must use an absolute
+    on the standard SMTP client. It's common to use Unix sockets for
+    LMTP, so our connect() method must support that as well as a regular
+    host:port server.  local_hostname has the same meaning as it does in
+    the SMTP class.  To specify a Unix socket, you must use an absolute
     path as the host, starting with a '/'.
 
     Authentication is supported, using the regular SMTP mechanism. When
