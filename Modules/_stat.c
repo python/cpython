@@ -258,15 +258,32 @@ typedef unsigned short mode_t;
 #  define SF_SNAPSHOT 0x00200000
 #endif
 
+static mode_t
+_PyLong_AsMode_t(PyObject *op)
+{
+    unsigned long value;
+    mode_t mode;
+
+    value = PyLong_AsUnsignedLong(op);
+    if ((value == (unsigned long)-1) && PyErr_Occurred())
+        return (mode_t)-1;
+
+    mode = (mode_t)value;
+    if ((unsigned long)mode != value) {
+        PyErr_SetString(PyExc_OverflowError, "mode out of range");
+        return (mode_t)-1;
+    }
+    return mode;
+}
+
 
 #define stat_S_ISFUNC(isfunc, doc)                             \
     static PyObject *                                          \
     stat_ ##isfunc (PyObject *self, PyObject *omode)           \
     {                                                          \
-       unsigned long mode = PyLong_AsUnsignedLong(omode);      \
-       if ((mode == (unsigned long)-1) && PyErr_Occurred()) {  \
+       mode_t mode = _PyLong_AsMode_t(omode);                   \
+       if ((mode == (mode_t)-1) && PyErr_Occurred())           \
            return NULL;                                        \
-       }                                                       \
        return PyBool_FromLong(isfunc(mode));                   \
     }                                                          \
     PyDoc_STRVAR(stat_ ## isfunc ## _doc, doc)
@@ -318,10 +335,9 @@ PyDoc_STRVAR(stat_S_IMODE_doc,
 static PyObject *
 stat_S_IMODE(PyObject *self, PyObject *omode)
 {
-    unsigned long mode = PyLong_AsUnsignedLong(omode);
-    if ((mode == (unsigned long)-1) && PyErr_Occurred()) {
+    mode_t mode = _PyLong_AsMode_t(omode);
+    if ((mode == (mode_t)-1) && PyErr_Occurred())
         return NULL;
-    }
     return PyLong_FromUnsignedLong(mode & S_IMODE);
 }
 
@@ -332,10 +348,9 @@ PyDoc_STRVAR(stat_S_IFMT_doc,
 static PyObject *
 stat_S_IFMT(PyObject *self, PyObject *omode)
 {
-    unsigned long mode = PyLong_AsUnsignedLong(omode);
-    if ((mode == (unsigned long)-1) && PyErr_Occurred()) {
+    mode_t mode = _PyLong_AsMode_t(omode);
+    if ((mode == (mode_t)-1) && PyErr_Occurred())
         return NULL;
-    }
     return PyLong_FromUnsignedLong(mode & S_IFMT);
 }
 
@@ -395,12 +410,11 @@ static PyObject *
 stat_filemode(PyObject *self, PyObject *omode)
 {
     char buf[10];
-    unsigned long mode;
+    mode_t mode;
 
-    mode = PyLong_AsUnsignedLong(omode);
-    if ((mode == (unsigned long)-1) && PyErr_Occurred()) {
+    mode = _PyLong_AsMode_t(omode);
+    if ((mode == (mode_t)-1) && PyErr_Occurred())
         return NULL;
-    }
 
     buf[0] = filetype(mode);
     fileperm(mode, &buf[1]);
