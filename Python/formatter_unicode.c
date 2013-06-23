@@ -977,7 +977,7 @@ format_float_internal(PyObject *value,
     Py_ssize_t n_total;
     int has_decimal;
     double val;
-    Py_ssize_t precision = format->precision;
+    Py_ssize_t precision;
     Py_ssize_t default_precision = 6;
     Py_UCS4 type = format->type;
     int add_pct = 0;
@@ -993,6 +993,12 @@ format_float_internal(PyObject *value,
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
     LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+
+    if (format->precision > INT_MAX) {
+        PyErr_SetString(PyExc_ValueError, "precision too big");
+        goto done;
+    }
+    precision = (int)format->precision;
 
     if (format->alternate)
         flags |= Py_DTSF_ALT;
@@ -1127,7 +1133,7 @@ format_complex_internal(PyObject *value,
     Py_ssize_t n_im_total;
     int re_has_decimal;
     int im_has_decimal;
-    Py_ssize_t precision = format->precision;
+    int precision;
     Py_ssize_t default_precision = 6;
     Py_UCS4 type = format->type;
     Py_ssize_t i_re;
@@ -1154,6 +1160,12 @@ format_complex_internal(PyObject *value,
     /* Locale settings, either from the actual locale or
        from a hard-code pseudo-locale */
     LocaleInfo locale = STATIC_LOCALE_INFO_INIT;
+
+    if (format->precision > INT_MAX) {
+        PyErr_SetString(PyExc_ValueError, "precision too big");
+        goto done;
+    }
+    precision = (int)format->precision;
 
     /* Zero padding is not allowed. */
     if (format->fill_char == '0') {
