@@ -58,8 +58,12 @@ class TestFilemode(unittest.TestCase):
                 pass
     tearDown = setUp
 
-    def get_mode(self, fname=TESTFN):
-        return os.lstat(fname).st_mode
+    def get_mode(self, fname=TESTFN, lstat=True):
+        if lstat:
+            st_mode = os.lstat(fname).st_mode
+        else:
+            st_mode = os.stat(fname).st_mode
+        return st_mode
 
     def assertS_IS(self, name, mode):
         # test format, lstrip is for S_IFIFO
@@ -136,12 +140,12 @@ class TestFilemode(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_devices(self):
         if os.path.exists(os.devnull):
-            st_mode = self.get_mode(os.devnull)
+            st_mode = self.get_mode(os.devnull, lstat=False)
             self.assertS_IS("CHR", st_mode)
         # Linux block devices, BSD has no block devices anymore
         for blockdev in ("/dev/sda", "/dev/hda"):
             if os.path.exists(blockdev):
-                st_mode = self.get_mode(blockdev)
+                st_mode = self.get_mode(blockdev, lstat=False)
                 self.assertS_IS("BLK", st_mode)
                 break
 
