@@ -393,9 +393,15 @@ typedef size_t Py_uhash_t;
 #include <stat.h>
 #endif
 
-#if defined(PYCC_VACPP)
+#ifndef S_IFMT
 /* VisualAge C/C++ Failed to Define MountType Field in sys/stat.h */
-#define S_IFMT (S_IFDIR|S_IFCHR|S_IFREG)
+#define S_IFMT 0170000
+#endif
+
+#ifndef S_IFLNK
+/* Windows doesn't define S_IFLNK but posixmodule.c maps
+ * IO_REPARSE_TAG_SYMLINK to S_IFLNK */
+#  define S_IFLNK 0120000
 #endif
 
 #ifndef S_ISREG
@@ -409,11 +415,6 @@ typedef size_t Py_uhash_t;
 #ifndef S_ISCHR
 #define S_ISCHR(x) (((x) & S_IFMT) == S_IFCHR)
 #endif
-
-#ifndef S_ISBLK
-#define S_ISBLK(x) (((x) & S_IFMT) == S_IFBLK)
-#endif
-
 
 #ifdef __cplusplus
 /* Move this down here since some C++ #include's don't like to be included
