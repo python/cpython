@@ -2496,7 +2496,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
     {
         int ordinal = va_arg(*vargs, int);
         if (ordinal < 0 || ordinal > MAX_UNICODE) {
-            PyErr_SetString(PyExc_ValueError,
+            PyErr_SetString(PyExc_OverflowError,
                             "character argument not in range(0x110000)");
             return NULL;
         }
