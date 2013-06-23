@@ -1136,7 +1136,7 @@ static PyObject *PySSL_selected_npn_protocol(PySSLSocket *self) {
     const unsigned char *out;
     unsigned int outlen;
 
-    SSL_get0_next_proto_negotiated(self->ssl, 
+    SSL_get0_next_proto_negotiated(self->ssl,
                                    &out, &outlen);
 
     if (out == NULL)
@@ -1763,8 +1763,8 @@ set_ciphers(PySSLContext *self, PyObject *args)
 #ifdef OPENSSL_NPN_NEGOTIATED
 /* this callback gets passed to SSL_CTX_set_next_protos_advertise_cb */
 static int
-_advertiseNPN_cb(SSL *s, 
-                 const unsigned char **data, unsigned int *len, 
+_advertiseNPN_cb(SSL *s,
+                 const unsigned char **data, unsigned int *len,
                  void *args)
 {
     PySSLContext *ssl_ctx = (PySSLContext *) args;
@@ -1781,7 +1781,7 @@ _advertiseNPN_cb(SSL *s,
 }
 /* this callback gets passed to SSL_CTX_set_next_proto_select_cb */
 static int
-_selectNPN_cb(SSL *s, 
+_selectNPN_cb(SSL *s,
               unsigned char **out, unsigned char *outlen,
               const unsigned char *server, unsigned int server_len,
               void *args)
@@ -2848,7 +2848,7 @@ PyInit__ssl(void)
     }
     if (PyModule_AddObject(m, "lib_codes_to_names", lib_codes_to_names))
         return NULL;
-    
+
     /* OpenSSL version */
     /* SSLeay() gives us the version of the library linked against,
        which could be different from the headers version.
