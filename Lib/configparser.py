@@ -191,7 +191,7 @@ class DuplicateSectionError(Error):
     def __init__(self, section, source=None, lineno=None):
         msg = [repr(section), " already exists"]
         if source is not None:
-            message = ["While reading from ", source]
+            message = ["While reading from ", repr(source)]
             if lineno is not None:
                 message.append(" [line {0:2d}]".format(lineno))
             message.append(": section ")
@@ -217,7 +217,7 @@ class DuplicateOptionError(Error):
         msg = [repr(option), " in section ", repr(section),
                " already exists"]
         if source is not None:
-            message = ["While reading from ", source]
+            message = ["While reading from ", repr(source)]
             if lineno is not None:
                 message.append(" [line {0:2d}]".format(lineno))
             message.append(": option ")
