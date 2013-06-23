@@ -2048,6 +2048,8 @@ class UnicodeTest(string_tests.CommonTest,
                      b'%c', c_int(0xabcd))
         check_format('\U0010ffff',
                      b'%c', c_int(0x10ffff))
+        with self.assertRaises(OverflowError):
+            PyUnicode_FromFormat(b'%c', c_int(0x110000))
         # Issue #18183
         check_format('\U00010000\U00100000',
                      b'%c%c', c_int(0x10000), c_int(0x100000))
