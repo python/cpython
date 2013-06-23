@@ -87,31 +87,31 @@ typedef unsigned short mode_t;
 
 /* S_ISXXX() */
 #ifndef S_ISDIR
-#  define S_ISDIR(mode) ((mode) & S_IFMT) == S_IDIR
+#  define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
 #ifndef S_ISCHR
-#  define S_ISCHR(mode) ((mode) & S_IFMT) == S_ICHR
+#  define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
 #endif
 
 #ifndef S_ISBLK
-#  define S_ISBLK(mode) ((mode) & S_IFMT) == S_IBLK
+#  define S_ISBLK(mode) (((mode) & S_IFMT) == S_IFBLK)
 #endif
 
 #ifndef S_ISREG
-#  define S_ISREG(mode) ((mode) & S_IFMT) == S_IREG
+#  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 #endif
 
 #ifndef S_ISFIFO
-#  define S_ISFIFO(mode) ((mode) & S_IFMT) == S_IFIFO
+#  define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
 #endif
 
 #ifndef S_ISLNK
-#  define S_ISLNK(mode) ((mode) & S_IFMT) == S_IFLNK
+#  define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
 #endif
 
 #ifndef S_ISSOCK
-#  define S_ISSOCK(mode) ((mode) & S_IFMT) == S_IFSOCK
+#  define S_ISSOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
 #endif
 
 #ifndef S_ISDOOR
