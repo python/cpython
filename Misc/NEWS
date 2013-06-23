@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18137: Detect integer overflow on precision in float.__format__()
+  and complex.__format__().
+
 - Issue #15767: Introduce ModuleNotFoundError which is raised when a module
   could not be found.
 
