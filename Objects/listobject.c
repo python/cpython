@@ -2660,7 +2660,7 @@ PyTypeObject PyList_Type = {
 
 typedef struct {
     PyObject_HEAD
-    long it_index;
+    Py_ssize_t it_index;
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } listiterobject;
 
@@ -2797,7 +2797,7 @@ listiter_reduce(listiterobject *it)
 static PyObject *
 listiter_setstate(listiterobject *it, PyObject *state)
 {
-    long index = PyLong_AsLong(state);
+    Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
     if (it->it_seq != NULL) {
@@ -2958,7 +2958,7 @@ listiter_reduce_general(void *_it, int forward)
     if (forward) {
         listiterobject *it = (listiterobject *)_it;
         if (it->it_seq)
-            return Py_BuildValue("N(O)l", _PyObject_GetBuiltin("iter"),
+            return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
                                  it->it_seq, it->it_index);
     } else {
         listreviterobject *it = (listreviterobject *)_it;
