@@ -307,11 +307,13 @@ examine Python's :file:`Makefile` (use :func:`sysconfig.get_makefile_filename`
 to find its location) and compilation
 options.  In this case, the :mod:`sysconfig` module is a useful tool to
 programmatically extract the configuration values that you will want to
-combine together:
+combine together.  For example:
 
 .. code-block:: python
 
    >>> import sysconfig
+   >>> sysconfig.get_config_var('LIBS')
+   '-lpthread -ldl  -lutil'
    >>> sysconfig.get_config_var('LINKFORSHARED')
    '-Xlinker -export-dynamic'
 
