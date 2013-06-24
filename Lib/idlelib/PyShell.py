@@ -61,7 +61,6 @@ else:
                                               lineno, line=line))
         except OSError:
             pass  ## file (probably __stderr__) is invalid, warning dropped.
-    warnings.showwarning = idle_showwarning
     def idle_formatwarning(message, category, filename, lineno, line=None):
         """Format warnings the IDLE way"""
         s = "\nWarning (from warnings module):\n"
@@ -73,7 +72,6 @@ else:
             s += "    %s\n" % line
         s += "%s: %s\n>>> " % (category.__name__, message)
         return s
-    warnings.formatwarning = idle_formatwarning
 
 def extended_linecache_checkcache(filename=None,
                                   orig_checkcache=linecache.checkcache):
@@ -1424,6 +1422,9 @@ echo "import sys; print(sys.argv)" | idle - "foobar"
 
 def main():
     global flist, root, use_subprocess
+
+    warnings.showwarning = idle_showwarning
+    warnings.formatwarning = idle_formatwarning
 
     use_subprocess = True
     enable_shell = False
