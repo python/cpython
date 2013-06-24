@@ -997,7 +997,7 @@ tupleiter_reduce(tupleiterobject *it)
 static PyObject *
 tupleiter_setstate(tupleiterobject *it, PyObject *state)
 {
-    long index = PyLong_AsLong(state);
+    Py_ssize_t index = PyLong_AsLong(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
     if (it->it_seq != NULL) {
