@@ -1338,6 +1338,12 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         return NULL;
     }
 
+    if (buf.len > INT_MAX) {
+        PyErr_Format(PyExc_OverflowError,
+                     "string longer than %d bytes", INT_MAX);
+        goto error;
+    }
+
     /* just in case the blocking state of the socket has been changed */
     nonblocking = (sock->sock_timeout >= 0.0);
     BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
@@ -1358,9 +1364,8 @@ static PyObject *PySSL_SSLwrite(PySSLSocket *self, PyObject *args)
         goto error;
     }
     do {
-        len = (int)Py_MIN(buf.len, INT_MAX);
         PySSL_BEGIN_ALLOW_THREADS
-        len = SSL_write(self->ssl, buf.buf, len);
+        len = SSL_write(self->ssl, buf.buf, (int)buf.len);
         err = SSL_get_error(self->ssl, len);
         PySSL_END_ALLOW_THREADS
         if (PyErr_CheckSignals()) {
