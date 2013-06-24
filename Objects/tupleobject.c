@@ -988,7 +988,7 @@ static PyObject *
 tupleiter_reduce(tupleiterobject *it)
 {
     if (it->it_seq)
-        return Py_BuildValue("N(O)l", _PyObject_GetBuiltin("iter"),
+        return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
                              it->it_seq, it->it_index);
     else
         return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
@@ -997,7 +997,7 @@ tupleiter_reduce(tupleiterobject *it)
 static PyObject *
 tupleiter_setstate(tupleiterobject *it, PyObject *state)
 {
-    Py_ssize_t index = PyLong_AsLong(state);
+    Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
     if (it->it_seq != NULL) {
