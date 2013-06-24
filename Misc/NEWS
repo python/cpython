@@ -24,8 +24,9 @@ Core and Builtins
 Library
 -------
 
-- Issue #18135: Fix a possible integer overflow in ssl.SSLSocket.write()
-  for strings longer than 2 gigabytes.
+- Issue #18135: ssl.SSLSocket.write() now raises an OverflowError if the input
+  string in longer than 2 gigabytes. The ssl module does not support partial
+  write.
 
 - Issue #18167: cgi.FieldStorage no more fails to handle multipart/form-data
   when \r\n appears at end of 65535 bytes without other newlines.
