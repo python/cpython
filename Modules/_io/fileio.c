@@ -533,7 +533,7 @@ fileio_readinto(fileio *self, PyObject *args)
         len = pbuf.len;
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
         if (len > INT_MAX)
             len = INT_MAX;
         n = read(self->fd, pbuf.buf, (int)len);
@@ -602,7 +602,7 @@ fileio_readall(fileio *self)
     if (!_PyVerify_fd(self->fd))
         return PyErr_SetFromErrno(PyExc_IOError);
 
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     pos = _lseeki64(self->fd, 0L, SEEK_CUR);
 #else
     pos = lseek(self->fd, 0L, SEEK_CUR);
@@ -645,7 +645,7 @@ fileio_readall(fileio *self)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
         n = bufsize - bytes_read;
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
         if (n > INT_MAX)
             n = INT_MAX;
         n = read(self->fd, PyBytes_AS_STRING(result) + bytes_read, (int)n);
@@ -706,7 +706,7 @@ fileio_read(fileio *self, PyObject *args)
         return fileio_readall(self);
     }
 
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     if (size > INT_MAX)
         size = INT_MAX;
 #endif
@@ -718,7 +718,7 @@ fileio_read(fileio *self, PyObject *args)
     if (_PyVerify_fd(self->fd)) {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
         n = read(self->fd, ptr, (int)size);
 #else
         n = read(self->fd, ptr, size);
@@ -766,7 +766,7 @@ fileio_write(fileio *self, PyObject *args)
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
         len = pbuf.len;
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
         if (len > 32767 && isatty(self->fd)) {
             /* Issue #11395: the Windows console returns an error (12: not
                enough space error) on writing into stdout if stdout mode is
@@ -839,7 +839,7 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 
     if (_PyVerify_fd(fd)) {
         Py_BEGIN_ALLOW_THREADS
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
         res = _lseeki64(fd, pos, whence);
 #else
         res = lseek(fd, pos, whence);

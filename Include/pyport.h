@@ -263,7 +263,7 @@ typedef size_t Py_uhash_t;
  */
 #ifdef HAVE_LONG_LONG
 #   ifndef PY_FORMAT_LONG_LONG
-#       if defined(MS_WIN64) || defined(MS_WINDOWS)
+#       ifdef MS_WINDOWS
 #           define PY_FORMAT_LONG_LONG "I64"
 #       else
 #           error "This platform's pyconfig.h needs to define PY_FORMAT_LONG_LONG"

@@ -390,7 +390,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 
     Py_BEGIN_ALLOW_THREADS
     errno = 0;
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     if (n > INT_MAX)
         n = INT_MAX;
     n = write(self->fd, c, (int)n);
