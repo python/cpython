@@ -1094,10 +1094,10 @@ PyZlib_adler32(PyObject *self, PyObject *args)
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        adler32val = adler32(adler32val, buf, len);
+        adler32val = adler32(adler32val, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        adler32val = adler32(adler32val, pbuf.buf, pbuf.len);
+        adler32val = adler32(adler32val, pbuf.buf, (unsigned int)pbuf.len);
     }
     PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(adler32val & 0xffffffffU);
@@ -1132,10 +1132,10 @@ PyZlib_crc32(PyObject *self, PyObject *args)
             buf += (size_t) UINT_MAX;
             len -= (size_t) UINT_MAX;
         }
-        signed_val = crc32(crc32val, buf, len);
+        signed_val = crc32(crc32val, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
-        signed_val = crc32(crc32val, pbuf.buf, pbuf.len);
+        signed_val = crc32(crc32val, pbuf.buf, (unsigned int)pbuf.len);
     }
     PyBuffer_Release(&pbuf);
     return PyLong_FromUnsignedLong(signed_val & 0xffffffffU);
