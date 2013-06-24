@@ -2347,7 +2347,7 @@ textiowrapper_tell(textio *self, PyObject *args)
 
     /* Note our initial start point. */
     cookie.start_pos += skip_bytes;
-    cookie.chars_to_skip = chars_to_skip;
+    cookie.chars_to_skip = Py_SAFE_DOWNCAST(chars_to_skip, Py_ssize_t, int);
     if (chars_to_skip == 0)
         goto finally;
 
