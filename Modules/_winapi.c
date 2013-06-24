@@ -62,6 +62,8 @@
 
 #define T_HANDLE T_POINTER
 
+#define DWORD_MAX 4294967295U
+
 /* Grab CancelIoEx dynamically from kernel32 */
 static int has_CancelIoEx = -1;
 static BOOL (CALLBACK *Py_CancelIoEx)(HANDLE, LPOVERLAPPED);
@@ -1142,7 +1144,7 @@ winapi_WriteFile(PyObject *self, PyObject *args, PyObject *kwds)
     HANDLE handle;
     Py_buffer _buf, *buf;
     PyObject *bufobj;
-    DWORD written;
+    DWORD len, written;
     BOOL ret;
     int use_overlapped = 0;
     DWORD err;
@@ -1170,7 +1172,8 @@ winapi_WriteFile(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    ret = WriteFile(handle, buf->buf, buf->len, &written,
+    len = (DWORD)Py_MIN(buf->len, DWORD_MAX);
+    ret = WriteFile(handle, buf->buf, len, &written,
                     overlapped ? &overlapped->overlapped : NULL);
     Py_END_ALLOW_THREADS
 
