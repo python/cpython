@@ -361,7 +361,7 @@ static int win32_can_symlink = 0;
 #undef STAT
 #undef FSTAT
 #undef STRUCT_STAT
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
 #       define STAT win32_stat
 #       define LSTAT win32_lstat
 #       define FSTAT win32_fstat
@@ -7425,7 +7425,7 @@ static PyObject *
 posix_lseek(PyObject *self, PyObject *args)
 {
     int fd, how;
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     PY_LONG_LONG pos, res;
 #else
     off_t pos, res;
@@ -7453,7 +7453,7 @@ posix_lseek(PyObject *self, PyObject *args)
     if (!_PyVerify_fd(fd))
         return posix_error();
     Py_BEGIN_ALLOW_THREADS
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     res = _lseeki64(fd, pos, how);
 #else
     res = lseek(fd, pos, how);
@@ -7659,7 +7659,7 @@ posix_write(PyObject *self, PyObject *args)
     }
     len = pbuf.len;
     Py_BEGIN_ALLOW_THREADS
-#if defined(MS_WIN64) || defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
     if (len > INT_MAX)
         len = INT_MAX;
     size = write(fd, pbuf.buf, (int)len);
