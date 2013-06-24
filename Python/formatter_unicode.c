@@ -982,8 +982,7 @@ format_float_internal(PyObject *value,
     Py_ssize_t n_total;
     int has_decimal;
     double val;
-    Py_ssize_t precision;
-    Py_ssize_t default_precision = 6;
+    int precision, default_precision = 6;
     Py_UCS4 type = format->type;
     int add_pct = 0;
     Py_ssize_t index;
@@ -1138,8 +1137,7 @@ format_complex_internal(PyObject *value,
     Py_ssize_t n_im_total;
     int re_has_decimal;
     int im_has_decimal;
-    int precision;
-    Py_ssize_t default_precision = 6;
+    int precision, default_precision = 6;
     Py_UCS4 type = format->type;
     Py_ssize_t i_re;
     Py_ssize_t i_im;
