@@ -496,7 +496,7 @@ Note that one can also create a shared queue by using a manager object -- see
    :ref:`manager <multiprocessing-managers>`.
 
    (1) After putting an object on an empty queue there may be an
-       infinitessimal delay before the queue's :meth:`~Queue.empty`
+       infinitesimal delay before the queue's :meth:`~Queue.empty`
        method returns :const:`False` and :meth:`~Queue.get_nowait` can
        return without raising :exc:`Queue.Empty`.
 
