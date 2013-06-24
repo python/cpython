@@ -258,37 +258,55 @@ program.  There is no need to recompile Python itself using C++.
 
 .. _link-reqs:
 
-Linking Requirements
-====================
+Compiling and Linking under Unix-like systems
+=============================================
 
-While the :program:`configure` script shipped with the Python sources will
-correctly build Python to export the symbols needed by dynamically linked
-extensions, this is not automatically inherited by applications which embed the
-Python library statically, at least on Unix.  This is an issue when the
-application is linked to the static runtime library (:file:`libpython.a`) and
-needs to load dynamic extensions (implemented as :file:`.so` files).
+It is not necessarily trivial to find the right flags to pass to your
+compiler (and linker) in order to embed the Python interpreter into your
+application, particularly because Python needs to load library modules
+implemented as C dynamic extensions (:file:`.so` files) linked against
+it.
 
-The problem is that some entry points are defined by the Python runtime solely
-for extension modules to use.  If the embedding application does not use any of
-these entry points, some linkers will not include those entries in the symbol
-table of the finished executable.  Some additional options are needed to inform
-the linker not to remove these symbols.
+To find out the required compiler and linker flags, you can execute the
+:file:`python{X.Y}-config` script which is generated as part of the
+installation process (a :file:`python-config` script may also be
+available).  This script has several options, of which the following will
+be directly useful to you:
 
-Determining the right options to use for any given platform can be quite
-difficult, but fortunately the Python configuration already has those values.
-To retrieve them from an installed Python interpreter, start an interactive
-interpreter and have a short session like this
+* ``pythonX.Y-config --cflags`` will give you the recommended flags when
+  compiling::
+
+   $ /opt/bin/python2.7-config --cflags
+   -I/opt/include/python2.7 -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+
+* ``pythonX.Y-config --ldflags`` will give you the recommended flags when
+  linking::
+
+   $ /opt/bin/python2.7-config --ldflags
+   -L/opt/lib/python2.7/config -lpthread -ldl -lutil -lm -lpython2.7 -Xlinker -export-dynamic
+
+.. note::
+   To avoid confusion between several Python installations (and especially
+   between the system Python and your own compiled Python), it is recommended
+   that you use the absolute path to :file:`python{X.Y}-config`, as in the above
+   example.
+
+If this procedure doesn't work for you (it is not guaranteed to work for
+all Unix-like platforms; however, we welcome :ref:`bug reports <reporting-bugs>`)
+you will have to read your system's documentation about dynamic linking and/or
+examine Python's :file:`Makefile` (use :func:`sysconfig.get_makefile_filename`
+to find its location) and compilation
+options.  In this case, the :mod:`sysconfig` module is a useful tool to
+programmatically extract the configuration values that you will want to
+combine together.  For example:
 
 .. code-block:: python
 
-   >>> import distutils.sysconfig
-   >>> distutils.sysconfig.get_config_var('LINKFORSHARED')
+   >>> import sysconfig
+   >>> sysconfig.get_config_var('LIBS')
+   '-lpthread -ldl  -lutil'
+   >>> sysconfig.get_config_var('LINKFORSHARED')
    '-Xlinker -export-dynamic'
 
-.. index:: module: distutils.sysconfig
 
-The contents of the string presented will be the options that should be used.
-If the string is empty, there's no need to add any additional options.  The
-:const:`LINKFORSHARED` definition corresponds to the variable of the same name
-in Python's top-level :file:`Makefile`.
-
+.. XXX similar documentation for Windows missing
