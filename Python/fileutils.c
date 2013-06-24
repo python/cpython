@@ -16,13 +16,13 @@ extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
 PyObject *
 _Py_device_encoding(int fd)
 {
-#if defined(MS_WINDOWS) || defined(MS_WIN64)
+#if defined(MS_WINDOWS)
     UINT cp;
 #endif
     if (!_PyVerify_fd(fd) || !isatty(fd)) {
         Py_RETURN_NONE;
     }
-#if defined(MS_WINDOWS) || defined(MS_WIN64)
+#if defined(MS_WINDOWS)
     if (fd == 0)
         cp = GetConsoleCP();
     else if (fd == 1 || fd == 2)
