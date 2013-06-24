@@ -486,6 +486,23 @@ Note that one can also create a shared queue by using a manager object -- see
    the :mod:`multiprocessing` namespace so you need to import them from
    :mod:`Queue`.
 
+.. note::
+
+   When an object is put on a queue, the object is pickled and a
+   background thread later flushes the pickled data to an underlying
+   pipe.  This has some consequences which are a little surprising,
+   but should not cause any pratical difficulties -- you can always
+   use a managed queue if they really bother you.
+
+   (1) After putting an object on an empty queue there may be an
+       infinitessimal delay before the queue's :meth:`~Queue.empty`
+       method returns :const:`False` and :meth:`~Queue.get_nowait` can
+       return without raising :exc:`Queue.Empty`.
+
+   (2) If multiple processes are enqueuing objects, it is possible for
+       the objects to be received at the other end out-of-order.
+       However, objects enqueued by the same process will always be in
+       the expected order with respect to each other.
 
 .. warning::
 
