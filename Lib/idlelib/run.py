@@ -40,7 +40,6 @@ else:
             s += "    %s\n" % line
         s += "%s: %s\n" % (category.__name__, message)
         return s
-    warnings.formatwarning = idle_formatwarning_subproc
 
 
 tcl = tkinter.Tcl()
@@ -82,6 +81,9 @@ def main(del_exitfunc=False):
     global exit_now
     global quitting
     global no_exitfunc
+
+    warnings.formatwarning = idle_formatwarning_subproc
+
     no_exitfunc = del_exitfunc
     #time.sleep(15) # test subprocess not responding
     try:
