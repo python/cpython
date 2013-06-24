@@ -205,7 +205,7 @@ typedef struct {
     int npn_protocols_len;
 #endif
 #ifndef OPENSSL_NO_TLSEXT
-    PyObject *set_hostname; 
+    PyObject *set_hostname;
 #endif
 } PySSLContext;
 
@@ -1810,7 +1810,7 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->npn_protocols = NULL;
 #endif
 #ifndef OPENSSL_NO_TLSEXT
-    self->set_hostname = NULL; 
+    self->set_hostname = NULL;
 #endif
     /* Defaults */
     SSL_CTX_set_verify(self->ctx, SSL_VERIFY_NONE, NULL);
@@ -2463,7 +2463,7 @@ _servername_callback(SSL *s, int *al, void *args)
     if (ssl_socket == Py_None) {
         goto error;
     }
- 
+
     if (servername == NULL) {
         result = PyObject_CallFunctionObjArgs(ssl_ctx->set_hostname, ssl_socket,
                                               Py_None, ssl_ctx, NULL);
