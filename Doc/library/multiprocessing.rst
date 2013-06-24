@@ -491,8 +491,9 @@ Note that one can also create a shared queue by using a manager object -- see
    When an object is put on a queue, the object is pickled and a
    background thread later flushes the pickled data to an underlying
    pipe.  This has some consequences which are a little surprising,
-   but should not cause any pratical difficulties -- you can always
-   use a managed queue if they really bother you.
+   but should not cause any practical difficulties -- if they really
+   bother you then you can instead use a queue created with a
+   :ref:`manager <multiprocessing-managers>`.
 
    (1) After putting an object on an empty queue there may be an
        infinitessimal delay before the queue's :meth:`~Queue.empty`
