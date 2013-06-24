@@ -443,7 +443,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
          cause other processes to deadlock.
 
    Note that the :meth:`start`, :meth:`join`, :meth:`is_alive`,
-   :meth:`terminate` and :attr:`exit_code` methods should only be called by
+   :meth:`terminate` and :attr:`exitcode` methods should only be called by
    the process that created the process object.
 
    Example usage of some of the methods of :class:`Process`:
