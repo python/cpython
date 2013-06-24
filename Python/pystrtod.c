@@ -923,7 +923,7 @@ static char *uc_float_strings[] = {
 
 static char *
 format_float_short(double d, char format_code,
-                   int mode, Py_ssize_t precision,
+                   int mode, int precision,
                    int always_add_sign, int add_dot_0_if_integer,
                    int use_alt_formatting, char **float_strings, int *type)
 {
@@ -1059,7 +1059,7 @@ format_float_short(double d, char format_code,
     /* if using an exponent, reset decimal point position to 1 and adjust
        exponent accordingly.*/
     if (use_exp) {
-        exp = decpt - 1;
+        exp = (int)decpt - 1;
         decpt = 1;
     }
     /* ensure vdigits_start < decpt <= vdigits_end, or vdigits_start <
