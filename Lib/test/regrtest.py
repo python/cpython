@@ -701,7 +701,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         output = Queue()
         pending = MultiprocessTests(tests)
         opt_args = support.args_from_interpreter_flags()
-        base_cmd = [sys.executable] + opt_args + ['-m', 'test.regrtest']
+        base_cmd = [sys.executable] + opt_args
+        base_cmd += ['-X', 'faulthandler', '-m', 'test.regrtest']
         def work():
             # A worker thread.
             try:
