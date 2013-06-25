@@ -807,7 +807,16 @@ time_mktime(PyObject *self, PyObject *tup)
     tt = mktime(&buf);
     /* Return value of -1 does not necessarily mean an error, but tm_wday
      * cannot remain set to -1 if mktime succeeded. */
-    if (tt == (time_t)(-1) && buf.tm_wday == -1) {
+    if (tt == (time_t)(-1)
+#ifndef _AIX
+        /* Return value of -1 does not necessarily mean an error, but
+         * tm_wday cannot remain set to -1 if mktime succeeded. */
+        && buf.tm_wday == -1
+#else
+        /* on AIX, tm_wday is always sets, even on error */
+#endif
+       )
+    {
         PyErr_SetString(PyExc_OverflowError,
                         "mktime argument out of range");
         return NULL;

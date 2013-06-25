@@ -4873,9 +4873,16 @@ datetime_timestamp(PyDateTime_DateTime *self)
         time.tm_wday = -1;
         time.tm_isdst = -1;
         timestamp = mktime(&time);
-        /* Return value of -1 does not necessarily mean an error, but tm_wday
-         * cannot remain set to -1 if mktime succeeded. */
-        if (timestamp == (time_t)(-1) && time.tm_wday == -1) {
+        if (timestamp == (time_t)(-1)
+#ifndef _AIX
+            /* Return value of -1 does not necessarily mean an error,
+             * but tm_wday cannot remain set to -1 if mktime succeeded. */
+            && time.tm_wday == -1
+#else
+            /* on AIX, tm_wday is always sets, even on error */
+#endif
+          )
+        {
             PyErr_SetString(PyExc_OverflowError,
                             "timestamp out of range");
             return NULL;
