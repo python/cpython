@@ -13,6 +13,10 @@ Core and Builtins
 - Issue #18184: PyUnicode_FromFormat() and PyUnicode_FromFormatV() now raise
   OverflowError when an argument of %c format is out of range.
 
+- Issue #18111: The min() and max() functions now support a default argument
+  to be returned instead of raising a ValueError on an empty sequence.
+  (Contributed by Julian Berman.)
+
 - Issue #18137: Detect integer overflow on precision in float.__format__()
   and complex.__format__().
 
