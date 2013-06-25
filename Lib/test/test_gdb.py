@@ -164,6 +164,7 @@ class DebuggerTests(unittest.TestCase):
             'linux-gate.so',
             'Do you need "set solib-search-path" or '
             '"set sysroot"?',
+            'warning: Source file is more recent than executable.',
             )
         for line in errlines:
             if not line.startswith(ignore_patterns):
