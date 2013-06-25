@@ -17,7 +17,7 @@ from test.support import make_legacy_pyc, strip_python_stderr
 
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
-    cmd_line = [sys.executable]
+    cmd_line = [sys.executable, '-X', 'faulthandler']
     if not env_vars:
         cmd_line.append('-E')
     # Need to preserve the original environment, for in-place testing of
