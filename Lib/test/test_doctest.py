@@ -2601,10 +2601,22 @@ The doctest module can be used to run doctests against an arbitrary file.
 These tests test this CLI functionality.
 
 We'll use the support module's script_helpers for this, and write a test files
-to a temp dir to run the command against.
+to a temp dir to run the command against.  Due to a current limitation in
+script_helpers, though, we need a little utility function to turn the returned
+output into something we can doctest against:
 
-First, a file with two simple tests and no errors.  We'll run both the
-unadorned doctest command, and the verbose version, and then check the output:
+    >>> def normalize(s):
+    ...     return '\n'.join(s.decode().splitlines())
+
+Note: we also pass TERM='' to all the assert_python calls to avoid a bug
+in the readline library that is triggered in these tests because we are
+running them in a new python process.  See:
+
+  http://lists.gnu.org/archive/html/bug-readline/2013-06/msg00000.html
+
+With those preliminaries out of the way, we'll start with a file with two
+simple tests and no errors.  We'll run both the unadorned doctest command, and
+the verbose version, and then check the output:
 
     >>> from test import script_helper
     >>> with script_helper.temp_dir() as tmpdir:
@@ -2618,9 +2630,9 @@ unadorned doctest command, and the verbose version, and then check the output:
     ...         _ = f.write('\n')
     ...         _ = f.write('And that is it.\n')
     ...     rc1, out1, err1 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', fn)
+    ...             '-m', 'doctest', fn, TERM='')
     ...     rc2, out2, err2 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', '-v', fn)
+    ...             '-m', 'doctest', '-v', fn, TERM='')
 
 With no arguments and passing tests, we should get no output:
 
@@ -2631,7 +2643,7 @@ With the verbose flag, we should see the test output, but no error output:
 
     >>> rc2, err2
     (0, b'')
-    >>> print(out2.decode())
+    >>> print(normalize(out2))
     Trying:
         1 + 1
     Expecting:
@@ -2647,7 +2659,6 @@ With the verbose flag, we should see the test output, but no error output:
     2 tests in 1 items.
     2 passed and 0 failed.
     Test passed.
-    <BLANKLINE>
 
 Now we'll write a couple files, one with three tests, the other a python module
 with two tests, both of the files having "errors" in the tests that can be made
@@ -2684,17 +2695,17 @@ text files).
     ...         _ = f.write('   \"\"\"\n')
     ...     import shutil
     ...     rc1, out1, err1 = script_helper.assert_python_failure(
-    ...             '-m', 'doctest', fn, fn2)
+    ...             '-m', 'doctest', fn, fn2, TERM='')
     ...     rc2, out2, err2 = script_helper.assert_python_ok(
-    ...             '-m', 'doctest', '-o', 'ELLIPSIS', fn)
+    ...             '-m', 'doctest', '-o', 'ELLIPSIS', fn, TERM='')
     ...     rc3, out3, err3 = script_helper.assert_python_ok(
     ...             '-m', 'doctest', '-o', 'ELLIPSIS',
-    ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2)
+    ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2, TERM='')
     ...     rc4, out4, err4 = script_helper.assert_python_failure(
-    ...             '-m', 'doctest', '-f', fn, fn2)
+    ...             '-m', 'doctest', '-f', fn, fn2, TERM='')
     ...     rc5, out5, err5 = script_helper.assert_python_ok(
     ...             '-m', 'doctest', '-v', '-o', 'ELLIPSIS',
-    ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2)
+    ...             '-o', 'NORMALIZE_WHITESPACE', fn, fn2, TERM='')
 
 Our first test run will show the errors from the first file (doctest stops if a
 file has errors).  Note that doctest test-run error output appears on stdout,
@@ -2702,7 +2713,7 @@ not stderr:
 
     >>> rc1, err1
     (1, b'')
-    >>> print(out1.decode())                # doctest: +ELLIPSIS
+    >>> print(normalize(out1))                # doctest: +ELLIPSIS
     **********************************************************************
     File "...myfile.doc", line 4, in myfile.doc
     Failed example:
@@ -2723,7 +2734,6 @@ not stderr:
     1 items had failures:
        2 of   3 in myfile.doc
     ***Test Failed*** 2 failures.
-    <BLANKLINE>
 
 With -o ELLIPSIS specified, the second run, against just the first file, should
 produce no errors, and with -o NORMALIZE_WHITESPACE also specified, neither
@@ -2738,7 +2748,7 @@ The fourth run uses FAIL_FAST, so we should see only one error:
 
     >>> rc4, err4
     (1, b'')
-    >>> print(out4.decode())                # doctest: +ELLIPSIS
+    >>> print(normalize(out4))                # doctest: +ELLIPSIS
     **********************************************************************
     File "...myfile.doc", line 4, in myfile.doc
     Failed example:
@@ -2751,14 +2761,13 @@ The fourth run uses FAIL_FAST, so we should see only one error:
     1 items had failures:
        1 of   2 in myfile.doc
     ***Test Failed*** 1 failures.
-    <BLANKLINE>
 
 The fifth test uses verbose with the two options, so we should get verbose
 success output for the tests in both files:
 
     >>> rc5, err5
     (0, b'')
-    >>> print(out5.decode())
+    >>> print(normalize(out5))
     Trying:
         1 + 1
     Expecting:
@@ -2796,17 +2805,16 @@ success output for the tests in both files:
     2 tests in 2 items.
     2 passed and 0 failed.
     Test passed.
-    <BLANKLINE>
 
 We should also check some typical error cases.
 
 Invalid file name:
 
     >>> rc, out, err = script_helper.assert_python_failure(
-    ...         '-m', 'doctest', 'nosuchfile')
+    ...         '-m', 'doctest', 'nosuchfile', TERM='')
     >>> rc, out
     (1, b'')
-    >>> print(err.decode())                    # doctest: +ELLIPSIS
+    >>> print(normalize(err))                    # doctest: +ELLIPSIS
     Traceback (most recent call last):
       ...
     FileNotFoundError: [Errno ...] No such file or directory: 'nosuchfile'
@@ -2814,10 +2822,10 @@ Invalid file name:
 Invalid doctest option:
 
     >>> rc, out, err = script_helper.assert_python_failure(
-    ...         '-m', 'doctest', '-o', 'nosuchoption')
+    ...         '-m', 'doctest', '-o', 'nosuchoption', TERM='')
     >>> rc, out
     (2, b'')
-    >>> print(err.decode())                    # doctest: +ELLIPSIS
+    >>> print(normalize(err))                    # doctest: +ELLIPSIS
     usage...invalid...nosuchoption...
 
 """
