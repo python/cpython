@@ -9140,7 +9140,7 @@ posix_confstr(PyObject *self, PyObject *args)
     PyObject *result = NULL;
     int name;
     char buffer[255];
-    int len;
+    size_t len;
 
     if (!PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name))
         return NULL;
@@ -9157,7 +9157,7 @@ posix_confstr(PyObject *self, PyObject *args)
         }
     }
 
-    if ((unsigned int)len >= sizeof(buffer)) {
+    if (len >= sizeof(buffer)) {
         char *buf = PyMem_Malloc(len);
         if (buf == NULL)
             return PyErr_NoMemory();
