@@ -1329,26 +1329,35 @@ static PyObject *
 min_max(PyObject *args, PyObject *kwds, int op)
 {
     PyObject *v, *it, *item, *val, *maxitem, *maxval, *keyfunc=NULL;
+    PyObject *emptytuple, *defaultval = NULL;
+    static char *kwlist[] = {"key", "default", NULL};
     const char *name = op == Py_LT ? "min" : "max";
+    const int positional = PyTuple_Size(args) > 1;
+    int ret;
 
-    if (PyTuple_Size(args) > 1)
+    if (positional)
         v = args;
     else if (!PyArg_UnpackTuple(args, (char *)name, 1, 1, &v))
         return NULL;
 
-    if (kwds != NULL && PyDict_Check(kwds) && PyDict_Size(kwds)) {
-        keyfunc = PyDict_GetItemString(kwds, "key");
-        if (PyDict_Size(kwds)!=1  ||  keyfunc == NULL) {
-            PyErr_Format(PyExc_TypeError,
-                "%s() got an unexpected keyword argument", name);
-            return NULL;
-        }
-        Py_INCREF(keyfunc);
+    emptytuple = PyTuple_New(0);
+    if (emptytuple == NULL)
+        return NULL;
+    ret = PyArg_ParseTupleAndKeywords(emptytuple, kwds, "|$OO", kwlist,
+                                      &keyfunc, &defaultval);
+    Py_DECREF(emptytuple);
+    if (!ret)
+        return NULL;
+
+    if (positional && defaultval != NULL) {
+        PyErr_Format(PyExc_TypeError,
+                        "Cannot specify a default for %s() with multiple "
+                        "positional arguments", name);
+        return NULL;
     }
 
     it = PyObject_GetIter(v);
     if (it == NULL) {
-        Py_XDECREF(keyfunc);
         return NULL;
     }
 
@@ -1392,14 +1401,18 @@ min_max(PyObject *args, PyObject *kwds, int op)
     if (PyErr_Occurred())
         goto Fail_it;
     if (maxval == NULL) {
-        PyErr_Format(PyExc_ValueError,
-                     "%s() arg is an empty sequence", name);
         assert(maxitem == NULL);
+        if (defaultval != NULL) {
+            Py_INCREF(defaultval);
+            maxitem = defaultval;
+        } else {
+            PyErr_Format(PyExc_ValueError,
+                         "%s() arg is an empty sequence", name);
+        }
     }
     else
         Py_DECREF(maxval);
     Py_DECREF(it);
-    Py_XDECREF(keyfunc);
     return maxitem;
 
 Fail_it_item_and_val:
@@ -1410,7 +1423,6 @@ Fail_it:
     Py_XDECREF(maxval);
     Py_XDECREF(maxitem);
     Py_DECREF(it);
-    Py_XDECREF(keyfunc);
     return NULL;
 }
 

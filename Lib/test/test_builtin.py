@@ -847,8 +847,19 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max(1, 2.0, 3), 3)
         self.assertEqual(max(1.0, 2, 3), 3)
 
+        self.assertRaises(TypeError, max)
+        self.assertRaises(TypeError, max, 42)
+        self.assertRaises(ValueError, max, ())
+        class BadSeq:
+            def __getitem__(self, index):
+                raise ValueError
+        self.assertRaises(ValueError, max, BadSeq())
+
         for stmt in (
             "max(key=int)",                 # no args
+            "max(default=None)",
+            "max(1, 2, default=None)",      # require container for default
+            "max(default=None, key=int)",
             "max(1, key=int)",              # single arg not iterable
             "max(1, 2, keystone=int)",      # wrong keyword
             "max(1, 2, key=int, abc=int)",  # two many keywords
@@ -864,6 +875,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max((1,), key=neg), 1)     # one elem iterable
         self.assertEqual(max((1,2), key=neg), 1)    # two elem iterable
         self.assertEqual(max(1, 2, key=neg), 1)     # two elems
+
+        self.assertEqual(max((), default=None), None)    # zero elem iterable
+        self.assertEqual(max((1,), default=None), 1)     # one elem iterable
+        self.assertEqual(max((1,2), default=None), 2)    # two elem iterable
+
+        self.assertEqual(max((), default=1, key=neg), 1)
+        self.assertEqual(max((1, 2), default=3, key=neg), 1)
 
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
@@ -891,6 +909,9 @@ class BuiltinTest(unittest.TestCase):
 
         for stmt in (
             "min(key=int)",                 # no args
+            "min(default=None)",
+            "min(1, 2, default=None)",      # require container for default
+            "min(default=None, key=int)",
             "min(1, key=int)",              # single arg not iterable
             "min(1, 2, keystone=int)",      # wrong keyword
             "min(1, 2, key=int, abc=int)",  # two many keywords
@@ -906,6 +927,13 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(min((1,), key=neg), 1)     # one elem iterable
         self.assertEqual(min((1,2), key=neg), 2)    # two elem iterable
         self.assertEqual(min(1, 2, key=neg), 2)     # two elems
+
+        self.assertEqual(min((), default=None), None)    # zero elem iterable
+        self.assertEqual(min((1,), default=None), 1)     # one elem iterable
+        self.assertEqual(min((1,2), default=None), 1)    # two elem iterable
+
+        self.assertEqual(min((), default=1, key=neg), 1)
+        self.assertEqual(min((1, 2), default=1, key=neg), 2)
 
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
