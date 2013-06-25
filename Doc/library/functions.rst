@@ -753,19 +753,22 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable, *[, key])
+.. function:: max(iterable, *[, default, key])
               max(arg1, arg2, *args[, key])
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
 
-   If one positional argument is provided, *iterable* must be a non-empty
-   iterable (such as a non-empty string, tuple or list).  The largest item
-   in the iterable is returned.  If two or more positional arguments are
-   provided, the largest of the positional arguments is returned.
+   If one positional argument is provided, it should be an :term:`iterable`.
+   The largest item in the iterable is returned.  If two or more positional
+   arguments are provided, the smallest of the positional arguments is
+   returned.
 
-   The optional keyword-only *key* argument specifies a one-argument ordering
-   function like that used for :meth:`list.sort`.
+   There are two optional keyword-only arguments. The *key* argument specifies
+   a one-argument ordering function like that used for :meth:`list.sort`. The
+   *default* argument specifies an object to return if the provided iterable is
+   empty. If the iterable is empty and *default* is not provided, a
+   :exc:`ValueError` is raised.
 
    If multiple items are maximal, the function returns the first one
    encountered.  This is consistent with other sort-stability preserving tools
@@ -781,19 +784,22 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *[, key])
+.. function:: min(iterable, *[, default, key])
               min(arg1, arg2, *args[, key])
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
 
-   If one positional argument is provided, *iterable* must be a non-empty
-   iterable (such as a non-empty string, tuple or list).  The smallest item
-   in the iterable is returned.  If two or more positional arguments are
-   provided, the smallest of the positional arguments is returned.
+   If one positional argument is provided, it should be an :term:`iterable`.
+   The smallest item in the iterable is returned.  If two or more positional
+   arguments are provided, the smallest of the positional arguments is
+   returned.
 
-   The optional keyword-only *key* argument specifies a one-argument ordering
-   function like that used for :meth:`list.sort`.
+   There are two optional keyword-only arguments. The *key* argument specifies
+   a one-argument ordering function like that used for :meth:`list.sort`. The
+   *default* argument specifies an object to return if the provided iterable is
+   empty. If the iterable is empty and *default* is not provided, a
+   :exc:`ValueError` is raised.
 
    If multiple items are minimal, the function returns the first one
    encountered.  This is consistent with other sort-stability preserving tools
