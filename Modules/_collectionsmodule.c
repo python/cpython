@@ -47,8 +47,8 @@
 
 typedef struct BLOCK {
     struct BLOCK *leftlink;
-    struct BLOCK *rightlink;
     PyObject *data[BLOCKLEN];
+    struct BLOCK *rightlink;
 } block;
 
 #define MAXFREEBLOCKS 10
