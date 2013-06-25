@@ -54,12 +54,19 @@ class CmdLineTest(unittest.TestCase):
         self.assertNotIn(b'stack overflow', err)
 
     def test_xoptions(self):
-        rc, out, err = assert_python_ok('-c', 'import sys; print(sys._xoptions)')
-        opts = eval(out.splitlines()[0])
+        def get_xoptions(*args):
+            # use subprocess module directly because test.script_helper adds
+            # "-X faulthandler" to the command line
+            args = (sys.executable, '-E') + args
+            args += ('-c', 'import sys; print(sys._xoptions)')
+            out = subprocess.check_output(args)
+            opts = eval(out.splitlines()[0])
+            return opts
+
+        opts = get_xoptions()
         self.assertEqual(opts, {})
-        rc, out, err = assert_python_ok(
-            '-Xa', '-Xb=c,d=e', '-c', 'import sys; print(sys._xoptions)')
-        opts = eval(out.splitlines()[0])
+
+        opts = get_xoptions('-Xa', '-Xb=c,d=e')
         self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
