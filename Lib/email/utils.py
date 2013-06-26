@@ -54,10 +54,16 @@ TICK = "'"
 specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[\\"]')
 
-# How to figure out if we are processing strings that come from a byte
-# source with undecodable characters.
-_has_surrogates = re.compile(
-    '([^\ud800-\udbff]|\A)[\udc00-\udfff]([^\udc00-\udfff]|\Z)').search
+def _has_surrogates(s):
+    """Return True if s contains surrogate-escaped binary data."""
+    # This check is based on the fact that unless there are surrogates, utf8
+    # (Python's default encoding) can encode any string.  This is the fastest
+    # way to check for surrogates, see issue 11454 for timings.
+    try:
+        s.encode()
+        return False
+    except UnicodeEncodeError:
+        return True
 
 # How to deal with a string containing bytes before handing it to the
 # application through the 'normal' interface.
