@@ -773,7 +773,7 @@ to speed up repeated connections from the same clients.
 
 .. method:: SSLContext.set_npn_protocols(protocols)
 
-   Specify which protocols the socket should avertise during the SSL/TLS
+   Specify which protocols the socket should advertise during the SSL/TLS
    handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
    ordered by preference. The selection of a protocol will happen during the
    handshake, and will play out according to the `NPN draft specification
