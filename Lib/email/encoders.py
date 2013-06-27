@@ -20,7 +20,7 @@ from quopri import encodestring as _encodestring
 def _qencode(s):
     enc = _encodestring(s, quotetabs=True)
     # Must encode spaces, which quopri.encodestring() doesn't do
-    return enc.replace(' ', '=20')
+    return enc.replace(b' ', b'=20')
 
 
 def encode_base64(msg):
@@ -41,8 +41,12 @@ def encode_quopri(msg):
     Also, add an appropriate Content-Transfer-Encoding header.
     """
     orig = msg.get_payload()
+    if isinstance(orig, str):
+        # If it is a string, the model data may have binary data encoded in via
+        # surrogateescape.  Convert back to bytes so we can CTE encode it.
+        orig = orig.encode('ascii', 'surrogateescape')
     encdata = _qencode(orig)
-    msg.set_payload(encdata)
+    msg.set_payload(encdata.decode('ascii', 'surrogateescape'))
     msg['Content-Transfer-Encoding'] = 'quoted-printable'
 
 
