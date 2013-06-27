@@ -9,6 +9,10 @@
  #endif
 #endif
 
+#ifdef MS_WINDOWS
+#include <windows.h>
+#endif
+
 #ifdef WITH_VALGRIND
 #include <valgrind/valgrind.h>
 
@@ -598,7 +602,11 @@ new_arena(void)
     arenaobj = unused_arena_objects;
     unused_arena_objects = arenaobj->nextarena;
     assert(arenaobj->address == 0);
-#ifdef ARENAS_USE_MMAP
+#ifdef MS_WINDOWS
+    address = (void*)VirtualAlloc(NULL, ARENA_SIZE,
+                                 MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    err = (address == NULL);
+#elif defined(ARENAS_USE_MMAP)
     address = mmap(NULL, ARENA_SIZE, PROT_READ|PROT_WRITE,
                                    MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
     err = (address == MAP_FAILED);
@@ -1093,7 +1101,9 @@ PyObject_Free(void *p)
                 unused_arena_objects = ao;
 
                 /* Free the entire arena. */
-#ifdef ARENAS_USE_MMAP
+#ifdef MS_WINDOWS
+                VirtualFree((void *)ao->address, 0, MEM_RELEASE);
+#elif defined(ARENAS_USE_MMAP)
                 munmap((void *)ao->address, ARENA_SIZE);
 #else
                 free((void *)ao->address);
