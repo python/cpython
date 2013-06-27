@@ -1474,6 +1474,35 @@ class TestMIMEApplication(unittest.TestCase):
         self.assertEqual(msg.get_payload(), '\uFFFD' * len(bytesdata))
         self.assertEqual(msg2.get_payload(decode=True), bytesdata)
 
+    def test_binary_body_with_encode_quopri(self):
+        # Issue 14360.
+        bytesdata = b'\xfa\xfb\xfc\xfd\xfe\xff '
+        msg = MIMEApplication(bytesdata, _encoder=encoders.encode_quopri)
+        self.assertEqual(msg.get_payload(), '=FA=FB=FC=FD=FE=FF=20')
+        self.assertEqual(msg.get_payload(decode=True), bytesdata)
+        self.assertEqual(msg['Content-Transfer-Encoding'], 'quoted-printable')
+        s = BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        wireform = s.getvalue()
+        msg2 = email.message_from_bytes(wireform)
+        self.assertEqual(msg.get_payload(), '=FA=FB=FC=FD=FE=FF=20')
+        self.assertEqual(msg2.get_payload(decode=True), bytesdata)
+        self.assertEqual(msg2['Content-Transfer-Encoding'], 'quoted-printable')
+
+    def test_binary_body_with_encode_base64(self):
+        bytesdata = b'\xfa\xfb\xfc\xfd\xfe\xff'
+        msg = MIMEApplication(bytesdata, _encoder=encoders.encode_base64)
+        self.assertEqual(msg.get_payload(), '+vv8/f7/\n')
+        self.assertEqual(msg.get_payload(decode=True), bytesdata)
+        s = BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        wireform = s.getvalue()
+        msg2 = email.message_from_bytes(wireform)
+        self.assertEqual(msg.get_payload(), '+vv8/f7/\n')
+        self.assertEqual(msg2.get_payload(decode=True), bytesdata)
+
 
 # Test the basic MIMEText class
 class TestMIMEText(unittest.TestCase):
