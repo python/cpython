@@ -1073,7 +1073,7 @@ class IMAP4:
 
         # Protocol mandates all lines terminated by CRLF
         if not line.endswith(b'\r\n'):
-            raise self.abort('socket error: unterminated line')
+            raise self.abort('socket error: unterminated line: %r' % line)
 
         line = line[:-2]
         if __debug__:
