@@ -331,7 +331,7 @@ class ProcessPoolExecutor(_base.Executor):
         _check_system_limits()
 
         if max_workers is None:
-            self._max_workers = multiprocessing.cpu_count()
+            self._max_workers = os.cpu_count() or 1
         else:
             self._max_workers = max_workers
 
