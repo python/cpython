@@ -90,12 +90,11 @@ DEFAULT_BUFSIZE = 8*1024
 
 def input(files=None, inplace=0, backup="", bufsize=0,
           mode="r", openhook=None):
-    """input([files[, inplace[, backup[, mode[, openhook]]]]])
+    """Return an instance of the FileInput class, which can be iterated.
 
-    Create an instance of the FileInput class. The instance will be used
-    as global state for the functions of this module, and is also returned
-    to use during iteration. The parameters to this function will be passed
-    along to the constructor of the FileInput class.
+    The parameters are passed to the constructor of the FileInput class.
+    The returned instance, in addition to being an iterator,
+    keeps global state for the functions of this module,.
     """
     global _state
     if _state and _state._file:
@@ -182,7 +181,7 @@ def isstdin():
     return _state.isstdin()
 
 class FileInput:
-    """class FileInput([files[, inplace[, backup[, mode[, openhook]]]]])
+    """FileInput([files[, inplace[, backup[, bufsize[, mode[, openhook]]]]]])
 
     Class FileInput is the implementation of the module; its methods
     filename(), lineno(), fileline(), isfirstline(), isstdin(), fileno(),
