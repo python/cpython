@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14360: encode_quopri can now be successfully used as an encoder
+  when constructing a MIMEApplication object.
+
 - Issue #18135: ssl.SSLSocket.write() now raises an OverflowError if the input
   string in longer than 2 gigabytes, and ssl.SSLContext.load_cert_chain()
   raises a ValueError if the password is longer than 2 gigabytes. The ssl
