@@ -140,6 +140,9 @@ Some smaller changes made to the core Python language are:
 * Import now raises the new exception :exc:`ModuleNotFoundError` (subclass of
   :exc:`ImportError`) when it cannot find something.
 
+* :func:`min` and :func:`max` now accept a *default* argument that can be used
+  to specify the value they return if the iterable they are evaluating has no
+  elements.  Contributed by Julian Berman in :issue:`18111`.
 
 
 New Modules
