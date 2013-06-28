@@ -17,10 +17,11 @@ import threading
 import queue
 import itertools
 import collections
+import os
 import time
 import traceback
 
-from multiprocessing import Process, cpu_count, TimeoutError
+from multiprocessing import Process, TimeoutError
 from multiprocessing.util import Finalize, debug
 
 #
@@ -147,10 +148,7 @@ class Pool(object):
         self._initargs = initargs
 
         if processes is None:
-            try:
-                processes = cpu_count()
-            except NotImplementedError:
-                processes = 1
+            processes = os.cpu_count() or 1
         if processes < 1:
             raise ValueError("Number of processes must be at least 1")
 
