@@ -87,8 +87,8 @@ Enumeration members are hashable, so they can be used in dictionaries and sets::
     True
 
 
-Programmatic access to enumeration members
-------------------------------------------
+Programmatic access to enumeration members and their attributes
+---------------------------------------------------------------
 
 Sometimes it's useful to access members in enumerations programmatically (i.e.
 situations where ``Color.red`` won't do because the exact color is not known
@@ -105,6 +105,14 @@ If you want to access enum members by *name*, use item access::
     <Color.red: 1>
     >>> Color['green']
     <Color.green: 2>
+
+If have an enum member and need its :attr:`name` or :attr:`value`::
+
+    >>> member = Color.red
+    >>> member.name
+    'red'
+    >>> member.value
+    1
 
 
 Duplicating enum members and values
