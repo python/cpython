@@ -508,12 +508,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-j', '--multiprocess'):
             use_mp = int(a)
             if use_mp <= 0:
-                try:
-                    import multiprocessing
-                    # Use all cores + extras for tests that like to sleep
-                    use_mp = 2 + multiprocessing.cpu_count()
-                except (ImportError, NotImplementedError):
-                    use_mp = 3
+                # Use all cores + extras for tests that like to sleep
+                use_mp = 2 + (os.cpu_count() or 1)
             if use_mp == 1:
                 use_mp = None
         elif o == '--header':
