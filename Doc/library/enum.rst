@@ -335,6 +335,10 @@ assignment to :class:`Animal` is equivalent to::
     ...   cat = 3
     ...   dog = 4
 
+The reason for defaulting to ``1`` as the starting number and not ``0`` is
+that ``0`` is ``False`` in a boolean sense, but enum members all evaluate
+to ``True``.
+
 Pickling enums created with the functional API can be tricky as frame stack
 implementation details are used to try and figure out which module the
 enumeration is being created in (e.g. it will fail if you use a utility
