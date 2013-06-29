@@ -12941,9 +12941,9 @@ unicode_endswith(PyObject *self,
         return NULL;
     }
     result = tailmatch(self, substring, start, end, +1);
+    Py_DECREF(substring);
     if (result == -1)
         return NULL;
-    Py_DECREF(substring);
     return PyBool_FromLong(result);
 }
 
