@@ -113,6 +113,7 @@ getgrammar(char *filename)
         Py_Exit(1);
     }
     g = pgen(n);
+    PyNode_Free(n);
     if (g == NULL) {
         printf("Bad grammar.\n");
         Py_Exit(1);
