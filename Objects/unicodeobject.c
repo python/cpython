@@ -10875,8 +10875,10 @@ unicode_count(PyObject *self, PyObject *args)
 
     kind1 = PyUnicode_KIND(self);
     kind2 = PyUnicode_KIND(substring);
-    if (kind2 > kind1)
+    if (kind2 > kind1) {
+        Py_DECREF(substring);
         return PyLong_FromLong(0);
+    }
     kind = kind1;
     buf1 = PyUnicode_DATA(self);
     buf2 = PyUnicode_DATA(substring);
@@ -11054,10 +11056,14 @@ unicode_find(PyObject *self, PyObject *args)
                                             &start, &end))
         return NULL;
 
-    if (PyUnicode_READY(self) == -1)
+    if (PyUnicode_READY(self) == -1) {
+        Py_DECREF(substring);
         return NULL;
-    if (PyUnicode_READY(substring) == -1)
+    }
+    if (PyUnicode_READY(substring) == -1) {
+        Py_DECREF(substring);
         return NULL;
+    }
 
     result = any_find_slice(1, self, substring, start, end);
 
@@ -13581,12 +13587,14 @@ formatlong(PyObject *val, struct unicode_format_arg_t *arg)
 
     /* To modify the string in-place, there can only be one reference. */
     if (Py_REFCNT(result) != 1) {
+        Py_DECREF(result);
         PyErr_BadInternalCall();
         return NULL;
     }
     buf = PyUnicode_DATA(result);
     llen = PyUnicode_GET_LENGTH(result);
     if (llen > INT_MAX) {
+        Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError,
                         "string too large in _PyBytes_FormatLong");
         return NULL;
