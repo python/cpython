@@ -50,35 +50,55 @@ except ImportError:
 # internal warnings to the console.  ScriptBinding.check_syntax() will
 # temporarily redirect the stream to the shell window to display warnings when
 # checking user's code.
-global warning_stream
-warning_stream = sys.__stderr__
-try:
-    import warnings
-except ImportError:
-    pass
-else:
-    def idle_showwarning(message, category, filename, lineno,
-                         file=None, line=None):
-        if file is None:
-            file = warning_stream
-        try:
-            file.write(warnings.formatwarning(message, category, filename,
-                                              lineno, line=line))
-        except IOError:
-            pass  ## file (probably __stderr__) is invalid, warning dropped.
-    warnings.showwarning = idle_showwarning
-    def idle_formatwarning(message, category, filename, lineno, line=None):
-        """Format warnings the IDLE way"""
-        s = "\nWarning (from warnings module):\n"
-        s += '  File \"%s\", line %s\n' % (filename, lineno)
-        if line is None:
-            line = linecache.getline(filename, lineno)
-        line = line.strip()
-        if line:
-            s += "    %s\n" % line
-        s += "%s: %s\n>>> " % (category.__name__, message)
-        return s
-    warnings.formatwarning = idle_formatwarning
+warning_stream = sys.__stderr__  # None, at least on Windows, if no console.
+import warnings
+
+def idle_formatwarning(message, category, filename, lineno, line=None):
+    """Format warnings the IDLE way."""
+
+    s = "\nWarning (from warnings module):\n"
+    s += '  File \"%s\", line %s\n' % (filename, lineno)
+    if line is None:
+        line = linecache.getline(filename, lineno)
+    line = line.strip()
+    if line:
+        s += "    %s\n" % line
+    s += "%s: %s\n" % (category.__name__, message)
+    return s
+
+def idle_showwarning(
+        message, category, filename, lineno, file=None, line=None):
+    """Show Idle-format warning (after replacing warnings.showwarning).
+
+    The differences are the formatter called, the file=None replacement,
+    which can be None, the capture of the consequence AttributeError,
+    and the output of a hard-coded prompt.
+    """
+    if file is None:
+        file = warning_stream
+    try:
+        file.write(idle_formatwarning(
+                message, category, filename, lineno, line=line))
+        file.write(">>> ")
+    except (AttributeError, IOError):
+        pass  # if file (probably __stderr__) is invalid, skip warning.
+
+_warnings_showwarning = None
+
+def capture_warnings(capture):
+    "Replace warning.showwarning with idle_showwarning, or reverse."
+
+    global _warnings_showwarning
+    if capture:
+        if _warnings_showwarning is None:
+            _warnings_showwarning = warnings.showwarning
+            warnings.showwarning = idle_showwarning
+    else:
+        if _warnings_showwarning is not None:
+            warnings.showwarning = _warnings_showwarning
+            _warnings_showwarning = None
+
+capture_warnings(True)
 
 def extended_linecache_checkcache(filename=None,
                                   orig_checkcache=linecache.checkcache):
@@ -1428,6 +1448,7 @@ echo "import sys; print sys.argv" | idle - "foobar"
 def main():
     global flist, root, use_subprocess
 
+    capture_warnings(True)
     use_subprocess = True
     enable_shell = False
     enable_edit = False
@@ -1560,7 +1581,10 @@ def main():
     while flist.inversedict:  # keep IDLE running while files are open.
         root.mainloop()
     root.destroy()
+    capture_warnings(False)
 
 if __name__ == "__main__":
     sys.modules['PyShell'] = sys.modules['__main__']
     main()
+
+capture_warnings(False)  # Make sure turned off; see issue 18081

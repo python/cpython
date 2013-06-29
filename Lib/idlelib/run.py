@@ -22,24 +22,38 @@ import __main__
 
 LOCALHOST = '127.0.0.1'
 
-try:
-    import warnings
-except ImportError:
-    pass
-else:
-    def idle_formatwarning_subproc(message, category, filename, lineno,
-                                   line=None):
-        """Format warnings the IDLE way"""
-        s = "\nWarning (from warnings module):\n"
-        s += '  File \"%s\", line %s\n' % (filename, lineno)
-        if line is None:
-            line = linecache.getline(filename, lineno)
-        line = line.strip()
-        if line:
-            s += "    %s\n" % line
-        s += "%s: %s\n" % (category.__name__, message)
-        return s
-    warnings.formatwarning = idle_formatwarning_subproc
+import warnings
+
+def idle_showwarning_subproc(
+        message, category, filename, lineno, file=None, line=None):
+    """Show Idle-format warning after replacing warnings.showwarning.
+
+    The only difference is the formatter called.
+    """
+    if file is None:
+        file = sys.stderr
+    try:
+        file.write(PyShell.idle_formatwarning(
+                message, category, filename, lineno, line))
+    except IOError:
+        pass # the file (probably stderr) is invalid - this warning gets lost.
+
+_warnings_showwarning = None
+
+def capture_warnings(capture):
+    "Replace warning.showwarning with idle_showwarning_subproc, or reverse."
+
+    global _warnings_showwarning
+    if capture:
+        if _warnings_showwarning is None:
+            _warnings_showwarning = warnings.showwarning
+            warnings.showwarning = idle_showwarning_subproc
+    else:
+        if _warnings_showwarning is not None:
+            warnings.showwarning = _warnings_showwarning
+            _warnings_showwarning = None
+
+capture_warnings(True)
 
 # Thread shared globals: Establish a queue between a subthread (which handles
 # the socket) and the main thread (which runs user code), plus global
@@ -78,6 +92,8 @@ def main(del_exitfunc=False):
     except:
         print>>sys.stderr, "IDLE Subprocess: no IP port passed in sys.argv."
         return
+
+    capture_warnings(True)
     sys.argv[:] = [""]
     sockthread = threading.Thread(target=manage_socket,
                                   name='SockThread',
@@ -104,6 +120,7 @@ def main(del_exitfunc=False):
                 exit_now = True
             continue
         except SystemExit:
+            capture_warnings(False)
             raise
         except:
             type, value, tb = sys.exc_info()
@@ -219,6 +236,7 @@ def exit():
             del sys.exitfunc
         except AttributeError:
             pass
+    capture_warnings(False)
     sys.exit(0)
 
 class MyRPCServer(rpc.RPCServer):
@@ -352,3 +370,5 @@ class Executive(object):
         sys.last_value = val
         item = StackViewer.StackTreeItem(flist, tb)
         return RemoteObjectBrowser.remote_object_tree_item(item)
+
+capture_warnings(False)  # Make sure turned off; see issue 18081
