@@ -4749,7 +4749,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
             goto error;
     }
     result = new_timezone(delta, nameo);
-    Py_DECREF(nameo);
+    Py_XDECREF(nameo);
   error:
     Py_DECREF(delta);
     return result;
