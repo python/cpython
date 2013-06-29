@@ -1129,7 +1129,7 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 
     u = PyUnicode_Decode((char*) template_buffer, 256, name, "replace");
     if (u == NULL || PyUnicode_READY(u)) {
-        Py_DECREF(u);
+        Py_XDECREF(u);
         return XML_STATUS_ERROR;
     }
 
