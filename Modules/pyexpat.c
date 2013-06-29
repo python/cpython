@@ -1128,8 +1128,10 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     }
 
     u = PyUnicode_Decode((char*) template_buffer, 256, name, "replace");
-    if (u == NULL || PyUnicode_READY(u))
+    if (u == NULL || PyUnicode_READY(u)) {
+        Py_DECREF(u);
         return XML_STATUS_ERROR;
+    }
 
     if (PyUnicode_GET_LENGTH(u) != 256) {
         Py_DECREF(u);
