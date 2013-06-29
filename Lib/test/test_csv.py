@@ -914,7 +914,7 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
 'Tommy''s Place':'Blue Island':'IL':'12/28/02':'Blue Sunday/White Crow'
 'Stonecutters ''Seafood'' and Chop House':'Lemont':'IL':'12/19/02':'Week Back'
 """
-    header = '''\
+    header1 = '''\
 "venue","city","state","date","performers"
 '''
     sample3 = '''\
@@ -933,10 +933,35 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
     sample6 = "a|b|c\r\nd|e|f\r\n"
     sample7 = "'a'|'b'|'c'\r\n'd'|e|f\r\n"
 
+# Issue 18155: Use a delimiter that is a special char to regex:
+
+    header2 = '''\
+"venue"+"city"+"state"+"date"+"performers"
+'''
+    sample8 = """\
+Harry's+ Arlington Heights+ IL+ 2/1/03+ Kimi Hayes
+Shark City+ Glendale Heights+ IL+ 12/28/02+ Prezence
+Tommy's Place+ Blue Island+ IL+ 12/28/02+ Blue Sunday/White Crow
+Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
+"""
+    sample9 = """\
+'Harry''s'+ Arlington Heights'+ 'IL'+ '2/1/03'+ 'Kimi Hayes'
+'Shark City'+ Glendale Heights'+' IL'+ '12/28/02'+ 'Prezence'
+'Tommy''s Place'+ Blue Island'+ 'IL'+ '12/28/02'+ 'Blue Sunday/White Crow'
+'Stonecutters ''Seafood'' and Chop House'+ 'Lemont'+ 'IL'+ '12/19/02'+ 'Week Back'
+"""
+
     def test_has_header(self):
         sniffer = csv.Sniffer()
         self.assertEqual(sniffer.has_header(self.sample1), False)
-        self.assertEqual(sniffer.has_header(self.header+self.sample1), True)
+        self.assertEqual(sniffer.has_header(self.header1 + self.sample1),
+                         True)
+
+    def test_has_header_regex_special_delimiter(self):
+        sniffer = csv.Sniffer()
+        self.assertEqual(sniffer.has_header(self.sample8), False)
+        self.assertEqual(sniffer.has_header(self.header2 + self.sample8),
+                         True)
 
     def test_sniff(self):
         sniffer = csv.Sniffer()
@@ -970,12 +995,23 @@ Stonecutters Seafood and Chop House, Lemont, IL, 12/19/02, Week Back
         dialect = sniffer.sniff(self.sample7)
         self.assertEqual(dialect.delimiter, "|")
         self.assertEqual(dialect.quotechar, "'")
+        dialect = sniffer.sniff(self.sample8)
+        self.assertEqual(dialect.delimiter, '+')
+        dialect = sniffer.sniff(self.sample9)
+        self.assertEqual(dialect.delimiter, '+')
+        self.assertEqual(dialect.quotechar, "'")
 
     def test_doublequote(self):
         sniffer = csv.Sniffer()
-        dialect = sniffer.sniff(self.header)
+        dialect = sniffer.sniff(self.header1)
+        self.assertFalse(dialect.doublequote)
+        dialect = sniffer.sniff(self.header2)
         self.assertFalse(dialect.doublequote)
         dialect = sniffer.sniff(self.sample2)
+        self.assertTrue(dialect.doublequote)
+        dialect = sniffer.sniff(self.sample8)
+        self.assertFalse(dialect.doublequote)
+        dialect = sniffer.sniff(self.sample9)
         self.assertTrue(dialect.doublequote)
 
 if not hasattr(sys, "gettotalrefcount"):

@@ -261,8 +261,9 @@ class Sniffer:
 
         # if we see an extra quote between delimiters, we've got a
         # double quoted format
-        dq_regexp = re.compile(r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
-                               {'delim':delim, 'quote':quotechar}, re.MULTILINE)
+        dq_regexp = re.compile(
+                               r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
+                               {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
 
 
 
