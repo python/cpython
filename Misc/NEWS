@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18155: The csv module now correctly handles csv files that use
+  a delimter character that has a special meaning in regexes, instead of
+  throwing an exception.
+
 - Issue #14360: encode_quopri can now be successfully used as an encoder
   when constructing a MIMEApplication object.
 
@@ -50,7 +54,7 @@ Library
 
 - Issue #18259: Declare sethostname in socketmodule.c for AIX
 
-- Issue #18167: cgi.FieldStorage no more fails to handle multipart/form-data
+- Issue #18167: cgi.FieldStorage no longer fails to handle multipart/form-data
   when \r\n appears at end of 65535 bytes without other newlines.
 
 - subprocess: Prevent a possible double close of parent pipe fds when the
