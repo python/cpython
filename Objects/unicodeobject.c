@@ -12248,10 +12248,14 @@ unicode_rfind(PyObject *self, PyObject *args)
                                             &start, &end))
         return NULL;
 
-    if (PyUnicode_READY(self) == -1)
+    if (PyUnicode_READY(self) == -1) {
+        Py_DECREF(substring);
         return NULL;
-    if (PyUnicode_READY(substring) == -1)
+    }
+    if (PyUnicode_READY(substring) == -1) {
+        Py_DECREF(substring);
         return NULL;
+    }
 
     result = any_find_slice(-1, self, substring, start, end);
 
@@ -12280,10 +12284,14 @@ unicode_rindex(PyObject *self, PyObject *args)
                                             &start, &end))
         return NULL;
 
-    if (PyUnicode_READY(self) == -1)
+    if (PyUnicode_READY(self) == -1) {
+        Py_DECREF(substring);
         return NULL;
-    if (PyUnicode_READY(substring) == -1)
+    }
+    if (PyUnicode_READY(substring) == -1) {
+        Py_DECREF(substring);
         return NULL;
+    }
 
     result = any_find_slice(-1, self, substring, start, end);
 
