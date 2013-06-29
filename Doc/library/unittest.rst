@@ -873,7 +873,7 @@ Test cases
       a regular expression object or a string containing a regular expression
       suitable for use by :func:`re.search`.  Examples::
 
-         self.assertRaisesRegex(ValueError, 'invalid literal for.*XYZ$',
+         self.assertRaisesRegex(ValueError, "invalid literal for.*XYZ'$",
                                 int, 'XYZ')
 
       or::
