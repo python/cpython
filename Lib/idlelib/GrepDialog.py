@@ -98,7 +98,7 @@ class GrepDialog(SearchDialogBase):
     def findfiles(self, dir, base, rec):
         try:
             names = os.listdir(dir or os.curdir)
-        except os.error, msg:
+        except os.error as msg:
             print msg
             return []
         list = []

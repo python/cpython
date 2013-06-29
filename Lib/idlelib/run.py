@@ -140,7 +140,7 @@ def manage_socket(address):
         try:
             server = MyRPCServer(address, MyHandler)
             break
-        except socket.error, err:
+        except socket.error as err:
             print>>sys.__stderr__,"IDLE Subprocess: socket error: "\
                                         + err.args[1] + ", retrying...."
     else:

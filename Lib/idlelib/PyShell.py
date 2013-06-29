@@ -430,7 +430,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             try:
                 self.rpcclt = MyRPCClient(addr)
                 break
-            except socket.error, err:
+            except socket.error as err:
                 pass
         else:
             self.display_port_binding_error()
@@ -451,7 +451,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.listening_sock.settimeout(10)
         try:
             self.rpcclt.accept()
-        except socket.timeout, err:
+        except socket.timeout as err:
             self.display_no_subprocess_error()
             return None
         self.rpcclt.register("console", self.tkconsole)
@@ -486,7 +486,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.spawn_subprocess()
         try:
             self.rpcclt.accept()
-        except socket.timeout, err:
+        except socket.timeout as err:
             self.display_no_subprocess_error()
             return None
         self.transfer_path(with_cwd=with_cwd)
@@ -1458,7 +1458,7 @@ def main():
     startup = False
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
-    except getopt.error, msg:
+    except getopt.error as msg:
         sys.stderr.write("Error: %s\n" % str(msg))
         sys.stderr.write(usage_msg)
         sys.exit(2)
