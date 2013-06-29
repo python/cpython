@@ -1,11 +1,11 @@
 import unittest
 import os
-from test.support import TESTFN, run_unittest, import_fresh_module
+from test.support import TESTFN, import_fresh_module
 
 c_stat = import_fresh_module('stat', fresh=['_stat'])
 py_stat = import_fresh_module('stat', blocked=['_stat'])
 
-class TestFilemode(unittest.TestCase):
+class TestFilemode:
     statmod = None
 
     file_flags = {'SF_APPEND', 'SF_ARCHIVED', 'SF_IMMUTABLE', 'SF_NOUNLINK',
@@ -186,21 +186,17 @@ class TestFilemode(unittest.TestCase):
             self.assertEqual(func(0), 0)
 
 
-class TestFilemodeCStat(TestFilemode):
+class TestFilemodeCStat(TestFilemode, unittest.TestCase):
     statmod = c_stat
 
     formats = TestFilemode.formats | {'S_IFDOOR', 'S_IFPORT', 'S_IFWHT'}
-    format_funcss = TestFilemode.format_funcs | {'S_ISDOOR', 'S_ISPORT',
-                                                 'S_ISWHT'}
+    format_funcs = TestFilemode.format_funcs | {'S_ISDOOR', 'S_ISPORT',
+                                                'S_ISWHT'}
 
 
-class TestFilemodePyStat(TestFilemode):
+class TestFilemodePyStat(TestFilemode, unittest.TestCase):
     statmod = py_stat
 
 
-def test_main():
-    run_unittest(TestFilemodeCStat)
-    run_unittest(TestFilemodePyStat)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
