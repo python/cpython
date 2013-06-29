@@ -1748,8 +1748,10 @@ save_bytes(PicklerObject *self, PyObject *obj)
                 return -1;
             if (latin1 == NULL) {
                 latin1 = PyUnicode_InternFromString("latin1");
-                if (latin1 == NULL)
+                if (latin1 == NULL) {
+                    Py_DECREF(unicode_str);
                     return -1;
+                }
             }
             reduce_value = Py_BuildValue("(O(OO))",
                                          codecs_encode, unicode_str, latin1);
