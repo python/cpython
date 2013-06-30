@@ -152,16 +152,16 @@ class ScriptBinding:
         dirname = os.path.dirname(filename)
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
-            _filename = %r
+            __file__ = {filename!r}
             import sys as _sys
             from os.path import basename as _basename
             if (not _sys.argv or
-                _basename(_sys.argv[0]) != _basename(_filename)):
-                _sys.argv = [_filename]
+                _basename(_sys.argv[0]) != _basename(__file__)):
+                _sys.argv = [__file__]
             import os as _os
-            _os.chdir(%r)
-            del _filename, _sys, _basename, _os
-            \n""" % (filename, dirname))
+            _os.chdir({dirname!r})
+            del _sys, _basename, _os
+            \n""".format(filename=filename, dirname=dirname))
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still
         #         go to __stderr__.  With subprocess, they go to the shell.

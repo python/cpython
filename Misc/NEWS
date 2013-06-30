@@ -73,6 +73,9 @@ Build
 IDLE
 ----
 
+- Issue #8515: Set __file__ when run file in IDLE.
+  Initial patch by Bruce Frederiksen.
+
 - Issue #5492: Avoid traceback when exiting IDLE caused by a race condition.
 
 - Issue #17511: Keep IDLE find dialog open after clicking "Find Next".
