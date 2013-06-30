@@ -20,14 +20,6 @@ class Delegator:
                 pass
         self.__cache.clear()
 
-    def cachereport(self):
-        keys = list(self.__cache.keys())
-        keys.sort()
-        print(keys)
-
     def setdelegate(self, delegate):
         self.resetcache()
         self.delegate = delegate
-
-    def getdelegate(self):
-        return self.delegate
