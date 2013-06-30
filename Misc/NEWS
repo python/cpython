@@ -135,6 +135,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18224: Removed pydoc script from created venv, as it causes problems
+  on Windows and adds no value over and above python -m pydoc ...
+
 - Issue #18155: The csv module now correctly handles csv files that use
   a delimter character that has a special meaning in regexes, instead of
   throwing an exception.
