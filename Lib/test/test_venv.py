@@ -23,12 +23,10 @@ class BaseTest(unittest.TestCase):
         self.env_dir = os.path.realpath(tempfile.mkdtemp())
         if os.name == 'nt':
             self.bindir = 'Scripts'
-            self.pydocname = 'pydoc.py'
             self.lib = ('Lib',)
             self.include = 'Include'
         else:
             self.bindir = 'bin'
-            self.pydocname = 'pydoc'
             self.lib = ('lib', 'python%s' % sys.version[:3])
             self.include = 'include'
         if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
@@ -78,8 +76,6 @@ class BasicTest(BaseTest):
             executable = sys.executable
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
-        data = self.get_text_file_contents(self.bindir, self.pydocname)
-        self.assertTrue(data.startswith('#!%s%s' % (self.env_dir, os.sep)))
         fn = self.get_env_file(self.bindir, self.exe)
         if not os.path.exists(fn):  # diagnostics for Windows buildbot failures
             bd = self.get_env_file(self.bindir)
