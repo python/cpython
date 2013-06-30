@@ -612,7 +612,7 @@ class SpooledTemporaryFile:
         return rv
 
     def xreadlines(self, *args):
-        try:
-            return self._file.xreadlines(*args)
-        except AttributeError:
+        if hasattr(self._file, 'xreadlines'):  # real file
+            return iter(self._file)
+        else:  # StringIO()
             return iter(self._file.readlines(*args))
