@@ -59,17 +59,17 @@ class PEP263Test(unittest.TestCase):
         compile(b'# -*- coding: iso-8859-15 -*-\n', 'dummy', 'exec')
         compile(b'\xef\xbb\xbf\n', 'dummy', 'exec')
         compile(b'\xef\xbb\xbf# -*- coding: utf-8 -*-\n', 'dummy', 'exec')
-        with self.assertRaisesRegexp(SyntaxError, 'fake'):
+        with self.assertRaisesRegex(SyntaxError, 'fake'):
             compile(b'# -*- coding: fake -*-\n', 'dummy', 'exec')
-        with self.assertRaisesRegexp(SyntaxError, 'iso-8859-15'):
+        with self.assertRaisesRegex(SyntaxError, 'iso-8859-15'):
             compile(b'\xef\xbb\xbf# -*- coding: iso-8859-15 -*-\n',
                     'dummy', 'exec')
-        with self.assertRaisesRegexp(SyntaxError, 'BOM'):
+        with self.assertRaisesRegex(SyntaxError, 'BOM'):
             compile(b'\xef\xbb\xbf# -*- coding: iso-8859-15 -*-\n',
                     'dummy', 'exec')
-        with self.assertRaisesRegexp(SyntaxError, 'fake'):
+        with self.assertRaisesRegex(SyntaxError, 'fake'):
             compile(b'\xef\xbb\xbf# -*- coding: fake -*-\n', 'dummy', 'exec')
-        with self.assertRaisesRegexp(SyntaxError, 'BOM'):
+        with self.assertRaisesRegex(SyntaxError, 'BOM'):
             compile(b'\xef\xbb\xbf# -*- coding: fake -*-\n', 'dummy', 'exec')
 
 
