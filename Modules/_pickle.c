@@ -5952,6 +5952,11 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
             idx = PyLong_AsSsize_t(key);
             if (idx == -1 && PyErr_Occurred())
                 goto error;
+            if (idx < 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "memo key must be positive integers.");
+                goto error;
+            }
             if (_Unpickler_MemoPut(self, idx, value) < 0)
                 goto error;
         }
