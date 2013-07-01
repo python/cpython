@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18328: Reorder ops in PyThreadState_Delete*() functions. Now the
+  tstate is first removed from TLS and then deallocated.
+
 - Issue #18184: PyUnicode_FromFormat() and PyUnicode_FromFormatV() now raise
   OverflowError when an argument of %c format is out of range.
 
