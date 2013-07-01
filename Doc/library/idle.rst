@@ -39,8 +39,8 @@ containing the menu is created (for Unix and Windows only).
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-New window
-   Create a new editing window
+New file
+   Create a new file editing window
 
 Open...
    Open an existing file
