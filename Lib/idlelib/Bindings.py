@@ -15,7 +15,7 @@ from idlelib import macosxSupport
 menudefs = [
  # underscore prefixes character to underscore
  ('file', [
-   ('_New Window', '<<open-new-window>>'),
+   ('_New File', '<<open-new-window>>'),
    ('_Open...', '<<open-window-from-file>>'),
    ('Open _Module...', '<<open-module>>'),
    ('Class _Browser', '<<open-class-browser>>'),

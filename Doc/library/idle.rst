@@ -33,8 +33,8 @@ Menus
 File menu
 ^^^^^^^^^
 
-New window
-   create a new editing window
+New file
+   create a new file editing window
 
 Open...
    open an existing file
