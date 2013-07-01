@@ -117,9 +117,11 @@ if has_c_implementation:
 
         def test_issue18339(self):
             unpickler = self.unpickler_class(io.BytesIO())
-            self.assertRaises(TypeError, setattr, unpickler, "memo", object)
+            with self.assertRaises(TypeError):
+                unpickler.memo = object
             # used to cause a segfault
-            self.assertRaises(ValueError, setattr, unpickler, "memo", {-1: None})
+            with self.assertRaises(ValueError):
+                unpickler.memo = {-1: None}
             unpickler.memo = {1: None}
 
     class CDispatchTableTests(AbstractDispatchTableTests):
