@@ -31,11 +31,11 @@ class HMAC:
                    A hashlib constructor returning a new hash object.
                    Defaults to hashlib.md5.
 
-        Note: key and msg must be bytes objects.
+        Note: key and msg must be a bytes or bytearray objects.
         """
 
-        if not isinstance(key, bytes):
-            raise TypeError("key: expected bytes, but got %r" % type(key).__name__)
+        if not isinstance(key, (bytes, bytearray)):
+            raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
 
         if digestmod is None:
             import hashlib
@@ -75,8 +75,6 @@ class HMAC:
     def update(self, msg):
         """Update this hashing object with the string msg.
         """
-        if not isinstance(msg, bytes):
-            raise TypeError("expected bytes, but got %r" % type(msg).__name__)
         self.inner.update(msg)
 
     def copy(self):
