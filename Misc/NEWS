@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18339: Negative ints keys in unpickler.memo dict no longer cause a
+  segfault inside the _pickle C extension.
+
 - Issue #18224: Removed pydoc script from created venv, as it causes problems
   on Windows and adds no value over and above python -m pydoc ...
 
