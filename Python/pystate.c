@@ -388,11 +388,11 @@ PyThreadState_Delete(PyThreadState *tstate)
 {
     if (tstate == _Py_atomic_load_relaxed(&_PyThreadState_Current))
         Py_FatalError("PyThreadState_Delete: tstate is still current");
-    tstate_delete_common(tstate);
 #ifdef WITH_THREAD
     if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
         PyThread_delete_key_value(autoTLSkey);
 #endif /* WITH_THREAD */
+    tstate_delete_common(tstate);
 }
 
 
@@ -406,9 +406,9 @@ PyThreadState_DeleteCurrent()
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
     _Py_atomic_store_relaxed(&_PyThreadState_Current, NULL);
-    tstate_delete_common(tstate);
     if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
         PyThread_delete_key_value(autoTLSkey);
+    tstate_delete_common(tstate);
     PyEval_ReleaseLock();
 }
 #endif /* WITH_THREAD */
