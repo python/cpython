@@ -543,6 +543,9 @@ C-API
 IDLE
 ----
 
+- Issue #7136: In the Idle File menu, "New Window" is renamed "New File".
+  Patch by Tal Einat, Roget Serwy, and Todd Rovito.
+
 - Remove dead imports of imp.
 
 - Issue #18196: Avoid displaying spurious SystemExit tracebacks.

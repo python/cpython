@@ -21,7 +21,7 @@ containing the menu is created (for Unix and Windows only).
 
 File Menu (Shell and Editor):
 
-        New Window       -- Create a new editing window
+        New File         -- Create a new file editing window
         Open...          -- Open an existing file
         Open Module...   -- Open an existing module (searches sys.path)
         Recent Files...  -- Open a list of recent files
