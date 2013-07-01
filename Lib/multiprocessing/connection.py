@@ -366,7 +366,10 @@ class Connection(_ConnectionBase):
     def _send(self, buf, write=_write):
         remaining = len(buf)
         while True:
-            n = write(self._handle, buf)
+            try:
+                n = write(self._handle, buf)
+            except InterruptedError:
+                continue
             remaining -= n
             if remaining == 0:
                 break
@@ -377,7 +380,10 @@ class Connection(_ConnectionBase):
         handle = self._handle
         remaining = size
         while remaining > 0:
-            chunk = read(handle, remaining)
+            try:
+                chunk = read(handle, remaining)
+            except InterruptedError:
+                continue
             n = len(chunk)
             if n == 0:
                 if remaining == size:
@@ -581,7 +587,13 @@ class SocketListener(object):
             self._unlink = None
 
     def accept(self):
-        s, self._last_accepted = self._socket.accept()
+        while True:
+            try:
+                s, self._last_accepted = self._socket.accept()
+            except InterruptedError:
+                pass
+            else:
+                break
         s.setblocking(True)
         return Connection(s.detach())
 
