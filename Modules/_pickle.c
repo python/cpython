@@ -5933,7 +5933,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj)
                 goto error;
             if (idx < 0) {
                 PyErr_SetString(PyExc_ValueError,
-                                "memos key must be positive integers.");
+                                "memo key must be positive integers.");
                 goto error;
             }
             if (_Unpickler_MemoPut(self, idx, value) < 0)
