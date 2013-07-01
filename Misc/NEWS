@@ -138,6 +138,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18343: faulthandler.register() now keeps the previous signal handler
+  when the function is called twice, so faulthandler.unregister() restores
+  correctly the original signal handler.
+
 - Issue #17097: Make multiprocessing ignore EINTR.
 
 - Issue #18339: Negative ints keys in unpickler.memo dict no longer cause a
