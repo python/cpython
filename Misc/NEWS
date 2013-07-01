@@ -73,6 +73,9 @@ Build
 IDLE
 ----
 
+- Issue #7136: In the Idle File menu, "New Window" is renamed "New File".
+  Patch by Tal Einat, Roget Serwy, and Todd Rovito.
+  
 - Issue #8515: Set __file__ when run file in IDLE.
   Initial patch by Bruce Frederiksen.
 

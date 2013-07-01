@@ -5,7 +5,7 @@ separate window containing the menu is created.
 
 File Menu:
 
-	New Window       -- Create a new editing window
+	New File         -- Create a new editing window
 	Open...          -- Open an existing file
 	Recent Files...  -- Open a list of recent files
 	Open Module...   -- Open an existing module (searches sys.path)
