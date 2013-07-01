@@ -135,6 +135,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17097: Make multiprocessing ignore EINTR.
+
 - Issue #18339: Negative ints keys in unpickler.memo dict no longer cause a
   segfault inside the _pickle C extension.
 
