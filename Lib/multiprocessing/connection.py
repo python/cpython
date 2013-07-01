@@ -270,7 +270,14 @@ class SocketListener(object):
             self._unlink = None
 
     def accept(self):
-        s, self._last_accepted = self._socket.accept()
+        while True:
+            try:
+                s, self._last_accepted = self._socket.accept()
+            except socket.error as e:
+                if e.args[0] != errno.EINTR:
+                    raise
+            else:
+                break
         s.setblocking(True)
         fd = duplicate(s.fileno())
         conn = _multiprocessing.Connection(fd)

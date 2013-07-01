@@ -2461,12 +2461,80 @@ class TestForkAwareThreadLock(unittest.TestCase):
         self.assertLessEqual(new_size, old_size)
 
 #
+# Issue #17097: EINTR should be ignored by recv(), send(), accept() etc
+#
+
+class TestIgnoreEINTR(unittest.TestCase):
+
+    @classmethod
+    def _test_ignore(cls, conn):
+        def handler(signum, frame):
+            pass
+        signal.signal(signal.SIGUSR1, handler)
+        conn.send('ready')
+        x = conn.recv()
+        conn.send(x)
+        conn.send_bytes(b'x'*(1024*1024))   # sending 1 MB should block
+
+    @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
+    def test_ignore(self):
+        conn, child_conn = multiprocessing.Pipe()
+        try:
+            p = multiprocessing.Process(target=self._test_ignore,
+                                        args=(child_conn,))
+            p.daemon = True
+            p.start()
+            child_conn.close()
+            self.assertEqual(conn.recv(), 'ready')
+            time.sleep(0.1)
+            os.kill(p.pid, signal.SIGUSR1)
+            time.sleep(0.1)
+            conn.send(1234)
+            self.assertEqual(conn.recv(), 1234)
+            time.sleep(0.1)
+            os.kill(p.pid, signal.SIGUSR1)
+            self.assertEqual(conn.recv_bytes(), b'x'*(1024*1024))
+            time.sleep(0.1)
+            p.join()
+        finally:
+            conn.close()
+
+    @classmethod
+    def _test_ignore_listener(cls, conn):
+        def handler(signum, frame):
+            pass
+        signal.signal(signal.SIGUSR1, handler)
+        l = multiprocessing.connection.Listener()
+        conn.send(l.address)
+        a = l.accept()
+        a.send('welcome')
+
+    @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
+    def test_ignore_listener(self):
+        conn, child_conn = multiprocessing.Pipe()
+        try:
+            p = multiprocessing.Process(target=self._test_ignore_listener,
+                                        args=(child_conn,))
+            p.daemon = True
+            p.start()
+            child_conn.close()
+            address = conn.recv()
+            time.sleep(0.1)
+            os.kill(p.pid, signal.SIGUSR1)
+            time.sleep(0.1)
+            client = multiprocessing.connection.Client(address)
+            self.assertEqual(client.recv(), 'welcome')
+            p.join()
+        finally:
+            conn.close()
+
+#
 #
 #
 
 testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
                    TestStdinBadfiledescriptor, TestTimeouts, TestNoForkBomb,
-                   TestFlags, TestForkAwareThreadLock]
+                   TestFlags, TestForkAwareThreadLock, TestIgnoreEINTR]
 
 #
 #
