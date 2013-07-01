@@ -16,19 +16,25 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
 
 .. function:: new(key, msg=None, digestmod=None)
 
-   Return a new hmac object.  *key* is a bytes object giving the secret key.  If
-   *msg* is present, the method call ``update(msg)`` is made.  *digestmod* is
-   the digest constructor or module for the HMAC object to use. It defaults to
-   the :func:`hashlib.md5` constructor.
+   Return a new hmac object.  *key* is a bytes or bytearray object giving the
+   secret key.  If *msg* is present, the method call ``update(msg)`` is made.
+   *digestmod* is the digest constructor or module for the HMAC object to use.
+   It defaults to the :func:`hashlib.md5` constructor.
 
+   .. versionchanged:: 3.4
+      Parameter *key* can be a bytes or bytearray object. Parameter *msg* can
+      be of any type supported by :mod:`hashlib`.
 
 An HMAC object has the following methods:
 
 .. method:: HMAC.update(msg)
 
-   Update the hmac object with the bytes object *msg*.  Repeated calls are
-   equivalent to a single call with the concatenation of all the arguments:
+   Update the hmac object with *msg*.  Repeated calls are equivalent to a
+   single call with the concatenation of all the arguments:
    ``m.update(a); m.update(b)`` is equivalent to ``m.update(a + b)``.
+
+   .. versionchanged:: 3.4
+      Parameter *msg* can be of any type supported by :mod:`hashlib`.
 
 
 .. method:: HMAC.digest()
