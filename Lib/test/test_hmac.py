@@ -253,6 +253,20 @@ class ConstructorTestCase(unittest.TestCase):
         except:
             self.fail("Constructor call with text argument raised exception.")
 
+    def test_with_bytearray(self):
+        try:
+            h = hmac.HMAC(bytearray(b"key"), bytearray(b"hash this!"))
+            self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
+        except:
+            self.fail("Constructor call with bytearray arguments raised exception.")
+
+    def test_with_memoryview_msg(self):
+        try:
+            h = hmac.HMAC(b"key", memoryview(b"hash this!"))
+            self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
+        except:
+            self.fail("Constructor call with memoryview msg raised exception.")
+
     def test_withmodule(self):
         # Constructor call with text and digest module.
         try:
