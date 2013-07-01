@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18328: Reorder ops in PyThreadState_Delete*() functions. Now the
+  tstate is first removed from TLS and then deallocated.
+
 - Issue #13483: Use VirtualAlloc in obmalloc on Windows.
 
 - Issue #18184: PyUnicode_FromFormat() and PyUnicode_FromFormatV() now raise
