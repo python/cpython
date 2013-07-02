@@ -1295,11 +1295,11 @@ distclean: clobber
 		Modules/ld_so_aix Modules/python.exp Misc/python.pc
 	-rm -f python*-gdb.py
 	-rm -f pybuilddir.txt
-	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
-			   -o -name '[@,#]*' -o -name '*.old' \
-			   -o -name '*.orig' -o -name '*.rej' \
-			   -o -name '*.bak' ')' \
-			   -exec rm -f {} ';'
+	find $(srcdir)/[a-zA-Z]* '(' -name '*.fdc' -o -name '*~' \
+				     -o -name '[@,#]*' -o -name '*.old' \
+				     -o -name '*.orig' -o -name '*.rej' \
+				     -o -name '*.bak' ')' \
+				     -exec rm -f {} ';'
 
 # Check for smelly exported symbols (not starting with Py/_Py)
 smelly: all
