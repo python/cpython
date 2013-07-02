@@ -630,6 +630,13 @@ For an example of the usage of queues for interprocess communication see
       the background thread from being joined automatically when the process
       exits -- see :meth:`join_thread`.
 
+      A better name for this method might be
+      ``allow_exit_without_flush()``.  It is likely to cause enqueued
+      data to lost, and you almost certainly will not need to use it.
+      It is really only there if you need the current process to exit
+      immediately without waiting to flush enqueued data to the
+      underlying pipe, and you don't care about lost data.
+
 
 .. class:: multiprocessing.queues.SimpleQueue()
 
