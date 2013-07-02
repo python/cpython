@@ -287,6 +287,9 @@ For example::
        print result.get(timeout=1)           # prints "100" unless your computer is *very* slow
        print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
 
+Note that the methods of a pool should only ever be used by the
+process which created it.
+
 
 Reference
 ---------
@@ -1598,6 +1601,9 @@ with the :class:`Pool` class.
    ``None`` then the number returned by :func:`cpu_count` is used.  If
    *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
+
+   Note that the methods of the pool object should only be called by
+   the process which created the pool.
 
    .. versionadded:: 2.7
       *maxtasksperchild* is the number of tasks a worker process can complete
