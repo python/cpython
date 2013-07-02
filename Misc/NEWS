@@ -138,6 +138,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17261: Ensure multiprocessing's proxies use proper address.
+
 - Issue #18343: faulthandler.register() now keeps the previous signal handler
   when the function is called twice, so faulthandler.unregister() restores
   correctly the original signal handler.
