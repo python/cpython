@@ -763,6 +763,7 @@ class BaseProxy(object):
         elif kind == '#PROXY':
             exposed, token = result
             proxytype = self._manager._registry[token.typeid][-1]
+            token.address = self._token.address
             proxy = proxytype(
                 token, self._serializer, manager=self._manager,
                 authkey=self._authkey, exposed=exposed

@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17261: Ensure multiprocessing's proxies use proper address.
+
 - Issue #17097: Make multiprocessing ignore EINTR.
 
 - Issue #18155: The csv module now correctly handles csv files that use
