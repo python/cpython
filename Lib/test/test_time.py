@@ -368,11 +368,11 @@ class TimeTestCase(unittest.TestCase):
                          'need time.monotonic')
     def test_monotonic(self):
         t1 = time.monotonic()
-        time.sleep(0.1)
+        time.sleep(0.5)
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        self.assertAlmostEqual(dt, 0.1, delta=0.2)
+        self.assertAlmostEqual(dt, 0.5, delta=0.2)
 
         info = time.get_clock_info('monotonic')
         self.assertTrue(info.monotonic)
