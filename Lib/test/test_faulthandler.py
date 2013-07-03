@@ -107,6 +107,8 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     "the first page of memory is a mapped read-only on AIX")
     def test_read_null(self):
         self.check_fatal_error("""
 import faulthandler
