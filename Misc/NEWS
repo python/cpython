@@ -519,6 +519,8 @@ Tests
 - Issue #17692: test_sqlite now works with unittest test discovery.
   Patch by Zachary Ware.
 
+- Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
+
 Documentation
 -------------
 
@@ -533,11 +535,6 @@ Documentation
 
 - Issue #6696: add documentation for the Profile objects, and improve
   profile/cProfile docs.  Patch by Tom Pinckney.
-
-Tests
------
-
-- Issue #11995: test_pydoc doesn't import all sys.path modules anymore.
 
 C-API
 -----
