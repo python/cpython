@@ -2,13 +2,13 @@
 
 try:
     import threading
-except ModuleNotFoundError:
+except ImportError:
     import dummy_threading as threading
 from collections import deque
 from heapq import heappush, heappop
 try:
     from time import monotonic as time
-except ModuleNotFoundError:
+except ImportError:
     from time import time
 
 __all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue']

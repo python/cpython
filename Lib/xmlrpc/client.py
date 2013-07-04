@@ -139,7 +139,7 @@ import errno
 from io import BytesIO
 try:
     import gzip
-except ModuleNotFoundError:
+except ImportError:
     gzip = None #python can be built without zlib/gzip support
 
 # --------------------------------------------------------------------

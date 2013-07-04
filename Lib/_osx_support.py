@@ -62,7 +62,7 @@ def _read_output(commandstring):
     try:
         import tempfile
         fp = tempfile.NamedTemporaryFile()
-    except ModuleNotFoundError:
+    except ImportError:
         fp = open("/tmp/_osx_support.%s"%(
             os.getpid(),), "w+b")
 

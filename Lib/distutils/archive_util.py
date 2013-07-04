@@ -9,7 +9,7 @@ import sys
 
 try:
     import zipfile
-except ModuleNotFoundError:
+except ImportError:
     zipfile = None
 
 

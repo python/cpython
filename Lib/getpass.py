@@ -164,7 +164,7 @@ try:
 except (ImportError, AttributeError):
     try:
         import msvcrt
-    except ModuleNotFoundError:
+    except ImportError:
         getpass = fallback_getpass
     else:
         getpass = win_getpass

@@ -6,14 +6,14 @@ import _thread
 from time import sleep as _sleep
 try:
     from time import monotonic as _time
-except ModuleNotFoundError:
+except ImportError:
     from time import time as _time
 from traceback import format_exc as _format_exc
 from _weakrefset import WeakSet
 from itertools import islice as _islice
 try:
     from _collections import deque as _deque
-except ModuleNotFoundError:
+except ImportError:
     from collections import deque as _deque
 
 # Note regarding PEP 8 compliant names
@@ -922,7 +922,7 @@ _shutdown = _MainThread()._exitfunc
 
 try:
     from _thread import _local as local
-except ModuleNotFoundError:
+except ImportError:
     from _threading_local import local
 
 

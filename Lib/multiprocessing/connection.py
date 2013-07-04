@@ -27,7 +27,7 @@ from multiprocessing.forking import ForkingPickler
 try:
     import _winapi
     from _winapi import WAIT_OBJECT_0, WAIT_TIMEOUT, INFINITE
-except ModuleNotFoundError:
+except ImportError:
     if sys.platform == 'win32':
         raise
     _winapi = None

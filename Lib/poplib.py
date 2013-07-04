@@ -20,7 +20,7 @@ import socket
 try:
     import ssl
     HAVE_SSL = True
-except ModuleNotFoundError:
+except ImportError:
     HAVE_SSL = False
 
 __all__ = ["POP3","error_proto"]

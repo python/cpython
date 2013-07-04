@@ -59,7 +59,7 @@ error = Error   # backward compatibility
 
 try:
     from org.python.core import PyStringMap
-except ModuleNotFoundError:
+except ImportError:
     PyStringMap = None
 
 __all__ = ["Error", "copy", "deepcopy"]

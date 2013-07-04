@@ -904,7 +904,7 @@ def nobody_uid():
         return nobody
     try:
         import pwd
-    except ModuleNotFoundError:
+    except ImportError:
         return -1
     try:
         nobody = pwd.getpwnam('nobody')[2]

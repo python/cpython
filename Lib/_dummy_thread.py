@@ -7,7 +7,7 @@ Suggested usage is::
 
     try:
         import _thread
-    except ModuleNotFoundError:
+    except ImportError:
         import _dummy_thread as _thread
 
 """

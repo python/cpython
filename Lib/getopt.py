@@ -36,7 +36,7 @@ __all__ = ["GetoptError","error","getopt","gnu_getopt"]
 import os
 try:
     from gettext import gettext as _
-except ModuleNotFoundError:
+except ImportError:
     # Bootstrapping Python: gettext's dependencies not built yet
     def _(s): return s
 

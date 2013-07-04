@@ -566,7 +566,7 @@ def normpath(path):
 try:
     from nt import _getfullpathname
 
-except ModuleNotFoundError: # not running on Windows - mock up something sensible
+except ImportError: # not running on Windows - mock up something sensible
     def abspath(path):
         """Return the absolute version of a path."""
         if not isabs(path):
@@ -659,6 +659,6 @@ try:
     # This is overkill on Windows - just pass the path to GetFileAttributes
     # and check the attribute from there.
     from nt import _isdir as isdir
-except ModuleNotFoundError:
+except ImportError:
     # Use genericpath.isdir as imported above.
     pass
