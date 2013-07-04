@@ -15,7 +15,7 @@ __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
 
 try:
     from _functools import reduce
-except ModuleNotFoundError:
+except ImportError:
     pass
 from abc import get_cache_token
 from collections import namedtuple
@@ -143,7 +143,7 @@ def cmp_to_key(mycmp):
 
 try:
     from _functools import cmp_to_key
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 
@@ -166,7 +166,7 @@ def partial(func, *args, **keywords):
 
 try:
     from _functools import partial
-except ModuleNotFoundError:
+except ImportError:
     pass
 
 

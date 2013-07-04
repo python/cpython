@@ -5,7 +5,7 @@ import re
 from json import scanner
 try:
     from _json import scanstring as c_scanstring
-except ModuleNotFoundError:
+except ImportError:
     c_scanstring = None
 
 __all__ = ['JSONDecoder']

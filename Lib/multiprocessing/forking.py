@@ -73,7 +73,7 @@ ForkingPickler.register(type(int.__add__), _reduce_method_descriptor)
 
 try:
     from functools import partial
-except ModuleNotFoundError:
+except ImportError:
     pass
 else:
     def _reduce_partial(p):

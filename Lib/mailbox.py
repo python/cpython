@@ -23,7 +23,7 @@ import io
 import contextlib
 try:
     import fcntl
-except ModuleNotFoundError:
+except ImportError:
     fcntl = None
 
 __all__ = [ 'Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',

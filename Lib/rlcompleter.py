@@ -154,7 +154,7 @@ def get_class_members(klass):
 
 try:
     import readline
-except ModuleNotFoundError:
+except ImportError:
     pass
 else:
     readline.set_completer(Completer().complete)

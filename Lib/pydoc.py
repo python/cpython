@@ -1892,7 +1892,7 @@ Here is a list of available topics.  Enter any topic name to get more help.
     def showtopic(self, topic, more_xrefs=''):
         try:
             import pydoc_data.topics
-        except ModuleNotFoundError:
+        except ImportError:
             self.output.write('''
 Sorry, topic and keyword documentation is not available because the
 module "pydoc_data.topics" could not be found.
@@ -1932,7 +1932,7 @@ module "pydoc_data.topics" could not be found.
         """
         try:
             import pydoc_data.topics
-        except ModuleNotFoundError:
+        except ImportError:
             return('''
 Sorry, topic and keyword documentation is not available because the
 module "pydoc_data.topics" could not be found.

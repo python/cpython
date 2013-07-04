@@ -52,13 +52,13 @@ if 'posix' in _names:
     try:
         from posix import _exit
         __all__.append('_exit')
-    except ModuleNotFoundError:
+    except ImportError:
         pass
     import posixpath as path
 
     try:
         from posix import _have_functions
-    except ModuleNotFoundError:
+    except ImportError:
         pass
 
 elif 'nt' in _names:
@@ -68,7 +68,7 @@ elif 'nt' in _names:
     try:
         from nt import _exit
         __all__.append('_exit')
-    except ModuleNotFoundError:
+    except ImportError:
         pass
     import ntpath as path
 
@@ -78,7 +78,7 @@ elif 'nt' in _names:
 
     try:
         from nt import _have_functions
-    except ModuleNotFoundError:
+    except ImportError:
         pass
 
 elif 'ce' in _names:
@@ -88,7 +88,7 @@ elif 'ce' in _names:
     try:
         from ce import _exit
         __all__.append('_exit')
-    except ModuleNotFoundError:
+    except ImportError:
         pass
     # We can use the standard Windows path.
     import ntpath as path
@@ -99,11 +99,11 @@ elif 'ce' in _names:
 
     try:
         from ce import _have_functions
-    except ModuleNotFoundError:
+    except ImportError:
         pass
 
 else:
-    raise ModuleNotFoundError('no os specific module found')
+    raise ImportError('no os specific module found')
 
 sys.modules['os.path'] = path
 from os.path import (curdir, pardir, sep, pathsep, defpath, extsep, altsep,

@@ -109,7 +109,7 @@ class Cmd:
                 self.old_completer = readline.get_completer()
                 readline.set_completer(self.complete)
                 readline.parse_and_bind(self.completekey+": complete")
-            except ModuleNotFoundError:
+            except ImportError:
                 pass
         try:
             if intro is not None:
@@ -143,7 +143,7 @@ class Cmd:
                 try:
                     import readline
                     readline.set_completer(self.old_completer)
-                except ModuleNotFoundError:
+                except ImportError:
                     pass
 
 

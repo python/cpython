@@ -1439,13 +1439,13 @@ class XMLParser:
     def __init__(self, html=0, target=None, encoding=None):
         try:
             from xml.parsers import expat
-        except ModuleNotFoundError:
+        except ImportError:
             try:
                 import pyexpat as expat
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError(
-                    "No module named expat; use SimpleXMLTreeBuilder instead",
-                    name='expat')
+            except ImportError:
+                raise ImportError(
+                    "No module named expat; use SimpleXMLTreeBuilder instead"
+                    )
         parser = expat.ParserCreate(encoding, "}")
         if target is None:
             target = TreeBuilder()

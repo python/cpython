@@ -67,7 +67,7 @@ def slave_open(tty_name):
     result = os.open(tty_name, os.O_RDWR)
     try:
         from fcntl import ioctl, I_PUSH
-    except ModuleNotFoundError:
+    except ImportError:
         return result
     try:
         ioctl(result, I_PUSH, "ptem")
