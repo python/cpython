@@ -26,13 +26,6 @@ class APITest(unittest.TestCase):
         with self.assertRaises(ModuleNotFoundError):
             util.import_('some module that does not exist')
 
-    def test_raises_ModuleNotFoundError_for_None(self):
-        # None in sys.modules should raise ModuleNotFoundError.
-        with importlib_test_util.uncache('not_here'):
-            sys.modules['not_here'] = None
-            with self.assertRaises(ModuleNotFoundError):
-                util.import_('not_here')
-
     def test_name_requires_rparition(self):
         # Raise TypeError if a non-string is passed in for the module name.
         with self.assertRaises(TypeError):
