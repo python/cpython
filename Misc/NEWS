@@ -465,9 +465,10 @@ Library
 
 - Implement PEP 435 "Adding an Enum type to the Python standard library".
 
-
 Tests
 -----
+
+- Issue #11185: Fix test_wait4 under AIX.  Patch by Sébastien Sablé.
 
 - Issue #18207: Fix test_ssl for some versions of OpenSSL that ignore seconds
   in ASN1_TIME fields.
