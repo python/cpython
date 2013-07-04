@@ -292,13 +292,6 @@ in various ways.  There is a separate error indicator for each thread.
 
    .. versionadded:: 3.3
 
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *msg, PyObject *name, PyObject *path)
-
-   Much like :c:func:`PyErr_SetImportError` but this function allows for
-   specifying a subclass of :exc:`ImportError` to raise.
-
-   .. versionadded:: 3.4
-
 
 .. c:function:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
 

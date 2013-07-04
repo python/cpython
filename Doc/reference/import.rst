@@ -37,7 +37,7 @@ use the standard import system.
 
 When a module is first imported, Python searches for the module and if found,
 it creates a module object [#fnmo]_, initializing it.  If the named module
-cannot be found, an :exc:`ModuleNotFoundError` is raised.  Python implements various
+cannot be found, an :exc:`ImportError` is raised.  Python implements various
 strategies to search for the named module when the import machinery is
 invoked.  These strategies can be modified and extended by using various hooks
 described in the sections below.
@@ -168,7 +168,7 @@ arguments to the :keyword:`import` statement, or from the parameters to the
 This name will be used in various phases of the import search, and it may be
 the dotted path to a submodule, e.g. ``foo.bar.baz``.  In this case, Python
 first tries to import ``foo``, then ``foo.bar``, and finally ``foo.bar.baz``.
-If any of the intermediate imports fail, an :exc:`ModuleNotFoundError` is raised.
+If any of the intermediate imports fail, an :exc:`ImportError` is raised.
 
 
 The module cache
@@ -187,7 +187,7 @@ object.
 During import, the module name is looked up in :data:`sys.modules` and if
 present, the associated value is the module satisfying the import, and the
 process completes.  However, if the value is ``None``, then an
-:exc:`ModuleNotFoundError` is raised.  If the module name is missing, Python will
+:exc:`ImportError` is raised.  If the module name is missing, Python will
 continue searching for the module.
 
 :data:`sys.modules` is writable.  Deleting a key may not destroy the
@@ -195,7 +195,7 @@ associated module (as other modules may hold references to it),
 but it will invalidate the cache entry for the named module, causing
 Python to search anew for the named module upon its next
 import. The key can also be assigned to ``None``, forcing the next import
-of the module to result in an :exc:`ModuleNotFoundError`.
+of the module to result in an :exc:`ImportError`.
 
 Beware though, as if you keep a reference to the module object,
 invalidate its cache entry in :data:`sys.modules`, and then re-import the
@@ -284,7 +284,7 @@ handle the named module or not.
 If the meta path finder knows how to handle the named module, it returns a
 loader object.  If it cannot handle the named module, it returns ``None``.  If
 :data:`sys.meta_path` processing reaches the end of its list without returning
-a loader, then an :exc:`ModuleNotFoundError` is raised.  Any other exceptions raised
+a loader, then an :exc:`ImportError` is raised.  Any other exceptions raised
 are simply propagated up, aborting the import process.
 
 The :meth:`find_module()` method of meta path finders is called with two
@@ -647,7 +647,7 @@ import statements within that module.
 
 To selectively prevent import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
-it is sufficient to raise :exc:`ModuleNotFoundError` directly from
+it is sufficient to raise :exc:`ImportError` directly from
 :meth:`find_module` instead of returning ``None``. The latter indicates
 that the meta path search should continue. while raising an exception
 terminates it immediately.
