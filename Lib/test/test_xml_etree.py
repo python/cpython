@@ -751,6 +751,13 @@ class ElementTreeTest(unittest.TestCase):
                 '<html><link><script>1 < 2</script></html>\n')
         self.assertEqual(serialize(e, method="text"), '1 < 2\n')
 
+    def test_issue18347(self):
+        e = ET.XML('<html><CamelCase>text</CamelCase></html>')
+        self.assertEqual(serialize(e),
+                '<html><CamelCase>text</CamelCase></html>')
+        self.assertEqual(serialize(e, method="html"),
+                '<html><CamelCase>text</CamelCase></html>')
+
     def test_entity(self):
         # Test entity handling.
 
