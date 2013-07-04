@@ -29,7 +29,7 @@ from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 try:
     import threading
-except ModuleNotFoundError: #pragma: no cover
+except ImportError: #pragma: no cover
     threading = None
 
 #
@@ -995,7 +995,7 @@ class NTEventLogHandler(logging.Handler):
                 logging.ERROR   : win32evtlog.EVENTLOG_ERROR_TYPE,
                 logging.CRITICAL: win32evtlog.EVENTLOG_ERROR_TYPE,
          }
-        except ModuleNotFoundError:
+        except ImportError:
             print("The Python Win32 extensions for NT (service, event "\
                         "logging) appear not to be available.")
             self._welu = None

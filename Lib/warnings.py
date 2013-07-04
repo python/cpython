@@ -144,8 +144,8 @@ def _getcategory(category):
         module = category[:i]
         klass = category[i+1:]
         try:
-            m = __import__(module, fromlist[klass])
-        except ModuleNotFoundError:
+            m = __import__(module, None, None, [klass])
+        except ImportError:
             raise _OptionError("invalid module name: %r" % (module,))
         try:
             cat = getattr(m, klass)
@@ -362,7 +362,7 @@ try:
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
-except ModuleNotFoundError:
+except ImportError:
     filters = []
     defaultaction = "default"
     onceregistry = {}

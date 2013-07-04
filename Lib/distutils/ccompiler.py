@@ -3,7 +3,7 @@
 Contains CCompiler, an abstract base class that defines the interface
 for the Distutils compiler abstraction model."""
 
-import importlib, sys, os, re
+import sys, os, re
 from distutils.errors import *
 from distutils.spawn import spawn
 from distutils.file_util import move_file
@@ -1013,9 +1013,10 @@ def new_compiler(plat=None, compiler=None, verbose=0, dry_run=0, force=0):
 
     try:
         module_name = "distutils." + module_name
-        module = importlib.import_module(module_name)
+        __import__ (module_name)
+        module = sys.modules[module_name]
         klass = vars(module)[class_name]
-    except ModuleNotFoundError:
+    except ImportError:
         raise DistutilsModuleError(
               "can't compile C/C++ code: unable to load module '%s'" % \
               module_name)

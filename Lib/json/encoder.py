@@ -4,11 +4,11 @@ import re
 
 try:
     from _json import encode_basestring_ascii as c_encode_basestring_ascii
-except ModuleNotFoundError:
+except ImportError:
     c_encode_basestring_ascii = None
 try:
     from _json import make_encoder as c_make_encoder
-except ModuleNotFoundError:
+except ImportError:
     c_make_encoder = None
 
 ESCAPE = re.compile(r'[\x00-\x1f\\"\b\f\n\r\t]')

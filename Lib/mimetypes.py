@@ -29,7 +29,7 @@ import posixpath
 import urllib.parse
 try:
     import winreg as _winreg
-except ModuleNotFoundError:
+except ImportError:
     _winreg = None
 
 __all__ = [

@@ -29,7 +29,7 @@ from io import DEFAULT_BUFFER_SIZE
 try:
     import ssl
     HAVE_SSL = True
-except ModuleNotFoundError:
+except ImportError:
     HAVE_SSL = False
 
 __all__ = ["IMAP4", "IMAP4_stream", "Internaldate2tuple",

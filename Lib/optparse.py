@@ -87,7 +87,7 @@ def _repr(self):
 
 try:
     from gettext import gettext, ngettext
-except ModuleNotFoundError:
+except ImportError:
     def gettext(message):
         return message
 

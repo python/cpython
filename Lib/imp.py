@@ -12,7 +12,7 @@ from _imp import (lock_held, acquire_lock, release_lock,
                   _fix_co_filename)
 try:
     from _imp import load_dynamic
-except ModuleNotFoundError:
+except ImportError:
     # Platform doesn't support dynamic loading.
     load_dynamic = None
 

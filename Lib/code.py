@@ -293,7 +293,7 @@ def interact(banner=None, readfunc=None, local=None):
     else:
         try:
             import readline
-        except ModuleNotFoundError:
+        except ImportError:
             pass
     console.interact(banner)
 

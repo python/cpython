@@ -295,7 +295,7 @@ def _mk_bitmap(bits):
 def _optimize_unicode(charset, fixup):
     try:
         import array
-    except ModuleNotFoundError:
+    except ImportError:
         return charset
     charmap = [0]*65536
     negate = 0

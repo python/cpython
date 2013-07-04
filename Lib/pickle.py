@@ -90,7 +90,7 @@ class _Stop(Exception):
 # Jython has PyStringMap; it's a dict subclass with string keys
 try:
     from org.python.core import PyStringMap
-except ModuleNotFoundError:
+except ImportError:
     PyStringMap = None
 
 # Pickle opcodes.  See pickletools.py for extensive docs.  The listing
@@ -1296,7 +1296,7 @@ def loads(s, *, fix_imports=True, encoding="ASCII", errors="strict"):
 # Use the faster _pickle if possible
 try:
     from _pickle import *
-except ModuleNotFoundError:
+except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
 
 # Doctest

@@ -30,7 +30,7 @@ import io
 try:
     import _thread as thread
     import threading
-except ModuleNotFoundError: #pragma: no cover
+except ImportError: #pragma: no cover
     thread = None
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
