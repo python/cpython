@@ -151,5 +151,5 @@ def filemode(mode):
 # If available, use C implementation
 try:
     from _stat import *
-except ModuleNotFoundError:
+except ImportError:
     pass
