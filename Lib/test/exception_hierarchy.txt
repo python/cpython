@@ -13,7 +13,6 @@ BaseException
       +-- BufferError
       +-- EOFError
       +-- ImportError
-           +-- ModuleNotFoundError
       +-- LookupError
       |    +-- IndexError
       |    +-- KeyError
