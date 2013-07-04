@@ -116,7 +116,7 @@ import inspect
 import traceback
 try:
     import fcntl
-except ModuleNotFoundError:
+except ImportError:
     fcntl = None
 
 def resolve_dotted_attribute(obj, attr, allow_dotted_names=True):

@@ -15,11 +15,11 @@ from test import support
 
 try:
     import gzip
-except ModuleNotFoundError:
+except ImportError:
     gzip = None
 try:
     import threading
-except ModuleNotFoundError:
+except ImportError:
     threading = None
 
 alist = [{'astring': 'foo@bar.baz.spam',

@@ -12,15 +12,15 @@ from test import support
 # Check for our compression modules.
 try:
     import gzip
-except ModuleNotFoundError:
+except ImportError:
     gzip = None
 try:
     import bz2
-except ModuleNotFoundError:
+except ImportError:
     bz2 = None
 try:
     import lzma
-except ModuleNotFoundError:
+except ImportError:
     lzma = None
 
 def md5sum(data):
