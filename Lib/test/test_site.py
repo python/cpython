@@ -131,7 +131,7 @@ class HelperFunctionsTests(unittest.TestCase):
             re.escape(os.path.join(pth_dir, pth_fn)))
         # XXX: ditto previous XXX comment.
         self.assertRegex(err_out.getvalue(), 'Traceback')
-        self.assertRegex(err_out.getvalue(), 'ModuleNotFoundError')
+        self.assertRegex(err_out.getvalue(), 'ImportError')
 
     @unittest.skipIf(sys.platform == "win32", "Windows does not raise an "
                       "error for file paths containing null characters")

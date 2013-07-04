@@ -22,10 +22,6 @@ class APITest(unittest.TestCase):
     """Test API-specific details for __import__ (e.g. raising the right
     exception when passing in an int for the module name)."""
 
-    def test_raises_ModuleNotFoundError(self):
-        with self.assertRaises(ModuleNotFoundError):
-            util.import_('some module that does not exist')
-
     def test_name_requires_rparition(self):
         # Raise TypeError if a non-string is passed in for the module name.
         with self.assertRaises(TypeError):

@@ -169,8 +169,8 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: ImportError
 
-   Raised when the :keyword:`import` statement has troubles trying to load a
-   module.
+   Raised when an :keyword:`import` statement fails to find the module definition
+   or when a ``from ... import`` fails to find a name that is to be imported.
 
    The :attr:`name` and :attr:`path` attributes can be set using keyword-only
    arguments to the constructor. When set they represent the name of the module
@@ -179,15 +179,6 @@ The following exceptions are the exceptions that are usually raised.
 
    .. versionchanged:: 3.3
       Added the :attr:`name` and :attr:`path` attributes.
-
-.. exception:: ModuleNotFoundError
-
-   A subclass of :exc:`ImportError` which is raised by :keyword:`import` when a
-   module could not be located. This includes ``from ... import`` statements as
-   the specific attribute being requested cannot be known a priori to be a module
-   or some other type of object.
-
-   .. versionadded:: 3.4
 
 
 .. exception:: IndexError

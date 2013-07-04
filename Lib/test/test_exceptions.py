@@ -953,5 +953,8 @@ class ImportErrorTests(unittest.TestCase):
             self.assertEqual(str(arg), str(exc))
 
 
+def test_main():
+    run_unittest(ExceptionTests, ImportErrorTests)
+
 if __name__ == '__main__':
     unittest.main()
