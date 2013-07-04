@@ -68,8 +68,6 @@ class ImportTests(unittest.TestCase):
     def tearDown(self):
         unload(TESTFN)
 
-    setUp = tearDown
-
     def test_case_sensitivity(self):
         # Brief digression to test that import is case-sensitive:  if we got
         # this far, we know for sure that "random" exists.
@@ -487,7 +485,7 @@ func_filename = func.__code__.co_filename
             header = f.read(12)
             code = marshal.load(f)
         constants = list(code.co_consts)
-        foreign_code = test_main.__code__
+        foreign_code = importlib.import_module.__code__
         pos = constants.index(1)
         constants[pos] = foreign_code
         code = type(code)(code.co_argcount, code.co_kwonlyargcount,
@@ -1013,16 +1011,6 @@ class ImportTracebackTests(unittest.TestCase):
             importlib.SourceLoader.load_module = old_load_module
 
 
-def test_main(verbose=None):
-    run_unittest(ImportTests, PycacheTests, FilePermissionTests,
-                 PycRewritingTests, PathsTests, RelativeImportTests,
-                 OverridingImportBuiltinTests,
-                 ImportlibBootstrapTests,
-                 TestSymbolicallyLinkedPackage,
-                 ImportTracebackTests)
-
-
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
-    from test.test_import import test_main
-    test_main()
+    unittest.main()
