@@ -619,25 +619,12 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 #endif /* MS_WINDOWS */
 
 PyObject *
-PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
-    PyObject *name, PyObject *path)
+PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 {
-    int issubclass;
     PyObject *args, *kwargs, *error;
 
-    issubclass = PyObject_IsSubclass(exception, PyExc_ImportError);
-    if (issubclass < 0) {
+    if (msg == NULL)
         return NULL;
-    }
-    else if (!issubclass) {
-        PyErr_SetString(PyExc_TypeError, "expected a subclass of ImportError");
-        return NULL;
-    }
-
-    if (msg == NULL) {
-        PyErr_SetString(PyExc_TypeError, "expected a message argument");
-        return NULL;
-    }
 
     args = PyTuple_New(1);
     if (args == NULL)
@@ -662,7 +649,7 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
     PyDict_SetItemString(kwargs, "name", name);
     PyDict_SetItemString(kwargs, "path", path);
 
-    error = PyObject_Call(exception, args, kwargs);
+    error = PyObject_Call(PyExc_ImportError, args, kwargs);
     if (error != NULL) {
         PyErr_SetObject((PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
@@ -672,12 +659,6 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
     Py_DECREF(kwargs);
 
     return NULL;
-}
-
-PyObject *
-PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
-{
-    return PyErr_SetImportErrorSubclass(PyExc_ImportError, msg, name, path);
 }
 
 void
