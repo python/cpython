@@ -135,6 +135,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18347: ElementTree's html serializer now preserves the case of
+  closing tags.
+
 - Issue #17261: Ensure multiprocessing's proxies use proper address.
 
 - Issue #18343: faulthandler.register() now keeps the previous signal handler
