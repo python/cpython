@@ -29,32 +29,32 @@ import _testcapi
 
 try:
     import _thread, threading
-except ModuleNotFoundError:
+except ImportError:
     _thread = None
     threading = None
 try:
     import multiprocessing.process
-except ModuleNotFoundError:
+except ImportError:
     multiprocessing = None
 
 try:
     import zlib
-except ModuleNotFoundError:
+except ImportError:
     zlib = None
 
 try:
     import gzip
-except ModuleNotFoundError:
+except ImportError:
     gzip = None
 
 try:
     import bz2
-except ModuleNotFoundError:
+except ImportError:
     bz2 = None
 
 try:
     import lzma
-except ModuleNotFoundError:
+except ImportError:
     lzma = None
 
 __all__ = [
@@ -121,7 +121,7 @@ def import_module(name, deprecated=False, *, required_on=()):
     with _ignore_deprecated_imports(deprecated):
         try:
             return importlib.import_module(name)
-        except ModuleNotFoundError as msg:
+        except ImportError as msg:
             if sys.platform.startswith(tuple(required_on)):
                 raise
             raise unittest.SkipTest(str(msg))
@@ -193,7 +193,7 @@ def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
                 if not _save_and_block_module(blocked_name, orig_modules):
                     names_to_remove.append(blocked_name)
             fresh_module = importlib.import_module(name)
-        except ModuleNotFoundError:
+        except ImportError:
             fresh_module = None
         finally:
             for orig_name, module in orig_modules.items():

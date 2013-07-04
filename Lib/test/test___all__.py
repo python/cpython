@@ -75,7 +75,7 @@ class AllTest(unittest.TestCase):
         try:
             import rlcompleter
             import locale
-        except ModuleNotFoundError:
+        except ImportError:
             pass
         else:
             locale.setlocale(locale.LC_CTYPE, 'C')
