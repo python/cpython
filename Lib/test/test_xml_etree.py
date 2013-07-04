@@ -1769,6 +1769,16 @@ def bug_200709_iter_comment():
 
     """
 
+def bug_18347():
+    """
+
+    >>> e = ET.XML('<html><CamelCase>text</CamelCase></html>')
+    >>> serialize(e)
+    '<html><CamelCase>text</CamelCase></html>'
+    >>> serialize(e, method="html")
+    '<html><CamelCase>text</CamelCase></html>'
+    """
+
 # --------------------------------------------------------------------
 # reported on bugs.python.org
 

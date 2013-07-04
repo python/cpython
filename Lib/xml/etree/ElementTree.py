@@ -988,15 +988,15 @@ def _serialize_html(write, elem, encoding, qnames, namespaces):
                     # FIXME: handle boolean attributes
                     write(" %s=\"%s\"" % (qnames[k], v))
             write(">")
-            tag = tag.lower()
+            ltag = tag.lower()
             if text:
-                if tag == "script" or tag == "style":
+                if ltag == "script" or ltag == "style":
                     write(_encode(text, encoding))
                 else:
                     write(_escape_cdata(text, encoding))
             for e in elem:
                 _serialize_html(write, e, encoding, qnames, None)
-            if tag not in HTML_EMPTY:
+            if ltag not in HTML_EMPTY:
                 write("</" + tag + ">")
     if elem.tail:
         write(_escape_cdata(elem.tail, encoding))
