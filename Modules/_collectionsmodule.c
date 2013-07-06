@@ -14,7 +14,7 @@
  * division/modulo computations during indexing.
  */
 
-#define BLOCKLEN 62
+#define BLOCKLEN 64
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
