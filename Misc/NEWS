@@ -67,6 +67,12 @@ Library
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
   set_userptr() method.  Reported by Atsuo Ishimoto.
 
+Tools/Demos
+-----------
+
+- Issue #12990: The "Python Launcher" on OSX could not launch python scripts
+  that have paths that include wide characters.
+
 Build
 -----
 
