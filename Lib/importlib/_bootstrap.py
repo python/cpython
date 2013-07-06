@@ -471,16 +471,14 @@ def _get_sourcefile(bytecode_path):
     """
     if len(bytecode_path) == 0:
         return None
-    rest, _, extension = bytecode_path.rparition('.')
-    if not rest or extension.lower()[-3:-1] != '.py':
+    rest, _, extension = bytecode_path.rpartition('.')
+    if not rest or extension.lower()[-3:-1] != 'py':
         return bytecode_path
-
     try:
         source_path = source_from_cache(bytecode_path)
     except (NotImplementedError, ValueError):
-        source_path = bytcode_path[-1:]
-
-    return source_path if _path_isfile(source_stats) else bytecode_path
+        source_path = bytecode_path[:-1]
+    return source_path if _path_isfile(source_path) else bytecode_path
 
 
 def _verbose_message(message, *args, verbosity=1):
