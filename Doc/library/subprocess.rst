@@ -303,7 +303,8 @@ default values. The arguments that are most commonly needed are:
    If *universal_newlines* is ``True``, the file objects *stdin*, *stdout* and
    *stderr* will be opened as text streams in :term:`universal newlines` mode
    using the encoding returned by :func:`locale.getpreferredencoding(False)
-   <locale.getpreferredencoding>`.  For *stdin*, line ending characters
+   <locale.getpreferredencoding>`, otherwise these streams will be opened
+   as binary streams.  For *stdin*, line ending characters
    ``'\n'`` in the input will be converted to the default line separator
    :data:`os.linesep`.  For *stdout* and *stderr*, all line endings in the
    output will be converted to ``'\n'``.  For more information see the
@@ -547,7 +548,8 @@ functions.
 
    If *universal_newlines* is ``True``, the file objects *stdin*, *stdout*
    and *stderr* are opened as text streams in universal newlines mode, as
-   described above in :ref:`frequently-used-arguments`.
+   described above in :ref:`frequently-used-arguments`, otherwise they are
+   opened as binary streams.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
