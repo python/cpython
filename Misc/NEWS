@@ -130,6 +130,12 @@ Library
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
   set_userptr() method.  Reported by Atsuo Ishimoto.
 
+C API
+-----
+
+- Issue #18351: Fix various issues with a helper function in importlib used
+  by PyImport_ExecCodeModuleWithPathnames() (and thus by extension PyImport_ExecCodeModule() and PyImport_ExecCodeModuleEx()).
+
 IDLE
 ----
 
