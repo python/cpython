@@ -468,6 +468,9 @@ Library
 Tests
 -----
 
+- Issue #18375: Assume --randomize when --randseed is used for running the
+  testsuite.
+
 - Issue #11185: Fix test_wait4 under AIX.  Patch by Sébastien Sablé.
 
 - Issue #18207: Fix test_ssl for some versions of OpenSSL that ignore seconds
