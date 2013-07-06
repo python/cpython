@@ -4048,6 +4048,10 @@ class TestQuopri(unittest.TestCase):
     def test_header_decode_non_ascii(self):
         self._test_header_decode('hello=C7there', 'hello\xc7there')
 
+    def test_header_decode_re_bug_18380(self):
+        # Issue 18380: Call re.sub with a positional argument for flags in the wrong position
+        self.assertEqual(quoprimime.header_decode('=30' * 257), '0' * 257)
+
     def _test_decode(self, encoded, expected_decoded, eol=None):
         if eol is None:
             decoded = quoprimime.decode(encoded)
