@@ -591,7 +591,8 @@ class TestFTPClass(TestCase):
 
         f = io.StringIO(RETR_DATA.replace('\r\n', '\n'))
         # storlines() expects a binary file, not a text file
-        self.assertRaises(TypeError, self.client.storlines, 'stor foo', f)
+        with support.check_warnings(('', BytesWarning), quiet=True):
+            self.assertRaises(TypeError, self.client.storlines, 'stor foo', f)
 
     def test_nlst(self):
         self.client.nlst()
