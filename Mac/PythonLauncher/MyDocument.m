@@ -76,7 +76,7 @@
     const char *cmdline;
     int sts;
     
-     cmdline = [[settings commandLineForScript: script] cString];
+     cmdline = [[settings commandLineForScript: script] UTF8String];
    if ([settings with_terminal]) {
         sts = doscript(cmdline);
     } else {
