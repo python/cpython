@@ -428,6 +428,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         elif o in ('-r', '--randomize'):
             randomize = True
         elif o == '--randseed':
+            randomize = True
             random_seed = int(a)
         elif o in ('-f', '--fromfile'):
             fromfile = a
