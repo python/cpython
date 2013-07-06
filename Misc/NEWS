@@ -599,6 +599,12 @@ Build
 - Issue #15172: Document NASM 2.10+ as requirement for building OpenSSL 1.0.1
   on Windows.
 
+Tools/Demos
+-----------
+
+- Issue #12990: The "Python Launcher" on OSX could not launch python scripts
+  that have paths that include wide characters.
+
 What's New in Python 3.3.1 release candidate 1?
 ===============================================
 
