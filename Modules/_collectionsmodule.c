@@ -805,16 +805,16 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
     Py_ssize_t index;
     Py_ssize_t indexlo = deque->leftindex;
 
-    for (b = deque->leftblock; b != NULL; b = b->rightlink) {
-        const Py_ssize_t indexhi = b == deque->rightblock ?
-                                 deque->rightindex :
-                     BLOCKLEN - 1;
-
-        for (index = indexlo; index <= indexhi; ++index) {
+    for (b = deque->leftblock; b != deque->rightblock; b = b->rightlink) {
+        for (index = indexlo; index < BLOCKLEN ; index++) {
             item = b->data[index];
             Py_VISIT(item);
         }
         indexlo = 0;
+    }
+    for (index = indexlo; index <= deque->rightindex; index++) {
+        item = b->data[index];
+        Py_VISIT(item);
     }
     return 0;
 }
