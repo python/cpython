@@ -542,6 +542,9 @@ Documentation
 C-API
 -----
 
+- Issue #18351: Fix various issues in a function in importlib provided to help
+  PyImport_ExecCodeModuleWithPathnames() (and thus by extension PyImport_ExecCodeModule() and PyImport_ExecCodeModuleEx()).
+
 - Issue #9369: The types of `char*` arguments of PyObject_CallFunction() and
   PyObject_CallMethod() now changed to `const char*`.  Based on patches by
   Jörg Müller and Lars Buitinck.
