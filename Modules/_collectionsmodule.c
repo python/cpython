@@ -551,6 +551,8 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     for (i=0 ; i<n ; i++) {
         /* Validate that pointers haven't met in the middle */
         assert(leftblock != rightblock || leftindex < rightindex);
+        assert(leftblock != NULL);
+        assert(rightblock != NULL);
 
         /* Swap */
         tmp = leftblock->data[leftindex];
@@ -560,8 +562,6 @@ deque_reverse(dequeobject *deque, PyObject *unused)
         /* Advance left block/index pair */
         leftindex++;
         if (leftindex == BLOCKLEN) {
-            if (leftblock->rightlink == NULL)
-                break;
             leftblock = leftblock->rightlink;
             leftindex = 0;
         }
@@ -569,8 +569,6 @@ deque_reverse(dequeobject *deque, PyObject *unused)
         /* Step backwards with the right block/index pair */
         rightindex--;
         if (rightindex == -1) {
-            if (rightblock->leftlink == NULL)
-                break;
             rightblock = rightblock->leftlink;
             rightindex = BLOCKLEN - 1;
         }
@@ -594,6 +592,7 @@ deque_count(dequeobject *deque, PyObject *v)
     int cmp;
 
     for (i=0 ; i<n ; i++) {
+        assert(leftblock != NULL);
         item = leftblock->data[leftindex];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
@@ -610,8 +609,6 @@ deque_count(dequeobject *deque, PyObject *v)
         /* Advance left block/index pair */
         leftindex++;
         if (leftindex == BLOCKLEN) {
-            if (leftblock->rightlink == NULL)  /* can occur when i==n-1 */
-                break;
             leftblock = leftblock->rightlink;
             leftindex = 0;
         }
