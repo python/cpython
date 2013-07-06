@@ -158,6 +158,9 @@ IDLE
 Tests
 -----
 
+- Issue #18375: Assume --randomize when --randseed is used for running the
+  testsuite.
+
 - Issue #11185: Fix test_wait4 under AIX.  Patch by Sébastien Sablé.
 
 - Issue #17691: test_univnewlines now works with unittest test discovery.
