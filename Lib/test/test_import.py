@@ -1,6 +1,7 @@
 # We import importlib *ASAP* in order to test #15386
 import importlib
 import importlib.util
+from importlib._bootstrap import _get_sourcefile
 import builtins
 from test.test_importlib.import_ import util as importlib_util
 import marshal
@@ -11,6 +12,7 @@ import random
 import stat
 import sys
 import unittest
+import unittest.mock as mock
 import textwrap
 import errno
 import shutil
@@ -849,6 +851,40 @@ class ImportlibBootstrapTests(unittest.TestCase):
         from importlib import machinery
         mod = sys.modules['_frozen_importlib']
         self.assertIs(machinery.FileFinder, mod.FileFinder)
+
+
+@cpython_only
+class GetSourcefileTests(unittest.TestCase):
+
+    """Test importlib._bootstrap._get_sourcefile() as used by the C API.
+
+    Because of the peculiarities of the need of this function, the tests are
+    knowingly whitebox tests.
+
+    """
+
+    def test_get_sourcefile(self):
+        # Given a valid bytecode path, return the path to the corresponding
+        # source file if it exists.
+        with mock.patch('importlib._bootstrap._path_isfile') as _path_isfile:
+            _path_isfile.return_value = True;
+            path = TESTFN + '.pyc'
+            expect = TESTFN + '.py'
+            self.assertEqual(_get_sourcefile(path), expect)
+
+    def test_get_sourcefile_no_source(self):
+        # Given a valid bytecode path without a corresponding source path,
+        # return the original bytecode path.
+        with mock.patch('importlib._bootstrap._path_isfile') as _path_isfile:
+            _path_isfile.return_value = False;
+            path = TESTFN + '.pyc'
+            self.assertEqual(_get_sourcefile(path), path)
+
+    def test_get_sourcefile_bad_ext(self):
+        # Given a path with an invalid bytecode extension, return the
+        # bytecode path passed as the argument.
+        path = TESTFN + '.bad_ext'
+        self.assertEqual(_get_sourcefile(path), path)
 
 
 class ImportTracebackTests(unittest.TestCase):
