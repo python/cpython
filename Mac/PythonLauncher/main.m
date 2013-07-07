@@ -11,7 +11,7 @@
 
 int main(int argc, const char *argv[])
 {
-	char *home = getenv("HOME");
-	if (home) chdir(home);
+    char *home = getenv("HOME");
+    if (home) chdir(home);
     return NSApplicationMain(argc, argv);
 }

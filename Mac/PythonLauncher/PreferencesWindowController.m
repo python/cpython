@@ -5,7 +5,7 @@
 + getPreferencesWindow
 {
     static PreferencesWindowController *_singleton;
-    
+
     if (!_singleton)
         _singleton = [[PreferencesWindowController alloc] init];
     [_singleton showWindow: _singleton];
@@ -21,15 +21,13 @@
 - (void)load_defaults
 {
     NSString *title = [filetype titleOfSelectedItem];
-    
+
     settings = [FileSettings getDefaultsForFileType: title];
 }
 
 - (void)update_display
 {
-//    [[self window] setTitle: script];
-    
-	[interpreter reloadData];
+    [interpreter reloadData];
     [interpreter setStringValue: [settings interpreter]];
     [honourhashbang setState: [settings honourhashbang]];
     [debug setState: [settings debug]];
@@ -41,7 +39,6 @@
     [others setStringValue: [settings others]];
     [with_terminal setState: [settings with_terminal]];
     // Not scriptargs, it isn't for preferences
-    
     [commandline setStringValue: [settings commandLineForScript: @"<your script here>"]];
 }
 
@@ -75,7 +72,7 @@
     [self update_display];
 }
 
-// FileSettingsSource protocol 
+// FileSettingsSource protocol
 - (NSString *) interpreter { return [interpreter stringValue];};
 - (BOOL) honourhashbang { return [honourhashbang state]; };
 - (BOOL) debug { return [debug state];};
