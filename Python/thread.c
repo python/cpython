@@ -231,7 +231,7 @@ find_key(int key, void *value)
         assert(p == NULL);
         goto Done;
     }
-    p = (struct key *)malloc(sizeof(struct key));
+    p = (struct key *)PyMem_RawMalloc(sizeof(struct key));
     if (p != NULL) {
         p->id = id;
         p->key = key;
@@ -270,7 +270,7 @@ PyThread_delete_key(int key)
     while ((p = *q) != NULL) {
         if (p->key == key) {
             *q = p->next;
-            free((void *)p);
+            PyMem_RawFree((void *)p);
             /* NB This does *not* free p->value! */
         }
         else
@@ -324,7 +324,7 @@ PyThread_delete_key_value(int key)
     while ((p = *q) != NULL) {
         if (p->key == key && p->id == id) {
             *q = p->next;
-            free((void *)p);
+            PyMem_RawFree((void *)p);
             /* NB This does *not* free p->value! */
             break;
         }
@@ -357,7 +357,7 @@ PyThread_ReInitTLS(void)
     while ((p = *q) != NULL) {
         if (p->id != id) {
             *q = p->next;
-            free((void *)p);
+            PyMem_RawFree((void *)p);
             /* NB This does *not* free p->value! */
         }
         else
