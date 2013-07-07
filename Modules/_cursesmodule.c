@@ -529,7 +529,7 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
     wo = PyObject_NEW(PyCursesWindowObject, &PyCursesWindow_Type);
     if (wo == NULL) return NULL;
     wo->win = win;
-    wo->encoding = strdup(encoding);
+    wo->encoding = _PyMem_Strdup(encoding);
     if (wo->encoding == NULL) {
         Py_DECREF(wo);
         PyErr_NoMemory();
@@ -543,7 +543,7 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 {
     if (wo->win != stdscr) delwin(wo->win);
     if (wo->encoding != NULL)
-        free(wo->encoding);
+        PyMem_Free(wo->encoding);
     PyObject_DEL(wo);
 }
 
@@ -1938,13 +1938,13 @@ PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
     ascii = PyUnicode_AsASCIIString(value);
     if (ascii == NULL)
         return -1;
-    encoding = strdup(PyBytes_AS_STRING(ascii));
+    encoding = _PyMem_Strdup(PyBytes_AS_STRING(ascii));
     Py_DECREF(ascii);
     if (encoding == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    free(self->encoding);
+    PyMem_Free(self->encoding);
     self->encoding = encoding;
     return 0;
 }
