@@ -84,12 +84,12 @@ parse_and_bind(PyObject *self, PyObject *args)
         return NULL;
     /* Make a copy -- rl_parse_and_bind() modifies its argument */
     /* Bernard Herzog */
-    copy = malloc(1 + strlen(s));
+    copy = PyMem_Malloc(1 + strlen(s));
     if (copy == NULL)
         return PyErr_NoMemory();
     strcpy(copy, s);
     rl_parse_and_bind(copy);
-    free(copy); /* Free the copy */
+    PyMem_Free(copy); /* Free the copy */
     Py_RETURN_NONE;
 }
 
