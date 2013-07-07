@@ -282,14 +282,14 @@ PyThread_allocate_lock(void)
     if (!initialized)
         PyThread_init_thread();
 
-    lock = (sem_t *)malloc(sizeof(sem_t));
+    lock = (sem_t *)PyMem_RawMalloc(sizeof(sem_t));
 
     if (lock) {
         status = sem_init(lock,0,1);
         CHECK_STATUS("sem_init");
 
         if (error) {
-            free((void *)lock);
+            PyMem_RawFree((void *)lock);
             lock = NULL;
         }
     }
@@ -313,7 +313,7 @@ PyThread_free_lock(PyThread_type_lock lock)
     status = sem_destroy(thelock);
     CHECK_STATUS("sem_destroy");
 
-    free((void *)thelock);
+    PyMem_RawFree((void *)thelock);
 }
 
 /*
@@ -410,7 +410,7 @@ PyThread_allocate_lock(void)
     if (!initialized)
         PyThread_init_thread();
 
-    lock = (pthread_lock *) malloc(sizeof(pthread_lock));
+    lock = (pthread_lock *) PyMem_RawMalloc(sizeof(pthread_lock));
     if (lock) {
         memset((void *)lock, '\0', sizeof(pthread_lock));
         lock->locked = 0;
@@ -430,7 +430,7 @@ PyThread_allocate_lock(void)
         CHECK_STATUS("pthread_cond_init");
 
         if (error) {
-            free((void *)lock);
+            PyMem_RawFree((void *)lock);
             lock = 0;
         }
     }
@@ -457,7 +457,7 @@ PyThread_free_lock(PyThread_type_lock lock)
     status = pthread_mutex_destroy( &thelock->mut );
     CHECK_STATUS("pthread_mutex_destroy");
 
-    free((void *)thelock);
+    PyMem_RawFree((void *)thelock);
 }
 
 PyLockStatus

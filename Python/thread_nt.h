@@ -34,7 +34,7 @@ typedef NRMUTEX *PNRMUTEX;
 PNRMUTEX
 AllocNonRecursiveMutex()
 {
-    PNRMUTEX m = (PNRMUTEX)malloc(sizeof(NRMUTEX));
+    PNRMUTEX m = (PNRMUTEX)PyMem_RawMalloc(sizeof(NRMUTEX));
     if (!m)
         return NULL;
     if (PyCOND_INIT(&m->cv))
@@ -46,7 +46,7 @@ AllocNonRecursiveMutex()
     m->locked = 0;
     return m;
 fail:
-    free(m);
+    PyMem_RawFree(m);
     return NULL;
 }
 
@@ -56,7 +56,7 @@ FreeNonRecursiveMutex(PNRMUTEX mutex)
     if (mutex) {
         PyCOND_FINI(&mutex->cv);
         PyMUTEX_FINI(&mutex->cs);
-        free(mutex);
+        PyMem_RawFree(mutex);
     }
 }
 
@@ -107,7 +107,7 @@ LeaveNonRecursiveMutex(PNRMUTEX mutex)
     result = PyCOND_SIGNAL(&mutex->cv);
     result &= PyMUTEX_UNLOCK(&mutex->cs);
     return result;
-}    
+}
 
 #else /* if ! _PY_USE_CV_LOCKS */
 
