@@ -104,6 +104,9 @@ in the child process prior to executing the command.
 If env is not None, it defines the environment variables for the new
 process.
 
+If universal_newlines is false, the file objects stdin, stdout and stderr
+are opened as binary files, and no line ending conversion is done.
+
 If universal_newlines is true, the file objects stdout and stderr are
 opened as a text files, but lines may be terminated by any of '\n',
 the Unix end-of-line convention, '\r', the old Macintosh convention or
