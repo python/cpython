@@ -149,7 +149,7 @@ PyZlib_Malloc(voidpf ctx, uInt items, uInt size)
 static void
 PyZlib_Free(voidpf ctx, void *ptr)
 {
-    return PyMem_RawFree(ptr);
+    PyMem_RawFree(ptr);
 }
 
 PyDoc_STRVAR(compress__doc__,

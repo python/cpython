@@ -132,7 +132,7 @@ PyLzma_Malloc(void *opaque, size_t items, size_t size)
 static void
 PyLzma_Free(void *opaque, void *ptr)
 {
-    return PyMem_RawFree(ptr);
+    PyMem_RawFree(ptr);
 }
 
 #if BUFSIZ < 8192
