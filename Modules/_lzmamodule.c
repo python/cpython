@@ -51,6 +51,7 @@ enum {
 
 typedef struct {
     PyObject_HEAD
+    lzma_allocator alloc;
     lzma_stream lzs;
     int flushed;
 #ifdef WITH_THREAD
@@ -60,6 +61,7 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
+    lzma_allocator alloc;
     lzma_stream lzs;
     int check;
     char eof;
@@ -115,6 +117,22 @@ catch_lzma_error(lzma_ret lzret)
             PyErr_Format(Error, "Unrecognized error from liblzma: %d", lzret);
             return 1;
     }
+}
+
+static void*
+PyLzma_Malloc(void *opaque, size_t items, size_t size)
+{
+    if (items > (size_t)PY_SSIZE_T_MAX / size)
+        return NULL;
+    /* PyMem_Malloc() cannot be used:
+       the GIL is not held when lzma_code() is called */
+    return PyMem_RawMalloc(items * size);
+}
+
+static void
+PyLzma_Free(void *opaque, void *ptr)
+{
+    return PyMem_RawFree(ptr);
 }
 
 #if BUFSIZ < 8192
@@ -656,6 +674,11 @@ Compressor_init(Compressor *self, PyObject *args, PyObject *kwargs)
         if (!uint32_converter(preset_obj, &preset))
             return -1;
 
+    self->alloc.opaque = NULL;
+    self->alloc.alloc = PyLzma_Malloc;
+    self->alloc.free = PyLzma_Free;
+    self->lzs.allocator = &self->alloc;
+
 #ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
@@ -921,6 +944,11 @@ Decompressor_init(Decompressor *self, PyObject *args, PyObject *kwargs)
                         "Cannot specify filters except with FORMAT_RAW");
         return -1;
     }
+
+    self->alloc.opaque = NULL;
+    self->alloc.alloc = PyLzma_Malloc;
+    self->alloc.free = PyLzma_Free;
+    self->lzs.allocator = &self->alloc;
 
 #ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
