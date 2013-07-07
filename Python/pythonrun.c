@@ -606,11 +606,6 @@ Py_Finalize(void)
 
     _PyExc_Fini();
 
-    /* Cleanup auto-thread-state */
-#ifdef WITH_THREAD
-    _PyGILState_Fini();
-#endif /* WITH_THREAD */
-
     /* Sundry finalizers */
     PyMethod_Fini();
     PyFrame_Fini();
@@ -629,10 +624,6 @@ Py_Finalize(void)
     /* Cleanup Unicode implementation */
     _PyUnicode_Fini();
 
-    /* Delete current thread. After this, many C API calls become crashy. */
-    PyThreadState_Swap(NULL);
-    PyInterpreterState_Delete(interp);
-
     /* reset file system default encoding */
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
         free((char*)Py_FileSystemDefaultEncoding);
@@ -646,6 +637,15 @@ Py_Finalize(void)
     */
 
     PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+
+    /* Cleanup auto-thread-state */
+#ifdef WITH_THREAD
+    _PyGILState_Fini();
+#endif /* WITH_THREAD */
+
+    /* Delete current thread. After this, many C API calls become crashy. */
+    PyThreadState_Swap(NULL);
+    PyInterpreterState_Delete(interp);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
