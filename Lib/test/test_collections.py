@@ -918,23 +918,26 @@ class TestCounter(unittest.TestCase):
         words = Counter('which witch had which witches wrist watch'.split())
         update_test = Counter()
         update_test.update(words)
-        for i, dup in enumerate([
-                    words.copy(),
-                    copy.copy(words),
-                    copy.deepcopy(words),
-                    pickle.loads(pickle.dumps(words, 0)),
-                    pickle.loads(pickle.dumps(words, 1)),
-                    pickle.loads(pickle.dumps(words, 2)),
-                    pickle.loads(pickle.dumps(words, -1)),
-                    eval(repr(words)),
-                    update_test,
-                    Counter(words),
-                    ]):
-            msg = (i, dup, words)
-            self.assertTrue(dup is not words)
-            self.assertEqual(dup, words)
-            self.assertEqual(len(dup), len(words))
-            self.assertEqual(type(dup), type(words))
+        for label, dup in [
+                    ('words.copy()', words.copy()),
+                    ('copy.copy(words)', copy.copy(words)),
+                    ('copy.deepcopy(words)', copy.deepcopy(words)),
+                    ('pickle.loads(pickle.dumps(words, 0))',
+                        pickle.loads(pickle.dumps(words, 0))),
+                    ('pickle.loads(pickle.dumps(words, 1))',
+                        pickle.loads(pickle.dumps(words, 1))),
+                    ('pickle.loads(pickle.dumps(words, 2))',
+                        pickle.loads(pickle.dumps(words, 2))),
+                    ('pickle.loads(pickle.dumps(words, -1))',
+                        pickle.loads(pickle.dumps(words, -1))),
+                    ('eval(repr(words))', eval(repr(words))),
+                    ('update_test', update_test),
+                    ('Counter(words)', Counter(words)),
+                    ]:
+            with self.subTest(label=label):
+                msg = "\ncopy: %s\nwords: %s" % (dup, words)
+                self.assertIsNot(dup, words, msg)
+                self.assertEqual(dup, words)
 
     def test_copy_subclass(self):
         class MyCounter(Counter):
@@ -1213,24 +1216,28 @@ class TestOrderedDict(unittest.TestCase):
         od = OrderedDict(pairs)
         update_test = OrderedDict()
         update_test.update(od)
-        for i, dup in enumerate([
-                    od.copy(),
-                    copy.copy(od),
-                    copy.deepcopy(od),
-                    pickle.loads(pickle.dumps(od, 0)),
-                    pickle.loads(pickle.dumps(od, 1)),
-                    pickle.loads(pickle.dumps(od, 2)),
-                    pickle.loads(pickle.dumps(od, 3)),
-                    pickle.loads(pickle.dumps(od, -1)),
-                    eval(repr(od)),
-                    update_test,
-                    OrderedDict(od),
-                    ]):
-            self.assertTrue(dup is not od)
-            self.assertEqual(dup, od)
-            self.assertEqual(list(dup.items()), list(od.items()))
-            self.assertEqual(len(dup), len(od))
-            self.assertEqual(type(dup), type(od))
+        for label, dup in [
+                    ('od.copy()', od.copy()),
+                    ('copy.copy(od)', copy.copy(od)),
+                    ('copy.deepcopy(od)', copy.deepcopy(od)),
+                    ('pickle.loads(pickle.dumps(od, 0))',
+                        pickle.loads(pickle.dumps(od, 0))),
+                    ('pickle.loads(pickle.dumps(od, 1))',
+                        pickle.loads(pickle.dumps(od, 1))),
+                    ('pickle.loads(pickle.dumps(od, 2))',
+                        pickle.loads(pickle.dumps(od, 2))),
+                    ('pickle.loads(pickle.dumps(od, 3))',
+                        pickle.loads(pickle.dumps(od, 3))),
+                    ('pickle.loads(pickle.dumps(od, -1))',
+                        pickle.loads(pickle.dumps(od, -1))),
+                    ('eval(repr(od))', eval(repr(od))),
+                    ('update_test', update_test),
+                    ('OrderedDict(od)', OrderedDict(od)),
+                    ]:
+            with self.subTest(label=label):
+                msg = "\ncopy: %s\nod: %s" % (dup, od)
+                self.assertIsNot(dup, od, msg)
+                self.assertEqual(dup, od)
 
     def test_yaml_linkage(self):
         # Verify that __reduce__ is setup in a way that supports PyYAML's dump() feature.
