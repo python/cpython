@@ -45,18 +45,13 @@
 + (id)getFactorySettingsForFileType: (NSString *)filetype;
 + (id)newSettingsForFileType: (NSString *)filetype;
 
-//- (id)init;
 - (id)initForFileType: (NSString *)filetype;
 - (id)initForFSDefaultFileType: (NSString *)filetype;
 - (id)initForDefaultFileType: (NSString *)filetype;
-//- (id)initWithFileSettings: (FileSettings *)source;
 
 - (void)updateFromSource: (id <FileSettingsSource>)source;
 - (NSString *)commandLineForScript: (NSString *)script;
 
-//- (void)applyFactorySettingsForFileType: (NSString *)filetype;
-//- (void)saveDefaults;
-//- (void)applyUserDefaults: (NSString *)filetype;
 - (void)applyValuesFromDict: (NSDictionary *)dict;
 - (void)reset;
 - (NSArray *) interpreters;
