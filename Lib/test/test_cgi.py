@@ -279,6 +279,27 @@ Content-Type: text/plain
         check('x' * (maxline - 1) + '\r')
         check('x' * (maxline - 1) + '\r' + 'y' * (maxline - 1))
 
+    def test_fieldstorage_multipart_w3c(self):
+        # Test basic FieldStorage multipart parsing (W3C sample)
+        env = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary={}'.format(BOUNDARY_W3),
+            'CONTENT_LENGTH': str(len(POSTDATA_W3))}
+        fp = BytesIO(POSTDATA_W3.encode('latin-1'))
+        fs = cgi.FieldStorage(fp, environ=env, encoding="latin-1")
+        self.assertEqual(len(fs.list), 2)
+        self.assertEqual(fs.list[0].name, 'submit-name')
+        self.assertEqual(fs.list[0].value, 'Larry')
+        self.assertEqual(fs.list[1].name, 'files')
+        files = fs.list[1].value
+        self.assertEqual(len(files), 2)
+        expect = [{'name': None, 'filename': 'file1.txt', 'value': b'... contents of file1.txt ...'},
+                  {'name': None, 'filename': 'file2.gif', 'value': b'...contents of file2.gif...'}]
+        for x in range(len(files)):
+            for k, exp in expect[x].items():
+                got = getattr(files[x], k)
+                self.assertEqual(got, exp)
+
     _qs_result = {
         'key1': 'value1',
         'key2': ['value2x', 'value2y'],
@@ -426,6 +447,31 @@ Content-Disposition: form-data; name="id"
 
 \xe7\xf1\x80
 -----------------------------721837373350705526688164684
+"""
+
+# http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4
+BOUNDARY_W3 = "AaB03x"
+POSTDATA_W3 = """--AaB03x
+Content-Disposition: form-data; name="submit-name"
+
+Larry
+--AaB03x
+Content-Disposition: form-data; name="files"
+Content-Type: multipart/mixed; boundary=BbC04y
+
+--BbC04y
+Content-Disposition: file; filename="file1.txt"
+Content-Type: text/plain
+
+... contents of file1.txt ...
+--BbC04y
+Content-Disposition: file; filename="file2.gif"
+Content-Type: image/gif
+Content-Transfer-Encoding: binary
+
+...contents of file2.gif...
+--BbC04y--
+--AaB03x--
 """
 
 
