@@ -6,11 +6,11 @@
 /* --------------------------------------------------------------------------
 CAUTION
 
-Always use malloc() and free() directly in this file.  A number of these
-functions are advertised as safe to call when the GIL isn't held, and in
-a debug build Python redirects (e.g.) PyMem_NEW (etc) to Python's debugging
-obmalloc functions.  Those aren't thread-safe (they rely on the GIL to avoid
-the expense of doing their own locking).
+Always use PyMem_RawMalloc() and PyMem_RawFree() directly in this file.  A
+number of these functions are advertised as safe to call when the GIL isn't
+held, and in a debug build Python redirects (e.g.) PyMem_NEW (etc) to Python's
+debugging obmalloc functions.  Those aren't thread-safe (they rely on the GIL
+to avoid the expense of doing their own locking).
 -------------------------------------------------------------------------- */
 
 #ifdef HAVE_DLOPEN
@@ -60,7 +60,7 @@ PyInterpreterState *
 PyInterpreterState_New(void)
 {
     PyInterpreterState *interp = (PyInterpreterState *)
-                                 malloc(sizeof(PyInterpreterState));
+                                 PyMem_RawMalloc(sizeof(PyInterpreterState));
 
     if (interp != NULL) {
         HEAD_INIT();
@@ -148,7 +148,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
         Py_FatalError("PyInterpreterState_Delete: remaining threads");
     *p = interp->next;
     HEAD_UNLOCK();
-    free(interp);
+    PyMem_RawFree(interp);
 #ifdef WITH_THREAD
     if (interp_head == NULL && head_mutex != NULL) {
         PyThread_free_lock(head_mutex);
@@ -168,7 +168,7 @@ threadstate_getframe(PyThreadState *self)
 static PyThreadState *
 new_threadstate(PyInterpreterState *interp, int init)
 {
-    PyThreadState *tstate = (PyThreadState *)malloc(sizeof(PyThreadState));
+    PyThreadState *tstate = (PyThreadState *)PyMem_RawMalloc(sizeof(PyThreadState));
 
     if (_PyThreadState_GetFrame == NULL)
         _PyThreadState_GetFrame = threadstate_getframe;
@@ -365,7 +365,7 @@ tstate_delete_common(PyThreadState *tstate)
     if (tstate->next)
         tstate->next->prev = tstate->prev;
     HEAD_UNLOCK();
-    free(tstate);
+    PyMem_RawFree(tstate);
 }
 
 
@@ -432,7 +432,7 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     for (p = garbage; p; p = next) {
         next = p->next;
         PyThreadState_Clear(p);
-        free(p);
+        PyMem_RawFree(p);
     }
 }
 

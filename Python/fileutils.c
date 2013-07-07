@@ -229,7 +229,7 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
    Use _Py_wchar2char() to encode the character string back to a byte string.
 
    Return a pointer to a newly allocated wide character string (use
-   PyMem_Free() to free the memory) and write the number of written wide
+   PyMem_RawFree() to free the memory) and write the number of written wide
    characters excluding the null character into *size if size is not NULL, or
    NULL on error (decoding or memory allocation error). If size is not NULL,
    *size is set to (size_t)-1 on memory error and (size_t)-2 on decoding
@@ -283,7 +283,7 @@ _Py_char2wchar(const char* arg, size_t *size)
     argsize = mbstowcs(NULL, arg, 0);
 #endif
     if (argsize != (size_t)-1) {
-        res = (wchar_t *)PyMem_Malloc((argsize+1)*sizeof(wchar_t));
+        res = (wchar_t *)PyMem_RawMalloc((argsize+1)*sizeof(wchar_t));
         if (!res)
             goto oom;
         count = mbstowcs(res, arg, argsize+1);
@@ -300,7 +300,7 @@ _Py_char2wchar(const char* arg, size_t *size)
                 return res;
             }
         }
-        PyMem_Free(res);
+        PyMem_RawFree(res);
     }
     /* Conversion failed. Fall back to escaping with surrogateescape. */
 #ifdef HAVE_MBRTOWC
@@ -309,7 +309,7 @@ _Py_char2wchar(const char* arg, size_t *size)
     /* Overallocate; as multi-byte characters are in the argument, the
        actual output could use less memory. */
     argsize = strlen(arg) + 1;
-    res = (wchar_t*)PyMem_Malloc(argsize*sizeof(wchar_t));
+    res = (wchar_t*)PyMem_RawMalloc(argsize*sizeof(wchar_t));
     if (!res)
         goto oom;
     in = (unsigned char*)arg;
@@ -325,7 +325,7 @@ _Py_char2wchar(const char* arg, size_t *size)
                since we provide everything that we have -
                unless there is a bug in the C library, or I
                misunderstood how mbrtowc works. */
-            PyMem_Free(res);
+            PyMem_RawFree(res);
             if (size != NULL)
                 *size = (size_t)-2;
             return NULL;
@@ -648,12 +648,12 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         return -1;
     }
     if (bufsiz <= r1) {
-        PyMem_Free(wbuf);
+        PyMem_RawFree(wbuf);
         errno = EINVAL;
         return -1;
     }
     wcsncpy(buf, wbuf, bufsiz);
-    PyMem_Free(wbuf);
+    PyMem_RawFree(wbuf);
     return (int)r1;
 }
 #endif
@@ -689,12 +689,12 @@ _Py_wrealpath(const wchar_t *path,
         return NULL;
     }
     if (resolved_path_size <= r) {
-        PyMem_Free(wresolved_path);
+        PyMem_RawFree(wresolved_path);
         errno = EINVAL;
         return NULL;
     }
     wcsncpy(resolved_path, wresolved_path, resolved_path_size);
-    PyMem_Free(wresolved_path);
+    PyMem_RawFree(wresolved_path);
     return resolved_path;
 }
 #endif
@@ -720,11 +720,11 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
     if (wname == NULL)
         return NULL;
     if (size <= len) {
-        PyMem_Free(wname);
+        PyMem_RawFree(wname);
         return NULL;
     }
     wcsncpy(buf, wname, size);
-    PyMem_Free(wname);
+    PyMem_RawFree(wname);
     return buf;
 #endif
 }

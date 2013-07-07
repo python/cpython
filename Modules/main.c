@@ -391,7 +391,7 @@ Py_Main(int argc, wchar_t **argv)
                command to interpret. */
 
             len = wcslen(_PyOS_optarg) + 1 + 1;
-            command = (wchar_t *)malloc(sizeof(wchar_t) * len);
+            command = (wchar_t *)PyMem_RawMalloc(sizeof(wchar_t) * len);
             if (command == NULL)
                 Py_FatalError(
                    "not enough memory to copy -c argument");
@@ -520,7 +520,7 @@ Py_Main(int argc, wchar_t **argv)
         *wp != L'\0') {
         wchar_t *buf, *warning;
 
-        buf = (wchar_t *)malloc((wcslen(wp) + 1) * sizeof(wchar_t));
+        buf = (wchar_t *)PyMem_RawMalloc((wcslen(wp) + 1) * sizeof(wchar_t));
         if (buf == NULL)
             Py_FatalError(
                "not enough memory to copy PYTHONWARNINGS");
@@ -530,7 +530,7 @@ Py_Main(int argc, wchar_t **argv)
              warning = wcstok(NULL, L",")) {
             PySys_AddWarnOption(warning);
         }
-        free(buf);
+        PyMem_RawFree(buf);
     }
 #else
     if ((p = Py_GETENV("PYTHONWARNINGS")) && *p != '\0') {
@@ -539,7 +539,7 @@ Py_Main(int argc, wchar_t **argv)
 
         /* settle for strtok here as there's no one standard
            C89 wcstok */
-        buf = (char *)malloc(strlen(p) + 1);
+        buf = (char *)PyMem_RawMalloc(strlen(p) + 1);
         if (buf == NULL)
             Py_FatalError(
                "not enough memory to copy PYTHONWARNINGS");
@@ -563,7 +563,7 @@ Py_Main(int argc, wchar_t **argv)
         }
         setlocale(LC_ALL, oldloc);
         free(oldloc);
-        free(buf);
+        PyMem_RawFree(buf);
     }
 #endif
 
@@ -633,7 +633,7 @@ Py_Main(int argc, wchar_t **argv)
         wchar_t* buffer;
         size_t len = strlen(p) + 1;
 
-        buffer = malloc(len * sizeof(wchar_t));
+        buffer = PyMem_RawMalloc(len * sizeof(wchar_t));
         if (buffer == NULL) {
             Py_FatalError(
                "not enough memory to copy PYTHONEXECUTABLE");
@@ -707,7 +707,7 @@ Py_Main(int argc, wchar_t **argv)
 
     if (command) {
         sts = run_command(command, &cf);
-        free(command);
+        PyMem_RawFree(command);
     } else if (module) {
         sts = (RunModule(module, 1) != 0);
     }
