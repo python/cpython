@@ -68,7 +68,7 @@ _PyObject_ArenaVirtualAlloc(void *ctx, size_t size)
 static void
 _PyObject_ArenaVirtualFree(void *ctx, void *ptr, size_t size)
 {
-    VirtualFree(ptr, size, MEM_RELEASE);
+    VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
 #elif defined(ARENAS_USE_MMAP)
