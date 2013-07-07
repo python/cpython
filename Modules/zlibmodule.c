@@ -136,6 +136,22 @@ newcompobject(PyTypeObject *type)
     return self;
 }
 
+static void*
+PyZlib_Malloc(voidpf ctx, uInt items, uInt size)
+{
+    if (items > (size_t)PY_SSIZE_T_MAX / size)
+        return NULL;
+    /* PyMem_Malloc() cannot be used: the GIL is not held when
+       inflate() and deflate() are called */
+    return PyMem_RawMalloc(items * size);
+}
+
+static void
+PyZlib_Free(voidpf ctx, void *ptr)
+{
+    return PyMem_RawFree(ptr);
+}
+
 PyDoc_STRVAR(compress__doc__,
 "compress(string[, level]) -- Returned compressed string.\n"
 "\n"
@@ -175,8 +191,9 @@ PyZlib_compress(PyObject *self, PyObject *args)
     /* Past the point of no return.  From here on out, we need to make sure
        we clean up mallocs & INCREFs. */
 
-    zst.zalloc = (alloc_func)NULL;
-    zst.zfree = (free_func)Z_NULL;
+    zst.opaque = NULL;
+    zst.zalloc = PyZlib_Malloc;
+    zst.zfree = PyZlib_Free;
     zst.next_out = (Byte *)output;
     zst.next_in = (Byte *)input;
     zst.avail_in = length;
@@ -262,8 +279,9 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     if (!(result_str = PyBytes_FromStringAndSize(NULL, r_strlen)))
         goto error;
 
-    zst.zalloc = (alloc_func)NULL;
-    zst.zfree = (free_func)Z_NULL;
+    zst.opaque = NULL;
+    zst.zalloc = PyZlib_Malloc;
+    zst.zfree = PyZlib_Free;
     zst.next_out = (Byte *)PyBytes_AS_STRING(result_str);
     zst.next_in = (Byte *)input;
     err = inflateInit2(&zst, wsize);
@@ -356,8 +374,9 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
     self = newcompobject(&Comptype);
     if (self==NULL)
         goto error;
-    self->zst.zalloc = (alloc_func)NULL;
-    self->zst.zfree = (free_func)Z_NULL;
+    self->zst.opaque = NULL;
+    self->zst.zalloc = PyZlib_Malloc;
+    self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
     err = deflateInit2(&self->zst, level, method, wbits, memLevel, strategy);
@@ -420,8 +439,9 @@ PyZlib_decompressobj(PyObject *selfptr, PyObject *args, PyObject *kwargs)
     self = newcompobject(&Decomptype);
     if (self == NULL)
         return(NULL);
-    self->zst.zalloc = (alloc_func)NULL;
-    self->zst.zfree = (free_func)Z_NULL;
+    self->zst.opaque = NULL;
+    self->zst.zalloc = PyZlib_Malloc;
+    self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
     if (zdict != NULL) {
