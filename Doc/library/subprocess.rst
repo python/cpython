@@ -290,11 +290,14 @@ default values. The arguments that are most commonly needed are:
    .. index::
       single: universal newlines; subprocess module
 
-   If *universal_newlines* is ``True``, the file objects *stdin*, *stdout* and
-   *stderr* will be opened as text streams in :term:`universal newlines` mode
+   If *universal_newlines* is ``False`` the file objects *stdin*, *stdout* and
+   *stderr* will be opened as binary streams, and no line ending conversion is
+   done.
+
+   If *universal_newlines* is ``True``, these file objects
+   will be opened as text streams in :term:`universal newlines` mode
    using the encoding returned by :func:`locale.getpreferredencoding(False)
-   <locale.getpreferredencoding>`, otherwise these streams will be opened
-   as binary streams.  For *stdin*, line ending characters
+   <locale.getpreferredencoding>`.  For *stdin*, line ending characters
    ``'\n'`` in the input will be converted to the default line separator
    :data:`os.linesep`.  For *stdout* and *stderr*, all line endings in the
    output will be converted to ``'\n'``.  For more information see the
