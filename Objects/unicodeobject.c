@@ -3316,7 +3316,7 @@ encode_error:
         wstr = _Py_char2wchar(errmsg, &errlen);
         if (wstr != NULL) {
             reason = PyUnicode_FromWideChar(wstr, errlen);
-            PyMem_Free(wstr);
+            PyMem_RawFree(wstr);
         } else
             errmsg = NULL;
     }
@@ -3535,7 +3535,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
         }
 
         unicode = PyUnicode_FromWideChar(wstr, wlen);
-        PyMem_Free(wstr);
+        PyMem_RawFree(wstr);
     }
     else {
         /* strict mode */
@@ -3583,7 +3583,7 @@ decode_error:
         wstr = _Py_char2wchar(errmsg, &errlen);
         if (wstr != NULL) {
             reason = PyUnicode_FromWideChar(wstr, errlen);
-            PyMem_Free(wstr);
+            PyMem_RawFree(wstr);
         } else
             errmsg = NULL;
     }

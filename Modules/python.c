@@ -18,11 +18,19 @@ wmain(int argc, wchar_t **argv)
 int
 main(int argc, char **argv)
 {
-    wchar_t **argv_copy = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*(argc+1));
+    wchar_t **argv_copy;
     /* We need a second copies, as Python might modify the first one. */
-    wchar_t **argv_copy2 = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*(argc+1));
+    wchar_t **argv_copy2;
     int i, res;
     char *oldloc;
+
+    argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
+    argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
+    if (!argv_copy || !argv_copy2) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+
     /* 754 requires that FP exceptions run in "no stop" mode by default,
      * and until C vendors implement C99's ways to control FP exceptions,
      * Python requires non-stop mode.  Alas, some platforms enable FP
@@ -34,10 +42,7 @@ main(int argc, char **argv)
     m = fpgetmask();
     fpsetmask(m & ~FP_X_OFL);
 #endif
-    if (!argv_copy || !argv_copy2) {
-        fprintf(stderr, "out of memory\n");
-        return 1;
-    }
+
     oldloc = strdup(setlocale(LC_ALL, NULL));
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
@@ -57,10 +62,10 @@ main(int argc, char **argv)
     free(oldloc);
     res = Py_Main(argc, argv_copy);
     for (i = 0; i < argc; i++) {
-        PyMem_Free(argv_copy2[i]);
+        PyMem_RawFree(argv_copy2[i]);
     }
-    PyMem_Free(argv_copy);
-    PyMem_Free(argv_copy2);
+    PyMem_RawFree(argv_copy);
+    PyMem_RawFree(argv_copy2);
     return res;
 }
 #endif
