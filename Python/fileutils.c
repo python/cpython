@@ -201,7 +201,7 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
     unsigned char *in;
     wchar_t *out;
 
-    res = PyMem_Malloc((strlen(arg)+1)*sizeof(wchar_t));
+    res = PyMem_RawMalloc((strlen(arg)+1)*sizeof(wchar_t));
     if (!res)
         return NULL;
 
