@@ -3118,7 +3118,7 @@ static int _setup_ssl_threads(void) {
     if (_ssl_locks == NULL) {
         _ssl_locks_count = CRYPTO_num_locks();
         _ssl_locks = (PyThread_type_lock *)
-            malloc(sizeof(PyThread_type_lock) * _ssl_locks_count);
+            PyMem_Malloc(sizeof(PyThread_type_lock) * _ssl_locks_count);
         if (_ssl_locks == NULL)
             return 0;
         memset(_ssl_locks, 0,
@@ -3130,7 +3130,7 @@ static int _setup_ssl_threads(void) {
                 for (j = 0;  j < i;  j++) {
                     PyThread_free_lock(_ssl_locks[j]);
                 }
-                free(_ssl_locks);
+                PyMem_Free(_ssl_locks);
                 return 0;
             }
         }
