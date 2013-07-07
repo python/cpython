@@ -4806,7 +4806,7 @@ onError:
    used to decode the command line arguments on Mac OS X.
 
    Return a pointer to a newly allocated wide character string (use
-   PyMem_Free() to free the memory), or NULL on memory allocation error. */
+   PyMem_RawFree() to free the memory), or NULL on memory allocation error. */
 
 wchar_t*
 _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
@@ -4819,7 +4819,7 @@ _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size)
        character count */
     if (PY_SSIZE_T_MAX / sizeof(wchar_t) < (size + 1))
         return NULL;
-    unicode = PyMem_Malloc((size + 1) * sizeof(wchar_t));
+    unicode = PyMem_RawMalloc((size + 1) * sizeof(wchar_t));
     if (!unicode)
         return NULL;
 
