@@ -142,6 +142,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17198: Fix a NameError in the dbm module.  Patch by Valentina
+  Mukhamedzhanova.
+
 - Issue #18013: Fix cgi.FieldStorage to parse the W3C sample form.
 
 - Issue #18020: improve html.escape speed by an order of magnitude.

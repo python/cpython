@@ -9,6 +9,11 @@ import test.support
 # Skip tests if dbm module doesn't exist.
 dbm = test.support.import_module('dbm')
 
+try:
+    from dbm import ndbm
+except ImportError:
+    ndbm = None
+
 _fname = test.support.TESTFN
 
 #
@@ -130,7 +135,7 @@ class WhichDBTestCase(unittest.TestCase):
             delete_files()
             f = module.open(_fname, 'c')
             f.close()
-            self.assertEqual(name, dbm.whichdb(_fname))
+            self.assertEqual(name, self.dbm.whichdb(_fname))
             # Now add a key
             f = module.open(_fname, 'w')
             f[b"1"] = b"1"
@@ -139,7 +144,15 @@ class WhichDBTestCase(unittest.TestCase):
             # and read it
             self.assertTrue(f[b"1"] == b"1")
             f.close()
-            self.assertEqual(name, dbm.whichdb(_fname))
+            self.assertEqual(name, self.dbm.whichdb(_fname))
+
+    @unittest.skipUnless(ndbm, reason='Test requires ndbm')
+    def test_whichdb_ndbm(self):
+        # Issue 17198: check that ndbm which is referenced in whichdb is defined
+        db_file = '{}_ndbm.db'.format(_fname)
+        with open(db_file, 'w'):
+            self.addCleanup(test.support.unlink, db_file)
+        self.assertIsNone(self.dbm.whichdb(db_file[:-3]))
 
     def tearDown(self):
         delete_files()
@@ -149,6 +162,7 @@ class WhichDBTestCase(unittest.TestCase):
         self.filename = test.support.TESTFN
         self.d = dbm.open(self.filename, 'c')
         self.d.close()
+        self.dbm = test.support.import_fresh_module('dbm')
 
     def test_keys(self):
         self.d = dbm.open(self.filename, 'c')
