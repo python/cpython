@@ -11,6 +11,11 @@
 extern "C" {
 #endif
 
+PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
+PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+
+
 /* BEWARE:
 
    Each interface exports both functions and macros.  Extension modules should
@@ -49,21 +54,11 @@ extern "C" {
    performed on failure (no exception is set, no warning is printed, etc).
 */
 
-PyAPI_FUNC(void *) PyMem_Malloc(size_t);
-PyAPI_FUNC(void *) PyMem_Realloc(void *, size_t);
-PyAPI_FUNC(void) PyMem_Free(void *);
-
-/* Starting from Python 1.6, the wrappers Py_{Malloc,Realloc,Free} are
-   no longer supported. They used to call PyErr_NoMemory() on failure. */
+PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
+PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
+PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
 /* Macros. */
-#ifdef PYMALLOC_DEBUG
-/* Redirect all memory operations to Python's debugging allocator. */
-#define PyMem_MALLOC		_PyMem_DebugMalloc
-#define PyMem_REALLOC		_PyMem_DebugRealloc
-#define PyMem_FREE		_PyMem_DebugFree
-
-#else	/* ! PYMALLOC_DEBUG */
 
 /* PyMem_MALLOC(0) means malloc(1). Some systems would return NULL
    for malloc(0), which would be treated as an error. Some platforms
@@ -71,13 +66,9 @@ PyAPI_FUNC(void) PyMem_Free(void *);
    pymalloc. To solve these problems, allocate an extra byte. */
 /* Returns NULL to indicate error if a negative size or size larger than
    Py_ssize_t can represent is supplied.  Helps prevents security holes. */
-#define PyMem_MALLOC(n)		((size_t)(n) > (size_t)PY_SSIZE_T_MAX ? NULL \
-				: malloc((n) ? (n) : 1))
-#define PyMem_REALLOC(p, n)	((size_t)(n) > (size_t)PY_SSIZE_T_MAX  ? NULL \
-				: realloc((p), (n) ? (n) : 1))
-#define PyMem_FREE		free
-
-#endif	/* PYMALLOC_DEBUG */
+#define PyMem_MALLOC(n)         PyMem_Malloc(n)
+#define PyMem_REALLOC(p, n)     PyMem_Realloc(p, n)
+#define PyMem_FREE(p)           PyMem_Free(p)
 
 /*
  * Type-oriented memory interface
@@ -114,6 +105,69 @@ PyAPI_FUNC(void) PyMem_Free(void *);
  */
 #define PyMem_Del		PyMem_Free
 #define PyMem_DEL		PyMem_FREE
+
+#ifndef Py_LIMITED_API
+typedef enum {
+    /* PyMem_RawMalloc(), PyMem_RawRealloc() and PyMem_RawFree() */
+    PYMEM_DOMAIN_RAW,
+
+    /* PyMem_Malloc(), PyMem_Realloc() and PyMem_Free() */
+    PYMEM_DOMAIN_MEM,
+
+    /* PyObject_Malloc(), PyObject_Realloc() and PyObject_Free() */
+    PYMEM_DOMAIN_OBJ
+} PyMemAllocatorDomain;
+
+typedef struct {
+    /* user context passed as the first argument to the 3 functions */
+    void *ctx;
+
+    /* allocate a memory block */
+    void* (*malloc) (void *ctx, size_t size);
+
+    /* allocate or resize a memory block */
+    void* (*realloc) (void *ctx, void *ptr, size_t new_size);
+
+    /* release a memory block */
+    void (*free) (void *ctx, void *ptr);
+} PyMemAllocator;
+
+/* Get the memory block allocator of the specified domain. */
+PyAPI_FUNC(void) PyMem_GetAllocator(PyMemAllocatorDomain domain,
+                                    PyMemAllocator *allocator);
+
+/* Set the memory block allocator of the specified domain.
+
+   The new allocator must return a distinct non-NULL pointer when requesting
+   zero bytes.
+
+   For the PYMEM_DOMAIN_RAW domain, the allocator must be thread-safe: the GIL
+   is not held when the allocator is called.
+
+   If the new allocator is not a hook (don't call the previous allocator), the
+   PyMem_SetupDebugHooks() function must be called to reinstall the debug hooks
+   on top on the new allocator. */
+PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
+                                    PyMemAllocator *allocator);
+
+/* Setup hooks to detect bugs in the following Python memory allocator
+   functions:
+
+   - PyMem_RawMalloc(), PyMem_RawRealloc(), PyMem_RawFree()
+   - PyMem_Malloc(), PyMem_Realloc(), PyMem_Free()
+   - PyObject_Malloc(), PyObject_Realloc() and PyObject_Free()
+
+   Newly allocated memory is filled with the byte 0xCB, freed memory is filled
+   with the byte 0xDB. Additionnal checks:
+
+   - detect API violations, ex: PyObject_Free() called on a buffer allocated
+     by PyMem_Malloc()
+   - detect write before the start of the buffer (buffer underflow)
+   - detect write after the end of the buffer (buffer overflow)
+
+   The function does nothing if Python is not compiled is debug mode. */
+PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
+#endif
 
 #ifdef __cplusplus
 }

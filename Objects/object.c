@@ -1859,26 +1859,6 @@ PyTypeObject *_PyCapsule_hack = &PyCapsule_Type;
 Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
 
 
-/* Python's malloc wrappers (see pymem.h) */
-
-void *
-PyMem_Malloc(size_t nbytes)
-{
-    return PyMem_MALLOC(nbytes);
-}
-
-void *
-PyMem_Realloc(void *p, size_t nbytes)
-{
-    return PyMem_REALLOC(p, nbytes);
-}
-
-void
-PyMem_Free(void *p)
-{
-    PyMem_FREE(p);
-}
-
 void
 _PyObject_DebugTypeStats(FILE *out)
 {
