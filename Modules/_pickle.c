@@ -1213,8 +1213,8 @@ _Unpickler_SetInputEncoding(UnpicklerObject *self,
     if (errors == NULL)
         errors = "strict";
 
-    self->encoding = strdup(encoding);
-    self->errors = strdup(errors);
+    self->encoding = _PyMem_Strdup(encoding);
+    self->errors = _PyMem_Strdup(errors);
     if (self->encoding == NULL || self->errors == NULL) {
         PyErr_NoMemory();
         return -1;
@@ -5590,8 +5590,8 @@ Unpickler_dealloc(UnpicklerObject *self)
     _Unpickler_MemoCleanup(self);
     PyMem_Free(self->marks);
     PyMem_Free(self->input_line);
-    free(self->encoding);
-    free(self->errors);
+    PyMem_Free(self->encoding);
+    PyMem_Free(self->errors);
 
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -5627,9 +5627,9 @@ Unpickler_clear(UnpicklerObject *self)
     self->marks = NULL;
     PyMem_Free(self->input_line);
     self->input_line = NULL;
-    free(self->encoding);
+    PyMem_Free(self->encoding);
     self->encoding = NULL;
-    free(self->errors);
+    PyMem_Free(self->errors);
     self->errors = NULL;
 
     return 0;

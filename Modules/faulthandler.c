@@ -475,7 +475,7 @@ cancel_dump_traceback_later(void)
 
     Py_CLEAR(thread.file);
     if (thread.header) {
-        free(thread.header);
+        PyMem_Free(thread.header);
         thread.header = NULL;
     }
 }
@@ -504,7 +504,7 @@ format_timeout(double timeout)
                       "Timeout (%lu:%02lu:%02lu)!\n",
                       hour, min, sec);
 
-    return strdup(buffer);
+    return _PyMem_Strdup(buffer);
 }
 
 static PyObject*
@@ -570,7 +570,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     if (PyThread_start_new_thread(faulthandler_thread, NULL) == -1) {
         PyThread_release_lock(thread.running);
         Py_CLEAR(thread.file);
-        free(header);
+        PyMem_Free(header);
         thread.header = NULL;
         PyErr_SetString(PyExc_RuntimeError,
                         "unable to start watchdog thread");
@@ -729,9 +729,10 @@ faulthandler_register_py(PyObject *self,
         return NULL;
 
     if (user_signals == NULL) {
-        user_signals = calloc(NSIG, sizeof(user_signal_t));
+        user_signals = PyMem_Malloc(NSIG * sizeof(user_signal_t));
         if (user_signals == NULL)
             return PyErr_NoMemory();
+        memset(user_signals, 0, NSIG * sizeof(user_signal_t));
     }
     user = &user_signals[signum];
 
@@ -1136,7 +1137,7 @@ void _PyFaulthandler_Fini(void)
     if (user_signals != NULL) {
         for (signum=0; signum < NSIG; signum++)
             faulthandler_unregister(&user_signals[signum], signum);
-        free(user_signals);
+        PyMem_Free(user_signals);
         user_signals = NULL;
     }
 #endif

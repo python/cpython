@@ -58,6 +58,9 @@ PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
 
+PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
+PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
+
 /* Macros. */
 
 /* PyMem_MALLOC(0) means malloc(1). Some systems would return NULL

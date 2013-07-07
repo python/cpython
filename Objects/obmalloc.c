@@ -294,6 +294,34 @@ PyMem_Free(void *ptr)
     _PyMem.free(_PyMem.ctx, ptr);
 }
 
+char *
+_PyMem_RawStrdup(const char *str)
+{
+    size_t size;
+    char *copy;
+
+    size = strlen(str) + 1;
+    copy = PyMem_RawMalloc(size);
+    if (copy == NULL)
+        return NULL;
+    memcpy(copy, str, size);
+    return copy;
+}
+
+char *
+_PyMem_Strdup(const char *str)
+{
+    size_t size;
+    char *copy;
+
+    size = strlen(str) + 1;
+    copy = PyMem_Malloc(size);
+    if (copy == NULL)
+        return NULL;
+    memcpy(copy, str, size);
+    return copy;
+}
+
 void *
 PyObject_Malloc(size_t size)
 {
