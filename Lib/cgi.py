@@ -699,7 +699,7 @@ class FieldStorage:
                          self.encoding, self.errors)
             self.bytes_read += part.bytes_read
             self.list.append(part)
-            if self.bytes_read >= self.length:
+            if part.done or self.bytes_read >= self.length > 0:
                 break
         self.skip_lines()
 
