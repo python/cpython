@@ -77,7 +77,7 @@ block_new(size_t size)
 {
     /* Allocate header and block as one unit.
        ab_mem points just past header. */
-    block *b = (block *)malloc(sizeof(block) + size);
+    block *b = (block *)PyMem_Malloc(sizeof(block) + size);
     if (!b)
         return NULL;
     b->ab_size = size;
@@ -92,7 +92,7 @@ static void
 block_free(block *b) {
     while (b) {
         block *next = b->ab_next;
-        free(b);
+        PyMem_Free(b);
         b = next;
     }
 }
@@ -127,20 +127,20 @@ block_alloc(block *b, size_t size)
 PyArena *
 PyArena_New()
 {
-    PyArena* arena = (PyArena *)malloc(sizeof(PyArena));
+    PyArena* arena = (PyArena *)PyMem_Malloc(sizeof(PyArena));
     if (!arena)
         return (PyArena*)PyErr_NoMemory();
 
     arena->a_head = block_new(DEFAULT_BLOCK_SIZE);
     arena->a_cur = arena->a_head;
     if (!arena->a_head) {
-        free((void *)arena);
+        PyMem_Free((void *)arena);
         return (PyArena*)PyErr_NoMemory();
     }
     arena->a_objects = PyList_New(0);
     if (!arena->a_objects) {
         block_free(arena->a_head);
-        free((void *)arena);
+        PyMem_Free((void *)arena);
         return (PyArena*)PyErr_NoMemory();
     }
 #if defined(Py_DEBUG)
@@ -173,7 +173,7 @@ PyArena_Free(PyArena *arena)
     */
 
     Py_DECREF(arena->a_objects);
-    free(arena);
+    PyMem_Free(arena);
 }
 
 void *
