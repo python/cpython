@@ -248,6 +248,24 @@ BZ2Compressor_flush(BZ2Compressor *self, PyObject *noargs)
     return result;
 }
 
+static void*
+BZ2_Malloc(void* ctx, int items, int size)
+{
+    if (items < 0 || size < 0)
+        return NULL;
+    if ((size_t)items > (size_t)PY_SSIZE_T_MAX / (size_t)size)
+        return NULL;
+    /* PyMem_Malloc() cannot be used: compress() and decompress()
+       release the GIL */
+    return PyMem_RawMalloc(items * size);
+}
+
+static void
+BZ2_Free(void* ctx, void *ptr)
+{
+    return PyMem_RawFree(ptr);
+}
+
 static int
 BZ2Compressor_init(BZ2Compressor *self, PyObject *args, PyObject *kwargs)
 {
@@ -270,6 +288,9 @@ BZ2Compressor_init(BZ2Compressor *self, PyObject *args, PyObject *kwargs)
     }
 #endif
 
+    self->bzs.opaque = NULL;
+    self->bzs.bzalloc = BZ2_Malloc;
+    self->bzs.bzfree = BZ2_Free;
     bzerror = BZ2_bzCompressInit(&self->bzs, compresslevel, 0, 0);
     if (catch_bz2_error(bzerror))
         goto error;
