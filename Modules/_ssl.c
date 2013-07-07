@@ -2070,8 +2070,8 @@ _pwinfo_set(_PySSLPasswordInfo *pw_info, PyObject* password,
         goto error;
     }
 
-    free(pw_info->password);
-    pw_info->password = malloc(size);
+    PyMem_Free(pw_info->password);
+    pw_info->password = PyMem_Malloc(size);
     if (!pw_info->password) {
         PyErr_SetString(PyExc_MemoryError,
                         "unable to allocate password buffer");
@@ -2215,13 +2215,13 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     }
     SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
     SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
-    free(pw_info.password);
+    PyMem_Free(pw_info.password);
     Py_RETURN_NONE;
 
 error:
     SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
     SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
-    free(pw_info.password);
+    PyMem_Free(pw_info.password);
     Py_XDECREF(keyfile_bytes);
     Py_XDECREF(certfile_bytes);
     return NULL;
