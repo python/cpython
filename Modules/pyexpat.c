@@ -10,6 +10,9 @@
 
 #define FIX_TRACE
 
+static XML_Memory_Handling_Suite ExpatMemoryHandler = {
+    PyObject_Malloc, PyObject_Realloc, PyObject_Free};
+
 enum HandlerTypes {
     StartElement,
     EndElement,
@@ -1177,12 +1180,9 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     self->in_callback = 0;
     self->ns_prefixes = 0;
     self->handlers = NULL;
-    if (namespace_separator != NULL) {
-        self->itself = XML_ParserCreateNS(encoding, *namespace_separator);
-    }
-    else {
-        self->itself = XML_ParserCreate(encoding);
-    }
+    /* namespace_separator is either NULL or contains one char + \0 */
+    self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
+                                       namespace_separator);
 #if ((XML_MAJOR_VERSION >= 2) && (XML_MINOR_VERSION >= 1)) || defined(XML_HAS_SET_HASH_SALT)
     /* This feature was added upstream in libexpat 2.1.0.  Our expat copy
      * has a backport of this feature where we also define XML_HAS_SET_HASH_SALT
