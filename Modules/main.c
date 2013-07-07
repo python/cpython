@@ -544,7 +544,7 @@ Py_Main(int argc, wchar_t **argv)
             Py_FatalError(
                "not enough memory to copy PYTHONWARNINGS");
         strcpy(buf, p);
-        oldloc = strdup(setlocale(LC_ALL, NULL));
+        oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
         setlocale(LC_ALL, "");
         for (p = strtok(buf, ","); p != NULL; p = strtok(NULL, ",")) {
 #ifdef __APPLE__
@@ -562,7 +562,7 @@ Py_Main(int argc, wchar_t **argv)
             Py_DECREF(unicode);
         }
         setlocale(LC_ALL, oldloc);
-        free(oldloc);
+        PyMem_RawFree(oldloc);
         PyMem_RawFree(buf);
     }
 #endif

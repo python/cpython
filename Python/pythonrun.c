@@ -174,7 +174,7 @@ get_codec_name(const char *encoding)
     name_utf8 = _PyUnicode_AsString(name);
     if (name_utf8 == NULL)
         goto error;
-    name_str = strdup(name_utf8);
+    name_str = _PyMem_RawStrdup(name_utf8);
     Py_DECREF(name);
     if (name_str == NULL) {
         PyErr_NoMemory();
@@ -626,7 +626,7 @@ Py_Finalize(void)
 
     /* reset file system default encoding */
     if (!Py_HasFileSystemDefaultEncoding && Py_FileSystemDefaultEncoding) {
-        free((char*)Py_FileSystemDefaultEncoding);
+        PyMem_RawFree((char*)Py_FileSystemDefaultEncoding);
         Py_FileSystemDefaultEncoding = NULL;
     }
 
@@ -1081,7 +1081,11 @@ initstdio(void)
     encoding = Py_GETENV("PYTHONIOENCODING");
     errors = NULL;
     if (encoding) {
-        encoding = strdup(encoding);
+        encoding = _PyMem_Strdup(encoding);
+        if (encoding == NULL) {
+            PyErr_NoMemory();
+            goto error;
+        }
         errors = strchr(encoding, ':');
         if (errors) {
             *errors = '\0';
@@ -1140,10 +1144,10 @@ initstdio(void)
        when import.c tries to write to stderr in verbose mode. */
     encoding_attr = PyObject_GetAttrString(std, "encoding");
     if (encoding_attr != NULL) {
-        const char * encoding;
-        encoding = _PyUnicode_AsString(encoding_attr);
-        if (encoding != NULL) {
-            PyObject *codec_info = _PyCodec_Lookup(encoding);
+        const char * std_encoding;
+        std_encoding = _PyUnicode_AsString(encoding_attr);
+        if (std_encoding != NULL) {
+            PyObject *codec_info = _PyCodec_Lookup(std_encoding);
             Py_XDECREF(codec_info);
         }
         Py_DECREF(encoding_attr);
@@ -1160,8 +1164,7 @@ initstdio(void)
         status = -1;
     }
 
-    if (encoding)
-        free(encoding);
+    PyMem_Free(encoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return status;
