@@ -3406,7 +3406,7 @@ PyInit__curses(void)
                 continue;
             if (strncmp(key_n,"KEY_F(",6)==0) {
                 char *p1, *p2;
-                key_n2 = malloc(strlen(key_n)+1);
+                key_n2 = PyMem_Malloc(strlen(key_n)+1);
                 if (!key_n2) {
                     PyErr_NoMemory();
                     break;
@@ -3425,7 +3425,7 @@ PyInit__curses(void)
                 key_n2 = key_n;
             SetDictInt(key_n2,key);
             if (key_n2 != key_n)
-                free(key_n2);
+                PyMem_Free(key_n2);
         }
 #endif
         SetDictInt("KEY_MIN", KEY_MIN);

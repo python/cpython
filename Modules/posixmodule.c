@@ -1298,14 +1298,14 @@ win32_wchdir(LPCWSTR path)
     if (!result)
         return FALSE;
     if (result > MAX_PATH+1) {
-        new_path = malloc(result * sizeof(wchar_t));
+        new_path = PyMem_RawMalloc(result * sizeof(wchar_t));
         if (!new_path) {
             SetLastError(ERROR_OUTOFMEMORY);
             return FALSE;
         }
         result = GetCurrentDirectoryW(result, new_path);
         if (!result) {
-            free(new_path);
+            PyMem_RawFree(new_path);
             return FALSE;
         }
     }
@@ -1316,7 +1316,7 @@ win32_wchdir(LPCWSTR path)
     env[1] = new_path[0];
     result = SetEnvironmentVariableW(env, new_path);
     if (new_path != _new_path)
-        free(new_path);
+        PyMem_RawFree(new_path);
     return result;
 }
 #endif
@@ -1497,7 +1497,7 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
     if(!buf_size)
         return FALSE;
 
-    buf = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
+    buf = (wchar_t *)PyMem_Malloc((buf_size+1)*sizeof(wchar_t));
     if (!buf) {
         SetLastError(ERROR_OUTOFMEMORY);
         return FALSE;
@@ -1507,12 +1507,12 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
                        buf, buf_size, VOLUME_NAME_DOS);
 
     if(!result_length) {
-        free(buf);
+        PyMem_Free(buf);
         return FALSE;
     }
 
     if(!CloseHandle(hdl)) {
-        free(buf);
+        PyMem_Free(buf);
         return FALSE;
     }
 
@@ -1603,7 +1603,7 @@ win32_xstat_impl(const char *path, struct win32_stat *result,
                     return -1;
 
                 code = win32_xstat_impl_w(target_path, result, FALSE);
-                free(target_path);
+                PyMem_Free(target_path);
                 return code;
             }
         } else
@@ -1699,7 +1699,7 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
                     return -1;
 
                 code = win32_xstat_impl_w(target_path, result, FALSE);
-                free(target_path);
+                PyMem_Free(target_path);
                 return code;
             }
         } else
@@ -3089,7 +3089,7 @@ posix_getcwd(int use_bytes)
            terminating \0. If the buffer is too small, len includes
            the space needed for the terminator. */
         if (len >= sizeof wbuf/ sizeof wbuf[0]) {
-            wbuf2 = malloc(len * sizeof(wchar_t));
+            wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
             if (wbuf2)
                 len = GetCurrentDirectoryW(len, wbuf2);
         }
@@ -3100,12 +3100,12 @@ posix_getcwd(int use_bytes)
         }
         if (!len) {
             if (wbuf2 != wbuf)
-                free(wbuf2);
+                PyMem_RawFree(wbuf2);
             return PyErr_SetFromWindowsErr(0);
         }
         resobj = PyUnicode_FromWideChar(wbuf2, len);
         if (wbuf2 != wbuf)
-            free(wbuf2);
+            PyMem_RawFree(wbuf2);
         return resobj;
     }
 
@@ -3289,7 +3289,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
             len = wcslen(path->wide);
         }
         /* The +5 is so we can append "\\*.*\0" */
-        wnamebuf = malloc((len + 5) * sizeof(wchar_t));
+        wnamebuf = PyMem_Malloc((len + 5) * sizeof(wchar_t));
         if (!wnamebuf) {
             PyErr_NoMemory();
             goto exit;
@@ -3410,8 +3410,7 @@ exit:
             }
         }
     }
-    if (wnamebuf)
-        free(wnamebuf);
+    PyMem_Free(wnamebuf);
 
     return list;
 }  /* end of _listdir_windows_no_opendir */
@@ -3575,7 +3574,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
                                   Py_ARRAY_LENGTH(woutbuf),
                                   woutbuf, &wtemp);
         if (result > Py_ARRAY_LENGTH(woutbuf)) {
-            woutbufp = malloc(result * sizeof(wchar_t));
+            woutbufp = PyMem_Malloc(result * sizeof(wchar_t));
             if (!woutbufp)
                 return PyErr_NoMemory();
             result = GetFullPathNameW(wpath, result, woutbufp, &wtemp);
@@ -3585,7 +3584,7 @@ posix__getfullpathname(PyObject *self, PyObject *args)
         else
             v = win32_error_object("GetFullPathNameW", po);
         if (woutbufp != woutbuf)
-            free(woutbufp);
+            PyMem_Free(woutbufp);
         return v;
     }
     /* Drop the argument parsing error as narrow strings
@@ -3655,7 +3654,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
     if(!buf_size)
         return win32_error_object("GetFinalPathNameByHandle", po);
 
-    target_path = (wchar_t *)malloc((buf_size+1)*sizeof(wchar_t));
+    target_path = (wchar_t *)PyMem_Malloc((buf_size+1)*sizeof(wchar_t));
     if(!target_path)
         return PyErr_NoMemory();
 
@@ -3669,7 +3668,7 @@ posix__getfinalpathname(PyObject *self, PyObject *args)
 
     target_path[result_length] = 0;
     result = PyUnicode_FromWideChar(target_path, result_length);
-    free(target_path);
+    PyMem_Free(target_path);
     return result;
 
 } /* end of posix__getfinalpathname */

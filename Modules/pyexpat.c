@@ -997,7 +997,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     PyObject_GC_Track(new_parser);
 
     if (self->buffer != NULL) {
-        new_parser->buffer = malloc(new_parser->buffer_size);
+        new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
         if (new_parser->buffer == NULL) {
             Py_DECREF(new_parser);
             return PyErr_NoMemory();
@@ -1014,7 +1014,7 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
-    new_parser->handlers = malloc(sizeof(PyObject *) * i);
+    new_parser->handlers = PyMem_Malloc(sizeof(PyObject *) * i);
     if (!new_parser->handlers) {
         Py_DECREF(new_parser);
         return PyErr_NoMemory();
@@ -1206,7 +1206,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
-    self->handlers = malloc(sizeof(PyObject *) * i);
+    self->handlers = PyMem_Malloc(sizeof(PyObject *) * i);
     if (!self->handlers) {
         Py_DECREF(self);
         return PyErr_NoMemory();
@@ -1233,11 +1233,11 @@ xmlparse_dealloc(xmlparseobject *self)
             self->handlers[i] = NULL;
             Py_XDECREF(temp);
         }
-        free(self->handlers);
+        PyMem_Free(self->handlers);
         self->handlers = NULL;
     }
     if (self->buffer != NULL) {
-        free(self->buffer);
+        PyMem_Free(self->buffer);
         self->buffer = NULL;
     }
     Py_XDECREF(self->intern);
@@ -1437,7 +1437,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
             return -1;
         if (b) {
             if (self->buffer == NULL) {
-                self->buffer = malloc(self->buffer_size);
+                self->buffer = PyMem_Malloc(self->buffer_size);
                 if (self->buffer == NULL) {
                     PyErr_NoMemory();
                     return -1;
@@ -1448,7 +1448,7 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         else if (self->buffer != NULL) {
             if (flush_character_buffer(self) < 0)
                 return -1;
-            free(self->buffer);
+            PyMem_Free(self->buffer);
             self->buffer = NULL;
         }
         return 0;
@@ -1508,9 +1508,9 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
           flush_character_buffer(self);
         }
         /* free existing buffer */
-        free(self->buffer);
+        PyMem_Free(self->buffer);
       }
-      self->buffer = malloc(new_buffer_size);
+      self->buffer = PyMem_Malloc(new_buffer_size);
       if (self->buffer == NULL) {
         PyErr_NoMemory();
         return -1;

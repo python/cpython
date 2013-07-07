@@ -165,7 +165,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
 
     zst.avail_out = length + length/1000 + 12 + 1;
 
-    output = (Byte*)malloc(zst.avail_out);
+    output = (Byte*)PyMem_Malloc(zst.avail_out);
     if (output == NULL) {
         PyErr_SetString(PyExc_MemoryError,
                         "Can't allocate memory to compress data");
@@ -218,7 +218,7 @@ PyZlib_compress(PyObject *self, PyObject *args)
 
  error:
     PyBuffer_Release(&pinput);
-    free(output);
+    PyMem_Free(output);
 
     return ReturnVal;
 }

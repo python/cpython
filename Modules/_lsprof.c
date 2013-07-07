@@ -223,7 +223,7 @@ static ProfilerEntry*
 newProfilerEntry(ProfilerObject *pObj, void *key, PyObject *userObj)
 {
     ProfilerEntry *self;
-    self = (ProfilerEntry*) malloc(sizeof(ProfilerEntry));
+    self = (ProfilerEntry*) PyMem_Malloc(sizeof(ProfilerEntry));
     if (self == NULL) {
         pObj->flags |= POF_NOMEMORY;
         return NULL;
@@ -231,7 +231,7 @@ newProfilerEntry(ProfilerObject *pObj, void *key, PyObject *userObj)
     userObj = normalizeUserObj(userObj);
     if (userObj == NULL) {
         PyErr_Clear();
-        free(self);
+        PyMem_Free(self);
         pObj->flags |= POF_NOMEMORY;
         return NULL;
     }
@@ -264,7 +264,7 @@ static ProfilerSubEntry *
 newSubEntry(ProfilerObject *pObj,  ProfilerEntry *caller, ProfilerEntry* entry)
 {
     ProfilerSubEntry *self;
-    self = (ProfilerSubEntry*) malloc(sizeof(ProfilerSubEntry));
+    self = (ProfilerSubEntry*) PyMem_Malloc(sizeof(ProfilerSubEntry));
     if (self == NULL) {
         pObj->flags |= POF_NOMEMORY;
         return NULL;
@@ -282,7 +282,7 @@ newSubEntry(ProfilerObject *pObj,  ProfilerEntry *caller, ProfilerEntry* entry)
 static int freeSubEntry(rotating_node_t *header, void *arg)
 {
     ProfilerSubEntry *subentry = (ProfilerSubEntry*) header;
-    free(subentry);
+    PyMem_Free(subentry);
     return 0;
 }
 
@@ -291,7 +291,7 @@ static int freeEntry(rotating_node_t *header, void *arg)
     ProfilerEntry *entry = (ProfilerEntry*) header;
     RotatingTree_Enum(entry->calls, freeSubEntry, NULL);
     Py_DECREF(entry->userObj);
-    free(entry);
+    PyMem_Free(entry);
     return 0;
 }
 
@@ -301,13 +301,13 @@ static void clearEntries(ProfilerObject *pObj)
     pObj->profilerEntries = EMPTY_ROTATING_TREE;
     /* release the memory hold by the ProfilerContexts */
     if (pObj->currentProfilerContext) {
-        free(pObj->currentProfilerContext);
+        PyMem_Free(pObj->currentProfilerContext);
         pObj->currentProfilerContext = NULL;
     }
     while (pObj->freelistProfilerContext) {
         ProfilerContext *c = pObj->freelistProfilerContext;
         pObj->freelistProfilerContext = c->previous;
-        free(c);
+        PyMem_Free(c);
     }
     pObj->freelistProfilerContext = NULL;
 }
@@ -393,7 +393,7 @@ ptrace_enter_call(PyObject *self, void *key, PyObject *userObj)
     else {
         /* free list exhausted, allocate a new one */
         pContext = (ProfilerContext*)
-            malloc(sizeof(ProfilerContext));
+            PyMem_Malloc(sizeof(ProfilerContext));
         if (pContext == NULL) {
             pObj->flags |= POF_NOMEMORY;
             goto restorePyerr;
@@ -712,7 +712,7 @@ flush_unmatched(ProfilerObject *pObj)
         else
             pObj->currentProfilerContext = pContext->previous;
         if (pContext)
-            free(pContext);
+            PyMem_Free(pContext);
     }
 
 }
