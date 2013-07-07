@@ -263,7 +263,7 @@ BZ2_Malloc(void* ctx, int items, int size)
 static void
 BZ2_Free(void* ctx, void *ptr)
 {
-    return PyMem_RawFree(ptr);
+    PyMem_RawFree(ptr);
 }
 
 static int
