@@ -44,6 +44,11 @@ _modules = {}
 
 error = (error, IOError)
 
+try:
+    from dbm import ndbm
+except ImportError:
+    ndbm = None
+
 
 def open(file, flag='r', mode=0o666):
     """Open or create database at path given by *file*.
