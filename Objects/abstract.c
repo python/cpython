@@ -1238,7 +1238,7 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
   to be an int or have an __int__ method. Steals integral's
   reference. error_format will be used to create the TypeError if integral
   isn't actually an Integral instance. error_format should be a format string
-  that can accept a char* naming integral's type. 
+  that can accept a char* naming integral's type.
 */
 static PyObject *
 convert_integral_to_int(PyObject *integral, const char *error_format)
@@ -1257,7 +1257,7 @@ convert_integral_to_int(PyObject *integral, const char *error_format)
     }
     PyErr_Format(PyExc_TypeError, error_format, Py_TYPE(integral)->tp_name);
     Py_DECREF(integral);
-    return NULL;    
+    return NULL;
 }
 
 
@@ -2721,8 +2721,8 @@ PyIter_Next(PyObject *iter)
  * NULL terminated string pointers with a NULL char* terminating the array.
  * (ie: an argv or env list)
  *
- * Memory allocated for the returned list is allocated using malloc() and MUST
- * be freed by the caller using a free() loop or _Py_FreeCharPArray().
+ * Memory allocated for the returned list is allocated using PyMem_Malloc()
+ * and MUST be freed by _Py_FreeCharPArray().
  */
 char *const *
 _PySequence_BytesToCharpArray(PyObject* self)
@@ -2730,6 +2730,7 @@ _PySequence_BytesToCharpArray(PyObject* self)
     char **array;
     Py_ssize_t i, argc;
     PyObject *item = NULL;
+    Py_ssize_t size;
 
     argc = PySequence_Size(self);
     if (argc == -1)
@@ -2742,7 +2743,7 @@ _PySequence_BytesToCharpArray(PyObject* self)
         return NULL;
     }
 
-    array = malloc((argc + 1) * sizeof(char *));
+    array = PyMem_Malloc((argc + 1) * sizeof(char *));
     if (array == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -2761,11 +2762,13 @@ _PySequence_BytesToCharpArray(PyObject* self)
             array[i] = NULL;
             goto fail;
         }
-        array[i] = strdup(data);
+        size = PyBytes_GET_SIZE(item) + 1;
+        array[i] = PyMem_Malloc(size);
         if (!array[i]) {
             PyErr_NoMemory();
             goto fail;
         }
+        memcpy(array[i], data, size);
         Py_DECREF(item);
     }
     array[argc] = NULL;
@@ -2785,7 +2788,7 @@ _Py_FreeCharPArray(char *const array[])
 {
     Py_ssize_t i;
     for (i = 0; array[i] != NULL; ++i) {
-        free(array[i]);
+        PyMem_Free(array[i]);
     }
-    free((void*)array);
+    PyMem_Free((void*)array);
 }
