@@ -18,16 +18,14 @@
 #define CENTER ((BLOCKLEN - 1) / 2)
 
 /* A `dequeobject` is composed of a doubly-linked list of `block` nodes.
- * This list is not circular (the leftmost block has leftlink==NULL,
- * and the rightmost block has rightlink==NULL).  A deque d's first
- * element is at d.leftblock[leftindex] and its last element is at
- * d.rightblock[rightindex]; note that, unlike as for Python slice
- * indices, these indices are inclusive on both ends.  By being inclusive
- * on both ends, algorithms for left and right operations become
- * symmetrical which simplifies the design.
- *
  * The list of blocks is never empty, so d.leftblock and d.rightblock
- * are never equal to NULL.
+ * are never equal to NULL.  The list is not circular.
+ *
+ * A deque d's first element is at d.leftblock[leftindex]
+ * and its last element is at d.rightblock[rightindex].
+ * Unlike Python slice indices, these indices are inclusive
+ * on both ends.  This makes the algorithms for left and
+ * right operations more symmetrical and simplifies the design.
  *
  * The indices, d.leftindex and d.rightindex are always in the range
  *     0 <= index < BLOCKLEN.
@@ -52,12 +50,38 @@ typedef struct BLOCK {
     struct BLOCK *rightlink;
 } block;
 
+/* For debug builds, add error checking to track the endpoints
+ * in the chain of links.  The goal is to make sure that link
+ * assignments only take place at endpoints so that links already
+ * in use do not get overwritten.
+ *
+ * CHECK_END should happen before each assignment to a block's link field.
+ * MARK_END should happen whenever a link field becomes a new endpoint.
+ * This happens when new blocks are added or whenever an existing
+ * block is freed leaving another existing block as the new endpoint.
+ */
+
+#if Py_DEBUG
+#define MARK_END(link)  link = NULL;
+#define CHECK_END(link) assert(link == NULL);
+#define CHECK_NOT_END(link) assert(link != NULL);
+#else
+#define MARK_END(link)
+#define CHECK_END(link)
+#define CHECK_NOT_END(link)
+#endif
+
+/* A simple freelisting scheme is used to minimize calls to the memory
+   allocator.  It accomodates common use cases where new blocks are being
+   added at about the same rate as old blocks are being freed.
+ */
+
 #define MAXFREEBLOCKS 10
 static Py_ssize_t numfreeblocks = 0;
 static block *freeblocks[MAXFREEBLOCKS];
 
 static block *
-newblock(block *leftlink, block *rightlink, Py_ssize_t len) {
+newblock(Py_ssize_t len) {
     block *b;
     /* To prevent len from overflowing PY_SSIZE_T_MAX, we refuse to
      * allocate new blocks if the current len is nearing overflow. */
@@ -68,17 +92,14 @@ newblock(block *leftlink, block *rightlink, Py_ssize_t len) {
     }
     if (numfreeblocks) {
         numfreeblocks--;
-        b = freeblocks[numfreeblocks];
-    } else {
-        b = PyMem_Malloc(sizeof(block));
-        if (b == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
+        return freeblocks[numfreeblocks];
     }
-    b->leftlink = leftlink;
-    b->rightlink = rightlink;
-    return b;
+    b = PyMem_Malloc(sizeof(block));
+    if (b != NULL) {
+        return b;
+    }
+    PyErr_NoMemory();
+    return NULL;
 }
 
 static void
@@ -132,11 +153,13 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (deque == NULL)
         return NULL;
 
-    b = newblock(NULL, NULL, 0);
+    b = newblock(0);
     if (b == NULL) {
         Py_DECREF(deque);
         return NULL;
     }
+    MARK_END(b->leftlink);
+    MARK_END(b->rightlink);
 
     assert(BLOCKLEN >= 2);
     deque->leftblock = b;
@@ -177,7 +200,8 @@ deque_pop(dequeobject *deque, PyObject *unused)
             prevblock = deque->rightblock->leftlink;
             assert(deque->leftblock != deque->rightblock);
             freeblock(deque->rightblock);
-            prevblock->rightlink = NULL;
+            CHECK_NOT_END(prevblock);
+            MARK_END(prevblock->rightlink);
             deque->rightblock = prevblock;
             deque->rightindex = BLOCKLEN - 1;
         }
@@ -214,8 +238,8 @@ deque_popleft(dequeobject *deque, PyObject *unused)
             assert(deque->leftblock != deque->rightblock);
             prevblock = deque->leftblock->rightlink;
             freeblock(deque->leftblock);
-            assert(prevblock != NULL);
-            prevblock->leftlink = NULL;
+            CHECK_NOT_END(prevblock);
+            MARK_END(prevblock->leftlink);
             deque->leftblock = prevblock;
             deque->leftindex = 0;
         }
@@ -230,12 +254,14 @@ deque_append(dequeobject *deque, PyObject *item)
 {
     deque->state++;
     if (deque->rightindex == BLOCKLEN-1) {
-        block *b = newblock(deque->rightblock, NULL, Py_SIZE(deque));
+        block *b = newblock(Py_SIZE(deque));
         if (b == NULL)
             return NULL;
-        assert(deque->rightblock->rightlink == NULL);
+        b->leftlink = deque->rightblock;
+        CHECK_END(deque->rightblock->rightlink);
         deque->rightblock->rightlink = b;
         deque->rightblock = b;
+        MARK_END(b->rightlink);
         deque->rightindex = -1;
     }
     Py_INCREF(item);
@@ -253,12 +279,14 @@ deque_appendleft(dequeobject *deque, PyObject *item)
 {
     deque->state++;
     if (deque->leftindex == 0) {
-        block *b = newblock(NULL, deque->leftblock, Py_SIZE(deque));
+        block *b = newblock(Py_SIZE(deque));
         if (b == NULL)
             return NULL;
-        assert(deque->leftblock->leftlink == NULL);
+        b->rightlink = deque->leftblock;
+        CHECK_END(deque->leftblock->leftlink);
         deque->leftblock->leftlink = b;
         deque->leftblock = b;
+        MARK_END(b->leftlink);
         deque->leftindex = BLOCKLEN;
     }
     Py_INCREF(item);
@@ -314,16 +342,17 @@ deque_extend(dequeobject *deque, PyObject *iterable)
     while ((item = PyIter_Next(it)) != NULL) {
         deque->state++;
         if (deque->rightindex == BLOCKLEN-1) {
-            block *b = newblock(deque->rightblock, NULL,
-                                Py_SIZE(deque));
+            block *b = newblock(Py_SIZE(deque));
             if (b == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(it);
                 return NULL;
             }
-            assert(deque->rightblock->rightlink == NULL);
+            b->leftlink = deque->rightblock;
+            CHECK_END(deque->rightblock->rightlink);
             deque->rightblock->rightlink = b;
             deque->rightblock = b;
+            MARK_END(b->rightlink);
             deque->rightindex = -1;
         }
         Py_SIZE(deque)++;
@@ -366,16 +395,17 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
     while ((item = PyIter_Next(it)) != NULL) {
         deque->state++;
         if (deque->leftindex == 0) {
-            block *b = newblock(NULL, deque->leftblock,
-                                Py_SIZE(deque));
+            block *b = newblock(Py_SIZE(deque));
             if (b == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(it);
                 return NULL;
             }
-            assert(deque->leftblock->leftlink == NULL);
+            b->rightlink = deque->leftblock;
+            CHECK_END(deque->leftblock->leftlink);
             deque->leftblock->leftlink = b;
             deque->leftblock = b;
+            MARK_END(b->leftlink);
             deque->leftindex = BLOCKLEN;
         }
         Py_SIZE(deque)++;
@@ -430,14 +460,16 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     deque->state++;
     while (n > 0) {
         if (leftindex == 0) {
-            block *b = newblock(NULL, leftblock, len);
+            block *b = newblock(len);
             if (b == NULL) {
                 rv = -1;
                 goto done;
             }
-            assert(leftblock->leftlink == NULL);
+            b->rightlink = leftblock;
+            CHECK_END(leftblock->leftlink);
             leftblock->leftlink = b;
             leftblock = b;
+            MARK_END(b->leftlink);
             leftindex = BLOCKLEN;
         }
         assert(leftindex > 0);
@@ -462,24 +494,26 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
 
         if (rightindex == -1) {
             block *prevblock = rightblock->leftlink;
-            assert(rightblock != NULL);
             assert(leftblock != rightblock);
             freeblock(rightblock);
-            prevblock->rightlink = NULL;
+            CHECK_NOT_END(prevblock);
+            MARK_END(prevblock->rightlink);
             rightblock = prevblock;
             rightindex = BLOCKLEN - 1;
         }
     }
     while (n < 0) {
         if (rightindex == BLOCKLEN - 1) {
-            block *b = newblock(rightblock, NULL, len);
+            block *b = newblock(len);
             if (b == NULL) {
                 rv = -1;
                 goto done;
             }
-            assert(rightblock->rightlink == NULL);
+            b->leftlink = rightblock;
+            CHECK_END(rightblock->rightlink);
             rightblock->rightlink = b;
             rightblock = b;
+            MARK_END(b->rightlink);
             rightindex = -1;
         }
         assert (rightindex < BLOCKLEN - 1);
@@ -506,8 +540,8 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             block *nextblock = leftblock->rightlink;
             assert(leftblock != rightblock);
             freeblock(leftblock);
-            assert(nextblock != NULL);
-            nextblock->leftlink = NULL;
+            CHECK_NOT_END(nextblock);
+            MARK_END(nextblock->leftlink);
             leftblock = nextblock;
             leftindex = 0;
         }
@@ -550,8 +584,8 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     for (i=0 ; i<n ; i++) {
         /* Validate that pointers haven't met in the middle */
         assert(leftblock != rightblock || leftindex < rightindex);
-        assert(leftblock != NULL);
-        assert(rightblock != NULL);
+        CHECK_NOT_END(leftblock);
+        CHECK_NOT_END(rightblock);
 
         /* Swap */
         tmp = leftblock->data[leftindex];
@@ -591,7 +625,7 @@ deque_count(dequeobject *deque, PyObject *v)
     int cmp;
 
     for (i=0 ; i<n ; i++) {
-        assert(b != NULL);
+        CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
@@ -1199,7 +1233,7 @@ dequeiter_next(dequeiterobject *it)
     it->index++;
     it->counter--;
     if (it->index == BLOCKLEN && it->counter > 0) {
-        assert (it->b->rightlink != NULL);
+        CHECK_NOT_END(it->b->rightlink);
         it->b = it->b->rightlink;
         it->index = 0;
     }
@@ -1341,7 +1375,7 @@ dequereviter_next(dequeiterobject *it)
     it->index--;
     it->counter--;
     if (it->index == -1 && it->counter > 0) {
-        assert (it->b->leftlink != NULL);
+        CHECK_NOT_END(it->b->leftlink);
         it->b = it->b->leftlink;
         it->index = BLOCKLEN - 1;
     }
