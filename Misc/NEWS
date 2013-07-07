@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #3329: Implement the PEP 445: Add new APIs to customize Python memory
+  allocators.
+
 - Issue #18328: Reorder ops in PyThreadState_Delete*() functions. Now the
   tstate is first removed from TLS and then deallocated.
 

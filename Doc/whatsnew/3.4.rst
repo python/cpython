@@ -112,21 +112,11 @@ Security improvements:
 Please read on for a comprehensive list of user-facing changes.
 
 
-.. PEP-sized items next.
+PEP 445: Add new APIs to customize Python memory allocators
+===========================================================
 
-.. _pep-4XX:
-
-.. PEP 4XX: Example PEP
-.. ====================
-
-
-.. (Implemented by Foo Bar.)
-
-.. .. seealso::
-
-   :pep:`4XX` - Example PEP
-      PEP written by Example Author
-
+The :pep:`445` adds new Application Programming Interfaces (API) to customize
+Python memory allocators.
 
 
 
