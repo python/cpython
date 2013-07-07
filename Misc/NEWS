@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17206: On Windows, increase the stack size from 2 MB to 4.2 MB to fix
+  a stack overflow in the marshal module (fix a crash in test_marshal).
+  Patch written by Jeremy Kloth.
+
 - Issue #3329: Implement the PEP 445: Add new APIs to customize Python memory
   allocators.
 
