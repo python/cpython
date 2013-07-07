@@ -581,8 +581,8 @@ PyDoc_STRVAR(reverse_doc,
 static PyObject *
 deque_count(dequeobject *deque, PyObject *v)
 {
-    block *leftblock = deque->leftblock;
-    Py_ssize_t leftindex = deque->leftindex;
+    block *b = deque->leftblock;
+    Py_ssize_t index = deque->leftindex;
     Py_ssize_t n = Py_SIZE(deque);
     Py_ssize_t i;
     Py_ssize_t count = 0;
@@ -591,8 +591,8 @@ deque_count(dequeobject *deque, PyObject *v)
     int cmp;
 
     for (i=0 ; i<n ; i++) {
-        assert(leftblock != NULL);
-        item = leftblock->data[leftindex];
+        assert(b != NULL);
+        item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
             count++;
@@ -606,10 +606,10 @@ deque_count(dequeobject *deque, PyObject *v)
         }
 
         /* Advance left block/index pair */
-        leftindex++;
-        if (leftindex == BLOCKLEN) {
-            leftblock = leftblock->rightlink;
-            leftindex = 0;
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
         }
     }
     return PyLong_FromSsize_t(count);
