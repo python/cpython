@@ -132,6 +132,10 @@ newcompobject(PyTypeObject *type)
     }
 #ifdef WITH_THREAD
     self->lock = PyThread_allocate_lock();
+    if (self->lock == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
+        return NULL;
+    }
 #endif
     return self;
 }
