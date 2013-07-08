@@ -549,8 +549,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
        so extend the output buffer and try again */
     while (err == Z_OK && self->zst.avail_out == 0) {
         if (_PyBytes_Resize(&RetVal, length << 1) < 0) {
-            Py_DECREF(RetVal);
-            RetVal = NULL;
+            Py_CLEAR(RetVal);
             goto error;
         }
         self->zst.next_out =
@@ -574,8 +573,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
         goto error;
     }
     if (_PyBytes_Resize(&RetVal, self->zst.total_out - start_total_out) < 0) {
-        Py_DECREF(RetVal);
-        RetVal = NULL;
+        Py_CLEAR(RetVal);
     }
 
  error:
@@ -722,8 +720,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
             length = max_length;
 
         if (_PyBytes_Resize(&RetVal, length) < 0) {
-            Py_DECREF(RetVal);
-            RetVal = NULL;
+            Py_CLEAR(RetVal);
             goto error;
         }
         self->zst.next_out =
@@ -757,8 +754,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     }
 
     if (_PyBytes_Resize(&RetVal, self->zst.total_out - start_total_out) < 0) {
-        Py_DECREF(RetVal);
-        RetVal = NULL;
+        Py_CLEAR(RetVal);
     }
 
  error:
@@ -811,8 +807,7 @@ PyZlib_flush(compobject *self, PyObject *args)
        so extend the output buffer and try again */
     while (err == Z_OK && self->zst.avail_out == 0) {
         if (_PyBytes_Resize(&RetVal, length << 1) < 0) {
-            Py_DECREF(RetVal);
-            RetVal = NULL;
+            Py_CLEAR(RetVal);
             goto error;
         }
         self->zst.next_out =
@@ -851,8 +846,7 @@ PyZlib_flush(compobject *self, PyObject *args)
     }
 
     if (_PyBytes_Resize(&RetVal, self->zst.total_out - start_total_out) < 0) {
-        Py_DECREF(RetVal);
-        RetVal = NULL;
+        Py_CLEAR(RetVal);
     }
 
  error:
@@ -1012,8 +1006,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
        so extend the output buffer and try again */
     while ((err == Z_OK || err == Z_BUF_ERROR) && self->zst.avail_out == 0) {
         if (_PyBytes_Resize(&retval, length << 1) < 0) {
-            Py_DECREF(retval);
-            retval = NULL;
+            Py_CLEAR(retval);
             goto error;
         }
         self->zst.next_out = (Byte *)PyBytes_AS_STRING(retval) + length;
@@ -1045,8 +1038,7 @@ PyZlib_unflush(compobject *self, PyObject *args)
     }
 
     if (_PyBytes_Resize(&retval, self->zst.total_out - start_total_out) < 0) {
-        Py_DECREF(retval);
-        retval = NULL;
+        Py_CLEAR(retval);
     }
 
 error:
