@@ -4171,10 +4171,15 @@ call_function(PyObject ***pp_stack, int oparg
         else {
             PyObject *callargs;
             callargs = load_args(pp_stack, na);
-            READ_TIMESTAMP(*pintr0);
-            C_TRACE(x, PyCFunction_Call(func,callargs,NULL));
-            READ_TIMESTAMP(*pintr1);
-            Py_XDECREF(callargs);
+            if (callargs != NULL) {
+                READ_TIMESTAMP(*pintr0);
+                C_TRACE(x, PyCFunction_Call(func,callargs,NULL));
+                READ_TIMESTAMP(*pintr1);
+                Py_XDECREF(callargs);
+            }
+            else {
+                x = NULL;
+            }
         }
     } else {
         if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
