@@ -262,7 +262,7 @@ to obtain individual characters, *slicing* allows you to obtain substring::
 
    >>> word[0:2]  # characters from position 0 (included) to 2 (excluded)
    'Py'
-   >>> word[2:5]  # characters from position 2 (included) to 4 (excluded)
+   >>> word[2:5]  # characters from position 2 (included) to 5 (excluded)
    'tho'
 
 Note how the start is always included, and the end always excluded.  This
