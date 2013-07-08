@@ -620,6 +620,8 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
         assert(dict->paramfunc);
         /* If it has an stgdict, it is a CDataObject */
         carg = dict->paramfunc((CDataObject *)obj);
+        if (carg == NULL)
+            return -1;
         pa->ffi_type = carg->pffi_type;
         memcpy(&pa->value, &carg->value, sizeof(pa->value));
         pa->keep = (PyObject *)carg;
