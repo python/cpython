@@ -4329,6 +4329,8 @@ add_subclass(PyTypeObject *base, PyTypeObject *type)
     }
     assert(PyList_Check(list));
     newobj = PyWeakref_NewRef((PyObject *)type, NULL);
+    if (newobj == NULL)
+        return -1;
     i = PyList_GET_SIZE(list);
     while (--i >= 0) {
         ref = PyList_GET_ITEM(list, i);
