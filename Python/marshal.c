@@ -998,6 +998,10 @@ r_object(RFILE *p)
         else {
             v = PyUnicode_New(0, 0);
         }
+        if (v == NULL) {
+            retval = NULL;
+            break;
+        }
         if (type == TYPE_INTERNED)
             PyUnicode_InternInPlace(&v);
         retval = v;
