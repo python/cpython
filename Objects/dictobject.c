@@ -389,6 +389,7 @@ static PyObject *
 new_dict(PyDictKeysObject *keys, PyObject **values)
 {
     PyDictObject *mp;
+    assert(keys != NULL);
     if (numfree) {
         mp = free_list[--numfree];
         assert (mp != NULL);
@@ -431,7 +432,10 @@ new_dict_with_shared_keys(PyDictKeysObject *keys)
 PyObject *
 PyDict_New(void)
 {
-    return new_dict(new_keys_object(PyDict_MINSIZE_COMBINED), NULL);
+    PyDictKeysObject *keys = new_keys_object(PyDict_MINSIZE_COMBINED);
+    if (keys == NULL)
+        return NULL;
+    return new_dict(keys, NULL);
 }
 
 /*
