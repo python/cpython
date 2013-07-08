@@ -1780,7 +1780,7 @@ static void *
 _PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
-    uchar *q = (uchar *)p;
+    uchar *q = (uchar *)p, *oldq;
     uchar *tail;
     size_t total;       /* nbytes + 4*SST */
     size_t original_nbytes;
@@ -1797,24 +1797,26 @@ _PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
         /* overflow:  can't represent total as a size_t */
         return NULL;
 
-    if (nbytes < original_nbytes) {
-        /* shrinking:  mark old extra memory dead */
-        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes + 2*SST);
-    }
-
     /* Resize and add decorations. We may get a new pointer here, in which
      * case we didn't get the chance to mark the old memory with DEADBYTE,
      * but we live with that.
      */
+    oldq = q;
     q = (uchar *)api->alloc.realloc(api->alloc.ctx, q - 2*SST, total);
     if (q == NULL)
         return NULL;
+
+    if (q == oldq && nbytes < original_nbytes) {
+        /* shrinking:  mark old extra memory dead */
+        memset(q + nbytes, DEADBYTE, original_nbytes - nbytes);
+    }
 
     write_size_t(q, nbytes);
     assert(q[SST] == (uchar)api->api_id);
     for (i = 1; i < SST; ++i)
         assert(q[SST + i] == FORBIDDENBYTE);
     q += 2*SST;
+
     tail = q + nbytes;
     memset(tail, FORBIDDENBYTE, SST);
     write_size_t(tail + SST, serialno);
