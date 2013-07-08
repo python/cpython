@@ -299,9 +299,9 @@ select_select(PyObject *self, PyObject *args)
         else
             ret = PyTuple_Pack(3, ifdlist, ofdlist, efdlist);
 
-        Py_DECREF(ifdlist);
-        Py_DECREF(ofdlist);
-        Py_DECREF(efdlist);
+        Py_XDECREF(ifdlist);
+        Py_XDECREF(ofdlist);
+        Py_XDECREF(efdlist);
     }
 
   finally:
