@@ -381,8 +381,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     /* Make a modifiable copy of the code string */
     codestr = (unsigned char *)PyMem_Malloc(codelen);
-    if (codestr == NULL)
+    if (codestr == NULL) {
+        PyErr_NoMemory();
         goto exitError;
+    }
     codestr = (unsigned char *)memcpy(codestr,
                                       PyBytes_AS_STRING(code), codelen);
 
@@ -396,8 +398,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
     /* Mapping to new jump targets after NOPs are removed */
     addrmap = (int *)PyMem_Malloc(codelen * sizeof(int));
-    if (addrmap == NULL)
+    if (addrmap == NULL) {
+        PyErr_NoMemory();
         goto exitError;
+    }
 
     blocks = markblocks(codestr, codelen);
     if (blocks == NULL)
