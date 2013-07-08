@@ -925,8 +925,10 @@ listpop(PyListObject *self, PyObject *args)
     v = self->ob_item[i];
     if (i == Py_SIZE(self) - 1) {
         status = list_resize(self, Py_SIZE(self) - 1);
-        assert(status >= 0);
-        return v; /* and v now owns the reference the list had */
+        if (status >= 0)
+            return v; /* and v now owns the reference the list had */
+        else
+            return NULL;
     }
     Py_INCREF(v);
     status = list_ass_slice(self, i, i+1, (PyObject *)NULL);
