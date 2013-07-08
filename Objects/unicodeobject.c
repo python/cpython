@@ -13157,6 +13157,7 @@ _PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer, const char *str, Py_ssize_t
 PyObject *
 _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 {
+    PyObject *str;
     if (writer->pos == 0) {
         Py_XDECREF(writer->buffer);
         _Py_RETURN_UNICODE_EMPTY();
@@ -13174,8 +13175,10 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
         }
         writer->buffer = newbuffer;
     }
-    assert(_PyUnicode_CheckConsistency(writer->buffer, 1));
-    return unicode_result_ready(writer->buffer);
+    str = writer->buffer;
+    writer->buffer = NULL;
+    assert(_PyUnicode_CheckConsistency(str, 1));
+    return unicode_result_ready(str);
 }
 
 void
