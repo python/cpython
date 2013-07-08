@@ -13159,18 +13159,21 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
 {
     PyObject *str;
     if (writer->pos == 0) {
-        Py_XDECREF(writer->buffer);
+        Py_CLEAR(writer->buffer);
         _Py_RETURN_UNICODE_EMPTY();
     }
     if (writer->readonly) {
-        assert(PyUnicode_GET_LENGTH(writer->buffer) == writer->pos);
-        return writer->buffer;
+        str = writer->buffer;
+        writer->buffer = NULL;
+        assert(PyUnicode_GET_LENGTH(str) == writer->pos);
+        return str;
     }
     if (PyUnicode_GET_LENGTH(writer->buffer) != writer->pos) {
         PyObject *newbuffer;
         newbuffer = resize_compact(writer->buffer, writer->pos);
         if (newbuffer == NULL) {
             Py_DECREF(writer->buffer);
+            writer->buffer = NULL;
             return NULL;
         }
         writer->buffer = newbuffer;
