@@ -332,6 +332,14 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         return result;
     }
 
+    /* Space saving heuristic.  Start filling from the left */
+    if (Py_SIZE(deque) == 0) {
+        assert(deque->leftblock == deque->rightblock);
+        assert(deque->leftindex == deque->rightindex+1);
+        deque->leftindex = 1;
+        deque->rightindex = 0;
+    }
+
     it = PyObject_GetIter(iterable);
     if (it == NULL)
         return NULL;
@@ -383,6 +391,14 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         result = deque_extendleft(deque, s);
         Py_DECREF(s);
         return result;
+    }
+
+    /* Space saving heuristic.  Start filling from the right */
+    if (Py_SIZE(deque) == 0) {
+        assert(deque->leftblock == deque->rightblock);
+        assert(deque->leftindex == deque->rightindex+1);
+        deque->leftindex = BLOCKLEN - 1;
+        deque->rightindex = BLOCKLEN - 2;
     }
 
     it = PyObject_GetIter(iterable);

@@ -543,8 +543,8 @@ class TestBasic(unittest.TestCase):
         check = self.check_sizeof
         check(deque(), basesize + blocksize)
         check(deque('a'), basesize + blocksize)
-        check(deque('a' * (BLOCKLEN // 2)), basesize + blocksize)
-        check(deque('a' * (BLOCKLEN // 2 + 1)), basesize + 2 * blocksize)
+        check(deque('a' * (BLOCKLEN - 1)), basesize + blocksize)
+        check(deque('a' * BLOCKLEN), basesize + 2 * blocksize)
         check(deque('a' * (42 * BLOCKLEN)), basesize + 43 * blocksize)
 
 class TestVariousIteratorArgs(unittest.TestCase):
