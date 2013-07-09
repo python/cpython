@@ -3312,7 +3312,11 @@ class RecvmsgIntoUDPTest(RecvmsgIntoTests, SendrecvmsgUDPTestBase):
 class SendrecvmsgUDP6TestBase(SendrecvmsgDgramFlagsBase,
                               SendrecvmsgConnectionlessBase,
                               ThreadedSocketTestMixin, UDP6TestBase):
-    pass
+
+    def checkRecvmsgAddress(self, addr1, addr2):
+        # Called to compare the received address with the address of
+        # the peer, ignoring scope ID
+        self.assertEqual(addr1[:-1], addr2[:-1])
 
 @requireAttrs(socket.socket, "sendmsg")
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
