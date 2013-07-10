@@ -3817,7 +3817,7 @@ prtrace(PyObject *v, char *str)
 static void
 call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 {
-    PyObject *type, *value, *traceback, *arg;
+    PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
     PyErr_Fetch(&type, &value, &traceback);
     if (value == NULL) {
@@ -3825,6 +3825,11 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
         Py_INCREF(value);
     }
     PyErr_NormalizeException(&type, &value, &traceback);
+    orig_traceback = traceback;
+    if (traceback == NULL) {
+        Py_INCREF(Py_None);
+        traceback = Py_None;
+    }
     arg = PyTuple_Pack(3, type, value, traceback);
     if (arg == NULL) {
         PyErr_Restore(type, value, traceback);
@@ -3833,11 +3838,11 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
     err = call_trace(func, self, f, PyTrace_EXCEPTION, arg);
     Py_DECREF(arg);
     if (err == 0)
-        PyErr_Restore(type, value, traceback);
+        PyErr_Restore(type, value, orig_traceback);
     else {
         Py_XDECREF(type);
         Py_XDECREF(value);
-        Py_XDECREF(traceback);
+        Py_XDECREF(orig_traceback);
     }
 }
 
