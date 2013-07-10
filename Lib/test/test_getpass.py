@@ -1,7 +1,7 @@
 import getpass
 import os
 import unittest
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest import mock
 from test import support
 
@@ -88,7 +88,8 @@ class UnixGetpassTest(unittest.TestCase):
 
     def test_uses_tty_directly(self):
         with mock.patch('os.open') as open, \
-                mock.patch('os.fdopen'):
+                mock.patch('io.FileIO') as fileio, \
+                mock.patch('io.TextIOWrapper') as textio:
             # By setting open's return value to None the implementation will
             # skip code we don't care about in this test.  We can mock this out
             # fully if an alternate implementation works differently.
@@ -96,10 +97,13 @@ class UnixGetpassTest(unittest.TestCase):
             getpass.unix_getpass()
             open.assert_called_once_with('/dev/tty',
                                          os.O_RDWR | os.O_NOCTTY)
+            fileio.assert_called_once_with(open.return_value, 'w+')
+            textio.assert_called_once_with(fileio.return_value)
 
     def test_resets_termios(self):
         with mock.patch('os.open') as open, \
-                mock.patch('os.fdopen'), \
+                mock.patch('io.FileIO'), \
+                mock.patch('io.TextIOWrapper'), \
                 mock.patch('termios.tcgetattr') as tcgetattr, \
                 mock.patch('termios.tcsetattr') as tcsetattr:
             open.return_value = 3
@@ -110,21 +114,23 @@ class UnixGetpassTest(unittest.TestCase):
 
     def test_falls_back_to_fallback_if_termios_raises(self):
         with mock.patch('os.open') as open, \
-                mock.patch('os.fdopen') as fdopen, \
+                mock.patch('io.FileIO') as fileio, \
+                mock.patch('io.TextIOWrapper') as textio, \
                 mock.patch('termios.tcgetattr'), \
                 mock.patch('termios.tcsetattr') as tcsetattr, \
                 mock.patch('getpass.fallback_getpass') as fallback:
             open.return_value = 3
-            fdopen.return_value = StringIO()
+            fileio.return_value = BytesIO()
             tcsetattr.side_effect = termios.error
             getpass.unix_getpass()
             fallback.assert_called_once_with('Password: ',
-                                             fdopen.return_value)
+                                             textio.return_value)
 
     def test_flushes_stream_after_input(self):
         # issue 7208
         with mock.patch('os.open') as open, \
-                mock.patch('os.fdopen'), \
+                mock.patch('io.FileIO'), \
+                mock.patch('io.TextIOWrapper'), \
                 mock.patch('termios.tcgetattr'), \
                 mock.patch('termios.tcsetattr'):
             open.return_value = 3
