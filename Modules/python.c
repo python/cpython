@@ -19,7 +19,7 @@ int
 main(int argc, char **argv)
 {
     wchar_t **argv_copy = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*(argc+1));
-    /* We need a second copies, as Python might modify the first one. */
+    /* We need a second copy, as Python might modify the first one. */
     wchar_t **argv_copy2 = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*)*(argc+1));
     int i, res;
     char *oldloc;
