@@ -130,19 +130,22 @@ class TestSupport(unittest.TestCase):
         self.assertNotIn("bar", sys.path)
 
     def test_captured_stdout(self):
-        with support.captured_stdout() as s:
+        with support.captured_stdout() as stdout:
             print("hello")
-        self.assertEqual(s.getvalue(), "hello\n")
+        self.assertEqual(stdout.getvalue(), "hello\n")
 
     def test_captured_stderr(self):
-        with support.captured_stderr() as s:
+        with support.captured_stderr() as stderr:
             print("hello", file=sys.stderr)
-        self.assertEqual(s.getvalue(), "hello\n")
+        self.assertEqual(stderr.getvalue(), "hello\n")
 
     def test_captured_stdin(self):
-        with support.captured_stdin() as s:
-            print("hello", file=sys.stdin)
-        self.assertEqual(s.getvalue(), "hello\n")
+        with support.captured_stdin() as stdin:
+            stdin.write('hello\n')
+            stdin.seek(0)
+            # call test code that consumes from sys.stdin
+            captured = input()
+        self.assertEqual(captured, "hello")
 
     def test_gc_collect(self):
         support.gc_collect()
