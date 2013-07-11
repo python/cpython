@@ -1456,8 +1456,10 @@ pmerge(PyObject *acc, PyObject* to_merge) {
        that is not included in acc.
     */
     remain = (int *)PyMem_MALLOC(SIZEOF_INT*to_merge_size);
-    if (remain == NULL)
+    if (remain == NULL) {
+        PyErr_NoMemory();
         return -1;
+    }
     for (i = 0; i < to_merge_size; i++)
         remain[i] = 0;
 
@@ -1489,7 +1491,7 @@ pmerge(PyObject *acc, PyObject* to_merge) {
         }
         ok = PyList_Append(acc, candidate);
         if (ok < 0) {
-            PyMem_Free(remain);
+            PyMem_FREE(remain);
             return -1;
         }
         for (j = 0; j < to_merge_size; j++) {
