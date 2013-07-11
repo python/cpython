@@ -97,6 +97,8 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
 
     /* Remember pointer to module init function. */
     def = PyModule_GetDef(m);
+    if (def == NULL)
+        goto error;
     def->m_base.m_init = p;
 
     /* Remember the filename as the __file__ attribute */
