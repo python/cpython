@@ -97,7 +97,7 @@ w_more(int c, WFILE *p)
 }
 
 static void
-w_string(char *s, Py_ssize_t n, WFILE *p)
+w_string(const char *s, Py_ssize_t n, WFILE *p)
 {
     if (p->fp != NULL) {
         fwrite(s, 1, n, p->fp);
@@ -140,6 +140,13 @@ w_long(long x, WFILE *p)
 #else
 # define W_SIZE  w_long
 #endif
+
+static void
+w_pstring(const char *s, Py_ssize_t n, WFILE *p)
+{
+        W_SIZE(n, p);
+        w_string(s, n, p);
+}
 
 /* We assume that Python longs are stored internally in base some power of
    2**15; for the sake of portability we'll always read and write them in base
@@ -384,9 +391,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyBytes_CheckExact(v)) {
         W_TYPE(TYPE_STRING, p);
-        n = PyBytes_GET_SIZE(v);
-        W_SIZE(n, p);
-        w_string(PyBytes_AS_STRING(v), n, p);
+        w_pstring(PyBytes_AS_STRING(v), PyBytes_GET_SIZE(v), p);
     }
     else if (PyUnicode_CheckExact(v)) {
         PyObject *utf8;
@@ -400,9 +405,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             W_TYPE(TYPE_INTERNED, p);
         else
             W_TYPE(TYPE_UNICODE, p);
-        n = PyBytes_GET_SIZE(utf8);
-        W_SIZE(n, p);
-        w_string(PyBytes_AS_STRING(utf8), n, p);
+        w_pstring(PyBytes_AS_STRING(utf8), PyBytes_GET_SIZE(utf8), p);
         Py_DECREF(utf8);
     }
     else if (PyTuple_CheckExact(v)) {
@@ -485,7 +488,6 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
     else if (PyObject_CheckBuffer(v)) {
         /* Write unknown buffer-style objects as a string */
-        char *s;
         Py_buffer view;
         if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) != 0) {
             w_byte(TYPE_UNKNOWN, p);
@@ -494,10 +496,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
             return;
         }
         W_TYPE(TYPE_STRING, p);
-        n = view.len;
-        s = view.buf;
-        W_SIZE(n, p);
-        w_string(s, n, p);
+        w_pstring(view.buf, view.len, p);
         PyBuffer_Release(&view);
     }
     else {
