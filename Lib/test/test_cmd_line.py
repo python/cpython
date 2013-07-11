@@ -41,8 +41,10 @@ class CmdLineTest(unittest.TestCase):
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
-        rc, out, err = assert_python_ok('-V')
-        self.assertTrue(err.startswith(version))
+        for switch in '-V', '--version':
+            rc, out, err = assert_python_ok(switch)
+            self.assertFalse(err.startswith(version))
+            self.assertTrue(out.startswith(version))
 
     def test_verbose(self):
         # -v causes imports to write to stderr.  If the write to
