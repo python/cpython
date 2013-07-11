@@ -79,23 +79,34 @@ PyCFunction_GetFlags(PyObject *op)
 PyObject *
 PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 {
+#define CHECK_RESULT(res) assert(res != NULL || PyErr_Occurred())
+
     PyCFunctionObject* f = (PyCFunctionObject*)func;
     PyCFunction meth = PyCFunction_GET_FUNCTION(func);
     PyObject *self = PyCFunction_GET_SELF(func);
+    PyObject *res;
     Py_ssize_t size;
 
     switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST)) {
     case METH_VARARGS:
-        if (kw == NULL || PyDict_Size(kw) == 0)
-            return (*meth)(self, arg);
+        if (kw == NULL || PyDict_Size(kw) == 0) {
+            res = (*meth)(self, arg);
+            CHECK_RESULT(res);
+            return res;
+        }
         break;
     case METH_VARARGS | METH_KEYWORDS:
-        return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
+        res = (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
+        CHECK_RESULT(res);
+        return res;
     case METH_NOARGS:
         if (kw == NULL || PyDict_Size(kw) == 0) {
             size = PyTuple_GET_SIZE(arg);
-            if (size == 0)
-                return (*meth)(self, NULL);
+            if (size == 0) {
+                res = (*meth)(self, NULL);
+                CHECK_RESULT(res);
+                return res;
+            }
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes no arguments (%zd given)",
                 f->m_ml->ml_name, size);
@@ -105,8 +116,11 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
     case METH_O:
         if (kw == NULL || PyDict_Size(kw) == 0) {
             size = PyTuple_GET_SIZE(arg);
-            if (size == 1)
-                return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
+            if (size == 1) {
+                res = (*meth)(self, PyTuple_GET_ITEM(arg, 0));
+                CHECK_RESULT(res);
+                return res;
+            }
             PyErr_Format(PyExc_TypeError,
                 "%.200s() takes exactly one argument (%zd given)",
                 f->m_ml->ml_name, size);
@@ -123,6 +137,8 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
     PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
                  f->m_ml->ml_name);
     return NULL;
+
+#undef CHECK_RESULT
 }
 
 /* Methods (the standard built-in methods, that is) */
