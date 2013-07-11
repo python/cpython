@@ -374,8 +374,10 @@ element_resize(ElementObject* self, int extra)
     /* make sure self->children can hold the given number of extra
        elements.  set an exception and return -1 if allocation failed */
 
-    if (!self->extra)
-        create_extra(self, NULL);
+    if (!self->extra) {
+        if (create_extra(self, NULL) < 0)
+            return -1;
+    }
 
     size = self->extra->length + extra;
 
@@ -1267,8 +1269,10 @@ element_insert(ElementObject* self, PyObject* args)
                           &Element_Type, &element))
         return NULL;
 
-    if (!self->extra)
-        create_extra(self, NULL);
+    if (!self->extra) {
+        if (create_extra(self, NULL) < 0)
+            return NULL;
+    }
 
     if (index < 0) {
         index += self->extra->length;
@@ -1409,8 +1413,10 @@ element_set(ElementObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "OO:set", &key, &value))
         return NULL;
 
-    if (!self->extra)
-        create_extra(self, NULL);
+    if (!self->extra) {
+        if (create_extra(self, NULL) < 0)
+            return NULL;
+    }
 
     attrib = element_get_attrib(self);
     if (!attrib)
@@ -1525,8 +1531,10 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         PyObject* recycle = NULL;
         PyObject* seq = NULL;
 
-        if (!self->extra)
-            create_extra(self, NULL);
+        if (!self->extra) {
+            if (create_extra(self, NULL) < 0)
+                return -1;
+        }
 
         if (PySlice_GetIndicesEx(item,
                 self->extra->length,
@@ -1756,8 +1764,10 @@ element_getattro(ElementObject* self, PyObject* nameobj)
         res = element_get_tail(self);
     } else if (strcmp(name, "attrib") == 0) {
         PyErr_Clear();
-        if (!self->extra)
-            create_extra(self, NULL);
+        if (!self->extra) {
+            if (create_extra(self, NULL) < 0)
+                return NULL;
+        }
         res = element_get_attrib(self);
     }
 
@@ -1790,8 +1800,10 @@ element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
         self->tail = value;
         Py_INCREF(self->tail);
     } else if (strcmp(name, "attrib") == 0) {
-        if (!self->extra)
-            create_extra(self, NULL);
+        if (!self->extra) {
+            if (create_extra(self, NULL) < 0)
+                return -1;
+        }
         Py_DECREF(self->extra->attrib);
         self->extra->attrib = value;
         Py_INCREF(self->extra->attrib);
