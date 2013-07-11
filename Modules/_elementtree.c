@@ -529,7 +529,6 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     elem = create_new_element(tag, attrib);
-
     Py_DECREF(attrib);
 
     if (element_add_subelement(parent, elem) < 0) {
@@ -1784,10 +1783,10 @@ element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
     char *name = "";
     if (PyUnicode_Check(nameobj))
         name = _PyUnicode_AsString(nameobj);
-
-    if (name == NULL) {
+    if (name == NULL)
         return -1;
-    } else if (strcmp(name, "tag") == 0) {
+
+    if (strcmp(name, "tag") == 0) {
         Py_DECREF(self->tag);
         self->tag = value;
         Py_INCREF(self->tag);
@@ -2135,15 +2134,15 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
 
     if (star && PyObject_RichCompareBool(tag, star, Py_EQ) == 1)
         tag = Py_None;
-
     Py_XDECREF(star);
+
+    Py_INCREF(tag);
     it->sought_tag = tag;
     it->root_done = 0;
     it->gettext = gettext;
+    Py_INCREF(self);
     it->root_element = self;
 
-    Py_INCREF(self);
-    Py_INCREF(tag);
 
     PyObject_GC_Track(it);
     return (PyObject *)it;
