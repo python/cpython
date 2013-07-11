@@ -224,13 +224,6 @@ create_new_element(PyObject* tag, PyObject* attrib)
         return NULL;
     self->extra = NULL;
 
-    if (attrib != Py_None && !is_empty_dict(attrib)) {
-        if (create_extra(self, attrib) < 0) {
-            PyObject_Del(self);
-            return NULL;
-        }
-    }
-
     Py_INCREF(tag);
     self->tag = tag;
 
@@ -241,6 +234,13 @@ create_new_element(PyObject* tag, PyObject* attrib)
     self->tail = Py_None;
 
     self->weakreflist = NULL;
+
+    if (attrib != Py_None && !is_empty_dict(attrib)) {
+        if (create_extra(self, attrib) < 0) {
+            PyObject_GC_Del(self);
+            return NULL;
+        }
+    }
 
     ALLOC(sizeof(ElementObject), "create element");
     PyObject_GC_Track(self);
@@ -530,6 +530,8 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
 
     elem = create_new_element(tag, attrib);
     Py_DECREF(attrib);
+    if (elem == NULL)
+        return NULL;
 
     if (element_add_subelement(parent, elem) < 0) {
         Py_DECREF(elem);
@@ -1748,7 +1750,7 @@ element_getattro(ElementObject* self, PyObject* nameobj)
         return res;
     } else if (strcmp(name, "text") == 0) {
         res = element_get_text(self);
-        Py_INCREF(res);
+        Py_XINCREF(res);
         return res;
     }
 
@@ -2726,6 +2728,10 @@ makeuniversal(XMLParserObject* self, const char* string)
         if (i != size) {
             /* convert to universal name */
             tag = PyBytes_FromStringAndSize(NULL, size+1);
+            if (tag == NULL) {
+                Py_DECREF(key);
+                return NULL;
+            }
             p = PyBytes_AS_STRING(tag);
             p[0] = '{';
             memcpy(p+1, string, size);
