@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18101: Tcl.split() now process strings nested in a tuple as it
+  do with byte strings.
+
 - Issue #17198: Fix a NameError in the dbm module.  Patch by Valentina
   Mukhamedzhanova.
 
