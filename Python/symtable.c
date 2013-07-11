@@ -37,24 +37,12 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_table = st;
     ste->ste_id = k; /* ste owns reference to k */
 
-    ste->ste_name = name;
     Py_INCREF(name);
+    ste->ste_name = name;
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
     ste->ste_children = NULL;
-
-    ste->ste_symbols = PyDict_New();
-    if (ste->ste_symbols == NULL)
-        goto fail;
-
-    ste->ste_varnames = PyList_New(0);
-    if (ste->ste_varnames == NULL)
-        goto fail;
-
-    ste->ste_children = PyList_New(0);
-    if (ste->ste_children == NULL)
-        goto fail;
 
     ste->ste_directives = NULL;
 
@@ -78,6 +66,14 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_generator = 0;
     ste->ste_returns_value = 0;
     ste->ste_needs_class_closure = 0;
+
+    ste->ste_symbols = PyDict_New();
+    ste->ste_varnames = PyList_New(0);
+    ste->ste_children = PyList_New(0);
+    if (ste->ste_symbols == NULL
+        || ste->ste_varnames == NULL
+        || ste->ste_children == NULL)
+        goto fail;
 
     if (PyDict_SetItem(st->st_blocks, ste->ste_id, (PyObject *)ste) < 0)
         goto fail;
