@@ -88,7 +88,7 @@ w_more(int c, WFILE *p)
 }
 
 static void
-w_string(char *s, Py_ssize_t n, WFILE *p)
+w_string(const char *s, Py_ssize_t n, WFILE *p)
 {
     if (p->fp != NULL) {
         fwrite(s, 1, n, p->fp);
@@ -140,6 +140,13 @@ w_long64(long x, WFILE *p)
 #else
 # define W_SIZE  w_long
 #endif
+
+static void
+w_pstring(const char *s, Py_ssize_t n, WFILE *p)
+{
+        W_SIZE(n, p);
+        w_string(s, n, p);
+}
 
 /* We assume that Python longs are stored internally in base some power of
    2**15; for the sake of portability we'll always read and write them in base
@@ -338,9 +345,7 @@ w_object(PyObject *v, WFILE *p)
         else {
             w_byte(TYPE_STRING, p);
         }
-        n = PyString_GET_SIZE(v);
-        W_SIZE(n, p);
-        w_string(PyString_AS_STRING(v), n, p);
+        w_pstring(PyBytes_AS_STRING(v), PyString_GET_SIZE(v), p);
     }
 #ifdef Py_USING_UNICODE
     else if (PyUnicode_CheckExact(v)) {
@@ -352,9 +357,7 @@ w_object(PyObject *v, WFILE *p)
             return;
         }
         w_byte(TYPE_UNICODE, p);
-        n = PyString_GET_SIZE(utf8);
-        W_SIZE(n, p);
-        w_string(PyString_AS_STRING(utf8), n, p);
+        w_pstring(PyString_AS_STRING(utf8), PyString_GET_SIZE(utf8), p);
         Py_DECREF(utf8);
     }
 #endif
@@ -441,8 +444,7 @@ w_object(PyObject *v, WFILE *p)
         PyBufferProcs *pb = v->ob_type->tp_as_buffer;
         w_byte(TYPE_STRING, p);
         n = (*pb->bf_getreadbuffer)(v, 0, (void **)&s);
-        W_SIZE(n, p);
-        w_string(s, n, p);
+        w_pstring(s, n, p);
     }
     else {
         w_byte(TYPE_UNKNOWN, p);
