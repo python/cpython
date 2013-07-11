@@ -653,7 +653,7 @@ compatible with the Python codec registry.
       Read one line from the input stream and return the decoded data.
 
       *size*, if given, is passed as size argument to the stream's
-      :meth:`readline` method.
+      :meth:`read` method.
 
       If *keepends* is false line-endings will be stripped from the lines
       returned.
