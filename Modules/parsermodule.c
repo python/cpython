@@ -83,54 +83,78 @@ node2tuple(node *n,                     /* node to convert               */
            int lineno,                  /* include line numbers?         */
            int col_offset)              /* include column offsets?       */
 {
+    PyObject *result = NULL, *w;
+
     if (n == NULL) {
         Py_INCREF(Py_None);
-        return (Py_None);
+        return Py_None;
     }
+
     if (ISNONTERMINAL(TYPE(n))) {
         int i;
-        PyObject *v;
-        PyObject *w;
 
-        v = mkseq(1 + NCH(n) + (TYPE(n) == encoding_decl));
-        if (v == NULL)
-            return (v);
+        result = mkseq(1 + NCH(n) + (TYPE(n) == encoding_decl));
+        if (result == NULL)
+            goto error;
+
         w = PyLong_FromLong(TYPE(n));
-        if (w == NULL) {
-            Py_DECREF(v);
-            return ((PyObject*) NULL);
-        }
-        (void) addelem(v, 0, w);
+        if (w == NULL)
+            goto error;
+        (void) addelem(result, 0, w);
+
         for (i = 0; i < NCH(n); i++) {
             w = node2tuple(CHILD(n, i), mkseq, addelem, lineno, col_offset);
-            if (w == NULL) {
-                Py_DECREF(v);
-                return ((PyObject*) NULL);
-            }
-            (void) addelem(v, i+1, w);
+            if (w == NULL)
+                goto error;
+            (void) addelem(result, i+1, w);
         }
 
-        if (TYPE(n) == encoding_decl)
-            (void) addelem(v, i+1, PyUnicode_FromString(STR(n)));
-        return (v);
+        if (TYPE(n) == encoding_decl) {
+            w = PyUnicode_FromString(STR(n));
+            if (w == NULL)
+                goto error;
+            (void) addelem(result, i+1, w);
+        }
     }
     else if (ISTERMINAL(TYPE(n))) {
-        PyObject *result = mkseq(2 + lineno + col_offset);
-        if (result != NULL) {
-            (void) addelem(result, 0, PyLong_FromLong(TYPE(n)));
-            (void) addelem(result, 1, PyUnicode_FromString(STR(n)));
-            if (lineno == 1)
-                (void) addelem(result, 2, PyLong_FromLong(n->n_lineno));
-            if (col_offset == 1)
-                (void) addelem(result, 3, PyLong_FromLong(n->n_col_offset));
+        result = mkseq(2 + lineno + col_offset);
+        if (result == NULL)
+            goto error;
+
+        w = PyLong_FromLong(TYPE(n));
+        if (w == NULL)
+            goto error;
+        (void) addelem(result, 0, w);
+
+        w = PyUnicode_FromString(STR(n));
+        if (w == NULL)
+            goto error;
+        (void) addelem(result, 1, w);
+
+        if (lineno == 1) {
+            w = PyLong_FromLong(n->n_lineno);
+            if (w == NULL)
+                goto error;
+            (void) addelem(result, 2, w);
         }
-        return (result);
+
+        if (col_offset == 1) {
+            w = PyLong_FromLong(n->n_col_offset);
+            if (w == NULL)
+                goto error;
+            (void) addelem(result, 3, w);
+        }
     }
     else {
         PyErr_SetString(PyExc_SystemError,
                         "unrecognized parse tree node type");
         return ((PyObject*) NULL);
     }
+    return result;
+
+error:
+    Py_XDECREF(result);
+    return NULL;
 }
 /*
  *  End of material copyrighted by Stichting Mathematisch Centrum.
