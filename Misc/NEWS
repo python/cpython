@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #17872: Fix a segfault in marshal.load() when input stream returns
+  more bytes than requested.
+
 - Issue #18426: Fix NULL pointer dereference in C extension import when
   PyModule_GetDef() returns an error.
 
