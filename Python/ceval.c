@@ -3026,9 +3026,13 @@ error:
         why = WHY_EXCEPTION;
 
         /* Double-check exception status. */
+#ifdef NDEBUG
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError,
                             "error return without exception set");
+#else
+        assert(PyErr_Occurred());
+#endif
 
         /* Log traceback info. */
         PyTraceBack_Here(f);
