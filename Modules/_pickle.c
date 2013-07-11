@@ -774,18 +774,15 @@ _Pickler_New(void)
     self->fast_nesting = 0;
     self->fix_imports = 0;
     self->fast_memo = NULL;
-
-    self->memo = PyMemoTable_New();
-    if (self->memo == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
     self->max_output_len = WRITE_BUF_SIZE;
     self->output_len = 0;
+
+    self->memo = PyMemoTable_New();
     self->output_buffer = PyBytes_FromStringAndSize(NULL,
                                                     self->max_output_len);
-    if (self->output_buffer == NULL) {
-        Py_DECREF(self);
+
+    if (self->memo == NULL || self->output_buffer == NULL) {
+        PyObject_GC_Del(self);
         return NULL;
     }
     return self;
@@ -1136,20 +1133,6 @@ _Unpickler_New(void)
     if (self == NULL)
         return NULL;
 
-    self->stack = (Pdata *)Pdata_New();
-    if (self->stack == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    memset(&self->buffer, 0, sizeof(Py_buffer));
-
-    self->memo_size = 32;
-    self->memo = _Unpickler_NewMemo(self->memo_size);
-    if (self->memo == NULL) {
-        Py_DECREF(self);
-        return NULL;
-    }
-
     self->arg = NULL;
     self->pers_func = NULL;
     self->input_buffer = NULL;
@@ -1167,6 +1150,15 @@ _Unpickler_New(void)
     self->marks_size = 0;
     self->proto = 0;
     self->fix_imports = 0;
+    memset(&self->buffer, 0, sizeof(Py_buffer));
+    self->memo_size = 32;
+    self->memo = _Unpickler_NewMemo(self->memo_size);
+    self->stack = (Pdata *)Pdata_New();
+
+    if (self->memo == NULL || self->stack == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
 
     return self;
 }
