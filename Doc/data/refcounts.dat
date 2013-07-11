@@ -210,7 +210,7 @@ PyDict_DelItem:PyObject*:key:0:
 
 PyDict_DelItemString:int:::
 PyDict_DelItemString:PyObject*:p:0:
-PyDict_DelItemString:char*:key::
+PyDict_DelItemString:const char*:key::
 
 PyDict_GetItem:PyObject*::0:0
 PyDict_GetItem:PyObject*:p:0:
@@ -218,7 +218,7 @@ PyDict_GetItem:PyObject*:key:0:
 
 PyDict_GetItemString:PyObject*::0:
 PyDict_GetItemString:PyObject*:p:0:
-PyDict_GetItemString:char*:key::
+PyDict_GetItemString:const char*:key::
 
 PyDict_Items:PyObject*::+1:
 PyDict_Items:PyObject*:p:0:
@@ -244,7 +244,7 @@ PyDict_SetItem:PyObject*:val:+1:
 
 PyDict_SetItemString:int:::
 PyDict_SetItemString:PyObject*:p:0:
-PyDict_SetItemString:char*:key::
+PyDict_SetItemString:const char*:key::
 PyDict_SetItemString:PyObject*:val:+1:
 
 PyDict_Size:int:::
@@ -277,13 +277,13 @@ PyErr_GivenExceptionMatches:PyObject*:given:0:
 PyErr_GivenExceptionMatches:PyObject*:exc:0:
 
 PyErr_NewException:PyObject*::+1:
-PyErr_NewException:char*:name::
+PyErr_NewException:const char*:name::
 PyErr_NewException:PyObject*:base:0:
 PyErr_NewException:PyObject*:dict:0:
 
 PyErr_NewExceptionWithDoc:PyObject*::+1:
-PyErr_NewExceptionWithDoc:char*:name::
-PyErr_NewExceptionWithDoc:char*:doc::
+PyErr_NewExceptionWithDoc:const char*:name::
+PyErr_NewExceptionWithDoc:const char*:doc::
 PyErr_NewExceptionWithDoc:PyObject*:base:0:
 PyErr_NewExceptionWithDoc:PyObject*:dict:0:
 
@@ -310,21 +310,21 @@ PyErr_SetExcFromWindowsErr:int:ierr::
 PyErr_SetExcFromWindowsErrWithFilename:PyObject*::null:
 PyErr_SetExcFromWindowsErrWithFilename:PyObject*:type:0:
 PyErr_SetExcFromWindowsErrWithFilename:int:ierr::
-PyErr_SetExcFromWindowsErrWithFilename:char*:filename::
+PyErr_SetExcFromWindowsErrWithFilename:const char*:filename::
 
 PyErr_SetFromErrno:PyObject*::null:
 PyErr_SetFromErrno:PyObject*:type:0:
 
 PyErr_SetFromErrnoWithFilename:PyObject*::null:
 PyErr_SetFromErrnoWithFilename:PyObject*:type:0:
-PyErr_SetFromErrnoWithFilename:char*:filename::
+PyErr_SetFromErrnoWithFilename:const char*:filename::
 
 PyErr_SetFromWindowsErr:PyObject*::null:
 PyErr_SetFromWindowsErr:int:ierr::
 
 PyErr_SetFromWindowsErrWithFilename:PyObject*::null:
 PyErr_SetFromWindowsErrWithFilename:int:ierr::
-PyErr_SetFromWindowsErrWithFilename:char*:filename::
+PyErr_SetFromWindowsErrWithFilename:const char*:filename::
 
 PyErr_SetInterrupt:void:::
 
@@ -337,11 +337,11 @@ PyErr_SetObject:PyObject*:value:+1:
 
 PyErr_SetString:void:::
 PyErr_SetString:PyObject*:type:+1:
-PyErr_SetString:char*:message::
+PyErr_SetString:const char*:message::
 
 PyErr_Format:PyObject*::null:
 PyErr_Format:PyObject*:exception:+1:
-PyErr_Format:char*:format::
+PyErr_Format:const char*:format::
 PyErr_Format::...::
 
 PyErr_WarnEx:int:::
@@ -386,22 +386,22 @@ PyFile_Check:PyObject*:p:0:
 
 PyFile_FromFile:PyObject*::+1:
 PyFile_FromFile:FILE*:fp::
-PyFile_FromFile:char*:name::
-PyFile_FromFile:char*:mode::
+PyFile_FromFile:const char*:name::
+PyFile_FromFile:const char*:mode::
 PyFile_FromFile:int(*:close)::
 
 PyFile_FromFileEx:PyObject*::+1:
 PyFile_FromFileEx:FILE*:fp::
-PyFile_FromFileEx:char*:name::
-PyFile_FromFileEx:char*:mode::
+PyFile_FromFileEx:const char*:name::
+PyFile_FromFileEx:const char*:mode::
 PyFile_FromFileEx:int(*:close)::
 PyFile_FromFileEx:int:buffering::
-PyFile_FromFileEx:char*:encoding::
-PyFile_FromFileEx:char*:newline::
+PyFile_FromFileEx:const char*:encoding::
+PyFile_FromFileEx:const char*:newline::
 
 PyFile_FromString:PyObject*::+1:
-PyFile_FromString:char*:name::
-PyFile_FromString:char*:mode::
+PyFile_FromString:const char*:name::
+PyFile_FromString:const char*:mode::
 
 PyFile_GetLine:PyObject*::+1:
 PyFile_GetLine:PyObject*:p::
@@ -482,23 +482,23 @@ PyGen_New:PyObject*::+1:
 PyGen_New:PyFrameObject*:frame:0:
 
 Py_InitModule:PyObject*::0:
-Py_InitModule:char*:name::
+Py_InitModule:const char*:name::
 Py_InitModule:PyMethodDef[]:methods::
 
 Py_InitModule3:PyObject*::0:
-Py_InitModule3:char*:name::
+Py_InitModule3:const char*:name::
 Py_InitModule3:PyMethodDef[]:methods::
-Py_InitModule3:char*:doc::
+Py_InitModule3:const char*:doc::
 
 Py_InitModule4:PyObject*::0:
-Py_InitModule4:char*:name::
+Py_InitModule4:const char*:name::
 Py_InitModule4:PyMethodDef[]:methods::
-Py_InitModule4:char*:doc::
+Py_InitModule4:const char*:doc::
 Py_InitModule4:PyObject*:self::
 Py_InitModule4:int:apiver::usually provided by Py_InitModule or Py_InitModule3
 
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
-PyImport_AddModule:char*:name::
+PyImport_AddModule:const char*:name::
 
 PyImport_Cleanup:void:::
 
@@ -522,16 +522,16 @@ PyImport_ImportFrozenModule:int:::
 PyImport_ImportFrozenModule:char*:::
 
 PyImport_ImportModule:PyObject*::+1:
-PyImport_ImportModule:char*:name::
+PyImport_ImportModule:const char*:name::
 
 PyImport_ImportModuleEx:PyObject*::+1:
-PyImport_ImportModuleEx:char*:name::
+PyImport_ImportModuleEx:const char*:name::
 PyImport_ImportModuleEx:PyObject*:globals:0:???
 PyImport_ImportModuleEx:PyObject*:locals:0:???
 PyImport_ImportModuleEx:PyObject*:fromlist:0:???
 
 PyImport_ImportModuleLevel:PyObject*::+1:
-PyImport_ImportModuleLevel:char*:name::
+PyImport_ImportModuleLevel:const char*:name::
 PyImport_ImportModuleLevel:PyObject*:globals:0:???
 PyImport_ImportModuleLevel:PyObject*:locals:0:???
 PyImport_ImportModuleLevel:PyObject*:fromlist:0:???
@@ -692,7 +692,7 @@ PyMapping_DelItem:PyObject*:key:0:
 
 PyMapping_DelItemString:int:::
 PyMapping_DelItemString:PyObject*:o:0:
-PyMapping_DelItemString:char*:key::
+PyMapping_DelItemString:const char*:key::
 
 PyMapping_GetItemString:PyObject*::+1:
 PyMapping_GetItemString:PyObject*:o:0:
@@ -762,10 +762,10 @@ PyMethod_Self:PyObject*:im:0:
 PyModule_GetDict:PyObject*::0:
 PyModule_GetDict::PyObject* module:0:
 
-PyModule_GetFilename:char*:::
+PyModule_GetFilename:const char*:::
 PyModule_GetFilename:PyObject*:module:0:
 
-PyModule_GetName:char*:::
+PyModule_GetName:const char*:::
 PyModule_GetName:PyObject*:module:0:
 
 PyModule_New:PyObject*::+1:
@@ -949,7 +949,7 @@ PyObject_DelAttr:PyObject*:attr_name:0:
 
 PyObject_DelAttrString:int:::
 PyObject_DelAttrString:PyObject*:o:0:
-PyObject_DelAttrString:char*:attr_name::
+PyObject_DelAttrString:const char*:attr_name::
 
 PyObject_DelItem:int:::
 PyObject_DelItem:PyObject*:o:0:
@@ -964,7 +964,7 @@ PyObject_GetAttr:PyObject*:attr_name:0:
 
 PyObject_GetAttrString:PyObject*::+1:
 PyObject_GetAttrString:PyObject*:o:0:
-PyObject_GetAttrString:char*:attr_name::
+PyObject_GetAttrString:const char*:attr_name::
 
 PyObject_GetItem:PyObject*::+1:
 PyObject_GetItem:PyObject*:o:0:
@@ -979,7 +979,7 @@ PyObject_HasAttr:PyObject*:attr_name:0:
 
 PyObject_HasAttrString:int:::
 PyObject_HasAttrString:PyObject*:o:0:
-PyObject_HasAttrString:char*:attr_name:0:
+PyObject_HasAttrString:const char*:attr_name:0:
 
 PyObject_Hash:int:::
 PyObject_Hash:PyObject*:o:0:
@@ -1029,7 +1029,7 @@ PyObject_SetAttr:PyObject*:v:+1:
 
 PyObject_SetAttrString:int:::
 PyObject_SetAttrString:PyObject*:o:0:
-PyObject_SetAttrString:char*:attr_name::
+PyObject_SetAttrString:const char*:attr_name::
 PyObject_SetAttrString:PyObject*:v:+1:
 
 PyObject_SetItem:int:::
@@ -1048,27 +1048,27 @@ PyObject_Unicode:PyObject*:o:0:
 
 PyParser_SimpleParseFile:struct _node*:::
 PyParser_SimpleParseFile:FILE*:fp::
-PyParser_SimpleParseFile:char*:filename::
+PyParser_SimpleParseFile:const char*:filename::
 PyParser_SimpleParseFile:int:start::
 
 PyParser_SimpleParseString:struct _node*:::
-PyParser_SimpleParseString:char*:str::
+PyParser_SimpleParseString:const char*:str::
 PyParser_SimpleParseString:int:start::
 
 PyRun_AnyFile:int:::
 PyRun_AnyFile:FILE*:fp::
-PyRun_AnyFile:char*:filename::
+PyRun_AnyFile:const char*:filename::
 
 PyRun_File:PyObject*::+1:??? -- same as eval_code2()
 PyRun_File:FILE*:fp::
-PyRun_File:char*:filename::
+PyRun_File:const char*:filename::
 PyRun_File:int:start::
 PyRun_File:PyObject*:globals:0:
 PyRun_File:PyObject*:locals:0:
 
 PyRun_FileEx:PyObject*::+1:??? -- same as eval_code2()
 PyRun_FileEx:FILE*:fp::
-PyRun_FileEx:char*:filename::
+PyRun_FileEx:const char*:filename::
 PyRun_FileEx:int:start::
 PyRun_FileEx:PyObject*:globals:0:
 PyRun_FileEx:PyObject*:locals:0:
@@ -1076,7 +1076,7 @@ PyRun_FileEx:int:closeit::
 
 PyRun_FileFlags:PyObject*::+1:??? -- same as eval_code2()
 PyRun_FileFlags:FILE*:fp::
-PyRun_FileFlags:char*:filename::
+PyRun_FileFlags:const char*:filename::
 PyRun_FileFlags:int:start::
 PyRun_FileFlags:PyObject*:globals:0:
 PyRun_FileFlags:PyObject*:locals:0:
@@ -1084,7 +1084,7 @@ PyRun_FileFlags:PyCompilerFlags*:flags::
 
 PyRun_FileExFlags:PyObject*::+1:??? -- same as eval_code2()
 PyRun_FileExFlags:FILE*:fp::
-PyRun_FileExFlags:char*:filename::
+PyRun_FileExFlags:const char*:filename::
 PyRun_FileExFlags:int:start::
 PyRun_FileExFlags:PyObject*:globals:0:
 PyRun_FileExFlags:PyObject*:locals:0:
@@ -1093,27 +1093,27 @@ PyRun_FileExFlags:PyCompilerFlags*:flags::
 
 PyRun_InteractiveLoop:int:::
 PyRun_InteractiveLoop:FILE*:fp::
-PyRun_InteractiveLoop:char*:filename::
+PyRun_InteractiveLoop:const char*:filename::
 
 PyRun_InteractiveOne:int:::
 PyRun_InteractiveOne:FILE*:fp::
-PyRun_InteractiveOne:char*:filename::
+PyRun_InteractiveOne:const char*:filename::
 
 PyRun_SimpleFile:int:::
 PyRun_SimpleFile:FILE*:fp::
-PyRun_SimpleFile:char*:filename::
+PyRun_SimpleFile:const char*:filename::
 
 PyRun_SimpleString:int:::
-PyRun_SimpleString:char*:command::
+PyRun_SimpleString:const char*:command::
 
 PyRun_String:PyObject*::+1:??? -- same as eval_code2()
-PyRun_String:char*:str::
+PyRun_String:const char*:str::
 PyRun_String:int:start::
 PyRun_String:PyObject*:globals:0:
 PyRun_String:PyObject*:locals:0:
 
 PyRun_StringFlags:PyObject*::+1:??? -- same as eval_code2()
-PyRun_StringFlags:char*:str::
+PyRun_StringFlags:const char*:str::
 PyRun_StringFlags:int:start::
 PyRun_StringFlags:PyObject*:globals:0:
 PyRun_StringFlags:PyObject*:locals:0:
@@ -1229,7 +1229,7 @@ PySlice_New:PyObject*:start:0:
 PySlice_New:PyObject*:stop:0:
 PySlice_New:PyObject*:step:0:
 
-PyString_AS_STRING:char*:::
+PyString_AS_STRING:const char*:::
 PyString_AS_STRING:PyObject*:string:0:
 
 PyString_AsDecodedObject:PyObject*::+1:
@@ -1242,7 +1242,7 @@ PyString_AsEncodedObject:PyObject*:str:0:
 PyString_AsEncodedObject:const char*:encoding::
 PyString_AsEncodedObject:const char*:errors::
 
-PyString_AsString:char*:::
+PyString_AsString:const char*:::
 PyString_AsString:PyObject*:string:0:
 
 PyString_AsStringAndSize:int:::
@@ -1310,13 +1310,13 @@ PyString_AsEncodedString:const char*:encoding::
 PyString_AsEncodedString:const char*:errors::
 
 PySys_AddWarnOption:void:::
-PySys_AddWarnOption:char*:s::
+PySys_AddWarnOption:const char*:s::
 
 PySys_AddXOption:void:::
 PySys_AddXOption:const wchar_t*:s::
 
 PySys_GetObject:PyObject*::0:
-PySys_GetObject:char*:name::
+PySys_GetObject:const char*:name::
 
 PySys_GetXOptions:PyObject*::0:
 
@@ -1325,16 +1325,16 @@ PySys_SetArgv:int:argc::
 PySys_SetArgv:char**:argv::
 
 PySys_SetObject:int:::
-PySys_SetObject:char*:name::
+PySys_SetObject:const char*:name::
 PySys_SetObject:PyObject*:v:+1:
 
 PySys_ResetWarnOptions:void:::
 
 PySys_WriteStdout:void:::
-PySys_WriteStdout:char*:format::
+PySys_WriteStdout:const char*:format::
 
 PySys_WriteStderr:void:::
-PySys_WriteStderr:char*:format::
+PySys_WriteStderr:const char*:format::
 
 PyThreadState_Clear:void:::
 PyThreadState_Clear:PyThreadState*:tstate::
@@ -1714,16 +1714,16 @@ Py_AtExit:int:::
 Py_AtExit:void (*)():func::
 
 Py_BuildValue:PyObject*::+1:
-Py_BuildValue:char*:format::
+Py_BuildValue:const char*:format::
 
 Py_CompileString:PyObject*::+1:
-Py_CompileString:char*:str::
-Py_CompileString:char*:filename::
+Py_CompileString:const char*:str::
+Py_CompileString:const char*:filename::
 Py_CompileString:int:start::
 
 Py_CompileStringFlags:PyObject*::+1:
-Py_CompileStringFlags:char*:str::
-Py_CompileStringFlags:char*:filename::
+Py_CompileStringFlags:const char*:str::
+Py_CompileStringFlags:const char*:filename::
 Py_CompileStringFlags:int:start::
 Py_CompileStringFlags:PyCompilerFlags*:flags::
 
@@ -1737,33 +1737,33 @@ Py_Exit:void:::
 Py_Exit:int:status::
 
 Py_FatalError:void:::
-Py_FatalError:char*:message::
+Py_FatalError:const char*:message::
 
 Py_FdIsInteractive:int:::
 Py_FdIsInteractive:FILE*:fp::
-Py_FdIsInteractive:char*:filename::
+Py_FdIsInteractive:const char*:filename::
 
 Py_Finalize:void:::
 
-Py_GetBuildInfoconst:char*:::
+Py_GetBuildInfoconst:const char*:::
 
-Py_GetCompilerconst:char*:::
+Py_GetCompilerconst:const char*:::
 
-Py_GetCopyrightconst:char*:::
+Py_GetCopyrightconst:const char*:::
 
-Py_GetExecPrefix:char*:::
+Py_GetExecPrefix:const char*:::
 
-Py_GetPath:char*:::
+Py_GetPath:const char*:::
 
-Py_GetPlatformconst:char*:::
+Py_GetPlatformconst:const char*:::
 
-Py_GetPrefix:char*:::
+Py_GetPrefix:const char*:::
 
-Py_GetProgramFullPath:char*:::
+Py_GetProgramFullPath:const char*:::
 
-Py_GetProgramName:char*:::
+Py_GetProgramName:const char*:::
 
-Py_GetVersionconst:char*:::
+Py_GetVersionconst:const char*:::
 
 Py_INCREF:void:::
 Py_INCREF:PyObject*:o:+1:
@@ -1775,7 +1775,7 @@ Py_IsInitialized:int:::
 Py_NewInterpreter:PyThreadState*:::
 
 Py_SetProgramName:void:::
-Py_SetProgramName:char*:name::
+Py_SetProgramName:const char*:name::
 
 Py_XDECREF:void:::
 Py_XDECREF:PyObject*:o:-1:if o is not NULL
@@ -1784,14 +1784,14 @@ Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
 
 _PyImport_FindExtension:PyObject*::0:??? see PyImport_AddModule
-_PyImport_FindExtension:char*:::
-_PyImport_FindExtension:char*:::
+_PyImport_FindExtension:const char*:::
+_PyImport_FindExtension:const char*:::
 
 _PyImport_Fini:void:::
 
 _PyImport_FixupExtension:PyObject*:::???
-_PyImport_FixupExtension:char*:::
-_PyImport_FixupExtension:char*:::
+_PyImport_FixupExtension:const char*:::
+_PyImport_FixupExtension:const char*:::
 
 _PyImport_Init:void:::
 
