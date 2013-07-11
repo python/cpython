@@ -2316,8 +2316,11 @@ compiler_import(struct compiler *c, stmt_ty s)
             identifier tmp = alias->name;
             Py_ssize_t dot = PyUnicode_FindChar(
                 alias->name, '.', 0, PyUnicode_GET_LENGTH(alias->name), 1);
-            if (dot != -1)
+            if (dot != -1) {
                 tmp = PyUnicode_Substring(alias->name, 0, dot);
+                if (tmp == NULL)
+                    return 0;
+            }
             r = compiler_nameop(c, tmp, Store);
             if (dot != -1) {
                 Py_DECREF(tmp);
