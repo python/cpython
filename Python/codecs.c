@@ -65,7 +65,7 @@ PyObject *normalizestring(const char *string)
 
     p = PyMem_Malloc(len + 1);
     if (p == NULL)
-        return NULL;
+        return PyErr_NoMemory();
     for (i = 0; i < len; i++) {
         register char ch = string[i];
         if (ch == ' ')
