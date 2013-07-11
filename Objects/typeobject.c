@@ -5274,29 +5274,12 @@ slot_tp_str(PyObject *self)
     _Py_IDENTIFIER(__str__);
 
     func = lookup_method(self, &PyId___str__);
-    if (func != NULL) {
+    if (func == NULL)
+        return NULL;
         res = PyEval_CallObject(func, NULL);
         Py_DECREF(func);
         return res;
     }
-    else {
-        /* PyObject *ress; */
-        PyErr_Clear();
-        res = slot_tp_repr(self);
-        if (!res)
-            return NULL;
-        /* XXX this is non-sensical. Why should we return
-           a bytes object from __str__. Is this code even
-           used? - mvl */
-        assert(0);
-        return res;
-        /*
-        ress = _PyUnicode_AsDefaultEncodedString(res);
-        Py_DECREF(res);
-        return ress;
-        */
-    }
-}
 
 static Py_hash_t
 slot_tp_hash(PyObject *self)
