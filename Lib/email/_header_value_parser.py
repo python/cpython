@@ -69,6 +69,7 @@ XXX: provide complete list of token types.
 
 import re
 import urllib   # For urllib.parse.unquote
+from string import hexdigits
 from collections import namedtuple, OrderedDict
 from email import _encoded_words as _ew
 from email import errors
@@ -391,10 +392,6 @@ class UnstructuredTokenList(TokenList):
     token_type = 'unstructured'
 
     def _fold(self, folded):
-        if any(x.token_type=='encoded-word' for x in self):
-            return self._fold_encoded(folded)
-        # Here we can have either a pure ASCII string that may or may not
-        # have surrogateescape encoded bytes, or a unicode string.
         last_ew = None
         for part in self.parts:
             tstr = str(part)
@@ -1386,35 +1383,6 @@ def _get_ptext_to_endchars(value, endchars):
         pos = pos + 1
     return ''.join(vchars), ''.join([fragment[pos:]] + remainder), had_qp
 
-def _decode_ew_run(value):
-    """ Decode a run of RFC2047 encoded words.
-
-        _decode_ew_run(value) -> (text, value, defects)
-
-    Scans the supplied value for a run of tokens that look like they are RFC
-    2047 encoded words, decodes those words into text according to RFC 2047
-    rules (whitespace between encoded words is discarded), and returns the text
-    and the remaining value (including any leading whitespace on the remaining
-    value), as well as a list of any defects encountered while decoding.  The
-    input value may not have any leading whitespace.
-
-    """
-    res = []
-    defects = []
-    last_ws = ''
-    while value:
-        try:
-            tok, ws, value = _wsp_splitter(value, 1)
-        except ValueError:
-            tok, ws, value = value, '', ''
-        if not (tok.startswith('=?') and tok.endswith('?=')):
-            return ''.join(res), last_ws + tok + ws + value, defects
-        text, charset, lang, new_defects = _ew.decode(tok)
-        res.append(text)
-        defects.extend(new_defects)
-        last_ws = ws
-    return ''.join(res), last_ws, defects
-
 def get_fws(value):
     """FWS = 1*WSP
 
@@ -1440,7 +1408,8 @@ def get_encoded_word(value):
         raise errors.HeaderParseError(
             "expected encoded word but found {}".format(value))
     remstr = ''.join(remainder)
-    if remstr[:2].isdigit():
+    if len(remstr) > 1 and remstr[0] in hexdigits and remstr[1] in hexdigits:
+        # The ? after the CTE was followed by an encoded word escape (=XX).
         rest, *remainder = remstr.split('?=', 1)
         tok = tok + '?=' + rest
     if len(tok.split()) > 1:
@@ -1488,8 +1457,8 @@ def get_unstructured(value):
 
     """
     # XXX: but what about bare CR and LF?  They might signal the start or
-    # end of an encoded word.  YAGNI for now, since out current parsers
-    # will never send us strings with bard CR or LF.
+    # end of an encoded word.  YAGNI for now, since our current parsers
+    # will never send us strings with bare CR or LF.
 
     unstructured = UnstructuredTokenList()
     while value:
@@ -1501,6 +1470,8 @@ def get_unstructured(value):
             try:
                 token, value = get_encoded_word(value)
             except errors.HeaderParseError:
+                # XXX: Need to figure out how to register defects when
+                # appropriate here.
                 pass
             else:
                 have_ws = True
