@@ -2411,7 +2411,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     char *s;
     char *res_start = (char*)res;
     PyType_Slot *slot;
-    
+
     /* Set the type name and qualname */
     s = strrchr(spec->name, '.');
     if (s == NULL)
@@ -2432,7 +2432,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     type->tp_name = spec->name;
     if (!type->tp_name)
         goto fail;
-    
+
     /* Adjust for empty tuple bases */
     if (!bases) {
         base = &PyBaseObject_Type;
@@ -2516,7 +2516,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
     /* Set type.__module__ */
     s = strrchr(spec->name, '.');
     if (s != NULL)
-        _PyDict_SetItemId(type->tp_dict, &PyId___module__, 
+        _PyDict_SetItemId(type->tp_dict, &PyId___module__,
             PyUnicode_FromStringAndSize(
                 spec->name, (Py_ssize_t)(s - spec->name)));
 
