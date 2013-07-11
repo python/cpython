@@ -123,12 +123,45 @@ class TestBaseHeaderFeatures(TestHeaderBase):
     #    self.assertEqual(h, value)
     #    self.assertDefectsEqual(h.defects, [errors.ObsoleteHeaderDefect])
 
-    def test_RFC2047_value_decoded(self):
-        value = '=?utf-8?q?this_is_a_test?='
-        h = self.make_header('subject', value)
-        self.assertEqual(h, 'this is a test')
+
+@parameterize
+class TestUnstructuredHeader(TestHeaderBase):
+
+    def string_as_value(self,
+                        source,
+                        decoded,
+                        *args):
+        l = len(args)
+        defects = args[0] if l>0 else []
+        header = 'Subject:' + (' ' if source else '')
+        folded = header + (args[1] if l>1 else source) + '\n'
+        h = self.make_header('Subject', source)
+        self.assertEqual(h, decoded)
+        self.assertDefectsEqual(h.defects, defects)
+        self.assertEqual(h.fold(policy=policy.default), folded)
+
+    string_params = {
+
+        'rfc2047_simple_quopri': (
+            '=?utf-8?q?this_is_a_test?=',
+            'this is a test',
+            [],
+            'this is a test'),
+
+        'rfc2047_gb2312_base64': (
+            '=?gb2312?b?1eLKx9bQzsSy4srUo6E=?=',
+            '\u8fd9\u662f\u4e2d\u6587\u6d4b\u8bd5\uff01',
+            [],
+            '=?utf-8?b?6L+Z5piv5Lit5paH5rWL6K+V77yB?='),
+
+        'rfc2047_simple_nonascii_quopri': (
+            '=?utf-8?q?=C3=89ric?=',
+            'Éric'),
+
+    }
 
 
+@parameterize
 class TestDateHeader(TestHeaderBase):
 
     datestring = 'Sun, 23 Sep 2001 20:10:55 -0700'
