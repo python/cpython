@@ -809,8 +809,13 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 return 0;
             }
             strn = (char *)PyObject_MALLOC(len + 1);
-            if (strn != NULL)
-                (void) memcpy(strn, temp_str, len + 1);
+            if (strn == NULL) {
+                Py_DECREF(temp);
+                Py_XDECREF(elem);
+                PyErr_NoMemory();
+                return 0;
+            }
+            (void) memcpy(strn, temp_str, len + 1);
             Py_DECREF(temp);
         }
         else if (!ISNONTERMINAL(type)) {
@@ -906,8 +911,14 @@ build_node_tree(PyObject *tuple)
                     return NULL;
                 }
                 res->n_str = (char *)PyObject_MALLOC(len + 1);
-                if (res->n_str != NULL && temp != NULL)
-                    (void) memcpy(res->n_str, temp, len + 1);
+                if (res->n_str == NULL) {
+                    Py_DECREF(res);
+                    Py_DECREF(encoding);
+                    Py_DECREF(tuple);
+                    PyErr_NoMemory();
+                    return NULL;
+                }
+                (void) memcpy(res->n_str, temp, len + 1);
                 Py_DECREF(encoding);
                 Py_DECREF(tuple);
             }
