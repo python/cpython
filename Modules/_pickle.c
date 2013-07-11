@@ -436,6 +436,7 @@ PyMemoTable_Copy(PyMemoTable *self)
     new->mt_table = PyMem_MALLOC(self->mt_allocated * sizeof(PyMemoEntry));
     if (new->mt_table == NULL) {
         PyMem_FREE(new);
+        PyErr_NoMemory();
         return NULL;
     }
     for (i = 0; i < self->mt_allocated; i++) {
@@ -1003,8 +1004,10 @@ _Unpickler_CopyLine(UnpicklerObject *self, char *line, Py_ssize_t len,
                     char **result)
 {
     char *input_line = PyMem_Realloc(self->input_line, len + 1);
-    if (input_line == NULL)
+    if (input_line == NULL) {
+        PyErr_NoMemory();
         return -1;
+    }
 
     memcpy(input_line, line, len);
     input_line[len] = '\0';
@@ -1101,8 +1104,10 @@ static PyObject **
 _Unpickler_NewMemo(Py_ssize_t new_size)
 {
     PyObject **memo = PyMem_MALLOC(new_size * sizeof(PyObject *));
-    if (memo == NULL)
+    if (memo == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
     memset(memo, 0, new_size * sizeof(PyObject *));
     return memo;
 }
