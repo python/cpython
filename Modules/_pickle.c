@@ -782,7 +782,7 @@ _Pickler_New(void)
                                                     self->max_output_len);
 
     if (self->memo == NULL || self->output_buffer == NULL) {
-        PyObject_GC_Del(self);
+        Py_DECREF(self);
         return NULL;
     }
     return self;
