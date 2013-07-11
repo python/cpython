@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18426: Fix NULL pointer dereference in C extension import when
+  PyModule_GetDef() returns an error.
+
 - Issue #18328: Reorder ops in PyThreadState_Delete*() functions. Now the
   tstate is first removed from TLS and then deallocated.
 
