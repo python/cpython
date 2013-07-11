@@ -16,7 +16,7 @@
 {
     self = [super init];
     if (self) {
-    
+
         // Add your subclass-specific initialization here.
         // If an error occurs here, send a [self dealloc] message and return nil.
         script = [@"<no script>.py" retain];
@@ -37,20 +37,17 @@
 {
     NSApplication *app = [NSApplication sharedApplication];
     [super close];
-    if ([[app delegate] shouldTerminate])
+    if ([(MyAppDelegate*)[app delegate] shouldTerminate])
         [app terminate: self];
 }
 
 - (void)load_defaults
 {
-//    if (settings) [settings release];
     settings = [FileSettings newSettingsForFileType: filetype];
 }
 
 - (void)update_display
 {
-//    [[self window] setTitle: script];
-    
     [interpreter setStringValue: [settings interpreter]];
     [honourhashbang setState: [settings honourhashbang]];
     [debug setState: [settings debug]];
@@ -62,7 +59,7 @@
     [others setStringValue: [settings others]];
     [scriptargs setStringValue: [settings scriptargs]];
     [with_terminal setState: [settings with_terminal]];
-    
+
     [commandline setStringValue: [settings commandLineForScript: script]];
 }
 
@@ -75,8 +72,8 @@
 {
     const char *cmdline;
     int sts;
-    
-     cmdline = [[settings commandLineForScript: script] cString];
+
+     cmdline = [[settings commandLineForScript: script] UTF8String];
    if ([settings with_terminal]) {
         sts = doscript(cmdline);
     } else {
@@ -107,14 +104,13 @@
 {
     // Insert code here to read your document from the given data.  You can also choose to override -loadFileWrapperRepresentation:ofType: or -readFromFile:ofType: instead.
     BOOL show_ui;
-    
-    // ask the app delegate whether we should show the UI or not. 
-    show_ui = [[[NSApplication sharedApplication] delegate] shouldShowUI];
+
+    // ask the app delegate whether we should show the UI or not.
+    show_ui = [(MyAppDelegate*)[[NSApplication sharedApplication] delegate] shouldShowUI];
     [script release];
     script = [fileName retain];
     [filetype release];
     filetype = [type retain];
-//    if (settings) [settings release];
     settings = [FileSettings newSettingsForFileType: filetype];
     if (show_ui) {
         [self update_display];
@@ -152,7 +148,7 @@
     [self update_display];
 }
 
-// FileSettingsSource protocol 
+// FileSettingsSource protocol
 - (NSString *) interpreter { return [interpreter stringValue];};
 - (BOOL) honourhashbang { return [honourhashbang state];};
 - (BOOL) debug { return [debug state];};

@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18427: str.replace could crash the interpreter with huge strings.
+
 - Issue #18347: ElementTree's html serializer now preserves the case of
   closing tags.
 
@@ -67,6 +69,12 @@ Library
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
   set_userptr() method.  Reported by Atsuo Ishimoto.
 
+Tools/Demos
+-----------
+
+- Issue #12990: The "Python Launcher" on OSX could not launch python scripts
+  that have paths that include wide characters.
+
 Build
 -----
 
@@ -82,7 +90,7 @@ IDLE
 
 - Issue #7136: In the Idle File menu, "New Window" is renamed "New File".
   Patch by Tal Einat, Roget Serwy, and Todd Rovito.
-  
+
 - Issue #8515: Set __file__ when run file in IDLE.
   Initial patch by Bruce Frederiksen.
 

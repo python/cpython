@@ -2434,9 +2434,9 @@ builtin_sum(PyObject *self, PyObject *args)
 PyDoc_STRVAR(sum_doc,
 "sum(sequence[, start]) -> value\n\
 \n\
-Returns the sum of a sequence of numbers (NOT strings) plus the value\n\
+Return the sum of a sequence of numbers (NOT strings) plus the value\n\
 of parameter 'start' (which defaults to 0).  When the sequence is\n\
-empty, returns start.");
+empty, return start.");
 
 
 static PyObject *
