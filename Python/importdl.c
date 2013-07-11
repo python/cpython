@@ -97,8 +97,12 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
 
     /* Remember pointer to module init function. */
     def = PyModule_GetDef(m);
-    if (def == NULL)
+    if (def == NULL) {
+        PyErr_Format(PyExc_SystemError,
+                     "initialization of %s did not return an extension "
+                     "module", shortname);
         goto error;
+    }
     def->m_base.m_init = p;
 
     /* Remember the filename as the __file__ attribute */
