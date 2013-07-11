@@ -122,6 +122,11 @@ class TestDecode(TestEmailBase):
                    # XXX Should this be a new Defect instead?
                    defects = [errors.CharsetError])
 
+    def test_q_nonascii(self):
+        self._test('=?utf-8?q?=C3=89ric?=',
+                   'Éric',
+                   charset='utf-8')
+
 
 class TestEncodeQ(TestEmailBase):
 
