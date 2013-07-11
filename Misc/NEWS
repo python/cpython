@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17872: Fix a segfault in marshal.load() when input stream returns
+  more bytes than requested.
+
 - Issue #18338: `python --version` now prints version string to stdout, and
   not to stderr.  Patch by Berker Peksag and Michael Dickens.
 
