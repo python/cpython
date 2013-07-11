@@ -529,7 +529,7 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, Py_ssize_t min_size)
     oldtable = self->mt_table;
     self->mt_table = PyMem_MALLOC(new_size * sizeof(PyMemoEntry));
     if (self->mt_table == NULL) {
-        PyMem_FREE(oldtable);
+        self->mt_table = oldtable;
         PyErr_NoMemory();
         return -1;
     }
