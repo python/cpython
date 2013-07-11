@@ -362,17 +362,29 @@ The :mod:`test.support` module defines the following functions:
       New optional arguments *filters* and *quiet*.
 
 
-.. function:: captured_stdout()
+.. function:: captured_stdin()
+              captured_stdout()
+              captured_stderr()
 
-   A context manager that runs the :keyword:`with` statement body using a
-   :class:`io.StringIO` object as sys.stdout.  That object can be retrieved
-   using the ``as`` clause of the :keyword:`with` statement.
+   A context managers that temporarily replaces the named stream with
+   :class:`io.StringIO` object.
 
-   Example use::
+   Example use with output streams::
 
-      with captured_stdout() as s:
+      with captured_stdout() as stdout, captured_stderr() as stderr:
           print("hello")
-      assert s.getvalue() == "hello\n"
+          print("error", file=sys.stderr)
+      assert stdout.getvalue() == "hello\n"
+      assert stderr.getvalue() == "error\n"
+
+   Example use with input stream::
+
+      with captured_stdin() as stdin:
+          stdin.write('hello\n')
+          stdin.seek(0)
+          # call test code that consumes from sys.stdin
+          captured = input()
+      self.assertEqual(captured, "hello")
 
 
 .. function:: temp_cwd(name='tempcwd', quiet=False, path=None)
