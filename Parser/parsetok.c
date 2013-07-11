@@ -178,7 +178,6 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         len = b - a; /* XXX this may compute NULL - NULL */
         str = (char *) PyObject_MALLOC(len + 1);
         if (str == NULL) {
-            fprintf(stderr, "no mem for next token\n");
             err_ret->error = E_NOMEM;
             break;
         }
