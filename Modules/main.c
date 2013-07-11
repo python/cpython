@@ -500,7 +500,7 @@ Py_Main(int argc, wchar_t **argv)
         return usage(0, argv[0]);
 
     if (version) {
-        fprintf(stderr, "Python %s\n", PY_VERSION);
+        printf("Python %s\n", PY_VERSION);
         return 0;
     }
 

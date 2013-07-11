@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18338: `python --version` now prints version string to stdout, and
+  not to stderr.  Patch by Berker Peksag and Michael Dickens.
+
 - Issue #18426: Fix NULL pointer dereference in C extension import when
   PyModule_GetDef() returns an error.
 
