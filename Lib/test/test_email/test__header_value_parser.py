@@ -170,6 +170,15 @@ class TestParser(TestParserMixin, TestEmailBase):
                         [],
                         '')
 
+    def test_get_encoded_word_quopri_utf_escape_follows_cte(self):
+        # Issue 18044
+        self._test_get_x(parser.get_encoded_word,
+                        '=?utf-8?q?=C3=89ric?=',
+                        'Éric',
+                        'Éric',
+                        [],
+                        '')
+
     # get_unstructured
 
     def _get_unst(self, value):
