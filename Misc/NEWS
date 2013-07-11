@@ -148,6 +148,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18101: Tcl.split() now process strings nested in a tuple as it
+  do with byte strings.
+
 - Issue #18116: getpass was always getting an error when testing /dev/tty,
   and thus was always falling back to stdin.  It also leaked an open file
   when it did so.  Both of these issues are now fixed.

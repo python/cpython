@@ -423,6 +423,21 @@ SplitObj(PyObject *arg)
             return result;
         /* Fall through, returning arg. */
     }
+    else if (PyUnicode_Check(arg)) {
+        int argc;
+        char **argv;
+        char *list = PyUnicode_AsUTF8(arg);
+
+        if (list == NULL ||
+            Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
+            Py_INCREF(arg);
+            return arg;
+        }
+        Tcl_Free(FREECAST argv);
+        if (argc > 1)
+            return Split(list);
+        /* Fall through, returning arg. */
+    }
     else if (PyBytes_Check(arg)) {
         int argc;
         char **argv;
