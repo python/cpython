@@ -184,6 +184,66 @@ class TclTest(unittest.TestCase):
                 self.assertEqual(passValue(f), f)
         self.assertEqual(passValue((1, '2', (3.4,))), (1, '2', (3.4,)))
 
+    def test_splitlist(self):
+        splitlist = self.interp.tk.splitlist
+        call = self.interp.tk.call
+        self.assertRaises(TypeError, splitlist)
+        self.assertRaises(TypeError, splitlist, 'a', 'b')
+        self.assertRaises(TypeError, splitlist, 2)
+        testcases = [
+            ('2', ('2',)),
+            ('', ()),
+            ('{}', ('',)),
+            ('""', ('',)),
+            ('a\n b\t\r c\n ', ('a', 'b', 'c')),
+            (u'a\n b\t\r c\n ', ('a', 'b', 'c')),
+            ('a \xe2\x82\xac', ('a', '\xe2\x82\xac')),
+            (u'a \u20ac', ('a', '\xe2\x82\xac')),
+            ('a {b c}', ('a', 'b c')),
+            (r'a b\ c', ('a', 'b c')),
+            (('a', 'b c'), ('a', 'b c')),
+            ('a 2', ('a', '2')),
+            (('a', 2), ('a', 2)),
+            ('a 3.4', ('a', '3.4')),
+            (('a', 3.4), ('a', 3.4)),
+            ((), ()),
+            (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
+        ]
+        for arg, res in testcases:
+            self.assertEqual(splitlist(arg), res)
+        self.assertRaises(TclError, splitlist, '{')
+
+    def test_split(self):
+        split = self.interp.tk.split
+        call = self.interp.tk.call
+        self.assertRaises(TypeError, split)
+        self.assertRaises(TypeError, split, 'a', 'b')
+        self.assertRaises(TypeError, split, 2)
+        testcases = [
+            ('2', '2'),
+            ('', ''),
+            ('{}', ''),
+            ('""', ''),
+            ('{', '{'),
+            ('a\n b\t\r c\n ', ('a', 'b', 'c')),
+            (u'a\n b\t\r c\n ', ('a', 'b', 'c')),
+            ('a \xe2\x82\xac', ('a', '\xe2\x82\xac')),
+            (u'a \u20ac', ('a', '\xe2\x82\xac')),
+            ('a {b c}', ('a', ('b', 'c'))),
+            (r'a b\ c', ('a', ('b', 'c'))),
+            (('a', 'b c'), ('a', ('b', 'c'))),
+            (('a', u'b c'), ('a', ('b', 'c'))),
+            ('a 2', ('a', '2')),
+            (('a', 2), ('a', 2)),
+            ('a 3.4', ('a', '3.4')),
+            (('a', 3.4), ('a', 3.4)),
+            (('a', (2, 3.4)), ('a', (2, 3.4))),
+            ((), ()),
+            (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
+        ]
+        for arg, res in testcases:
+            self.assertEqual(split(arg), res)
+
 
 def test_main():
     test_support.run_unittest(TclTest, TkinterTest)
