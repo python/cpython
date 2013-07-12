@@ -37,14 +37,9 @@ try:
     import threading
 except ImportError:
     threading = None
+import types
 
 logger = logging.getLogger(__name__)
-
-class Context:
-    """
-    Holds information about a current venv creation/upgrade request.
-    """
-    pass
 
 
 class EnvBuilder:
@@ -108,7 +103,7 @@ class EnvBuilder:
             raise ValueError('Directory exists: %s' % env_dir)
         if os.path.exists(env_dir) and self.clear:
             shutil.rmtree(env_dir)
-        context = Context()
+        context = types.SimpleNamespace()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
         context.prompt = '(%s) ' % context.env_name
