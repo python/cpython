@@ -187,7 +187,7 @@ An example of extending ``EnvBuilder``
 --------------------------------------
 
 The following script shows how to extend :class:`EnvBuilder` by implementing a
-subclass which installs Distribute and pip into a created venv::
+subclass which installs setuptools and pip into a created venv::
 
     import os
     import os.path
@@ -198,16 +198,16 @@ subclass which installs Distribute and pip into a created venv::
     from urllib.request import urlretrieve
     import venv
 
-    class DistributeEnvBuilder(venv.EnvBuilder):
+    class ExtendedEnvBuilder(venv.EnvBuilder):
         """
-        This builder installs Distribute and pip so that you can pip or
+        This builder installs setuptools and pip so that you can pip or
         easy_install other packages into the created environment.
 
-        :param nodist: If True, Distribute is not installed into the created
-                       environment.
+        :param nodist: If True, setuptools and pip are not installed into the
+                       created environment.
         :param nopip: If True, pip is not installed into the created
                       environment.
-        :param progress: If Distribute or pip are installed, the progress of the
+        :param progress: If setuptools or pip are installed, the progress of the
                          installation can be monitored by passing a progress
                          callable. If specified, it is called with two
                          arguments: a string indicating some progress, and a
@@ -237,9 +237,11 @@ subclass which installs Distribute and pip into a created venv::
             :param context: The information for the environment creation request
                             being processed.
             """
+            os.environ['VIRTUAL_ENV'] = context.env_dir
             if not self.nodist:
-                self.install_distribute(context)
-            if not self.nopip:
+                self.install_setuptools(context)
+            # Can't install pip without setuptools
+            if not self.nopip and not self.nodist:
                 self.install_pip(context)
 
         def reader(self, stream, context):
@@ -269,10 +271,14 @@ subclass which installs Distribute and pip into a created venv::
             # Download script into the env's binaries folder
             urlretrieve(url, distpath)
             progress = self.progress
-            if progress is not None:
-                progress('Installing %s' %name, 'main')
+            if self.verbose:
+                term = '\n'
             else:
-                sys.stderr.write('Installing %s ' % name)
+                term = ''
+            if progress is not None:
+                progress('Installing %s ...%s' % (name, term), 'main')
+            else:
+                sys.stderr.write('Installing %s ...%s' % (name, term))
                 sys.stderr.flush()
             # Install in the env
             args = [context.env_exe, fn]
@@ -291,17 +297,17 @@ subclass which installs Distribute and pip into a created venv::
             # Clean up - no longer needed
             os.unlink(distpath)
 
-        def install_distribute(self, context):
+        def install_setuptools(self, context):
             """
-            Install Distribute in the environment.
+            Install setuptools in the environment.
 
             :param context: The information for the environment creation request
                             being processed.
             """
-            url = 'http://python-distribute.org/distribute_setup.py'
-            self.install_script(context, 'distribute', url)
-            # clear up the distribute archive which gets downloaded
-            pred = lambda o: o.startswith('distribute-') and o.endswith('.tar.gz')
+            url = 'https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py'
+            self.install_script(context, 'setuptools', url)
+            # clear up the setuptools archive which gets downloaded
+            pred = lambda o: o.startswith('setuptools-') and o.endswith('.tar.gz')
             files = filter(pred, os.listdir(context.bin_path))
             for f in files:
                 f = os.path.join(context.bin_path, f)
@@ -336,10 +342,10 @@ subclass which installs Distribute and pip into a created venv::
                                                          'directories.')
             parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                                 help='A directory to create the environment in.')
-            parser.add_argument('--no-distribute', default=False,
+            parser.add_argument('--no-setuptools', default=False,
                                 action='store_true', dest='nodist',
-                                help="Don't install Distribute in the virtual "
-                                     "environment.")
+                                help="Don't install setuptools or pip in the "
+                                     "virtual environment.")
             parser.add_argument('--no-pip', default=False,
                                 action='store_true', dest='nopip',
                                 help="Don't install pip in the virtual "
@@ -370,11 +376,11 @@ subclass which installs Distribute and pip into a created venv::
             parser.add_argument('--verbose', default=False, action='store_true',
                                 dest='verbose', help='Display the output '
                                                    'from the scripts which '
-                                                   'install Distribute and pip.')
+                                                   'install setuptools and pip.')
             options = parser.parse_args(args)
             if options.upgrade and options.clear:
                 raise ValueError('you cannot supply --upgrade and --clear together.')
-            builder = DistributeEnvBuilder(system_site_packages=options.system_site,
+            builder = ExtendedEnvBuilder(system_site_packages=options.system_site,
                                            clear=options.clear,
                                            symlinks=options.symlinks,
                                            upgrade=options.upgrade,
@@ -392,6 +398,7 @@ subclass which installs Distribute and pip into a created venv::
         except Exception as e:
             print('Error: %s' % e, file=sys.stderr)
         sys.exit(rc)
+
 
 This script is also available for download `online
 <https://gist.github.com/4673395>`_.
