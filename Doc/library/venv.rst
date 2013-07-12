@@ -125,11 +125,13 @@ creation according to their needs, the :class:`EnvBuilder` class.
         :meth:`create_configuration`, :meth:`setup_python`,
         :meth:`setup_scripts` and :meth:`post_setup` can be overridden.
 
-    .. method:: create_directories(env_dir)
+    .. method:: ensure_directories(env_dir)
 
         Creates the environment directory and all necessary directories, and
         returns a context object.  This is just a holder for attributes (such as
-        paths), for use by the other methods.
+        paths), for use by the other methods. The directories are allowed to
+        exist already, as long as either ``clear`` or ``upgrade`` were
+        specified to allow operating on an existing environment directory.
 
     .. method:: create_configuration(context)
 
@@ -138,7 +140,10 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. method:: setup_python(context)
 
         Creates a copy of the Python executable (and, under Windows, DLLs) in
-        the environment.
+        the environment. On a POSIX system, if a specific executable
+        ``python3.x`` was used, symlinks to ``python`` and ``python3`` will be
+        created pointing to that executable, unless files with those names
+        already exist.
 
     .. method:: setup_scripts(context)
 
@@ -175,6 +180,8 @@ creation according to their needs, the :class:`EnvBuilder` class.
         * ``__VENV_PYTHON__`` is replaced with the absolute path of the
           environment's executable.
 
+        The directories are allowed to exist (for when an existing environment
+        is being upgraded).
 
 There is also a module-level convenience function:
 
