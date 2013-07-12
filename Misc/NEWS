@@ -154,6 +154,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18431: The new email header parser now decodes RFC2047 encoded words
+  in structured headers.
+
 - Issue #18044: The new email header parser was mis-parsing encoded words where
   an encoded character immediately followed the '?' that follows the CTE
   character, resulting in a decoding failure.  They are now decoded correctly.
