@@ -261,6 +261,7 @@ subclass which installs setuptools and pip into a created venv::
                     else:
                         sys.stderr.write(s.decode('utf-8'))
                     sys.stderr.flush()
+            stream.close()
 
         def install_script(self, context, name, url):
             _, _, path, _, _, _ = urlparse(url)
