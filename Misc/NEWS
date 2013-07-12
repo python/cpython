@@ -631,6 +631,8 @@ IDLE
 Build
 -----
 
+- Issue #17845: Clarified the message printed when some module are not built.
+
 - Issue #18256: Compilation fix for recent AIX releases.  Patch by
   David Edelsohn.
 
