@@ -237,15 +237,16 @@ create_new_element(PyObject* tag, PyObject* attrib)
 
     self->weakreflist = NULL;
 
+    ALLOC(sizeof(ElementObject), "create element");
+    PyObject_GC_Track(self);
+
     if (attrib != Py_None && !is_empty_dict(attrib)) {
         if (create_extra(self, attrib) < 0) {
-            PyObject_GC_Del(self);
+            Py_DECREF(self);
             return NULL;
         }
     }
 
-    ALLOC(sizeof(ElementObject), "create element");
-    PyObject_GC_Track(self);
     return (PyObject*) self;
 }
 
@@ -2122,14 +2123,6 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     it = PyObject_GC_New(ElementIterObject, &ElementIter_Type);
     if (!it)
         return NULL;
-    if (!(it->parent_stack = PyObject_Malloc(sizeof(ParentLocator)))) {
-        PyObject_GC_Del(it);
-        return NULL;
-    }
-
-    it->parent_stack->parent = NULL;
-    it->parent_stack->child_index = 0;
-    it->parent_stack->next = NULL;
 
     if (PyUnicode_Check(tag))
         star = PyUnicode_FromString("*");
@@ -2147,8 +2140,18 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     Py_INCREF(self);
     it->root_element = self;
 
-
     PyObject_GC_Track(it);
+
+    it->parent_stack = PyObject_Malloc(sizeof(ParentLocator));
+    if (it->parent_stack == NULL) {
+        Py_DECREF(it);
+        PyErr_NoMemory();
+        return NULL;
+    }
+    it->parent_stack->parent = NULL;
+    it->parent_stack->child_index = 0;
+    it->parent_stack->next = NULL;
+
     return (PyObject *)it;
 }
 
