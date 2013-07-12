@@ -170,8 +170,10 @@ LOCAL(int)
 create_extra(ElementObject* self, PyObject* attrib)
 {
     self->extra = PyObject_Malloc(sizeof(ElementObjectExtra));
-    if (!self->extra)
+    if (!self->extra) {
+        PyErr_NoMemory();
         return -1;
+    }
 
     if (!attrib)
         attrib = Py_None;
