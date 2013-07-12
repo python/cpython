@@ -1624,6 +1624,7 @@ def get_quoted_string(value):
 def get_atom(value):
     """atom = [CFWS] 1*atext [CFWS]
 
+    An atom could be an rfc2047 encoded word.
     """
     atom = Atom()
     if value and value[0] in CFWS_LEADER:
@@ -1632,7 +1633,15 @@ def get_atom(value):
     if value and value[0] in ATOM_ENDS:
         raise errors.HeaderParseError(
             "expected atom but found '{}'".format(value))
-    token, value = get_atext(value)
+    if value.startswith('=?'):
+        try:
+            token, value = get_encoded_word(value)
+        except errors.HeaderParseError:
+            # XXX: need to figure out how to register defects when
+            # appropriate here.
+            token, value = get_atext(value)
+    else:
+        token, value = get_atext(value)
     atom.append(token)
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
@@ -1661,12 +1670,22 @@ def get_dot_atom_text(value):
 def get_dot_atom(value):
     """ dot-atom = [CFWS] dot-atom-text [CFWS]
 
+    Any place we can have a dot atom, we could instead have an rfc2047 encoded
+    word.
     """
     dot_atom = DotAtom()
     if value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         dot_atom.append(token)
-    token, value = get_dot_atom_text(value)
+    if value.startswith('=?'):
+        try:
+            token, value = get_encoded_word(value)
+        except errors.HeaderParseError:
+            # XXX: need to figure out how to register defects when
+            # appropriate here.
+            token, value = get_dot_atom_text(value)
+    else:
+        token, value = get_dot_atom_text(value)
     dot_atom.append(token)
     if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
