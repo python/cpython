@@ -233,8 +233,10 @@ the :mod:`glob` module.)
 
 .. function:: relpath(path, start=None)
 
-   Return a relative filepath to *path* either from the current directory or from
-   an optional *start* point.
+   Return a relative filepath to *path* either from the current directory or
+   from an optional *start* directory.  This is a path computation:  the
+   filesystem is not accessed to confirm the existence or nature of *path* or
+   *start*.
 
    *start* defaults to :attr:`os.curdir`.
 
