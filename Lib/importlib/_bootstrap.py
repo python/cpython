@@ -175,7 +175,7 @@ class _ModuleLock:
                         self.count += 1
                         return True
                     if self.has_deadlock():
-                        raise _DeadlockError("deadlock detected by %r" % self)
+                        raise _DeadlockError('deadlock detected by %r' % self)
                     if self.wakeup.acquire(False):
                         self.waiters += 1
                 # Wait for a release() call
@@ -188,7 +188,7 @@ class _ModuleLock:
         tid = _thread.get_ident()
         with self.lock:
             if self.owner != tid:
-                raise RuntimeError("cannot release un-acquired lock")
+                raise RuntimeError('cannot release un-acquired lock')
             assert self.count > 0
             self.count -= 1
             if self.count == 0:
@@ -198,7 +198,7 @@ class _ModuleLock:
                     self.wakeup.release()
 
     def __repr__(self):
-        return "_ModuleLock({!r}) at {}".format(self.name, id(self))
+        return '_ModuleLock({!r}) at {}'.format(self.name, id(self))
 
 
 class _DummyModuleLock:
@@ -215,11 +215,11 @@ class _DummyModuleLock:
 
     def release(self):
         if self.count == 0:
-            raise RuntimeError("cannot release un-acquired lock")
+            raise RuntimeError('cannot release un-acquired lock')
         self.count -= 1
 
     def __repr__(self):
-        return "_DummyModuleLock({!r}) at {}".format(self.name, id(self))
+        return '_DummyModuleLock({!r}) at {}'.format(self.name, id(self))
 
 
 # The following two functions are for consumption by Python/import.c.
@@ -603,7 +603,7 @@ def _check_name(method):
         if name is None:
             name = self.name
         elif self.name != name:
-            raise ImportError("loader cannot handle %s" % name, name=name)
+            raise ImportError('loader cannot handle %s' % name, name=name)
         return method(self, name, *args, **kwargs)
     _wrap(_check_name_wrapper, method)
     return _check_name_wrapper
@@ -613,7 +613,7 @@ def _requires_builtin(fxn):
     """Decorator to verify the named module is built-in."""
     def _requires_builtin_wrapper(self, fullname):
         if fullname not in sys.builtin_module_names:
-            raise ImportError("{} is not a built-in module".format(fullname),
+            raise ImportError('{} is not a built-in module'.format(fullname),
                               name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_builtin_wrapper, fxn)
@@ -624,7 +624,7 @@ def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
     def _requires_frozen_wrapper(self, fullname):
         if not _imp.is_frozen(fullname):
-            raise ImportError("{} is not a frozen module".format(fullname),
+            raise ImportError('{} is not a frozen module'.format(fullname),
                               name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_frozen_wrapper, fxn)
@@ -639,7 +639,7 @@ def _find_module_shim(self, fullname):
     # return None.
     loader, portions = self.find_loader(fullname)
     if loader is None and len(portions):
-        msg = "Not importing directory {}: missing __init__"
+        msg = 'Not importing directory {}: missing __init__'
         _warnings.warn(msg.format(portions[0]), ImportWarning)
     return loader
 
@@ -694,7 +694,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
             pass
         else:
             if _r_long(raw_size) != source_size:
-                raise ImportError("bytecode is stale for {!r}".format(name),
+                raise ImportError('bytecode is stale for {!r}'.format(name),
                                   **exc_details)
     return data[12:]
 
@@ -708,7 +708,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
             _imp._fix_co_filename(code, source_path)
         return code
     else:
-        raise ImportError("Non-code object in {!r}".format(bytecode_path),
+        raise ImportError('Non-code object in {!r}'.format(bytecode_path),
                           name=name, path=bytecode_path)
 
 def _code_to_bytecode(code, mtime=0, source_size=0):
@@ -746,7 +746,7 @@ class BuiltinImporter:
 
     @classmethod
     def module_repr(cls, module):
-        return "<module '{}' (built-in)>".format(module.__name__)
+        return '<module {!r} (built-in)>'.format(module.__name__)
 
     @classmethod
     def find_module(cls, fullname, path=None):
@@ -798,7 +798,7 @@ class FrozenImporter:
 
     @classmethod
     def module_repr(cls, m):
-        return "<module '{}' (frozen)>".format(m.__name__)
+        return '<module {!r} (frozen)>'.format(m.__name__)
 
     @classmethod
     def find_module(cls, fullname, path=None):
@@ -842,11 +842,11 @@ class WindowsRegistryFinder:
     """
 
     REGISTRY_KEY = (
-        "Software\\Python\\PythonCore\\{sys_version}"
-        "\\Modules\\{fullname}")
+        'Software\\Python\\PythonCore\\{sys_version}'
+        '\\Modules\\{fullname}')
     REGISTRY_KEY_DEBUG = (
-        "Software\\Python\\PythonCore\\{sys_version}"
-        "\\Modules\\{fullname}\\Debug")
+        'Software\\Python\\PythonCore\\{sys_version}'
+        '\\Modules\\{fullname}\\Debug')
     DEBUG_BUILD = False  # Changed in _setup()
 
     @classmethod
@@ -866,7 +866,7 @@ class WindowsRegistryFinder:
                                   sys_version=sys.version[:3])
         try:
             with cls._open_registry(key) as hkey:
-                filepath = _winreg.QueryValue(hkey, "")
+                filepath = _winreg.QueryValue(hkey, '')
         except OSError:
             return None
         return filepath
@@ -973,7 +973,7 @@ class SourceLoader(_LoaderBasics):
         try:
             source_bytes = self.get_data(path)
         except OSError as exc:
-            raise ImportError("source not available through get_data()",
+            raise ImportError('source not available through get_data()',
                               name=fullname) from exc
         return decode_source(source_bytes)
 
@@ -1218,7 +1218,7 @@ class _NamespacePath:
         return len(self._recalculate())
 
     def __repr__(self):
-        return "_NamespacePath({!r})".format(self._path)
+        return '_NamespacePath({!r})'.format(self._path)
 
     def __contains__(self, item):
         return item in self._recalculate()
@@ -1233,7 +1233,7 @@ class NamespaceLoader:
 
     @classmethod
     def module_repr(cls, module):
-        return "<module '{}' (namespace)>".format(module.__name__)
+        return '<module {!r} (namespace)>'.format(module.__name__)
 
     def is_package(self, fullname):
         return True
@@ -1467,13 +1467,13 @@ class FileFinder:
         def path_hook_for_FileFinder(path):
             """Path hook for importlib.machinery.FileFinder."""
             if not _path_isdir(path):
-                raise ImportError("only directories are supported", path=path)
+                raise ImportError('only directories are supported', path=path)
             return cls(path, *loader_details)
 
         return path_hook_for_FileFinder
 
     def __repr__(self):
-        return "FileFinder({!r})".format(self.path)
+        return 'FileFinder({!r})'.format(self.path)
 
 
 # Import itself ###############################################################
@@ -1520,18 +1520,18 @@ def _find_module(name, path):
 def _sanity_check(name, package, level):
     """Verify arguments are "sane"."""
     if not isinstance(name, str):
-        raise TypeError("module name must be str, not {}".format(type(name)))
+        raise TypeError('module name must be str, not {}'.format(type(name)))
     if level < 0:
         raise ValueError('level must be >= 0')
     if package:
         if not isinstance(package, str):
-            raise TypeError("__package__ not set to a string")
+            raise TypeError('__package__ not set to a string')
         elif package not in sys.modules:
-            msg = ("Parent module {!r} not loaded, cannot perform relative "
-                   "import")
+            msg = ('Parent module {!r} not loaded, cannot perform relative '
+                   'import')
             raise SystemError(msg.format(package))
     if not name and level == 0:
-        raise ValueError("Empty module name")
+        raise ValueError('Empty module name')
 
 
 _ERR_MSG_PREFIX = 'No module named '
@@ -1614,8 +1614,8 @@ def _gcd_import(name, package=None, level=0):
     module = sys.modules[name]
     if module is None:
         _imp.release_lock()
-        message = ("import of {} halted; "
-                    "None in sys.modules".format(name))
+        message = ('import of {} halted; '
+                   'None in sys.modules'.format(name))
         raise ImportError(message, name=name)
     _lock_unlock_module(name)
     return module
