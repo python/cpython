@@ -158,6 +158,10 @@ class TestUnstructuredHeader(TestHeaderBase):
             '=?utf-8?q?=C3=89ric?=',
             'Éric'),
 
+        'rfc2047_quopri_with_regular_text': (
+            'The =?utf-8?q?=C3=89ric=2C?= Himself',
+            'The Éric, Himself'),
+
     }
 
 
@@ -1118,6 +1122,26 @@ class TestAddressHeader(TestHeaderBase):
              'merwok.wok.wok',
              'example.com',
              None),
+
+        'rfc2047_atom_is_decoded':
+            ('=?utf-8?q?=C3=89ric?= <foo@example.com>',
+            [],
+            'Éric <foo@example.com>',
+            'Éric',
+            'foo@example.com',
+            'foo',
+            'example.com',
+            None),
+
+        'rfc2047_atom_in_phrase_is_decoded':
+            ('The =?utf-8?q?=C3=89ric=2C?= Himself <foo@example.com>',
+            [],
+            '"The Éric, Himself" <foo@example.com>',
+            'The Éric, Himself',
+            'foo@example.com',
+            'foo',
+            'example.com',
+            None),
 
         }
 
