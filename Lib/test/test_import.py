@@ -321,6 +321,14 @@ class ImportTests(unittest.TestCase):
         stdout, stderr = popen.communicate()
         self.assertIn(b"ImportError", stdout)
 
+    def test_from_import_message_for_nonexistent_module(self):
+        with self.assertRaisesRegexp(ImportError, "^No module named 'bogus'"):
+            from bogus import foo
+
+    def test_from_import_message_for_existing_module(self):
+        with self.assertRaisesRegexp(ImportError, "^cannot import name 'bogus'"):
+            from re import bogus
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
