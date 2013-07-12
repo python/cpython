@@ -808,8 +808,12 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(atom[2].comments, ['bar'])
 
     def test_get_atom_atom_ends_at_noncfws(self):
-        atom = self._test_get_x(parser.get_atom,
+        self._test_get_x(parser.get_atom,
             'bob  fred', 'bob  ', 'bob ', [], 'fred')
+
+    def test_get_atom_rfc2047_atom(self):
+        self._test_get_x(parser.get_atom,
+            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
 
     # get_dot_atom_text
 
@@ -884,6 +888,10 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_dot_atom_trailing_dot_raises(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_dot_atom(' (foo) bar.bang. foo')
+
+    def test_get_dot_atom_rfc2047_atom(self):
+        self._test_get_x(parser.get_dot_atom,
+            '=?utf-8?q?=20bob?=', ' bob', ' bob', [], '')
 
     # get_word (if this were black box we'd repeat all the qs/atom tests)
 
@@ -2153,6 +2161,22 @@ class TestParser(TestParserMixin, TestEmailBase):
                          address.all_mailboxes)
         self.assertEqual(address.mailboxes[0].display_name,
                          'Fred A. Bear')
+        self.assertEqual(address[0].token_type,
+                         'mailbox')
+
+    def test_get_address_rfc2047_display_name(self):
+        address = self._test_get_x(parser.get_address,
+            '=?utf-8?q?=C3=89ric?= <foo@example.com>',
+            'Éric <foo@example.com>',
+            'Éric <foo@example.com>',
+            [],
+            '')
+        self.assertEqual(address.token_type, 'address')
+        self.assertEqual(len(address.mailboxes), 1)
+        self.assertEqual(address.mailboxes,
+                         address.all_mailboxes)
+        self.assertEqual(address.mailboxes[0].display_name,
+                         'Éric')
         self.assertEqual(address[0].token_type,
                          'mailbox')
 
