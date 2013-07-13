@@ -216,7 +216,10 @@ class TkTextTest(TextTest, unittest.TestCase):
         requires('gui')
         from Tkinter import Tk, Text
         cls.Text = Text
-        cls.root = Tk()
+        try:
+            cls.root = Tk()
+        except TclError as msg:
+            raise unittest.SkipTest('TclError: %s' % msg)
 
     @classmethod
     def tearDownClass(cls):
