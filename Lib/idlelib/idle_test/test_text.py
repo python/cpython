@@ -36,7 +36,7 @@ class TextTest(object):
             self.assertEqual(index(dex), '1.0')
 
         for dex in '1.0 lineend', '1.end', '1.33':
-             self.assertEqual(index(dex), '1.5')
+            self.assertEqual(index(dex), '1.5')
 
         for dex in 'end',  '33.44':
             self.assertEqual(index(dex), '3.0')
@@ -225,4 +225,3 @@ class TkTextTest(TextTest, unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=False)
-
