@@ -183,7 +183,7 @@ class Charset:
                    header encoding.  Charset.SHORTEST is not allowed for
                    body_encoding.
 
-    output_charset: Some character sets must be converted before the can be
+    output_charset: Some character sets must be converted before they can be
                     used in email headers or bodies.  If the input_charset is
                     one of them, this attribute will contain the name of the
                     charset output will be converted to.  Otherwise, it will
