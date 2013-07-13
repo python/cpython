@@ -91,6 +91,10 @@ Build
 IDLE
 ----
 
+- Issue #18279: Format - Strip trailing whitespace no longer marks a file as
+  changed when it has not been changed. This fix followed the addition of a
+  test file originally written by Phil Webster (the issue's main goal).
+
 - Issue #7136: In the Idle File menu, "New Window" is renamed "New File".
   Patch by Tal Einat, Roget Serwy, and Todd Rovito.
 
@@ -104,6 +108,7 @@ IDLE
 
 - Issue #15392: Create a unittest framework for IDLE.
   Preliminary patch by Rajagopalasarma Jayakrishnan
+  See Lib/idlelib/idle_test/README.txt for how to run Idle tests.
 
 - Issue #14146: Highlight source line while debugging on Windows.
 
