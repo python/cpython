@@ -114,7 +114,7 @@ class Text(object):
         try:
             index=index.lower()
         except AttributeError:
-            raise TclError('bad text index "%s"' % index) from None
+            raise TclError('bad text index "%s"' % index)
 
         lastline =  len(self.data) - 1  # same as number of text lines
         if index == 'insert':
