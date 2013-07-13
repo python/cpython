@@ -210,7 +210,7 @@ class Text:
                 endline, endchar = startline+1, 0
             else:
                 # do not delete terminal \n if index1 == 'insert'
-               return
+                return
         else:
             endline, endchar = self._decode(index2, -1)
             # restricting end position to insert position excludes terminal \n
@@ -219,11 +219,11 @@ class Text:
             self.data[startline] = self.data[startline][:startchar] + \
                                              self.data[startline][endchar:]
         elif startline < endline:
-                self.data[startline] = self.data[startline][:startchar] + \
-                                       self.data[endline][endchar:]
-                startline += 1
-                for i in range(startline, endline+1):
-                    del self.data[startline]
+            self.data[startline] = self.data[startline][:startchar] + \
+                                   self.data[endline][endchar:]
+            startline += 1
+            for i in range(startline, endline+1):
+                del self.data[startline]
 
     def compare(self, index1, op, index2):
         line1, char1 = self._decode(index1)
