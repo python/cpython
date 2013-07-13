@@ -454,12 +454,13 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
 static int
 _deque_rotate(dequeobject *deque, Py_ssize_t n)
 {
+    block *b = NULL;
     block *leftblock = deque->leftblock;
     block *rightblock = deque->rightblock;
     Py_ssize_t leftindex = deque->leftindex;
     Py_ssize_t rightindex = deque->rightindex;
     Py_ssize_t len=Py_SIZE(deque), halflen=len>>1;
-    int rv = 0;
+    int rv = -1;
 
     if (len <= 1)
         return 0;
@@ -476,10 +477,10 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     deque->state++;
     while (n > 0) {
         if (leftindex == 0) {
-            block *b = newblock(len);
             if (b == NULL) {
-                rv = -1;
-                goto done;
+                b = newblock(len);
+                if (b == NULL)
+                    goto done;
             }
             b->rightlink = leftblock;
             CHECK_END(leftblock->leftlink);
@@ -487,6 +488,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             leftblock = b;
             MARK_END(b->leftlink);
             leftindex = BLOCKLEN;
+            b = NULL;
         }
         assert(leftindex > 0);
 
@@ -511,7 +513,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         if (rightindex == -1) {
             block *prevblock = rightblock->leftlink;
             assert(leftblock != rightblock);
-            freeblock(rightblock);
+            b = rightblock;
             CHECK_NOT_END(prevblock);
             MARK_END(prevblock->rightlink);
             rightblock = prevblock;
@@ -520,10 +522,10 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     }
     while (n < 0) {
         if (rightindex == BLOCKLEN - 1) {
-            block *b = newblock(len);
             if (b == NULL) {
-                rv = -1;
-                goto done;
+                b = newblock(len);
+                if (b == NULL)
+                    goto done;
             }
             b->leftlink = rightblock;
             CHECK_END(rightblock->rightlink);
@@ -531,6 +533,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             rightblock = b;
             MARK_END(b->rightlink);
             rightindex = -1;
+            b = NULL;
         }
         assert (rightindex < BLOCKLEN - 1);
 
@@ -555,14 +558,17 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
         if (leftindex == BLOCKLEN) {
             block *nextblock = leftblock->rightlink;
             assert(leftblock != rightblock);
-            freeblock(leftblock);
+            b = leftblock;
             CHECK_NOT_END(nextblock);
             MARK_END(nextblock->leftlink);
             leftblock = nextblock;
             leftindex = 0;
         }
     }
+    rv = 0;
 done:
+    if (b != NULL)
+        freeblock(b);
     deque->leftblock = leftblock;
     deque->rightblock = rightblock;
     deque->leftindex = leftindex;
