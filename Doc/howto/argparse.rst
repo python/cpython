@@ -468,7 +468,7 @@ verbosity argument (check the output of ``python --help``)::
        print answer
 
 We have introduced another action, "count",
-to count the number of occurences of a specific optional arguments:
+to count the number of occurrences of a specific optional arguments:
 
 .. code-block:: sh
 

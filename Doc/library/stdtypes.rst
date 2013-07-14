@@ -743,10 +743,10 @@ are sequences of the same type; *n*, *i* and *j* are integers:
 +------------------+--------------------------------+----------+
 | ``max(s)``       | largest item of *s*            |          |
 +------------------+--------------------------------+----------+
-| ``s.index(i)``   | index of the first occurence   |          |
+| ``s.index(i)``   | index of the first occurrence  |          |
 |                  | of *i* in *s*                  |          |
 +------------------+--------------------------------+----------+
-| ``s.count(i)``   | total number of occurences of  |          |
+| ``s.count(i)``   | total number of occurrences of |          |
 |                  | *i* in *s*                     |          |
 +------------------+--------------------------------+----------+
 
