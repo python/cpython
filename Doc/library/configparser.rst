@@ -539,7 +539,7 @@ the :meth:`__init__` options:
 * *delimiters*, default value: ``('=', ':')``
 
   Delimiters are substrings that delimit keys from values within a section. The
-  first occurence of a delimiting substring on a line is considered a delimiter.
+  first occurrence of a delimiting substring on a line is considered a delimiter.
   This means values (but not keys) can contain the delimiters.
 
   See also the *space_around_delimiters* argument to
