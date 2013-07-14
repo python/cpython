@@ -165,4 +165,4 @@ class scheduler:
         # the actual order they would be retrieved.
         with self._lock:
             events = self._queue[:]
-            return map(heapq.heappop, [events]*len(events))
+            return list(map(heapq.heappop, [events]*len(events)))
