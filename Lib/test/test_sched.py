@@ -172,7 +172,7 @@ class TestCase(unittest.TestCase):
         e3 = scheduler.enterabs(now + 0.03, 1, fun)
         # queue property is supposed to return an order list of
         # upcoming events
-        self.assertEqual(list(scheduler.queue), [e1, e2, e3, e4, e5])
+        self.assertEqual(scheduler.queue, [e1, e2, e3, e4, e5])
 
     def test_args_kwargs(self):
         flag = []
