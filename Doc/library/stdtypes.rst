@@ -871,11 +871,11 @@ operations have the same priority as the corresponding numeric operations.
 +--------------------------+--------------------------------+----------+
 | ``max(s)``               | largest item of *s*            |          |
 +--------------------------+--------------------------------+----------+
-| ``s.index(x[, i[, j]])`` | index of the first occurence   | \(8)     |
+| ``s.index(x[, i[, j]])`` | index of the first occurrence  | \(8)     |
 |                          | of *x* in *s* (at or after     |          |
 |                          | index *i* and before index *j*)|          |
 +--------------------------+--------------------------------+----------+
-| ``s.count(x)``           | total number of occurences of  |          |
+| ``s.count(x)``           | total number of occurrences of |          |
 |                          | *x* in *s*                     |          |
 +--------------------------+--------------------------------+----------+
 
