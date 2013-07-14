@@ -27,4 +27,3 @@ SpecialBuilds.txt       Describes extra symbols you can set for debug builds
 TextMate                A TextMate bundle for Python development
 valgrind-python.supp    Valgrind suppression file, see README.valgrind
 vgrindefs               Python configuration for vgrind (a generic pretty printer)
-Vim                     Python development utilities for the Vim editor
