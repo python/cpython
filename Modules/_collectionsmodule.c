@@ -506,13 +506,15 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             rightindex -= m;
             leftindex -= m;
             n -= m;
-            while (m--)
+            do {
                 *(dest--) = *(src--);
+            } while (--m);
         }
 
         if (rightindex == -1) {
             block *prevblock = rightblock->leftlink;
             assert(leftblock != rightblock);
+            assert(b == NULL);
             b = rightblock;
             CHECK_NOT_END(prevblock);
             MARK_END(prevblock->rightlink);
@@ -551,13 +553,15 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             leftindex += m;
             rightindex += m;
             n += m;
-            while (m--)
+            do {
                 *(dest++) = *(src++);
+            } while (--m);
         }
 
         if (leftindex == BLOCKLEN) {
             block *nextblock = leftblock->rightlink;
             assert(leftblock != rightblock);
+            assert(b == NULL);
             b = leftblock;
             CHECK_NOT_END(nextblock);
             MARK_END(nextblock->leftlink);
