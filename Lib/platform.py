@@ -634,62 +634,6 @@ def win32_ver(release='',version='',csd='',ptype=''):
     RegCloseKey(keyCurVer)
     return release,version,csd,ptype
 
-def _mac_ver_lookup(selectors,default=None):
-
-    from _gestalt import gestalt
-    l = []
-    append = l.append
-    for selector in selectors:
-        try:
-            append(gestalt(selector))
-        except (RuntimeError, OSError):
-            append(default)
-    return l
-
-def _bcd2str(bcd):
-
-    return hex(bcd)[2:]
-
-def _mac_ver_gestalt():
-    """
-        Thanks to Mark R. Levinson for mailing documentation links and
-        code examples for this function. Documentation for the
-        gestalt() API is available online at:
-
-           http://www.rgaros.nl/gestalt/
-    """
-    # Check whether the version info module is available
-    try:
-        import _gestalt
-    except ImportError:
-        return None
-    # Get the infos
-    sysv, sysa = _mac_ver_lookup(('sysv','sysa'))
-    # Decode the infos
-    if sysv:
-        major = (sysv & 0xFF00) >> 8
-        minor = (sysv & 0x00F0) >> 4
-        patch = (sysv & 0x000F)
-
-        if (major, minor) >= (10, 4):
-            # the 'sysv' gestald cannot return patchlevels
-            # higher than 9. Apple introduced 3 new
-            # gestalt codes in 10.4 to deal with this
-            # issue (needed because patch levels can
-            # run higher than 9, such as 10.4.11)
-            major,minor,patch = _mac_ver_lookup(('sys1','sys2','sys3'))
-            release = '%i.%i.%i' %(major, minor, patch)
-        else:
-            release = '%s.%i.%i' % (_bcd2str(major),minor,patch)
-
-    if sysa:
-        machine = {0x1: '68k',
-                   0x2: 'PowerPC',
-                   0xa: 'i386'}.get(sysa,'')
-
-    versioninfo=('', '', '')
-    return release,versioninfo,machine
-
 def _mac_ver_xml():
     fn = '/System/Library/CoreServices/SystemVersion.plist'
     if not os.path.exists(fn):
@@ -705,7 +649,7 @@ def _mac_ver_xml():
     versioninfo=('', '', '')
     machine = os.uname().machine
     if machine in ('ppc', 'Power Macintosh'):
-        # for compatibility with the gestalt based code
+        # Cannonical name
         machine = 'PowerPC'
 
     return release,versioninfo,machine
@@ -724,12 +668,6 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
     # First try reading the information from an XML file which should
     # always be present
     info = _mac_ver_xml()
-    if info is not None:
-        return info
-
-    # If that doesn't work for some reason fall back to reading the
-    # information using gestalt calls.
-    info = _mac_ver_gestalt()
     if info is not None:
         return info
 
