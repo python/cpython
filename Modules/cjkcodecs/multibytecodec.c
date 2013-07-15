@@ -1053,8 +1053,10 @@ mbidecoder_decode(MultibyteIncrementalDecoderObject *self,
         }
         wsize = size + self->pendingsize;
         wdata = PyMem_Malloc(wsize);
-        if (wdata == NULL)
+        if (wdata == NULL) {
+            PyErr_NoMemory();
             goto errorexit;
+        }
         memcpy(wdata, self->pending, self->pendingsize);
         memcpy(wdata + self->pendingsize, data, size);
         self->pendingsize = 0;
