@@ -154,6 +154,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17482: functools.update_wrapper (and functools.wraps) now set the
+  __wrapped__ attribute correctly even if the underlying function has a
+  __wrapped__ attribute set.
+
 - Issue #18431: The new email header parser now decodes RFC2047 encoded words
   in structured headers.
 

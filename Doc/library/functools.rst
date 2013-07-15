@@ -306,8 +306,8 @@ The :mod:`functools` module defines the following functions:
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
-   automatically adds a __wrapped__ attribute to the wrapper that refers to
-   the original function.
+   automatically adds a ``__wrapped__`` attribute to the wrapper that refers to
+   the function being wrapped.
 
    The main intended use for this function is in :term:`decorator` functions which
    wrap the decorated function and return the wrapper. If the wrapper function is
@@ -329,6 +329,11 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.2
       Missing attributes no longer trigger an :exc:`AttributeError`.
+
+   .. versionchanged:: 3.4
+      The ``__wrapped__`` attribute now always refers to the wrapped
+      function, even if that function defined a ``__wrapped__`` attribute.
+      (see :issue:`17482`)
 
 
 .. decorator:: wraps(wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
