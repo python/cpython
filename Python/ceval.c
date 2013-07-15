@@ -3090,7 +3090,10 @@ fast_block_end:
                    Python main loop. */
                 PyErr_NormalizeException(
                     &exc, &val, &tb);
-                PyException_SetTraceback(val, tb);
+                if (tb != NULL)
+                    PyException_SetTraceback(val, tb);
+                else
+                    PyException_SetTraceback(val, Py_None);
                 Py_INCREF(exc);
                 tstate->exc_type = exc;
                 Py_INCREF(val);
