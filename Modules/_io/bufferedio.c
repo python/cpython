@@ -1479,7 +1479,7 @@ static PyObject *
 _bufferedreader_read_all(buffered *self)
 {
     Py_ssize_t current_size;
-    PyObject *res, *data = NULL, *chunk, *chunks;
+    PyObject *res = NULL, *data = NULL, *tmp = NULL, *chunks = NULL;
 
     /* First copy what we have in the current buffer. */
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
@@ -1492,85 +1492,82 @@ _bufferedreader_read_all(buffered *self)
     }
     /* We're going past the buffer's bounds, flush it */
     if (self->writable) {
-        res = buffered_flush_and_rewind_unlocked(self);
-        if (res == NULL)
-            return NULL;
-        Py_CLEAR(res);
+        tmp = buffered_flush_and_rewind_unlocked(self);
+        if (tmp == NULL)
+            goto cleanup;
+        Py_CLEAR(tmp);
     }
     _bufferedreader_reset_buf(self);
 
     if (PyObject_HasAttr(self->raw, _PyIO_str_readall)) {
-        chunk = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readall, NULL);
-        if (chunk == NULL)
-            return NULL;
-        if (chunk != Py_None && !PyBytes_Check(chunk)) {
-            Py_XDECREF(data);
-            Py_DECREF(chunk);
+        tmp = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_readall, NULL);
+        if (tmp == NULL)
+            goto cleanup;
+        if (tmp != Py_None && !PyBytes_Check(tmp)) {
             PyErr_SetString(PyExc_TypeError, "readall() should return bytes");
-            return NULL;
+            goto cleanup;
         }
-        if (chunk == Py_None) {
-            if (current_size == 0)
-                return chunk;
-            else {
-                Py_DECREF(chunk);
-                return data;
+        if (tmp == Py_None) {
+            if (current_size == 0) {
+                res = Py_None;
+                goto cleanup;
+            } else {
+                res = data;
+                goto cleanup;
             }
         }
         else if (current_size) {
-            PyBytes_Concat(&data, chunk);
-            Py_DECREF(chunk);
-            if (data == NULL)
-                return NULL;
-            return data;
-        } else
-            return chunk;
+            PyBytes_Concat(&data, tmp);
+            res = data;
+            goto cleanup;
+        }
+        else {
+            res = tmp;
+            goto cleanup;
+        }
     }
 
     chunks = PyList_New(0);
-    if (chunks == NULL) {
-        Py_XDECREF(data);
-        return NULL;
-    }
+    if (chunks == NULL)
+        goto cleanup;
 
     while (1) {
         if (data) {
-            if (PyList_Append(chunks, data) < 0) {
-                Py_DECREF(data);
-                Py_DECREF(chunks);
-                return NULL;
-            }
-            Py_DECREF(data);
+            if (PyList_Append(chunks, data) < 0)
+                goto cleanup;
+            Py_CLEAR(data);
         }
 
         /* Read until EOF or until read() would block. */
         data = PyObject_CallMethodObjArgs(self->raw, _PyIO_str_read, NULL);
-        if (data == NULL) {
-            Py_DECREF(chunks);
-            return NULL;
-        }
+        if (data == NULL)
+            goto cleanup;
         if (data != Py_None && !PyBytes_Check(data)) {
-            Py_DECREF(data);
-            Py_DECREF(chunks);
             PyErr_SetString(PyExc_TypeError, "read() should return bytes");
-            return NULL;
+            goto cleanup;
         }
         if (data == Py_None || PyBytes_GET_SIZE(data) == 0) {
             if (current_size == 0) {
-                Py_DECREF(chunks);
-                return data;
+                res = data;
+                goto cleanup;
             }
             else {
-                res = _PyBytes_Join(_PyIO_empty_bytes, chunks);
-                Py_DECREF(data);
-                Py_DECREF(chunks);
-                return res;
+                tmp = _PyBytes_Join(_PyIO_empty_bytes, chunks);
+                res = tmp;
+                goto cleanup;
             }
         }
         current_size += PyBytes_GET_SIZE(data);
         if (self->abs_pos != -1)
             self->abs_pos += PyBytes_GET_SIZE(data);
     }
+cleanup:
+    /* res is either NULL or a borrowed ref */
+    Py_XINCREF(res);
+    Py_XDECREF(data);
+    Py_XDECREF(tmp);
+    Py_XDECREF(chunks);
+    return res;
 }
 
 /* Read n bytes from the buffer if it can, otherwise return None.
