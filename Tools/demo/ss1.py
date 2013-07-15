@@ -79,10 +79,10 @@ class Sheet:
             del self.cells[xy]
 
     def clearrows(self, y1, y2):
-        self.clearcells(0, y1, sys.maxint, y2)
+        self.clearcells(0, y1, sys.maxsize, y2)
 
     def clearcolumns(self, x1, x2):
-        self.clearcells(x1, 0, x2, sys.maxint)
+        self.clearcells(x1, 0, x2, sys.maxsize)
 
     def selectcells(self, x1, y1, x2, y2):
         if x1 > x2:
@@ -113,23 +113,23 @@ class Sheet:
 
     def insertrows(self, y, n):
         assert n > 0
-        self.movecells(0, y, sys.maxint, sys.maxint, 0, n)
+        self.movecells(0, y, sys.maxsize, sys.maxsize, 0, n)
 
     def deleterows(self, y1, y2):
         if y1 > y2:
             y1, y2 = y2, y1
         self.clearrows(y1, y2)
-        self.movecells(0, y2+1, sys.maxint, sys.maxint, 0, y1-y2-1)
+        self.movecells(0, y2+1, sys.maxsize, sys.maxsize, 0, y1-y2-1)
 
     def insertcolumns(self, x, n):
         assert n > 0
-        self.movecells(x, 0, sys.maxint, sys.maxint, n, 0)
+        self.movecells(x, 0, sys.maxsize, sys.maxsize, n, 0)
 
     def deletecolumns(self, x1, x2):
         if x1 > x2:
             x1, x2 = x2, x1
         self.clearcells(x1, x2)
-        self.movecells(x2+1, 0, sys.maxint, sys.maxint, x1-x2-1, 0)
+        self.movecells(x2+1, 0, sys.maxsize, sys.maxsize, x1-x2-1, 0)
 
     def getsize(self):
         maxx = maxy = 0
@@ -626,29 +626,29 @@ class SheetGUI:
 
     def selectall(self, event):
         self.setcurrent(1, 1)
-        self.setcorner(sys.maxint, sys.maxint)
+        self.setcorner(sys.maxsize, sys.maxsize)
 
     def selectcolumn(self, event):
         x, y = self.whichxy(event)
         self.setcurrent(x, 1)
-        self.setcorner(x, sys.maxint)
+        self.setcorner(x, sys.maxsize)
 
     def extendcolumn(self, event):
         x, y = self.whichxy(event)
         if x > 0:
             self.setcurrent(self.currentxy[0], 1)
-            self.setcorner(x, sys.maxint)
+            self.setcorner(x, sys.maxsize)
 
     def selectrow(self, event):
         x, y = self.whichxy(event)
         self.setcurrent(1, y)
-        self.setcorner(sys.maxint, y)
+        self.setcorner(sys.maxsize, y)
 
     def extendrow(self, event):
         x, y = self.whichxy(event)
         if y > 0:
             self.setcurrent(1, self.currentxy[1])
-            self.setcorner(sys.maxint, y)
+            self.setcorner(sys.maxsize, y)
 
     def press(self, event):
         x, y = self.whichxy(event)
@@ -709,14 +709,14 @@ class SheetGUI:
         self.setbeacon(x1, y1, x2, y2)
 
     def setbeacon(self, x1, y1, x2, y2):
-        if x1 == y1 == 1 and x2 == y2 == sys.maxint:
+        if x1 == y1 == 1 and x2 == y2 == sys.maxsize:
             name = ":"
-        elif (x1, x2) == (1, sys.maxint):
+        elif (x1, x2) == (1, sys.maxsize):
             if y1 == y2:
                 name = "%d" % y1
             else:
                 name = "%d:%d" % (y1, y2)
-        elif (y1, y2) == (1, sys.maxint):
+        elif (y1, y2) == (1, sys.maxsize):
             if x1 == x2:
                 name = "%s" % colnum2name(x1)
             else:
