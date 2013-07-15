@@ -581,6 +581,9 @@ Tests
 Documentation
 -------------
 
+- Issue #18440: Clarify that `hash()` can truncate the value returned from an
+  object's custom `__hash__()` method.
+
 - Issue #17844: Add links to encoders and decoders for bytes-to-bytes codecs.
 
 - Issue #14097: improve the "introduction" page of the tutorial.
