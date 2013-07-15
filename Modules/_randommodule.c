@@ -250,8 +250,10 @@ random_seed(RandomObject *self, PyObject *args)
 
     /* Convert seed to byte sequence. */
     key_as_bytes = (unsigned char *)PyMem_Malloc((size_t)4 * keyused);
-    if (key_as_bytes == NULL)
+    if (key_as_bytes == NULL) {
+        PyErr_NoMemory();
         goto Done;
+    }
     res = _PyLong_AsByteArray((PyLongObject *)n,
                               key_as_bytes, keyused * 4,
                               1,  /* little-endian */
@@ -264,6 +266,7 @@ random_seed(RandomObject *self, PyObject *args)
     /* Fill array of unsigned longs from byte sequence. */
     key = (unsigned long *)PyMem_Malloc(sizeof(unsigned long) * keyused);
     if (key == NULL) {
+        PyErr_NoMemory();
         PyMem_Free(key_as_bytes);
         goto Done;
     }
