@@ -122,16 +122,14 @@ extern "C" {
 /* true if the Unicode object has an allocated UTF-8 memory block
    (not shared with other data) */
 #define _PyUnicode_HAS_UTF8_MEMORY(op)                  \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     (!PyUnicode_IS_COMPACT_ASCII(op)                   \
+    ((!PyUnicode_IS_COMPACT_ASCII(op)                   \
       && _PyUnicode_UTF8(op)                            \
       && _PyUnicode_UTF8(op) != PyUnicode_DATA(op)))
 
 /* true if the Unicode object has an allocated wstr memory block
    (not shared with other data) */
 #define _PyUnicode_HAS_WSTR_MEMORY(op)                  \
-    (assert(_PyUnicode_CHECK(op)),                      \
-     (_PyUnicode_WSTR(op) &&                            \
+    ((_PyUnicode_WSTR(op) &&                            \
       (!PyUnicode_IS_READY(op) ||                       \
        _PyUnicode_WSTR(op) != PyUnicode_DATA(op))))
 
