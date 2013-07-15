@@ -2104,10 +2104,16 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
             return NULL;
         result = (*call)(func, arg, kw);
         Py_LeaveRecursiveCall();
-        if (result == NULL && !PyErr_Occurred())
+#ifdef NDEBUG
+        if (result == NULL && !PyErr_Occurred()) {
             PyErr_SetString(
                 PyExc_SystemError,
                 "NULL result without error in PyObject_Call");
+        }
+#else
+        if (result == NULL)
+            assert(PyErr_Occurred());
+#endif
         return result;
     }
     PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
