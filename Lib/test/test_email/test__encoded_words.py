@@ -75,7 +75,7 @@ class TestDecode(TestEmailBase):
     def test_non_trivial_q(self):
         self._test('=?latin-1?q?=20F=fcr=20Elise=20?=', ' Für Elise ', 'latin-1')
 
-    def test_q_escpaed_bytes_preserved(self):
+    def test_q_escaped_bytes_preserved(self):
         self._test(b'=?us-ascii?q?=20\xACfoo?='.decode('us-ascii',
                                                        'surrogateescape'),
                    ' \uDCACfoo',
