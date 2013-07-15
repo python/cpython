@@ -1520,10 +1520,6 @@ class PyBuildExt(build_ext):
 
         if host_platform == 'darwin':
             exts.append(
-                       Extension('_gestalt', ['_gestalt.c'],
-                       extra_link_args=['-framework', 'Carbon'])
-                       )
-            exts.append(
                        Extension('_scproxy', ['_scproxy.c'],
                        extra_link_args=[
                            '-framework', 'SystemConfiguration',
