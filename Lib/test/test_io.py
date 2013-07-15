@@ -3070,15 +3070,18 @@ class SignalsTest(unittest.TestCase):
         try:
             wio = self.io.open(w, **fdopen_kwargs)
             t.start()
-            signal.alarm(1)
             # Fill the pipe enough that the write will be blocking.
             # It will be interrupted by the timer armed above.  Since the
             # other thread has read one byte, the low-level write will
             # return with a successful (partial) result rather than an EINTR.
             # The buffered IO layer must check for pending signal
             # handlers, which in this case will invoke alarm_interrupt().
-            self.assertRaises(ZeroDivisionError,
-                        wio.write, item * (support.PIPE_MAX_SIZE // len(item) + 1))
+            signal.alarm(1)
+            try:
+                self.assertRaises(ZeroDivisionError,
+                            wio.write, item * (support.PIPE_MAX_SIZE // len(item) + 1))
+            finally:
+                signal.alarm(0)
             t.join()
             # We got one byte, get another one and check that it isn't a
             # repeat of the first one.
