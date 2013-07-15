@@ -656,6 +656,9 @@ Build
 Tools/Demos
 -----------
 
+- Issue #18449: Make Tools/demo/ss1.py work again on Python 3.  Patch by
+  Févry Thibault.
+
 - Issue #12990: The "Python Launcher" on OSX could not launch python scripts
   that have paths that include wide characters.
 
