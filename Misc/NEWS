@@ -156,6 +156,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18393: The private module _gestalt and private functions platform._mac_ver_gestalt,
+  platform._mac_ver_lookup and platform._bcd2str have been removed. This does not
+  affect the public interface of the platform module.
+
 - Issue #17482: functools.update_wrapper (and functools.wraps) now set the
   __wrapped__ attribute correctly even if the underlying function has a
   __wrapped__ attribute set.
