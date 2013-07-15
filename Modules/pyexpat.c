@@ -1180,9 +1180,19 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     self->in_callback = 0;
     self->ns_prefixes = 0;
     self->handlers = NULL;
+    self->intern = intern;
+    Py_XINCREF(self->intern);
+    PyObject_GC_Track(self);
+
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
                                        namespace_separator);
+    if (self->itself == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "XML_ParserCreate failed");
+        Py_DECREF(self);
+        return NULL;
+    }
 #if ((XML_MAJOR_VERSION >= 2) && (XML_MINOR_VERSION >= 1)) || defined(XML_HAS_SET_HASH_SALT)
     /* This feature was added upstream in libexpat 2.1.0.  Our expat copy
      * has a backport of this feature where we also define XML_HAS_SET_HASH_SALT
@@ -1190,15 +1200,6 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     XML_SetHashSalt(self->itself,
                     (unsigned long)_Py_HashSecret.prefix);
 #endif
-    self->intern = intern;
-    Py_XINCREF(self->intern);
-    PyObject_GC_Track(self);
-    if (self->itself == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "XML_ParserCreate failed");
-        Py_DECREF(self);
-        return NULL;
-    }
     XML_SetUserData(self->itself, (void *)self);
     XML_SetUnknownEncodingHandler(self->itself,
                   (XML_UnknownEncodingHandler) PyUnknownEncodingHandler, NULL);
