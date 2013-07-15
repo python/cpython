@@ -283,9 +283,9 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
         PyFile_WriteString(source_line_str, f_stderr);
         PyFile_WriteString("\n", f_stderr);
     }
-    else
-        if (_Py_DisplaySourceLine(f_stderr, filename, lineno, 2) < 0)
-                return;
+    else {
+        _Py_DisplaySourceLine(f_stderr, filename, lineno, 2);
+    }
     PyErr_Clear();
 }
 
