@@ -21,13 +21,13 @@ Core and Builtins
 - Issue #18019: Fix crash in the repr of dictionaries containing their own
   views.
 
+- Issue #18427: str.replace could crash the interpreter with huge strings.
+
 Library
 -------
 
 - Issue #18101: Tcl.split() now process Unicode strings nested in a tuple as it
   do with byte strings.
-
-- Issue #18427: str.replace could crash the interpreter with huge strings.
 
 - Issue #18347: ElementTree's html serializer now preserves the case of
   closing tags.
