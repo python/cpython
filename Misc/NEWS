@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18455: multiprocessing should not retry connect() with same socket.
+
 - Issue #18101: Tcl.split() now process Unicode strings nested in a tuple as it
   do with byte strings.
 

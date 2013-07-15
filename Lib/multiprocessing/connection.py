@@ -294,15 +294,16 @@ def SocketClient(address):
     '''
     Return a connection object connected to the socket given by `address`
     '''
-    family = address_type(address)
-    s = socket.socket( getattr(socket, family) )
-    s.setblocking(True)
+    family = getattr(socket, address_type(address))
     t = _init_timeout()
 
     while 1:
+        s = socket.socket(family)
+        s.setblocking(True)
         try:
             s.connect(address)
         except socket.error, e:
+            s.close()
             if e.args[0] != errno.ECONNREFUSED or _check_timeout(t):
                 debug('failed to connect to address %s', address)
                 raise
