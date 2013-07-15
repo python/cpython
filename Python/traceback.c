@@ -246,10 +246,12 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     binary = _PyObject_CallMethodId(io, &PyId_open, "Os", filename, "rb");
 
     if (binary == NULL) {
+        PyErr_Clear();
+
         binary = _Py_FindSourceFile(filename, buf, sizeof(buf), io);
         if (binary == NULL) {
             Py_DECREF(io);
-            return 0;
+            return -1;
         }
     }
 
