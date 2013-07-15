@@ -2292,8 +2292,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             /* Silently truncate the docstring if it contains null bytes. */
             len = strlen(doc_str);
             tp_doc = (char *)PyObject_MALLOC(len + 1);
-            if (tp_doc == NULL)
+            if (tp_doc == NULL) {
+                PyErr_NoMemory();
                 goto error;
+            }
             memcpy(tp_doc, doc_str, len + 1);
             type->tp_doc = tp_doc;
         }
@@ -2496,8 +2498,10 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
         if (slot->slot == Py_tp_doc) {
             size_t len = strlen(slot->pfunc)+1;
             char *tp_doc = PyObject_MALLOC(len);
-            if (tp_doc == NULL)
+            if (tp_doc == NULL) {
+                PyErr_NoMemory();
                 goto fail;
+            }
             memcpy(tp_doc, slot->pfunc, len);
             type->tp_doc = tp_doc;
         }
