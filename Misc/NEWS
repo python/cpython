@@ -12,6 +12,8 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18344: Fix potential ref-leaks in _bufferedreader_read_all().
+
 - Issue #17872: Fix a segfault in marshal.load() when input stream returns
   more bytes than requested.
 
