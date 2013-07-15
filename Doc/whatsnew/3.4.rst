@@ -315,3 +315,12 @@ that may require changes to your code.
   found but improperly structured. If you were catching ImportError before and
   wish to continue to ignore syntax or decoding issues, catch all three
   exceptions now.
+
+* :func:`functools.update_wrapper` and :func:`functools.wraps` now correctly
+  set the ``__wrapped__`` attribute even if the wrapped function had a
+  wrapped attribute set. This means ``__wrapped__`` attributes now correctly
+  link a stack of decorated functions rather than every ``__wrapped__``
+  attribute in the chain referring to the innermost function. Introspection
+  libraries that assumed the previous behaviour was intentional will need to
+  be updated to walk the chain of ``__wrapped__`` attributes to find the
+  innermost function.

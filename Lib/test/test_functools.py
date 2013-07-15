@@ -224,19 +224,26 @@ class TestUpdateWrapper(unittest.TestCase):
                       updated=functools.WRAPPER_UPDATES):
         # Check attributes were assigned
         for name in assigned:
-            self.assertTrue(getattr(wrapper, name) is getattr(wrapped, name))
+            self.assertIs(getattr(wrapper, name), getattr(wrapped, name))
         # Check attributes were updated
         for name in updated:
             wrapper_attr = getattr(wrapper, name)
             wrapped_attr = getattr(wrapped, name)
             for key in wrapped_attr:
-                self.assertTrue(wrapped_attr[key] is wrapper_attr[key])
+                if name == "__dict__" and key == "__wrapped__":
+                    # __wrapped__ is overwritten by the update code
+                    continue
+                self.assertIs(wrapped_attr[key], wrapper_attr[key])
+        # Check __wrapped__
+        self.assertIs(wrapper.__wrapped__, wrapped)
+
 
     def _default_update(self):
         def f(a:'This is a new annotation'):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
+        f.__wrapped__ = "This is a bald faced lie"
         def wrapper(b:'This is the prior annotation'):
             pass
         functools.update_wrapper(wrapper, f)
@@ -331,14 +338,15 @@ class TestWraps(TestUpdateWrapper):
             """This is a test"""
             pass
         f.attr = 'This is also a test'
+        f.__wrapped__ = "This is still a bald faced lie"
         @functools.wraps(f)
         def wrapper():
             pass
-        self.check_wrapper(wrapper, f)
         return wrapper, f
 
     def test_default_update(self):
         wrapper, f = self._default_update()
+        self.check_wrapper(wrapper, f)
         self.assertEqual(wrapper.__name__, 'f')
         self.assertEqual(wrapper.__qualname__, f.__qualname__)
         self.assertEqual(wrapper.attr, 'This is also a test')

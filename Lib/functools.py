@@ -55,7 +55,6 @@ def update_wrapper(wrapper,
        are updated with the corresponding attribute from the wrapped
        function (defaults to functools.WRAPPER_UPDATES)
     """
-    wrapper.__wrapped__ = wrapped
     for attr in assigned:
         try:
             value = getattr(wrapped, attr)
@@ -65,6 +64,9 @@ def update_wrapper(wrapper,
             setattr(wrapper, attr, value)
     for attr in updated:
         getattr(wrapper, attr).update(getattr(wrapped, attr, {}))
+    # Issue #17482: set __wrapped__ last so we don't inadvertently copy it
+    # from the wrapped function when updating __dict__
+    wrapper.__wrapped__ = wrapped
     # Return the wrapper so this can be used as a decorator via partial()
     return wrapper
 
