@@ -210,6 +210,9 @@ Tests
 Documentation
 -------------
 
+- Issue #18440: Clarify that `hash()` can truncate the value returned from an
+  object's custom `__hash__()` method.
+
 - Issue #17953: Mention that you shouldn't replace sys.modules and deleting key
   items will cause Python to not be happy.
 

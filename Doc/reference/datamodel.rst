@@ -1264,10 +1264,21 @@ Basic customization
 
    Called by built-in function :func:`hash` and for operations on members of
    hashed collections including :class:`set`, :class:`frozenset`, and
-   :class:`dict`.  :meth:`__hash__` should return an integer.  The only required
-   property is that objects which compare equal have the same hash value; it is
-   advised to somehow mix together (e.g. using exclusive or) the hash values for
-   the components of the object that also play a part in comparison of objects.
+   :class:`dict`.  :meth:`__hash__` should return an integer.  The only
+   required property is that objects which compare equal have the same hash
+   value; it is advised to somehow mix together (e.g. using exclusive or) the
+   hash values for the components of the object that also play a part in
+   comparison of objects.
+
+   .. note::
+
+     :func:`hash` truncates the value returned from an object's custom
+     :meth:`__hash__` method to the size of a :c:type:`Py_ssize_t`.  This is
+     typically 8 bytes on 64-bit builds and 4 bytes on 32-bit builds.  If an
+     object's   :meth:`__hash__` must interoperate on builds of different bit
+     sizes, be sure to check the width on all supported builds.  An easy way
+     to do this is with
+     ``python -c "import sys; print(sys.hash_info.width)"``
 
    If a class does not define an :meth:`__eq__` method it should not define a
    :meth:`__hash__` operation either; if it defines :meth:`__eq__` but not
