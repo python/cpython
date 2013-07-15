@@ -4216,6 +4216,8 @@ call_function(PyObject ***pp_stack, int oparg
         READ_TIMESTAMP(*pintr1);
         Py_DECREF(func);
     }
+    assert((x != NULL && !PyErr_Occurred())
+           || (x == NULL && PyErr_Occurred()));
 
     /* Clear the stack of the function object.  Also removes
        the arguments in case they weren't consumed already
@@ -4509,6 +4511,8 @@ ext_call_fail:
     Py_XDECREF(callargs);
     Py_XDECREF(kwdict);
     Py_XDECREF(stararg);
+    assert((result != NULL && !PyErr_Occurred())
+           || (result == NULL && PyErr_Occurred()));
     return result;
 }
 
