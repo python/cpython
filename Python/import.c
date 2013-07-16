@@ -85,8 +85,10 @@ _PyImportZip_Init(void)
     int err = 0;
 
     path_hooks = PySys_GetObject("path_hooks");
-    if (path_hooks == NULL)
+    if (path_hooks == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path_hooks");
         goto error;
+    }
 
     if (Py_VerboseFlag)
         PySys_WriteStderr("# installing zipimport hook\n");
@@ -944,11 +946,11 @@ PyAPI_FUNC(PyObject *)
 PyImport_GetImporter(PyObject *path) {
     PyObject *importer=NULL, *path_importer_cache=NULL, *path_hooks=NULL;
 
-    if ((path_importer_cache = PySys_GetObject("path_importer_cache"))) {
-        if ((path_hooks = PySys_GetObject("path_hooks"))) {
-            importer = get_path_importer(path_importer_cache,
-                                         path_hooks, path);
-        }
+    path_importer_cache = PySys_GetObject("path_importer_cache");
+    path_hooks = PySys_GetObject("path_hooks");
+    if (path_importer_cache != NULL && path_hooks != NULL) {
+        importer = get_path_importer(path_importer_cache,
+                                     path_hooks, path);
     }
     Py_XINCREF(importer); /* get_path_importer returns a borrowed reference */
     return importer;
