@@ -384,6 +384,8 @@ multibytecodec_decerror(MultibyteCodec *codec,
             PyErr_SetString(PyExc_RuntimeError,
                             "internal codec error");
             return -1;
+        case MBERR_EXCEPTION:
+            return -1;
         default:
             PyErr_SetString(PyExc_RuntimeError,
                             "unknown runtime error");

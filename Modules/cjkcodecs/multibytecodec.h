@@ -112,6 +112,7 @@ typedef struct {
 #define MBERR_TOOSMALL          (-1) /* insufficient output buffer space */
 #define MBERR_TOOFEW            (-2) /* incomplete input buffer */
 #define MBERR_INTERNAL          (-3) /* internal runtime error */
+#define MBERR_EXCEPTION         (-4) /* an exception has been raised */
 
 #define ERROR_STRICT            (PyObject *)(1)
 #define ERROR_IGNORE            (PyObject *)(2)
