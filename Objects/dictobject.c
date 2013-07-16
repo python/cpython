@@ -1395,7 +1395,7 @@ dict_dealloc(PyDictObject *mp)
         }
         DK_DECREF(keys);
     }
-    else {
+    else if (keys != NULL) {
         assert(keys->dk_refcnt == 1);
         DK_DECREF(keys);
     }
@@ -2595,19 +2595,18 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;
-
     d = (PyDictObject *)self;
-    d->ma_keys = new_keys_object(PyDict_MINSIZE_COMBINED);
-    /* XXX - Should we raise a no-memory error? */
-    if (d->ma_keys == NULL) {
-        DK_INCREF(Py_EMPTY_KEYS);
-        d->ma_keys = Py_EMPTY_KEYS;
-        d->ma_values = empty_values;
-    }
-    d->ma_used = 0;
+
     /* The object has been implicitly tracked by tp_alloc */
     if (type == &PyDict_Type)
         _PyObject_GC_UNTRACK(d);
+
+    d->ma_used = 0;
+    d->ma_keys = new_keys_object(PyDict_MINSIZE_COMBINED);
+    if (d->ma_keys == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
     return self;
 }
 
