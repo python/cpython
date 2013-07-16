@@ -673,6 +673,8 @@ Build
 Tools/Demos
 -----------
 
+- Issue #18448: Fix a typo in Tools/demo/eiffel.py.
+
 - Issue #18457: Fixed saving of formulas and complex numbers in
   Tools/demo/ss1.py.
 
