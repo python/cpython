@@ -36,7 +36,7 @@ class EiffelBaseMetaClass(type):
             pre = dict.get("%s_pre" % m)
             post = dict.get("%s_post" % m)
             if pre or post:
-                dict[k] = cls.make_eiffel_method(dict[m], pre, post)
+                dict[m] = cls.make_eiffel_method(dict[m], pre, post)
 
 
 class EiffelMetaClass1(EiffelBaseMetaClass):
