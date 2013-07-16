@@ -99,8 +99,8 @@ typedef struct {
     Py_ssize_t leftindex;       /* in range(BLOCKLEN) */
     Py_ssize_t rightindex;      /* in range(BLOCKLEN) */
     Py_ssize_t len;
-    Py_ssize_t maxlen;
     long state;         /* incremented whenever the indices move */
+    Py_ssize_t maxlen;
     PyObject *weakreflist; /* List of weak references */
 } dequeobject;
 
