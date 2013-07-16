@@ -246,7 +246,7 @@ A nice feature of this sort is that you can efficiently insert new items while
 the sort is going on, provided that the inserted items are not "better" than the
 last 0'th element you extracted.  This is especially useful in simulation
 contexts, where the tree holds all incoming events, and the "win" condition
-means the smallest scheduled time.  When an event schedule other events for
+means the smallest scheduled time.  When an event schedules other events for
 execution, they are scheduled into the future, so they can easily go into the
 heap.  So, a heap is a good structure for implementing schedulers (this is what
 I used for my MIDI sequencer :-).
