@@ -227,12 +227,21 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
        value will be an instance.
     */
     if (PyExceptionClass_Check(type)) {
+        int is_subclass;
+        if (inclass) {
+            is_subclass = PyObject_IsSubclass(inclass, type);
+            if (is_subclass < 0)
+                goto finally;
+        }
+        else
+            is_subclass = 0;
+
         /* if the value was not an instance, or is not an instance
            whose class is (or is derived from) type, then use the
            value as an argument to instantiation of the type
            class.
         */
-        if (!inclass || !PyObject_IsSubclass(inclass, type)) {
+        if (!inclass || !is_subclass) {
             PyObject *args, *res;
 
             if (value == Py_None)
