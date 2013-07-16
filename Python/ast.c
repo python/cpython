@@ -560,7 +560,10 @@ new_identifier(const char *n, struct compiling *c)
         id = id2;
     }
     PyUnicode_InternInPlace(&id);
-    PyArena_AddPyObject(c->c_arena, id);
+    if (PyArena_AddPyObject(c->c_arena, id) < 0) {
+        Py_DECREF(id);
+        return NULL;
+    }
     return id;
 }
 
@@ -1847,7 +1850,10 @@ ast_for_atom(struct compiling *c, const node *n)
             }
             return NULL;
         }
-        PyArena_AddPyObject(c->c_arena, str);
+        if (PyArena_AddPyObject(c->c_arena, str) < 0) {
+            Py_DECREF(str);
+            return NULL;
+        }
         if (bytesmode)
             return Bytes(str, LINENO(n), n->n_col_offset, c->c_arena);
         else
@@ -1858,7 +1864,10 @@ ast_for_atom(struct compiling *c, const node *n)
         if (!pynum)
             return NULL;
 
-        PyArena_AddPyObject(c->c_arena, pynum);
+        if (PyArena_AddPyObject(c->c_arena, pynum) < 0) {
+            Py_DECREF(pynum);
+            return NULL;
+        }
         return Num(pynum, LINENO(n), n->n_col_offset, c->c_arena);
     }
     case ELLIPSIS: /* Ellipsis */
@@ -2845,13 +2854,19 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                     return NULL;
                 str = uni;
                 PyUnicode_InternInPlace(&str);
-                PyArena_AddPyObject(c->c_arena, str);
+                if (PyArena_AddPyObject(c->c_arena, str) < 0) {
+                    Py_DECREF(str);
+                    return NULL;
+                }
                 return alias(str, NULL, c->c_arena);
             }
             break;
         case STAR:
             str = PyUnicode_InternFromString("*");
-            PyArena_AddPyObject(c->c_arena, str);
+            if (PyArena_AddPyObject(c->c_arena, str) < 0) {
+                Py_DECREF(str);
+                return NULL;
+            }
             return alias(str, NULL, c->c_arena);
         default:
             PyErr_Format(PyExc_SystemError,
