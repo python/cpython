@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17778: Fix test discovery for test_multiprocessing. (Patch by
+  Zachary Ware.)
+
 - Issue #18431: The new email header parser now decodes RFC2047 encoded words
   in structured headers.
 
