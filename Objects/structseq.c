@@ -11,17 +11,20 @@ static char unnamed_fields_key[] = "n_unnamed_fields";
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
 char *PyStructSequence_UnnamedField = "unnamed field";
+_Py_IDENTIFIER(n_sequence_fields);
+_Py_IDENTIFIER(n_fields);
+_Py_IDENTIFIER(n_unnamed_fields);
 
 #define VISIBLE_SIZE(op) Py_SIZE(op)
 #define VISIBLE_SIZE_TP(tp) PyLong_AsLong( \
-                      PyDict_GetItemString((tp)->tp_dict, visible_length_key))
+                      _PyDict_GetItemId((tp)->tp_dict, &PyId_n_sequence_fields))
 
 #define REAL_SIZE_TP(tp) PyLong_AsLong( \
-                      PyDict_GetItemString((tp)->tp_dict, real_length_key))
+                      _PyDict_GetItemId((tp)->tp_dict, &PyId_n_fields))
 #define REAL_SIZE(op) REAL_SIZE_TP(Py_TYPE(op))
 
 #define UNNAMED_FIELDS_TP(tp) PyLong_AsLong( \
-                      PyDict_GetItemString((tp)->tp_dict, unnamed_fields_key))
+                      _PyDict_GetItemId((tp)->tp_dict, &PyId_n_unnamed_fields))
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
 
@@ -59,7 +62,7 @@ static void
 structseq_dealloc(PyStructSequence *obj)
 {
     Py_ssize_t i, size;
-    
+
     size = REAL_SIZE(obj);
     for (i = 0; i < size; ++i) {
         Py_XDECREF(obj->ob_item[i]);
@@ -382,9 +385,21 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 PyTypeObject*
 PyStructSequence_NewType(PyStructSequence_Desc *desc)
 {
-    PyTypeObject *result = (PyTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
+    PyTypeObject *result;
+
+    result = (PyTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
     if (result != NULL) {
         PyStructSequence_InitType(result, desc);
     }
     return result;
+}
+
+int _PyStructSequence_Init(void)
+{
+    if (_PyUnicode_FromId(&PyId_n_sequence_fields) == NULL
+        || _PyUnicode_FromId(&PyId_n_fields) == NULL
+        || _PyUnicode_FromId(&PyId_n_unnamed_fields) == NULL)
+        return -1;
+
+    return 0;
 }
