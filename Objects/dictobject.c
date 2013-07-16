@@ -305,9 +305,9 @@ PyDict_Fini(void)
  * #define USABLE_FRACTION(n) (((n) >> 1) + ((n) >> 2) - ((n) >> 3))
 */
 
-/* GROWTH_RATE. Growth rate upon hitting maximum load. 
- * Currently set to used*2 + capacity/2. 
- * This means that dicts double in size when growing without deletions, 
+/* GROWTH_RATE. Growth rate upon hitting maximum load.
+ * Currently set to used*2 + capacity/2.
+ * This means that dicts double in size when growing without deletions,
  * but have more head room when the number of deletions is on a par with the
  * number of insertions.
  * Raising this to used*4 doubles memory consumption depending on the size of
@@ -2589,23 +2589,25 @@ static PyObject *
 dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *self;
+    PyDictObject *d;
 
     assert(type != NULL && type->tp_alloc != NULL);
     self = type->tp_alloc(type, 0);
-    if (self != NULL) {
-        PyDictObject *d = (PyDictObject *)self;
-        d->ma_keys = new_keys_object(PyDict_MINSIZE_COMBINED);
-        /* XXX - Should we raise a no-memory error? */
-        if (d->ma_keys == NULL) {
-            DK_INCREF(Py_EMPTY_KEYS);
-            d->ma_keys = Py_EMPTY_KEYS;
-            d->ma_values = empty_values;
-        }
-        d->ma_used = 0;
-        /* The object has been implicitly tracked by tp_alloc */
-        if (type == &PyDict_Type)
-            _PyObject_GC_UNTRACK(d);
+    if (self == NULL)
+        return NULL;
+
+    d = (PyDictObject *)self;
+    d->ma_keys = new_keys_object(PyDict_MINSIZE_COMBINED);
+    /* XXX - Should we raise a no-memory error? */
+    if (d->ma_keys == NULL) {
+        DK_INCREF(Py_EMPTY_KEYS);
+        d->ma_keys = Py_EMPTY_KEYS;
+        d->ma_values = empty_values;
     }
+    d->ma_used = 0;
+    /* The object has been implicitly tracked by tp_alloc */
+    if (type == &PyDict_Type)
+        _PyObject_GC_UNTRACK(d);
     return self;
 }
 
