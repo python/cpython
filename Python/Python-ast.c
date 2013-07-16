@@ -7188,7 +7188,8 @@ PyInit__ast(void)
 
 PyObject* PyAST_mod2obj(mod_ty t)
 {
-    init_types();
+    if (!init_types())
+        return NULL;
     return ast2obj_mod(t);
 }
 
@@ -7202,7 +7203,8 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
     int isinstance;
     assert(0 <= mode && mode <= 2);
 
-    init_types();
+    if (!init_types())
+        return NULL;
 
     isinstance = PyObject_IsInstance(ast, req_type[mode]);
     if (isinstance == -1)
@@ -7220,7 +7222,8 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 
 int PyAST_Check(PyObject* obj)
 {
-    init_types();
+    if (!init_types())
+        return -1;
     return PyObject_IsInstance(obj, (PyObject*)&AST_type);
 }
 
