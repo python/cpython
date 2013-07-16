@@ -1361,8 +1361,10 @@ whichmodule(PyObject *global, PyObject *global_name)
 
   search:
     modules_dict = PySys_GetObject("modules");
-    if (modules_dict == NULL)
+    if (modules_dict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
+    }
 
     i = 0;
     module_name = NULL;
@@ -5542,8 +5544,10 @@ Unpickler_find_class(UnpicklerObject *self, PyObject *args)
     }
 
     modules_dict = PySys_GetObject("modules");
-    if (modules_dict == NULL)
+    if (modules_dict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
+    }
 
     module = PyDict_GetItemWithError(modules_dict, module_name);
     if (module == NULL) {
