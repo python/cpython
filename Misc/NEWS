@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18408: Fix many various bugs in code handling errors, especially
+  on memory allocation failure (MemoryError).
+
 - Issue #18344: Fix potential ref-leaks in _bufferedreader_read_all().
 
 - Issue #18342: Use the repr of a module name when an import fails when using
