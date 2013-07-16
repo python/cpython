@@ -1550,6 +1550,11 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     if (file == NULL || file == Py_None) {
         file = PySys_GetObject("stdout");
+        if (file == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+            return NULL;
+        }
+
         /* sys.stdout may be None when FILE* stdout isn't connected */
         if (file == Py_None)
             Py_RETURN_NONE;
