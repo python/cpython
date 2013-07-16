@@ -77,6 +77,8 @@ Library
 Tools/Demos
 -----------
 
+- Issue #18448: Fix a typo in Demo/newmetaclasses/Eiffel.py.
+
 - Issue #12990: The "Python Launcher" on OSX could not launch python scripts
   that have paths that include wide characters.
 
