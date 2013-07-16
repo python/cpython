@@ -899,7 +899,7 @@ build_node_tree(PyObject *tuple)
          *  The tuple is simple, but it doesn't start with a start symbol.
          *  Raise an exception now and be done with it.
          */
-        tuple = Py_BuildValue("os", tuple,
+        tuple = Py_BuildValue("Os", tuple,
                     "Illegal syntax-tree; cannot start with terminal symbol.");
         PyErr_SetObject(parser_error, tuple);
         Py_XDECREF(tuple);
