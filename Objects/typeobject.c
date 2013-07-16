@@ -750,10 +750,12 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         if (!PyType_IsSubtype(Py_TYPE(obj), type))
             return obj;
         type = Py_TYPE(obj);
-        if (type->tp_init != NULL &&
-            type->tp_init(obj, args, kwds) < 0) {
-            Py_DECREF(obj);
-            obj = NULL;
+        if (type->tp_init != NULL) {
+            int res = type->tp_init(obj, args, kwds);
+            if (res < 0) {
+                Py_DECREF(obj);
+                obj = NULL;
+            }
         }
     }
     return obj;
