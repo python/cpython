@@ -86,6 +86,7 @@ static void call_py_exitfuncs(void);
 static void wait_for_thread_shutdown(void);
 static void call_ll_exitfuncs(void);
 extern int _PyUnicode_Init(void);
+extern int _PyStructSequence_Init(void);
 extern void _PyUnicode_Fini(void);
 extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
@@ -336,6 +337,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     /* Init Unicode implementation; relies on the codec registry */
     if (_PyUnicode_Init() < 0)
         Py_FatalError("Py_Initialize: can't initialize unicode");
+    if (_PyStructSequence_Init() < 0)
+        Py_FatalError("Py_Initialize: can't initialize structseq");
 
     bimod = _PyBuiltin_Init();
     if (bimod == NULL)
