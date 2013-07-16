@@ -7,8 +7,8 @@ SS1 -- a spreadsheet-like application.
 import os
 import re
 import sys
-import html
 from xml.parsers import expat
+from xml.sax.saxutils import escape
 
 LEFT, CENTER, RIGHT = "LEFT", "CENTER", "RIGHT"
 
@@ -205,7 +205,7 @@ class Sheet:
             if hasattr(cell, 'xml'):
                 cellxml = cell.xml()
             else:
-                cellxml = '<value>%s</value>' % html.escape(cell)
+                cellxml = '<value>%s</value>' % escape(cell)
             out.append('<cell row="%s" col="%s">\n  %s\n</cell>' %
                        (y, x, cellxml))
         out.append('</spreadsheet>')
@@ -213,16 +213,14 @@ class Sheet:
 
     def save(self, filename):
         text = self.xml()
-        f = open(filename, "w")
-        f.write(text)
-        if text and not text.endswith('\n'):
-            f.write('\n')
-        f.close()
+        with open(filename, "w", encoding='utf-8') as f:
+            f.write(text)
+            if text and not text.endswith('\n'):
+                f.write('\n')
 
     def load(self, filename):
-        f = open(filename, 'rb')
-        SheetParser(self).parsefile(f)
-        f.close()
+        with open(filename, 'rb') as f:
+            SheetParser(self).parsefile(f)
 
 class SheetParser:
 
@@ -239,13 +237,10 @@ class SheetParser:
     def startelement(self, tag, attrs):
         method = getattr(self, 'start_'+tag, None)
         if method:
-            for key, value in attrs.items():
-                attrs[key] = str(value) # XXX Convert Unicode to 8-bit
             method(attrs)
         self.texts = []
 
     def data(self, text):
-        text = str(text) # XXX Convert Unicode to 8-bit
         self.texts.append(text)
 
     def endelement(self, tag):
@@ -269,11 +264,7 @@ class SheetParser:
         except:
             self.value = None
 
-    def end_long(self, text):
-        try:
-            self.value = int(text)
-        except:
-            self.value = None
+    end_long = end_int
 
     def end_double(self, text):
         try:
@@ -288,10 +279,7 @@ class SheetParser:
             self.value = None
 
     def end_string(self, text):
-        try:
-            self.value = text
-        except:
-            self.value = None
+        self.value = text
 
     def end_value(self, text):
         if isinstance(self.value, BaseCell):
@@ -328,7 +316,7 @@ class BaseCell:
 class NumericCell(BaseCell):
 
     def __init__(self, value, fmt="%s", alignment=RIGHT):
-        assert isinstance(value, (int, int, float, complex))
+        assert isinstance(value, (int, float, complex))
         assert alignment in (LEFT, CENTER, RIGHT)
         self.value = value
         self.fmt = fmt
@@ -355,21 +343,18 @@ class NumericCell(BaseCell):
         if -2**31 <= self.value < 2**31:
             return '<int>%s</int>' % self.value
         else:
-            return self._xml_long()
-
-    def _xml_long(self):
-        return '<long>%s</long>' % self.value
+            return '<long>%s</long>' % self.value
 
     def _xml_float(self):
-        return '<double>%s</double>' % repr(self.value)
+        return '<double>%r</double>' % self.value
 
     def _xml_complex(self):
-        return '<complex>%s</double>' % repr(self.value)
+        return '<complex>%r</complex>' % self.value
 
 class StringCell(BaseCell):
 
     def __init__(self, text, fmt="%s", alignment=LEFT):
-        assert isinstance(text, (str, str))
+        assert isinstance(text, str)
         assert alignment in (LEFT, CENTER, RIGHT)
         self.text = text
         self.fmt = fmt
@@ -386,7 +371,7 @@ class StringCell(BaseCell):
         return s % (
             align2xml[self.alignment],
             self.fmt,
-            html.escape(self.text))
+            escape(self.text))
 
 class FormulaCell(BaseCell):
 
@@ -404,7 +389,6 @@ class FormulaCell(BaseCell):
     def recalc(self, ns):
         if self.value is None:
             try:
-                # A hack to evaluate expressions using true division
                 self.value = eval(self.translated, ns)
             except:
                 exc = sys.exc_info()[0]
@@ -425,7 +409,7 @@ class FormulaCell(BaseCell):
         return '<formula align="%s" format="%s">%s</formula>' % (
             align2xml[self.alignment],
             self.fmt,
-            self.formula)
+            escape(self.formula))
 
     def renumber(self, x1, y1, x2, y2, dx, dy):
         out = []
@@ -776,7 +760,7 @@ class SheetGUI:
         if text.startswith('='):
             cell = FormulaCell(text[1:])
         else:
-            for cls in int, int, float, complex:
+            for cls in int, float, complex:
                 try:
                     value = cls(text)
                 except:
