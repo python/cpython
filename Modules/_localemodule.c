@@ -147,26 +147,32 @@ PyLocale_localeconv(PyObject* self)
     /* hopefully, the localeconv result survives the C library calls
        involved herein */
 
+#define RESULT(key, obj)\
+    do { \
+        if (obj == NULL) \
+            goto failed; \
+        if (PyDict_SetItemString(result, key, obj) < 0) \
+            goto failed; \
+        Py_DECREF(obj); \
+    } while (0)
+
 #define RESULT_STRING(s)\
-    x = PyUnicode_DecodeLocale(l->s, NULL);   \
-    if (!x) goto failed;\
-    PyDict_SetItemString(result, #s, x);\
-    Py_XDECREF(x)
+    do { \
+        x = PyUnicode_DecodeLocale(l->s, NULL); \
+        RESULT(#s, x); \
+    } while (0)
 
 #define RESULT_INT(i)\
-    x = PyLong_FromLong(l->i);\
-    if (!x) goto failed;\
-    PyDict_SetItemString(result, #i, x);\
-    Py_XDECREF(x)
+    do { \
+        x = PyLong_FromLong(l->i); \
+        RESULT(#i, x); \
+    } while (0)
 
     /* Numeric information */
     RESULT_STRING(decimal_point);
     RESULT_STRING(thousands_sep);
     x = copy_grouping(l->grouping);
-    if (!x)
-        goto failed;
-    PyDict_SetItemString(result, "grouping", x);
-    Py_XDECREF(x);
+    RESULT("grouping", x);
 
     /* Monetary information */
     RESULT_STRING(int_curr_symbol);
@@ -174,10 +180,8 @@ PyLocale_localeconv(PyObject* self)
     RESULT_STRING(mon_decimal_point);
     RESULT_STRING(mon_thousands_sep);
     x = copy_grouping(l->mon_grouping);
-    if (!x)
-        goto failed;
-    PyDict_SetItemString(result, "mon_grouping", x);
-    Py_XDECREF(x);
+    RESULT("mon_grouping", x);
+
     RESULT_STRING(positive_sign);
     RESULT_STRING(negative_sign);
     RESULT_INT(int_frac_digits);
