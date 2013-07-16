@@ -871,8 +871,10 @@ listextend(PyListObject *self, PyObject *b)
     }
 
     /* Cut back result list if initial guess was too large. */
-    if (Py_SIZE(self) < self->allocated)
-        list_resize(self, Py_SIZE(self));  /* shrinking can't fail */
+    if (Py_SIZE(self) < self->allocated) {
+        if (list_resize(self, Py_SIZE(self)) < 0)
+            goto error;
+    }
 
     Py_DECREF(it);
     Py_RETURN_NONE;
