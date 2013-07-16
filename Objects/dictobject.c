@@ -2692,8 +2692,10 @@ PyDict_GetItemString(PyObject *v, const char *key)
 {
     PyObject *kv, *rv;
     kv = PyUnicode_FromString(key);
-    if (kv == NULL)
+    if (kv == NULL) {
+        PyErr_Clear();
         return NULL;
+    }
     rv = PyDict_GetItem(v, kv);
     Py_DECREF(kv);
     return rv;
