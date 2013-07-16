@@ -739,7 +739,7 @@ fileio_read(fileio *self, PyObject *args)
 
     if (n != size) {
         if (_PyBytes_Resize(&bytes, n) < 0) {
-            Py_DECREF(bytes);
+            Py_CLEAR(bytes);
             return NULL;
         }
     }
