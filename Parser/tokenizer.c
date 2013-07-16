@@ -254,9 +254,10 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
 
             if (begin < t) {
                 char* r = new_string(begin, t - begin, tok);
+                char* q;
                 if (!r)
                     return 0;
-                char* q = get_normal_name(r);
+                q = get_normal_name(r);
                 if (r != q) {
                     PyMem_FREE(r);
                     r = new_string(q, strlen(q), tok);
