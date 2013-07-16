@@ -2404,7 +2404,7 @@ class _TestListenerClient(BaseTestCase):
             c.close()
             l.close()
 
-class _TestPoll(unittest.TestCase):
+class _TestPoll(BaseTestCase):
 
     ALLOWED_TYPES = ('processes', 'threads')
 
@@ -3585,16 +3585,7 @@ class TestIgnoreEINTR(unittest.TestCase):
 #
 #
 
-testcases_other = [OtherTest, TestInvalidHandle, TestInitializers,
-                   TestStdinBadfiledescriptor, TestWait, TestInvalidFamily,
-                   TestFlags, TestTimeouts, TestNoForkBomb,
-                   TestForkAwareThreadLock, TestIgnoreEINTR]
-
-#
-#
-#
-
-def test_main(run=None):
+def setUpModule():
     if sys.platform.startswith("linux"):
         try:
             lock = multiprocessing.RLock()
@@ -3603,26 +3594,10 @@ def test_main(run=None):
 
     check_enough_semaphores()
 
-    if run is None:
-        from test.support import run_unittest as run
-
     util.get_temp_dir()     # creates temp directory for use by all processes
 
     multiprocessing.get_logger().setLevel(LOG_LEVEL)
 
-    testcases = (
-        sorted(testcases_processes.values(), key=lambda tc:tc.__name__) +
-        sorted(testcases_threads.values(), key=lambda tc:tc.__name__) +
-        sorted(testcases_manager.values(), key=lambda tc:tc.__name__) +
-        testcases_other
-        )
-
-    loadTestsFromTestCase = unittest.defaultTestLoader.loadTestsFromTestCase
-    suite = unittest.TestSuite(loadTestsFromTestCase(tc) for tc in testcases)
-    run(suite)
-
-def main():
-    test_main(unittest.TextTestRunner(verbosity=2).run)
 
 if __name__ == '__main__':
-    main()
+    unittest.main()
