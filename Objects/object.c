@@ -1920,13 +1920,18 @@ Py_ReprLeave(PyObject *obj)
     PyObject *dict;
     PyObject *list;
     Py_ssize_t i;
+    PyObject *error_type, *error_value, *error_traceback;
+
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
     dict = PyThreadState_GetDict();
     if (dict == NULL)
-        return;
+        goto finally;
+
     list = PyDict_GetItemString(dict, KEY);
     if (list == NULL || !PyList_Check(list))
-        return;
+        goto finally;
+
     i = PyList_GET_SIZE(list);
     /* Count backwards because we always expect obj to be list[-1] */
     while (--i >= 0) {
@@ -1935,6 +1940,10 @@ Py_ReprLeave(PyObject *obj)
             break;
         }
     }
+
+finally:
+    /* ignore exceptions because there is no way to report them. */
+    PyErr_Restore(error_type, error_value, error_traceback);
 }
 
 /* Trashcan support. */
