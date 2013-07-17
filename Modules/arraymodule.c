@@ -968,8 +968,13 @@ array_count(arrayobject *self, PyObject *v)
     Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *selfi = getarrayitem((PyObject *)self, i);
-        int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
+        PyObject *selfi;
+        int cmp;
+
+        selfi = getarrayitem((PyObject *)self, i);
+        if (selfi == NULL)
+            return NULL;
+        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
         if (cmp > 0)
             count++;
@@ -990,8 +995,13 @@ array_index(arrayobject *self, PyObject *v)
     Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *selfi = getarrayitem((PyObject *)self, i);
-        int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
+        PyObject *selfi;
+        int cmp;
+
+        selfi = getarrayitem((PyObject *)self, i);
+        if (selfi == NULL)
+            return NULL;
+        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
         if (cmp > 0) {
             return PyLong_FromLong((long)i);
@@ -1016,6 +1026,8 @@ array_contains(arrayobject *self, PyObject *v)
 
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(self); i++) {
         PyObject *selfi = getarrayitem((PyObject *)self, i);
+        if (selfi == NULL)
+            return NULL;
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
     }
@@ -1028,8 +1040,13 @@ array_remove(arrayobject *self, PyObject *v)
     int i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
-        PyObject *selfi = getarrayitem((PyObject *)self,i);
-        int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
+        PyObject *selfi;
+        int cmp;
+
+        selfi = getarrayitem((PyObject *)self,i);
+        if (selfi == NULL)
+            return NULL;
+        cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
         if (cmp > 0) {
             if (array_ass_slice(self, i, i+1,
@@ -1068,7 +1085,9 @@ array_pop(arrayobject *self, PyObject *args)
         PyErr_SetString(PyExc_IndexError, "pop index out of range");
         return NULL;
     }
-    v = getarrayitem((PyObject *)self,i);
+    v = getarrayitem((PyObject *)self, i);
+    if (v == NULL)
+        return NULL;
     if (array_ass_slice(self, i, i+1, (PyObject *)NULL) != 0) {
         Py_DECREF(v);
         return NULL;
