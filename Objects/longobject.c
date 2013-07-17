@@ -17,7 +17,8 @@
 #endif
 
 /* convert a PyLong of size 1, 0 or -1 to an sdigit */
-#define MEDIUM_VALUE(x) (Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :   \
+#define MEDIUM_VALUE(x) (assert(-1 <= Py_SIZE(x) && Py_SIZE(x) <= 1),   \
+         Py_SIZE(x) < 0 ? -(sdigit)(x)->ob_digit[0] :   \
              (Py_SIZE(x) == 0 ? (sdigit)0 :                             \
               (sdigit)(x)->ob_digit[0]))
 #define ABS(x) ((x) < 0 ? -(x) : (x))
