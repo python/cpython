@@ -4256,11 +4256,15 @@ PyType_Ready(PyTypeObject *type)
             PyObject *doc = PyUnicode_FromString(type->tp_doc);
             if (doc == NULL)
                 goto error;
-            _PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc);
+            if (_PyDict_SetItemId(type->tp_dict, &PyId___doc__, doc) < 0) {
+                Py_DECREF(doc);
+                goto error;
+            }
             Py_DECREF(doc);
         } else {
-            _PyDict_SetItemId(type->tp_dict,
-                              &PyId___doc__, Py_None);
+            if (_PyDict_SetItemId(type->tp_dict,
+                                  &PyId___doc__, Py_None) < 0)
+                goto error;
         }
     }
 
