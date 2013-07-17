@@ -70,11 +70,21 @@ maybe_small_long(PyLongObject *v)
 
 /* If a freshly-allocated long is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
-#define NEGATE(x) \
-    do if (Py_REFCNT(x) == 1) Py_SIZE(x) = -Py_SIZE(x);  \
-       else { PyObject* tmp=PyLong_FromLong(-MEDIUM_VALUE(x));  \
-           Py_DECREF(x); (x) = (PyLongObject*)tmp; }               \
-    while(0)
+Py_LOCAL_INLINE(void)
+_PyLong_Negate(PyLongObject **x_p)
+{
+    PyLongObject *x;
+
+    x = (PyLongObject *)*x_p;
+    if (Py_REFCNT(x) == 1) {
+        Py_SIZE(x) = -Py_SIZE(x);
+        return;
+    }
+
+    *x_p = (PyLongObject *)PyLong_FromLong(-MEDIUM_VALUE(x));
+    Py_DECREF(x);
+}
+
 /* For long multiplication, use the O(N**2) school algorithm unless
  * both operands contain more than KARATSUBA_CUTOFF digits (this
  * being an internal Python long digit, in base BASE).
@@ -2357,10 +2367,21 @@ long_divrem(PyLongObject *a, PyLongObject *b,
        The quotient z has the sign of a*b;
        the remainder r has the sign of a,
        so a = b*z + r. */
-    if ((Py_SIZE(a) < 0) != (Py_SIZE(b) < 0))
-        NEGATE(z);
-    if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0)
-        NEGATE(*prem);
+    if ((Py_SIZE(a) < 0) != (Py_SIZE(b) < 0)) {
+        _PyLong_Negate(&z);
+        if (z == NULL) {
+            Py_CLEAR(*prem);
+            return -1;
+        }
+    }
+    if (Py_SIZE(a) < 0 && Py_SIZE(*prem) != 0) {
+        _PyLong_Negate(prem);
+        if (*prem == NULL) {
+            Py_DECREF(z);
+            Py_CLEAR(*prem);
+            return -1;
+        }
+    }
     *pdiv = maybe_small_long(z);
     return 0;
 }
@@ -2856,8 +2877,11 @@ x_sub(PyLongObject *a, PyLongObject *b)
         borrow &= 1; /* Keep only one sign bit */
     }
     assert(borrow == 0);
-    if (sign < 0)
-        NEGATE(z);
+    if (sign < 0) {
+        _PyLong_Negate(&z);
+        if (z == NULL)
+            return NULL;
+    }
     return long_normalize(z);
 }
 
@@ -3348,8 +3372,11 @@ long_mul(PyLongObject *a, PyLongObject *b)
 
     z = k_mul(a, b);
     /* Negate if exactly one of the inputs is negative. */
-    if (((Py_SIZE(a) ^ Py_SIZE(b)) < 0) && z)
-        NEGATE(z);
+    if (((Py_SIZE(a) ^ Py_SIZE(b)) < 0) && z) {
+        _PyLong_Negate(&z);
+        if (z == NULL)
+            return NULL;
+    }
     return (PyObject *)z;
 }
 
@@ -3796,7 +3823,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             Py_DECREF(c);
             c = temp;
             temp = NULL;
-            NEGATE(c);
+            _PyLong_Negate(&c);
+            if (c == NULL)
+                goto Error;
         }
 
         /* if modulus == 1:
@@ -3896,10 +3925,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
     goto Done;
 
   Error:
-    if (z != NULL) {
-        Py_DECREF(z);
-        z = NULL;
-    }
+    Py_CLEAR(z);
     /* fall through */
   Done:
     if (Py_SIZE(b) > FIVEARY_CUTOFF) {
@@ -4029,10 +4055,10 @@ long_lshift(PyObject *v, PyObject *w)
 
     shiftby = PyLong_AsSsize_t((PyObject *)b);
     if (shiftby == -1L && PyErr_Occurred())
-        goto lshift_error;
+        return NULL;
     if (shiftby < 0) {
         PyErr_SetString(PyExc_ValueError, "negative shift count");
-        goto lshift_error;
+        return NULL;
     }
     /* wordshift, remshift = divmod(shiftby, PyLong_SHIFT) */
     wordshift = shiftby / PyLong_SHIFT;
@@ -4044,9 +4070,11 @@ long_lshift(PyObject *v, PyObject *w)
         ++newsize;
     z = _PyLong_New(newsize);
     if (z == NULL)
-        goto lshift_error;
-    if (Py_SIZE(a) < 0)
-        NEGATE(z);
+        return NULL;
+    if (Py_SIZE(a) < 0) {
+        assert(Py_REFCNT(z) == 1);
+        Py_SIZE(z) = -Py_SIZE(z);
+    }
     for (i = 0; i < wordshift; i++)
         z->ob_digit[i] = 0;
     accum = 0;
@@ -4060,7 +4088,6 @@ long_lshift(PyObject *v, PyObject *w)
     else
         assert(!accum);
     z = long_normalize(z);
-  lshift_error:
     return (PyObject *) maybe_small_long(z);
 }
 
