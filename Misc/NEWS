@@ -529,6 +529,9 @@ Library
 Tests
 -----
 
+- Issue #18266: test_largefile now works with unittest test discovery and
+  supports running only selected tests.  Patch by Zachary Ware.
+
 - Issue #17767: test_locale now works with unittest test discovery.
   Original patch by Zachary Ware.
 
