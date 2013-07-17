@@ -71,6 +71,11 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
         if (value == NULL || !PyExceptionInstance_Check(value)) {
             /* We must normalize the value right now */
             PyObject *args, *fixed_value;
+#ifdef Py_DEBUG
+            /* in debug mode, PyEval_EvalFrameEx() fails with an assertion
+               error if an exception is set when it is called */
+            PyErr_Clear();
+#endif
             if (value == NULL || value == Py_None)
                 args = PyTuple_New(0);
             else if (PyTuple_Check(value)) {
@@ -705,6 +710,12 @@ PyErr_Format(PyObject *exception, const char *format, ...)
     va_start(vargs, format);
 #else
     va_start(vargs);
+#endif
+
+#ifdef Py_DEBUG
+    /* in debug mode, PyEval_EvalFrameEx() fails with an assertion error
+       if an exception is set when it is called */
+    PyErr_Clear();
 #endif
 
     string = PyUnicode_FromFormatV(format, vargs);

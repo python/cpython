@@ -1203,6 +1203,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     if (throwflag) /* support for generator.throw() */
         goto error;
 
+#ifdef Py_DEBUG
+    /* PyEval_EvalFrameEx() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller looses its exception */
+    assert(!PyErr_Occurred());
+#endif
+
     for (;;) {
 #ifdef WITH_TSC
         if (inst1 == 0) {
@@ -1223,6 +1230,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #endif
         assert(stack_pointer >= f->f_valuestack); /* else underflow */
         assert(STACK_LEVEL() <= co->co_stacksize);  /* else overflow */
+        assert(!PyErr_Occurred());
 
         /* Do periodic things.  Doing this every time through
            the loop would add too much overhead, so we do it
@@ -3125,6 +3133,8 @@ fast_block_end:
             break;
         READ_TIMESTAMP(loop1);
 
+        assert(!PyErr_Occurred());
+
     } /* main loop */
 
     assert(why != WHY_YIELD);
@@ -3136,6 +3146,9 @@ fast_block_end:
 
     if (why != WHY_RETURN)
         retval = NULL;
+
+    assert((retval != NULL && !PyErr_Occurred())
+            || (retval == NULL && PyErr_Occurred()));
 
 fast_yield:
     if (co->co_flags & CO_GENERATOR && (why == WHY_YIELD || why == WHY_RETURN)) {
@@ -4044,6 +4057,13 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 {
     PyObject *result;
 
+#ifdef Py_DEBUG
+    /* PyEval_CallObjectWithKeywords() must not be called with an exception
+       set, because it may clear it (directly or indirectly)
+       and so the caller looses its exception */
+    assert(!PyErr_Occurred());
+#endif
+
     if (arg == NULL) {
         arg = PyTuple_New(0);
         if (arg == NULL)
@@ -4066,6 +4086,9 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 
     result = PyObject_Call(func, arg, kw);
     Py_DECREF(arg);
+
+    assert((result != NULL && !PyErr_Occurred())
+           || (result == NULL && PyErr_Occurred()));
     return result;
 }
 
@@ -4228,6 +4251,9 @@ call_function(PyObject ***pp_stack, int oparg
         Py_DECREF(w);
         PCALL(PCALL_POP);
     }
+
+    assert((x != NULL && !PyErr_Occurred())
+           || (x == NULL && PyErr_Occurred()));
     return x;
 }
 

@@ -663,6 +663,11 @@ static void
 _set_BlockingIOError(char *msg, Py_ssize_t written)
 {
     PyObject *err;
+#ifdef Py_DEBUG
+    /* in debug mode, PyEval_EvalFrameEx() fails with an assertion error
+       if an exception is set when it is called */
+    PyErr_Clear();
+#endif
     err = PyObject_CallFunction(PyExc_BlockingIOError, "isn",
                                 errno, msg, written);
     if (err)
