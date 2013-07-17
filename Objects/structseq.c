@@ -233,8 +233,8 @@ structseq_repr(PyStructSequence *obj)
 static PyObject *
 structseq_reduce(PyStructSequence* self)
 {
-    PyObject* tup;
-    PyObject* dict;
+    PyObject* tup = NULL;
+    PyObject* dict = NULL;
     PyObject* result;
     Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields;
     int i;
@@ -243,15 +243,12 @@ structseq_reduce(PyStructSequence* self)
     n_visible_fields = VISIBLE_SIZE(self);
     n_unnamed_fields = UNNAMED_FIELDS(self);
     tup = PyTuple_New(n_visible_fields);
-    if (!tup) {
-        return NULL;
-    }
+    if (!tup)
+        goto error;
 
     dict = PyDict_New();
-    if (!dict) {
-        Py_DECREF(tup);
-        return NULL;
-    }
+    if (!dict)
+        goto error;
 
     for (i = 0; i < n_visible_fields; i++) {
         Py_INCREF(self->ob_item[i]);
@@ -260,8 +257,8 @@ structseq_reduce(PyStructSequence* self)
 
     for (; i < n_fields; i++) {
         char *n = Py_TYPE(self)->tp_members[i-n_unnamed_fields].name;
-        PyDict_SetItemString(dict, n,
-                             self->ob_item[i]);
+        if (PyDict_SetItemString(dict, n, self->ob_item[i]) < 0)
+            goto error;
     }
 
     result = Py_BuildValue("(O(OO))", Py_TYPE(self), tup, dict);
@@ -270,6 +267,11 @@ structseq_reduce(PyStructSequence* self)
     Py_DECREF(dict);
 
     return result;
+
+error:
+    Py_XDECREF(tup);
+    Py_XDECREF(dict);
+    return NULL;
 }
 
 static PyMethodDef structseq_methods[] = {
