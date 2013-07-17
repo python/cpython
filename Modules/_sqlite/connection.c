@@ -697,6 +697,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
     PyObject** aggregate_instance;
     _Py_IDENTIFIER(finalize);
     int ok;
+    PyObject *exception, *value, *tb;
 
 #ifdef WITH_THREAD
     PyGILState_STATE threadstate;
@@ -712,7 +713,15 @@ void _pysqlite_final_callback(sqlite3_context* context)
         goto error;
     }
 
+    /* Keep the exception (if any) of the last call to step() */
+    PyErr_Fetch(&exception, &value, &tb);
+
     function_result = _PyObject_CallMethodId(*aggregate_instance, &PyId_finalize, "");
+
+    /* Restore the exception (if any) of the last call to step(),
+       but clear also the current exception if finalize() failed */
+    PyErr_Restore(exception, value, tb);
+
     Py_DECREF(*aggregate_instance);
 
     ok = 0;
