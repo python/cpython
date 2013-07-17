@@ -1910,7 +1910,8 @@ Py_ReprEnter(PyObject *obj)
         if (PyList_GET_ITEM(list, i) == obj)
             return 1;
     }
-    PyList_Append(list, obj);
+    if (PyList_Append(list, obj) < 0)
+        return -1;
     return 0;
 }
 
