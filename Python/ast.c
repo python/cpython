@@ -1845,7 +1845,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 }
                 ast_error(c, n, buf);
                 Py_DECREF(type);
-                Py_DECREF(value);
+                Py_XDECREF(value);
                 Py_XDECREF(tback);
             }
             return NULL;
