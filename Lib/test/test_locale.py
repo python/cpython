@@ -1,52 +1,50 @@
-from test.support import run_unittest, verbose
+from test.support import verbose
 import unittest
 import locale
 import sys
 import codecs
-
-enUS_locale = None
-
-def get_enUS_locale():
-    global enUS_locale
-    if sys.platform == 'darwin':
-        import os
-        tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US")
-        if int(os.uname().release.split('.')[0]) < 10:
-            # The locale test work fine on OSX 10.6, I (ronaldoussoren)
-            # haven't had time yet to verify if tests work on OSX 10.5
-            # (10.4 is known to be bad)
-            raise unittest.SkipTest("Locale support on MacOSX is minimal")
-    elif sys.platform.startswith("win"):
-        tlocs = ("En", "English")
-    else:
-        tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US.US-ASCII", "en_US")
-    oldlocale = locale.setlocale(locale.LC_NUMERIC)
-    for tloc in tlocs:
-        try:
-            locale.setlocale(locale.LC_NUMERIC, tloc)
-        except locale.Error:
-            continue
-        break
-    else:
-        raise unittest.SkipTest(
-            "Test locale not supported (tried %s)" % (', '.join(tlocs)))
-    enUS_locale = tloc
-    locale.setlocale(locale.LC_NUMERIC, oldlocale)
-
 
 class BaseLocalizedTest(unittest.TestCase):
     #
     # Base class for tests using a real locale
     #
 
-    def setUp(self):
-        self.oldlocale = locale.setlocale(self.locale_type)
-        locale.setlocale(self.locale_type, enUS_locale)
-        if verbose:
-            print("testing with \"%s\"..." % enUS_locale, end=' ')
+    @classmethod
+    def setUpClass(cls):
+        if sys.platform == 'darwin':
+            import os
+            tlocs = ("en_US.UTF-8", "en_US.ISO8859-1", "en_US")
+            if int(os.uname().release.split('.')[0]) < 10:
+                # The locale test work fine on OSX 10.6, I (ronaldoussoren)
+                # haven't had time yet to verify if tests work on OSX 10.5
+                # (10.4 is known to be bad)
+                raise unittest.SkipTest("Locale support on MacOSX is minimal")
+        elif sys.platform.startswith("win"):
+            tlocs = ("En", "English")
+        else:
+            tlocs = ("en_US.UTF-8", "en_US.ISO8859-1",
+                     "en_US.US-ASCII", "en_US")
+        try:
+            oldlocale = locale.setlocale(locale.LC_NUMERIC)
+            for tloc in tlocs:
+                try:
+                    locale.setlocale(locale.LC_NUMERIC, tloc)
+                except locale.Error:
+                    continue
+                break
+            else:
+                raise unittest.SkipTest("Test locale not supported "
+                                        "(tried %s)" % (', '.join(tlocs)))
+            cls.enUS_locale = tloc
+        finally:
+            locale.setlocale(locale.LC_NUMERIC, oldlocale)
 
-    def tearDown(self):
-        locale.setlocale(self.locale_type, self.oldlocale)
+    def setUp(self):
+        oldlocale = locale.setlocale(self.locale_type)
+        self.addCleanup(locale.setlocale, self.locale_type, oldlocale)
+        locale.setlocale(self.locale_type, self.enUS_locale)
+        if verbose:
+            print("testing with %r..." % self.enUS_locale, end=' ', flush=True)
 
 
 class BaseCookedTest(unittest.TestCase):
@@ -415,25 +413,5 @@ class TestMiscellaneous(unittest.TestCase):
             locale.setlocale(locale.LC_ALL, (b'not', b'valid'))
 
 
-def test_main():
-    tests = [
-        TestMiscellaneous,
-        TestFormatPatternArg,
-        TestLocaleFormatString,
-        TestEnUSNumberFormatting,
-        TestCNumberFormatting,
-        TestFrFRNumberFormatting,
-        TestCollation
-    ]
-    # SkipTest can't be raised inside unittests, handle it manually instead
-    try:
-        get_enUS_locale()
-    except unittest.SkipTest as e:
-        if verbose:
-            print("Some tests will be disabled: %s" % e)
-    else:
-        tests += [TestNumberFormatting, TestEnUSCollation]
-    run_unittest(*tests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
