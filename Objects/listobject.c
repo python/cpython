@@ -934,12 +934,10 @@ listpop(PyListObject *self, PyObject *args)
     }
     Py_INCREF(v);
     status = list_ass_slice(self, i, i+1, (PyObject *)NULL);
-    assert(status >= 0);
-    /* Use status, so that in a release build compilers don't
-     * complain about the unused name.
-     */
-    (void) status;
-
+    if (status < 0) {
+        Py_DECREF(v);
+        return NULL;
+    }
     return v;
 }
 
