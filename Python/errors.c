@@ -655,8 +655,11 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
 
     Py_INCREF(msg);
     PyTuple_SET_ITEM(args, 0, msg);
-    PyDict_SetItemString(kwargs, "name", name);
-    PyDict_SetItemString(kwargs, "path", path);
+
+    if (PyDict_SetItemString(kwargs, "name", name) < 0)
+        return NULL;
+    if (PyDict_SetItemString(kwargs, "path", path) < 0)
+        return NULL;
 
     error = PyObject_Call(PyExc_ImportError, args, kwargs);
     if (error != NULL) {
