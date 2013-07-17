@@ -1027,7 +1027,7 @@ array_contains(arrayobject *self, PyObject *v)
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(self); i++) {
         PyObject *selfi = getarrayitem((PyObject *)self, i);
         if (selfi == NULL)
-            return NULL;
+            return -1;
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
     }
@@ -1405,13 +1405,16 @@ array_tolist(arrayobject *self, PyObject *unused)
         return NULL;
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *v = getarrayitem((PyObject *)self, i);
-        if (v == NULL) {
-            Py_DECREF(list);
-            return NULL;
-        }
-        PyList_SetItem(list, i, v);
+        if (v == NULL)
+            goto error;
+        if (PyList_SetItem(list, i, v) < 0)
+            goto error;
     }
     return list;
+
+error:
+    Py_DECREF(list);
+    return NULL;
 }
 
 PyDoc_STRVAR(tolist_doc,
