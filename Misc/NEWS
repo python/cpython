@@ -529,6 +529,9 @@ Library
 Tests
 -----
 
+- Issue #17767: test_locale now works with unittest test discovery.
+  Original patch by Zachary Ware.
+
 - Issue #18375: Assume --randomize when --randseed is used for running the
   testsuite.
 
