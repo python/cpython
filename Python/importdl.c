@@ -77,6 +77,8 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
         PyObject *msg = PyUnicode_FromFormat("dynamic module does not define "
                                              "init function (PyInit_%s)",
                                              shortname);
+        if (msg == NULL)
+            goto error;
         PyErr_SetImportError(msg, name, path);
         Py_DECREF(msg);
         goto error;
