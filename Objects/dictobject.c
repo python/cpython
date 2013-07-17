@@ -1443,6 +1443,9 @@ dict_repr(PyDictObject *mp)
         Py_INCREF(value);
         s = PyObject_Repr(key);
         PyUnicode_Append(&s, colon);
+        if (s == NULL)
+            goto Done;
+
         PyUnicode_AppendAndDel(&s, PyObject_Repr(value));
         Py_DECREF(key);
         Py_DECREF(value);
