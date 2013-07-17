@@ -168,7 +168,10 @@ heappop(PyObject *self, PyObject *heap)
 
     lastelt = PyList_GET_ITEM(heap, n-1) ;
     Py_INCREF(lastelt);
-    PyList_SetSlice(heap, n-1, n, NULL);
+    if (PyList_SetSlice(heap, n-1, n, NULL) < 0) {
+        Py_DECREF(lastelt);
+        return NULL;
+    }
     n--;
 
     if (!n)
