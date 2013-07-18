@@ -2831,6 +2831,9 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
     if (data_len < 2 || data_in[0] != '&')
         return;
 
+    if (PyErr_Occurred())
+        return;
+
     key = PyUnicode_DecodeUTF8(data_in + 1, data_len - 2, "strict");
     if (!key)
         return;
@@ -2870,6 +2873,9 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
     PyObject* tag;
     PyObject* attrib;
     int ok;
+
+    if (PyErr_Occurred())
+        return;
 
     /* tag name */
     tag = makeuniversal(self, tag_in);
@@ -2929,6 +2935,9 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
     PyObject* data;
     PyObject* res;
 
+    if (PyErr_Occurred())
+        return;
+
     data = PyUnicode_DecodeUTF8(data_in, data_len, "strict");
     if (!data)
         return; /* parser will look for errors */
@@ -2951,6 +2960,9 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
 {
     PyObject* tag;
     PyObject* res = NULL;
+
+    if (PyErr_Occurred())
+        return;
 
     if (TreeBuilder_CheckExact(self->target))
         /* shortcut */
@@ -2976,6 +2988,9 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
     PyObject* sprefix = NULL;
     PyObject* suri = NULL;
 
+    if (PyErr_Occurred())
+        return;
+
     suri = PyUnicode_DecodeUTF8(uri, strlen(uri), "strict");
     if (!suri)
         return;
@@ -3000,6 +3015,9 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
 static void
 expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 {
+    if (PyErr_Occurred())
+        return;
+
     treebuilder_handle_namespace(
         (TreeBuilderObject*) self->target, 0, NULL, NULL
         );
@@ -3010,6 +3028,9 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
 {
     PyObject* comment;
     PyObject* res;
+
+    if (PyErr_Occurred())
+        return;
 
     if (self->handle_comment) {
         comment = PyUnicode_DecodeUTF8(comment_in, strlen(comment_in), "strict");
@@ -3032,6 +3053,9 @@ expat_start_doctype_handler(XMLParserObject *self,
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
     PyObject *parser_doctype = NULL;
     PyObject *res = NULL;
+
+    if (PyErr_Occurred())
+        return;
 
     doctype_name_obj = makeuniversal(self, doctype_name);
     if (!doctype_name_obj)
@@ -3100,6 +3124,9 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
     PyObject* target;
     PyObject* data;
     PyObject* res;
+
+    if (PyErr_Occurred())
+        return;
 
     if (self->handle_pi) {
         target = PyUnicode_DecodeUTF8(target_in, strlen(target_in), "strict");
@@ -3273,6 +3300,7 @@ expat_parse(XMLParserObject* self, const char* data, int data_len, int final)
 {
     int ok;
 
+    assert(!PyErr_Occurred());
     ok = EXPAT(Parse)(self->parser, data, data_len, final);
 
     if (PyErr_Occurred())
