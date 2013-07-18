@@ -2961,7 +2961,7 @@ posix_chflags(PyObject *self, PyObject *args, PyObject *kwargs)
     unsigned long flags;
     int follow_symlinks = 1;
     int result;
-    PyObject *return_value;
+    PyObject *return_value = NULL;
     static char *keywords[] = {"path", "flags", "follow_symlinks", NULL};
 
     memset(&path, 0, sizeof(path));
