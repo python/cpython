@@ -402,6 +402,10 @@ static void
 my_CharacterDataHandler(void *userData, const XML_Char *data, int len)
 {
     xmlparseobject *self = (xmlparseobject *) userData;
+
+    if (PyErr_Occurred())
+        return;
+
     if (self->buffer == NULL)
         call_character_handler(self, data, len);
     else {
@@ -435,6 +439,9 @@ my_StartElementHandler(void *userData,
     if (have_handler(self, StartElement)) {
         PyObject *container, *rv, *args;
         int i, max;
+
+        if (PyErr_Occurred())
+            return;
 
         if (flush_character_buffer(self) < 0)
             return;
@@ -519,6 +526,8 @@ my_##NAME##Handler PARAMS {\
     INIT \
 \
     if (have_handler(self, NAME)) { \
+        if (PyErr_Occurred()) \
+            return RETURN; \
         if (flush_character_buffer(self) < 0) \
             return RETURN; \
         args = Py_BuildValue PARAM_FORMAT ;\
@@ -632,6 +641,9 @@ my_ElementDeclHandler(void *userData,
     if (have_handler(self, ElementDecl)) {
         PyObject *rv = NULL;
         PyObject *modelobj, *nameobj;
+
+        if (PyErr_Occurred())
+            return;
 
         if (flush_character_buffer(self) < 0)
             goto finally;
@@ -1124,6 +1136,9 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     int i;
     void *data;
     unsigned int kind;
+
+    if (PyErr_Occurred())
+        return XML_STATUS_ERROR;
 
     if (template_buffer[1] == 0) {
         for (i = 0; i < 256; i++)
