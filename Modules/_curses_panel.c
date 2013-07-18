@@ -513,6 +513,8 @@ PyInit__curses_panel(void)
         goto fail;
 
     import_curses();
+    if (PyErr_Occurred())
+        goto fail;
 
     /* For exception _curses_panel.error */
     _curses_panelstate(m)->PyCursesError = PyErr_NewException("_curses_panel.error", NULL, NULL);
