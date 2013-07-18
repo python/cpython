@@ -23,6 +23,9 @@ main(int argc, char **argv)
     wchar_t **argv_copy2;
     int i, res;
     char *oldloc;
+#ifdef __FreeBSD__
+    fp_except_t m;
+#endif
 
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
@@ -37,8 +40,6 @@ main(int argc, char **argv)
      * exceptions by default.  Here we disable them.
      */
 #ifdef __FreeBSD__
-    fp_except_t m;
-
     m = fpgetmask();
     fpsetmask(m & ~FP_X_OFL);
 #endif
