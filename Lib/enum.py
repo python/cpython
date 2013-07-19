@@ -4,7 +4,7 @@ import sys
 from collections import OrderedDict
 from types import MappingProxyType
 
-__all__ = ['Enum', 'IntEnum']
+__all__ = ['Enum', 'IntEnum', 'unique']
 
 
 class _RouteClassAttributeToGetattr:
@@ -463,3 +463,17 @@ class Enum(metaclass=EnumMeta):
 
 class IntEnum(int, Enum):
     """Enum where members are also (and must be) ints"""
+
+
+def unique(enumeration):
+    """Class decorator for enumerations ensuring unique member values."""
+    duplicates = []
+    for name, member in enumeration.__members__.items():
+        if name != member.name:
+            duplicates.append((name, member.name))
+    if duplicates:
+        alias_details = ', '.join(
+                ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
+        raise ValueError('duplicate values found in %r: %s' %
+                (enumeration, alias_details))
+    return enumeration

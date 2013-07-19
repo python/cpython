@@ -2,7 +2,7 @@ import enum
 import unittest
 from collections import OrderedDict
 from pickle import dumps, loads, PicklingError
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, unique
 
 # for pickle tests
 try:
@@ -915,6 +915,39 @@ class TestEnum(unittest.TestCase):
                 return G * self.mass / (self.radius * self.radius)
         self.assertEqual(round(Planet.EARTH.surface_gravity, 2), 9.80)
         self.assertEqual(Planet.EARTH.value, (5.976e+24, 6.37814e6))
+
+
+class TestUnique(unittest.TestCase):
+
+    def test_unique_clean(self):
+        @unique
+        class Clean(Enum):
+            one = 1
+            two = 'dos'
+            tres = 4.0
+        @unique
+        class Cleaner(IntEnum):
+            single = 1
+            double = 2
+            triple = 3
+
+    def test_unique_dirty(self):
+        with self.assertRaisesRegex(ValueError, 'tres.*one'):
+            @unique
+            class Dirty(Enum):
+                one = 1
+                two = 'dos'
+                tres = 1
+        with self.assertRaisesRegex(
+                ValueError,
+                'double.*single.*turkey.*triple',
+                ):
+            @unique
+            class Dirtier(IntEnum):
+                single = 1
+                double = 1
+                triple = 3
+                turkey = 3
 
 
 if __name__ == '__main__':
