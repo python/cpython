@@ -3590,13 +3590,16 @@ def setUpModule():
         try:
             lock = multiprocessing.RLock()
         except OSError:
-            raise unittest.SkipTest("OSError raises on RLock creation, see issue 3111!")
-
+            raise unittest.SkipTest("OSError raises on RLock creation, "
+                                    "see issue 3111!")
     check_enough_semaphores()
-
     util.get_temp_dir()     # creates temp directory for use by all processes
-
     multiprocessing.get_logger().setLevel(LOG_LEVEL)
+
+
+def tearDownModule():
+    # pause a bit so we don't get warning about dangling threads/processes
+    time.sleep(0.5)
 
 
 if __name__ == '__main__':
