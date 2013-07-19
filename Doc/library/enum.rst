@@ -18,7 +18,10 @@ values.  Within an enumeration, the members can be compared by identity, and
 the enumeration itself can be iterated over.
 
 This module defines two enumeration classes that can be used to define unique
-sets of names and values: :class:`Enum` and :class:`IntEnum`.
+sets of names and values: :class:`Enum` and :class:`IntEnum`.  It also defines
+one decorator, :func:`unique`, that ensures only unique member values are
+present in an enumeration.
+
 
 Creating an Enum
 ----------------
@@ -146,6 +149,35 @@ return A::
     >>> Shape(2)
     <Shape.square: 2>
 
+
+Ensuring unique enumeration values
+==================================
+
+By default, enumerations allow multiple names as aliases for the same value.
+When this behavior isn't desired, the following decorator can be used to
+ensure each value is used only once in the enumeration:
+
+.. decorator:: unique
+
+A :keyword:`class` decorator specifically for enumerations.  It searches an
+enumeration's :attr:`__members__` gathering any aliases it finds; if any are
+found :exc:`ValueError` is raised with the details::
+
+    >>> from enum import Enum, unique
+    >>> @unique
+    ... class Mistake(Enum):
+    ...   one = 1
+    ...   two = 2
+    ...   three = 3
+    ...   four = 3
+    Traceback (most recent call last):
+    ...
+    ValueError: duplicate values found in <enum 'Mistake'>: four -> three
+
+
+Iteration
+=========
+
 Iterating over the members of an enum does not provide the aliases::
 
     >>> list(Shape)
@@ -168,6 +200,7 @@ the enumeration members.  For example, finding all the aliases::
 
     >>> [name for name, member in Shape.__members__.items() if member.name != name]
     ['alias_for_square']
+
 
 Comparisons
 -----------
@@ -462,32 +495,6 @@ Avoids having to specify the value for each enumeration member::
     True
 
 
-UniqueEnum
-----------
-
-Raises an error if a duplicate member name is found instead of creating an
-alias::
-
-    >>> class UniqueEnum(Enum):
-    ...     def __init__(self, *args):
-    ...         cls = self.__class__
-    ...         if any(self.value == e.value for e in cls):
-    ...             a = self.name
-    ...             e = cls(self.value).name
-    ...             raise ValueError(
-    ...                     "aliases not allowed in UniqueEnum:  %r --> %r"
-    ...                     % (a, e))
-    ...
-    >>> class Color(UniqueEnum):
-    ...     red = 1
-    ...     green = 2
-    ...     blue = 3
-    ...     grene = 2
-    Traceback (most recent call last):
-    ...
-    ValueError: aliases not allowed in UniqueEnum:  'grene' --> 'green'
-
-
 OrderedEnum
 -----------
 
@@ -522,6 +529,38 @@ enumerations)::
     ...
     >>> Grade.C < Grade.A
     True
+
+
+DuplicateFreeEnum
+-----------------
+
+Raises an error if a duplicate member name is found instead of creating an
+alias::
+
+    >>> class DuplicateFreeEnum(Enum):
+    ...     def __init__(self, *args):
+    ...         cls = self.__class__
+    ...         if any(self.value == e.value for e in cls):
+    ...             a = self.name
+    ...             e = cls(self.value).name
+    ...             raise ValueError(
+    ...                 "aliases not allowed in DuplicateFreeEnum:  %r --> %r"
+    ...                 % (a, e))
+    ...
+    >>> class Color(DuplicateFreeEnum):
+    ...     red = 1
+    ...     green = 2
+    ...     blue = 3
+    ...     grene = 2
+    Traceback (most recent call last):
+    ...
+    ValueError: aliases not allowed in DuplicateFreeEnum:  'grene' --> 'green'
+
+.. note::
+
+    This is a useful example for subclassing Enum to add or change other
+    behaviors as well as disallowing aliases.  If the only change desired is
+    no aliases allowed the :func:`unique` decorator can be used instead.
 
 
 Planet
