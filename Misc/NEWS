@@ -159,6 +159,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18480: Add missing call to PyType_Ready to the _elementtree extension.
+
 - Issue #17778: Fix test discovery for test_multiprocessing. (Patch by
   Zachary Ware.)
 
