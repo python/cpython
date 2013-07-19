@@ -644,9 +644,14 @@ list_ass_slice(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     memcpy(recycle, &item[ilow], s);
 
     if (d < 0) { /* Delete -d items */
-        memmove(&item[ihigh+d], &item[ihigh],
-            (Py_SIZE(a) - ihigh)*sizeof(PyObject *));
-        list_resize(a, Py_SIZE(a) + d);
+        Py_ssize_t tail;
+        tail = (Py_SIZE(a) - ihigh) * sizeof(PyObject *);
+        memmove(&item[ihigh+d], &item[ihigh], tail);
+        if (list_resize(a, Py_SIZE(a) + d) < 0) {
+            memmove(&item[ihigh], &item[ihigh+d], tail);
+            memcpy(&item[ilow], recycle, s);
+            goto Error;
+        }
         item = a->ob_item;
     }
     else if (d > 0) { /* Insert d items */
