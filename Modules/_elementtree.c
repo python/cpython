@@ -100,6 +100,13 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 #define JOIN_SET(p, flag) ((void*) ((Py_uintptr_t) (JOIN_OBJ(p)) | (flag)))
 #define JOIN_OBJ(p) ((PyObject*) ((Py_uintptr_t) (p) & ~(Py_uintptr_t)1))
 
+/* Types defined by this extension */
+static PyTypeObject Element_Type;
+static PyTypeObject ElementIter_Type;
+static PyTypeObject TreeBuilder_Type;
+static PyTypeObject XMLParser_Type;
+
+
 /* glue functions (see the init function for details) */
 static PyObject* elementtree_parseerror_obj;
 static PyObject* elementtree_deepcopy_obj;
@@ -200,7 +207,6 @@ typedef struct {
 
 } ElementObject;
 
-static PyTypeObject Element_Type;
 
 #define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
 
@@ -2204,8 +2210,6 @@ typedef struct {
     PyObject *end_ns_event_obj;
 } TreeBuilderObject;
 
-static PyTypeObject TreeBuilder_Type;
-
 #define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
@@ -2716,8 +2720,6 @@ typedef struct {
     PyObject *handle_close;
 
 } XMLParserObject;
-
-static PyTypeObject XMLParser_Type;
 
 #define XMLParser_CheckExact(op) (Py_TYPE(op) == &XMLParser_Type)
 
@@ -3653,6 +3655,8 @@ PyInit__elementtree(void)
     PyObject *m, *temp;
 
     /* Initialize object types */
+    if (PyType_Ready(&ElementIter_Type) < 0)
+        return NULL;
     if (PyType_Ready(&TreeBuilder_Type) < 0)
         return NULL;
     if (PyType_Ready(&Element_Type) < 0)
