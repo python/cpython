@@ -3338,7 +3338,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
                      "__class__ assignment: only for heap types");
         return -1;
     }
-    if (compatible_for_assignment(newto, oldto, "__class__")) {
+    if (compatible_for_assignment(oldto, newto, "__class__")) {
         Py_INCREF(newto);
         Py_TYPE(self) = newto;
         Py_DECREF(oldto);
