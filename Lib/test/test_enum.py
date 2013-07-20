@@ -694,6 +694,7 @@ class TestEnum(unittest.TestCase):
             x = ('the-x', 1)
             y = ('the-y', 2)
 
+
         self.assertIs(NEI.__new__, Enum.__new__)
         self.assertEqual(repr(NEI.x + NEI.y), "NamedInt('(the-x + the-y)', 3)")
         globals()['NamedInt'] = NamedInt
@@ -785,6 +786,7 @@ class TestEnum(unittest.TestCase):
                 [AutoNumber.first, AutoNumber.second, AutoNumber.third],
                 )
         self.assertEqual(int(AutoNumber.second), 2)
+        self.assertEqual(AutoNumber.third.value, 3)
         self.assertIs(AutoNumber(1), AutoNumber.first)
 
     def test_inherited_new_from_enhanced_enum(self):
@@ -915,6 +917,22 @@ class TestEnum(unittest.TestCase):
                 return G * self.mass / (self.radius * self.radius)
         self.assertEqual(round(Planet.EARTH.surface_gravity, 2), 9.80)
         self.assertEqual(Planet.EARTH.value, (5.976e+24, 6.37814e6))
+
+    def test_nonhash_value(self):
+        class AutoNumberInAList(Enum):
+            def __new__(cls):
+                value = [len(cls.__members__) + 1]
+                obj = object.__new__(cls)
+                obj._value = value
+                return obj
+        class ColorInAList(AutoNumberInAList):
+            red = ()
+            green = ()
+            blue = ()
+        self.assertEqual(list(ColorInAList), [ColorInAList.red, ColorInAList.green, ColorInAList.blue])
+        self.assertEqual(ColorInAList.red.value, [1])
+        self.assertEqual(ColorInAList([1]), ColorInAList.red)
+
 
 
 class TestUnique(unittest.TestCase):
