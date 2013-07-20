@@ -245,7 +245,7 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
     int arg;
 
     assert(strlen(fname) <= 30);
-    strcat(argfmt, fname);
+    strncat(argfmt, fname, 30);
     if (!PyArg_ParseTuple(args, argfmt, &arg))
         return NULL;
 
@@ -270,7 +270,7 @@ _do_ioctl_1_internal(int fd, PyObject *args, char *fname, int cmd)
     int arg = 0;
 
     assert(strlen(fname) <= 30);
-    strcat(argfmt, fname);
+    strncat(argfmt, fname, 30);
     if (!PyArg_ParseTuple(args, argfmt, &arg))
         return NULL;
 
@@ -290,7 +290,7 @@ _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
     int rv;
 
     assert(strlen(fname) <= 30);
-    strcat(argfmt, fname);
+    strncat(argfmt, fname, 30);
     if (!PyArg_ParseTuple(args, argfmt))
         return NULL;
 
