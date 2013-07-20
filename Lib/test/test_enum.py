@@ -516,7 +516,7 @@ class TestEnum(unittest.TestCase):
             def question(self):
                 print(42)
         self.assertIsNot(type(Why.question), Why)
-        self.assertNotIn(Why.question, Why._member_names)
+        self.assertNotIn(Why.question, Why._member_names_)
         self.assertNotIn(Why.question, Why)
 
     def test_wrong_inheritance_order(self):
@@ -777,10 +777,10 @@ class TestEnum(unittest.TestCase):
             def __new__(cls):
                 value = len(cls.__members__) + 1
                 obj = object.__new__(cls)
-                obj._value = value
+                obj._value_ = value
                 return obj
             def __int__(self):
-                return int(self._value)
+                return int(self._value_)
         self.assertEqual(
                 list(AutoNumber),
                 [AutoNumber.first, AutoNumber.second, AutoNumber.third],
@@ -794,10 +794,10 @@ class TestEnum(unittest.TestCase):
             def __new__(cls):
                 value = len(cls.__members__) + 1
                 obj = object.__new__(cls)
-                obj._value = value
+                obj._value_ = value
                 return obj
             def __int__(self):
-                return int(self._value)
+                return int(self._value_)
         class Color(AutoNumber):
             red = ()
             green = ()
@@ -810,7 +810,7 @@ class TestEnum(unittest.TestCase):
             def __new__(cls):
                 value = len(cls.__members__) + 1
                 obj = int.__new__(cls, value)
-                obj._value = value
+                obj._value_ = value
                 return obj
         class Color(AutoNumber):
             red = ()
@@ -823,19 +823,19 @@ class TestEnum(unittest.TestCase):
         class OrderedEnum(Enum):
             def __ge__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value >= other._value
+                    return self._value_ >= other._value_
                 return NotImplemented
             def __gt__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value > other._value
+                    return self._value_ > other._value_
                 return NotImplemented
             def __le__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value <= other._value
+                    return self._value_ <= other._value_
                 return NotImplemented
             def __lt__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value < other._value
+                    return self._value_ < other._value_
                 return NotImplemented
         class Grade(OrderedEnum):
             A = 5
@@ -847,6 +847,7 @@ class TestEnum(unittest.TestCase):
         self.assertLessEqual(Grade.F, Grade.C)
         self.assertLess(Grade.D, Grade.A)
         self.assertGreaterEqual(Grade.B, Grade.B)
+
     def test_extending2(self):
         class Shade(Enum):
             def shade(self):
@@ -923,7 +924,7 @@ class TestEnum(unittest.TestCase):
             def __new__(cls):
                 value = [len(cls.__members__) + 1]
                 obj = object.__new__(cls)
-                obj._value = value
+                obj._value_ = value
                 return obj
         class ColorInAList(AutoNumberInAList):
             red = ()
