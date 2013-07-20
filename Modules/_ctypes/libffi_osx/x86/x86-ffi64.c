@@ -225,14 +225,16 @@ classify_argument(
 			/* Merge the fields of structure.  */
 			for (ptr = type->elements; *ptr != NULL; ptr++)
 			{
+				int num, pos;
+
 				byte_offset = ALIGN(byte_offset, (*ptr)->alignment);
 
-				int	num = classify_argument(*ptr, subclasses, byte_offset % 8);
+				num = classify_argument(*ptr, subclasses, byte_offset % 8);
 
 				if (num == 0)
 					return 0;
 
-				int pos = byte_offset / 8;
+				pos = byte_offset / 8;
 
 				for (i = 0; i < num; i++)
 				{
@@ -589,11 +591,12 @@ ffi_prep_closure(
 	void			(*fun)(ffi_cif*, void*, void**, void*),
 	void*			user_data)
 {
+		volatile unsigned short*	tramp;
+
 	if (cif->abi != FFI_UNIX64)
 		return FFI_BAD_ABI;
 
-	volatile unsigned short*	tramp =
-		(volatile unsigned short*)&closure->tramp[0];
+	tramp = (volatile unsigned short*)&closure->tramp[0];
 
 	tramp[0] = 0xbb49;		/* mov <code>, %r11	*/
 	*(void* volatile*)&tramp[1] = ffi_closure_unix64;
