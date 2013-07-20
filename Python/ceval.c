@@ -3461,7 +3461,9 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
                          keyword);
             goto fail;
         }
-        PyDict_SetItem(kwdict, keyword, value);
+        if (PyDict_SetItem(kwdict, keyword, value) == -1) {
+            goto fail;
+        }
         continue;
       kw_found:
         if (GETLOCAL(j) != NULL) {
