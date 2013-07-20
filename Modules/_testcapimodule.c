@@ -120,7 +120,10 @@ test_dict_inner(int count)
 
     for (i = 0; i < count; i++) {
         v = PyLong_FromLong(i);
-        PyDict_SetItem(dict, v, v);
+        if (PyDict_SetItem(dict, v, v) < 0) {
+            Py_DECREF(v);
+            return -1;
+        }
         Py_DECREF(v);
     }
 
