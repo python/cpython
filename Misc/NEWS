@@ -159,6 +159,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9177: Calling read() or write() now raises ValueError, not
+  AttributeError, on a closed SSL socket.  Patch by Senko Rasic.
+
 - Issue #18513: Fix behaviour of cmath.rect w.r.t. signed zeros on OS X 10.8 +
   gcc.
 
