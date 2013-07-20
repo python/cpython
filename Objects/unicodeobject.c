@@ -14164,7 +14164,8 @@ int _PyUnicode_Init(void)
         PyUnicode_2BYTE_KIND, linebreak,
         Py_ARRAY_LENGTH(linebreak));
 
-    PyType_Ready(&EncodingMapType);
+    if (PyType_Ready(&EncodingMapType) < 0)
+         Py_FatalError("Can't initialize encoding map type");
 
     if (PyType_Ready(&PyFieldNameIter_Type) < 0)
         Py_FatalError("Can't initialize field name iterator type");
