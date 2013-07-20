@@ -347,7 +347,8 @@ get_attrib_from_keywords(PyObject *kwds)
     Py_DECREF(attrib_str);
 
     if (attrib)
-        PyDict_Update(attrib, kwds);
+        if (PyDict_Update(attrib, kwds) < 0)
+            return NULL;
     return attrib;
 }
 
