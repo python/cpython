@@ -310,7 +310,8 @@ get_attrib_from_keywords(PyObject *kwds)
 
     /* attrib can be NULL if PyDict_New failed */
     if (attrib)
-        PyDict_Update(attrib, kwds);
+        if (PyDict_Update(attrib, kwds) < 0)
+            return NULL;
     return attrib;
 }
 
