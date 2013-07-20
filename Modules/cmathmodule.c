@@ -1006,6 +1006,13 @@ cmath_rect(PyObject *self, PyObject *args)
         else
             errno = 0;
     }
+    else if (phi == 0.0) {
+        /* Workaround for buggy results with phi=-0.0 on OS X 10.8.  See
+           bugs.python.org/issue18513. */
+        z.real = r;
+        z.imag = r * phi;
+        errno = 0;
+    }
     else {
         z.real = r * cos(phi);
         z.imag = r * sin(phi);
