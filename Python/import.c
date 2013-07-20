@@ -553,7 +553,10 @@ _PyImport_FindExtensionObject(PyObject *name, PyObject *filename)
         mod = def->m_base.m_init();
         if (mod == NULL)
             return NULL;
-        PyDict_SetItem(PyImport_GetModuleDict(), name, mod);
+        if (PyDict_SetItem(PyImport_GetModuleDict(), name, mod) == -1) {
+            Py_DECREF(mod);
+            return NULL;
+        }
         Py_DECREF(mod);
     }
     if (_PyState_AddModule(mod, def) < 0) {
