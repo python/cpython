@@ -125,11 +125,11 @@ class EnumMeta(type):
 
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
-        enum_class._member_names = []               # names in definition order
-        enum_class._member_map = OrderedDict()      # name->value map
+        enum_class._member_names_ = []               # names in definition order
+        enum_class._member_map_ = OrderedDict()      # name->value map
 
         # Reverse value->name map for hashable values.
-        enum_class._value2member_map = {}
+        enum_class._value2member_map_ = {}
 
         # check for a __getnewargs__, and if not present sabotage
         # pickling, since it won't work anyway
@@ -156,27 +156,27 @@ class EnumMeta(type):
             else:
                 enum_member = __new__(enum_class, *args)
                 original_value = member_type(*args)
-            if not hasattr(enum_member, '_value'):
-                enum_member._value = original_value
-            value = enum_member._value
-            enum_member._member_type = member_type
-            enum_member._name = member_name
+            if not hasattr(enum_member, '_value_'):
+                enum_member._value_ = original_value
+            value = enum_member._value_
+            enum_member._member_type_ = member_type
+            enum_member._name_ = member_name
             enum_member.__init__(*args)
             # If another member with the same value was already defined, the
             # new member becomes an alias to the existing one.
-            for name, canonical_member in enum_class._member_map.items():
-                if canonical_member.value == enum_member._value:
+            for name, canonical_member in enum_class._member_map_.items():
+                if canonical_member.value == enum_member._value_:
                     enum_member = canonical_member
                     break
             else:
                 # Aliases don't appear in member names (only in __members__).
-                enum_class._member_names.append(member_name)
-            enum_class._member_map[member_name] = enum_member
+                enum_class._member_names_.append(member_name)
+            enum_class._member_map_[member_name] = enum_member
             try:
                 # This may fail if value is not hashable. We can't add the value
                 # to the map, and by-value lookups for this value will be
                 # linear.
-                enum_class._value2member_map[value] = enum_member
+                enum_class._value2member_map_[value] = enum_member
             except TypeError:
                 pass
 
@@ -221,10 +221,10 @@ class EnumMeta(type):
         return cls._create_(value, names, module=module, type=type)
 
     def __contains__(cls, member):
-        return isinstance(member, cls) and member.name in cls._member_map
+        return isinstance(member, cls) and member.name in cls._member_map_
 
     def __dir__(self):
-        return ['__class__', '__doc__', '__members__'] + self._member_names
+        return ['__class__', '__doc__', '__members__'] + self._member_names_
 
     @property
     def __members__(cls):
@@ -234,7 +234,7 @@ class EnumMeta(type):
         is a read-only view of the internal mapping.
 
         """
-        return MappingProxyType(cls._member_map)
+        return MappingProxyType(cls._member_map_)
 
     def __getattr__(cls, name):
         """Return the enum member matching `name`
@@ -248,18 +248,18 @@ class EnumMeta(type):
         if _is_dunder(name):
             raise AttributeError(name)
         try:
-            return cls._member_map[name]
+            return cls._member_map_[name]
         except KeyError:
             raise AttributeError(name) from None
 
     def __getitem__(cls, name):
-        return cls._member_map[name]
+        return cls._member_map_[name]
 
     def __iter__(cls):
-        return (cls._member_map[name] for name in cls._member_names)
+        return (cls._member_map_[name] for name in cls._member_names_)
 
     def __len__(cls):
-        return len(cls._member_names)
+        return len(cls._member_names_)
 
     def __repr__(cls):
         return "<enum %r>" % cls.__name__
@@ -327,7 +327,7 @@ class EnumMeta(type):
         for base in bases:
             if  (base is not Enum and
                     issubclass(base, Enum) and
-                    base._member_names):
+                    base._member_names_):
                 raise TypeError("Cannot extend enumerations")
         # base is now the last base in bases
         if not issubclass(base, Enum):
@@ -417,21 +417,21 @@ class Enum(metaclass=EnumMeta):
         # by-value search for a matching enum member
         # see if it's in the reverse mapping (for hashable values)
         try:
-            if value in cls._value2member_map:
-                return cls._value2member_map[value]
+            if value in cls._value2member_map_:
+                return cls._value2member_map_[value]
         except TypeError:
             # not there, now do long search -- O(n) behavior
-            for member in cls._member_map.values():
+            for member in cls._member_map_.values():
                 if member.value == value:
                     return member
         raise ValueError("%s is not a valid %s" % (value, cls.__name__))
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
-                self.__class__.__name__, self._name, self._value)
+                self.__class__.__name__, self._name_, self._value_)
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self._name)
+        return "%s.%s" % (self.__class__.__name__, self._name_)
 
     def __dir__(self):
         return (['__class__', '__doc__', 'name', 'value'])
@@ -442,10 +442,10 @@ class Enum(metaclass=EnumMeta):
         return NotImplemented
 
     def __getnewargs__(self):
-        return (self._value, )
+        return (self._value_, )
 
     def __hash__(self):
-        return hash(self._name)
+        return hash(self._name_)
 
     # _RouteClassAttributeToGetattr is used to provide access to the `name`
     # and `value` properties of enum members while keeping some measure of
@@ -456,11 +456,11 @@ class Enum(metaclass=EnumMeta):
 
     @_RouteClassAttributeToGetattr
     def name(self):
-        return self._name
+        return self._name_
 
     @_RouteClassAttributeToGetattr
     def value(self):
-        return self._value
+        return self._value_
 
 
 class IntEnum(int, Enum):
