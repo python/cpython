@@ -286,12 +286,17 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args,
 {
     PyThreadState *tstate = PyThreadState_GET();
     PyFrameObject *f;
-    PyObject *res;
+    PyObject *res, *globals;
 
     if (c == NULL)
         return NULL;
 
-    f = PyFrame_New(tstate, c, PyEval_GetGlobals(), NULL);
+    globals = PyEval_GetGlobals();
+    if (globals == NULL) {
+        return NULL;
+    }
+
+    f = PyFrame_New(tstate, c, globals, NULL);
     if (f == NULL)
         return NULL;
     tstate->frame = f;
