@@ -2324,7 +2324,7 @@ else:
                 s.close()
 
                 self.assertRaises(ValueError, s.read, 1024)
-                self.assertRaises(ValueError, s.write, 'hello')
+                self.assertRaises(ValueError, s.write, b'hello')
 
 
 def test_main(verbose=False):
