@@ -402,6 +402,8 @@ class SSLSocket(socket):
         Return zero-length string on EOF."""
 
         self._checkClosed()
+        if not self._sslobj:
+            raise ValueError("Read on closed or unwrapped SSL socket.")
         try:
             if buffer is not None:
                 v = self._sslobj.read(len, buffer)
@@ -422,6 +424,8 @@ class SSLSocket(socket):
         number of bytes of DATA actually transmitted."""
 
         self._checkClosed()
+        if not self._sslobj:
+            raise ValueError("Write on closed or unwrapped SSL socket.")
         return self._sslobj.write(data)
 
     def getpeercert(self, binary_form=False):
