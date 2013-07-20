@@ -1,5 +1,3 @@
-"""Python Enumerations"""
-
 import sys
 from collections import OrderedDict
 from types import MappingProxyType
@@ -154,11 +152,13 @@ class EnumMeta(type):
                 args = (args, )     # wrap it one more time
             if not use_args:
                 enum_member = __new__(enum_class)
-                enum_member._value = value
+                original_value = value
             else:
                 enum_member = __new__(enum_class, *args)
-                if not hasattr(enum_member, '_value'):
-                    enum_member._value = member_type(*args)
+                original_value = member_type(*args)
+            if not hasattr(enum_member, '_value'):
+                enum_member._value = original_value
+            value = enum_member._value
             enum_member._member_type = member_type
             enum_member._name = member_name
             enum_member.__init__(*args)
@@ -416,12 +416,14 @@ class Enum(metaclass=EnumMeta):
             return value
         # by-value search for a matching enum member
         # see if it's in the reverse mapping (for hashable values)
-        if value in cls._value2member_map:
-            return cls._value2member_map[value]
-        # not there, now do long search -- O(n) behavior
-        for member in cls._member_map.values():
-            if member.value == value:
-                return member
+        try:
+            if value in cls._value2member_map:
+                return cls._value2member_map[value]
+        except TypeError:
+            # not there, now do long search -- O(n) behavior
+            for member in cls._member_map.values():
+                if member.value == value:
+                    return member
         raise ValueError("%s is not a valid %s" % (value, cls.__name__))
 
     def __repr__(self):
