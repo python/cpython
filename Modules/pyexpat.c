@@ -1503,7 +1503,9 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
       if (self->buffer != NULL) {
         /* there is already a buffer */
         if (self->buffer_used != 0) {
-          flush_character_buffer(self);
+            if (flush_character_buffer(self) < 0) {
+                return -1;
+            }
         }
         /* free existing buffer */
         free(self->buffer);
