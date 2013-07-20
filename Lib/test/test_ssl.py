@@ -2311,6 +2311,21 @@ else:
             self.assertEqual(cm.exception.reason, 'TLSV1_ALERT_INTERNAL_ERROR')
             self.assertIn("TypeError", stderr.getvalue())
 
+        def test_read_write_after_close_raises_valuerror(self):
+            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_verify_locations(CERTFILE)
+            context.load_cert_chain(CERTFILE)
+            server = ThreadedEchoServer(context=context, chatty=False)
+
+            with server:
+                s = context.wrap_socket(socket.socket())
+                s.connect((HOST, server.port))
+                s.close()
+
+                self.assertRaises(ValueError, s.read, 1024)
+                self.assertRaises(ValueError, s.write, 'hello')
+
 
 def test_main(verbose=False):
     if support.verbose:
