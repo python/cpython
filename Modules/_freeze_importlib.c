@@ -34,12 +34,12 @@ int
 main(int argc, char *argv[])
 {
     char *inpath, *outpath;
-    FILE *infile, *outfile = NULL;
+    FILE *infile = NULL, *outfile = NULL;
     struct stat st;
     size_t text_size, data_size, n;
-    char *text;
+    char *text = NULL;
     unsigned char *data;
-    PyObject *code, *marshalled;
+    PyObject *code = NULL, *marshalled = NULL;
 
     PyImport_FrozenModules = _PyImport_FrozenModules;
 
@@ -52,19 +52,17 @@ main(int argc, char *argv[])
     infile = fopen(inpath, "rb");
     if (infile == NULL) {
         fprintf(stderr, "cannot open '%s' for reading\n", inpath);
-        return 1;
+        goto error;
     }
     if (fstat(fileno(infile), &st)) {
-        fclose(infile);
         fprintf(stderr, "cannot fstat '%s'\n", inpath);
-        return 1;
+        goto error;
     }
     text_size = st.st_size;
     text = (char *) malloc(text_size + 1);
     if (text == NULL) {
-        fclose(infile);
         fprintf(stderr, "could not allocate %ld bytes\n", (long) text_size);
-        return 1;
+        goto error;
     }
     n = fread(text, 1, text_size, infile);
     fclose(infile);
@@ -72,8 +70,7 @@ main(int argc, char *argv[])
     if (n < text_size) {
         fprintf(stderr, "read too short: got %ld instead of %ld bytes\n",
                 (long) n, (long) text_size);
-        free(text);
-        return 1;
+        goto error;
     }
     text[text_size] = '\0';
 
@@ -87,11 +84,13 @@ main(int argc, char *argv[])
 
     code = Py_CompileStringExFlags(text, "<frozen importlib._bootstrap>",
                                    Py_file_input, NULL, 0);
-    free(text);
     if (code == NULL)
         goto error;
+    free(text);
+    text = NULL;
+
     marshalled = PyMarshal_WriteObjectToString(code, Py_MARSHAL_VERSION);
-    Py_DECREF(code);
+    Py_CLEAR(code);
     if (marshalled == NULL)
         goto error;
 
@@ -104,8 +103,7 @@ main(int argc, char *argv[])
     outfile = fopen(outpath, "w");
     if (outfile == NULL) {
         fprintf(stderr, "cannot open '%s' for writing\n", outpath);
-        Py_DECREF(marshalled);
-        return 1;
+        goto error;
     }
     fprintf(outfile, "%s\n", header);
     fprintf(outfile, "const unsigned char _Py_M__importlib[] = {\n");
@@ -119,16 +117,13 @@ main(int argc, char *argv[])
     }
     fprintf(outfile, "};\n");
 
-    Py_DECREF(marshalled);
+    Py_CLEAR(marshalled);
 
     Py_Finalize();
-    if (infile)
-        fclose(infile);
     if (outfile) {
         if (ferror(outfile)) {
             fprintf(stderr, "error when writing to '%s'\n", outpath);
-            fclose(outfile);
-            return 1;
+            goto error;
         }
         fclose(outfile);
     }
@@ -141,5 +136,9 @@ error:
         fclose(infile);
     if (outfile)
         fclose(outfile);
+    if (text)
+        free(text);
+    if (marshalled)
+        Py_DECREF(marshalled);
     return 1;
 }
