@@ -2671,8 +2671,8 @@ PyCData_FromBaseObj(PyObject *type, PyObject *base, Py_ssize_t index, char *adr)
         cmem->b_index = index;
     } else { /* copy contents of adr */
         if (-1 == PyCData_MallocBuffer(cmem, dict)) {
-            return NULL;
             Py_DECREF(cmem);
+            return NULL;
         }
         memcpy(cmem->b_ptr, adr, dict->size);
         cmem->b_index = index;
