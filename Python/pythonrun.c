@@ -2481,6 +2481,9 @@ initsigs(void)
     PyOS_setsig(SIGXFSZ, SIG_IGN);
 #endif
     PyOS_InitInterrupts(); /* May imply initsignal() */
+    if (PyErr_Occurred()) {
+        Py_FatalError("Py_Initialize: can't import signal");
+    }
 }
 
 
