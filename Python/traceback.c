@@ -258,7 +258,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     if (fd < 0) {
         Py_DECREF(io);
         Py_DECREF(binary);
-        return NULL;
+        return 0;
     }
     found_encoding = PyTokenizer_FindEncodingFilename(fd, filename);
     encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
@@ -267,7 +267,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         Py_DECREF(io);
         Py_DECREF(binary);
         PyMem_FREE(found_encoding);
-        return PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, filename);
+        return 0;
     }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
