@@ -324,7 +324,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     strcpy(buf, "          ");
     assert (strlen(buf) == 10);
     while (indent > 0) {
-        if(indent < 10)
+        if (indent < 10)
             buf[indent] = '\0';
         err = PyFile_WriteString(buf, f);
         if (err != 0)
