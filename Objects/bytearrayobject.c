@@ -1508,7 +1508,10 @@ bytearray_translate(PyByteArrayObject *self, PyObject *args)
     }
     /* Fix the size of the resulting string */
     if (inlen > 0)
-        PyByteArray_Resize(result, output - output_start);
+        if (PyByteArray_Resize(result, output - output_start) < 0) {
+            Py_CLEAR(result);
+            goto done;
+        }
 
 done:
     if (tableobj != NULL)
