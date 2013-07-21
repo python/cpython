@@ -491,7 +491,6 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             b = NULL;
         }
         assert(leftindex > 0);
-
         {
             PyObject **src, **dest;
             Py_ssize_t m = n;
@@ -510,15 +509,13 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
                 *(dest--) = *(src--);
             } while (--m);
         }
-
         if (rightindex == -1) {
-            block *prevblock = rightblock->leftlink;
             assert(leftblock != rightblock);
             assert(b == NULL);
             b = rightblock;
-            CHECK_NOT_END(prevblock);
-            MARK_END(prevblock->rightlink);
-            rightblock = prevblock;
+            CHECK_NOT_END(rightblock->leftlink);
+            rightblock = rightblock->leftlink;
+            MARK_END(rightblock->rightlink);
             rightindex = BLOCKLEN - 1;
         }
     }
@@ -538,7 +535,6 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
             b = NULL;
         }
         assert (rightindex < BLOCKLEN - 1);
-
         {
             PyObject **src, **dest;
             Py_ssize_t m = -n;
@@ -557,15 +553,13 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
                 *(dest++) = *(src++);
             } while (--m);
         }
-
         if (leftindex == BLOCKLEN) {
-            block *nextblock = leftblock->rightlink;
             assert(leftblock != rightblock);
             assert(b == NULL);
             b = leftblock;
-            CHECK_NOT_END(nextblock);
-            MARK_END(nextblock->leftlink);
-            leftblock = nextblock;
+            CHECK_NOT_END(leftblock->rightlink);
+            leftblock = leftblock->rightlink;
+            MARK_END(leftblock->leftlink);
             leftindex = 0;
         }
     }
