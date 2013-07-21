@@ -264,7 +264,13 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     }
     found_encoding = PyTokenizer_FindEncodingFilename(fd, filename);
     encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
-    lseek(fd, 0, 0); /* Reset position */
+    /* Reset position */
+    if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+        Py_DECREF(io);
+        Py_DECREF(binary);
+        PyMem_FREE(found_encoding);
+        return PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, filename);
+    }
     fob = _PyObject_CallMethodId(io, &PyId_TextIOWrapper, "Os", binary, encoding);
     Py_DECREF(io);
     Py_DECREF(binary);
