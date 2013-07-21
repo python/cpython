@@ -72,6 +72,7 @@ main(int argc, char *argv[])
     if (n < text_size) {
         fprintf(stderr, "read too short: got %ld instead of %ld bytes\n",
                 (long) n, (long) text_size);
+        free(text);
         return 1;
     }
     text[text_size] = '\0';
@@ -86,6 +87,7 @@ main(int argc, char *argv[])
 
     code = Py_CompileStringExFlags(text, "<frozen importlib._bootstrap>",
                                    Py_file_input, NULL, 0);
+    free(text);
     if (code == NULL)
         goto error;
     marshalled = PyMarshal_WriteObjectToString(code, Py_MARSHAL_VERSION);
@@ -102,6 +104,7 @@ main(int argc, char *argv[])
     outfile = fopen(outpath, "w");
     if (outfile == NULL) {
         fprintf(stderr, "cannot open '%s' for writing\n", outpath);
+        Py_DECREF(marshalled);
         return 1;
     }
     fprintf(outfile, "%s\n", header);
