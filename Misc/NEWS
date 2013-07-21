@@ -49,6 +49,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18514: Fix unreachable Py_DECREF() call in PyCData_FromBaseObj()
+
 - Issue #18513: Fix behaviour of cmath.rect w.r.t. signed zeros on OS X 10.8 +
   gcc.
 
