@@ -159,6 +159,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18514: Fix unreachable Py_DECREF() call in PyCData_FromBaseObj()
+
 - Issue #9177: Calling read() or write() now raises ValueError, not
   AttributeError, on a closed SSL socket.  Patch by Senko Rasic.
 
