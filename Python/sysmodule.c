@@ -1565,17 +1565,24 @@ static struct PyModuleDef sysmodule = {
 PyObject *
 _PySys_Init(void)
 {
-    PyObject *m, *v, *sysdict, *version_info;
+    PyObject *m, *sysdict, *version_info;
 
     m = PyModule_Create(&sysmodule);
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);
-#define SET_SYS_FROM_STRING(key, value)                 \
-    v = value;                                          \
-    if (v != NULL)                                      \
-        PyDict_SetItemString(sysdict, key, v);          \
-    Py_XDECREF(v)
+#define SET_SYS_FROM_STRING(key, value)                    \
+    do {                                                   \
+        int res;                                           \
+        PyObject *v = (value);                             \
+        if (v == NULL)                                     \
+            return NULL;                                   \
+        res = PyDict_SetItemString(sysdict, key, v);       \
+        if (res < 0) {                                     \
+            Py_DECREF(v);                                  \
+            return NULL;                                   \
+        }                                                  \
+    } while (0)
 
     /* Check that stdin is not a directory
     Using shell redirection, you can redirect stdin to a directory,
@@ -1597,10 +1604,10 @@ _PySys_Init(void)
 
     /* stdin/stdout/stderr are now set by pythonrun.c */
 
-    PyDict_SetItemString(sysdict, "__displayhook__",
-                         PyDict_GetItemString(sysdict, "displayhook"));
-    PyDict_SetItemString(sysdict, "__excepthook__",
-                         PyDict_GetItemString(sysdict, "excepthook"));
+    SET_SYS_FROM_STRING("__displayhook__",
+                        PyDict_GetItemString(sysdict, "displayhook"));
+    SET_SYS_FROM_STRING("__excepthook__",
+                        PyDict_GetItemString(sysdict, "excepthook"));
     SET_SYS_FROM_STRING("version",
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",
@@ -1664,18 +1671,15 @@ _PySys_Init(void)
 #endif
     if (warnoptions == NULL) {
         warnoptions = PyList_New(0);
+        if (warnoptions == NULL)
+            return NULL;
     }
     else {
         Py_INCREF(warnoptions);
     }
-    if (warnoptions != NULL) {
-        PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
-    }
+    SET_SYS_FROM_STRING("warnoptions", warnoptions);
 
-    v = get_xoptions();
-    if (v != NULL) {
-        PyDict_SetItemString(sysdict, "_xoptions", v);
-    }
+    SET_SYS_FROM_STRING("_xoptions", get_xoptions());
 
     /* version_info */
     if (VersionInfoType.tp_name == NULL) {
