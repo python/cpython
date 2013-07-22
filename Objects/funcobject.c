@@ -8,60 +8,60 @@
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
-    PyFunctionObject *op = PyObject_GC_New(PyFunctionObject,
-                                        &PyFunction_Type);
-    static PyObject *__name__ = 0;
-    if (op != NULL) {
-        PyObject *doc;
-        PyObject *consts;
-        PyObject *module;
-        op->func_weakreflist = NULL;
-        Py_INCREF(code);
-        op->func_code = code;
-        Py_INCREF(globals);
-        op->func_globals = globals;
-        op->func_name = ((PyCodeObject *)code)->co_name;
-        Py_INCREF(op->func_name);
-        op->func_defaults = NULL; /* No default arguments */
-        op->func_kwdefaults = NULL; /* No keyword only defaults */
-        op->func_closure = NULL;
-        consts = ((PyCodeObject *)code)->co_consts;
-        if (PyTuple_Size(consts) >= 1) {
-            doc = PyTuple_GetItem(consts, 0);
-            if (!PyUnicode_Check(doc))
-                doc = Py_None;
-        }
-        else
-            doc = Py_None;
-        Py_INCREF(doc);
-        op->func_doc = doc;
-        op->func_dict = NULL;
-        op->func_module = NULL;
-        op->func_annotations = NULL;
+    PyFunctionObject *op;
+    PyObject *doc, *consts, *module;
+    static PyObject *__name__ = NULL;
 
-        /* __module__: If module name is in globals, use it.
-           Otherwise, use None.
-        */
-        if (!__name__) {
-            __name__ = PyUnicode_InternFromString("__name__");
-            if (!__name__) {
-                Py_DECREF(op);
-                return NULL;
-            }
-        }
-        module = PyDict_GetItem(globals, __name__);
-        if (module) {
-            Py_INCREF(module);
-            op->func_module = module;
-        }
-        if (qualname)
-            op->func_qualname = qualname;
-        else
-            op->func_qualname = op->func_name;
-        Py_INCREF(op->func_qualname);
+    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL)
+        return NULL;
+
+    op->func_weakreflist = NULL;
+    Py_INCREF(code);
+    op->func_code = code;
+    Py_INCREF(globals);
+    op->func_globals = globals;
+    op->func_name = ((PyCodeObject *)code)->co_name;
+    Py_INCREF(op->func_name);
+    op->func_defaults = NULL; /* No default arguments */
+    op->func_kwdefaults = NULL; /* No keyword only defaults */
+    op->func_closure = NULL;
+    consts = ((PyCodeObject *)code)->co_consts;
+    if (PyTuple_Size(consts) >= 1) {
+        doc = PyTuple_GetItem(consts, 0);
+        if (!PyUnicode_Check(doc))
+            doc = Py_None;
     }
     else
-        return NULL;
+        doc = Py_None;
+    Py_INCREF(doc);
+    op->func_doc = doc;
+    op->func_dict = NULL;
+    op->func_module = NULL;
+    op->func_annotations = NULL;
+
+    /* __module__: If module name is in globals, use it.
+       Otherwise, use None.
+    */
+    if (!__name__) {
+        __name__ = PyUnicode_InternFromString("__name__");
+        if (!__name__) {
+            Py_DECREF(op);
+            return NULL;
+        }
+    }
+
+    module = PyDict_GetItem(globals, __name__);
+    if (module) {
+        Py_INCREF(module);
+        op->func_module = module;
+    }
+    if (qualname)
+        op->func_qualname = qualname;
+    else
+        op->func_qualname = op->func_name;
+    Py_INCREF(op->func_qualname);
+
     _PyObject_GC_TRACK(op);
     return (PyObject *)op;
 }
