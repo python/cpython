@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #15905: Fix theoretical buffer overflow in handling of sys.argv[0],
+  prefix and exec_prefix if the operation system does not obey MAXPATHLEN.
+
 - Issue #18344: Fix potential ref-leaks in _bufferedreader_read_all().
 
 - Issue #17872: Fix a segfault in marshal.load() when input stream returns
