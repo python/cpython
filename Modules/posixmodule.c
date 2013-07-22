@@ -11518,19 +11518,23 @@ INITFUNC(void)
     if (!initialized) {
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
         waitid_result_desc.name = MODNAME ".waitid_result";
-        PyStructSequence_InitType(&WaitidResultType, &waitid_result_desc);
+        if (PyStructSequence_InitType2(&WaitidResultType, &waitid_result_desc) < 0)
+            return NULL;
 #endif
 
         stat_result_desc.name = MODNAME ".stat_result";
         stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
-        PyStructSequence_InitType(&StatResultType, &stat_result_desc);
+        if (PyStructSequence_InitType2(&StatResultType, &stat_result_desc) < 0)
+            return NULL;
         structseq_new = StatResultType.tp_new;
         StatResultType.tp_new = statresult_new;
 
         statvfs_result_desc.name = MODNAME ".statvfs_result";
-        PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
+        if (PyStructSequence_InitType2(&StatVFSResultType,
+                                       &statvfs_result_desc) < 0)
+            return NULL;
 #ifdef NEED_TICKS_PER_SECOND
 #  if defined(HAVE_SYSCONF) && defined(_SC_CLK_TCK)
         ticks_per_second = sysconf(_SC_CLK_TCK);
@@ -11543,12 +11547,15 @@ INITFUNC(void)
 
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER)
         sched_param_desc.name = MODNAME ".sched_param";
-        PyStructSequence_InitType(&SchedParamType, &sched_param_desc);
+        if (PyStructSequence_InitType2(&SchedParamType, &sched_param_desc) < 0)
+            return NULL;
         SchedParamType.tp_new = sched_param_new;
 #endif
 
         /* initialize TerminalSize_info */
-        PyStructSequence_InitType(&TerminalSizeType, &TerminalSize_desc);
+        if (PyStructSequence_InitType2(&TerminalSizeType,
+                                       &TerminalSize_desc) < 0)
+            return NULL;
     }
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     Py_INCREF((PyObject*) &WaitidResultType);
@@ -11566,11 +11573,13 @@ INITFUNC(void)
 #endif
 
     times_result_desc.name = MODNAME ".times_result";
-    PyStructSequence_InitType(&TimesResultType, &times_result_desc);
+    if (PyStructSequence_InitType2(&TimesResultType, &times_result_desc) < 0)
+        return NULL;
     PyModule_AddObject(m, "times_result", (PyObject *)&TimesResultType);
 
     uname_result_desc.name = MODNAME ".uname_result";
-    PyStructSequence_InitType(&UnameResultType, &uname_result_desc);
+    if (PyStructSequence_InitType2(&UnameResultType, &uname_result_desc) < 0)
+        return NULL;
     PyModule_AddObject(m, "uname_result", (PyObject *)&UnameResultType);
 
 #ifdef __APPLE__
@@ -11648,7 +11657,6 @@ INITFUNC(void)
     initialized = 1;
 
     return m;
-
 }
 
 #ifdef __cplusplus

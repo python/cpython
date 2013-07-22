@@ -216,8 +216,9 @@ PyInit_pwd(void)
         return NULL;
 
     if (!initialized) {
-        PyStructSequence_InitType(&StructPwdType,
-                                  &struct_pwd_type_desc);
+        if (PyStructSequence_InitType2(&StructPwdType,
+                                       &struct_pwd_type_desc) < 0)
+            return NULL;
         initialized = 1;
     }
     Py_INCREF((PyObject *) &StructPwdType);

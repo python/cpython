@@ -10,6 +10,10 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18520: Add a new PyStructSequence_InitType2() function, same than
+  PyStructSequence_InitType() except that it has a return value (0 on success,
+  -1 on error).
+
 - Issue #15905: Fix theoretical buffer overflow in handling of sys.argv[0],
   prefix and exec_prefix if the operation system does not obey MAXPATHLEN.
 

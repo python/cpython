@@ -263,9 +263,12 @@ PyInit_resource(void)
     /* Add some symbolic constants to the module */
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
-    if (!initialized)
-        PyStructSequence_InitType(&StructRUsageType,
-                                  &struct_rusage_desc);
+    if (!initialized) {
+        if (PyStructSequence_InitType2(&StructRUsageType,
+                                       &struct_rusage_desc) < 0)
+            return NULL;
+    }
+
     Py_INCREF(&StructRUsageType);
     PyModule_AddObject(m, "struct_rusage",
                        (PyObject*) &StructRUsageType);

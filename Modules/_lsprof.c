@@ -884,10 +884,12 @@ PyInit__lsprof(void)
     PyDict_SetItemString(d, "Profiler", (PyObject *)&PyProfiler_Type);
 
     if (!initialized) {
-        PyStructSequence_InitType(&StatsEntryType,
-                                  &profiler_entry_desc);
-        PyStructSequence_InitType(&StatsSubEntryType,
-                                  &profiler_subentry_desc);
+        if (PyStructSequence_InitType2(&StatsEntryType,
+                                       &profiler_entry_desc) < 0)
+            return NULL;
+        if (PyStructSequence_InitType2(&StatsSubEntryType,
+                                       &profiler_subentry_desc) < 0)
+            return NULL;
     }
     Py_INCREF((PyObject*) &StatsEntryType);
     Py_INCREF((PyObject*) &StatsSubEntryType);
