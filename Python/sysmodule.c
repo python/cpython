@@ -1634,8 +1634,10 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("int_info",
                         PyLong_GetInfo());
     /* initialize hash_info */
-    if (Hash_InfoType.tp_name == 0)
-        PyStructSequence_InitType(&Hash_InfoType, &hash_info_desc);
+    if (Hash_InfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&Hash_InfoType, &hash_info_desc) < 0)
+            return NULL;
+    }
     SET_SYS_FROM_STRING("hash_info",
                         get_hash_info());
     SET_SYS_FROM_STRING("maxunicode",
@@ -1676,8 +1678,11 @@ _PySys_Init(void)
     }
 
     /* version_info */
-    if (VersionInfoType.tp_name == 0)
-        PyStructSequence_InitType(&VersionInfoType, &version_info_desc);
+    if (VersionInfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&VersionInfoType,
+                                       &version_info_desc) < 0)
+            return NULL;
+    }
     version_info = make_version_info();
     SET_SYS_FROM_STRING("version_info", version_info);
     /* prevent user from creating new instances */
@@ -1688,8 +1693,10 @@ _PySys_Init(void)
     SET_SYS_FROM_STRING("implementation", make_impl_info(version_info));
 
     /* flags */
-    if (FlagsType.tp_name == 0)
-        PyStructSequence_InitType(&FlagsType, &flags_desc);
+    if (FlagsType.tp_name == 0) {
+        if (PyStructSequence_InitType2(&FlagsType, &flags_desc) < 0)
+            return NULL;
+    }
     SET_SYS_FROM_STRING("flags", make_flags());
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
@@ -1699,7 +1706,9 @@ _PySys_Init(void)
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
     if (WindowsVersionType.tp_name == 0)
-        PyStructSequence_InitType(&WindowsVersionType, &windows_version_desc);
+        if (PyStructSequence_InitType2(&WindowsVersionType,
+                                       &windows_version_desc) < 0)
+            return NULL;
     /* prevent user from creating new instances */
     WindowsVersionType.tp_init = NULL;
     WindowsVersionType.tp_new = NULL;

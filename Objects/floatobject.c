@@ -1853,7 +1853,7 @@ PyTypeObject PyFloat_Type = {
     float_new,                                  /* tp_new */
 };
 
-void
+int
 _PyFloat_Init(void)
 {
     /* We attempt to determine if this machine is using IEEE
@@ -1903,8 +1903,11 @@ _PyFloat_Init(void)
     float_format = detected_float_format;
 
     /* Init float info */
-    if (FloatInfoType.tp_name == 0)
-        PyStructSequence_InitType(&FloatInfoType, &floatinfo_desc);
+    if (FloatInfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0)
+            return 0;
+    }
+    return 1;
 }
 
 int

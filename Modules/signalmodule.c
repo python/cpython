@@ -978,9 +978,10 @@ PyInit_signal(void)
         return NULL;
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
-    if (!initialized)
-        PyStructSequence_InitType(&SiginfoType, &struct_siginfo_desc);
-
+    if (!initialized) {
+        if (PyStructSequence_InitType2(&SiginfoType, &struct_siginfo_desc) < 0)
+            return NULL;
+    }
     Py_INCREF((PyObject*) &SiginfoType);
     PyModule_AddObject(m, "struct_siginfo", (PyObject*) &SiginfoType);
     initialized = 1;
