@@ -182,18 +182,24 @@ def lexists(path):
 
 def ismount(path):
     """Test whether a path is a mount point"""
-    if islink(path):
-        # A symlink can never be a mount point
-        return False
     try:
         s1 = os.lstat(path)
-        if isinstance(path, bytes):
-            parent = join(path, b'..')
-        else:
-            parent = join(path, '..')
+    except OSError:
+        # It doesn't exist -- so not a mount point. :-)
+        return False
+    else:
+        if stat.S_ISLNK(s1.st_mode):
+            return False
+
+    if isinstance(path, bytes):
+        parent = join(path, b'..')
+    else:
+        parent = join(path, '..')
+    try:
         s2 = os.lstat(parent)
     except OSError:
-        return False # It doesn't exist -- so not a mount point :-)
+        return False
+
     dev1 = s1.st_dev
     dev2 = s2.st_dev
     if dev1 != dev2:
