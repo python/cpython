@@ -56,5 +56,6 @@ PyGrammar_LabelRepr(label *lb)
     }
     else {
         Py_FatalError("invalid label");
+        return NULL;
     }
 }
