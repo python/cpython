@@ -548,6 +548,10 @@ Library
 Tests
 -----
 
+- Issue #17944: test_zipfile now discoverable and uses subclassing to
+  generate tests for different compression types.  Fixed a bug with skipping
+  some tests due to use of exhausted iterators.
+
 - Issue #18266: test_largefile now works with unittest test discovery and
   supports running only selected tests.  Patch by Zachary Ware.
 
