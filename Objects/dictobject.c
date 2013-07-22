@@ -2684,8 +2684,10 @@ _PyDict_GetItemId(PyObject *dp, struct _Py_Identifier *key)
 {
     PyObject *kv;
     kv = _PyUnicode_FromId(key); /* borrowed */
-    if (kv == NULL)
+    if (kv == NULL) {
+        PyErr_Clear();
         return NULL;
+    }
     return PyDict_GetItem(dp, kv);
 }
 
