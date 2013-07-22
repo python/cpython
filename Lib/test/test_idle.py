@@ -1,8 +1,20 @@
-# Skip test if _tkinter or _thread wasn't built or idlelib was deleted.
-from test.test_support import import_module
-import_module('Tkinter')
-import_module('threading')  # imported by PyShell, imports _thread
+# Skip test if _thread or _tkinter wasn't built or idlelib was deleted.
+from test.test_support import import_module, use_resources
+import_module('threading')  # imported by idlelib.PyShell, imports _thread
+tk = import_module('Tkinter')
 idletest = import_module('idlelib.idle_test')
+
+# If buildbot improperly sets gui resource (#18365, #18441), remove it
+# so requires('gui') tests are skipped while non-gui tests still run.
+if use_resources and 'gui' in use_resources:
+    try:
+        root = tk.Tk()
+        root.destroy()
+    except TclError:
+        while True:
+            use_resources.delete('gui')
+            if 'gui' not in use_resources:
+                break
 
 # Without test_main present, regrtest.runtest_inner (line1219) calls
 # unittest.TestLoader().loadTestsFromModule(this_module) which calls
