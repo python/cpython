@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #15905: Fix theoretical buffer overflow in handling of sys.argv[0],
+  prefix and exec_prefix if the operation system does not obey MAXPATHLEN.
+
 - Issue #18408: Fix many various bugs in code handling errors, especially
   on memory allocation failure (MemoryError).
 
