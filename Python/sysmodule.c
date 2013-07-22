@@ -1854,10 +1854,11 @@ sys_update_path(int argc, wchar_t **argv)
             if (q == NULL)
                 argv0 = link; /* argv0 without path */
             else {
-                /* Must make a copy */
-                wcscpy(argv0copy, argv0);
+                /* Must make a copy, argv0copy has room for 2 * MAXPATHLEN */
+                wcsncpy(argv0copy, argv0, MAXPATHLEN);
                 q = wcsrchr(argv0copy, SEP);
-                wcscpy(q+1, link);
+                wcsncpy(q+1, link, MAXPATHLEN);
+                q[MAXPATHLEN + 1] = L'\0';
                 argv0 = argv0copy;
             }
         }
