@@ -380,6 +380,12 @@ PyErr_BadArgument(void)
 PyObject *
 PyErr_NoMemory(void)
 {
+    if (Py_TYPE(PyExc_MemoryError) == NULL) {
+        /* PyErr_NoMemory() has been called before PyExc_MemoryError has been
+           initialized by _PyExc_Init() */
+        Py_FatalError("Out of memory and PyExc_MemoryError is not "
+                      "initialized yet");
+    }
     PyErr_SetNone(PyExc_MemoryError);
     return NULL;
 }
