@@ -1159,8 +1159,14 @@ initstdio(void)
     }
     PyErr_Clear();  /* Not a fatal error if codec isn't available */
 
-    PySys_SetObject("__stderr__", std);
-    PySys_SetObject("stderr", std);
+    if (PySys_SetObject("__stderr__", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
+    if (PySys_SetObject("stderr", std) < 0) {
+        Py_DECREF(std);
+        goto error;
+    }
     Py_DECREF(std);
 #endif
 
