@@ -10,7 +10,7 @@ if use_resources and 'gui' in use_resources:
     try:
         root = tk.Tk()
         root.destroy()
-    except tk.TclError:
+    except TclError:
         while True:
             use_resources.delete('gui')
             if 'gui' not in use_resources:
