@@ -326,6 +326,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix)
     if (home) {
         wchar_t *delim;
         wcsncpy(prefix, home, MAXPATHLEN);
+        prefix[MAXPATHLEN] = L'\0';
         delim = wcschr(prefix, DELIM);
         if (delim)
             *delim = L'\0';
@@ -335,13 +336,15 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix)
     }
 
     /* Check to see if argv[0] is in the build directory */
-    wcscpy(prefix, argv0_path);
+    wcsncpy(prefix, argv0_path, MAXPATHLEN);
+    prefix[MAXPATHLEN] = L'\0';
     joinpath(prefix, L"Modules/Setup");
     if (isfile(prefix)) {
         /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = _Py_char2wchar(VPATH, NULL);
         if (vpath != NULL) {
-            wcscpy(prefix, argv0_path);
+            wcsncpy(prefix, argv0_path, MAXPATHLEN);
+            prefix[MAXPATHLEN] = L'\0';
             joinpath(prefix, vpath);
             PyMem_RawFree(vpath);
             joinpath(prefix, L"Lib");
@@ -365,6 +368,7 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix)
 
     /* Look at configure's PREFIX */
     wcsncpy(prefix, _prefix, MAXPATHLEN);
+    prefix[MAXPATHLEN] = L'\0';
     joinpath(prefix, lib_python);
     joinpath(prefix, LANDMARK);
     if (ismodule(prefix))
@@ -391,6 +395,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix
             wcsncpy(exec_prefix, delim+1, MAXPATHLEN);
         else
             wcsncpy(exec_prefix, home, MAXPATHLEN);
+        exec_prefix[MAXPATHLEN] = L'\0';
         joinpath(exec_prefix, lib_python);
         joinpath(exec_prefix, L"lib-dynload");
         return 1;
@@ -399,7 +404,8 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix
     /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
        is written by setup.py and contains the relative path to the location
        of shared library modules. */
-    wcscpy(exec_prefix, argv0_path);
+    wcsncpy(exec_prefix, argv0_path, MAXPATHLEN);
+    exec_prefix[MAXPATHLEN] = L'\0';
     joinpath(exec_prefix, L"pybuilddir.txt");
     if (isfile(exec_prefix)) {
         FILE *f = _Py_wfopen(exec_prefix, L"rb");
@@ -420,7 +426,8 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix
                 Py_DECREF(decoded);
                 if (k >= 0) {
                     rel_builddir_path[k] = L'\0';
-                    wcscpy(exec_prefix, argv0_path);
+                    wcsncpy(exec_prefix, argv0_path, MAXPATHLEN);
+                    exec_prefix[MAXPATHLEN] = L'\0';
                     joinpath(exec_prefix, rel_builddir_path);
                     return -1;
                 }
@@ -442,6 +449,7 @@ search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix
 
     /* Look at configure's EXEC_PREFIX */
     wcsncpy(exec_prefix, _exec_prefix, MAXPATHLEN);
+    exec_prefix[MAXPATHLEN] = L'\0';
     joinpath(exec_prefix, lib_python);
     joinpath(exec_prefix, L"lib-dynload");
     if (isdir(exec_prefix))
