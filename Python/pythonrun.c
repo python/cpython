@@ -918,6 +918,7 @@ initsite(void)
     PyObject *m;
     m = PyImport_ImportModule("site");
     if (m == NULL) {
+        fprintf(stderr, "Failed to import the site module\n");
         PyErr_Print();
         Py_Finalize();
         exit(1);
