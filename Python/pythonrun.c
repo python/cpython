@@ -328,7 +328,8 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     if (!PyByteArray_Init())
         Py_FatalError("Py_Initialize: can't init bytearray");
 
-    _PyFloat_Init();
+    if (!_PyFloat_Init())
+        Py_FatalError("Py_Initialize: can't init float");
 
     interp->modules = PyDict_New();
     if (interp->modules == NULL)

@@ -1476,8 +1476,9 @@ PyInit_time(void)
     PyInit_timezone(m);
 
     if (!initialized) {
-        PyStructSequence_InitType(&StructTimeType,
-                                  &struct_time_type_desc);
+        if (PyStructSequence_InitType2(&StructTimeType,
+                                       &struct_time_type_desc) < 0)
+            return NULL;
 
 #ifdef MS_WINDOWS
         winver.dwOSVersionInfoSize = sizeof(winver);

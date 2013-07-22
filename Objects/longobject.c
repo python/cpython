@@ -5059,8 +5059,10 @@ _PyLong_Init(void)
     }
 #endif
     /* initialize int_info */
-    if (Int_InfoType.tp_name == 0)
-        PyStructSequence_InitType(&Int_InfoType, &int_info_desc);
+    if (Int_InfoType.tp_name == NULL) {
+        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0)
+            return 0;
+    }
 
     return 1;
 }

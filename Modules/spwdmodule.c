@@ -196,9 +196,11 @@ PyInit_spwd(void)
     m=PyModule_Create(&spwdmodule);
     if (m == NULL)
         return NULL;
-    if (!initialized)
-        PyStructSequence_InitType(&StructSpwdType,
-                                  &struct_spwd_type_desc);
+    if (!initialized) {
+        if (PyStructSequence_InitType2(&StructSpwdType,
+                                       &struct_spwd_type_desc) < 0)
+            return NULL;
+    }
     Py_INCREF((PyObject *) &StructSpwdType);
     PyModule_AddObject(m, "struct_spwd", (PyObject *) &StructSpwdType);
     initialized = 1;
