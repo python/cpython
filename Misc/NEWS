@@ -695,6 +695,8 @@ Build
 Tools/Demos
 -----------
 
+- Issue #18439: Make patchcheck work on Windows for ACKS, NEWS.
+
 - Issue #18448: Fix a typo in Tools/demo/eiffel.py.
 
 - Issue #18457: Fixed saving of formulas and complex numbers in
