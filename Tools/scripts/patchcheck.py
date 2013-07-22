@@ -144,13 +144,13 @@ def docs_modified(file_paths):
 @status("Misc/ACKS updated", modal=True)
 def credit_given(file_paths):
     """Check if Misc/ACKS has been changed."""
-    return 'Misc/ACKS' in file_paths
+    return os.path.join('Misc', 'ACKS') in file_paths
 
 
 @status("Misc/NEWS updated", modal=True)
 def reported_news(file_paths):
     """Check if Misc/NEWS has been changed."""
-    return 'Misc/NEWS' in file_paths
+    return os.path.join('Misc', 'NEWS') in file_paths
 
 
 def main():
@@ -158,7 +158,8 @@ def main():
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc')]
-    special_files = {'Misc/ACKS', 'Misc/NEWS'} & set(file_paths)
+    misc_files = {os.path.join('Misc', 'ACKS'), os.path.join('Misc', 'NEWS')}\
+            & set(file_paths)
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
     # C rules enforcement.
@@ -168,9 +169,9 @@ def main():
     # Docs updated.
     docs_modified(doc_files)
     # Misc/ACKS changed.
-    credit_given(special_files)
+    credit_given(misc_files)
     # Misc/NEWS changed.
-    reported_news(special_files)
+    reported_news(misc_files)
 
     # Test suite run and passed.
     if python_files or c_files:

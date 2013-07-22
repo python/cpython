@@ -137,6 +137,8 @@ Documentation
 - Issue #17844: Refactor a documentation of Python specific encodings.
   Add links to encoders and decoders for binary-to-binary codecs.
 
+- Issue #18439: Make patchcheck work on Windows for ACKS, NEWS.
+
 
 What's New in Python 2.7.5?
 ===========================
