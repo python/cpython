@@ -45,7 +45,7 @@ PyGrammar_LabelRepr(label *lb)
         else
             return lb->lb_str;
     }
-    else {
+    else if (lb->lb_type < N_TOKENS) {
         if (lb->lb_str == NULL)
             return _PyParser_TokenNames[lb->lb_type];
         else {
@@ -53,5 +53,8 @@ PyGrammar_LabelRepr(label *lb)
                 _PyParser_TokenNames[lb->lb_type], lb->lb_str);
             return buf;
         }
+    }
+    else {
+        Py_FatalError("invalid label");
     }
 }
