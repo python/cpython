@@ -12,6 +12,12 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     PyObject *doc, *consts, *module;
     static PyObject *__name__ = NULL;
 
+    if (__name__ == NULL) {
+        __name__ = PyUnicode_InternFromString("__name__");
+        if (__name__ == NULL)
+            return NULL;
+    }
+
     op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
     if (op == NULL)
         return NULL;
@@ -26,6 +32,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_defaults = NULL; /* No default arguments */
     op->func_kwdefaults = NULL; /* No keyword only defaults */
     op->func_closure = NULL;
+
     consts = ((PyCodeObject *)code)->co_consts;
     if (PyTuple_Size(consts) >= 1) {
         doc = PyTuple_GetItem(consts, 0);
@@ -36,21 +43,13 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
         doc = Py_None;
     Py_INCREF(doc);
     op->func_doc = doc;
+
     op->func_dict = NULL;
     op->func_module = NULL;
     op->func_annotations = NULL;
 
     /* __module__: If module name is in globals, use it.
-       Otherwise, use None.
-    */
-    if (!__name__) {
-        __name__ = PyUnicode_InternFromString("__name__");
-        if (!__name__) {
-            Py_DECREF(op);
-            return NULL;
-        }
-    }
-
+       Otherwise, use None. */
     module = PyDict_GetItem(globals, __name__);
     if (module) {
         Py_INCREF(module);
