@@ -14,23 +14,18 @@
  * Coverity Scan doesn't pick up modifications automatically. The model file
  * must be uploaded by an admin in the analysis settings of
  * http://scan.coverity.com/projects/200
- *
  */
-
 
 /* dummy definitions, in most cases struct fields aren't required. */
 
 #define NULL (void *)0
-
 typedef int sdigit;
 typedef long Py_ssize_t;
 typedef unsigned short wchar_t;
 typedef struct {} PyObject;
 typedef struct {} grammar;
-typedef int sdigit;
 typedef struct {} DIR;
 typedef struct {} RFILE;
-
 
 /* Python/pythonrun.c
  * resourece leak false positive */
