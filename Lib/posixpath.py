@@ -188,6 +188,7 @@ def ismount(path):
         # It doesn't exist -- so not a mount point. :-)
         return False
     else:
+        # A symlink can never be a mount point
         if stat.S_ISLNK(s1.st_mode):
             return False
 
