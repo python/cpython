@@ -535,11 +535,11 @@ init_normalization(struct compiling *c)
     if (!c->c_normalize)
         return 0;
     c->c_normalize_args = Py_BuildValue("(sN)", "NFKC", Py_None);
-    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
     if (!c->c_normalize_args) {
         Py_CLEAR(c->c_normalize);
         return 0;
     }
+    PyTuple_SET_ITEM(c->c_normalize_args, 1, NULL);
     return 1;
 }
 
