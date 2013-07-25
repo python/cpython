@@ -166,6 +166,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18556: Check the return type of PyUnicode_AsWideChar() in ctype's
+  U_set().
+
 - Issue #17818: aifc.getparams now returns a namedtuple.
 
 - Issue #18549: Eliminate dead code in socket_ntohl()

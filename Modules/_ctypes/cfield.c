@@ -1260,7 +1260,11 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     } else if (size < length-1)
         /* copy terminating NUL character if there is space */
         size += 1;
-    PyUnicode_AsWideChar(value, (wchar_t *)ptr, size);
+
+    if (PyUnicode_AsWideChar(value, (wchar_t *)ptr, size) == -1) {
+        return NULL;
+    }
+
     return value;
 }
 
