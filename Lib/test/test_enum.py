@@ -934,6 +934,22 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(ColorInAList.red.value, [1])
         self.assertEqual(ColorInAList([1]), ColorInAList.red)
 
+    def test_conflicting_types_resolved_in_new(self):
+        class LabelledIntEnum(int, Enum):
+            def __new__(cls, *args):
+                value, label = args
+                obj = int.__new__(cls, value)
+                obj.label = label
+                obj._value_ = value
+                return obj
+
+        class LabelledList(LabelledIntEnum):
+            unprocessed = (1, "Unprocessed")
+            payment_complete = (2, "Payment Complete")
+
+        self.assertEqual(list(LabelledList), [LabelledList.unprocessed, LabelledList.payment_complete])
+        self.assertEqual(LabelledList.unprocessed, 1)
+        self.assertEqual(LabelledList(1), LabelledList.unprocessed)
 
 
 class TestUnique(unittest.TestCase):
