@@ -3,6 +3,7 @@ import unittest
 import os
 import io
 import struct
+import pickle
 
 import aifc
 
@@ -31,6 +32,7 @@ class AIFCTest(unittest.TestCase):
 
     def test_params(self):
         f = self.f = aifc.open(self.sndfilepath)
+        params = f.getparams()
         self.assertEqual(f.getfp().name, self.sndfilepath)
         self.assertEqual(f.getnchannels(), 2)
         self.assertEqual(f.getsampwidth(), 2)
@@ -42,6 +44,36 @@ class AIFCTest(unittest.TestCase):
             f.getparams(),
             (2, 2, 48000, 14400, b'NONE', b'not compressed'),
             )
+
+        params = f.getparams()
+        self.assertEqual(params.nchannels, 2)
+        self.assertEqual(params.sampwidth, 2)
+        self.assertEqual(params.framerate, 48000)
+        self.assertEqual(params.nframes, 14400)
+        self.assertEqual(params.comptype, b'NONE')
+        self.assertEqual(params.compname, b'not compressed')
+
+    def test_params_added(self):
+        f = self.f = aifc.open(TESTFN, 'wb')
+        f.aiff()
+        f.setparams((1, 1, 1, 1, b'NONE', b''))
+        f.close()
+
+        f = self.f = aifc.open(TESTFN, 'rb')
+        params = f.getparams()
+        self.assertEqual(params.nchannels, f.getnchannels())
+        self.assertEqual(params.sampwidth, f.getsampwidth())
+        self.assertEqual(params.framerate, f.getframerate())
+        self.assertEqual(params.nframes, f.getnframes())
+        self.assertEqual(params.comptype, f.getcomptype())
+        self.assertEqual(params.compname, f.getcompname())
+
+    def test_getparams_picklable(self):
+        self.f = aifc.open(self.sndfilepath)
+        params = self.f.getparams()
+        dump = pickle.dumps(params)
+        self.assertEqual(pickle.loads(dump), params)
+        self.f.close()
 
     def test_context_manager(self):
         with open(self.sndfilepath, 'rb') as testfile:
