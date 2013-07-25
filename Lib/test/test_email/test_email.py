@@ -388,6 +388,7 @@ class TestMessageAPI(TestEmailBase):
 
     def test_del_param_on_nonexistent_header(self):
         msg = Message()
+        # Deleting param on empty msg should not raise exception.
         msg.del_param('filename', 'content-disposition')
 
     def test_del_nonexistent_param(self):
@@ -395,7 +396,7 @@ class TestMessageAPI(TestEmailBase):
         msg.add_header('Content-Type', 'text/plain', charset='utf-8')
         existing_header = msg['Content-Type']
         msg.del_param('foobar', header='Content-Type')
-        self.assertEqual(msg['Content-Type'], 'text/plain; charset="utf-8"')
+        self.assertEqual(msg['Content-Type'], existing_header)
 
     def test_set_type(self):
         eq = self.assertEqual
@@ -2265,7 +2266,6 @@ class TestMIMEMessage(TestEmailBase):
         eq(subpart['subject'], subject)
 
     def test_bad_multipart(self):
-        eq = self.assertEqual
         msg1 = Message()
         msg1['Subject'] = 'subpart 1'
         msg2 = Message()
