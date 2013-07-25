@@ -19,12 +19,6 @@
 Sockets
 =======
 
-Sockets are used nearly everywhere, but are one of the most severely
-misunderstood technologies around. This is a 10,000 foot overview of sockets.
-It's not really a tutorial - you'll still have work to do in getting things
-working. It doesn't cover the fine points (and there are a lot of them), but I
-hope it will give you enough background to begin using them decently.
-
 I'm only going to talk about INET sockets, but they account for at least 99% of
 the sockets in use. And I'll only talk about STREAM sockets - unless you really
 know what you're doing (in which case this HOWTO isn't for you!), you'll get
