@@ -20,6 +20,27 @@
 #define SKIP_PREFIX
 #define SEARCH_PATH
 
+/* Error codes */
+
+#define RC_NO_STD_HANDLES   100
+#define RC_CREATE_PROCESS   101
+#define RC_BAD_VIRTUAL_PATH 102
+#define RC_NO_PYTHON        103
+#define RC_NO_MEMORY        104
+/*
+ * SCRIPT_WRAPPER is used to choose between two variants of an executable built
+ * from this source file. If not defined, the PEP 397 Python launcher is built;
+ * if defined, a script launcher of the type used by setuptools is built, which
+ * looks for a script name related to the executable name and runs that script
+ * with the appropriate Python interpreter.
+ *
+ * SCRIPT_WRAPPER should be undefined in the source, and defined in a VS project
+ * which builds the setuptools-style launcher.
+ */
+#if defined(SCRIPT_WRAPPER)
+#define RC_NO_SCRIPT        105
+#endif
+
 /* Just for now - static definition */
 
 static FILE * log_fp = NULL;
@@ -31,32 +52,6 @@ skip_whitespace(wchar_t * p)
         ++p;
     return p;
 }
-
-/*
- * This function is here to simplify memory management
- * and to treat blank values as if they are absent.
- */
-static wchar_t * get_env(wchar_t * key)
-{
-    /* This is not thread-safe, just like getenv */
-    static wchar_t buf[256];
-    DWORD result = GetEnvironmentVariableW(key, buf, 256);
-
-    if (result > 255) {
-        /* Large environment variable. Accept some leakage */
-        wchar_t *buf2 = (wchar_t*)malloc(sizeof(wchar_t) * (result+1));
-        GetEnvironmentVariableW(key, buf2, result);
-        return buf2;
-    }
-
-    if (result == 0)
-        /* Either some error, e.g. ERROR_ENVVAR_NOT_FOUND,
-           or an empty environment variable. */
-        return NULL;
-
-    return buf;
-}
-
 
 static void
 debug(wchar_t * format, ...)
@@ -100,9 +95,38 @@ error(int rc, wchar_t * format, ... )
 #if !defined(_WINDOWS)
     fwprintf(stderr, L"%s\n", message);
 #else
-    MessageBox(NULL, message, TEXT("Python Launcher is sorry to say ..."), MB_OK); 
+    MessageBox(NULL, message, TEXT("Python Launcher is sorry to say ..."),
+               MB_OK); 
 #endif
     ExitProcess(rc);
+}
+
+/*
+ * This function is here to simplify memory management
+ * and to treat blank values as if they are absent.
+ */
+static wchar_t * get_env(wchar_t * key)
+{
+    /* This is not thread-safe, just like getenv */
+    static wchar_t buf[BUFSIZE];
+    DWORD result = GetEnvironmentVariableW(key, buf, BUFSIZE);
+
+    if (result >= BUFSIZE) {
+        /* Large environment variable. Accept some leakage */
+        wchar_t *buf2 = (wchar_t*)malloc(sizeof(wchar_t) * (result+1));
+        if (buf2 = NULL) {
+            error(RC_NO_MEMORY, L"Could not allocate environment buffer");
+        }
+        GetEnvironmentVariableW(key, buf2, result);
+        return buf2;
+    }
+
+    if (result == 0)
+        /* Either some error, e.g. ERROR_ENVVAR_NOT_FOUND,
+           or an empty environment variable. */
+        return NULL;
+
+    return buf;
 }
 
 #if defined(_WINDOWS)
@@ -114,11 +138,6 @@ error(int rc, wchar_t * format, ... )
 #define PYTHON_EXECUTABLE L"python.exe"
 
 #endif
-
-#define RC_NO_STD_HANDLES   100
-#define RC_CREATE_PROCESS   101
-#define RC_BAD_VIRTUAL_PATH 102
-#define RC_NO_PYTHON        103
 
 #define MAX_VERSION_SIZE    4
 
@@ -456,6 +475,51 @@ locate_python(wchar_t * wanted_ver)
     }
     return result;
 }
+
+#if defined(SCRIPT_WRAPPER)
+/*
+ * Check for a script located alongside the executable
+ */
+
+#if defined(_WINDOWS)
+#define SCRIPT_SUFFIX L"-script.pyw"
+#else
+#define SCRIPT_SUFFIX L"-script.py"
+#endif
+
+static wchar_t wrapped_script_path[MAX_PATH];
+
+/* Locate the script being wrapped.
+ *
+ * This code should store the name of the wrapped script in
+ * wrapped_script_path, or terminate the program with an error if there is no
+ * valid wrapped script file.
+ */
+static void
+locate_wrapped_script()
+{
+    wchar_t * p;
+    size_t plen;
+    DWORD attrs;
+
+    plen = GetModuleFileNameW(NULL, wrapped_script_path, MAX_PATH);
+    p = wcsrchr(wrapped_script_path, L'.');
+    if (p == NULL) {
+        debug(L"GetModuleFileNameW returned value has no extension: %s\n",
+              wrapped_script_path);
+        error(RC_NO_SCRIPT, L"Wrapper name '%s' is not valid.", wrapped_script_path);
+    }
+
+    wcsncpy_s(p, MAX_PATH - (p - wrapped_script_path) + 1, SCRIPT_SUFFIX, _TRUNCATE);
+    attrs = GetFileAttributesW(wrapped_script_path);
+    if (attrs == INVALID_FILE_ATTRIBUTES) {
+        debug(L"File '%s' non-existent\n", wrapped_script_path);
+        error(RC_NO_SCRIPT, L"Script file '%s' is not present.", wrapped_script_path);
+    }
+
+    debug(L"Using wrapped script file '%s'\n", wrapped_script_path);
+}
+#endif
 
 /*
  * Process creation code
@@ -863,7 +927,7 @@ typedef struct {
 } BOM;
 
 /*
- * Strictly, we don't need to handle UTF-16 anf UTF-32, since Python itself
+ * Strictly, we don't need to handle UTF-16 and UTF-32, since Python itself
  * doesn't. Never mind, one day it might - there's no harm leaving it in.
  */
 static BOM BOMs[] = {
@@ -1250,6 +1314,11 @@ process(int argc, wchar_t ** argv)
     VS_FIXEDFILEINFO * file_info;
     UINT block_size;
     int index;
+#if defined(SCRIPT_WRAPPER)
+    int newlen;
+    wchar_t * newcommand;
+    wchar_t * av[2];
+#endif
 
     wp = get_env(L"PYLAUNCH_DEBUG");
     if ((wp != NULL) && (*wp != L'\0'))
@@ -1329,7 +1398,40 @@ process(int argc, wchar_t ** argv)
     }
 
     command = skip_me(GetCommandLineW());
-    debug(L"Called with command line: %s", command);
+    debug(L"Called with command line: %s\n", command);
+
+#if defined(SCRIPT_WRAPPER)
+    /* The launcher is being used in "script wrapper" mode.
+     * There should therefore be a Python script named <exename>-script.py in
+     * the same directory as the launcher executable.
+     * Put the script name into argv as the first (script name) argument.
+     */
+
+    /* Get the wrapped script name - if the script is not present, this will
+     * terminate the program with an error.
+     */
+    locate_wrapped_script();
+
+    /* Add the wrapped script to the start of command */
+    newlen = wcslen(wrapped_script_path) + wcslen(command) + 2; /* ' ' + NUL */
+    newcommand = malloc(sizeof(wchar_t) * newlen);
+    if (!newcommand) {
+        error(RC_NO_MEMORY, L"Could not allocate new command line");
+    }
+    else {
+        wcscpy_s(newcommand, newlen, wrapped_script_path);
+        wcscat_s(newcommand, newlen, L" ");
+        wcscat_s(newcommand, newlen, command);
+        debug(L"Running wrapped script with command line '%s'\n", newcommand);
+        read_commands();
+        av[0] = wrapped_script_path;
+        av[1] = NULL;
+        maybe_handle_shebang(av, newcommand);
+        /* Returns if no shebang line - pass to default processing */
+        command = newcommand;
+        valid = FALSE;
+    }
+#else
     if (argc <= 1) {
         valid = FALSE;
         p = NULL;
@@ -1357,6 +1459,8 @@ installed", &p[1]);
             }
         }
     }
+#endif
+
     if (!valid) {
         ip = locate_python(L"");
         if (ip == NULL)
