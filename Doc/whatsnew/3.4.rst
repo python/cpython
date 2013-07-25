@@ -173,6 +173,12 @@ be specified on the command line, and ``-f`` is a shorthand for ``-o
 FAIL_FAST`` (to parallel the similar option supported by the :mod:`unittest`
 CLI).  (Contributed by R. David Murray in :issue:`11390`.)
 
+aifc
+----
+
+The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
+plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
+
 
 functools
 ---------

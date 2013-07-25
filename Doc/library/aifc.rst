@@ -96,7 +96,9 @@ following methods:
 
 .. method:: aifc.getparams()
 
-   Return a tuple consisting of all of the above values in the above order.
+   Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
+   framerate, nframes, comptype, compname)``, equivalent to output of the
+   :meth:`get\*` methods.
 
 
 .. method:: aifc.getmarkers()
