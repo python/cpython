@@ -152,12 +152,12 @@ class EnumMeta(type):
                 args = (args, )     # wrap it one more time
             if not use_args:
                 enum_member = __new__(enum_class)
-                original_value = value
+                if not hasattr(enum_member, '_value_'):
+                    enum_member._value_ = value
             else:
                 enum_member = __new__(enum_class, *args)
-                original_value = member_type(*args)
-            if not hasattr(enum_member, '_value_'):
-                enum_member._value_ = original_value
+                if not hasattr(enum_member, '_value_'):
+                    enum_member._value_ = member_type(*args)
             value = enum_member._value_
             enum_member._member_type_ = member_type
             enum_member._name_ = member_name
