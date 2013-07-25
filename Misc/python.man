@@ -172,7 +172,8 @@ that it entails.  Also disable these manipulations if
 is explicitly imported later.
 .TP
 .B \-u
-Force the binary I/O layers of stdin, stdout and stderr to be unbuffered.
+Force the binary I/O layers of stdout and stderr to be unbuffered.
+stdin is always buffered.
 The text I/O layer will still be line-buffered.
 .\" Note that there is internal buffering in readlines() and
 .\" file-object iterators ("for line in sys.stdin") which is not
