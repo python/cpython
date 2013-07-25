@@ -154,16 +154,6 @@ class OtherFileTests(unittest.TestCase):
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
 
-    def testStdin(self):
-        # This causes the interpreter to exit on OSF1 v5.1.
-        if sys.platform != 'osf1V5':
-            self.assertRaises((IOError, ValueError), sys.stdin.seek, -1)
-        else:
-            print((
-                '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
-                ' Test manually.'), file=sys.__stdout__)
-        self.assertRaises((IOError, ValueError), sys.stdin.truncate)
-
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
         bad_mode = "qwerty"
