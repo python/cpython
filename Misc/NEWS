@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18556: Check the return value of a PyUnicode_AsWideChar() call in
+  ctypes' U_set().
+
 - Issue #18549: Eliminate dead code in socket_ntohl()
 
 - Issue #18514: Fix unreachable Py_DECREF() call in PyCData_FromBaseObj()
