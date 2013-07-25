@@ -4663,8 +4663,6 @@ socket_ntohl(PyObject *self, PyObject *arg)
         return PyErr_Format(PyExc_TypeError,
                             "expected int/long, %s found",
                             Py_TYPE(arg)->tp_name);
-    if (x == (unsigned long) -1 && PyErr_Occurred())
-        return NULL;
     return PyLong_FromUnsignedLong(ntohl(x));
 }
 
