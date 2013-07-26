@@ -20,9 +20,16 @@ Py_FrozenMain(int argc, char **argv)
     int inspect = 0;
     int unbuffered = 0;
     char *oldloc;
-    wchar_t **argv_copy = PyMem_Malloc(sizeof(wchar_t*)*argc);
+    wchar_t **argv_copy;
     /* We need a second copies, as Python might modify the first one. */
-    wchar_t **argv_copy2 = PyMem_Malloc(sizeof(wchar_t*)*argc);
+    wchar_t **argv_copy2;
+
+    argv_copy = PyMem_Malloc(sizeof(wchar_t*)*argc);
+    argv_copy2 = PyMem_Malloc(sizeof(wchar_t*)*argc);
+    if (!argv_copy || !argv_copy2) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
 
     Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
 
