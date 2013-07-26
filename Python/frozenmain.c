@@ -24,8 +24,8 @@ Py_FrozenMain(int argc, char **argv)
     /* We need a second copies, as Python might modify the first one. */
     wchar_t **argv_copy2;
 
-    argv_copy = PyMem_Malloc(sizeof(wchar_t*)*argc);
-    argv_copy2 = PyMem_Malloc(sizeof(wchar_t*)*argc);
+    argv_copy = PyMem_RawMalloc(sizeof(wchar_t*)*argc);
+    argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*)*argc);
     if (!argv_copy || !argv_copy2) {
         fprintf(stderr, "out of memory\n");
         return 1;
@@ -62,7 +62,7 @@ Py_FrozenMain(int argc, char **argv)
             fprintf(stderr, "Could not convert argument %d to string\n", i);
             return 1;
         }
-        argv_copy[i] = PyMem_Malloc((argsize+1)*sizeof(wchar_t));
+        argv_copy[i] = PyMem_RawMalloc((argsize+1)*sizeof(wchar_t));
         argv_copy2[i] = argv_copy[i];
         if (!argv_copy[i]) {
             fprintf(stderr, "out of memory\n");
@@ -109,9 +109,9 @@ Py_FrozenMain(int argc, char **argv)
 #endif
     Py_Finalize();
     for (i = 0; i < argc; i++) {
-        PyMem_Free(argv_copy2[i]);
+        PyMem_RawFree(argv_copy2[i]);
     }
-    PyMem_Free(argv_copy);
-    PyMem_Free(argv_copy2);
+    PyMem_RawFree(argv_copy);
+    PyMem_RawFree(argv_copy2);
     return sts;
 }
