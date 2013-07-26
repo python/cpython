@@ -937,6 +937,8 @@ _decode_certificate(X509 *certificate) {
     Py_DECREF(issuer);
 
     version = PyLong_FromLong(X509_get_version(certificate) + 1);
+    if (version == NULL)
+        goto fail0;
     if (PyDict_SetItemString(retval, "version", version) < 0) {
         Py_DECREF(version);
         goto fail0;
