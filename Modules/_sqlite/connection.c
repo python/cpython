@@ -884,32 +884,31 @@ static int _authorizer_callback(void* user_arg, int action, const char* arg1, co
     gilstate = PyGILState_Ensure();
 #endif
 
-    if (!PyErr_Occurred()) {
-        ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
+    ret = PyObject_CallFunction((PyObject*)user_arg, "issss", action, arg1, arg2, dbname, access_attempt_source);
 
-        if (!ret) {
-            if (_enable_callback_tracebacks) {
-                PyErr_Print();
-            } else {
-                PyErr_Clear();
-            }
+    if (ret == NULL) {
+        if (_enable_callback_tracebacks)
+            PyErr_Print();
+        else
+            PyErr_Clear();
 
-            rc = SQLITE_DENY;
-        } else {
-            if (PyLong_Check(ret)) {
-                rc = _PyLong_AsInt(ret);
-                if (rc == -1 && PyErr_Occurred())
-                    rc = SQLITE_DENY;
-            } else {
-                rc = SQLITE_DENY;
-            }
-            Py_DECREF(ret);
-        }
+        rc = SQLITE_DENY;
     }
     else {
-        /* A previous call to the authorizer callback failed and raised an
-           exception: don't call the Python authorizer callback */
-        rc = SQLITE_DENY;
+        if (PyLong_Check(ret)) {
+            rc = _PyLong_AsInt(ret);
+            if (rc == -1 && PyErr_Occurred()) {
+                if (_enable_callback_tracebacks)
+                    PyErr_Print();
+                else
+                    PyErr_Clear();
+                rc = SQLITE_DENY;
+            }
+        }
+        else {
+            rc = SQLITE_DENY;
+        }
+        Py_DECREF(ret);
     }
 
 #ifdef WITH_THREAD
