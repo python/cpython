@@ -1659,11 +1659,15 @@ test_long_numbits(PyObject *self)
     int i;
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        PyObject *plong = PyLong_FromLong(testcases[i].input);
+        size_t nbits;
+        int sign;
+        PyObject *plong;
+
+        plong = PyLong_FromLong(testcases[i].input);
         if (plong == NULL)
             return NULL;
-        size_t nbits = _PyLong_NumBits(plong);
-        int sign = _PyLong_Sign(plong);
+        nbits = _PyLong_NumBits(plong);
+        sign = _PyLong_Sign(plong);
 
         Py_DECREF(plong);
         if (nbits != testcases[i].nbits)
@@ -2197,6 +2201,8 @@ profile_int(PyObject *self, PyObject* args)
     /* Test 3: Allocate a few integers, then release
        them all simultaneously. */
     multiple = malloc(sizeof(PyObject*) * 1000);
+    if (multiple == NULL)
+        return PyErr_NoMemory();
     gettimeofday(&start, NULL);
     for(k=0; k < 20000; k++) {
         for(i=0; i < 1000; i++) {
@@ -2208,10 +2214,13 @@ profile_int(PyObject *self, PyObject* args)
     }
     gettimeofday(&stop, NULL);
     print_delta(3, &start, &stop);
+    free(multiple);
 
     /* Test 4: Allocate many integers, then release
        them all simultaneously. */
     multiple = malloc(sizeof(PyObject*) * 1000000);
+    if (multiple == NULL)
+        return PyErr_NoMemory();
     gettimeofday(&start, NULL);
     for(k=0; k < 20; k++) {
         for(i=0; i < 1000000; i++) {
@@ -2223,9 +2232,12 @@ profile_int(PyObject *self, PyObject* args)
     }
     gettimeofday(&stop, NULL);
     print_delta(4, &start, &stop);
+    free(multiple);
 
     /* Test 5: Allocate many integers < 32000 */
     multiple = malloc(sizeof(PyObject*) * 1000000);
+    if (multiple == NULL)
+        return PyErr_NoMemory();
     gettimeofday(&start, NULL);
     for(k=0; k < 10; k++) {
         for(i=0; i < 1000000; i++) {
@@ -2237,6 +2249,7 @@ profile_int(PyObject *self, PyObject* args)
     }
     gettimeofday(&stop, NULL);
     print_delta(5, &start, &stop);
+    free(multiple);
 
     /* Test 6: Perform small int addition */
     op1 = PyLong_FromLong(1);
