@@ -2930,9 +2930,13 @@ PyCurses_Start_Color(PyObject *self)
     if (code != ERR) {
         initialisedcolors = TRUE;
         c = PyLong_FromLong((long) COLORS);
+        if (c == NULL)
+            return NULL;
         PyDict_SetItemString(ModDict, "COLORS", c);
         Py_DECREF(c);
         cp = PyLong_FromLong((long) COLOR_PAIRS);
+        if (cp == NULL)
+            return NULL;
         PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
         Py_DECREF(cp);
         Py_INCREF(Py_None);
