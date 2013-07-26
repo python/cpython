@@ -19,8 +19,10 @@
 /* dummy definitions, in most cases struct fields aren't required. */
 
 #define NULL (void *)0
+#define assert(op) /* empty */
 typedef int sdigit;
 typedef long Py_ssize_t;
+typedef long long PY_LONG_LONG;
 typedef unsigned short wchar_t;
 typedef struct {} PyObject;
 typedef struct {} grammar;
@@ -37,15 +39,38 @@ void Py_FatalError(const char *msg) {
 /* Objects/longobject.c
  * NEGATIVE_RETURNS false positive */
 
-static PyObject small_ints[257 + 5];
-
 static PyObject *get_small_int(sdigit ival)
 {
+    /* Never returns NULL */
     PyObject *p;
-    if (((ival + 5) >= 0) && ((ival + 5) < 257 + 5)) {
-        return &small_ints[ival + 5];
-    }
+    assert(p != NULL);
     return p;
+}
+
+PyObject *PyLong_FromLong(long ival)
+{
+    PyObject *p;
+    int maybe;
+
+    if ((ival >= -5) && (ival < 257 + 5)) {
+        p = get_small_int(ival);
+        assert(p != NULL);
+        return p;
+    }
+    if (maybe)
+        return p;
+    else
+        return NULL;
+}
+
+PyObject *PyLong_FromLongLong(PY_LONG_LONG ival)
+{
+    return PyLong_FromLong((long)ival);
+}
+
+PyObject *PyLong_FromSsize_t(Py_ssize_t ival)
+{
+    return PyLong_FromLong((long)ival);
 }
 
 /* tainted sinks
