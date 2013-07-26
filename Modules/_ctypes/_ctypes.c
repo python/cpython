@@ -3453,7 +3453,7 @@ _get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObje
         Py_INCREF(v);
         return v;
     }
-    if (kwds && (v = PyDict_GetItem(kwds, name))) {
+    if (kwds && name && (v = PyDict_GetItem(kwds, name))) {
         ++*pindex;
         Py_INCREF(v);
         return v;
