@@ -42,25 +42,25 @@ typedef struct _withitem *withitem_ty;
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
                  Suite_kind=4};
 struct _mod {
-        enum _mod_kind kind;
-        union {
-                struct {
-                        asdl_seq *body;
-                } Module;
-                
-                struct {
-                        asdl_seq *body;
-                } Interactive;
-                
-                struct {
-                        expr_ty body;
-                } Expression;
-                
-                struct {
-                        asdl_seq *body;
-                } Suite;
-                
-        } v;
+    enum _mod_kind kind;
+    union {
+        struct {
+            asdl_seq *body;
+        } Module;
+        
+        struct {
+            asdl_seq *body;
+        } Interactive;
+        
+        struct {
+            expr_ty body;
+        } Expression;
+        
+        struct {
+            asdl_seq *body;
+        } Suite;
+        
+    } v;
 };
 
 enum _stmt_kind {FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
@@ -70,111 +70,111 @@ enum _stmt_kind {FunctionDef_kind=1, ClassDef_kind=2, Return_kind=3,
                   ImportFrom_kind=15, Global_kind=16, Nonlocal_kind=17,
                   Expr_kind=18, Pass_kind=19, Break_kind=20, Continue_kind=21};
 struct _stmt {
-        enum _stmt_kind kind;
-        union {
-                struct {
-                        identifier name;
-                        arguments_ty args;
-                        asdl_seq *body;
-                        asdl_seq *decorator_list;
-                        expr_ty returns;
-                } FunctionDef;
-                
-                struct {
-                        identifier name;
-                        asdl_seq *bases;
-                        asdl_seq *keywords;
-                        expr_ty starargs;
-                        expr_ty kwargs;
-                        asdl_seq *body;
-                        asdl_seq *decorator_list;
-                } ClassDef;
-                
-                struct {
-                        expr_ty value;
-                } Return;
-                
-                struct {
-                        asdl_seq *targets;
-                } Delete;
-                
-                struct {
-                        asdl_seq *targets;
-                        expr_ty value;
-                } Assign;
-                
-                struct {
-                        expr_ty target;
-                        operator_ty op;
-                        expr_ty value;
-                } AugAssign;
-                
-                struct {
-                        expr_ty target;
-                        expr_ty iter;
-                        asdl_seq *body;
-                        asdl_seq *orelse;
-                } For;
-                
-                struct {
-                        expr_ty test;
-                        asdl_seq *body;
-                        asdl_seq *orelse;
-                } While;
-                
-                struct {
-                        expr_ty test;
-                        asdl_seq *body;
-                        asdl_seq *orelse;
-                } If;
-                
-                struct {
-                        asdl_seq *items;
-                        asdl_seq *body;
-                } With;
-                
-                struct {
-                        expr_ty exc;
-                        expr_ty cause;
-                } Raise;
-                
-                struct {
-                        asdl_seq *body;
-                        asdl_seq *handlers;
-                        asdl_seq *orelse;
-                        asdl_seq *finalbody;
-                } Try;
-                
-                struct {
-                        expr_ty test;
-                        expr_ty msg;
-                } Assert;
-                
-                struct {
-                        asdl_seq *names;
-                } Import;
-                
-                struct {
-                        identifier module;
-                        asdl_seq *names;
-                        int level;
-                } ImportFrom;
-                
-                struct {
-                        asdl_seq *names;
-                } Global;
-                
-                struct {
-                        asdl_seq *names;
-                } Nonlocal;
-                
-                struct {
-                        expr_ty value;
-                } Expr;
-                
-        } v;
-        int lineno;
-        int col_offset;
+    enum _stmt_kind kind;
+    union {
+        struct {
+            identifier name;
+            arguments_ty args;
+            asdl_seq *body;
+            asdl_seq *decorator_list;
+            expr_ty returns;
+        } FunctionDef;
+        
+        struct {
+            identifier name;
+            asdl_seq *bases;
+            asdl_seq *keywords;
+            expr_ty starargs;
+            expr_ty kwargs;
+            asdl_seq *body;
+            asdl_seq *decorator_list;
+        } ClassDef;
+        
+        struct {
+            expr_ty value;
+        } Return;
+        
+        struct {
+            asdl_seq *targets;
+        } Delete;
+        
+        struct {
+            asdl_seq *targets;
+            expr_ty value;
+        } Assign;
+        
+        struct {
+            expr_ty target;
+            operator_ty op;
+            expr_ty value;
+        } AugAssign;
+        
+        struct {
+            expr_ty target;
+            expr_ty iter;
+            asdl_seq *body;
+            asdl_seq *orelse;
+        } For;
+        
+        struct {
+            expr_ty test;
+            asdl_seq *body;
+            asdl_seq *orelse;
+        } While;
+        
+        struct {
+            expr_ty test;
+            asdl_seq *body;
+            asdl_seq *orelse;
+        } If;
+        
+        struct {
+            asdl_seq *items;
+            asdl_seq *body;
+        } With;
+        
+        struct {
+            expr_ty exc;
+            expr_ty cause;
+        } Raise;
+        
+        struct {
+            asdl_seq *body;
+            asdl_seq *handlers;
+            asdl_seq *orelse;
+            asdl_seq *finalbody;
+        } Try;
+        
+        struct {
+            expr_ty test;
+            expr_ty msg;
+        } Assert;
+        
+        struct {
+            asdl_seq *names;
+        } Import;
+        
+        struct {
+            identifier module;
+            asdl_seq *names;
+            int level;
+        } ImportFrom;
+        
+        struct {
+            asdl_seq *names;
+        } Global;
+        
+        struct {
+            asdl_seq *names;
+        } Nonlocal;
+        
+        struct {
+            expr_ty value;
+        } Expr;
+        
+    } v;
+    int lineno;
+    int col_offset;
 };
 
 enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
@@ -186,211 +186,211 @@ enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   Subscript_kind=22, Starred_kind=23, Name_kind=24,
                   List_kind=25, Tuple_kind=26};
 struct _expr {
-        enum _expr_kind kind;
-        union {
-                struct {
-                        boolop_ty op;
-                        asdl_seq *values;
-                } BoolOp;
-                
-                struct {
-                        expr_ty left;
-                        operator_ty op;
-                        expr_ty right;
-                } BinOp;
-                
-                struct {
-                        unaryop_ty op;
-                        expr_ty operand;
-                } UnaryOp;
-                
-                struct {
-                        arguments_ty args;
-                        expr_ty body;
-                } Lambda;
-                
-                struct {
-                        expr_ty test;
-                        expr_ty body;
-                        expr_ty orelse;
-                } IfExp;
-                
-                struct {
-                        asdl_seq *keys;
-                        asdl_seq *values;
-                } Dict;
-                
-                struct {
-                        asdl_seq *elts;
-                } Set;
-                
-                struct {
-                        expr_ty elt;
-                        asdl_seq *generators;
-                } ListComp;
-                
-                struct {
-                        expr_ty elt;
-                        asdl_seq *generators;
-                } SetComp;
-                
-                struct {
-                        expr_ty key;
-                        expr_ty value;
-                        asdl_seq *generators;
-                } DictComp;
-                
-                struct {
-                        expr_ty elt;
-                        asdl_seq *generators;
-                } GeneratorExp;
-                
-                struct {
-                        expr_ty value;
-                } Yield;
-                
-                struct {
-                        expr_ty value;
-                } YieldFrom;
-                
-                struct {
-                        expr_ty left;
-                        asdl_int_seq *ops;
-                        asdl_seq *comparators;
-                } Compare;
-                
-                struct {
-                        expr_ty func;
-                        asdl_seq *args;
-                        asdl_seq *keywords;
-                        expr_ty starargs;
-                        expr_ty kwargs;
-                } Call;
-                
-                struct {
-                        object n;
-                } Num;
-                
-                struct {
-                        string s;
-                } Str;
-                
-                struct {
-                        bytes s;
-                } Bytes;
-                
-                struct {
-                        singleton value;
-                } NameConstant;
-                
-                struct {
-                        expr_ty value;
-                        identifier attr;
-                        expr_context_ty ctx;
-                } Attribute;
-                
-                struct {
-                        expr_ty value;
-                        slice_ty slice;
-                        expr_context_ty ctx;
-                } Subscript;
-                
-                struct {
-                        expr_ty value;
-                        expr_context_ty ctx;
-                } Starred;
-                
-                struct {
-                        identifier id;
-                        expr_context_ty ctx;
-                } Name;
-                
-                struct {
-                        asdl_seq *elts;
-                        expr_context_ty ctx;
-                } List;
-                
-                struct {
-                        asdl_seq *elts;
-                        expr_context_ty ctx;
-                } Tuple;
-                
-        } v;
-        int lineno;
-        int col_offset;
+    enum _expr_kind kind;
+    union {
+        struct {
+            boolop_ty op;
+            asdl_seq *values;
+        } BoolOp;
+        
+        struct {
+            expr_ty left;
+            operator_ty op;
+            expr_ty right;
+        } BinOp;
+        
+        struct {
+            unaryop_ty op;
+            expr_ty operand;
+        } UnaryOp;
+        
+        struct {
+            arguments_ty args;
+            expr_ty body;
+        } Lambda;
+        
+        struct {
+            expr_ty test;
+            expr_ty body;
+            expr_ty orelse;
+        } IfExp;
+        
+        struct {
+            asdl_seq *keys;
+            asdl_seq *values;
+        } Dict;
+        
+        struct {
+            asdl_seq *elts;
+        } Set;
+        
+        struct {
+            expr_ty elt;
+            asdl_seq *generators;
+        } ListComp;
+        
+        struct {
+            expr_ty elt;
+            asdl_seq *generators;
+        } SetComp;
+        
+        struct {
+            expr_ty key;
+            expr_ty value;
+            asdl_seq *generators;
+        } DictComp;
+        
+        struct {
+            expr_ty elt;
+            asdl_seq *generators;
+        } GeneratorExp;
+        
+        struct {
+            expr_ty value;
+        } Yield;
+        
+        struct {
+            expr_ty value;
+        } YieldFrom;
+        
+        struct {
+            expr_ty left;
+            asdl_int_seq *ops;
+            asdl_seq *comparators;
+        } Compare;
+        
+        struct {
+            expr_ty func;
+            asdl_seq *args;
+            asdl_seq *keywords;
+            expr_ty starargs;
+            expr_ty kwargs;
+        } Call;
+        
+        struct {
+            object n;
+        } Num;
+        
+        struct {
+            string s;
+        } Str;
+        
+        struct {
+            bytes s;
+        } Bytes;
+        
+        struct {
+            singleton value;
+        } NameConstant;
+        
+        struct {
+            expr_ty value;
+            identifier attr;
+            expr_context_ty ctx;
+        } Attribute;
+        
+        struct {
+            expr_ty value;
+            slice_ty slice;
+            expr_context_ty ctx;
+        } Subscript;
+        
+        struct {
+            expr_ty value;
+            expr_context_ty ctx;
+        } Starred;
+        
+        struct {
+            identifier id;
+            expr_context_ty ctx;
+        } Name;
+        
+        struct {
+            asdl_seq *elts;
+            expr_context_ty ctx;
+        } List;
+        
+        struct {
+            asdl_seq *elts;
+            expr_context_ty ctx;
+        } Tuple;
+        
+    } v;
+    int lineno;
+    int col_offset;
 };
 
 enum _slice_kind {Slice_kind=1, ExtSlice_kind=2, Index_kind=3};
 struct _slice {
-        enum _slice_kind kind;
-        union {
-                struct {
-                        expr_ty lower;
-                        expr_ty upper;
-                        expr_ty step;
-                } Slice;
-                
-                struct {
-                        asdl_seq *dims;
-                } ExtSlice;
-                
-                struct {
-                        expr_ty value;
-                } Index;
-                
-        } v;
+    enum _slice_kind kind;
+    union {
+        struct {
+            expr_ty lower;
+            expr_ty upper;
+            expr_ty step;
+        } Slice;
+        
+        struct {
+            asdl_seq *dims;
+        } ExtSlice;
+        
+        struct {
+            expr_ty value;
+        } Index;
+        
+    } v;
 };
 
 struct _comprehension {
-        expr_ty target;
-        expr_ty iter;
-        asdl_seq *ifs;
+    expr_ty target;
+    expr_ty iter;
+    asdl_seq *ifs;
 };
 
 enum _excepthandler_kind {ExceptHandler_kind=1};
 struct _excepthandler {
-        enum _excepthandler_kind kind;
-        union {
-                struct {
-                        expr_ty type;
-                        identifier name;
-                        asdl_seq *body;
-                } ExceptHandler;
-                
-        } v;
-        int lineno;
-        int col_offset;
+    enum _excepthandler_kind kind;
+    union {
+        struct {
+            expr_ty type;
+            identifier name;
+            asdl_seq *body;
+        } ExceptHandler;
+        
+    } v;
+    int lineno;
+    int col_offset;
 };
 
 struct _arguments {
-        asdl_seq *args;
-        arg_ty vararg;
-        asdl_seq *kwonlyargs;
-        asdl_seq *kw_defaults;
-        arg_ty kwarg;
-        asdl_seq *defaults;
+    asdl_seq *args;
+    arg_ty vararg;
+    asdl_seq *kwonlyargs;
+    asdl_seq *kw_defaults;
+    arg_ty kwarg;
+    asdl_seq *defaults;
 };
 
 struct _arg {
-        identifier arg;
-        expr_ty annotation;
-        int lineno;
-        int col_offset;
+    identifier arg;
+    expr_ty annotation;
+    int lineno;
+    int col_offset;
 };
 
 struct _keyword {
-        identifier arg;
-        expr_ty value;
+    identifier arg;
+    expr_ty value;
 };
 
 struct _alias {
-        identifier name;
-        identifier asname;
+    identifier name;
+    identifier asname;
 };
 
 struct _withitem {
-        expr_ty context_expr;
-        expr_ty optional_vars;
+    expr_ty context_expr;
+    expr_ty optional_vars;
 };
 
 
