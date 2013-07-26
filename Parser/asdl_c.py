@@ -8,7 +8,7 @@ import os, sys
 
 import asdl
 
-TABSIZE = 8
+TABSIZE = 4
 MAX_COL = 80
 
 def get_c_type(name):
