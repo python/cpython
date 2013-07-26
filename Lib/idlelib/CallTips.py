@@ -163,7 +163,7 @@ def get_arg_text(ob):
             if fob.func_code.co_flags & 0x8:
                 items.append("***")
             arg_text = ", ".join(items)
-            arg_text = "(%s)" % re.sub("\.\d+", "<tuple>", arg_text)
+            arg_text = "(%s)" % re.sub("(?<!\d)\.\d+", "<tuple>", arg_text)
         # See if we can use the docstring
         doc = getattr(ob, "__doc__", "")
         if doc:

@@ -104,6 +104,8 @@ IDLE
   changed when it has not been changed. This fix followed the addition of a
   test file originally written by Phil Webster (the issue's main goal).
 
+- Issue #18539: Calltips now work for float default arguments.
+
 - Issue #7136: In the Idle File menu, "New Window" is renamed "New File".
   Patch by Tal Einat, Roget Serwy, and Todd Rovito.
 
