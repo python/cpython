@@ -526,8 +526,7 @@ class Obj2ModVisitor(PickleVisitor):
                       (field.type, field.name), depth+1)
             self.emit("if (res != 0) goto failed;", depth+1)
 
-        self.emit("Py_XDECREF(tmp);", depth+1)
-        self.emit("tmp = NULL;", depth+1)
+        self.emit("Py_CLEAR(tmp);", depth+1)
         self.emit("} else {", depth)
         if not field.opt:
             message = "required field \\\"%s\\\" missing from %s" % (field.name, name)
