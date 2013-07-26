@@ -2030,6 +2030,11 @@ builtin_sum(PyObject *self, PyObject *args)
             }
             /* Either overflowed or is not an int. Restore real objects and process normally */
             result = PyLong_FromLong(i_result);
+            if (result == NULL) {
+                Py_DECREF(item);
+                Py_DECREF(iter);
+                return NULL;
+            }
             temp = PyNumber_Add(result, item);
             Py_DECREF(result);
             Py_DECREF(item);
