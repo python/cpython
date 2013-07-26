@@ -2249,6 +2249,8 @@ profile_int(PyObject *self, PyObject* args)
 
     /* Test 7: Perform medium int addition */
     op1 = PyLong_FromLong(1000);
+    if (op1 == NULL)
+        return NULL;
     gettimeofday(&start, NULL);
     for(i=0; i < 10000000; i++) {
         result = PyNumber_Add(op1, op1);
