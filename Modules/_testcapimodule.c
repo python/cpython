@@ -120,6 +120,10 @@ test_dict_inner(int count)
 
     for (i = 0; i < count; i++) {
         v = PyLong_FromLong(i);
+        if (v == NULL) {
+            Py_DECREF(v);
+            return -1;
+        }
         if (PyDict_SetItem(dict, v, v) < 0) {
             Py_DECREF(v);
             return -1;
@@ -1642,6 +1646,8 @@ test_long_numbits(PyObject *self)
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
         PyObject *plong = PyLong_FromLong(testcases[i].input);
+        if (plong == NULL)
+            return NULL;
         size_t nbits = _PyLong_NumBits(plong);
         int sign = _PyLong_Sign(plong);
 
@@ -2234,7 +2240,7 @@ profile_int(PyObject *self, PyObject* args)
     gettimeofday(&start, NULL);
     for(i=0; i < 10000000; i++) {
         result = PyNumber_Add(op1, op1);
-        Py_DECREF(result);
+        Py_XDECREF(result);
     }
     gettimeofday(&stop, NULL);
     Py_DECREF(op1);
