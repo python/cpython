@@ -1645,11 +1645,15 @@ test_long_numbits(PyObject *self)
     int i;
 
     for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        PyObject *plong = PyLong_FromLong(testcases[i].input);
+        size_t nbits;
+        int sign;
+        PyObject *plong;
+
+        plong = PyLong_FromLong(testcases[i].input);
         if (plong == NULL)
             return NULL;
-        size_t nbits = _PyLong_NumBits(plong);
-        int sign = _PyLong_Sign(plong);
+        nbits = _PyLong_NumBits(plong);
+        sign = _PyLong_Sign(plong);
 
         Py_DECREF(plong);
         if (nbits != testcases[i].nbits)
