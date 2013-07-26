@@ -4836,9 +4836,10 @@ load_binget(UnpicklerObject *self)
     value = _Unpickler_MemoGet(self, idx);
     if (value == NULL) {
         PyObject *key = PyLong_FromSsize_t(idx);
-        if (!PyErr_Occurred())
+        if (key != NULL) {
             PyErr_SetObject(PyExc_KeyError, key);
-        Py_DECREF(key);
+            Py_DECREF(key);
+        }
         return -1;
     }
 
@@ -4861,9 +4862,10 @@ load_long_binget(UnpicklerObject *self)
     value = _Unpickler_MemoGet(self, idx);
     if (value == NULL) {
         PyObject *key = PyLong_FromSsize_t(idx);
-        if (!PyErr_Occurred())
+        if (key != NULL) {
             PyErr_SetObject(PyExc_KeyError, key);
-        Py_DECREF(key);
+            Py_DECREF(key);
+        }
         return -1;
     }
 
