@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18552: Check return value of PyArena_AddPyObject() in
+  obj2ast_object().
+
 - Issue #18560: Fix potential NULL pointer dereference in sum().
 
 - Issue #18520: Add a new PyStructSequence_InitType2() function, same than
