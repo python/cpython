@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18560: Fix potential NULL pointer dereference in sum().
+
 - Issue #18520: Add a new PyStructSequence_InitType2() function, same than
   PyStructSequence_InitType() except that it has a return value (0 on success,
   -1 on error).
