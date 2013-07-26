@@ -12,6 +12,8 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18560: Fix potential NULL pointer dereference in sum().
+
 - Issue #15905: Fix theoretical buffer overflow in handling of sys.argv[0],
   prefix and exec_prefix if the operation system does not obey MAXPATHLEN.
 
