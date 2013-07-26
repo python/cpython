@@ -121,7 +121,6 @@ test_dict_inner(int count)
     for (i = 0; i < count; i++) {
         v = PyLong_FromLong(i);
         if (v == NULL) {
-            Py_DECREF(v);
             return -1;
         }
         if (PyDict_SetItem(dict, v, v) < 0) {
