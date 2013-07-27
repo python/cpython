@@ -45,6 +45,11 @@ main(int argc, char **argv)
 #endif
 
     oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
+    if (!oldloc) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
         argv_copy[i] = _Py_char2wchar(argv[i], NULL);

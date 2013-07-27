@@ -16,19 +16,19 @@ int
 Py_FrozenMain(int argc, char **argv)
 {
     char *p;
-    int i, n, sts;
+    int i, n, sts = 1;
     int inspect = 0;
     int unbuffered = 0;
-    char *oldloc;
-    wchar_t **argv_copy;
+    char *oldloc = NULL;
+    wchar_t **argv_copy = NULL;
     /* We need a second copies, as Python might modify the first one. */
-    wchar_t **argv_copy2;
+    wchar_t **argv_copy2 = NULL;
 
-    argv_copy = PyMem_RawMalloc(sizeof(wchar_t*)*argc);
-    argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*)*argc);
+    argv_copy = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
+    argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
     if (!argv_copy || !argv_copy2) {
         fprintf(stderr, "out of memory\n");
-        return 1;
+        goto error;
     }
 
     Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
@@ -44,23 +44,26 @@ Py_FrozenMain(int argc, char **argv)
         setbuf(stderr, (char *)NULL);
     }
 
-    if (!argv_copy) {
+    oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
+    if (!oldloc) {
         fprintf(stderr, "out of memory\n");
-        return 1;
+        goto error;
     }
 
-    oldloc = setlocale(LC_ALL, NULL);
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
         argv_copy[i] = _Py_char2wchar(argv[i], NULL);
+        argv_copy2[i] = argv_copy[i];
         if (!argv_copy[i]) {
             fprintf(stderr, "Unable to decode the command line argument #%i\n",
                             i + 1);
-            return 1;
+            argc = i;
+            goto error;
         }
-        argv_copy2[i] = argv_copy[i];
     }
     setlocale(LC_ALL, oldloc);
+    PyMem_RawFree(oldloc);
+    oldloc = NULL;
 
 #ifdef MS_WINDOWS
     PyInitFrozenExtensions();
@@ -94,10 +97,14 @@ Py_FrozenMain(int argc, char **argv)
     PyWinFreeze_ExeTerm();
 #endif
     Py_Finalize();
-    for (i = 0; i < argc; i++) {
-        PyMem_RawFree(argv_copy2[i]);
-    }
+
+error:
     PyMem_RawFree(argv_copy);
-    PyMem_RawFree(argv_copy2);
+    if (argv_copy2) {
+        for (i = 0; i < argc; i++)
+            PyMem_RawFree(argv_copy2[i]);
+        PyMem_RawFree(argv_copy2);
+    }
+    PyMem_RawFree(oldloc);
     return sts;
 }
