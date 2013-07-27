@@ -61,7 +61,7 @@ typedef struct BLOCK {
  * block is freed leaving another existing block as the new endpoint.
  */
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
 #define MARK_END(link)  link = NULL;
 #define CHECK_END(link) assert(link == NULL);
 #define CHECK_NOT_END(link) assert(link != NULL);
