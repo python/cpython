@@ -44,11 +44,6 @@ Py_FrozenMain(int argc, char **argv)
         setbuf(stderr, (char *)NULL);
     }
 
-    if (!argv_copy) {
-        fprintf(stderr, "out of memory\n");
-        return 1;
-    }
-
     oldloc = setlocale(LC_ALL, NULL);
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
