@@ -908,7 +908,7 @@ Test cases
          with self.assertWarns(SomeWarning):
              do_something()
 
-      When used as a context manager, :meth:`assertRaises` accepts the
+      When used as a context manager, :meth:`assertWarns` accepts the
       additional keyword argument *msg*.
 
       The context manager will store the caught warning object in its
