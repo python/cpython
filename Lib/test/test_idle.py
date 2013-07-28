@@ -9,17 +9,9 @@ idletest = import_module('idlelib.idle_test')
 
 # If buildbot improperly sets gui resource (#18365, #18441), remove it
 # so requires('gui') tests are skipped while non-gui tests still run.
+# If there is a problem with Macs, see #18441, msg 193805
 if use_resources and 'gui' in use_resources:
     try:
-        import sys
-##        if sys.platform == 'darwin':
-##            from lib-tk.test.runtktests import check_tk_availability
-# see test/test_tk.py or test_ttk_guionly for how to import the above
-##            # tkinter.test.suppport in 3.x
-##            try:
-##                check_tk_availability()
-##            except unittest.SkipTest:
-##                raise tk.TclError
         root = tk.Tk()
         root.destroy()
     except tk.TclError:
