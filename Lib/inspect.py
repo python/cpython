@@ -360,6 +360,40 @@ def getmro(cls):
     "Return tuple of base classes (including cls) in method resolution order."
     return cls.__mro__
 
+# -------------------------------------------------------- function helpers
+
+def unwrap(func, *, stop=None):
+    """Get the object wrapped by *func*.
+
+   Follows the chain of :attr:`__wrapped__` attributes returning the last
+   object in the chain.
+
+   *stop* is an optional callback accepting an object in the wrapper chain
+   as its sole argument that allows the unwrapping to be terminated early if
+   the callback returns a true value. If the callback never returns a true
+   value, the last object in the chain is returned as usual. For example,
+   :func:`signature` uses this to stop unwrapping if any object in the
+   chain has a ``__signature__`` attribute defined.
+
+   :exc:`ValueError` is raised if a cycle is encountered.
+
+    """
+    if stop is None:
+        def _is_wrapper(f):
+            return hasattr(f, '__wrapped__')
+    else:
+        def _is_wrapper(f):
+            return hasattr(f, '__wrapped__') and not stop(f)
+    f = func  # remember the original func for error reporting
+    memo = {id(f)} # Memoise by id to tolerate non-hashable objects
+    while _is_wrapper(func):
+        func = func.__wrapped__
+        id_func = id(func)
+        if id_func in memo:
+            raise ValueError('wrapper loop when unwrapping {!r}'.format(f))
+        memo.add(id_func)
+    return func
+
 # -------------------------------------------------- source code extraction
 def indentsize(line):
     """Return the indent size, in spaces, at the start of a line of text."""
@@ -1346,6 +1380,9 @@ def signature(obj):
         sig = signature(obj.__func__)
         return sig.replace(parameters=tuple(sig.parameters.values())[1:])
 
+    # Was this function wrapped by a decorator?
+    obj = unwrap(obj, stop=(lambda f: hasattr(f, "__signature__")))
+
     try:
         sig = obj.__signature__
     except AttributeError:
@@ -1354,13 +1391,6 @@ def signature(obj):
         if sig is not None:
             return sig
 
-    try:
-        # Was this function wrapped by a decorator?
-        wrapped = obj.__wrapped__
-    except AttributeError:
-        pass
-    else:
-        return signature(wrapped)
 
     if isinstance(obj, types.FunctionType):
         return Signature.from_function(obj)
