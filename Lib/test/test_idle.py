@@ -18,7 +18,7 @@ if use_resources and 'gui' in use_resources:
 ##            # tkinter.test.suppport in 3.x
 ##            try:
 ##                check_tk_availability()
-##            except unittest.SkipTest:  
+##            except unittest.SkipTest:
 ##                raise tk.TclError
         root = tk.Tk()
         root.destroy()
