@@ -11,7 +11,7 @@ INVALID_NAME = '!@$)(!@#_1'
 EMPTY = ''
 TESTS = 'inspect_fodder inspect_fodder2 mapping_tests'
 TESTS = TESTS.split()
-TEST_PATH = os.path.dirname(support.__file__)
+TEST_PATH = os.path.dirname(__file__)
 MODULES = "linecache abc".split()
 MODULE_PATH = os.path.dirname(FILENAME)
 
