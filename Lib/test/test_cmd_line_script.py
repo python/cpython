@@ -290,7 +290,7 @@ class CmdLineTest(unittest.TestCase):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
         # searching for the module to execute
         with temp_dir() as script_dir:
-            with support.temp_cwd(path=script_dir):
+            with support.change_cwd(path=script_dir):
                 pkg_dir = os.path.join(script_dir, 'test_pkg')
                 make_pkg(pkg_dir, "import sys; print('init_argv0==%r' % sys.argv[0])")
                 script_name = _make_test_script(pkg_dir, 'script')
@@ -307,7 +307,7 @@ class CmdLineTest(unittest.TestCase):
         # Make sure a "-c" file in the current directory
         # does not alter the value of sys.path[0]
         with temp_dir() as script_dir:
-            with support.temp_cwd(path=script_dir):
+            with support.change_cwd(path=script_dir):
                 with open("-c", "w") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-c',
@@ -322,7 +322,7 @@ class CmdLineTest(unittest.TestCase):
         # does not alter the value of sys.path[0]
         with temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'other')
-            with support.temp_cwd(path=script_dir):
+            with support.change_cwd(path=script_dir):
                 with open("-m", "w") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-m', 'other', *example_args)
@@ -335,7 +335,7 @@ class CmdLineTest(unittest.TestCase):
         # and results in an error that the return code to the
         # shell is '1'
         with temp_dir() as script_dir:
-            with support.temp_cwd(path=script_dir):
+            with support.change_cwd(path=script_dir):
                 pkg_dir = os.path.join(script_dir, 'test_pkg')
                 make_pkg(pkg_dir)
                 script_name = _make_test_script(pkg_dir, 'other',
