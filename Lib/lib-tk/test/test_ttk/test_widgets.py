@@ -26,8 +26,8 @@ class WidgetTest(unittest.TestCase):
     def test_identify(self):
         self.widget.update_idletasks()
         self.assertEqual(self.widget.identify(
-            int(self.widget.winfo_width() / 2),
-            int(self.widget.winfo_height() / 2)
+            self.widget.winfo_width() // 2,
+            self.widget.winfo_height() // 2
             ), "label")
         self.assertEqual(self.widget.identify(-1, -1), "")
 
