@@ -171,6 +171,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13266: Added inspect.unwrap to easily unravel __wrapped__ chains
+  (initial patch by Daniel Urban and Aaron Iles)
+
 - Issue #18561: Skip name in ctypes' _build_callargs() if name is NULL.
 
 - Issue #18559: Fix NULL pointer dereference error in _pickle module

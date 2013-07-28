@@ -185,6 +185,15 @@ functools
 
 New :func:`functools.singledispatch` decorator: see the :pep:`443`.
 
+
+inspect
+-------
+
+:func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
+created by :func:`functools.wraps` (and any other API that sets the
+``__wrapped__`` attribute on a wrapper function).
+
+
 smtplib
 -------
 
@@ -327,6 +336,5 @@ that may require changes to your code.
   wrapped attribute set. This means ``__wrapped__`` attributes now correctly
   link a stack of decorated functions rather than every ``__wrapped__``
   attribute in the chain referring to the innermost function. Introspection
-  libraries that assumed the previous behaviour was intentional will need to
-  be updated to walk the chain of ``__wrapped__`` attributes to find the
-  innermost function.
+  libraries that assumed the previous behaviour was intentional can use
+  :func:`inspect.unwrap` to gain equivalent behaviour.
