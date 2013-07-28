@@ -1307,18 +1307,18 @@ class TestWhich(unittest.TestCase):
         # that exists, it should be returned.
         base_dir, tail_dir = os.path.split(self.dir)
         relpath = os.path.join(tail_dir, self.file)
-        with support.temp_cwd(path=base_dir):
+        with support.change_cwd(path=base_dir):
             rv = shutil.which(relpath, path=self.temp_dir)
             self.assertEqual(rv, relpath)
         # But it shouldn't be searched in PATH directories (issue #16957).
-        with support.temp_cwd(path=self.dir):
+        with support.change_cwd(path=self.dir):
             rv = shutil.which(relpath, path=base_dir)
             self.assertIsNone(rv)
 
     def test_cwd(self):
         # Issue #16957
         base_dir = os.path.dirname(self.dir)
-        with support.temp_cwd(path=self.dir):
+        with support.change_cwd(path=self.dir):
             rv = shutil.which(self.file, path=base_dir)
             if sys.platform == "win32":
                 # Windows: current directory implicitly on PATH
@@ -1339,7 +1339,7 @@ class TestWhich(unittest.TestCase):
 
     def test_relative_path(self):
         base_dir, tail_dir = os.path.split(self.dir)
-        with support.temp_cwd(path=base_dir):
+        with support.change_cwd(path=base_dir):
             rv = shutil.which(self.file, path=tail_dir)
             self.assertEqual(rv, os.path.join(tail_dir, self.file))
 
@@ -1364,7 +1364,7 @@ class TestWhich(unittest.TestCase):
 
     def test_empty_path(self):
         base_dir = os.path.dirname(self.dir)
-        with support.temp_cwd(path=self.dir), \
+        with support.change_cwd(path=self.dir), \
              support.EnvironmentVarGuard() as env:
             env['PATH'] = self.dir
             rv = shutil.which(self.file, path='')
