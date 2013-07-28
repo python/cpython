@@ -40,13 +40,20 @@ master object either directly or indirectly by instantiating a tkinter or
 idle class. For the benefit of buildbot machines that do not have a graphics
 screen, gui tests must be 'guarded' by "requires('gui')" in a setUp
 function or method. This will typically be setUpClass.
+
+All gui objects must be destroyed by the end of the test, perhaps in a tearDown
+function. Creating the Tk root directly in a setUp allows a reference to be saved
+so it can be properly destroyed in the corresponding tearDown. 
 ---
     @classmethod
     def setUpClass(cls):
         requires('gui')
+        cls.root = tk.Tk()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.destroy()
 ---
-All gui objects must be destroyed by the end of the test, perhaps in a tearDown
-function.
 
 Support.requires('gui') returns true if it is either called in a main module
 (which never happens on buildbots) or if use_resources contains 'gui'.
@@ -56,8 +63,9 @@ template above.
 
 Since non-gui tests always run, but gui tests only sometimes, tests of non-gui
 operations should best avoid needing a gui. Methods that make incidental use of
-tkinter variables and messageboxes can do this by using the mock classes in
-idle_test/mock_tk.py.
+tkinter (tk) variables and messageboxes can do this by using the mock classes in
+idle_test/mock_tk.py. There is also a mock text that will handle some uses of the
+tk Text widget.
 
 
 3. Running Tests
