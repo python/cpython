@@ -789,9 +789,12 @@ if hasattr(os, "umask"):
         finally:
             os.umask(oldmask)
 
+# TEST_HOME refers to the top level directory of the "test" package
+# that contains Python's regression test suite
+TEST_HOME = os.path.dirname(os.path.abspath(__file__))
 
-def findfile(file, here=__file__, subdir=None):
-    """Try to find a file on sys.path and the working directory.  If it is not
+def findfile(file, here=TEST_HOME, subdir=None):
+    """Try to find a file on sys.path or in the test directory.  If it is not
     found the argument passed to the function is returned (this does not
     necessarily signal failure; could still be the legitimate path)."""
     if os.path.isabs(file):
