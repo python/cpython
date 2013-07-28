@@ -738,44 +738,84 @@ else:
 SAVEDCWD = os.getcwd()
 
 @contextlib.contextmanager
-def temp_cwd(name='tempcwd', quiet=False, path=None):
-    """
-    Context manager that temporarily changes the CWD.
+def temp_dir(path=None, quiet=False):
+    """Return a context manager that creates a temporary directory.
 
-    An existing path may be provided as *path*, in which case this
-    function makes no changes to the file system.
+    Arguments:
 
-    Otherwise, the new CWD is created in the current directory and it's
-    named *name*. If *quiet* is False (default) and it's not possible to
-    create or change the CWD, an error is raised.  If it's True, only a
-    warning is raised and the original CWD is used.
+      path: the directory to create temporarily.  If omitted or None,
+        defaults to creating a temporary directory using tempfile.mkdtemp.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, if the path is specified and cannot be
+        created, only a warning is issued.
+
     """
-    saved_dir = os.getcwd()
-    is_temporary = False
+    dir_created = False
     if path is None:
-        path = name
+        path = tempfile.mkdtemp()
+        dir_created = True
+        path = os.path.realpath(path)
+    else:
         try:
-            os.mkdir(name)
-            is_temporary = True
+            os.mkdir(path)
+            dir_created = True
         except OSError:
             if not quiet:
                 raise
-            warnings.warn('tests may fail, unable to create temp CWD ' + name,
+            warnings.warn('tests may fail, unable to create temp dir: ' + path,
                           RuntimeWarning, stacklevel=3)
+    try:
+        yield path
+    finally:
+        if dir_created:
+            shutil.rmtree(path)
+
+@contextlib.contextmanager
+def change_cwd(path, quiet=False):
+    """Return a context manager that changes the current working directory.
+
+    Arguments:
+
+      path: the directory to use as the temporary current working directory.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_dir = os.getcwd()
     try:
         os.chdir(path)
     except OSError:
         if not quiet:
             raise
-        warnings.warn('tests may fail, unable to change the CWD to ' + path,
+        warnings.warn('tests may fail, unable to change CWD to: ' + path,
                       RuntimeWarning, stacklevel=3)
     try:
         yield os.getcwd()
     finally:
         os.chdir(saved_dir)
-        if is_temporary:
-            rmtree(name)
 
+
+@contextlib.contextmanager
+def temp_cwd(name='tempcwd', quiet=False):
+    """
+    Context manager that temporarily creates and changes the CWD.
+
+    The function temporarily changes the current working directory
+    after creating a temporary directory in the current directory with
+    name *name*.  If *name* is None, the temporary directory is
+    created using tempfile.mkdtemp.
+
+    If *quiet* is False (default) and it is not possible to
+    create or change the CWD, an error is raised.  If *quiet* is True,
+    only a warning is raised and the original CWD is used.
+
+    """
+    with temp_dir(path=name, quiet=quiet) as temp_path:
+        with change_cwd(temp_path, quiet=quiet) as cwd_dir:
+            yield cwd_dir
 
 if hasattr(os, "umask"):
     @contextlib.contextmanager

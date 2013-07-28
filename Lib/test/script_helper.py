@@ -13,7 +13,7 @@ import shutil
 import zipfile
 
 from imp import source_from_cache
-from test.support import make_legacy_pyc, strip_python_stderr
+from test.support import make_legacy_pyc, strip_python_stderr, temp_dir
 
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
@@ -76,16 +76,6 @@ def kill_python(p):
     p.wait()
     subprocess._cleanup()
     return data
-
-# Script creation utilities
-@contextlib.contextmanager
-def temp_dir():
-    dirname = tempfile.mkdtemp()
-    dirname = os.path.realpath(dirname)
-    try:
-        yield dirname
-    finally:
-        shutil.rmtree(dirname)
 
 def make_script(script_dir, script_basename, source):
     script_filename = script_basename+os.extsep+'py'
