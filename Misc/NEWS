@@ -571,6 +571,9 @@ Library
 Tests
 -----
 
+- Issue #15415: Add new temp_dir() and change_cwd() context managers to
+  test.support, and refactor temp_cwd() to use them.  Patch by Chris Jerdonek.
+
 - Issue #15494: test.support is now a package rather than a module (Initial
   patch by Indra Talip)
 

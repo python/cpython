@@ -387,18 +387,40 @@ The :mod:`test.support` module defines the following functions:
       self.assertEqual(captured, "hello")
 
 
-.. function:: temp_cwd(name='tempcwd', quiet=False, path=None)
+.. function:: temp_dir(path=None, quiet=False)
+
+   A context manager that creates a temporary directory at *path* and
+   yields the directory.
+
+   If *path* is None, the temporary directory is created using
+   :func:`tempfile.mkdtemp`.  If *quiet* is ``False``, the context manager
+   raises an exception on error.  Otherwise, if *path* is specified and
+   cannot be created, only a warning is issued.
+
+
+.. function:: change_cwd(path, quiet=False)
 
    A context manager that temporarily changes the current working
-   directory (CWD).
+   directory to *path* and yields the directory.
 
-   An existing path may be provided as *path*, in which case this function
-   makes no changes to the file system.
+   If *quiet* is ``False``, the context manager raises an exception
+   on error.  Otherwise, it issues only a warning and keeps the current
+   working directory the same.
 
-   Otherwise, the new CWD is created in the current directory and it's named
-   *name*.  If *quiet* is ``False`` and it's not possible to create or
-   change the CWD, an error is raised.  If it's ``True``, only a warning
-   is raised and the original CWD is used.
+
+.. function:: temp_cwd(name='tempcwd', quiet=False)
+
+   A context manager that temporarily creates a new directory and
+   changes the current working directory (CWD).
+
+   The context manager creates a temporary directory in the current
+   directory with name *name* before temporarily changing the current
+   working directory.  If *name* is None, the temporary directory is
+   created using :func:`tempfile.mkdtemp`.
+
+   If *quiet* is ``False`` and it is not possible to create or change
+   the CWD, an error is raised.  Otherwise, only a warning is raised
+   and the original CWD is used.
 
 
 .. function:: temp_umask(umask)
