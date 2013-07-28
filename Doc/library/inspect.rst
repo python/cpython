@@ -797,6 +797,23 @@ Classes and functions
    .. versionadded:: 3.3
 
 
+.. function:: unwrap(func, *, stop=None)
+
+   Get the object wrapped by *func*. It follows the chain of :attr:`__wrapped__`
+   attributes returning the last object in the chain.
+
+   *stop* is an optional callback accepting an object in the wrapper chain
+   as its sole argument that allows the unwrapping to be terminated early if
+   the callback returns a true value. If the callback never returns a true
+   value, the last object in the chain is returned as usual. For example,
+   :func:`signature` uses this to stop unwrapping if any object in the
+   chain has a ``__signature__`` attribute defined.
+
+   :exc:`ValueError` is raised if a cycle is encountered.
+
+   .. versionadded:: 3.4
+
+
 .. _inspect-stack:
 
 The interpreter stack
