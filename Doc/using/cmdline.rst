@@ -562,6 +562,8 @@ conflict.
    Python traceback.  This is equivalent to :option:`-X` ``faulthandler``
    option.
 
+   .. versionadded:: 3.3
+
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
