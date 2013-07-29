@@ -21,12 +21,14 @@ class TestCase(unittest.TestCase):
         self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
     def test_empty(self):
-        # startfile is a little odd when it comes to handling absolute
-        # paths, so we briefly switch to the main test directory
-        # and use a relative path
-        with support.change_cwd(support.TEST_HOME):
-            empty = "empty.vbs"
+        # We need to make sure the child process starts in a directory
+        # we're not about to delete. If we're running under -j, that
+        # means the test harness provided directory isn't a safe option.
+        # See http://bugs.python.org/issue15526 for more details
+        with support.change_cwd(path.dirname(sys.executable)):
+            empty = path.join(path.dirname(__file__), "empty.vbs")
             startfile(empty)
+            startfile(empty, "open")
 
 def test_main():
     support.run_unittest(TestCase)
