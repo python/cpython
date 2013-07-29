@@ -513,16 +513,25 @@ Here are the methods of the :class:`Message` class:
       iterator in a ``for`` loop; each iteration returns the next subpart.
 
       Here's an example that prints the MIME type of every part of a multipart
-      message structure::
+      message structure:
 
-        >>> for part in msg.walk():
-        ...     print(part.get_content_type())
-        multipart/report
-        text/plain
-        message/delivery-status
-        text/plain
-        text/plain
-        message/rfc822
+       .. testsetup::
+
+            >>> from email import message_from_binary_file
+            >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
+            ...     msg = message_from_binary_file(f)
+
+       .. doctest::
+
+            >>> for part in msg.walk():
+            ...     print(part.get_content_type())
+            multipart/report
+            text/plain
+            message/delivery-status
+            text/plain
+            text/plain
+            message/rfc822
+            text/plain
 
    :class:`Message` objects can also optionally contain two instance attributes,
    which can be used when generating the plain text of a MIME message.
