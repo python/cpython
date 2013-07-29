@@ -21,12 +21,12 @@ class TestCase(unittest.TestCase):
         self.assertRaises(OSError, startfile, "nonexisting.vbs")
 
     def test_empty(self):
-        # Switch to an existing, but safe, working directory to let the
-        # cleanup code do its thing without permission errors.
-        with support.temp_cwd(path=path.dirname(sys.executable)):
-            empty = path.join(path.dirname(__file__), "empty.vbs")
+        # startfile is a little odd when it comes to handling absolute
+        # paths, so we briefly switch to the main test directory
+        # and use a relative path
+        with support.change_cwd(support.TEST_HOME):
+            empty = "empty.vbs"
             startfile(empty)
-            startfile(empty, "open")
 
 def test_main():
     support.run_unittest(TestCase)
