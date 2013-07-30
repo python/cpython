@@ -124,6 +124,11 @@ class ResourceTest(unittest.TestCase):
 
             resource.setrlimit(resource.RLIMIT_CPU, BadSequence())
 
+    def test_pagesize(self):
+        pagesize = resource.getpagesize()
+        self.assertIsInstance(pagesize, int)
+        self.assertGreaterEqual(pagesize, 0)
+
 def test_main(verbose=None):
     support.run_unittest(ResourceTest)
 
