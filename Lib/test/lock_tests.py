@@ -80,6 +80,11 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         del lock
 
+    def test_repr(self):
+        lock = self.locktype()
+        repr(lock)
+        del lock
+
     def test_acquire_destroy(self):
         lock = self.locktype()
         lock.acquire()
