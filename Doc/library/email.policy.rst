@@ -85,7 +85,7 @@ file on disk and pass it to the system ``sendmail`` program on a Unix system:
    >>> p.stdin.close()
    >>> rc = p.wait()
 
-.. testcleanup::
+.. testsetup::
 
    >>> mymsg.close()
    >>> mocker.stop()
