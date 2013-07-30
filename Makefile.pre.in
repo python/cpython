@@ -1012,7 +1012,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
 		test/capath test/data \
 		test/cjkencodings test/decimaltestdata test/xmltestdata \
-		test/subprocessdata test/sndhdrdata \
+		test/subprocessdata test/sndhdrdata test/support \
 		test/tracedmodules test/encoded_modules \
 		test/namespace_pkgs \
 		test/namespace_pkgs/both_portions \
