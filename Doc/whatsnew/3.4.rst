@@ -119,6 +119,21 @@ The :pep:`445` adds new Application Programming Interfaces (API) to customize
 Python memory allocators.
 
 
+.. _pep-442:
+
+PEP 442: Safe object finalization
+=================================
+
+This PEP removes the current limitations and quirks of object finalization.
+With it, objects with :meth:`__del__` methods, as well as generators
+with :keyword:`finally` clauses, can be finalized when they are part of a
+reference cycle.
+
+.. seealso::
+
+   :pep:`442` - Safe object finalization
+      PEP written and implemented by Antoine Pitrou
+
 
 Other Language Changes
 ======================

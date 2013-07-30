@@ -465,6 +465,14 @@ type objects) *must* have the :attr:`ob_size` field.
       :const:`Py_TPFLAGS_HAVE_VERSION_TAG`.
 
 
+   .. data:: Py_TPFLAGS_HAVE_FINALIZE
+
+      This bit is set when the :attr:`tp_finalize` slot is present in the
+      type structure.
+
+      .. versionadded:: 3.4
+
+
 .. c:member:: char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
@@ -966,6 +974,47 @@ type objects) *must* have the :attr:`ob_size` field.
    and ending with :class:`object`, in Method Resolution Order.
 
    This field is not inherited; it is calculated fresh by :c:func:`PyType_Ready`.
+
+
+.. c:member:: destructor PyTypeObject.tp_finalize
+
+   An optional pointer to an instance finalization function.  Its signature is
+   :c:type:`destructor`::
+
+      void tp_finalize(PyObject *)
+
+   If :attr:`tp_finalize` is set, the interpreter calls it once when
+   finalizing an instance.  It is called either from the garbage
+   collector (if the instance is part of an isolated reference cycle) or
+   just before the object is deallocated.  Either way, it is guaranteed
+   to be called before attempting to break reference cycles, ensuring
+   that it finds the object in a sane state.
+
+   :attr:`tp_finalize` should not mutate the current exception status;
+   therefore, a recommended way to write a non-trivial finalizer is::
+
+      static void
+      local_finalize(PyObject *self)
+      {
+          PyObject *error_type, *error_value, *error_traceback;
+
+          /* Save the current exception, if any. */
+          PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+          /* ... */
+
+          /* Restore the saved exception. */
+          PyErr_Restore(error_type, error_value, error_traceback);
+      }
+
+   For this field to be taken into account (even through inheritance),
+   you must also set the :const:`Py_TPFLAGS_HAVE_FINALIZE` flags bit.
+
+   This field is inherited by subtypes.
+
+   .. versionadded:: 3.4
+
+   .. seealso:: "Safe object finalization" (:pep:`442`)
 
 
 .. c:member:: PyObject* PyTypeObject.tp_cache

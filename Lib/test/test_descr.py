@@ -3736,18 +3736,8 @@ order (MRO) for bases """
         # bug).
         del c
 
-        # If that didn't blow up, it's also interesting to see whether clearing
-        # the last container slot works: that will attempt to delete c again,
-        # which will cause c to get appended back to the container again
-        # "during" the del.  (On non-CPython implementations, however, __del__
-        # is typically not called again.)
         support.gc_collect()
         self.assertEqual(len(C.container), 1)
-        del C.container[-1]
-        if support.check_impl_detail():
-            support.gc_collect()
-            self.assertEqual(len(C.container), 1)
-            self.assertEqual(C.container[-1].attr, 42)
 
         # Make c mortal again, so that the test framework with -l doesn't report
         # it as a leak.

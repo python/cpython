@@ -157,7 +157,8 @@ to :const:`Py_TPFLAGS_DEFAULT`. ::
    Py_TPFLAGS_DEFAULT,        /* tp_flags */
 
 All types should include this constant in their flags.  It enables all of the
-members defined by the current version of Python.
+members defined until at least Python 3.3.  If you need further members,
+you will need to OR the corresponding flags.
 
 We provide a doc string for the type in :attr:`tp_doc`. ::
 
@@ -928,8 +929,9 @@ Finalization and De-allocation
 
 This function is called when the reference count of the instance of your type is
 reduced to zero and the Python interpreter wants to reclaim it.  If your type
-has memory to free or other clean-up to perform, put it here.  The object itself
-needs to be freed here as well.  Here is an example of this function::
+has memory to free or other clean-up to perform, you can put it here.  The
+object itself needs to be freed here as well.  Here is an example of this
+function::
 
    static void
    newdatatype_dealloc(newdatatypeobject * obj)
@@ -981,6 +983,22 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
        Py_TYPE(obj)->tp_free((PyObject*)self);
    }
 
+.. note::
+   There are limitations to what you can safely do in a deallocator function.
+   First, if your type supports garbage collection (using :attr:`tp_traverse`
+   and/or :attr:`tp_clear`), some of the object's members can have been
+   cleared or finalized by the time :attr:`tp_dealloc` is called.  Second, in
+   :attr:`tp_dealloc`, your object is in an unstable state: its reference
+   count is equal to zero.  Any call to a non-trivial object or API (as in the
+   example above) might end up calling :attr:`tp_dealloc` again, causing a
+   double free and a crash.
+
+   Starting with Python 3.4, it is recommended not to put any complex
+   finalization code in :attr:`tp_dealloc`, and instead use the new
+   :c:member:`~PyTypeObject.tp_finalize` type method.
+
+   .. seealso::
+      :pep:`442` explains the new finalization scheme.
 
 .. index::
    single: string; object representation

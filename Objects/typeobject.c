@@ -921,6 +921,7 @@ subtype_dealloc(PyObject *self)
     PyTypeObject *type, *base;
     destructor basedealloc;
     PyThreadState *tstate = PyThreadState_GET();
+    int has_finalizer;
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
@@ -936,6 +937,10 @@ subtype_dealloc(PyObject *self)
            clear_slots(), or DECREF the dict, or clear weakrefs. */
 
         /* Maybe call finalizer; exit early if resurrected */
+        if (type->tp_finalize) {
+            if (PyObject_CallFinalizerFromDealloc(self) < 0)
+                return;
+        }
         if (type->tp_del) {
             type->tp_del(self);
             if (self->ob_refcnt > 0)
@@ -987,25 +992,36 @@ subtype_dealloc(PyObject *self)
         assert(base);
     }
 
-    /* If we added a weaklist, we clear it.      Do this *before* calling
-       the finalizer (__del__), clearing slots, or clearing the instance
-       dict. */
+    has_finalizer = type->tp_finalize || type->tp_del;
 
+    /* Maybe call finalizer; exit early if resurrected */
+    if (has_finalizer)
+        _PyObject_GC_TRACK(self);
+
+    if (type->tp_finalize) {
+        if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+            /* Resurrected */
+            goto endlabel;
+        }
+    }
+    /* If we added a weaklist, we clear it.      Do this *before* calling
+       tp_del, clearing slots, or clearing the instance dict. */
     if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
         PyObject_ClearWeakRefs(self);
 
-    /* Maybe call finalizer; exit early if resurrected */
     if (type->tp_del) {
-        _PyObject_GC_TRACK(self);
         type->tp_del(self);
-        if (self->ob_refcnt > 0)
-            goto endlabel;              /* resurrected */
-        else
-            _PyObject_GC_UNTRACK(self);
+        if (self->ob_refcnt > 0) {
+            /* Resurrected */
+            goto endlabel;
+        }
+    }
+    if (has_finalizer) {
+        _PyObject_GC_UNTRACK(self);
         /* New weakrefs could be created during the finalizer call.
-            If this occurs, clear them out without calling their
-            finalizers since they might rely on part of the object
-            being finalized that has already been destroyed. */
+           If this occurs, clear them out without calling their
+           finalizers since they might rely on part of the object
+           being finalized that has already been destroyed. */
         if (type->tp_weaklistoffset && !base->tp_weaklistoffset) {
             /* Modeled after GET_WEAKREFS_LISTPTR() */
             PyWeakReference **list = (PyWeakReference **) \
@@ -2231,7 +2247,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
     /* Initialize tp_flags */
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE |
-        Py_TPFLAGS_BASETYPE;
+        Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_FINALIZE;
     if (base->tp_flags & Py_TPFLAGS_HAVE_GC)
         type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 
@@ -4111,6 +4127,10 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYSLOT(tp_init);
         COPYSLOT(tp_alloc);
         COPYSLOT(tp_is_gc);
+        if ((type->tp_flags & Py_TPFLAGS_HAVE_FINALIZE) &&
+            (base->tp_flags & Py_TPFLAGS_HAVE_FINALIZE)) {
+            COPYSLOT(tp_finalize);
+        }
         if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) ==
             (base->tp_flags & Py_TPFLAGS_HAVE_GC)) {
             /* They agree about gc. */
@@ -4734,6 +4754,18 @@ wrap_call(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
     ternaryfunc func = (ternaryfunc)wrapped;
 
     return (*func)(self, args, kwds);
+}
+
+static PyObject *
+wrap_del(PyObject *self, PyObject *args, void *wrapped)
+{
+    destructor func = (destructor)wrapped;
+
+    if (!check_num_args(args, 0))
+        return NULL;
+
+    (*func)(self);
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5617,15 +5649,11 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-slot_tp_del(PyObject *self)
+slot_tp_finalize(PyObject *self)
 {
     _Py_IDENTIFIER(__del__);
     PyObject *del, *res;
     PyObject *error_type, *error_value, *error_traceback;
-
-    /* Temporarily resurrect the object. */
-    assert(self->ob_refcnt == 0);
-    self->ob_refcnt = 1;
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -5643,37 +5671,6 @@ slot_tp_del(PyObject *self)
 
     /* Restore the saved exception. */
     PyErr_Restore(error_type, error_value, error_traceback);
-
-    /* Undo the temporary resurrection; can't use DECREF here, it would
-     * cause a recursive call.
-     */
-    assert(self->ob_refcnt > 0);
-    if (--self->ob_refcnt == 0)
-        return;         /* this is the normal path out */
-
-    /* __del__ resurrected it!  Make it look like the original Py_DECREF
-     * never happened.
-     */
-    {
-        Py_ssize_t refcnt = self->ob_refcnt;
-        _Py_NewReference(self);
-        self->ob_refcnt = refcnt;
-    }
-    assert(!PyType_IS_GC(Py_TYPE(self)) ||
-           _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
-    /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
-     * we need to undo that. */
-    _Py_DEC_REFTOTAL;
-    /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
-     * chain, so no more to do there.
-     * If COUNT_ALLOCS, the original decref bumped tp_frees, and
-     * _Py_NewReference bumped tp_allocs:  both of those need to be
-     * undone.
-     */
-#ifdef COUNT_ALLOCS
-    --Py_TYPE(self)->tp_frees;
-    --Py_TYPE(self)->tp_allocs;
-#endif
 }
 
 
@@ -5782,7 +5779,7 @@ static slotdef slotdefs[] = {
            "see help(type(x)) for signature",
            PyWrapperFlag_KEYWORDS),
     TPSLOT("__new__", tp_new, slot_tp_new, NULL, ""),
-    TPSLOT("__del__", tp_del, slot_tp_del, NULL, ""),
+    TPSLOT("__del__", tp_finalize, slot_tp_finalize, (wrapperfunc)wrap_del, ""),
 
     BINSLOT("__add__", nb_add, slot_nb_add,
         "+"),

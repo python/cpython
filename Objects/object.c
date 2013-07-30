@@ -255,6 +255,72 @@ _PyObject_NewVar(PyTypeObject *tp, Py_ssize_t nitems)
     return PyObject_INIT_VAR(op, tp, nitems);
 }
 
+void
+PyObject_CallFinalizer(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+
+    /* The former could happen on heaptypes created from the C API, e.g.
+       PyType_FromSpec(). */
+    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_FINALIZE) ||
+        tp->tp_finalize == NULL)
+        return;
+    /* tp_finalize should only be called once. */
+    if (PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
+        return;
+
+    tp->tp_finalize(self);
+    if (PyType_IS_GC(tp))
+        _PyGC_SET_FINALIZED(self, 1);
+}
+
+int
+PyObject_CallFinalizerFromDealloc(PyObject *self)
+{
+    Py_ssize_t refcnt;
+
+    /* Temporarily resurrect the object. */
+    if (self->ob_refcnt != 0) {
+        Py_FatalError("PyObject_CallFinalizerFromDealloc called on "
+                      "object with a non-zero refcount");
+    }
+    self->ob_refcnt = 1;
+
+    PyObject_CallFinalizer(self);
+
+    /* Undo the temporary resurrection; can't use DECREF here, it would
+     * cause a recursive call.
+     */
+    assert(self->ob_refcnt > 0);
+    if (--self->ob_refcnt == 0)
+        return 0;         /* this is the normal path out */
+
+    /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
+     * never happened.
+     */
+    refcnt = self->ob_refcnt;
+    _Py_NewReference(self);
+    self->ob_refcnt = refcnt;
+
+    if (PyType_IS_GC(Py_TYPE(self))) {
+        assert(_PyGC_REFS(self) != _PyGC_REFS_UNTRACKED);
+    }
+    /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
+     * we need to undo that. */
+    _Py_DEC_REFTOTAL;
+    /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
+     * chain, so no more to do there.
+     * If COUNT_ALLOCS, the original decref bumped tp_frees, and
+     * _Py_NewReference bumped tp_allocs:  both of those need to be
+     * undone.
+     */
+#ifdef COUNT_ALLOCS
+    --Py_TYPE(self)->tp_frees;
+    --Py_TYPE(self)->tp_allocs;
+#endif
+    return -1;
+}
+
 int
 PyObject_Print(PyObject *op, FILE *fp, int flags)
 {
@@ -1981,7 +2047,7 @@ void
 _PyTrash_deposit_object(PyObject *op)
 {
     assert(PyObject_IS_GC(op));
-    assert(_Py_AS_GC(op)->gc.gc_refs == _PyGC_REFS_UNTRACKED);
+    assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
     assert(op->ob_refcnt == 0);
     _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
     _PyTrash_delete_later = op;
@@ -1993,7 +2059,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
 {
     PyThreadState *tstate = PyThreadState_GET();
     assert(PyObject_IS_GC(op));
-    assert(_Py_AS_GC(op)->gc.gc_refs == _PyGC_REFS_UNTRACKED);
+    assert(_PyGC_REFS(op) == _PyGC_REFS_UNTRACKED);
     assert(op->ob_refcnt == 0);
     _Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *) tstate->trash_delete_later;
     tstate->trash_delete_later = op;
