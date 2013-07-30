@@ -964,10 +964,9 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
 
        if (self->my_callback != NULL) {
            PyObject *err_type, *err_value, *err_traceback;
-           int have_error = PyErr_Occurred() ? 1 : 0;
 
-           if (have_error)
-               PyErr_Fetch(&err_type, &err_value, &err_traceback);
+           /* This saves the current exception state */
+           PyErr_Fetch(&err_type, &err_value, &err_traceback);
 
            cbresult = PyObject_CallObject(self->my_callback, NULL);
            if (cbresult == NULL)
@@ -975,8 +974,8 @@ done.  This can be done using the :c:func:`PyErr_Fetch` and
            else
                Py_DECREF(cbresult);
 
-           if (have_error)
-               PyErr_Restore(err_type, err_value, err_traceback);
+           /* This restores the saved exception state */
+           PyErr_Restore(err_type, err_value, err_traceback);
 
            Py_DECREF(self->my_callback);
        }
