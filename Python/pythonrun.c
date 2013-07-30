@@ -1382,8 +1382,8 @@ maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
     return 0;
 }
 
-int
-static set_main_loader(PyObject *d, const char *filename, const char *loader_name)
+static int
+set_main_loader(PyObject *d, const char *filename, const char *loader_name)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
