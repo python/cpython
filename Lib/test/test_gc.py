@@ -1,3 +1,4 @@
+import _testcapi
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                             strip_python_stderr)
@@ -40,6 +41,7 @@ class GC_Detector(object):
         # gc collects it.
         self.wr = weakref.ref(C1055820(666), it_happened)
 
+@_testcapi.with_tp_del
 class Uncollectable(object):
     """Create a reference cycle with multiple __del__ methods.
 
@@ -52,7 +54,7 @@ class Uncollectable(object):
             self.partner = Uncollectable(partner=self)
         else:
             self.partner = partner
-    def __del__(self):
+    def __tp_del__(self):
         pass
 
 ### Tests
@@ -141,11 +143,12 @@ class GCTests(unittest.TestCase):
         del a
         self.assertNotEqual(gc.collect(), 0)
 
-    def test_finalizer(self):
+    def test_legacy_finalizer(self):
         # A() is uncollectable if it is part of a cycle, make sure it shows up
         # in gc.garbage.
+        @_testcapi.with_tp_del
         class A:
-            def __del__(self): pass
+            def __tp_del__(self): pass
         class B:
             pass
         a = A()
@@ -165,11 +168,12 @@ class GCTests(unittest.TestCase):
             self.fail("didn't find obj in garbage (finalizer)")
         gc.garbage.remove(obj)
 
-    def test_finalizer_newclass(self):
+    def test_legacy_finalizer_newclass(self):
         # A() is uncollectable if it is part of a cycle, make sure it shows up
         # in gc.garbage.
+        @_testcapi.with_tp_del
         class A(object):
-            def __del__(self): pass
+            def __tp_del__(self): pass
         class B(object):
             pass
         a = A()
@@ -570,12 +574,14 @@ class GCTests(unittest.TestCase):
         import subprocess
         code = """if 1:
             import gc
+            import _testcapi
+            @_testcapi.with_tp_del
             class X:
                 def __init__(self, name):
                     self.name = name
                 def __repr__(self):
                     return "<X %%r>" %% self.name
-                def __del__(self):
+                def __tp_del__(self):
                     pass
 
             x = X('first')

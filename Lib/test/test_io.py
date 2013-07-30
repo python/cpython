@@ -1072,12 +1072,13 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     def test_garbage_collection(self):
         # C BufferedReader objects are collected.
         # The Python version has __del__, so it ends into gc.garbage instead
-        rawio = self.FileIO(support.TESTFN, "w+b")
-        f = self.tp(rawio)
-        f.f = f
-        wr = weakref.ref(f)
-        del f
-        support.gc_collect()
+        with support.check_warnings(('', ResourceWarning)):
+            rawio = self.FileIO(support.TESTFN, "w+b")
+            f = self.tp(rawio)
+            f.f = f
+            wr = weakref.ref(f)
+            del f
+            support.gc_collect()
         self.assertTrue(wr() is None, wr)
 
     def test_args_error(self):
@@ -1366,13 +1367,14 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         # C BufferedWriter objects are collected, and collecting them flushes
         # all data to disk.
         # The Python version has __del__, so it ends into gc.garbage instead
-        rawio = self.FileIO(support.TESTFN, "w+b")
-        f = self.tp(rawio)
-        f.write(b"123xxx")
-        f.x = f
-        wr = weakref.ref(f)
-        del f
-        support.gc_collect()
+        with support.check_warnings(('', ResourceWarning)):
+            rawio = self.FileIO(support.TESTFN, "w+b")
+            f = self.tp(rawio)
+            f.write(b"123xxx")
+            f.x = f
+            wr = weakref.ref(f)
+            del f
+            support.gc_collect()
         self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"123xxx")
@@ -2607,14 +2609,15 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         # C TextIOWrapper objects are collected, and collecting them flushes
         # all data to disk.
         # The Python version has __del__, so it ends in gc.garbage instead.
-        rawio = io.FileIO(support.TESTFN, "wb")
-        b = self.BufferedWriter(rawio)
-        t = self.TextIOWrapper(b, encoding="ascii")
-        t.write("456def")
-        t.x = t
-        wr = weakref.ref(t)
-        del t
-        support.gc_collect()
+        with support.check_warnings(('', ResourceWarning)):
+            rawio = io.FileIO(support.TESTFN, "wb")
+            b = self.BufferedWriter(rawio)
+            t = self.TextIOWrapper(b, encoding="ascii")
+            t.write("456def")
+            t.x = t
+            wr = weakref.ref(t)
+            del t
+            support.gc_collect()
         self.assertTrue(wr() is None, wr)
         with self.open(support.TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"456def")
