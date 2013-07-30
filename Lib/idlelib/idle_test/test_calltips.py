@@ -1,7 +1,7 @@
 import unittest
 import idlelib.CallTips as ct
 
-class Test_get_entity(unittest.TestCase):
+class Get_entityTest(unittest.TestCase):
     def test_bad_entity(self):
         self.assertIsNone(ct.get_entity('1/0'))
     def test_good_entity(self):
