@@ -22,7 +22,7 @@ class Dummy_name_dialog(object):
 orig_mbox = name_dialog_module.tkMessageBox
 showerror = Mbox.showerror
 
-class TestConfigName(unittest.TestCase):
+class ConfigNameTest(unittest.TestCase):
     dialog = Dummy_name_dialog()
 
     @classmethod

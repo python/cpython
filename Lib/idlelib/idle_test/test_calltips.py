@@ -2,7 +2,7 @@ import unittest
 import idlelib.CallTips as ct
 CTi = ct.CallTips()
 
-class Test_get_entity(unittest.TestCase):
+class Get_entityTest(unittest.TestCase):
     # In 3.x, get_entity changed from 'instance method' to module function
     # since 'self' not used. Use dummy instance until change 2.7 also.
     def test_bad_entity(self):
