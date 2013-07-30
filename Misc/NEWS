@@ -171,6 +171,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18599: Fix name attribute of _sha1.sha1() object. It now returns
+  'SHA1' instead of 'SHA'.
+
 - Issue #13266: Added inspect.unwrap to easily unravel __wrapped__ chains
   (initial patch by Daniel Urban and Aaron Iles)
 
