@@ -211,6 +211,12 @@ HOST_GNU_TYPE=	@host@
 PROFILE_TASK=	$(srcdir)/Tools/pybench/pybench.py -n 2 --with-gc --with-syscheck
 #PROFILE_TASK=	$(srcdir)/Lib/test/regrtest.py
 
+# report files for gcov / lcov coverage report
+COVERAGE_INFO=	$(abs_builddir)/coverage.info
+COVERAGE_REPORT=$(abs_builddir)/lcov-report
+COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
+
+
 # === Definitions added by makesetup ===
 
 
@@ -463,11 +469,48 @@ run_profile_task:
 build_all_use_profile:
 	$(MAKE) all CFLAGS="$(CFLAGS) -fprofile-use -fprofile-correction"
 
+# Compile and run with gcov
+.PHONY=coverage coverage-lcov coverage-report
 coverage:
 	@echo "Building with support for coverage checking:"
-	$(MAKE) clean
+	$(MAKE) clean profile-removal
 	$(MAKE) all CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
 
+coverage-lcov:
+	@echo "Creating Coverage HTML report with LCOV:"
+	@rm -f $(COVERAGE_INFO)
+	@rm -rf $(COVERAGE_REPORT)
+	@lcov --capture --directory $(abs_builddir) \
+	    --base-directory $(realpath $(abs_builddir)) \
+	    --path $(realpath $(abs_srcdir)) \
+	    --output-file $(COVERAGE_INFO)
+	: # remove 3rd party modules and system headers
+	@lcov --remove $(COVERAGE_INFO) \
+	    '*/Modules/_ctypes/libffi*/*' \
+	    '*/Modules/_sha3/keccak/*' \
+	    '*/Modules/_decimal/libmpdec/*' \
+	    '*/Modules/expat/*' \
+	    '*/Modules/zlib/*' \
+	    '*/Include/*' \
+	    '/usr/include/*' \
+	    '/usr/local/include/*' \
+	    --output-file $(COVERAGE_INFO)
+	@genhtml $(COVERAGE_INFO) --output-directory $(COVERAGE_REPORT) \
+	    $(COVERAGE_REPORT_OPTIONS)
+	@echo
+	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
+	@echo
+
+coverage-report:
+	: # force rebuilding of parser and importlib
+	@touch $(GRAMMAR_INPUT)
+	@touch $(srcdir)/Lib/importlib/_bootstrap.py
+	: # build with coverage info
+	$(MAKE) coverage
+	: # run tests, ignore failures
+	$(TESTRUNNER) $(TESTOPTS) || true
+	: # build lcov report
+	$(MAKE) coverage-lcov
 
 # Build the interpreter
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
@@ -1396,6 +1439,8 @@ clean: pycremoval
 
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'
+	rm -f $(COVERAGE_INFO)
+	rm -rf $(COVERAGE_REPORT)
 
 clobber: clean profile-removal
 	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
