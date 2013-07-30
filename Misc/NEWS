@@ -57,6 +57,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18599: Fix name attribute of _sha1.sha1() object. It now returns
+  'SHA1' instead of 'SHA'.
+
 - Issue #18561: Skip name in ctypes' _build_callargs() if name is NULL.
 
 - Issue #18559: Fix NULL pointer dereference error in _pickle module
