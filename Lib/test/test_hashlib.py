@@ -105,10 +105,14 @@ class HashLibTestCase(unittest.TestCase):
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
+    @property
+    def hash_constructors(self):
+        constructors = self.constructors_to_test.values()
+        return itertools.chain.from_iterable(constructors)
+
     def test_hash_array(self):
         a = array.array("b", range(10))
-        constructors = self.constructors_to_test.values()
-        for cons in itertools.chain.from_iterable(constructors):
+        for cons in self.hash_constructors:
             c = cons(a)
             c.hexdigest()
 
@@ -145,8 +149,8 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(TypeError, get_builtin_constructor, 3)
 
     def test_hexdigest(self):
-        for name in self.supported_hash_names:
-            h = hashlib.new(name)
+        for cons in self.hash_constructors:
+            h = cons()
             assert isinstance(h.digest(), bytes), name
             self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
@@ -155,30 +159,48 @@ class HashLibTestCase(unittest.TestCase):
         aas = b'a' * 128
         bees = b'b' * 127
         cees = b'c' * 126
+        dees = b'd' * 2048 #  HASHLIB_GIL_MINSIZE
 
-        for name in self.supported_hash_names:
-            m1 = hashlib.new(name)
+        for cons in self.hash_constructors:
+            m1 = cons()
             m1.update(aas)
             m1.update(bees)
             m1.update(cees)
+            m1.update(dees)
 
-            m2 = hashlib.new(name)
-            m2.update(aas + bees + cees)
+            m2 = cons()
+            m2.update(aas + bees + cees + dees)
             self.assertEqual(m1.digest(), m2.digest())
 
-    def check(self, name, data, digest):
-        digest = digest.lower()
+            m3 = cons(aas + bees + cees + dees)
+            self.assertEqual(m1.digest(), m3.digest())
+
+            # verify copy() doesn't touch original
+            m4 = cons(aas + bees + cees)
+            m4_digest = m4.digest()
+            m4_copy = m4.copy()
+            m4_copy.update(dees)
+            self.assertEqual(m1.digest(), m4_copy.digest())
+            self.assertEqual(m4.digest(), m4_digest)
+
+    def check(self, name, data, hexdigest):
+        hexdigest = hexdigest.lower()
         constructors = self.constructors_to_test[name]
         # 2 is for hashlib.name(...) and hashlib.new(name, ...)
         self.assertGreaterEqual(len(constructors), 2)
         for hash_object_constructor in constructors:
-            computed = hash_object_constructor(data).hexdigest()
+            m = hash_object_constructor(data)
+            computed = m.hexdigest()
             self.assertEqual(
-                    computed, digest,
+                    computed, hexdigest,
                     "Hash algorithm %s constructed using %s returned hexdigest"
                     " %r for %d byte input data that should have hashed to %r."
                     % (name, hash_object_constructor,
-                       computed, len(data), digest))
+                       computed, len(data), hexdigest))
+            computed = m.digest()
+            digest = bytes.fromhex(hexdigest)
+            self.assertEqual(computed, digest)
+            self.assertEqual(len(digest), m.digest_size)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -197,6 +219,29 @@ class HashLibTestCase(unittest.TestCase):
         self.check_no_unicode('sha3_256')
         self.check_no_unicode('sha3_384')
         self.check_no_unicode('sha3_512')
+
+    def check_blocksize_name(self, name, block_size=0, digest_size=0):
+        constructors = self.constructors_to_test[name]
+        for hash_object_constructor in constructors:
+            m = hash_object_constructor()
+            self.assertEqual(m.block_size, block_size)
+            self.assertEqual(m.digest_size, digest_size)
+            self.assertEqual(len(m.digest()), digest_size)
+            self.assertEqual(m.name.lower(), name.lower())
+            # split for sha3_512 / _sha3.sha3 object
+            self.assertIn(name.split("_")[0], repr(m).lower())
+
+    def test_blocksize_name(self):
+        self.check_blocksize_name('md5', 64, 16)
+        self.check_blocksize_name('sha1', 64, 20)
+        self.check_blocksize_name('sha224', 64, 28)
+        self.check_blocksize_name('sha256', 64, 32)
+        self.check_blocksize_name('sha384', 128, 48)
+        self.check_blocksize_name('sha512', 128, 64)
+        self.check_blocksize_name('sha3_224', NotImplemented, 28)
+        self.check_blocksize_name('sha3_256', NotImplemented, 32)
+        self.check_blocksize_name('sha3_384', NotImplemented, 48)
+        self.check_blocksize_name('sha3_512', NotImplemented, 64)
 
     def test_case_md5_0(self):
         self.check('md5', b'', 'd41d8cd98f00b204e9800998ecf8427e')
@@ -439,13 +484,13 @@ class HashLibTestCase(unittest.TestCase):
         # for multithreaded operation (which is hardwired to 2048).
         gil_minsize = 2048
 
-        for name in self.supported_hash_names:
-            m = hashlib.new(name)
+        for cons in self.hash_constructors:
+            m = cons()
             m.update(b'1')
             m.update(b'#' * gil_minsize)
             m.update(b'1')
 
-            m = hashlib.new(name, b'x' * gil_minsize)
+            m = cons(b'x' * gil_minsize)
             m.update(b'1')
 
         m = hashlib.md5()
