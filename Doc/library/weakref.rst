@@ -529,22 +529,13 @@ follows::
         def __del__(self):
             self.remove()
 
-This solution has a couple of serious problems:
+This solution has a serious problem: the :meth:`__del__` method may be
+called at shutdown after the :mod:`shutil` module has been cleaned up,
+in which case :attr:`shutil.rmtree` will have been replaced by :const:`None`.
+This will cause the :meth:`__del__` method to fail and the directory
+will not be removed.
 
-* There is no guarantee that the object will be garbage collected
-  before the program exists, so the directory might be left.  This is
-  because reference cycles containing an object with a :meth:`__del__`
-  method can never be collected.  And even if the :class:`TempDir`
-  object is not itself part of a reference cycle, it may still be kept
-  alive by some unkown uncollectable reference cycle.
-
-* The :meth:`__del__` method may be called at shutdown after the
-  :mod:`shutil` module has been cleaned up, in which case
-  :attr:`shutil.rmtree` will have been replaced by :const:`None`.
-  This will cause the :meth:`__del__` method to fail and the directory
-  will not be removed.
-
-Using finalizers we can avoid these problems::
+Using finalizers we can avoid this problem::
 
     class TempDir:
         def __init__(self):

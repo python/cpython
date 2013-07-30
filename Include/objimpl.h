@@ -256,6 +256,30 @@ extern PyGC_Head *_PyGC_generation0;
 
 #define _Py_AS_GC(o) ((PyGC_Head *)(o)-1)
 
+/* Bit 0 is set when tp_finalize is called */
+#define _PyGC_REFS_MASK_FINALIZED  (1 << 0)
+/* The (N-1) most significant bits contain the gc state / refcount */
+#define _PyGC_REFS_SHIFT           (1)
+#define _PyGC_REFS_MASK            (((size_t) -1) << _PyGC_REFS_SHIFT)
+
+#define _PyGCHead_REFS(g) ((g)->gc.gc_refs >> _PyGC_REFS_SHIFT)
+#define _PyGCHead_SET_REFS(g, v) do { \
+    (g)->gc.gc_refs = ((g)->gc.gc_refs & ~_PyGC_REFS_MASK) \
+        | (v << _PyGC_REFS_SHIFT); \
+    } while (0)
+#define _PyGCHead_DECREF(g) ((g)->gc.gc_refs -= 1 << _PyGC_REFS_SHIFT)
+
+#define _PyGCHead_FINALIZED(g) (((g)->gc.gc_refs & _PyGC_REFS_MASK_FINALIZED) != 0)
+#define _PyGCHead_SET_FINALIZED(g, v) do {  \
+    (g)->gc.gc_refs = ((g)->gc.gc_refs & ~_PyGC_REFS_MASK_FINALIZED) \
+        | (v != 0); \
+    } while (0)
+
+#define _PyGC_FINALIZED(o) _PyGCHead_FINALIZED(_Py_AS_GC(o))
+#define _PyGC_SET_FINALIZED(o, v) _PyGCHead_SET_FINALIZED(_Py_AS_GC(o), v)
+
+#define _PyGC_REFS(o) _PyGCHead_REFS(_Py_AS_GC(o))
+
 #define _PyGC_REFS_UNTRACKED                    (-2)
 #define _PyGC_REFS_REACHABLE                    (-3)
 #define _PyGC_REFS_TENTATIVELY_UNREACHABLE      (-4)
@@ -264,9 +288,9 @@ extern PyGC_Head *_PyGC_generation0;
  * collector it must be safe to call the ob_traverse method. */
 #define _PyObject_GC_TRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
-    if (g->gc.gc_refs != _PyGC_REFS_UNTRACKED) \
+    if (_PyGCHead_REFS(g) != _PyGC_REFS_UNTRACKED) \
         Py_FatalError("GC object already tracked"); \
-    g->gc.gc_refs = _PyGC_REFS_REACHABLE; \
+    _PyGCHead_SET_REFS(g, _PyGC_REFS_REACHABLE); \
     g->gc.gc_next = _PyGC_generation0; \
     g->gc.gc_prev = _PyGC_generation0->gc.gc_prev; \
     g->gc.gc_prev->gc.gc_next = g; \
@@ -279,8 +303,8 @@ extern PyGC_Head *_PyGC_generation0;
  */
 #define _PyObject_GC_UNTRACK(o) do { \
     PyGC_Head *g = _Py_AS_GC(o); \
-    assert(g->gc.gc_refs != _PyGC_REFS_UNTRACKED); \
-    g->gc.gc_refs = _PyGC_REFS_UNTRACKED; \
+    assert(_PyGCHead_REFS(g) != _PyGC_REFS_UNTRACKED); \
+    _PyGCHead_SET_REFS(g, _PyGC_REFS_UNTRACKED); \
     g->gc.gc_prev->gc.gc_next = g->gc.gc_next; \
     g->gc.gc_next->gc.gc_prev = g->gc.gc_prev; \
     g->gc.gc_next = NULL; \
@@ -288,7 +312,7 @@ extern PyGC_Head *_PyGC_generation0;
 
 /* True if the object is currently tracked by the GC. */
 #define _PyObject_GC_IS_TRACKED(o) \
-    ((_Py_AS_GC(o))->gc.gc_refs != _PyGC_REFS_UNTRACKED)
+    (_PyGC_REFS(o) != _PyGC_REFS_UNTRACKED)
 
 /* True if the object may be tracked by the GC in the future, or already is.
    This can be useful to implement some optimizations. */

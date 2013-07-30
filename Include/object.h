@@ -408,6 +408,8 @@ typedef struct _typeobject {
     /* Type attribute cache version tag. Added in version 2.6 */
     unsigned int tp_version_tag;
 
+    destructor tp_finalize;
+
 #ifdef COUNT_ALLOCS
     /* these must be last and never explicitly initialized */
     Py_ssize_t tp_allocs;
@@ -529,6 +531,8 @@ PyAPI_FUNC(int) PyObject_Not(PyObject *);
 PyAPI_FUNC(int) PyCallable_Check(PyObject *);
 
 PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
+PyAPI_FUNC(void) PyObject_CallFinalizer(PyObject *);
+PyAPI_FUNC(int) PyObject_CallFinalizerFromDealloc(PyObject *);
 
 /* Same as PyObject_Generic{Get,Set}Attr, but passing the attributes
    dict as the last parameter. */
@@ -645,6 +649,12 @@ given type object has a specified feature.
                  Py_TPFLAGS_HAVE_STACKLESS_EXTENSION | \
                  Py_TPFLAGS_HAVE_VERSION_TAG | \
                 0)
+
+/* NOTE: The following flags reuse lower bits (removed as part of the
+ * Python 3.0 transition). */
+
+/* Type structure has tp_finalize member (3.4) */
+#define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 
 #ifdef Py_LIMITED_API
 #define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)

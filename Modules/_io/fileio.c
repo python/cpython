@@ -51,7 +51,7 @@ typedef struct {
     unsigned int writable : 1;
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
-    unsigned int deallocating: 1;
+    char finalizing;
     PyObject *weakreflist;
     PyObject *dict;
 } fileio;
@@ -128,7 +128,7 @@ fileio_close(fileio *self)
         self->fd = -1;
         Py_RETURN_NONE;
     }
-    if (self->deallocating) {
+    if (self->finalizing) {
         PyObject *r = fileio_dealloc_warn(self, (PyObject *) self);
         if (r)
             Py_DECREF(r);
@@ -447,7 +447,7 @@ fileio_clear(fileio *self)
 static void
 fileio_dealloc(fileio *self)
 {
-    self->deallocating = 1;
+    self->finalizing = 1;
     if (_PyIOBase_finalize((PyObject *) self) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
@@ -1182,6 +1182,11 @@ static PyGetSetDef fileio_getsetlist[] = {
     {NULL},
 };
 
+static PyMemberDef fileio_members[] = {
+    {"_finalizing", T_BOOL, offsetof(fileio, finalizing), 0},
+    {NULL}
+};
+
 PyTypeObject PyFileIO_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_io.FileIO",
@@ -1203,7 +1208,7 @@ PyTypeObject PyFileIO_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
-                    | Py_TPFLAGS_HAVE_GC,       /* tp_flags */
+        | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,       /* tp_flags */
     fileio_doc,                                 /* tp_doc */
     (traverseproc)fileio_traverse,              /* tp_traverse */
     (inquiry)fileio_clear,                      /* tp_clear */
@@ -1212,7 +1217,7 @@ PyTypeObject PyFileIO_Type = {
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     fileio_methods,                             /* tp_methods */
-    0,                                          /* tp_members */
+    fileio_members,                             /* tp_members */
     fileio_getsetlist,                          /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
@@ -1223,4 +1228,13 @@ PyTypeObject PyFileIO_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     fileio_new,                                 /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
+    0,                                          /* tp_is_gc */
+    0,                                          /* tp_bases */
+    0,                                          /* tp_mro */
+    0,                                          /* tp_cache */
+    0,                                          /* tp_subclasses */
+    0,                                          /* tp_weaklist */
+    0,                                          /* tp_del */
+    0,                                          /* tp_version_tag */
+    0,                                          /* tp_finalize */
 };

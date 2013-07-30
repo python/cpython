@@ -2491,6 +2491,85 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
     return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
 }
 
+static void
+slot_tp_del(PyObject *self)
+{
+    _Py_IDENTIFIER(__tp_del__);
+    PyObject *del, *res;
+    PyObject *error_type, *error_value, *error_traceback;
+
+    /* Temporarily resurrect the object. */
+    assert(self->ob_refcnt == 0);
+    self->ob_refcnt = 1;
+
+    /* Save the current exception, if any. */
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    /* Execute __del__ method, if any. */
+    del = _PyObject_LookupSpecial(self, &PyId___tp_del__);
+    if (del != NULL) {
+        res = PyEval_CallObject(del, NULL);
+        if (res == NULL)
+            PyErr_WriteUnraisable(del);
+        else
+            Py_DECREF(res);
+        Py_DECREF(del);
+    }
+
+    /* Restore the saved exception. */
+    PyErr_Restore(error_type, error_value, error_traceback);
+
+    /* Undo the temporary resurrection; can't use DECREF here, it would
+     * cause a recursive call.
+     */
+    assert(self->ob_refcnt > 0);
+    if (--self->ob_refcnt == 0)
+        return;         /* this is the normal path out */
+
+    /* __del__ resurrected it!  Make it look like the original Py_DECREF
+     * never happened.
+     */
+    {
+        Py_ssize_t refcnt = self->ob_refcnt;
+        _Py_NewReference(self);
+        self->ob_refcnt = refcnt;
+    }
+    assert(!PyType_IS_GC(Py_TYPE(self)) ||
+           _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
+    /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
+     * we need to undo that. */
+    _Py_DEC_REFTOTAL;
+    /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
+     * chain, so no more to do there.
+     * If COUNT_ALLOCS, the original decref bumped tp_frees, and
+     * _Py_NewReference bumped tp_allocs:  both of those need to be
+     * undone.
+     */
+#ifdef COUNT_ALLOCS
+    --Py_TYPE(self)->tp_frees;
+    --Py_TYPE(self)->tp_allocs;
+#endif
+}
+
+static PyObject *
+with_tp_del(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    PyTypeObject *tp;
+
+    if (!PyArg_ParseTuple(args, "O:with_tp_del", &obj))
+        return NULL;
+    tp = (PyTypeObject *) obj;
+    if (!PyType_Check(obj) || !PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
+        PyErr_Format(PyExc_TypeError,
+                     "heap type expected, got %R", obj);
+        return NULL;
+    }
+    tp->tp_del = slot_tp_del;
+    Py_INCREF(obj);
+    return obj;
+}
+
 static PyObject *
 _test_incref(PyObject *ob)
 {
@@ -2789,6 +2868,7 @@ static PyMethodDef TestMethods[] = {
     {"pytime_object_to_time_t", test_pytime_object_to_time_t,  METH_VARARGS},
     {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
+    {"with_tp_del",             with_tp_del,                     METH_VARARGS},
     {"test_pymem",
      (PyCFunction)test_pymem_alloc0, METH_NOARGS},
     {"test_pymem_alloc0",

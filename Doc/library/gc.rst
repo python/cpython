@@ -176,30 +176,23 @@ values but should not rebind them):
 
 .. data:: garbage
 
-   A list of objects which the collector found to be unreachable but could not be
-   freed (uncollectable objects).  By default, this list contains only objects with
-   :meth:`__del__` methods. Objects that have :meth:`__del__` methods and are
-   part of a reference cycle cause the entire reference cycle to be uncollectable,
-   including objects not necessarily in the cycle but reachable only from it.
-   Python doesn't collect such cycles automatically because, in general, it isn't
-   possible for Python to guess a safe order in which to run the :meth:`__del__`
-   methods.  If you know a safe order, you can force the issue by examining the
-   *garbage* list, and explicitly breaking cycles due to your objects within the
-   list.  Note that these objects are kept alive even so by virtue of being in the
-   *garbage* list, so they should be removed from *garbage* too.  For example,
-   after breaking cycles, do ``del gc.garbage[:]`` to empty the list.  It's
-   generally better to avoid the issue by not creating cycles containing objects
-   with :meth:`__del__` methods, and *garbage* can be examined in that case to
-   verify that no such cycles are being created.
+   A list of objects which the collector found to be unreachable but could
+   not be freed (uncollectable objects).  Starting with Python 3.4, this
+   list should be empty most of the time, except when using instances of
+   C extension types with a non-NULL ``tp_del`` slot.
 
-   If :const:`DEBUG_SAVEALL` is set, then all unreachable objects will be added
-   to this list rather than freed.
+   If :const:`DEBUG_SAVEALL` is set, then all unreachable objects will be
+   added to this list rather than freed.
 
    .. versionchanged:: 3.2
       If this list is non-empty at interpreter shutdown, a
       :exc:`ResourceWarning` is emitted, which is silent by default.  If
       :const:`DEBUG_UNCOLLECTABLE` is set, in addition all uncollectable objects
       are printed.
+
+   .. versionchanged:: 3.4
+      Following :pep:`442`, objects with a :meth:`__del__` method don't end
+      up in :attr:`gc.garbage` anymore.
 
 .. data:: callbacks
 
