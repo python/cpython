@@ -21,7 +21,7 @@ from multiprocessing.forking import assert_spawning
 __all__ = ['BufferWrapper']
 
 #
-# Inheirtable class which wraps an mmap, and from which blocks can be allocated
+# Inheritable class which wraps an mmap, and from which blocks can be allocated
 #
 
 if sys.platform == 'win32':
