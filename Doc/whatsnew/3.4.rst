@@ -239,8 +239,11 @@ wave
 The :meth:`~wave.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 
+:meth:`wave.open` now supports the context manager protocol.  (Contributed
+by Claudiu Popa in :issue:`17616`.)
+
 stat
----
+----
 
 The stat module is now backed by a C implementation in :mod:`_stat`. A C
 implementation is required as most of the values aren't standardized and
