@@ -322,7 +322,7 @@ SHA3_update(SHA3object *self, PyObject *args)
     GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
 
     /* add new data, the function takes the length in bits not bytes */
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
         self->lock = PyThread_allocate_lock();
     }
