@@ -74,6 +74,9 @@ Library
   the default for linking if LDSHARED is not also overriden.  This restores
   Distutils behavior introduced in 2.7.3 and inadvertently dropped in 2.7.4.
 
+- Issue #18071: C extension module builds on OS X could fail with TypeError
+  if the Xcode command line tools were not installed.
+
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
   set_userptr() method.  Reported by Atsuo Ishimoto.
 
