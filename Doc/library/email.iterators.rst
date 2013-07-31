@@ -68,7 +68,7 @@ The following function has been added as a useful debugging tool.  It should
                   text/plain
           text/plain
 
-   .. testcleanup::
+   .. testsetup::
 
       >>> somefile.close()
 
