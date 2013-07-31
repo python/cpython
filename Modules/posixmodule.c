@@ -4751,6 +4751,7 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
 
     memset(&path, 0, sizeof(path));
+    memset(&utime, 0, sizeof(utime_t));
 #if UTIME_HAVE_FD
     path.allow_fd = 1;
 #endif
