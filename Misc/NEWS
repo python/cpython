@@ -173,6 +173,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17616: wave.open now supports the context manager protocol.
+
 - Issue #18599: Fix name attribute of _sha1.sha1() object. It now returns
   'SHA1' instead of 'SHA'.
 
