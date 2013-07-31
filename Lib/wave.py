@@ -167,6 +167,13 @@ class Wave_read:
 
     def __del__(self):
         self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     #
     # User visible methods.
     #
@@ -321,6 +328,12 @@ class Wave_write:
         self._headerwritten = False
 
     def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
         self.close()
 
     #
