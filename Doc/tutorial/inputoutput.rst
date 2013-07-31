@@ -322,9 +322,11 @@ first::
    >>> f.write(s)
    18
 
-``f.tell()`` returns an integer giving the file object's current position in the
-file, measured in bytes from the beginning of the file.  To change the file
-object's position, use ``f.seek(offset, from_what)``.  The position is computed
+``f.tell()`` returns an integer giving the file object's current position in the file
+represented as number of bytes from the beginning of the file when in `binary mode` and
+an opaque number when in `text mode`.
+
+To change the file object's position, use ``f.seek(offset, from_what)``.  The position is computed
 from adding *offset* to a reference point; the reference point is selected by
 the *from_what* argument.  A *from_what* value of 0 measures from the beginning
 of the file, 1 uses the current file position, and 2 uses the end of the file as
@@ -345,7 +347,10 @@ beginning of the file as the reference point. ::
 
 In text files (those opened without a ``b`` in the mode string), only seeks
 relative to the beginning of the file are allowed (the exception being seeking
-to the very file end with ``seek(0, 2)``).
+to the very file end with ``seek(0, 2)``) and the only valid *offset* values are
+those returned from the ``f.tell()``, or zero. Any other *offset* value produces
+undefined behaviour.
+
 
 When you're done with a file, call ``f.close()`` to close it and free up any
 system resources taken up by the open file.  After calling ``f.close()``,
