@@ -1,7 +1,5 @@
-from test.support import TESTFN, run_unittest
-import os
+from test.support import TESTFN, unlink
 import wave
-import struct
 import unittest
 
 nchannels = 2
@@ -17,10 +15,7 @@ class TestWave(unittest.TestCase):
     def tearDown(self):
         if self.f is not None:
             self.f.close()
-        try:
-            os.remove(TESTFN)
-        except OSError:
-            pass
+        unlink(TESTFN)
 
     def test_it(self, test_rounding=False):
         self.f = wave.open(TESTFN, 'wb')
@@ -74,9 +69,23 @@ class TestWave(unittest.TestCase):
         self.assertEqual(params.comptype, self.f.getcomptype())
         self.assertEqual(params.compname, self.f.getcompname())
 
+    def test_context_manager(self):
+        self.f = wave.open(TESTFN, 'wb')
+        self.f.setnchannels(nchannels)
+        self.f.setsampwidth(sampwidth)
+        self.f.setframerate(framerate)
+        self.f.close()
 
-def test_main():
-    run_unittest(TestWave)
+        with wave.open(TESTFN) as f:
+            self.assertFalse(f.getfp().closed)
+        self.assertIs(f.getfp(), None)
+
+        with open(TESTFN, 'wb') as testfile:
+            with self.assertRaises(wave.Error):
+                with wave.open(testfile, 'wb'):
+                    pass
+            self.assertEqual(testfile.closed, False)
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

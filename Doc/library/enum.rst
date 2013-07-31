@@ -483,7 +483,7 @@ Avoids having to specify the value for each enumeration member::
     ...     def __new__(cls):
     ...         value = len(cls.__members__) + 1
     ...         obj = object.__new__(cls)
-    ...         obj._value = value
+    ...         obj._value_ = value
     ...         return obj
     ...
     >>> class Color(AutoNumber):
@@ -505,19 +505,19 @@ enumerations)::
     >>> class OrderedEnum(Enum):
     ...     def __ge__(self, other):
     ...         if self.__class__ is other.__class__:
-    ...             return self._value >= other._value
+    ...             return self.value >= other.value
     ...         return NotImplemented
     ...     def __gt__(self, other):
     ...         if self.__class__ is other.__class__:
-    ...             return self._value > other._value
+    ...             return self.value > other.value
     ...         return NotImplemented
     ...     def __le__(self, other):
     ...         if self.__class__ is other.__class__:
-    ...             return self._value <= other._value
+    ...             return self.value <= other.value
     ...         return NotImplemented
     ...     def __lt__(self, other):
     ...         if self.__class__ is other.__class__:
-    ...             return self._value < other._value
+    ...             return self.value < other.value
     ...         return NotImplemented
     ...
     >>> class Grade(OrderedEnum):
