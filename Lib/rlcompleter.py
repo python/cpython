@@ -163,4 +163,3 @@ else:
     # contents are quasi-immortal, and the completer function holds a
     # reference to globals).
     atexit.register(lambda: readline.set_completer(None))
-
