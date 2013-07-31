@@ -11,6 +11,8 @@ typedef struct {
     PyObject *md_dict;
     struct PyModuleDef *md_def;
     void *md_state;
+    PyObject *md_weaklist;
+    PyObject *md_name;  /* for logging purposes after md_dict is cleared */
 } PyModuleObject;
 
 static PyMemberDef module_members[] = {
@@ -27,7 +29,8 @@ static PyTypeObject moduledef_type = {
 
 
 static int
-module_init_dict(PyObject *md_dict, PyObject *name, PyObject *doc)
+module_init_dict(PyModuleObject *mod, PyObject *md_dict,
+                 PyObject *name, PyObject *doc)
 {
     if (md_dict == NULL)
         return -1;
@@ -42,6 +45,11 @@ module_init_dict(PyObject *md_dict, PyObject *name, PyObject *doc)
         return -1;
     if (PyDict_SetItemString(md_dict, "__loader__", Py_None) != 0)
         return -1;
+    if (PyUnicode_CheckExact(name)) {
+        Py_INCREF(name);
+        Py_XDECREF(mod->md_name);
+        mod->md_name = name;
+    }
 
     return 0;
 }
@@ -56,8 +64,10 @@ PyModule_NewObject(PyObject *name)
         return NULL;
     m->md_def = NULL;
     m->md_state = NULL;
+    m->md_weaklist = NULL;
+    m->md_name = NULL;
     m->md_dict = PyDict_New();
-    if (module_init_dict(m->md_dict, name, NULL) != 0)
+    if (module_init_dict(m, m->md_dict, name, NULL) != 0)
         goto fail;
     PyObject_GC_Track(m);
     return (PyObject *)m;
@@ -362,7 +372,7 @@ module_init(PyModuleObject *m, PyObject *args, PyObject *kwds)
             return -1;
         m->md_dict = dict;
     }
-    if (module_init_dict(dict, name, doc) < 0)
+    if (module_init_dict(m, dict, name, doc) < 0)
         return -1;
     return 0;
 }
@@ -371,12 +381,15 @@ static void
 module_dealloc(PyModuleObject *m)
 {
     PyObject_GC_UnTrack(m);
+    if (Py_VerboseFlag && m->md_name) {
+        PySys_FormatStderr("# destroy %S\n", m->md_name);
+    }
+    if (m->md_weaklist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) m);
     if (m->md_def && m->md_def->m_free)
         m->md_def->m_free(m);
-    if (m->md_dict != NULL) {
-        _PyModule_Clear((PyObject *)m);
-        Py_DECREF(m->md_dict);
-    }
+    Py_XDECREF(m->md_dict);
+    Py_XDECREF(m->md_name);
     if (m->md_state != NULL)
         PyMem_FREE(m->md_state);
     Py_TYPE(m)->tp_free((PyObject *)m);
@@ -522,7 +535,7 @@ PyTypeObject PyModule_Type = {
     (traverseproc)module_traverse,              /* tp_traverse */
     (inquiry)module_clear,                      /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    offsetof(PyModuleObject, md_weaklist),      /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     module_methods,                             /* tp_methods */

@@ -1,6 +1,7 @@
 # Test the module type
 import unittest
 from test.support import run_unittest, gc_collect
+from test.script_helper import assert_python_ok
 
 import sys
 ModuleType = type(sys)
@@ -70,7 +71,6 @@ class ModuleTests(unittest.TestCase):
                "__loader__": None, "__package__": None})
         self.assertTrue(foo.__dict__ is d)
 
-    @unittest.expectedFailure
     def test_dont_clear_dict(self):
         # See issue 7140.
         def f():
@@ -180,6 +180,19 @@ a = A(destroyed)"""
         r = repr(unittest)
         self.assertEqual(r[:25], "<module 'unittest' from '")
         self.assertEqual(r[-13:], "__init__.py'>")
+
+    def test_module_finalization_at_shutdown(self):
+        # Module globals and builtins should still be available during shutdown
+        rc, out, err = assert_python_ok("-c", "from test import final_a")
+        self.assertFalse(err)
+        lines = out.splitlines()
+        self.assertEqual(set(lines), {
+            b"x = a",
+            b"x = b",
+            b"final_a.x = a",
+            b"final_b.x = b",
+            b"len = len",
+            b"shutil.rmtree = rmtree"})
 
     # frozen and namespace module reprs are tested in importlib.
 
