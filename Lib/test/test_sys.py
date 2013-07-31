@@ -810,7 +810,7 @@ class SizeofTest(unittest.TestCase):
         # memoryview
         check(memoryview(b''), size('Pnin 2P2n2i5P 3cPn'))
         # module
-        check(unittest, size('PnP'))
+        check(unittest, size('PnPPP'))
         # None
         check(None, size(''))
         # NotImplementedType

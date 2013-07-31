@@ -277,6 +277,7 @@ static char* sys_deletes[] = {
     "path", "argv", "ps1", "ps2",
     "last_type", "last_value", "last_traceback",
     "path_hooks", "path_importer_cache", "meta_path",
+    "__interactivehook__",
     /* misc stuff */
     "flags", "float_info",
     NULL
@@ -289,40 +290,17 @@ static char* sys_files[] = {
     NULL
 };
 
-static int
-is_essential_module(PyObject *name)
-{
-    Py_ssize_t name_len;
-    char *name_str = PyUnicode_AsUTF8AndSize(name, &name_len);
-
-    if (name_str == NULL) {
-        PyErr_Clear();
-        return 0;
-    }
-    if (strcmp(name_str, "builtins") == 0)
-        return 1;
-    if (strcmp(name_str, "sys") == 0)
-        return 1;
-    /* These are all needed for stderr to still function */
-    if (strcmp(name_str, "codecs") == 0)
-        return 1;
-    if (strcmp(name_str, "_codecs") == 0)
-        return 1;
-    if (strncmp(name_str, "encodings.", 10) == 0)
-        return 1;
-    return 0;
-}
-
-
 /* Un-initialize things, as good as we can */
 
 void
 PyImport_Cleanup(void)
 {
-    Py_ssize_t pos, ndone;
+    Py_ssize_t pos;
     PyObject *key, *value, *dict;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
+    PyObject *builtins = interp->builtins;
+    PyObject *weaklist = NULL;
 
     if (modules == NULL)
         return; /* Already done */
@@ -332,6 +310,8 @@ PyImport_Cleanup(void)
        destructors fail.  Since the modules containing them are
        deleted *last* of all, they would come too late in the normal
        destruction order.  Sigh. */
+
+    /* XXX Perhaps these precautions are obsolete. Who knows? */
 
     value = PyDict_GetItemString(modules, "builtins");
     if (value != NULL && PyModule_Check(value)) {
@@ -360,87 +340,84 @@ PyImport_Cleanup(void)
         }
     }
 
-    /* First, delete __main__ */
-    value = PyDict_GetItemString(modules, "__main__");
-    if (value != NULL && PyModule_Check(value)) {
-        if (Py_VerboseFlag)
-            PySys_WriteStderr("# cleanup __main__\n");
-        _PyModule_Clear(value);
-        PyDict_SetItemString(modules, "__main__", Py_None);
+    /* We prepare a list which will receive (name, weakref) tuples of
+       modules when they are removed from sys.modules.  The name is used
+       for diagnosis messages (in verbose mode), while the weakref helps
+       detect those modules which have been held alive. */
+    weaklist = PyList_New(0);
+
+#define STORE_MODULE_WEAKREF(mod) \
+    if (weaklist != NULL) { \
+        PyObject *name = PyModule_GetNameObject(mod); \
+        PyObject *wr = PyWeakref_NewRef(mod, NULL); \
+        if (name && wr) { \
+            PyObject *tup = PyTuple_Pack(2, name, wr); \
+            PyList_Append(weaklist, tup); \
+            Py_XDECREF(tup); \
+        } \
+        Py_XDECREF(name); \
+        Py_XDECREF(wr); \
+        if (PyErr_Occurred()) \
+            PyErr_Clear(); \
     }
 
-    /* The special treatment of "builtins" here is because even
-       when it's not referenced as a module, its dictionary is
-       referenced by almost every module's __builtins__.  Since
-       deleting a module clears its dictionary (even if there are
-       references left to it), we need to delete the "builtins"
-       module last.  Likewise, we don't delete sys until the very
-       end because it is implicitly referenced (e.g. by print).
-
-       Also note that we 'delete' modules by replacing their entry
-       in the modules dict with None, rather than really deleting
-       them; this avoids a rehash of the modules dictionary and
-       also marks them as "non existent" so they won't be
-       re-imported. */
-
-    /* Next, repeatedly delete modules with a reference count of
-       one (skipping builtins and sys) and delete them */
-    do {
-        ndone = 0;
-        pos = 0;
-        while (PyDict_Next(modules, &pos, &key, &value)) {
-            if (value->ob_refcnt != 1)
-                continue;
-            if (PyUnicode_Check(key) && PyModule_Check(value)) {
-                if (is_essential_module(key))
-                    continue;
-                if (Py_VerboseFlag)
-                    PySys_FormatStderr(
-                        "# cleanup[1] %U\n", key);
-                _PyModule_Clear(value);
-                PyDict_SetItem(modules, key, Py_None);
-                ndone++;
-            }
-        }
-    } while (ndone > 0);
-
-    /* Next, delete all modules (still skipping builtins and sys) */
+    /* Remove all modules from sys.modules, hoping that garbage collection
+       can reclaim most of them. */
     pos = 0;
     while (PyDict_Next(modules, &pos, &key, &value)) {
-        if (PyUnicode_Check(key) && PyModule_Check(value)) {
-            if (is_essential_module(key))
-                continue;
-            if (Py_VerboseFlag)
-                PySys_FormatStderr("# cleanup[2] %U\n", key);
-            _PyModule_Clear(value);
+        if (PyModule_Check(value)) {
+            if (Py_VerboseFlag && PyUnicode_Check(key))
+                PySys_FormatStderr("# cleanup[2] removing %U\n", key, value);
+            STORE_MODULE_WEAKREF(value);
             PyDict_SetItem(modules, key, Py_None);
         }
     }
 
-    /* Collect garbage remaining after deleting the modules. Mostly
-       reference cycles created by classes. */
-    PyGC_Collect();
-
+    /* Clear the modules dict. */
+    PyDict_Clear(modules);
+    /* Replace the interpreter's reference to builtins with an empty dict
+       (module globals still have a reference to the original builtins). */
+    builtins = interp->builtins;
+    interp->builtins = PyDict_New();
+    Py_DECREF(builtins);
+    /* Collect references */
+    _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
     _PyGC_DumpShutdownStats();
 
-    /* Next, delete all remaining modules */
-    pos = 0;
-    while (PyDict_Next(modules, &pos, &key, &value)) {
-        if (PyUnicode_Check(key) && PyModule_Check(value)) {
+    /* Now, if there are any modules left alive, clear their globals to
+       minimize potential leaks.  All C extension modules actually end
+       up here, since they are kept alive in the interpreter state. */
+    if (weaklist != NULL) {
+        Py_ssize_t i, n;
+        n = PyList_GET_SIZE(weaklist);
+        for (i = 0; i < n; i++) {
+            PyObject *tup = PyList_GET_ITEM(weaklist, i);
+            PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
+            if (mod == Py_None)
+                continue;
+            Py_INCREF(mod);
+            assert(PyModule_Check(mod));
             if (Py_VerboseFlag)
-                PySys_FormatStderr("# cleanup[3] %U\n", key);
-            _PyModule_Clear(value);
-            PyDict_SetItem(modules, key, Py_None);
+                PySys_FormatStderr("# cleanup[3] wiping %U\n",
+                                   PyTuple_GET_ITEM(tup, 0), mod);
+            _PyModule_Clear(mod);
+            Py_DECREF(mod);
         }
+        Py_DECREF(weaklist);
     }
 
-    /* Finally, clear and delete the modules directory */
-    PyDict_Clear(modules);
-    _PyGC_CollectNoFail();
+    /* Clear and delete the modules directory.  Actual modules will
+       still be there only if imported during the execution of some
+       destructor. */
     interp->modules = NULL;
     Py_DECREF(modules);
+
+    /* Once more */
+    _PyGC_CollectNoFail();
+
+#undef STORE_MODULE_WEAKREF
 }
 
 

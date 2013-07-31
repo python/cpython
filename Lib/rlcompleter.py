@@ -29,6 +29,7 @@ Notes:
 
 """
 
+import atexit
 import builtins
 import __main__
 
@@ -158,3 +159,8 @@ except ImportError:
     pass
 else:
     readline.set_completer(Completer().complete)
+    # Release references early at shutdown (the readline module's
+    # contents are quasi-immortal, and the completer function holds a
+    # reference to globals).
+    atexit.register(lambda: readline.set_completer(None))
+
