@@ -464,7 +464,7 @@ SHA3_factory(PyObject *args, PyObject *kwdict, const char *fmt,
     }
 
     if (data_obj) {
-#ifdef WITH_THREADS
+#ifdef WITH_THREAD
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
             /* invariant: New objects can't be accessed by other code yet,
              * thus it's safe to release the GIL without locking the object.
