@@ -974,12 +974,12 @@ Test cases
       Test that a warning is triggered when *callable* is called with any
       positional or keyword arguments that are also passed to
       :meth:`assertWarns`.  The test passes if *warning* is triggered and
-      fails if it isn't.  Also, any unexpected exception is an error.
+      fails if it isn't.  Any exception is an error.
       To catch any of a group of warnings, a tuple containing the warning
       classes may be passed as *warnings*.
 
       If only the *warning* and possibly the *msg* arguments are given,
-      returns a context manager so that the code under test can be written
+      return a context manager so that the code under test can be written
       inline rather than as a function::
 
          with self.assertWarns(SomeWarning):
@@ -992,7 +992,7 @@ Test cases
       :attr:`warning` attribute, and the source line which triggered the
       warnings in the :attr:`filename` and :attr:`lineno` attributes.
       This can be useful if the intention is to perform additional checks
-      on the exception raised::
+      on the warning caught::
 
          with self.assertWarns(SomeWarning) as cm:
              do_something()

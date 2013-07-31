@@ -210,8 +210,10 @@ iobase_finalize(PyObject *self)
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
     res = PyObject_GetAttr(self, _PyIO_str_closed);
-    if (res == NULL)
+    if (res == NULL) {
         PyErr_Clear();
+        closed = -1;
+    }
     else {
         closed = PyObject_IsTrue(res);
         Py_DECREF(res);
