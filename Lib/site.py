@@ -68,6 +68,7 @@ site-specific customizations.  If this import fails with an
 ImportError exception, it is silently ignored.
 """
 
+import atexit
 import sys
 import os
 import re
@@ -84,6 +85,25 @@ ENABLE_USER_SITE = None
 # functions, through the main() function when Python starts.
 USER_SITE = None
 USER_BASE = None
+
+
+_no_builtin = object()
+
+def _patch_builtins(**items):
+    # When patching builtins, we make some objects almost immortal
+    # (builtins are only reclaimed at the very end of the interpreter
+    #  shutdown sequence).  To avoid keeping to many references alive,
+    # we register callbacks to undo our builtins additions.
+    old_items = {k: getattr(builtins, k, _no_builtin) for k in items}
+    def unpatch(old_items=old_items):
+        for k, v in old_items.items():
+            if v is _no_builtin:
+                delattr(builtins, k)
+            else:
+                setattr(builtins, k, v)
+    for k, v in items.items():
+        setattr(builtins, k, v)
+    atexit.register(unpatch)
 
 
 def makepath(*paths):
@@ -357,8 +377,7 @@ def setquit():
             except:
                 pass
             raise SystemExit(code)
-    builtins.quit = Quitter('quit')
-    builtins.exit = Quitter('exit')
+    _patch_builtins(quit=Quitter('quit'), exit=Quitter('exit'))
 
 
 class _Printer(object):
@@ -423,20 +442,20 @@ class _Printer(object):
 
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
-    builtins.copyright = _Printer("copyright", sys.copyright)
+    _patch_builtins(copyright=_Printer("copyright", sys.copyright))
     if sys.platform[:4] == 'java':
-        builtins.credits = _Printer(
+        _patch_builtins(credits=_Printer(
             "credits",
-            "Jython is maintained by the Jython developers (www.jython.org).")
+            "Jython is maintained by the Jython developers (www.jython.org)."))
     else:
-        builtins.credits = _Printer("credits", """\
+        _patch_builtins(credits=_Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
-    for supporting Python development.  See www.python.org for more information.""")
+    for supporting Python development.  See www.python.org for more information."""))
     here = os.path.dirname(os.__file__)
-    builtins.license = _Printer(
+    _patch_builtins(license=_Printer(
         "license", "See http://www.python.org/%.3s/license.html" % sys.version,
         ["LICENSE.txt", "LICENSE"],
-        [os.path.join(here, os.pardir), here, os.curdir])
+        [os.path.join(here, os.pardir), here, os.curdir]))
 
 
 class _Helper(object):
@@ -453,7 +472,7 @@ class _Helper(object):
         return pydoc.help(*args, **kwds)
 
 def sethelper():
-    builtins.help = _Helper()
+    _patch_builtins(help=_Helper())
 
 def enablerlcompleter():
     """Enable default readline configuration on interactive prompts, by

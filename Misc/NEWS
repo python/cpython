@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #18214: Improve finalization of Python modules to avoid setting
+  their globals to None, in most cases.
+
 - Issue #18112: PEP 442 implementation (safe object finalization).
 
 - Issue #18552: Check return value of PyArena_AddPyObject() in
