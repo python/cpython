@@ -2614,6 +2614,16 @@ test_decref_doesnt_leak(PyObject *ob)
 }
 
 static PyObject *
+test_incref_decref_API(PyObject *ob)
+{
+    PyObject *obj = PyLong_FromLong(0);
+    Py_IncRef(ob);
+    Py_DecRef(obj);
+    Py_DecRef(obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 test_pymem_alloc0(PyObject *self)
 {
     void *ptr;
@@ -2781,6 +2791,7 @@ static PyMethodDef TestMethods[] = {
     {"test_incref_doesnt_leak", (PyCFunction)test_incref_doesnt_leak,      METH_NOARGS},
     {"test_xdecref_doesnt_leak",(PyCFunction)test_xdecref_doesnt_leak,      METH_NOARGS},
     {"test_decref_doesnt_leak", (PyCFunction)test_decref_doesnt_leak,      METH_NOARGS},
+    {"test_incref_decref_API",  (PyCFunction)test_incref_decref_API,       METH_NOARGS},
     {"test_long_and_overflow", (PyCFunction)test_long_and_overflow,
      METH_NOARGS},
     {"test_long_as_double",     (PyCFunction)test_long_as_double,METH_NOARGS},
