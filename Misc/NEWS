@@ -179,6 +179,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18608: Avoid keeping a strong reference to the locale module
+  inside the _io module.
+
 - Issue #18619: Fix atexit leaking callbacks registered from sub-interpreters,
   and make it GC-aware.
 
