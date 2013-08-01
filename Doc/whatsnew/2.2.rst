@@ -450,9 +450,9 @@ signal that the iterator is done.
 Python classes can define an :meth:`__iter__` method, which should create and
 return a new iterator for the object; if the object is its own iterator, this
 method can just return ``self``.  In particular, iterators will usually be their
-own iterators.  Extension types implemented in C can implement a :attr:`tp_iter`
+own iterators.  Extension types implemented in C can implement a :c:member:`~PyTypeObject.tp_iter`
 function in order to return an iterator, and extension types that want to behave
-as iterators can define a :attr:`tp_iternext` function.
+as iterators can define a :c:member:`~PyTypeObject.tp_iternext` function.
 
 So, after all this, what do iterators actually do?  They have one required
 method, :meth:`next`, which takes no arguments and returns the next value.  When
@@ -478,7 +478,7 @@ there are no more values to be returned, calling :meth:`next` should raise the
 In 2.2, Python's :keyword:`for` statement no longer expects a sequence; it
 expects something for which :func:`iter` will return an iterator. For backward
 compatibility and convenience, an iterator is automatically constructed for
-sequences that don't implement :meth:`__iter__` or a :attr:`tp_iter` slot, so
+sequences that don't implement :meth:`__iter__` or a :c:member:`~PyTypeObject.tp_iter` slot, so
 ``for i in [1,2,3]`` will still work.  Wherever the Python interpreter loops
 over a sequence, it's been changed to use the iterator protocol.  This means you
 can do things like this::
