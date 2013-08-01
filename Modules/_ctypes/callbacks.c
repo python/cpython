@@ -98,20 +98,37 @@ void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
     PyObject *py_globals = 0;
     PyCodeObject *py_code = 0;
     PyFrameObject *py_frame = 0;
+    PyObject *exception, *value, *tb;
+
+    /* (Save and) Clear the current exception. Python functions must not be
+       called with an exception set. Calling Python functions happens when
+       the codec of the filesystem encoding is implemented in pure Python. */
+    PyErr_Fetch(&exception, &value, &tb);
 
     py_globals = PyDict_New();
-    if (!py_globals) goto bad;
+    if (!py_globals)
+        goto bad;
     py_code = PyCode_NewEmpty(filename, funcname, lineno);
-    if (!py_code) goto bad;
+    if (!py_code)
+        goto bad;
     py_frame = PyFrame_New(
         PyThreadState_Get(), /*PyThreadState *tstate,*/
         py_code,             /*PyCodeObject *code,*/
         py_globals,          /*PyObject *globals,*/
         0                    /*PyObject *locals*/
         );
-    if (!py_frame) goto bad;
+    if (!py_frame)
+        goto bad;
     py_frame->f_lineno = lineno;
+
+    PyErr_Restore(exception, value, tb);
     PyTraceBack_Here(py_frame);
+
+    Py_DECREF(py_globals);
+    Py_DECREF(py_code);
+    Py_DECREF(py_frame);
+    return;
+
   bad:
     Py_XDECREF(py_globals);
     Py_XDECREF(py_code);
