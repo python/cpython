@@ -179,6 +179,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18619: Fix atexit leaking callbacks registered from sub-interpreters,
+  and make it GC-aware.
+
 - Issue #15699: The readline module now uses PEP 3121-style module
   initialization, so as to reclaim allocated resources (Python callbacks)
   at shutdown.  Original patch by Robin Schreiber.
