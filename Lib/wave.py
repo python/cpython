@@ -448,11 +448,13 @@ class Wave_write:
 
     def close(self):
         if self._file:
-            self._ensure_header_written(0)
-            if self._datalength != self._datawritten:
-                self._patchheader()
-            self._file.flush()
-            self._file = None
+            try:
+                self._ensure_header_written(0)
+                if self._datalength != self._datawritten:
+                    self._patchheader()
+                self._file.flush()
+            finally:
+                self._file = None
         if self._i_opened_the_file:
             self._i_opened_the_file.close()
             self._i_opened_the_file = None
