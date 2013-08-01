@@ -1736,7 +1736,7 @@ class Tk(Misc, Wm):
         # ensure that self.tk is always _something_.
         self.tk = None
         if baseName is None:
-            import sys, os
+            import os
             baseName = os.path.basename(sys.argv[0])
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc', '.pyo'):
