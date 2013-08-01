@@ -698,6 +698,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
     _Py_IDENTIFIER(finalize);
     int ok;
     PyObject *exception, *value, *tb;
+    int restore;
 
 #ifdef WITH_THREAD
     PyGILState_STATE threadstate;
@@ -715,6 +716,7 @@ void _pysqlite_final_callback(sqlite3_context* context)
 
     /* Keep the exception (if any) of the last call to step() */
     PyErr_Fetch(&exception, &value, &tb);
+    restore = 1;
 
     function_result = _PyObject_CallMethodId(*aggregate_instance, &PyId_finalize, "");
 
@@ -732,11 +734,18 @@ void _pysqlite_final_callback(sqlite3_context* context)
             PyErr_Clear();
         }
         _sqlite3_result_error(context, "user-defined aggregate's 'finalize' method raised error", -1);
+#if SQLITE_VERSION_NUMBER < 3003003
+        /* with old SQLite versions, _sqlite3_result_error() sets a new Python
+           exception, so don't restore the previous exception */
+        restore = 0;
+#endif
     }
 
-    /* Restore the exception (if any) of the last call to step(),
-       but clear also the current exception if finalize() failed */
-    PyErr_Restore(exception, value, tb);
+    if (restore) {
+        /* Restore the exception (if any) of the last call to step(),
+           but clear also the current exception if finalize() failed */
+        PyErr_Restore(exception, value, tb);
+    }
 
 error:
 #ifdef WITH_THREAD
