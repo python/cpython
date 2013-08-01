@@ -37,10 +37,10 @@ Type Objects
 
 .. c:function:: long PyType_GetFlags(PyTypeObject* type)
 
-   Return the :attr:`tp_flags` member of *type*. This function is primarily
+   Return the :c:member:`~PyTypeObject.tp_flags` member of *type*. This function is primarily
    meant for use with `Py_LIMITED_API`; the individual flag bits are
    guaranteed to be stable across Python releases, but access to
-   :attr:`tp_flags` itself is not part of the limited API.
+   :c:member:`~PyTypeObject.tp_flags` itself is not part of the limited API.
 
    .. versionadded:: 3.2
 
@@ -70,14 +70,14 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
-   Generic handler for the :attr:`tp_alloc` slot of a type object.  Use
+   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
    Python's default memory allocation mechanism to allocate a new instance and
    initialize all its contents to *NULL*.
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   Generic handler for the :attr:`tp_new` slot of a type object.  Create a
-   new instance using the type's :attr:`tp_alloc` slot.
+   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type object.  Create a
+   new instance using the type's :c:member:`~PyTypeObject.tp_alloc` slot.
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
