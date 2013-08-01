@@ -737,6 +737,9 @@ IDLE
 Build
 -----
 
+- Issue #18257: Fix readlink usage in python-config.  Install the python
+  version again on Darwin.
+
 - Issue #18481: Add C coverage reporting with gcov and lcov. A new make target
   "coverage-report" creates an instrumented Python build, runs unit tests
   and creates a HTML. The report can be updated with "make coverage-lcov".

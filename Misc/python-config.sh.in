@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Keep this script in sync with python-config.in
+
 exit_with_usage ()
 {
     echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir"
@@ -15,7 +17,9 @@ installed_prefix ()
 {
     RESULT=$(dirname $(cd $(dirname "$1") && pwd -P))
     if which readlink >/dev/null 2>&1 ; then
-        RESULT=$(readlink -f "$RESULT")
+        if readlink -f "$RESULT" >/dev/null 2>&1; then
+          RESULT=$(readlink -f "$RESULT")
+        fi
     fi
     echo $RESULT
 }
@@ -23,7 +27,8 @@ installed_prefix ()
 prefix_build="@prefix@"
 prefix_real=$(installed_prefix "$0")
 
-# Use sed to fix paths from their built to locations to their installed to locations.
+# Use sed to fix paths from their built-to locations to their installed-to
+# locations.
 prefix=$(echo "$prefix_build" | sed "s#$prefix_build#$prefix_real#")
 exec_prefix_build="@exec_prefix@"
 exec_prefix=$(echo "$exec_prefix_build" | sed "s#$exec_prefix_build#$prefix_real#")
