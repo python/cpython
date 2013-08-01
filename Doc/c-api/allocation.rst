@@ -32,7 +32,7 @@ Allocating Objects on the Heap
    Allocate a new Python object using the C structure type *TYPE* and the
    Python type object *type*.  Fields not defined by the Python object header
    are not initialized; the object's reference count will be one.  The size of
-   the memory allocation is determined from the :attr:`tp_basicsize` field of
+   the memory allocation is determined from the :c:member:`~PyTypeObject.tp_basicsize` field of
    the type object.
 
 
@@ -41,7 +41,7 @@ Allocating Objects on the Heap
    Allocate a new Python object using the C structure type *TYPE* and the
    Python type object *type*.  Fields not defined by the Python object header
    are not initialized.  The allocated memory allows for the *TYPE* structure
-   plus *size* fields of the size given by the :attr:`tp_itemsize` field of
+   plus *size* fields of the size given by the :c:member:`~PyTypeObject.tp_itemsize` field of
    *type*.  This is useful for implementing objects like tuples, which are
    able to determine their size at construction time.  Embedding the array of
    fields into the same allocation decreases the number of allocations,
@@ -52,7 +52,7 @@ Allocating Objects on the Heap
 
    Releases memory allocated to an object using :c:func:`PyObject_New` or
    :c:func:`PyObject_NewVar`.  This is normally called from the
-   :attr:`tp_dealloc` handler specified in the object's type.  The fields of
+   :c:member:`~PyTypeObject.tp_dealloc` handler specified in the object's type.  The fields of
    the object should not be accessed after this call as the memory is no
    longer a valid Python object.
 
