@@ -1270,6 +1270,10 @@ def add_registry(db):
               "{60254CA5-953B-11CF-8C96-00AA00B8708C}", "REGISTRY.def"),
             ])
 
+    # PATHEXT
+    add_data(db, "Environment",
+             [("PathExtAddition", "=-*PathExt", "[~];.PY", "REGISTRY.def")])
+
     # Registry keys
     prefix = r"Software\%sPython\PythonCore\%s" % (testprefix, short_version)
     add_data(db, "Registry",
