@@ -1201,6 +1201,13 @@ python-config: $(srcdir)/Misc/python-config.in Misc/python-config.sh
 	sed -e "s,@EXENAME@,$(BINDIR)/python$(LDVERSION)$(EXE)," < $(srcdir)/Misc/python-config.in >python-config.py
 	# Replace makefile compat. variable references with shell script compat. ones; $(VAR) -> ${VAR}
 	sed -e 's,\$$(\([A-Za-z0-9_]*\)),\$$\{\1\},g' < Misc/python-config.sh >python-config
+	# On Darwin, always use the python version of the script, the shell
+	# version doesn't use the compiler customizations that are provided
+	# in python (_osx_support.py).
+	if test `uname -s` = Darwin; then \
+		cp python-config.py python-config; \
+	fi
+
 
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
