@@ -1123,7 +1123,7 @@ class _SuppressCoreFiles(object):
         if resource is not None:
             try:
                 self.old_limit = resource.getrlimit(resource.RLIMIT_CORE)
-                resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+                resource.setrlimit(resource.RLIMIT_CORE, (0, self.old_limit[1]))
             except (ValueError, resource.error):
                 pass
 
