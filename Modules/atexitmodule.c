@@ -10,8 +10,6 @@
 
 /* Forward declaration (for atexit_cleanup) */
 static PyObject *atexit_clear(PyObject*, PyObject*);
-/* Forward declaration (for atexit_callfuncs) */
-static void atexit_cleanup(PyObject*);
 /* Forward declaration of module object */
 static struct PyModuleDef atexitmodule;
 
@@ -32,6 +30,35 @@ typedef struct {
 
 #define GET_ATEXIT_STATE(mod) ((atexitmodule_state*)PyModule_GetState(mod))
 
+
+static void
+atexit_delete_cb(atexitmodule_state *modstate, int i)
+{
+    atexit_callback *cb;
+
+    cb = modstate->atexit_callbacks[i];
+    modstate->atexit_callbacks[i] = NULL;
+    Py_DECREF(cb->func);
+    Py_DECREF(cb->args);
+    Py_XDECREF(cb->kwargs);
+    PyMem_Free(cb);
+}
+
+/* Clear all callbacks without calling them */
+static void
+atexit_cleanup(atexitmodule_state *modstate)
+{
+    atexit_callback *cb;
+    int i;
+    for (i = 0; i < modstate->ncallbacks; i++) {
+        cb = modstate->atexit_callbacks[i];
+        if (cb == NULL)
+            continue;
+
+        atexit_delete_cb(modstate, i);
+    }
+    modstate->ncallbacks = 0;
+}
 
 /* Installed into pythonrun.c's atexit mechanism */
 
@@ -78,32 +105,10 @@ atexit_callfuncs(void)
         }
     }
 
-    atexit_cleanup(module);
+    atexit_cleanup(modstate);
 
     if (exc_type)
         PyErr_Restore(exc_type, exc_value, exc_tb);
-}
-
-static void
-atexit_delete_cb(PyObject *self, int i)
-{
-    atexitmodule_state *modstate;
-    atexit_callback *cb;
-
-    modstate = GET_ATEXIT_STATE(self);
-    cb = modstate->atexit_callbacks[i];
-    modstate->atexit_callbacks[i] = NULL;
-    Py_DECREF(cb->func);
-    Py_DECREF(cb->args);
-    Py_XDECREF(cb->kwargs);
-    PyMem_Free(cb);
-}
-
-static void
-atexit_cleanup(PyObject *self)
-{
-    PyObject *r = atexit_clear(self, NULL);
-    Py_DECREF(r);
 }
 
 /* ===================================================================== */
@@ -194,21 +199,50 @@ Clear the list of previously registered exit functions.");
 static PyObject *
 atexit_clear(PyObject *self, PyObject *unused)
 {
+    atexit_cleanup(GET_ATEXIT_STATE(self));
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(atexit_ncallbacks__doc__,
+"_ncallbacks() -> int\n\
+\n\
+Return the number of registered exit functions.");
+
+static PyObject *
+atexit_ncallbacks(PyObject *self, PyObject *unused)
+{
     atexitmodule_state *modstate;
-    atexit_callback *cb;
-    int i;
 
     modstate = GET_ATEXIT_STATE(self);
 
+    return PyLong_FromSsize_t(modstate->ncallbacks);
+}
+
+static int
+atexit_m_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    int i;
+    atexitmodule_state *modstate;
+
+    modstate = GET_ATEXIT_STATE(self);
     for (i = 0; i < modstate->ncallbacks; i++) {
-        cb = modstate->atexit_callbacks[i];
+        atexit_callback *cb = modstate->atexit_callbacks[i];
         if (cb == NULL)
             continue;
-
-        atexit_delete_cb(self, i);
+        Py_VISIT(cb->func);
+        Py_VISIT(cb->args);
+        Py_VISIT(cb->kwargs);
     }
-    modstate->ncallbacks = 0;
-    Py_RETURN_NONE;
+    return 0;
+}
+
+static int
+atexit_m_clear(PyObject *self)
+{
+    atexitmodule_state *modstate;
+    modstate = GET_ATEXIT_STATE(self);
+    atexit_cleanup(modstate);
+    return 0;
 }
 
 static void
@@ -216,6 +250,7 @@ atexit_free(PyObject *m)
 {
     atexitmodule_state *modstate;
     modstate = GET_ATEXIT_STATE(m);
+    atexit_cleanup(modstate);
     PyMem_Free(modstate->atexit_callbacks);
 }
 
@@ -246,7 +281,7 @@ atexit_unregister(PyObject *self, PyObject *func)
         if (eq < 0)
             return NULL;
         if (eq)
-            atexit_delete_cb(self, i);
+            atexit_delete_cb(modstate, i);
     }
     Py_RETURN_NONE;
 }
@@ -260,6 +295,8 @@ static PyMethodDef atexit_methods[] = {
         atexit_unregister__doc__},
     {"_run_exitfuncs", (PyCFunction) atexit_run_exitfuncs, METH_NOARGS,
         atexit_run_exitfuncs__doc__},
+    {"_ncallbacks", (PyCFunction) atexit_ncallbacks, METH_NOARGS,
+        atexit_ncallbacks__doc__},
     {NULL, NULL}        /* sentinel */
 };
 
@@ -275,15 +312,15 @@ Two public functions, register and unregister, are defined.\n\
 
 
 static struct PyModuleDef atexitmodule = {
-	PyModuleDef_HEAD_INIT,
-	"atexit",
-	atexit__doc__,
-	sizeof(atexitmodule_state),
-	atexit_methods,
-	NULL,
-	NULL,
-	NULL,
-	(freefunc)atexit_free
+    PyModuleDef_HEAD_INIT,
+    "atexit",
+    atexit__doc__,
+    sizeof(atexitmodule_state),
+    atexit_methods,
+    NULL,
+    atexit_m_traverse,
+    atexit_m_clear,
+    (freefunc)atexit_free
 };
 
 PyMODINIT_FUNC
