@@ -335,16 +335,35 @@ def lexists(path):
         return False
     return True
 
-# Is a path a mount point?  Either a root (with or without drive letter)
-# or an UNC path with at most a / or \ after the mount point.
-
+# Is a path a mount point?
+# Any drive letter root (eg c:\)
+# Any share UNC (eg \\server\share)
+# Any volume mounted on a filesystem folder
+#
+# No one method detects all three situations. Historically we've lexically
+# detected drive letter roots and share UNCs. The canonical approach to
+# detecting mounted volumes (querying the reparse tag) fails for the most
+# common case: drive letter roots. The alternative which uses GetVolumePathName
+# fails if the drive letter is the result of a SUBST.
+try:
+    from nt import _getvolumepathname
+except ImportError:
+    _getvolumepathname = None
 def ismount(path):
-    """Test whether a path is a mount point (defined as root of drive)"""
+    """Test whether a path is a mount point (a drive root, the root of a
+    share, or a mounted volume)"""
     seps = _get_bothseps(path)
+    path = abspath(path)
     root, rest = splitdrive(path)
     if root and root[0] in seps:
         return (not rest) or (rest in seps)
-    return rest in seps
+    if rest in seps:
+        return True
+
+    if _getvolumepathname:
+        return path.rstrip(seps) == _getvolumepathname(path).rstrip(seps)
+    else:
+        return False
 
 
 # Expand paths beginning with '~' or '~user'.
