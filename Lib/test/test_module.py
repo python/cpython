@@ -1,5 +1,6 @@
 # Test the module type
 import unittest
+import weakref
 from test.support import run_unittest, gc_collect
 from test.script_helper import assert_python_ok
 
@@ -94,6 +95,14 @@ a = A(destroyed)"""
         del m
         gc_collect()
         self.assertEqual(destroyed, [1])
+
+    def test_weakref(self):
+        m = ModuleType("foo")
+        wr = weakref.ref(m)
+        self.assertIs(wr(), m)
+        del m
+        gc_collect()
+        self.assertIs(wr(), None)
 
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
