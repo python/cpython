@@ -734,6 +734,12 @@ IDLE
 - Issue #17532: Always include Options menu for IDLE on OS X.
   Patch by Guilherme Simões.
 
+Windows
+-------
+
+- Issue #18569: The installer now adds .py to the PATHEXT variable when extensions
+  are registered. Patch by Paul Moore.
+
 Build
 -----
 
