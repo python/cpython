@@ -533,6 +533,31 @@ _PyIO_ConvertSsize_t(PyObject *obj, void *result) {
 }
 
 
+PyObject *
+_PyIO_get_locale_module(_PyIO_State *state)
+{
+    PyObject *mod;
+    if (state->locale_module != NULL) {
+        assert(PyWeakref_CheckRef(state->locale_module));
+        mod = PyWeakref_GET_OBJECT(state->locale_module);
+        if (mod != Py_None) {
+            Py_INCREF(mod);
+            return mod;
+        }
+        Py_CLEAR(state->locale_module);
+    }
+    mod = PyImport_ImportModule("locale");
+    if (mod == NULL)
+        return NULL;
+    state->locale_module = PyWeakref_NewRef(mod, NULL);
+    if (state->locale_module == NULL) {
+        Py_DECREF(mod);
+        return NULL;
+    }
+    return mod;
+}
+
+
 static int
 iomodule_traverse(PyObject *mod, visitproc visit, void *arg) {
     _PyIO_State *state = IO_MOD_STATE(mod);

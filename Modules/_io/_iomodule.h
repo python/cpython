@@ -137,6 +137,8 @@ typedef struct {
 #define IO_MOD_STATE(mod) ((_PyIO_State *)PyModule_GetState(mod))
 #define IO_STATE IO_MOD_STATE(PyState_FindModule(&_PyIO_Module))
 
+extern PyObject *_PyIO_get_locale_module(_PyIO_State *);
+
 extern PyObject *_PyIO_str_close;
 extern PyObject *_PyIO_str_closed;
 extern PyObject *_PyIO_str_decode;
