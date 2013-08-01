@@ -274,22 +274,22 @@ class TestNtpath(unittest.TestCase):
         with support.temp_dir() as d:
             self.assertFalse(ntpath.ismount(d))
 
-        #
-        # Make sure the current folder isn't the root folder
-        # (or any other volume root). The drive-relative
-        # locations below cannot then refer to mount points
-        #
-        drive, path = ntpath.splitdrive(sys.executable)
-        with support.change_cwd(os.path.dirname(sys.executable)):
-            self.assertFalse(ntpath.ismount(drive.lower()))
-            self.assertFalse(ntpath.ismount(drive.upper()))
+        if sys.platform == "win32":
+            #
+            # Make sure the current folder isn't the root folder
+            # (or any other volume root). The drive-relative
+            # locations below cannot then refer to mount points
+            #
+            drive, path = ntpath.splitdrive(sys.executable)
+            with support.change_cwd(os.path.dirname(sys.executable)):
+                self.assertFalse(ntpath.ismount(drive.lower()))
+                self.assertFalse(ntpath.ismount(drive.upper()))
 
-        self.assertTrue(ntpath.ismount("\\\\localhost\\c$"))
-        self.assertTrue(ntpath.ismount("\\\\localhost\\c$\\"))
+            self.assertTrue(ntpath.ismount("\\\\localhost\\c$"))
+            self.assertTrue(ntpath.ismount("\\\\localhost\\c$\\"))
 
-        self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
-        self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
-
+            self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$"))
+            self.assertTrue(ntpath.ismount(b"\\\\localhost\\c$\\"))
 
 class NtCommonTest(test_genericpath.CommonTest, unittest.TestCase):
     pathmodule = ntpath
