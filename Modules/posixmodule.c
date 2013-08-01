@@ -3711,6 +3711,47 @@ check:
     else
         Py_RETURN_FALSE;
 }
+
+PyDoc_STRVAR(posix__getvolumepathname__doc__,
+"Return volume mount point of the specified path.");
+
+/* A helper function for ismount on windows */
+static PyObject *
+posix__getvolumepathname(PyObject *self, PyObject *args)
+{
+    PyObject *po, *result;
+    wchar_t *path, *mountpath=NULL;
+    size_t bufsize;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, "U|:_getvolumepathname", &po))
+        return NULL;
+    path = PyUnicode_AsUnicode(po);
+    if (path == NULL)
+        return NULL;
+
+    /* Volume path should be shorter than entire path */
+    bufsize = max(MAX_PATH, wcslen(path) * 2 * sizeof(wchar_t)+1);
+    mountpath = (wchar_t *)PyMem_Malloc(bufsize);
+    if (mountpath == NULL)
+        return PyErr_NoMemory();
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = GetVolumePathNameW(path, mountpath, bufsize);
+    Py_END_ALLOW_THREADS
+
+    if (!ret) {
+        result = win32_error_object("_getvolumepathname", po);
+        goto exit;
+    }
+    result = PyUnicode_FromWideChar(mountpath, wcslen(mountpath));
+
+exit:
+    PyMem_Free(mountpath);
+    return result;
+}
+/* end of posix__getvolumepathname */
+
 #endif /* MS_WINDOWS */
 
 PyDoc_STRVAR(posix_mkdir__doc__,
@@ -10885,6 +10926,7 @@ static PyMethodDef posix_methods[] = {
     {"_getfinalpathname",       posix__getfinalpathname, METH_VARARGS, NULL},
     {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
     {"_getdiskusage",           win32__getdiskusage, METH_VARARGS, win32__getdiskusage__doc__},
+    {"_getvolumepathname",      posix__getvolumepathname, METH_VARARGS, posix__getvolumepathname__doc__},
 #endif
 #ifdef HAVE_GETLOADAVG
     {"getloadavg",      posix_getloadavg, METH_NOARGS, posix_getloadavg__doc__},

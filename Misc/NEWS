@@ -10,6 +10,9 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #9035: ismount now recognises volumes mounted below a drive root
+  on Windows. Original patch by Atsuo Ishimoto.
+
 - Issue #18214: Improve finalization of Python modules to avoid setting
   their globals to None, in most cases.
 
