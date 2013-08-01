@@ -15,10 +15,10 @@ collection.
 .. An example showing the use of these interfaces can be found in "Supporting the
 .. Cycle Collector (XXX not found: ../ext/example-cycle-support.html)".
 
-To create a container type, the :attr:`tp_flags` field of the type object must
+To create a container type, the :c:member:`~PyTypeObject.tp_flags` field of the type object must
 include the :const:`Py_TPFLAGS_HAVE_GC` and provide an implementation of the
-:attr:`tp_traverse` handler.  If instances of the type are mutable, a
-:attr:`tp_clear` implementation must also be provided.
+:c:member:`~PyTypeObject.tp_traverse` handler.  If instances of the type are mutable, a
+:c:member:`~PyTypeObject.tp_clear` implementation must also be provided.
 
 
 .. data:: Py_TPFLAGS_HAVE_GC
@@ -68,7 +68,7 @@ Constructors for container types must conform to two rules:
    Adds the object *op* to the set of container objects tracked by the
    collector.  The collector can run at unexpected times so objects must be
    valid while being tracked.  This should be called once all the fields
-   followed by the :attr:`tp_traverse` handler become valid, usually near the
+   followed by the :c:member:`~PyTypeObject.tp_traverse` handler become valid, usually near the
    end of the constructor.
 
 
@@ -97,8 +97,8 @@ rules:
    Remove the object *op* from the set of container objects tracked by the
    collector.  Note that :c:func:`PyObject_GC_Track` can be called again on
    this object to add it back to the set of tracked objects.  The deallocator
-   (:attr:`tp_dealloc` handler) should call this for the object before any of
-   the fields used by the :attr:`tp_traverse` handler become invalid.
+   (:c:member:`~PyTypeObject.tp_dealloc` handler) should call this for the object before any of
+   the fields used by the :c:member:`~PyTypeObject.tp_traverse` handler become invalid.
 
 
 .. c:function:: void _PyObject_GC_UNTRACK(PyObject *op)
@@ -106,19 +106,19 @@ rules:
    A macro version of :c:func:`PyObject_GC_UnTrack`.  It should not be used for
    extension modules.
 
-The :attr:`tp_traverse` handler accepts a function parameter of this type:
+The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
 
 
 .. c:type:: int (*visitproc)(PyObject *object, void *arg)
 
-   Type of the visitor function passed to the :attr:`tp_traverse` handler.
+   Type of the visitor function passed to the :c:member:`~PyTypeObject.tp_traverse` handler.
    The function should be called with an object to traverse as *object* and
-   the third parameter to the :attr:`tp_traverse` handler as *arg*.  The
+   the third parameter to the :c:member:`~PyTypeObject.tp_traverse` handler as *arg*.  The
    Python core uses several visitor functions to implement cyclic garbage
    detection; it's not expected that users will need to write their own
    visitor functions.
 
-The :attr:`tp_traverse` handler must have the following type:
+The :c:member:`~PyTypeObject.tp_traverse` handler must have the following type:
 
 
 .. c:type:: int (*traverseproc)(PyObject *self, visitproc visit, void *arg)
@@ -130,15 +130,15 @@ The :attr:`tp_traverse` handler must have the following type:
    object argument.  If *visit* returns a non-zero value that value should be
    returned immediately.
 
-To simplify writing :attr:`tp_traverse` handlers, a :c:func:`Py_VISIT` macro is
-provided.  In order to use this macro, the :attr:`tp_traverse` implementation
+To simplify writing :c:member:`~PyTypeObject.tp_traverse` handlers, a :c:func:`Py_VISIT` macro is
+provided.  In order to use this macro, the :c:member:`~PyTypeObject.tp_traverse` implementation
 must name its arguments exactly *visit* and *arg*:
 
 
 .. c:function:: void Py_VISIT(PyObject *o)
 
    Call the *visit* callback, with arguments *o* and *arg*. If *visit* returns
-   a non-zero value, then return it.  Using this macro, :attr:`tp_traverse`
+   a non-zero value, then return it.  Using this macro, :c:member:`~PyTypeObject.tp_traverse`
    handlers look like::
 
       static int
@@ -151,7 +151,7 @@ must name its arguments exactly *visit* and *arg*:
 
    .. versionadded:: 2.4
 
-The :attr:`tp_clear` handler must be of the :c:type:`inquiry` type, or *NULL*
+The :c:member:`~PyTypeObject.tp_clear` handler must be of the :c:type:`inquiry` type, or *NULL*
 if the object is immutable.
 
 

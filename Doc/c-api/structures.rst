@@ -293,6 +293,6 @@ definition with the same method name.
 .. c:function:: PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
 
    Return a bound method object for an extension type implemented in C.  This
-   can be useful in the implementation of a :attr:`tp_getattro` or
-   :attr:`tp_getattr` handler that does not use the
+   can be useful in the implementation of a :c:member:`~PyTypeObject.tp_getattro` or
+   :c:member:`~PyTypeObject.tp_getattr` handler that does not use the
    :c:func:`PyObject_GenericGetAttr` function.
