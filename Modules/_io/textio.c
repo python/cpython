@@ -917,35 +917,29 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
         }
     }
     if (encoding == NULL && self->encoding == NULL) {
-        if (state->locale_module == NULL) {
-            state->locale_module = PyImport_ImportModule("locale");
-            if (state->locale_module == NULL)
-                goto catch_ImportError;
-            else
-                goto use_locale;
-        }
-        else {
-          use_locale:
-            self->encoding = _PyObject_CallMethodId(
-                state->locale_module, &PyId_getpreferredencoding, "O", Py_False);
-            if (self->encoding == NULL) {
-              catch_ImportError:
-                /*
-                 Importing locale can raise a ImportError because of
-                 _functools, and locale.getpreferredencoding can raise a
-                 ImportError if _locale is not available.  These will happen
-                 during module building.
-                */
-                if (PyErr_ExceptionMatches(PyExc_ImportError)) {
-                    PyErr_Clear();
-                    self->encoding = PyUnicode_FromString("ascii");
-                }
-                else
-                    goto error;
+        PyObject *locale_module = _PyIO_get_locale_module(state);
+        if (locale_module == NULL)
+            goto catch_ImportError;
+        self->encoding = _PyObject_CallMethodId(
+            locale_module, &PyId_getpreferredencoding, "O", Py_False);
+        Py_DECREF(locale_module);
+        if (self->encoding == NULL) {
+          catch_ImportError:
+            /*
+             Importing locale can raise a ImportError because of
+             _functools, and locale.getpreferredencoding can raise a
+             ImportError if _locale is not available.  These will happen
+             during module building.
+            */
+            if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+                PyErr_Clear();
+                self->encoding = PyUnicode_FromString("ascii");
             }
-            else if (!PyUnicode_Check(self->encoding))
-                Py_CLEAR(self->encoding);
+            else
+                goto error;
         }
+        else if (!PyUnicode_Check(self->encoding))
+            Py_CLEAR(self->encoding);
     }
     if (self->encoding != NULL) {
         encoding = _PyUnicode_AsString(self->encoding);
