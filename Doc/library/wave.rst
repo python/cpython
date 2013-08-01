@@ -19,21 +19,20 @@ The :mod:`wave` module defines the following function and exception:
 .. function:: open(file, mode=None)
 
    If *file* is a string, open the file by that name, otherwise treat it as a
-   seekable file-like object.  *mode* can be any of
+   seekable file-like object.  *mode* can be:
 
-   ``'r'``, ``'rb'``
+   ``'rb'``
       Read only mode.
 
-   ``'w'``, ``'wb'``
+   ``'wb'``
       Write only mode.
 
    Note that it does not allow read/write WAV files.
 
-   A *mode* of ``'r'`` or ``'rb'`` returns a :class:`Wave_read` object, while a
-   *mode* of ``'w'`` or ``'wb'`` returns a :class:`Wave_write` object.  If
-   *mode* is omitted and a file-like object is passed as *file*, ``file.mode``
-   is used as the default value for *mode* (the ``'b'`` flag is still added if
-   necessary).
+   A *mode* of ``'rb'`` returns a :class:`Wave_read` object, while a *mode* of
+   ``'wb'`` returns a :class:`Wave_write` object.  If *mode* is omitted and a
+   file-like object is passed as *file*, ``file.mode`` is used as the default
+   value for *mode*.
 
    If you pass in a file-like object, the wave object will not close it when its
    :meth:`close` method is called; it is the caller's responsibility to close
