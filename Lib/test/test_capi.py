@@ -193,6 +193,9 @@ class TestPendingCalls(unittest.TestCase):
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
 
+
+class SubinterpreterTest(unittest.TestCase):
+
     def test_subinterps(self):
         import builtins
         r, w = os.pipe()
@@ -207,6 +210,7 @@ class TestPendingCalls(unittest.TestCase):
             self.assertEqual(ret, 0)
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))
+
 
 # Bug #6012
 class Test6012(unittest.TestCase):
@@ -354,7 +358,8 @@ class TestThreadState(unittest.TestCase):
 
 def test_main():
     support.run_unittest(CAPITest, TestPendingCalls, Test6012,
-                         EmbeddingTest, SkipitemTest, TestThreadState)
+                         EmbeddingTest, SkipitemTest, TestThreadState,
+                         SubinterpreterTest)
 
     for name in dir(_testcapi):
         if name.startswith('test_'):
