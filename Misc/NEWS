@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17557: Fix os.getgroups() to work with the modified behavior of
+  getgroups(2) on OS X 10.8.  Original patch by Mateusz Lenik.
+
 - Issue #18599: Fix name attribute of _sha1.sha1() object. It now returns
   'SHA1' instead of 'SHA'.
 
