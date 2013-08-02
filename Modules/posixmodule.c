@@ -3420,12 +3420,13 @@ exit:
 static PyObject *
 _posix_listdir(path_t *path, PyObject *list)
 {
-    int fd = -1;
-
     PyObject *v;
     DIR *dirp = NULL;
     struct dirent *ep;
     int return_str; /* if false, return bytes */
+#ifdef HAVE_FDOPENDIR
+    int fd = -1;
+#endif
 
     errno = 0;
 #ifdef HAVE_FDOPENDIR
@@ -3467,6 +3468,13 @@ _posix_listdir(path_t *path, PyObject *list)
 
     if (dirp == NULL) {
         list = path_error(path);
+#ifdef HAVE_FDOPENDIR
+        if (fd != -1) {
+            Py_BEGIN_ALLOW_THREADS
+            close(fd);
+            Py_END_ALLOW_THREADS
+        }
+#endif
         goto exit;
     }
     if ((list = PyList_New(0)) == NULL) {
@@ -3509,8 +3517,10 @@ _posix_listdir(path_t *path, PyObject *list)
 exit:
     if (dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FDOPENDIR
         if (fd > -1)
             rewinddir(dirp);
+#endif
         closedir(dirp);
         Py_END_ALLOW_THREADS
     }
