@@ -1525,6 +1525,15 @@ class PyBuildExt(build_ext):
         if '_tkinter' not in [e.name for e in self.extensions]:
             missing.append('_tkinter')
 
+##         # Uncomment these lines if you want to play with xxmodule.c
+##         ext = Extension('xx', ['xxmodule.c'])
+##         self.extensions.append(ext)
+
+        if 'd' not in sys.abiflags:
+            ext = Extension('xxlimited', ['xxlimited.c'],
+                            define_macros=[('Py_LIMITED_API', 1)])
+            self.extensions.append(ext)
+
         return missing
 
     def detect_tkinter_darwin(self, inc_dirs, lib_dirs):
@@ -1721,14 +1730,6 @@ class PyBuildExt(build_ext):
                         library_dirs = added_lib_dirs,
                         )
         self.extensions.append(ext)
-
-##         # Uncomment these lines if you want to play with xxmodule.c
-##         ext = Extension('xx', ['xxmodule.c'])
-##         self.extensions.append(ext)
-        if 'd' not in sys.abiflags:
-            ext = Extension('xxlimited', ['xxlimited.c'],
-                            define_macros=[('Py_LIMITED_API', 1)])
-            self.extensions.append(ext)
 
         # XXX handle these, but how to detect?
         # *** Uncomment and edit for PIL (TkImaging) extension only:
