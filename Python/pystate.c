@@ -320,31 +320,6 @@ PyState_RemoveModule(struct PyModuleDef* def)
     return PyList_SetItem(state->modules_by_index, index, Py_None);
 }
 
-/* used by import.c:PyImport_Cleanup */
-void
-_PyState_ClearModules(void)
-{
-    PyInterpreterState *state = PyThreadState_GET()->interp;
-    if (state->modules_by_index) {
-        Py_ssize_t i;
-        for (i = 0; i < PyList_GET_SIZE(state->modules_by_index); i++) {
-            PyObject *m = PyList_GET_ITEM(state->modules_by_index, i);
-            if (PyModule_Check(m)) {
-                /* cleanup the saved copy of module dicts */
-                PyModuleDef *md = PyModule_GetDef(m);
-                if (md)
-                    Py_CLEAR(md->m_base.m_copy);
-            }
-        }
-        /* Setting modules_by_index to NULL could be dangerous, so we
-           clear the list instead. */
-        if (PyList_SetSlice(state->modules_by_index,
-                            0, PyList_GET_SIZE(state->modules_by_index),
-                            NULL))
-            PyErr_WriteUnraisable(state->modules_by_index);
-    }
-}
-
 void
 PyThreadState_Clear(PyThreadState *tstate)
 {
