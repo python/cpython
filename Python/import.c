@@ -380,8 +380,6 @@ PyImport_Cleanup(void)
     builtins = interp->builtins;
     interp->builtins = PyDict_New();
     Py_DECREF(builtins);
-    /* Clear module dict copies stored in the interpreter state */
-    _PyState_ClearModules();
     /* Collect references */
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
