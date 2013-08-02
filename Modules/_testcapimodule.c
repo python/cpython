@@ -2723,6 +2723,7 @@ test_setallocators(PyMemAllocatorDomain domain)
     case PYMEM_DOMAIN_RAW: ptr2 = PyMem_RawRealloc(ptr, size2); break;
     case PYMEM_DOMAIN_MEM: ptr2 = PyMem_Realloc(ptr, size2); break;
     case PYMEM_DOMAIN_OBJ: ptr2 = PyObject_Realloc(ptr, size2); break;
+    default: ptr2 = NULL; break;
     }
 
     if (ptr2 == NULL) {
