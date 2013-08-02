@@ -70,13 +70,13 @@ class TestKQueue(unittest.TestCase):
         self.assertEqual(ev, ev)
         self.assertNotEqual(ev, other)
 
-        bignum = sys.maxsize * 2 + 1
-        ev = select.kevent(bignum, 1, 2, 3, sys.maxsize, bignum)
+        bignum = 0x7fff
+        ev = select.kevent(bignum, 1, 2, 3, bignum - 1, bignum)
         self.assertEqual(ev.ident, bignum)
         self.assertEqual(ev.filter, 1)
         self.assertEqual(ev.flags, 2)
         self.assertEqual(ev.fflags, 3)
-        self.assertEqual(ev.data, sys.maxsize)
+        self.assertEqual(ev.data, bignum - 1)
         self.assertEqual(ev.udata, bignum)
         self.assertEqual(ev, ev)
         self.assertNotEqual(ev, other)
