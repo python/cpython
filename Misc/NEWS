@@ -184,6 +184,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17557: Fix os.getgroups() to work with the modified behavior of
+  getgroups(2) on OS X 10.8.  Original patch by Mateusz Lenik.
+
 - Issue #18608: Avoid keeping a strong reference to the locale module
   inside the _io module.
 
