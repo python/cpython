@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17557: Fix os.getgroups() to work with the modified behavior of
+  getgroups(2) on OS X 10.8.  Original patch by Mateusz Lenik.
+
 - Issue #18455: multiprocessing should not retry connect() with same socket.
 
 - Issue #18513: Fix behaviour of cmath.rect w.r.t. signed zeros on OS X 10.8 +
