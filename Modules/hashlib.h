@@ -2,7 +2,7 @@
 
 /*
  * Given a PyObject* obj, fill in the Py_buffer* viewp with the result
- * of PyObject_GetBuffer.  Sets and exception and issues a return NULL
+ * of PyObject_GetBuffer.  Sets an exception and issues a return NULL
  * on any errors.
  */
 #define GET_BUFFER_VIEW_OR_ERROUT(obj, viewp) do { \
