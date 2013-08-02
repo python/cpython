@@ -10,6 +10,8 @@ What's New in Python 3.4.0 Alpha 1?
 Core and Builtins
 -----------------
 
+- Issue #17899: Fix rare file descriptor leak in os.listdir().
+
 - Issue #10241: Clear extension module dict copies at interpreter shutdown.
   Patch by Neil Schemenauer, minimally modified.
 
