@@ -3443,7 +3443,9 @@ posix_listdir(PyObject *self, PyObject *args, PyObject *kwargs)
     path_t path;
     PyObject *list = NULL;
     static char *keywords[] = {"path", NULL};
+#ifdef HAVE_FDOPENDIR
     int fd = -1;
+#endif /* HAVE_FDOPENDIR */
 
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     PyObject *v;
@@ -3732,6 +3734,13 @@ exit:
 
     if (dirp == NULL) {
         list = path_error("listdir", &path);
+#ifdef HAVE_FDOPENDIR
+        if (fd != -1) {
+            Py_BEGIN_ALLOW_THREADS
+            close(fd);
+            Py_END_ALLOW_THREADS
+        }
+#endif /* HAVE_FDOPENDIR */
         goto exit;
     }
     if ((list = PyList_New(0)) == NULL) {
@@ -3774,8 +3783,10 @@ exit:
 exit:
     if (dirp != NULL) {
         Py_BEGIN_ALLOW_THREADS
+#ifdef HAVE_FDOPENDIR
         if (fd > -1)
             rewinddir(dirp);
+#endif /* HAVE_FDOPENDIR */
         closedir(dirp);
         Py_END_ALLOW_THREADS
     }
