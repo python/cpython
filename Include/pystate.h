@@ -134,9 +134,6 @@ PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(int) PyState_RemoveModule(struct PyModuleDef*);
 #endif
 PyAPI_FUNC(PyObject*) PyState_FindModule(struct PyModuleDef*);
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyState_ClearModules(void);
-#endif
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
