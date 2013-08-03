@@ -304,6 +304,8 @@ Tools/Demos
 Build
 -----
 
+- Issue #16067: Add description into MSI file to replace installer's temporary name.
+
 - Issue #18256: Compilation fix for recent AIX releases.  Patch by
   David Edelsohn.
 
