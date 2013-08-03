@@ -97,6 +97,7 @@ PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
 PyAPI_FUNC(PyObject *) PyLong_FromUnicodeObject(PyObject *u, int base);
+PyAPI_FUNC(PyObject *) _PyLong_FromBytes(const char *, Py_ssize_t, int);
 #endif
 
 #ifndef Py_LIMITED_API
