@@ -599,6 +599,8 @@ Library
 Tests
 -----
 
+- Issue #17046: Fix broken test_executable_without_cwd in test_subprocess.
+
 - Issue #15415: Add new temp_dir() and change_cwd() context managers to
   test.support, and refactor temp_cwd() to use them.  Patch by Chris Jerdonek.
 
