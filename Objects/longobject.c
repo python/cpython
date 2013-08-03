@@ -549,7 +549,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
         x = (x << PyLong_SHIFT) | v->ob_digit[i];
         if ((x >> PyLong_SHIFT) != prev) {
             PyErr_SetString(PyExc_OverflowError,
-                            "python int too large to convert "
+                            "Python int too large to convert "
                             "to C unsigned long");
             return (unsigned long) -1;
         }
@@ -1602,7 +1602,7 @@ long_to_decimal_string_internal(PyObject *aa,
     */
     if (size_a > PY_SSIZE_T_MAX / PyLong_SHIFT) {
         PyErr_SetString(PyExc_OverflowError,
-                        "long is too large to format");
+                        "int too large to format");
         return -1;
     }
     /* the expression size_a * PyLong_SHIFT is now safe from overflow */
@@ -1785,7 +1785,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
         /* Ensure overflow doesn't occur during computation of sz. */
         if (size_a > (PY_SSIZE_T_MAX - 3) / PyLong_SHIFT) {
             PyErr_SetString(PyExc_OverflowError,
-                            "int is too large to format");
+                            "int too large to format");
             return -1;
         }
         size_a_in_bits = (size_a - 1) * PyLong_SHIFT +
@@ -2658,7 +2658,7 @@ PyLong_AsDouble(PyObject *v)
     x = _PyLong_Frexp((PyLongObject *)v, &exponent);
     if ((x == -1.0 && PyErr_Occurred()) || exponent > DBL_MAX_EXP) {
         PyErr_SetString(PyExc_OverflowError,
-                        "long int too large to convert to float");
+                        "int too large to convert to float");
         return -1.0;
     }
     return ldexp(x, (int)exponent);
