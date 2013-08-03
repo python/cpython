@@ -75,7 +75,6 @@ class TestWave(unittest.TestCase):
         with self.assertRaises(wave.Error):
             with wave.open(TESTFN, 'wb') as f:
                 pass
-        print('in test:', f._file)
         with self.assertRaises(wave.Error):
             with open(TESTFN, 'wb') as testfile:
                 with wave.open(testfile):
