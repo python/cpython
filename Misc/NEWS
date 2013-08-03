@@ -10,6 +10,8 @@ Release date: 2013-08-03
 Core and Builtins
 -----------------
 
+- Issue #16741: Fix an error reporting in int().
+
 - Issue #17899: Fix rare file descriptor leak in os.listdir().
 
 - Issue #9035: ismount now recognises volumes mounted below a drive root
@@ -180,6 +182,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #17998: Fix an internal error in regular expression engine.
 
 - Issue #17557: Fix os.getgroups() to work with the modified behavior of
   getgroups(2) on OS X 10.8.  Original patch by Mateusz Lenik.
@@ -760,6 +764,9 @@ Windows
 
 Build
 -----
+
+- Issue #16067: Add description into MSI file to replace installer's 
+  temporary name.
 
 - Issue #18257: Fix readlink usage in python-config.  Install the python
   version again on Darwin.
