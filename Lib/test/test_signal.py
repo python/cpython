@@ -209,11 +209,17 @@ class WindowsSignalTests(unittest.TestCase):
     def test_issue9324(self):
         # Updated for issue #10003, adding SIGBREAK
         handler = lambda x, y: None
+        checked = set()
         for sig in (signal.SIGABRT, signal.SIGBREAK, signal.SIGFPE,
                     signal.SIGILL, signal.SIGINT, signal.SIGSEGV,
                     signal.SIGTERM):
-            # Set and then reset a handler for signals that work on windows
-            signal.signal(sig, signal.signal(sig, handler))
+            # Set and then reset a handler for signals that work on windows.
+            # Issue #18396, only for signals without a C-level handler.
+            if signal.getsignal(sig) is not None:
+                signal.signal(sig, signal.signal(sig, handler))
+                checked.add(sig)
+        # Issue #18396: Ensure the above loop at least tested *something*
+        self.assertTrue(checked)
 
         with self.assertRaises(ValueError):
             signal.signal(-1, handler)
