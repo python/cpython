@@ -1392,7 +1392,10 @@ merge(msiname, "SharedCRT", "TARGETDIR", modules)
 # certname (from config.py) should be (a substring of)
 # the certificate subject, e.g. "Python Software Foundation"
 if certname:
-    os.system('signtool sign /n "%s" /t http://timestamp.verisign.com/scripts/timestamp.dll %s' % (certname, msiname))
+    os.system('signtool sign /n "%s" '
+      '/t http://timestamp.verisign.com/scripts/timestamp.dll '
+      '/d "Python %s" '
+      '%s' % (certname, full_current_version, msiname))
 
 if pdbzip:
     build_pdbzip()
