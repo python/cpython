@@ -1718,8 +1718,6 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(TypeError, "hello".encode, 42, 42, 42)
 
         # Error handling (lone surrogate in PyUnicode_TransformDecimalToASCII())
-        self.assertRaises(UnicodeError, int, "\ud800")
-        self.assertRaises(UnicodeError, int, "\udf00")
         self.assertRaises(UnicodeError, float, "\ud800")
         self.assertRaises(UnicodeError, float, "\udf00")
         self.assertRaises(UnicodeError, complex, "\ud800")
