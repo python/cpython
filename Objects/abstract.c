@@ -1240,25 +1240,6 @@ convert_integral_to_int(PyObject *integral, const char *error_format)
 }
 
 
-/* Add a check for embedded NULL-bytes in the argument. */
-static PyObject *
-long_from_string(const char *s, Py_ssize_t len)
-{
-    char *end;
-    PyObject *x;
-
-    x = PyLong_FromString((char*)s, &end, 10);
-    if (x == NULL)
-        return NULL;
-    if (end != s + len) {
-        PyErr_SetString(PyExc_ValueError,
-                        "null byte in argument for int()");
-        Py_DECREF(x);
-        return NULL;
-    }
-    return x;
-}
-
 PyObject *
 PyNumber_Long(PyObject *o)
 {
@@ -1306,16 +1287,16 @@ PyNumber_Long(PyObject *o)
 
     if (PyBytes_Check(o))
         /* need to do extra error checking that PyLong_FromString()
-         * doesn't do.  In particular int('9.5') must raise an
-         * exception, not truncate the float.
+         * doesn't do.  In particular int('9\x005') must raise an
+         * exception, not truncate at the null.
          */
-        return long_from_string(PyBytes_AS_STRING(o),
-                                PyBytes_GET_SIZE(o));
+        return _PyLong_FromBytes(PyBytes_AS_STRING(o),
+                                 PyBytes_GET_SIZE(o), 10);
     if (PyUnicode_Check(o))
         /* The above check is done in PyLong_FromUnicode(). */
         return PyLong_FromUnicodeObject(o, 10);
     if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
-        return long_from_string(buffer, buffer_len);
+        return _PyLong_FromBytes(buffer, buffer_len, 10);
 
     return type_error("int() argument must be a string or a "
                       "number, not '%.200s'", o);
