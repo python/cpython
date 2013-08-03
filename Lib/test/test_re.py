@@ -897,6 +897,16 @@ class ReTests(unittest.TestCase):
         with self.assertRaisesRegexp(sre_constants.error, '\?foo'):
             re.compile('(?P<?foo>)')
 
+    def test_issue17998(self):
+        for reps in '*', '+', '?', '{1}':
+            for mod in '', '?':
+                pattern = '.' + reps + mod + 'yz'
+                self.assertEqual(re.compile(pattern, re.S).findall('xyz'),
+                                 ['xyz'], msg=pattern)
+                pattern = pattern.encode()
+                self.assertEqual(re.compile(pattern, re.S).findall(b'xyz'),
+                                 [b'xyz'], msg=pattern)
+
 
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR

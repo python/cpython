@@ -20,14 +20,14 @@
 # if SIZEOF_SIZE_T > 4
 #  define SRE_MAXREPEAT (~(SRE_CODE)0)
 # else
-#  define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX + 1u)
+#  define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX)
 # endif
 #else
 # define SRE_CODE unsigned int
 # if SIZEOF_SIZE_T > SIZEOF_INT
 #  define SRE_MAXREPEAT (~(SRE_CODE)0)
 # else
-#  define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX + 1u)
+#  define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX)
 # endif
 #endif
 
