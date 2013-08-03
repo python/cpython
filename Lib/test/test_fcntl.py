@@ -32,6 +32,8 @@ def get_lockdata():
             pid_t = 'l'
         lockdata = struct.pack(off_t + off_t + pid_t + 'hh', 0, 0, 0,
                                fcntl.F_WRLCK, 0)
+    elif sys.platform.startswith('gnukfreebsd'):
+        lockdata = struct.pack('qqihhi', 0, 0, 0, fcntl.F_WRLCK, 0, 0)
     elif sys.platform in ['aix3', 'aix4', 'hp-uxB', 'unixware7']:
         lockdata = struct.pack('hhlllii', fcntl.F_WRLCK, 0, 0, 0, 0, 0, 0)
     else:
