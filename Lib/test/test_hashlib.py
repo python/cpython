@@ -154,6 +154,11 @@ class HashLibTestCase(unittest.TestCase):
             assert isinstance(h.digest(), bytes), name
             self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
+    def test_name_attribute(self):
+        for cons in self.hash_constructors:
+            h = cons()
+            assert isinstance(h.name, str), "No name attribute"
+            assert h.name in self.supported_hash_names
 
     def test_large_update(self):
         aas = b'a' * 128
