@@ -73,14 +73,6 @@ class IntTestCases(unittest.TestCase):
         x = -1-sys.maxsize
         self.assertEqual(x >> 1, x//2)
 
-        self.assertRaises(ValueError, int, '123\0')
-        self.assertRaises(ValueError, int, '53', 40)
-
-        # SF bug 1545497: embedded NULs were not detected with
-        # explicit base
-        self.assertRaises(ValueError, int, '123\0', 10)
-        self.assertRaises(ValueError, int, '123\x00 245', 20)
-
         x = int('1' * 600)
         self.assertIsInstance(x, int)
 
@@ -360,14 +352,37 @@ class IntTestCases(unittest.TestCase):
                     int(TruncReturnsBadInt())
 
     def test_error_message(self):
-        testlist = ('\xbd', '123\xbd', '  123 456  ')
-        for s in testlist:
-            try:
-                int(s)
-            except ValueError as e:
-                self.assertIn(s.strip(), e.args[0])
-            else:
-                self.fail("Expected int(%r) to raise a ValueError", s)
+        def check(s, base=None):
+            with self.assertRaises(ValueError,
+                                   msg="int(%r, %r)" % (s, base)) as cm:
+                if base is None:
+                    int(s)
+                else:
+                    int(s, base)
+            self.assertEqual(cm.exception.args[0],
+                "invalid literal for int() with base %d: %r" %
+                (10 if base is None else base, s))
+
+        check('\xbd')
+        check('123\xbd')
+        check('  123 456  ')
+
+        check('123\x00')
+        # SF bug 1545497: embedded NULs were not detected with explicit base
+        check('123\x00', 10)
+        check('123\x00 245', 20)
+        check('123\x00 245', 16)
+        check('123\x00245', 20)
+        check('123\x00245', 16)
+        # byte string with embedded NUL
+        check(b'123\x00')
+        check(b'123\x00', 10)
+        # non-UTF-8 byte string
+        check(b'123\xbd')
+        check(b'123\xbd', 10)
+        # lone surrogate in Unicode string
+        check('123\ud800')
+        check('123\ud800', 10)
 
 def test_main():
     support.run_unittest(IntTestCases)
