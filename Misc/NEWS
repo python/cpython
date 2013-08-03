@@ -765,6 +765,9 @@ Windows
 Build
 -----
 
+- Issue #16067: Add description into MSI file to replace installer's 
+  temporary name.
+
 - Issue #18257: Fix readlink usage in python-config.  Install the python
   version again on Darwin.
 
