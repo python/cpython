@@ -997,7 +997,7 @@ entrance:
             TRACE(("|%p|%p|REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
 
-            if (ctx->pattern[1] > (end - ctx->ptr) / state->charsize)
+            if ((Py_ssize_t) ctx->pattern[1] > (end - ctx->ptr) / state->charsize)
                 RETURN_FAILURE; /* cannot match */
 
             state->ptr = ctx->ptr;
@@ -1081,7 +1081,7 @@ entrance:
             TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", ctx->pattern, ctx->ptr,
                    ctx->pattern[1], ctx->pattern[2]));
 
-            if (ctx->pattern[1] > (end - ctx->ptr) / state->charsize)
+            if ((Py_ssize_t) ctx->pattern[1] > (end - ctx->ptr) / state->charsize)
                 RETURN_FAILURE; /* cannot match */
 
             state->ptr = ctx->ptr;
@@ -1180,7 +1180,7 @@ entrance:
             TRACE(("|%p|%p|MAX_UNTIL %d\n", ctx->pattern,
                    ctx->ptr, ctx->count));
 
-            if (ctx->count < ctx->u.rep->pattern[1]) {
+            if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
@@ -1194,7 +1194,7 @@ entrance:
                 RETURN_FAILURE;
             }
 
-            if ((ctx->count < ctx->u.rep->pattern[2] ||
+            if ((ctx->count < (Py_ssize_t) ctx->u.rep->pattern[2] ||
                 ctx->u.rep->pattern[2] == SRE_MAXREPEAT) &&
                 state->ptr != ctx->u.rep->last_ptr) {
                 /* we may have enough matches, but if we can
@@ -1243,7 +1243,7 @@ entrance:
             TRACE(("|%p|%p|MIN_UNTIL %d %p\n", ctx->pattern,
                    ctx->ptr, ctx->count, ctx->u.rep->pattern));
 
-            if (ctx->count < ctx->u.rep->pattern[1]) {
+            if (ctx->count < (Py_ssize_t) ctx->u.rep->pattern[1]) {
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MIN_UNTIL_1, jump_min_until_1,
@@ -1272,7 +1272,7 @@ entrance:
 
             LASTMARK_RESTORE();
 
-            if ((ctx->count >= ctx->u.rep->pattern[2]
+            if ((ctx->count >= (Py_ssize_t) ctx->u.rep->pattern[2]
                 && ctx->u.rep->pattern[2] != SRE_MAXREPEAT) ||
                 state->ptr == ctx->u.rep->last_ptr)
                 RETURN_FAILURE;
