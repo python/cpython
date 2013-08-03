@@ -19,7 +19,7 @@
 #if SIZEOF_SIZE_T > 4
 # define SRE_MAXREPEAT (~(SRE_CODE)0)
 #else
-# define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX + 1u)
+# define SRE_MAXREPEAT ((SRE_CODE)PY_SSIZE_T_MAX)
 #endif
 
 typedef struct {
