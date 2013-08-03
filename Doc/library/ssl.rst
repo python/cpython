@@ -859,7 +859,7 @@ to speed up repeated connections from the same clients.
    does not contain certificates from *capath* unless a certificate was
    requested and loaded by a SSL connection.
 
-   ..versionadded:: 3.4
+   .. versionadded:: 3.4
 
 .. method:: SSLContext.set_default_verify_paths()
 
