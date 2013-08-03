@@ -230,6 +230,8 @@ IDLE
 Tests
 -----
 
+- Fix a fcntl test case on KFreeBSD, Debian #708653 (Petr Salinger).
+
 - Issue #18396: Fix spurious test failure in test_signal on Windows when
   faulthandler is enabled (Patch by Jeremy Kloth)
 
