@@ -416,7 +416,8 @@ class ProcessTestCase(BaseTestCase):
     def test_executable_without_cwd(self):
         # For a normal installation, it should work without 'cwd'
         # argument.  For test runs in the build directory, see #7774.
-        self._assert_cwd('', "somethingyoudonthave", executable=sys.executable)
+        self._assert_cwd(os.getcwd(), "somethingyoudonthave",
+                         executable=sys.executable)
 
     def test_stdin_pipe(self):
         # stdin redirection
