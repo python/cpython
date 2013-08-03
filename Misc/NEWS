@@ -181,6 +181,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17998: Fix an internal error in regular expression engine.
+
 - Issue #17557: Fix os.getgroups() to work with the modified behavior of
   getgroups(2) on OS X 10.8.  Original patch by Mateusz Lenik.
 
