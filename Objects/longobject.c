@@ -2000,6 +2000,14 @@ long_from_binary_base(char **str, int base)
     return long_normalize(z);
 }
 
+/* Parses a long from a bytestring. Leading and trailing whitespace will be
+ * ignored.
+ *
+ * If successful, a PyLong object will be returned and 'pend' will be pointing
+ * to the first unused byte unless it's NULL.
+ *
+ * If unsuccessful, NULL will be returned.
+ */
 PyObject *
 PyLong_FromString(char *str, char **pend, int base)
 {
@@ -2262,21 +2270,51 @@ digit beyond the first.
         str++;
     if (*str != '\0')
         goto onError;
-    if (pend)
-        *pend = str;
     long_normalize(z);
-    return (PyObject *) maybe_small_long(z);
+    z = maybe_small_long(z);
+    if (z == NULL)
+        return NULL;
+    if (pend != NULL)
+        *pend = str;
+    return (PyObject *) z;
 
   onError:
+    if (pend != NULL)
+        *pend = str;
     Py_XDECREF(z);
     slen = strlen(orig_str) < 200 ? strlen(orig_str) : 200;
     strobj = PyUnicode_FromStringAndSize(orig_str, slen);
     if (strobj == NULL)
         return NULL;
     PyErr_Format(PyExc_ValueError,
-                 "invalid literal for int() with base %d: %R",
+                 "invalid literal for int() with base %d: %.200R",
                  base, strobj);
     Py_DECREF(strobj);
+    return NULL;
+}
+
+/* Since PyLong_FromString doesn't have a length parameter,
+ * check here for possible NULs in the string.
+ *
+ * Reports an invalid literal as a bytes object.
+ */
+PyObject *
+_PyLong_FromBytes(const char *s, Py_ssize_t len, int base)
+{
+    PyObject *result, *strobj;
+    char *end = NULL;
+
+    result = PyLong_FromString((char*)s, &end, base);
+    if (end == NULL || (result != NULL && end == s + len))
+        return result;
+    Py_XDECREF(result);
+    strobj = PyBytes_FromStringAndSize(s, Py_MIN(len, 200));
+    if (strobj != NULL) {
+        PyErr_Format(PyExc_ValueError,
+                     "invalid literal for int() with base %d: %.200R",
+                     base, strobj);
+        Py_DECREF(strobj);
+    }
     return NULL;
 }
 
@@ -2294,9 +2332,8 @@ PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
 PyObject *
 PyLong_FromUnicodeObject(PyObject *u, int base)
 {
-    PyObject *result;
-    PyObject *asciidig;
-    char *buffer, *end;
+    PyObject *result, *asciidig;
+    char *buffer, *end = NULL;
     Py_ssize_t buflen;
 
     asciidig = _PyUnicode_TransformDecimalAndSpaceToASCII(u);
@@ -2305,17 +2342,22 @@ PyLong_FromUnicodeObject(PyObject *u, int base)
     buffer = PyUnicode_AsUTF8AndSize(asciidig, &buflen);
     if (buffer == NULL) {
         Py_DECREF(asciidig);
-        return NULL;
+        if (!PyErr_ExceptionMatches(PyExc_UnicodeEncodeError))
+            return NULL;
     }
-    result = PyLong_FromString(buffer, &end, base);
-    if (result != NULL && end != buffer + buflen) {
-        PyErr_SetString(PyExc_ValueError,
-                        "null byte in argument for int()");
-        Py_DECREF(result);
-        result = NULL;
+    else {
+        result = PyLong_FromString(buffer, &end, base);
+        if (end == NULL || (result != NULL && end == buffer + buflen)) {
+            Py_DECREF(asciidig);
+            return result;
+        }
+        Py_DECREF(asciidig);
+        Py_XDECREF(result);
     }
-    Py_DECREF(asciidig);
-    return result;
+    PyErr_Format(PyExc_ValueError,
+                 "invalid literal for int() with base %d: %.200R",
+                 base, u);
+    return NULL;
 }
 
 /* forward */
@@ -4319,23 +4361,12 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PyUnicode_Check(x))
         return PyLong_FromUnicodeObject(x, (int)base);
     else if (PyByteArray_Check(x) || PyBytes_Check(x)) {
-        /* Since PyLong_FromString doesn't have a length parameter,
-         * check here for possible NULs in the string. */
         char *string;
-        Py_ssize_t size = Py_SIZE(x);
         if (PyByteArray_Check(x))
             string = PyByteArray_AS_STRING(x);
         else
             string = PyBytes_AS_STRING(x);
-        if (strlen(string) != (size_t)size || !size) {
-            /* We only see this if there's a null byte in x or x is empty,
-               x is a bytes or buffer, *and* a base is given. */
-            PyErr_Format(PyExc_ValueError,
-                         "invalid literal for int() with base %d: %R",
-                         (int)base, x);
-            return NULL;
-        }
-        return PyLong_FromString(string, NULL, (int)base);
+        return _PyLong_FromBytes(string, Py_SIZE(x), (int)base);
     }
     else {
         PyErr_SetString(PyExc_TypeError,
