@@ -124,6 +124,18 @@ returned by the constructors:
 
    The internal block size of the hash algorithm in bytes.
 
+A hash object has the following attributes:
+
+.. attribute:: hash.name
+
+   The canonical name of this hash, always lowercase and always suitable as a
+   parameter to :func:`new` to create another hash of this type.
+
+   .. versionchanged:: 3.4
+      The name attribute has been present in CPython since its inception, but
+      until Python 3.4 was not formally specified, so may not exist on some
+      platforms.
+
 A hash object has the following methods:
 
 
