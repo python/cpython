@@ -416,7 +416,8 @@ Functions
    and ``"end-ns"`` (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  Returns an :term:`iterator` providing
+   :class:`XMLParser` parser is used.  *parser* can only use the default
+   :class:`TreeBuilder` as a target.  Returns an :term:`iterator` providing
    ``(event, elem)`` pairs.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
@@ -880,7 +881,7 @@ IncrementalParser Objects
    events are used to get detailed namespace information).  If *events* is
    omitted, only ``"end"`` events are reported.  *parser* is an optional
    parser instance.  If not given, the standard :class:`XMLParser` parser is
-   used.
+   used.  *parser* can only use the default :class:`TreeBuilder` as a target.
 
    .. method:: data_received(data)
 
