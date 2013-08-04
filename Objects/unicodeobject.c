@@ -3323,7 +3323,7 @@ PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
     wchar_t *wstr;
     PyObject *bytes = NULL;
     char *errmsg;
-    PyObject *reason;
+    PyObject *reason = NULL;
     PyObject *exc;
     size_t error_pos;
     int surrogateescape;
