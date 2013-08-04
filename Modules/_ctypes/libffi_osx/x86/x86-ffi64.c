@@ -46,7 +46,7 @@ ffi_call_unix64(
 	unsigned long	bytes,
 	unsigned		flags,
 	void*			raddr,
-	void			(*fnaddr)(),
+	void			(*fnaddr)(void),
 	unsigned		ssecount);
 
 /*	All reference to register classes here is identical to the code in
@@ -429,7 +429,7 @@ ffi_prep_cif_machdep(
 void
 ffi_call(
 	ffi_cif*	cif,
-	void		(*fn)(),
+	void		(*fn)(void),
 	void*		rvalue,
 	void**		avalue)
 {
