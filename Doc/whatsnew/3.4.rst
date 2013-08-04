@@ -245,9 +245,12 @@ by Claudiu Popa in :issue:`17616`.)
 stat
 ----
 
-The stat module is now backed by a C implementation in :mod:`_stat`. A C
+The :mod:`stat` module is now backed by a C implementation in :mod:`_stat`. A C
 implementation is required as most of the values aren't standardized and
 platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
+
+The module supports new file types: door, event port and whiteout.
+
 
 Optimizations
 =============
@@ -271,7 +274,9 @@ Deprecated
 Unsupported Operating Systems
 -----------------------------
 
-* None yet.
+* OS/2
+* VMS (issue 16136)
+* Windows 2000
 
 
 Deprecated Python modules, functions and methods
