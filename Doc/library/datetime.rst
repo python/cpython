@@ -170,10 +170,12 @@ dates or times.
    * ``0 <= seconds < 3600*24`` (the number of seconds in one day)
    * ``-999999999 <= days <= 999999999``
 
-   If any argument is a float and there are fractional microseconds, the fractional
-   microseconds left over from all arguments are combined and their sum is rounded
-   to the nearest microsecond.  If no argument is a float, the conversion and
-   normalization processes are exact (no information is lost).
+   If any argument is a float and there are fractional microseconds,
+   the fractional microseconds left over from all arguments are
+   combined and their sum is rounded to the nearest microsecond using
+   round-half-to-even tiebreaker.  If no argument is a float, the
+   conversion and normalization processes are exact (no information is
+   lost).
 
    If the normalized value of days lies outside the indicated range,
    :exc:`OverflowError` is raised.

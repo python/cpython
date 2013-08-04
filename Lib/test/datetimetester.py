@@ -619,6 +619,10 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(hours=-.2/us_per_hour), td(0))
         eq(td(days=-.4/us_per_day, hours=-.2/us_per_hour), td(microseconds=-1))
 
+        # Test for a patch in Issue 8860
+        eq(td(microseconds=0.5), 0.5*td(microseconds=1.0))
+        eq(td(microseconds=0.5)//td.resolution, 0.5*td.resolution//td.resolution)
+
     def test_massive_normalization(self):
         td = timedelta(microseconds=-1)
         self.assertEqual((td.days, td.seconds, td.microseconds),

@@ -140,19 +140,6 @@ divmod(int x, int y, int *r)
     return quo;
 }
 
-/* Round a double to the nearest long.  |x| must be small enough to fit
- * in a C long; this is not checked.
- */
-static long
-round_to_long(double x)
-{
-    if (x >= 0.0)
-        x = floor(x + 0.5);
-    else
-        x = ceil(x - 0.5);
-    return (long)x;
-}
-
 /* Nearest integer to m / n for integers m and n. Half-integer results
  * are rounded to even.
  */
@@ -1397,7 +1384,7 @@ cmperror(PyObject *a, PyObject *b)
  */
 
 /* Conversion factors. */
-static PyObject *us_per_us = NULL;      /* 1 */
+static PyObject *one = NULL;      /* 1 */
 static PyObject *us_per_ms = NULL;      /* 1000 */
 static PyObject *us_per_second = NULL;  /* 1000000 */
 static PyObject *us_per_minute = NULL;  /* 1e6 * 60 as Python int */
@@ -2119,7 +2106,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         goto Done
 
     if (us) {
-        y = accum("microseconds", x, us, us_per_us, &leftover_us);
+        y = accum("microseconds", x, us, one, &leftover_us);
         CLEANUP;
     }
     if (ms) {
@@ -2148,7 +2135,33 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
     if (leftover_us) {
         /* Round to nearest whole # of us, and add into x. */
-        PyObject *temp = PyLong_FromLong(round_to_long(leftover_us));
+        double whole_us = round(leftover_us);
+        int x_is_odd;
+        PyObject *temp;
+
+        whole_us = round(leftover_us);
+        if (fabs(whole_us - leftover_us) == 0.5) {
+            /* We're exactly halfway between two integers.  In order
+             * to do round-half-to-even, we must determine whether x
+             * is odd. Note that x is odd when it's last bit is 1. The
+             * code below uses bitwise and operation to check the last
+             * bit. */
+	    temp = PyNumber_And(x, one);  /* temp <- x & 1 */
+            if (temp == NULL) {
+                Py_DECREF(x);
+                goto Done;
+            }
+            x_is_odd = PyObject_IsTrue(temp);
+            Py_DECREF(temp);
+            if (x_is_odd == -1) {
+                Py_DECREF(x);
+                goto Done;
+            }
+            whole_us = 2.0 * round((leftover_us + x_is_odd) * 0.5) - x_is_odd;
+        }
+
+        temp = PyLong_FromLong(whole_us);
+
         if (temp == NULL) {
             Py_DECREF(x);
             goto Done;
@@ -5351,12 +5364,12 @@ PyInit__datetime(void)
     assert(DI100Y == 25 * DI4Y - 1);
     assert(DI100Y == days_before_year(100+1));
 
-    us_per_us = PyLong_FromLong(1);
+    one = PyLong_FromLong(1);
     us_per_ms = PyLong_FromLong(1000);
     us_per_second = PyLong_FromLong(1000000);
     us_per_minute = PyLong_FromLong(60000000);
     seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (us_per_us == NULL || us_per_ms == NULL || us_per_second == NULL ||
+    if (one == NULL || us_per_ms == NULL || us_per_second == NULL ||
         us_per_minute == NULL || seconds_per_day == NULL)
         return NULL;
 
