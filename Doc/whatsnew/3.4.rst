@@ -275,7 +275,6 @@ Unsupported Operating Systems
 -----------------------------
 
 * OS/2
-* VMS (issue 16136)
 * Windows 2000
 
 
