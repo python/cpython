@@ -2427,6 +2427,8 @@ expat_unknown_encoding_handler(XMLParserObject *self, const XML_Char *name,
 
     if (PyUnicode_GET_SIZE(u) != 256) {
         Py_DECREF(u);
+        PyErr_SetString(PyExc_ValueError,
+                        "multi-byte encodings are not supported");
         return XML_STATUS_ERROR;
     }
 

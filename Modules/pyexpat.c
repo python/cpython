@@ -1252,6 +1252,13 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
     if (_u_string == NULL)
         return result;
 
+    if (PyUnicode_GET_SIZE(_u_string) != 256) {
+        Py_DECREF(_u_string);
+        PyErr_SetString(PyExc_ValueError,
+                        "multi-byte encodings are not supported");
+        return result;
+    }
+
     for (i = 0; i < 256; i++) {
         /* Stupid to access directly, but fast */
         Py_UNICODE c = _u_string->str[i];

@@ -883,6 +883,12 @@ def check_encoding(encoding):
     >>> check_encoding("iso-8859-15")
     >>> check_encoding("cp437")
     >>> check_encoding("mac-roman")
+    >>> check_encoding("gbk")
+    Traceback (most recent call last):
+    ValueError: multi-byte encodings are not supported
+    >>> check_encoding("cp037")
+    Traceback (most recent call last):
+    ParseError: unknown encoding: line 1, column 30
     """
     ET.XML("<?xml version='1.0' encoding='%s'?><xml />" % encoding)
 
