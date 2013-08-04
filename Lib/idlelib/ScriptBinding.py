@@ -87,9 +87,8 @@ class ScriptBinding:
         self.shell = shell = self.flist.open_shell()
         saved_stream = shell.get_warning_stream()
         shell.set_warning_stream(shell.stderr)
-        f = open(filename, 'rb')
-        source = f.read()
-        f.close()
+        with open(filename, 'rb') as f:
+            source = f.read()
         if b'\r' in source:
             source = source.replace(b'\r\n', b'\n')
             source = source.replace(b'\r', b'\n')
