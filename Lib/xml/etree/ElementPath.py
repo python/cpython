@@ -249,10 +249,12 @@ class _SelectorContext:
 
 def iterfind(elem, path, namespaces=None):
     # compile selector pattern
+    cache_key = (path, None if namespaces is None
+                            else tuple(sorted(namespaces.items())))
     if path[-1:] == "/":
         path = path + "*" # implicit all (FIXME: keep this?)
     try:
-        selector = _cache[path]
+        selector = _cache[cache_key]
     except KeyError:
         if len(_cache) > 100:
             _cache.clear()
@@ -272,7 +274,7 @@ def iterfind(elem, path, namespaces=None):
                     token = next()
             except StopIteration:
                 break
-        _cache[path] = selector
+        _cache[cache_key] = selector
     # execute selector pattern
     result = [elem]
     context = _SelectorContext(elem)
