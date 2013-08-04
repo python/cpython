@@ -127,6 +127,7 @@ class EnumMeta(type):
         enum_class = super().__new__(metacls, cls, bases, classdict)
         enum_class._member_names_ = []               # names in definition order
         enum_class._member_map_ = OrderedDict()      # name->value map
+        enum_class._member_type_ = member_type
 
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
@@ -159,7 +160,6 @@ class EnumMeta(type):
                 if not hasattr(enum_member, '_value_'):
                     enum_member._value_ = member_type(*args)
             value = enum_member._value_
-            enum_member._member_type_ = member_type
             enum_member._name_ = member_name
             enum_member.__init__(*args)
             # If another member with the same value was already defined, the

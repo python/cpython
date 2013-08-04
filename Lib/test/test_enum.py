@@ -583,6 +583,24 @@ class TestEnum(unittest.TestCase):
             option3 = 3
         self.assertEqual(int(MailManOptions.option1), 1)
 
+    def test_introspection(self):
+        class Number(IntEnum):
+            one = 100
+            two = 200
+        self.assertIs(Number.one._member_type_, int)
+        self.assertIs(Number._member_type_, int)
+        class String(str, Enum):
+            yarn = 'soft'
+            rope = 'rough'
+            wire = 'hard'
+        self.assertIs(String.yarn._member_type_, str)
+        self.assertIs(String._member_type_, str)
+        class Plain(Enum):
+            vanilla = 'white'
+            one = 1
+        self.assertIs(Plain.vanilla._member_type_, object)
+        self.assertIs(Plain._member_type_, object)
+
     def test_no_such_enum_member(self):
         class Color(Enum):
             red = 1
