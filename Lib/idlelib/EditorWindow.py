@@ -894,11 +894,8 @@ class EditorWindow(object):
         "Load and update the recent files list and menus"
         rf_list = []
         if os.path.exists(self.recent_files_path):
-            rf_list_file = open(self.recent_files_path,'r')
-            try:
+            with  open(self.recent_files_path, 'r') as rf_list_file:
                 rf_list = rf_list_file.readlines()
-            finally:
-                rf_list_file.close()
         if new_file:
             new_file = os.path.abspath(new_file) + '\n'
             if new_file in rf_list:

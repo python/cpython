@@ -248,9 +248,8 @@ class IOBinding:
         try:
             # open the file in binary mode so that we can handle
             #   end-of-line convention ourselves.
-            f = open(filename,'rb')
-            chars = f.read()
-            f.close()
+            with open(filename, 'rb') as f:
+                chars = f.read()
         except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg), master=self.text)
             return False
@@ -383,10 +382,8 @@ class IOBinding:
         if self.eol_convention != "\n":
             chars = chars.replace("\n", self.eol_convention)
         try:
-            f = open(filename, "wb")
-            f.write(chars)
-            f.flush()
-            f.close()
+            with open(filename, "wb") as f:
+                f.write(chars)
             return True
         except IOError as msg:
             tkMessageBox.showerror("I/O Error", str(msg),
