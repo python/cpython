@@ -20,6 +20,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "structmember.h"
 
 #ifndef MS_WINDOWS
 #define UNIX
@@ -108,6 +109,7 @@ typedef struct {
     int fd;
 #endif
 
+    PyObject *weakreflist;
     access_mode access;
 } mmap_object;
 
@@ -134,6 +136,8 @@ mmap_object_dealloc(mmap_object *m_obj)
     }
 #endif /* UNIX */
 
+    if (m_obj->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) m_obj);
     Py_TYPE(m_obj)->tp_free((PyObject*)m_obj);
 }
 
@@ -1032,7 +1036,7 @@ static PyTypeObject mmap_object_type = {
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
+    offsetof(mmap_object, weakreflist),         /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
     mmap_object_methods,                        /* tp_methods */
@@ -1190,6 +1194,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->data = NULL;
     m_obj->size = (size_t) map_size;
     m_obj->pos = (size_t) 0;
+    m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     m_obj->offset = offset;
     if (fd == -1) {
@@ -1394,6 +1399,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     /* set the initial position */
     m_obj->pos = (size_t) 0;
 
+    m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
     if (tagname != NULL && *tagname != '\0') {
