@@ -36,6 +36,8 @@ typedef struct _frame {
            non-generator frames. See the save_exc_state and swap_exc_state
            functions in ceval.c for details of their use. */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
+    /* Borrowed referenced to a generator, or NULL */
+    PyObject *f_gen;
 
     PyThreadState *f_tstate;
     int f_lasti;                /* Last instruction if called */
@@ -46,6 +48,7 @@ typedef struct _frame {
        bytecode index. */
     int f_lineno;               /* Current line number */
     int f_iblock;               /* index in f_blockstack */
+    char f_executing;           /* whether the frame is still executing */
     PyTryBlock f_blockstack[CO_MAXBLOCKS]; /* for try and loop blocks */
     PyObject *f_localsplus[1];  /* locals+stack, dynamically sized */
 } PyFrameObject;

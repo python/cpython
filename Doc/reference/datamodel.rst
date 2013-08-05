@@ -934,6 +934,20 @@ Internal types
       frame).  A debugger can implement a Jump command (aka Set Next Statement)
       by writing to f_lineno.
 
+      Frame objects support one method:
+
+      .. method:: frame.clear()
+
+         This method clears all references to local variables held by the
+         frame.  Also, if the frame belonged to a generator, the generator
+         is finalized.  This helps break reference cycles involving frame
+         objects (for example when catching an exception and storing its
+         traceback for later use).
+
+         :exc:`RuntimeError` is raised if the frame is currently executing.
+
+         .. versionadded:: 3.4
+
    Traceback objects
       .. index::
          object: traceback

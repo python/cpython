@@ -846,6 +846,10 @@ index of the current line within that list.
           finally:
               del frame
 
+   If you want to keep the frame around (for example to print a traceback
+   later), you can also break reference cycles by using the
+   :meth:`frame.clear` method.
+
 The optional *context* argument supported by most of these functions specifies
 the number of lines of context to return, which are centered around the current
 line.
