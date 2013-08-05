@@ -212,7 +212,6 @@ static int
 set_insert_key(register PySetObject *so, PyObject *key, long hash)
 {
     register setentry *entry;
-    typedef setentry *(*lookupfunc)(PySetObject *, PyObject *, long);
 
     assert(so->lookup != NULL);
     entry = so->lookup(so, key, hash);
