@@ -11,7 +11,7 @@ static PyStructSequence_Field struct_group_type_fields[] = {
    {"gr_name", "group name"},
    {"gr_passwd", "password"},
    {"gr_gid", "group id"},
-   {"gr_mem", "group memebers"},
+   {"gr_mem", "group members"},
    {0}
 };
 
