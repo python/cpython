@@ -15,8 +15,8 @@ gen_traverse(PyGenObject *gen, visitproc visit, void *arg)
     return 0;
 }
 
-static void
-gen_finalize(PyObject *self)
+void
+_PyGen_Finalize(PyObject *self)
 {
     PyGenObject *gen = (PyGenObject *)self;
     PyObject *res;
@@ -140,6 +140,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
         Py_XDECREF(t);
         Py_XDECREF(v);
         Py_XDECREF(tb);
+        gen->gi_frame->f_gen = NULL;
         gen->gi_frame = NULL;
         Py_DECREF(f);
     }
@@ -505,7 +506,7 @@ PyTypeObject PyGen_Type = {
     0,                                          /* tp_weaklist */
     0,                                          /* tp_del */
     0,                                          /* tp_version_tag */
-    gen_finalize,                               /* tp_finalize */
+    _PyGen_Finalize,                            /* tp_finalize */
 };
 
 PyObject *
@@ -517,6 +518,7 @@ PyGen_New(PyFrameObject *f)
         return NULL;
     }
     gen->gi_frame = f;
+    f->f_gen = (PyObject *) gen;
     Py_INCREF(f->f_code);
     gen->gi_code = (PyObject *)(f->f_code);
     gen->gi_running = 0;
