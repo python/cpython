@@ -75,8 +75,8 @@ class HashLibTestCase(unittest.TestCase):
         if _hashlib:
             # These two algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
-            assert hasattr(_hashlib, 'openssl_md5')
-            assert hasattr(_hashlib, 'openssl_sha1')
+            self.assertTrue(hasattr(_hashlib, 'openssl_md5'))
+            self.assertTrue(hasattr(_hashlib, 'openssl_sha1'))
             for algorithm, constructors in self.constructors_to_test.items():
                 constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
                 if constructor:
@@ -151,14 +151,15 @@ class HashLibTestCase(unittest.TestCase):
     def test_hexdigest(self):
         for cons in self.hash_constructors:
             h = cons()
-            assert isinstance(h.digest(), bytes), name
+            self.assertIsInstance(h.digest(), bytes)
             self.assertEqual(hexstr(h.digest()), h.hexdigest())
 
     def test_name_attribute(self):
         for cons in self.hash_constructors:
             h = cons()
-            assert isinstance(h.name, str), "No name attribute"
-            assert h.name in self.supported_hash_names
+            self.assertIsInstance(h.name, str)
+            self.assertIn(h.name, self.supported_hash_names)
+            self.assertEqual(h.name, hashlib.new(h.name).name)
 
     def test_large_update(self):
         aas = b'a' * 128
@@ -532,8 +533,8 @@ class HashLibTestCase(unittest.TestCase):
         events = []
         for threadnum in range(num_threads):
             chunk_size = len(data) // (10**threadnum)
-            assert chunk_size > 0
-            assert chunk_size % len(smallest_data) == 0
+            self.assertGreater(chunk_size, 0)
+            self.assertEqual(chunk_size % len(smallest_data), 0)
             event = threading.Event()
             events.append(event)
             threading.Thread(target=hash_in_chunks,
