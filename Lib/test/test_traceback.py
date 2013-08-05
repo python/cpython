@@ -150,11 +150,17 @@ class SyntaxTracebackCases(unittest.TestCase):
 
 class TracebackFormatTests(unittest.TestCase):
 
-    def test_traceback_format(self):
+    def some_exception(self):
+        raise KeyError('blah')
+
+    def check_traceback_format(self, cleanup_func=None):
         try:
-            raise KeyError('blah')
+            self.some_exception()
         except KeyError:
             type_, value, tb = sys.exc_info()
+            if cleanup_func is not None:
+                # Clear the inner frames, not this one
+                cleanup_func(tb.tb_next)
             traceback_fmt = 'Traceback (most recent call last):\n' + \
                             ''.join(traceback.format_tb(tb))
             file_ = StringIO()
@@ -183,11 +189,21 @@ class TracebackFormatTests(unittest.TestCase):
 
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
-        self.assertEqual(len(tb_lines), 3)
-        banner, location, source_line = tb_lines
+        self.assertEqual(len(tb_lines), 5)
+        banner = tb_lines[0]
+        location, source_line = tb_lines[-2:]
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))
         self.assertTrue(source_line.startswith('    raise'))
+
+    def test_traceback_format(self):
+        self.check_traceback_format()
+
+    def test_traceback_format_with_cleared_frames(self):
+        # Check that traceback formatting also works with a clear()ed frame
+        def cleanup_tb(tb):
+            tb.tb_frame.clear()
+        self.check_traceback_format(cleanup_tb)
 
     def test_stack_format(self):
         # Verify _stack functions. Note we have to use _getframe(1) to

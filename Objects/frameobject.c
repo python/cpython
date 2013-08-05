@@ -488,7 +488,7 @@ frame_traverse(PyFrameObject *f, visitproc visit, void *arg)
 }
 
 static void
-frame_clear(PyFrameObject *f)
+frame_tp_clear(PyFrameObject *f)
 {
     PyObject **fastlocals, **p, **oldtop;
     Py_ssize_t i, slots;
@@ -500,6 +500,7 @@ frame_clear(PyFrameObject *f)
      */
     oldtop = f->f_stacktop;
     f->f_stacktop = NULL;
+    f->f_executing = 0;
 
     Py_CLEAR(f->f_exc_type);
     Py_CLEAR(f->f_exc_value);
@@ -520,6 +521,25 @@ frame_clear(PyFrameObject *f)
 }
 
 static PyObject *
+frame_clear(PyFrameObject *f)
+{
+    if (f->f_executing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "cannot clear an executing frame");
+        return NULL;
+    }
+    if (f->f_gen) {
+        _PyGen_Finalize(f->f_gen);
+        assert(f->f_gen == NULL);
+    }
+    frame_tp_clear(f);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(clear__doc__,
+"F.clear(): clear most references held by the frame");
+
+static PyObject *
 frame_sizeof(PyFrameObject *f)
 {
     Py_ssize_t res, extras, ncells, nfrees;
@@ -538,6 +558,8 @@ PyDoc_STRVAR(sizeof__doc__,
 "F.__sizeof__() -> size of F in memory, in bytes");
 
 static PyMethodDef frame_methods[] = {
+    {"clear",           (PyCFunction)frame_clear,       METH_NOARGS,
+     clear__doc__},
     {"__sizeof__",      (PyCFunction)frame_sizeof,      METH_NOARGS,
      sizeof__doc__},
     {NULL,              NULL}   /* sentinel */
@@ -566,7 +588,7 @@ PyTypeObject PyFrame_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)frame_traverse,               /* tp_traverse */
-    (inquiry)frame_clear,                       /* tp_clear */
+    (inquiry)frame_tp_clear,                    /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -708,6 +730,8 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     f->f_lasti = -1;
     f->f_lineno = code->co_firstlineno;
     f->f_iblock = 0;
+    f->f_executing = 0;
+    f->f_gen = NULL;
 
     _PyObject_GC_TRACK(f);
     return f;

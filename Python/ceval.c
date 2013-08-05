@@ -1182,6 +1182,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     stack_pointer = f->f_stacktop;
     assert(stack_pointer != NULL);
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
+    f->f_executing = 1;
 
     if (co->co_flags & CO_GENERATOR && !throwflag) {
         if (f->f_exc_type != NULL && f->f_exc_type != Py_None) {
@@ -3206,6 +3207,7 @@ fast_yield:
     /* pop frame */
 exit_eval_frame:
     Py_LeaveRecursiveCall();
+    f->f_executing = 0;
     tstate->frame = f->f_back;
 
     return retval;
