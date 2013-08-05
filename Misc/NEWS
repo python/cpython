@@ -13,7 +13,10 @@ Core and Builtins
 Library
 -------
 
-- Issue 8860: Fixed rounding in timedelta constructor.
+- Issue #4885: Add weakref support to mmap objects.  Patch by Valerie Lambert.
+
+- Issue #8860: Fixed rounding in timedelta constructor.
+
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================
