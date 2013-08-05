@@ -1,11 +1,12 @@
 from test.support import (TESTFN, run_unittest, import_module, unlink,
-                          requires, _2G, _4G)
+                          requires, _2G, _4G, gc_collect)
 import unittest
 import os
 import re
 import itertools
 import socket
 import sys
+import weakref
 
 # Skip test if we can't import mmap.
 mmap = import_module('mmap')
@@ -691,6 +692,15 @@ class MmapTests(unittest.TestCase):
         self.assertIsInstance(exc.exception, OSError,
                               "wrong exception raised in context manager")
         self.assertTrue(m.closed, "context manager failed")
+
+    def test_weakref(self):
+        # Check mmap objects are weakrefable
+        mm = mmap.mmap(-1, 16)
+        wr = weakref.ref(mm)
+        self.assertIs(wr(), mm)
+        del mm
+        gc_collect()
+        self.assertIs(wr(), None)
 
 class LargeMmapTests(unittest.TestCase):
 
