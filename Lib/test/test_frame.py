@@ -90,6 +90,9 @@ class ClearTest(unittest.TestCase):
         gen = g()
         f = next(gen)
         self.assertFalse(endly)
+        # Clearing the frame closes the generator
+        f.clear()
+        self.assertTrue(endly)
 
     @support.cpython_only
     def test_clear_refcycles(self):
