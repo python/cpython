@@ -66,15 +66,34 @@ class CodecCallbackTest(unittest.TestCase):
         # replace unencodable characters which numeric character entities.
         # For ascii, latin-1 and charmaps this is completely implemented
         # in C and should be reasonably fast.
-        s = u"\u30b9\u30d1\u30e2 \xe4nd eggs"
+        s = u"\u30b9\u30d1\u30e2 \xe4nd egg\u0161"
         self.assertEqual(
             s.encode("ascii", "xmlcharrefreplace"),
-            "&#12473;&#12497;&#12514; &#228;nd eggs"
+            "&#12473;&#12497;&#12514; &#228;nd egg&#353;"
         )
         self.assertEqual(
             s.encode("latin-1", "xmlcharrefreplace"),
-            "&#12473;&#12497;&#12514; \xe4nd eggs"
+            "&#12473;&#12497;&#12514; \xe4nd egg&#353;"
         )
+        self.assertEqual(
+            s.encode("iso-8859-15", "xmlcharrefreplace"),
+            "&#12473;&#12497;&#12514; \xe4nd egg\xa8"
+        )
+
+    def test_xmlcharrefreplace_with_surrogates(self):
+        tests = [(u'\U0001f49d', '&#128157;'),
+                 (u'\ud83d', '&#55357;'),
+                 (u'\udc9d', '&#56477;'),
+                 (u'\ud83d\udc9d', '&#128157;' if len(u'\U0001f49d') > 1 else
+                                   '&#55357;&#56477;'),
+                ]
+        for encoding in ['ascii', 'latin1', 'iso-8859-15']:
+            for s, exp in tests:
+                self.assertEqual(s.encode(encoding, 'xmlcharrefreplace'),
+                                 exp, msg='%r.encode(%r)' % (s, encoding))
+                self.assertEqual((s+'X').encode(encoding, 'xmlcharrefreplace'),
+                                 exp+'X',
+                                 msg='%r.encode(%r)' % (s + 'X', encoding))
 
     def test_xmlcharnamereplace(self):
         # This time use a named character entity for unencodable

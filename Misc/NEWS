@@ -9,6 +9,9 @@ What's New in Python 2.7.6?
 Core and Builtins
 -----------------
 
+- Issue #15866: The xmlcharrefreplace error handler no more produces two XML
+  entities for a non-BMP character on narrow build.
+
 - Issue #18184: PyUnicode_FromFormat() and PyUnicode_FromFormatV() now raise
   OverflowError when an argument of %c format is out of range.
 

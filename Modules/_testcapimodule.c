@@ -1118,7 +1118,7 @@ unicode_encodedecimal(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "u#|s", &unicode, &length, &errors))
         return NULL;
 
-    decimal_length = length * 7; /* len('&#8364;') */
+    decimal_length = length * 10; /* len('&#1114111;') */
     decimal = PyBytes_FromStringAndSize(NULL, decimal_length);
     if (decimal == NULL)
         return NULL;

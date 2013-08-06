@@ -556,6 +556,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         PyObject *res;
         Py_UNICODE *p;
         Py_UNICODE *startp;
+        Py_UNICODE *e;
         Py_UNICODE *outp;
         int ressize;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
@@ -565,26 +566,31 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
         if (!(object = PyUnicodeEncodeError_GetObject(exc)))
             return NULL;
         startp = PyUnicode_AS_UNICODE(object);
-        for (p = startp+start, ressize = 0; p < startp+end; ++p) {
-            if (*p<10)
-                ressize += 2+1+1;
-            else if (*p<100)
-                ressize += 2+2+1;
-            else if (*p<1000)
-                ressize += 2+3+1;
-            else if (*p<10000)
-                ressize += 2+4+1;
+        e = startp + end;
+        for (p = startp+start, ressize = 0; p < e;) {
+            Py_UCS4 ch = *p++;
 #ifndef Py_UNICODE_WIDE
-            else
+            if ((0xD800 <= ch && ch <= 0xDBFF) &&
+                (p < e) &&
+                (0xDC00 <= *p && *p <= 0xDFFF)) {
+                ch = ((((ch & 0x03FF) << 10) |
+                       ((Py_UCS4)*p++ & 0x03FF)) + 0x10000);
+            }
+#endif
+            if (ch < 10)
+                ressize += 2+1+1;
+            else if (ch < 100)
+                ressize += 2+2+1;
+            else if (ch < 1000)
+                ressize += 2+3+1;
+            else if (ch < 10000)
+                ressize += 2+4+1;
+            else if (ch < 100000)
                 ressize += 2+5+1;
-#else
-            else if (*p<100000)
-                ressize += 2+5+1;
-            else if (*p<1000000)
+            else if (ch < 1000000)
                 ressize += 2+6+1;
             else
                 ressize += 2+7+1;
-#endif
         }
         /* allocate replacement */
         res = PyUnicode_FromUnicode(NULL, ressize);
@@ -593,40 +599,41 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
             return NULL;
         }
         /* generate replacement */
-        for (p = startp+start, outp = PyUnicode_AS_UNICODE(res);
-            p < startp+end; ++p) {
-            Py_UNICODE c = *p;
+        for (p = startp+start, outp = PyUnicode_AS_UNICODE(res); p < e;) {
             int digits;
             int base;
+            Py_UCS4 ch = *p++;
+#ifndef Py_UNICODE_WIDE
+            if ((0xD800 <= ch && ch <= 0xDBFF) &&
+                (p < startp+end) &&
+                (0xDC00 <= *p && *p <= 0xDFFF)) {
+                ch = ((((ch & 0x03FF) << 10) |
+                       ((Py_UCS4)*p++ & 0x03FF)) + 0x10000);
+            }
+#endif
             *outp++ = '&';
             *outp++ = '#';
-            if (*p<10) {
+            if (ch < 10) {
                 digits = 1;
                 base = 1;
             }
-            else if (*p<100) {
+            else if (ch < 100) {
                 digits = 2;
                 base = 10;
             }
-            else if (*p<1000) {
+            else if (ch < 1000) {
                 digits = 3;
                 base = 100;
             }
-            else if (*p<10000) {
+            else if (ch < 10000) {
                 digits = 4;
                 base = 1000;
             }
-#ifndef Py_UNICODE_WIDE
-            else {
+            else if (ch < 100000) {
                 digits = 5;
                 base = 10000;
             }
-#else
-            else if (*p<100000) {
-                digits = 5;
-                base = 10000;
-            }
-            else if (*p<1000000) {
+            else if (ch < 1000000) {
                 digits = 6;
                 base = 100000;
             }
@@ -634,10 +641,9 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
                 digits = 7;
                 base = 1000000;
             }
-#endif
             while (digits-->0) {
-                *outp++ = '0' + c/base;
-                c %= base;
+                *outp++ = '0' + ch/base;
+                ch %= base;
                 base /= 10;
             }
             *outp++ = ';';
