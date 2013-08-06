@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18368: PyOS_StdioReadline() no longer leaks memory when realloc()
+  fails.
+
 - Issue #16741: Fix an error reporting in int().
 
 - Issue #17899: Fix rare file descriptor leak in os.listdir().
