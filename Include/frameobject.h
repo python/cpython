@@ -36,7 +36,7 @@ typedef struct _frame {
            non-generator frames. See the save_exc_state and swap_exc_state
            functions in ceval.c for details of their use. */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
-    /* Borrowed referenced to a generator, or NULL */
+    /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
 
     PyThreadState *f_tstate;
