@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18621: Prevent the site module's patched builtins from keeping
+  too many references alive for too long.
+
 - Issue #4885: Add weakref support to mmap objects.  Patch by Valerie Lambert.
 
 - Issue #8860: Fixed rounding in timedelta constructor.

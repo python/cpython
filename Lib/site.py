@@ -72,6 +72,7 @@ import sys
 import os
 import re
 import builtins
+import _sitebuiltins
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -344,116 +345,30 @@ def setquit():
     else:
         eof = 'Ctrl-D (i.e. EOF)'
 
-    class Quitter(object):
-        def __init__(self, name):
-            self.name = name
-        def __repr__(self):
-            return 'Use %s() or %s to exit' % (self.name, eof)
-        def __call__(self, code=None):
-            # Shells like IDLE catch the SystemExit, but listen when their
-            # stdin wrapper is closed.
-            try:
-                sys.stdin.close()
-            except:
-                pass
-            raise SystemExit(code)
-    builtins.quit = Quitter('quit')
-    builtins.exit = Quitter('exit')
+    builtins.quit = _sitebuiltins.Quitter('quit', eof)
+    builtins.exit = _sitebuiltins.Quitter('exit', eof)
 
-
-class _Printer(object):
-    """interactive prompt objects for printing the license text, a list of
-    contributors and the copyright notice."""
-
-    MAXLINES = 23
-
-    def __init__(self, name, data, files=(), dirs=()):
-        self.__name = name
-        self.__data = data
-        self.__files = files
-        self.__dirs = dirs
-        self.__lines = None
-
-    def __setup(self):
-        if self.__lines:
-            return
-        data = None
-        for dir in self.__dirs:
-            for filename in self.__files:
-                filename = os.path.join(dir, filename)
-                try:
-                    with open(filename, "r") as fp:
-                        data = fp.read()
-                    break
-                except OSError:
-                    pass
-            if data:
-                break
-        if not data:
-            data = self.__data
-        self.__lines = data.split('\n')
-        self.__linecnt = len(self.__lines)
-
-    def __repr__(self):
-        self.__setup()
-        if len(self.__lines) <= self.MAXLINES:
-            return "\n".join(self.__lines)
-        else:
-            return "Type %s() to see the full %s text" % ((self.__name,)*2)
-
-    def __call__(self):
-        self.__setup()
-        prompt = 'Hit Return for more, or q (and Return) to quit: '
-        lineno = 0
-        while 1:
-            try:
-                for i in range(lineno, lineno + self.MAXLINES):
-                    print(self.__lines[i])
-            except IndexError:
-                break
-            else:
-                lineno += self.MAXLINES
-                key = None
-                while key is None:
-                    key = input(prompt)
-                    if key not in ('', 'q'):
-                        key = None
-                if key == 'q':
-                    break
 
 def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
-    builtins.copyright = _Printer("copyright", sys.copyright)
+    builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
     if sys.platform[:4] == 'java':
-        builtins.credits = _Printer(
+        builtins.credits = _sitebuiltins._Printer(
             "credits",
             "Jython is maintained by the Jython developers (www.jython.org).")
     else:
-        builtins.credits = _Printer("credits", """\
+        builtins.credits = _sitebuiltins._Printer("credits", """\
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
     here = os.path.dirname(os.__file__)
-    builtins.license = _Printer(
+    builtins.license = _sitebuiltins._Printer(
         "license", "See http://www.python.org/%.3s/license.html" % sys.version,
         ["LICENSE.txt", "LICENSE"],
         [os.path.join(here, os.pardir), here, os.curdir])
 
 
-class _Helper(object):
-    """Define the builtin 'help'.
-    This is a wrapper around pydoc.help (with a twist).
-
-    """
-
-    def __repr__(self):
-        return "Type help() for interactive help, " \
-               "or help(object) for help about object."
-    def __call__(self, *args, **kwds):
-        import pydoc
-        return pydoc.help(*args, **kwds)
-
 def sethelper():
-    builtins.help = _Helper()
+    builtins.help = _sitebuiltins._Helper()
 
 def enablerlcompleter():
     """Enable default readline configuration on interactive prompts, by
