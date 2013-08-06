@@ -96,7 +96,7 @@ class ClearTest(unittest.TestCase):
 
     @support.cpython_only
     def test_clear_refcycles(self):
-        # .clear() doesn't leave any refcycle behin
+        # .clear() doesn't leave any refcycle behind
         with support.disable_gc():
             class C:
                 pass
