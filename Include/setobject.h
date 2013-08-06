@@ -23,8 +23,8 @@ no meaning otherwise.
 
 typedef struct {
     /* Cached hash code of the key. */
-    Py_hash_t hash;
     PyObject *key;
+    Py_hash_t hash;
 } setentry;
 
 
