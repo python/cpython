@@ -345,17 +345,17 @@ PyImport_Cleanup(void)
        for diagnosis messages (in verbose mode), while the weakref helps
        detect those modules which have been held alive. */
     weaklist = PyList_New(0);
+    if (weaklist == NULL)
+        PyErr_Clear();
 
-#define STORE_MODULE_WEAKREF(mod) \
+#define STORE_MODULE_WEAKREF(name, mod) \
     if (weaklist != NULL) { \
-        PyObject *name = PyModule_GetNameObject(mod); \
         PyObject *wr = PyWeakref_NewRef(mod, NULL); \
         if (name && wr) { \
             PyObject *tup = PyTuple_Pack(2, name, wr); \
             PyList_Append(weaklist, tup); \
             Py_XDECREF(tup); \
         } \
-        Py_XDECREF(name); \
         Py_XDECREF(wr); \
         if (PyErr_Occurred()) \
             PyErr_Clear(); \
@@ -368,7 +368,7 @@ PyImport_Cleanup(void)
         if (PyModule_Check(value)) {
             if (Py_VerboseFlag && PyUnicode_Check(key))
                 PySys_FormatStderr("# cleanup[2] removing %U\n", key, value);
-            STORE_MODULE_WEAKREF(value);
+            STORE_MODULE_WEAKREF(key, value);
             PyDict_SetItem(modules, key, Py_None);
         }
     }
@@ -394,14 +394,15 @@ PyImport_Cleanup(void)
         n = PyList_GET_SIZE(weaklist);
         for (i = 0; i < n; i++) {
             PyObject *tup = PyList_GET_ITEM(weaklist, i);
+            PyObject *name = PyTuple_GET_ITEM(tup, 0);
             PyObject *mod = PyWeakref_GET_OBJECT(PyTuple_GET_ITEM(tup, 1));
             if (mod == Py_None)
                 continue;
             Py_INCREF(mod);
             assert(PyModule_Check(mod));
-            if (Py_VerboseFlag)
+            if (Py_VerboseFlag && PyUnicode_Check(name))
                 PySys_FormatStderr("# cleanup[3] wiping %U\n",
-                                   PyTuple_GET_ITEM(tup, 0), mod);
+                                   name, mod);
             _PyModule_Clear(mod);
             Py_DECREF(mod);
         }
