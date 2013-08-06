@@ -202,6 +202,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14323: Expanded the number of digits in the coefficients for the
+  RGB -- YIQ conversions so that they match the FCC NTSC versions.
+
 - Issue #17998: Fix an internal error in regular expression engine.
 
 - Issue #17557: Fix os.getgroups() to work with the modified behavior of
