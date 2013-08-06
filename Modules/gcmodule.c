@@ -1661,6 +1661,7 @@ void
 _PyGC_Fini(void)
 {
     Py_CLEAR(callbacks);
+    Py_CLEAR(tmod);
 }
 
 /* for debugging */
