@@ -251,6 +251,13 @@ platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
 The module supports new file types: door, event port and whiteout.
 
+colorsys
+--------
+
+The number of digits in the coefficients for the RGB --- YIQ conversions have
+been expanded so that they match the FCC NTSC versions.  The change in
+results should be less than 1% and may better match results found elsewhere.
+
 
 Optimizations
 =============
