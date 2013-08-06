@@ -10,6 +10,9 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #18368: PyOS_StdioReadline() no longer leaks memory when realloc()
+  fail
+
 - Issue #17934: Add a clear() method to frame objects, to help clean up
   expensive details (local variables) and break reference cycles.
 
