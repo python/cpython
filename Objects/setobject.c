@@ -118,7 +118,7 @@ set_lookkey(PySetObject *so, PyObject *key, register Py_hash_t hash)
     /* In the loop, key == dummy is by far (factor of 100s) the
        least likely outcome, so test for that last. */
     for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
-        i = (i << 2) + i + perturb + 1;
+        i = i * 5 + perturb + 1;
         entry = &table[i & mask];
         if (entry->key == NULL) {
             if (freeslot != NULL)
@@ -189,7 +189,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, register Py_hash_t hash)
     /* In the loop, key == dummy is by far (factor of 100s) the
        least likely outcome, so test for that last. */
     for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
-        i = (i << 2) + i + perturb + 1;
+        i = i * 5 + perturb + 1;
         entry = &table[i & mask];
         if (entry->key == NULL)
             return freeslot == NULL ? entry : freeslot;
@@ -258,7 +258,7 @@ set_insert_clean(register PySetObject *so, PyObject *key, Py_hash_t hash)
     i = (size_t)hash & mask;
     entry = &table[i];
     for (perturb = hash; entry->key != NULL; perturb >>= PERTURB_SHIFT) {
-        i = (i << 2) + i + perturb + 1;
+        i = i * 5 + perturb + 1;
         entry = &table[i & mask];
     }
     so->fill++;
