@@ -182,15 +182,21 @@ These functions are usually used in the module initialization function.
 
    .. c:member:: Py_ssize_t m_size
 
-      If the module object needs additional memory, this should be set to the
-      number of bytes to allocate; a pointer to the block of memory can be
-      retrieved with :c:func:`PyModule_GetState`.  If no memory is needed, set
-      this to ``-1``.
+      Some modules allow re-initialization (calling their ``PyInit_*`` function
+      more than once). These modules should keep their state in a per-module
+      memory area that can be retrieved with :c:func:`PyModule_GetState`.
 
       This memory should be used, rather than static globals, to hold per-module
       state, since it is then safe for use in multiple sub-interpreters.  It is
       freed when the module object is deallocated, after the :c:member:`m_free`
       function has been called, if present.
+
+      Setting ``m_size`` to a positive value specifies the size of the additional
+      memory required by the module. Setting it to ``-1`` means that the module can
+      not be re-initialized because it has global state. Setting it to ``0`` is
+      forbidden.
+
+      See :PEP:`3121` for more details.
 
    .. c:member:: PyMethodDef* m_methods
 
