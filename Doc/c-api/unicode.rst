@@ -565,7 +565,7 @@ APIs:
 
 
 .. c:function:: int PyUnicode_CopyCharacters(PyObject *to, Py_ssize_t to_start, \
-                        PyObject *to, Py_ssize_t from_start, Py_ssize_t how_many)
+                    PyObject *from, Py_ssize_t from_start, Py_ssize_t how_many)
 
    Copy characters from one Unicode object into another.  This function performs
    character conversion when necessary and falls back to :c:func:`memcpy` if
