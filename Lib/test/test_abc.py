@@ -65,34 +65,6 @@ class TestLegacyAPI(unittest.TestCase):
         self.assertEqual(D.foo(), 4)
         self.assertEqual(D().foo(), 4)
 
-    def test_abstractmethod_integration(self):
-        for abstractthing in [abc.abstractmethod, abc.abstractproperty,
-                              abc.abstractclassmethod,
-                              abc.abstractstaticmethod]:
-            class C(metaclass=abc.ABCMeta):
-                @abstractthing
-                def foo(self): pass  # abstract
-                def bar(self): pass  # concrete
-            self.assertEqual(C.__abstractmethods__, {"foo"})
-            self.assertRaises(TypeError, C)  # because foo is abstract
-            self.assertTrue(isabstract(C))
-            class D(C):
-                def bar(self): pass  # concrete override of concrete
-            self.assertEqual(D.__abstractmethods__, {"foo"})
-            self.assertRaises(TypeError, D)  # because foo is still abstract
-            self.assertTrue(isabstract(D))
-            class E(D):
-                def foo(self): pass
-            self.assertEqual(E.__abstractmethods__, set())
-            E()  # now foo is concrete, too
-            self.assertFalse(isabstract(E))
-            class F(E):
-                @abstractthing
-                def bar(self): pass  # abstract override of concrete
-            self.assertEqual(F.__abstractmethods__, {"bar"})
-            self.assertRaises(TypeError, F)  # because bar is abstract now
-            self.assertTrue(isabstract(F))
-
 
 class TestABC(unittest.TestCase):
 
@@ -414,10 +386,6 @@ class TestABC(unittest.TestCase):
         self.assertEqual(B.counter, 0)
         C()
         self.assertEqual(B.counter, 1)
-
-
-def test_main():
-    support.run_unittest(TestABC)
 
 
 if __name__ == "__main__":
