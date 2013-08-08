@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from test.json_tests import PyTest, CTest
+from test.test_json import PyTest, CTest
 
 
 class TestUnicode:
