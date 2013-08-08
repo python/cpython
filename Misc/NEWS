@@ -350,6 +350,9 @@ Library
   when \r\n appears at end of 65535 bytes without other newlines.
 
 - Issue #18076: Introduce importlib.util.decode_source().
+- Issue #18357: add tests for dictview set difference.
+  Patch by Fraser Tweedale.
+
 
 - importlib.abc.SourceLoader.get_source() no longer changes SyntaxError or
   UnicodeDecodeError into ImportError.
