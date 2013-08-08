@@ -142,6 +142,9 @@ IDLE
 Tests
 -----
 
+- Issue #18357: add tests for dictview set difference.
+  Patch by Fraser Tweedale.
+
 - Issue #11185: Fix test_wait4 under AIX.  Patch by Sébastien Sablé.
 
 - Issue #18094: test_uuid no more reports skipped tests as passed.
