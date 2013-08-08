@@ -237,6 +237,9 @@ IDLE
 Tests
 -----
 
+- Issue #18357: add tests for dictview set difference.
+  Patch by Fraser Tweedale.
+
 - Issue #18273: move the tests in Lib/test/json_tests to Lib/test/test_json
   and make them discoverable by unittest.  Patch by Zachary Ware.
 
