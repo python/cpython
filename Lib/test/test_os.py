@@ -24,6 +24,8 @@ import itertools
 import stat
 import locale
 import codecs
+import decimal
+import fractions
 try:
     import threading
 except ImportError:
@@ -864,6 +866,16 @@ class MakedirTests(unittest.TestCase):
         self.assertRaises(OSError, os.makedirs, path, 0o776, exist_ok=True)
         os.makedirs(path, mode=mode, exist_ok=True)
         os.umask(old_mask)
+
+    def test_chown_uid_gid_arguments_must_be_index(self):
+        stat = os.stat(support.TESTFN)
+        uid = stat.st_uid
+        gid = stat.st_gid
+        for value in (-1.0, -1j, decimal.Decimal(-1), fractions.Fraction(-2, 2)):
+            self.assertRaises(TypeError, os.chown, support.TESTFN, value, gid)
+            self.assertRaises(TypeError, os.chown, support.TESTFN, uid, value)
+        self.assertIsNone(os.chown(support.TESTFN, uid, gid))
+        self.assertIsNone(os.chown(support.TESTFN, -1, -1))
 
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(support.TESTFN, 'dir1')
