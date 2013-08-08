@@ -1036,7 +1036,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
                 test/namespace_pkgs/module_and_namespace_package/a_test \
 		collections concurrent concurrent/futures encodings \
 		email email/mime test/test_email test/test_email/data \
-		html json test/json_tests http dbm xmlrpc \
+		html json test/test_json http dbm xmlrpc \
 		sqlite3 sqlite3/test \
 		logging csv wsgiref urllib \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \

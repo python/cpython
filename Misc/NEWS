@@ -237,6 +237,9 @@ IDLE
 Tests
 -----
 
+- Issue #18273: move the tests in Lib/test/json_tests to Lib/test/test_json
+  and make them discoverable by unittest.  Patch by Zachary Ware.
+
 - Fix a fcntl test case on KFreeBSD, Debian #708653 (Petr Salinger).
 
 - Issue #18396: Fix spurious test failure in test_signal on Windows when
