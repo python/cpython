@@ -1,4 +1,4 @@
-from test.json_tests import PyTest, CTest
+from test.test_json import PyTest, CTest
 
 
 class JSONTestObject:
