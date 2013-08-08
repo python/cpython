@@ -1,5 +1,5 @@
 from io import StringIO
-from test.json_tests import PyTest, CTest
+from test.test_json import PyTest, CTest
 
 from test.support import bigmemtest, _1G
 
