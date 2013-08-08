@@ -899,6 +899,9 @@ class Handler(Filterer):
                     # couldn't find the right stack frame, for some reason
                     sys.stderr.write('Logged from file %s, line %s\n' % (
                                      record.filename, record.lineno))
+                # Issue 18671: output logging message and arguments
+                sys.stderr.write('Message: %r\n'
+                                 'Arguments: %s\n' % (record.msg, record.args))
             except OSError: #pragma: no cover
                 pass    # see issue 5971
             finally:
