@@ -132,22 +132,50 @@ class Message:
 
     def __str__(self):
         """Return the entire formatted message as a string.
-        This includes the headers, body, and envelope header.
         """
         return self.as_string()
 
-    def as_string(self, unixfrom=False, maxheaderlen=0):
+    def as_string(self, unixfrom=False, maxheaderlen=0, policy=None):
         """Return the entire formatted message as a string.
-        Optional `unixfrom' when True, means include the Unix From_ envelope
-        header.
 
-        This is a convenience method and may not generate the message exactly
-        as you intend.  For more flexibility, use the flatten() method of a
-        Generator instance.
+        Optional 'unixfrom', when true, means include the Unix From_ envelope
+        header.  For backward compatibility reasons, if maxheaderlen is
+        not specified it defaults to 0, so you must override it explicitly
+        if you want a different maxheaderlen.  'policy' is passed to the
+        Generator instance used to serialize the mesasge; if it is not
+        specified the policy associated with the message instance is used.
+
+        If the message object contains binary data that is not encoded
+        according to RFC standards, the non-compliant data will be replaced by
+        unicode "unknown character" code points.
         """
         from email.generator import Generator
+        policy = self.policy if policy is None else policy
         fp = StringIO()
-        g = Generator(fp, mangle_from_=False, maxheaderlen=maxheaderlen)
+        g = Generator(fp,
+                      mangle_from_=False,
+                      maxheaderlen=maxheaderlen,
+                      policy=policy)
+        g.flatten(self, unixfrom=unixfrom)
+        return fp.getvalue()
+
+    def __bytes__(self):
+        """Return the entire formatted message as a bytes object.
+        """
+        return self.as_bytes()
+
+    def as_bytes(self, unixfrom=False, policy=None):
+        """Return the entire formatted message as a bytes object.
+
+        Optional 'unixfrom', when true, means include the Unix From_ envelope
+        header.  'policy' is passed to the BytesGenerator instance used to
+        serialize the message; if not specified the policy associated with
+        the message instance is used.
+        """
+        from email.generator import BytesGenerator
+        policy = self.policy if policy is None else policy
+        fp = BytesIO()
+        g = BytesGenerator(fp, mangle_from_=False, policy=policy)
         g.flatten(self, unixfrom=unixfrom)
         return fp.getvalue()
 

@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18600: Added policy argument to email.message.Message.as_string,
+  and as_bytes and __bytes__ methods to Message.
+
 - Issue #18671: Output more information when logging exceptions occur.
 
 - Issue #18621: Prevent the site module's patched builtins from keeping

@@ -195,6 +195,26 @@ The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 
+email
+-----
+
+:meth:`~email.message.Message.as_string` now accepts a *policy* argument to
+override the default policy of the message when generating a string
+representation of it.  This means that ``as_string`` can now be used in more
+circumstances, instead of having to create and use a :mod:`~email.generator` in
+order to pass formatting parameters to its ``flatten`` method.
+
+New method :meth:`~email.message.Message.as_bytes` added to produce a bytes
+representation of the message in a fashion similar to how ``as_string``
+produces a string representation.  It does not accept the *maxheaderlen*
+argument, but does accept the *unixfrom* and *policy* arguments. The
+:class:`~email.message.Message` :meth:`~email.message.Message.__bytes__` method
+calls it, meaning that ``bytes(mymsg)`` will now produce the intuitive
+result:  a bytes object containing the fully formatted message.
+
+(Contributed by R. David Murray in :issue:`18600`.)
+
+
 functools
 ---------
 
