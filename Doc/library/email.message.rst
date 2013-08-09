@@ -31,9 +31,15 @@ parameters, and for recursively walking over the object tree.
 Here are the methods of the :class:`Message` class:
 
 
-.. class:: Message()
+.. class:: Message(policy=compat32)
 
-   The constructor takes no arguments.
+   The *policy* argument determiens the :mod:`~email.policy` that will be used
+   to update the message model.  The default value, :class:`compat32
+   <email.policy.Compat32>` maintains backward compatibility with the
+   Python 3.2 version of the email package.  For more information see the
+   :mod:`~email.policy` documentation.
+
+   .. versionchanged:: 3.3 The *policy* keyword argument was added.
 
 
    .. method:: as_string(unixfrom=False, maxheaderlen=0)

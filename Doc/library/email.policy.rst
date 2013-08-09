@@ -97,16 +97,6 @@ correct line separator characters when creating the binary string to feed into
 ``sendmail's`` ``stdin``, where the default policy would use ``\n`` line
 separators.
 
-Some email package methods accept a *policy* keyword argument, allowing the
-policy to be overridden for that method.  For example, the following code uses
-the :meth:`~email.message.Message.as_string` method of the *msg* object from
-the previous example and writes the message to a file using the native line
-separators for the platform on which it is running::
-
-   >>> import os
-   >>> with open('converted.txt', 'wb') as f:
-   ...     f.write(msg.as_string(policy=msg.policy.clone(linesep=os.linesep)))
-
 Policy objects can also be combined using the addition operator, producing a
 policy object whose settings are a combination of the non-default values of the
 summed objects::
