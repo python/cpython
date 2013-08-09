@@ -31,19 +31,32 @@ parameters, and for recursively walking over the object tree.
 Here are the methods of the :class:`Message` class:
 
 
-.. class:: Message()
+.. class:: Message(policy=compat32)
 
-   The constructor takes no arguments.
+   The *policy* argument determiens the :mod:`~email.policy` that will be used
+   to update the message model.  The default value, :class:`compat32
+   <email.policy.Compat32>` maintains backward compatibility with the
+   Python 3.2 version of the email package.  For more information see the
+   :mod:`~email.policy` documentation.
+
+   .. versionchanged:: 3.3 The *policy* keyword argument was added.
 
 
-   .. method:: as_string(unixfrom=False, maxheaderlen=0)
+   .. method:: as_string(unixfrom=False, maxheaderlen=0, policy=None)
 
       Return the entire message flattened as a string.  When optional *unixfrom*
-      is ``True``, the envelope header is included in the returned string.
-      *unixfrom* defaults to ``False``.  Flattening the message may trigger
-      changes to the :class:`Message` if defaults need to be filled in to
-      complete the transformation to a string (for example, MIME boundaries may
-      be generated or modified).
+      is true, the envelope header is included in the returned string.
+      *unixfrom* defaults to ``False``.  For backward compabitility reasons,
+      *maxheaderlen* defaults to ``0``, so if you want a different value you
+      must override it explicitly (the value specified for *max_line_length* in
+      the policy will be ignored by this method).  The *policy* argument may be
+      used to override the default policy obtained from the message instance.
+      This can be used to control some of the formatting produced by the
+      method, since the specified *policy* will be passed to the ``Generator``.
+
+      Flattening the message may trigger changes to the :class:`Message` if
+      defaults need to be filled in to complete the transformation to a string
+      (for example, MIME boundaries may be generated or modified).
 
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
@@ -59,10 +72,57 @@ Here are the methods of the :class:`Message` class:
          g.flatten(msg)
          text = fp.getvalue()
 
+      If the message object contains binary data that is not encoded according
+      to RFC standards, the non-compliant data will be replaced by unicode
+      "unknown character" code points.  (See also :meth:`.as_bytes` and
+      :class:`~email.generator.BytesGenerator`.)
+
+      .. versionchanged:: 3.4 the *policy* keyword argument was added.
+
 
    .. method:: __str__()
 
-      Equivalent to ``as_string(unixfrom=True)``.
+      Equivalent to :meth:`.as_string()`.  Allows ``str(msg)`` to produce a
+      string containing the formatted message.
+
+
+   .. method:: as_bytes(unixfrom=False, policy=None)
+
+      Return the entire message flattened as a bytes object.  When optional
+      *unixfrom* is true, the envelope header is included in the returned
+      string.  *unixfrom* defaults to ``False``.  The *policy* argument may be
+      used to override the default policy obtained from the message instance.
+      This can be used to control some of the formatting produced by the
+      method, since the specified *policy* will be passed to the
+      ``BytesGenerator``.
+
+      Flattening the message may trigger changes to the :class:`Message` if
+      defaults need to be filled in to complete the transformation to a string
+      (for example, MIME boundaries may be generated or modified).
+
+      Note that this method is provided as a convenience and may not always
+      format the message the way you want.  For example, by default it does
+      not do the mangling of lines that begin with ``From`` that is
+      required by the unix mbox format.  For more flexibility, instantiate a
+      :class:`~email.generator.BytesGenerator` instance and use its
+      :meth:`flatten` method directly.  For example::
+
+         from io import BytesIO
+         from email.generator import BytesGenerator
+         fp = BytesIO()
+         g = BytesGenerator(fp, mangle_from_=True, maxheaderlen=60)
+         g.flatten(msg)
+         text = fp.getvalue()
+
+      .. versionadded:: 3.4
+
+
+   .. method:: __bytes__()
+
+      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      bytes object containing the formatted message.
+
+      .. versionadded:: 3.4
 
 
    .. method:: is_multipart()

@@ -249,15 +249,42 @@ class TestMessageAPI(TestEmailBase):
         self.assertTrue('TO' in msg)
 
     def test_as_string(self):
-        eq = self.ndiffAssertEqual
         msg = self._msgobj('msg_01.txt')
         with openfile('msg_01.txt') as fp:
             text = fp.read()
-        eq(text, str(msg))
+        self.assertEqual(text, str(msg))
         fullrepr = msg.as_string(unixfrom=True)
         lines = fullrepr.split('\n')
         self.assertTrue(lines[0].startswith('From '))
-        eq(text, NL.join(lines[1:]))
+        self.assertEqual(text, NL.join(lines[1:]))
+
+    def test_as_string_policy(self):
+        msg = self._msgobj('msg_01.txt')
+        newpolicy = msg.policy.clone(linesep='\r\n')
+        fullrepr = msg.as_string(policy=newpolicy)
+        s = StringIO()
+        g = Generator(s, policy=newpolicy)
+        g.flatten(msg)
+        self.assertEqual(fullrepr, s.getvalue())
+
+    def test_as_bytes(self):
+        msg = self._msgobj('msg_01.txt')
+        with openfile('msg_01.txt', 'rb') as fp:
+            data = fp.read()
+        self.assertEqual(data, bytes(msg))
+        fullrepr = msg.as_bytes(unixfrom=True)
+        lines = fullrepr.split(b'\n')
+        self.assertTrue(lines[0].startswith(b'From '))
+        self.assertEqual(data, b'\n'.join(lines[1:]))
+
+    def test_as_bytes_policy(self):
+        msg = self._msgobj('msg_01.txt')
+        newpolicy = msg.policy.clone(linesep='\r\n')
+        fullrepr = msg.as_bytes(policy=newpolicy)
+        s = BytesIO()
+        g = BytesGenerator(s,policy=newpolicy)
+        g.flatten(msg)
+        self.assertEqual(fullrepr, s.getvalue())
 
     # test_headerregistry.TestContentTypeHeader.bad_params
     def test_bad_param(self):
