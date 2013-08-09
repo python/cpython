@@ -105,7 +105,8 @@ separators for the platform on which it is running::
 
    >>> import os
    >>> with open('converted.txt', 'wb') as f:
-   ...     f.write(msg.as_string(policy=msg.policy.clone(linesep=os.linesep)))
+   ...     f.write(msg.as_bytes(policy=msg.policy.clone(linesep=os.linesep)))
+   17
 
 Policy objects can also be combined using the addition operator, producing a
 policy object whose settings are a combination of the non-default values of the
