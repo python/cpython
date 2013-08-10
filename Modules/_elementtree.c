@@ -66,10 +66,51 @@ static PyTypeObject TreeBuilder_Type;
 static PyTypeObject XMLParser_Type;
 
 
-/* glue functions (see the init function for details) */
-static PyObject* elementtree_parseerror_obj;
-static PyObject* elementtree_deepcopy_obj;
-static PyObject* elementpath_obj;
+/* Per-module state; PEP 3121 */
+typedef struct {
+    PyObject *parseerror_obj;
+    PyObject *deepcopy_obj;
+    PyObject *elementpath_obj;
+} elementtreestate;
+
+static struct PyModuleDef elementtreemodule;
+
+/* Given a module object (assumed to be _elementtree), get its per-module
+ * state.
+ */
+#define ET_STATE(mod) ((elementtreestate *) PyModule_GetState(mod))
+
+/* Find the module instance imported in the currently running sub-interpreter
+ * and get its state.
+ */
+#define ET_STATE_GLOBAL \
+    ((elementtreestate *) PyModule_GetState(PyState_FindModule(&elementtreemodule)))
+
+static int
+elementtree_clear(PyObject *m)
+{
+    elementtreestate *st = ET_STATE(m);
+    Py_CLEAR(st->parseerror_obj);
+    Py_CLEAR(st->deepcopy_obj);
+    Py_CLEAR(st->elementpath_obj);
+    return 0;
+}
+
+static int
+elementtree_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    elementtreestate *st = ET_STATE(m);
+    Py_VISIT(st->parseerror_obj);
+    Py_VISIT(st->deepcopy_obj);
+    Py_VISIT(st->elementpath_obj);
+    return 0;
+}
+
+static void
+elementtree_free(void *m)
+{
+    elementtree_clear((PyObject *)m);
+}
 
 /* helpers */
 
@@ -77,11 +118,11 @@ LOCAL(PyObject*)
 deepcopy(PyObject* object, PyObject* memo)
 {
     /* do a deep copy of the given object */
-
     PyObject* args;
     PyObject* result;
+    elementtreestate *st = ET_STATE_GLOBAL;
 
-    if (!elementtree_deepcopy_obj) {
+    if (!st->deepcopy_obj) {
         PyErr_SetString(
             PyExc_RuntimeError,
             "deepcopy helper not found"
@@ -92,7 +133,7 @@ deepcopy(PyObject* object, PyObject* memo)
     args = PyTuple_Pack(2, object, memo);
     if (!args)
         return NULL;
-    result = PyObject_CallObject(elementtree_deepcopy_obj, args);
+    result = PyObject_CallObject(st->deepcopy_obj, args);
     Py_DECREF(args);
     return result;
 }
@@ -1047,6 +1088,7 @@ element_find(ElementObject *self, PyObject *args, PyObject *kwds)
     PyObject* tag;
     PyObject* namespaces = Py_None;
     static char *kwlist[] = {"path", "namespaces", 0};
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:find", kwlist,
                                      &tag, &namespaces))
@@ -1055,7 +1097,7 @@ element_find(ElementObject *self, PyObject *args, PyObject *kwds)
     if (checkpath(tag) || namespaces != Py_None) {
         _Py_IDENTIFIER(find);
         return _PyObject_CallMethodId(
-            elementpath_obj, &PyId_find, "OOO", self, tag, namespaces
+            st->elementpath_obj, &PyId_find, "OOO", self, tag, namespaces
             );
     }
 
@@ -1083,6 +1125,7 @@ element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
     PyObject* namespaces = Py_None;
     _Py_IDENTIFIER(findtext);
     static char *kwlist[] = {"path", "default", "namespaces", 0};
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO:findtext", kwlist,
                                      &tag, &default_value, &namespaces))
@@ -1090,7 +1133,7 @@ element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
 
     if (checkpath(tag) || namespaces != Py_None)
         return _PyObject_CallMethodId(
-            elementpath_obj, &PyId_findtext, "OOOO", self, tag, default_value, namespaces
+            st->elementpath_obj, &PyId_findtext, "OOOO", self, tag, default_value, namespaces
             );
 
     if (!self->extra) {
@@ -1122,6 +1165,7 @@ element_findall(ElementObject *self, PyObject *args, PyObject *kwds)
     PyObject* tag;
     PyObject* namespaces = Py_None;
     static char *kwlist[] = {"path", "namespaces", 0};
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:findall", kwlist,
                                      &tag, &namespaces))
@@ -1130,7 +1174,7 @@ element_findall(ElementObject *self, PyObject *args, PyObject *kwds)
     if (checkpath(tag) || namespaces != Py_None) {
         _Py_IDENTIFIER(findall);
         return _PyObject_CallMethodId(
-            elementpath_obj, &PyId_findall, "OOO", self, tag, namespaces
+            st->elementpath_obj, &PyId_findall, "OOO", self, tag, namespaces
             );
     }
 
@@ -1162,13 +1206,14 @@ element_iterfind(ElementObject *self, PyObject *args, PyObject *kwds)
     PyObject* namespaces = Py_None;
     _Py_IDENTIFIER(iterfind);
     static char *kwlist[] = {"path", "namespaces", 0};
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:iterfind", kwlist,
                                      &tag, &namespaces))
         return NULL;
 
     return _PyObject_CallMethodId(
-        elementpath_obj, &PyId_iterfind, "OOO", self, tag, namespaces
+        st->elementpath_obj, &PyId_iterfind, "OOO", self, tag, namespaces
         );
 }
 
@@ -2351,6 +2396,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
 {
     PyObject* node;
     PyObject* this;
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     if (self->data) {
         if (self->this == self->last) {
@@ -2381,7 +2427,7 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     } else {
         if (self->root) {
             PyErr_SetString(
-                elementtree_parseerror_obj,
+                st->parseerror_obj,
                 "multiple elements on top level"
                 );
             goto error;
@@ -2670,6 +2716,10 @@ static PyTypeObject TreeBuilder_Type = {
 
 #include "expat.h"
 #include "pyexpat.h"
+
+/* The PyExpat_CAPI structure is an immutable dispatch table, so it can be
+ * cached globally without being in per-module state.
+ */
 static struct PyExpat_CAPI *expat_capi;
 #define EXPAT(func) (expat_capi->func)
 
@@ -2779,6 +2829,7 @@ static void
 expat_set_error(enum XML_Error error_code, int line, int column, char *message)
 {
     PyObject *errmsg, *error, *position, *code;
+    elementtreestate *st = ET_STATE_GLOBAL;
 
     errmsg = PyUnicode_FromFormat("%s: line %d, column %d",
                 message ? message : EXPAT(ErrorString)(error_code),
@@ -2786,7 +2837,7 @@ expat_set_error(enum XML_Error error_code, int line, int column, char *message)
     if (errmsg == NULL)
         return;
 
-    error = PyObject_CallFunction(elementtree_parseerror_obj, "O", errmsg);
+    error = PyObject_CallFunction(st->parseerror_obj, "O", errmsg);
     Py_DECREF(errmsg);
     if (!error)
         return;
@@ -2816,7 +2867,7 @@ expat_set_error(enum XML_Error error_code, int line, int column, char *message)
     }
     Py_DECREF(position);
 
-    PyErr_SetObject(elementtree_parseerror_obj, error);
+    PyErr_SetObject(st->parseerror_obj, error);
     Py_DECREF(error);
 }
 
@@ -3639,22 +3690,29 @@ static PyMethodDef _functions[] = {
 };
 
 
-static struct PyModuleDef _elementtreemodule = {
-        PyModuleDef_HEAD_INIT,
-        "_elementtree",
-        NULL,
-        -1,
-        _functions,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+static struct PyModuleDef elementtreemodule = {
+    PyModuleDef_HEAD_INIT,
+    "_elementtree",
+    NULL,
+    sizeof(elementtreestate),
+    _functions,
+    NULL,
+    elementtree_traverse,
+    elementtree_clear,
+    elementtree_free
 };
 
 PyMODINIT_FUNC
 PyInit__elementtree(void)
 {
     PyObject *m, *temp;
+    elementtreestate *st;
+
+    m = PyState_FindModule(&elementtreemodule);
+    if (m) {
+        Py_INCREF(m);
+        return m;
+    }
 
     /* Initialize object types */
     if (PyType_Ready(&ElementIter_Type) < 0)
@@ -3666,16 +3724,17 @@ PyInit__elementtree(void)
     if (PyType_Ready(&XMLParser_Type) < 0)
         return NULL;
 
-    m = PyModule_Create(&_elementtreemodule);
+    m = PyModule_Create(&elementtreemodule);
     if (!m)
         return NULL;
+    st = ET_STATE(m);
 
     if (!(temp = PyImport_ImportModule("copy")))
         return NULL;
-    elementtree_deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
+    st->deepcopy_obj = PyObject_GetAttrString(temp, "deepcopy");
     Py_XDECREF(temp);
 
-    if (!(elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
+    if (!(st->elementpath_obj = PyImport_ImportModule("xml.etree.ElementPath")))
         return NULL;
 
     /* link against pyexpat */
@@ -3695,11 +3754,11 @@ PyInit__elementtree(void)
         return NULL;
     }
 
-    elementtree_parseerror_obj = PyErr_NewException(
+    st->parseerror_obj = PyErr_NewException(
         "xml.etree.ElementTree.ParseError", PyExc_SyntaxError, NULL
         );
-    Py_INCREF(elementtree_parseerror_obj);
-    PyModule_AddObject(m, "ParseError", elementtree_parseerror_obj);
+    Py_INCREF(st->parseerror_obj);
+    PyModule_AddObject(m, "ParseError", st->parseerror_obj);
 
     Py_INCREF((PyObject *)&Element_Type);
     PyModule_AddObject(m, "Element", (PyObject *)&Element_Type);
