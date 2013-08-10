@@ -1,7 +1,7 @@
 # test for xml.dom.minidom
 
 import pickle
-from test.support import verbose, run_unittest, findfile
+from test.support import run_unittest, findfile
 import unittest
 
 import xml.dom.minidom
@@ -310,9 +310,10 @@ class MinidomTest(unittest.TestCase):
         self.confirm(len(child.attributes) == 0
                 and child.getAttributeNode("spam") is None)
         dom2 = Document()
-        child2 = dom2.appendChild(dom.createElement("foo"))
-        self.assertRaises(xml.dom.NotFoundErr, child.removeAttributeNode,
-            node)
+        child2 = dom2.appendChild(dom2.createElement("foo"))
+        node2 = child2.getAttributeNode("spam")
+        self.assertRaises(xml.dom.NotFoundErr, child2.removeAttributeNode,
+            node2)
         dom.unlink()
 
     def testHasAttribute(self):
@@ -607,7 +608,7 @@ class MinidomTest(unittest.TestCase):
     def testHasChildNodes(self):
         dom = parseString("<doc><foo/></doc>")
         doc = dom.documentElement
-        self.assertTrue(dom.hasChildNodes())
+        self.assertTrue(doc.hasChildNodes())
         dom2 = parseString("<doc/>")
         doc2 = dom2.documentElement
         self.assertFalse(doc2.hasChildNodes())
