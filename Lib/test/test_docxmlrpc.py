@@ -54,8 +54,18 @@ def server(evt, numrequests):
             """
             return x + y
 
+        def annotation(x: int):
+            """ Use function annotations. """
+            return x
+
+        class ClassWithAnnotation:
+            def method_annotation(self, x: bytes):
+                return x.decode()
+
         serv.register_function(add)
         serv.register_function(lambda x, y: x-y)
+        serv.register_function(annotation)
+        serv.register_instance(ClassWithAnnotation())
 
         while numrequests > 0:
             serv.handle_request()
@@ -177,10 +187,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
              b'method&nbsp;takes&nbsp;two&nbsp;integers&nbsp;as&nbsp;arguments'
              b'<br>\nand&nbsp;returns&nbsp;a&nbsp;double&nbsp;result.<br>\n&nbsp;'
              b'<br>\nThis&nbsp;server&nbsp;does&nbsp;NOT&nbsp;support&nbsp;system'
-             b'.methodSignature.</tt></dd></dl>\n<dl><dt><a name="-test_method">'
-             b'<strong>test_method</strong></a>(arg)</dt><dd><tt>Test&nbsp;'
-             b'method\'s&nbsp;docs.&nbsp;This&nbsp;method&nbsp;truly&nbsp;does'
-             b'&nbsp;very&nbsp;little.</tt></dd></dl>'), response)
+             b'.methodSignature.</tt></dd></dl>'), response)
 
     def test_autolink_dotted_methods(self):
         """Test that selfdot values are made strong automatically in the
@@ -190,6 +197,18 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
 
         self.assertIn(b"""Try&nbsp;self.<strong>add</strong>,&nbsp;too.""",
                       response.read())
+
+    def test_annotations(self):
+        """ Test that annotations works as expected """
+        self.client.request("GET", "/")
+        response = self.client.getresponse()
+        self.assertIn(
+            (b'<dl><dt><a name="-annotation"><strong>annotation</strong></a>'
+             b'(x: int)</dt><dd><tt>Use&nbsp;function&nbsp;annotations.</tt>'
+             b'</dd></dl>\n<dl><dt><a name="-method_annotation"><strong>'
+             b'method_annotation</strong></a>(x: bytes)</dt></dl>'),
+            response.read())
+
 
 def test_main():
     support.run_unittest(DocXMLRPCHTTPGETServer)
