@@ -770,6 +770,9 @@ C-API
 IDLE
 ----
 
+- Issue #18226: Add docstrings and unittests for FormatParagraph.py.
+  Original patches by Todd Rovito and Phil Webster.
+
 - Issue #18279: Format - Strip trailing whitespace no longer marks a file as
   changed when it has not been changed. This fix followed the addition of a
   test file originally written by Phil Webster (the issue's main goal).
