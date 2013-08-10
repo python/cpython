@@ -926,7 +926,7 @@ Subject: the first part of this is short,
 This is a long line that has two whitespaces  in a row.  This used to cause
  truncation of the header when folded""")
 
-    def test_splitter_split_on_punctuation_only_if_fws(self):
+    def test_splitter_split_on_punctuation_only_if_fws_with_header(self):
         eq = self.ndiffAssertEqual
         h = Header('thisverylongheaderhas;semicolons;and,commas,but'
             'they;arenotlegal;fold,points')
@@ -4213,9 +4213,6 @@ class TestQuopri(unittest.TestCase):
     def test_encode_one_very_long_line(self):
         self._test_encode('x' * 200 + '\n',
                 2 * ('x' * 75 + '=\n') + 'x' * 50 + '\n')
-
-    def test_encode_one_long_line(self):
-        self._test_encode('x' * 100 + '\n', 'x' * 75 + '=\n' + 'x' * 25 + '\n')
 
     def test_encode_shortest_maxlinelen(self):
         self._test_encode('=' * 5, '=3D=\n' * 4 + '=3D', maxlinelen=4)
