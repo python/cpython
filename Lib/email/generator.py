@@ -349,7 +349,7 @@ class Generator:
     # This used to be a module level function; we use a classmethod for this
     # and _compile_re so we can continue to provide the module level function
     # for backward compatibility by doing
-    #   _make_boudary = Generator._make_boundary
+    #   _make_boundary = Generator._make_boundary
     # at the end of the module.  It *is* internal, so we could drop that...
     @classmethod
     def _make_boundary(cls, text=None):

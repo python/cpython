@@ -24,9 +24,9 @@ The email package consists of three major components:
 Conceptually the package is organized around the model.  The model provides both
 "external" APIs intended for use by application programs using the library,
 and "internal" APIs intended for use by the Parser and Generator components.
-This division is intentionally a bit fuzy; the API described by this documentation
-is all a public, stable API.  This allows for an application with special needs
-to implement its own parser and/or generator.
+This division is intentionally a bit fuzzy; the API described by this
+documentation is all a public, stable API.  This allows for an application
+with special needs to implement its own parser and/or generator.
 
 In addition to the three major functional components, there is a third key
 component to the architecture:
