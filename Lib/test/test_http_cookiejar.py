@@ -7,7 +7,7 @@ import time
 import unittest
 import urllib.request
 
-from http.cookiejar import (time2isoz, http2time, time2netscape,
+from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      parse_ns_headers, join_header_words, split_header_words, Cookie,
      CookieJar, DefaultCookiePolicy, LWPCookieJar, MozillaCookieJar,
      LoadError, lwp_cookie_str, DEFAULT_HTTP_PORT, escape_path,
@@ -80,7 +80,7 @@ class DateTimeTests(unittest.TestCase):
             t3 = http2time(s.upper())
 
             self.assertTrue(t == t2 == t3 == test_t,
-                         "'%s'  =>  %s, %s, %s (%s)" % (s, t, t2, t3, test_t))
+                            "'%s'  =>  %s, %s, %s (%s)" % (s, t, t2, t3, test_t))
 
     def test_http2time_garbage(self):
         for test in [
@@ -95,10 +95,71 @@ class DateTimeTests(unittest.TestCase):
             '01-01-1980 00:61:00',
             '01-01-1980 00:00:62',
             ]:
-            self.assertTrue(http2time(test) is None,
-                         "http2time(%s) is not None\n"
-                         "http2time(test) %s" % (test, http2time(test))
-                         )
+            self.assertIsNone(http2time(test),
+                              "http2time(%s) is not None\n"
+                              "http2time(test) %s" % (test, http2time(test)))
+
+    def test_iso2time(self):
+        def parse_date(text):
+            return time.gmtime(iso2time(text))[:6]
+
+        # ISO 8601 compact format
+        self.assertEqual(parse_date("19940203T141529Z"),
+                         (1994, 2, 3, 14, 15, 29))
+
+        # ISO 8601 with time behind UTC
+        self.assertEqual(parse_date("1994-02-03 07:15:29 -0700"),
+                         (1994, 2, 3, 14, 15, 29))
+
+        # ISO 8601 with time ahead of UTC
+        self.assertEqual(parse_date("1994-02-03 19:45:29 +0530"),
+                         (1994, 2, 3, 14, 15, 29))
+
+    def test_iso2time_formats(self):
+        # test iso2time for supported dates.
+        tests = [
+            '1994-02-03 00:00:00 -0000', # ISO 8601 format
+            '1994-02-03 00:00:00 +0000', # ISO 8601 format
+            '1994-02-03 00:00:00',       # zone is optional
+            '1994-02-03',                # only date
+            '1994-02-03T00:00:00',       # Use T as separator
+            '19940203',                  # only date
+            '1994-02-02 24:00:00',       # using hour-24 yesterday date
+            '19940203T000000Z',          # ISO 8601 compact format
+
+            # A few tests with extra space at various places
+            '  1994-02-03 ',
+            '  1994-02-03T00:00:00  ',
+        ]
+
+        test_t = 760233600  # assume broken POSIX counting of seconds
+        for s in tests:
+            t = iso2time(s)
+            t2 = iso2time(s.lower())
+            t3 = iso2time(s.upper())
+
+            self.assertTrue(t == t2 == t3 == test_t,
+                            "'%s'  =>  %s, %s, %s (%s)" % (s, t, t2, t3, test_t))
+
+    def test_iso2time_garbage(self):
+        for test in [
+            '',
+            'Garbage',
+            'Thursday, 03-Feb-94 00:00:00 GMT',
+            '1980-00-01',
+            '1980-13-01',
+            '1980-01-00',
+            '1980-01-32',
+            '1980-01-01 25:00:00',
+            '1980-01-01 00:61:00',
+            '01-01-1980 00:00:62',
+            '01-01-1980T00:00:62',
+            '19800101T250000Z'
+            '1980-01-01 00:00:00 -2500',
+            ]:
+            self.assertIsNone(iso2time(test),
+                              "iso2time(%s) is not None\n"
+                              "iso2time(test) %s" % (test, iso2time(test)))
 
 
 class HeaderTests(unittest.TestCase):
