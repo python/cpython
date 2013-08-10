@@ -107,7 +107,8 @@ Significantly Improved Library Modules:
 
 Security improvements:
 
-* None yet.
+* command line option for :ref:`isolated mode <using-on-misc-options>`,
+  :issue:`16499`.
 
 Please read on for a comprehensive list of user-facing changes.
 
