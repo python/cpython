@@ -54,6 +54,9 @@ Core and Builtins
 
 - Issue #17899: Fix rare file descriptor leak in os.listdir().
 
+- Issue #10241: Clear extension module dict copies at interpreter shutdown.
+  Patch by Neil Schemenauer, minimally modified.
+
 - Issue #9035: ismount now recognises volumes mounted below a drive root
   on Windows. Original patch by Atsuo Ishimoto.
 
