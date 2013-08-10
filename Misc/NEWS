@@ -27,6 +27,8 @@ Library
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
   docstrings and ValueError messages. Patch by Zhongyue Luo
 
+- Fix refcounting issue with extension types in tkinter.
+
 - Issue #8112: xlmrpc.server's DocXMLRPCServer server no longer raises an error
   if methods have annotations; it now correctly displays the annotations.
 
