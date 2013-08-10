@@ -175,6 +175,7 @@ class JSONEncoder(object):
     def encode(self, o):
         """Return a JSON string representation of a Python data structure.
 
+        >>> from json.encoder import JSONEncoder
         >>> JSONEncoder().encode({"foo": ["bar", "baz"]})
         '{"foo": ["bar", "baz"]}'
 
@@ -298,9 +299,13 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif value is False:
                 yield buf + 'false'
             elif isinstance(value, int):
-                yield buf + str(value)
+                # Subclasses of int/float may override __str__, but we still
+                # want to encode them as integers/floats in JSON. One example
+                # within the standard library is IntEnum.
+                yield buf + str(int(value))
             elif isinstance(value, float):
-                yield buf + _floatstr(value)
+                # see comment above for int
+                yield buf + _floatstr(float(value))
             else:
                 yield buf
                 if isinstance(value, (list, tuple)):
@@ -346,7 +351,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             # JavaScript is weakly typed for these, so it makes sense to
             # also allow them.  Many encoders seem to do something like this.
             elif isinstance(key, float):
-                key = _floatstr(key)
+                # see comment for int/float in _make_iterencode
+                key = _floatstr(float(key))
             elif key is True:
                 key = 'true'
             elif key is False:
@@ -354,7 +360,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif key is None:
                 key = 'null'
             elif isinstance(key, int):
-                key = str(key)
+                # see comment for int/float in _make_iterencode
+                key = str(int(key))
             elif _skipkeys:
                 continue
             else:
@@ -374,9 +381,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif value is False:
                 yield 'false'
             elif isinstance(value, int):
-                yield str(value)
+                # see comment for int/float in _make_iterencode
+                yield str(int(value))
             elif isinstance(value, float):
-                yield _floatstr(value)
+                # see comment for int/float in _make_iterencode
+                yield _floatstr(float(value))
             else:
                 if isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
@@ -402,9 +411,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif o is False:
             yield 'false'
         elif isinstance(o, int):
-            yield str(o)
+            # see comment for int/float in _make_iterencode
+            yield str(int(o))
         elif isinstance(o, float):
-            yield _floatstr(o)
+            # see comment for int/float in _make_iterencode
+            yield _floatstr(float(o))
         elif isinstance(o, (list, tuple)):
             yield from _iterencode_list(o, _current_indent_level)
         elif isinstance(o, dict):

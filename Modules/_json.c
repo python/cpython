@@ -116,6 +116,8 @@ raise_errmsg(char *msg, PyObject *s, Py_ssize_t end);
 static PyObject *
 encoder_encode_string(PyEncoderObject *s, PyObject *obj);
 static PyObject *
+encoder_encode_long(PyEncoderObject* s UNUSED, PyObject *obj);
+static PyObject *
 encoder_encode_float(PyEncoderObject *s, PyObject *obj);
 
 #define S_CHAR(c) (c >= ' ' && c <= '~' && c != '\\' && c != '"')
@@ -1302,13 +1304,45 @@ _encoded_const(PyObject *obj)
 }
 
 static PyObject *
+encoder_encode_long(PyEncoderObject* s UNUSED, PyObject *obj)
+{
+    /* Return the JSON representation of a PyLong and PyLong subclasses.
+       Calls int() on PyLong subclasses in case the str() was changed.
+       Added specifically to deal with IntEnum.  See Issue18264. */
+    PyObject *encoded, *longobj;
+    if (PyLong_CheckExact(obj)) {
+        encoded = PyObject_Str(obj);
+    }
+    else {
+        longobj = PyNumber_Long(obj);
+        if (longobj == NULL) {
+            PyErr_SetString(
+                    PyExc_ValueError,
+                    "Unable to coerce int subclass to int"
+                    );
+            return NULL;
+        }
+        encoded = PyObject_Str(longobj);
+        Py_DECREF(longobj);
+    }
+    return encoded;
+}
+
+
+static PyObject *
 encoder_encode_float(PyEncoderObject *s, PyObject *obj)
 {
-    /* Return the JSON representation of a PyFloat */
+    /* Return the JSON representation of a PyFloat.
+       Modified to call float() on float subclasses in case the subclass
+       changes the repr.  See Issue18264.  */
+    PyObject *encoded, *floatobj;
     double i = PyFloat_AS_DOUBLE(obj);
     if (!Py_IS_FINITE(i)) {
         if (!s->allow_nan) {
-            PyErr_SetString(PyExc_ValueError, "Out of range float values are not JSON compliant");
+            PyErr_SetString(
+                    PyExc_ValueError,
+                    "Out of range float values are not JSON compliant"
+                    );
             return NULL;
         }
         if (i > 0) {
@@ -1321,8 +1355,24 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
             return PyUnicode_FromString("NaN");
         }
     }
-    /* Use a better float format here? */
-    return PyObject_Repr(obj);
+    /* coerce float subclasses to float (primarily for Enum) */
+    if (PyFloat_CheckExact(obj)) {
+        /* Use a better float format here? */
+        encoded = PyObject_Repr(obj);
+    }
+    else {
+        floatobj = PyNumber_Float(obj);
+        if (floatobj == NULL) {
+            PyErr_SetString(
+                    PyExc_ValueError,
+                    "Unable to coerce float subclass to float"
+                    );
+            return NULL;
+        }
+        encoded = PyObject_Repr(floatobj);
+        Py_DECREF(floatobj);
+    }
+    return encoded;
 }
 
 static PyObject *
@@ -1366,7 +1416,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyObject_Str(obj);
+        PyObject *encoded = encoder_encode_long(s, obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
@@ -1551,9 +1601,10 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                 goto bail;
         }
         else if (PyLong_Check(key)) {
-            kstr = PyObject_Str(key);
-            if (kstr == NULL)
+            kstr = encoder_encode_long(s, key);
+            if (kstr == NULL) {
                 goto bail;
+            }
         }
         else if (skipkeys) {
             Py_DECREF(item);
