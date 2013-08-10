@@ -56,6 +56,8 @@ class DateTimeTests(unittest.TestCase):
          '03-Feb-1994 00:00:00 GMT',  # broken rfc850 (no weekday)
          '03-Feb-1994 00:00 GMT',  # broken rfc850 (no weekday, no seconds)
          '03-Feb-1994 00:00',  # broken rfc850 (no weekday, no seconds, no tz)
+         '02-Feb-1994 24:00',  # broken rfc850 (no weekday, no seconds,
+                               # no tz) using hour 24 with yesterday date
 
          '03-Feb-94',  # old rfc850 HTTP format (no weekday, no time)
          '03-Feb-1994',  # broken rfc850 HTTP format (no weekday, no time)
