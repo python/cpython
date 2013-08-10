@@ -10,6 +10,8 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #16400: Add command line option for isolated mode.
+
 - Issue #15301: Parsing fd, uid, and gid parameters for builtins
   in Modules/posixmodule.c is now far more robust.
 

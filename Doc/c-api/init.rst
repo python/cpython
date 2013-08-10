@@ -329,7 +329,11 @@ Process-wide parameters
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
 
-   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set to 1.
+   This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
+   to 1 unless the :program:`python` interpreter was started with the
+   :option:`-I`.
+
+   .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
 
 .. c:function:: void Py_SetPythonHome(wchar_t *home)

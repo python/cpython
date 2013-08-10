@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -175,6 +175,8 @@ Generic options
        Python 3.0
 
 
+.. _using-on-misc-options:
+
 Miscellaneous options
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -211,6 +213,17 @@ Miscellaneous options
 
    This can be useful to inspect global variables or a stack trace when a script
    raises an exception.  See also :envvar:`PYTHONINSPECT`.
+
+
+.. cmdoption:: -I
+
+   Run Python in isolated mode. This also implies -E and -s.
+   In isolated mode :data:`sys.path` contains neither the script's directory nor
+   the user's site-packages directory. All :envvar:`PYTHON*` environment
+   variables are ignored, too. Further restrictions may be imposed to prevent
+   the user from injecting malicious code.
+
+   .. versionadded:: 3.4
 
 
 .. cmdoption:: -O
@@ -398,7 +411,7 @@ Environment variables
 ---------------------
 
 These environment variables influence Python's behavior, they are processed
-before the command-line switches other than -E.  It is customary that
+before the command-line switches other than -E or -I.  It is customary that
 command-line switches override environmental variables where there is a
 conflict.
 

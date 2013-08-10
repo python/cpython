@@ -4,6 +4,7 @@
 
 import test.support, unittest
 import os
+import shutil
 import sys
 import subprocess
 import tempfile
@@ -438,6 +439,31 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
         self.assertEqual(b'', out)
 
+
+    def test_isolatedmode(self):
+        self.verify_valid_flag('-I')
+        self.verify_valid_flag('-IEs')
+        rc, out, err = assert_python_ok('-I', '-c',
+            'from sys import flags as f; '
+            'print(f.no_user_site, f.ignore_environment, f.isolated)',
+            # dummyvar to prevent extranous -E
+            dummyvar="")
+        self.assertEqual(out.strip(), b'1 1 1')
+        with test.support.temp_cwd() as tmpdir:
+            fake = os.path.join(tmpdir, "uuid.py")
+            main = os.path.join(tmpdir, "main.py")
+            with open(fake, "w") as f:
+                f.write("raise RuntimeError('isolated mode test')\n")
+            with open(main, "w") as f:
+                f.write("import uuid\n")
+                f.write("print('ok')\n")
+            self.assertRaises(subprocess.CalledProcessError,
+                              subprocess.check_output,
+                              [sys.executable, main], cwd=tmpdir,
+                              stderr=subprocess.DEVNULL)
+            out = subprocess.check_output([sys.executable, "-I", main],
+                                          cwd=tmpdir)
+            self.assertEqual(out.strip(), b"ok")
 
 def test_main():
     test.support.run_unittest(CmdLineTest)
