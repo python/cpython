@@ -516,6 +516,7 @@ Tkapp_New(char *screenName, char *className,
     v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
+    Py_INCREF(Tkapp_Type);
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
@@ -674,6 +675,7 @@ newPyTclObject(Tcl_Obj *arg)
     self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
+    Py_INCREF(PyTclObject_Type);
     Tcl_IncrRefCount(arg);
     self->value = arg;
     self->string = NULL;
@@ -683,9 +685,11 @@ newPyTclObject(Tcl_Obj *arg)
 static void
 PyTclObject_dealloc(PyTclObject *self)
 {
+    PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static char*
@@ -2196,6 +2200,7 @@ Tktt_New(PyObject *func)
     v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
     if (v == NULL)
         return NULL;
+    Py_INCREF(Tktt_Type);
 
     Py_INCREF(func);
     v->token = NULL;
@@ -2211,10 +2216,12 @@ Tktt_Dealloc(PyObject *self)
 {
     TkttObject *v = (TkttObject *)self;
     PyObject *func = v->func;
+    PyObject *tp = (PyObject *) Py_TYPE(self);
 
     Py_XDECREF(func);
 
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -2520,11 +2527,13 @@ static PyMethodDef Tkapp_methods[] =
 static void
 Tkapp_Dealloc(PyObject *self)
 {
+    PyObject *tp = (PyObject *) Py_TYPE(self);
     /*CHECK_TCL_APPARTMENT;*/
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
     PyObject_Del(self);
+    Py_DECREF(tp);
     DisableEventHook();
 }
 
