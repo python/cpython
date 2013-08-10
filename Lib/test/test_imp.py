@@ -275,6 +275,15 @@ class ReloadTests(unittest.TestCase):
             import marshal
             imp.reload(marshal)
 
+    def test_with_deleted_parent(self):
+        # see #18681
+        from html import parser
+        del sys.modules['html']
+        def cleanup(): del sys.modules['html.parser']
+        self.addCleanup(cleanup)
+        with self.assertRaisesRegex(ImportError, 'html'):
+            imp.reload(parser)
+
 
 class PEP3147Tests(unittest.TestCase):
     """Tests of PEP 3147."""
