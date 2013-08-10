@@ -64,6 +64,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18681: Fix a NameError in imp.reload() (noticed by Weizhao Li).
+
 - Issue #8112: xlmrpc.server's DocXMLRPCServer server no longer raises an error
   if methods have annotations; it now correctly displays the annotations.
 
