@@ -64,6 +64,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #8112: xlmrpc.server's DocXMLRPCServer server no longer raises an error
+  if methods have annotations; it now correctly displays the annotations.
+
 - Issue #17998: Fix an internal error in regular expression engine.
 
 - Issue #17557: Fix os.getgroups() to work with the modified behavior of
