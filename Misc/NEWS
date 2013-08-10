@@ -770,6 +770,10 @@ C-API
 IDLE
 ----
 
+- Issue #18429: Format / Format Paragraph, now works when comment blocks
+  are selected. As with text blocks, this works best when the selection
+  only includes complete lines.
+
 - Issue #18226: Add docstrings and unittests for FormatParagraph.py.
   Original patches by Todd Rovito and Phil Webster.
 
