@@ -115,7 +115,7 @@ def reload(module):
         parent_name = name.rpartition('.')[0]
         if parent_name and parent_name not in sys.modules:
             msg = "parent {!r} not in sys.modules"
-            raise ImportError(msg.format(parentname), name=parent_name)
+            raise ImportError(msg.format(parent_name), name=parent_name)
         return module.__loader__.load_module(name)
     finally:
         try:
