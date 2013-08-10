@@ -109,7 +109,7 @@ class Queue:
 
         If optional args 'block' is true and 'timeout' is None (the default),
         block if necessary until a free slot is available. If 'timeout' is
-        a positive number, it blocks at most 'timeout' seconds and raises
+        a non-negative number, it blocks at most 'timeout' seconds and raises
         the Full exception if no free slot was available within that time.
         Otherwise ('block' is false), put an item on the queue if a free slot
         is immediately available, else raise the Full exception ('timeout'
@@ -125,7 +125,7 @@ class Queue:
                     while self._qsize() == self.maxsize:
                         self.not_full.wait()
                 elif timeout < 0:
-                    raise ValueError("'timeout' must be a positive number")
+                    raise ValueError("'timeout' must be a non-negative number")
                 else:
                     endtime = _time() + timeout
                     while self._qsize() == self.maxsize:
@@ -152,7 +152,7 @@ class Queue:
 
         If optional args 'block' is true and 'timeout' is None (the default),
         block if necessary until an item is available. If 'timeout' is
-        a positive number, it blocks at most 'timeout' seconds and raises
+        a non-negative number, it blocks at most 'timeout' seconds and raises
         the Empty exception if no item was available within that time.
         Otherwise ('block' is false), return an item if one is immediately
         available, else raise the Empty exception ('timeout' is ignored
@@ -167,7 +167,7 @@ class Queue:
                 while not self._qsize():
                     self.not_empty.wait()
             elif timeout < 0:
-                raise ValueError("'timeout' must be a positive number")
+                raise ValueError("'timeout' must be a non-negative number")
             else:
                 endtime = _time() + timeout
                 while not self._qsize():
