@@ -3,6 +3,7 @@ import datetime
 import sys
 import time
 import unittest
+from unittest import mock
 import xmlrpc.client as xmlrpclib
 import xmlrpc.server
 import http.client
@@ -249,7 +250,14 @@ class FaultTestCase(unittest.TestCase):
 
 class DateTimeTestCase(unittest.TestCase):
     def test_default(self):
-        t = xmlrpclib.DateTime()
+        with mock.patch('time.localtime') as localtime_mock:
+            time_struct = time.struct_time(
+                [2013, 7, 15, 0, 24, 49, 0, 196, 0])
+            localtime_mock.return_value = time_struct
+            localtime = time.localtime()
+            t = xmlrpclib.DateTime()
+            self.assertEqual(str(t),
+                             time.strftime("%Y%m%dT%H:%M:%S", localtime))
 
     def test_time(self):
         d = 1181399930.036952
@@ -286,7 +294,7 @@ class DateTimeTestCase(unittest.TestCase):
         self.assertEqual(t1, tref)
 
         t2 = xmlrpclib._datetime(d)
-        self.assertEqual(t1, tref)
+        self.assertEqual(t2, tref)
 
     def test_comparison(self):
         now = datetime.datetime.now()
