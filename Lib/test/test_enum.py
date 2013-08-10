@@ -78,21 +78,6 @@ class TestEnum(unittest.TestCase):
     def test_intenum_value(self):
         self.assertEqual(IntStooges.CURLY.value, 2)
 
-    def test_dir_on_class(self):
-        Season = self.Season
-        self.assertEqual(
-            set(dir(Season)),
-            set(['__class__', '__doc__', '__members__',
-                'SPRING', 'SUMMER', 'AUTUMN', 'WINTER']),
-            )
-
-    def test_dir_on_item(self):
-        Season = self.Season
-        self.assertEqual(
-            set(dir(Season.WINTER)),
-            set(['__class__', '__doc__', 'name', 'value']),
-            )
-
     def test_enum(self):
         Season = self.Season
         lst = list(Season)
