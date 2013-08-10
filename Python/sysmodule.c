@@ -1369,6 +1369,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"bytes_warning",           "-b"},
     {"quiet",                   "-q"},
     {"hash_randomization",      "-R"},
+    {"isolated",                "-I"},
     {0}
 };
 
@@ -1376,7 +1377,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    12
+    13
 };
 
 static PyObject*
@@ -1406,6 +1407,7 @@ make_flags(void)
     SetFlag(Py_BytesWarningFlag);
     SetFlag(Py_QuietFlag);
     SetFlag(Py_HashRandomizationFlag);
+    SetFlag(Py_IsolatedFlag);
 #undef SetFlag
 
     if (PyErr_Occurred()) {
@@ -1944,7 +1946,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 void
 PySys_SetArgv(int argc, wchar_t **argv)
 {
-    PySys_SetArgvEx(argc, argv, 1);
+    PySys_SetArgvEx(argc, argv, Py_IsolatedFlag == 0);
 }
 
 /* Reimplementation of PyFile_WriteString() no calling indirectly

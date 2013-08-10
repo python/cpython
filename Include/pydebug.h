@@ -20,6 +20,7 @@ PyAPI_DATA(int) Py_DontWriteBytecodeFlag;
 PyAPI_DATA(int) Py_NoUserSiteDirectory;
 PyAPI_DATA(int) Py_UnbufferedStdioFlag;
 PyAPI_DATA(int) Py_HashRandomizationFlag;
+PyAPI_DATA(int) Py_IsolatedFlag;
 
 /* this is a wrapper around getenv() that pays attention to
    Py_IgnoreEnvironmentFlag.  It should be used for getting variables like

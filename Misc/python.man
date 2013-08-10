@@ -26,11 +26,14 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-i
 ]
 [
-.B \-m
-.I module-name
+.B \-I
 ]
 .br
        [
+.B \-m
+.I module-name
+]
+[
 .B \-q
 ]
 [
@@ -138,6 +141,13 @@ used, enter interactive mode after executing the script or the
 command.  It does not read the $PYTHONSTARTUP file.  This can be
 useful to inspect global variables or a stack trace when a script
 raises an exception.
+.TP
+.B \-I
+Run Python in isolated mode. This also implies \fB\-E\fP and \fB\-S\fP. In
+isolated mode sys.path contains neither the script’s directory nor the user’s
+site-packages directory. All PYTHON* environment variables are ignored, too.
+Further restrictions may be imposed to prevent the user from injecting
+malicious code.
 .TP
 .BI "\-m " module-name
 Searches 

@@ -112,6 +112,7 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int Py_NoUserSiteDirectory = 0; /* for -s and site.py */
 int Py_UnbufferedStdioFlag = 0; /* Unbuffered binary std{in,out,err} */
 int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
+int Py_IsolatedFlag = 0; /* for -I, isolate from user's env */
 
 PyThreadState *_Py_Finalizing = NULL;
 
