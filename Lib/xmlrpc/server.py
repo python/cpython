@@ -756,20 +756,23 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             self.escape(anchor), self.escape(name))
 
         if inspect.ismethod(object):
-            args, varargs, varkw, defaults = inspect.getargspec(object)
+            args = inspect.getfullargspec(object)
             # exclude the argument bound to the instance, it will be
             # confusing to the non-Python user
             argspec = inspect.formatargspec (
-                    args[1:],
-                    varargs,
-                    varkw,
-                    defaults,
+                    args.args[1:],
+                    args.varargs,
+                    args.varkw,
+                    args.defaults,
+                    annotations=args.annotations,
                     formatvalue=self.formatvalue
                 )
         elif inspect.isfunction(object):
-            args, varargs, varkw, defaults = inspect.getargspec(object)
+            args = inspect.getfullargspec(object)
             argspec = inspect.formatargspec(
-                args, varargs, varkw, defaults, formatvalue=self.formatvalue)
+                args.args, args.varargs, args.varkw, args.defaults,
+                annotations=args.annotations,
+                formatvalue=self.formatvalue)
         else:
             argspec = '(...)'
 
