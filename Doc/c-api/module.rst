@@ -198,10 +198,10 @@ These functions are usually used in the module initialization function.
       freed when the module object is deallocated, after the :c:member:`m_free`
       function has been called, if present.
 
-      Setting ``m_size`` to a positive value specifies the size of the additional
-      memory required by the module. Setting it to ``-1`` means that the module can
-      not be re-initialized because it has global state. Setting it to ``0`` is
-      forbidden.
+      Setting ``m_size`` to ``-1`` means that the module can not be
+      re-initialized because it has global state. Setting it to a non-negative
+      value means that the module can be re-initialized and specifies the
+      additional amount of memory it requires for its state.
 
       See :PEP:`3121` for more details.
 
