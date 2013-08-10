@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
+  docstrings and ValueError messages. Patch by Zhongyue Luo
+
 - Issue #8112: xlmrpc.server's DocXMLRPCServer server no longer raises an error
   if methods have annotations; it now correctly displays the annotations.
 
@@ -821,7 +824,7 @@ Windows
 Build
 -----
 
-- Issue #16067: Add description into MSI file to replace installer's 
+- Issue #16067: Add description into MSI file to replace installer's
   temporary name.
 
 - Issue #18257: Fix readlink usage in python-config.  Install the python
