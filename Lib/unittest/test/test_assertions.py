@@ -33,6 +33,10 @@ class Test_Assertions(unittest.TestCase):
         self.assertNotAlmostEqual(1.1, 1.0, delta=0.05)
         self.assertNotAlmostEqual(1.0, 1.1, delta=0.05)
 
+        self.assertAlmostEqual(1.0, 1.0, delta=0.5)
+        self.assertRaises(self.failureException, self.assertNotAlmostEqual,
+                          1.0, 1.0, delta=0.5)
+
         self.assertRaises(self.failureException, self.assertAlmostEqual,
                           1.1, 1.0, delta=0.05)
         self.assertRaises(self.failureException, self.assertNotAlmostEqual,

@@ -1017,7 +1017,7 @@ Test cases
       like the :func:`round` function) and not *significant digits*.
 
       If *delta* is supplied instead of *places* then the difference
-      between *first* and *second* must be less (or more) than *delta*.
+      between *first* and *second* must be less or equal to (or greater than) *delta*.
 
       Supplying both *delta* and *places* raises a ``TypeError``.
 
