@@ -130,8 +130,8 @@ def import_module(name, deprecated=False, *, required_on=()):
 def _save_and_remove_module(name, orig_modules):
     """Helper function to save and remove a module from sys.modules
 
-       Raise ImportError if the module can't be imported.
-       """
+    Raise ImportError if the module can't be imported.
+    """
     # try to import the module and raise an error if it can't be imported
     if name not in sys.modules:
         __import__(name)
@@ -144,7 +144,8 @@ def _save_and_remove_module(name, orig_modules):
 def _save_and_block_module(name, orig_modules):
     """Helper function to save and block a module in sys.modules
 
-       Return True if the module was in sys.modules, False otherwise."""
+    Return True if the module was in sys.modules, False otherwise.
+    """
     saved = True
     try:
         orig_modules[name] = sys.modules[name]
@@ -166,18 +167,30 @@ def anticipate_failure(condition):
 
 
 def import_fresh_module(name, fresh=(), blocked=(), deprecated=False):
-    """Imports and returns a module, deliberately bypassing the sys.modules cache
-    and importing a fresh copy of the module. Once the import is complete,
-    the sys.modules cache is restored to its original state.
+    """Import and return a module, deliberately bypassing sys.modules.
 
-    Modules named in fresh are also imported anew if needed by the import.
-    If one of these modules can't be imported, None is returned.
+    This function imports and returns a fresh copy of the named Python module
+    by removing the named module from sys.modules before doing the import.
+    Note that unlike reload, the original module is not affected by
+    this operation.
 
-    Importing of modules named in blocked is prevented while the fresh import
-    takes place.
+    *fresh* is an iterable of additional module names that are also removed
+    from the sys.modules cache before doing the import.
 
-    If deprecated is True, any module or package deprecation messages
-    will be suppressed."""
+    *blocked* is an iterable of module names that are replaced with None
+    in the module cache during the import to ensure that attempts to import
+    them raise ImportError.
+
+    The named module and any modules named in the *fresh* and *blocked*
+    parameters are saved before starting the import and then reinserted into
+    sys.modules when the fresh import is complete.
+
+    Module and package deprecation messages are suppressed during this import
+    if *deprecated* is True.
+
+    This function will raise ImportError if the named module cannot be
+    imported.
+    """
     # NOTE: test_heapq, test_json and test_warnings include extra sanity checks
     # to make sure that this utility function is working as expected
     with _ignore_deprecated_imports(deprecated):
