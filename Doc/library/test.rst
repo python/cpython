@@ -489,7 +489,7 @@ The :mod:`test.support` module defines the following functions:
    *fresh* is an iterable of additional module names that are also removed
    from the ``sys.modules`` cache before doing the import.
 
-   *blocked* is an iterable of module names that are replaced with :const:`0`
+   *blocked* is an iterable of module names that are replaced with ``None``
    in the module cache during the import to ensure that attempts to import
    them raise :exc:`ImportError`.
 
@@ -500,15 +500,15 @@ The :mod:`test.support` module defines the following functions:
    Module and package deprecation messages are suppressed during this import
    if *deprecated* is ``True``.
 
-   This function will raise :exc:`unittest.SkipTest` if the named module
-   cannot be imported.
+   This function will raise :exc:`ImportError` if the named module cannot be
+   imported.
 
    Example use::
 
-      # Get copies of the warnings module for testing without
-      # affecting the version being used by the rest of the test suite
-      # One copy uses the C implementation, the other is forced to use
-      # the pure Python fallback implementation
+      # Get copies of the warnings module for testing without affecting the
+      # version being used by the rest of the test suite. One copy uses the
+      # C implementation, the other is forced to use the pure Python fallback
+      # implementation
       py_warnings = import_fresh_module('warnings', blocked=['_warnings'])
       c_warnings = import_fresh_module('warnings', fresh=['_warnings'])
 
