@@ -278,8 +278,9 @@ class ReloadTests(unittest.TestCase):
     def test_with_deleted_parent(self):
         # see #18681
         from html import parser
-        del sys.modules['html']
-        def cleanup(): del sys.modules['html.parser']
+        html = sys.modules.pop('html')
+        def cleanup():
+            sys.modules['html'] = html
         self.addCleanup(cleanup)
         with self.assertRaisesRegex(ImportError, 'html'):
             imp.reload(parser)
