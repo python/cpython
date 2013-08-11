@@ -39,7 +39,7 @@ def _assert_python(expected_success, *args, **env_vars):
         p.stdout.close()
         p.stderr.close()
     rc = p.returncode
-    err =  strip_python_stderr(err)
+    err = strip_python_stderr(err)
     if (rc and expected_success) or (not rc and not expected_success):
         raise AssertionError(
             "Process return code is %d, "
@@ -49,18 +49,25 @@ def _assert_python(expected_success, *args, **env_vars):
 def assert_python_ok(*args, **env_vars):
     """
     Assert that running the interpreter with `args` and optional environment
-    variables `env_vars` is ok and return a (return code, stdout, stderr) tuple.
+    variables `env_vars` succeeds (rc == 0) and return a (return code, stdout,
+    stderr) tuple.
     """
     return _assert_python(True, *args, **env_vars)
 
 def assert_python_failure(*args, **env_vars):
     """
     Assert that running the interpreter with `args` and optional environment
-    variables `env_vars` fails and return a (return code, stdout, stderr) tuple.
+    variables `env_vars` fails (rc != 0) and return a (return code, stdout,
+    stderr) tuple.
     """
     return _assert_python(False, *args, **env_vars)
 
 def spawn_python(*args, **kw):
+    """Run a Python subprocess with the given arguments.
+
+    kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
+    object.
+    """
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
@@ -68,6 +75,7 @@ def spawn_python(*args, **kw):
                             **kw)
 
 def kill_python(p):
+    """Run the given Popen process until completion and return stdout."""
     p.stdin.close()
     data = p.stdout.read()
     p.stdout.close()
