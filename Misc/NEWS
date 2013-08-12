@@ -26,6 +26,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18585: Add :func:`textwrap.shorten` to collapse and truncate a
+  piece of text to a given length.
+
 - Issue #18598: Tweak exception message for importlib.import_module() to
   include the module name when a key argument is missing.
 
