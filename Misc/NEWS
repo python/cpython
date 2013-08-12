@@ -164,6 +164,7 @@ Tests
 Documentation
 -------------
 
+- Issue #17701: Improving strftime documentation.
 - Issue #17844: Refactor a documentation of Python specific encodings.
   Add links to encoders and decoders for binary-to-binary codecs.
 
