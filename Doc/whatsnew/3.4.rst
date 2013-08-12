@@ -94,13 +94,20 @@ New library modules:
 
 New built-in features:
 
-* None yet.
+* :ref:`PEP 442: Safe object finalization <pep-442>`.
+* :ref:`PEP 445: Configurable memory allocators <pep-445>`.
 
 Implementation improvements:
 
-* A more efficient :mod:`marshal` format <http://bugs.python.org/issue16475>.
+* A more efficient :mod:`marshal` format (:issue:`16475`).
+* Improve finalization of Python modules to avoid setting their globals
+  to None, in most cases (:issue:`18214`).
 
 Significantly Improved Library Modules:
+
+* Single-dispatch generic functions (:pep:`443`)
+* SHA-3 (Keccak) support for :mod:`hashlib`.
+* TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 
 * SHA-3 (Keccak) support for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
@@ -112,6 +119,10 @@ Security improvements:
 
 Please read on for a comprehensive list of user-facing changes.
 
+.. _pep-445:
+
+PEP 445: Add new APIs to customize Python memory allocators
+===========================================================
 
 PEP 445: Add new APIs to customize Python memory allocators
 ===========================================================
@@ -146,6 +157,8 @@ Some smaller changes made to the core Python language are:
 * :func:`min` and :func:`max` now accept a *default* argument that can be used
   to specify the value they return if the iterable they are evaluating has no
   elements.  Contributed by Julian Berman in :issue:`18111`.
+
+* Module objects are now :mod:`weakref`'able.
 
 
 New Modules
@@ -222,6 +235,26 @@ functools
 New :func:`functools.singledispatch` decorator: see the :pep:`443`.
 
 
+mmap
+----
+
+mmap objects can now be weakref'ed.
+
+(Contributed by Valerie Lambert in :issue:`4885`.)
+
+
+poplib
+------
+
+New :meth:`~poplib.POP3.stls` method to switch a clear-text POP3 session into
+an encrypted POP3 session.
+
+New :meth:`~poplib.POP3.capa` method to query the capabilities advertised by the
+POP3 server.
+
+(Contributed by Lorenzo Catucci in :issue:`4473`.)
+
+
 inspect
 -------
 
@@ -241,18 +274,50 @@ try/except statement by code that only cares whether or not an error occurred.
 ssl
 ---
 
-TLSv1.1 and TLSv1.2 support (Contributed by Michele Orrù and Antoine Pitrou
-in :issue:`16692`)
+TLSv1.1 and TLSv1.2 support.
 
-New diagnostic functions :func:`~ssl.get_default_verify_paths`,
-:meth:`~ssl.SSLContext.cert_store_stats` and
-:meth:`~ssl.SSLContext.get_ca_certs`
+(Contributed by Michele Orrù and Antoine Pitrou in :issue:`16692`)
 
-Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
-cert store.
+* New diagnostic functions :func:`~ssl.get_default_verify_paths`,
+  :meth:`~ssl.SSLContext.cert_store_stats` and
+  :meth:`~ssl.SSLContext.get_ca_certs`
+
+* Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
+  cert store.
 
 (Contributed by Christian Heimes in :issue:`18143`, :issue:`18147` and
-:issue:`17134`)
+ :issue:`17134`.)
+
+Support for server-side SNI using the new
+:meth:`ssl.SSLContext.set_servername_callback` method.
+
+(Contributed by Daniel Black in :issue:`8109`.)
+
+
+struct
+------
+
+Streaming struct unpacking using :func:`struct.iter_unpack`.
+
+(Contributed by Antoine Pitrou in :issue:`17804`.)
+
+
+urllib
+------
+
+Add support.for ``data:`` URLs in :mod:`urllib.request`.
+
+(Contributed by Mathias Panzenböck in :issue:`16423`.)
+
+
+unittest
+--------
+
+Support for easy dynamically-generated subtests using the
+:meth:`~unittest.TestCase.subTest` context manager.
+
+(Contributed by Antoine Pitrou in :issue:`16997`.)
+
 
 wave
 ----
@@ -263,6 +328,7 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 :meth:`wave.open` now supports the context manager protocol.  (Contributed
 by Claudiu Popa in :issue:`17616`.)
 
+
 stat
 ----
 
@@ -272,12 +338,39 @@ platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
 
 The module supports new file types: door, event port and whiteout.
 
+
+weakref
+-------
+
+New :class:`~weakref.WeakMethod` class simulates weak references to bound
+methods.
+
+(Contributed by Antoine Pitrou in :issue:`14631`.)
+
+
+xml.etree
+---------
+
+Add an event-driven parser for non-blocking applications,
+:class:`~xml.etree.ElementTree.IncrementalParser`.
+
+(Contributed by Antoine Pitrou in :issue:`17782`.)
+
+
 colorsys
 --------
 
 The number of digits in the coefficients for the RGB --- YIQ conversions have
 been expanded so that they match the FCC NTSC versions.  The change in
 results should be less than 1% and may better match results found elsewhere.
+
+
+Other improvements
+==================
+
+Tab-completion is now enabled by default in the interactive interpreter.
+
+(Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
 
 
 Optimizations
