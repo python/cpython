@@ -245,6 +245,8 @@ Basic Usage
    kwarg; otherwise :class:`JSONDecoder` is used.  Additional keyword arguments
    will be passed to the constructor of the class.
 
+   If the data being deserialized is not a valid JSON document, a
+   :exc:`ValueError` will be raised.
 
 .. function:: loads(s, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
