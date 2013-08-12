@@ -223,6 +223,9 @@ class EnumMeta(type):
     def __contains__(cls, member):
         return isinstance(member, cls) and member.name in cls._member_map_
 
+    def __dir__(self):
+        return ['__class__', '__doc__', '__members__'] + self._member_names_
+
     @property
     def __members__(cls):
         """Returns a mapping of member name->value.
@@ -429,6 +432,9 @@ class Enum(metaclass=EnumMeta):
 
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name_)
+
+    def __dir__(self):
+        return (['__class__', '__doc__', 'name', 'value'])
 
     def __eq__(self, other):
         if type(other) is self.__class__:
