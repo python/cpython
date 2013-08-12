@@ -67,6 +67,21 @@ class TestEnum(unittest.TestCase):
             WINTER = 4
         self.Season = Season
 
+    def test_dir_on_class(self):
+        Season = self.Season
+        self.assertEqual(
+            set(dir(Season)),
+            set(['__class__', '__doc__', '__members__',
+                'SPRING', 'SUMMER', 'AUTUMN', 'WINTER']),
+            )
+
+    def test_dir_on_item(self):
+        Season = self.Season
+        self.assertEqual(
+            set(dir(Season.WINTER)),
+            set(['__class__', '__doc__', 'name', 'value']),
+            )
+
     def test_enum_in_enum_out(self):
         Season = self.Season
         self.assertIs(Season(Season.WINTER), Season.WINTER)
