@@ -11567,6 +11567,10 @@ static char *have_functions[] = {
     "HAVE_FCHOWN",
 #endif
 
+#ifdef HAVE_FCHOWNAT
+    "HAVE_FCHOWNAT",
+#endif
+
 #ifdef HAVE_FEXECVE
     "HAVE_FEXECVE",
 #endif
