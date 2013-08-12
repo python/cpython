@@ -256,6 +256,8 @@ Basic Usage
    The other arguments have the same meaning as in :func:`load`, except
    *encoding* which is ignored and deprecated.
 
+   If the data being deserialized is not a valid JSON document, a
+   :exc:`ValueError` will be raised.
 
 Encoders and Decoders
 ---------------------
