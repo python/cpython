@@ -19,6 +19,8 @@ __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent']
 # since 0xa0 is not in range(128).
 _whitespace = '\t\n\x0b\x0c\r '
 
+_default_placeholder = ' (...)'
+
 class TextWrapper:
     """
     Object for wrapping/filling text.  The public interface consists of
@@ -277,6 +279,9 @@ class TextWrapper:
 
         return lines
 
+    def _split_chunks(self, text):
+        text = self._munge_whitespace(text)
+        return self._split(text)
 
     # -- Public interface ----------------------------------------------
 
@@ -289,8 +294,7 @@ class TextWrapper:
         and all other whitespace characters (including newline) are
         converted to space.
         """
-        text = self._munge_whitespace(text)
-        chunks = self._split(text)
+        chunks = self._split_chunks(text)
         if self.fix_sentence_endings:
             self._fix_sentence_endings(chunks)
         return self._wrap_chunks(chunks)
@@ -303,6 +307,36 @@ class TextWrapper:
         containing the entire wrapped paragraph.
         """
         return "\n".join(self.wrap(text))
+
+    def shorten(self, text, *, placeholder=_default_placeholder):
+        """shorten(text: str) -> str
+
+        Collapse and truncate the given text to fit in 'self.width' columns.
+        """
+        max_length = self.width
+        if max_length < len(placeholder.strip()):
+            raise ValueError("placeholder too large for max width")
+        sep = ' '
+        sep_len = len(sep)
+        parts = []
+        cur_len = 0
+        chunks = self._split_chunks(text)
+        for chunk in chunks:
+            if not chunk.strip():
+                continue
+            chunk_len = len(chunk) + sep_len if parts else len(chunk)
+            if cur_len + chunk_len > max_length:
+                break
+            parts.append(chunk)
+            cur_len += chunk_len
+        else:
+            # No truncation necessary
+            return sep.join(parts)
+        max_truncated_length = max_length - len(placeholder)
+        while parts and cur_len > max_truncated_length:
+            last = parts.pop()
+            cur_len -= len(last) + sep_len
+        return (sep.join(parts) + placeholder).strip()
 
 
 # -- Convenience interface ---------------------------------------------
@@ -331,6 +365,21 @@ def fill(text, width=70, **kwargs):
     """
     w = TextWrapper(width=width, **kwargs)
     return w.fill(text)
+
+def shorten(text, width, *, placeholder=_default_placeholder, **kwargs):
+    """Collapse and truncate the given text to fit in the given width.
+
+    The text first has its whitespace collapsed.  If it then fits in
+    the *width*, it is returned as is.  Otherwise, as many words
+    as possible are joined and then the placeholder is appended::
+
+        >>> textwrap.shorten("Hello  world!", width=12)
+        'Hello world!'
+        >>> textwrap.shorten("Hello  world!", width=11)
+        'Hello (...)'
+    """
+    w = TextWrapper(width=width, **kwargs)
+    return w.shorten(text, placeholder=placeholder)
 
 
 # -- Loosely related functionality -------------------------------------
