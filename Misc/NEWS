@@ -10,6 +10,8 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #18667: Add missing "HAVE_FCHOWNAT" symbol to posix._have_functions.
+
 - Issue #16499: Add command line option for isolated mode.
 
 - Issue #15301: Parsing fd, uid, and gid parameters for builtins
