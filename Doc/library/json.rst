@@ -329,6 +329,8 @@ Encoders and Decoders
    those with character codes in the 0-31 range, including ``'\t'`` (tab),
    ``'\n'``, ``'\r'`` and ``'\0'``.
 
+   If the data being deserialized is not a valid JSON document, a
+   :exc:`ValueError` will be raised.
 
    .. method:: decode(s)
 
