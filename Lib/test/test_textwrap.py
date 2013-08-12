@@ -9,9 +9,8 @@
 #
 
 import unittest
-from test import support
 
-from textwrap import TextWrapper, wrap, fill, dedent, indent
+from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
 
 
 class BaseTestCase(unittest.TestCase):
@@ -42,6 +41,10 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(result, expect,
                          "\nexpected %r\n"
                          "but got  %r" % (expect, result))
+
+    def check_shorten(self, text, width, expect, **kwargs):
+        result = shorten(text, width, **kwargs)
+        self.check(result, expect)
 
 
 class WrapTestCase(BaseTestCase):
@@ -777,12 +780,59 @@ class IndentTestCase(unittest.TestCase):
             self.assertEqual(indent(text, prefix, predicate), expect)
 
 
-def test_main():
-    support.run_unittest(WrapTestCase,
-                              LongWordTestCase,
-                              IndentTestCases,
-                              DedentTestCase,
-                              IndentTestCase)
+class ShortenTestCase(BaseTestCase):
+
+    def test_simple(self):
+        # Simple case: just words, spaces, and a bit of punctuation
+        text = "Hello there, how are you this fine day? I'm glad to hear it!"
+
+        self.check_shorten(text, 18, "Hello there, (...)")
+        self.check_shorten(text, len(text), text)
+        self.check_shorten(text, len(text) - 1,
+            "Hello there, how are you this fine day? "
+            "I'm glad to (...)")
+
+    def test_placeholder(self):
+        text = "Hello there, how are you this fine day? I'm glad to hear it!"
+
+        self.check_shorten(text, 17, "Hello there,$$", placeholder='$$')
+        self.check_shorten(text, 18, "Hello there, how$$", placeholder='$$')
+        self.check_shorten(text, 18, "Hello there, $$", placeholder=' $$')
+        self.check_shorten(text, len(text), text, placeholder='$$')
+        self.check_shorten(text, len(text) - 1,
+            "Hello there, how are you this fine day? "
+            "I'm glad to hear$$", placeholder='$$')
+
+    def test_empty_string(self):
+        self.check_shorten("", 6, "")
+
+    def test_whitespace(self):
+        # Whitespace collapsing
+        text = """
+            This is a  paragraph that  already has
+            line breaks and \t tabs too."""
+        self.check_shorten(text, 62,
+                             "This is a paragraph that already has line "
+                             "breaks and tabs too.")
+        self.check_shorten(text, 61,
+                             "This is a paragraph that already has line "
+                             "breaks and (...)")
+
+        self.check_shorten("hello      world!  ", 12, "hello world!")
+        self.check_shorten("hello      world!  ", 11, "hello (...)")
+        # The leading space is trimmed from the placeholder
+        # (it would be ugly otherwise).
+        self.check_shorten("hello      world!  ", 10, "(...)")
+
+    def test_width_too_small_for_placeholder(self):
+        wrapper = TextWrapper(width=8)
+        wrapper.shorten("x" * 20, placeholder="(......)")
+        with self.assertRaises(ValueError):
+            wrapper.shorten("x" * 20, placeholder="(.......)")
+
+    def test_first_word_too_long_but_placeholder_fits(self):
+        self.check_shorten("Helloo", 5, "(...)")
+
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
