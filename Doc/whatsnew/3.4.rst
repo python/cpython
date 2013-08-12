@@ -173,6 +173,20 @@ New Modules
 Improved Modules
 ================
 
+aifc
+----
+
+The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
+plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
+
+
+colorsys
+--------
+
+The number of digits in the coefficients for the RGB --- YIQ conversions have
+been expanded so that they match the FCC NTSC versions.  The change in
+results should be less than 1% and may better match results found elsewhere.
+
 
 dis
 ---
@@ -189,6 +203,7 @@ instructions.
 
 (Contributed by Nick Coghlan, Ryan Kelly and Thomas Kluyver in :issue:`11816`)
 
+
 doctest
 -------
 
@@ -201,12 +216,6 @@ Updated the doctest command line interface to use :mod:`argparse`, and added
 be specified on the command line, and ``-f`` is a shorthand for ``-o
 FAIL_FAST`` (to parallel the similar option supported by the :mod:`unittest`
 CLI).  (Contributed by R. David Murray in :issue:`11390`.)
-
-aifc
-----
-
-The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
-plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 
 email
@@ -235,6 +244,14 @@ functools
 New :func:`functools.singledispatch` decorator: see the :pep:`443`.
 
 
+inspect
+-------
+
+:func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
+created by :func:`functools.wraps` (and any other API that sets the
+``__wrapped__`` attribute on a wrapper function).
+
+
 mmap
 ----
 
@@ -255,14 +272,6 @@ POP3 server.
 (Contributed by Lorenzo Catucci in :issue:`4473`.)
 
 
-inspect
--------
-
-:func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
-created by :func:`functools.wraps` (and any other API that sets the
-``__wrapped__`` attribute on a wrapper function).
-
-
 smtplib
 -------
 
@@ -270,6 +279,7 @@ smtplib
 both socket level errors and SMTP protocol level errors to be caught in one
 try/except statement by code that only cares whether or not an error occurred.
 (:issue:`2118`).
+
 
 ssl
 ---
@@ -292,6 +302,16 @@ Support for server-side SNI using the new
 :meth:`ssl.SSLContext.set_servername_callback` method.
 
 (Contributed by Daniel Black in :issue:`8109`.)
+
+
+stat
+----
+
+The :mod:`stat` module is now backed by a C implementation in :mod:`_stat`. A C
+implementation is required as most of the values aren't standardized and
+platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
+
+The module supports new file types: door, event port and whiteout.
 
 
 struct
@@ -329,16 +349,6 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`17487`.)
 by Claudiu Popa in :issue:`17616`.)
 
 
-stat
-----
-
-The :mod:`stat` module is now backed by a C implementation in :mod:`_stat`. A C
-implementation is required as most of the values aren't standardized and
-platform-dependent.  (Contributed by Christian Heimes in :issue:`11016`.)
-
-The module supports new file types: door, event port and whiteout.
-
-
 weakref
 -------
 
@@ -355,14 +365,6 @@ Add an event-driven parser for non-blocking applications,
 :class:`~xml.etree.ElementTree.IncrementalParser`.
 
 (Contributed by Antoine Pitrou in :issue:`17782`.)
-
-
-colorsys
---------
-
-The number of digits in the coefficients for the RGB --- YIQ conversions have
-been expanded so that they match the FCC NTSC versions.  The change in
-results should be less than 1% and may better match results found elsewhere.
 
 
 Other improvements
