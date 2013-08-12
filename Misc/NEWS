@@ -298,6 +298,8 @@ Tests
 Documentation
 -------------
 
+- Issue #17701: Improving strftime documentation.
+
 - Issue #18440: Clarify that `hash()` can truncate the value returned from an
   object's custom `__hash__()` method.
 
