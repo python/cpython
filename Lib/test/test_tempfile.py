@@ -35,7 +35,7 @@ else:
 # Common functionality.
 class BaseTestCase(unittest.TestCase):
 
-    str_check = re.compile(r"[a-zA-Z0-9_-]{6}$")
+    str_check = re.compile(r"^[a-z0-9_-]{8}$")
 
     def setUp(self):
         self._warnings_manager = support.check_warnings()
@@ -62,7 +62,7 @@ class BaseTestCase(unittest.TestCase):
 
         nbase = nbase[len(pre):len(nbase)-len(suf)]
         self.assertTrue(self.str_check.match(nbase),
-                     "random string '%s' does not match /^[a-zA-Z0-9_-]{6}$/"
+                     "random string '%s' does not match ^[a-z0-9_-]{8}$"
                      % nbase)
 
 
