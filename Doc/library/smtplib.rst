@@ -111,7 +111,7 @@ A nice selection of exceptions is defined as well:
 .. exception:: SMTPException
 
    Subclass of :exc:`OSError` that is the base exception class for all
-   the other excpetions provided by this module.
+   the other exceptions provided by this module.
 
 
 .. exception:: SMTPServerDisconnected
