@@ -1,23 +1,41 @@
+"Implement Idle Shell history mechanism with History class"
+
 from idlelib.configHandler import idleConf
 
 class History:
+    ''' Implement Idle Shell history mechanism.
 
+    store - Store source statement (called from PyShell.resetoutput).
+    fetch - Fetch stored statement matching prefix already entered.
+    history_next - Bound to <<history-next>> event (default Alt-N).
+    history_prev - Bound to <<history-prev>> event (default Alt-P).
+    '''
     def __init__(self, text, output_sep = "\n"):
+        '''Initialize data attributes and bind event methods.
+
+        .text - Idle wrapper of tk Text widget, with .bell().
+        .history - source statements, possibly with multiple lines.
+        .prefix - source already entered at prompt; filters history list.
+        .pointer - index into history.
+        .cyclic - wrap around history list (or not).
+        '''
         self.text = text
         self.history = []
-        self.history_prefix = None
-        self.history_pointer = None
+        self.prefix = None
+        self.pointer = None
         self.output_sep = output_sep
         self.cyclic = idleConf.GetOption("main", "History", "cyclic", 1, "bool")
         text.bind("<<history-previous>>", self.history_prev)
         text.bind("<<history-next>>", self.history_next)
 
     def history_next(self, event):
-        self.history_do(0)
+        "Fetch later statement; start with ealiest if cyclic."
+        self.fetch(reverse=False)
         return "break"
 
     def history_prev(self, event):
-        self.history_do(1)
+        "Fetch earlier statement; start with most recent."
+        self.fetch(reverse=True)
         return "break"
 
     def _get_source(self, start, end):
@@ -30,10 +48,11 @@ class History:
         output = self.output_sep.join(source.split("\n"))
         self.text.insert(where, output)
 
-    def history_do(self, reverse):
+    def fetch(self, reverse):
+        "Fetch statememt and enter into text at cursor."
         nhist = len(self.history)
-        pointer = self.history_pointer
-        prefix = self.history_prefix
+        pointer = self.pointer
+        prefix = self.prefix
         if pointer is not None and prefix is not None:
             if self.text.compare("insert", "!=", "end-1c") or \
                self._get_source("iomark", "end-1c") != self.history[pointer]:
@@ -41,10 +60,10 @@ class History:
         if pointer is None or prefix is None:
             prefix = self._get_source("iomark", "end-1c")
             if reverse:
-                pointer = nhist
+                pointer = nhist  # will be decremented
             else:
                 if self.cyclic:
-                    pointer = -1
+                    pointer = -1  # will be incremented
                 else:
                     self.text.bell()
                     return
@@ -72,10 +91,11 @@ class History:
         self.text.mark_set("insert", "end-1c")
         self.text.see("insert")
         self.text.tag_remove("sel", "1.0", "end")
-        self.history_pointer = pointer
-        self.history_prefix = prefix
+        self.pointer = pointer
+        self.prefix = prefix
 
-    def history_store(self, source):
+    def store(self, source):
+        "Store Shell input statement into history list."
         source = source.strip()
         if len(source) > 2:
             # avoid duplicates
@@ -84,5 +104,5 @@ class History:
             except ValueError:
                 pass
             self.history.append(source)
-        self.history_pointer = None
-        self.history_prefix = None
+        self.pointer = None
+        self.prefix = None
