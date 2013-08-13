@@ -110,7 +110,7 @@ A nice selection of exceptions is defined as well:
 
 .. exception:: SMTPException
 
-   The base exception class for all the other excpetions provided by this
+   The base exception class for all the other exceptions provided by this
    module.
 
 
