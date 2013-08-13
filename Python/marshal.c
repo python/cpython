@@ -613,7 +613,7 @@ r_byte(RFILE *p)
 static int
 r_short(RFILE *p)
 {
-    register short x;
+    short x;
     unsigned char buffer[2];
 
     r_string((char *) buffer, 2, p);
@@ -627,7 +627,7 @@ r_short(RFILE *p)
 static long
 r_long(RFILE *p)
 {
-    register long x;
+    long x;
     unsigned char buffer[4];
 
     r_string((char *) buffer, 4, p);

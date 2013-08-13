@@ -859,7 +859,7 @@ PyAPI_FUNC(int) PyUnicode_Resize(
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromEncodedObject(
-    register PyObject *obj,     /* Object */
+    PyObject *obj,              /* Object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
     );
@@ -878,7 +878,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromEncodedObject(
 */
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromObject(
-    register PyObject *obj      /* Object */
+    PyObject *obj      /* Object */
     );
 
 PyAPI_FUNC(PyObject *) PyUnicode_FromFormatV(
@@ -1015,7 +1015,7 @@ PyAPI_FUNC(void) _Py_ReleaseInternedUnicodeStrings(void);
    The buffer is copied into the new object. */
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromWideChar(
-    register const wchar_t *w,  /* wchar_t buffer */
+    const wchar_t *w,           /* wchar_t buffer */
     Py_ssize_t size             /* size of buffer */
     );
 
@@ -1033,7 +1033,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromWideChar(
 
 PyAPI_FUNC(Py_ssize_t) PyUnicode_AsWideChar(
     PyObject *unicode,          /* Unicode object */
-    register wchar_t *w,        /* wchar_t buffer */
+    wchar_t *w,                 /* wchar_t buffer */
     Py_ssize_t size             /* size of buffer */
     );
 
