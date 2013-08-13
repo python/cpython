@@ -125,7 +125,7 @@ class _RandomNameSequence:
     def __next__(self):
         c = self.characters
         choose = self.rng.choice
-        letters = [choose(c) for dummy in "123456"]
+        letters = [choose(c) for dummy in range(8)]
         return ''.join(letters)
 
 def _candidate_tempdir_list():
