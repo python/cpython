@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18405: Improve the entropy of crypt.mksalt().
+
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
   docstrings and ValueError messages. Patch by Zhongyue Luo
 
