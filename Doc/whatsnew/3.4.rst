@@ -109,9 +109,6 @@ Significantly Improved Library Modules:
 * SHA-3 (Keccak) support for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 
-* SHA-3 (Keccak) support for :mod:`hashlib`.
-* TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
-
 Security improvements:
 
 * command line option for :ref:`isolated mode <using-on-misc-options>`,
@@ -120,9 +117,6 @@ Security improvements:
 Please read on for a comprehensive list of user-facing changes.
 
 .. _pep-445:
-
-PEP 445: Add new APIs to customize Python memory allocators
-===========================================================
 
 PEP 445: Add new APIs to customize Python memory allocators
 ===========================================================
