@@ -30,11 +30,11 @@ const char *_PyImport_DynLoadFiletab[] = {".so", NULL};
 static int
 aix_getoldmodules(void **modlistptr)
 {
-    register ModulePtr       modptr, prevmodptr;
-    register struct ld_info  *ldiptr;
-    register char            *ldibuf;
-    register int             errflag, bufsize = 1024;
-    register unsigned int    offset;
+    ModulePtr       modptr, prevmodptr;
+    struct ld_info  *ldiptr;
+    char            *ldibuf;
+    int             errflag, bufsize = 1024;
+    unsigned int    offset;
     char *progname = Py_GetProgramName();
 
     /*
@@ -106,7 +106,7 @@ aix_loaderror(const char *pathname)
     char *message[1024], errbuf[1024];
     PyObject *pathname_ob = NULL;
     PyObject *errbuf_ob = NULL;
-    register int i,j;
+    int i,j;
 
     struct errtab {
         int errNo;

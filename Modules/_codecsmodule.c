@@ -189,9 +189,9 @@ escape_encode(PyObject *self,
         return NULL;
     }
     else {
-        register Py_ssize_t i;
-        register char c;
-        register char *p = PyBytes_AS_STRING(v);
+        Py_ssize_t i;
+        char c;
+        char *p = PyBytes_AS_STRING(v);
 
         for (i = 0; i < size; i++) {
             /* There's at least enough room for a hex escape */

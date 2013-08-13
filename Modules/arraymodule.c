@@ -513,7 +513,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
 static PyObject *
 getarrayitem(PyObject *op, Py_ssize_t i)
 {
-    register arrayobject *ap;
+    arrayobject *ap;
     assert(array_Check(op));
     ap = (arrayobject *)op;
     assert(i>=0 && i<Py_SIZE(ap));
@@ -1225,8 +1225,8 @@ Byteswap all items of the array.  If the items in the array are not 1, 2,\n\
 static PyObject *
 array_reverse(arrayobject *self, PyObject *unused)
 {
-    register Py_ssize_t itemsize = self->ob_descr->itemsize;
-    register char *p, *q;
+    Py_ssize_t itemsize = self->ob_descr->itemsize;
+    char *p, *q;
     /* little buffer to hold items while swapping */
     char tmp[256];      /* 8 is probably enough -- but why skimp */
     assert((size_t)itemsize <= sizeof(tmp));

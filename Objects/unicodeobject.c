@@ -873,7 +873,7 @@ resize_copy(PyObject *unicode, Py_ssize_t length)
 static PyUnicodeObject *
 _PyUnicode_New(Py_ssize_t length)
 {
-    register PyUnicodeObject *unicode;
+    PyUnicodeObject *unicode;
     size_t new_size;
 
     /* Optimization for empty strings */
@@ -1557,7 +1557,7 @@ _PyUnicode_Ready(PyObject *unicode)
 }
 
 static void
-unicode_dealloc(register PyObject *unicode)
+unicode_dealloc(PyObject *unicode)
 {
     switch (PyUnicode_CHECK_INTERNED(unicode)) {
     case SSTATE_NOT_INTERNED:
@@ -2287,7 +2287,7 @@ PyUnicode_AsUCS4Copy(PyObject *string)
 #ifdef HAVE_WCHAR_H
 
 PyObject *
-PyUnicode_FromWideChar(register const wchar_t *w, Py_ssize_t size)
+PyUnicode_FromWideChar(const wchar_t *w, Py_ssize_t size)
 {
     if (w == NULL) {
         if (size == 0)
@@ -2898,7 +2898,7 @@ PyUnicode_FromOrdinal(int ordinal)
 }
 
 PyObject *
-PyUnicode_FromObject(register PyObject *obj)
+PyUnicode_FromObject(PyObject *obj)
 {
     /* XXX Perhaps we should make this API an alias of
        PyObject_Str() instead ?! */
@@ -2920,7 +2920,7 @@ PyUnicode_FromObject(register PyObject *obj)
 }
 
 PyObject *
-PyUnicode_FromEncodedObject(register PyObject *obj,
+PyUnicode_FromEncodedObject(PyObject *obj,
                             const char *encoding,
                             const char *errors)
 {
@@ -4653,9 +4653,9 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
     if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
         /* Fast path, see in STRINGLIB(utf8_decode) for
            an explanation. */
-        /* Help register allocation */
-        register const char *_p = p;
-        register Py_UCS1 * q = dest;
+        /* Help allocation */
+        const char *_p = p;
+        Py_UCS1 * q = dest;
         while (_p < aligned_end) {
             unsigned long value = *(const unsigned long *) _p;
             if (value & ASCII_CHAR_MASK)
@@ -4678,8 +4678,8 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
         /* Fast path, see in STRINGLIB(utf8_decode) in stringlib/codecs.h
            for an explanation. */
         if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
-            /* Help register allocation */
-            register const char *_p = p;
+            /* Help allocation */
+            const char *_p = p;
             while (_p < aligned_end) {
                 unsigned long value = *(unsigned long *) _p;
                 if (value & ASCII_CHAR_MASK)
@@ -6513,7 +6513,7 @@ PyUnicode_DecodeASCII(const char *s,
     s += writer.pos;
     kind = writer.kind;
     while (s < e) {
-        register unsigned char c = (unsigned char)*s;
+        unsigned char c = (unsigned char)*s;
         if (c < 128) {
             PyUnicode_WRITE(kind, data, writer.pos, c);
             writer.pos++;
@@ -14621,7 +14621,7 @@ _PyUnicode_Fini(void)
 void
 PyUnicode_InternInPlace(PyObject **p)
 {
-    register PyObject *s = *p;
+    PyObject *s = *p;
     PyObject *t;
 #ifdef Py_DEBUG
     assert(s != NULL);
@@ -14954,7 +14954,7 @@ Py_UNICODE_strcmp(const Py_UNICODE *s1, const Py_UNICODE *s2)
 int
 Py_UNICODE_strncmp(const Py_UNICODE *s1, const Py_UNICODE *s2, size_t n)
 {
-    register Py_UNICODE u1, u2;
+    Py_UNICODE u1, u2;
     for (; n != 0; n--) {
         u1 = *s1;
         u2 = *s2;

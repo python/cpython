@@ -10,9 +10,9 @@ and there is at least one character in B, False otherwise.");
 PyObject*
 _Py_bytes_isspace(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (len == 1 && Py_ISSPACE(*p))
@@ -40,9 +40,9 @@ and there is at least one character in B, False otherwise.");
 PyObject*
 _Py_bytes_isalpha(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (len == 1 && Py_ISALPHA(*p))
@@ -70,9 +70,9 @@ and there is at least one character in B, False otherwise.");
 PyObject*
 _Py_bytes_isalnum(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (len == 1 && Py_ISALNUM(*p))
@@ -100,9 +100,9 @@ and there is at least one character in B, False otherwise.");
 PyObject*
 _Py_bytes_isdigit(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
 
     /* Shortcut for single character strings */
     if (len == 1 && Py_ISDIGIT(*p))
@@ -130,9 +130,9 @@ at least one cased character in B, False otherwise.");
 PyObject*
 _Py_bytes_islower(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
     int cased;
 
     /* Shortcut for single character strings */
@@ -164,9 +164,9 @@ at least one cased character in B, False otherwise.");
 PyObject*
 _Py_bytes_isupper(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
     int cased;
 
     /* Shortcut for single character strings */
@@ -200,9 +200,9 @@ otherwise.");
 PyObject*
 _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
 {
-    register const unsigned char *p
+    const unsigned char *p
         = (unsigned char *) cptr;
-    register const unsigned char *e;
+    const unsigned char *e;
     int cased, previous_is_cased;
 
     /* Shortcut for single character strings */
@@ -217,7 +217,7 @@ _Py_bytes_istitle(const char *cptr, Py_ssize_t len)
     cased = 0;
     previous_is_cased = 0;
     for (; p < e; p++) {
-        register const unsigned char ch = *p;
+        const unsigned char ch = *p;
 
         if (Py_ISUPPER(ch)) {
             if (previous_is_cased)

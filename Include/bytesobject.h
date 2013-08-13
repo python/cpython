@@ -86,11 +86,11 @@ PyAPI_FUNC(PyObject *) _PyBytes_Join(PyObject *sep, PyObject *x);
    0-terminated (passing a string with embedded NULL characters will
    cause an exception).  */
 PyAPI_FUNC(int) PyBytes_AsStringAndSize(
-    register PyObject *obj,	/* string or Unicode object */
-    register char **s,		/* pointer to buffer variable */
-    register Py_ssize_t *len	/* pointer to length variable or NULL
-				   (only possible for 0-terminated
-				   strings) */
+    PyObject *obj,      /* string or Unicode object */
+    char **s,           /* pointer to buffer variable */
+    Py_ssize_t *len     /* pointer to length variable or NULL
+                           (only possible for 0-terminated
+                           strings) */
     );
 
 /* Using the current locale, insert the thousands grouping

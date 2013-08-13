@@ -63,7 +63,7 @@ newdbmobject(char *file, int flags, int mode)
 /* Methods */
 
 static void
-dbm_dealloc(register dbmobject *dp)
+dbm_dealloc(dbmobject *dp)
 {
     if ( dp->di_dbm )
         dbm_close(dp->di_dbm);
@@ -91,7 +91,7 @@ dbm_length(dbmobject *dp)
 }
 
 static PyObject *
-dbm_subscript(dbmobject *dp, register PyObject *key)
+dbm_subscript(dbmobject *dp, PyObject *key)
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
@@ -166,7 +166,7 @@ static PyMappingMethods dbm_as_mapping = {
 };
 
 static PyObject *
-dbm__close(register dbmobject *dp, PyObject *unused)
+dbm__close(dbmobject *dp, PyObject *unused)
 {
     if (dp->di_dbm)
         dbm_close(dp->di_dbm);
@@ -176,9 +176,9 @@ dbm__close(register dbmobject *dp, PyObject *unused)
 }
 
 static PyObject *
-dbm_keys(register dbmobject *dp, PyObject *unused)
+dbm_keys(dbmobject *dp, PyObject *unused)
 {
-    register PyObject *v, *item;
+    PyObject *v, *item;
     datum key;
     int err;
 
@@ -249,7 +249,7 @@ static PySequenceMethods dbm_as_sequence = {
 };
 
 static PyObject *
-dbm_get(register dbmobject *dp, PyObject *args)
+dbm_get(dbmobject *dp, PyObject *args)
 {
     datum key, val;
     PyObject *defvalue = Py_None;
@@ -272,7 +272,7 @@ dbm_get(register dbmobject *dp, PyObject *args)
 }
 
 static PyObject *
-dbm_setdefault(register dbmobject *dp, PyObject *args)
+dbm_setdefault(dbmobject *dp, PyObject *args)
 {
     datum key, val;
     PyObject *defvalue = NULL;

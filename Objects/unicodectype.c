@@ -61,7 +61,7 @@ gettyperecord(Py_UCS4 code)
 /* Returns the titlecase Unicode characters corresponding to ch or just
    ch if no titlecase mapping is known. */
 
-Py_UCS4 _PyUnicode_ToTitlecase(register Py_UCS4 ch)
+Py_UCS4 _PyUnicode_ToTitlecase(Py_UCS4 ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
 
