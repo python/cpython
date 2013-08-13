@@ -28,6 +28,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18405: Improve the entropy of crypt.mksalt().
+
 - Issue #12015: The tempfile module now uses a suffix of 8 random characters
   instead of 6, to reduce the risk of filename collision. The entropy was
   reduced when uppercase letters were removed from the charset used to generate
