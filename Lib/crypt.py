@@ -28,7 +28,7 @@ def mksalt(method=None):
     if method is None:
         method = methods[0]
     s = '${}$'.format(method.ident) if method.ident else ''
-    s += ''.join(_sr.sample(_saltchars, method.salt_chars))
+    s += ''.join(_sr.choice(_saltchars) for char in range(method.salt_chars))
     return s
 
 
