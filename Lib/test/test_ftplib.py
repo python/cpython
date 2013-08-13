@@ -530,6 +530,14 @@ class TestFTPClass(TestCase):
     def test_rmd(self):
         self.client.rmd('foo')
 
+    def test_cwd(self):
+        dir = self.client.cwd('/foo')
+        self.assertEqual(dir, '250 cwd ok')
+
+    def test_mkd(self):
+        dir = self.client.mkd('/foo')
+        self.assertEqual(dir, '/foo')
+
     def test_pwd(self):
         dir = self.client.pwd()
         self.assertEqual(dir, 'pwd ok')
