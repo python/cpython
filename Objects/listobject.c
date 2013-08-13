@@ -213,11 +213,11 @@ PyList_GetItem(PyObject *op, Py_ssize_t i)
 }
 
 int
-PyList_SetItem(register PyObject *op, register Py_ssize_t i,
-               register PyObject *newitem)
+PyList_SetItem(PyObject *op, Py_ssize_t i,
+               PyObject *newitem)
 {
-    register PyObject *olditem;
-    register PyObject **p;
+    PyObject *olditem;
+    PyObject **p;
     if (!PyList_Check(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
@@ -1058,9 +1058,9 @@ sortslice_advance(sortslice *slice, Py_ssize_t n)
 static int
 binarysort(sortslice lo, PyObject **hi, PyObject **start)
 {
-    register Py_ssize_t k;
-    register PyObject **l, **p, **r;
-    register PyObject *pivot;
+    Py_ssize_t k;
+    PyObject **l, **p, **r;
+    PyObject *pivot;
 
     assert(lo.keys <= start && start <= hi);
     /* assert [lo, start) is sorted */

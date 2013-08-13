@@ -44,7 +44,7 @@ PyMethod_Self(PyObject *im)
 PyObject *
 PyMethod_New(PyObject *func, PyObject *self)
 {
-    register PyMethodObject *im;
+    PyMethodObject *im;
     if (self == NULL) {
         PyErr_BadInternalCall();
         return NULL;
@@ -164,7 +164,7 @@ method_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 }
 
 static void
-method_dealloc(register PyMethodObject *im)
+method_dealloc(PyMethodObject *im)
 {
     _PyObject_GC_UNTRACK(im);
     if (im->im_weakreflist != NULL)
@@ -509,7 +509,7 @@ instancemethod_call(PyObject *self, PyObject *arg, PyObject *kw)
 
 static PyObject *
 instancemethod_descr_get(PyObject *descr, PyObject *obj, PyObject *type) {
-    register PyObject *func = PyInstanceMethod_GET_FUNCTION(descr);
+    PyObject *func = PyInstanceMethod_GET_FUNCTION(descr);
     if (obj == NULL) {
         Py_INCREF(func);
         return func;

@@ -6,8 +6,8 @@
 Py_LOCAL_INLINE(int)
 unicode_eq(PyObject *aa, PyObject *bb)
 {
-    register PyUnicodeObject *a = (PyUnicodeObject *)aa;
-    register PyUnicodeObject *b = (PyUnicodeObject *)bb;
+    PyUnicodeObject *a = (PyUnicodeObject *)aa;
+    PyUnicodeObject *b = (PyUnicodeObject *)bb;
 
     if (PyUnicode_READY(a) == -1 || PyUnicode_READY(b) == -1) {
         assert(0 && "unicode_eq ready fail");

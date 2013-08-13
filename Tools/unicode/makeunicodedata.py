@@ -552,7 +552,7 @@ def makeunicodetype(unicode, trace):
     print("/* Returns 1 for Unicode characters having the bidirectional", file=fp)
     print(" * type 'WS', 'B' or 'S' or the category 'Zs', 0 otherwise.", file=fp)
     print(" */", file=fp)
-    print('int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)', file=fp)
+    print('int _PyUnicode_IsWhitespace(const Py_UCS4 ch)', file=fp)
     print('{', file=fp)
     print('    switch (ch) {', file=fp)
 
@@ -570,7 +570,7 @@ def makeunicodetype(unicode, trace):
     print(" * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional", file=fp)
     print(" * type 'B', 0 otherwise.", file=fp)
     print(" */", file=fp)
-    print('int _PyUnicode_IsLinebreak(register const Py_UCS4 ch)', file=fp)
+    print('int _PyUnicode_IsLinebreak(const Py_UCS4 ch)', file=fp)
     print('{', file=fp)
     print('    switch (ch) {', file=fp)
     for codepoint in sorted(linebreaks):

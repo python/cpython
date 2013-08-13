@@ -4278,7 +4278,7 @@ double _PyUnicode_ToNumeric(Py_UCS4 ch)
 /* Returns 1 for Unicode characters having the bidirectional
  * type 'WS', 'B' or 'S' or the category 'Zs', 0 otherwise.
  */
-int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)
+int _PyUnicode_IsWhitespace(const Py_UCS4 ch)
 {
     switch (ch) {
     case 0x0009:
@@ -4320,7 +4320,7 @@ int _PyUnicode_IsWhitespace(register const Py_UCS4 ch)
  * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional
  * type 'B', 0 otherwise.
  */
-int _PyUnicode_IsLinebreak(register const Py_UCS4 ch)
+int _PyUnicode_IsLinebreak(const Py_UCS4 ch)
 {
     switch (ch) {
     case 0x000A:

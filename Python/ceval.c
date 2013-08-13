@@ -37,7 +37,7 @@ typedef unsigned long long uint64;
 static void
 ppc_getcounter(uint64 *v)
 {
-    register unsigned long tbu, tb, tbu2;
+    unsigned long tbu, tb, tbu2;
 
   loop:
     asm volatile ("mftbu %0" : "=r" (tbu) );
@@ -792,12 +792,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef DXPAIRS
     int lastopcode = 0;
 #endif
-    register PyObject **stack_pointer;  /* Next free slot in value stack */
-    register unsigned char *next_instr;
-    register int opcode;        /* Current opcode */
-    register int oparg;         /* Current opcode argument, if any */
-    register enum why_code why; /* Reason for block stack unwind */
-    register PyObject **fastlocals, **freevars;
+    PyObject **stack_pointer;  /* Next free slot in value stack */
+    unsigned char *next_instr;
+    int opcode;        /* Current opcode */
+    int oparg;         /* Current opcode argument, if any */
+    enum why_code why; /* Reason for block stack unwind */
+    PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     PyThreadState *tstate = PyThreadState_GET();
     PyCodeObject *co;
@@ -3373,9 +3373,9 @@ PyEval_EvalCodeEx(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject **defs, int defcount, PyObject *kwdefs, PyObject *closure)
 {
     PyCodeObject* co = (PyCodeObject*)_co;
-    register PyFrameObject *f;
-    register PyObject *retval = NULL;
-    register PyObject **fastlocals, **freevars;
+    PyFrameObject *f;
+    PyObject *retval = NULL;
+    PyObject **fastlocals, **freevars;
     PyThreadState *tstate = PyThreadState_GET();
     PyObject *x, *u;
     int total_args = co->co_argcount + co->co_kwonlyargcount;
@@ -3895,7 +3895,7 @@ static int
 call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
            int what, PyObject *arg)
 {
-    register PyThreadState *tstate = frame->f_tstate;
+    PyThreadState *tstate = frame->f_tstate;
     int result;
     if (tstate->tracing)
         return 0;
@@ -4581,7 +4581,7 @@ _PyEval_SliceIndex(PyObject *v, Py_ssize_t *pi)
                          "BaseException is not allowed"
 
 static PyObject *
-cmp_outcome(int op, register PyObject *v, register PyObject *w)
+cmp_outcome(int op, PyObject *v, PyObject *w)
 {
     int res = 0;
     switch (op) {

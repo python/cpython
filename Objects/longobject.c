@@ -110,7 +110,7 @@ _PyLong_Negate(PyLongObject **x_p)
    of the algorithms used, this could save at most be one word anyway. */
 
 static PyLongObject *
-long_normalize(register PyLongObject *v)
+long_normalize(PyLongObject *v)
 {
     Py_ssize_t j = ABS(Py_SIZE(v));
     Py_ssize_t i = j;
@@ -340,7 +340,7 @@ long
 PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version by Tim Peters */
-    register PyLongObject *v;
+    PyLongObject *v;
     unsigned long x, prev;
     long res;
     Py_ssize_t i;
@@ -463,7 +463,7 @@ _PyLong_AsInt(PyObject *obj)
 
 Py_ssize_t
 PyLong_AsSsize_t(PyObject *vv) {
-    register PyLongObject *v;
+    PyLongObject *v;
     size_t x, prev;
     Py_ssize_t i;
     int sign;
@@ -519,7 +519,7 @@ PyLong_AsSsize_t(PyObject *vv) {
 unsigned long
 PyLong_AsUnsignedLong(PyObject *vv)
 {
-    register PyLongObject *v;
+    PyLongObject *v;
     unsigned long x, prev;
     Py_ssize_t i;
 
@@ -563,7 +563,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 size_t
 PyLong_AsSize_t(PyObject *vv)
 {
-    register PyLongObject *v;
+    PyLongObject *v;
     size_t x, prev;
     Py_ssize_t i;
 
@@ -606,7 +606,7 @@ PyLong_AsSize_t(PyObject *vv)
 static unsigned long
 _PyLong_AsUnsignedLongMask(PyObject *vv)
 {
-    register PyLongObject *v;
+    PyLongObject *v;
     unsigned long x;
     Py_ssize_t i;
     int sign;
@@ -634,7 +634,7 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
 }
 
 unsigned long
-PyLong_AsUnsignedLongMask(register PyObject *op)
+PyLong_AsUnsignedLongMask(PyObject *op)
 {
     PyNumberMethods *nb;
     PyLongObject *lo;
@@ -1250,7 +1250,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 static unsigned PY_LONG_LONG
 _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 {
-    register PyLongObject *v;
+    PyLongObject *v;
     unsigned PY_LONG_LONG x;
     Py_ssize_t i;
     int sign;
@@ -1278,7 +1278,7 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 }
 
 unsigned PY_LONG_LONG
-PyLong_AsUnsignedLongLongMask(register PyObject *op)
+PyLong_AsUnsignedLongLongMask(PyObject *op)
 {
     PyNumberMethods *nb;
     PyLongObject *lo;
@@ -1326,7 +1326,7 @@ PY_LONG_LONG
 PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
 {
     /* This version by Tim Peters */
-    register PyLongObject *v;
+    PyLongObject *v;
     unsigned PY_LONG_LONG x, prev;
     PY_LONG_LONG res;
     Py_ssize_t i;
@@ -1744,7 +1744,7 @@ static int
 long_format_binary(PyObject *aa, int base, int alternate,
                    PyObject **p_output, _PyUnicodeWriter *writer)
 {
-    register PyLongObject *a = (PyLongObject *)aa;
+    PyLongObject *a = (PyLongObject *)aa;
     PyObject *v;
     Py_ssize_t sz;
     Py_ssize_t size_a;
@@ -2141,7 +2141,7 @@ that triggers it(!).  Instead the code was tested by artificially allocating
 just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
-        register twodigits c;           /* current input character */
+        twodigits c;           /* current input character */
         Py_ssize_t size_z;
         int i;
         int convwidth;

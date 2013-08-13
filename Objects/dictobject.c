@@ -467,13 +467,13 @@ static PyDictKeyEntry *
 lookdict(PyDictObject *mp, PyObject *key,
          Py_hash_t hash, PyObject ***value_addr)
 {
-    register size_t i;
-    register size_t perturb;
-    register PyDictKeyEntry *freeslot;
-    register size_t mask;
+    size_t i;
+    size_t perturb;
+    PyDictKeyEntry *freeslot;
+    size_t mask;
     PyDictKeyEntry *ep0;
-    register PyDictKeyEntry *ep;
-    register int cmp;
+    PyDictKeyEntry *ep;
+    int cmp;
     PyObject *startkey;
 
 top:
@@ -559,12 +559,12 @@ static PyDictKeyEntry *
 lookdict_unicode(PyDictObject *mp, PyObject *key,
                  Py_hash_t hash, PyObject ***value_addr)
 {
-    register size_t i;
-    register size_t perturb;
-    register PyDictKeyEntry *freeslot;
-    register size_t mask = DK_MASK(mp->ma_keys);
+    size_t i;
+    size_t perturb;
+    PyDictKeyEntry *freeslot;
+    size_t mask = DK_MASK(mp->ma_keys);
     PyDictKeyEntry *ep0 = &mp->ma_keys->dk_entries[0];
-    register PyDictKeyEntry *ep;
+    PyDictKeyEntry *ep;
 
     /* Make sure this function doesn't have to handle non-unicode keys,
        including subclasses of str; e.g., one reason to subclass
@@ -624,11 +624,11 @@ static PyDictKeyEntry *
 lookdict_unicode_nodummy(PyDictObject *mp, PyObject *key,
                          Py_hash_t hash, PyObject ***value_addr)
 {
-    register size_t i;
-    register size_t perturb;
-    register size_t mask = DK_MASK(mp->ma_keys);
+    size_t i;
+    size_t perturb;
+    size_t mask = DK_MASK(mp->ma_keys);
     PyDictKeyEntry *ep0 = &mp->ma_keys->dk_entries[0];
-    register PyDictKeyEntry *ep;
+    PyDictKeyEntry *ep;
 
     /* Make sure this function doesn't have to handle non-unicode keys,
        including subclasses of str; e.g., one reason to subclass
@@ -669,11 +669,11 @@ static PyDictKeyEntry *
 lookdict_split(PyDictObject *mp, PyObject *key,
                Py_hash_t hash, PyObject ***value_addr)
 {
-    register size_t i;
-    register size_t perturb;
-    register size_t mask = DK_MASK(mp->ma_keys);
+    size_t i;
+    size_t perturb;
+    size_t mask = DK_MASK(mp->ma_keys);
     PyDictKeyEntry *ep0 = &mp->ma_keys->dk_entries[0];
-    register PyDictKeyEntry *ep;
+    PyDictKeyEntry *ep;
 
     if (!PyUnicode_CheckExact(key)) {
         ep = lookdict(mp, key, hash, value_addr);
@@ -1498,7 +1498,7 @@ dict_length(PyDictObject *mp)
 }
 
 static PyObject *
-dict_subscript(PyDictObject *mp, register PyObject *key)
+dict_subscript(PyDictObject *mp, PyObject *key)
 {
     PyObject *v;
     Py_hash_t hash;
@@ -1554,10 +1554,10 @@ static PyMappingMethods dict_as_mapping = {
 };
 
 static PyObject *
-dict_keys(register PyDictObject *mp)
+dict_keys(PyDictObject *mp)
 {
-    register PyObject *v;
-    register Py_ssize_t i, j;
+    PyObject *v;
+    Py_ssize_t i, j;
     PyDictKeyEntry *ep;
     Py_ssize_t size, n, offset;
     PyObject **value_ptr;
@@ -1598,10 +1598,10 @@ dict_keys(register PyDictObject *mp)
 }
 
 static PyObject *
-dict_values(register PyDictObject *mp)
+dict_values(PyDictObject *mp)
 {
-    register PyObject *v;
-    register Py_ssize_t i, j;
+    PyObject *v;
+    Py_ssize_t i, j;
     Py_ssize_t size, n, offset;
     PyObject **value_ptr;
 
@@ -1640,10 +1640,10 @@ dict_values(register PyDictObject *mp)
 }
 
 static PyObject *
-dict_items(register PyDictObject *mp)
+dict_items(PyDictObject *mp)
 {
-    register PyObject *v;
-    register Py_ssize_t i, j, n;
+    PyObject *v;
+    Py_ssize_t i, j, n;
     Py_ssize_t size, offset;
     PyObject *item, *key;
     PyDictKeyEntry *ep;
@@ -1915,8 +1915,8 @@ PyDict_Update(PyObject *a, PyObject *b)
 int
 PyDict_Merge(PyObject *a, PyObject *b, int override)
 {
-    register PyDictObject *mp, *other;
-    register Py_ssize_t i, n;
+    PyDictObject *mp, *other;
+    Py_ssize_t i, n;
     PyDictKeyEntry *entry;
 
     /* We accept for the argument either a concrete dictionary object,
@@ -2013,7 +2013,7 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
 }
 
 static PyObject *
-dict_copy(register PyDictObject *mp)
+dict_copy(PyDictObject *mp)
 {
     return PyDict_Copy((PyObject*)mp);
 }
@@ -2175,7 +2175,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static PyObject *
-dict_contains(register PyDictObject *mp, PyObject *key)
+dict_contains(PyDictObject *mp, PyObject *key)
 {
     Py_hash_t hash;
     PyDictKeyEntry *ep;
@@ -2194,7 +2194,7 @@ dict_contains(register PyDictObject *mp, PyObject *key)
 }
 
 static PyObject *
-dict_get(register PyDictObject *mp, PyObject *args)
+dict_get(PyDictObject *mp, PyObject *args)
 {
     PyObject *key;
     PyObject *failobj = Py_None;
@@ -2280,7 +2280,7 @@ dict_setdefault(PyDictObject *mp, PyObject *args)
 }
 
 static PyObject *
-dict_clear(register PyDictObject *mp)
+dict_clear(PyDictObject *mp)
 {
     PyDict_Clear((PyObject *)mp);
     Py_RETURN_NONE;
@@ -2824,8 +2824,8 @@ static PyMethodDef dictiter_methods[] = {
 static PyObject *dictiter_iternextkey(dictiterobject *di)
 {
     PyObject *key;
-    register Py_ssize_t i, mask, offset;
-    register PyDictKeysObject *k;
+    Py_ssize_t i, mask, offset;
+    PyDictKeysObject *k;
     PyDictObject *d = di->di_dict;
     PyObject **value_ptr;
 
@@ -2907,7 +2907,7 @@ PyTypeObject PyDictIterKey_Type = {
 static PyObject *dictiter_iternextvalue(dictiterobject *di)
 {
     PyObject *value;
-    register Py_ssize_t i, mask, offset;
+    Py_ssize_t i, mask, offset;
     PyDictObject *d = di->di_dict;
     PyObject **value_ptr;
 
@@ -2988,7 +2988,7 @@ PyTypeObject PyDictIterValue_Type = {
 static PyObject *dictiter_iternextitem(dictiterobject *di)
 {
     PyObject *key, *value, *result = di->di_result;
-    register Py_ssize_t i, mask, offset;
+    Py_ssize_t i, mask, offset;
     PyDictObject *d = di->di_dict;
     PyObject **value_ptr;
 

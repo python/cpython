@@ -24,7 +24,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
     while (p < end) {
         if (_Py_IS_ALIGNED(p, SIZEOF_LONG)) {
             /* Help register allocation */
-            register const unsigned char *_p = p;
+            const unsigned char *_p = p;
             while (_p < aligned_end) {
                 unsigned long value = *(unsigned long *) _p;
                 if (value & UCS1_ASCII_CHAR_MASK)
@@ -66,7 +66,7 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #else
 #error Invalid STRINGLIB_SIZEOF_CHAR (must be 1, 2 or 4)
 #endif
-    register Py_UCS4 mask;
+    Py_UCS4 mask;
     Py_ssize_t n = end - begin;
     const STRINGLIB_CHAR *p = begin;
     const STRINGLIB_CHAR *unrolled_end = begin + _Py_SIZE_ROUND_DOWN(n, 4);

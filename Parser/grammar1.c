@@ -9,9 +9,9 @@
 /* Return the DFA for the given type */
 
 dfa *
-PyGrammar_FindDFA(grammar *g, register int type)
+PyGrammar_FindDFA(grammar *g, int type)
 {
-    register dfa *d;
+    dfa *d;
 #if 1
     /* Massive speed-up */
     d = &g->g_dfa[type - NT_OFFSET];
@@ -19,7 +19,7 @@ PyGrammar_FindDFA(grammar *g, register int type)
     return d;
 #else
     /* Old, slow version */
-    register int i;
+    int i;
 
     for (i = g->g_ndfas, d = g->g_dfa; --i >= 0; d++) {
         if (d->d_type == type)

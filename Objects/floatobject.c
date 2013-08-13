@@ -109,7 +109,7 @@ PyFloat_GetInfo(void)
 PyObject *
 PyFloat_FromDouble(double fval)
 {
-    register PyFloatObject *op = free_list;
+    PyFloatObject *op = free_list;
     if (op != NULL) {
         free_list = (PyFloatObject *) Py_TYPE(op);
         numfree--;
@@ -241,7 +241,7 @@ PyFloat_AsDouble(PyObject *op)
 static int
 convert_to_double(PyObject **v, double *dbl)
 {
-    register PyObject *obj = *v;
+    PyObject *obj = *v;
 
     if (PyLong_Check(obj)) {
         *dbl = PyLong_AsDouble(obj);
