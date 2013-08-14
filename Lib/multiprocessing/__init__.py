@@ -21,6 +21,8 @@ __all__ = [
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition',
     'Event', 'Barrier', 'Queue', 'SimpleQueue', 'JoinableQueue', 'Pool',
     'Value', 'Array', 'RawValue', 'RawArray', 'SUBDEBUG', 'SUBWARNING',
+    'set_executable', 'set_start_method', 'get_start_method',
+    'get_all_start_methods', 'set_forkserver_preload'
     ]
 
 #
@@ -30,8 +32,14 @@ __all__ = [
 import os
 import sys
 
-from multiprocessing.process import Process, current_process, active_children
-from multiprocessing.util import SUBDEBUG, SUBWARNING
+from .process import Process, current_process, active_children
+
+#
+# XXX These should not really be documented or public.
+#
+
+SUBDEBUG = 5
+SUBWARNING = 25
 
 #
 # Alias for main module -- will be reset by bootstrapping child processes
@@ -56,8 +64,6 @@ class TimeoutError(ProcessError):
 class AuthenticationError(ProcessError):
     pass
 
-import _multiprocessing
-
 #
 # Definitions not depending on native semaphores
 #
@@ -69,7 +75,7 @@ def Manager():
     The managers methods such as `Lock()`, `Condition()` and `Queue()`
     can be used to create shared objects.
     '''
-    from multiprocessing.managers import SyncManager
+    from .managers import SyncManager
     m = SyncManager()
     m.start()
     return m
@@ -78,7 +84,7 @@ def Pipe(duplex=True):
     '''
     Returns two connection object connected by a pipe
     '''
-    from multiprocessing.connection import Pipe
+    from .connection import Pipe
     return Pipe(duplex)
 
 def cpu_count():
@@ -97,21 +103,21 @@ def freeze_support():
     If so then run code specified by commandline and exit.
     '''
     if sys.platform == 'win32' and getattr(sys, 'frozen', False):
-        from multiprocessing.forking import freeze_support
+        from .spawn import freeze_support
         freeze_support()
 
 def get_logger():
     '''
     Return package logger -- if it does not already exist then it is created
     '''
-    from multiprocessing.util import get_logger
+    from .util import get_logger
     return get_logger()
 
 def log_to_stderr(level=None):
     '''
     Turn on logging and add a handler which prints to stderr
     '''
-    from multiprocessing.util import log_to_stderr
+    from .util import log_to_stderr
     return log_to_stderr(level)
 
 def allow_connection_pickling():
@@ -120,7 +126,7 @@ def allow_connection_pickling():
     '''
     # This is undocumented.  In previous versions of multiprocessing
     # its only effect was to make socket objects inheritable on Windows.
-    import multiprocessing.connection
+    from . import connection
 
 #
 # Definitions depending on native semaphores
@@ -130,120 +136,151 @@ def Lock():
     '''
     Returns a non-recursive lock object
     '''
-    from multiprocessing.synchronize import Lock
+    from .synchronize import Lock
     return Lock()
 
 def RLock():
     '''
     Returns a recursive lock object
     '''
-    from multiprocessing.synchronize import RLock
+    from .synchronize import RLock
     return RLock()
 
 def Condition(lock=None):
     '''
     Returns a condition object
     '''
-    from multiprocessing.synchronize import Condition
+    from .synchronize import Condition
     return Condition(lock)
 
 def Semaphore(value=1):
     '''
     Returns a semaphore object
     '''
-    from multiprocessing.synchronize import Semaphore
+    from .synchronize import Semaphore
     return Semaphore(value)
 
 def BoundedSemaphore(value=1):
     '''
     Returns a bounded semaphore object
     '''
-    from multiprocessing.synchronize import BoundedSemaphore
+    from .synchronize import BoundedSemaphore
     return BoundedSemaphore(value)
 
 def Event():
     '''
     Returns an event object
     '''
-    from multiprocessing.synchronize import Event
+    from .synchronize import Event
     return Event()
 
 def Barrier(parties, action=None, timeout=None):
     '''
     Returns a barrier object
     '''
-    from multiprocessing.synchronize import Barrier
+    from .synchronize import Barrier
     return Barrier(parties, action, timeout)
 
 def Queue(maxsize=0):
     '''
     Returns a queue object
     '''
-    from multiprocessing.queues import Queue
+    from .queues import Queue
     return Queue(maxsize)
 
 def JoinableQueue(maxsize=0):
     '''
     Returns a queue object
     '''
-    from multiprocessing.queues import JoinableQueue
+    from .queues import JoinableQueue
     return JoinableQueue(maxsize)
 
 def SimpleQueue():
     '''
     Returns a queue object
     '''
-    from multiprocessing.queues import SimpleQueue
+    from .queues import SimpleQueue
     return SimpleQueue()
 
 def Pool(processes=None, initializer=None, initargs=(), maxtasksperchild=None):
     '''
     Returns a process pool object
     '''
-    from multiprocessing.pool import Pool
+    from .pool import Pool
     return Pool(processes, initializer, initargs, maxtasksperchild)
 
 def RawValue(typecode_or_type, *args):
     '''
     Returns a shared object
     '''
-    from multiprocessing.sharedctypes import RawValue
+    from .sharedctypes import RawValue
     return RawValue(typecode_or_type, *args)
 
 def RawArray(typecode_or_type, size_or_initializer):
     '''
     Returns a shared array
     '''
-    from multiprocessing.sharedctypes import RawArray
+    from .sharedctypes import RawArray
     return RawArray(typecode_or_type, size_or_initializer)
 
 def Value(typecode_or_type, *args, lock=True):
     '''
     Returns a synchronized shared object
     '''
-    from multiprocessing.sharedctypes import Value
+    from .sharedctypes import Value
     return Value(typecode_or_type, *args, lock=lock)
 
 def Array(typecode_or_type, size_or_initializer, *, lock=True):
     '''
     Returns a synchronized shared array
     '''
-    from multiprocessing.sharedctypes import Array
+    from .sharedctypes import Array
     return Array(typecode_or_type, size_or_initializer, lock=lock)
 
 #
 #
 #
 
-if sys.platform == 'win32':
+def set_executable(executable):
+    '''
+    Sets the path to a python.exe or pythonw.exe binary used to run
+    child processes instead of sys.executable when using the 'spawn'
+    start method.  Useful for people embedding Python.
+    '''
+    from .spawn import set_executable
+    set_executable(executable)
 
-    def set_executable(executable):
-        '''
-        Sets the path to a python.exe or pythonw.exe binary used to run
-        child processes on Windows instead of sys.executable.
-        Useful for people embedding Python.
-        '''
-        from multiprocessing.forking import set_executable
-        set_executable(executable)
+def set_start_method(method):
+    '''
+    Set method for starting processes: 'fork', 'spawn' or 'forkserver'.
+    '''
+    from .popen import set_start_method
+    set_start_method(method)
 
-    __all__ += ['set_executable']
+def get_start_method():
+    '''
+    Get method for starting processes: 'fork', 'spawn' or 'forkserver'.
+    '''
+    from .popen import get_start_method
+    return get_start_method()
+
+def get_all_start_methods():
+    '''
+    Get list of availables start methods, default first.
+    '''
+    from .popen import get_all_start_methods
+    return get_all_start_methods()
+
+def set_forkserver_preload(module_names):
+    '''
+    Set list of module names to try to load in the forkserver process
+    when it is started.  Properly chosen this can significantly reduce
+    the cost of starting a new process using the forkserver method.
+    The default list is ['__main__'].
+    '''
+    try:
+        from .forkserver import set_forkserver_preload
+    except ImportError:
+        pass
+    else:
+        set_forkserver_preload(module_names)

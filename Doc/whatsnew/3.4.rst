@@ -108,6 +108,8 @@ Significantly Improved Library Modules:
 * Single-dispatch generic functions (:pep:`443`)
 * SHA-3 (Keccak) support for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
+* :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
+  on Unix (:issue:`8713`).
 
 Security improvements:
 
@@ -252,6 +254,17 @@ mmap
 mmap objects can now be weakref'ed.
 
 (Contributed by Valerie Lambert in :issue:`4885`.)
+
+
+multiprocessing
+---------------
+
+On Unix two new *start methods* have been added for starting processes
+using :mod:`multiprocessing`.  These make the mixing of processes with
+threads more robust.  See :issue:`8713`.
+
+Also, except when using the old *fork* start method, child processes
+will no longer inherit unneeded handles/file descriptors from their parents.
 
 
 poplib
