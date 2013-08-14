@@ -1406,7 +1406,7 @@ Instance methods:
 
    Return a string representing the time, controlled by an explicit format
    string.  For a complete list of formatting directives, see
-   :ref:`strftime-strptime-behavior`. 
+   :ref:`strftime-strptime-behavior`.
 
 
 .. method:: time.__format__(format)
@@ -1826,7 +1826,7 @@ format codes.
 |           | zero-padded decimal number.    |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Y``    | Year with century as a decimal | 0001, 0002, ..., 2013, | \(2)  |
-|           | number.                        | 2014, ...., 9998, 9999 |       |
+|           | number.                        | 2014, ..., 9998, 9999  |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%H``    | Hour (24-hour clock) as a      | 00, 01, ..., 23        |       |
 |           | zero-padded decimal number.    |                        |       |
