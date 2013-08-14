@@ -20,15 +20,6 @@ unicode_eq(PyObject *aa, PyObject *bb)
         return 1;
     if (PyUnicode_KIND(a) != PyUnicode_KIND(b))
         return 0;
-    /* Just comparing the first byte is enough to see if a and b differ.
-     * If they are 2 byte or 4 byte character most differences will happen in
-     * the lower bytes anyways.
-     */
-    if (PyUnicode_1BYTE_DATA(a)[0] != PyUnicode_1BYTE_DATA(b)[0])
-        return 0;
-    if (PyUnicode_KIND(a) == PyUnicode_1BYTE_KIND &&
-        PyUnicode_GET_LENGTH(a) == 1)
-        return 1;
     return memcmp(PyUnicode_1BYTE_DATA(a), PyUnicode_1BYTE_DATA(b),
                   PyUnicode_GET_LENGTH(a) * PyUnicode_KIND(a)) == 0;
 }
