@@ -1664,7 +1664,7 @@ platforms.  Regardless of platform, years before 1900 cannot be used.
 | ``%M``    | Minute as a zero-padded        | 00, 01, ..., 59        |       |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%S``    | Second as a zero-padded        | 00, 01, ..., 61        | \(3)  |
+| ``%S``    | Second as a zero-padded        | 00, 01, ..., 59        | \(3)  |
 |           | decimal number.                |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%f``    | Microsecond as a decimal       | 000000, 000001, ...,   | \(4)  |
@@ -1728,12 +1728,8 @@ Notes:
    the output hour field if the ``%I`` directive is used to parse the hour.
 
 (3)
-   The range really is ``0`` to ``61``; according to the Posix standard this
-   accounts for leap seconds and the (very rare) double leap seconds.
-   The :mod:`time` module may produce and does accept leap seconds since
-   it is based on the Posix standard, but the :mod:`datetime` module
-   does not accept leap seconds in :meth:`strptime` input nor will it
-   produce them in :func:`strftime` output.
+   Unlike the :mod:`time` module, the :mod:`datetime` module does not support
+   leap seconds.
 
 (4)
    ``%f`` is an extension to the set of format characters in the C standard
