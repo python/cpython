@@ -149,7 +149,7 @@ try:
 except ImportError:
     threading = None
 try:
-    import multiprocessing.process
+    import _multiprocessing, multiprocessing.process
 except ImportError:
     multiprocessing = None
 

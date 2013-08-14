@@ -1,16 +1,3 @@
-#
-# Simple example which uses a pool of workers to carry out some tasks.
-#
-# Notice that the results will probably not come out of the output
-# queue in the same in the same order as the corresponding tasks were
-# put on the input queue.  If it is important to get the results back
-# in the original order then consider using `Pool.map()` or
-# `Pool.imap()` (which will save on the amount of code needed anyway).
-#
-# Copyright (c) 2006-2008, R Oudkerk
-# All rights reserved.
-#
-
 import time
 import random
 

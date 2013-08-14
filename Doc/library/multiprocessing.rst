@@ -93,8 +93,77 @@ To show the individual process IDs involved, here is an expanded example::
         p.start()
         p.join()
 
-For an explanation of why (on Windows) the ``if __name__ == '__main__'`` part is
+For an explanation of why the ``if __name__ == '__main__'`` part is
 necessary, see :ref:`multiprocessing-programming`.
+
+
+
+Start methods
+~~~~~~~~~~~~~
+
+Depending on the platform, :mod:`multiprocessing` supports three ways
+to start a process.  These *start methods* are
+
+  *spawn*
+    The parent process starts a fresh python interpreter process.  The
+    child process will only inherit those resources necessary to run
+    the process objects :meth:`~Process.run` method.  In particular,
+    unnecessary file descriptors and handles from the parent process
+    will not be inherited.  Starting a process using this method is
+    rather slow compared to using *fork* or *forkserver*.
+
+    Available on Unix and Windows.  The default on Windows.
+
+  *fork*
+    The parent process uses :func:`os.fork` to fork the Python
+    interpreter.  The child process, when it begins, is effectively
+    identical to the parent process.  All resources of the parent are
+    inherited by the child process.  Note that safely forking a
+    multithreaded process is problematic.
+
+    Available on Unix only.  The default on Unix.
+
+  *forkserver*
+    When the program starts and selects the *forkserver* start method,
+    a server process is started.  From then on, whenever a new process
+    is need the parent process connects to the server and requests
+    that it fork a new process.  The fork server process is single
+    threaded so it is safe for it to use :func:`os.fork`.  No
+    unnecessary resources are inherited.
+
+    Available on Unix platforms which support passing file descriptors
+    over unix pipes.
+
+Before Python 3.4 *fork* was the only option available on Unix.  Also,
+prior to Python 3.4, child processes would inherit all the parents
+inheritable handles on Windows.
+
+On Unix using the *spawn* or *forkserver* start methods will also
+start a *semaphore tracker* process which tracks the unlinked named
+semaphores created by processes of the program.  When all processes
+have exited the semaphore tracker unlinks any remaining semaphores.
+Usually there should be none, but if a process was killed by a signal
+there may some "leaked" semaphores.  (Unlinking the named semaphores
+is a serious matter since the system allows only a limited number, and
+they will not be automatically unlinked until the next reboot.)
+
+To select the a start method you use the :func:`set_start_method` in
+the ``if __name__ == '__main__'`` clause of the main module.  For
+example::
+
+       import multiprocessing as mp
+
+       def foo():
+           print('hello')
+
+       if __name__ == '__main__':
+           mp.set_start_method('spawn')
+           p = mp.Process(target=foo)
+           p.start()
+           p.join()
+
+:func:`set_start_method` should not be used more than once in the
+program.
 
 
 
@@ -274,15 +343,31 @@ processes in a few different ways.
 For example::
 
    from multiprocessing import Pool
+   from time import sleep
 
    def f(x):
        return x*x
 
    if __name__ == '__main__':
-       with Pool(processes=4) as pool:        # start 4 worker processes
-           result = pool.apply_async(f, [10]) # evaluate "f(10)" asynchronously
-           print(result.get(timeout=1))       # prints "100" unless your computer is *very* slow
-           print(pool.map(f, range(10)))      # prints "[0, 1, 4,..., 81]"
+       # start 4 worker processes
+       with Pool(processes=4) as pool:
+
+           # print "[0, 1, 4,..., 81]"
+           print(pool.map(f, range(10)))
+
+           # print same numbers in arbitrary order
+           for i in pool.imap_unordered(f, range(10)):
+               print(i)
+
+           # evaluate "f(10)" asynchronously
+           res = pool.apply_async(f, [10])
+           print(res.get(timeout=1))             # prints "100"
+
+           # make worker sleep for 10 secs
+           res = pool.apply_async(sleep, 10)
+           print(res.get(timeout=1))             # raises multiprocessing.TimeoutError
+
+       # exiting the 'with'-block has stopped the pool
 
 Note that the methods of a pool should only ever be used by the
 process which created it.
@@ -763,6 +848,24 @@ Miscellaneous
    If the module is being run normally by the Python interpreter then
    :func:`freeze_support` has no effect.
 
+.. function:: get_all_start_methods()
+
+   Returns a list of the supported start methods, the first of which
+   is the default.  The possible start methods are ``'fork'``,
+   ``'spawn'`` and ``'forkserver'``.  On Windows only ``'spawn'`` is
+   available.  On Unix ``'fork'`` and ``'spawn'`` are always
+   supported, with ``'fork'`` being the default.
+
+   .. versionadded:: 3.4
+
+.. function:: get_start_method()
+
+   Return the current start method.  This can be ``'fork'``,
+   ``'spawn'`` or ``'forkserver'``.  ``'fork'`` is the default on
+   Unix, while ``'spawn'`` is the default on Windows.
+
+   .. versionadded:: 3.4
+
 .. function:: set_executable()
 
    Sets the path of the Python interpreter to use when starting a child process.
@@ -771,8 +874,21 @@ Miscellaneous
 
       set_executable(os.path.join(sys.exec_prefix, 'pythonw.exe'))
 
-   before they can create child processes.  (Windows only)
+   before they can create child processes.
 
+   .. versionchanged:: 3.4
+      Now supported on Unix when the ``'spawn'`` start method is used.
+
+.. function:: set_start_method(method)
+
+   Set the method which should be used to start child processes.
+   *method* can be ``'fork'``, ``'spawn'`` or ``'forkserver'``.
+
+   Note that this should be called at most once, and it should be
+   protected inside the ``if __name__ == '__main__'`` clause of the
+   main module.
+
+   .. versionadded:: 3.4
 
 .. note::
 
@@ -2175,43 +2291,8 @@ Below is an example session with logging turned on::
     [INFO/MainProcess] sending shutdown message to manager
     [INFO/SyncManager-...] manager exiting with exitcode 0
 
-In addition to having these two logging functions, the multiprocessing also
-exposes two additional logging level attributes. These are  :const:`SUBWARNING`
-and :const:`SUBDEBUG`. The table below illustrates where theses fit in the
-normal level hierarchy.
-
-+----------------+----------------+
-| Level          | Numeric value  |
-+================+================+
-| ``SUBWARNING`` | 25             |
-+----------------+----------------+
-| ``SUBDEBUG``   | 5              |
-+----------------+----------------+
-
 For a full table of logging levels, see the :mod:`logging` module.
 
-These additional logging levels are used primarily for certain debug messages
-within the multiprocessing module. Below is the same example as above, except
-with :const:`SUBDEBUG` enabled::
-
-    >>> import multiprocessing, logging
-    >>> logger = multiprocessing.log_to_stderr()
-    >>> logger.setLevel(multiprocessing.SUBDEBUG)
-    >>> logger.warning('doomed')
-    [WARNING/MainProcess] doomed
-    >>> m = multiprocessing.Manager()
-    [INFO/SyncManager-...] child process calling self.run()
-    [INFO/SyncManager-...] created temp directory /.../pymp-...
-    [INFO/SyncManager-...] manager serving at '/.../pymp-djGBXN/listener-...'
-    >>> del m
-    [SUBDEBUG/MainProcess] finalizer calling ...
-    [INFO/MainProcess] sending shutdown message to manager
-    [DEBUG/SyncManager-...] manager received shutdown message
-    [SUBDEBUG/SyncManager-...] calling <Finalize object, callback=unlink, ...
-    [SUBDEBUG/SyncManager-...] finalizer calling <built-in function unlink> ...
-    [SUBDEBUG/SyncManager-...] calling <Finalize object, dead>
-    [SUBDEBUG/SyncManager-...] finalizer calling <function rmtree at 0x5aa730> ...
-    [INFO/SyncManager-...] manager exiting with exitcode 0
 
 The :mod:`multiprocessing.dummy` module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2232,8 +2313,10 @@ There are certain guidelines and idioms which should be adhered to when using
 :mod:`multiprocessing`.
 
 
-All platforms
-~~~~~~~~~~~~~
+All start methods
+~~~~~~~~~~~~~~~~~
+
+The following applies to all start methods.
 
 Avoid shared state
 
@@ -2266,11 +2349,13 @@ Joining zombie processes
 
 Better to inherit than pickle/unpickle
 
-    On Windows many types from :mod:`multiprocessing` need to be picklable so
-    that child processes can use them.  However, one should generally avoid
-    sending shared objects to other processes using pipes or queues.  Instead
-    you should arrange the program so that a process which needs access to a
-    shared resource created elsewhere can inherit it from an ancestor process.
+    When using the *spawn* or *forkserver* start methods many types
+    from :mod:`multiprocessing` need to be picklable so that child
+    processes can use them.  However, one should generally avoid
+    sending shared objects to other processes using pipes or queues.
+    Instead you should arrange the program so that a process which
+    needs access to a shared resource created elsewhere can inherit it
+    from an ancestor process.
 
 Avoid terminating processes
 
@@ -2314,15 +2399,17 @@ Joining processes that use queues
 
 Explicitly pass resources to child processes
 
-    On Unix a child process can make use of a shared resource created in a
-    parent process using a global resource.  However, it is better to pass the
-    object as an argument to the constructor for the child process.
+    On Unix using the *fork* start method, a child process can make
+    use of a shared resource created in a parent process using a
+    global resource.  However, it is better to pass the object as an
+    argument to the constructor for the child process.
 
-    Apart from making the code (potentially) compatible with Windows this also
-    ensures that as long as the child process is still alive the object will not
-    be garbage collected in the parent process.  This might be important if some
-    resource is freed when the object is garbage collected in the parent
-    process.
+    Apart from making the code (potentially) compatible with Windows
+    and the other start methods this also ensures that as long as the
+    child process is still alive the object will not be garbage
+    collected in the parent process.  This might be important if some
+    resource is freed when the object is garbage collected in the
+    parent process.
 
     So for instance ::
 
@@ -2381,17 +2468,19 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
 
     For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
 
-Windows
-~~~~~~~
+The *spawn* and *forkserver* start methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since Windows lacks :func:`os.fork` it has a few extra restrictions:
+There are a few extra restriction which don't apply to the *fork*
+start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are picklable.  This
-    means, in particular, that bound or unbound methods cannot be used directly
-    as the ``target`` argument on Windows --- just define a function and use
-    that instead.
+    Ensure that all arguments to :meth:`Process.__init__` are
+    picklable.  This means, in particular, that bound or unbound
+    methods cannot be used directly as the ``target`` (unless you use
+    the *fork* start method) --- just define a function and use that
+    instead.
 
     Also, if you subclass :class:`Process` then make sure that instances will be
     picklable when the :meth:`Process.start` method is called.
@@ -2411,7 +2500,8 @@ Safe importing of main module
     interpreter without causing unintended side effects (such a starting a new
     process).
 
-    For example, under Windows running the following module would fail with a
+    For example, using the *spawn* or *forkserver* start method
+    running the following module would fail with a
     :exc:`RuntimeError`::
 
         from multiprocessing import Process
@@ -2425,13 +2515,14 @@ Safe importing of main module
     Instead one should protect the "entry point" of the program by using ``if
     __name__ == '__main__':`` as follows::
 
-       from multiprocessing import Process, freeze_support
+       from multiprocessing import Process, freeze_support, set_start_method
 
        def foo():
            print('hello')
 
        if __name__ == '__main__':
            freeze_support()
+           set_start_method('spawn')
            p = Process(target=foo)
            p.start()
 
@@ -2462,26 +2553,7 @@ Using :class:`Pool`:
    :language: python3
 
 
-Synchronization types like locks, conditions and queues:
-
-.. literalinclude:: ../includes/mp_synchronize.py
-   :language: python3
-
-
 An example showing how to use queues to feed tasks to a collection of worker
 processes and collect the results:
 
 .. literalinclude:: ../includes/mp_workers.py
-
-
-An example of how a pool of worker processes can each run a
-:class:`~http.server.SimpleHTTPRequestHandler` instance while sharing a single
-listening socket.
-
-.. literalinclude:: ../includes/mp_webserver.py
-
-
-Some simple benchmarks comparing :mod:`multiprocessing` with :mod:`threading`:
-
-.. literalinclude:: ../includes/mp_benchmarks.py
-
