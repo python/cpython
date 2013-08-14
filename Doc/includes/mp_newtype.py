@@ -1,11 +1,3 @@
-#
-# This module shows how to use arbitrary callables with a subclass of
-# `BaseManager`.
-#
-# Copyright (c) 2006-2008, R Oudkerk
-# All rights reserved.
-#
-
 from multiprocessing import freeze_support
 from multiprocessing.managers import BaseManager, BaseProxy
 import operator
@@ -27,11 +19,9 @@ def baz():
 
 # Proxy type for generator objects
 class GeneratorProxy(BaseProxy):
-    _exposed_ = ('next', '__next__')
+    _exposed_ = ['__next__']
     def __iter__(self):
         return self
-    def __next__(self):
-        return self._callmethod('next')
     def __next__(self):
         return self._callmethod('__next__')
 
@@ -90,8 +80,6 @@ def test():
     op = manager.operator()
     print('op.add(23, 45) =', op.add(23, 45))
     print('op.pow(2, 94) =', op.pow(2, 94))
-    print('op.getslice(range(10), 2, 6) =', op.getslice(list(range(10)), 2, 6))
-    print('op.repeat(range(5), 3) =', op.repeat(list(range(5)), 3))
     print('op._exposed_ =', op._exposed_)
 
 ##
