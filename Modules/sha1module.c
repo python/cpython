@@ -411,7 +411,7 @@ SHA1_get_block_size(PyObject *self, void *closure)
 static PyObject *
 SHA1_get_name(PyObject *self, void *closure)
 {
-    return PyUnicode_FromStringAndSize("SHA1", 4);
+    return PyUnicode_FromStringAndSize("sha1", 4);
 }
 
 static PyObject *
