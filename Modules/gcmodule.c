@@ -1612,12 +1612,19 @@ _PyGC_CollectNoFail(void)
 {
     Py_ssize_t n;
 
-    /* This function should only be called on interpreter shutdown, and
-       therefore not recursively. */
-    assert(!collecting);
-    collecting = 1;
-    n = collect(NUM_GENERATIONS - 1, NULL, NULL, 1);
-    collecting = 0;
+    /* Ideally, this function is only called on interpreter shutdown,
+       and therefore not recursively.  Unfortunately, when there are daemon
+       threads, a daemon thread can start a cyclic garbage collection
+       during interpreter shutdown (and then never finish it).
+       See http://bugs.python.org/issue8713#msg195178 for an example.
+       */
+    if (collecting)
+        n = 0;
+    else {
+        collecting = 1;
+        n = collect(NUM_GENERATIONS - 1, NULL, NULL, 1);
+        collecting = 0;
+    }
     return n;
 }
 
