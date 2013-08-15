@@ -2,8 +2,8 @@
 import unittest
 from idlelib import FormatParagraph as fp
 from idlelib.EditorWindow import EditorWindow
-from tkinter import Tk, Text, TclError
-from test.support import requires
+from Tkinter import Tk, Text, TclError
+from test.test_support import requires
 
 
 class Is_Get_Test(unittest.TestCase):
@@ -238,7 +238,7 @@ class TextWrapper:
 class Editor:
     def __init__(self, root):
         self.text = TextWrapper(root)
-    get_selection_indices = EditorWindow. get_selection_indices
+    get_selection_indices = EditorWindow. get_selection_indices.im_func
 
 class FormatEventTest(unittest.TestCase):
     """Test the formatting of text inside a Text widget.
