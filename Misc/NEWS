@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18532: Change the builtin hash algorithms' names to lower case names
+  as promised by hashlib's documentation.
+
 - Issue #18405: Improve the entropy of crypt.mksalt().
 
 - Issue #12015: The tempfile module now uses a suffix of 8 random characters
