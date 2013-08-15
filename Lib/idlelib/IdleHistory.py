@@ -49,7 +49,13 @@ class History:
         self.text.insert(where, output)
 
     def fetch(self, reverse):
-        "Fetch statememt and enter into text at cursor."
+        '''Fetch statememt and replace current line in text widget.
+
+        Set prefix and pointer as needed for successive fetches.
+        Reset them to None, None when returning to the start line.
+        Sound bell when return to start line or cannot leave a line
+        because cyclic is False.
+        '''
         nhist = len(self.history)
         pointer = self.pointer
         prefix = self.prefix
@@ -64,7 +70,7 @@ class History:
             else:
                 if self.cyclic:
                     pointer = -1  # will be incremented
-                else:
+                else:  # abort history_next
                     self.text.bell()
                     return
         nprefix = len(prefix)
@@ -75,7 +81,7 @@ class History:
                 pointer = pointer + 1
             if pointer < 0 or pointer >= nhist:
                 self.text.bell()
-                if not self.cyclic and pointer < 0:
+                if not self.cyclic and pointer < 0:  # abort history_prev
                     return
                 else:
                     if self._get_source("iomark", "end-1c") != prefix:
@@ -106,3 +112,9 @@ class History:
             self.history.append(source)
         self.pointer = None
         self.prefix = None
+
+if __name__ == "__main__":
+    from test import support
+    support.use_resources = ['gui']
+    from unittest import main
+    main('idlelib.idle_test.test_idlehistory', verbosity=2, exit=False)
