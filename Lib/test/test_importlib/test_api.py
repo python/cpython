@@ -162,6 +162,22 @@ class ReloadTests(unittest.TestCase):
                     module = importlib.import_module(mod)
                     importlib.reload(module)
 
+    def test_module_replaced(self):
+        def code():
+            import sys
+            module = type(sys)('top_level')
+            module.spam = 3
+            sys.modules['top_level'] = module
+        mock = util.mock_modules('top_level',
+                                 module_code={'top_level': code})
+        with mock:
+            with util.import_state(meta_path=[mock]):
+                module = importlib.import_module('top_level')
+                reloaded = importlib.reload(module)
+                actual = sys.modules['top_level']
+                self.assertEqual(actual.spam, 3)
+                self.assertEqual(reloaded.spam, 3)
+
 
 class InvalidateCacheTests(unittest.TestCase):
 
