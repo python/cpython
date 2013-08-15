@@ -439,7 +439,7 @@ MD5_get_block_size(PyObject *self, void *closure)
 static PyObject *
 MD5_get_name(PyObject *self, void *closure)
 {
-    return PyUnicode_FromStringAndSize("MD5", 3);
+    return PyUnicode_FromStringAndSize("md5", 3);
 }
 
 static PyObject *

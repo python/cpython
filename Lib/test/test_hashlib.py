@@ -233,9 +233,9 @@ class HashLibTestCase(unittest.TestCase):
             self.assertEqual(m.block_size, block_size)
             self.assertEqual(m.digest_size, digest_size)
             self.assertEqual(len(m.digest()), digest_size)
-            self.assertEqual(m.name.lower(), name.lower())
+            self.assertEqual(m.name, name)
             # split for sha3_512 / _sha3.sha3 object
-            self.assertIn(name.split("_")[0], repr(m).lower())
+            self.assertIn(name.split("_")[0], repr(m))
 
     def test_blocksize_name(self):
         self.check_blocksize_name('md5', 64, 16)
