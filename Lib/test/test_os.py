@@ -1963,16 +1963,17 @@ class TestSendfile(unittest.TestCase):
 
         def test_trailers(self):
             TESTFN2 = support.TESTFN + "2"
+            file_data = b"abcdef"
             with open(TESTFN2, 'wb') as f:
-                f.write(b"abcde")
+                f.write(file_data)
             with open(TESTFN2, 'rb')as f:
                 self.addCleanup(os.remove, TESTFN2)
-                os.sendfile(self.sockno, f.fileno(), 0, 4096,
-                            trailers=[b"12345"])
+                os.sendfile(self.sockno, f.fileno(), 0, len(file_data),
+                            trailers=[b"1234"])
                 self.client.close()
                 self.server.wait()
                 data = self.server.handler_instance.get_data()
-                self.assertEqual(data, b"abcde12345")
+                self.assertEqual(data, b"abcdef1234")
 
         if hasattr(os, "SF_NODISKIO"):
             def test_flags(self):
