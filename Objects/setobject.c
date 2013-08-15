@@ -280,6 +280,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     Py_ssize_t i;
     int is_oldtable_malloced;
     setentry small_copy[PySet_MINSIZE];
+    PyObject *dummy_entry;
 
     assert(minused >= 0);
 
@@ -336,11 +337,12 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
+    dummy_entry = dummy;
     for (entry = oldtable; i > 0; entry++) {
         if (entry->key == NULL) {
             /* UNUSED */
             ;
-        } else if (entry->key == dummy) {
+        } else if (entry->key == dummy_entry) {
             /* DUMMY */
             --i;
             assert(entry->key == dummy);
