@@ -118,7 +118,9 @@ def reload(module):
         if parent_name and parent_name not in sys.modules:
             msg = "parent {!r} not in sys.modules"
             raise ImportError(msg.format(parent_name), name=parent_name)
-        return module.__loader__.load_module(name)
+        module.__loader__.load_module(name)
+        # The module may have replaced itself in sys.modules!
+        return sys.modules[module.__name__]
     finally:
         try:
             del _RELOADING[name]
