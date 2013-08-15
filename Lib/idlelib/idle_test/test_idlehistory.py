@@ -87,6 +87,7 @@ class FetchTest(unittest.TestCase):
         # The last two are diagnostic of fetch internals.
         History = self.history
         History.fetch(reverse)
+
         Equal = self.assertEqual
         Equal(self.text.get('iomark', 'end-1c'), line)
         Equal(self.text._bell, bell)
@@ -94,6 +95,7 @@ class FetchTest(unittest.TestCase):
             self.text._bell = False
         Equal(History.prefix, prefix)
         Equal(History.pointer, index)
+        Equal(self.text.compare("insert", '==', "end-1c"), 1)
 
     def test_fetch_prev_cyclic(self):
         prefix = ''
