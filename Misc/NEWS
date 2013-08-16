@@ -258,6 +258,9 @@ IDLE
 Tests
 -----
 
+- Issue #1666318: Add a test that shutil.copytree() retains directory
+  permissions.  Patch by Catherine Devlin.
+
 - Issue #18357: add tests for dictview set difference.
   Patch by Fraser Tweedale.
 
