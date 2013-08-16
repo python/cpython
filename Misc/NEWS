@@ -66,6 +66,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18756: Improve error reporting in os.urandom() when the failure
+  is due to something else than /dev/urandom not existing (for example,
+  exhausting the file descriptor limit).
+
 - Issue #18405: Improve the entropy of crypt.mksalt().
 
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
