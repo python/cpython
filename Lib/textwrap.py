@@ -19,7 +19,7 @@ __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent']
 # since 0xa0 is not in range(128).
 _whitespace = '\t\n\x0b\x0c\r '
 
-_default_placeholder = ' (...)'
+_default_placeholder = ' [...]'
 
 class TextWrapper:
     """
@@ -376,7 +376,7 @@ def shorten(text, width, *, placeholder=_default_placeholder, **kwargs):
         >>> textwrap.shorten("Hello  world!", width=12)
         'Hello world!'
         >>> textwrap.shorten("Hello  world!", width=11)
-        'Hello (...)'
+        'Hello [...]'
     """
     w = TextWrapper(width=width, **kwargs)
     return w.shorten(text, placeholder=placeholder)

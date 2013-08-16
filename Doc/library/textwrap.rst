@@ -40,7 +40,7 @@ functions should be good enough; otherwise, you should use an instance of
    :func:`wrap`.
 
 
-.. function:: shorten(text, width=70, *, placeholder=" (...)")
+.. function:: shorten(text, width=70, *, placeholder=" [...]")
 
    Collapse and truncate the given text to fit in the given width.
 
@@ -51,7 +51,7 @@ functions should be good enough; otherwise, you should use an instance of
       >>> textwrap.shorten("Hello  world!", width=12)
       'Hello world!'
       >>> textwrap.shorten("Hello  world!", width=11)
-      'Hello (...)'
+      'Hello [...]'
       >>> textwrap.shorten("Hello world", width=10, placeholder="...")
       'Hello...'
 
@@ -268,7 +268,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       containing the wrapped paragraph.
 
 
-   .. function:: shorten(text, *, placeholder=" (...)")
+   .. function:: shorten(text, *, placeholder=" [...]")
 
       Collapse and truncate the given text to fit in :attr:`width`
       characters.
