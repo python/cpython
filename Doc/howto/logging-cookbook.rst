@@ -97,11 +97,11 @@ The output looks like this::
 Multiple handlers and formatters
 --------------------------------
 
-Loggers are plain Python objects.  The :func:`addHandler` method has no minimum
-or maximum quota for the number of handlers you may add.  Sometimes it will be
-beneficial for an application to log all messages of all severities to a text
-file while simultaneously logging errors or above to the console.  To set this
-up, simply configure the appropriate handlers.  The logging calls in the
+Loggers are plain Python objects.  The :meth:`~Logger.addHandler` method has no
+minimum or maximum quota for the number of handlers you may add.  Sometimes it
+will be beneficial for an application to log all messages of all severities to a
+text file while simultaneously logging errors or above to the console.  To set
+this up, simply configure the appropriate handlers.  The logging calls in the
 application code will remain unchanged.  Here is a slight modification to the
 previous simple module-based configuration example::
 
@@ -459,8 +459,9 @@ printed on the console; on the server side, you should see something like::
 
 Note that there are some security issues with pickle in some scenarios. If
 these affect you, you can use an alternative serialization scheme by overriding
-the :meth:`makePickle` method and implementing your alternative there, as
-well as adapting the above script to use your alternative serialization.
+the :meth:`~handlers.SocketHandler.makePickle` method and implementing your
+alternative there, as well as adapting the above script to use your alternative
+serialization.
 
 
 .. _context-info:
@@ -509,9 +510,9 @@ information in the delegated call. Here's a snippet from the code of
         msg, kwargs = self.process(msg, kwargs)
         self.logger.debug(msg, *args, **kwargs)
 
-The :meth:`process` method of :class:`LoggerAdapter` is where the contextual
-information is added to the logging output. It's passed the message and
-keyword arguments of the logging call, and it passes back (potentially)
+The :meth:`~LoggerAdapter.process` method of :class:`LoggerAdapter` is where the
+contextual information is added to the logging output. It's passed the message
+and keyword arguments of the logging call, and it passes back (potentially)
 modified versions of these to use in the call to the underlying logger. The
 default implementation of this method leaves the message alone, but inserts
 an 'extra' key in the keyword argument whose value is the dict-like object
@@ -523,8 +524,8 @@ merged into the :class:`LogRecord` instance's __dict__, allowing you to use
 customized strings with your :class:`Formatter` instances which know about
 the keys of the dict-like object. If you need a different method, e.g. if you
 want to prepend or append the contextual information to the message string,
-you just need to subclass :class:`LoggerAdapter` and override :meth:`process`
-to do what you need. Here is a simple example::
+you just need to subclass :class:`LoggerAdapter` and override
+:meth:`~LoggerAdapter.process` to do what you need. Here is a simple example::
 
     class CustomAdapter(logging.LoggerAdapter):
         """
@@ -633,20 +634,20 @@ threads in a single process *is* supported, logging to a single file from
 *multiple processes* is *not* supported, because there is no standard way to
 serialize access to a single file across multiple processes in Python. If you
 need to log to a single file from multiple processes, one way of doing this is
-to have all the processes log to a :class:`SocketHandler`, and have a separate
-process which implements a socket server which reads from the socket and logs
-to file. (If you prefer, you can dedicate one thread in one of the existing
-processes to perform this function.) :ref:`This section <network-logging>`
-documents this approach in more detail and includes a working socket receiver
-which can be used as a starting point for you to adapt in your own
-applications.
+to have all the processes log to a :class:`~handlers.SocketHandler`, and have a
+separate process which implements a socket server which reads from the socket
+and logs to file. (If you prefer, you can dedicate one thread in one of the
+existing processes to perform this function.)
+:ref:`This section <network-logging>` documents this approach in more detail and
+includes a working socket receiver which can be used as a starting point for you
+to adapt in your own applications.
 
 If you are using a recent version of Python which includes the
 :mod:`multiprocessing` module, you could write your own handler which uses the
-:class:`Lock` class from this module to serialize access to the file from
-your processes. The existing :class:`FileHandler` and subclasses do not make
-use of :mod:`multiprocessing` at present, though they may do so in the future.
-Note that at present, the :mod:`multiprocessing` module does not provide
+:class:`~multiprocessing.Lock` class from this module to serialize access to the
+file from your processes. The existing :class:`FileHandler` and subclasses do
+not make use of :mod:`multiprocessing` at present, though they may do so in the
+future. Note that at present, the :mod:`multiprocessing` module does not provide
 working lock functionality on all platforms (see
 http://bugs.python.org/issue3770).
 
@@ -880,7 +881,7 @@ Sometimes you want to let a log file grow to a certain size, then open a new
 file and log to that. You may want to keep a certain number of these files, and
 when that many files have been created, rotate the files so that the number of
 files and the size of the files both remain bounded. For this usage pattern, the
-logging package provides a :class:`RotatingFileHandler`::
+logging package provides a :class:`~handlers.RotatingFileHandler`::
 
    import glob
    import logging
@@ -1254,7 +1255,7 @@ An example dictionary-based configuration
 
 Below is an example of a logging configuration dictionary - it's taken from
 the `documentation on the Django project <https://docs.djangoproject.com/en/1.3/topics/logging/#configuring-logging>`_.
-This dictionary is passed to :func:`~logging.config.dictConfig` to put the configuration into effect::
+This dictionary is passed to :func:`~config.dictConfig` to put the configuration into effect::
 
     LOGGING = {
         'version': 1,

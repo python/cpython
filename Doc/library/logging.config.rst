@@ -101,8 +101,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    configurations. If no port is specified, the module's default
    :const:`DEFAULT_LOGGING_CONFIG_PORT` is used. Logging configurations will be
    sent as a file suitable for processing by :func:`fileConfig`. Returns a
-   :class:`Thread` instance on which you can call :meth:`start` to start the
-   server, and which you can :meth:`join` when appropriate. To stop the server,
+   :class:`~threading.Thread` instance on which you can call
+   :meth:`~threading.Thread.start` to start the server, and which you can
+   :meth:`~threading.Thread.join` when appropriate. To stop the server,
    call :func:`stopListening`.
 
    To send a configuration to the socket, read in the configuration file and
@@ -166,11 +167,11 @@ otherwise, the context is used to determine what to instantiate.
 
 * *formatters* - the corresponding value will be a dict in which each
   key is a formatter id and each value is a dict describing how to
-  configure the corresponding Formatter instance.
+  configure the corresponding :class:`~logging.Formatter` instance.
 
   The configuring dict is searched for keys ``format`` and ``datefmt``
   (with defaults of ``None``) and these are used to construct a
-  :class:`logging.Formatter` instance.
+  :class:`~logging.Formatter` instance.
 
 * *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
@@ -704,8 +705,9 @@ format string, with a comma separator.  An example time in ISO8601 format is
 
 The ``class`` entry is optional.  It indicates the name of the formatter's class
 (as a dotted module and class name.)  This option is useful for instantiating a
-:class:`Formatter` subclass.  Subclasses of :class:`Formatter` can present
-exception tracebacks in an expanded or condensed format.
+:class:`~logging.Formatter` subclass.  Subclasses of
+:class:`~logging.Formatter` can present exception tracebacks in an expanded or
+condensed format.
 
 .. note:: Due to the use of :func:`eval` as described above, there are
    potential security risks which result from using the :func:`listen` to send
