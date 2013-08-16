@@ -581,8 +581,12 @@ class URandomTests (unittest.TestCase):
             # creating any file descriptor.
             resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
 
+
+class ExecvpeTests(unittest.TestCase):
+
     def test_execvpe_with_bad_arglist(self):
         self.assertRaises(ValueError, os.execvpe, 'notepad', [], None)
+
 
 class Win32ErrorTests(unittest.TestCase):
     def test_rename(self):
@@ -870,6 +874,7 @@ def test_main():
         MakedirTests,
         DevNullTests,
         URandomTests,
+        ExecvpeTests,
         Win32ErrorTests,
         TestInvalidFD,
         PosixUidGidTests,
