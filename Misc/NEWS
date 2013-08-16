@@ -72,6 +72,10 @@ Library
   strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
   ``uniformResourceIdentifier`` (URI).
 
+- Issue #18756: Improve error reporting in os.urandom() when the failure
+  is due to something else than /dev/urandom not existing (for example,
+  exhausting the file descriptor limit).
+
 - Issue #18405: Improve the entropy of crypt.mksalt().
 
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
@@ -263,6 +267,9 @@ IDLE
 
 Tests
 -----
+
+- Issue #1666318: Add a test that shutil.copytree() retains directory
+  permissions.  Patch by Catherine Devlin.
 
 - Issue #18357: add tests for dictview set difference.
   Patch by Fraser Tweedale.
