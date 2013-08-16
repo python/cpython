@@ -924,6 +924,10 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    These constants are GNU extensions and not present if they are not defined by
    the C library.
 
+   .. versionchanged:: 3.4
+      Add :data:`O_TMPFILE` constant. It's only available on Linux Kernel 3.11
+      or newer.
+
 
 .. function:: openpty()
 
