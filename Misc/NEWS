@@ -28,6 +28,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18756: Improve error reporting in os.urandom() when the failure
+  is due to something else than /dev/urandom not existing (for example,
+  exhausting the file descriptor limit).
+
 - Issue #18673: Add O_TMPFILE to os module. O_TMPFILE requires Linux kernel
   3.11 or newer. It's only defined on system with 3.11 uapi headers, too.
 
