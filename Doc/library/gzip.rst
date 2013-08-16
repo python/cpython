@@ -62,7 +62,7 @@ The module defines the following items:
    value.
 
    The new class instance is based on *fileobj*, which can be a regular file, a
-   :class:`StringIO` object, or any other object which simulates a file.  It
+   :class:`io.BytesIO` object, or any other object which simulates a file.  It
    defaults to ``None``, in which case *filename* is opened to provide a file
    object.
 
