@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18673: Add O_TMPFILE to os module. O_TMPFILE requires Linux kernel
+  3.11 or newer. It's only defined on system with 3.11 uapi headers, too.
+
 - Issue #18532: Change the builtin hash algorithms' names to lower case names
   as promised by hashlib's documentation.
 

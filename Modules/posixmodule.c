@@ -11245,6 +11245,9 @@ all_ins(PyObject *m)
 #ifdef O_TTY_INIT
     if (PyModule_AddIntMacro(m, O_TTY_INIT)) return -1;
 #endif
+#ifdef O_TMPFILE
+    if (PyModule_AddIntMacro(m, O_TMPFILE)) return -1;
+#endif
 #ifdef PRIO_PROCESS
     if (PyModule_AddIntMacro(m, PRIO_PROCESS)) return -1;
 #endif
