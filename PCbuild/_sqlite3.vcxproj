@@ -243,7 +243,6 @@
     <ClInclude Include="..\Modules\_sqlite\module.h" />
     <ClInclude Include="..\Modules\_sqlite\prepare_protocol.h" />
     <ClInclude Include="..\Modules\_sqlite\row.h" />
-    <ClInclude Include="..\Modules\_sqlite\sqlitecompat.h" />
     <ClInclude Include="..\Modules\_sqlite\statement.h" />
     <ClInclude Include="..\Modules\_sqlite\util.h" />
   </ItemGroup>

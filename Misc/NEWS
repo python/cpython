@@ -28,6 +28,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18701: Remove support of old CPython versions (<3.0) from C code.
+
 - Issue #18756: Improve error reporting in os.urandom() when the failure
   is due to something else than /dev/urandom not existing (for example,
   exhausting the file descriptor limit).

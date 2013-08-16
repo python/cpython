@@ -555,10 +555,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Modules\_sqlite\sqlitecompat.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\Modules\_sqlite\statement.h"
 				>
 			</File>

@@ -27,7 +27,6 @@
 #include "microprotocols.h"
 #include "prepare_protocol.h"
 #include "util.h"
-#include "sqlitecompat.h"
 
 /* prototypes */
 static int pysqlite_check_remaining_sql(const char* tail);

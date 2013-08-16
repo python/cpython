@@ -428,13 +428,7 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     StgDictObject *dict = PyType_stgdict(type);
     assert (dict);
 
-    if (!PyArg_ParseTuple(args,
-#if (PY_VERSION_HEX < 0x02050000)
-                          "O|i:from_buffer",
-#else
-                          "O|n:from_buffer",
-#endif
-                          &obj, &offset))
+    if (!PyArg_ParseTuple(args, "O|n:from_buffer", &obj, &offset))
         return NULL;
 
     if (-1 == PyObject_AsWriteBuffer(obj, &buffer, &buffer_len))
@@ -447,11 +441,7 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
     }
     if (dict->size > buffer_len - offset) {
         PyErr_Format(PyExc_ValueError,
-#if (PY_VERSION_HEX < 0x02050000)
-                     "Buffer size too small (%d instead of at least %d bytes)",
-#else
                      "Buffer size too small (%zd instead of at least %zd bytes)",
-#endif
                      buffer_len, dict->size + offset);
         return NULL;
     }
@@ -484,13 +474,7 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
     StgDictObject *dict = PyType_stgdict(type);
     assert (dict);
 
-    if (!PyArg_ParseTuple(args,
-#if (PY_VERSION_HEX < 0x02050000)
-                          "O|i:from_buffer",
-#else
-                          "O|n:from_buffer",
-#endif
-                          &obj, &offset))
+    if (!PyArg_ParseTuple(args, "O|n:from_buffer", &obj, &offset))
         return NULL;
 
     if (-1 == PyObject_AsReadBuffer(obj, (const void**)&buffer, &buffer_len))
@@ -504,11 +488,7 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
 
     if (dict->size > buffer_len - offset) {
         PyErr_Format(PyExc_ValueError,
-#if (PY_VERSION_HEX < 0x02050000)
-                     "Buffer size too small (%d instead of at least %d bytes)",
-#else
                      "Buffer size too small (%zd instead of at least %zd bytes)",
-#endif
                      buffer_len, dict->size + offset);
         return NULL;
     }
