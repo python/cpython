@@ -28,6 +28,11 @@ try:
     import threading
 except ImportError:
     threading = None
+try:
+    import resource
+except ImportError:
+    resource = None
+
 from test.script_helper import assert_python_ok
 
 with warnings.catch_warnings():
@@ -996,6 +1001,21 @@ class URandomTests(unittest.TestCase):
         data1 = self.get_urandom_subprocess(16)
         data2 = self.get_urandom_subprocess(16)
         self.assertNotEqual(data1, data2)
+
+    @unittest.skipUnless(resource, "test requires the resource module")
+    def test_urandom_failure(self):
+        soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
+        try:
+            with self.assertRaises(OSError) as cm:
+                os.urandom(16)
+            self.assertEqual(cm.exception.errno, errno.EMFILE)
+        finally:
+            # We restore the old limit as soon as possible.  If doing it
+            # using addCleanup(), code running in between would fail
+            # creating any file descriptor.
+            resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
+
 
 @contextlib.contextmanager
 def _execvpe_mockup(defpath=None):
