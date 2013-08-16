@@ -89,6 +89,13 @@ reStructuredText (2.6+) formats; the LaTeX and reStructuredText versions are
 primarily for documentation authors, translators, and people with special
 formatting requirements.
 
+If you would like to contribute to the development of Python, relevant
+documentation is available at:
+
+    http://docs.python.org/devguide/
+
+For information about building Python's documentation, refer to Doc/README.txt.
+
 
 Web sites
 ---------
