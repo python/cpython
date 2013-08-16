@@ -1,5 +1,6 @@
 """Unit tests for socket timeout feature."""
 
+import functools
 import unittest
 from test import support
 
@@ -9,6 +10,18 @@ skip_expected = not support.is_resource_enabled('network')
 import time
 import errno
 import socket
+
+
+@functools.lru_cache()
+def resolve_address(host, port):
+    """Resolve an (host, port) to an address.
+
+    We must perform name resolution before timeout tests, otherwise it will be
+    performed by connect().
+    """
+    with support.transient_internet(host):
+        return socket.getaddrinfo(host, port, socket.AF_INET,
+                                  socket.SOCK_STREAM)[0][4]
 
 
 class CreationTestCase(unittest.TestCase):
@@ -132,7 +145,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
 
     def setUp(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.addr_remote = ('www.python.org.', 80)
+        self.addr_remote = resolve_address('www.python.org.', 80)
 
     def tearDown(self):
         self.sock.close()
@@ -142,7 +155,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # to a host that silently drops our packets.  We can't simulate this
         # from Python because it's a function of the underlying TCP/IP stack.
         # So, the following Snakebite host has been defined:
-        blackhole = ('blackhole.snakebite.net', 56666)
+        blackhole = resolve_address('blackhole.snakebite.net', 56666)
 
         # Blackhole has been configured to silently drop any incoming packets.
         # No RSTs (for TCP) or ICMP UNREACH (for UDP/ICMP) will be sent back
@@ -154,7 +167,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # to firewalling or general network configuration.  In order to improve
         # our confidence in testing the blackhole, a corresponding 'whitehole'
         # has also been set up using one port higher:
-        whitehole = ('whitehole.snakebite.net', 56667)
+        whitehole = resolve_address('whitehole.snakebite.net', 56667)
 
         # This address has been configured to immediately drop any incoming
         # packets as well, but it does it respectfully with regards to the
