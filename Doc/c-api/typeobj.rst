@@ -192,7 +192,7 @@ type objects) *must* have the :attr:`ob_size` field.
    An optional pointer to the instance print function.
 
    The print function is only called when the instance is printed to a *real* file;
-   when it is printed to a pseudo-file (like a :class:`StringIO` instance), the
+   when it is printed to a pseudo-file (like a :class:`io.StringIO` instance), the
    instance's :c:member:`~PyTypeObject.tp_repr` or :c:member:`~PyTypeObject.tp_str` function is called to convert it to
    a string.  These are also called when the type's :c:member:`~PyTypeObject.tp_print` field is
    *NULL*.  A type should never implement :c:member:`~PyTypeObject.tp_print` in a way that produces
