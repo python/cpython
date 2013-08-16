@@ -53,8 +53,8 @@ and :meth:`flush` methods).
    .. method:: flush()
 
       Flushes the stream by calling its :meth:`flush` method. Note that the
-      :meth:`close` method is inherited from :class:`Handler` and so does
-      no output, so an explicit :meth:`flush` call may be needed at times.
+      :meth:`close` method is inherited from :class:`~logging.Handler` and so
+      does no output, so an explicit :meth:`flush` call may be needed at times.
 
 .. versionchanged:: 3.2
    The ``StreamHandler`` class now has a ``terminator`` attribute, default
@@ -145,8 +145,8 @@ new stream.
 This handler is not appropriate for use under Windows, because under Windows
 open log files cannot be moved or renamed - logging opens the files with
 exclusive locks - and so there is no need for such a handler. Furthermore,
-*ST_INO* is not supported under Windows; :func:`stat` always returns zero for
-this value.
+*ST_INO* is not supported under Windows; :func:`~os.stat` always returns zero
+for this value.
 
 
 .. class:: WatchedFileHandler(filename[,mode[, encoding[, delay]]])
@@ -383,7 +383,8 @@ sends logging output to a network socket. The base class uses a TCP socket.
       binary format. If there is an error with the socket, silently drops the
       packet. If the connection was previously lost, re-establishes the
       connection. To unpickle the record at the receiving end into a
-      :class:`LogRecord`, use the :func:`makeLogRecord` function.
+      :class:`~logging.LogRecord`, use the :func:`~logging.makeLogRecord`
+      function.
 
 
    .. method:: handleError()
@@ -461,7 +462,8 @@ over UDP sockets.
       Pickles the record's attribute dictionary and writes it to the socket in
       binary format. If there is an error with the socket, silently drops the
       packet. To unpickle the record at the receiving end into a
-      :class:`LogRecord`, use the :func:`makeLogRecord` function.
+      :class:`~logging.LogRecord`, use the :func:`~logging.makeLogRecord`
+      function.
 
 
    .. method:: makeSocket()
