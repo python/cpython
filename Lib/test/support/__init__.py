@@ -1750,12 +1750,12 @@ def threading_setup():
 def threading_cleanup(*original_values):
     if not _thread:
         return
-    _MAX_COUNT = 10
+    _MAX_COUNT = 100
     for count in range(_MAX_COUNT):
         values = _thread._count(), threading._dangling
         if values == original_values:
             break
-        time.sleep(0.1)
+        time.sleep(0.01)
         gc_collect()
     # XXX print a warning in case of failure?
 
