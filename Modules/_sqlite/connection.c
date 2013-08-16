@@ -29,7 +29,6 @@
 #include "cursor.h"
 #include "prepare_protocol.h"
 #include "util.h"
-#include "sqlitecompat.h"
 
 #include "pythread.h"
 

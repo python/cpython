@@ -24,7 +24,6 @@
 #include "cursor.h"
 #include "module.h"
 #include "util.h"
-#include "sqlitecompat.h"
 
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 

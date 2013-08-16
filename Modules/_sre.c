@@ -70,10 +70,6 @@ static char copyright[] =
 /* enables copy/deepcopy handling (work in progress) */
 #undef USE_BUILTIN_COPY
 
-#if PY_VERSION_HEX < 0x01060000
-#define PyObject_DEL(op) PyMem_DEL((op))
-#endif
-
 /* -------------------------------------------------------------------- */
 
 #if defined(_MSC_VER)
@@ -1993,10 +1989,8 @@ join_list(PyObject* list, PyObject* string)
     /* join list elements */
 
     PyObject* joiner;
-#if PY_VERSION_HEX >= 0x01060000
     PyObject* function;
     PyObject* args;
-#endif
     PyObject* result;
 
     joiner = PySequence_GetSlice(string, 0, 0);
@@ -2008,7 +2002,6 @@ join_list(PyObject* list, PyObject* string)
         return joiner;
     }
 
-#if PY_VERSION_HEX >= 0x01060000
     function = PyObject_GetAttrString(joiner, "join");
     if (!function) {
         Py_DECREF(joiner);
@@ -2024,12 +2017,6 @@ join_list(PyObject* list, PyObject* string)
     result = PyObject_CallObject(function, args);
     Py_DECREF(args); /* also removes list */
     Py_DECREF(function);
-#else
-    result = call(
-        "string", "join",
-        PyTuple_Pack(2, list, joiner)
-        );
-#endif
     Py_DECREF(joiner);
 
     return result;
@@ -2136,7 +2123,6 @@ error:
 
 }
 
-#if PY_VERSION_HEX >= 0x02020000
 static PyObject*
 pattern_finditer(PatternObject* pattern, PyObject* args, PyObject* kw)
 {
@@ -2158,7 +2144,6 @@ pattern_finditer(PatternObject* pattern, PyObject* args, PyObject* kw)
 
     return iterator;
 }
-#endif
 
 static PyObject*
 pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
@@ -2581,10 +2566,8 @@ static PyMethodDef pattern_methods[] = {
         pattern_split_doc},
     {"findall", (PyCFunction) pattern_findall, METH_VARARGS|METH_KEYWORDS,
         pattern_findall_doc},
-#if PY_VERSION_HEX >= 0x02020000
     {"finditer", (PyCFunction) pattern_finditer, METH_VARARGS|METH_KEYWORDS,
         pattern_finditer_doc},
-#endif
     {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS|METH_KEYWORDS},
     {"__copy__", (PyCFunction) pattern_copy, METH_NOARGS},
     {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_O},

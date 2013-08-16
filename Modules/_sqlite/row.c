@@ -23,7 +23,6 @@
 
 #include "row.h"
 #include "cursor.h"
-#include "sqlitecompat.h"
 
 void pysqlite_row_dealloc(pysqlite_Row* self)
 {
