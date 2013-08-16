@@ -30,9 +30,6 @@
     <ClInclude Include="..\Modules\_sqlite\row.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Modules\_sqlite\sqlitecompat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Modules\_sqlite\statement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
