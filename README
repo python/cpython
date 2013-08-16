@@ -76,6 +76,13 @@ is downloadable in HTML, PDF, and reStructuredText formats; the latter version
 is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
+If you would like to contribute to the development of Python, relevant
+documentation is available at:
+
+    http://docs.python.org/devguide/
+
+For information about building Python's documentation, refer to Doc/README.txt.
+
 
 Converting From Python 2.x to 3.x
 ---------------------------------
