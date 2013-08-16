@@ -727,6 +727,32 @@ class TestShutil(unittest.TestCase):
             shutil.rmtree(src_dir)
             shutil.rmtree(os.path.dirname(dst_dir))
 
+    def test_copytree_retains_permissions(self):
+        tmp_dir = tempfile.mkdtemp()
+        src_dir = os.path.join(tmp_dir, 'source')
+        os.mkdir(src_dir)
+        dst_dir = os.path.join(tmp_dir, 'destination')
+        self.addCleanup(shutil.rmtree, tmp_dir)
+
+        os.chmod(src_dir, 0o777)
+        write_file((src_dir, 'permissive.txt'), '123')
+        os.chmod(os.path.join(src_dir, 'permissive.txt'), 0o777)
+        write_file((src_dir, 'restrictive.txt'), '456')
+        os.chmod(os.path.join(src_dir, 'restrictive.txt'), 0o600)
+        restrictive_subdir = tempfile.mkdtemp(dir=src_dir)
+        os.chmod(restrictive_subdir, 0o600)
+
+        shutil.copytree(src_dir, dst_dir)
+        self.assertEquals(os.stat(src_dir).st_mode, os.stat(dst_dir).st_mode)
+        self.assertEquals(os.stat(os.path.join(src_dir, 'permissive.txt')).st_mode,
+                          os.stat(os.path.join(dst_dir, 'permissive.txt')).st_mode)
+        self.assertEquals(os.stat(os.path.join(src_dir, 'restrictive.txt')).st_mode,
+                          os.stat(os.path.join(dst_dir, 'restrictive.txt')).st_mode)
+        restrictive_subdir_dst = os.path.join(dst_dir,
+                                              os.path.split(restrictive_subdir)[1])
+        self.assertEquals(os.stat(restrictive_subdir).st_mode,
+                          os.stat(restrictive_subdir_dst).st_mode)
+
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
     def test_dont_copy_file_onto_link_to_itself(self):
         # Temporarily disable test on Windows.
