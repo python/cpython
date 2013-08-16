@@ -786,11 +786,11 @@ class ShortenTestCase(BaseTestCase):
         # Simple case: just words, spaces, and a bit of punctuation
         text = "Hello there, how are you this fine day? I'm glad to hear it!"
 
-        self.check_shorten(text, 18, "Hello there, (...)")
+        self.check_shorten(text, 18, "Hello there, [...]")
         self.check_shorten(text, len(text), text)
         self.check_shorten(text, len(text) - 1,
             "Hello there, how are you this fine day? "
-            "I'm glad to (...)")
+            "I'm glad to [...]")
 
     def test_placeholder(self):
         text = "Hello there, how are you this fine day? I'm glad to hear it!"
@@ -816,13 +816,13 @@ class ShortenTestCase(BaseTestCase):
                              "breaks and tabs too.")
         self.check_shorten(text, 61,
                              "This is a paragraph that already has line "
-                             "breaks and (...)")
+                             "breaks and [...]")
 
         self.check_shorten("hello      world!  ", 12, "hello world!")
-        self.check_shorten("hello      world!  ", 11, "hello (...)")
+        self.check_shorten("hello      world!  ", 11, "hello [...]")
         # The leading space is trimmed from the placeholder
         # (it would be ugly otherwise).
-        self.check_shorten("hello      world!  ", 10, "(...)")
+        self.check_shorten("hello      world!  ", 10, "[...]")
 
     def test_width_too_small_for_placeholder(self):
         wrapper = TextWrapper(width=8)
@@ -831,7 +831,7 @@ class ShortenTestCase(BaseTestCase):
             wrapper.shorten("x" * 20, placeholder="(.......)")
 
     def test_first_word_too_long_but_placeholder_fits(self):
-        self.check_shorten("Helloo", 5, "(...)")
+        self.check_shorten("Helloo", 5, "[...]")
 
 
 if __name__ == '__main__':
