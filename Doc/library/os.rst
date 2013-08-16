@@ -919,6 +919,7 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
           O_NOFOLLOW
           O_NOATIME
           O_PATH
+          O_TMPFILE
 
    These constants are GNU extensions and not present if they are not defined by
    the C library.
