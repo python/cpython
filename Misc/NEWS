@@ -66,6 +66,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #18709: Fix CVE-2013-4238. The SSL module now handles NULL bytes
+  inside subjectAltName correctly. Formerly the module has used OpenSSL's
+  GENERAL_NAME_print() function to get the string represention of ASN.1
+  strings for ``rfc822Name`` (email), ``dNSName`` (DNS) and
+  ``uniformResourceIdentifier`` (URI).
+
 - Issue #18405: Improve the entropy of crypt.mksalt().
 
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
