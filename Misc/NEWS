@@ -10,6 +10,10 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #16105: When a signal handler fails to write to the file descriptor
+  registered with ``signal.set_wakeup_fd()``, report an exception instead
+  of ignoring the error.
+
 - Issue #18722: Remove uses of the "register" keyword in C code.
 
 - Issue #18667: Add missing "HAVE_FCHOWNAT" symbol to posix._have_functions.
