@@ -252,7 +252,7 @@ def unload(name):
 
 if sys.platform.startswith("win"):
     def _waitfor(func, pathname, waitall=False):
-        # Peform the operation
+        # Perform the operation
         func(pathname)
         # Now setup the wait loop
         if waitall:
@@ -268,7 +268,7 @@ if sys.platform.startswith("win"):
         # required when contention occurs.
         timeout = 0.001
         while timeout < 1.0:
-            # Note we are only testing for the existance of the file(s) in
+            # Note we are only testing for the existence of the file(s) in
             # the contents of the directory regardless of any security or
             # access rights.  If we have made it this far, we have sufficient
             # permissions to do that much using Python's equivalent of the

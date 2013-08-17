@@ -2,7 +2,7 @@
 
 Run all tests found in this directory, and print a summary of the results.
 Command line flags:
-  -q     quiet mode: don't prnt anything while the tests are running
+  -q     quiet mode: don't print anything while the tests are running
   -r     run tests repeatedly, look for refcount leaks
   -u<resources>
          Add resources to the lits of allowed resources. '*' allows all

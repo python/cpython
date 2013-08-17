@@ -108,7 +108,7 @@ class StructureTestCase(unittest.TestCase):
     def test_emtpy(self):
         # I had problems with these
         #
-        # Although these are patological cases: Empty Structures!
+        # Although these are pathological cases: Empty Structures!
         class X(Structure):
             _fields_ = []
 
