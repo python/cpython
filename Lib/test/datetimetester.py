@@ -250,7 +250,7 @@ class TestTimeZone(unittest.TestCase):
                              t.replace(tzinfo=tz).dst())
 
 #############################################################################
-# Base clase for testing a particular aspect of timedelta, time, date and
+# Base class for testing a particular aspect of timedelta, time, date and
 # datetime comparisons.
 
 class HarmlessMixedComparison:

@@ -489,7 +489,7 @@ getenvironment(PyObject* environment)
     Py_UCS4 *buffer = NULL, *p, *end;
     PyObject *keys, *values, *res;
 
-    /* convert environment dictionary to windows enviroment string */
+    /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
         PyErr_SetString(
             PyExc_TypeError, "environment must be dictionary or None");
