@@ -1054,7 +1054,7 @@ test case
                 self.assertWarns(DeprecationWarning, _runtime_warn)
 
     def testAssertWarnsContext(self):
-        # Believe it or not, it is preferrable to duplicate all tests above,
+        # Believe it or not, it is preferable to duplicate all tests above,
         # to make sure the __warningregistry__ $@ is circumvented correctly.
         def _runtime_warn():
             warnings.warn("foo", RuntimeWarning)
