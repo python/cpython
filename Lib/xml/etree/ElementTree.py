@@ -836,7 +836,7 @@ class ElementTree:
 
 @contextlib.contextmanager
 def _get_writer(file_or_filename, encoding):
-    # returns text write method and release all resourses after using
+    # returns text write method and release all resources after using
     try:
         write = file_or_filename.write
     except AttributeError:

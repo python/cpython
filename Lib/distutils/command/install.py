@@ -545,7 +545,7 @@ class install(Command):
         self.extra_dirs = extra_dirs
 
     def change_roots(self, *names):
-        """Change the install direcories pointed by name using root."""
+        """Change the install directories pointed by name using root."""
         for name in names:
             attr = "install_" + name
             setattr(self, attr, change_root(self.root, getattr(self, attr)))

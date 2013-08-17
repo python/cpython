@@ -297,7 +297,7 @@ def _check_system_limits():
         # sysconf not available or setting not available
         return
     if nsems_max == -1:
-        # indetermine limit, assume that limit is determined
+        # indetermined limit, assume that limit is determined
         # by available memory only
         return
     if nsems_max >= 256:
@@ -411,7 +411,7 @@ class ProcessPoolExecutor(_base.Executor):
             self._result_queue.put(None)
             if wait:
                 self._queue_management_thread.join()
-        # To reduce the risk of openning too many files, remove references to
+        # To reduce the risk of opening too many files, remove references to
         # objects that use file descriptors.
         self._queue_management_thread = None
         self._call_queue = None
