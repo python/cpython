@@ -313,6 +313,16 @@ class WakeupSignalTests(unittest.TestCase):
         else:
             raise AssertionError("ZeroDivisionError not raised")
         """
+        r, w = os.pipe()
+        try:
+            os.write(r, b'x')
+        except OSError:
+            pass
+        else:
+            self.skipTest("OS doesn't report write() error on the read end of a pipe")
+        finally:
+            os.close(r)
+            os.close(w)
 
         assert_python_ok('-c', code)
 
