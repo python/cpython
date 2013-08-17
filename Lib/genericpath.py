@@ -22,7 +22,7 @@ def exists(path):
 
 
 # This follows symbolic links, so both islink() and isdir() can be true
-# for the same path ono systems that support symlinks
+# for the same path on systems that support symlinks
 def isfile(path):
     """Test whether a path is a regular file"""
     try:

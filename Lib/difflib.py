@@ -586,7 +586,7 @@ class SequenceMatcher:
     def get_grouped_opcodes(self, n=3):
         """ Isolate change clusters by eliminating ranges with no changes.
 
-        Return a generator of groups with upto n lines of context.
+        Return a generator of groups with up to n lines of context.
         Each group is in the same format as returned by get_opcodes().
 
         >>> from pprint import pprint
@@ -1361,7 +1361,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     linejunk -- passed on to ndiff (see ndiff documentation)
     charjunk -- passed on to ndiff (see ndiff documentation)
 
-    This function returns an interator which returns a tuple:
+    This function returns an iterator which returns a tuple:
     (from line tuple, to line tuple, boolean flag)
 
     from/to line tuple -- (line num, line text)
@@ -1963,7 +1963,7 @@ class HtmlDiff(object):
         self._make_prefix()
 
         # change tabs to spaces before it gets more difficult after we insert
-        # markkup
+        # markup
         fromlines,tolines = self._tab_newline_replace(fromlines,tolines)
 
         # create diffs iterator which generates side by side from/to data
