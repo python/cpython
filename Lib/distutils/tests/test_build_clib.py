@@ -77,7 +77,7 @@ class BuildCLibTestCase(support.TempdirManager,
 
         cmd.compiler = FakeCompiler()
 
-        # build_libraries is also doing a bit of typoe checking
+        # build_libraries is also doing a bit of typo checking
         lib = [('name', {'sources': 'notvalid'})]
         self.assertRaises(DistutilsSetupError, cmd.build_libraries, lib)
 

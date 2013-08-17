@@ -44,7 +44,7 @@ class RefcountTestCase(unittest.TestCase):
         # this is the standard refcount for func
         self.assertEqual(grc(func), 2)
 
-        # the CFuncPtr instance holds atr least one refcount on func:
+        # the CFuncPtr instance holds at least one refcount on func:
         f = OtherCallback(func)
         self.assertTrue(grc(func) > 2)
 
@@ -61,7 +61,7 @@ class RefcountTestCase(unittest.TestCase):
         x = X()
         x.a = OtherCallback(func)
 
-        # the CFuncPtr instance holds atr least one refcount on func:
+        # the CFuncPtr instance holds at least one refcount on func:
         self.assertTrue(grc(func) > 2)
 
         # and may release it again
@@ -74,7 +74,7 @@ class RefcountTestCase(unittest.TestCase):
 
         f = OtherCallback(func)
 
-        # the CFuncPtr instance holds atr least one refcount on func:
+        # the CFuncPtr instance holds at least one refcount on func:
         self.assertTrue(grc(func) > 2)
 
         # create a cycle

@@ -330,7 +330,7 @@ class TestCommandLineArgs(unittest.TestCase):
         self.assertEqual(program.testNames, argv[1:])
 
         # it may be better to use platform specific functions to normalise paths
-        # rather than accepting '.PY' and '\' as file seprator on Linux / Mac
+        # rather than accepting '.PY' and '\' as file separator on Linux / Mac
         # it would also be better to check that a filename is a valid module
         # identifier (we have a regex for this in loader.py)
         # for invalid filenames should we raise a useful error rather than
