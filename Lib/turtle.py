@@ -1278,7 +1278,7 @@ class TurtleScreen(TurtleScreenBase):
         self._delayvalue = int(delay)
 
     def _incrementudc(self):
-        """Increment upadate counter."""
+        """Increment update counter."""
         if not TurtleScreen._RUNNING:
             TurtleScreen._RUNNNING = True
             raise Terminator
@@ -2527,7 +2527,7 @@ class RawTurtle(TPen, TNavigator):
                 self.screen = TurtleScreen(canvas)
                 RawTurtle.screens.append(self.screen)
         else:
-            raise TurtleGraphicsError("bad cavas argument %s" % canvas)
+            raise TurtleGraphicsError("bad canvas argument %s" % canvas)
 
         screen = self.screen
         TNavigator.__init__(self, screen.mode())
@@ -2772,7 +2772,7 @@ class RawTurtle(TPen, TNavigator):
     def shapesize(self, stretch_wid=None, stretch_len=None, outline=None):
         """Set/return turtle's stretchfactors/outline. Set resizemode to "user".
 
-        Optinonal arguments:
+        Optional arguments:
            stretch_wid : positive number
            stretch_len : positive number
            outline  : positive number
@@ -3135,7 +3135,7 @@ class RawTurtle(TPen, TNavigator):
 
     def _goto(self, end):
         """Move the pen to the point end, thereby drawing a line
-        if pen is down. All other methodes for turtle movement depend
+        if pen is down. All other methods for turtle movement depend
         on this one.
         """
         ## Version with undo-stuff

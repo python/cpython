@@ -90,9 +90,9 @@ class _EnumDict(dict):
         super().__setitem__(key, value)
 
 
-# Dummy value for Enum as EnumMeta explicity checks for it, but of course until
-# EnumMeta finishes running the first time the Enum class doesn't exist.  This
-# is also why there are checks in EnumMeta like `if Enum is not None`
+# Dummy value for Enum as EnumMeta explicitly checks for it, but of course
+# until EnumMeta finishes running the first time the Enum class doesn't exist.
+# This is also why there are checks in EnumMeta like `if Enum is not None`
 Enum = None
 
 

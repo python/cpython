@@ -512,7 +512,7 @@ class ModuleFinder:
         # Print modules that may be missing, but then again, maybe not...
         if maybe:
             print()
-            print("Submodules thay appear to be missing, but could also be", end=' ')
+            print("Submodules that appear to be missing, but could also be", end=' ')
             print("global names in the parent package:")
             for name in maybe:
                 mods = sorted(self.badmodules[name].keys())

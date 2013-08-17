@@ -188,7 +188,7 @@ Exceptions raised in the child process, before the new program has
 started to execute, will be re-raised in the parent.  Additionally,
 the exception object will have one extra attribute called
 'child_traceback', which is a string containing traceback information
-from the childs point of view.
+from the child's point of view.
 
 The most common exception raised is OSError.  This occurs, for
 example, when trying to execute a non-existent file.  Applications
