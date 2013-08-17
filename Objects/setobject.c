@@ -91,32 +91,27 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     if (entry->key == NULL || entry->key == key)
         return entry;
 
-    if (entry->key == dummy)
-        freeslot = entry;
-    else {
-        if (entry->hash == hash) {
-            startkey = entry->key;
-            Py_INCREF(startkey);
-            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp < 0)
-                return NULL;
-            if (table == so->table && entry->key == startkey) {
-                if (cmp > 0)
-                    return entry;
-            }
-            else {
-                /* The compare did major nasty stuff to the
-                 * set:  start over.
-                 */
-                return set_lookkey(so, key, hash);
-            }
+    if (entry->hash == hash) {
+        startkey = entry->key;
+        Py_INCREF(startkey);
+        cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        Py_DECREF(startkey);
+        if (cmp < 0)
+            return NULL;
+        if (table == so->table && entry->key == startkey) {
+            if (cmp > 0)
+                return entry;
         }
-        freeslot = NULL;
+        else {
+            /* Start over if the compare altered the set */
+            return set_lookkey(so, key, hash);
+        }
     }
 
-    /* In the loop, key == dummy is by far (factor of 100s) the
-       least likely outcome, so test for that last. */
+    freeslot = (entry->key == dummy) ? entry : NULL;
+
+    /* In the loop, key == dummy is by far (factor of 100s)
+       the least likely outcome, so test for that last. */
     for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
         i = i * 5 + perturb + 1;
         entry = &table[i & mask];
@@ -127,7 +122,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         }
         if (entry->key == key)
             break;
-        if (entry->hash == hash && entry->key != dummy) {
+        if (entry->hash == hash) {
             startkey = entry->key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -1029,7 +1024,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     PySetObject *so = NULL;
 
     if (dummy == NULL) { /* Auto-initialize dummy */
-        dummy = PyUnicode_FromString("<dummy key>");
+        dummy = _PyObject_New(&PyBaseObject_Type);
         if (dummy == NULL)
             return NULL;
     }
