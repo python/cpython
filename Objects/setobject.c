@@ -140,7 +140,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 return set_lookkey(so, key, hash);
             }
         }
-        else if (entry->key == dummy && freeslot == NULL)
+        if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
     }
     return entry;
