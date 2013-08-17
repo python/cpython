@@ -53,7 +53,7 @@ class ReadError(EnvironmentError):
     """Raised when an archive cannot be read"""
 
 class RegistryError(Exception):
-    """Raised when a registery operation with the archiving
+    """Raised when a registry operation with the archiving
     and unpacking registeries fails"""
 
 
@@ -195,7 +195,7 @@ def copystat(src, dst, *, follow_symlinks=True):
         #   * follow_symlinks=False,
         #   * lchown() is unavailable, and
         #   * either
-        #       * fchownat() is unvailable or
+        #       * fchownat() is unavailable or
         #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
         #         (it returned ENOSUP.)
         # therefore we're out of options--we simply cannot chown the
@@ -984,7 +984,7 @@ elif os.name == 'nt':
     def disk_usage(path):
         """Return disk usage statistics about the given path.
 
-        Returned valus is a named tuple with attributes 'total', 'used' and
+        Returned values is a named tuple with attributes 'total', 'used' and
         'free', which are the amount of total, used and free space, in bytes.
         """
         total, free = nt._getdiskusage(path)

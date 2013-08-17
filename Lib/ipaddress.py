@@ -727,7 +727,7 @@ class _BaseNetwork(_IPAddressBase):
             minus other.
 
         Raises:
-            TypeError: If self and other are of difffering address
+            TypeError: If self and other are of differing address
               versions, or if other is not a network object.
             ValueError: If other is not completely contained by self.
 
@@ -1378,7 +1378,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               '192.0.2.1'
               '192.0.2.1/255.255.255.255'
               '192.0.2.1/32'
-              are also functionaly equivalent. That is to say, failing to
+              are also functionally equivalent. That is to say, failing to
               provide a subnetmask will create an object with a mask of /32.
 
               If the mask (portion after the / in the argument) is given in

@@ -14,7 +14,7 @@ from _weakrefset import WeakSet
 # Note regarding PEP 8 compliant names
 #  This threading model was originally inspired by Java, and inherited
 # the convention of camelCase function and method names from that
-# language. Those originaly names are not in any imminent danger of
+# language. Those original names are not in any imminent danger of
 # being deprecated (even for Py3k),so this module provides them as an
 # alias for the PEP 8 compliant names
 # Note that using the new PEP 8 compliant names facilitates substitution
