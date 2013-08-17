@@ -125,7 +125,7 @@ def order_blocks(start_block, exit_block):
         # Make sure every block appears in dominators, even if no
         # other block must precede it.
         dominators.setdefault(b, set())
-        # preceeding blocks dominate following blocks
+        # preceding blocks dominate following blocks
         for c in b.get_followers():
             while 1:
                 dominators.setdefault(c, set()).add(b)

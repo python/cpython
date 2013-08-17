@@ -330,7 +330,7 @@ class ExtractError(TarError):
     """General exception for extract errors."""
     pass
 class ReadError(TarError):
-    """Exception for unreadble tar archives."""
+    """Exception for unreadable tar archives."""
     pass
 class CompressionError(TarError):
     """Exception for unavailable compression methods."""

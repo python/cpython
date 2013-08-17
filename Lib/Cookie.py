@@ -238,7 +238,7 @@ class CookieError(Exception):
 # a two-way quoting algorithm.  Any non-text character is translated
 # into a 4 character sequence: a forward-slash followed by the
 # three-digit octal equivalent of the character.  Any '\' or '"' is
-# quoted with a preceeding '\' slash.
+# quoted with a preceding '\' slash.
 #
 # These are taken from RFC2068 and RFC2109.
 #       _LegalChars       is the list of chars which don't require "'s

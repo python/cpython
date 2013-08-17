@@ -321,7 +321,7 @@ else:
 
                hostname - the hostname of the pop3 over ssl server
                port - port number
-               keyfile - PEM formatted file that countains your private key
+               keyfile - PEM formatted file that contains your private key
                certfile - PEM formatted certificate chain file
 
             See the methods of the parent class POP3 for more documentation.
