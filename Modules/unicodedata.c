@@ -524,7 +524,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         while(stackptr) {
             Py_UCS4 code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
-               a single step, so we need atleast that much room. */
+               a single step, so we need at least that much room. */
             if (space < 3) {
                 Py_UCS4 *new_output;
                 osize += 10;
