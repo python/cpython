@@ -3443,7 +3443,7 @@ Library
 - Issue #1285086: Speed up ``urllib.quote()`` and urllib.unquote for simple
   cases.
 
-- Issue #8688: Distutils now recalculates MANIFEST everytime.
+- Issue #8688: Distutils now recalculates MANIFEST every time.
 
 - Issue #5099: The ``__del__()`` method of ``subprocess.Popen`` (and the methods
   it calls) referenced global objects, causing errors to pop up during
@@ -6299,7 +6299,7 @@ Library
 - Issue #3547: Fixed ctypes structures bitfields of varying integer
   sizes.
 
-- Issue #3879: A regression in urllib.getproxies_enviroment was fixed.
+- Issue #3879: A regression in urllib.getproxies_environment was fixed.
 
 - Issue #3863: Disabled a unit test of fork being called from a thread
   when running on platforms known to exhibit OS bugs when attempting that.

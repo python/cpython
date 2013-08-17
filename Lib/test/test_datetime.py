@@ -124,7 +124,7 @@ class TestTZInfo(unittest.TestCase):
             self.assertEqual(derived.tzname(None), 'cookie')
 
 #############################################################################
-# Base clase for testing a particular aspect of timedelta, time, date and
+# Base class for testing a particular aspect of timedelta, time, date and
 # datetime comparisons.
 
 class HarmlessMixedComparison:

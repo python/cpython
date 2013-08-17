@@ -331,7 +331,7 @@ getenvironment(PyObject* environment)
     PyObject* values;
     char* p;
 
-    /* convert environment dictionary to windows enviroment string */
+    /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
         PyErr_SetString(
             PyExc_TypeError, "environment must be dictionary or None");

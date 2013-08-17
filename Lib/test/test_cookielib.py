@@ -329,7 +329,7 @@ class CookieTests(TestCase):
 ##   commas and equals are commonly appear in the cookie value). This also
 ##   means that if you fold multiple Set-Cookie header fields into one,
 ##   comma-separated list, it'll be a headache to parse (at least my head
-##   starts hurting everytime I think of that code).
+##   starts hurting every time I think of that code).
 ## - Expires: You'll get all sorts of date formats in the expires,
 ##   including emtpy expires attributes ("expires="). Be as flexible as you
 ##   can, and certainly don't expect the weekday to be there; if you can't

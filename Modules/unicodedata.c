@@ -520,7 +520,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
         while(stackptr) {
             Py_UNICODE code = stack[--stackptr];
             /* Hangul Decomposition adds three characters in
-               a single step, so we need atleast that much room. */
+               a single step, so we need at least that much room. */
             if (space < 3) {
                 Py_ssize_t newsize = PyString_GET_SIZE(result) + 10;
                 space += 10;

@@ -57,7 +57,7 @@ class NormalizationTest(unittest.TestCase):
                 c1,c2,c3,c4,c5 = [unistr(x) for x in line.split(';')[:-1]]
             except RangeError:
                 # Skip unsupported characters;
-                # try atleast adding c1 if we are in part1
+                # try at least adding c1 if we are in part1
                 if part == "@Part1":
                     try:
                         c1 = unistr(line.split(';')[0])
