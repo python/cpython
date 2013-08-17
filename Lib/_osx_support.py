@@ -53,7 +53,7 @@ def _find_executable(executable, path=None):
 
 
 def _read_output(commandstring):
-    """Output from succesful command execution or None"""
+    """Output from successful command execution or None"""
     # Similar to os.popen(commandstring, "r").read(),
     # but without actually using os.popen because that
     # function is not usable during python bootstrap.
@@ -152,7 +152,7 @@ def _find_appropriate_compiler(_config_vars):
     #    are not installed.
     #
     #    Futhermore, the compiler that can be used varies between
-    #    Xcode releases. Upto Xcode 4 it was possible to use 'gcc-4.2'
+    #    Xcode releases. Up to Xcode 4 it was possible to use 'gcc-4.2'
     #    as the compiler, after that 'clang' should be used because
     #    gcc-4.2 is either not present, or a copy of 'llvm-gcc' that
     #    miscompiles Python.
@@ -192,7 +192,7 @@ def _find_appropriate_compiler(_config_vars):
 
     if cc != oldcc:
         # Found a replacement compiler.
-        # Modify config vars using new compiler, if not already explictly
+        # Modify config vars using new compiler, if not already explicitly
         # overriden by an env variable, preserving additional arguments.
         for cv in _COMPILER_CONFIG_VARS:
             if cv in _config_vars and cv not in os.environ:
@@ -274,7 +274,7 @@ def _check_for_unavailable_sdk(_config_vars):
     # compile an extension using an SDK that is not present
     # on the current machine it is better to not use an SDK
     # than to fail.  This is particularly important with
-    # the standalong Command Line Tools alternative to a
+    # the standalone Command Line Tools alternative to a
     # full-blown Xcode install since the CLT packages do not
     # provide SDKs.  If the SDK is not present, it is assumed
     # that the header files and dev libs have been installed
@@ -378,7 +378,7 @@ def customize_config_vars(_config_vars):
     compilers are present, i.e. when installing pure
     Python dists.  Customization of compiler paths
     and detection of unavailable archs is deferred
-    until the first extention module build is
+    until the first extension module build is
     requested (in distutils.sysconfig.customize_compiler).
 
     Currently called from distutils.sysconfig

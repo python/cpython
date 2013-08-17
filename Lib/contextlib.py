@@ -142,7 +142,7 @@ class closing(object):
 
 @contextmanager
 def ignored(*exceptions):
-    """Context manager to ignore specifed exceptions
+    """Context manager to ignore specified exceptions
 
          with ignored(OSError):
              os.remove(somefile)

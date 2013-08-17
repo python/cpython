@@ -345,7 +345,7 @@ class POP3:
         >>>
 
         Really, according to RFC 2449, the cyrus folks should avoid
-        having the implementation splitted into multiple arguments...
+        having the implementation split into multiple arguments...
         """
         def _parsecap(line):
             lst = line.decode('ascii').split()
@@ -395,7 +395,7 @@ if HAVE_SSL:
 
                hostname - the hostname of the pop3 over ssl server
                port - port number
-               keyfile - PEM formatted file that countains your private key
+               keyfile - PEM formatted file that contains your private key
                certfile - PEM formatted certificate chain file
                context - a ssl.SSLContext
 

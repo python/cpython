@@ -123,7 +123,7 @@ It is best to first set all parameters, perhaps possibly the
 compression type, and then write audio frames using writeframesraw.
 When all frames have been written, either call writeframes('') or
 close() to patch up the sizes in the header.
-Marks can be added anytime.  If there are any marks, ypu must call
+Marks can be added anytime.  If there are any marks, you must call
 close() after all frames have been written.
 The close() method is called automatically when the class instance
 is destroyed.
