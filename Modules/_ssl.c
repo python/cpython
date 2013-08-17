@@ -776,7 +776,7 @@ _get_peer_alt_names (X509 *certificate) {
             ASN1_STRING *as = NULL;
 
             name = sk_GENERAL_NAME_value(names, j);
-            gntype = name-> type;
+            gntype = name->type;
             switch (gntype) {
             case GEN_DIRNAME:
                 /* we special-case DirName as a tuple of
