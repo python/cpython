@@ -188,7 +188,7 @@ class CFunctions(unittest.TestCase):
         self.assertEqual(self._dll.tv_i(-42), None)
         self.assertEqual(self.S(), -42)
 
-# The following repeates the above tests with stdcall functions (where
+# The following repeats the above tests with stdcall functions (where
 # they are available)
 try:
     WinDLL

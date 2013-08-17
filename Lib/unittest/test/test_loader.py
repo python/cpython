@@ -324,7 +324,7 @@ class Test_TestLoader(unittest.TestCase):
     # Does loadTestsFromName raise TypeError when the `module` argument
     # isn't a module object?
     #
-    # XXX Accepts the not-a-module object, ignorning the object's type
+    # XXX Accepts the not-a-module object, ignoring the object's type
     # This should raise an exception or the method name should be changed
     #
     # XXX Some people are relying on this, so keep it for now

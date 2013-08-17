@@ -159,7 +159,8 @@ class RegressionTests(unittest.TestCase):
 
     def CheckCursorConstructorCallCheck(self):
         """
-        Verifies that cursor methods check wether base class __init__ was called.
+        Verifies that cursor methods check whether base class __init__ was
+        called.
         """
         class Cursor(sqlite.Cursor):
             def __init__(self, con):
@@ -177,7 +178,8 @@ class RegressionTests(unittest.TestCase):
 
     def CheckConnectionConstructorCallCheck(self):
         """
-        Verifies that connection methods check wether base class __init__ was called.
+        Verifies that connection methods check whether base class __init__ was
+        called.
         """
         class Connection(sqlite.Connection):
             def __init__(self, name):

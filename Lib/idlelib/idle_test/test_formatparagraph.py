@@ -244,7 +244,7 @@ class FormatEventTest(unittest.TestCase):
     """Test the formatting of text inside a Text widget.
 
     This is done with FormatParagraph.format.paragraph_event,
-    which calls funtions in the module as appropriate.
+    which calls functions in the module as appropriate.
     """
     test_string = (
         "    '''this is a test of a reformat for a triple "
