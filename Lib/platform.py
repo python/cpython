@@ -230,7 +230,7 @@ def _dist_try_harder(distname,version,id):
                 return 'OpenLinux',pkg[1],id
 
     if os.path.isdir('/usr/lib/setup'):
-        # Check for slackware verson tag file (thanks to Greg Andruk)
+        # Check for slackware version tag file (thanks to Greg Andruk)
         verfiles = os.listdir('/usr/lib/setup')
         for n in range(len(verfiles)-1, -1, -1):
             if verfiles[n][:14] != 'slack-version-':
@@ -282,7 +282,7 @@ def _parse_release_file(firstline):
     if m is not None:
         return tuple(m.groups())
 
-    # Unkown format... take the first two words
+    # Unknown format... take the first two words
     l = firstline.strip().split()
     if l:
         version = l[0]
@@ -720,7 +720,7 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
         versioninfo, machine) with versioninfo being a tuple (version,
         dev_stage, non_release_version).
 
-        Entries which cannot be determined are set to the paramter values
+        Entries which cannot be determined are set to the parameter values
         which default to ''. All tuple entries are strings.
     """
 

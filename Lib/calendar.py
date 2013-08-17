@@ -220,7 +220,7 @@ class Calendar(object):
     def yeardatescalendar(self, year, width=3):
         """
         Return the data for the specified year ready for formatting. The return
-        value is a list of month rows. Each month row contains upto width months.
+        value is a list of month rows. Each month row contains up to width months.
         Each month contains between 4 and 6 weeks and each week contains 1-7
         days. Days are datetime.date objects.
         """
