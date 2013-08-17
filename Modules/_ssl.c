@@ -2576,7 +2576,7 @@ PyDoc_STRVAR(PySSL_RAND_egd_doc,
 \n\
 Queries the entropy gather daemon (EGD) on the socket named by 'path'.\n\
 Returns number of bytes read.  Raises SSLError if connection to EGD\n\
-fails or if it does provide enough data to seed PRNG.");
+fails or if it does not provide enough data to seed PRNG.");
 
 #endif
 
