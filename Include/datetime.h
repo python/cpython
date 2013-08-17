@@ -42,7 +42,7 @@ typedef struct
 
 typedef struct
 {
-    PyObject_HEAD               /* a pure abstract base clase */
+    PyObject_HEAD               /* a pure abstract base class */
 } PyDateTime_TZInfo;
 
 

@@ -1638,7 +1638,7 @@ static PyObject *PySSL_SSLshutdown(PySSLSocket *self)
          * Otherwise OpenSSL might read in too much data,
          * eating clear text data that happens to be
          * transmitted after the SSL shutdown.
-         * Should be safe to call repeatedly everytime this
+         * Should be safe to call repeatedly every time this
          * function is used and the shutdown_seen_zero != 0
          * condition is met.
          */
