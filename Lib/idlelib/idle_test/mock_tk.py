@@ -35,7 +35,7 @@ class Mbox:
     """Mock for tkinter.messagebox with an Mbox_func for each function.
 
     This module was 'tkMessageBox' in 2.x; hence the 'import as' in  3.x.
-    Example usage in test_module.py for testing functios in module.py:
+    Example usage in test_module.py for testing functions in module.py:
     ---
 from idlelib.idle_test.mock_tk import Mbox
 import module
@@ -98,7 +98,7 @@ class Text:
 
         This implements .index without converting the result back to a string.
         The result is contrained by the number of lines and linelengths of
-        self.data. For many indexes, the result is initally (1, 0).
+        self.data. For many indexes, the result is initially (1, 0).
 
         The input index may have any of several possible forms:
         * line.char float: converted to 'line.char' string;
@@ -149,7 +149,7 @@ class Text:
 
        -1: position before terminal \n; for .insert(), .delete
        0: position after terminal \n; for .get, .delete index 1
-       1: same viewed as begininning of non-existent next line (for .index)
+       1: same viewed as beginning of non-existent next line (for .index)
        '''
         n = len(self.data)
         if endflag == 1:
@@ -271,7 +271,7 @@ class Text:
         "Scroll screen to make the character at INDEX is visible."
         pass
 
-    #  The following is a Misc method inheritet by Text.
+    #  The following is a Misc method inherited by Text.
     # It should properly go in a Misc mock, but is included here for now.
 
     def bind(sequence=None, func=None, add=None):
