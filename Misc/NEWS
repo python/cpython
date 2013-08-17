@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue 18768: Correct doc string of RAND_edg(). Patch by Vajrasky Kok.
+
 - Issue #18178: Fix ctypes on BSD. dlmalloc.c was compiled twice which broke
   malloc weak symbols.
 
