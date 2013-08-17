@@ -1004,7 +1004,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_run(self, arg):
         """run [args...]
         Restart the debugged python program. If a string is supplied
-        it is splitted with "shlex", and the result is used as the new
+        it is split with "shlex", and the result is used as the new
         sys.argv.  History, breakpoints, actions and debugger options
         are preserved.  "restart" is an alias for "run".
         """
@@ -1361,7 +1361,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_interact(self, arg):
         """interact
 
-        Start an interative interpreter whose global namespace
+        Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
         ns = self.curframe.f_globals.copy()
