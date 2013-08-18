@@ -275,6 +275,57 @@ class WakeupSignalTests(unittest.TestCase):
 
         assert_python_ok('-c', code)
 
+    def test_wakeup_write_error(self):
+        # Issue #16105: write() errors in the C signal handler should not
+        # pass silently.
+        # Use a subprocess to have only one thread.
+        code = """if 1:
+        import errno
+        import fcntl
+        import os
+        import signal
+        import sys
+        import time
+        from test.support import captured_stderr
+
+        def handler(signum, frame):
+            1/0
+
+        signal.signal(signal.SIGALRM, handler)
+        r, w = os.pipe()
+        flags = fcntl.fcntl(r, fcntl.F_GETFL, 0)
+        fcntl.fcntl(r, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
+        # Set wakeup_fd a read-only file descriptor to trigger the error
+        signal.set_wakeup_fd(r)
+        try:
+            with captured_stderr() as err:
+                signal.alarm(1)
+                time.sleep(5.0)
+        except ZeroDivisionError:
+            # An ignored exception should have been printed out on stderr
+            err = err.getvalue()
+            if ('Exception ignored when trying to write to the signal wakeup fd'
+                not in err):
+                raise AssertionError(err)
+            if ('OSError: [Errno %d]' % errno.EBADF) not in err:
+                raise AssertionError(err)
+        else:
+            raise AssertionError("ZeroDivisionError not raised")
+        """
+        r, w = os.pipe()
+        try:
+            os.write(r, b'x')
+        except OSError:
+            pass
+        else:
+            self.skipTest("OS doesn't report write() error on the read end of a pipe")
+        finally:
+            os.close(r)
+            os.close(w)
+
+        assert_python_ok('-c', code)
+
     def test_wakeup_fd_early(self):
         self.check_wakeup("""def test():
             import select

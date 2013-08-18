@@ -175,15 +175,31 @@ checksignals_witharg(void * unused)
     return PyErr_CheckSignals();
 }
 
+static int
+report_wakeup_error(void *data)
+{
+    int save_errno = errno;
+    errno = (int) (Py_intptr_t) data;
+    PyErr_SetFromErrno(PyExc_OSError);
+    PySys_WriteStderr("Exception ignored when trying to write to the "
+                      "signal wakeup fd:\n");
+    PyErr_WriteUnraisable(NULL);
+    errno = save_errno;
+    return 0;
+}
+
 static void
 trip_signal(int sig_num)
 {
     unsigned char byte;
+    int rc = 0;
 
     Handlers[sig_num].tripped = 1;
     if (wakeup_fd != -1) {
         byte = (unsigned char)sig_num;
-        write(wakeup_fd, &byte, 1);
+        while ((rc = write(wakeup_fd, &byte, 1)) == -1 && errno == EINTR);
+        if (rc == -1)
+            Py_AddPendingCall(report_wakeup_error, (void *) (Py_intptr_t) errno);
     }
     if (is_tripped)
         return;
