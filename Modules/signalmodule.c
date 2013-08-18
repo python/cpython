@@ -73,10 +73,6 @@
    a working implementation that works in all three cases -- the
    handler ignores signals if getpid() isn't the same as in the main
    thread.  XXX This is a hack.
-
-   GNU pth is a user-space threading library, and as such, all threads
-   run within the same process. In this case, if the currently running
-   thread is not the main_thread, send the signal to the main_thread.
 */
 
 #ifdef WITH_THREAD
@@ -214,13 +210,6 @@ signal_handler(int sig_num)
 {
     int save_errno = errno;
 
-#if defined(WITH_THREAD) && defined(WITH_PTH)
-    if (PyThread_get_thread_ident() != main_thread) {
-        pth_raise(*(pth_t *) main_thread, sig_num);
-    }
-    else
-#endif
-    {
 #ifdef WITH_THREAD
     /* See NOTES section above */
     if (getpid() == main_pid)
@@ -242,7 +231,6 @@ signal_handler(int sig_num)
      * makes this true.  See also issue8354. */
     PyOS_setsig(sig_num, signal_handler);
 #endif
-    }
 
     /* Issue #10311: asynchronously executing signal handlers should not
        mutate errno under the feet of unsuspecting C code. */
