@@ -10,6 +10,8 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #18774: Remove last bits of GNU PTH thread code and thread_pth.h.
+
 - Issue #16105: When a signal handler fails to write to the file descriptor
   registered with ``signal.set_wakeup_fd()``, report an exception instead
   of ignoring the error.
