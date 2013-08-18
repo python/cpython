@@ -1,6 +1,23 @@
+'''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 from tkinter import *
 
 class SearchDialogBase:
+    '''Create most of a modal search dialog (make_frame, create_widgets).
+
+    The wide left column contains:
+    1 or 2 text entry lines (create_entries, make_entry);
+    a row of standard radiobuttons (create_option_buttons);
+    a row of dialog specific radiobuttons (create_other_buttons).
+    
+    The narrow right column contains command buttons
+    (create_command_buttons, make_button).
+    These are bound to functions that execute the command.
+
+    Except for command buttons, this base class is not limited to
+    items common to all three subclasses.  Rather, it is the Find dialog
+    minus the "Find Next" command and its execution function.
+    The other dialogs override methods to replace and add widgets.
+    '''
 
     title = "Search Dialog"
     icon = "Search"
