@@ -8,7 +8,7 @@ class SearchDialogBase:
     1 or 2 text entry lines (create_entries, make_entry);
     a row of standard radiobuttons (create_option_buttons);
     a row of dialog specific radiobuttons (create_other_buttons).
-    
+
     The narrow right column contains command buttons
     (create_command_buttons, make_button).
     These are bound to functions that execute the command.
