@@ -278,13 +278,11 @@ class ImportTests(unittest.TestCase):
     @unittest.skipIf(sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
     def test_bug7732(self):
-        source = support.TESTFN + '.py'
-        os.mkdir(source)
-        try:
+        with support.temp_cwd():
+            source = support.TESTFN + '.py'
+            os.mkdir(source)
             self.assertRaisesRegex(ImportError, '^No module',
                 imp.find_module, support.TESTFN, ["."])
-        finally:
-            os.rmdir(source)
 
 
 class ReloadTests(unittest.TestCase):
