@@ -51,9 +51,9 @@ struct _setobject {
      */
     setentry *table;
     setentry *(*lookup)(PySetObject *so, PyObject *key, Py_hash_t hash);
+    Py_hash_t hash;             /* only used by frozenset objects */
     setentry smalltable[PySet_MINSIZE];
 
-    Py_hash_t hash;                  /* only used by frozenset objects */
     PyObject *weakreflist;      /* List of weak references */
 };
 #endif /* Py_LIMITED_API */
