@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18777: The ssl module now uses the new CRYPTO_THREADID API of
+  OpenSSL 1.0.0+ instead of the deprecated CRYPTO id callback function.
+
 - Issue #18768: Correct doc string of RAND_edg(). Patch by Vajrasky Kok.
 
 - Issue #18178: Fix ctypes on BSD. dlmalloc.c was compiled twice which broke
