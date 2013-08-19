@@ -148,7 +148,7 @@ class SubPattern:
         REPEATCODES = (MIN_REPEAT, MAX_REPEAT)
         for op, av in self.data:
             if op is BRANCH:
-                i = sys.maxsize
+                i = MAXREPEAT - 1
                 j = 0
                 for av in av[1]:
                     l, h = av.getwidth()
@@ -166,14 +166,14 @@ class SubPattern:
                 hi = hi + j
             elif op in REPEATCODES:
                 i, j = av[2].getwidth()
-                lo = lo + int(i) * av[0]
-                hi = hi + int(j) * av[1]
+                lo = lo + i * av[0]
+                hi = hi + j * av[1]
             elif op in UNITCODES:
                 lo = lo + 1
                 hi = hi + 1
             elif op == SUCCESS:
                 break
-        self.width = int(min(lo, sys.maxsize)), int(min(hi, sys.maxsize))
+        self.width = min(lo, MAXREPEAT - 1), min(hi, MAXREPEAT)
         return self.width
 
 class Tokenizer:
