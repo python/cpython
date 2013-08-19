@@ -48,8 +48,8 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it mangles
       lines that begin with ``From``.  For more flexibility, instantiate a
-      :class:`~email.generator.Generator` instance and use its :meth:`flatten`
-      method directly.  For example::
+      :class:`~email.generator.Generator` instance and use its
+      :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
          from cStringIO import StringIO
          from email.generator import Generator
@@ -494,8 +494,8 @@ Here are the methods of the :class:`Message` class:
 
       Set the ``boundary`` parameter of the :mailheader:`Content-Type` header to
       *boundary*.  :meth:`set_boundary` will always quote *boundary* if
-      necessary.  A :exc:`HeaderParseError` is raised if the message object has
-      no :mailheader:`Content-Type` header.
+      necessary.  A :exc:`~email.errors.HeaderParseError` is raised if the
+      message object has no :mailheader:`Content-Type` header.
 
       Note that using this method is subtly different than deleting the old
       :mailheader:`Content-Type` header and adding a new one with the new
@@ -589,7 +589,8 @@ Here are the methods of the :class:`Message` class:
 
       .. versionchanged:: 2.5
          You do not need to set the epilogue to the empty string in order for the
-         :class:`Generator` to print a newline at the end of the file.
+         :class:`~email.generator.Generator` to print a newline at the end of the
+         file.
 
 
    .. attribute:: defects
