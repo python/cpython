@@ -315,7 +315,7 @@ added matters.  To illustrate::
 
    This concrete :class:`Policy` is the backward compatibility policy.  It
    replicates the behavior of the email package in Python 3.2.  The
-   :mod:`policy` module also defines an instance of this class,
+   :mod:`~email.policy` module also defines an instance of this class,
    :const:`compat32`, that is used as the default policy.  Thus the default
    behavior of the email package is to maintain compatibility with Python 3.2.
 
@@ -459,10 +459,11 @@ added matters.  To illustrate::
 
    .. method:: fold_binary(name, value)
 
-      The same as :meth:`fold` if :attr:`cte_type` is ``7bit``, except that
-      the returned value is bytes.
+      The same as :meth:`fold` if :attr:`~Policy.cte_type` is ``7bit``, except
+      that the returned value is bytes.
 
-      If :attr:`cte_type` is ``8bit``, non-ASCII binary data is converted back
+      If :attr:`~Policy.cte_type` is ``8bit``, non-ASCII binary data is
+      converted back
       into bytes.  Headers with binary data are not refolded, regardless of the
       ``refold_header`` setting, since there is no way to know whether the
       binary data consists of single byte characters or multibyte characters.

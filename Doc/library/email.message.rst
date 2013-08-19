@@ -62,8 +62,8 @@ Here are the methods of the :class:`Message` class:
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
       required by the unix mbox format.  For more flexibility, instantiate a
-      :class:`~email.generator.Generator` instance and use its :meth:`flatten`
-      method directly.  For example::
+      :class:`~email.generator.Generator` instance and use its
+      :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
          from io import StringIO
          from email.generator import Generator
@@ -105,7 +105,8 @@ Here are the methods of the :class:`Message` class:
       not do the mangling of lines that begin with ``From`` that is
       required by the unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.BytesGenerator` instance and use its
-      :meth:`flatten` method directly.  For example::
+      :meth:`~email.generator.BytesGenerator.flatten` method directly.
+      For example::
 
          from io import BytesIO
          from email.generator import BytesGenerator
@@ -530,8 +531,8 @@ Here are the methods of the :class:`Message` class:
 
       Set the ``boundary`` parameter of the :mailheader:`Content-Type` header to
       *boundary*.  :meth:`set_boundary` will always quote *boundary* if
-      necessary.  A :exc:`HeaderParseError` is raised if the message object has
-      no :mailheader:`Content-Type` header.
+      necessary.  A :exc:`~email.errors.HeaderParseError` is raised if the
+      message object has no :mailheader:`Content-Type` header.
 
       Note that using this method is subtly different than deleting the old
       :mailheader:`Content-Type` header and adding a new one with the new
@@ -627,7 +628,8 @@ Here are the methods of the :class:`Message` class:
       the end of the message.
 
       You do not need to set the epilogue to the empty string in order for the
-      :class:`Generator` to print a newline at the end of the file.
+      :class:`~email.generator.Generator` to print a newline at the end of the
+      file.
 
 
    .. attribute:: defects
