@@ -393,7 +393,7 @@ Major performance enhancements have been added:
   probe now checks a second key/hash pair for each cache line retrieved.
   This exploits cache locality to make collision resolution less expensive.
 
-  (Contributed by Raymond Hetting in :issue"`18771`.)
+  (Contributed by Raymond Hettinger in :issue"`18771`.)
 
 
 Build and C API Changes
