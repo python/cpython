@@ -3136,9 +3136,21 @@ static PyMethodDef PySSL_methods[] = {
 
 static PyThread_type_lock *_ssl_locks = NULL;
 
-static unsigned long _ssl_thread_id_function (void) {
+#if OPENSSL_VERSION_NUMBER >= 0x10000000
+/* use new CRYPTO_THREADID API. */
+static void
+_ssl_threadid_callback(CRYPTO_THREADID *id)
+{
+    CRYPTO_THREADID_set_numeric(id,
+                                (unsigned long)PyThread_get_thread_ident());
+}
+#else
+/* deprecated CRYPTO_set_id_callback() API. */
+static unsigned long
+_ssl_thread_id_function (void) {
     return PyThread_get_thread_ident();
 }
+#endif
 
 static void _ssl_thread_locking_function
     (int mode, int n, const char *file, int line) {
@@ -3191,7 +3203,11 @@ static int _setup_ssl_threads(void) {
             }
         }
         CRYPTO_set_locking_callback(_ssl_thread_locking_function);
+#if OPENSSL_VERSION_NUMBER >= 0x10000000
+        CRYPTO_THREADID_set_callback(_ssl_threadid_callback);
+#else
         CRYPTO_set_id_callback(_ssl_thread_id_function);
+#endif
     }
     return 1;
 }
