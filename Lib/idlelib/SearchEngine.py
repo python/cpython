@@ -1,19 +1,28 @@
+'''Define SearchEngine for search dialogs.'''
 import re
 from tkinter import *
 import tkinter.messagebox as tkMessageBox
 
 def get(root):
+    '''Return the singleton SearchEngine instance for the process.
+
+    The single SearchEngine saves settings between dialog instances.
+    If there is not a SearchEngine already, make one.
+    '''
     if not hasattr(root, "_searchengine"):
         root._searchengine = SearchEngine(root)
-        # XXX This will never garbage-collect -- who cares
+        # This creates a cycle that persists until root is deleted.
     return root._searchengine
 
 class SearchEngine:
+    """Handles searching a text widget for Find, Replace, and Grep."""
 
     def __init__(self, root):
+        '''Initialize Variables that save search state.
+
+        The dialogs bind these to the UI elements present in the dialogs.
+        '''
         self.root = root
-        # State shared by search, replace, and grep;
-        # the search dialogs bind these to UI elements.
         self.patvar = StringVar(root)           # search pattern
         self.revar = BooleanVar(root)           # regular expression?
         self.casevar = BooleanVar(root)         # match case?
@@ -56,6 +65,7 @@ class SearchEngine:
         return pat
 
     def getprog(self):
+        "Return compiled cooked search pattern."
         pat = self.getpat()
         if not pat:
             self.report_error(pat, "Empty regular expression")
@@ -77,7 +87,7 @@ class SearchEngine:
         return prog
 
     def report_error(self, pat, msg, col=-1):
-        # Derived class could overrid this with something fancier
+        # Derived class could override this with something fancier
         msg = "Error: " + str(msg)
         if pat:
             msg = msg + "\np\Pattern: " + str(pat)
@@ -92,25 +102,23 @@ class SearchEngine:
         self.setpat(pat)
 
     def search_text(self, text, prog=None, ok=0):
-        """Search a text widget for the pattern.
+        '''Return (lineno, matchobj) for prog in text widget, or None.
 
-        If prog is given, it should be the precompiled pattern.
-        Return a tuple (lineno, matchobj); None if not found.
+        If prog is given, it should be a precompiled pattern.
+        Wrap (yes/no) and direction (forward/back) settings are used.
 
-        This obeys the wrap and direction (back) settings.
-
-        The search starts at the selection (if there is one) or
-        at the insert mark (otherwise).  If the search is forward,
-        it starts at the right of the selection; for a backward
-        search, it starts at the left end.  An empty match exactly
-        at either end of the selection (or at the insert mark if
-        there is no selection) is ignored  unless the ok flag is true
-        -- this is done to guarantee progress.
+        The search starts at the selection (if there is one) or at the
+        insert mark (otherwise).  If the search is forward, it starts
+        at the right of the selection; for a backward search, it
+        starts at the left end.  An empty match exactly at either end
+        of the selection (or at the insert mark if there is no
+        selection) is ignored  unless the ok flag is true -- this is
+        done to guarantee progress.
 
         If the search is allowed to wrap around, it will return the
         original selection if (and only if) it is the only match.
+        '''
 
-        """
         if not prog:
             prog = self.getprog()
             if not prog:
@@ -179,10 +187,11 @@ class SearchEngine:
             col = len(chars) - 1
         return None
 
-# Helper to search backwards in a string.
-# (Optimized for the case where the pattern isn't found.)
-
 def search_reverse(prog, chars, col):
+    '''Search backwards in a string (line of text).
+
+    This is done by searching forwards until there is no match.
+    '''
     m = prog.search(chars)
     if not m:
         return None
@@ -198,10 +207,9 @@ def search_reverse(prog, chars, col):
         i, j = m.span()
     return found
 
-# Helper to get selection end points, defaulting to insert mark.
-# Return a tuple of indices ("line.col" strings).
-
 def get_selection(text):
+    '''Return tuple of 'line.col' indexes from selection or insert mark.
+    '''
     try:
         first = text.index("sel.first")
         last = text.index("sel.last")
@@ -213,8 +221,12 @@ def get_selection(text):
         last = first
     return first, last
 
-# Helper to parse a text index into a (line, col) tuple.
-
 def get_line_col(index):
+    '''Return (line, col) tuple of ints from 'line.col' string.'''
     line, col = map(int, index.split(".")) # Fails on invalid index
     return line, col
+
+##if __name__ == "__main__":
+##    from test import support; support.use_resources = ['gui']
+##    import unittest
+##    unittest.main('idlelib.idle_test.test_searchengine', verbosity=2, exit=False)
