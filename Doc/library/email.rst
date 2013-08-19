@@ -147,14 +147,15 @@ Here are the major differences between :mod:`email` version 4 and version 3:
   *Note that the version 3 names will continue to work until Python 2.6*.
 
 * The :mod:`email.mime.application` module was added, which contains the
-  :class:`MIMEApplication` class.
+  :class:`~email.mime.application.MIMEApplication` class.
 
 * Methods that were deprecated in version 3 have been removed.  These include
   :meth:`Generator.__call__`, :meth:`Message.get_type`,
   :meth:`Message.get_main_type`, :meth:`Message.get_subtype`.
 
 * Fixes have been added for :rfc:`2231` support which can change some of the
-  return types for :func:`Message.get_param` and friends.  Under some
+  return types for :func:`Message.get_param <email.message.Message.get_param>`
+  and friends.  Under some
   circumstances, values which used to return a 3-tuple now return simple strings
   (specifically, if all extended parameter segments were unencoded, there is no
   language and charset designation expected, so the return type is now a simple
@@ -163,23 +164,24 @@ Here are the major differences between :mod:`email` version 4 and version 3:
 
 Here are the major differences between :mod:`email` version 3 and version 2:
 
-* The :class:`FeedParser` class was introduced, and the :class:`Parser` class
-  was implemented in terms of the :class:`FeedParser`.  All parsing therefore is
+* The :class:`~email.parser.FeedParser` class was introduced, and the
+  :class:`~email.parser.Parser` class was implemented in terms of the
+  :class:`~email.parser.FeedParser`.  All parsing therefore is
   non-strict, and parsing will make a best effort never to raise an exception.
   Problems found while parsing messages are stored in the message's *defect*
   attribute.
 
 * All aspects of the API which raised :exc:`DeprecationWarning`\ s in version 2
   have been removed.  These include the *_encoder* argument to the
-  :class:`MIMEText` constructor, the :meth:`Message.add_payload` method, the
-  :func:`Utils.dump_address_pair` function, and the functions :func:`Utils.decode`
-  and :func:`Utils.encode`.
+  :class:`~email.mime.text.MIMEText` constructor, the
+  :meth:`Message.add_payload` method, the :func:`Utils.dump_address_pair`
+  function, and the functions :func:`Utils.decode` and :func:`Utils.encode`.
 
 * New :exc:`DeprecationWarning`\ s have been added to:
   :meth:`Generator.__call__`, :meth:`Message.get_type`,
   :meth:`Message.get_main_type`, :meth:`Message.get_subtype`, and the *strict*
-  argument to the :class:`Parser` class.  These are expected to be removed in
-  future versions.
+  argument to the :class:`~email.parser.Parser` class.  These are expected to
+  be removed in future versions.
 
 * Support for Pythons earlier than 2.3 has been removed.
 
@@ -187,53 +189,61 @@ Here are the differences between :mod:`email` version 2 and version 1:
 
 * The :mod:`email.Header` and :mod:`email.Charset` modules have been added.
 
-* The pickle format for :class:`Message` instances has changed. Since this was
-  never (and still isn't) formally defined, this isn't considered a backward
-  incompatibility.  However if your application pickles and unpickles
-  :class:`Message` instances, be aware that in :mod:`email` version 2,
-  :class:`Message` instances now have private variables *_charset* and
-  *_default_type*.
+* The pickle format for :class:`~email.message.Message` instances has changed.
+  Since this was never (and still isn't) formally defined, this isn't
+  considered a backward incompatibility.  However if your application pickles
+  and unpickles :class:`~email.message.Message` instances, be aware that in
+  :mod:`email` version 2, :class:`~email.message.Message` instances now have
+  private variables *_charset* and *_default_type*.
 
-* Several methods in the :class:`Message` class have been deprecated, or their
-  signatures changed.  Also, many new methods have been added.  See the
-  documentation for the :class:`Message` class for details.  The changes should be
-  completely backward compatible.
+* Several methods in the :class:`~email.message.Message` class have been
+  deprecated, or their signatures changed.  Also, many new methods have been
+  added.  See the documentation for the :class:`~email.message.Message` class
+  for details.  The changes should be completely backward compatible.
 
 * The object structure has changed in the face of :mimetype:`message/rfc822`
-  content types.  In :mod:`email` version 1, such a type would be represented by a
-  scalar payload, i.e. the container message's :meth:`is_multipart` returned
-  false, :meth:`get_payload` was not a list object, but a single :class:`Message`
-  instance.
+  content types.  In :mod:`email` version 1, such a type would be represented
+  by a scalar payload, i.e. the container message's
+  :meth:`~email.message.Message.is_multipart` returned false,
+  :meth:`~email.message.Message.get_payload` was not a list object, but a
+  single :class:`~email.message.Message` instance.
 
   This structure was inconsistent with the rest of the package, so the object
   representation for :mimetype:`message/rfc822` content types was changed.  In
   :mod:`email` version 2, the container *does* return ``True`` from
-  :meth:`is_multipart`, and :meth:`get_payload` returns a list containing a single
-  :class:`Message` item.
+  :meth:`~email.message.Message.is_multipart`, and
+  :meth:`~email.message.Message.get_payload` returns a list containing a single
+  :class:`~email.message.Message` item.
 
-  Note that this is one place that backward compatibility could not be completely
-  maintained.  However, if you're already testing the return type of
-  :meth:`get_payload`, you should be fine.  You just need to make sure your code
-  doesn't do a :meth:`set_payload` with a :class:`Message` instance on a container
-  with a content type of :mimetype:`message/rfc822`.
+  Note that this is one place that backward compatibility could not be
+  completely maintained.  However, if you're already testing the return type of
+  :meth:`~email.message.Message.get_payload`, you should be fine.  You just need
+  to make sure your code doesn't do a :meth:`~email.message.Message.set_payload`
+  with a :class:`~email.message.Message` instance on a container with a content
+  type of :mimetype:`message/rfc822`.
 
-* The :class:`Parser` constructor's *strict* argument was added, and its
-  :meth:`parse` and :meth:`parsestr` methods grew a *headersonly* argument.  The
-  *strict* flag was also added to functions :func:`email.message_from_file` and
-  :func:`email.message_from_string`.
+* The :class:`~email.parser.Parser` constructor's *strict* argument was added,
+  and its :meth:`~email.parser.Parser.parse` and
+  :meth:`~email.parser.Parser.parsestr` methods grew a *headersonly* argument.
+  The *strict* flag was also added to functions :func:`email.message_from_file`
+  and :func:`email.message_from_string`.
 
-* :meth:`Generator.__call__` is deprecated; use :meth:`Generator.flatten`
-  instead.  The :class:`Generator` class has also grown the :meth:`clone` method.
+* :meth:`Generator.__call__` is deprecated; use :meth:`Generator.flatten
+  <email.generator.Generator.flatten>` instead.  The
+  :class:`~email.generator.Generator` class has also grown the
+  :meth:`~email.generator.Generator.clone` method.
 
-* The :class:`DecodedGenerator` class in the :mod:`email.Generator` module was
-  added.
+* The :class:`~email.generator.DecodedGenerator` class in the
+  :mod:`email.generator` module was added.
 
-* The intermediate base classes :class:`MIMENonMultipart` and
-  :class:`MIMEMultipart` have been added, and interposed in the class hierarchy
-  for most of the other MIME-related derived classes.
+* The intermediate base classes
+  :class:`~email.mime.nonmultipart.MIMENonMultipart` and
+  :class:`~email.mime.multipart.MIMEMultipart` have been added, and interposed
+  in the class hierarchy for most of the other MIME-related derived classes.
 
-* The *_encoder* argument to the :class:`MIMEText` constructor has been
-  deprecated.  Encoding  now happens implicitly based on the *_charset* argument.
+* The *_encoder* argument to the :class:`~email.mime.text.MIMEText` constructor
+  has been deprecated.  Encoding  now happens implicitly based on the
+  *_charset* argument.
 
 * The following functions in the :mod:`email.Utils` module have been deprecated:
   :func:`dump_address_pairs`, :func:`decode`, and :func:`encode`.  The following
@@ -266,17 +276,22 @@ package has the following differences:
 
 * :func:`messageFromFile` has been renamed to :func:`message_from_file`.
 
-The :class:`Message` class has the following differences:
+The :class:`~email.message.Message` class has the following differences:
 
-* The method :meth:`asString` was renamed to :meth:`as_string`.
+* The method :meth:`asString` was renamed to
+  :meth:`~email.message.Message.as_string`.
 
-* The method :meth:`ismultipart` was renamed to :meth:`is_multipart`.
+* The method :meth:`ismultipart` was renamed to
+  :meth:`~email.message.Message.is_multipart`.
 
-* The :meth:`get_payload` method has grown a *decode* optional argument.
+* The :meth:`~email.message.Message.get_payload` method has grown a *decode*
+  optional argument.
 
-* The method :meth:`getall` was renamed to :meth:`get_all`.
+* The method :meth:`getall` was renamed to
+  :meth:`~email.message.Message.get_all`.
 
-* The method :meth:`addheader` was renamed to :meth:`add_header`.
+* The method :meth:`addheader` was renamed to
+  :meth:`~email.message.Message.add_header`.
 
 * The method :meth:`gettype` was renamed to :meth:`get_type`.
 
@@ -284,48 +299,57 @@ The :class:`Message` class has the following differences:
 
 * The method :meth:`getsubtype` was renamed to :meth:`get_subtype`.
 
-* The method :meth:`getparams` was renamed to :meth:`get_params`. Also, whereas
-  :meth:`getparams` returned a list of strings, :meth:`get_params` returns a list
-  of 2-tuples, effectively the key/value pairs of the parameters, split on the
-  ``'='`` sign.
+* The method :meth:`getparams` was renamed to
+  :meth:`~email.message.Message.get_params`. Also, whereas :meth:`getparams`
+  returned a list of strings, :meth:`~email.message.Message.get_params` returns
+  a list of 2-tuples, effectively the key/value pairs of the parameters, split
+  on the ``'='`` sign.
 
-* The method :meth:`getparam` was renamed to :meth:`get_param`.
+* The method :meth:`getparam` was renamed to
+  :meth:`~email.message.Message.get_param`.
 
-* The method :meth:`getcharsets` was renamed to :meth:`get_charsets`.
+* The method :meth:`getcharsets` was renamed to
+  :meth:`~email.message.Message.get_charsets`.
 
-* The method :meth:`getfilename` was renamed to :meth:`get_filename`.
+* The method :meth:`getfilename` was renamed to
+  :meth:`~email.message.Message.get_filename`.
 
-* The method :meth:`getboundary` was renamed to :meth:`get_boundary`.
+* The method :meth:`getboundary` was renamed to
+  :meth:`~email.message.Message.get_boundary`.
 
-* The method :meth:`setboundary` was renamed to :meth:`set_boundary`.
+* The method :meth:`setboundary` was renamed to
+  :meth:`~email.message.Message.set_boundary`.
 
 * The method :meth:`getdecodedpayload` was removed.  To get similar
-  functionality, pass the value 1 to the *decode* flag of the get_payload()
-  method.
+  functionality, pass the value 1 to the *decode* flag of the
+  :meth:`~email.message.Message.get_payload` method.
 
 * The method :meth:`getpayloadastext` was removed.  Similar functionality is
-  supported by the :class:`DecodedGenerator` class in the :mod:`email.generator`
-  module.
+  supported by the :class:`~email.generator.DecodedGenerator` class in the
+  :mod:`email.generator` module.
 
 * The method :meth:`getbodyastext` was removed.  You can get similar
-  functionality by creating an iterator with :func:`typed_subpart_iterator` in the
-  :mod:`email.iterators` module.
+  functionality by creating an iterator with
+  :func:`~email.iterators.typed_subpart_iterator` in the :mod:`email.iterators`
+  module.
 
-The :class:`Parser` class has no differences in its public interface. It does
-have some additional smarts to recognize :mimetype:`message/delivery-status`
-type messages, which it represents as a :class:`Message` instance containing
-separate :class:`Message` subparts for each header block in the delivery status
-notification [#]_.
+The :class:`~email.parser.Parser` class has no differences in its public
+interface. It does have some additional smarts to recognize
+:mimetype:`message/delivery-status` type messages, which it represents as a
+:class:`~email.message.Message` instance containing separate
+:class:`~email.message.Message` subparts for each header block in the delivery
+status notification [#]_.
 
-The :class:`Generator` class has no differences in its public interface.  There
-is a new class in the :mod:`email.generator` module though, called
-:class:`DecodedGenerator` which provides most of the functionality previously
-available in the :meth:`Message.getpayloadastext` method.
+The :class:`~email.generator.Generator` class has no differences in its public
+interface.  There is a new class in the :mod:`email.generator` module though,
+called :class:`~email.generator.DecodedGenerator` which provides most of the
+functionality previously available in the :meth:`Message.getpayloadastext`
+method.
 
 The following modules and classes have been changed:
 
-* The :class:`MIMEBase` class constructor arguments *_major* and *_minor* have
-  changed to *_maintype* and *_subtype* respectively.
+* The :class:`~email.mime.base.MIMEBase` class constructor arguments *_major*
+  and *_minor* have changed to *_maintype* and *_subtype* respectively.
 
 * The ``Image`` class/module has been renamed to ``MIMEImage``.  The *_minor*
   argument has been renamed to *_subtype*.
@@ -338,7 +362,8 @@ The following modules and classes have been changed:
   but that clashed with the Python standard library module :mod:`rfc822` on some
   case-insensitive file systems.
 
-  Also, the :class:`MIMEMessage` class now represents any kind of MIME message
+  Also, the :class:`~email.mime.message.MIMEMessage` class now represents any
+  kind of MIME message
   with main type :mimetype:`message`.  It takes an optional argument *_subtype*
   which is used to set the MIME subtype.  *_subtype* defaults to
   :mimetype:`rfc822`.
@@ -348,8 +373,8 @@ The following modules and classes have been changed:
 :mod:`email.utils` module.
 
 The ``MsgReader`` class/module has been removed.  Its functionality is most
-closely supported in the :func:`body_line_iterator` function in the
-:mod:`email.iterators` module.
+closely supported in the :func:`~email.iterators.body_line_iterator` function
+in the :mod:`email.iterators` module.
 
 .. rubric:: Footnotes
 
