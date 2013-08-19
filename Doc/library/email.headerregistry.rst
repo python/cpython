@@ -56,15 +56,16 @@ headers.
    .. attribute:: name
 
       The name of the header (the portion of the field before the ':').  This
-      is exactly the value passed in the :attr:`~EmailPolicy.header_factory`
-      call for *name*; that is, case is preserved.
+      is exactly the value passed in the
+      :attr:`~email.policy.EmailPolicy.header_factory` call for *name*; that
+      is, case is preserved.
 
 
    .. attribute:: defects
 
       A tuple of :exc:`~email.errors.HeaderDefect` instances reporting any
       RFC compliance problems found during parsing.  The email package tries to
-      be complete about detecting compliance issues.  See the :mod:`errors`
+      be complete about detecting compliance issues.  See the :mod:`~email.errors`
       module for a discussion of the types of defects that may be reported.
 
 
@@ -230,8 +231,8 @@ headers.
 
       The single address encoded by the header value.  If the header value
       actually contains more than one address (which would be a violation of
-      the RFC under the default :mod:`policy`), accessing this attribute will
-      result in a :exc:`ValueError`.
+      the RFC under the default :mod:`~email.policy`), accessing this attribute
+      will result in a :exc:`ValueError`.
 
 
 Many of the above classes also have a ``Unique`` variant (for example,
@@ -275,7 +276,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
 .. class:: ContentTypeHeader
 
-    A :class:`ParameterizedMIMEHheader` class that handles the
+    A :class:`ParameterizedMIMEHeader` class that handles the
     :mailheader:`Content-Type` header.
 
     .. attribute:: content_type
@@ -289,7 +290,7 @@ variant, :attr:`~.BaseHeader.max_count` is set to 1.
 
 .. class:: ContentDispositionHeader
 
-    A :class:`ParameterizedMIMEHheader` class that handles the
+    A :class:`ParameterizedMIMEHeader` class that handles the
     :mailheader:`Content-Disposition` header.
 
     .. attribute:: content-disposition
