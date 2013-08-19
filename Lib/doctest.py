@@ -553,7 +553,7 @@ class DocTestParser:
         # Want consists of any non-blank lines that do not start with PS1.
         (?P<want> (?:(?![ ]*$)    # Not a blank line
                      (?![ ]*>>>)  # Not a line starting with PS1
-                     .*$\n?       # But any other line
+                     .+$\n?       # But any other line
                   )*)
         ''', re.MULTILINE | re.VERBOSE)
 
