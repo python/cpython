@@ -7,7 +7,8 @@
 
 Message object structures can be created in one of two ways: they can be created
 from whole cloth by instantiating :class:`~email.message.Message` objects and
-stringing them together via :meth:`attach` and :meth:`set_payload` calls, or they
+stringing them together via :meth:`~email.message.Message.attach` and
+:meth:`~email.message.Message.set_payload` calls, or they
 can be created by parsing a flat text representation of the email message.
 
 The :mod:`email` package provides a standard parser that understands most email
@@ -16,8 +17,9 @@ or a file object, and the parser will return to you the root
 :class:`~email.message.Message` instance of the object structure.  For simple,
 non-MIME messages the payload of this root object will likely be a string
 containing the text of the message.  For MIME messages, the root object will
-return ``True`` from its :meth:`is_multipart` method, and the subparts can be
-accessed via the :meth:`get_payload` and :meth:`walk` methods.
+return ``True`` from its :meth:`~email.message.Message.is_multipart` method, and
+the subparts can be accessed via the :meth:`~email.message.Message.get_payload`
+and :meth:`~email.message.Message.walk` methods.
 
 There are actually two parser interfaces available for use, the classic
 :class:`Parser` API and the incremental :class:`FeedParser` API.  The classic
@@ -134,7 +136,8 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
 
       Read all the data from the file-like object *fp*, parse the resulting
       text, and return the root message object.  *fp* must support both the
-      :meth:`readline` and the :meth:`read` methods on file-like objects.
+      :meth:`~io.TextIOBase.readline` and the :meth:`~io.TextIOBase.read`
+      methods on file-like objects.
 
       The text contained in *fp* must be formatted as a block of :rfc:`2822`
       style headers and header continuation lines, optionally preceded by a
@@ -173,8 +176,8 @@ have the same API as the :class:`Parser` and :class:`BytesParser` classes.
 
       Read all the data from the binary file-like object *fp*, parse the
       resulting bytes, and return the message object.  *fp* must support
-      both the :meth:`readline` and the :meth:`read` methods on file-like
-      objects.
+      both the :meth:`~io.IOBase.readline` and the :meth:`~io.IOBase.read`
+      methods on file-like objects.
 
       The bytes contained in *fp* must be formatted as a block of :rfc:`2822`
       style headers and header continuation lines, optionally preceded by a
@@ -210,7 +213,7 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure from a string.  This is exactly equivalent to
    ``Parser().parsestr(s)``.  *_class* and *policy* are interpreted as
-   with the :class:`Parser` class constructor.
+   with the :class:`~email.parser.Parser` class constructor.
 
    .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
@@ -220,7 +223,8 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure from a byte string.  This is exactly
    equivalent to ``BytesParser().parsebytes(s)``.  Optional *_class* and
-   *strict* are interpreted as with the :class:`Parser` class constructor.
+   *strict* are interpreted as with the :class:`~email.parser.Parser` class
+   constructor.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.3
@@ -231,7 +235,8 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure tree from an open :term:`file object`.
    This is exactly equivalent to ``Parser().parse(fp)``.  *_class*
-   and *policy* are interpreted as with the :class:`Parser` class constructor.
+   and *policy* are interpreted as with the :class:`~email.parser.Parser` class
+   constructor.
 
    .. versionchanged::
       Removed the *strict* argument.  Added the *policy* keyword.
@@ -241,8 +246,8 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure tree from an open binary :term:`file
    object`.  This is exactly equivalent to ``BytesParser().parse(fp)``.
-   *_class* and *policy* are interpreted as with the :class:`Parser`
-   class constructor.
+   *_class* and *policy* are interpreted as with the
+   :class:`~email.parser.Parser` class constructor.
 
    .. versionadded:: 3.2
    .. versionchanged:: 3.3
@@ -261,32 +266,35 @@ Here are some notes on the parsing semantics:
 
 * Most non-\ :mimetype:`multipart` type messages are parsed as a single message
   object with a string payload.  These objects will return ``False`` for
-  :meth:`is_multipart`.  Their :meth:`get_payload` method will return a string
-  object.
+  :meth:`~email.message.Message.is_multipart`.  Their
+  :meth:`~email.message.Message.get_payload` method will return a string object.
 
 * All :mimetype:`multipart` type messages will be parsed as a container message
   object with a list of sub-message objects for their payload.  The outer
-  container message will return ``True`` for :meth:`is_multipart` and their
-  :meth:`get_payload` method will return the list of :class:`~email.message.Message`
-  subparts.
+  container message will return ``True`` for
+  :meth:`~email.message.Message.is_multipart` and their
+  :meth:`~email.message.Message.get_payload` method will return the list of
+  :class:`~email.message.Message` subparts.
 
 * Most messages with a content type of :mimetype:`message/\*` (e.g.
   :mimetype:`message/delivery-status` and :mimetype:`message/rfc822`) will also be
   parsed as container object containing a list payload of length 1.  Their
-  :meth:`is_multipart` method will return ``True``.  The single element in the
-  list payload will be a sub-message object.
+  :meth:`~email.message.Message.is_multipart` method will return ``True``.
+  The single element in the list payload will be a sub-message object.
 
 * Some non-standards compliant messages may not be internally consistent about
   their :mimetype:`multipart`\ -edness.  Such messages may have a
   :mailheader:`Content-Type` header of type :mimetype:`multipart`, but their
-  :meth:`is_multipart` method may return ``False``.  If such messages were parsed
-  with the :class:`FeedParser`, they will have an instance of the
-  :class:`MultipartInvariantViolationDefect` class in their *defects* attribute
-  list.  See :mod:`email.errors` for details.
+  :meth:`~email.message.Message.is_multipart` method may return ``False``.
+  If such messages were parsed with the :class:`~email.parser.FeedParser`,
+  they will have an instance of the
+  :class:`~email.errors.MultipartInvariantViolationDefect` class in their
+  *defects* attribute list.  See :mod:`email.errors` for details.
 
 .. rubric:: Footnotes
 
 .. [#] As of email package version 3.0, introduced in Python 2.4, the classic
-   :class:`Parser` was re-implemented in terms of the :class:`FeedParser`, so the
-   semantics and results are identical between the two parsers.
+   :class:`~email.parser.Parser` was re-implemented in terms of the
+   :class:`~email.parser.FeedParser`, so the semantics and results are
+   identical between the two parsers.
 

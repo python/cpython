@@ -49,8 +49,8 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 
    This method returns a list of 2-tuples of the form returned by ``parseaddr()``.
    *fieldvalues* is a sequence of header field values as might be returned by
-   :meth:`Message.get_all`.  Here's a simple example that gets all the recipients
-   of a message::
+   :meth:`Message.get_all <email.message.Message.get_all>`.  Here's a simple
+   example that gets all the recipients of a message::
 
       from email.utils import getaddresses
 
@@ -187,10 +187,11 @@ There are several useful utilities provided in the :mod:`email.utils` module:
 .. function:: collapse_rfc2231_value(value, errors='replace', fallback_charset='us-ascii')
 
    When a header parameter is encoded in :rfc:`2231` format,
-   :meth:`Message.get_param` may return a 3-tuple containing the character set,
+   :meth:`Message.get_param <email.message.Message.get_param>` may return a
+   3-tuple containing the character set,
    language, and value.  :func:`collapse_rfc2231_value` turns this into a unicode
    string.  Optional *errors* is passed to the *errors* argument of :class:`str`'s
-   :func:`encode` method; it defaults to ``'replace'``.  Optional
+   :func:`~str.encode` method; it defaults to ``'replace'``.  Optional
    *fallback_charset* specifies the character set to use if the one in the
    :rfc:`2231` header is not known by Python; it defaults to ``'us-ascii'``.
 

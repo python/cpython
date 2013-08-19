@@ -6,8 +6,9 @@
 
 
 Iterating over a message object tree is fairly easy with the
-:meth:`Message.walk` method.  The :mod:`email.iterators` module provides some
-useful higher level iterations over message object trees.
+:meth:`Message.walk <email.message.Message.walk>` method.  The
+:mod:`email.iterators` module provides some useful higher level iterations over
+message object trees.
 
 
 .. function:: body_line_iterator(msg, decode=False)
@@ -16,9 +17,11 @@ useful higher level iterations over message object trees.
    string payloads line-by-line.  It skips over all the subpart headers, and it
    skips over any subpart with a payload that isn't a Python string.  This is
    somewhat equivalent to reading the flat text representation of the message from
-   a file using :meth:`readline`, skipping over all the intervening headers.
+   a file using :meth:`~io.TextIOBase.readline`, skipping over all the
+   intervening headers.
 
-   Optional *decode* is passed through to :meth:`Message.get_payload`.
+   Optional *decode* is passed through to :meth:`Message.get_payload
+   <email.message.Message.get_payload>`.
 
 
 .. function:: typed_subpart_iterator(msg, maintype='text', subtype=None)

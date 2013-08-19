@@ -234,5 +234,5 @@ new entries to the global character set, alias, and codec registries:
 
    *charset* is the canonical name of a character set. *codecname* is the name of a
    Python codec, as appropriate for the second argument to the :class:`str`'s
-   :func:`decode` method
+   :meth:`~str.encode` method
 
