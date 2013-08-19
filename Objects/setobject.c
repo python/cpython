@@ -68,6 +68,11 @@ chaining would be substantial (100% with typical malloc overhead).
 The initial probe index is computed as hash mod the table size. Subsequent
 probe indices are computed as explained in Objects/dictobject.c.
 
+To improve cache locality, each probe is done in pairs.
+After the probe is examined, an adjacent entry is then examined as well.
+The likelihood is that an adjacent entry is in the same cache line and
+can be examined more cheaply than another probe elsewhere in memory.
+
 All arithmetic on hash should ignore overflow.
 
 Unlike the dictionary implementation, the lookkey functions can return
@@ -77,7 +82,7 @@ NULL if the rich comparison returns an error.
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    size_t i;  /* Unsigned for defined overflow behavior. */
+    size_t i, j;  /* Unsigned for defined overflow behavior. */
     size_t perturb;
     setentry *freeslot;
     size_t mask = so->mask;
@@ -90,7 +95,6 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry = &table[i];
     if (entry->key == NULL || entry->key == key)
         return entry;
-
     if (entry->hash == hash) {
         startkey = entry->key;
         Py_INCREF(startkey);
@@ -107,14 +111,15 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             return set_lookkey(so, key, hash);
         }
     }
-
     freeslot = (entry->key == dummy) ? entry : NULL;
 
     /* In the loop, key == dummy is by far (factor of 100s)
        the least likely outcome, so test for that last. */
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
-        i = i * 5 + perturb + 1;
-        entry = &table[i & mask];
+    j = i;
+    perturb = hash;
+    while (1) {
+        j ^= 1;
+        entry = &table[j];
         if (entry->key == NULL) {
             if (freeslot != NULL)
                 entry = freeslot;
@@ -134,14 +139,42 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                     break;
             }
             else {
-                /* The compare did major nasty stuff to the
-                 * set:  start over.
-                 */
                 return set_lookkey(so, key, hash);
             }
         }
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
+
+        i = i * 5 + perturb + 1;
+        j = i & mask;
+        perturb >>= PERTURB_SHIFT;
+
+        entry = &table[j];
+        if (entry->key == NULL) {
+            if (freeslot != NULL)
+                entry = freeslot;
+            break;
+        }
+        if (entry->key == key)
+            break;
+        if (entry->hash == hash) {
+            startkey = entry->key;
+            Py_INCREF(startkey);
+            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+            Py_DECREF(startkey);
+            if (cmp < 0)
+                return NULL;
+            if (table == so->table && entry->key == startkey) {
+                if (cmp > 0)
+                    break;
+            }
+            else {
+                return set_lookkey(so, key, hash);
+            }
+        }
+        if (entry->key == dummy && freeslot == NULL)
+            freeslot = entry;
+
     }
     return entry;
 }
@@ -154,7 +187,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 static setentry *
 set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    size_t i;  /* Unsigned for defined overflow behavior. */
+    size_t i, j;  /* Unsigned for defined overflow behavior. */
     size_t perturb;
     setentry *freeslot;
     size_t mask = so->mask;
@@ -169,6 +202,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         so->lookup = set_lookkey;
         return set_lookkey(so, key, hash);
     }
+
     i = (size_t)hash & mask;
     entry = &table[i];
     if (entry->key == NULL || entry->key == key)
@@ -181,11 +215,37 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         freeslot = NULL;
     }
 
-    /* In the loop, key == dummy is by far (factor of 100s) the
-       least likely outcome, so test for that last. */
-    for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+    entry = &table[i ^ 1];
+    if (entry->key == NULL)
+        return freeslot == NULL ? entry : freeslot;
+    if (entry->key == key
+        || (entry->hash == hash
+            && entry->key != dummy
+            && unicode_eq(entry->key, key)))
+        return entry;
+    if (entry->key == dummy && freeslot == NULL)
+        freeslot = entry;
+
+    j = i;
+    perturb = hash;
+    while (1) {
+        j ^= 1;
+        entry = &table[j];
+        if (entry->key == NULL)
+            return freeslot == NULL ? entry : freeslot;
+        if (entry->key == key
+            || (entry->hash == hash
+            && entry->key != dummy
+            && unicode_eq(entry->key, key)))
+            return entry;
+        if (entry->key == dummy && freeslot == NULL)
+            freeslot = entry;
+
         i = i * 5 + perturb + 1;
-        entry = &table[i & mask];
+        j = i & mask;
+        perturb >>= PERTURB_SHIFT;
+
+        entry = &table[j];
         if (entry->key == NULL)
             return freeslot == NULL ? entry : freeslot;
         if (entry->key == key
@@ -244,17 +304,23 @@ is responsible for incref'ing `key`.
 static void
 set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    size_t i;
-    size_t perturb;
-    size_t mask = (size_t)so->mask;
     setentry *table = so->table;
     setentry *entry;
+    size_t perturb = hash;
+    size_t mask = (size_t)so->mask;
+    size_t i, j;
 
-    i = (size_t)hash & mask;
-    entry = &table[i];
-    for (perturb = hash; entry->key != NULL; perturb >>= PERTURB_SHIFT) {
+    i = j = (size_t)hash & mask;
+    while (1) {
+        entry = &table[j];
+        if (entry->key == NULL)
+            break;
+        entry = &table[j ^ 1];
+        if (entry->key == NULL)
+            break;
         i = i * 5 + perturb + 1;
-        entry = &table[i & mask];
+        j = i & mask;
+        perturb >>= PERTURB_SHIFT;
     }
     so->fill++;
     entry->key = key;
