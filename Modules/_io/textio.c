@@ -2368,7 +2368,7 @@ textiowrapper_tell(textio *self, PyObject *args)
     while (input < input_end) {
         Py_ssize_t n;
 
-        DECODER_DECODE(input, 1, n);
+        DECODER_DECODE(input, (Py_ssize_t)1, n);
         /* We got n chars for 1 byte */
         chars_decoded += n;
         cookie.bytes_to_feed += 1;

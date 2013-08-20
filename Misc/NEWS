@@ -284,6 +284,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13461: Fix a crash in the TextIOWrapper.tell method on 64-bit
+  platforms.  Patch by Yogesh Chaudhari.
+
 - Issue #18681: Fix a NameError in importlib.reload() (noticed by Weizhao Li).
 
 - Issue #14323: Expanded the number of digits in the coefficients for the
