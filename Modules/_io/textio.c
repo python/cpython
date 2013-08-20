@@ -2271,7 +2271,7 @@ textiowrapper_tell(textio *self, PyObject *args)
         int dec_flags;
 
         PyObject *decoded = PyObject_CallMethod(
-            self->decoder, "decode", "s#", input, 1);
+            self->decoder, "decode", "s#", input, (Py_ssize_t)1);
         if (check_decoded(decoded) < 0)
             goto fail;
         chars_decoded += PyUnicode_GET_SIZE(decoded);
