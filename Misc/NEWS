@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13461: Fix a crash in the TextIOWrapper.tell method on 64-bit
+  platforms.  Patch by Yogesh Chaudhari.
+
 - Issue #18777: The ssl module now uses the new CRYPTO_THREADID API of
   OpenSSL 1.0.0+ instead of the deprecated CRYPTO id callback function.
 
