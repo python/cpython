@@ -332,6 +332,7 @@ typedef struct {
     int ufd_uptodate;
     int ufd_len;
     struct pollfd *ufds;
+    int poll_running;
 } pollObject;
 
 static PyTypeObject poll_Type;
@@ -528,15 +529,26 @@ poll_poll(pollObject *self, PyObject *args)
             return NULL;
     }
 
+    /* Avoid concurrent poll() invocation, issue 8865 */
+    if (self->poll_running) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "concurrent poll() invocation");
+        return NULL;
+    }
+
     /* Ensure the ufd array is up to date */
     if (!self->ufd_uptodate)
         if (update_ufd_array(self) == 0)
             return NULL;
 
+    self->poll_running = 1;
+
     /* call poll() */
     Py_BEGIN_ALLOW_THREADS
     poll_result = poll(self->ufds, self->ufd_len, timeout);
     Py_END_ALLOW_THREADS
+
+    self->poll_running = 0;
 
     if (poll_result < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -614,6 +626,7 @@ newPollObject(void)
        array pointed to by ufds matches the contents of the dictionary. */
     self->ufd_uptodate = 0;
     self->ufds = NULL;
+    self->poll_running = 0;
     self->dict = PyDict_New();
     if (self->dict == NULL) {
         Py_DECREF(self);
