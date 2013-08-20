@@ -1,6 +1,7 @@
 # Test case for the os.poll() function
 
 import os
+import subprocess
 import random
 import select
 import _testcapi
