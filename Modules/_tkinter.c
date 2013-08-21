@@ -47,6 +47,9 @@ Copyright (C) 1994 Steen Lumholt.
 #define PyBool_FromLong       PyLong_FromLong
 #endif
 
+#define CHECK_SIZE(size, elemsize) \
+    ((size_t)(size) <= Py_MAX((size_t)INT_MAX, UINT_MAX / (size_t)(elemsize)))
+
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
    making _tkinter correct for this API means to break earlier
    versions. USE_COMPAT_CONST allows to make _tkinter work with both 8.4 and
@@ -364,7 +367,7 @@ Merge(PyObject *args)
     char **argv = NULL;
     int fvStore[ARGSZ];
     int *fv = NULL;
-    int argc = 0, fvc = 0, i;
+    Py_ssize_t argc = 0, fvc = 0, i;
     char *res = NULL;
 
     if (!(tmp = PyList_New(0)))
@@ -386,8 +389,12 @@ Merge(PyObject *args)
         argc = PyTuple_Size(args);
 
         if (argc > ARGSZ) {
-            argv = (char **)ckalloc(argc * sizeof(char *));
-            fv = (int *)ckalloc(argc * sizeof(int));
+            if (!CHECK_SIZE(argc, sizeof(char *))) {
+                PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+                goto finally;
+            }
+            argv = (char **)ckalloc((size_t)argc * sizeof(char *));
+            fv = (int *)ckalloc((size_t)argc * sizeof(int));
             if (argv == NULL || fv == NULL) {
                 PyErr_NoMemory();
                 goto finally;
@@ -966,12 +973,18 @@ AsObj(PyObject *value)
     else if (PyFloat_Check(value))
         return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
     else if (PyTuple_Check(value)) {
-        Tcl_Obj **argv = (Tcl_Obj**)
-            ckalloc(PyTuple_Size(value)*sizeof(Tcl_Obj*));
-        int i;
+        Tcl_Obj **argv;
+        Py_ssize_t size, i;
+
+        size = PyTuple_Size(value);
+        if (!CHECK_SIZE(size, sizeof(Tcl_Obj *))) {
+            PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+            return NULL;
+        }
+        argv = (Tcl_Obj **) ckalloc(((size_t)size) * sizeof(Tcl_Obj *));
         if(!argv)
           return 0;
-        for(i=0;i<PyTuple_Size(value);i++)
+        for (i = 0; i < size; i++)
           argv[i] = AsObj(PyTuple_GetItem(value,i));
         result = Tcl_NewListObj(PyTuple_Size(value), argv);
         ckfree(FREECAST argv);
@@ -990,6 +1003,10 @@ AsObj(PyObject *value)
 
         inbuf = PyUnicode_DATA(value);
         size = PyUnicode_GET_LENGTH(value);
+        if (!CHECK_SIZE(size, sizeof(Tcl_UniChar))) {
+            PyErr_SetString(PyExc_OverflowError, "string is too long");
+            return NULL;
+        }
         kind = PyUnicode_KIND(value);
         allocsize = ((size_t)size) * sizeof(Tcl_UniChar);
         outbuf = (Tcl_UniChar*)ckalloc(allocsize);
@@ -1145,7 +1162,7 @@ static Tcl_Obj**
 Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
 {
     Tcl_Obj **objv = objStore;
-    int objc = 0, i;
+    Py_ssize_t objc = 0, i;
     if (args == NULL)
         /* do nothing */;
 
@@ -1160,7 +1177,11 @@ Tkapp_CallArgs(PyObject *args, Tcl_Obj** objStore, int *pobjc)
         objc = PyTuple_Size(args);
 
         if (objc > ARGSZ) {
-            objv = (Tcl_Obj **)ckalloc(objc * sizeof(char *));
+            if (!CHECK_SIZE(objc, sizeof(Tcl_Obj *))) {
+                PyErr_SetString(PyExc_OverflowError, "tuple is too long");
+                return NULL;
+            }
+            objv = (Tcl_Obj **)ckalloc(((size_t)objc) * sizeof(Tcl_Obj *));
             if (objv == NULL) {
                 PyErr_NoMemory();
                 objc = 0;

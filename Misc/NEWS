@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17119: Fixed integer overflows when processing large strings and tuples
+  in the tkinter module.
+
 - Issue #18747: Re-seed OpenSSL's pseudo-random number generator after fork.
   A pthread_atfork() child handler is used to seeded the PRNG with pid, time
   and some stack data.
