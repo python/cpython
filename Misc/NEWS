@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17119: Fixed integer overflows when processing large Unicode strings
+  and tuples in the tkinter module.
+
 - Issue #15233: Python now guarantees that callables registered with the atexit
   module will be called in a deterministic order.
 

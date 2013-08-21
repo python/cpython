@@ -3,6 +3,7 @@
 import unittest
 import sys
 import os
+import _testcapi
 from test import test_support
 from subprocess import Popen, PIPE
 
@@ -245,8 +246,22 @@ class TclTest(unittest.TestCase):
             self.assertEqual(split(arg), res)
 
 
+class BigmemTclTest(unittest.TestCase):
+
+    def setUp(self):
+        self.interp = Tcl()
+
+    @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
+                         "needs UINT_MAX < SIZE_MAX")
+    @test_support.precisionbigmemtest(size=_testcapi.INT_MAX + 1, memuse=5,
+                                      dry_run=False)
+    def test_huge_string(self, size):
+        value = ' ' * size
+        self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+
+
 def test_main():
-    test_support.run_unittest(TclTest, TkinterTest)
+    test_support.run_unittest(TclTest, TkinterTest, BigmemTclTest)
 
 if __name__ == "__main__":
     test_main()
