@@ -9809,6 +9809,17 @@ $as_echo "#define HAVE_BROKEN_PTHREAD_SIGMASK 1" >>confdefs.h
 fi
 done
 
+      for ac_func in pthread_atfork
+do :
+  ac_fn_c_check_func "$LINENO" "pthread_atfork" "ac_cv_func_pthread_atfork"
+if test "x$ac_cv_func_pthread_atfork" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PTHREAD_ATFORK 1
+_ACEOF
+
+fi
+done
+
 fi
 
 
