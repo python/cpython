@@ -520,6 +520,9 @@
 /* Define if you have GNU PTH threads. */
 #undef HAVE_PTH
 
+/* Define to 1 if you have the `pthread_atfork' function. */
+#undef HAVE_PTHREAD_ATFORK
+
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
 

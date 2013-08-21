@@ -18,6 +18,11 @@
 
 #ifdef WITH_THREAD
 #include "pythread.h"
+
+#ifdef HAVE_PTHREAD_ATFORK
+#  include <pthread.h>
+#endif
+
 #define PySSL_BEGIN_ALLOW_THREADS { \
             PyThreadState *_save = NULL;  \
             if (_ssl_locks_count>0) {_save = PyEval_SaveThread();}
@@ -1621,7 +1626,69 @@ Queries the entropy gather daemon (EGD) on the socket named by 'path'.\n\
 Returns number of bytes read.  Raises SSLError if connection to EGD\n\
 fails or if it does not provide enough data to seed PRNG.");
 
+/* Seed OpenSSL's PRNG at fork(), http://bugs.python.org/issue18747
+ *
+ * The child handler seeds the PRNG from pseudo-random data like pid, the
+ * current time (nanoseconds, miliseconds or seconds) and an uninitialized
+ * array. The array contains stack variables that are impossible to predict
+ * on most systems, e.g. function return address (subject to ASLR), the
+ * stack protection canary and automatic variables.
+ * The code is inspired by Apache's ssl_rand_seed() function.
+ *
+ * Note:
+ * The code uses pthread_atfork() until Python has a proper atfork API. The
+ * handlers are not removed from the child process.
+ */
+
+#if defined(HAVE_PTHREAD_ATFORK) && defined(WITH_THREAD)
+#define PYSSL_RAND_ATFORK 1
+
+static void
+PySSL_RAND_atfork_child(void)
+{
+    struct {
+        char stack[128];    /* uninitialized (!) stack data, 128 is an
+                               arbitrary number. */
+        pid_t pid;          /* current pid */
+        time_t time;        /* current time */
+    } seed;
+
+#ifdef WITH_VALGRIND
+    VALGRIND_MAKE_MEM_DEFINED(seed.stack, sizeof(seed.stack));
 #endif
+    seed.pid = getpid();
+    seed.time = time(NULL);
+
+#if 0
+    fprintf(stderr, "PySSL_RAND_atfork_child() seeds %i bytes in pid %i\n",
+            (int)sizeof(seed), seed.pid);
+#endif
+    RAND_add((unsigned char *)&seed, sizeof(seed), 0.0);
+}
+
+static int
+PySSL_RAND_atfork(void)
+{
+    static int registered = 0;
+    int retval;
+
+    if (registered)
+        return 0;
+
+    retval = pthread_atfork(NULL,                     /* prepare */
+                            NULL,                     /* parent */
+                            PySSL_RAND_atfork_child); /* child */
+    if (retval != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+    registered = 1;
+    return 0;
+}
+#endif /* HAVE_PTHREAD_ATFORK */
+
+#endif /* HAVE_OPENSSL_RAND */
+
 
 /* List of functions exported by this module. */
 
@@ -1833,4 +1900,9 @@ init_ssl(void)
     r = PyString_FromString(SSLeay_version(SSLEAY_VERSION));
     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
         return;
+
+#ifdef PYSSL_RAND_ATFORK
+    if (PySSL_RAND_atfork() == -1)
+        return;
+#endif
 }
