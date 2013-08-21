@@ -143,6 +143,38 @@ class BasicSocketTests(unittest.TestCase):
         self.assertRaises(TypeError, ssl.RAND_egd, 'foo', 1)
         ssl.RAND_add("this is a random string", 75.0)
 
+    @unittest.skipUnless(os.name == 'posix', 'requires posix')
+    def test_random_fork(self):
+        status = ssl.RAND_status()
+        if not status:
+            self.fail("OpenSSL's PRNG has insufficient randomness")
+
+        rfd, wfd = os.pipe()
+        pid = os.fork()
+        if pid == 0:
+            try:
+                os.close(rfd)
+                child_random = ssl.RAND_pseudo_bytes(16)[0]
+                self.assertEqual(len(child_random), 16)
+                os.write(wfd, child_random)
+                os.close(wfd)
+            except BaseException:
+                os._exit(1)
+            else:
+                os._exit(0)
+        else:
+            os.close(wfd)
+            self.addCleanup(os.close, rfd)
+            _, status = os.waitpid(pid, 0)
+            self.assertEqual(status, 0)
+
+            child_random = os.read(rfd, 16)
+            self.assertEqual(len(child_random), 16)
+            parent_random = ssl.RAND_pseudo_bytes(16)[0]
+            self.assertEqual(len(parent_random), 16)
+
+            self.assertNotEqual(child_random, parent_random)
+
     def test_parse_cert(self):
         # note that this uses an 'unofficial' function in _ssl.c,
         # provided solely for this test, to exercise the certificate
