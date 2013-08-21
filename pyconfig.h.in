@@ -633,6 +633,9 @@
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
+/* Define to 1 if you have the `pthread_atfork' function. */
+#undef HAVE_PTHREAD_ATFORK
+
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
 
