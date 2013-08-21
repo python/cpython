@@ -215,17 +215,6 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         freeslot = NULL;
     }
 
-    entry = &table[i ^ 1];
-    if (entry->key == NULL)
-        return freeslot == NULL ? entry : freeslot;
-    if (entry->key == key
-        || (entry->hash == hash
-            && entry->key != dummy
-            && unicode_eq(entry->key, key)))
-        return entry;
-    if (entry->key == dummy && freeslot == NULL)
-        freeslot = entry;
-
     j = i;
     perturb = hash;
     while (1) {
