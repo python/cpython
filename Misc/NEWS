@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15233: Python now guarantees that callables registered with the atexit
+  module will be called in a deterministic order.
+
 - Issue #18747: Re-seed OpenSSL's pseudo-random number generator after fork.
   A pthread_atfork() child handler is used to seeded the PRNG with pid, time
   and some stack data.
