@@ -3,6 +3,7 @@
 import unittest
 import sys
 import os
+import _testcapi
 from test import support
 
 # Skip this test if the _tkinter module wasn't built.
@@ -236,8 +237,21 @@ class TclTest(unittest.TestCase):
             self.assertEqual(split(arg), res, msg=arg)
 
 
+class BigmemTclTest(unittest.TestCase):
+
+    def setUp(self):
+        self.interp = Tcl()
+
+    @unittest.skipUnless(_testcapi.INT_MAX < _testcapi.PY_SSIZE_T_MAX,
+                         "needs UINT_MAX < SIZE_MAX")
+    @support.bigmemtest(size=_testcapi.INT_MAX + 1, memuse=5, dry_run=False)
+    def test_huge_string(self, size):
+        value = ' ' * size
+        self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+
+
 def test_main():
-    support.run_unittest(TclTest, TkinterTest)
+    support.run_unittest(TclTest, TkinterTest, BigmemTclTest)
 
 if __name__ == "__main__":
     test_main()
