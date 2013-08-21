@@ -95,7 +95,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry = &table[i];
     if (entry->key == NULL || entry->key == key)
         return entry;
-    if (entry->hash == hash) {
+    if (entry->hash == hash && entry->key != dummy) {
         startkey = entry->key;
         Py_INCREF(startkey);
         cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -127,7 +127,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         }
         if (entry->key == key)
             break;
-        if (entry->hash == hash) {
+        if (entry->hash == hash && entry->key != dummy) {
             startkey = entry->key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -157,7 +157,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         }
         if (entry->key == key)
             break;
-        if (entry->hash == hash) {
+        if (entry->hash == hash && entry->key != dummy) {
             startkey = entry->key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -1090,7 +1090,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     PySetObject *so = NULL;
 
     if (dummy == NULL) { /* Auto-initialize dummy */
-        dummy = _PyObject_New(&PyBaseObject_Type);
+        dummy = PyUnicode_FromString("<dummy key>");
         if (dummy == NULL)
             return NULL;
     }
