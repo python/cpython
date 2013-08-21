@@ -976,29 +976,25 @@ class BuiltinTest(unittest.TestCase):
     def write_testfile(self):
         # NB the first 4 lines are also used to test input, below
         fp = open(TESTFN, 'w')
-        try:
+        self.addCleanup(unlink, TESTFN)
+        with fp:
             fp.write('1+1\n')
             fp.write('The quick brown fox jumps over the lazy dog')
             fp.write('.\n')
             fp.write('Dear John\n')
             fp.write('XXX'*100)
             fp.write('YYY'*100)
-        finally:
-            fp.close()
 
     def test_open(self):
         self.write_testfile()
         fp = open(TESTFN, 'r')
-        try:
+        with fp:
             self.assertEqual(fp.readline(4), '1+1\n')
             self.assertEqual(fp.readline(), 'The quick brown fox jumps over the lazy dog.\n')
             self.assertEqual(fp.readline(4), 'Dear')
             self.assertEqual(fp.readline(100), ' John\n')
             self.assertEqual(fp.read(300), 'XXX'*100)
             self.assertEqual(fp.read(1000), 'YYY'*100)
-        finally:
-            fp.close()
-            unlink(TESTFN)
 
     def test_open_default_encoding(self):
         old_environ = dict(os.environ)
@@ -1013,11 +1009,8 @@ class BuiltinTest(unittest.TestCase):
             self.write_testfile()
             current_locale_encoding = locale.getpreferredencoding(False)
             fp = open(TESTFN, 'w')
-            try:
+            with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
-            finally:
-                fp.close()
-                unlink(TESTFN)
         finally:
             os.environ.clear()
             os.environ.update(old_environ)
@@ -1132,7 +1125,6 @@ class BuiltinTest(unittest.TestCase):
             sys.stdin = savestdin
             sys.stdout = savestdout
             fp.close()
-            unlink(TESTFN)
 
     @unittest.skipUnless(pty, "the pty and signal modules must be available")
     def check_input_tty(self, prompt, terminal_input, stdio_encoding=None):
