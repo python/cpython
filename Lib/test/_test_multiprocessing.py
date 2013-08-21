@@ -3386,7 +3386,8 @@ class TestForkAwareThreadLock(unittest.TestCase):
         if n > 1:
             p = multiprocessing.Process(target=cls.child, args=(n-1, conn))
             p.start()
-            p.join()
+            conn.close()
+            p.join(timeout=5)
         else:
             conn.send(len(util._afterfork_registry))
         conn.close()
@@ -3397,8 +3398,9 @@ class TestForkAwareThreadLock(unittest.TestCase):
         old_size = len(util._afterfork_registry)
         p = multiprocessing.Process(target=self.child, args=(5, w))
         p.start()
+        w.close()
         new_size = r.recv()
-        p.join()
+        p.join(timeout=5)
         self.assertLessEqual(new_size, old_size)
 
 #
