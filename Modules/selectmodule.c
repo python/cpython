@@ -684,6 +684,13 @@ typedef struct {
 
 static PyTypeObject devpoll_Type;
 
+static PyObject *
+devpoll_err_closed(void)
+{
+    PyErr_SetString(PyExc_ValueError, "I/O operation on closed devpoll object");
+    return NULL;
+}
+
 static int devpoll_flush(devpollObject *self)
 {
     int size, n;
@@ -723,6 +730,9 @@ internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
 {
     PyObject *o;
     int fd, events = POLLIN | POLLPRI | POLLOUT;
+
+    if (self->fd_devpoll < 0)
+        return devpoll_err_closed();
 
     if (!PyArg_ParseTuple(args, "O|i:register", &o, &events)) {
         return NULL;
@@ -788,6 +798,9 @@ devpoll_unregister(devpollObject *self, PyObject *o)
 {
     int fd;
 
+    if (self->fd_devpoll < 0)
+        return devpoll_err_closed();
+
     fd = PyObject_AsFileDescriptor( o );
     if (fd == -1)
         return NULL;
@@ -816,6 +829,9 @@ devpoll_poll(devpollObject *self, PyObject *args)
     int poll_result, i;
     long timeout;
     PyObject *value, *num1, *num2;
+
+    if (self->fd_devpoll < 0)
+        return devpoll_err_closed();
 
     if (!PyArg_UnpackTuple(args, "poll", 0, 1, &tout)) {
         return NULL;
@@ -895,6 +911,45 @@ devpoll_poll(devpollObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject*
+devpoll_close(devpollObject *self)
+{
+    errno = devpoll_internal_close(self);
+    if (errno < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(devpoll_close_doc,
+"close() -> None\n\
+\n\
+Close the devpoll file descriptor. Further operations on the devpoll\n\
+object will raise an exception.");
+
+static PyObject*
+devpoll_get_closed(devpollObject *self)
+{
+    if (self->fd_devpoll < 0)
+        Py_RETURN_TRUE;
+    else
+        Py_RETURN_FALSE;
+}
+
+static PyObject*
+devpoll_fileno(devpollObject *self)
+{
+    if (self->fd_devpoll < 0)
+        return devpoll_err_closed();
+    return PyLong_FromLong(self->fd_devpoll);
+}
+
+PyDoc_STRVAR(devpoll_fileno_doc,
+"fileno() -> int\n\
+\n\
+Return the file descriptor.");
+
 static PyMethodDef devpoll_methods[] = {
     {"register",        (PyCFunction)devpoll_register,
      METH_VARARGS,  devpoll_register_doc},
@@ -904,7 +959,17 @@ static PyMethodDef devpoll_methods[] = {
      METH_O,        devpoll_unregister_doc},
     {"poll",            (PyCFunction)devpoll_poll,
      METH_VARARGS,  devpoll_poll_doc},
+    {"close",           (PyCFunction)devpoll_close,    METH_NOARGS,
+     devpoll_close_doc},
+    {"fileno",          (PyCFunction)devpoll_fileno,    METH_NOARGS,
+     devpoll_fileno_doc},
     {NULL,              NULL}           /* sentinel */
+};
+
+static PyGetSetDef devpoll_getsetlist[] = {
+    {"closed", (getter)devpoll_get_closed, NULL,
+     "True if the devpoll object is closed"},
+    {0},
 };
 
 static devpollObject *
@@ -957,15 +1022,26 @@ newDevPollObject(void)
     return self;
 }
 
+static int
+devpoll_internal_close(pyEpoll_Object *self)
+{
+    int save_errno = 0;
+    if (self->fd_devpoll >= 0) {
+        int fd = self->fd_devpoll;
+        self->fd_devpoll = -1;
+        Py_BEGIN_ALLOW_THREADS
+        if (close(fd) < 0)
+            save_errno = errno;
+        Py_END_ALLOW_THREADS
+    }
+    return save_errno;
+}
+
 static void
 devpoll_dealloc(devpollObject *self)
 {
-    Py_BEGIN_ALLOW_THREADS
-    close(self->fd_devpoll);
-    Py_END_ALLOW_THREADS
-
+    (void)devpoll_internal_close();
     PyMem_DEL(self->fds);
-
     PyObject_Del(self);
 }
 
@@ -1001,6 +1077,8 @@ static PyTypeObject devpoll_Type = {
     0,                          /*tp_iter*/
     0,                          /*tp_iternext*/
     devpoll_methods,            /*tp_methods*/
+    0,                          /* tp_members */
+    devpoll_getsetlist,         /* tp_getset */
 };
 #endif  /* HAVE_SYS_DEVPOLL_H */
 
@@ -1084,7 +1162,7 @@ static PyTypeObject pyEpoll_Type;
 static PyObject *
 pyepoll_err_closed(void)
 {
-    PyErr_SetString(PyExc_ValueError, "I/O operation on closed epoll fd");
+    PyErr_SetString(PyExc_ValueError, "I/O operation on closed epoll object");
     return NULL;
 }
 
@@ -1776,7 +1854,7 @@ static PyTypeObject kqueue_event_Type = {
 static PyObject *
 kqueue_queue_err_closed(void)
 {
-    PyErr_SetString(PyExc_ValueError, "I/O operation on closed kqueue fd");
+    PyErr_SetString(PyExc_ValueError, "I/O operation on closed kqueue object");
     return NULL;
 }
 

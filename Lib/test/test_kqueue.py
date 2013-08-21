@@ -185,6 +185,28 @@ class TestKQueue(unittest.TestCase):
         b.close()
         kq.close()
 
+    def test_close(self):
+        open_file = open(__file__, "rb")
+        self.addCleanup(open_file.close)
+        fd = open_file.fileno()
+        kqueue = select.kqueue()
+
+        # test fileno() method and closed attribute
+        self.assertIsInstance(kqueue.fileno(), int)
+        self.assertFalse(kqueue.closed)
+
+        # test close()
+        kqueue.close()
+        self.assertTrue(kqueue.closed)
+        self.assertRaises(ValueError, kqueue.fileno)
+
+        # close() can be called more than once
+        kqueue.close()
+
+        # operations must fail with ValueError("I/O operation on closed ...")
+        self.assertRaises(ValueError, kqueue.control, None, 4)
+
+
 def test_main():
     support.run_unittest(TestKQueue)
 
