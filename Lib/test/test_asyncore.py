@@ -10,7 +10,7 @@ import errno
 import struct
 
 from test import test_support
-from test.test_support import TESTFN, run_unittest, unlink
+from test.test_support import TESTFN, run_unittest, unlink, HOST
 from StringIO import StringIO
 
 try:
@@ -18,7 +18,6 @@ try:
 except ImportError:
     threading = None
 
-HOST = test_support.HOST
 
 class dummysocket:
     def __init__(self):

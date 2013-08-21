@@ -17,7 +17,7 @@ except ImportError:
 
 from unittest import TestCase
 from test import test_support
-from test.test_support import HOST
+from test.test_support import HOST, HOSTv6
 threading = test_support.import_module('threading')
 
 
@@ -562,7 +562,7 @@ class TestFTPClass(TestCase):
 class TestIPv6Environment(TestCase):
 
     def setUp(self):
-        self.server = DummyFTPServer((HOST, 0), af=socket.AF_INET6)
+        self.server = DummyFTPServer((HOSTv6, 0), af=socket.AF_INET6)
         self.server.start()
         self.client = ftplib.FTP()
         self.client.connect(self.server.host, self.server.port)
@@ -713,7 +713,7 @@ class TestTimeouts(TestCase):
         self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
-            ftp = ftplib.FTP("localhost")
+            ftp = ftplib.FTP(HOST)
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(ftp.sock.gettimeout(), 30)
@@ -725,7 +725,7 @@ class TestTimeouts(TestCase):
         self.assertTrue(socket.getdefaulttimeout() is None)
         socket.setdefaulttimeout(30)
         try:
-            ftp = ftplib.FTP("localhost", timeout=None)
+            ftp = ftplib.FTP(HOST, timeout=None)
         finally:
             socket.setdefaulttimeout(None)
         self.assertTrue(ftp.sock.gettimeout() is None)

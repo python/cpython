@@ -191,6 +191,10 @@ IDLE
 Tests
 -----
 
+- Issue #18792: Use "127.0.0.1" or "::1" instead of "localhost" as much as
+  possible, since "localhost" goes through a DNS lookup under recent Windows
+  versions.
+
 - Issue #18357: add tests for dictview set difference.
   Patch by Fraser Tweedale.
 
