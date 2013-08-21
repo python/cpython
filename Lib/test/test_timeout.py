@@ -110,7 +110,7 @@ class TimeoutTestCase(unittest.TestCase):
     # solution.
     fuzz = 2.0
 
-    localhost = '127.0.0.1'
+    localhost = support.HOST
 
     def setUp(self):
         raise NotImplementedError()
