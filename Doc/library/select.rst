@@ -147,6 +147,27 @@ descriptors), ``/dev/poll`` is O(active file descriptors).
 object.
 
 
+.. method:: devpoll.close()
+
+   Close the file descriptor of the polling object.
+
+   .. versionadded:: 3.4
+
+
+.. attribute:: devpoll.closed
+
+   ``True`` if the polling object is closed.
+
+   .. versionadded:: 3.4
+
+
+.. method:: devpoll.fileno()
+
+   Return the file descriptor number of the polling object.
+
+   .. versionadded:: 3.4
+
+
 .. method:: devpoll.register(fd[, eventmask])
 
    Register a file descriptor with the polling object.  Future calls to the
@@ -242,6 +263,11 @@ Edge and Level Trigger Polling (epoll) Objects
 .. method:: epoll.close()
 
    Close the control file descriptor of the epoll object.
+
+
+.. attribute:: epoll.closed
+
+   ``True`` if the epoll object is closed.
 
 
 .. method:: epoll.fileno()
@@ -361,6 +387,11 @@ Kqueue Objects
 .. method:: kqueue.close()
 
    Close the control file descriptor of the kqueue object.
+
+
+.. attribute:: kqueue.closed
+
+   ``True`` if the kqueue object is closed.
 
 
 .. method:: kqueue.fileno()

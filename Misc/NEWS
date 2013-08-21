@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18794: Add a fileno() method and a closed attribute to select.devpoll
+  objects.
+
 - Issue #17119: Fixed integer overflows when processing large strings and tuples
   in the tkinter module.
 

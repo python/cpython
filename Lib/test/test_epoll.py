@@ -225,6 +225,31 @@ class TestEPoll(unittest.TestCase):
         server.close()
         ep.unregister(fd)
 
+    def test_close(self):
+        open_file = open(__file__, "rb")
+        self.addCleanup(open_file.close)
+        fd = open_file.fileno()
+        epoll = select.epoll()
+
+        # test fileno() method and closed attribute
+        self.assertIsInstance(epoll.fileno(), int)
+        self.assertFalse(epoll.closed)
+
+        # test close()
+        epoll.close()
+        self.assertTrue(epoll.closed)
+        self.assertRaises(ValueError, epoll.fileno)
+
+        # close() can be called more than once
+        epoll.close()
+
+        # operations must fail with ValueError("I/O operation on closed ...")
+        self.assertRaises(ValueError, epoll.modify, fd, select.EPOLLIN)
+        self.assertRaises(ValueError, epoll.poll, 1.0)
+        self.assertRaises(ValueError, epoll.register, fd, select.EPOLLIN)
+        self.assertRaises(ValueError, epoll.unregister, fd)
+
+
 def test_main():
     support.run_unittest(TestEPoll)
 
