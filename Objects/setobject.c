@@ -683,6 +683,7 @@ set_merge(PySetObject *so, PyObject *otherset)
 {
     PySetObject *other;
     PyObject *key;
+    PyObject *dummy_entry;
     Py_hash_t hash;
     Py_ssize_t i;
     setentry *entry;
@@ -702,12 +703,13 @@ set_merge(PySetObject *so, PyObject *otherset)
        if (set_table_resize(so, (so->used + other->used)*2) != 0)
            return -1;
     }
+    dummy_entry = dummy;
     for (i = 0; i <= other->mask; i++) {
         entry = &other->table[i];
         key = entry->key;
         hash = entry->hash;
         if (key != NULL &&
-            key != dummy) {
+            key != dummy_entry) {
             Py_INCREF(key);
             if (set_insert_key(so, key, hash) == -1) {
                 Py_DECREF(key);
