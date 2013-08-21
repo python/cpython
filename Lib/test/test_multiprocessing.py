@@ -1968,7 +1968,7 @@ class _TestRemoteManager(BaseTestCase):
         authkey = os.urandom(32)
 
         manager = QueueManager(
-            address=('localhost', 0), authkey=authkey, serializer=SERIALIZER
+            address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER
             )
         manager.start()
 
@@ -2006,7 +2006,7 @@ class _TestManagerRestart(BaseTestCase):
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
-            address=('localhost', 0), authkey=authkey, serializer=SERIALIZER)
+            address=(test.support.HOST, 0), authkey=authkey, serializer=SERIALIZER)
         srvr = manager.get_server()
         addr = srvr.address
         # Close the connection.Listener socket which gets opened as a part
@@ -2478,7 +2478,7 @@ class _TestPicklingConnections(BaseTestCase):
             l.close()
 
         l = socket.socket()
-        l.bind(('localhost', 0))
+        l.bind((test.support.HOST, 0))
         l.listen(1)
         conn.send(l.getsockname())
         new_conn, addr = l.accept()
@@ -3235,9 +3235,9 @@ class TestWait(unittest.TestCase):
     def test_wait_socket(self, slow=False):
         from multiprocessing.connection import wait
         l = socket.socket()
-        l.bind(('', 0))
+        l.bind((test.support.HOST, 0))
         l.listen(4)
-        addr = ('localhost', l.getsockname()[1])
+        addr = l.getsockname()
         readers = []
         procs = []
         dic = {}
