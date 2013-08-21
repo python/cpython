@@ -110,6 +110,13 @@ Library
 
 - Issue #8860: Fixed rounding in timedelta constructor.
 
+Tests
+-----
+
+- Issue #18792: Use "127.0.0.1" or "::1" instead of "localhost" as much as
+  possible, since "localhost" goes through a DNS lookup under recent Windows
+  versions.
+
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================

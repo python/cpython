@@ -10,7 +10,7 @@ import errno
 import struct
 
 from test import support
-from test.support import TESTFN, run_unittest, unlink
+from test.support import TESTFN, run_unittest, unlink, HOST, HOSTv6
 from io import BytesIO
 from io import StringIO
 
@@ -19,7 +19,6 @@ try:
 except ImportError:
     threading = None
 
-HOST = support.HOST
 TIMEOUT = 3
 HAS_UNIX_SOCKETS = hasattr(socket, 'AF_UNIX')
 
@@ -816,7 +815,7 @@ class TestAPI_UseIPv4Sockets(BaseTestAPI):
 @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 support required')
 class TestAPI_UseIPv6Sockets(BaseTestAPI):
     family = socket.AF_INET6
-    addr = ('::1', 0)
+    addr = (HOSTv6, 0)
 
 @unittest.skipUnless(HAS_UNIX_SOCKETS, 'Unix sockets required')
 class TestAPI_UseUnixSockets(BaseTestAPI):
