@@ -1023,7 +1023,7 @@ newDevPollObject(void)
 }
 
 static int
-devpoll_internal_close(pyEpoll_Object *self)
+devpoll_internal_close(devpollObject *self)
 {
     int save_errno = 0;
     if (self->fd_devpoll >= 0) {
