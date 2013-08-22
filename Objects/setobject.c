@@ -274,7 +274,6 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
         entry->key = key;
         entry->hash = hash;
         so->used++;
-        Py_DECREF(dummy);
     } else {
         /* ACTIVE */
         Py_DECREF(key);
@@ -381,23 +380,15 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     so->table = newtable;
     so->mask = newsize - 1;
     memset(newtable, 0, sizeof(setentry) * newsize);
+    i = so->used;
     so->used = 0;
-    i = so->fill;
     so->fill = 0;
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
     dummy_entry = dummy;
     for (entry = oldtable; i > 0; entry++) {
-        if (entry->key == NULL) {
-            /* UNUSED */
-            ;
-        } else if (entry->key == dummy_entry) {
-            /* DUMMY */
-            --i;
-            assert(entry->key == dummy);
-            Py_DECREF(entry->key);
-        } else {
+        if (entry->key != NULL && entry->key != dummy_entry) {
             /* ACTIVE */
             --i;
             set_insert_clean(so, entry->key, entry->hash);
@@ -468,7 +459,6 @@ set_discard_entry(PySetObject *so, setentry *oldentry)
     if (entry->key == NULL  ||  entry->key == dummy)
         return DISCARD_NOTFOUND;
     old_key = entry->key;
-    Py_INCREF(dummy);
     entry->key = dummy;
     so->used--;
     Py_DECREF(old_key);
@@ -496,7 +486,6 @@ set_discard_key(PySetObject *so, PyObject *key)
     if (entry->key == NULL  ||  entry->key == dummy)
         return DISCARD_NOTFOUND;
     old_key = entry->key;
-    Py_INCREF(dummy);
     entry->key = dummy;
     so->used--;
     Py_DECREF(old_key);
@@ -554,7 +543,8 @@ set_clear_internal(PySetObject *so)
 #endif
         if (entry->key) {
             --fill;
-            Py_DECREF(entry->key);
+            if (entry->key != dummy)
+                Py_DECREF(entry->key);
         }
 #ifdef Py_DEBUG
         else
@@ -615,7 +605,8 @@ set_dealloc(PySetObject *so)
     for (entry = so->table; fill > 0; entry++) {
         if (entry->key) {
             --fill;
-            Py_DECREF(entry->key);
+            if (entry->key != dummy)
+                Py_DECREF(entry->key);
         }
     }
     if (so->table != so->smalltable)
@@ -788,7 +779,6 @@ set_pop(PySetObject *so)
         }
     }
     key = entry->key;
-    Py_INCREF(dummy);
     entry->key = dummy;
     so->used--;
     so->table[0].hash = i + 1;  /* next place to start */
