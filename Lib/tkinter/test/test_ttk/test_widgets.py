@@ -105,7 +105,7 @@ class CheckbuttonTest(unittest.TestCase):
 
         cbtn['command'] = ''
         res = cbtn.invoke()
-        self.assertEqual(res, '')
+        self.assertEqual(str(res), '')
         self.assertFalse(len(success) > 1)
         self.assertEqual(cbtn['offvalue'],
             cbtn.tk.globalgetvar(cbtn['variable']))
@@ -453,7 +453,7 @@ class RadiobuttonTest(unittest.TestCase):
 
         cbtn2['command'] = ''
         res = cbtn2.invoke()
-        self.assertEqual(res, '')
+        self.assertEqual(str(res), '')
         self.assertFalse(len(success) > 1)
         self.assertEqual(cbtn2['value'], myvar.get())
         self.assertEqual(myvar.get(),
