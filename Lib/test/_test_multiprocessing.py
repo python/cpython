@@ -3580,16 +3580,11 @@ class TestSemaphoreTracker(unittest.TestCase):
             os.write(%d, lock2._semlock.name.encode("ascii") + b"\\n")
             time.sleep(10)
         '''
-        print("\nTestSemaphoreTracker will output warnings a bit like:\n"
-              "    ... There appear to be 2 leaked semaphores"
-                  " to clean up at shutdown\n"
-              "    ... '/mp-03jgqz': [Errno 2] No such file or directory",
-              file=sys.stderr)
         r, w = os.pipe()
         p = subprocess.Popen([sys.executable,
-                             #'-W', 'ignore:semaphore_tracker',
                              '-c', cmd % (w, w)],
-                             pass_fds=[w])
+                             pass_fds=[w],
+                             stderr=subprocess.PIPE)
         os.close(w)
         with open(r, 'rb', closefd=True) as f:
             name1 = f.readline().rstrip().decode('ascii')
@@ -3602,6 +3597,11 @@ class TestSemaphoreTracker(unittest.TestCase):
             _multiprocessing.sem_unlink(name2)
         # docs say it should be ENOENT, but OSX seems to give EINVAL
         self.assertIn(ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
+        err = p.stderr.read().decode('utf-8')
+        p.stderr.close()
+        expected = 'semaphore_tracker: There appear to be 2 leaked semaphores'
+        self.assertRegex(err, expected)
+        self.assertRegex(err, 'semaphore_tracker: %r: \[Errno' % name1)
 
 #
 # Mixins
