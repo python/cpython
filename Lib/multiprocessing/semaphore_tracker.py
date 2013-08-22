@@ -26,6 +26,7 @@ from . import current_process
 __all__ = ['ensure_running', 'register', 'unregister']
 
 
+_semaphore_tracker_fd = None
 _lock = threading.Lock()
 
 
@@ -34,9 +35,9 @@ def ensure_running():
 
     This can be run from any process.  Usually a child process will use
     the semaphore created by its parent.'''
+    global _semaphore_tracker_fd
     with _lock:
-        config = current_process()._config
-        if config.get('semaphore_tracker_fd') is not None:
+        if _semaphore_tracker_fd is not None:
             return
         fds_to_pass = []
         try:
@@ -44,7 +45,7 @@ def ensure_running():
         except Exception:
             pass
         cmd = 'from multiprocessing.semaphore_tracker import main; main(%d)'
-        r, semaphore_tracker_fd = util.pipe()
+        r, w = util.pipe()
         try:
             fds_to_pass.append(r)
             # process will out live us, so no need to wait on pid
@@ -53,10 +54,10 @@ def ensure_running():
             args += ['-c', cmd % r]
             util.spawnv_passfds(exe, args, fds_to_pass)
         except:
-            os.close(semaphore_tracker_fd)
+            os.close(w)
             raise
         else:
-            config['semaphore_tracker_fd'] = semaphore_tracker_fd
+            _semaphore_tracker_fd = w
         finally:
             os.close(r)
 
@@ -77,8 +78,7 @@ def _send(cmd, name):
         # posix guarantees that writes to a pipe of less than PIPE_BUF
         # bytes are atomic, and that PIPE_BUF >= 512
         raise ValueError('name too long')
-    fd = current_process()._config['semaphore_tracker_fd']
-    nbytes = os.write(fd, msg)
+    nbytes = os.write(_semaphore_tracker_fd, msg)
     assert nbytes == len(msg)
 
 

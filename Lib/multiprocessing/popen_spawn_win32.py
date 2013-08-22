@@ -32,13 +32,14 @@ class Popen(object):
 
     def __init__(self, process_obj):
         prep_data = spawn.get_preparation_data(process_obj._name)
-        cmd = ' '.join('"%s"' % x for x in spawn.get_command_line())
 
         # read end of pipe will be "stolen" by the child process
         # -- see spawn_main() in spawn.py.
         rhandle, whandle = _winapi.CreatePipe(None, 0)
         wfd = msvcrt.open_osfhandle(whandle, 0)
-        cmd += ' {} {}'.format(os.getpid(), rhandle)
+        cmd = spawn.get_command_line(parent_pid=os.getpid(),
+                                     pipe_handle=rhandle)
+        cmd = ' '.join('"%s"' % x for x in cmd)
 
         with open(wfd, 'wb', closefd=True) as to_child:
             # start process

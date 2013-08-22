@@ -66,32 +66,33 @@ def freeze_support():
         sys.exit()
 
 
-def get_command_line():
+def get_command_line(**kwds):
     '''
     Returns prefix of command line used for spawning a child process
     '''
     if getattr(sys, 'frozen', False):
         return [sys.executable, '--multiprocessing-fork']
     else:
-        prog = 'from multiprocessing.spawn import spawn_main; spawn_main()'
+        prog = 'from multiprocessing.spawn import spawn_main; spawn_main(%s)'
+        prog %= ', '.join('%s=%r' % item for item in kwds.items())
         opts = util._args_from_interpreter_flags()
         return [_python_exe] + opts + ['-c', prog, '--multiprocessing-fork']
 
 
-def spawn_main():
+def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     '''
     Run code specifed by data received over pipe
     '''
     assert is_forking(sys.argv)
-    handle = int(sys.argv[-1])
     if sys.platform == 'win32':
         import msvcrt
         from .reduction import steal_handle
-        pid = int(sys.argv[-2])
-        new_handle = steal_handle(pid, handle)
+        new_handle = steal_handle(parent_pid, pipe_handle)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
     else:
-        fd = handle
+        from . import semaphore_tracker
+        semaphore_tracker._semaphore_tracker_fd = tracker_fd
+        fd = pipe_handle
     exitcode = _main(fd)
     sys.exit(exitcode)
 
