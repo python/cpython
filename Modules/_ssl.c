@@ -2943,23 +2943,25 @@ fails or if it does not provide enough data to seed PRNG.");
 
 /* Seed OpenSSL's PRNG at fork(), http://bugs.python.org/issue18747
  *
- * The child handler seeds the PRNG from pseudo-random data like pid, the
- * current time (nanoseconds, miliseconds or seconds) and an uninitialized
- * array. The array contains stack variables that are impossible to predict
+ * The parent handler seeds the PRNG from pseudo-random data like pid, the
+ * current time (miliseconds or seconds) and an uninitialized arry.
+ * The array contains stack variables that are impossible to predict
  * on most systems, e.g. function return address (subject to ASLR), the
  * stack protection canary and automatic variables.
  * The code is inspired by Apache's ssl_rand_seed() function.
  *
  * Note:
  * The code uses pthread_atfork() until Python has a proper atfork API. The
- * handlers are not removed from the child process.
+ * handlers are not removed from the child process. A parent handler is used
+ * instead of a child handler because fork() is suppose to be async-signal
+ * safe but the handler calls unsafe functions.
  */
 
 #if defined(HAVE_PTHREAD_ATFORK) && defined(WITH_THREAD)
 #define PYSSL_RAND_ATFORK 1
 
 static void
-PySSL_RAND_atfork_child(void)
+PySSL_RAND_atfork_parent(void)
 {
     struct {
         char stack[128];    /* uninitialized (!) stack data, 128 is an
@@ -2973,11 +2975,6 @@ PySSL_RAND_atfork_child(void)
 #endif
     seed.pid = getpid();
     _PyTime_gettimeofday(&(seed.tp));
-
-#if 0
-    fprintf(stderr, "PySSL_RAND_atfork_child() seeds %i bytes in pid %i\n",
-            (int)sizeof(seed), seed.pid);
-#endif
     RAND_add((unsigned char *)&seed, sizeof(seed), 0.0);
 }
 
@@ -2991,8 +2988,8 @@ PySSL_RAND_atfork(void)
         return 0;
 
     retval = pthread_atfork(NULL,                     /* prepare */
-                            NULL,                     /* parent */
-                            PySSL_RAND_atfork_child); /* child */
+                            PySSL_RAND_atfork_parent, /* parent */
+                            NULL);                    /* child */
     if (retval != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
         return -1;
