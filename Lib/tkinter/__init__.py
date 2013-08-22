@@ -1352,7 +1352,7 @@ class Misc:
                 value = words[i+1]
                 if not value:
                     value = None
-                elif '.' in value:
+                elif '.' in str(value):
                     value = getdouble(value)
                 else:
                     value = getint(value)
@@ -1921,7 +1921,7 @@ class Pack:
         for i in range(0, len(words), 2):
             key = words[i][1:]
             value = words[i+1]
-            if value[:1] == '.':
+            if str(value)[:1] == '.':
                 value = self._nametowidget(value)
             dict[key] = value
         return dict
@@ -1972,7 +1972,7 @@ class Place:
         for i in range(0, len(words), 2):
             key = words[i][1:]
             value = words[i+1]
-            if value[:1] == '.':
+            if str(value)[:1] == '.':
                 value = self._nametowidget(value)
             dict[key] = value
         return dict
@@ -2021,7 +2021,7 @@ class Grid:
         for i in range(0, len(words), 2):
             key = words[i][1:]
             value = words[i+1]
-            if value[:1] == '.':
+            if str(value)[:1] == '.':
                 value = self._nametowidget(value)
             dict[key] = value
         return dict
