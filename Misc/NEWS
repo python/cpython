@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18324: set_payload now correctly handles binary input.  This also
+  supersedes the previous fixes for #14360, #1717, and #16564.
+
 - Issue #17119: Fixed integer overflows when processing large strings and tuples
   in the tkinter module.
 

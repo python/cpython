@@ -275,6 +275,8 @@ class Message:
         Optional charset sets the message's default character set.  See
         set_charset() for details.
         """
+        if isinstance(payload, bytes):
+            payload = payload.decode('ascii', 'surrogateescape')
         self._payload = payload
         if charset is not None:
             self.set_charset(charset)
