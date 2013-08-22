@@ -1757,16 +1757,35 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
     char *list;
     int argc;
     char **argv;
-    PyObject *v;
+    PyObject *arg, *v;
     int i;
 
-    if (PyTuple_Size(args) == 1) {
-        v = PyTuple_GetItem(args, 0);
-        if (PyTuple_Check(v)) {
-            Py_INCREF(v);
-            return v;
+    if (!PyArg_ParseTuple(args, "O:splitlist", &arg))
+        return NULL;
+    if (PyTclObject_Check(arg)) {
+        int objc;
+        Tcl_Obj **objv;
+        if (Tcl_ListObjGetElements(Tkapp_Interp(self),
+                                   ((PyTclObject*)arg)->value,
+                                   &objc, &objv) == TCL_ERROR) {
+            return Tkinter_Error(self);
         }
+        if (!(v = PyTuple_New(objc)))
+            return NULL;
+        for (i = 0; i < objc; i++) {
+            PyObject *s = FromObj(self, objv[i]);
+            if (!s || PyTuple_SetItem(v, i, s)) {
+                Py_DECREF(v);
+                return NULL;
+            }
+        }
+        return v;
     }
+    if (PyTuple_Check(arg)) {
+        Py_INCREF(arg);
+        return arg;
+    }
+
     if (!PyArg_ParseTuple(args, "et:splitlist", "utf-8", &list))
         return NULL;
 
@@ -1797,16 +1816,38 @@ Tkapp_SplitList(PyObject *self, PyObject *args)
 static PyObject *
 Tkapp_Split(PyObject *self, PyObject *args)
 {
-    PyObject *v;
+    PyObject *arg, *v;
     char *list;
 
-    if (PyTuple_Size(args) == 1) {
-        PyObject* o = PyTuple_GetItem(args, 0);
-        if (PyTuple_Check(o)) {
-            o = SplitObj(o);
-            return o;
+    if (!PyArg_ParseTuple(args, "O:split", &arg))
+        return NULL;
+    if (PyTclObject_Check(arg)) {
+        Tcl_Obj *value = ((PyTclObject*)arg)->value;
+        int objc;
+        Tcl_Obj **objv;
+        int i;
+        if (Tcl_ListObjGetElements(Tkapp_Interp(self), value,
+                                   &objc, &objv) == TCL_ERROR) {
+            return FromObj(self, value);
         }
+        if (objc == 0)
+            return PyUnicode_FromString("");
+        if (objc == 1)
+            return FromObj(self, objv[0]);
+        if (!(v = PyTuple_New(objc)))
+            return NULL;
+        for (i = 0; i < objc; i++) {
+            PyObject *s = FromObj(self, objv[i]);
+            if (!s || PyTuple_SetItem(v, i, s)) {
+                Py_DECREF(v);
+                return NULL;
+            }
+        }
+        return v;
     }
+    if (PyTuple_Check(arg))
+        return SplitObj(arg);
+
     if (!PyArg_ParseTuple(args, "et:split", "utf-8", &list))
         return NULL;
     v = Split(list);
