@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16809: Tkinter's splitlist() and split() methods now accept Tcl_Obj
+  argument.
+
 - Issue #17119: Fixed integer overflows when processing large Unicode strings
   and tuples in the tkinter module.
 
