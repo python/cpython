@@ -911,6 +911,21 @@ devpoll_poll(devpollObject *self, PyObject *args)
     return NULL;
 }
 
+static int
+devpoll_internal_close(devpollObject *self)
+{
+    int save_errno = 0;
+    if (self->fd_devpoll >= 0) {
+        int fd = self->fd_devpoll;
+        self->fd_devpoll = -1;
+        Py_BEGIN_ALLOW_THREADS
+        if (close(fd) < 0)
+            save_errno = errno;
+        Py_END_ALLOW_THREADS
+    }
+    return save_errno;
+}
+
 static PyObject*
 devpoll_close(devpollObject *self)
 {
@@ -1020,21 +1035,6 @@ newDevPollObject(void)
     self->fds = fds;
 
     return self;
-}
-
-static int
-devpoll_internal_close(devpollObject *self)
-{
-    int save_errno = 0;
-    if (self->fd_devpoll >= 0) {
-        int fd = self->fd_devpoll;
-        self->fd_devpoll = -1;
-        Py_BEGIN_ALLOW_THREADS
-        if (close(fd) < 0)
-            save_errno = errno;
-        Py_END_ALLOW_THREADS
-    }
-    return save_errno;
 }
 
 static void
