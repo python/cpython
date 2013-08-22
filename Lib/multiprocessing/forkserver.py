@@ -10,6 +10,7 @@ import threading
 from . import connection
 from . import process
 from . import reduction
+from . import semaphore_tracker
 from . import spawn
 from . import util
 
@@ -55,13 +56,14 @@ def connect_to_new_process(fds):
     The calling process should write to data_w the pickled preparation and
     process data.
     '''
-    if len(fds) + 3 >= MAXFDS_TO_SEND:
+    if len(fds) + 4 >= MAXFDS_TO_SEND:
         raise ValueError('too many fds')
     with socket.socket(socket.AF_UNIX) as client:
         client.connect(_forkserver_address)
         parent_r, child_w = util.pipe()
         child_r, parent_w = util.pipe()
-        allfds = [child_r, child_w, _forkserver_alive_fd]
+        allfds = [child_r, child_w, _forkserver_alive_fd,
+                  semaphore_tracker._semaphore_tracker_fd]
         allfds += fds
         try:
             reduction.sendfds(client, allfds)
@@ -88,8 +90,6 @@ def ensure_running():
             return
 
         assert all(type(mod) is str for mod in _preload_modules)
-        config = process.current_process()._config
-        semaphore_tracker_fd = config['semaphore_tracker_fd']
         cmd = ('from multiprocessing.forkserver import main; ' +
                'main(%d, %d, %r, **%r)')
 
@@ -110,7 +110,7 @@ def ensure_running():
             # when they all terminate the read end becomes ready.
             alive_r, alive_w = util.pipe()
             try:
-                fds_to_pass = [listener.fileno(), alive_r, semaphore_tracker_fd]
+                fds_to_pass = [listener.fileno(), alive_r]
                 cmd %= (listener.fileno(), alive_r, _preload_modules, data)
                 exe = spawn.get_executable()
                 args = [exe] + util._args_from_interpreter_flags() + ['-c', cmd]
@@ -197,7 +197,8 @@ def _serve_one(s, listener, alive_r, handler):
     fds = reduction.recvfds(s, MAXFDS_TO_SEND + 1)
     s.close()
     assert len(fds) <= MAXFDS_TO_SEND
-    child_r, child_w, _forkserver_alive_fd, *_inherited_fds = fds
+    child_r, child_w, _forkserver_alive_fd, stfd, *_inherited_fds = fds
+    semaphore_tracker._semaphore_tracker_fd = stfd
 
     # send pid to client processes
     write_unsigned(child_w, os.getpid())

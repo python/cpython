@@ -40,7 +40,8 @@ class Popen(popen_fork.Popen):
         return fd
 
     def _launch(self, process_obj):
-        tracker_fd = current_process()._config['semaphore_tracker_fd']
+        from . import semaphore_tracker
+        tracker_fd = semaphore_tracker._semaphore_tracker_fd
         self._fds.append(tracker_fd)
         prep_data = spawn.get_preparation_data(process_obj._name)
         fp = io.BytesIO()
@@ -55,7 +56,8 @@ class Popen(popen_fork.Popen):
         try:
             parent_r, child_w = util.pipe()
             child_r, parent_w = util.pipe()
-            cmd = spawn.get_command_line() + [str(child_r)]
+            cmd = spawn.get_command_line(tracker_fd=tracker_fd,
+                                         pipe_handle=child_r)
             self._fds.extend([child_r, child_w])
             self.pid = util.spawnv_passfds(spawn.get_executable(),
                                            cmd, self._fds)
