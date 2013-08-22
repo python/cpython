@@ -200,6 +200,8 @@ class TclTest(unittest.TestCase):
             (('a', 3.4), ('a', 3.4)),
             ((), ()),
             (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
+            (call('dict', 'create', 1, '\u20ac', b'\xe2\x82\xac', (3.4,)),
+                    (1, '\u20ac', '\u20ac', (3.4,))),
         ]
         for arg, res in testcases:
             self.assertEqual(splitlist(arg), res, msg=arg)
@@ -232,6 +234,8 @@ class TclTest(unittest.TestCase):
             (('a', (2, 3.4)), ('a', (2, 3.4))),
             ((), ()),
             (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
+            (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
+                    (12, '\u20ac', '\u20ac', (3.4,))),
         ]
         for arg, res in testcases:
             self.assertEqual(split(arg), res, msg=arg)
