@@ -620,6 +620,42 @@ class TestMessageAPI(TestEmailBase):
             "attachment; filename*=utf-8''Fu%C3%9Fballer%20%5Bfilename%5D.ppt",
             msg['Content-Disposition'])
 
+    def test_binary_quopri_payload(self):
+        for charset in ('latin-1', 'ascii'):
+            msg = Message()
+            msg['content-type'] = 'text/plain; charset=%s' % charset
+            msg['content-transfer-encoding'] = 'quoted-printable'
+            msg.set_payload(b'foo=e6=96=87bar')
+            self.assertEqual(
+                msg.get_payload(decode=True),
+                b'foo\xe6\x96\x87bar',
+                'get_payload returns wrong result with charset %s.' % charset)
+
+    def test_binary_base64_payload(self):
+        for charset in ('latin-1', 'ascii'):
+            msg = Message()
+            msg['content-type'] = 'text/plain; charset=%s' % charset
+            msg['content-transfer-encoding'] = 'base64'
+            msg.set_payload(b'Zm9v5paHYmFy')
+            self.assertEqual(
+                msg.get_payload(decode=True),
+                b'foo\xe6\x96\x87bar',
+                'get_payload returns wrong result with charset %s.' % charset)
+
+    def test_binary_uuencode_payload(self):
+        for charset in ('latin-1', 'ascii'):
+            for encoding in ('x-uuencode', 'uuencode', 'uue', 'x-uue'):
+                msg = Message()
+                msg['content-type'] = 'text/plain; charset=%s' % charset
+                msg['content-transfer-encoding'] = encoding
+                msg.set_payload(b"begin 666 -\n)9F]OYI:'8F%R\n \nend\n")
+                self.assertEqual(
+                    msg.get_payload(decode=True),
+                    b'foo\xe6\x96\x87bar',
+                    str(('get_payload returns wrong result ',
+                         'with charset {0} and encoding {1}.')).\
+                        format(charset, encoding))
+
     def test_add_header_with_name_only_param(self):
         msg = Message()
         msg.add_header('Content-Disposition', 'inline', foo_bar=None)
