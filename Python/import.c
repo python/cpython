@@ -24,9 +24,6 @@ extern "C" {
 /* See _PyImport_FixupExtensionObject() below */
 static PyObject *extensions = NULL;
 
-/* Function from Parser/tokenizer.c */
-extern char * PyTokenizer_FindEncodingFilename(int, PyObject *);
-
 /* This table is defined in config.c: */
 extern struct _inittab _PyImport_Inittab[];
 
