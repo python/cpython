@@ -1040,7 +1040,7 @@ newDevPollObject(void)
 static void
 devpoll_dealloc(devpollObject *self)
 {
-    (void)devpoll_internal_close();
+    (void)devpoll_internal_close(self);
     PyMem_DEL(self->fds);
     PyObject_Del(self);
 }
