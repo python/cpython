@@ -29,7 +29,10 @@ set_key_error(PyObject *arg)
 #define PERTURB_SHIFT 5
 
 /* Object used as dummy key to fill deleted entries */
-static PyObject *dummy = NULL; /* Initialized by first call to make_new_set() */
+
+static PyObject _dummy_struct;
+
+#define dummy (&_dummy_struct)
 
 #ifdef Py_REF_DEBUG
 PyObject *
@@ -329,7 +332,6 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     Py_ssize_t i;
     int is_oldtable_malloced;
     setentry small_copy[PySet_MINSIZE];
-    PyObject *dummy_entry;
 
     assert(minused >= 0);
 
@@ -386,10 +388,8 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
-    dummy_entry = dummy;
     for (entry = oldtable; i > 0; entry++) {
-        if (entry->key != NULL && entry->key != dummy_entry) {
-            /* ACTIVE */
+        if (entry->key != NULL && entry->key != dummy) {
             --i;
             set_insert_clean(so, entry->key, entry->hash);
         }
@@ -674,7 +674,6 @@ set_merge(PySetObject *so, PyObject *otherset)
 {
     PySetObject *other;
     PyObject *key;
-    PyObject *dummy_entry;
     Py_hash_t hash;
     Py_ssize_t i;
     setentry *entry;
@@ -694,13 +693,12 @@ set_merge(PySetObject *so, PyObject *otherset)
        if (set_table_resize(so, (so->used + other->used)*2) != 0)
            return -1;
     }
-    dummy_entry = dummy;
     for (i = 0; i <= other->mask; i++) {
         entry = &other->table[i];
         key = entry->key;
         hash = entry->hash;
         if (key != NULL &&
-            key != dummy_entry) {
+            key != dummy) {
             Py_INCREF(key);
             if (set_insert_key(so, key, hash) == -1) {
                 Py_DECREF(key);
@@ -1070,12 +1068,6 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
 {
     PySetObject *so = NULL;
 
-    if (dummy == NULL) { /* Auto-initialize dummy */
-        dummy = PyUnicode_FromString("<dummy key>");
-        if (dummy == NULL)
-            return NULL;
-    }
-
     /* create PySetObject structure */
     if (numfree &&
         (type == &PySet_Type  ||  type == &PyFrozenSet_Type)) {
@@ -1172,7 +1164,6 @@ void
 PySet_Fini(void)
 {
     PySet_ClearFreeList();
-    Py_CLEAR(dummy);
     Py_CLEAR(emptyfrozenset);
 }
 
@@ -2581,3 +2572,46 @@ test_c_api(PySetObject *so)
 #undef assertRaises
 
 #endif
+
+/***** Dummy Struct  *************************************************/
+
+static PyObject *
+dummy_repr(PyObject *op)
+{
+    return PyUnicode_FromString("<dummy key>");
+}
+
+static void
+dummy_dealloc(PyObject* ignore)
+{
+    Py_FatalError("deallocating <dummy key>");
+}
+
+static PyTypeObject _PySetDummy_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "<dummy key> type",
+    0,
+    0,
+    dummy_dealloc,      /*tp_dealloc*/ /*never called*/
+    0,                  /*tp_print*/
+    0,                  /*tp_getattr*/
+    0,                  /*tp_setattr*/
+    0,                  /*tp_reserved*/
+    dummy_repr,         /*tp_repr*/
+    0,                  /*tp_as_number*/
+    0,                  /*tp_as_sequence*/
+    0,                  /*tp_as_mapping*/
+    0,                  /*tp_hash */
+    0,                  /*tp_call */
+    0,                  /*tp_str */
+    0,                  /*tp_getattro */
+    0,                  /*tp_setattro */
+    0,                  /*tp_as_buffer */
+    Py_TPFLAGS_DEFAULT, /*tp_flags */
+};
+
+static PyObject _dummy_struct = {
+  _PyObject_EXTRA_INIT
+  2, &_PySetDummy_Type
+};
+
