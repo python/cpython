@@ -146,7 +146,10 @@ def _format_code_info(co):
     return "\n".join(lines)
 
 def show_code(co, *, file=None):
-    """Print details of methods, functions, or code to stdout."""
+    """Print details of methods, functions, or code to *file*.
+
+    If *file* is not provided, the output is printed on stdout.
+    """
     print(code_info(co), file=file)
 
 _Instruction = collections.namedtuple("_Instruction",
