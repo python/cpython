@@ -386,7 +386,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Unix daemons or services, they are normal processes that will be
       terminated (and not joined) if non-daemonic processes have exited.
 
-   In addition to the  :class:`Threading.Thread` API, :class:`Process` objects
+   In addition to the  :class:`threading.Thread` API, :class:`Process` objects
    also support the following attributes and methods:
 
    .. attribute:: pid
@@ -405,7 +405,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       The process's authentication key (a byte string).
 
       When :mod:`multiprocessing` is initialized the main process is assigned a
-      random string using :func:`os.random`.
+      random string using :func:`os.urandom`.
 
       When a :class:`Process` object is created, it will inherit the
       authentication key of its parent process, although this may be changed by
@@ -530,7 +530,7 @@ Note that one can also create a shared queue by using a manager object -- see
    (1) After putting an object on an empty queue there may be an
        infinitesimal delay before the queue's :meth:`~Queue.empty`
        method returns :const:`False` and :meth:`~Queue.get_nowait` can
-       return without raising :exc:`Queue.Empty`.
+       return without raising :exc:`queue.Empty`.
 
    (2) If multiple processes are enqueuing objects, it is possible for
        the objects to be received at the other end out-of-order.
@@ -547,7 +547,8 @@ Note that one can also create a shared queue by using a manager object -- see
 .. warning::
 
    As mentioned above, if a child process has put items on a queue (and it has
-   not used :meth:`JoinableQueue.cancel_join_thread`), then that process will
+   not used :meth:`JoinableQueue.cancel_join_thread
+   <multiprocessing.Queue.cancel_join_thread>`), then that process will
    not terminate until all buffered items have been flushed to the pipe.
 
    This means that if you try joining that process you may get a deadlock unless
@@ -580,7 +581,7 @@ For an example of the usage of queues for interprocess communication see
    thread is started which transfers objects from a buffer into the pipe.
 
    The usual :exc:`queue.Empty` and :exc:`queue.Full` exceptions from the
-   standard library's :mod:`Queue` module are raised to signal timeouts.
+   standard library's :mod:`queue` module are raised to signal timeouts.
 
    :class:`Queue` implements all the methods of :class:`queue.Queue` except for
    :meth:`~queue.Queue.task_done` and :meth:`~queue.Queue.join`.
@@ -696,7 +697,7 @@ For an example of the usage of queues for interprocess communication see
       call to :meth:`task_done` tells the queue that the processing on the task
       is complete.
 
-      If a :meth:`~Queue.join` is currently blocking, it will resume when all
+      If a :meth:`~queue.Queue.join` is currently blocking, it will resume when all
       items have been processed (meaning that a :meth:`task_done` call was
       received for every item that had been :meth:`~Queue.put` into the queue).
 
@@ -712,7 +713,7 @@ For an example of the usage of queues for interprocess communication see
       queue.  The count goes down whenever a consumer calls
       :meth:`task_done` to indicate that the item was retrieved and all work on
       it is complete.  When the count of unfinished tasks drops to zero,
-      :meth:`~Queue.join` unblocks.
+      :meth:`~queue.Queue.join` unblocks.
 
 
 Miscellaneous
@@ -874,8 +875,8 @@ Connection objects are usually created using :func:`Pipe` -- see also
 
    .. versionadded:: 3.3
       Connection objects now support the context manager protocol -- see
-      :ref:`typecontextmanager`.  :meth:`__enter__` returns the
-      connection object, and :meth:`__exit__` calls :meth:`close`.
+      :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
+      connection object, and :meth:`~contextmanager.__exit__` calls :meth:`close`.
 
 For example:
 
@@ -948,7 +949,7 @@ object -- see :ref:`multiprocessing-managers`.
    object from :mod:`multiprocessing`.
 
    .. versionchanged:: 3.3
-      The :meth:`wait_for` method was added.
+      The :meth:`~threading.Condition.wait_for` method was added.
 
 .. class:: Event()
 
@@ -1095,8 +1096,9 @@ processes.
    array.
 
    If *lock* is ``True`` (the default) then a new lock object is created to
-   synchronize access to the value.  If *lock* is a :class:`Lock` or
-   :class:`RLock` object then that will be used to synchronize access to the
+   synchronize access to the value.  If *lock* is a
+   :class:`~multiprocessing.Lock` or :class:`~multiprocessing.RLock` object
+   then that will be used to synchronize access to the
    value.  If *lock* is ``False`` then access to the returned object will not be
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
@@ -1110,8 +1112,8 @@ processes.
    object.
 
    If *lock* is ``True`` (the default) then a new lock object is created to
-   synchronize access to the value.  If *lock* is a :class:`Lock` or
-   :class:`RLock` object then that will be used to synchronize access to the
+   synchronize access to the value.  If *lock* is a :class:`~multiprocessing.Lock` or
+   :class:`~multiprocessing.RLock` object then that will be used to synchronize access to the
    value.  If *lock* is ``False`` then access to the returned object will not be
    automatically protected by a lock, so it will not necessarily be
    "process-safe".
@@ -1296,8 +1298,8 @@ their parent process exits.  The manager classes are defined in the
       :attr:`proxytype._exposed_` is used instead if it exists.)  In the case
       where no exposed list is specified, all "public methods" of the shared
       object will be accessible.  (Here a "public method" means any attribute
-      which has a :meth:`__call__` method and whose name does not begin with
-      ``'_'``.)
+      which has a :meth:`~object.__call__` method and whose name does not begin
+      with ``'_'``.)
 
       *method_to_typeid* is a mapping used to specify the return type of those
       exposed methods which should return a proxy.  It maps method names to
@@ -1318,11 +1320,11 @@ their parent process exits.  The manager classes are defined in the
 
    .. versionchanged:: 3.3
       Manager objects support the context manager protocol -- see
-      :ref:`typecontextmanager`.  :meth:`__enter__` starts the server
-      process (if it has not already started) and then returns the
-      manager object.  :meth:`__exit__` calls :meth:`shutdown`.
+      :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` starts the
+      server process (if it has not already started) and then returns the
+      manager object.  :meth:`~contextmanager.__exit__` calls :meth:`shutdown`.
 
-      In previous versions :meth:`__enter__` did not start the
+      In previous versions :meth:`~contextmanager.__enter__` did not start the
       manager's server process if it was not already started.
 
 .. class:: SyncManager
@@ -1354,7 +1356,7 @@ their parent process exits.  The manager classes are defined in the
       :class:`threading.Lock` or :class:`threading.RLock` object.
 
       .. versionchanged:: 3.3
-         The :meth:`wait_for` method was added.
+         The :meth:`~threading.Condition.wait_for` method was added.
 
    .. method:: Event()
 
@@ -1798,8 +1800,8 @@ with the :class:`Pool` class.
 
    .. versionadded:: 3.3
       Pool objects now support the context manager protocol -- see
-      :ref:`typecontextmanager`.  :meth:`__enter__` returns the pool
-      object, and :meth:`__exit__` calls :meth:`terminate`.
+      :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
+      pool object, and :meth:~contextmanager.`__exit__` calls :meth:`terminate`.
 
 
 .. class:: AsyncResult
@@ -1860,7 +1862,8 @@ Listeners and Clients
    :synopsis: API for dealing with sockets.
 
 Usually message passing between processes is done using queues or by using
-:class:`Connection` objects returned by :func:`Pipe`.
+:class:`~multiprocessing.Connection` objects returned by
+:func:`~multiprocessing.Pipe`.
 
 However, the :mod:`multiprocessing.connection` module allows some extra
 flexibility.  It basically gives a high level message oriented API for dealing
@@ -1928,7 +1931,8 @@ multiple connections at the same time.
    private temporary directory created using :func:`tempfile.mkstemp`.
 
    If the listener object uses a socket then *backlog* (1 by default) is passed
-   to the :meth:`listen` method of the socket once it has been bound.
+   to the :meth:`~socket.socket.listen` method of the socket once it has been
+   bound.
 
    If *authenticate* is ``True`` (``False`` by default) or *authkey* is not
    ``None`` then digest authentication is used.
@@ -1946,8 +1950,8 @@ multiple connections at the same time.
    .. method:: accept()
 
       Accept a connection on the bound socket or named pipe of the listener
-      object and return a :class:`Connection` object.  If authentication is
-      attempted and fails, then
+      object and return a :class:`~multiprocessing.Connection` object.  If
+      authentication is attempted and fails, then
       :exc:`~multiprocessing.AuthenticationError` is raised.
 
    .. method:: close()
@@ -1969,8 +1973,8 @@ multiple connections at the same time.
 
    .. versionadded:: 3.3
       Listener objects now support the context manager protocol -- see
-      :ref:`typecontextmanager`.  :meth:`__enter__` returns the
-      listener object, and :meth:`__exit__` calls :meth:`close`.
+      :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
+      listener object, and :meth:~contextmanager.`__exit__` calls :meth:`close`.
 
 .. function:: wait(object_list, timeout=None)
 
@@ -2106,7 +2110,8 @@ an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
 Authentication keys
 ~~~~~~~~~~~~~~~~~~~
 
-When one uses :meth:`Connection.recv`, the data received is automatically
+When one uses :meth:`Connection.recv <multiprocessing.Connection.recv>`, the
+data received is automatically
 unpickled.  Unfortunately unpickling data from an untrusted source is a security
 risk.  Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
 to provide digest authentication.
@@ -2256,9 +2261,10 @@ Joining zombie processes
 
     On Unix when a process finishes but has not been joined it becomes a zombie.
     There should never be very many because each time a new process starts (or
-    :func:`active_children` is called) all completed processes which have not
-    yet been joined will be joined.  Also calling a finished process's
-    :meth:`Process.is_alive` will join the process.  Even so it is probably good
+    :func:`~multiprocessing.active_children` is called) all completed processes
+    which have not yet been joined will be joined.  Also calling a finished
+    process's :meth:`Process.is_alive <multiprocessing.Process.is_alive>` will
+    join the process.  Even so it is probably good
     practice to explicitly join all the processes that you start.
 
 Better to inherit than pickle/unpickle
@@ -2271,20 +2277,23 @@ Better to inherit than pickle/unpickle
 
 Avoid terminating processes
 
-    Using the :meth:`Process.terminate` method to stop a process is liable to
+    Using the :meth:`Process.terminate <multiprocessing.Process.terminate>`
+    method to stop a process is liable to
     cause any shared resources (such as locks, semaphores, pipes and queues)
     currently being used by the process to become broken or unavailable to other
     processes.
 
     Therefore it is probably best to only consider using
-    :meth:`Process.terminate` on processes which never use any shared resources.
+    :meth:`Process.terminate <multiprocessing.Process.terminate>` on processes
+    which never use any shared resources.
 
 Joining processes that use queues
 
     Bear in mind that a process that has put items in a queue will wait before
     terminating until all the buffered items are fed by the "feeder" thread to
     the underlying pipe.  (The child process can call the
-    :meth:`Queue.cancel_join_thread` method of the queue to avoid this behaviour.)
+    :meth:`Queue.cancel_join_thread <multiprocessing.Queue.cancel_join_thread>`
+    method of the queue to avoid this behaviour.)
 
     This means that whenever you use a queue you need to make sure that all
     items which have been put on the queue will eventually be removed before the
@@ -2361,7 +2370,7 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
     resulting in a bad file descriptor error, but introduces a potential danger
     to applications which replace :func:`sys.stdin` with a "file-like object"
     with output buffering.  This danger is that if multiple processes call
-    :func:`close()` on this file-like object, it could result in the same
+    :meth:`~io.IOBase.close()` on this file-like object, it could result in the same
     data being flushed to the object multiple times, resulting in corruption.
 
     If you write a file-like object and implement your own caching, you can
@@ -2390,14 +2399,16 @@ More picklability
     as the ``target`` argument on Windows --- just define a function and use
     that instead.
 
-    Also, if you subclass :class:`Process` then make sure that instances will be
-    picklable when the :meth:`Process.start` method is called.
+    Also, if you subclass :class:`~multiprocessing.Process` then make sure that
+    instances will be picklable when the :meth:`Process.start
+    <multiprocessing.Process.start>` method is called.
 
 Global variables
 
     Bear in mind that if code run in a child process tries to access a global
     variable, then the value it sees (if any) may not be the same as the value
-    in the parent process at the time that :meth:`Process.start` was called.
+    in the parent process at the time that :meth:`Process.start
+    <multiprocessing.Process.start>` was called.
 
     However, global variables which are just module level constants cause no
     problems.
@@ -2453,7 +2464,7 @@ Demonstration of how to create and use customized managers and proxies:
    :language: python3
 
 
-Using :class:`Pool`:
+Using :class:`~multiprocessing.pool.Pool`:
 
 .. literalinclude:: ../includes/mp_pool.py
    :language: python3
