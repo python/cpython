@@ -743,14 +743,14 @@ class TestShutil(unittest.TestCase):
         os.chmod(restrictive_subdir, 0o600)
 
         shutil.copytree(src_dir, dst_dir)
-        self.assertEquals(os.stat(src_dir).st_mode, os.stat(dst_dir).st_mode)
-        self.assertEquals(os.stat(os.path.join(src_dir, 'permissive.txt')).st_mode,
+        self.assertEqual(os.stat(src_dir).st_mode, os.stat(dst_dir).st_mode)
+        self.assertEqual(os.stat(os.path.join(src_dir, 'permissive.txt')).st_mode,
                           os.stat(os.path.join(dst_dir, 'permissive.txt')).st_mode)
-        self.assertEquals(os.stat(os.path.join(src_dir, 'restrictive.txt')).st_mode,
+        self.assertEqual(os.stat(os.path.join(src_dir, 'restrictive.txt')).st_mode,
                           os.stat(os.path.join(dst_dir, 'restrictive.txt')).st_mode)
         restrictive_subdir_dst = os.path.join(dst_dir,
                                               os.path.split(restrictive_subdir)[1])
-        self.assertEquals(os.stat(restrictive_subdir).st_mode,
+        self.assertEqual(os.stat(restrictive_subdir).st_mode,
                           os.stat(restrictive_subdir_dst).st_mode)
 
     @unittest.skipUnless(hasattr(os, 'link'), 'requires os.link')
