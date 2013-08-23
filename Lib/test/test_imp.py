@@ -275,7 +275,6 @@ class ImportTests(unittest.TestCase):
             return
         imp.load_module(name, None, *found[1:])
 
-<<<<<<< local
     @unittest.skipIf(sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
     def test_bug7732(self):
@@ -284,14 +283,13 @@ class ImportTests(unittest.TestCase):
             os.mkdir(source)
             self.assertRaisesRegex(ImportError, '^No module',
                 imp.find_module, support.TESTFN, ["."])
-=======
+
     def test_multiple_calls_to_get_data(self):
         # Issue #18755: make sure multiple calls to get_data() can succeed.
         loader = imp._LoadSourceCompatibility('imp', imp.__file__,
                                               open(imp.__file__))
         loader.get_data(imp.__file__)  # File should be closed
         loader.get_data(imp.__file__)  # Will need to create a newly opened file
->>>>>>> other
 
 
 class ReloadTests(unittest.TestCase):
