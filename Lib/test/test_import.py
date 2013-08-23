@@ -322,11 +322,11 @@ class ImportTests(unittest.TestCase):
         self.assertIn(b"ImportError", stdout)
 
     def test_from_import_message_for_nonexistent_module(self):
-        with self.assertRaisesRegexp(ImportError, "^No module named 'bogus'"):
+        with self.assertRaisesRegex(ImportError, "^No module named 'bogus'"):
             from bogus import foo
 
     def test_from_import_message_for_existing_module(self):
-        with self.assertRaisesRegexp(ImportError, "^cannot import name 'bogus'"):
+        with self.assertRaisesRegex(ImportError, "^cannot import name 'bogus'"):
             from re import bogus
 
 
@@ -689,6 +689,7 @@ class PycacheTests(unittest.TestCase):
         self.assertTrue(os.path.exists(pyc_file))
         os.remove(self.source)
         forget(TESTFN)
+        importlib.invalidate_caches()
         self.assertRaises(ImportError, __import__, TESTFN)
 
     @skip_if_dont_write_bytecode
