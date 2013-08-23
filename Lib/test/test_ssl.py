@@ -31,6 +31,7 @@ except ImportError:
 HOST = test_support.HOST
 CERTFILE = None
 SVN_PYTHON_ORG_ROOT_CERT = None
+NULLBYTECERT = None
 
 def handle_error(prefix):
     exc_format = ' '.join(traceback.format_exception(*sys.exc_info()))
@@ -87,6 +88,27 @@ class BasicTests(unittest.TestCase):
         p = ssl._ssl._test_decode_cert(CERTFILE, False)
         if test_support.verbose:
             sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+
+    def test_parse_cert_CVE_2013_4073(self):
+        p = ssl._ssl._test_decode_cert(NULLBYTECERT)
+        if test_support.verbose:
+            sys.stdout.write("\n" + pprint.pformat(p) + "\n")
+        subject = ((('countryName', 'US'),),
+                   (('stateOrProvinceName', 'Oregon'),),
+                   (('localityName', 'Beaverton'),),
+                   (('organizationName', 'Python Software Foundation'),),
+                   (('organizationalUnitName', 'Python Core Development'),),
+                   (('commonName', 'null.python.org\x00example.org'),),
+                   (('emailAddress', 'python-dev@python.org'),))
+        self.assertEqual(p['subject'], subject)
+        self.assertEqual(p['issuer'], subject)
+        self.assertEqual(p['subjectAltName'],
+                         (('DNS', 'altnull.python.org\x00example.com'),
+                         ('email', 'null@python.org\x00user@example.org'),
+                         ('URI', 'http://null.python.org\x00http://example.org'),
+                         ('IP Address', '192.0.2.1'),
+                         ('IP Address', '2001:DB8:0:0:0:0:0:1\n'))
+                        )
 
     def test_DER_to_PEM(self):
         with open(SVN_PYTHON_ORG_ROOT_CERT, 'r') as f:
@@ -1210,15 +1232,18 @@ def test_main(verbose=False):
     if skip_expected:
         raise test_support.TestSkipped("No SSL support")
 
-    global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT
+    global CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, NULLBYTECERT
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir,
                             "keycert.pem")
     SVN_PYTHON_ORG_ROOT_CERT = os.path.join(
         os.path.dirname(__file__) or os.curdir,
         "https_svn_python_org_root.pem")
+    NULLBYTECERT = os.path.join(os.path.dirname(__file__) or os.curdir,
+                                "nullbytecert.pem")
 
     if (not os.path.exists(CERTFILE) or
-        not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT)):
+        not os.path.exists(SVN_PYTHON_ORG_ROOT_CERT) or
+        not os.path.exists(NULLBYTECERT)):
         raise test_support.TestFailed("Can't read certificate files!")
 
     tests = [BasicTests]
