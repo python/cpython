@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17702: On error, os.environb now removes suppress the except context
+  when raising a new KeyError with the original key.
+
 - Issue #18755: Fixed the loader used in imp to allow get_data() to be called
   multiple times.
 
