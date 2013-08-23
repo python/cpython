@@ -443,14 +443,6 @@ PyObject_Repr(PyObject *v)
     if (Py_TYPE(v)->tp_repr == NULL)
         return PyUnicode_FromFormat("<%s object at %p>",
                                     v->ob_type->tp_name, v);
-
-#ifdef Py_DEBUG
-    /* PyObject_Repr() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
-    assert(!PyErr_Occurred());
-#endif
-
     res = (*v->ob_type->tp_repr)(v);
     if (res == NULL)
         return NULL;
@@ -482,7 +474,6 @@ PyObject_Str(PyObject *v)
 #endif
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
-
     if (PyUnicode_CheckExact(v)) {
 #ifndef Py_DEBUG
         if (PyUnicode_READY(v) < 0)
@@ -493,13 +484,6 @@ PyObject_Str(PyObject *v)
     }
     if (Py_TYPE(v)->tp_str == NULL)
         return PyObject_Repr(v);
-
-#ifdef Py_DEBUG
-    /* PyObject_Str() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
-    assert(!PyErr_Occurred());
-#endif
 
     /* It is possible for a type to have a tp_str representation that loops
        infinitely. */
