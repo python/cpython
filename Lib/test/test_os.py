@@ -646,10 +646,13 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         with self.assertRaises(KeyError) as cm:
             os.environ[missing]
         self.assertIs(cm.exception.args[0], missing)
+        self.assertTrue(cm.exception.__suppress_context__)
 
         with self.assertRaises(KeyError) as cm:
             del os.environ[missing]
         self.assertIs(cm.exception.args[0], missing)
+        self.assertTrue(cm.exception.__suppress_context__)
+
 
 class WalkTests(unittest.TestCase):
     """Tests for os.walk()."""
