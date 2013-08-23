@@ -40,7 +40,7 @@ Executor Objects
 
     .. method:: map(func, *iterables, timeout=None)
 
-       Equivalent to ``map(func, *iterables)`` except *func* is executed
+       Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
        asynchronously and several calls to *func* may be made concurrently.  The
        returned iterator raises a :exc:`TimeoutError` if
        :meth:`~iterator.__next__` is called and the result isn't available

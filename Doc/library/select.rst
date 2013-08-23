@@ -81,7 +81,7 @@ The module defines the following:
    This is a straightforward interface to the Unix :c:func:`select` system call.
    The first three arguments are sequences of 'waitable objects': either
    integers representing file descriptors or objects with a parameterless method
-   named :meth:`fileno` returning such an integer:
+   named :meth:`~io.IOBase.fileno` returning such an integer:
 
    * *rlist*: wait until ready for reading
    * *wlist*: wait until ready for writing
@@ -107,8 +107,8 @@ The module defines the following:
    objects <file object>` (e.g. ``sys.stdin``, or objects returned by
    :func:`open` or :func:`os.popen`), socket objects returned by
    :func:`socket.socket`.  You may also define a :dfn:`wrapper` class yourself,
-   as long as it has an appropriate :meth:`fileno` method (that really returns
-   a file descriptor, not just a random integer).
+   as long as it has an appropriate :meth:`~io.IOBase.fileno` method (that
+   really returns a file descriptor, not just a random integer).
 
    .. note::
 
@@ -122,7 +122,7 @@ The module defines the following:
 .. attribute:: PIPE_BUF
 
    The minimum number of bytes which can be written without blocking to a pipe
-   when the pipe has been reported as ready for writing by :func:`select`,
+   when the pipe has been reported as ready for writing by :func:`~select.select`,
    :func:`poll` or another interface in this module.  This doesn't apply
    to other kind of file-like objects such as sockets.
 
@@ -171,10 +171,10 @@ object.
 .. method:: devpoll.register(fd[, eventmask])
 
    Register a file descriptor with the polling object.  Future calls to the
-   :meth:`poll` method will then check whether the file descriptor has any pending
-   I/O events.  *fd* can be either an integer, or an object with a :meth:`fileno`
-   method that returns an integer.  File objects implement :meth:`fileno`, so they
-   can also be used as the argument.
+   :meth:`poll` method will then check whether the file descriptor has any
+   pending I/O events.  *fd* can be either an integer, or an object with a
+   :meth:`~io.IOBase.fileno` method that returns an integer.  File objects
+   implement :meth:`!fileno`, so they can also be used as the argument.
 
    *eventmask* is an optional bitmask describing the type of events you want to
    check for. The constants are the same that with :c:func:`poll`
@@ -200,7 +200,7 @@ object.
 
    Remove a file descriptor being tracked by a polling object.  Just like the
    :meth:`register` method, *fd* can be an integer or an object with a
-   :meth:`fileno` method that returns an integer.
+   :meth:`~io.IOBase.fileno` method that returns an integer.
 
    Attempting to remove a file descriptor that was never registered is
    safely ignored.
@@ -317,10 +317,10 @@ linearly scanned again. :c:func:`select` is O(highest file descriptor), while
 .. method:: poll.register(fd[, eventmask])
 
    Register a file descriptor with the polling object.  Future calls to the
-   :meth:`poll` method will then check whether the file descriptor has any pending
-   I/O events.  *fd* can be either an integer, or an object with a :meth:`fileno`
-   method that returns an integer.  File objects implement :meth:`fileno`, so they
-   can also be used as the argument.
+   :meth:`poll` method will then check whether the file descriptor has any
+   pending I/O events.  *fd* can be either an integer, or an object with a
+   :meth:`~io.IOBase.fileno` method that returns an integer.  File objects
+   implement :meth:`!fileno`, so they can also be used as the argument.
 
    *eventmask* is an optional bitmask describing the type of events you want to
    check for, and can be a combination of the constants :const:`POLLIN`,
@@ -359,7 +359,7 @@ linearly scanned again. :c:func:`select` is O(highest file descriptor), while
 
    Remove a file descriptor being tracked by a polling object.  Just like the
    :meth:`register` method, *fd* can be an integer or an object with a
-   :meth:`fileno` method that returns an integer.
+   :meth:`~io.IOBase.fileno` method that returns an integer.
 
    Attempting to remove a file descriptor that was never registered causes a
    :exc:`KeyError` exception to be raised.
@@ -424,8 +424,8 @@ http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
    Value used to identify the event. The interpretation depends on the filter
    but it's usually the file descriptor. In the constructor ident can either
-   be an int or an object with a fileno() function. kevent stores the integer
-   internally.
+   be an int or an object with a :meth:`~io.IOBase.fileno` method. kevent
+   stores the integer internally.
 
 .. attribute:: kevent.filter
 
