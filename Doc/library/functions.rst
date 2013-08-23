@@ -1467,10 +1467,11 @@ are always available.  They are listed here in alphabetical order.
    This function is invoked by the :keyword:`import` statement.  It can be
    replaced (by importing the :mod:`builtins` module and assigning to
    ``builtins.__import__``) in order to change semantics of the
-   :keyword:`import` statement, but nowadays it is usually simpler to use import
-   hooks (see :pep:`302`) to attain the same goals.  Direct use of
-   :func:`__import__` is entirely discouraged in favor of
-   :func:`importlib.import_module`.
+   :keyword:`import` statement, but doing so is **strongly** discouraged as it
+   is usually simpler to use import hooks (see :pep:`302`) to attain the same
+   goals and does not cause issues with code which assumes the default import
+   implementation is in use.  Direct use of :func:`__import__` is also
+   discouraged in favor of :func:`importlib.import_module`.
 
    The function imports the module *name*, potentially using the given *globals*
    and *locals* to determine how to interpret the name in a package context.
