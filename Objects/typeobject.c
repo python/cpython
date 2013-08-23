@@ -736,13 +736,6 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-#ifdef Py_DEBUG
-    /* type_call() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
-    assert(!PyErr_Occurred());
-#endif
-
     obj = type->tp_new(type, args, kwds);
     if (obj != NULL) {
         /* Ugly exception: when the call was type(something),
