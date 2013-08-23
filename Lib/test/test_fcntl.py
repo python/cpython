@@ -11,7 +11,7 @@ import unittest
 from test.test_support import (verbose, TESTFN, unlink, run_unittest,
     import_module)
 
-# Skip test if no fnctl module.
+# Skip test if no fcntl module.
 fcntl = import_module('fcntl')
 
 
