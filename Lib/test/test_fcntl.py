@@ -8,7 +8,7 @@ import _testcapi
 import unittest
 from test.support import verbose, TESTFN, unlink, run_unittest, import_module
 
-# Skip test if no fnctl module.
+# Skip test if no fcntl module.
 fcntl = import_module('fcntl')
 
 
@@ -70,7 +70,11 @@ class TestFcntl(unittest.TestCase):
         # again, but pass the file rather than numeric descriptor
         self.f = open(TESTFN, 'wb')
         rv = fcntl.fcntl(self.f, fcntl.F_SETFL, os.O_NONBLOCK)
+        if verbose:
+            print('Status from fcntl with O_NONBLOCK: ', rv)
         rv = fcntl.fcntl(self.f, fcntl.F_SETLKW, lockdata)
+        if verbose:
+            print('String from fcntl with F_SETLKW: ', repr(rv))
         self.f.close()
 
     def test_fcntl_bad_file(self):
