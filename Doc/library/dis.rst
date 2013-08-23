@@ -109,7 +109,8 @@ object isn't useful:
 .. function:: show_code(x, *, file=None)
 
    Print detailed code object information for the supplied function, method,
-   source code string or code object to stdout.
+   source code string or code object to *file* (or ``sys.stdout`` if *file*
+   is not specified).
 
    This is a convenient shorthand for ``print(code_info(x), file=file)``,
    intended for interactive exploration at the interpreter prompt.
