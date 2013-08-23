@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18755: Fixed the loader used in imp to allow get_data() to be called
+  multiple times.
+
 - Issue #16809: Fixed some tkinter incompabilities with Tcl/Tk 8.6.
 
 - Issue #16809: Tkinter's splitlist() and split() methods now accept Tcl_Obj
