@@ -54,13 +54,15 @@ The :mod:`queue` module defines the following classes and exceptions:
 
 .. exception:: Empty
 
-   Exception raised when non-blocking :meth:`get` (or :meth:`get_nowait`) is called
+   Exception raised when non-blocking :meth:`~Queue.get` (or
+   :meth:`~Queue.get_nowait`) is called
    on a :class:`Queue` object which is empty.
 
 
 .. exception:: Full
 
-   Exception raised when non-blocking :meth:`put` (or :meth:`put_nowait`) is called
+   Exception raised when non-blocking :meth:`~Queue.put` (or
+   :meth:`~Queue.put_nowait`) is called
    on a :class:`Queue` object which is full.
 
 
@@ -181,6 +183,6 @@ Example of how to wait for enqueued tasks to be completed::
       context.
 
    :class:`collections.deque` is an alternative implementation of unbounded
-   queues with fast atomic :func:`append` and :func:`popleft` operations that
-   do not require locking.
+   queues with fast atomic :meth:`~collections.deque.append` and
+   :meth:`~collections.deque.popleft` operations that do not require locking.
 
