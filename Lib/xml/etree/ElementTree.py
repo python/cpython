@@ -1265,27 +1265,29 @@ class IncrementalParser:
             self.root = self._root
 
 
-class _IterParseIterator(IncrementalParser):
+class _IterParseIterator:
 
     def __init__(self, source, events, parser, close_source=False):
-        IncrementalParser.__init__(self, events, parser)
+        self._parser = IncrementalParser(events, parser)
         self._file = source
         self._close_file = close_source
+        self.root = None
 
     def __next__(self):
         while 1:
-            for event in self.events():
+            for event in self._parser.events():
                 return event
-            if self._parser is None:
+            if self._parser._parser is None:
+                self.root = self._parser.root
                 if self._close_file:
                     self._file.close()
                 raise StopIteration
             # load event buffer
             data = self._file.read(16384)
             if data:
-                self.data_received(data)
+                self._parser.data_received(data)
             else:
-                self.eof_received()
+                self._parser.eof_received()
 
     def __iter__(self):
         return self
