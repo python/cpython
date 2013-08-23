@@ -248,6 +248,13 @@ class ImportTests(unittest.TestCase):
             return
         imp.load_module(name, None, *found[1:])
 
+    def test_multiple_calls_to_get_data(self):
+        # Issue #18755: make sure multiple calls to get_data() can succeed.
+        loader = imp._LoadSourceCompatibility('imp', imp.__file__,
+                                              open(imp.__file__))
+        loader.get_data(imp.__file__)  # File should be closed
+        loader.get_data(imp.__file__)  # Will need to create a newly opened file
+
 
 class ReloadTests(unittest.TestCase):
 
