@@ -63,7 +63,7 @@ This module defines the following functions:
 
    Set a trace function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
-   :meth:`run` method is called.
+   :meth:`~Thread.run` method is called.
 
 
 .. function:: setprofile(func)
@@ -72,7 +72,7 @@ This module defines the following functions:
 
    Set a profile function for all threads started from the :mod:`threading` module.
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
-   :meth:`run` method is called.
+   :meth:`~Thread.run` method is called.
 
 
 .. function:: stack_size([size])
@@ -825,10 +825,11 @@ This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
 and as such also functions as an example of creating custom threads.
 
-Timers are started, as with threads, by calling their :meth:`start` method.  The
-timer can be stopped (before its action has begun) by calling the :meth:`cancel`
-method.  The interval the timer will wait before executing its action may not be
-exactly the same as the interval specified by the user.
+Timers are started, as with threads, by calling their :meth:`~Timer.start`
+method.  The timer can be stopped (before its action has begun) by calling the
+:meth:`~Timer.cancel` method.  The interval the timer will wait before
+executing its action may not be exactly the same as the interval specified by
+the user.
 
 For example::
 
