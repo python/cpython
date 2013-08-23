@@ -60,13 +60,15 @@ The :mod:`Queue` module defines the following classes and exceptions:
 
 .. exception:: Empty
 
-   Exception raised when non-blocking :meth:`get` (or :meth:`get_nowait`) is called
+   Exception raised when non-blocking :meth:`~Queue.get` (or
+   :meth:`~Queue.get_nowait`) is called
    on a :class:`Queue` object which is empty.
 
 
 .. exception:: Full
 
-   Exception raised when non-blocking :meth:`put` (or :meth:`put_nowait`) is called
+   Exception raised when non-blocking :meth:`~Queue.put` (or
+   :meth:`~Queue.put_nowait`) is called
    on a :class:`Queue` object which is full.
 
 .. seealso::
