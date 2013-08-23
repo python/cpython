@@ -552,6 +552,12 @@ class FieldStorage:
         else:
             self.read_single()
 
+    def __del__(self):
+        try:
+            self.file.close()
+        except AttributeError:
+            pass
+
     def __repr__(self):
         """Return a printable representation."""
         return "FieldStorage(%r, %r, %r)" % (

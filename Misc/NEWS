@@ -38,6 +38,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18394: Close cgi.FieldStorage's optional file.
+
 - Issue #17702: On error, os.environb now removes suppress the except context
   when raising a new KeyError with the original key.
 
