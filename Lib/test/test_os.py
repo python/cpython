@@ -1007,17 +1007,26 @@ class URandomTests(unittest.TestCase):
 
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
-        soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
-        resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
-        try:
-            with self.assertRaises(OSError) as cm:
+        # Check urandom() failing when it is not able to open /dev/random.
+        # We spawn a new process to make the test more robust (if getrlimit()
+        # failed to restore the file descriptor limit after this, the whole
+        # test suite would crash; this actually happened on the OS X Tiger
+        # buildbot).
+        code = """if 1:
+            import errno
+            import os
+            import resource
+
+            soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+            resource.setrlimit(resource.RLIMIT_NOFILE, (1, hard_limit))
+            try:
                 os.urandom(16)
-            self.assertEqual(cm.exception.errno, errno.EMFILE)
-        finally:
-            # We restore the old limit as soon as possible.  If doing it
-            # using addCleanup(), code running in between would fail
-            # creating any file descriptor.
-            resource.setrlimit(resource.RLIMIT_NOFILE, (soft_limit, hard_limit))
+            except OSError as e:
+                assert e.errno == errno.EMFILE, e.errno
+            else:
+                raise AssertionError("OSError not raised")
+            """
+        assert_python_ok('-c', code)
 
 
 @contextlib.contextmanager
