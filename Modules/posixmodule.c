@@ -140,21 +140,18 @@ corresponding Unix manual entries for more information on calls.");
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(__WATCOMC__) && !defined(__QNX__)           /* Watcom compiler */
-#define HAVE_GETCWD     1
 #define HAVE_OPENDIR    1
 #define HAVE_SYSTEM     1
 #include <process.h>
 #else
 #ifdef __BORLANDC__             /* Borland compiler */
 #define HAVE_EXECV      1
-#define HAVE_GETCWD     1
 #define HAVE_OPENDIR    1
 #define HAVE_PIPE       1
 #define HAVE_SYSTEM     1
 #define HAVE_WAIT       1
 #else
 #ifdef _MSC_VER         /* Microsoft compiler */
-#define HAVE_GETCWD     1
 #define HAVE_GETPPID    1
 #define HAVE_GETLOGIN   1
 #define HAVE_SPAWNV     1
@@ -174,7 +171,6 @@ corresponding Unix manual entries for more information on calls.");
 #if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
 #define HAVE_FORK1      1
 #endif
-#define HAVE_GETCWD     1
 #define HAVE_GETEGID    1
 #define HAVE_GETEUID    1
 #define HAVE_GETGID     1
@@ -3179,7 +3175,6 @@ posix_lchown(PyObject *self, PyObject *args)
 #endif /* HAVE_LCHOWN */
 
 
-#ifdef HAVE_GETCWD
 static PyObject *
 posix_getcwd(int use_bytes)
 {
@@ -3251,7 +3246,6 @@ posix_getcwd_bytes(PyObject *self)
 {
     return posix_getcwd(1);
 }
-#endif
 
 #if ((!defined(HAVE_LINK)) && defined(MS_WINDOWS))
 #define HAVE_LINK 1
@@ -10710,12 +10704,10 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_CTERMID
     {"ctermid",         posix_ctermid, METH_NOARGS, posix_ctermid__doc__},
 #endif
-#ifdef HAVE_GETCWD
     {"getcwd",          (PyCFunction)posix_getcwd_unicode,
     METH_NOARGS, posix_getcwd__doc__},
     {"getcwdb",         (PyCFunction)posix_getcwd_bytes,
     METH_NOARGS, posix_getcwdb__doc__},
-#endif
 #if defined(HAVE_LINK) || defined(MS_WINDOWS)
     {"link",            (PyCFunction)posix_link,
                         METH_VARARGS | METH_KEYWORDS,

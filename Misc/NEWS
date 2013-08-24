@@ -10,6 +10,8 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Remove supporting for compiling on systems without getcwd().
+
 - Issue #18774: Remove last bits of GNU PTH thread code and thread_pth.h.
 
 - Issue #18771: Add optimization to set object lookups to reduce the cost
