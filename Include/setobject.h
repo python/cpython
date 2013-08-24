@@ -61,6 +61,10 @@ struct _setobject {
 PyAPI_DATA(PyTypeObject) PySet_Type;
 PyAPI_DATA(PyTypeObject) PyFrozenSet_Type;
 PyAPI_DATA(PyTypeObject) PySetIter_Type;
+#ifndef Py_LIMITED_API
+PyAPI_DATA(PyObject *) _PySet_Dummy;
+#endif
+
 
 /* Invariants for frozensets:
  *     data is immutable.
