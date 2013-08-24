@@ -29,18 +29,12 @@ set_key_error(PyObject *arg)
 #define PERTURB_SHIFT 5
 
 /* Object used as dummy key to fill deleted entries */
-
 static PyObject _dummy_struct;
 
 #define dummy (&_dummy_struct)
 
-#ifdef Py_REF_DEBUG
-PyObject *
-_PySet_Dummy(void)
-{
-    return dummy;
-}
-#endif
+/* Exported for the gdb plugin's benefit. */
+PyObject *_PySet_Dummy = dummy;
 
 #define INIT_NONZERO_SET_SLOTS(so) do {                         \
     (so)->table = (so)->smalltable;                             \

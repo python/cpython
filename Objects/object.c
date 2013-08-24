@@ -22,7 +22,7 @@ _Py_GetRefTotal(void)
     o = _PyDict_Dummy();
     if (o != NULL)
         total -= o->ob_refcnt;
-    o = _PySet_Dummy();
+    o = _PySet_Dummy;
     if (o != NULL)
         total -= o->ob_refcnt;
     return total;
