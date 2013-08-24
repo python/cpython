@@ -1251,6 +1251,7 @@ class GeneralModuleTests(unittest.TestCase):
                 signal.alarm(1)
                 self.assertRaises(socket.timeout, c.sendall, b"x" * (1024**2))
         finally:
+            signal.alarm(0)
             signal.signal(signal.SIGALRM, old_alarm)
             c.close()
             s.close()
