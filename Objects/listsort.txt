@@ -100,11 +100,13 @@ Comparison with Python's Samplesort Hybrid
   The algorithms are effectively identical in these cases, except that
   timsort does one less compare in \sort.
 
-  Now for the more interesting cases.  lg(n!) is the information-theoretic
-  limit for the best any comparison-based sorting algorithm can do on
-  average (across all permutations).  When a method gets significantly
-  below that, it's either astronomically lucky, or is finding exploitable
-  structure in the data.
+  Now for the more interesting cases.  Where lg(x) is the logarithm of x to
+  the base 2 (e.g., lg(8)=3), lg(n!) is the information-theoretic limit for
+  the best any comparison-based sorting algorithm can do on average (across
+  all permutations).  When a method gets significantly below that, it's
+  either astronomically lucky, or is finding exploitable structure in the
+  data.
+
 
       n   lg(n!)    *sort    3sort     +sort   %sort    ~sort     !sort
 -------  -------   ------   -------  -------  ------  -------  --------
@@ -251,7 +253,7 @@ Computing minrun
 ----------------
 If N < 64, minrun is N.  IOW, binary insertion sort is used for the whole
 array then; it's hard to beat that given the overheads of trying something
-fancier.
+fancier (see note BINSORT).
 
 When N is a power of 2, testing on random data showed that minrun values of
 16, 32, 64 and 128 worked about equally well.  At 256 the data-movement cost
@@ -379,10 +381,10 @@ with wildly unbalanced run lengths.
 
 Merge Memory
 ------------
-Merging adjacent runs of lengths A and B in-place is very difficult.
-Theoretical constructions are known that can do it, but they're too difficult
-and slow for practical use.  But if we have temp memory equal to min(A, B),
-it's easy.
+Merging adjacent runs of lengths A and B in-place, and in linear time, is
+difficult.  Theoretical constructions are known that can do it, but they're
+too difficult and slow for practical use.  But if we have temp memory equal
+to min(A, B), it's easy.
 
 If A is smaller (function merge_lo), copy A to a temp array, leave B alone,
 and then we can do the obvious merge algorithm left to right, from the temp
@@ -457,10 +459,10 @@ finding the right spot early in B (more on that later).
 
 After finding such a k, the region of uncertainty is reduced to 2**(k-1) - 1
 consecutive elements, and a straight binary search requires exactly k-1
-additional comparisons to nail it.  Then we copy all the B's up to that
-point in one chunk, and then copy A[0].  Note that no matter where A[0]
-belongs in B, the combination of galloping + binary search finds it in no
-more than about 2*lg(B) comparisons.
+additional comparisons to nail it (see note REGION OF UNCERTAINTY).  Then we
+copy all the B's up to that point in one chunk, and then copy A[0].  Note
+that no matter where A[0] belongs in B, the combination of galloping + binary
+search finds it in no more than about 2*lg(B) comparisons.
 
 If we did a straight binary search, we could find it in no more than
 ceiling(lg(B+1)) comparisons -- but straight binary search takes that many
@@ -573,11 +575,11 @@ Galloping Complication
 The description above was for merge_lo.  merge_hi has to merge "from the
 other end", and really needs to gallop starting at the last element in a run
 instead of the first.  Galloping from the first still works, but does more
-comparisons than it should (this is significant -- I timed it both ways).
-For this reason, the gallop_left() and gallop_right() functions have a
-"hint" argument, which is the index at which galloping should begin.  So
-galloping can actually start at any index, and proceed at offsets of 1, 3,
-7, 15, ... or -1, -3, -7, -15, ... from the starting index.
+comparisons than it should (this is significant -- I timed it both ways). For
+this reason, the gallop_left() and gallop_right() (see note LEFT OR RIGHT)
+functions have a "hint" argument, which is the index at which galloping
+should begin.  So galloping can actually start at any index, and proceed at
+offsets of 1, 3, 7, 15, ... or -1, -3, -7, -15, ... from the starting index.
 
 In the code as I type it's always called with either 0 or n-1 (where n is
 the # of elements in a run).  It's tempting to try to do something fancier,
@@ -676,3 +678,78 @@ immediately.  The consequence is that it ends up using two compares to sort
 [2, 1].  Gratifyingly, timsort doesn't do any special-casing, so had to be
 taught how to deal with mixtures of ascending and descending runs
 efficiently in all cases.
+
+
+NOTES
+-----
+
+BINSORT
+A "binary insertion sort" is just like a textbook insertion sort, but instead
+of locating the correct position of the next item via linear (one at a time)
+search, an equivalent to Python's bisect.bisect_right is used to find the
+correct position in logarithmic time.  Most texts don't mention this
+variation, and those that do usually say it's not worth the bother:  insertion
+sort remains quadratic (expected and worst cases) either way.  Speeding the
+search doesn't reduce the quadratic data movement costs.
+
+But in CPython's case, comparisons are extraordinarily expensive compared to
+moving data, and the details matter.  Moving objects is just copying
+pointers.  Comparisons can be arbitrarily expensive (can invoke arbitary
+user-supplied Python code), but even in simple cases (like 3 < 4) _all_
+decisions are made at runtime:  what's the type of the left comparand?  the
+type of the right?  do they need to be coerced to a common type?  where's the
+code to compare these types?  And so on.  Even the simplest Python comparison
+triggers a large pile of C-level pointer dereferences, conditionals, and
+function calls.
+
+So cutting the number of compares is almost always measurably helpful in
+CPython, and the savings swamp the quadratic-time data movement costs for
+reasonable minrun values.
+
+
+LEFT OR RIGHT
+gallop_left() and gallop_right() are akin to the Python bisect module's
+bisect_left() and bisect_right():  they're the same unless the slice they're
+searching contains a (at least one) value equal to the value being searched
+for.  In that case, gallop_left() returns the position immediately before the
+leftmost equal value, and gallop_right() the position immediately after the
+rightmost equal value.  The distinction is needed to preserve stability.  In
+general, when merging adjacent runs A and B, gallop_left is used to search
+thru B for where an element from A belongs, and gallop_right to search thru A
+for where an element from B belongs.
+
+
+REGION OF UNCERTAINTY
+Two kinds of confusion seem to be common about the claim that after finding
+a k such that
+
+    B[2**(k-1) - 1] < A[0] <= B[2**k - 1]
+
+then a binary search requires exactly k-1 tries to find A[0]'s proper
+location. For concreteness, say k=3, so B[3] < A[0] <= B[7].
+
+The first confusion takes the form "OK, then the region of uncertainty is at
+indices 3, 4, 5, 6 and 7:  that's 5 elements, not the claimed 2**(k-1) - 1 =
+3"; or the region is viewed as a Python slice and the objection is "but that's
+the slice B[3:7], so has 7-3 = 4 elements".  Resolution:  we've already
+compared A[0] against B[3] and against B[7], so A[0]'s correct location is
+already known wrt _both_ endpoints.  What remains is to find A[0]'s correct
+location wrt B[4], B[5] and B[6], which spans 3 elements.  Or in general, the
+slice (leaving off both endpoints) (2**(k-1)-1)+1 through (2**k-1)-1
+inclusive = 2**(k-1) through (2**k-1)-1 inclusive, which has
+    (2**k-1)-1 - 2**(k-1) + 1 =
+    2**k-1 - 2**(k-1) =
+    2*2**k-1 - 2**(k-1) =
+    (2-1)*2**(k-1) - 1 =
+    2**(k-1) - 1
+elements.
+
+The second confusion:  "k-1 = 2 binary searches can find the correct location
+among 2**(k-1) = 4 elements, but you're only applying it to 3 elements:  we
+could make this more efficient by arranging for the region of uncertainty to
+span 2**(k-1) elements."  Resolution:  that confuses "elements" with
+"locations".  In a slice with N elements, there are N+1 _locations_.  In the
+example, with the region of uncertainty B[4], B[5], B[6], there are 4
+locations:  before B[4], between B[4] and B[5], between B[5] and B[6], and
+after B[6].  In general, across 2**(k-1)-1 elements, there are 2**(k-1)
+locations.  That's why k-1 binary searches are necessary and sufficient.
