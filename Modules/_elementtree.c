@@ -3389,11 +3389,14 @@ xmlparser_close(XMLParserObject* self, PyObject* args)
     if (TreeBuilder_CheckExact(self->target)) {
         Py_DECREF(res);
         return treebuilder_done((TreeBuilderObject*) self->target);
-    } if (self->handle_close) {
+    }
+    else if (self->handle_close) {
         Py_DECREF(res);
         return PyObject_CallFunction(self->handle_close, "");
-    } else
+    }
+    else {
         return res;
+    }
 }
 
 static PyObject*
