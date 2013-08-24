@@ -3080,7 +3080,7 @@ PySSL_enum_cert_store(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if ((hStore = CertOpenSystemStore(NULL, store_name)) == NULL) {
+    if ((hStore = CertOpenSystemStore((HCRYPTPROV)NULL, store_name)) == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
