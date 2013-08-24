@@ -375,11 +375,17 @@ def main(args=None):
             use_symlinks = False
         else:
             use_symlinks = True
-        parser.add_argument('--symlinks', default=use_symlinks,
-                            action='store_true', dest='symlinks',
-                            help='Try to use symlinks rather than copies, '
-                                 'when symlinks are not the default for '
-                                 'the platform.')
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--symlinks', default=use_symlinks,
+                           action='store_true', dest='symlinks',
+                           help='Try to use symlinks rather than copies, '
+                                'when symlinks are not the default for '
+                                'the platform.')
+        group.add_argument('--copies', default=not use_symlinks,
+                           action='store_false', dest='symlinks',
+                           help='Try to use copies rather than symlinks, '
+                                'even when symlinks are the default for '
+                                'the platform.')
         parser.add_argument('--clear', default=False, action='store_true',
                             dest='clear', help='Delete the contents of the '
                                                'environment directory if it '
