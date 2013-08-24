@@ -982,7 +982,9 @@ XMLParser Objects
 
    .. method:: close()
 
-      Finishes feeding data to the parser.  Returns an element structure.
+      Finishes feeding data to the parser.  Returns the result of calling the
+      `close` method of the *target* passed during construction; by default,
+      this is the toplevel document element.
 
 
    .. method:: doctype(name, pubid, system)
