@@ -317,9 +317,6 @@
 /* Define if you have the getaddrinfo function. */
 #undef HAVE_GETADDRINFO
 
-/* Define to 1 if you have the `getcwd' function. */
-#undef HAVE_GETCWD
-
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
 

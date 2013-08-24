@@ -11379,19 +11379,6 @@ esac
 
 fi
 
-ac_fn_c_check_func "$LINENO" "getcwd" "ac_cv_func_getcwd"
-if test "x$ac_cv_func_getcwd" = xyes; then :
-  $as_echo "#define HAVE_GETCWD 1" >>confdefs.h
-
-else
-  case " $LIBOBJS " in
-  *" getcwd.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS getcwd.$ac_objext"
- ;;
-esac
-
-fi
-
 ac_fn_c_check_func "$LINENO" "strdup" "ac_cv_func_strdup"
 if test "x$ac_cv_func_strdup" = xyes; then :
   $as_echo "#define HAVE_STRDUP 1" >>confdefs.h
