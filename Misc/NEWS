@@ -66,7 +66,7 @@ Library
   in the tkinter module.
 
 - Issue #18747: Re-seed OpenSSL's pseudo-random number generator after fork.
-  A pthread_atfork() parent handler is used to seeded the PRNG with pid, time
+  A pthread_atfork() parent handler is used to seed the PRNG with pid, time
   and some stack data.
 
 - Issue #8865: Concurrent invocation of select.poll.poll() now raises a

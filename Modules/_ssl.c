@@ -2944,7 +2944,7 @@ fails or if it does not provide enough data to seed PRNG.");
 /* Seed OpenSSL's PRNG at fork(), http://bugs.python.org/issue18747
  *
  * The parent handler seeds the PRNG from pseudo-random data like pid, the
- * current time (miliseconds or seconds) and an uninitialized arry.
+ * current time (miliseconds or seconds) and an uninitialized array.
  * The array contains stack variables that are impossible to predict
  * on most systems, e.g. function return address (subject to ASLR), the
  * stack protection canary and automatic variables.
@@ -2953,7 +2953,7 @@ fails or if it does not provide enough data to seed PRNG.");
  * Note:
  * The code uses pthread_atfork() until Python has a proper atfork API. The
  * handlers are not removed from the child process. A parent handler is used
- * instead of a child handler because fork() is suppose to be async-signal
+ * instead of a child handler because fork() is supposed to be async-signal
  * safe but the handler calls unsafe functions.
  */
 
