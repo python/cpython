@@ -109,12 +109,50 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(),
                          'Set-Cookie: Customer="WILE_E_COYOTE"; Max-Age=10')
 
-        # others
+    def test_set_secure_httponly_attrs(self):
         C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
         C['Customer']['secure'] = True
         C['Customer']['httponly'] = True
         self.assertEqual(C.output(),
             'Set-Cookie: Customer="WILE_E_COYOTE"; httponly; secure')
+
+    def test_secure_httponly_false_if_not_present(self):
+        C = cookies.SimpleCookie()
+        C.load('eggs=scrambled; Path=/bacon')
+        self.assertFalse(C['eggs']['httponly'])
+        self.assertFalse(C['eggs']['secure'])
+
+    def test_secure_httponly_true_if_present(self):
+        # Issue 16611
+        C = cookies.SimpleCookie()
+        C.load('eggs=scrambled; httponly; secure; Path=/bacon')
+        self.assertTrue(C['eggs']['httponly'])
+        self.assertTrue(C['eggs']['secure'])
+
+    def test_secure_httponly_true_if_have_value(self):
+        # This isn't really valid, but demonstrates what the current code
+        # is expected to do in this case.
+        C = cookies.SimpleCookie()
+        C.load('eggs=scrambled; httponly=foo; secure=bar; Path=/bacon')
+        self.assertTrue(C['eggs']['httponly'])
+        self.assertTrue(C['eggs']['secure'])
+        # Here is what it actually does; don't depend on this behavior.  These
+        # checks are testing backward compatibility for issue 16611.
+        self.assertEqual(C['eggs']['httponly'], 'foo')
+        self.assertEqual(C['eggs']['secure'], 'bar')
+
+    def test_bad_attrs(self):
+        # issue 16611: make sure we don't break backward compatibility.
+        C = cookies.SimpleCookie()
+        C.load('cookie=with; invalid; version; second=cookie;')
+        self.assertEqual(C.output(),
+            'Set-Cookie: cookie=with\r\nSet-Cookie: second=cookie')
+
+    def test_extra_spaces(self):
+        C = cookies.SimpleCookie()
+        C.load('eggs  =  scrambled  ;  secure  ;  path  =  bar   ; foo=foo   ')
+        self.assertEqual(C.output(),
+            'Set-Cookie: eggs=scrambled; Path=bar; secure\r\nSet-Cookie: foo=foo')
 
     def test_quoted_meta(self):
         # Try cookie with quoted meta-data
