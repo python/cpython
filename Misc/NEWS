@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11973: Fix a problem in kevent. The flags and fflags fields are now
+  properly handled as unsigned.
+
 - Issue #18807: ``pyvenv`` now takes a --copies argument allowing copies
   instead of symlinks even where symlinks are available and the default.
 
