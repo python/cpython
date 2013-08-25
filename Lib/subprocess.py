@@ -1247,15 +1247,16 @@ class Popen(object):
                                     os.close(fd)
                                     closed.add(fd)
 
-                            # Close all other fds, if asked for
-                            if close_fds:
-                                self._close_fds(but=errpipe_write)
-
                             if cwd is not None:
                                 os.chdir(cwd)
 
                             if preexec_fn:
                                 preexec_fn()
+
+                            # Close all other fds, if asked for - after
+                            # preexec_fn(), which may open FDs.
+                            if close_fds:
+                                self._close_fds(but=errpipe_write)
 
                             if env is None:
                                 os.execvp(executable, args)
