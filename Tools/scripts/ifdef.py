@@ -9,11 +9,11 @@
 # options.  On standard output it writes a copy of the input file(s)
 # minus those code sections that are suppressed by the selected
 # combination of defined/undefined symbols.  The #if(n)def/#else/#else
-# lines themselfs (if the #if(n)def tests for one of the mentioned
+# lines themselves (if the #if(n)def tests for one of the mentioned
 # names) are removed as well.
 
 # Features: Arbitrary nesting of recognized and unrecognized
-# preprocesor statements works correctly.  Unrecognized #if* commands
+# preprocessor statements works correctly.  Unrecognized #if* commands
 # are left in place, so it will never remove too much, only too
 # little.  It does accept whitespace around the '#' character.
 
