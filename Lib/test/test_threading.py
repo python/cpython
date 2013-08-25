@@ -9,6 +9,7 @@ import re
 import sys
 _thread = import_module('_thread')
 threading = import_module('threading')
+import _testcapi
 import time
 import unittest
 import weakref
@@ -752,6 +753,53 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
         for t in threads:
             t.join()
+
+
+class SubinterpThreadingTests(BaseTestCase):
+
+    def test_threads_join(self):
+        # Non-daemon threads should be joined at subinterpreter shutdown
+        # (issue #18808)
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        code = r"""if 1:
+            import os
+            import threading
+            import time
+
+            def f():
+                # Sleep a bit so that the thread is still running when
+                # Py_EndInterpreter is called.
+                time.sleep(0.05)
+                os.write(%d, b"x")
+            threading.Thread(target=f).start()
+            """ % (w,)
+        ret = _testcapi.run_in_subinterp(code)
+        self.assertEqual(ret, 0)
+        # The thread was joined properly.
+        self.assertEqual(os.read(r, 1), b"x")
+
+    def test_daemon_threads_fatal_error(self):
+        subinterp_code = r"""if 1:
+            import os
+            import threading
+            import time
+
+            def f():
+                # Make sure the daemon thread is still running when
+                # Py_EndInterpreter is called.
+                time.sleep(10)
+            threading.Thread(target=f, daemon=True).start()
+            """
+        script = r"""if 1:
+            import _testcapi
+
+            _testcapi.run_in_subinterp(%r)
+            """ % (subinterp_code,)
+        rc, out, err = assert_python_failure("-c", script)
+        self.assertIn("Fatal Python error: Py_EndInterpreter: "
+                      "not the last thread", err.decode())
 
 
 class ThreadingExceptionTests(BaseTestCase):
