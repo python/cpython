@@ -885,7 +885,9 @@ XMLParser Objects
 
    .. method:: close()
 
-      Finishes feeding data to the parser.  Returns an element structure.
+      Finishes feeding data to the parser.  Returns the result of calling the
+      ``close()`` method of the *target* passed during construction; by default,
+      this is the toplevel document element.
 
 
    .. method:: doctype(name, pubid, system)
@@ -899,12 +901,12 @@ XMLParser Objects
 
       Feeds data to the parser.  *data* is encoded data.
 
-:meth:`XMLParser.feed` calls *target*\'s :meth:`start` method
-for each opening tag, its :meth:`end` method for each closing tag,
-and data is processed by method :meth:`data`.  :meth:`XMLParser.close`
-calls *target*\'s method :meth:`close`.
-:class:`XMLParser` can be used not only for building a tree structure.
-This is an example of counting the maximum depth of an XML file::
+   :meth:`XMLParser.feed` calls *target*\'s ``start()`` method
+   for each opening tag, its ``end()`` method for each closing tag,
+   and data is processed by method ``data()``.  :meth:`XMLParser.close`
+   calls *target*\'s method ``close()``.
+   :class:`XMLParser` can be used not only for building a tree structure.
+   This is an example of counting the maximum depth of an XML file::
 
     >>> from xml.etree.ElementTree import XMLParser
     >>> class MaxDepth:                     # The target object of the parser
