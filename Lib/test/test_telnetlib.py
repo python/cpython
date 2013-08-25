@@ -75,6 +75,14 @@ class GeneralTests(TestCase):
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
+    def testGetters(self):
+        # Test telnet getter methods
+        telnet = telnetlib.Telnet(HOST, self.port, timeout=30)
+        t_sock = telnet.sock
+        self.assertEqual(telnet.get_socket(), t_sock)
+        self.assertEqual(telnet.fileno(), t_sock.fileno())
+        telnet.sock.close()
+
 class SocketStub(object):
     ''' a socket proxy that re-defines sendall() '''
     def __init__(self, reads=()):
