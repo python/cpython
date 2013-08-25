@@ -1294,7 +1294,7 @@ def _get_big_s(STR):
     raise AssertionError
 
 # The older replace implementation counted all matches in
-# the string even when it only neeed to make one replacement.
+# the string even when it only needed to make one replacement.
 @bench('("A" + ("Z"*128*1024)).replace("A", "BB", 1)',
        'quick replace single character match', 10)
 def quick_replace_single_match(STR):

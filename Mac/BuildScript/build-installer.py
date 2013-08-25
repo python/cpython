@@ -108,7 +108,7 @@ DEPSRC = os.path.expanduser('~/Universal/other-sources')
 ### There are some issues with the SDK selection below here,
 ### The resulting binary doesn't work on all platforms that
 ### it should. Always default to the 10.4u SDK until that
-### isue is resolved.
+### issue is resolved.
 ###
 ##if int(os.uname()[2].split('.')[0]) == 8:
 ##    # Explicitly use the 10.4u (universal) SDK when
@@ -1015,7 +1015,7 @@ def buildPython():
     os.chdir(curdir)
 
     if PYTHON_3:
-        # Remove the 'Current' link, that way we don't accidently mess
+        # Remove the 'Current' link, that way we don't accidentally mess
         # with an already installed version of python 2
         os.unlink(os.path.join(rootDir, 'Library', 'Frameworks',
                             'Python.framework', 'Versions', 'Current'))

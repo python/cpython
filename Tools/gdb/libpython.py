@@ -632,7 +632,7 @@ class PyDictObjectPtr(PyObjectPtr):
     def iteritems(self):
         '''
         Yields a sequence of (PyObjectPtr key, PyObjectPtr value) pairs,
-        analagous to dict.iteritems()
+        analogous to dict.iteritems()
         '''
         keys = self.field('ma_keys')
         values = self.field('ma_values')

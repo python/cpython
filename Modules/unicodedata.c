@@ -507,7 +507,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
 
     stackptr = 0;
     isize = PyUnicode_GET_LENGTH(input);
-    /* Overallocate atmost 10 characters. */
+    /* Overallocate at most 10 characters. */
     space = (isize > 10 ? 10 : isize) + isize;
     osize = space;
     output = PyMem_Malloc(space * sizeof(Py_UCS4));

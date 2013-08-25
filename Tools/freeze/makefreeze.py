@@ -61,7 +61,7 @@ def makefreeze(base, dict, debug=0, entry_point=None, fail_import=()):
         outfp.write('\t{"%s", M_%s, %d},\n' % (mod, mangled, size))
     outfp.write('\n')
     # The following modules have a NULL code pointer, indicating
-    # that the prozen program should not search for them on the host
+    # that the frozen program should not search for them on the host
     # system. Importing them will *always* raise an ImportError.
     # The zero value size is never used.
     for mod in fail_import:
