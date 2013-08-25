@@ -137,7 +137,7 @@ class BasicSocketTests(unittest.TestCase):
                    (('emailAddress', 'python-dev@python.org'),))
         self.assertEqual(p['subject'], subject)
         self.assertEqual(p['issuer'], subject)
-        if ssl._OPENSSL_API_VERSION >= (0, 9, 8):
+        if ssl.OPENSSL_VERSION_INFO >= (0, 9, 8):
             san = (('DNS', 'altnull.python.org\x00example.com'),
                    ('email', 'null@python.org\x00user@example.org'),
                    ('URI', 'http://null.python.org\x00http://example.org'),
