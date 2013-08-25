@@ -378,6 +378,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #18817: Fix a resource warning in Lib/aifc.py demo.
+
 - Issue #18439: Make patchcheck work on Windows for ACKS, NEWS.
 
 - Issue #18448: Fix a typo in Tools/demo/eiffel.py.
