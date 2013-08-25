@@ -151,7 +151,7 @@ def fix(filename):
             except OSError as msg:
                 err('%s: reset of timestamp failed (%r)\n' % (filename, msg))
                 return 1
-    # Return succes
+    # Return success
     return 0
 
 def fixline(line):

@@ -1,4 +1,4 @@
-#Run this file after automatic convertsion of the VisualStudio 2008 solution by VisualStudio 2010.
+#Run this file after automatic conversion of the VisualStudio 2008 solution by VisualStudio 2010.
 #This can be done whenever the 2008 solution changes.
 #It will make the necessary cleanup and updates to the vcxproj files
 #the .props files need to be maintained by hand if the .vsprops files change

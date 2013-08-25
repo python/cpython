@@ -966,7 +966,7 @@ class UnicodeData:
             assert pua_index - NAME_ALIASES_START == len(self.aliases)
 
             self.named_sequences = []
-            # store named seqences in the PUA 1, in range U+F0100..,
+            # store named sequences in the PUA 1, in range U+F0100..,
             # in order to take advantage of the compression and lookup
             # algorithms used for the other characters.
 
