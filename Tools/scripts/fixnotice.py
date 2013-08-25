@@ -2,7 +2,7 @@
 
 """(Ostensibly) fix copyright notices in files.
 
-Actually, this sript will simply replace a block of text in a file from one
+Actually, this script will simply replace a block of text in a file from one
 string to another.  It will only do this once though, i.e. not globally
 throughout the file.  It writes a backup file and then does an os.rename()
 dance for atomicity.

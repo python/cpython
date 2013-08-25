@@ -458,7 +458,7 @@ class Application:
                 handler = getattr(self, handlername)
             except AttributeError:
                 if value == '':
-                    # count the number of occurances
+                    # count the number of occurrences
                     if values.has_key(optionname):
                         values[optionname] = values[optionname] + 1
                     else:

@@ -977,7 +977,7 @@ def has_sequence(types, doing_specialization):
 
 
 class StaticVisitor(PickleVisitor):
-    CODE = '''Very simple, always emit this static code.  Overide CODE'''
+    CODE = '''Very simple, always emit this static code.  Override CODE'''
 
     def visit(self, object):
         self.emit(self.CODE, 0, reflow=False)

@@ -617,7 +617,7 @@ class PyDictObjectPtr(PyObjectPtr):
     def iteritems(self):
         '''
         Yields a sequence of (PyObjectPtr key, PyObjectPtr value) pairs,
-        analagous to dict.iteritems()
+        analogous to dict.iteritems()
         '''
         for i in safe_range(self.field('ma_mask') + 1):
             ep = self.field('ma_table') + i
