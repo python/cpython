@@ -889,24 +889,22 @@ if __name__ == '__main__':
     if not sys.argv[1:]:
         sys.argv.append('/usr/demos/data/audio/bach.aiff')
     fn = sys.argv[1]
-    f = open(fn, 'r')
-    print("Reading", fn)
-    print("nchannels =", f.getnchannels())
-    print("nframes   =", f.getnframes())
-    print("sampwidth =", f.getsampwidth())
-    print("framerate =", f.getframerate())
-    print("comptype  =", f.getcomptype())
-    print("compname  =", f.getcompname())
-    if sys.argv[2:]:
-        gn = sys.argv[2]
-        print("Writing", gn)
-        g = open(gn, 'w')
-        g.setparams(f.getparams())
-        while 1:
-            data = f.readframes(1024)
-            if not data:
-                break
-            g.writeframes(data)
-        g.close()
-        f.close()
-        print("Done.")
+    with open(fn, 'r') as f:
+        print("Reading", fn)
+        print("nchannels =", f.getnchannels())
+        print("nframes   =", f.getnframes())
+        print("sampwidth =", f.getsampwidth())
+        print("framerate =", f.getframerate())
+        print("comptype  =", f.getcomptype())
+        print("compname  =", f.getcompname())
+        if sys.argv[2:]:
+            gn = sys.argv[2]
+            print("Writing", gn)
+            with open(gn, 'w') as g:
+                g.setparams(f.getparams())
+                while 1:
+                    data = f.readframes(1024)
+                    if not data:
+                        break
+                    g.writeframes(data)
+            print("Done.")
