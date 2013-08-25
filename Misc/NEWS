@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16611: http.cookie now correctly parses the 'secure' and 'httponly'
+  cookie flags.
+
 - Issue #11973: Fix a problem in kevent. The flags and fflags fields are now
   properly handled as unsigned.
 
