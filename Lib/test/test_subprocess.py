@@ -1972,6 +1972,23 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertRaises(OSError, os.waitpid, pid, 0)
         self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
+    def test_close_fds_after_preexec(self):
+        fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
+
+        # this FD is used as dup2() target by preexec_fn, and should be closed
+        # in the child process
+        fd = os.dup(1)
+        self.addCleanup(os.close, fd)
+
+        p = subprocess.Popen([sys.executable, fd_status],
+                             stdout=subprocess.PIPE, close_fds=True,
+                             preexec_fn=lambda: os.dup2(1, fd))
+        output, ignored = p.communicate()
+
+        remaining_fds = set(map(int, output.split(b',')))
+
+        self.assertNotIn(fd, remaining_fds)
+
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):
