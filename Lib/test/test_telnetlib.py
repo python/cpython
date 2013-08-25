@@ -92,6 +92,14 @@ class GeneralTests(TestCase):
         self.assertEqual(telnet.sock.gettimeout(), 30)
         telnet.sock.close()
 
+    def testGetters(self):
+        # Test telnet getter methods
+        telnet = telnetlib.Telnet(HOST, self.port, timeout=30)
+        t_sock = telnet.sock
+        self.assertEqual(telnet.get_socket(), t_sock)
+        self.assertEqual(telnet.fileno(), t_sock.fileno())
+        telnet.sock.close()
+
 def _read_setUp(self):
     self.evt = threading.Event()
     self.dataq = Queue.Queue()
