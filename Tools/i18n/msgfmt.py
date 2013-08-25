@@ -154,7 +154,7 @@ def make(filename, outfile):
         # This is a message with plural forms
         elif l.startswith('msgid_plural'):
             if section != ID:
-                print('msgid_plural not preceeded by msgid on %s:%d' % (infile, lno),
+                print('msgid_plural not preceded by msgid on %s:%d' % (infile, lno),
                       file=sys.stderr)
                 sys.exit(1)
             l = l[12:]
