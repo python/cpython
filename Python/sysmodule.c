@@ -219,7 +219,7 @@ PyDoc_STRVAR(exit_doc,
 \n\
 Exit the interpreter by raising SystemExit(status).\n\
 If the status is omitted or None, it defaults to zero (i.e., success).\n\
-If the status is numeric, it will be used as the system exit status.\n\
+If the status is an integer, it will be used as the system exit status.\n\
 If it is another kind of object, it will be printed and the system\n\
 exit status will be one (i.e., failure)."
 );
