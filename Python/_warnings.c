@@ -707,14 +707,14 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
 
         /* Handle the warning. */
         returned = warn_explicit(category, message, filename, lineno, module,
-                            registry, source_line);
+                                 registry, source_line);
         Py_DECREF(source_list);
         return returned;
     }
 
  standard_call:
     return warn_explicit(category, message, filename, lineno, module,
-                                registry, NULL);
+                         registry, NULL);
 }
 
 
@@ -786,11 +786,26 @@ PyErr_Warn(PyObject *category, char *text)
 
 /* Warning with explicit origin */
 int
+PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
+                         PyObject *filename, int lineno,
+                         PyObject *module, PyObject *registry)
+{
+    PyObject *res;
+    if (category == NULL)
+        category = PyExc_RuntimeWarning;
+    res = warn_explicit(category, message, filename, lineno,
+                        module, registry, NULL);
+    if (res == NULL)
+        return -1;
+    Py_DECREF(res);
+    return 0;
+}
+
+int
 PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *filename_str, int lineno,
                    const char *module_str, PyObject *registry)
 {
-    PyObject *res;
     PyObject *message = PyUnicode_FromString(text);
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
     PyObject *module = NULL;
@@ -804,14 +819,8 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
             goto exit;
     }
 
-    if (category == NULL)
-        category = PyExc_RuntimeWarning;
-    res = warn_explicit(category, message, filename, lineno, module, registry,
-                        NULL);
-    if (res == NULL)
-        goto exit;
-    Py_DECREF(res);
-    ret = 0;
+    ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                   module, registry);
 
  exit:
     Py_XDECREF(message);

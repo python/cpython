@@ -901,7 +901,8 @@ extern PyObject *PyModule_GetWarningsModule(void);
 
 
 void
-PyErr_SyntaxLocation(const char *filename, int lineno) {
+PyErr_SyntaxLocation(const char *filename, int lineno)
+{
     PyErr_SyntaxLocationEx(filename, lineno, -1);
 }
 
@@ -911,7 +912,7 @@ PyErr_SyntaxLocation(const char *filename, int lineno) {
    to make printing of exceptions believe it is a syntax error. */
 
 void
-PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
+PyErr_SyntaxLocationObject(PyObject *filename, int lineno, int col_offset)
 {
     PyObject *exc, *v, *tb, *tmp;
     _Py_IDENTIFIER(filename);
@@ -945,16 +946,10 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
         }
     }
     if (filename != NULL) {
-        tmp = PyUnicode_DecodeFSDefault(filename);
-        if (tmp == NULL)
+        if (_PyObject_SetAttrId(v, &PyId_filename, filename))
             PyErr_Clear();
-        else {
-            if (_PyObject_SetAttrId(v, &PyId_filename, tmp))
-                PyErr_Clear();
-            Py_DECREF(tmp);
-        }
 
-        tmp = PyErr_ProgramText(filename, lineno);
+        tmp = PyErr_ProgramTextObject(filename, lineno);
         if (tmp) {
             if (_PyObject_SetAttrId(v, &PyId_text, tmp))
                 PyErr_Clear();
@@ -984,6 +979,21 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
     PyErr_Restore(exc, v, tb);
 }
 
+void
+PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
+{
+    PyObject *fileobj;
+    if (filename != NULL) {
+        fileobj = PyUnicode_DecodeFSDefault(filename);
+        if (fileobj == NULL)
+            PyErr_Clear();
+    }
+    else
+        fileobj = NULL;
+    PyErr_SyntaxLocationObject(fileobj, lineno, col_offset);
+    Py_XDECREF(fileobj);
+}
+
 /* Attempt to load the line of text that the exception refers to.  If it
    fails, it will return NULL but will not set an exception.
 
@@ -991,15 +1001,11 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
    functionality in tb_displayline() in traceback.c. */
 
 PyObject *
-PyErr_ProgramText(const char *filename, int lineno)
+err_programtext(FILE *fp, int lineno)
 {
-    FILE *fp;
     int i;
     char linebuf[1000];
 
-    if (filename == NULL || *filename == '\0' || lineno <= 0)
-        return NULL;
-    fp = fopen(filename, "r" PY_STDIOTEXTMODE);
     if (fp == NULL)
         return NULL;
     for (i = 0; i < lineno; i++) {
@@ -1028,6 +1034,26 @@ PyErr_ProgramText(const char *filename, int lineno)
         return res;
     }
     return NULL;
+}
+
+PyObject *
+PyErr_ProgramText(const char *filename, int lineno)
+{
+    FILE *fp;
+    if (filename == NULL || *filename == '\0' || lineno <= 0)
+        return NULL;
+    fp = fopen(filename, "r" PY_STDIOTEXTMODE);
+    return err_programtext(fp, lineno);
+}
+
+PyObject *
+PyErr_ProgramTextObject(PyObject *filename, int lineno)
+{
+    FILE *fp;
+    if (filename == NULL || lineno <= 0)
+        return NULL;
+    fp = _Py_fopen(filename, "r" PY_STDIOTEXTMODE);
+    return err_programtext(fp, lineno);
 }
 
 #ifdef __cplusplus

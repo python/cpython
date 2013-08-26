@@ -17,6 +17,13 @@ PyAPI_FUNC(int) PyErr_WarnFormat(
     Py_ssize_t stack_level,
     const char *format,         /* ASCII-encoded string  */
     ...);
+PyAPI_FUNC(int) PyErr_WarnExplicitObject(
+    PyObject *category,
+    PyObject *message,
+    PyObject *filename,
+    int lineno,
+    PyObject *module,
+    PyObject *registry);
 PyAPI_FUNC(int) PyErr_WarnExplicit(
     PyObject *category,
     const char *message,        /* UTF-8 encoded string */

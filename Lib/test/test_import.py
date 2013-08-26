@@ -22,7 +22,7 @@ import test.support
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file, cpython_only)
+    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE)
 from test import script_helper
 
 
@@ -1054,6 +1054,14 @@ class ImportTracebackTests(unittest.TestCase):
             self.assert_traceback(tb, [__file__, '<frozen importlib', __file__])
         finally:
             importlib.SourceLoader.load_module = old_load_module
+
+    @unittest.skipUnless(TESTFN_UNENCODABLE, 'need TESTFN_UNENCODABLE')
+    def test_unencodable_filename(self):
+        # Issue #11619: The Python parser and the import machinery must not
+        # encode filenames, especially on Windows
+        pyname = script_helper.make_script('', TESTFN_UNENCODABLE, 'pass')
+        name = pyname[:-3]
+        script_helper.assert_python_ok("-c", "mod = __import__(%a)" % name)
 
 
 if __name__ == '__main__':

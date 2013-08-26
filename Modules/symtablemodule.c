@@ -11,12 +11,12 @@ symtable_symtable(PyObject *self, PyObject *args)
     PyObject *t;
 
     char *str;
-    char *filename;
+    PyObject *filename;
     char *startstr;
     int start;
 
-    if (!PyArg_ParseTuple(args, "sss:symtable", &str, &filename,
-                          &startstr))
+    if (!PyArg_ParseTuple(args, "sO&s:symtable",
+                          &str, PyUnicode_FSDecoder, &filename, &startstr))
         return NULL;
     if (strcmp(startstr, "exec") == 0)
         start = Py_file_input;
@@ -27,9 +27,11 @@ symtable_symtable(PyObject *self, PyObject *args)
     else {
         PyErr_SetString(PyExc_ValueError,
            "symtable() arg 3 must be 'exec' or 'eval' or 'single'");
+        Py_DECREF(filename);
         return NULL;
     }
-    st = Py_SymtableString(str, filename, start);
+    st = Py_SymtableStringObject(str, filename, start);
+    Py_DECREF(filename);
     if (st == NULL)
         return NULL;
     t = st->st_blocks;
