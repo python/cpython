@@ -339,8 +339,10 @@ otherwise stated.
 .. method:: xmlparser.StartElementHandler(name, attributes)
 
    Called for the start of every element.  *name* is a string containing the
-   element name, and *attributes* is a dictionary mapping attribute names to their
-   values.
+   element name, and *attributes* is the element attributes. If
+   :attr:`ordered_attributes` is true, this is a list (see
+   :attr:`ordered_attributes` for a full description). Otherwise it's a
+   dictionary mapping names to values.
 
 
 .. method:: xmlparser.EndElementHandler(name)
