@@ -149,8 +149,7 @@ handled by the symbol analysis pass.
 */
 
 struct compiler {
-    const char *c_filename;
-    PyObject *c_filename_obj;
+    PyObject *c_filename;
     struct symtable *c_st;
     PyFutureFeatures *c_future; /* pointer to module's __future__ */
     PyCompilerFlags *c_flags;
@@ -288,8 +287,8 @@ compiler_init(struct compiler *c)
 }
 
 PyCodeObject *
-PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
-                int optimize, PyArena *arena)
+PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
+                   int optimize, PyArena *arena)
 {
     struct compiler c;
     PyCodeObject *co = NULL;
@@ -304,12 +303,10 @@ PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 
     if (!compiler_init(&c))
         return NULL;
+    Py_INCREF(filename);
     c.c_filename = filename;
-    c.c_filename_obj = PyUnicode_DecodeFSDefault(filename);
-    if (!c.c_filename_obj)
-        goto finally;
     c.c_arena = arena;
-    c.c_future = PyFuture_FromAST(mod, filename);
+    c.c_future = PyFuture_FromASTObject(mod, filename);
     if (c.c_future == NULL)
         goto finally;
     if (!flags) {
@@ -323,7 +320,7 @@ PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
     c.c_optimize = (optimize == -1) ? Py_OptimizeFlag : optimize;
     c.c_nestlevel = 0;
 
-    c.c_st = PySymtable_Build(mod, filename, c.c_future);
+    c.c_st = PySymtable_BuildObject(mod, filename, c.c_future);
     if (c.c_st == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_SystemError, "no symtable");
@@ -336,6 +333,21 @@ PyAST_CompileEx(mod_ty mod, const char *filename, PyCompilerFlags *flags,
     compiler_free(&c);
     assert(co || PyErr_Occurred());
     return co;
+}
+
+PyCodeObject *
+PyAST_CompileEx(mod_ty mod, const char *filename_str, PyCompilerFlags *flags,
+                int optimize, PyArena *arena)
+{
+    PyObject *filename;
+    PyCodeObject *co;
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
+    Py_DECREF(filename);
+    return co;
+
 }
 
 PyCodeObject *
@@ -360,8 +372,7 @@ compiler_free(struct compiler *c)
         PySymtable_Free(c->c_st);
     if (c->c_future)
         PyObject_Free(c->c_future);
-    if (c->c_filename_obj)
-        Py_DECREF(c->c_filename_obj);
+    Py_XDECREF(c->c_filename);
     Py_DECREF(c->c_stack);
 }
 
@@ -1368,12 +1379,11 @@ get_ref_type(struct compiler *c, PyObject *name)
     if (scope == 0) {
         char buf[350];
         PyOS_snprintf(buf, sizeof(buf),
-                      "unknown scope for %.100s in %.100s(%s) in %s\n"
+                      "unknown scope for %.100s in %.100s(%s)\n"
                       "symbols: %s\nlocals: %s\nglobals: %s",
                       PyBytes_AS_STRING(name),
                       PyBytes_AS_STRING(c->u->u_name),
                       PyObject_REPR(c->u->u_ste->ste_id),
-                      c->c_filename,
                       PyObject_REPR(c->u->u_ste->ste_symbols),
                       PyObject_REPR(c->u->u_varnames),
                       PyObject_REPR(c->u->u_names)
@@ -2411,6 +2421,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
 {
     static PyObject *assertion_error = NULL;
     basicblock *end;
+    PyObject* msg;
 
     if (c->c_optimize)
         return 1;
@@ -2421,11 +2432,17 @@ compiler_assert(struct compiler *c, stmt_ty s)
     }
     if (s->v.Assert.test->kind == Tuple_kind &&
         asdl_seq_LEN(s->v.Assert.test->v.Tuple.elts) > 0) {
-        const char* msg =
-            "assertion is always true, perhaps remove parentheses?";
-        if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, c->c_filename,
-                               c->u->u_lineno, NULL, NULL) == -1)
+        msg = PyUnicode_FromString("assertion is always true, "
+                                   "perhaps remove parentheses?");
+        if (msg == NULL)
             return 0;
+        if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+                                     c->c_filename, c->u->u_lineno,
+                                     NULL, NULL) == -1) {
+            Py_DECREF(msg);
+            return 0;
+        }
+        Py_DECREF(msg);
     }
     VISIT(c, expr, s->v.Assert.test);
     end = compiler_new_block(c);
@@ -3593,12 +3610,12 @@ compiler_error(struct compiler *c, const char *errstr)
     PyObject *loc;
     PyObject *u = NULL, *v = NULL;
 
-    loc = PyErr_ProgramText(c->c_filename, c->u->u_lineno);
+    loc = PyErr_ProgramTextObject(c->c_filename, c->u->u_lineno);
     if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    u = Py_BuildValue("(OiiO)", c->c_filename_obj, c->u->u_lineno,
+    u = Py_BuildValue("(OiiO)", c->c_filename, c->u->u_lineno,
                       c->u->u_col_offset, loc);
     if (!u)
         goto exit;
@@ -4188,7 +4205,7 @@ makecode(struct compiler *c, struct assembler *a)
                     nlocals, stackdepth(c), flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
-                    c->c_filename_obj, c->u->u_name,
+                    c->c_filename, c->u->u_name,
                     c->u->u_firstlineno,
                     a->a_lnotab);
  error:

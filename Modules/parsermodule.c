@@ -477,33 +477,46 @@ parser_st2list(PyST_Object *self, PyObject *args, PyObject *kw)
 static PyObject*
 parser_compilest(PyST_Object *self, PyObject *args, PyObject *kw)
 {
-    PyObject*     res = 0;
-    PyArena*      arena;
+    PyObject*     res = NULL;
+    PyArena*      arena = NULL;
     mod_ty        mod;
-    char*         str = "<syntax-tree>";
+    PyObject*     filename = NULL;
     int ok;
 
     static char *keywords[] = {"st", "filename", NULL};
 
     if (self == NULL || PyModule_Check(self))
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|s:compilest", keywords,
-                                         &PyST_Type, &self, &str);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O&:compilest", keywords,
+                                         &PyST_Type, &self,
+                                         PyUnicode_FSDecoder, &filename);
     else
-        ok = PyArg_ParseTupleAndKeywords(args, kw, "|s:compile", &keywords[1],
-                                         &str);
+        ok = PyArg_ParseTupleAndKeywords(args, kw, "|O&:compile", &keywords[1],
+                                         PyUnicode_FSDecoder, &filename);
+    if (!ok)
+        goto error;
 
-    if (ok) {
-        arena = PyArena_New();
-        if (arena) {
-           mod = PyAST_FromNode(self->st_node, &(self->st_flags), str, arena);
-           if (mod) {
-               res = (PyObject *)PyAST_Compile(mod, str, &(self->st_flags), arena);
-           }
-           PyArena_Free(arena);
-        }
+    if (filename == NULL) {
+        filename = PyUnicode_FromString("<syntax-tree>");
+        if (filename == NULL)
+            goto error;
     }
 
-    return (res);
+    arena = PyArena_New();
+    if (!arena)
+        goto error;
+
+    mod = PyAST_FromNodeObject(self->st_node, &self->st_flags,
+                               filename, arena);
+    if (!mod)
+        goto error;
+
+    res = (PyObject *)PyAST_CompileObject(mod, filename,
+                                          &self->st_flags, -1, arena);
+error:
+    Py_XDECREF(filename);
+    if (arena != NULL)
+        PyArena_Free(arena);
+    return res;
 }
 
 

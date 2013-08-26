@@ -258,16 +258,15 @@ the same library that the Python runtime is using.
    *optimize* set to ``-1``.
 
 
-.. c:function:: PyObject* Py_CompileStringExFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags, int optimize)
+.. c:function:: PyObject* Py_CompileStringObject(const char *str, PyObject *filename, int start, PyCompilerFlags *flags, int optimize)
 
    Parse and compile the Python source code in *str*, returning the resulting code
    object.  The start token is given by *start*; this can be used to constrain the
    code which can be compiled and should be :const:`Py_eval_input`,
    :const:`Py_file_input`, or :const:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
-   :exc:`SyntaxError` exception messages, it is decoded from the filesystem
-   encoding (:func:`sys.getfilesystemencoding`).  This returns *NULL* if the
-   code cannot be parsed or compiled.
+   :exc:`SyntaxError` exception messages.  This returns *NULL* if the code
+   cannot be parsed or compiled.
 
    The integer *optimize* specifies the optimization level of the compiler; a
    value of ``-1`` selects the optimization level of the interpreter as given by
@@ -275,8 +274,15 @@ the same library that the Python runtime is using.
    ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
    or ``2`` (docstrings are removed too).
 
-   .. versionadded:: 3.2
+   .. versionadded:: 3.4
 
+
+.. c:function:: PyObject* Py_CompileStringExFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags, int optimize)
+
+   Like :c:func:`Py_CompileStringExFlags`, but *filename* is a byte string
+   decoded from the filesystem encoding (:func:`os.fsdecode`).
+
+   .. versionadded:: 3.2
 
 .. c:function:: PyObject* PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 

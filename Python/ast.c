@@ -491,7 +491,7 @@ PyAST_Validate(mod_ty mod)
 struct compiling {
     char *c_encoding; /* source encoding */
     PyArena *c_arena; /* arena for allocating memeory */
-    const char *c_filename; /* filename */
+    PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
     PyObject *c_normalize_args; /* Normalization argument tuple. */
 };
@@ -573,24 +573,13 @@ static int
 ast_error(struct compiling *c, const node *n, const char *errmsg)
 {
     PyObject *value, *errstr, *loc, *tmp;
-    PyObject *filename_obj;
 
-    loc = PyErr_ProgramText(c->c_filename, LINENO(n));
+    loc = PyErr_ProgramTextObject(c->c_filename, LINENO(n));
     if (!loc) {
         Py_INCREF(Py_None);
         loc = Py_None;
     }
-    if (c->c_filename) {
-        filename_obj = PyUnicode_DecodeFSDefault(c->c_filename);
-        if (!filename_obj) {
-            Py_DECREF(loc);
-            return 0;
-        }
-    } else {
-        Py_INCREF(Py_None);
-        filename_obj = Py_None;
-    }
-    tmp = Py_BuildValue("(NiiN)", filename_obj, LINENO(n), n->n_col_offset, loc);
+    tmp = Py_BuildValue("(OiiN)", c->c_filename, LINENO(n), n->n_col_offset, loc);
     if (!tmp)
         return 0;
     errstr = PyUnicode_FromString(errmsg);
@@ -673,8 +662,8 @@ num_stmts(const node *n)
 */
 
 mod_ty
-PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
-               PyArena *arena)
+PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
+                     PyObject *filename, PyArena *arena)
 {
     int i, j, k, num;
     asdl_seq *stmts = NULL;
@@ -684,6 +673,7 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
     mod_ty res = NULL;
 
     c.c_arena = arena;
+    /* borrowed reference */
     c.c_filename = filename;
     c.c_normalize = c.c_normalize_args = NULL;
     if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
@@ -795,6 +785,21 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename,
         Py_DECREF(c.c_normalize_args);
     }
     return res;
+}
+
+mod_ty
+PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename_str,
+               PyArena *arena)
+{
+    mod_ty mod;
+    PyObject *filename;
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    mod = PyAST_FromNodeObject(n, flags, filename, arena);
+    Py_DECREF(filename);
+    return mod;
+
 }
 
 /* Return the AST repr. of the operator represented as syntax (|, ^, etc.)

@@ -10,6 +10,9 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #11619: The parser and the import machinery do not encode Unicode
+  filenames anymore on Windows.
+
 - Issue #18808: Non-daemon threads are now automatically joined when
   a sub-interpreter is shutdown (it would previously dump a fatal error).
 

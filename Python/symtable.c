@@ -233,7 +233,7 @@ symtable_new(void)
 #define COMPILER_STACK_FRAME_SCALE 3
 
 struct symtable *
-PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
+PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
 {
     struct symtable *st = symtable_new();
     asdl_seq *seq;
@@ -241,7 +241,12 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
     PyThreadState *tstate;
 
     if (st == NULL)
-        return st;
+        return NULL;
+    if (filename == NULL) {
+        PySymtable_Free(st);
+        return NULL;
+    }
+    Py_INCREF(filename);
     st->st_filename = filename;
     st->st_future = future;
 
@@ -302,9 +307,23 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
     return NULL;
 }
 
+struct symtable *
+PySymtable_Build(mod_ty mod, const char *filename_str, PyFutureFeatures *future)
+{
+    PyObject *filename;
+    struct symtable *st;
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    st = PySymtable_BuildObject(mod, filename, future);
+    Py_DECREF(filename);
+    return st;
+}
+
 void
 PySymtable_Free(struct symtable *st)
 {
+    Py_XDECREF(st->st_filename);
     Py_XDECREF(st->st_blocks);
     Py_XDECREF(st->st_stack);
     PyMem_Free((void *)st);
@@ -354,9 +373,9 @@ error_at_directive(PySTEntryObject *ste, PyObject *name)
         if (PyTuple_GET_ITEM(data, 0) == name)
             break;
     }
-    PyErr_SyntaxLocationEx(ste->ste_table->st_filename,
-                           PyLong_AsLong(PyTuple_GET_ITEM(data, 1)),
-                           PyLong_AsLong(PyTuple_GET_ITEM(data, 2)));
+    PyErr_SyntaxLocationObject(ste->ste_table->st_filename,
+                               PyLong_AsLong(PyTuple_GET_ITEM(data, 1)),
+                               PyLong_AsLong(PyTuple_GET_ITEM(data, 2)));
     return 0;
 }
 
@@ -583,8 +602,9 @@ check_unoptimized(const PySTEntryObject* ste) {
         break;
     }
 
-    PyErr_SyntaxLocationEx(ste->ste_table->st_filename, ste->ste_opt_lineno,
-                           ste->ste_opt_col_offset);
+    PyErr_SyntaxLocationObject(ste->ste_table->st_filename,
+                               ste->ste_opt_lineno,
+                               ste->ste_opt_col_offset);
     return 0;
 }
 
@@ -915,15 +935,20 @@ symtable_analyze(struct symtable *st)
 static int
 symtable_warn(struct symtable *st, char *msg, int lineno)
 {
-    if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, st->st_filename,
-                           lineno, NULL, NULL) < 0)     {
+    PyObject *message = PyUnicode_FromString(msg);
+    if (message == NULL)
+        return 0;
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, message, st->st_filename,
+                                 lineno, NULL, NULL) < 0)     {
+        Py_DECREF(message);
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             PyErr_SetString(PyExc_SyntaxError, msg);
-            PyErr_SyntaxLocationEx(st->st_filename, st->st_cur->ste_lineno,
-                                   st->st_cur->ste_col_offset);
+            PyErr_SyntaxLocationObject(st->st_filename, st->st_cur->ste_lineno,
+                                       st->st_cur->ste_col_offset);
         }
         return 0;
     }
+    Py_DECREF(message);
     return 1;
 }
 
@@ -1006,9 +1031,9 @@ symtable_add_def(struct symtable *st, PyObject *name, int flag)
         if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
             /* Is it better to use 'mangled' or 'name' here? */
             PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT, name);
-            PyErr_SyntaxLocationEx(st->st_filename,
-                                   st->st_cur->ste_lineno,
-                                   st->st_cur->ste_col_offset);
+            PyErr_SyntaxLocationObject(st->st_filename,
+                                       st->st_cur->ste_lineno,
+                                       st->st_cur->ste_col_offset);
             goto error;
         }
         val |= flag;
@@ -1613,7 +1638,7 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             int lineno = st->st_cur->ste_lineno;
             int col_offset = st->st_cur->ste_col_offset;
             PyErr_SetString(PyExc_SyntaxError, IMPORT_STAR_WARNING);
-            PyErr_SyntaxLocationEx(st->st_filename, lineno, col_offset);
+            PyErr_SyntaxLocationObject(st->st_filename, lineno, col_offset);
             Py_DECREF(store_name);
             return 0;
         }

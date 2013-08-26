@@ -2051,8 +2051,8 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
 }
 
 PyObject *
-Py_CompileStringExFlags(const char *str, const char *filename, int start,
-                        PyCompilerFlags *flags, int optimize)
+Py_CompileStringObject(const char *str, PyObject *filename, int start,
+                       PyCompilerFlags *flags, int optimize)
 {
     PyCodeObject *co;
     mod_ty mod;
@@ -2060,7 +2060,7 @@ Py_CompileStringExFlags(const char *str, const char *filename, int start,
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromString(str, filename, start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
@@ -2070,9 +2070,22 @@ Py_CompileStringExFlags(const char *str, const char *filename, int start,
         PyArena_Free(arena);
         return result;
     }
-    co = PyAST_CompileEx(mod, filename, flags, optimize, arena);
+    co = PyAST_CompileObject(mod, filename, flags, optimize, arena);
     PyArena_Free(arena);
     return (PyObject *)co;
+}
+
+PyObject *
+Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
+                        PyCompilerFlags *flags, int optimize)
+{
+    PyObject *filename, *co;
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    co = Py_CompileStringObject(str, filename, start, flags, optimize);
+    Py_DECREF(filename);
+    return co;
 }
 
 /* For use in Py_LIMITED_API */
@@ -2084,46 +2097,62 @@ PyCompileString(const char *str, const char *filename, int start)
 }
 
 struct symtable *
-Py_SymtableString(const char *str, const char *filename, int start)
+Py_SymtableStringObject(const char *str, PyObject *filename, int start)
 {
     struct symtable *st;
     mod_ty mod;
     PyCompilerFlags flags;
-    PyArena *arena = PyArena_New();
+    PyArena *arena;
+
+    arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
     flags.cf_flags = 0;
-    mod = PyParser_ASTFromString(str, filename, start, &flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, &flags, arena);
     if (mod == NULL) {
         PyArena_Free(arena);
         return NULL;
     }
-    st = PySymtable_Build(mod, filename, 0);
+    st = PySymtable_BuildObject(mod, filename, 0);
     PyArena_Free(arena);
+    return st;
+}
+
+struct symtable *
+Py_SymtableString(const char *str, const char *filename_str, int start)
+{
+    PyObject *filename;
+    struct symtable *st;
+
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    st = Py_SymtableStringObject(str, filename, start);
+    Py_DECREF(filename);
     return st;
 }
 
 /* Preferred access to parser is through AST. */
 mod_ty
-PyParser_ASTFromString(const char *s, const char *filename, int start,
-                       PyCompilerFlags *flags, PyArena *arena)
+PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
+                             PyCompilerFlags *flags, PyArena *arena)
 {
     mod_ty mod;
     PyCompilerFlags localflags;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
-    node *n = PyParser_ParseStringFlagsFilenameEx(s, filename,
-                                    &_PyParser_Grammar, start, &err,
-                                    &iflags);
+    node *n = PyParser_ParseStringObject(s, filename,
+                                         &_PyParser_Grammar, start, &err,
+                                         &iflags);
     if (flags == NULL) {
         localflags.cf_flags = 0;
         flags = &localflags;
     }
     if (n) {
         flags->cf_flags |= iflags & PyCF_MASK;
-        mod = PyAST_FromNode(n, flags, filename, arena);
+        mod = PyAST_FromNodeObject(n, flags, filename, arena);
         PyNode_Free(n);
     }
     else {
@@ -2135,26 +2164,40 @@ PyParser_ASTFromString(const char *s, const char *filename, int start,
 }
 
 mod_ty
-PyParser_ASTFromFile(FILE *fp, const char *filename, const char* enc,
-                     int start, char *ps1,
-                     char *ps2, PyCompilerFlags *flags, int *errcode,
-                     PyArena *arena)
+PyParser_ASTFromString(const char *s, const char *filename_str, int start,
+                       PyCompilerFlags *flags, PyArena *arena)
+{
+    PyObject *filename;
+    mod_ty mod;
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    mod = PyParser_ASTFromStringObject(s, filename, start, flags, arena);
+    Py_DECREF(filename);
+    return mod;
+}
+
+mod_ty
+PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
+                           int start, char *ps1,
+                           char *ps2, PyCompilerFlags *flags, int *errcode,
+                           PyArena *arena)
 {
     mod_ty mod;
     PyCompilerFlags localflags;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
-    node *n = PyParser_ParseFileFlagsEx(fp, filename, enc,
-                                      &_PyParser_Grammar,
-                            start, ps1, ps2, &err, &iflags);
+    node *n = PyParser_ParseFileObject(fp, filename, enc,
+                                       &_PyParser_Grammar,
+                                       start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {
         localflags.cf_flags = 0;
         flags = &localflags;
     }
     if (n) {
         flags->cf_flags |= iflags & PyCF_MASK;
-        mod = PyAST_FromNode(n, flags, filename, arena);
+        mod = PyAST_FromNodeObject(n, flags, filename, arena);
         PyNode_Free(n);
     }
     else {
@@ -2164,6 +2207,23 @@ PyParser_ASTFromFile(FILE *fp, const char *filename, const char* enc,
         mod = NULL;
     }
     err_free(&err);
+    return mod;
+}
+
+mod_ty
+PyParser_ASTFromFile(FILE *fp, const char *filename_str, const char* enc,
+                     int start, char *ps1,
+                     char *ps2, PyCompilerFlags *flags, int *errcode,
+                     PyArena *arena)
+{
+    mod_ty mod;
+    PyObject *filename;
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        return NULL;
+    mod = PyParser_ASTFromFileObject(fp, filename, enc, start, ps1, ps2,
+                                     flags, errcode, arena);
+    Py_DECREF(filename);
     return mod;
 }
 

@@ -66,9 +66,25 @@ PyAPI_FUNC(struct _mod *) PyParser_ASTFromString(
     int start,
     PyCompilerFlags *flags,
     PyArena *arena);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromStringObject(
+    const char *s,
+    PyObject *filename,
+    int start,
+    PyCompilerFlags *flags,
+    PyArena *arena);
 PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
+    const char* enc,
+    int start,
+    char *ps1,
+    char *ps2,
+    PyCompilerFlags *flags,
+    int *errcode,
+    PyArena *arena);
+PyAPI_FUNC(struct _mod *) PyParser_ASTFromFileObject(
+    FILE *fp,
+    PyObject *filename,
     const char* enc,
     int start,
     char *ps1,
@@ -117,10 +133,19 @@ PyAPI_FUNC(PyObject *) Py_CompileStringExFlags(
     int start,
     PyCompilerFlags *flags,
     int optimize);
+PyAPI_FUNC(PyObject *) Py_CompileStringObject(
+    const char *str,
+    PyObject *filename, int start,
+    PyCompilerFlags *flags,
+    int optimize);
 #endif
 PyAPI_FUNC(struct symtable *) Py_SymtableString(
     const char *str,
     const char *filename,       /* decoded from the filesystem encoding */
+    int start);
+PyAPI_FUNC(struct symtable *) Py_SymtableStringObject(
+    const char *str,
+    PyObject *filename,
     int start);
 
 PyAPI_FUNC(void) PyErr_Print(void);
