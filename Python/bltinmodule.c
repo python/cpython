@@ -579,8 +579,7 @@ static PyObject *
 builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 {
     char *str;
-    PyObject *filename_obj;
-    char *filename;
+    PyObject *filename;
     char *startstr;
     int mode = -1;
     int dont_inherit = 0;
@@ -596,12 +595,11 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO&s|iii:compile",  kwlist,
                                      &cmd,
-                                     PyUnicode_FSConverter, &filename_obj,
+                                     PyUnicode_FSDecoder, &filename,
                                      &startstr, &supplied_flags,
                                      &dont_inherit, &optimize))
         return NULL;
 
-    filename = PyBytes_AS_STRING(filename_obj);
     cf.cf_flags = supplied_flags | PyCF_SOURCE_IS_UTF8;
 
     if (supplied_flags &
@@ -659,8 +657,8 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
                 PyArena_Free(arena);
                 goto error;
             }
-            result = (PyObject*)PyAST_CompileEx(mod, filename,
-                                                &cf, optimize, arena);
+            result = (PyObject*)PyAST_CompileObject(mod, filename,
+                                                    &cf, optimize, arena);
             PyArena_Free(arena);
         }
         goto finally;
@@ -670,13 +668,13 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
     if (str == NULL)
         goto error;
 
-    result = Py_CompileStringExFlags(str, filename, start[mode], &cf, optimize);
+    result = Py_CompileStringObject(str, filename, start[mode], &cf, optimize);
     goto finally;
 
 error:
     result = NULL;
 finally:
-    Py_DECREF(filename_obj);
+    Py_DECREF(filename);
     return result;
 }
 

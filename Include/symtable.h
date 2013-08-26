@@ -16,7 +16,7 @@ typedef enum _block_type { FunctionBlock, ClassBlock, ModuleBlock }
 struct _symtable_entry;
 
 struct symtable {
-    const char *st_filename;        /* name of file being compiled,
+    PyObject *st_filename;          /* name of file being compiled,
                                        decoded from the filesystem encoding */
     struct _symtable_entry *st_cur; /* current symbol table entry */
     struct _symtable_entry *st_top; /* symbol table entry for module */
@@ -73,6 +73,10 @@ PyAPI_FUNC(int) PyST_GetScope(PySTEntryObject *, PyObject *);
 PyAPI_FUNC(struct symtable *) PySymtable_Build(
     mod_ty mod,
     const char *filename,       /* decoded from the filesystem encoding */
+    PyFutureFeatures *future);
+PyAPI_FUNC(struct symtable *) PySymtable_BuildObject(
+    mod_ty mod,
+    PyObject *filename,
     PyFutureFeatures *future);
 PyAPI_FUNC(PySTEntryObject *) PySymtable_Lookup(struct symtable *, void *);
 
