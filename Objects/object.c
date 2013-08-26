@@ -406,11 +406,17 @@ _PyObject_Dump(PyObject* op)
 #ifdef WITH_THREAD
         PyGILState_STATE gil;
 #endif
+        PyObject *error_type, *error_value, *error_traceback;
+
         fprintf(stderr, "object  : ");
 #ifdef WITH_THREAD
         gil = PyGILState_Ensure();
 #endif
+
+        PyErr_Fetch(&error_type, &error_value, &error_traceback);
         (void)PyObject_Print(op, stderr, 0);
+        PyErr_Restore(error_type, error_value, error_traceback);
+
 #ifdef WITH_THREAD
         PyGILState_Release(gil);
 #endif
