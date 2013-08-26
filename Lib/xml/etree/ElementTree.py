@@ -1469,19 +1469,10 @@ class XMLParser:
             parser.CommentHandler = target.comment
         if hasattr(target, 'pi'):
             parser.ProcessingInstructionHandler = target.pi
-        # let expat do the buffering, if supported
-        try:
-            parser.buffer_text = 1
-        except AttributeError:
-            pass
-        # use new-style attribute handling, if supported
-        try:
-            parser.ordered_attributes = 1
-            parser.specified_attributes = 1
-            if hasattr(target, 'start'):
-                parser.StartElementHandler = self._start_list
-        except AttributeError:
-            pass
+        # Configure pyexpat: buffering, new-style attribute handling.
+        parser.buffer_text = 1
+        parser.ordered_attributes = 1
+        parser.specified_attributes = 1
         self._doctype = None
         self.entity = {}
         try:
@@ -1503,7 +1494,7 @@ class XMLParser:
                 parser.ordered_attributes = 1
                 parser.specified_attributes = 1
                 def handler(tag, attrib_in, event=event_name, append=append,
-                            start=self._start_list):
+                            start=self._start):
                     append((event, start(tag, attrib_in)))
                 parser.StartElementHandler = handler
             elif event_name == "end":
@@ -1539,21 +1530,16 @@ class XMLParser:
             self._names[key] = name
         return name
 
-    def _start(self, tag, attrib_in):
+    def _start(self, tag, attr_list):
+        # Handler for expat's StartElementHandler. Since ordered_attributes
+        # is set, the attributes are reported as a list of alternating
+        # attribute name,value.
         fixname = self._fixname
         tag = fixname(tag)
         attrib = {}
-        for key, value in attrib_in.items():
-            attrib[fixname(key)] = value
-        return self.target.start(tag, attrib)
-
-    def _start_list(self, tag, attrib_in):
-        fixname = self._fixname
-        tag = fixname(tag)
-        attrib = {}
-        if attrib_in:
-            for i in range(0, len(attrib_in), 2):
-                attrib[fixname(attrib_in[i])] = attrib_in[i+1]
+        if attr_list:
+            for i in range(0, len(attr_list), 2):
+                attrib[fixname(attr_list[i])] = attr_list[i+1]
         return self.target.start(tag, attrib)
 
     def _end(self, tag):
