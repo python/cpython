@@ -825,54 +825,76 @@ PyErr_WriteUnraisable(PyObject *obj)
 {
     _Py_IDENTIFIER(__module__);
     PyObject *f, *t, *v, *tb;
-    PyErr_Fetch(&t, &v, &tb);
-    f = PySys_GetObject("stderr");
-    if (f != NULL && f != Py_None) {
-        if (obj) {
-            PyFile_WriteString("Exception ignored in: ", f);
-            PyFile_WriteObject(obj, f, 0);
-            PyFile_WriteString("\n", f);
-        }
-        PyTraceBack_Print(tb, f);
-        if (t) {
-            PyObject* moduleName;
-            char* className;
-            assert(PyExceptionClass_Check(t));
-            className = PyExceptionClass_Name(t);
-            if (className != NULL) {
-                char *dot = strrchr(className, '.');
-                if (dot != NULL)
-                    className = dot+1;
-            }
+    PyObject *moduleName = NULL;
+    char* className;
 
-            moduleName = _PyObject_GetAttrId(t, &PyId___module__);
-            if (moduleName == NULL)
-                PyFile_WriteString("<unknown>", f);
-            else {
-                char* modstr = _PyUnicode_AsString(moduleName);
-                if (modstr &&
-                    strcmp(modstr, "builtins") != 0)
-                {
-                    PyFile_WriteString(modstr, f);
-                    PyFile_WriteString(".", f);
-                }
-            }
-            if (className == NULL)
-                PyFile_WriteString("<unknown>", f);
-            else
-                PyFile_WriteString(className, f);
-            if (v && v != Py_None) {
-                PyFile_WriteString(": ", f);
-                PyFile_WriteObject(v, f, Py_PRINT_RAW);
-            }
-            PyFile_WriteString("\n", f);
-            Py_XDECREF(moduleName);
-        }
-        PyErr_Clear(); /* Just in case */
+    PyErr_Fetch(&t, &v, &tb);
+
+    f = PySys_GetObject("stderr");
+    if (f == NULL || f == Py_None)
+        goto done;
+
+    if (obj) {
+        if (PyFile_WriteString("Exception ignored in: ", f) < 0)
+            goto done;
+        if (PyFile_WriteObject(obj, f, 0) < 0)
+            goto done;
+        if (PyFile_WriteString("\n", f) < 0)
+            goto done;
     }
+
+    if (PyTraceBack_Print(tb, f) < 0)
+        goto done;
+
+    if (!t)
+        goto done;
+
+    assert(PyExceptionClass_Check(t));
+    className = PyExceptionClass_Name(t);
+    if (className != NULL) {
+        char *dot = strrchr(className, '.');
+        if (dot != NULL)
+            className = dot+1;
+    }
+
+    moduleName = _PyObject_GetAttrId(t, &PyId___module__);
+    if (moduleName == NULL) {
+        PyErr_Clear();
+        if (PyFile_WriteString("<unknown>", f) < 0)
+            goto done;
+    }
+    else {
+        if (PyUnicode_CompareWithASCIIString(moduleName, "builtins") != 0) {
+            if (PyFile_WriteObject(moduleName, f, Py_PRINT_RAW) < 0)
+                goto done;
+            if (PyFile_WriteString(".", f) < 0)
+                goto done;
+        }
+    }
+    if (className == NULL) {
+        if (PyFile_WriteString("<unknown>", f) < 0)
+            goto done;
+    }
+    else {
+        if (PyFile_WriteString(className, f) < 0)
+            goto done;
+    }
+
+    if (v && v != Py_None) {
+        if (PyFile_WriteString(": ", f) < 0)
+            goto done;
+        if (PyFile_WriteObject(v, f, Py_PRINT_RAW) < 0)
+            goto done;
+    }
+    if (PyFile_WriteString("\n", f) < 0)
+        goto done;
+
+done:
+    Py_XDECREF(moduleName);
     Py_XDECREF(t);
     Py_XDECREF(v);
     Py_XDECREF(tb);
+    PyErr_Clear(); /* Just in case */
 }
 
 extern PyObject *PyModule_GetWarningsModule(void);
