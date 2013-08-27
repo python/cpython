@@ -1439,8 +1439,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
     case 'x':
     case 'X':
     case 'n':
-        /* no type conversion needed, already an int (or long).  do
-           the formatting */
+        /* no type conversion needed, already an int.  do the formatting */
         result = format_long_internal(obj, &format, writer);
         break;
 

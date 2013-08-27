@@ -1401,9 +1401,9 @@ static PyObject *us_per_us = NULL;      /* 1 */
 static PyObject *us_per_ms = NULL;      /* 1000 */
 static PyObject *us_per_second = NULL;  /* 1000000 */
 static PyObject *us_per_minute = NULL;  /* 1e6 * 60 as Python int */
-static PyObject *us_per_hour = NULL;    /* 1e6 * 3600 as Python long */
-static PyObject *us_per_day = NULL;     /* 1e6 * 3600 * 24 as Python long */
-static PyObject *us_per_week = NULL;    /* 1e6*3600*24*7 as Python long */
+static PyObject *us_per_hour = NULL;    /* 1e6 * 3600 as Python int */
+static PyObject *us_per_day = NULL;     /* 1e6 * 3600 * 24 as Python int */
+static PyObject *us_per_week = NULL;    /* 1e6*3600*24*7 as Python int */
 static PyObject *seconds_per_day = NULL; /* 3600*24 as Python int */
 
 /* ---------------------------------------------------------------------------
@@ -1416,7 +1416,7 @@ static PyObject *seconds_per_day = NULL; /* 3600*24 as Python int */
 
 /* Convert a timedelta to a number of us,
  *      (24*3600*self.days + self.seconds)*1000000 + self.microseconds
- * as a Python int or long.
+ * as a Python int.
  * Doing mixed-radix arithmetic by hand instead is excruciating in C,
  * due to ubiquitous overflow possibilities.
  */
@@ -1468,7 +1468,7 @@ Done:
     return result;
 }
 
-/* Convert a number of us (as a Python int or long) to a timedelta.
+/* Convert a number of us (as a Python int) to a timedelta.
  */
 static PyObject *
 microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
@@ -3886,7 +3886,7 @@ static char time_doc[] =
 PyDoc_STR("time([hour[, minute[, second[, microsecond[, tzinfo]]]]]) --> a time object\n\
 \n\
 All arguments are optional. tzinfo may be None, or an instance of\n\
-a tzinfo subclass. The remaining arguments may be ints or longs.\n");
+a tzinfo subclass. The remaining arguments may be ints.\n");
 
 static PyNumberMethods time_as_number = {
     0,                                          /* nb_add */
@@ -5069,7 +5069,7 @@ static char datetime_doc[] =
 PyDoc_STR("datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])\n\
 \n\
 The year, month and day arguments are required. tzinfo may be None, or an\n\
-instance of a tzinfo subclass. The remaining arguments may be ints or longs.\n");
+instance of a tzinfo subclass. The remaining arguments may be ints.\n");
 
 static PyNumberMethods datetime_as_number = {
     datetime_add,                               /* nb_add */

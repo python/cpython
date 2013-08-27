@@ -278,7 +278,7 @@ class StructTest(unittest.TestCase):
 
                 # Objects with an '__index__' method should be allowed
                 # to pack as integers.  That is assuming the implemented
-                # '__index__' method returns and 'int' or 'long'.
+                # '__index__' method returns an 'int'.
                 class Indexable(object):
                     def __init__(self, value):
                         self._value = value

@@ -771,7 +771,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(PyObject *) PyNumber_Index(PyObject *o);
 
        /*
-     Returns the object converted to a Python long or int
+     Returns the object converted to a Python int
      or NULL with an error raised on failure.
        */
 
@@ -780,7 +780,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        /*
     Returns the object converted to Py_ssize_t by going through
     PyNumber_Index first.  If an overflow error occurs while
-    converting the int-or-long to Py_ssize_t, then the second argument
+    converting the int to Py_ssize_t, then the second argument
     is the error-type to return.  If it is NULL, then the overflow error
     is cleared and the value is clipped.
        */

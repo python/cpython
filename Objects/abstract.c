@@ -1132,8 +1132,8 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
-/* Return a Python Int or Long from the object item
-   Raise TypeError if the result is not an int-or-long
+/* Return a Python int from the object item
+   Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
 */
 PyObject *
@@ -1343,8 +1343,7 @@ PyNumber_ToBase(PyObject *n, int base)
         /* It should not be possible to get here, as
            PyNumber_Index already has a check for the same
            condition */
-        PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not "
-                        "int or long");
+        PyErr_SetString(PyExc_ValueError, "PyNumber_ToBase: index not int");
     Py_DECREF(index);
     return res;
 }

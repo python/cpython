@@ -1838,7 +1838,7 @@ class UsabilityTest(unittest.TestCase):
         self.assertIs(max(d1,d2), d2)
         self.assertIs(max(d2,d1), d2)
 
-        #between Decimal and long
+        #between Decimal and int
         self.assertIs(min(d1,l2), d1)
         self.assertIs(min(l2,d1), d1)
         self.assertIs(max(l1,d2), d2)

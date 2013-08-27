@@ -1631,7 +1631,7 @@ s_pack_internal(PyStructObject *soself, PyObject *args, int offset, char* buf)
             if (e->pack(res, v, e) < 0) {
                 if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
                     PyErr_SetString(StructError,
-                                    "long too large to convert to int");
+                                    "int too large to convert");
                 return -1;
             }
         }

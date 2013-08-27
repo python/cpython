@@ -633,7 +633,7 @@ class SystemRandom(Random):
         return (int.from_bytes(_urandom(7), 'big') >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
-        """getrandbits(k) -> x.  Generates a long int with k random bits."""
+        """getrandbits(k) -> x.  Generates an int with k random bits."""
         if k <= 0:
             raise ValueError('number of bits must be greater than zero')
         if k != int(k):

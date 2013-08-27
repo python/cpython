@@ -505,9 +505,9 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(count(10.25)), 'count(10.25)')
         self.assertEqual(next(c), -8)
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
-            # Test repr (ignoring the L in longs)
-            r1 = repr(count(i)).replace('L', '')
-            r2 = 'count(%r)'.__mod__(i).replace('L', '')
+            # Test repr
+            r1 = repr(count(i))
+            r2 = 'count(%r)'.__mod__(i)
             self.assertEqual(r1, r2)
 
         # check copy, deepcopy, pickle
@@ -555,12 +555,12 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(count(10.5, 1.00)), 'count(10.5, 1.0)')   # do show float values lilke 1.0
         for i in (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 10, sys.maxsize-5, sys.maxsize+5):
             for j in  (-sys.maxsize-5, -sys.maxsize+5 ,-10, -1, 0, 1, 10, sys.maxsize-5, sys.maxsize+5):
-                # Test repr (ignoring the L in longs)
-                r1 = repr(count(i, j)).replace('L', '')
+                # Test repr
+                r1 = repr(count(i, j))
                 if j == 1:
-                    r2 = ('count(%r)' % i).replace('L', '')
+                    r2 = ('count(%r)' % i)
                 else:
-                    r2 = ('count(%r, %r)' % (i, j)).replace('L', '')
+                    r2 = ('count(%r, %r)' % (i, j))
                 self.assertEqual(r1, r2)
                 self.pickletest(count(i, j))
 
