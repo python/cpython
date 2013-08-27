@@ -1529,7 +1529,7 @@ PyDoc_STRVAR(pow_doc,
 "pow(x, y[, z]) -> number\n\
 \n\
 With two arguments, equivalent to x**y.  With three arguments,\n\
-equivalent to (x**y) % z, but may be more efficient (e.g. for longs).");
+equivalent to (x**y) % z, but may be more efficient (e.g. for ints).");
 
 
 

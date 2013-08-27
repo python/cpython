@@ -322,20 +322,13 @@ class LongTest(unittest.TestCase):
                "".join("0123456789abcdef"[i] for i in digits)
 
     def check_format_1(self, x):
-        for base, mapper in (8, oct), (10, repr), (16, hex):
+        for base, mapper in (2, bin), (8, oct), (10, str), (10, repr), (16, hex):
             got = mapper(x)
             expected = self.slow_format(x, base)
             msg = Frm("%s returned %r but expected %r for %r",
                 mapper.__name__, got, expected, x)
             self.assertEqual(got, expected, msg)
             self.assertEqual(int(got, 0), x, Frm('int("%s", 0) != %r', got, x))
-        # str() has to be checked a little differently since there's no
-        # trailing "L"
-        got = str(x)
-        expected = self.slow_format(x, 10)
-        msg = Frm("%s returned %r but expected %r for %r",
-            mapper.__name__, got, expected, x)
-        self.assertEqual(got, expected, msg)
 
     def test_format(self):
         for x in special:
@@ -553,11 +546,11 @@ class LongTest(unittest.TestCase):
     def test_mixed_compares(self):
         eq = self.assertEqual
 
-        # We're mostly concerned with that mixing floats and longs does the
-        # right stuff, even when longs are too large to fit in a float.
+        # We're mostly concerned with that mixing floats and ints does the
+        # right stuff, even when ints are too large to fit in a float.
         # The safest way to check the results is to use an entirely different
         # method, which we do here via a skeletal rational class (which
-        # represents all Python ints, longs and floats exactly).
+        # represents all Python ints and floats exactly).
         class Rat:
             def __init__(self, value):
                 if isinstance(value, int):

@@ -4654,14 +4654,14 @@ socket_ntohl(PyObject *self, PyObject *arg)
             y = x & 0xFFFFFFFFUL;
             if (y ^ x)
                 return PyErr_Format(PyExc_OverflowError,
-                            "long int larger than 32 bits");
+                            "int larger than 32 bits");
             x = y;
         }
 #endif
     }
     else
         return PyErr_Format(PyExc_TypeError,
-                            "expected int/long, %s found",
+                            "expected int, %s found",
                             Py_TYPE(arg)->tp_name);
     return PyLong_FromUnsignedLong(ntohl(x));
 }
@@ -4711,14 +4711,14 @@ socket_htonl(PyObject *self, PyObject *arg)
             y = x & 0xFFFFFFFFUL;
             if (y ^ x)
                 return PyErr_Format(PyExc_OverflowError,
-                            "long int larger than 32 bits");
+                            "int larger than 32 bits");
             x = y;
         }
 #endif
     }
     else
         return PyErr_Format(PyExc_TypeError,
-                            "expected int/long, %s found",
+                            "expected int, %s found",
                             Py_TYPE(arg)->tp_name);
     return PyLong_FromUnsignedLong(htonl((unsigned long)x));
 }

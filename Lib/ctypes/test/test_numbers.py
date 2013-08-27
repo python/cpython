@@ -104,7 +104,7 @@ class NumberTestCase(unittest.TestCase):
 
     def test_floats(self):
         # c_float and c_double can be created from
-        # Python int, long and float
+        # Python int and float
         class FloatLike(object):
             def __float__(self):
                 return 2.0
