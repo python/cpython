@@ -96,6 +96,7 @@ New built-in features:
 
 * :ref:`PEP 442: Safe object finalization <pep-442>`.
 * :ref:`PEP 445: Configurable memory allocators <pep-445>`.
+* :ref:`PEP 446: Make newly created file descriptors non-inheritable <pep-446>`.
 
 Implementation improvements:
 
@@ -117,6 +118,19 @@ Security improvements:
   :issue:`16499`.
 
 Please read on for a comprehensive list of user-facing changes.
+
+.. _pep-446:
+
+PEP 446: Make newly created file descriptors non-inheritable
+============================================================
+
+The :pep:`446` makes newly created file descriptors `non-inheritable
+<fd_inheritance>`_. New functions and methods:
+
+* :func:`os.get_inheritable`, :func:`os.set_inheritable`
+* :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
+* :meth:`socket.socket.get_inheritable`, :meth:`socket.socket.set_inheritable`
+
 
 .. _pep-445:
 
@@ -267,6 +281,16 @@ Also, except when using the old *fork* start method, child processes
 will no longer inherit unneeded handles/file descriptors from their parents.
 
 
+os
+--
+
+New functions to get and set the `inheritable flag <fd_inheritance>`_ of a file
+descriptors or a Windows handle:
+
+* :func:`os.get_inheritable`, :func:`os.set_inheritable`
+* :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
+
+
 poplib
 ------
 
@@ -286,6 +310,15 @@ smtplib
 both socket level errors and SMTP protocol level errors to be caught in one
 try/except statement by code that only cares whether or not an error occurred.
 (:issue:`2118`).
+
+
+socket
+------
+
+Socket objects have new methods to get or set their `inheritable flag
+<fd_inheritance>`_:
+
+* :meth:`socket.socket.get_inheritable`, :meth:`socket.socket.set_inheritable`
 
 
 ssl

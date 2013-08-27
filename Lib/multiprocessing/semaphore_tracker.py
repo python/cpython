@@ -45,7 +45,7 @@ def ensure_running():
         except Exception:
             pass
         cmd = 'from multiprocessing.semaphore_tracker import main; main(%d)'
-        r, w = util.pipe()
+        r, w = os.pipe()
         try:
             fds_to_pass.append(r)
             # process will out live us, so no need to wait on pid

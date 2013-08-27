@@ -21,10 +21,11 @@
 """
 Tests for epoll wrapper.
 """
-import socket
 import errno
-import time
+import os
 import select
+import socket
+import time
 import unittest
 
 from test import support
@@ -248,6 +249,11 @@ class TestEPoll(unittest.TestCase):
         self.assertRaises(ValueError, epoll.poll, 1.0)
         self.assertRaises(ValueError, epoll.register, fd, select.EPOLLIN)
         self.assertRaises(ValueError, epoll.unregister, fd)
+
+    def test_fd_non_inheritable(self):
+        epoll = select.epoll()
+        self.addCleanup(epoll.close)
+        self.assertEqual(os.get_inheritable(epoll.fileno()), False)
 
 
 def test_main():

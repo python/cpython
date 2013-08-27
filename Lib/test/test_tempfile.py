@@ -333,6 +333,7 @@ class TestMkstempInner(BaseTestCase):
             v="q"
 
         file = self.do_create()
+        self.assertEqual(os.get_inheritable(file.fd), False)
         fd = "%d" % file.fd
 
         try:

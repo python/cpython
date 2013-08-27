@@ -37,7 +37,12 @@ The module defines the following:
    increases this value, :c:func:`devpoll` may return an
    incomplete list of active file descriptors.
 
+   The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.4
+      The new file descriptor is now non-inheritable.
 
 .. function:: epoll(sizehint=-1, flags=0)
 
@@ -49,11 +54,14 @@ The module defines the following:
    :ref:`epoll-objects` below for the methods supported by epolling objects.
    They also support the :keyword:`with` statement.
 
+   The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
    .. versionchanged:: 3.3
       Added the *flags* parameter.
 
    .. versionchanged:: 3.4
       Support for the :keyword:`with` statement was added.
+      The new file descriptor is now non-inheritable.
 
 
 .. function:: poll()
@@ -68,6 +76,11 @@ The module defines the following:
 
    (Only supported on BSD.)  Returns a kernel queue object; see section
    :ref:`kqueue-objects` below for the methods supported by kqueue objects.
+
+   The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. versionchanged:: 3.4
+      The new file descriptor is now non-inheritable.
 
 
 .. function:: kevent(ident, filter=KQ_FILTER_READ, flags=KQ_EV_ADD, fflags=0, data=0, udata=0)

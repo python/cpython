@@ -66,7 +66,7 @@ class Popen(object):
 
     def _launch(self, process_obj):
         code = 1
-        parent_r, child_w = util.pipe()
+        parent_r, child_w = os.pipe()
         self.pid = os.fork()
         if self.pid == 0:
             try:

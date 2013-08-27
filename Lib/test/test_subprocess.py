@@ -1501,16 +1501,28 @@ class POSIXProcessTestCase(BaseTestCase):
         # Terminating a dead process
         self._kill_dead_process('terminate')
 
+    def _save_fds(self, save_fds):
+        fds = []
+        for fd in save_fds:
+            inheritable = os.get_inheritable(fd)
+            saved = os.dup(fd)
+            fds.append((fd, saved, inheritable))
+        return fds
+
+    def _restore_fds(self, fds):
+        for fd, saved, inheritable in fds:
+            os.dup2(saved, fd, inheritable=inheritable)
+            os.close(saved)
+
     def check_close_std_fds(self, fds):
         # Issue #9905: test that subprocess pipes still work properly with
         # some standard fds closed
         stdin = 0
-        newfds = []
-        for a in fds:
-            b = os.dup(a)
-            newfds.append(b)
-            if a == 0:
-                stdin = b
+        saved_fds = self._save_fds(fds)
+        for fd, saved, inheritable in saved_fds:
+            if fd == 0:
+                stdin = saved
+                break
         try:
             for fd in fds:
                 os.close(fd)
@@ -1525,10 +1537,7 @@ class POSIXProcessTestCase(BaseTestCase):
             err = support.strip_python_stderr(err)
             self.assertEqual((out, err), (b'apple', b'orange'))
         finally:
-            for b, a in zip(newfds, fds):
-                os.dup2(b, a)
-            for b in newfds:
-                os.close(b)
+            self._restore_fds(saved_fds)
 
     def test_close_fd_0(self):
         self.check_close_std_fds([0])
@@ -1568,7 +1577,7 @@ class POSIXProcessTestCase(BaseTestCase):
             os.lseek(temp_fds[1], 0, 0)
 
             # move the standard file descriptors out of the way
-            saved_fds = [os.dup(fd) for fd in range(3)]
+            saved_fds = self._save_fds(range(3))
             try:
                 # duplicate the file objects over the standard fd's
                 for fd, temp_fd in enumerate(temp_fds):
@@ -1584,10 +1593,7 @@ class POSIXProcessTestCase(BaseTestCase):
                     stderr=temp_fds[0])
                 p.wait()
             finally:
-                # restore the original fd's underneath sys.stdin, etc.
-                for std, saved in enumerate(saved_fds):
-                    os.dup2(saved, std)
-                    os.close(saved)
+                self._restore_fds(saved_fds)
 
             for fd in temp_fds:
                 os.lseek(fd, 0, 0)
@@ -1611,7 +1617,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 os.unlink(fname)
 
             # save a copy of the standard file descriptors
-            saved_fds = [os.dup(fd) for fd in range(3)]
+            saved_fds = self._save_fds(range(3))
             try:
                 # duplicate the temp files over the standard fd's 0, 1, 2
                 for fd, temp_fd in enumerate(temp_fds):
@@ -1637,9 +1643,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 out = os.read(stdout_no, 1024)
                 err = support.strip_python_stderr(os.read(stderr_no, 1024))
             finally:
-                for std, saved in enumerate(saved_fds):
-                    os.dup2(saved, std)
-                    os.close(saved)
+                self._restore_fds(saved_fds)
 
             self.assertEqual(out, b"got STDIN")
             self.assertEqual(err, b"err")
@@ -1810,6 +1814,9 @@ class POSIXProcessTestCase(BaseTestCase):
             self.addCleanup(os.close, fd)
             open_fds.add(fd)
 
+        for fd in open_fds:
+            os.set_inheritable(fd, True)
+
         p = subprocess.Popen([sys.executable, fd_status],
                              stdout=subprocess.PIPE, close_fds=False)
         output, ignored = p.communicate()
@@ -1854,6 +1861,8 @@ class POSIXProcessTestCase(BaseTestCase):
             fds = os.pipe()
             self.addCleanup(os.close, fds[0])
             self.addCleanup(os.close, fds[1])
+            os.set_inheritable(fds[0], True)
+            os.set_inheritable(fds[1], True)
             open_fds.update(fds)
 
         for fd in open_fds:
@@ -1875,6 +1884,32 @@ class POSIXProcessTestCase(BaseTestCase):
                         [sys.executable, "-c", "import sys; sys.exit(0)"],
                         close_fds=False, pass_fds=(fd, )))
             self.assertIn('overriding close_fds', str(context.warning))
+
+    def test_pass_fds_inheritable(self):
+        script = support.findfile("inherited.py", subdir="subprocessdata")
+
+        inheritable, non_inheritable = os.pipe()
+        self.addCleanup(os.close, inheritable)
+        self.addCleanup(os.close, non_inheritable)
+        os.set_inheritable(inheritable, True)
+        os.set_inheritable(non_inheritable, False)
+        pass_fds = (inheritable, non_inheritable)
+        args = [sys.executable, script]
+        args += list(map(str, pass_fds))
+
+        p = subprocess.Popen(args,
+                             stdout=subprocess.PIPE, close_fds=True,
+                             pass_fds=pass_fds)
+        output, ignored = p.communicate()
+        fds = set(map(int, output.split(b',')))
+
+        # the inheritable file descriptor must be inherited, so its inheritable
+        # flag must be set in the child process after fork() and before exec()
+        self.assertEqual(fds, set(pass_fds))
+
+        # inheritable flag must not be changed in the parent process
+        self.assertEqual(os.get_inheritable(inheritable), True)
+        self.assertEqual(os.get_inheritable(non_inheritable), False)
 
     def test_stdout_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:

@@ -2,7 +2,11 @@
 
 # Initial tests are copied as is from "test_poll.py"
 
-import os, select, random, unittest, sys
+import os
+import random
+import select
+import sys
+import unittest
 from test.support import TESTFN, run_unittest
 
 try:
@@ -110,6 +114,11 @@ class DevPollTests(unittest.TestCase):
         self.assertRaises(ValueError, devpoll.poll)
         self.assertRaises(ValueError, devpoll.register, fd, fd, select.POLLIN)
         self.assertRaises(ValueError, devpoll.unregister, fd)
+
+    def test_fd_non_inheritable(self):
+        devpoll = select.devpoll()
+        self.addCleanup(devpoll.close)
+        self.assertEqual(os.get_inheritable(devpoll.fileno()), False)
 
 
 def test_main():

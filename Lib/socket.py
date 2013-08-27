@@ -137,7 +137,8 @@ class socket(_socket.socket):
     def dup(self):
         """dup() -> socket object
 
-        Return a new socket object connected to the same system resource.
+        Duplicate the socket. Return a new socket object connected to the same
+        system resource. The new socket is non-inheritable.
         """
         fd = dup(self.fileno())
         sock = self.__class__(self.family, self.type, self.proto, fileno=fd)
@@ -228,6 +229,20 @@ class socket(_socket.socket):
         """
         self._closed = True
         return super().detach()
+
+    if os.name == 'nt':
+        def get_inheritable(self):
+            return os.get_handle_inheritable(self.fileno())
+        def set_inheritable(self, inheritable):
+            os.set_handle_inheritable(self.fileno(), inheritable)
+    else:
+        def get_inheritable(self):
+            return os.get_inheritable(self.fileno())
+        def set_inheritable(self, inheritable):
+            os.set_inheritable(self.fileno(), inheritable)
+    get_inheritable.__doc__ = "Get the inheritable flag of the socket"
+    set_inheritable.__doc__ = "Set the inheritable flag of the socket"
+
 
 def fromfd(fd, family, type, proto=0):
     """ fromfd(fd, family, type[, proto]) -> socket object

@@ -143,7 +143,7 @@ static void RunStartupFile(PyCompilerFlags *cf)
 {
     char *startup = Py_GETENV("PYTHONSTARTUP");
     if (startup != NULL && startup[0] != '\0') {
-        FILE *fp = fopen(startup, "r");
+        FILE *fp = _Py_fopen(startup, "r");
         if (fp != NULL) {
             (void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
             PyErr_Clear();

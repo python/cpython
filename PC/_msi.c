@@ -55,7 +55,7 @@ static FNFCIFREE(cb_free)
 
 static FNFCIOPEN(cb_open)
 {
-    int result = _open(pszFile, oflag, pmode);
+    int result = _open(pszFile, oflag | O_NOINHERIT, pmode);
     if (result == -1)
         *err = errno;
     return result;
@@ -179,7 +179,7 @@ static FNFCIGETOPENINFO(cb_getopeninfo)
 
     CloseHandle(handle);
 
-    return _open(pszName, _O_RDONLY | _O_BINARY);
+    return _open(pszName, _O_RDONLY | _O_BINARY | O_NOINHERIT);
 }
 
 static PyObject* fcicreate(PyObject* obj, PyObject* args)

@@ -522,12 +522,17 @@ Raw File I/O
    :mod:`os.open` as *opener* results in functionality similar to passing
    ``None``).
 
+   The newly created file is :ref:`non-inheritable <fd_inheritance>`.
+
    See the :func:`open` built-in function for examples on using the *opener*
    parameter.
 
    .. versionchanged:: 3.3
       The *opener* parameter was added.
       The ``'x'`` mode was added.
+
+   .. versionchanged:: 3.4
+      The file is now non-inheritable.
 
    In addition to the attributes and methods from :class:`IOBase` and
    :class:`RawIOBase`, :class:`FileIO` provides the following data

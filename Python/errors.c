@@ -1042,7 +1042,7 @@ PyErr_ProgramText(const char *filename, int lineno)
     FILE *fp;
     if (filename == NULL || *filename == '\0' || lineno <= 0)
         return NULL;
-    fp = fopen(filename, "r" PY_STDIOTEXTMODE);
+    fp = _Py_fopen(filename, "r" PY_STDIOTEXTMODE);
     return err_programtext(fp, lineno);
 }
 
@@ -1052,7 +1052,7 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
     FILE *fp;
     if (filename == NULL || lineno <= 0)
         return NULL;
-    fp = _Py_fopen(filename, "r" PY_STDIOTEXTMODE);
+    fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
     return err_programtext(fp, lineno);
 }
 
