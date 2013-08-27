@@ -421,7 +421,7 @@ static PyMethodDef random_methods[] = {
     {"setstate",          (PyCFunction)random_setstate,  METH_O,
         PyDoc_STR("setstate(state) -> None.  Restores generator state.")},
     {"getrandbits",     (PyCFunction)random_getrandbits,  METH_VARARGS,
-        PyDoc_STR("getrandbits(k) -> x.  Generates a long int with "
+        PyDoc_STR("getrandbits(k) -> x.  Generates an int with "
                   "k random bits.")},
     {NULL,              NULL}           /* sentinel */
 };

@@ -148,7 +148,7 @@ w_pstring(const char *s, Py_ssize_t n, WFILE *p)
         w_string(s, n, p);
 }
 
-/* We assume that Python longs are stored internally in base some power of
+/* We assume that Python ints are stored internally in base some power of
    2**15; for the sake of portability we'll always read and write them in base
    exactly 2**15. */
 
@@ -505,7 +505,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
     }
 }
 
-/* version currently has no effect for writing longs. */
+/* version currently has no effect for writing ints. */
 void
 PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
 {

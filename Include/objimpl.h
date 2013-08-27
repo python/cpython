@@ -147,7 +147,7 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
    value is rounded up to the closest multiple of sizeof(void *), in order to
    ensure that pointer fields at the end of the object are correctly aligned
    for the platform (this is of special importance for subclasses of, e.g.,
-   str or long, so that pointers can be stored after the embedded data).
+   str or int, so that pointers can be stored after the embedded data).
 
    Note that there's no memory wastage in doing this, as malloc has to
    return (at worst) pointer-aligned memory anyway.

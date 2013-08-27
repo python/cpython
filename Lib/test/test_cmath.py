@@ -253,7 +253,7 @@ class CMathTests(unittest.TestCase):
             self.assertRaises(SomeException, f, MyComplexExceptionOS())
 
     def test_input_type(self):
-        # ints and longs should be acceptable inputs to all cmath
+        # ints should be acceptable inputs to all cmath
         # functions, by virtue of providing a __float__ method
         for f in self.test_functions:
             for arg in [2, 2.]:

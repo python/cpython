@@ -150,6 +150,12 @@ Tests
   possible, since "localhost" goes through a DNS lookup under recent Windows
   versions.
 
+Documentation
+-------------
+
+- Issue #18783: Removed existing mentions of Python long type in docstrings,
+  error messages and comments.
+
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================

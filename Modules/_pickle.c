@@ -387,8 +387,8 @@ static PyTypeObject Unpickler_Type;
 
 
 /*************************************************************************
- A custom hashtable mapping void* to longs. This is used by the pickler for
- memoization. Using a custom hashtable rather than PyDict allows us to skip
+ A custom hashtable mapping void* to Python ints. This is used by the pickler
+ for memoization. Using a custom hashtable rather than PyDict allows us to skip
  a bunch of unnecessary object creation. This makes a huge performance
  difference. */
 
@@ -1580,8 +1580,8 @@ save_long(PicklerObject *self, PyObject *obj)
          * need another byte even if there aren't any leftovers:
          * the most-significant bit of the most-significant byte
          * acts like a sign bit, and it's usually got a sense
-         * opposite of the one we need.  The exception is longs
-         * of the form -(2**(8*j-1)) for j > 0.  Such a long is
+         * opposite of the one we need.  The exception is ints
+         * of the form -(2**(8*j-1)) for j > 0.  Such an int is
          * its own 256's-complement, so has the right sign bit
          * even without the extra byte.  That's a pain to check
          * for in advance, though, so we always grab an extra
@@ -1590,7 +1590,7 @@ save_long(PicklerObject *self, PyObject *obj)
         nbytes = (nbits >> 3) + 1;
         if (nbytes > 0x7fffffffL) {
             PyErr_SetString(PyExc_OverflowError,
-                            "long too large to pickle");
+                            "int too large to pickle");
             goto error;
         }
         repr = PyBytes_FromStringAndSize(NULL, (Py_ssize_t)nbytes);
@@ -1602,7 +1602,7 @@ save_long(PicklerObject *self, PyObject *obj)
                                 1 /* little endian */ , 1 /* signed */ );
         if (i < 0)
             goto error;
-        /* If the long is negative, this may be a byte more than
+        /* If the int is negative, this may be a byte more than
          * needed.  This is so iff the MSB is all redundant sign
          * bits.
          */
@@ -3952,7 +3952,7 @@ load_int(UnpicklerObject *self)
 
     if (errno || (*endptr != '\n' && *endptr != '\0')) {
         /* Hm, maybe we've got something long.  Let's try reading
-         * it as a Python long object. */
+         * it as a Python int object. */
         errno = 0;
         /* XXX: Same thing about the base here. */
         value = PyLong_FromString(s, NULL, 0);
