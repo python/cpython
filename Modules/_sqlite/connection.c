@@ -715,6 +715,9 @@ error:
 #ifdef WITH_THREAD
     PyGILState_Release(threadstate);
 #endif
+    /* explicit return to avoid a compilation error if WITH_THREAD
+       is not defined */
+    return;
 }
 
 static void _pysqlite_drop_unused_statement_references(pysqlite_Connection* self)
