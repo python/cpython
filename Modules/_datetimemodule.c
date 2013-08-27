@@ -2160,7 +2160,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             whole_us = 2.0 * round((leftover_us + x_is_odd) * 0.5) - x_is_odd;
         }
 
-        temp = PyLong_FromLong(whole_us);
+        temp = PyLong_FromLong((long)whole_us);
 
         if (temp == NULL) {
             Py_DECREF(x);
