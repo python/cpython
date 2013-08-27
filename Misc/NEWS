@@ -10,6 +10,11 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #18571: Implementation of the PEP 446: file descriptors and file
+  handles are now created non-inheritable; add functions
+  os.get/set_inheritable(), os.get/set_handle_inheritable() and
+  socket.socket.get/set_inheritable().
+
 - Issue #11619: The parser and the import machinery do not encode Unicode
   filenames anymore on Windows.
 

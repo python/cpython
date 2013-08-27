@@ -1797,7 +1797,7 @@ imp_load_dynamic(PyObject *self, PyObject *args)
                           &name, PyUnicode_FSDecoder, &pathname, &fob))
         return NULL;
     if (fob != NULL) {
-        fp = _Py_fopen(pathname, "r");
+        fp = _Py_fopen_obj(pathname, "r");
         if (fp == NULL) {
             Py_DECREF(pathname);
             if (!PyErr_Occurred())

@@ -3535,10 +3535,7 @@ _posix_listdir(path_t *path, PyObject *list)
 #ifdef HAVE_FDOPENDIR
     if (path->fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
-        Py_BEGIN_ALLOW_THREADS
-        fd = dup(path->fd);
-        Py_END_ALLOW_THREADS
-
+        fd = _Py_dup(path->fd);
         if (fd == -1) {
             list = posix_error();
             goto exit;
@@ -5768,7 +5765,7 @@ Open a pseudo-terminal, returning open fd's for both master and slave end.\n");
 static PyObject *
 posix_openpty(PyObject *self, PyObject *noargs)
 {
-    int master_fd, slave_fd;
+    int master_fd = -1, slave_fd = -1;
 #ifndef HAVE_OPENPTY
     char * slave_name;
 #endif
@@ -5781,37 +5778,52 @@ posix_openpty(PyObject *self, PyObject *noargs)
 
 #ifdef HAVE_OPENPTY
     if (openpty(&master_fd, &slave_fd, NULL, NULL, NULL) != 0)
-        return posix_error();
+        goto posix_error;
+
+    if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+        goto error;
+    if (_Py_set_inheritable(slave_fd, 0, NULL) < 0)
+        goto error;
+
 #elif defined(HAVE__GETPTY)
     slave_name = _getpty(&master_fd, O_RDWR, 0666, 0);
     if (slave_name == NULL)
-        return posix_error();
+        goto posix_error;
+    if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+        goto error;
 
-    slave_fd = open(slave_name, O_RDWR);
+    slave_fd = _Py_open(slave_name, O_RDWR);
     if (slave_fd < 0)
-        return posix_error();
+        goto posix_error;
+
 #else
-    master_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
+    master_fd = _Py_open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
     if (master_fd < 0)
-        return posix_error();
+        goto posix_error;
+
     sig_saved = PyOS_setsig(SIGCHLD, SIG_DFL);
+
     /* change permission of slave */
     if (grantpt(master_fd) < 0) {
         PyOS_setsig(SIGCHLD, sig_saved);
-        return posix_error();
+        goto posix_error;
     }
+
     /* unlock slave */
     if (unlockpt(master_fd) < 0) {
         PyOS_setsig(SIGCHLD, sig_saved);
-        return posix_error();
+        goto posix_error;
     }
+
     PyOS_setsig(SIGCHLD, sig_saved);
+
     slave_name = ptsname(master_fd); /* get name of slave */
     if (slave_name == NULL)
-        return posix_error();
-    slave_fd = open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
+        goto posix_error;
+
+    slave_fd = _Py_open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
     if (slave_fd < 0)
-        return posix_error();
+        goto posix_error;
 #if !defined(__CYGWIN__) && !defined(HAVE_DEV_PTC)
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
@@ -5823,6 +5835,14 @@ posix_openpty(PyObject *self, PyObject *noargs)
 
     return Py_BuildValue("(ii)", master_fd, slave_fd);
 
+posix_error:
+    posix_error();
+error:
+    if (master_fd != -1)
+        close(master_fd);
+    if (slave_fd != -1)
+        close(slave_fd);
+    return NULL;
 }
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) || defined(HAVE_DEV_PTMX) */
 
@@ -7432,6 +7452,10 @@ posix_tcsetpgrp(PyObject *self, PyObject *args)
 
 /* Functions acting on file descriptors */
 
+#ifdef O_CLOEXEC
+extern int _Py_open_cloexec_works;
+#endif
+
 PyDoc_STRVAR(posix_open__doc__,
 "open(path, flags, mode=0o777, *, dir_fd=None)\n\n\
 Open a file for low level IO.  Returns a file handle (integer).\n\
@@ -7451,6 +7475,11 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
     int fd;
     PyObject *return_value = NULL;
     static char *keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
+#ifdef O_CLOEXEC
+    int *atomic_flag_works = &_Py_open_cloexec_works;
+#elif !defined(MS_WINDOWS)
+    int *atomic_flag_works = NULL;
+#endif
 
     memset(&path, 0, sizeof(path));
     path.function_name = "open";
@@ -7464,6 +7493,12 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
         ))
         return NULL;
+
+#ifdef MS_WINDOWS
+    flags |= O_NOINHERIT;
+#elif defined(O_CLOEXEC)
+    flags |= O_CLOEXEC;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
@@ -7483,6 +7518,13 @@ posix_open(PyObject *self, PyObject *args, PyObject *kwargs)
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path.object);
         goto exit;
     }
+
+#ifndef MS_WINDOWS
+    if (_Py_set_inheritable(fd, 0, atomic_flag_works) < 0) {
+        close(fd);
+        goto exit;
+    }
+#endif
 
     return_value = PyLong_FromLong((long)fd);
 
@@ -7540,13 +7582,14 @@ static PyObject *
 posix_dup(PyObject *self, PyObject *args)
 {
     int fd;
+
     if (!PyArg_ParseTuple(args, "i:dup", &fd))
         return NULL;
-    if (!_PyVerify_fd(fd))
-        return posix_error();
-    fd = dup(fd);
-    if (fd < 0)
-        return posix_error();
+    
+    fd = _Py_dup(fd);
+    if (fd == -1)
+        return NULL;
+
     return PyLong_FromLong((long)fd);
 }
 
@@ -7556,16 +7599,82 @@ PyDoc_STRVAR(posix_dup2__doc__,
 Duplicate file descriptor.");
 
 static PyObject *
-posix_dup2(PyObject *self, PyObject *args)
+posix_dup2(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    int fd, fd2, res;
-    if (!PyArg_ParseTuple(args, "ii:dup2", &fd, &fd2))
+    static char *keywords[] = {"fd", "fd2", "inheritable", NULL};
+    int fd, fd2;
+    int inheritable = 1;
+    int res;
+#if defined(HAVE_DUP3) && \
+    !(defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC))
+    /* dup3() is available on Linux 2.6.27+ and glibc 2.9 */
+    int dup3_works = -1;
+#endif
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|i:dup2", keywords,
+                                     &fd, &fd2, &inheritable))
         return NULL;
+
     if (!_PyVerify_fd_dup2(fd, fd2))
         return posix_error();
+
+#ifdef MS_WINDOWS
+    Py_BEGIN_ALLOW_THREADS
     res = dup2(fd, fd2);
+    Py_END_ALLOW_THREADS
     if (res < 0)
         return posix_error();
+
+    /* Character files like console cannot be make non-inheritable */
+    if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
+        close(fd2);
+        return NULL;
+    }
+
+#elif defined(HAVE_FCNTL_H) && defined(F_DUP2FD_CLOEXEC)
+    Py_BEGIN_ALLOW_THREADS
+    if (!inheritable)
+        res = fcntl(fd, F_DUP2FD_CLOEXEC, fd2);
+    else
+        res = dup2(fd, fd2);
+    Py_END_ALLOW_THREADS
+    if (res < 0)
+        return posix_error();
+
+#else
+
+#ifdef HAVE_DUP3
+    if (!inheritable && dup3_works != 0) {
+        Py_BEGIN_ALLOW_THREADS
+        res = dup3(fd, fd2, O_CLOEXEC);
+        Py_END_ALLOW_THREADS
+        if (res < 0) {
+            if (dup3_works == -1)
+                dup3_works = (errno != ENOSYS);
+            if (dup3_works)
+                return posix_error();
+        }
+    }
+
+    if (inheritable || dup3_works == 0)
+    {
+#endif
+        Py_BEGIN_ALLOW_THREADS
+        res = dup2(fd, fd2);
+        Py_END_ALLOW_THREADS
+        if (res < 0)
+            return posix_error();
+
+        if (!inheritable && _Py_set_inheritable(fd2, 0, NULL) < 0) {
+            close(fd2);
+            return NULL;
+        }
+#ifdef HAVE_DUP3
+    }
+#endif
+
+#endif
+
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -8052,24 +8161,69 @@ Create a pipe.");
 static PyObject *
 posix_pipe(PyObject *self, PyObject *noargs)
 {
-#if !defined(MS_WINDOWS)
     int fds[2];
-    int res;
-    res = pipe(fds);
-    if (res != 0)
-        return posix_error();
-    return Py_BuildValue("(ii)", fds[0], fds[1]);
-#else /* MS_WINDOWS */
+#ifdef MS_WINDOWS
     HANDLE read, write;
-    int read_fd, write_fd;
+    SECURITY_ATTRIBUTES attr;
     BOOL ok;
-    ok = CreatePipe(&read, &write, NULL, 0);
+#else
+    int res;
+#endif
+
+#ifdef MS_WINDOWS
+    attr.nLength = sizeof(attr);
+    attr.lpSecurityDescriptor = NULL;
+    attr.bInheritHandle = FALSE;
+
+    Py_BEGIN_ALLOW_THREADS
+    ok = CreatePipe(&read, &write, &attr, 0);
+    if (ok) {
+        fds[0] = _open_osfhandle((Py_intptr_t)read, _O_RDONLY);
+        fds[1] = _open_osfhandle((Py_intptr_t)write, _O_WRONLY);
+        if (fds[0] == -1 || fds[1] == -1) {
+            CloseHandle(read);
+            CloseHandle(write);
+            ok = 0;
+        }
+    }
+    Py_END_ALLOW_THREADS
+
     if (!ok)
         return PyErr_SetFromWindowsErr(0);
-    read_fd = _open_osfhandle((Py_intptr_t)read, 0);
-    write_fd = _open_osfhandle((Py_intptr_t)write, 1);
-    return Py_BuildValue("(ii)", read_fd, write_fd);
-#endif /* MS_WINDOWS */
+#else
+
+#ifdef HAVE_PIPE2
+    Py_BEGIN_ALLOW_THREADS
+    res = pipe2(fds, O_CLOEXEC);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0 && errno == ENOSYS)
+    {
+#endif
+        Py_BEGIN_ALLOW_THREADS
+        res = pipe(fds);
+        Py_END_ALLOW_THREADS
+
+        if (res == 0) {
+            if (_Py_set_inheritable(fds[0], 0, NULL) < 0) {
+                close(fds[0]);
+                close(fds[1]);
+                return NULL;
+            }
+            if (_Py_set_inheritable(fds[1], 0, NULL) < 0) {
+                close(fds[0]);
+                close(fds[1]);
+                return NULL;
+            }
+        }
+#ifdef HAVE_PIPE2
+    }
+#endif
+
+    if (res != 0)
+        return PyErr_SetFromErrno(PyExc_OSError);
+#endif /* !MS_WINDOWS */
+    return Py_BuildValue("(ii)", fds[0], fds[1]);
 }
 #endif  /* HAVE_PIPE */
 
@@ -10659,6 +10813,102 @@ posix_cpu_count(PyObject *self)
         Py_RETURN_NONE;
 }
 
+PyDoc_STRVAR(get_inheritable__doc__,
+    "get_inheritable(fd) -> bool\n" \
+    "\n" \
+    "Get the close-on-exe flag of the specified file descriptor.");
+
+static PyObject*
+posix_get_inheritable(PyObject *self, PyObject *args)
+{
+    int fd;
+    int inheritable;
+
+    if (!PyArg_ParseTuple(args, "i:get_inheritable", &fd))
+        return NULL;
+
+    if (!_PyVerify_fd(fd))
+        return posix_error();
+
+    inheritable = _Py_get_inheritable(fd);
+    if (inheritable < 0)
+        return NULL;
+    return PyBool_FromLong(inheritable);
+}
+
+PyDoc_STRVAR(set_inheritable__doc__,
+    "set_inheritable(fd, inheritable)\n" \
+    "\n" \
+    "Set the inheritable flag of the specified file descriptor.");
+
+static PyObject*
+posix_set_inheritable(PyObject *self, PyObject *args)
+{
+    int fd, inheritable;
+
+    if (!PyArg_ParseTuple(args, "ii:set_inheritable", &fd, &inheritable))
+        return NULL;
+
+    if (!_PyVerify_fd(fd))
+        return posix_error();
+
+    if (_Py_set_inheritable(fd, inheritable, NULL) < 0)
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+
+#ifdef MS_WINDOWS
+PyDoc_STRVAR(get_handle_inheritable__doc__,
+    "get_handle_inheritable(fd) -> bool\n" \
+    "\n" \
+    "Get the close-on-exe flag of the specified file descriptor.");
+
+static PyObject*
+posix_get_handle_inheritable(PyObject *self, PyObject *args)
+{
+    Py_intptr_t handle;
+    DWORD flags;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_INTPTR ":get_handle_inheritable", &handle))
+        return NULL;
+
+    if (!GetHandleInformation((HANDLE)handle, &flags)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+
+    return PyBool_FromLong(flags & HANDLE_FLAG_INHERIT);
+}
+
+PyDoc_STRVAR(set_handle_inheritable__doc__,
+    "set_handle_inheritable(fd, inheritable)\n" \
+    "\n" \
+    "Set the inheritable flag of the specified handle.");
+
+static PyObject*
+posix_set_handle_inheritable(PyObject *self, PyObject *args)
+{
+    int inheritable = 1;
+    Py_intptr_t handle;
+    DWORD flags;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_INTPTR "i:set_handle_inheritable",
+                          &handle, &inheritable))
+        return NULL;
+
+    if (inheritable)
+        flags = HANDLE_FLAG_INHERIT;
+    else
+        flags = 0;
+    if (!SetHandleInformation((HANDLE)handle, HANDLE_FLAG_INHERIT, flags)) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif   /* MS_WINDOWS */
+
 
 static PyMethodDef posix_methods[] = {
     {"access",          (PyCFunction)posix_access,
@@ -10934,7 +11184,8 @@ static PyMethodDef posix_methods[] = {
     {"closerange",      posix_closerange, METH_VARARGS, posix_closerange__doc__},
     {"device_encoding", device_encoding, METH_VARARGS, device_encoding__doc__},
     {"dup",             posix_dup, METH_VARARGS, posix_dup__doc__},
-    {"dup2",            posix_dup2, METH_VARARGS, posix_dup2__doc__},
+    {"dup2",            (PyCFunction)posix_dup2,
+                        METH_VARARGS | METH_KEYWORDS, posix_dup2__doc__},
 #ifdef HAVE_LOCKF
     {"lockf",           posix_lockf, METH_VARARGS, posix_lockf__doc__},
 #endif
@@ -11105,6 +11356,14 @@ static PyMethodDef posix_methods[] = {
 #endif
     {"cpu_count", (PyCFunction)posix_cpu_count,
                   METH_NOARGS, posix_cpu_count__doc__},
+    {"get_inheritable", posix_get_inheritable, METH_VARARGS, get_inheritable__doc__},
+    {"set_inheritable", posix_set_inheritable, METH_VARARGS, set_inheritable__doc__},
+#ifdef MS_WINDOWS
+    {"get_handle_inheritable", posix_get_handle_inheritable,
+     METH_VARARGS, get_handle_inheritable__doc__},
+    {"set_handle_inheritable", posix_set_handle_inheritable,
+     METH_VARARGS, set_handle_inheritable__doc__},
+#endif
     {NULL,              NULL}            /* Sentinel */
 };
 

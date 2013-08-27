@@ -365,7 +365,7 @@ def spawnv_passfds(path, args, passfds):
         if flag & fcntl.FD_CLOEXEC:
             fcntl.fcntl(fd, fcntl.F_SETFD, flag & ~fcntl.FD_CLOEXEC)
             tmp.append((fd, flag))
-    errpipe_read, errpipe_write = _posixsubprocess.cloexec_pipe()
+    errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
             args, [os.fsencode(path)], True, passfds, None, None,
@@ -381,7 +381,9 @@ def spawnv_passfds(path, args, passfds):
 #
 # Return pipe with CLOEXEC set on fds
 #
+# Deprecated: os.pipe() creates non-inheritable file descriptors
+# since Python 3.4
+#
 
 def pipe():
-    import _posixsubprocess
-    return _posixsubprocess.cloexec_pipe()
+    return os.pipe()

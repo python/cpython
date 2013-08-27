@@ -1015,6 +1015,11 @@ class BuiltinTest(unittest.TestCase):
             os.environ.clear()
             os.environ.update(old_environ)
 
+    def test_open_non_inheritable(self):
+        fileobj = open(__file__)
+        with fileobj:
+            self.assertFalse(os.get_inheritable(fileobj.fileno()))
+
     def test_ord(self):
         self.assertEqual(ord(' '), 32)
         self.assertEqual(ord('A'), 65)

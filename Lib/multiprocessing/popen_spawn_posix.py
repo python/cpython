@@ -54,8 +54,8 @@ class Popen(popen_fork.Popen):
 
         parent_r = child_w = child_r = parent_w = None
         try:
-            parent_r, child_w = util.pipe()
-            child_r, parent_w = util.pipe()
+            parent_r, child_w = os.pipe()
+            child_r, parent_w = os.pipe()
             cmd = spawn.get_command_line(tracker_fd=tracker_fd,
                                          pipe_handle=child_r)
             self._fds.extend([child_r, child_w])

@@ -1004,7 +1004,7 @@ newDevPollObject(void)
     */
     limit_result = getrlimit(RLIMIT_NOFILE, &limit);
     if (limit_result != -1)
-        fd_devpoll = open("/dev/poll", O_RDWR);
+        fd_devpoll = _Py_open("/dev/poll", O_RDWR);
     Py_END_ALLOW_THREADS
 
     if (limit_result == -1) {
@@ -1194,6 +1194,7 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
     if (fd == -1) {
         Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_EPOLL_CREATE1
+        flags |= EPOLL_CLOEXEC;
         if (flags)
             self->epfd = epoll_create1(flags);
         else
@@ -1209,6 +1210,14 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+
+#ifndef HAVE_EPOLL_CREATE1
+    if (_Py_set_inheritable(self->epfd, 0, NULL) < 0) {
+        Py_DECREF(self);
+        return NULL;
+    }
+#endif
+
     return (PyObject *)self;
 }
 
@@ -1896,13 +1905,19 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
+
+    if (fd == -1) {
+        if (_Py_set_inheritable(self->kqfd, 0, NULL) < 0) {
+            Py_DECREF(self);
+            return NULL;
+        }
+    }
     return (PyObject *)self;
 }
 
 static PyObject *
 kqueue_queue_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-
     if ((args != NULL && PyObject_Size(args)) ||
                     (kwds != NULL && PyObject_Size(kwds))) {
         PyErr_SetString(PyExc_ValueError,

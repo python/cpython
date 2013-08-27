@@ -1694,26 +1694,24 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument stream. */
     char fn[100];
-    int fd;
-    FILE *fp;
-    PyObject *res;
+    int fd = -1;
+    FILE *fp = NULL;
+    PyObject *res = NULL;
 
     strcpy(fn, "/tmp/py.curses.putwin.XXXXXX");
     fd = mkstemp(fn);
     if (fd < 0)
         return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+    if (_Py_set_inheritable(fd, 0, NULL) < 0)
+        goto exit;
     fp = fdopen(fd, "wb+");
     if (fp == NULL) {
-        close(fd);
-        remove(fn);
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        goto exit;
     }
     res = PyCursesCheckERR(putwin(self->win, fp), "putwin");
-    if (res == NULL) {
-        fclose(fp);
-        remove(fn);
-        return res;
-    }
+    if (res == NULL)
+        goto exit;
     fseek(fp, 0, 0);
     while (1) {
         char buf[BUFSIZ];
@@ -1727,7 +1725,12 @@ PyCursesWindow_PutWin(PyCursesWindowObject *self, PyObject *stream)
         if (res == NULL)
             break;
     }
-    fclose(fp);
+
+exit:
+    if (fp != NULL)
+        fclose(fp);
+    else if (fd != -1)
+        close(fd);
     remove(fn);
     return res;
 }
@@ -2252,12 +2255,13 @@ static PyObject *
 PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
 {
     char fn[100];
-    int fd;
-    FILE *fp;
+    int fd = -1;
+    FILE *fp = NULL;
     PyObject *data;
     size_t datalen;
     WINDOW *win;
     _Py_IDENTIFIER(read);
+    PyObject *res = NULL;
 
     PyCursesInitialised;
 
@@ -2265,44 +2269,47 @@ PyCurses_GetWin(PyCursesWindowObject *self, PyObject *stream)
     fd = mkstemp(fn);
     if (fd < 0)
         return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+    if (_Py_set_inheritable(fd, 0, NULL) < 0)
+        goto error;
     fp = fdopen(fd, "wb+");
     if (fp == NULL) {
-        close(fd);
-        remove(fn);
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        goto error;
     }
+
     data = _PyObject_CallMethodId(stream, &PyId_read, "");
-    if (data == NULL) {
-        fclose(fp);
-        remove(fn);
-        return NULL;
-    }
+    if (data == NULL)
+        goto error;
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "f.read() returned %.100s instead of bytes",
                      data->ob_type->tp_name);
         Py_DECREF(data);
-        fclose(fp);
-        remove(fn);
-        return NULL;
+        goto error;
     }
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
         Py_DECREF(data);
-        fclose(fp);
-        remove(fn);
-        return PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, fn);
+        goto error;
     }
     Py_DECREF(data);
+
     fseek(fp, 0, 0);
     win = getwin(fp);
-    fclose(fp);
-    remove(fn);
     if (win == NULL) {
         PyErr_SetString(PyCursesError, catchall_NULL);
-        return NULL;
+        goto error;
     }
-    return PyCursesWindow_New(win, NULL);
+    res = PyCursesWindow_New(win, NULL);
+
+error:
+    if (fp != NULL)
+        fclose(fp);
+    else if (fd != -1)
+        close(fd);
+    remove(fn);
+    return res;
 }
 
 static PyObject *

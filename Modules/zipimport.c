@@ -870,7 +870,7 @@ read_directory(PyObject *archive)
     const char *charset;
     int bootstrap;
 
-    fp = _Py_fopen(archive, "rb");
+    fp = _Py_fopen_obj(archive, "rb");
     if (fp == NULL) {
         if (!PyErr_Occurred())
             PyErr_Format(ZipImportError, "can't open Zip file: %R", archive);
@@ -1064,7 +1064,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
         return NULL;
     }
 
-    fp = _Py_fopen(archive, "rb");
+    fp = _Py_fopen_obj(archive, "rb");
     if (!fp) {
         if (!PyErr_Occurred())
             PyErr_Format(PyExc_IOError,

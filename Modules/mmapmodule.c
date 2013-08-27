@@ -1208,18 +1208,18 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         flags |= MAP_ANONYMOUS;
 #else
         /* SVR4 method to map anonymous memory is to open /dev/zero */
-        fd = devzero = open("/dev/zero", O_RDWR);
+        fd = devzero = _Py_open("/dev/zero", O_RDWR);
         if (devzero == -1) {
             Py_DECREF(m_obj);
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
 #endif
-    } else {
-        m_obj->fd = dup(fd);
+    }
+    else {
+        m_obj->fd = _Py_dup(fd);
         if (m_obj->fd == -1) {
             Py_DECREF(m_obj);
-            PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
     }

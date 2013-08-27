@@ -979,6 +979,8 @@ are always available.  They are listed here in alphabetical order.
    :mod:`os.open` as *opener* results in functionality similar to passing
    ``None``).
 
+   The newly created file is :ref:`non-inheritable <fd_inheritance>`.
+
    The following example uses the :ref:`dir_fd <dir_fd>` parameter of the
    :func:`os.open` function to open a file relative to a given directory::
 
@@ -991,10 +993,6 @@ are always available.  They are listed here in alphabetical order.
       ...     print('This will be written to somedir/spamspam.txt', file=f)
       ...
       >>> os.close(dir_fd)  # don't leak a file descriptor
-
-   .. versionchanged:: 3.3
-      The *opener* parameter was added.
-      The ``'x'`` mode was added.
 
    The type of :term:`file object` returned by the :func:`open` function
    depends on the mode.  When :func:`open` is used to open a file in a text
@@ -1022,9 +1020,14 @@ are always available.  They are listed here in alphabetical order.
    and :mod:`shutil`.
 
    .. versionchanged:: 3.3
+      The *opener* parameter was added.
+      The ``'x'`` mode was added.
       :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
       :exc:`FileExistsError` is now raised if the file opened in exclusive
       creation mode (``'x'``) already exists.
+
+   .. versionchanged:: 3.4
+      The file is now non-inheritable.
 
 
 .. XXX works for bytes too, but should it?

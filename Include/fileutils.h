@@ -27,11 +27,19 @@ PyAPI_FUNC(int) _Py_stat(
     struct stat *statbuf);
 #endif
 
+PyAPI_FUNC(int) _Py_open(
+    const char *pathname,
+    int flags);
+
 PyAPI_FUNC(FILE *) _Py_wfopen(
     const wchar_t *path,
     const wchar_t *mode);
 
 PyAPI_FUNC(FILE*) _Py_fopen(
+    const char *pathname,
+    const char *mode);
+
+PyAPI_FUNC(FILE*) _Py_fopen_obj(
     PyObject *path,
     const char *mode);
 
@@ -52,6 +60,13 @@ PyAPI_FUNC(wchar_t*) _Py_wrealpath(
 PyAPI_FUNC(wchar_t*) _Py_wgetcwd(
     wchar_t *buf,
     size_t size);
+
+PyAPI_FUNC(int) _Py_get_inheritable(int fd);
+
+PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
+                                    int *atomic_flag_works);
+
+PyAPI_FUNC(int) _Py_dup(int fd);
 
 #ifdef __cplusplus
 }

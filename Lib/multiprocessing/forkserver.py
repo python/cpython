@@ -60,8 +60,8 @@ def connect_to_new_process(fds):
         raise ValueError('too many fds')
     with socket.socket(socket.AF_UNIX) as client:
         client.connect(_forkserver_address)
-        parent_r, child_w = util.pipe()
-        child_r, parent_w = util.pipe()
+        parent_r, child_w = os.pipe()
+        child_r, parent_w = os.pipe()
         allfds = [child_r, child_w, _forkserver_alive_fd,
                   semaphore_tracker._semaphore_tracker_fd]
         allfds += fds

@@ -2350,7 +2350,7 @@ load_dh_params(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-    f = _Py_fopen(filepath, "rb");
+    f = _Py_fopen_obj(filepath, "rb");
     if (f == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, filepath);

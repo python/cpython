@@ -685,16 +685,29 @@ as internal buffering of data.
 
 .. function:: dup(fd)
 
-   Return a duplicate of file descriptor *fd*.
+   Return a duplicate of file descriptor *fd*. The new file descriptor is
+   :ref:`non-inheritable <fd_inheritance>`.
+
+   On Windows, when duplicating a standard stream (0: stdin, 1: stdout,
+   2: stderr), the new file descriptor is :ref:`inheritable
+   <fd_inheritance>`.
 
    Availability: Unix, Windows.
 
+   .. versionchanged:: 3.4
+      The new file descriptor is now non-inheritable.
 
-.. function:: dup2(fd, fd2)
+
+.. function:: dup2(fd, fd2, inheritable=True)
 
    Duplicate file descriptor *fd* to *fd2*, closing the latter first if necessary.
+   The file descriptor *fd2* is :ref:`inheritable <fd_inheritance>` by default,
+   or non-inheritable if *inheritable* is ``False``.
 
    Availability: Unix, Windows.
+
+   .. versionchanged:: 3.4
+      Add the optional *inheritable* parameter.
 
 
 .. function:: fchmod(fd, mode)
@@ -848,6 +861,7 @@ as internal buffering of data.
    Open the file *file* and set various flags according to *flags* and possibly
    its mode according to *mode*.  When computing *mode*, the current umask value
    is first masked out.  Return the file descriptor for the newly opened file.
+   The new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
    For a description of the flag and mode values, see the C run-time documentation;
    flag constants (like :const:`O_RDONLY` and :const:`O_WRONLY`) are defined in
@@ -858,6 +872,9 @@ as internal buffering of data.
    <dir_fd>` with the *dir_fd* parameter.
 
    Availability: Unix, Windows.
+
+   .. versionchanged:: 3.4
+      The new file descriptor is now non-inheritable.
 
    .. note::
 
@@ -933,19 +950,27 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 
    .. index:: module: pty
 
-   Open a new pseudo-terminal pair. Return a pair of file descriptors ``(master,
-   slave)`` for the pty and the tty, respectively. For a (slightly) more portable
-   approach, use the :mod:`pty` module.
+   Open a new pseudo-terminal pair. Return a pair of file descriptors
+   ``(master, slave)`` for the pty and the tty, respectively. The new file
+   descriptors are :ref:`non-inheritable <fd_inheritance>`. For a (slightly) more
+   portable approach, use the :mod:`pty` module.
 
    Availability: some flavors of Unix.
+
+   .. versionchanged:: 3.4
+      The new file descriptors are now non-inheritable.
 
 
 .. function:: pipe()
 
-   Create a pipe.  Return a pair of file descriptors ``(r, w)`` usable for reading
-   and writing, respectively.
+   Create a pipe.  Return a pair of file descriptors ``(r, w)`` usable for
+   reading and writing, respectively. The new file descriptor are
+   :ref:`non-inheritable <fd_inheritance>`.
 
    Availability: Unix, Windows.
+
+   .. versionchanged:: 3.4
+      The new file descriptors are now non-inheritable.
 
 
 .. function:: pipe2(flags)
@@ -1176,6 +1201,50 @@ Querying the size of a terminal
    .. attribute:: lines
 
       Height of the terminal window in characters.
+
+
+.. _fd_inheritance:
+
+Inheritance of File Descriptors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A file descriptor has a inheritable flag which indicates if the file descriptor
+can be inherited or not in child processes. Since Python 3.4, file descriptors
+created by Python are non-inheritable by default.
+
+On UNIX, non-inheritable file descriptors are closed in child processes at the
+execution of a new program, other file descriptors are inherited.
+
+On Windows, non-inheritable handles and file descriptors are closed in child
+processes, except standard streams (file descriptors 0, 1 and 2: stdin, stdout
+and stderr) which are always inherited. Using :func:`os.spawn*` functions,
+all inheritable handles and all inheritable file descriptors are inherited.
+Using the :mod:`subprocess` module, all file descriptors except standard
+streams are closed, inheritable handles are only inherited if the *close_fds*
+parameter is ``False``.
+
+.. versionadded:: 3.4
+
+.. function:: get_inheritable(fd)
+
+   Get the `inheritable flag <fd_inheritance>`_ of the specified file
+   descriptor. Return a :class:`bool`.
+
+.. function:: set_inheritable(fd, inheritable)
+
+   Set the `inheritable flag <fd_inheritance>`_ of the specified file descriptor.
+
+.. function:: get_handle_inheritable(handle)
+
+   Get the `inheritable flag <fd_inheritance>`_ of the specified handle. Return a :class:`bool`.
+
+   Availability: Windows.
+
+.. function:: set_handle_inheritable(handle, inheritable)
+
+   Set the `inheritable flag <fd_inheritance>`_ of the specified handle.
+
+   Availability: Windows.
 
 
 .. _os-file-dir:
