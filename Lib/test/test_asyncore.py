@@ -744,7 +744,12 @@ class BaseTestAPI:
         s.create_socket(self.family)
         self.assertEqual(s.socket.family, self.family)
         SOCK_NONBLOCK = getattr(socket, 'SOCK_NONBLOCK', 0)
-        self.assertEqual(s.socket.type, socket.SOCK_STREAM | SOCK_NONBLOCK)
+        sock_type = socket.SOCK_STREAM | SOCK_NONBLOCK
+        if hasattr(socket, 'SOCK_CLOEXEC'):
+            self.assertIn(s.socket.type,
+                          (sock_type | socket.SOCK_CLOEXEC, sock_type))
+        else:
+            self.assertEqual(s.socket.type, sock_type)
 
     def test_bind(self):
         if HAS_UNIX_SOCKETS and self.family == socket.AF_UNIX:

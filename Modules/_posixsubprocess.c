@@ -35,7 +35,7 @@
 # define FD_DIR "/proc/self/fd"
 #endif
 
-#define POSIX_CALL(call)   if ((call) == -1) goto error
+#define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
 
 
 /* Maximum file descriptor, initialized on module load. */
@@ -87,7 +87,7 @@ _is_fdescfs_mounted_on_dev_fd(void)
     if (stat("/dev", &dev_stat) != 0)
         return 0;
     if (stat(FD_DIR, &dev_fd_stat) != 0)
-        return 0; 
+        return 0;
     if (dev_stat.st_dev == dev_fd_stat.st_dev)
         return 0;  /* / == /dev == /dev/fd means it is static. #fail */
     return 1;
@@ -133,6 +133,29 @@ _is_fd_in_sorted_fd_sequence(int fd, PyObject *fd_sequence)
         else
             search_max = middle - 1;
     } while (search_min <= search_max);
+    return 0;
+}
+
+static int
+make_inheritable(PyObject *py_fds_to_keep, int errpipe_write)
+{
+    Py_ssize_t i, len;
+
+    len = PySequence_Length(py_fds_to_keep);
+    for (i = 0; i < len; ++i) {
+        PyObject* fdobj = PySequence_Fast_GET_ITEM(py_fds_to_keep, i);
+        long fd = PyLong_AsLong(fdobj);
+        assert(!PyErr_Occurred());
+        assert(0 <= fd && fd <= INT_MAX);
+        if (fd == errpipe_write) {
+            /* errpipe_write is part of py_fds_to_keep. It must be closed at
+               exec(), but kept open in the child process until exec() is
+               called. */
+            continue;
+        }
+        if (_Py_set_inheritable((int)fd, 1, NULL) < 0)
+            return -1;
+    }
     return 0;
 }
 
@@ -205,18 +228,8 @@ _close_open_fd_range_safe(int start_fd, int end_fd, PyObject* py_fds_to_keep)
     int fd_dir_fd;
     if (start_fd >= end_fd)
         return;
-#ifdef O_CLOEXEC
-    fd_dir_fd = open(FD_DIR, O_RDONLY | O_CLOEXEC, 0);
-#else
-    fd_dir_fd = open(FD_DIR, O_RDONLY, 0);
-#ifdef FD_CLOEXEC
-    {
-        int old = fcntl(fd_dir_fd, F_GETFD);
-        if (old != -1)
-            fcntl(fd_dir_fd, F_SETFD, old | FD_CLOEXEC);
-    }
-#endif
-#endif
+
+    fd_dir_fd = _Py_open(FD_DIR, O_RDONLY);
     if (fd_dir_fd == -1) {
         /* No way to get a list of open fds. */
         _close_fds_by_brute_force(start_fd, end_fd, py_fds_to_keep);
@@ -356,16 +369,16 @@ child_exec(char *const exec_array[],
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
     char hex_errno[sizeof(saved_errno)*2+1];
 
+    if (make_inheritable(py_fds_to_keep, errpipe_write) < 0)
+        goto error;
+
     /* Close parent's pipe ends. */
-    if (p2cwrite != -1) {
+    if (p2cwrite != -1)
         POSIX_CALL(close(p2cwrite));
-    }
-    if (c2pread != -1) {
+    if (c2pread != -1)
         POSIX_CALL(close(c2pread));
-    }
-    if (errread != -1) {
+    if (errread != -1)
         POSIX_CALL(close(errread));
-    }
     POSIX_CALL(close(errpipe_read));
 
     /* When duping fds, if there arises a situation where one of the fds is
@@ -379,38 +392,34 @@ child_exec(char *const exec_array[],
        dup2() removes the CLOEXEC flag but we must do it ourselves if dup2()
        would be a no-op (issue #10806). */
     if (p2cread == 0) {
-        int old = fcntl(p2cread, F_GETFD);
-        if (old != -1)
-            fcntl(p2cread, F_SETFD, old & ~FD_CLOEXEC);
-    } else if (p2cread != -1) {
+        if (_Py_set_inheritable(p2cread, 1, NULL) < 0)
+            goto error;
+    }
+    else if (p2cread != -1)
         POSIX_CALL(dup2(p2cread, 0));  /* stdin */
-    }
+
     if (c2pwrite == 1) {
-        int old = fcntl(c2pwrite, F_GETFD);
-        if (old != -1)
-            fcntl(c2pwrite, F_SETFD, old & ~FD_CLOEXEC);
-    } else if (c2pwrite != -1) {
+        if (_Py_set_inheritable(c2pwrite, 1, NULL) < 0)
+            goto error;
+    }
+    else if (c2pwrite != -1)
         POSIX_CALL(dup2(c2pwrite, 1));  /* stdout */
-    }
+
     if (errwrite == 2) {
-        int old = fcntl(errwrite, F_GETFD);
-        if (old != -1)
-            fcntl(errwrite, F_SETFD, old & ~FD_CLOEXEC);
-    } else if (errwrite != -1) {
-        POSIX_CALL(dup2(errwrite, 2));  /* stderr */
+        if (_Py_set_inheritable(errwrite, 1, NULL) < 0)
+            goto error;
     }
+    else if (errwrite != -1)
+        POSIX_CALL(dup2(errwrite, 2));  /* stderr */
 
     /* Close pipe fds.  Make sure we don't close the same fd more than */
     /* once, or standard fds. */
-    if (p2cread > 2) {
+    if (p2cread > 2)
         POSIX_CALL(close(p2cread));
-    }
-    if (c2pwrite > 2 && c2pwrite != p2cread) {
+    if (c2pwrite > 2 && c2pwrite != p2cread)
         POSIX_CALL(close(c2pwrite));
-    }
-    if (errwrite != c2pwrite && errwrite != p2cread && errwrite > 2) {
+    if (errwrite != c2pwrite && errwrite != p2cread && errwrite > 2)
         POSIX_CALL(close(errwrite));
-    }
 
     if (cwd)
         POSIX_CALL(chdir(cwd));
@@ -544,7 +553,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         PyObject *result;
         _Py_IDENTIFIER(isenabled);
         _Py_IDENTIFIER(disable);
-        
+
         gc_module = PyImport_ImportModule("gc");
         if (gc_module == NULL)
             return NULL;
@@ -721,52 +730,6 @@ Returns: the child process's PID.\n\
 Raises: Only on an error in the parent process.\n\
 ");
 
-PyDoc_STRVAR(subprocess_cloexec_pipe_doc,
-"cloexec_pipe() -> (read_end, write_end)\n\n\
-Create a pipe whose ends have the cloexec flag set.");
-
-static PyObject *
-subprocess_cloexec_pipe(PyObject *self, PyObject *noargs)
-{
-    int fds[2];
-    int res;
-#ifdef HAVE_PIPE2
-    Py_BEGIN_ALLOW_THREADS
-    res = pipe2(fds, O_CLOEXEC);
-    Py_END_ALLOW_THREADS
-    if (res != 0 && errno == ENOSYS)
-    {
-        {
-#endif
-        /* We hold the GIL which offers some protection from other code calling
-         * fork() before the CLOEXEC flags have been set but we can't guarantee
-         * anything without pipe2(). */
-        long oldflags;
-
-        res = pipe(fds);
-
-        if (res == 0) {
-            oldflags = fcntl(fds[0], F_GETFD, 0);
-            if (oldflags < 0) res = oldflags;
-        }
-        if (res == 0)
-            res = fcntl(fds[0], F_SETFD, oldflags | FD_CLOEXEC);
-
-        if (res == 0) {
-            oldflags = fcntl(fds[1], F_GETFD, 0);
-            if (oldflags < 0) res = oldflags;
-        }
-        if (res == 0)
-            res = fcntl(fds[1], F_SETFD, oldflags | FD_CLOEXEC);
-#ifdef HAVE_PIPE2
-        }
-    }
-#endif
-    if (res != 0)
-        return PyErr_SetFromErrno(PyExc_OSError);
-    return Py_BuildValue("(ii)", fds[0], fds[1]);
-}
-
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -775,7 +738,6 @@ PyDoc_STRVAR(module_doc,
 
 static PyMethodDef module_methods[] = {
     {"fork_exec", subprocess_fork_exec, METH_VARARGS, subprocess_fork_exec_doc},
-    {"cloexec_pipe", subprocess_cloexec_pipe, METH_NOARGS, subprocess_cloexec_pipe_doc},
     {NULL, NULL}  /* sentinel */
 };
 

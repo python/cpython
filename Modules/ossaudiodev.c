@@ -115,7 +115,9 @@ newossobject(PyObject *arg)
        one open at a time.  This does *not* affect later I/O; OSS
        provides a special ioctl() for non-blocking read/write, which is
        exposed via oss_nonblock() below. */
-    if ((fd = open(devicename, imode|O_NONBLOCK)) == -1) {
+    fd = _Py_open(devicename, imode|O_NONBLOCK);
+
+    if (fd == -1) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }
@@ -177,7 +179,8 @@ newossmixerobject(PyObject *arg)
             devicename = "/dev/mixer";
     }
 
-    if ((fd = open(devicename, O_RDWR)) == -1) {
+    fd = _Py_open(devicename, O_RDWR);
+    if (fd == -1) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, devicename);
         return NULL;
     }

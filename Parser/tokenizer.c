@@ -1730,10 +1730,15 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     FILE *fp;
     char *p_start =NULL , *p_end =NULL , *encoding = NULL;
 
+#ifndef PGEN
+    fd = _Py_dup(fd);
+#else
     fd = dup(fd);
+#endif
     if (fd < 0) {
         return NULL;
     }
+
     fp = fdopen(fd, "r");
     if (fp == NULL) {
         return NULL;

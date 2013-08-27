@@ -584,13 +584,6 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
         SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding, use_builtin_types)
         socketserver.TCPServer.__init__(self, addr, requestHandler, bind_and_activate)
 
-        # [Bug #1222790] If possible, set close-on-exec flag; if a
-        # method spawns a subprocess, the subprocess shouldn't have
-        # the listening socket open.
-        if fcntl is not None and hasattr(fcntl, 'FD_CLOEXEC'):
-            flags = fcntl.fcntl(self.fileno(), fcntl.F_GETFD)
-            flags |= fcntl.FD_CLOEXEC
-            fcntl.fcntl(self.fileno(), fcntl.F_SETFD, flags)
 
 class MultiPathXMLRPCServer(SimpleXMLRPCServer):
     """Multipath XML-RPC Server

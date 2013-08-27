@@ -2298,6 +2298,72 @@ class CPUCountTests(unittest.TestCase):
         else:
             self.skipTest("Could not determine the number of CPUs")
 
+
+class FDInheritanceTests(unittest.TestCase):
+    def test_get_inheritable(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        for inheritable in (False, True):
+            os.set_inheritable(fd, inheritable)
+            self.assertEqual(os.get_inheritable(fd), inheritable)
+
+    def test_set_inheritable(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        os.set_inheritable(fd, True)
+        self.assertEqual(os.get_inheritable(fd), True)
+
+    def test_open(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        self.assertEqual(os.get_inheritable(fd), False)
+
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_pipe(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        self.assertEqual(os.get_inheritable(rfd), False)
+        self.assertEqual(os.get_inheritable(wfd), False)
+
+    def test_dup(self):
+        fd1 = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd1)
+
+        fd2 = os.dup(fd1)
+        self.addCleanup(os.close, fd2)
+        self.assertEqual(os.get_inheritable(fd2), False)
+
+    @unittest.skipUnless(hasattr(os, 'dup2'), "need os.dup2()")
+    def test_dup2(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+
+        # inheritable by default
+        fd2 = os.open(__file__, os.O_RDONLY)
+        try:
+            os.dup2(fd, fd2)
+            self.assertEqual(os.get_inheritable(fd2), True)
+        finally:
+            os.close(fd2)
+
+        # force non-inheritable
+        fd3 = os.open(__file__, os.O_RDONLY)
+        try:
+            os.dup2(fd, fd3, inheritable=False)
+            self.assertEqual(os.get_inheritable(fd3), False)
+        finally:
+            os.close(fd3)
+
+    @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
+    def test_openpty(self):
+        master_fd, slave_fd = os.openpty()
+        self.addCleanup(os.close, master_fd)
+        self.addCleanup(os.close, slave_fd)
+        self.assertEqual(os.get_inheritable(master_fd), False)
+        self.assertEqual(os.get_inheritable(slave_fd), False)
+
+
 @support.reap_threads
 def test_main():
     support.run_unittest(
@@ -2330,6 +2396,7 @@ def test_main():
         OSErrorTests,
         RemoveDirsTests,
         CPUCountTests,
+        FDInheritanceTests,
     )
 
 if __name__ == "__main__":

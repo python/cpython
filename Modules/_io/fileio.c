@@ -202,6 +202,9 @@ check_fd(int fd)
     return 0;
 }
 
+#ifdef O_CLOEXEC
+extern int _Py_open_cloexec_works;
+#endif
 
 static int
 fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
@@ -221,6 +224,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     int fd = -1;
     int closefd = 1;
     int fd_is_own = 0;
+#ifdef O_CLOEXEC
+    int *atomic_flag_works = &_Py_open_cloexec_works;
+#elif !defined(MS_WINDOWS)
+    int *atomic_flag_works = NULL;
+#endif
 
     assert(PyFileIO_Check(oself));
     if (self->fd >= 0) {
@@ -345,6 +353,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     if (append)
         flags |= O_APPEND;
 #endif
+#ifdef MS_WINDOWS
+    flags |= O_NOINHERIT;
+#elif defined(O_CLOEXEC)
+    flags |= O_CLOEXEC;
+#endif
 
     if (fd >= 0) {
         if (check_fd(fd))
@@ -369,10 +382,18 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             else
 #endif
                 self->fd = open(name, flags, 0666);
+
             Py_END_ALLOW_THREADS
-        } else {
-            PyObject *fdobj = PyObject_CallFunction(
-                                  opener, "Oi", nameobj, flags);
+        }
+        else {
+            PyObject *fdobj;
+
+#ifndef MS_WINDOWS
+            /* the opener may clear the atomic flag */
+            atomic_flag_works = NULL;
+#endif
+
+            fdobj = PyObject_CallFunction(opener, "Oi", nameobj, flags);
             if (fdobj == NULL)
                 goto error;
             if (!PyLong_Check(fdobj)) {
@@ -394,6 +415,11 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
             goto error;
         }
+
+#ifndef MS_WINDOWS
+        if (_Py_set_inheritable(self->fd, 0, atomic_flag_works) < 0)
+            goto error;
+#endif
     }
     if (dircheck(self, nameobj) < 0)
         goto error;

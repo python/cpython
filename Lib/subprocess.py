@@ -405,7 +405,6 @@ else:
     import select
     _has_poll = hasattr(select, 'poll')
     import _posixsubprocess
-    _create_pipe = _posixsubprocess.cloexec_pipe
 
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.
@@ -1258,7 +1257,7 @@ class Popen(object):
             if stdin is None:
                 pass
             elif stdin == PIPE:
-                p2cread, p2cwrite = _create_pipe()
+                p2cread, p2cwrite = os.pipe()
             elif stdin == DEVNULL:
                 p2cread = self._get_devnull()
             elif isinstance(stdin, int):
@@ -1270,7 +1269,7 @@ class Popen(object):
             if stdout is None:
                 pass
             elif stdout == PIPE:
-                c2pread, c2pwrite = _create_pipe()
+                c2pread, c2pwrite = os.pipe()
             elif stdout == DEVNULL:
                 c2pwrite = self._get_devnull()
             elif isinstance(stdout, int):
@@ -1282,7 +1281,7 @@ class Popen(object):
             if stderr is None:
                 pass
             elif stderr == PIPE:
-                errread, errwrite = _create_pipe()
+                errread, errwrite = os.pipe()
             elif stderr == STDOUT:
                 errwrite = c2pwrite
             elif stderr == DEVNULL:
@@ -1334,7 +1333,7 @@ class Popen(object):
             # For transferring possible exec failure from child to parent.
             # Data format: "exception name:hex errno:description"
             # Pickle is not used; it is complex and involves memory allocation.
-            errpipe_read, errpipe_write = _create_pipe()
+            errpipe_read, errpipe_write = os.pipe()
             try:
                 try:
                     # We must avoid complex work that could involve

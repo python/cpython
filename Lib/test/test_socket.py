@@ -23,10 +23,6 @@ import math
 import pickle
 import struct
 try:
-    import fcntl
-except ImportError:
-    fcntl = False
-try:
     import multiprocessing
 except ImportError:
     multiprocessing = False
@@ -1108,9 +1104,15 @@ class GeneralModuleTests(unittest.TestCase):
 
     def testNewAttributes(self):
         # testing .family, .type and .protocol
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.assertEqual(sock.family, socket.AF_INET)
-        self.assertEqual(sock.type, socket.SOCK_STREAM)
+        if hasattr(socket, 'SOCK_CLOEXEC'):
+            self.assertIn(sock.type,
+                          (socket.SOCK_STREAM | socket.SOCK_CLOEXEC,
+                           socket.SOCK_STREAM))
+        else:
+            self.assertEqual(sock.type, socket.SOCK_STREAM)
         self.assertEqual(sock.proto, 0)
         sock.close()
 
@@ -4749,16 +4751,46 @@ class ContextManagersTest(ThreadedTCPSocketTest):
         self.assertRaises(OSError, sock.sendall, b'foo')
 
 
-@unittest.skipUnless(hasattr(socket, "SOCK_CLOEXEC"),
-                     "SOCK_CLOEXEC not defined")
-@unittest.skipUnless(fcntl, "module fcntl not available")
-class CloexecConstantTest(unittest.TestCase):
+class InheritanceTest(unittest.TestCase):
+    @unittest.skipUnless(hasattr(socket, "SOCK_CLOEXEC"),
+                         "SOCK_CLOEXEC not defined")
     @support.requires_linux_version(2, 6, 28)
     def test_SOCK_CLOEXEC(self):
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_CLOEXEC) as s:
             self.assertTrue(s.type & socket.SOCK_CLOEXEC)
-            self.assertTrue(fcntl.fcntl(s, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+            self.assertTrue(sock.get_inheritable())
+
+    def test_default_inheritable(self):
+        sock = socket.socket()
+        with sock:
+            self.assertEqual(sock.get_inheritable(), False)
+
+    def test_dup(self):
+        sock = socket.socket()
+        with sock:
+            newsock = sock.dup()
+            sock.close()
+            with newsock:
+                self.assertEqual(newsock.get_inheritable(), False)
+
+    def test_set_inheritable(self):
+        sock = socket.socket()
+        with sock:
+            sock.set_inheritable(True)
+            self.assertEqual(sock.get_inheritable(), True)
+
+            sock.set_inheritable(False)
+            self.assertEqual(sock.get_inheritable(), False)
+
+    @unittest.skipUnless(hasattr(socket, "socketpair"),
+                         "need socket.socketpair()")
+    def test_socketpair(self):
+        s1, s2 = socket.socketpair()
+        self.addCleanup(s1.close)
+        self.addCleanup(s2.close)
+        self.assertEqual(s1.get_inheritable(), False)
+        self.assertEqual(s2.get_inheritable(), False)
 
 
 @unittest.skipUnless(hasattr(socket, "SOCK_NONBLOCK"),
@@ -4927,7 +4959,7 @@ def test_main():
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
         ContextManagersTest,
-        CloexecConstantTest,
+        InheritanceTest,
         NonblockConstantTest
     ])
     if hasattr(socket, "socketpair"):

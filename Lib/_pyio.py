@@ -129,6 +129,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     be kept open when the file is closed. This does not work when a file name is
     given and must be True in that case.
 
+    The newly created file is non-inheritable.
+
     A custom opener can be used by passing a callable as *opener*. The
     underlying file descriptor for the file object is then obtained by calling
     *opener* with (*file*, *flags*). *opener* must return an open file
