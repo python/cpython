@@ -799,7 +799,7 @@ class SizeofTest(unittest.TestCase):
         check(iter([]), size('lP'))
         # listreverseiterator (list)
         check(reversed([]), size('nP'))
-        # long
+        # int
         check(0, vsize(''))
         check(1, vsize('') + self.longdigit)
         check(-1, vsize('') + self.longdigit)

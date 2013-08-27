@@ -126,7 +126,7 @@ PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
 PyAPI_FUNC(PyObject *) _PyLong_DivmodNear(PyObject *, PyObject *);
 
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
-   base 256, and return a Python long with the same numeric value.
+   base 256, and return a Python int with the same numeric value.
    If n is 0, the integer is 0.  Else:
    If little_endian is 1/true, bytes[n-1] is the MSB and bytes[0] the LSB;
    else (little_endian is 0/false) bytes[0] is the MSB and bytes[n-1] the
@@ -136,7 +136,7 @@ PyAPI_FUNC(PyObject *) _PyLong_DivmodNear(PyObject *, PyObject *);
    non-negative if bit 0x80 of the MSB is clear, negative if set.
    Error returns:
    + Return NULL with the appropriate exception set if there's not
-     enough memory to create the Python long.
+     enough memory to create the Python int.
 */
 PyAPI_FUNC(PyObject *) _PyLong_FromByteArray(
     const unsigned char* bytes, size_t n,
@@ -186,7 +186,7 @@ PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
     Py_ssize_t end);
 #endif /* Py_LIMITED_API */
 
-/* These aren't really part of the long object, but they're handy. The
+/* These aren't really part of the int object, but they're handy. The
    functions are in Python/mystrtoul.c.
  */
 PyAPI_FUNC(unsigned long) PyOS_strtoul(char *, char **, int);

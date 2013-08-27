@@ -740,7 +740,7 @@ PyTypeObject PyRange_Type = {
 /*********************** range Iterator **************************/
 
 /* There are 2 types of iterators, one for C longs, the other for
-   Python longs (ie, PyObjects).  This should make iteration fast
+   Python ints (ie, PyObjects).  This should make iteration fast
    in the normal case, but possible for any numeric value.
 */
 

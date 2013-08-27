@@ -1218,7 +1218,7 @@ class _Unpickler:
         raise _Stop(value)
     dispatch[STOP[0]] = load_stop
 
-# Encode/decode longs.
+# Encode/decode ints.
 
 def encode_long(x):
     r"""Encode a long to a two's complement little-endian binary string.
@@ -1251,7 +1251,7 @@ def encode_long(x):
     return result
 
 def decode_long(data):
-    r"""Decode a long from a two's complement little-endian binary string.
+    r"""Decode an int from a two's complement little-endian binary string.
 
     >>> decode_long(b'')
     0
