@@ -186,9 +186,9 @@ PyFile_WriteString(const char *s, PyObject *f)
 }
 
 /* Try to get a file-descriptor from a Python object.  If the object
-   is an integer or long integer, its value is returned.  If not, the
+   is an integer, its value is returned.  If not, the
    object's fileno() method is called if it exists; the method must return
-   an integer or long integer, which is returned as the file descriptor value.
+   an integer, which is returned as the file descriptor value.
    -1 is returned on failure.
 */
 

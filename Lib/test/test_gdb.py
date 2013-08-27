@@ -227,7 +227,7 @@ class PrettyPrintTests(DebuggerTests):
                           % (gdb_repr, exp_repr, gdb_output)))
 
     def test_int(self):
-        'Verify the pretty-printing of various "int"/long values'
+        'Verify the pretty-printing of various int values'
         self.assertGdbRepr(42)
         self.assertGdbRepr(0)
         self.assertGdbRepr(-7)

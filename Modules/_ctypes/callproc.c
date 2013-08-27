@@ -650,7 +650,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
             pa->value.i = PyLong_AsLong(obj);
             if (pa->value.i == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_OverflowError,
-                                "long int too long to convert");
+                                "int too long to convert");
                 return -1;
             }
         }

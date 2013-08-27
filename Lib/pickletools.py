@@ -580,16 +580,12 @@ def read_decimalnl_short(f):
     >>> read_decimalnl_short(io.BytesIO(b"1234L\n56"))
     Traceback (most recent call last):
     ...
-    ValueError: trailing 'L' not allowed in b'1234L'
+    ValueError: invalid literal for int() with base 10: b'1234L'
     """
 
     s = read_stringnl(f, decode=False, stripquotes=False)
-    if s.endswith(b"L"):
-        raise ValueError("trailing 'L' not allowed in %r" % s)
 
-    # It's not necessarily true that the result fits in a Python short int:
-    # the pickle may have been written on a 64-bit box.  There's also a hack
-    # for True and False here.
+    # There's a hack for True and False here.
     if s == b"00":
         return False
     elif s == b"01":

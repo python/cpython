@@ -232,7 +232,7 @@ PyFloat_AsDouble(PyObject *op)
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl.  If conversion to double raises an exception, obj is
    set to NULL, and the function invoking this macro returns NULL.  If
-   obj is not of float, int or long type, Py_NotImplemented is incref'ed,
+   obj is not of float or int type, Py_NotImplemented is incref'ed,
    stored in obj, and returned from the function invoking this macro.
 */
 #define CONVERT_TO_DOUBLE(obj, dbl)                     \
@@ -287,7 +287,7 @@ float_repr(PyFloatObject *v)
  * When mixing float with an integer type, there's no good *uniform* approach.
  * Converting the double to an integer obviously doesn't work, since we
  * may lose info from fractional bits.  Converting the integer to a double
- * also has two failure modes:  (1) a long int may trigger overflow (too
+ * also has two failure modes:  (1) an int may trigger overflow (too
  * large to fit in the dynamic range of a C double); (2) even a C long may have
  * more bits than fit in a C double (e.g., on a 64-bit box long may have
  * 63 bits of precision, but a C double probably has only 53), and then
@@ -385,7 +385,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
             goto Compare;
         }
         /* v and w have the same number of bits before the radix
-         * point.  Construct two longs that have the same comparison
+         * point.  Construct two ints that have the same comparison
          * outcome.
          */
         {
@@ -450,7 +450,7 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         }
     } /* else if (PyLong_Check(w)) */
 
-    else        /* w isn't float, int, or long */
+    else        /* w isn't float or int */
         goto Unimplemented;
 
  Compare:
