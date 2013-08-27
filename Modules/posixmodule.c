@@ -5837,7 +5837,9 @@ posix_openpty(PyObject *self, PyObject *noargs)
 
 posix_error:
     posix_error();
+#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY)
 error:
+#endif
     if (master_fd != -1)
         close(master_fd);
     if (slave_fd != -1)
