@@ -80,7 +80,7 @@ Used in:  PY_LONG_LONG
 #endif
 #endif /* HAVE_LONG_LONG */
 
-/* a build with 30-bit digits for Python long integers needs an exact-width
+/* a build with 30-bit digits for Python integers needs an exact-width
  * 32-bit unsigned integer type to store those digits.  (We could just use
  * type 'unsigned long', but that would be wasteful on a system where longs
  * are 64-bits.)  On Unix systems, the autoconf macro AC_TYPE_UINT32_T defines
@@ -98,7 +98,7 @@ Used in:  PY_LONG_LONG
 #endif
 
 /* Macros for a 64-bit unsigned integer type; used for type 'twodigits' in the
- * long integer implementation, when 30-bit digits are enabled.
+ * integer implementation, when 30-bit digits are enabled.
  */
 #ifdef uint64_t
 #define HAVE_UINT64_T 1

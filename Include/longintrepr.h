@@ -8,7 +8,7 @@ extern "C" {
 
 /* This is published for the benefit of "friends" marshal.c and _decimal.c. */
 
-/* Parameters of the long integer representation.  There are two different
+/* Parameters of the integer representation.  There are two different
    sets of parameters: one set for 30-bit digits, stored in an unsigned 32-bit
    integer type, and one set for 15-bit digits with each digit stored in an
    unsigned short.  The value of PYLONG_BITS_IN_DIGIT, defined either at
@@ -29,7 +29,7 @@ extern "C" {
      of bits in an unsigned long, as do the PyLong <-> long (or unsigned long)
      conversion functions
 
-   - the long <-> size_t/Py_ssize_t conversion functions expect that
+   - the Python int <-> size_t/Py_ssize_t conversion functions expect that
      PyLong_SHIFT is strictly less than the number of bits in a size_t
 
    - the marshal code currently expects that PyLong_SHIFT is a multiple of 15
@@ -83,7 +83,7 @@ typedef long stwodigits; /* signed variant of twodigits */
    so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
 
    CAUTION:  Generic code manipulating subtypes of PyVarObject has to
-   aware that longs abuse  ob_size's sign bit.
+   aware that ints abuse  ob_size's sign bit.
 */
 
 struct _longobject {

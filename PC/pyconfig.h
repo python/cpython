@@ -398,7 +398,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #endif
 
 /* define signed and unsigned exact-width 32-bit and 64-bit types, used in the
-   implementation of Python long integers. */
+   implementation of Python integers. */
 #ifndef PY_UINT32_T
 #if SIZEOF_INT == 4
 #define HAVE_UINT32_T 1

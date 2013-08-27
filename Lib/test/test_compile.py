@@ -198,7 +198,7 @@ if 1:
         else:
             self.fail("How many bits *does* this machine have???")
         # Verify treatment of constant folding on -(sys.maxsize+1)
-        # i.e. -2147483648 on 32 bit platforms.  Should return int, not long.
+        # i.e. -2147483648 on 32 bit platforms.  Should return int.
         self.assertIsInstance(eval("%s" % (-sys.maxsize - 1)), int)
         self.assertIsInstance(eval("%s" % (-sys.maxsize - 2)), int)
 
