@@ -1470,14 +1470,23 @@ Grouping tests
 
       Tests grouped by a :class:`TestSuite` are always accessed by iteration.
       Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
-      that this method maybe called several times on a single suite
-      (for example when counting tests or comparing for equality)
-      so the tests returned must be the same for repeated iterations.
+      that this method may be called several times on a single suite (for
+      example when counting tests or comparing for equality) so the tests
+      returned by repeated iterations before :meth:`TestSuite.run` must be the
+      same for each call iteration. After :meth:`TestSuite.run`, callers should
+      not rely on the tests returned by this method unless the caller uses a
+      subclass that overrides :meth:`TestSuite._removeTestAtIndex` to preserve
+      test references.
 
       .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
          than through iteration, so overriding :meth:`__iter__` wasn't sufficient
          for providing tests.
+
+      .. versionchanged:: 3.4
+         In earlier versions the :class:`TestSuite` held references to each
+         :class:`TestCase` after :meth:`TestSuite.run`. Subclasses can restore
+         that behavior by overriding :meth:`TestSuite._removeTestAtIndex`.
 
    In the typical usage of a :class:`TestSuite` object, the :meth:`run` method
    is invoked by a :class:`TestRunner` rather than by the end-user test harness.

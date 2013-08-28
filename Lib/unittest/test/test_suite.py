@@ -1,6 +1,8 @@
 import unittest
 
+import gc
 import sys
+import weakref
 from .support import LoggingResult, TestEquality
 
 
@@ -300,7 +302,46 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         # when the bug is fixed this line will not crash
         suite.run(unittest.TestResult())
 
+    def test_remove_test_at_index(self):
+        suite = unittest.TestSuite()
 
+        suite._tests = [1, 2, 3]
+        suite._removeTestAtIndex(1)
+
+        self.assertEqual([1, None, 3], suite._tests)
+
+    def test_remove_test_at_index_not_indexable(self):
+        suite = unittest.TestSuite()
+        suite._tests = None
+
+        # if _removeAtIndex raises for noniterables this next line will break
+        suite._removeTestAtIndex(2)
+
+    def assert_garbage_collect_test_after_run(self, TestSuiteClass):
+
+        class Foo(unittest.TestCase):
+            def test_nothing(self):
+                pass
+
+        test = Foo('test_nothing')
+        wref = weakref.ref(test)
+
+        suite = TestSuiteClass([wref()])
+        suite.run(unittest.TestResult())
+
+        del test
+
+        # for the benefit of non-reference counting implementations
+        gc.collect()
+
+        self.assertEqual(suite._tests, [None])
+        self.assertIsNone(wref())
+
+    def test_garbage_collect_test_after_run_BaseTestSuite(self):
+        self.assert_garbage_collect_test_after_run(unittest.BaseTestSuite)
+
+    def test_garbage_collect_test_after_run_TestSuite(self):
+        self.assert_garbage_collect_test_after_run(unittest.TestSuite)
 
     def test_basetestsuite(self):
         class Test(unittest.TestCase):
@@ -361,7 +402,6 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
 
         # reusing results should be permitted even if abominable
         self.assertFalse(result._testRunEntered)
-
 
 
 if __name__ == '__main__':
