@@ -142,7 +142,7 @@ class PyclbrTest(TestCase):
         self.checkModule('pyclbr')
         self.checkModule('ast')
         self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
-                                            "DocTestCase"))
+                                            "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
     def test_decorators(self):
