@@ -4759,7 +4759,7 @@ class InheritanceTest(unittest.TestCase):
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_CLOEXEC) as s:
             self.assertTrue(s.type & socket.SOCK_CLOEXEC)
-            self.assertTrue(sock.get_inheritable())
+            self.assertFalse(s.get_inheritable())
 
     def test_default_inheritable(self):
         sock = socket.socket()
