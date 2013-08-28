@@ -2925,7 +2925,7 @@ class _TestPollEintr(BaseTestCase):
 
     @classmethod
     def _killer(cls, pid):
-        time.sleep(0.5)
+        time.sleep(0.1)
         os.kill(pid, signal.SIGUSR1)
 
     @unittest.skipUnless(hasattr(signal, 'SIGUSR1'), 'requires SIGUSR1')
@@ -2938,12 +2938,14 @@ class _TestPollEintr(BaseTestCase):
         try:
             killer = self.Process(target=self._killer, args=(pid,))
             killer.start()
-            p = self.Process(target=time.sleep, args=(1,))
-            p.start()
-            p.join()
+            try:
+                p = self.Process(target=time.sleep, args=(2,))
+                p.start()
+                p.join()
+            finally:
+                killer.join()
             self.assertTrue(got_signal[0])
             self.assertEqual(p.exitcode, 0)
-            killer.join()
         finally:
             signal.signal(signal.SIGUSR1, oldhandler)
 
