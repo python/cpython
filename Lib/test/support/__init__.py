@@ -431,6 +431,8 @@ def _requires_unix_version(sysname, min_version):
                         raise unittest.SkipTest(
                             "%s version %s or higher required, not %s"
                             % (sysname, min_version_txt, version_txt))
+            return func(*args, **kw)
+        wrapper.min_version = min_version
         return wrapper
     return decorator
 
