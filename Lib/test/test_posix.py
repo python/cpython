@@ -563,8 +563,10 @@ class PosixTester(unittest.TestCase):
         r, w = os.pipe2(os.O_CLOEXEC|os.O_NONBLOCK)
         self.addCleanup(os.close, r)
         self.addCleanup(os.close, w)
-        self.assertTrue(fcntl.fcntl(r, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
-        self.assertTrue(fcntl.fcntl(w, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+        self.assertFalse(os.get_inheritable(r))
+        self.assertFalse(os.get_inheritable(w))
+        self.assertTrue(fcntl.fcntl(r, fcntl.F_GETFL) & os.O_NONBLOCK)
+        self.assertTrue(fcntl.fcntl(w, fcntl.F_GETFL) & os.O_NONBLOCK)
         # try reading from an empty pipe: this should fail, not block
         self.assertRaises(OSError, os.read, r, 1)
         # try a write big enough to fill-up the pipe: this should either
