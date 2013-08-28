@@ -1212,7 +1212,7 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, int flags, SOCKET fd)
     }
 
 #ifndef HAVE_EPOLL_CREATE1
-    if (_Py_set_inheritable(self->epfd, 0, NULL) < 0) {
+    if (fd == -1 && _Py_set_inheritable(self->epfd, 0, NULL) < 0) {
         Py_DECREF(self);
         return NULL;
     }
