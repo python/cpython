@@ -57,11 +57,20 @@ class BaseTestSuite(object):
             self.addTest(test)
 
     def run(self, result):
-        for test in self:
+        for index, test in enumerate(self):
             if result.shouldStop:
                 break
             test(result)
+            self._removeTestAtIndex(index)
         return result
+
+    def _removeTestAtIndex(self, index):
+        """Stop holding a reference to the TestCase at index."""
+        try:
+            self._tests[index] = None
+        except TypeError:
+            # support for suite implementations that have overriden self._test
+            pass
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -87,7 +96,7 @@ class TestSuite(BaseTestSuite):
         if getattr(result, '_testRunEntered', False) is False:
             result._testRunEntered = topLevel = True
 
-        for test in self:
+        for index, test in enumerate(self):
             if result.shouldStop:
                 break
 
@@ -105,6 +114,8 @@ class TestSuite(BaseTestSuite):
                 test(result)
             else:
                 test.debug()
+
+            self._removeTestAtIndex(index)
 
         if topLevel:
             self._tearDownPreviousClass(None, result)
