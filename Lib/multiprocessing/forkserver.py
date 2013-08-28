@@ -108,7 +108,7 @@ def ensure_running():
 
             # all client processes own the write end of the "alive" pipe;
             # when they all terminate the read end becomes ready.
-            alive_r, alive_w = util.pipe()
+            alive_r, alive_w = os.pipe()
             try:
                 fds_to_pass = [listener.fileno(), alive_r]
                 cmd %= (listener.fileno(), alive_r, _preload_modules, data)

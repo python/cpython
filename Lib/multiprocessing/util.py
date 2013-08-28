@@ -358,13 +358,6 @@ def close_all_fds_except(fds):
 def spawnv_passfds(path, args, passfds):
     import _posixsubprocess, fcntl
     passfds = sorted(passfds)
-    tmp = []
-    # temporarily unset CLOEXEC on passed fds
-    for fd in passfds:
-        flag = fcntl.fcntl(fd, fcntl.F_GETFD)
-        if flag & fcntl.FD_CLOEXEC:
-            fcntl.fcntl(fd, fcntl.F_SETFD, flag & ~fcntl.FD_CLOEXEC)
-            tmp.append((fd, flag))
     errpipe_read, errpipe_write = os.pipe()
     try:
         return _posixsubprocess.fork_exec(
@@ -374,16 +367,3 @@ def spawnv_passfds(path, args, passfds):
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
-        # reset CLOEXEC where necessary
-        for fd, flag in tmp:
-            fcntl.fcntl(fd, fcntl.F_SETFD, flag)
-
-#
-# Return pipe with CLOEXEC set on fds
-#
-# Deprecated: os.pipe() creates non-inheritable file descriptors
-# since Python 3.4
-#
-
-def pipe():
-    return os.pipe()
