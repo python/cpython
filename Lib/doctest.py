@@ -2290,6 +2290,12 @@ class SkipDocTestCase(DocTestCase):
     __str__ = shortDescription
 
 
+class _DocTestSuite(unittest.TestSuite):
+
+    def _removeTestAtIndex(self, index):
+        pass
+
+
 def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
                  **options):
     """
@@ -2335,7 +2341,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
 
     if not tests and sys.flags.optimize >=2:
         # Skip doctests when running with -O2
-        suite = unittest.TestSuite()
+        suite = _DocTestSuite()
         suite.addTest(SkipDocTestCase(module))
         return suite
     elif not tests:
@@ -2349,7 +2355,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
         raise ValueError(module, "has no docstrings")
 
     tests.sort()
-    suite = unittest.TestSuite()
+    suite = _DocTestSuite()
 
     for test in tests:
         if len(test.examples) == 0:
@@ -2459,7 +2465,7 @@ def DocFileSuite(*paths, **kw):
     encoding
       An encoding that will be used to convert the files to unicode.
     """
-    suite = unittest.TestSuite()
+    suite = _DocTestSuite()
 
     # We do this here so that _normalize_module is called at the right
     # level.  If it were called in DocFileTest, then this function
