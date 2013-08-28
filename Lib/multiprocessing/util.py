@@ -356,7 +356,7 @@ def close_all_fds_except(fds):
 #
 
 def spawnv_passfds(path, args, passfds):
-    import _posixsubprocess, fcntl
+    import _posixsubprocess
     passfds = sorted(passfds)
     errpipe_read, errpipe_write = os.pipe()
     try:
