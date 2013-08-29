@@ -3738,7 +3738,6 @@ def install_tests_in_module_dict(remote_globs, start_method):
         except ValueError:
             raise unittest.SkipTest(start_method +
                                     ' start method not supported')
-        print('Using start method %r' % multiprocessing.get_start_method())
 
         if sys.platform.startswith("linux"):
             try:
