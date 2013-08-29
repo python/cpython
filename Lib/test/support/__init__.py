@@ -602,8 +602,14 @@ IPV6_ENABLED = _is_ipv6_enabled()
 # Windows limit seems to be around 512 B, and many Unix kernels have a
 # 64 KiB pipe buffer size or 16 * PAGE_SIZE: take a few megs to be sure.
 # (see issue #17835 for a discussion of this number).
-PIPE_MAX_SIZE = 4 *1024 * 1024 + 1
+PIPE_MAX_SIZE = 4 * 1024 * 1024 + 1
 
+# A constant likely larger than the underlying OS socket buffer size, to make
+# writes blocking.
+# The socket buffer sizes can usually be tuned system-wide (e.g. through sysctl
+# on Linux), or on a per-socket basis (SO_SNDBUF/SO_RCVBUF). See issue #18643
+# for a discussion of this number).
+SOCK_MAX_SIZE = 16 * 1024 * 1024 + 1
 
 # decorator for skipping tests on non-IEEE 754 platforms
 requires_IEEE_754 = unittest.skipUnless(
