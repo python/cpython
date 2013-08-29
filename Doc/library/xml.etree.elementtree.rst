@@ -710,8 +710,9 @@ Element Objects
       or contents.
 
    :class:`Element` objects also support the following sequence type methods
-   for working with subelements: :meth:`__delitem__`, :meth:`__getitem__`,
-   :meth:`__setitem__`, :meth:`__len__`.
+   for working with subelements: :meth:`~object.__delitem__`,
+   :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
+   :meth:`~object.__len__`.
 
    Caution: Elements with no subelements will test as ``False``.  This behavior
    will change in future versions.  Use specific ``len(elem)`` or ``elem is
