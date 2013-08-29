@@ -501,7 +501,7 @@ class SpooledTemporaryFile:
 
     # The method caching trick from NamedTemporaryFile
     # won't work here, because _file may change from a
-    # _StringIO instance to a real file. So we list
+    # BytesIO/StringIO instance to a real file. So we list
     # all the methods directly.
 
     # Context management protocol

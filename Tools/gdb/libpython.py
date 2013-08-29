@@ -121,7 +121,7 @@ class StringTruncated(RuntimeError):
     pass
 
 class TruncatedStringIO(object):
-    '''Similar to cStringIO, but can truncate the output by raising a
+    '''Similar to io.StringIO, but can truncate the output by raising a
     StringTruncated exception'''
     def __init__(self, maxlen=None):
         self._val = ''
