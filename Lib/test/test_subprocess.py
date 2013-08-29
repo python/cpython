@@ -1398,16 +1398,22 @@ class POSIXProcessTestCase(BaseTestCase):
     def _kill_process(self, method, *args):
         # Do not inherit file handles from the parent.
         # It should fix failures on some platforms.
-        p = subprocess.Popen([sys.executable, "-c", """if 1:
-                             import sys, time
-                             sys.stdout.write('x\\n')
-                             sys.stdout.flush()
-                             time.sleep(30)
-                             """],
-                             close_fds=True,
-                             stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        # Also set the SIGINT handler to the default to make sure it's not
+        # being ignored (some tests rely on that.)
+        old_handler = signal.signal(signal.SIGINT, signal.default_int_handler)
+        try:
+            p = subprocess.Popen([sys.executable, "-c", """if 1:
+                                 import sys, time
+                                 sys.stdout.write('x\\n')
+                                 sys.stdout.flush()
+                                 time.sleep(30)
+                                 """],
+                                 close_fds=True,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        finally:
+            signal.signal(signal.SIGINT, old_handler)
         # Wait for the interpreter to be completely initialized before
         # sending any signal.
         p.stdout.read(1)

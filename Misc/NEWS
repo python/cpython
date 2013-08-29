@@ -309,6 +309,11 @@ IDLE
 Tests
 -----
 
+- Issue #15507: test_subprocess's test_send_signal could fail if the test
+  runner were run in an environment where the process inherited an ignore
+  setting for SIGINT.  Restore the SIGINT handler to the desired
+  KeyboardInterrupt raising one during that test.
+
 - Issue #18792: Use "127.0.0.1" or "::1" instead of "localhost" as much as
   possible, since "localhost" goes through a DNS lookup under recent Windows
   versions.
