@@ -233,18 +233,20 @@ def _create_parser():
     # We add help explicitly to control what argument group it renders under.
     group.add_argument('-h', '--help', action='help',
                        help='show this help message and exit')
-    group.add_argument('--timeout', metavar='TIMEOUT',
+    group.add_argument('--timeout', metavar='TIMEOUT', type=float,
                         help='dump the traceback and exit if a test takes '
                              'more than TIMEOUT seconds; disabled if TIMEOUT '
                              'is negative or equals to zero')
-    group.add_argument('--wait', action='store_true', help='wait for user '
-                        'input, e.g., allow a debugger to be attached')
+    group.add_argument('--wait', action='store_true',
+                       help='wait for user input, e.g., allow a debugger '
+                            'to be attached')
     group.add_argument('--slaveargs', metavar='ARGS')
-    group.add_argument('-S', '--start', metavar='START', help='the name of '
-                        'the test at which to start.' + more_details)
+    group.add_argument('-S', '--start', metavar='START',
+                       help='the name of the test at which to start.' +
+                            more_details)
 
     group = parser.add_argument_group('Verbosity')
-    group.add_argument('-v', '--verbose', action='store_true',
+    group.add_argument('-v', '--verbose', action='count',
                        help='run tests in verbose mode with output to stdout')
     group.add_argument('-w', '--verbose2', action='store_true',
                        help='re-run failed tests in verbose mode')
@@ -254,7 +256,7 @@ def _create_parser():
                        help='print traceback for failed tests')
     group.add_argument('-q', '--quiet', action='store_true',
                        help='no output unless one or more tests fail')
-    group.add_argument('-o', '--slow', action='store_true',
+    group.add_argument('-o', '--slow', action='store_true', dest='print_slow',
                        help='print the slowest 10 tests')
     group.add_argument('--header', action='store_true',
                        help='print header with interpreter info')
@@ -262,45 +264,60 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--randseed', metavar='SEED', help='pass a random seed '
-                       'to reproduce a previous random run')
-    group.add_argument('-f', '--fromfile', metavar='FILE', help='read names '
-                       'of tests to run from a file.' + more_details)
+    group.add_argument('--randseed', metavar='SEED',
+                       dest='random_seed', type=int,
+                       help='pass a random seed to reproduce a previous '
+                            'random run')
+    group.add_argument('-f', '--fromfile', metavar='FILE',
+                       help='read names of tests to run from a file.' +
+                            more_details)
     group.add_argument('-x', '--exclude', action='store_true',
                        help='arguments are tests to *exclude*')
-    group.add_argument('-s', '--single', action='store_true', help='single '
-                       'step through a set of tests.' + more_details)
-    group.add_argument('-m', '--match', metavar='PAT', help='match test cases '
-                       'and methods with glob pattern PAT')
-    group.add_argument('-G', '--failfast', action='store_true', help='fail as '
-                       'soon as a test fails (only with -v or -W)')
-    group.add_argument('-u', '--use', metavar='RES1,RES2,...', help='specify '
-                       'which special resource intensive tests to run.' +
-                       more_details)
-    group.add_argument('-M', '--memlimit', metavar='LIMIT', help='run very '
-                       'large memory-consuming tests.' + more_details)
+    group.add_argument('-s', '--single', action='store_true',
+                       help='single step through a set of tests.' +
+                            more_details)
+    group.add_argument('-m', '--match', metavar='PAT',
+                       dest='match_tests',
+                       help='match test cases and methods with glob pattern PAT')
+    group.add_argument('-G', '--failfast', action='store_true',
+                       help='fail as soon as a test fails (only with -v or -W)')
+    group.add_argument('-u', '--use', metavar='RES1,RES2,...',
+                       action='append', type=resources_list,
+                       help='specify which special resource intensive tests '
+                            'to run.' + more_details)
+    group.add_argument('-M', '--memlimit', metavar='LIMIT',
+                       help='run very large memory-consuming tests.' +
+                            more_details)
     group.add_argument('--testdir', metavar='DIR',
+                       type=relative_filename,
                        help='execute test files in the specified directory '
                             '(instead of the Python stdlib test suite)')
 
     group = parser.add_argument_group('Special runs')
-    group.add_argument('-l', '--findleaks', action='store_true', help='if GC '
-                       'is available detect tests that leak memory')
+    group.add_argument('-l', '--findleaks', action='store_true',
+                       help='if GC is available detect tests that leak memory')
     group.add_argument('-L', '--runleaks', action='store_true',
                        help='run the leaks(1) command just before exit.' +
-                       more_details)
+                            more_details)
     group.add_argument('-R', '--huntrleaks', metavar='RUNCOUNTS',
+                       type=huntrleaks,
                        help='search for reference leaks (needs debug build, '
                             'very slow).' + more_details)
     group.add_argument('-j', '--multiprocess', metavar='PROCESSES',
+                       dest='use_mp', type=int,
                        help='run PROCESSES processes at once')
-    group.add_argument('-T', '--coverage', action='store_true', help='turn on '
-                       'code coverage tracing using the trace module')
+    group.add_argument('-T', '--coverage', action='store_true',
+                       dest='trace',
+                       help='turn on code coverage tracing using the trace '
+                            'module')
     group.add_argument('-D', '--coverdir', metavar='DIR',
+                       type=relative_filename,
                        help='directory where coverage files are put')
-    group.add_argument('-N', '--nocoverdir', action='store_true',
+    group.add_argument('-N', '--nocoverdir',
+                       action='store_const', const=None, dest='coverdir',
                        help='put coverage files alongside modules')
     group.add_argument('-t', '--threshold', metavar='THRESHOLD',
+                       type=int,
                        help='call gc.set_threshold(THRESHOLD)')
     group.add_argument('-n', '--nowindows', action='store_true',
                        help='suppress error message boxes on Windows')
@@ -313,43 +330,103 @@ def _create_parser():
 
     return parser
 
-# TODO: remove this function as described in issue #16799, for example.
-# We use this function since regrtest.main() was originally written to use
-# getopt for parsing.
-def _convert_namespace_to_getopt(ns):
-    """Convert an argparse.Namespace object to a getopt-style opts list.
+def relative_filename(string):
+    # CWD is replaced with a temporary dir before calling main(), so we
+    # join it with the saved CWD so it ends up where the user expects.
+    return os.path.join(support.SAVEDCWD, string)
 
-    The return value of this function mimics the first element of
-    getopt.getopt()'s (opts, args) return value.  In addition, the (option,
-    value) pairs in the opts list are sorted by option and use the long
-    option string.  The args part of (opts, args) can be mimicked by the
-    args attribute of the Namespace object we are using in regrtest.
-    """
-    opts = []
-    args_dict = vars(ns)
-    for key in sorted(args_dict.keys()):
-        if key == 'args':
+def huntrleaks(string):
+    args = string.split(':')
+    if len(args) not in (2, 3):
+        raise argparse.ArgumentTypeError(
+            'needs 2 or 3 colon-separated arguments')
+    nwarmup = int(args[0]) if args[0] else 5
+    ntracked = int(args[1]) if args[1] else 4
+    fname = args[2] if len(args) > 2 and args[2] else 'reflog.txt'
+    return nwarmup, ntracked, fname
+
+def resources_list(string):
+    u = [x.lower() for x in string.split(',')]
+    for r in u:
+        if r == 'all' or r == 'none':
             continue
-        val = args_dict[key]
-        # Don't continue if val equals '' because this means an option
-        # accepting a value was provided the empty string.  Such values should
-        # show up in the returned opts list.
-        if val is None or val is False:
-            continue
-        if val is True:
-            # Then an option with action store_true was passed. getopt
-            # includes these with value '' in the opts list.
-            val = ''
-        opts.append(('--' + key, val))
-    return opts
+        if r[0] == '-':
+            r = r[1:]
+        if r not in RESOURCE_NAMES:
+            raise argparse.ArgumentTypeError('invalid resource: ' + r)
+    return u
 
-
-def main(tests=None, testdir=None, verbose=0, quiet=False,
+def _parse_args(args, **kwargs):
+    # Defaults
+    ns = argparse.Namespace(testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None):
+         header=False, failfast=False, match_tests=None)
+    for k, v in kwargs.items():
+        if not hasattr(ns, k):
+            raise TypeError('%r is an invalid keyword argument '
+                            'for this function' % k)
+        setattr(ns, k, v)
+    if ns.use_resources is None:
+        ns.use_resources = []
+
+    parser = _create_parser()
+    parser.parse_args(args=args, namespace=ns)
+
+    if ns.single and ns.fromfile:
+        parser.error("-s and -f don't go together!")
+    if ns.use_mp and ns.trace:
+        parser.error("-T and -j don't go together!")
+    if ns.use_mp and ns.findleaks:
+        parser.error("-l and -j don't go together!")
+    if ns.use_mp and ns.memlimit:
+        parser.error("-M and -j don't go together!")
+    if ns.failfast and not (ns.verbose or ns.verbose3):
+        parser.error("-G/--failfast needs either -v or -W")
+
+    if ns.quiet:
+        ns.verbose = 0
+    if ns.timeout is not None:
+        if hasattr(faulthandler, 'dump_traceback_later'):
+            if ns.timeout <= 0:
+                ns.timeout = None
+        else:
+            print("Warning: The timeout option requires "
+                  "faulthandler.dump_traceback_later")
+            ns.timeout = None
+    if ns.use_mp is not None:
+        if ns.use_mp <= 0:
+            # Use all cores + extras for tests that like to sleep
+            ns.use_mp = 2 + (os.cpu_count() or 1)
+        if ns.use_mp == 1:
+            ns.use_mp = None
+    if ns.use:
+        for a in ns.use:
+            for r in a:
+                if r == 'all':
+                    ns.use_resources[:] = RESOURCE_NAMES
+                    continue
+                if r == 'none':
+                    del ns.use_resources[:]
+                    continue
+                remove = False
+                if r[0] == '-':
+                    remove = True
+                    r = r[1:]
+                if remove:
+                    if r in ns.use_resources:
+                        ns.use_resources.remove(r)
+                elif r not in ns.use_resources:
+                    ns.use_resources.append(r)
+    if ns.random_seed is not None:
+        ns.randomize = True
+
+    return ns
+
+
+def main(tests=None, **kwargs):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -372,7 +449,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     directly to set the values that would normally be set by flags
     on the command line.
     """
-
     # Display the Python traceback on fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
@@ -389,174 +465,48 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     support.record_original_stdout(sys.stdout)
 
-    parser = _create_parser()
-    ns = parser.parse_args()
-    opts = _convert_namespace_to_getopt(ns)
-    args = ns.args
-    usage = parser.error
+    ns = _parse_args(sys.argv[1:], **kwargs)
 
-    # Defaults
-    if random_seed is None:
-        random_seed = random.randrange(10000000)
-    if use_resources is None:
-        use_resources = []
-    debug = False
-    start = None
-    timeout = None
-    for o, a in opts:
-        if o in ('-v', '--verbose'):
-            verbose += 1
-        elif o in ('-w', '--verbose2'):
-            verbose2 = True
-        elif o in ('-d', '--debug'):
-            debug = True
-        elif o in ('-W', '--verbose3'):
-            verbose3 = True
-        elif o in ('-G', '--failfast'):
-            failfast = True
-        elif o in ('-q', '--quiet'):
-            quiet = True;
-            verbose = 0
-        elif o in ('-x', '--exclude'):
-            exclude = True
-        elif o in ('-S', '--start'):
-            start = a
-        elif o in ('-s', '--single'):
-            single = True
-        elif o in ('-o', '--slow'):
-            print_slow = True
-        elif o in ('-r', '--randomize'):
-            randomize = True
-        elif o == '--randseed':
-            randomize = True
-            random_seed = int(a)
-        elif o in ('-f', '--fromfile'):
-            fromfile = a
-        elif o in ('-m', '--match'):
-            match_tests = a
-        elif o in ('-l', '--findleaks'):
-            findleaks = True
-        elif o in ('-L', '--runleaks'):
-            runleaks = True
-        elif o in ('-t', '--threshold'):
-            import gc
-            gc.set_threshold(int(a))
-        elif o in ('-T', '--coverage'):
-            trace = True
-        elif o in ('-D', '--coverdir'):
-            # CWD is replaced with a temporary dir before calling main(), so we
-            # need  join it with the saved CWD so it goes where the user expects.
-            coverdir = os.path.join(support.SAVEDCWD, a)
-        elif o in ('-N', '--nocoverdir'):
-            coverdir = None
-        elif o in ('-R', '--huntrleaks'):
-            huntrleaks = a.split(':')
-            if len(huntrleaks) not in (2, 3):
-                print(a, huntrleaks)
-                usage('-R takes 2 or 3 colon-separated arguments')
-            if not huntrleaks[0]:
-                huntrleaks[0] = 5
-            else:
-                huntrleaks[0] = int(huntrleaks[0])
-            if not huntrleaks[1]:
-                huntrleaks[1] = 4
-            else:
-                huntrleaks[1] = int(huntrleaks[1])
-            if len(huntrleaks) == 2 or not huntrleaks[2]:
-                huntrleaks[2:] = ["reflog.txt"]
-            # Avoid false positives due to various caches
-            # filling slowly with random data:
-            warm_caches()
-        elif o in ('-M', '--memlimit'):
-            support.set_memlimit(a)
-        elif o in ('-u', '--use'):
-            u = [x.lower() for x in a.split(',')]
-            for r in u:
-                if r == 'all':
-                    use_resources[:] = RESOURCE_NAMES
-                    continue
-                if r == 'none':
-                    del use_resources[:]
-                    continue
-                remove = False
-                if r[0] == '-':
-                    remove = True
-                    r = r[1:]
-                if r not in RESOURCE_NAMES:
-                    usage('Invalid -u/--use option: ' + a)
-                if remove:
-                    if r in use_resources:
-                        use_resources.remove(r)
-                elif r not in use_resources:
-                    use_resources.append(r)
-        elif o in ('-n', '--nowindows'):
-            import msvcrt
-            msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                    msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                    msvcrt.SEM_NOGPFAULTERRORBOX|
-                    msvcrt.SEM_NOOPENFILEERRORBOX)
-            try:
-                msvcrt.CrtSetReportMode
-            except AttributeError:
-                # release build
-                pass
-            else:
-                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-        elif o in ('-F', '--forever'):
-            forever = True
-        elif o in ('-j', '--multiprocess'):
-            use_mp = int(a)
-            if use_mp <= 0:
-                # Use all cores + extras for tests that like to sleep
-                use_mp = 2 + (os.cpu_count() or 1)
-            if use_mp == 1:
-                use_mp = None
-        elif o == '--header':
-            header = True
-        elif o == '--slaveargs':
-            args, kwargs = json.loads(a)
-            try:
-                result = runtest(*args, **kwargs)
-            except KeyboardInterrupt:
-                result = INTERRUPTED, ''
-            except BaseException as e:
-                traceback.print_exc()
-                result = CHILD_ERROR, str(e)
-            sys.stdout.flush()
-            print()   # Force a newline (just in case)
-            print(json.dumps(result))
-            sys.exit(0)
-        elif o == '--testdir':
-            # CWD is replaced with a temporary dir before calling main(), so we
-            # join it with the saved CWD so it ends up where the user expects.
-            testdir = os.path.join(support.SAVEDCWD, a)
-        elif o == '--timeout':
-            if hasattr(faulthandler, 'dump_traceback_later'):
-                timeout = float(a)
-                if timeout <= 0:
-                    timeout = None
-            else:
-                print("Warning: The timeout option requires "
-                      "faulthandler.dump_traceback_later")
-                timeout = None
-        elif o == '--wait':
-            input("Press any key to continue...")
+    if ns.huntrleaks:
+        # Avoid false positives due to various caches
+        # filling slowly with random data:
+        warm_caches()
+    if ns.memlimit is not None:
+        support.set_memlimit(ns.memlimit)
+    if ns.threshold is not None:
+        import gc
+        gc.set_threshold(ns.threshold)
+    if ns.nowindows:
+        import msvcrt
+        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                            msvcrt.SEM_NOGPFAULTERRORBOX|
+                            msvcrt.SEM_NOOPENFILEERRORBOX)
+        try:
+            msvcrt.CrtSetReportMode
+        except AttributeError:
+            # release build
+            pass
         else:
-            print(("No handler for option {}.  Please report this as a bug "
-                   "at http://bugs.python.org.").format(o), file=sys.stderr)
-            sys.exit(1)
-    if single and fromfile:
-        usage("-s and -f don't go together!")
-    if use_mp and trace:
-        usage("-T and -j don't go together!")
-    if use_mp and findleaks:
-        usage("-l and -j don't go together!")
-    if use_mp and support.max_memuse:
-        usage("-M and -j don't go together!")
-    if failfast and not (verbose or verbose3):
-        usage("-G/--failfast needs either -v or -W")
+            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+                msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+    if ns.wait:
+        input("Press any key to continue...")
+
+    if ns.slaveargs is not None:
+        args, kwargs = json.loads(ns.slaveargs)
+        try:
+            result = runtest(*args, **kwargs)
+        except KeyboardInterrupt:
+            result = INTERRUPTED, ''
+        except BaseException as e:
+            traceback.print_exc()
+            result = CHILD_ERROR, str(e)
+        sys.stdout.flush()
+        print()   # Force a newline (just in case)
+        print(json.dumps(result))
+        sys.exit(0)
 
     good = []
     bad = []
@@ -565,12 +515,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
     environment_changed = []
     interrupted = False
 
-    if findleaks:
+    if ns.findleaks:
         try:
             import gc
         except ImportError:
             print('No GC available, disabling findleaks.')
-            findleaks = False
+            ns.findleaks = False
         else:
             # Uncomment the line below to report garbage that is not
             # freeable by reference counting alone.  By default only
@@ -578,42 +528,40 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             #gc.set_debug(gc.DEBUG_SAVEALL)
             found_garbage = []
 
-    if single:
+    if ns.single:
         filename = os.path.join(TEMPDIR, 'pynexttest')
         try:
-            fp = open(filename, 'r')
-            next_test = fp.read().strip()
-            tests = [next_test]
-            fp.close()
+            with open(filename, 'r') as fp:
+                next_test = fp.read().strip()
+                tests = [next_test]
         except OSError:
             pass
 
-    if fromfile:
+    if ns.fromfile:
         tests = []
-        fp = open(os.path.join(support.SAVEDCWD, fromfile))
-        count_pat = re.compile(r'\[\s*\d+/\s*\d+\]')
-        for line in fp:
-            line = count_pat.sub('', line)
-            guts = line.split() # assuming no test has whitespace in its name
-            if guts and not guts[0].startswith('#'):
-                tests.extend(guts)
-        fp.close()
+        with open(os.path.join(support.SAVEDCWD, ns.fromfile)) as fp:
+            count_pat = re.compile(r'\[\s*\d+/\s*\d+\]')
+            for line in fp:
+                line = count_pat.sub('', line)
+                guts = line.split() # assuming no test has whitespace in its name
+                if guts and not guts[0].startswith('#'):
+                    tests.extend(guts)
 
     # Strip .py extensions.
-    removepy(args)
+    removepy(ns.args)
     removepy(tests)
 
     stdtests = STDTESTS[:]
     nottests = NOTTESTS.copy()
-    if exclude:
-        for arg in args:
+    if ns.exclude:
+        for arg in ns.args:
             if arg in stdtests:
                 stdtests.remove(arg)
             nottests.add(arg)
-        args = []
+        ns.args = []
 
     # For a partial run, we do not need to clutter the output.
-    if verbose or header or not (quiet or single or tests or args):
+    if ns.verbose or ns.header or not (ns.quiet or ns.single or tests or ns.args):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==  ", platform.platform(aliased=True),
@@ -623,37 +571,39 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     # if testdir is set, then we are not running the python tests suite, so
     # don't add default tests to be executed or skipped (pass empty values)
-    if testdir:
-        alltests = findtests(testdir, list(), set())
+    if ns.testdir:
+        alltests = findtests(ns.testdir, list(), set())
     else:
-        alltests = findtests(testdir, stdtests, nottests)
+        alltests = findtests(ns.testdir, stdtests, nottests)
 
-    selected = tests or args or alltests
-    if single:
+    selected = tests or ns.args or alltests
+    if ns.single:
         selected = selected[:1]
         try:
             next_single_test = alltests[alltests.index(selected[0])+1]
         except IndexError:
             next_single_test = None
     # Remove all the selected tests that precede start if it's set.
-    if start:
+    if ns.start:
         try:
-            del selected[:selected.index(start)]
+            del selected[:selected.index(ns.start)]
         except ValueError:
-            print("Couldn't find starting test (%s), using all tests" % start)
-    if randomize:
-        random.seed(random_seed)
-        print("Using random seed", random_seed)
+            print("Couldn't find starting test (%s), using all tests" % ns.start)
+    if ns.randomize:
+        if ns.random_seed is None:
+            ns.random_seed = random.randrange(10000000)
+        random.seed(ns.random_seed)
+        print("Using random seed", ns.random_seed)
         random.shuffle(selected)
-    if trace:
+    if ns.trace:
         import trace, tempfile
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
                                          tempfile.gettempdir()],
                              trace=False, count=True)
 
     test_times = []
-    support.verbose = verbose      # Tell tests to be moderately quiet
-    support.use_resources = use_resources
+    support.verbose = ns.verbose      # Tell tests to be moderately quiet
+    support.use_resources = ns.use_resources
     save_modules = sys.modules.keys()
 
     def accumulate_result(test, result):
@@ -671,7 +621,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             skipped.append(test)
             resource_denieds.append(test)
 
-    if forever:
+    if ns.forever:
         def test_forever(tests=list(selected)):
             while True:
                 for test in tests:
@@ -686,7 +636,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         test_count = '/{}'.format(len(selected))
         test_count_width = len(test_count) - 1
 
-    if use_mp:
+    if ns.use_mp:
         try:
             from threading import Thread
         except ImportError:
@@ -710,11 +660,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                         output.put((None, None, None, None))
                         return
                     args_tuple = (
-                        (test, verbose, quiet),
-                        dict(huntrleaks=huntrleaks, use_resources=use_resources,
-                             debug=debug, output_on_failure=verbose3,
-                             timeout=timeout, failfast=failfast,
-                             match_tests=match_tests)
+                        (test, ns.verbose, ns.quiet),
+                        dict(huntrleaks=ns.huntrleaks,
+                             use_resources=ns.use_resources,
+                             debug=ns.debug, output_on_failure=ns.verbose3,
+                             timeout=ns.timeout, failfast=ns.failfast,
+                             match_tests=ns.match_tests)
                     )
                     # -E is needed by some tests, e.g. test_import
                     # Running the child from the same working directory ensures
@@ -743,19 +694,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             except BaseException:
                 output.put((None, None, None, None))
                 raise
-        workers = [Thread(target=work) for i in range(use_mp)]
+        workers = [Thread(target=work) for i in range(ns.use_mp)]
         for worker in workers:
             worker.start()
         finished = 0
         test_index = 1
         try:
-            while finished < use_mp:
+            while finished < ns.use_mp:
                 test, stdout, stderr, result = output.get()
                 if test is None:
                     finished += 1
                     continue
                 accumulate_result(test, result)
-                if not quiet:
+                if not ns.quiet:
                     fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
                     print(fmt.format(
                         test_count_width, test_index, test_count,
@@ -778,29 +729,30 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             worker.join()
     else:
         for test_index, test in enumerate(tests, 1):
-            if not quiet:
+            if not ns.quiet:
                 fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
                 print(fmt.format(
                     test_count_width, test_index, test_count, len(bad), test))
                 sys.stdout.flush()
-            if trace:
+            if ns.trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                tracer.runctx('runtest(test, verbose, quiet, timeout=timeout)',
+                tracer.runctx('runtest(test, ns.verbose, ns.quiet, timeout=ns.timeout)',
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet, huntrleaks, debug,
-                                     output_on_failure=verbose3,
-                                     timeout=timeout, failfast=failfast,
-                                     match_tests=match_tests)
+                    result = runtest(test, ns.verbose, ns.quiet,
+                                     ns.huntrleaks, ns.debug,
+                                     output_on_failure=ns.verbose3,
+                                     timeout=ns.timeout, failfast=ns.failfast,
+                                     match_tests=ns.match_tests)
                     accumulate_result(test, result)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
                 except:
                     raise
-            if findleaks:
+            if ns.findleaks:
                 gc.collect()
                 if gc.garbage:
                     print("Warning: test created", len(gc.garbage), end=' ')
@@ -821,11 +773,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         omitted = set(selected) - set(good) - set(bad) - set(skipped)
         print(count(len(omitted), "test"), "omitted:")
         printlist(omitted)
-    if good and not quiet:
+    if good and not ns.quiet:
         if not bad and not skipped and not interrupted and len(good) > 1:
             print("All", end=' ')
         print(count(len(good), "test"), "OK.")
-    if print_slow:
+    if ns.print_slow:
         test_times.sort(reverse=True)
         print("10 slowest tests:")
         for time, test in test_times[:10]:
@@ -839,18 +791,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print("{} altered the execution environment:".format(
                  count(len(environment_changed), "test")))
         printlist(environment_changed)
-    if skipped and not quiet:
+    if skipped and not ns.quiet:
         print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
 
-    if verbose2 and bad:
+    if ns.verbose2 and bad:
         print("Re-running failed tests in verbose mode")
         for test in bad:
             print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
-                verbose = True
-                ok = runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
+                ns.verbose = True
+                ok = runtest(test, True, ns.quiet, ns.huntrleaks, ns.debug,
+                             timeout=ns.timeout)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print()
@@ -858,18 +811,18 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             except:
                 raise
 
-    if single:
+    if ns.single:
         if next_single_test:
             with open(filename, 'w') as fp:
                 fp.write(next_single_test + '\n')
         else:
             os.unlink(filename)
 
-    if trace:
+    if ns.trace:
         r = tracer.results()
-        r.write_results(show_missing=True, summary=True, coverdir=coverdir)
+        r.write_results(show_missing=True, summary=True, coverdir=ns.coverdir)
 
-    if runleaks:
+    if ns.runleaks:
         os.system("leaks %d" % os.getpid())
 
     sys.exit(len(bad) > 0 or interrupted)
