@@ -1547,14 +1547,14 @@ class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
         pickler.dump(data)
         first_pickled = f.getvalue()
 
-        # Reset StringIO object.
+        # Reset BytesIO object.
         f.seek(0)
         f.truncate()
 
         pickler.dump(data)
         second_pickled = f.getvalue()
 
-        # Reset the Pickler and StringIO objects.
+        # Reset the Pickler and BytesIO objects.
         pickler.clear_memo()
         f.seek(0)
         f.truncate()

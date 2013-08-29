@@ -156,12 +156,7 @@ class BaseTest(unittest.TestCase):
         the expected_values list of tuples."""
         stream = stream or self.stream
         pat = re.compile(self.expected_log_pat)
-        try:
-            stream.reset()
-            actual_lines = stream.readlines()
-        except AttributeError:
-            # StringIO.StringIO lacks a reset() method.
-            actual_lines = stream.getvalue().splitlines()
+        actual_lines = stream.getvalue().splitlines()
         self.assertEqual(len(actual_lines), len(expected_values))
         for actual, expected in zip(actual_lines, expected_values):
             match = pat.search(actual)
