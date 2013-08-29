@@ -1,12 +1,13 @@
 import os
 import re
 import sys
+from test import support
 
 import unittest
 
 
 class TestableTestProgram(unittest.TestProgram):
-    module = '__main__'
+    module = None
     exit = True
     defaultTest = failfast = catchbreak = buffer = None
     verbosity = 1
@@ -232,58 +233,54 @@ class TestDiscovery(unittest.TestCase):
         program = TestableTestProgram()
 
         args = []
-        def do_discovery(argv):
-            args.extend(argv)
-        program._do_discovery = do_discovery
+        program._do_discovery = args.append
         program.parseArgs(['something', 'discover'])
-        self.assertEqual(args, [])
+        self.assertEqual(args, [[]])
 
+        args[:] = []
         program.parseArgs(['something', 'discover', 'foo', 'bar'])
-        self.assertEqual(args, ['foo', 'bar'])
+        self.assertEqual(args, [['foo', 'bar']])
 
     def test_command_line_handling_discover_by_default(self):
         program = TestableTestProgram()
-        program.module = None
 
-        self.called = False
-        def do_discovery(argv):
-            self.called = True
-            self.assertEqual(argv, [])
-        program._do_discovery = do_discovery
+        args = []
+        program._do_discovery = args.append
         program.parseArgs(['something'])
-        self.assertTrue(self.called)
+        self.assertEqual(args, [[]])
+        self.assertEqual(program.verbosity, 1)
+        self.assertIs(program.buffer, False)
+        self.assertIs(program.catchbreak, False)
+        self.assertIs(program.failfast, False)
 
     def test_command_line_handling_discover_by_default_with_options(self):
         program = TestableTestProgram()
-        program.module = None
 
-        args = ['something', '-v', '-b', '-v', '-c', '-f']
-        self.called = False
-        def do_discovery(argv):
-            self.called = True
-            self.assertEqual(argv, args[1:])
-        program._do_discovery = do_discovery
-        program.parseArgs(args)
-        self.assertTrue(self.called)
+        args = []
+        program._do_discovery = args.append
+        program.parseArgs(['something', '-v', '-b', '-v', '-c', '-f'])
+        self.assertEqual(args, [[]])
+        self.assertEqual(program.verbosity, 2)
+        self.assertIs(program.buffer, True)
+        self.assertIs(program.catchbreak, True)
+        self.assertIs(program.failfast, True)
 
 
     def test_command_line_handling_do_discovery_too_many_arguments(self):
-        class Stop(Exception):
-            pass
-        def usageExit():
-            raise Stop
-
         program = TestableTestProgram()
-        program.usageExit = usageExit
         program.testLoader = None
 
-        with self.assertRaises(Stop):
+        with support.captured_stderr() as stderr, \
+             self.assertRaises(SystemExit) as cm:
             # too many args
             program._do_discovery(['one', 'two', 'three', 'four'])
+        self.assertEqual(cm.exception.args, (2,))
+        self.assertIn('usage:', stderr.getvalue())
 
 
     def test_command_line_handling_do_discovery_uses_default_loader(self):
         program = object.__new__(unittest.TestProgram)
+        program._initArgParsers()
 
         class Loader(object):
             args = []
