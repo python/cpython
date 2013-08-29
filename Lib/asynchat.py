@@ -69,12 +69,9 @@ class async_chat (asyncore.dispatcher):
         # for string terminator matching
         self.ac_in_buffer = b''
 
-        # we use a list here rather than cStringIO for a few reasons...
-        # del lst[:] is faster than sio.truncate(0)
-        # lst = [] is faster than sio.truncate(0)
-        # cStringIO will be gaining unicode support in py3k, which
-        # will negatively affect the performance of bytes compared to
-        # a ''.join() equivalent
+        # we use a list here rather than io.BytesIO for a few reasons...
+        # del lst[:] is faster than bio.truncate(0)
+        # lst = [] is faster than bio.truncate(0)
         self.incoming = []
 
         # we toss the use of the "simple producer" and replace it with

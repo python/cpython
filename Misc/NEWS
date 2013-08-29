@@ -360,6 +360,8 @@ Tests
 Documentation
 -------------
 
+- Issue #18743: Fix references to non-existant "StringIO" module.
+
 - Issue #18783: Removed existing mentions of Python long type in docstrings,
   error messages and comments.
 
