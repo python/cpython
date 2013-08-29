@@ -53,8 +53,8 @@ class EPipeSocket(FakeSocket):
     def close(self):
         pass
 
-class NoEOFStringIO(io.BytesIO):
-    """Like StringIO, but raises AssertionError on EOF.
+class NoEOFBytesIO(io.BytesIO):
+    """Like BytesIO, but raises AssertionError on EOF.
 
     This is used below to test that http.client doesn't try to read
     more from the underlying file than it should.
@@ -326,7 +326,7 @@ class BasicTest(TestCase):
             'HTTP/1.1 200 OK\r\n'
             'Content-Length: 14432\r\n'
             '\r\n',
-            NoEOFStringIO)
+            NoEOFBytesIO)
         resp = client.HTTPResponse(sock, method="HEAD")
         resp.begin()
         if resp.read():
@@ -339,7 +339,7 @@ class BasicTest(TestCase):
             'HTTP/1.1 200 OK\r\n'
             'Content-Length: 14432\r\n'
             '\r\n',
-            NoEOFStringIO)
+            NoEOFBytesIO)
         resp = client.HTTPResponse(sock, method="HEAD")
         resp.begin()
         b = bytearray(5)
