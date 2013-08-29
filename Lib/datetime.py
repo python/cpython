@@ -23,10 +23,10 @@ _MAXORDINAL = 3652059 # date.max.toordinal()
 # for all computations.  See the book for algorithms for converting between
 # proleptic Gregorian ordinals and many other calendar systems.
 
-# -1 is a placeholder for 0.
+# -1 is a placeholder for indexing purposes.
 _DAYS_IN_MONTH = [-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-_DAYS_BEFORE_MONTH = [-1] # -1 is a placeholder for 0.
+_DAYS_BEFORE_MONTH = [-1] # -1 is a placeholder for indexing purposes.
 dbm = 0
 for dim in _DAYS_IN_MONTH[1:]:
     _DAYS_BEFORE_MONTH.append(dbm)
