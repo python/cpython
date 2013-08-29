@@ -155,6 +155,11 @@ Library
 Tests
 -----
 
+- Issue #15507: test_subprocess's test_send_signal could fail if the test
+  runner were run in an environment where the process inherited an ignore
+  setting for SIGINT.  Restore the SIGINT handler to the desired
+  KeyboardInterrupt raising one during that test.
+
 - Issue #16799: Switched from getopt to argparse style in regrtest's argument
   parsing.  Added more tests for regrtest's argument parsing.
 
