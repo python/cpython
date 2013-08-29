@@ -1210,11 +1210,12 @@ class GeneralModuleTests(unittest.TestCase):
                 c.settimeout(1.5)
             with self.assertRaises(ZeroDivisionError):
                 signal.alarm(1)
-                c.sendall(b"x" * (1024**2))
+                c.sendall(b"x" * support.SOCK_MAX_SIZE)
             if with_timeout:
                 signal.signal(signal.SIGALRM, ok_handler)
                 signal.alarm(1)
-                self.assertRaises(socket.timeout, c.sendall, b"x" * (1024**2))
+                self.assertRaises(socket.timeout, c.sendall,
+                                  b"x" * support.SOCK_MAX_SIZE)
         finally:
             signal.alarm(0)
             signal.signal(signal.SIGALRM, old_alarm)
@@ -4047,7 +4048,7 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.serv_skipped = None
         self.serv_conn.setblocking(False)
         # Try to saturate the socket buffer pipe with repeated large writes.
-        BIG = b"x" * (1024 ** 2)
+        BIG = b"x" * support.SOCK_MAX_SIZE
         LIMIT = 10
         # The first write() succeeds since a chunk of data can be buffered
         n = self.write_file.write(BIG)
