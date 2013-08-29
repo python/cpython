@@ -1010,8 +1010,10 @@ class saved_test_environment:
                  'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
                  'warnings.filters', 'asyncore.socket_map',
                  'logging._handlers', 'logging._handlerList', 'sys.gettrace',
-                 'sys.warnoptions', 'threading._dangling',
-                 'multiprocessing.process._dangling',
+                 'sys.warnoptions',
+                 # multiprocessing.process._cleanup() may release ref
+                 # to a thread, so check processes first.
+                 'multiprocessing.process._dangling', 'threading._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'support.TESTFN', 'locale', 'warnings.showwarning',
                 )
@@ -1141,6 +1143,8 @@ class saved_test_environment:
     def get_multiprocessing_process__dangling(self):
         if not multiprocessing:
             return None
+        # Unjoined process objects can survive after process exits
+        multiprocessing.process._cleanup()
         # This copies the weakrefs without making any strong reference
         return multiprocessing.process._dangling.copy()
     def restore_multiprocessing_process__dangling(self, saved):
