@@ -3730,9 +3730,15 @@ def install_tests_in_module_dict(remote_globs, start_method):
             Temp.__module__ = __module__
             remote_globs[name] = Temp
 
+    dangling = [None, None]
+    old_start_method = [None]
+
     def setUpModule():
         multiprocessing.set_forkserver_preload(PRELOAD)
-        remote_globs['old_start_method'] = multiprocessing.get_start_method()
+        multiprocessing.process._cleanup()
+        dangling[0] = multiprocessing.process._dangling.copy()
+        dangling[1] = threading._dangling.copy()
+        old_start_method[0] = multiprocessing.get_start_method()
         try:
             multiprocessing.set_start_method(start_method)
         except ValueError:
@@ -3750,9 +3756,18 @@ def install_tests_in_module_dict(remote_globs, start_method):
         multiprocessing.get_logger().setLevel(LOG_LEVEL)
 
     def tearDownModule():
-        multiprocessing.set_start_method(remote_globs['old_start_method'])
+        multiprocessing.set_start_method(old_start_method[0])
         # pause a bit so we don't get warning about dangling threads/processes
         time.sleep(0.5)
+        multiprocessing.process._cleanup()
+        gc.collect()
+        tmp = set(multiprocessing.process._dangling) - set(dangling[0])
+        if tmp:
+            print('Dangling processes:', tmp, file=sys.stderr)
+        del tmp
+        tmp = set(threading._dangling) - set(dangling[1])
+        if tmp:
+            print('Dangling threads:', tmp, file=sys.stderr)
 
     remote_globs['setUpModule'] = setUpModule
     remote_globs['tearDownModule'] = tearDownModule
