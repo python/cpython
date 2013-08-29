@@ -2,6 +2,7 @@ import io
 
 import os
 import sys
+from test import support
 import unittest
 
 
@@ -186,20 +187,38 @@ class TestCommandLineArgs(unittest.TestCase):
             if attr == 'catch' and not hasInstallHandler:
                 continue
 
+            setattr(program, attr, None)
+            program.parseArgs([None])
+            self.assertIs(getattr(program, attr), False)
+
+            false = []
+            setattr(program, attr, false)
+            program.parseArgs([None])
+            self.assertIs(getattr(program, attr), false)
+
+            true = [42]
+            setattr(program, attr, true)
+            program.parseArgs([None])
+            self.assertIs(getattr(program, attr), true)
+
             short_opt = '-%s' % arg[0]
             long_opt = '--%s' % arg
             for opt in short_opt, long_opt:
                 setattr(program, attr, None)
-
                 program.parseArgs([None, opt])
-                self.assertTrue(getattr(program, attr))
+                self.assertIs(getattr(program, attr), True)
 
-            for opt in short_opt, long_opt:
-                not_none = object()
-                setattr(program, attr, not_none)
+                setattr(program, attr, False)
+                with support.captured_stderr() as stderr, \
+                    self.assertRaises(SystemExit) as cm:
+                    program.parseArgs([None, opt])
+                self.assertEqual(cm.exception.args, (2,))
 
-                program.parseArgs([None, opt])
-                self.assertEqual(getattr(program, attr), not_none)
+                setattr(program, attr, True)
+                with support.captured_stderr() as stderr, \
+                    self.assertRaises(SystemExit) as cm:
+                    program.parseArgs([None, opt])
+                self.assertEqual(cm.exception.args, (2,))
 
     def testWarning(self):
         """Test the warnings argument"""

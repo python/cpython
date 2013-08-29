@@ -51,6 +51,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17974: Switch unittest from using getopt to using argparse.
+
 - Issue #11798: TestSuite now drops references to own tests after execution.
 
 - Issue #16611: http.cookie now correctly parses the 'secure' and 'httponly'

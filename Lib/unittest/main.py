@@ -1,7 +1,7 @@
 """Unittest main program"""
 
 import sys
-import optparse
+import argparse
 import os
 
 from . import loader, runner
@@ -9,53 +9,20 @@ from .signals import installHandler
 
 __unittest = True
 
-FAILFAST     = "  -f, --failfast   Stop on first failure\n"
-CATCHBREAK   = "  -c, --catch      Catch control-C and display results\n"
-BUFFEROUTPUT = "  -b, --buffer     Buffer stdout and stderr during test runs\n"
-
-USAGE_AS_MAIN = """\
-Usage: %(progName)s [options] [tests]
-
-Options:
-  -h, --help       Show this message
-  -v, --verbose    Verbose output
-  -q, --quiet      Minimal output
-%(failfast)s%(catchbreak)s%(buffer)s
+MAIN_EXAMPLES = """\
 Examples:
-  %(progName)s test_module               - run tests from test_module
-  %(progName)s module.TestClass          - run tests from module.TestClass
-  %(progName)s module.Class.test_method  - run specified test method
-
-[tests] can be a list of any number of test modules, classes and test
-methods.
-
-Alternative Usage: %(progName)s discover [options]
-
-Options:
-  -v, --verbose    Verbose output
-%(failfast)s%(catchbreak)s%(buffer)s  -s directory     Directory to start discovery ('.' default)
-  -p pattern       Pattern to match test files ('test*.py' default)
-  -t directory     Top level directory of project (default to
-                   start directory)
-
-For test discovery all test modules must be importable from the top
-level directory of the project.
+  %(prog)s test_module               - run tests from test_module
+  %(prog)s module.TestClass          - run tests from module.TestClass
+  %(prog)s module.Class.test_method  - run specified test method
 """
 
-USAGE_FROM_MODULE = """\
-Usage: %(progName)s [options] [test] [...]
-
-Options:
-  -h, --help       Show this message
-  -v, --verbose    Verbose output
-  -q, --quiet      Minimal output
-%(failfast)s%(catchbreak)s%(buffer)s
+MODULE_EXAMPLES = """\
 Examples:
-  %(progName)s                               - run default set of tests
-  %(progName)s MyTestSuite                   - run suite 'MyTestSuite'
-  %(progName)s MyTestCase.testSomething      - run MyTestCase.testSomething
-  %(progName)s MyTestCase                    - run all 'test*' test methods
-                                               in MyTestCase
+  %(prog)s                           - run default set of tests
+  %(prog)s MyTestSuite               - run suite 'MyTestSuite'
+  %(prog)s MyTestCase.testSomething  - run MyTestCase.testSomething
+  %(prog)s MyTestCase                - run all 'test*' test methods
+                                       in MyTestCase
 """
 
 def _convert_name(name):
@@ -82,10 +49,11 @@ class TestProgram(object):
     """A command-line program that runs a set of tests; this is primarily
        for making test modules conveniently executable.
     """
-    USAGE = USAGE_FROM_MODULE
-
     # defaults for testing
+    module=None
+    verbosity = 1
     failfast = catchbreak = buffer = progName = warnings = None
+    _discovery_parser = None
 
     def __init__(self, module='__main__', defaultTest=None, argv=None,
                     testRunner=None, testLoader=loader.defaultTestLoader,
@@ -127,47 +95,47 @@ class TestProgram(object):
     def usageExit(self, msg=None):
         if msg:
             print(msg)
-        usage = {'progName': self.progName, 'catchbreak': '', 'failfast': '',
-                 'buffer': ''}
-        if self.failfast != False:
-            usage['failfast'] = FAILFAST
-        if self.catchbreak != False:
-            usage['catchbreak'] = CATCHBREAK
-        if self.buffer != False:
-            usage['buffer'] = BUFFEROUTPUT
-        print(self.USAGE % usage)
+        if self._discovery_parser is None:
+            self._initArgParsers()
+        self._print_help()
         sys.exit(2)
 
+    def _print_help(self, *args, **kwargs):
+        if self.module is None:
+            print(self._main_parser.format_help())
+            print(MAIN_EXAMPLES % {'prog': self.progName})
+            self._discovery_parser.print_help()
+        else:
+            print(self._main_parser.format_help())
+            print(MODULE_EXAMPLES % {'prog': self.progName})
+
     def parseArgs(self, argv):
-        if ((len(argv) > 1 and argv[1].lower() == 'discover') or
-            (len(argv) == 1 and self.module is None)):
-            self._do_discovery(argv[2:])
-            return
+        self._initArgParsers()
+        if self.module is None:
+            if len(argv) > 1 and argv[1].lower() == 'discover':
+                self._do_discovery(argv[2:])
+                return
+            self._main_parser.parse_args(argv[1:], self)
+            if not self.tests:
+                # this allows "python -m unittest -v" to still work for
+                # test discovery.
+                self._do_discovery([])
+                return
+        else:
+            self._main_parser.parse_args(argv[1:], self)
 
-        parser = self._getOptParser()
-        options, args = parser.parse_args(argv[1:])
-        self._setAttributesFromOptions(options)
-
-        if len(args) == 0 and self.module is None:
-            # this allows "python -m unittest -v" to still work for
-            # test discovery. This means -c / -b / -v / -f options will
-            # be handled twice, which is harmless but not ideal.
-            self._do_discovery(argv[1:])
-            return
-
-        if len(args) == 0 and self.defaultTest is None:
-            # createTests will load tests from self.module
-            self.testNames = None
-        elif len(args) > 0:
-            self.testNames = _convert_names(args)
+        if self.tests:
+            self.testNames = _convert_names(self.tests)
             if __name__ == '__main__':
                 # to support python -m unittest ...
                 self.module = None
+        elif self.defaultTest is None:
+            # createTests will load tests from self.module
+            self.testNames = None
+        elif isinstance(self.defaultTest, str):
+            self.testNames = (self.defaultTest,)
         else:
-            if isinstance(self.defaultTest, str):
-                self.testNames = (self.defaultTest,)
-            else:
-                self.testNames = list(self.defaultTest)
+            self.testNames = list(self.defaultTest)
         self.createTests()
 
     def createTests(self):
@@ -177,76 +145,84 @@ class TestProgram(object):
             self.test = self.testLoader.loadTestsFromNames(self.testNames,
                                                            self.module)
 
-    def _getOptParser(self):
-        import optparse
-        parser = optparse.OptionParser()
-        parser.prog = self.progName
-        parser.add_option('-v', '--verbose', dest='verbose', default=False,
-                          help='Verbose output', action='store_true')
-        parser.add_option('-q', '--quiet', dest='quiet', default=False,
-                          help='Quiet output', action='store_true')
+    def _initArgParsers(self):
+        parent_parser = self._getParentArgParser()
+        self._main_parser = self._getMainArgParser(parent_parser)
+        self._discovery_parser = self._getDiscoveryArgParser(parent_parser)
 
-        if self.failfast != False:
-            parser.add_option('-f', '--failfast', dest='failfast', default=False,
-                              help='Stop on first fail or error',
-                              action='store_true')
-        if self.catchbreak != False:
-            parser.add_option('-c', '--catch', dest='catchbreak', default=False,
-                              help='Catch ctrl-C and display results so far',
-                              action='store_true')
-        if self.buffer != False:
-            parser.add_option('-b', '--buffer', dest='buffer', default=False,
-                              help='Buffer stdout and stderr during tests',
-                              action='store_true')
+    def _getParentArgParser(self):
+        parser = argparse.ArgumentParser(add_help=False)
+
+        parser.add_argument('-v', '--verbose', dest='verbosity',
+                            action='store_const', const=2,
+                            help='Verbose output')
+        parser.add_argument('-q', '--quiet', dest='verbosity',
+                            action='store_const', const=0,
+                            help='Quiet output')
+
+        if self.failfast is None:
+            parser.add_argument('-f', '--failfast', dest='failfast',
+                                action='store_true',
+                                help='Stop on first fail or error')
+            self.failfast = False
+        if self.catchbreak is None:
+            parser.add_argument('-c', '--catch', dest='catchbreak',
+                                action='store_true',
+                                help='Catch ctrl-C and display results so far')
+            self.catchbreak = False
+        if self.buffer is None:
+            parser.add_argument('-b', '--buffer', dest='buffer',
+                                action='store_true',
+                                help='Buffer stdout and stderr during tests')
+            self.buffer = False
+
         return parser
 
-    def _setAttributesFromOptions(self, options):
-        # only set options from the parsing here
-        # if they weren't set explicitly in the constructor
-        if self.failfast is None:
-            self.failfast = options.failfast
-        if self.catchbreak is None:
-            self.catchbreak = options.catchbreak
-        if self.buffer is None:
-            self.buffer = options.buffer
+    def _getMainArgParser(self, parent):
+        parser = argparse.ArgumentParser(parents=[parent])
+        parser.prog = self.progName
+        parser.print_help = self._print_help
 
-        if options.verbose:
-            self.verbosity = 2
-        elif options.quiet:
-            self.verbosity = 0
+        parser.add_argument('tests', nargs='*',
+                            help='a list of any number of test modules, '
+                            'classes and test methods.')
 
-    def _addDiscoveryOptions(self, parser):
-        parser.add_option('-s', '--start-directory', dest='start', default='.',
-                          help="Directory to start discovery ('.' default)")
-        parser.add_option('-p', '--pattern', dest='pattern', default='test*.py',
-                          help="Pattern to match tests ('test*.py' default)")
-        parser.add_option('-t', '--top-level-directory', dest='top', default=None,
-                          help='Top level directory of project (defaults to start directory)')
+        return parser
+
+    def _getDiscoveryArgParser(self, parent):
+        parser = argparse.ArgumentParser(parents=[parent])
+        parser.prog = '%s discover' % self.progName
+        parser.epilog = ('For test discovery all test modules must be '
+                         'importable from the top level directory of the '
+                         'project.')
+
+        parser.add_argument('-s', '--start-directory', dest='start',
+                            help="Directory to start discovery ('.' default)")
+        parser.add_argument('-p', '--pattern', dest='pattern',
+                            help="Pattern to match tests ('test*.py' default)")
+        parser.add_argument('-t', '--top-level-directory', dest='top',
+                            help='Top level directory of project (defaults to '
+                                 'start directory)')
+        for arg in ('start', 'pattern', 'top'):
+            parser.add_argument(arg, nargs='?',
+                                default=argparse.SUPPRESS,
+                                help=argparse.SUPPRESS)
+
+        return parser
 
     def _do_discovery(self, argv, Loader=None):
-        if Loader is None:
-            Loader = lambda: self.testLoader
+        self.start = '.'
+        self.pattern = 'test*.py'
+        self.top = None
+        if argv is not None:
+            # handle command line args for test discovery
+            if self._discovery_parser is None:
+                # for testing
+                self._initArgParsers()
+            self._discovery_parser.parse_args(argv, self)
 
-        # handle command line args for test discovery
-        self.progName = '%s discover' % self.progName
-        parser = self._getOptParser()
-        self._addDiscoveryOptions(parser)
-
-        options, args = parser.parse_args(argv)
-        if len(args) > 3:
-            self.usageExit()
-
-        for name, value in zip(('start', 'pattern', 'top'), args):
-            setattr(options, name, value)
-
-        self._setAttributesFromOptions(options)
-
-        start_dir = options.start
-        pattern = options.pattern
-        top_level_dir = options.top
-
-        loader = Loader()
-        self.test = loader.discover(start_dir, pattern, top_level_dir)
+        loader = self.testLoader if Loader is None else Loader()
+        self.test = loader.discover(self.start, self.pattern, self.top)
 
     def runTests(self):
         if self.catchbreak:
