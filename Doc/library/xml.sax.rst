@@ -26,7 +26,8 @@ The convenience functions are:
 
 .. function:: make_parser(parser_list=[])
 
-   Create and return a SAX :class:`XMLReader` object.  The first parser found will
+   Create and return a SAX :class:`~xml.sax.xmlreader.XMLReader` object.  The
+   first parser found will
    be used.  If *parser_list* is provided, it must be a sequence of strings which
    name modules that have a function named :func:`create_parser`.  Modules listed
    in *parser_list* will be used before modules in the default list of parsers.
@@ -36,8 +37,9 @@ The convenience functions are:
 
    Create a SAX parser and use it to parse a document.  The document, passed in as
    *filename_or_stream*, can be a filename or a file object.  The *handler*
-   parameter needs to be a SAX :class:`ContentHandler` instance.  If
-   *error_handler* is given, it must be a SAX :class:`ErrorHandler` instance; if
+   parameter needs to be a SAX :class:`~handler.ContentHandler` instance.  If
+   *error_handler* is given, it must be a SAX :class:`~handler.ErrorHandler`
+   instance; if
    omitted,  :exc:`SAXParseException` will be raised on all errors.  There is no
    return value; all work must be done by the *handler* passed in.
 
@@ -62,10 +64,12 @@ For these objects, only the interfaces are relevant; they are normally not
 instantiated by the application itself.  Since Python does not have an explicit
 notion of interface, they are formally introduced as classes, but applications
 may use implementations which do not inherit from the provided classes.  The
-:class:`InputSource`, :class:`Locator`, :class:`Attributes`,
-:class:`AttributesNS`, and :class:`XMLReader` interfaces are defined in the
+:class:`~xml.sax.xmlreader.InputSource`, :class:`~xml.sax.xmlreader.Locator`,
+:class:`~xml.sax.xmlreader.Attributes`, :class:`~xml.sax.xmlreader.AttributesNS`,
+and :class:`~xml.sax.xmlreader.XMLReader` interfaces are defined in the
 module :mod:`xml.sax.xmlreader`.  The handler interfaces are defined in
-:mod:`xml.sax.handler`.  For convenience, :class:`InputSource` (which is often
+:mod:`xml.sax.handler`.  For convenience,
+:class:`~xml.sax.xmlreader.InputSource` (which is often
 instantiated directly) and the handler classes are also available from
 :mod:`xml.sax`.  These interfaces are described below.
 
@@ -78,7 +82,8 @@ classes.
    Encapsulate an XML error or warning.  This class can contain basic error or
    warning information from either the XML parser or the application: it can be
    subclassed to provide additional functionality or to add localization.  Note
-   that although the handlers defined in the :class:`ErrorHandler` interface
+   that although the handlers defined in the
+   :class:`~xml.sax.handler.ErrorHandler` interface
    receive instances of this exception, it is not required to actually raise the
    exception --- it is also useful as a container for information.
 
@@ -91,22 +96,26 @@ classes.
 
 .. exception:: SAXParseException(msg, exception, locator)
 
-   Subclass of :exc:`SAXException` raised on parse errors. Instances of this class
-   are passed to the methods of the SAX :class:`ErrorHandler` interface to provide
-   information about the parse error.  This class supports the SAX :class:`Locator`
-   interface as well as the :class:`SAXException` interface.
+   Subclass of :exc:`SAXException` raised on parse errors. Instances of this
+   class are passed to the methods of the SAX
+   :class:`~xml.sax.handler.ErrorHandler` interface to provide information
+   about the parse error.  This class supports the SAX
+   :class:`~xml.sax.xmlreader.Locator` interface as well as the
+   :class:`SAXException` interface.
 
 
 .. exception:: SAXNotRecognizedException(msg, exception=None)
 
-   Subclass of :exc:`SAXException` raised when a SAX :class:`XMLReader` is
+   Subclass of :exc:`SAXException` raised when a SAX
+   :class:`~xml.sax.xmlreader.XMLReader` is
    confronted with an unrecognized feature or property.  SAX applications and
    extensions may use this class for similar purposes.
 
 
 .. exception:: SAXNotSupportedException(msg, exception=None)
 
-   Subclass of :exc:`SAXException` raised when a SAX :class:`XMLReader` is asked to
+   Subclass of :exc:`SAXException` raised when a SAX
+   :class:`~xml.sax.xmlreader.XMLReader` is asked to
    enable a feature that is not supported, or to set a property to a value that the
    implementation does not support.  SAX applications and extensions may use this
    class for similar purposes.
