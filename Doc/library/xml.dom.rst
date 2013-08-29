@@ -422,14 +422,15 @@ objects:
 
 In addition, the Python DOM interface requires that some additional support is
 provided to allow :class:`NodeList` objects to be used as Python sequences.  All
-:class:`NodeList` implementations must include support for :meth:`__len__` and
-:meth:`__getitem__`; this allows iteration over the :class:`NodeList` in
+:class:`NodeList` implementations must include support for
+:meth:`~object.__len__` and
+:meth:`~object.__getitem__`; this allows iteration over the :class:`NodeList` in
 :keyword:`for` statements and proper support for the :func:`len` built-in
 function.
 
 If a DOM implementation supports modification of the document, the
-:class:`NodeList` implementation must also support the :meth:`__setitem__` and
-:meth:`__delitem__` methods.
+:class:`NodeList` implementation must also support the
+:meth:`~object.__setitem__` and :meth:`~object.__delitem__` methods.
 
 
 .. _dom-documenttype-objects:
