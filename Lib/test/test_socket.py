@@ -688,11 +688,12 @@ class GeneralModuleTests(unittest.TestCase):
                 c.settimeout(1.5)
             with self.assertRaises(ZeroDivisionError):
                 signal.alarm(1)
-                c.sendall(b"x" * (1024**2))
+                c.sendall(b"x" * test_support.SOCK_MAX_SIZE)
             if with_timeout:
                 signal.signal(signal.SIGALRM, ok_handler)
                 signal.alarm(1)
-                self.assertRaises(socket.timeout, c.sendall, b"x" * (1024**2))
+                self.assertRaises(socket.timeout, c.sendall,
+                                  b"x" * test_support.SOCK_MAX_SIZE)
         finally:
             signal.signal(signal.SIGALRM, old_alarm)
             c.close()
