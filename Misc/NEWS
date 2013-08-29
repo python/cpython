@@ -153,6 +153,9 @@ Library
 Tests
 -----
 
+- Issue #16799: Switched from getopt to argparse style in regrtest's argument
+  parsing.  Added more tests for regrtest's argument parsing.
+
 - Issue #18792: Use "127.0.0.1" or "::1" instead of "localhost" as much as
   possible, since "localhost" goes through a DNS lookup under recent Windows
   versions.
