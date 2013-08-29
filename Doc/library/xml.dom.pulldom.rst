@@ -74,7 +74,8 @@ and switch to DOM-related processing.
 
    Return a :class:`DOMEventStream` from the given input. *stream_or_string* may be
    either a file name, or a file-like object. *parser*, if given, must be a
-   :class:`XmlReader` object. This function will change the document handler of the
+   :class:`~xml.sax.xmlreader.XMLReader` object. This function will change the
+   document handler of the
    parser and activate namespace support; other parser configuration (like
    setting an entity resolver) must have been done in advance.
 

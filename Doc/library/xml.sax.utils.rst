@@ -52,7 +52,8 @@ or as base classes.
 
 .. class:: XMLGenerator(out=None, encoding='iso-8859-1', short_empty_elements=False)
 
-   This class implements the :class:`ContentHandler` interface by writing SAX
+   This class implements the :class:`~xml.sax.handler.ContentHandler` interface
+   by writing SAX
    events back into an XML document. In other words, using an :class:`XMLGenerator`
    as the content handler will reproduce the original document being parsed. *out*
    should be a file-like object which will default to *sys.stdout*. *encoding* is
@@ -67,7 +68,8 @@ or as base classes.
 
 .. class:: XMLFilterBase(base)
 
-   This class is designed to sit between an :class:`XMLReader` and the client
+   This class is designed to sit between an
+   :class:`~xml.sax.xmlreader.XMLReader` and the client
    application's event handlers.  By default, it does nothing but pass requests up
    to the reader and events on to the handlers unmodified, but subclasses can
    override specific methods to modify the event stream or the configuration
@@ -76,9 +78,10 @@ or as base classes.
 
 .. function:: prepare_input_source(source, base='')
 
-   This function takes an input source and an optional base URL and returns a fully
-   resolved :class:`InputSource` object ready for reading.  The input source can be
-   given as a string, a file-like object, or an :class:`InputSource` object;
-   parsers will use this function to implement the polymorphic *source* argument to
-   their :meth:`parse` method.
+   This function takes an input source and an optional base URL and returns a
+   fully resolved :class:`~xml.sax.xmlreader.InputSource` object ready for
+   reading.  The input source can be given as a string, a file-like object, or
+   an :class:`~xml.sax.xmlreader.InputSource` object; parsers will use this
+   function to implement the polymorphic *source* argument to their
+   :meth:`parse` method.
 
