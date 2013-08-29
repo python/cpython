@@ -661,7 +661,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
 
       In Babyl mailboxes, the headers of a message are not stored contiguously
       with the body of the message. To generate a file-like representation, the
-      headers and body are copied together into a :class:`StringIO` instance
+      headers and body are copied together into a :class:`~StringIO.StringIO` instance
       (from the :mod:`StringIO` module), which has an API identical to that of a
       file. As a result, the file-like object is truly independent of the
       underlying mailbox but does not save memory compared to a string

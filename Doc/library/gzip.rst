@@ -33,7 +33,7 @@ The module defines the following items:
    given a non-trivial value.
 
    The new class instance is based on *fileobj*, which can be a regular file, a
-   :class:`StringIO` object, or any other object which simulates a file.  It
+   :class:`~StringIO.StringIO` object, or any other object which simulates a file.  It
    defaults to ``None``, in which case *filename* is opened to provide a file
    object.
 
@@ -65,9 +65,9 @@ The module defines the following items:
 
    Calling a :class:`GzipFile` object's :meth:`close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
-   data.  This also allows you to pass a :class:`StringIO` object opened for
+   data.  This also allows you to pass a :class:`~StringIO.StringIO` object opened for
    writing as *fileobj*, and retrieve the resulting memory buffer using the
-   :class:`StringIO` object's :meth:`getvalue` method.
+   :class:`StringIO` object's :meth:`~StringIO.StringIO.getvalue` method.
 
    :class:`GzipFile` supports iteration and the :keyword:`with` statement.
 
