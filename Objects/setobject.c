@@ -79,65 +79,53 @@ NULL if the rich comparison returns an error.
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    size_t i, j;  /* Unsigned for defined overflow behavior. */
-    size_t perturb;
-    setentry *freeslot;
-    size_t mask = so->mask;
     setentry *table = so->table;
+    setentry *freeslot = NULL;
     setentry *entry;
+    size_t perturb = hash;
+    size_t mask = so->mask;
+    size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior. */
+    size_t j = i;
     int cmp;
-    PyObject *startkey;
 
-    i = (size_t)hash & mask;
     entry = &table[i];
-    if (entry->key == NULL || entry->key == key)
+    if (entry->key == NULL)
         return entry;
-    if (entry->hash == hash && entry->key != dummy) {
-        startkey = entry->key;
-        Py_INCREF(startkey);
-        cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-        Py_DECREF(startkey);
-        if (cmp < 0)
-            return NULL;
-        if (table == so->table && entry->key == startkey) {
-            if (cmp > 0)
-                return entry;
-        }
-        else {
-            /* Start over if the compare altered the set */
-            return set_lookkey(so, key, hash);
-        }
-    }
-    freeslot = (entry->key == dummy) ? entry : NULL;
 
-    /* In the loop, key == dummy is by far (factor of 100s)
-       the least likely outcome, so test for that last. */
-    j = i;
-    perturb = hash;
     while (1) {
-        j ^= 1;
-        entry = &table[j];
-        if (entry->key == NULL) {
-            if (freeslot != NULL)
-                entry = freeslot;
-            break;
-        }
         if (entry->key == key)
-            break;
+            return entry;
         if (entry->hash == hash && entry->key != dummy) {
-            startkey = entry->key;
+            PyObject *startkey = entry->key;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
             if (cmp < 0)
                 return NULL;
-            if (table == so->table && entry->key == startkey) {
-                if (cmp > 0)
-                    break;
-            }
-            else {
+            if (table != so->table || entry->key != startkey)
                 return set_lookkey(so, key, hash);
-            }
+            if (cmp > 0)
+                return entry;
+        }
+        if (entry->key == dummy && freeslot == NULL)
+            freeslot = entry;
+
+        entry = &table[j ^ 1];
+        if (entry->key == NULL)
+            break;
+        if (entry->key == key)
+            return entry;
+        if (entry->hash == hash && entry->key != dummy) {
+            PyObject *startkey = entry->key;
+            Py_INCREF(startkey);
+            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+            Py_DECREF(startkey);
+            if (cmp < 0)
+                return NULL;
+            if (table != so->table || entry->key != startkey)
+                return set_lookkey(so, key, hash);
+            if (cmp > 0)
+                return entry;
         }
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
@@ -147,33 +135,10 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         perturb >>= PERTURB_SHIFT;
 
         entry = &table[j];
-        if (entry->key == NULL) {
-            if (freeslot != NULL)
-                entry = freeslot;
+        if (entry->key == NULL)
             break;
-        }
-        if (entry->key == key)
-            break;
-        if (entry->hash == hash && entry->key != dummy) {
-            startkey = entry->key;
-            Py_INCREF(startkey);
-            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp < 0)
-                return NULL;
-            if (table == so->table && entry->key == startkey) {
-                if (cmp > 0)
-                    break;
-            }
-            else {
-                return set_lookkey(so, key, hash);
-            }
-        }
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
-
     }
-    return entry;
+    return freeslot == NULL ? entry : freeslot;
 }
 
 /*
@@ -184,12 +149,13 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 static setentry *
 set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    size_t i, j;  /* Unsigned for defined overflow behavior. */
-    size_t perturb;
-    setentry *freeslot;
-    size_t mask = so->mask;
     setentry *table = so->table;
+    setentry *freeslot = NULL;
     setentry *entry;
+    size_t perturb = hash;
+    size_t mask = so->mask;
+    size_t i = (size_t)hash & mask;
+    size_t j = i;
 
     /* Make sure this function doesn't have to handle non-unicode keys,
        including subclasses of str; e.g., one reason to subclass
@@ -200,25 +166,22 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         return set_lookkey(so, key, hash);
     }
 
-    i = (size_t)hash & mask;
     entry = &table[i];
-    if (entry->key == NULL || entry->key == key)
+    if (entry->key == NULL)
         return entry;
-    if (entry->key == dummy)
-        freeslot = entry;
-    else {
-        if (entry->hash == hash && unicode_eq(entry->key, key))
-            return entry;
-        freeslot = NULL;
-    }
 
-    j = i;
-    perturb = hash;
     while (1) {
-        j ^= 1;
-        entry = &table[j];
+        if (entry->key == key
+            || (entry->hash == hash
+            && entry->key != dummy
+            && unicode_eq(entry->key, key)))
+            return entry;
+        if (entry->key == dummy && freeslot == NULL)
+            freeslot = entry;
+
+        entry = &table[j ^ 1];
         if (entry->key == NULL)
-            return freeslot == NULL ? entry : freeslot;
+            break;
         if (entry->key == key
             || (entry->hash == hash
             && entry->key != dummy
@@ -233,17 +196,9 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
 
         entry = &table[j];
         if (entry->key == NULL)
-            return freeslot == NULL ? entry : freeslot;
-        if (entry->key == key
-            || (entry->hash == hash
-            && entry->key != dummy
-            && unicode_eq(entry->key, key)))
-            return entry;
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
+            break;
     }
-    assert(0);          /* NOT REACHED */
-    return 0;
+    return freeslot == NULL ? entry : freeslot;
 }
 
 /*
