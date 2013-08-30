@@ -1220,7 +1220,7 @@ def _after_fork():
     new_active = {}
     current = current_thread()
     with _active_limbo_lock:
-        for thread in _active.itervalues():
+        for thread in _enumerate():
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.
             if hasattr(thread, '_reset_internal_locks'):
