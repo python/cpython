@@ -22,6 +22,10 @@ try:
     import resource
 except ImportError:
     resource = None
+try:
+    import threading
+except ImportError:
+    threading = None
 
 mswindows = (sys.platform == "win32")
 
@@ -986,6 +990,36 @@ class ProcessTestCase(BaseTestCase):
             # ignore errors that indicate the command was not found
             if c.exception.errno not in (errno.ENOENT, errno.EACCES):
                 raise c.exception
+
+    @unittest.skipIf(threading is None, "threading required")
+    def test_double_close_on_error(self):
+        # Issue #18851
+        fds = []
+        def open_fds():
+            for i in range(20):
+                fds.extend(os.pipe())
+                time.sleep(0.001)
+        t = threading.Thread(target=open_fds)
+        t.start()
+        try:
+            with self.assertRaises(EnvironmentError):
+                subprocess.Popen(['nonexisting_i_hope'],
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        finally:
+            t.join()
+            exc = None
+            for fd in fds:
+                # If a double close occurred, some of those fds will
+                # already have been closed by mistake, and os.close()
+                # here will raise.
+                try:
+                    os.close(fd)
+                except OSError as e:
+                    exc = e
+            if exc is not None:
+                raise exc
 
     def test_issue8780(self):
         # Ensure that stdout is inherited from the parent
