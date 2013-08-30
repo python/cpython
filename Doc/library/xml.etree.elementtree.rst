@@ -105,37 +105,42 @@ Children are nested, and we can access specific child nodes by index::
    >>> root[0][1].text
    '2008'
 
-Incremental parsing
-^^^^^^^^^^^^^^^^^^^
+Pull API for asynchronous parsing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It's possible to parse XML incrementally (i.e. not the whole document at once).
-The most powerful tool for doing this is :class:`IncrementalParser`.  It does
-not require a blocking read to obtain the XML data, and is instead fed with
-data incrementally with :meth:`IncrementalParser.data_received` calls.  To get
-the parsed XML elements, call :meth:`IncrementalParser.events`.  Here's an
-example::
+Most parsing functions provided by this module require to read the whole
+document at once before returning any result.  It is possible to use a
+:class:`XMLParser` and feed data into it incrementally, but it's a push API that
+calls methods on a callback target, which is too low-level and inconvenient for
+most needs.  Sometimes what the user really wants is to be able to parse XML
+incrementally, without blocking operations, while enjoying the convenience of
+fully constructed :class:`Element` objects.
 
-    >>> incparser = ET.IncrementalParser(['start', 'end'])
-    >>> incparser.data_received('<mytag>sometext')
-    >>> list(incparser.events())
-    [('start', <Element 'mytag' at 0x7fba3f2a8688>)]
-    >>> incparser.data_received(' more text</mytag>')
-    >>> for event, elem in incparser.events():
-    ...   print(event)
-    ...   print(elem.tag, 'text=', elem.text)
-    ...
-    end
-    mytag text= sometext more text
+The most powerful tool for doing this is :class:`XMLPullParser`.  It does not
+require a blocking read to obtain the XML data, and is instead fed with data
+incrementally with :meth:`XMLPullParser.feed` calls.  To get the parsed XML
+elements, call :meth:`XMLPullParser.read_events`.  Here's an example::
+
+   >>> asyncparser = ET.XMLPullParser(['start', 'end'])
+   >>> asyncparser.feed('<mytag>sometext')
+   >>> list(asyncparser.read_events())
+   [('start', <Element 'mytag' at 0x7fa66db2be58>)]
+   >>> asyncparser.feed(' more text</mytag>')
+   >>> for event, elem in asyncparser.read_events():
+   ...   print(event)
+   ...   print(elem.tag, 'text=', elem.text)
+   ...
+   end
 
 The obvious use case is applications that operate in an asynchronous fashion
 where the XML data is being received from a socket or read incrementally from
 some storage device.  In such cases, blocking reads are unacceptable.
 
-Because it's so flexible, :class:`IncrementalParser` can be inconvenient
-to use for simpler use-cases.  If you don't mind your application blocking on
-reading XML data but would still like to have incremental parsing capabilities,
-take a look at :func:`iterparse`.  It can be useful when you're reading a large
-XML document and don't want to hold it wholly in memory.
+Because it's so flexible, :class:`XMLPullParser` can be inconvenient to use for
+simpler use-cases.  If you don't mind your application blocking on reading XML
+data but would still like to have incremental parsing capabilities, take a look
+at :func:`iterparse`.  It can be useful when you're reading a large XML document
+and don't want to hold it wholly in memory.
 
 Finding interesting elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -412,28 +417,31 @@ Functions
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user.  *source* is a filename or :term:`file object`
    containing XML data.  *events* is a sequence of events to report back.  The
-   supported events are the strings ``"start"``, ``"end"``, ``"start-ns"``
-   and ``"end-ns"`` (the "ns" events are used to get detailed namespace
+   supported events are the strings ``"start"``, ``"end"``, ``"start-ns"`` and
+   ``"end-ns"`` (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
    *parser* is an optional parser instance.  If not given, the standard
-   :class:`XMLParser` parser is used.  *parser* can only use the default
-   :class:`TreeBuilder` as a target.  Returns an :term:`iterator` providing
-   ``(event, elem)`` pairs.
+   :class:`XMLParser` parser is used.  *parser* must be a subclass of
+   :class:`XMLParser` and can only use the default :class:`TreeBuilder` as a
+   target.  Returns an :term:`iterator` providing ``(event, elem)`` pairs.
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
    for asynchronous applications where blocking reads can't be made.  For fully
-   asynchronous parsing, see :class:`IncrementalParser`.
+   asynchronous parsing, see :class:`XMLPullParser`.
 
    .. note::
 
-      :func:`iterparse` only guarantees that it has seen the ">"
-      character of a starting tag when it emits a "start" event, so the
-      attributes are defined, but the contents of the text and tail attributes
-      are undefined at that point.  The same applies to the element children;
-      they may or may not be present.
+      :func:`iterparse` only guarantees that it has seen the ">" character of a
+      starting tag when it emits a "start" event, so the attributes are defined,
+      but the contents of the text and tail attributes are undefined at that
+      point.  The same applies to the element children; they may or may not be
+      present.
 
       If you need a fully populated element, look for "end" events instead.
+
+   .. deprecated:: 3.4
+      The *parser* argument.
 
 .. function:: parse(source, parser=None)
 
@@ -871,48 +879,6 @@ QName Objects
    :class:`QName` instances are opaque.
 
 
-IncrementalParser Objects
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. class:: IncrementalParser(events=None, parser=None)
-
-   An incremental, event-driven parser suitable for non-blocking applications.
-   *events* is a sequence of events to report back.  The supported events are
-   the strings ``"start"``, ``"end"``, ``"start-ns"`` and ``"end-ns"`` (the "ns"
-   events are used to get detailed namespace information).  If *events* is
-   omitted, only ``"end"`` events are reported.  *parser* is an optional
-   parser instance.  If not given, the standard :class:`XMLParser` parser is
-   used.  *parser* can only use the default :class:`TreeBuilder` as a target.
-
-   .. method:: data_received(data)
-
-      Feed the given bytes data to the incremental parser.
-
-   .. method:: eof_received()
-
-      Signal the incremental parser that the data stream is terminated.
-
-   .. method:: events()
-
-      Iterate over the events which have been encountered in the data fed
-      to the parser.  This method yields ``(event, elem)`` pairs, where
-      *event* is a string representing the type of event (e.g. ``"end"``)
-      and *elem* is the encountered :class:`Element` object.  Events
-      provided in a previous call to :meth:`events` will not be yielded
-      again.
-
-   .. note::
-
-      :class:`IncrementalParser` only guarantees that it has seen the ">"
-      character of a starting tag when it emits a "start" event, so the
-      attributes are defined, but the contents of the text and tail attributes
-      are undefined at that point.  The same applies to the element children;
-      they may or may not be present.
-
-      If you need a fully populated element, look for "end" events instead.
-
-   .. versionadded:: 3.4
-
 
 .. _elementtree-treebuilder-objects:
 
@@ -973,13 +939,17 @@ XMLParser Objects
 
 .. class:: XMLParser(html=0, target=None, encoding=None)
 
-   :class:`Element` structure builder for XML source data, based on the expat
-   parser.  *html* are predefined HTML entities.  This flag is not supported by
-   the current implementation.  *target* is the target object.  If omitted, the
-   builder uses an instance of the standard :class:`TreeBuilder` class.
-   *encoding* [1]_ is optional.  If given, the value overrides the encoding
+   This class is the low-level building block of the module.  It uses
+   :mod:`xml.parsers.expat` for efficient, event-based parsing of XML.  It can
+   be fed XML data incrementall with the :meth:`feed` method, and parsing events
+   are translated to a push API - by invoking callbacks on the *target* object.
+   If *target* is omitted, the standard :class:`TreeBuilder` is used.  The
+   *html* argument was historically used for backwards compatibility and is now
+   deprecated.  If *encoding* [1]_ is given, the value overrides the encoding
    specified in the XML file.
 
+   .. deprecated:: 3.4
+      The *html* argument.
 
    .. method:: close()
 
@@ -999,12 +969,12 @@ XMLParser Objects
 
       Feeds data to the parser.  *data* is encoded data.
 
-   :meth:`XMLParser.feed` calls *target*\'s ``start()`` method
-   for each opening tag, its ``end()`` method for each closing tag,
-   and data is processed by method ``data()``.  :meth:`XMLParser.close`
-   calls *target*\'s method ``close()``.
-   :class:`XMLParser` can be used not only for building a tree structure.
-   This is an example of counting the maximum depth of an XML file::
+   :meth:`XMLParser.feed` calls *target*\'s ``start(tag, attrs_dict)`` method
+   for each opening tag, its ``end(tag)`` method for each closing tag, and data
+   is processed by method ``data(data)``.  :meth:`XMLParser.close` calls
+   *target*\'s method ``close()``. :class:`XMLParser` can be used not only for
+   building a tree structure. This is an example of counting the maximum depth
+   of an XML file::
 
     >>> from xml.etree.ElementTree import XMLParser
     >>> class MaxDepth:                     # The target object of the parser
@@ -1037,6 +1007,51 @@ XMLParser Objects
     >>> parser.feed(exampleXml)
     >>> parser.close()
     4
+
+
+.. _elementtree-xmlpullparser-objects:
+
+XMLPullParser Objects
+^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: XMLPullParser(events=None)
+
+   A pull parser suitable for nonblocking (asynchronous) applications.  Its
+   input-side API is similar to that of :class:`XMLParser`, but instead of
+   pushing calls to a callback target, :class:`XMLPullParser` collects an
+   internal list of parsing events and lets the user read from it. *events* is a
+   sequence of events to report back.  The supported events are the strings
+   ``"start"``, ``"end"``, ``"start-ns"`` and ``"end-ns"`` (the "ns" events are
+   used to get detailed namespace information).  If *events* is omitted, only
+   ``"end"`` events are reported.
+
+   .. method:: feed(data)
+
+      Feed the given bytes data to the parser.
+
+   .. method:: close()
+
+      Signal the parser that the data stream is terminated.
+
+   .. method:: read_events()
+
+      Iterate over the events which have been encountered in the data fed to the
+      parser.  This method yields ``(event, elem)`` pairs, where *event* is a
+      string representing the type of event (e.g. ``"end"``) and *elem* is the
+      encountered :class:`Element` object.  Events provided in a previous call
+      to :meth:`read_events` will not be yielded again.
+
+   .. note::
+
+      :class:`XMLPullParser` only guarantees that it has seen the ">"
+      character of a starting tag when it emits a "start" event, so the
+      attributes are defined, but the contents of the text and tail attributes
+      are undefined at that point.  The same applies to the element children;
+      they may or may not be present.
+
+      If you need a fully populated element, look for "end" events instead.
+
+   .. versionadded:: 3.4
 
 Exceptions
 ^^^^^^^^^^
