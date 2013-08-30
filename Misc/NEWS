@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18418: After fork(), reinit all threads states, not only active ones.
+  Patch by A. Jesse Jiryu Davis.
+
 - Issue #16611: http.cookie now correctly parses the 'secure' and 'httponly'
   cookie flags.
 
