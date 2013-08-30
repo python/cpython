@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18418: After fork(), reinit all threads states, not only active ones.
+  Patch by A. Jesse Jiryu Davis.
+
 - Issue #17974: Switch unittest from using getopt to using argparse.
 
 - Issue #11798: TestSuite now drops references to own tests after execution.
