@@ -402,10 +402,9 @@ xml.etree
 ---------
 
 Add an event-driven parser for non-blocking applications,
-:class:`~xml.etree.ElementTree.IncrementalParser`.
+:class:`~xml.etree.ElementTree.XMLPullParser`.
 
-(Contributed by Antoine Pitrou in :issue:`17782`.)
-
+(Contributed by Antoine Pitrou in :issue:`17741`.)
 
 Other improvements
 ==================
