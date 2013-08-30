@@ -1210,37 +1210,39 @@ def iterparse(source, events=None, parser=None):
     return _IterParseIterator(source, events, parser, close_source)
 
 
-class IncrementalParser:
+class XMLPullParser:
 
-    def __init__(self, events=None, parser=None):
+    def __init__(self, events=None, *, _parser=None):
+        # The _parser argument is for internal use only and must not be relied
+        # upon in user code. It will be removed in a future release.
+        # See http://bugs.python.org/issue17741 for more details.
+
         # _elementtree.c expects a list, not a deque
         self._events_queue = []
         self._index = 0
         self.root = self._root = None
-        if not parser:
-            parser = XMLParser(target=TreeBuilder())
-        self._parser = parser
+        self._parser = _parser or XMLParser(target=TreeBuilder())
         # wire up the parser for event reporting
         if events is None:
             events = ("end",)
         self._parser._setevents(self._events_queue, events)
 
-    def data_received(self, data):
+    def feed(self, data):
         if self._parser is None:
-            raise ValueError("data_received() called after end of stream")
+            raise ValueError("feed() called after end of stream")
         if data:
             try:
                 self._parser.feed(data)
             except SyntaxError as exc:
                 self._events_queue.append(exc)
 
-    def eof_received(self):
+    def close(self):
         self._root = self._parser.close()
         self._parser = None
         if self._index >= len(self._events_queue):
             self.root = self._root
 
-    def events(self):
+    def read_events(self):
         events = self._events_queue
         while True:
             index = self._index
@@ -1268,14 +1270,16 @@ class IncrementalParser:
 class _IterParseIterator:
 
     def __init__(self, source, events, parser, close_source=False):
-        self._parser = IncrementalParser(events, parser)
+        # Use the internal, undocumented _parser argument for now; When the
+        # parser argument of iterparse is removed, this can be killed.
+        self._parser = XMLPullParser(events=events, _parser=parser)
         self._file = source
         self._close_file = close_source
         self.root = None
 
     def __next__(self):
         while 1:
-            for event in self._parser.events():
+            for event in self._parser.read_events():
                 return event
             if self._parser._parser is None:
                 self.root = self._parser.root
@@ -1283,11 +1287,11 @@ class _IterParseIterator:
                     self._file.close()
                 raise StopIteration
             # load event buffer
-            data = self._file.read(16384)
+            data = self._file.read(16 * 1024)
             if data:
-                self._parser.data_received(data)
+                self._parser.feed(data)
             else:
-                self._parser.eof_received()
+                self._parser.close()
 
     def __iter__(self):
         return self
@@ -1481,9 +1485,9 @@ class XMLParser:
             pass # unknown
 
     def _setevents(self, events_queue, events_to_report):
-        # Internal API for IncrementalParser
+        # Internal API for XMLPullParser
         # events_to_report: a list of events to report during parsing (same as
-        # the *events* of IncrementalParser's constructor.
+        # the *events* of XMLPullParser's constructor.
         # events_queue: a list of actual parsing events that will be populated
         # by the underlying parser.
         #
