@@ -1,6 +1,6 @@
 '''Define SearchEngine for search dialogs.'''
 import re
-from tkinter import *
+from tkinter import StringVar, BooleanVar, TclError
 import tkinter.messagebox as tkMessageBox
 
 def get(root):
@@ -22,14 +22,13 @@ class SearchEngine:
 
         The dialogs bind these to the UI elements present in the dialogs.
         '''
-        self.root = root
-        self.patvar = StringVar(root)           # search pattern
-        self.revar = BooleanVar(root)           # regular expression?
-        self.casevar = BooleanVar(root)         # match case?
-        self.wordvar = BooleanVar(root)         # match whole word?
-        self.wrapvar = BooleanVar(root)         # wrap around buffer?
-        self.wrapvar.set(1)                     # (on by default)
-        self.backvar = BooleanVar(root)         # search backwards?
+        self.root = root  # need for report_error()
+        self.patvar = StringVar(root, '')   # search pattern
+        self.revar = BooleanVar(root, False)   # regular expression?
+        self.casevar = BooleanVar(root, False)   # match case?
+        self.wordvar = BooleanVar(root, False)   # match whole word?
+        self.wrapvar = BooleanVar(root, True)   # wrap around buffer?
+        self.backvar = BooleanVar(root, False)   # search backwards?
 
     # Access methods
 
@@ -56,9 +55,16 @@ class SearchEngine:
 
     # Higher level access methods
 
+    def setcookedpat(self, pat):
+        "Set pattern after escaping if re."
+        # called only in SearchDialog.py: 66
+        if self.isre():
+            pat = re.escape(pat)
+        self.setpat(pat)
+
     def getcookedpat(self):
         pat = self.getpat()
-        if not self.isre():
+        if not self.isre():  # if True, see setcookedpat
             pat = re.escape(pat)
         if self.isword():
             pat = r"\b%s\b" % pat
@@ -90,33 +96,28 @@ class SearchEngine:
         # Derived class could override this with something fancier
         msg = "Error: " + str(msg)
         if pat:
-            msg = msg + "\np\Pattern: " + str(pat)
+            msg = msg + "\nPattern: " + str(pat)
         if col >= 0:
             msg = msg + "\nOffset: " + str(col)
         tkMessageBox.showerror("Regular expression error",
                                msg, master=self.root)
 
-    def setcookedpat(self, pat):
-        if self.isre():
-            pat = re.escape(pat)
-        self.setpat(pat)
-
     def search_text(self, text, prog=None, ok=0):
-        '''Return (lineno, matchobj) for prog in text widget, or None.
+        '''Return (lineno, matchobj) or None for forward/backward search.
 
-        If prog is given, it should be a precompiled pattern.
-        Wrap (yes/no) and direction (forward/back) settings are used.
+        This function calls the right function with the right arguments.
+        It directly return the result of that call.
 
-        The search starts at the selection (if there is one) or at the
-        insert mark (otherwise).  If the search is forward, it starts
-        at the right of the selection; for a backward search, it
-        starts at the left end.  An empty match exactly at either end
-        of the selection (or at the insert mark if there is no
-        selection) is ignored  unless the ok flag is true -- this is
-        done to guarantee progress.
+        Text is a text widget. Prog is a precompiled pattern.
+        The ok parameteris a bit complicated as it has two effects.
 
-        If the search is allowed to wrap around, it will return the
-        original selection if (and only if) it is the only match.
+        If there is a selection, the search begin at either end,
+        depending on the direction setting and ok, with ok meaning that
+        the search starts with the selection. Otherwise, search begins
+        at the insert mark.
+
+        To aid progress, the search functions do not return an empty
+        match at the starting position unless ok is True.
         '''
 
         if not prog:
@@ -188,15 +189,18 @@ class SearchEngine:
         return None
 
 def search_reverse(prog, chars, col):
-    '''Search backwards in a string (line of text).
+    '''Search backwards and return an re match object or None.
 
     This is done by searching forwards until there is no match.
+    Prog: compiled re object with a search method returning a match.
+    Chars: line of text, without \n.
+    Col: stop index for the search; the limit for match.end().
     '''
     m = prog.search(chars)
     if not m:
         return None
     found = None
-    i, j = m.span()
+    i, j = m.span()  # m.start(), m.end() == match slice indexes
     while i < col and j <= col:
         found = m
         if i == j:
@@ -226,7 +230,7 @@ def get_line_col(index):
     line, col = map(int, index.split(".")) # Fails on invalid index
     return line, col
 
-##if __name__ == "__main__":
-##    from test import support; support.use_resources = ['gui']
-##    import unittest
-##    unittest.main('idlelib.idle_test.test_searchengine', verbosity=2, exit=False)
+if __name__ == "__main__":
+    from test import support; support.use_resources = ['gui']
+    import unittest
+    unittest.main('idlelib.idle_test.test_searchengine', verbosity=2, exit=False)
