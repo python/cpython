@@ -4940,7 +4940,7 @@ socket_inet_aton(PyObject *self, PyObject *args)
     /* special-case this address as inet_addr might return INADDR_NONE
      * for this */
     if (strcmp(ip_addr, "255.255.255.255") == 0) {
-        packed_addr = 0xFFFFFFFF;
+        packed_addr = INADDR_BROADCAST;
     } else {
 
         packed_addr = inet_addr(ip_addr);
