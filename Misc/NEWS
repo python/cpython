@@ -51,6 +51,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18756: os.urandom() now uses a lazily-opened persistent file
+  descriptor, so as to avoid using many file descriptors when run in
+  parallel from multiple threads.
+
 - Issue #18418: After fork(), reinit all threads states, not only active ones.
   Patch by A. Jesse Jiryu Davis.
 
