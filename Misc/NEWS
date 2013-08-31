@@ -48,6 +48,9 @@ Core and Builtins
 - Issue #17934: Add a clear() method to frame objects, to help clean up
   expensive details (local variables) and break reference cycles.
 
+- Issue #18780: %-formatting codes %d, %i, and %u now treat int-subclasses
+  as int (displays value of int-subclass instead of str(int-subclass) ).
+
 Library
 -------
 
