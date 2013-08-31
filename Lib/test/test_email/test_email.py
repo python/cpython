@@ -180,8 +180,8 @@ class TestMessageAPI(TestEmailBase):
 
     def test_byte_message_rfc822_only(self):
         # Make sure new bytes header parser also passes this.
-        with openfile('msg_46.txt', 'rb') as fp:
-            msgdata = fp.read()
+        with openfile('msg_46.txt') as fp:
+            msgdata = fp.read().encode('ascii')
         parser = email.parser.BytesHeaderParser()
         msg = parser.parsebytes(msgdata)
         out = BytesIO()
@@ -269,8 +269,8 @@ class TestMessageAPI(TestEmailBase):
 
     def test_as_bytes(self):
         msg = self._msgobj('msg_01.txt')
-        with openfile('msg_01.txt', 'rb') as fp:
-            data = fp.read()
+        with openfile('msg_01.txt') as fp:
+            data = fp.read().encode('ascii')
         self.assertEqual(data, bytes(msg))
         fullrepr = msg.as_bytes(unixfrom=True)
         lines = fullrepr.split(b'\n')
