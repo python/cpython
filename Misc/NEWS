@@ -177,6 +177,11 @@ Tests
   possible, since "localhost" goes through a DNS lookup under recent Windows
   versions.
 
+IDLE
+----
+
+- Issue #18489: Add tests for SearchEngine. Original patch by Phil Webster.
+
 Documentation
 -------------
 
