@@ -105,7 +105,7 @@ Children are nested, and we can access specific child nodes by index::
    >>> root[0][1].text
    '2008'
 
-Pull API for asynchronous parsing
+Pull API for non-blocking parsing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Most parsing functions provided by this module require to read the whole
@@ -121,18 +121,18 @@ require a blocking read to obtain the XML data, and is instead fed with data
 incrementally with :meth:`XMLPullParser.feed` calls.  To get the parsed XML
 elements, call :meth:`XMLPullParser.read_events`.  Here's an example::
 
-   >>> asyncparser = ET.XMLPullParser(['start', 'end'])
-   >>> asyncparser.feed('<mytag>sometext')
-   >>> list(asyncparser.read_events())
+   >>> parser = ET.XMLPullParser(['start', 'end'])
+   >>> parser.feed('<mytag>sometext')
+   >>> list(parser.read_events())
    [('start', <Element 'mytag' at 0x7fa66db2be58>)]
-   >>> asyncparser.feed(' more text</mytag>')
-   >>> for event, elem in asyncparser.read_events():
+   >>> parser.feed(' more text</mytag>')
+   >>> for event, elem in parser.read_events():
    ...   print(event)
    ...   print(elem.tag, 'text=', elem.text)
    ...
    end
 
-The obvious use case is applications that operate in an asynchronous fashion
+The obvious use case is applications that operate in a non-blocking fashion
 where the XML data is being received from a socket or read incrementally from
 some storage device.  In such cases, blocking reads are unacceptable.
 
@@ -427,8 +427,8 @@ Functions
 
    Note that while :func:`iterparse` builds the tree incrementally, it issues
    blocking reads on *source* (or the file it names).  As such, it's unsuitable
-   for asynchronous applications where blocking reads can't be made.  For fully
-   asynchronous parsing, see :class:`XMLPullParser`.
+   for applications where blocking reads can't be made.  For fully non-blocking
+   parsing, see :class:`XMLPullParser`.
 
    .. note::
 
@@ -1016,14 +1016,14 @@ XMLPullParser Objects
 
 .. class:: XMLPullParser(events=None)
 
-   A pull parser suitable for nonblocking (asynchronous) applications.  Its
-   input-side API is similar to that of :class:`XMLParser`, but instead of
-   pushing calls to a callback target, :class:`XMLPullParser` collects an
-   internal list of parsing events and lets the user read from it. *events* is a
-   sequence of events to report back.  The supported events are the strings
-   ``"start"``, ``"end"``, ``"start-ns"`` and ``"end-ns"`` (the "ns" events are
-   used to get detailed namespace information).  If *events* is omitted, only
-   ``"end"`` events are reported.
+   A pull parser suitable for non-blocking applications.  Its input-side API is
+   similar to that of :class:`XMLParser`, but instead of pushing calls to a
+   callback target, :class:`XMLPullParser` collects an internal list of parsing
+   events and lets the user read from it. *events* is a sequence of events to
+   report back.  The supported events are the strings ``"start"``, ``"end"``,
+   ``"start-ns"`` and ``"end-ns"`` (the "ns" events are used to get detailed
+   namespace information).  If *events* is omitted, only ``"end"`` events are
+   reported.
 
    .. method:: feed(data)
 
