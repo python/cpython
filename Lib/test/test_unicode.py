@@ -1134,42 +1134,27 @@ class UnicodeTest(string_tests.CommonTest,
         class Str(str, enum.Enum):
             ABC = 'abc'
         # Testing Unicode formatting strings...
-        self.assertEqual(
-                "%s, %s" % (Str.ABC, Str.ABC),
-                'Str.ABC, Str.ABC',
-                )
-        self.assertEqual(
-                "%s, %s, %d, %i, %u, %f, %5.2f" %
-                    (Str.ABC, Str.ABC,
-                     Int.IDES, Int.IDES, Int.IDES,
-                     Float.PI, Float.PI),
-                'Str.ABC, Str.ABC, 15, 15, 15, 3.141593,  3.14')
+        self.assertEqual("%s, %s" % (Str.ABC, Str.ABC),
+                         'Str.ABC, Str.ABC')
+        self.assertEqual("%s, %s, %d, %i, %u, %f, %5.2f" %
+                        (Str.ABC, Str.ABC,
+                         Int.IDES, Int.IDES, Int.IDES,
+                         Float.PI, Float.PI),
+                         'Str.ABC, Str.ABC, 15, 15, 15, 3.141593,  3.14')
 
         # formatting jobs delegated from the string implementation:
-        self.assertEqual(
-                '...%(foo)s...' % {'foo':Str.ABC},
-                '...Str.ABC...',
-                )
-        self.assertEqual(
-                '...%(foo)s...' % {'foo':Int.IDES},
-                '...Int.IDES...',
-                )
-        self.assertEqual(
-                '...%(foo)i...' % {'foo':Int.IDES},
-                '...15...',
-                )
-        self.assertEqual(
-                '...%(foo)d...' % {'foo':Int.IDES},
-                '...15...',
-                )
-        self.assertEqual(
-                '...%(foo)u...' % {'foo':Int.IDES, 'def':Float.PI},
-                '...15...',
-                )
-        self.assertEqual(
-                '...%(foo)f...' % {'foo':Float.PI,'def':123},
-                '...3.141593...',
-                )
+        self.assertEqual('...%(foo)s...' % {'foo':Str.ABC},
+                         '...Str.ABC...')
+        self.assertEqual('...%(foo)s...' % {'foo':Int.IDES},
+                         '...Int.IDES...')
+        self.assertEqual('...%(foo)i...' % {'foo':Int.IDES},
+                         '...15...')
+        self.assertEqual('...%(foo)d...' % {'foo':Int.IDES},
+                         '...15...')
+        self.assertEqual('...%(foo)u...' % {'foo':Int.IDES, 'def':Float.PI},
+                         '...15...')
+        self.assertEqual('...%(foo)f...' % {'foo':Float.PI,'def':123},
+                         '...3.141593...')
 
     @support.cpython_only
     def test_formatting_huge_precision(self):
