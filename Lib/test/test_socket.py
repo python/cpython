@@ -565,11 +565,7 @@ class SCTPStreamBase(InetTestBase):
 class Inet6TestBase(InetTestBase):
     """Base class for IPv6 socket tests."""
 
-    # Don't use "localhost" here - it may not have an IPv6 address
-    # assigned to it by default (e.g. in /etc/hosts), and if someone
-    # has assigned it an IPv4-mapped address, then it's unlikely to
-    # work with the full IPv6 API.
-    host = "::1"
+    host = support.HOSTv6
 
 class UDP6TestBase(Inet6TestBase):
     """Base class for UDP-over-IPv6 tests."""
@@ -1321,9 +1317,9 @@ class GeneralModuleTests(unittest.TestCase):
     @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 required for this test.')
     def test_flowinfo(self):
         self.assertRaises(OverflowError, socket.getnameinfo,
-                          ('::1',0, 0xffffffff), 0)
+                          (support.HOSTv6, 0, 0xffffffff), 0)
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
-            self.assertRaises(OverflowError, s.bind, ('::1', 0, -10))
+            self.assertRaises(OverflowError, s.bind, (support.HOSTv6, 0, -10))
 
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
