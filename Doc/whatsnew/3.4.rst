@@ -320,6 +320,9 @@ Socket objects have new methods to get or set their `inheritable flag
 
 * :meth:`socket.socket.get_inheritable`, :meth:`socket.socket.set_inheritable`
 
+The ``socket.AF_*`` and ``socket.SOCK_*`` constants are enumeration values,
+using the new :mod:`enum` module. This allows descriptive reporting during
+debugging, instead of seeing integer "magic numbers".
 
 ssl
 ---
