@@ -13566,11 +13566,9 @@ formatlong(PyObject *val, struct unicode_format_arg_t *arg)
     case 'd':
     case 'i':
     case 'u':
-        /* Special-case boolean: we want 0/1 */
-        if (PyBool_Check(val))
-            result = PyNumber_ToBase(val, 10);
-        else
-            result = Py_TYPE(val)->tp_str(val);
+        /* int and int subclasses should print numerically when a numeric */
+        /* format code is used (see issue18780) */
+        result = PyNumber_ToBase(val, 10);
         break;
     case 'o':
         numnondigits = 2;
