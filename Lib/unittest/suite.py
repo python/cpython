@@ -66,6 +66,7 @@ class BaseTestSuite(object):
 
     def _removeTestAtIndex(self, index):
         """Stop holding a reference to the TestCase at index."""
+        return
         try:
             self._tests[index] = None
         except TypeError:
