@@ -1161,9 +1161,12 @@ class GeneralModuleTests(unittest.TestCase):
         socket.getaddrinfo(HOST, 80)
         socket.getaddrinfo(HOST, None)
         # test family and socktype filters
-        infos = socket.getaddrinfo(HOST, None, socket.AF_INET)
-        for family, _, _, _, _ in infos:
+        infos = socket.getaddrinfo(HOST, 80, socket.AF_INET, socket.SOCK_STREAM)
+        for family, type, _, _, _ in infos:
             self.assertEqual(family, socket.AF_INET)
+            self.assertEqual(str(family), 'AddressFamily.AF_INET')
+            self.assertEqual(type, socket.SOCK_STREAM)
+            self.assertEqual(str(type), 'SocketType.SOCK_STREAM')
         infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
         for _, socktype, _, _, _ in infos:
             self.assertEqual(socktype, socket.SOCK_STREAM)
@@ -1321,6 +1324,27 @@ class GeneralModuleTests(unittest.TestCase):
         with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
             self.assertRaises(OverflowError, s.bind, (support.HOSTv6, 0, -10))
 
+    def test_str_for_enums(self):
+        # Make sure that the AF_* and SOCK_* constants have enum-like string
+        # reprs.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            self.assertEqual(str(s.family), 'AddressFamily.AF_INET')
+            self.assertEqual(str(s.type), 'SocketType.SOCK_STREAM')
+
+    @unittest.skipIf(os.name == 'nt', 'Will not work on Windows')
+    def test_uknown_socket_family_repr(self):
+        # Test that when created with a family that's not one of the known
+        # AF_*/SOCK_* constants, socket.family just returns the number.
+        #
+        # To do this we fool socket.socket into believing it already has an
+        # open fd because on this path it doesn't actually verify the family and
+        # type and populates the socket object.
+        #
+        # On Windows this trick won't work, so the test is skipped.
+        fd, _ = tempfile.mkstemp()
+        with socket.socket(family=42424, type=13331, fileno=fd) as s:
+            self.assertEqual(s.family, 42424)
+            self.assertEqual(s.type, 13331)
 
 @unittest.skipUnless(HAVE_SOCKET_CAN, 'SocketCan required for this test.')
 class BasicCANTest(unittest.TestCase):
