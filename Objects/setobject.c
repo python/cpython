@@ -65,10 +65,11 @@ chaining would be substantial (100% with typical malloc overhead).
 The initial probe index is computed as hash mod the table size. Subsequent
 probe indices are computed as explained in Objects/dictobject.c.
 
-To improve cache locality, each probe is done in pairs.
-After the probe is examined, an adjacent entry is then examined as well.
-The likelihood is that an adjacent entry is in the same cache line and
-can be examined more cheaply than another probe elsewhere in memory.
+To improve cache locality, each probe inspects nearby entries before
+moving on to probes elsewhere in memory.  Depending on alignment and the
+size of a cache line, the nearby entries are cheaper to inspect than
+other probes elsewhere in memory.  This probe strategy reduces the cost
+of hash collisions.
 
 All arithmetic on hash should ignore overflow.
 
@@ -111,6 +112,26 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             freeslot = entry;
 
         entry = &table[j ^ 1];
+        if (entry->key == NULL)
+            break;
+        if (entry->key == key)
+            return entry;
+        if (entry->hash == hash && entry->key != dummy) {
+            PyObject *startkey = entry->key;
+            Py_INCREF(startkey);
+            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+            Py_DECREF(startkey);
+            if (cmp < 0)
+                return NULL;
+            if (table != so->table || entry->key != startkey)
+                return set_lookkey(so, key, hash);
+            if (cmp > 0)
+                return entry;
+        }
+        if (entry->key == dummy && freeslot == NULL)
+            freeslot = entry;
+
+        entry = &table[j ^ 2];
         if (entry->key == NULL)
             break;
         if (entry->key == key)
@@ -190,6 +211,17 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
+        entry = &table[j ^ 2];
+        if (entry->key == NULL)
+            break;
+        if (entry->key == key
+            || (entry->hash == hash
+            && entry->key != dummy
+            && unicode_eq(entry->key, key)))
+            return entry;
+        if (entry->key == dummy && freeslot == NULL)
+            freeslot = entry;
+
         i = i * 5 + perturb + 1;
         j = i & mask;
         perturb >>= PERTURB_SHIFT;
@@ -256,6 +288,9 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == NULL)
             break;
         entry = &table[j ^ 1];
+        if (entry->key == NULL)
+            break;
+        entry = &table[j ^ 2];
         if (entry->key == NULL)
             break;
         i = i * 5 + perturb + 1;
