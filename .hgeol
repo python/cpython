@@ -31,6 +31,7 @@ Lib/test/cjkencodings/* = BIN
 Lib/test/decimaltestdata/*.decTest = BIN
 Lib/test/sndhdrdata/sndhdr.* = BIN
 Lib/test/test_email/data/msg_26.txt = BIN
+Lib/test/xmltestdata/* = BIN
 
 Lib/venv/scripts/nt/* = BIN
 
