@@ -26,7 +26,6 @@
 **.xar  = BIN
 **.zip  = BIN
 
-Lib/email/test/data/msg_26.txt = BIN
 Lib/test/cjkencodings/* = BIN
 Lib/test/decimaltestdata/*.decTest = BIN
 Lib/test/sndhdrdata/sndhdr.* = BIN
