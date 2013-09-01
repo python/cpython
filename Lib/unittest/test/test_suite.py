@@ -303,6 +303,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         suite.run(unittest.TestResult())
 
     def test_remove_test_at_index(self):
+        if not unittest.BaseTestSuite._cleanup:
+            raise unittest.SkipTest("Suite cleanup is disabled")
+
         suite = unittest.TestSuite()
 
         suite._tests = [1, 2, 3]
@@ -311,6 +314,9 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         self.assertEqual([1, None, 3], suite._tests)
 
     def test_remove_test_at_index_not_indexable(self):
+        if not unittest.BaseTestSuite._cleanup:
+            raise unittest.SkipTest("Suite cleanup is disabled")
+
         suite = unittest.TestSuite()
         suite._tests = None
 
@@ -318,6 +324,8 @@ class Test_TestSuite(unittest.TestCase, TestEquality):
         suite._removeTestAtIndex(2)
 
     def assert_garbage_collect_test_after_run(self, TestSuiteClass):
+        if not unittest.BaseTestSuite._cleanup:
+            raise unittest.SkipTest("Suite cleanup is disabled")
 
         class Foo(unittest.TestCase):
             def test_nothing(self):

@@ -496,6 +496,8 @@ def main(tests=None, **kwargs):
 
     if ns.slaveargs is not None:
         args, kwargs = json.loads(ns.slaveargs)
+        if kwargs.get('huntrleaks'):
+            unittest.BaseTestSuite._cleanup = False
         try:
             result = runtest(*args, **kwargs)
         except KeyboardInterrupt:
@@ -527,6 +529,9 @@ def main(tests=None, **kwargs):
             # garbage that is not collectable by the GC is reported.
             #gc.set_debug(gc.DEBUG_SAVEALL)
             found_garbage = []
+
+    if ns.huntrleaks:
+        unittest.BaseTestSuite._cleanup = False
 
     if ns.single:
         filename = os.path.join(TEMPDIR, 'pynexttest')
