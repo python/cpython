@@ -1926,7 +1926,7 @@ class POSIXProcessTestCase(BaseTestCase):
             self.assertIn('overriding close_fds', str(context.warning))
 
     def test_pass_fds_inheritable(self):
-        script = support.findfile("inherited.py", subdir="subprocessdata")
+        script = support.findfile("fd_status.py", subdir="subprocessdata")
 
         inheritable, non_inheritable = os.pipe()
         self.addCleanup(os.close, inheritable)
@@ -1945,7 +1945,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
         # the inheritable file descriptor must be inherited, so its inheritable
         # flag must be set in the child process after fork() and before exec()
-        self.assertEqual(fds, set(pass_fds))
+        self.assertEqual(fds, set(pass_fds), "output=%a" % output)
 
         # inheritable flag must not be changed in the parent process
         self.assertEqual(os.get_inheritable(inheritable), True)
