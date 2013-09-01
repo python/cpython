@@ -3,7 +3,7 @@
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
-   Copyright (c) 2003-2008 Python Software Foundation.
+   Copyright (c) 2003-2013 Python Software Foundation.
    All rights reserved.
 */
 
