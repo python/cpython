@@ -159,7 +159,7 @@ class Test_TextTestRunner(unittest.TestCase):
 
         # This used to raise an exception due to TextTestResult not passing
         # on arguments in its __init__ super call
-        ATextResult(None, None, None)
+        ATextResult(None, None, 1)
 
 
     def testBufferAndFailfast(self):
