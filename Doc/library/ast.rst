@@ -131,10 +131,10 @@ and classes for traversing abstract syntax trees:
 
 .. function:: literal_eval(node_or_string)
 
-   Safely evaluate an expression node or a string containing a Python
-   expression.  The string or node provided may only consist of the following
-   Python literal structures: strings, numbers, tuples, lists, dicts, booleans,
-   and ``None``.
+   Safely evaluate an expression node or a Unicode or *Latin-1* encoded string
+   containing a Python expression.  The string or node provided may only consist
+   of the following Python literal structures: strings, numbers, tuples, lists,
+   dicts, booleans, and ``None``.
 
    This can be used for safely evaluating strings containing Python expressions
    from untrusted sources without the need to parse the values oneself.

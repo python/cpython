@@ -199,8 +199,10 @@ available.  They are listed here in alphabetical order.
 
    Compile the *source* into a code or AST object.  Code objects can be executed
    by an :keyword:`exec` statement or evaluated by a call to :func:`eval`.
-   *source* can either be a string or an AST object.  Refer to the :mod:`ast`
-   module documentation for information on how to work with AST objects.
+   *source* can either be a Unicode string, a *Latin-1* encoded string or an
+   AST object.
+   Refer to the :mod:`ast` module documentation for information on how to work
+   with AST objects.
 
    The *filename* argument should give the file from which the code was read;
    pass some recognizable value if it wasn't read from a file (``'<string>'`` is
@@ -388,9 +390,9 @@ available.  They are listed here in alphabetical order.
 
 .. function:: eval(expression[, globals[, locals]])
 
-   The arguments are a string and optional globals and locals.  If provided,
-   *globals* must be a dictionary.  If provided, *locals* can be any mapping
-   object.
+   The arguments are a Unicode or *Latin-1* encoded string and optional
+   globals and locals.  If provided, *globals* must be a dictionary.
+   If provided, *locals* can be any mapping object.
 
    .. versionchanged:: 2.4
       formerly *locals* was required to be a dictionary.
