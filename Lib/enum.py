@@ -50,7 +50,6 @@ def _make_class_unpicklable(cls):
     cls.__reduce__ = _break_on_call_reduce
     cls.__module__ = '<unknown>'
 
-
 class _EnumDict(dict):
     """Keeps track of definition order of the enum items.
 
@@ -182,7 +181,7 @@ class EnumMeta(type):
 
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
-        for name in ('__repr__', '__str__', '__getnewargs__'):
+        for name in ('__repr__', '__str__', '__format__', '__getnewargs__'):
             class_method = getattr(enum_class, name)
             obj_method = getattr(member_type, name, None)
             enum_method = getattr(first_enum, name, None)
@@ -440,6 +439,21 @@ class Enum(metaclass=EnumMeta):
         if type(other) is self.__class__:
             return self is other
         return NotImplemented
+
+    def __format__(self, format_spec):
+        # mixed-in Enums should use the mixed-in type's __format__, otherwise
+        # we can get strange results with the Enum name showing up instead of
+        # the value
+
+        # pure Enum branch
+        if self._member_type_ is object:
+            cls = str
+            val = str(self)
+        # mix-in branch
+        else:
+            cls = self._member_type_
+            val = self.value
+        return cls.__format__(val, format_spec)
 
     def __getnewargs__(self):
         return (self._value_, )

@@ -67,6 +67,33 @@ class TestEnum(unittest.TestCase):
             WINTER = 4
         self.Season = Season
 
+        class Konstants(float, Enum):
+            E = 2.7182818
+            PI = 3.1415926
+            TAU = 2 * PI
+        self.Konstants = Konstants
+
+        class Grades(IntEnum):
+            A = 5
+            B = 4
+            C = 3
+            D = 2
+            F = 0
+        self.Grades = Grades
+
+        class Directional(str, Enum):
+            EAST = 'east'
+            WEST = 'west'
+            NORTH = 'north'
+            SOUTH = 'south'
+        self.Directional = Directional
+
+        from datetime import date
+        class Holiday(date, Enum):
+            NEW_YEAR = 2013, 1, 1
+            IDES_OF_MARCH = 2013, 3, 15
+        self.Holiday = Holiday
+
     def test_dir_on_class(self):
         Season = self.Season
         self.assertEqual(
@@ -207,6 +234,77 @@ class TestEnum(unittest.TestCase):
         self.assertIs(type(Huh.name), Huh)
         self.assertEqual(Huh.name.name, 'name')
         self.assertEqual(Huh.name.value, 1)
+
+    def test_format_enum(self):
+        Season = self.Season
+        self.assertEqual('{}'.format(Season.SPRING),
+                         '{}'.format(str(Season.SPRING)))
+        self.assertEqual( '{:}'.format(Season.SPRING),
+                          '{:}'.format(str(Season.SPRING)))
+        self.assertEqual('{:20}'.format(Season.SPRING),
+                         '{:20}'.format(str(Season.SPRING)))
+        self.assertEqual('{:^20}'.format(Season.SPRING),
+                         '{:^20}'.format(str(Season.SPRING)))
+        self.assertEqual('{:>20}'.format(Season.SPRING),
+                         '{:>20}'.format(str(Season.SPRING)))
+        self.assertEqual('{:<20}'.format(Season.SPRING),
+                         '{:<20}'.format(str(Season.SPRING)))
+
+    def test_format_enum_custom(self):
+        class TestFloat(float, Enum):
+            one = 1.0
+            two = 2.0
+            def __format__(self, spec):
+                return 'TestFloat success!'
+        self.assertEqual('{}'.format(TestFloat.one), 'TestFloat success!')
+
+    def assertFormatIsValue(self, spec, member):
+        self.assertEqual(spec.format(member), spec.format(member.value))
+
+    def test_format_enum_date(self):
+        Holiday = self.Holiday
+        self.assertFormatIsValue('{}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:20}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:^20}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:>20}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:<20}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:%Y %m}', Holiday.IDES_OF_MARCH)
+        self.assertFormatIsValue('{:%Y %m %M:00}', Holiday.IDES_OF_MARCH)
+
+    def test_format_enum_float(self):
+        Konstants = self.Konstants
+        self.assertFormatIsValue('{}', Konstants.TAU)
+        self.assertFormatIsValue('{:}', Konstants.TAU)
+        self.assertFormatIsValue('{:20}', Konstants.TAU)
+        self.assertFormatIsValue('{:^20}', Konstants.TAU)
+        self.assertFormatIsValue('{:>20}', Konstants.TAU)
+        self.assertFormatIsValue('{:<20}', Konstants.TAU)
+        self.assertFormatIsValue('{:n}', Konstants.TAU)
+        self.assertFormatIsValue('{:5.2}', Konstants.TAU)
+        self.assertFormatIsValue('{:f}', Konstants.TAU)
+
+    def test_format_enum_int(self):
+        Grades = self.Grades
+        self.assertFormatIsValue('{}', Grades.C)
+        self.assertFormatIsValue('{:}', Grades.C)
+        self.assertFormatIsValue('{:20}', Grades.C)
+        self.assertFormatIsValue('{:^20}', Grades.C)
+        self.assertFormatIsValue('{:>20}', Grades.C)
+        self.assertFormatIsValue('{:<20}', Grades.C)
+        self.assertFormatIsValue('{:+}', Grades.C)
+        self.assertFormatIsValue('{:08X}', Grades.C)
+        self.assertFormatIsValue('{:b}', Grades.C)
+
+    def test_format_enum_str(self):
+        Directional = self.Directional
+        self.assertFormatIsValue('{}', Directional.WEST)
+        self.assertFormatIsValue('{:}', Directional.WEST)
+        self.assertFormatIsValue('{:20}', Directional.WEST)
+        self.assertFormatIsValue('{:^20}', Directional.WEST)
+        self.assertFormatIsValue('{:>20}', Directional.WEST)
+        self.assertFormatIsValue('{:<20}', Directional.WEST)
+
     def test_hash(self):
         Season = self.Season
         dates = {}
@@ -232,7 +330,7 @@ class TestEnum(unittest.TestCase):
 
     def test_floatenum_from_scratch(self):
         class phy(float, Enum):
-            pi = 3.141596
+            pi = 3.1415926
             tau = 2 * pi
         self.assertTrue(phy.pi < phy.tau)
 
@@ -240,7 +338,7 @@ class TestEnum(unittest.TestCase):
         class FloatEnum(float, Enum):
             pass
         class phy(FloatEnum):
-            pi = 3.141596
+            pi = 3.1415926
             tau = 2 * pi
         self.assertTrue(phy.pi < phy.tau)
 
