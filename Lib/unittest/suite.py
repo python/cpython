@@ -16,6 +16,8 @@ def _call_if_exists(parent, attr):
 class BaseTestSuite(object):
     """A simple test suite that doesn't provide class or module shared fixtures.
     """
+    _cleanup = True
+
     def __init__(self, tests=()):
         self._tests = []
         self.addTests(tests)
@@ -61,7 +63,8 @@ class BaseTestSuite(object):
             if result.shouldStop:
                 break
             test(result)
-            self._removeTestAtIndex(index)
+            if self._cleanup:
+                self._removeTestAtIndex(index)
         return result
 
     def _removeTestAtIndex(self, index):
@@ -115,7 +118,8 @@ class TestSuite(BaseTestSuite):
             else:
                 test.debug()
 
-            self._removeTestAtIndex(index)
+            if self._cleanup:
+                self._removeTestAtIndex(index)
 
         if topLevel:
             self._tearDownPreviousClass(None, result)
