@@ -1,4 +1,6 @@
-# Very rudimentary test of threading module
+"""
+Tests for the threading module.
+"""
 
 import test.support
 from test.support import verbose, strip_python_stderr, import_module
