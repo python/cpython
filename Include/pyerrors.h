@@ -75,6 +75,7 @@ typedef PyOSErrorObject PyWindowsErrorObject;
 
 PyAPI_FUNC(void) PyErr_SetNone(PyObject *);
 PyAPI_FUNC(void) PyErr_SetObject(PyObject *, PyObject *);
+PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
 PyAPI_FUNC(void) PyErr_SetString(
     PyObject *exception,
     const char *string   /* decoded from utf-8 */
