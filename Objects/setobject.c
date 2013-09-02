@@ -11,8 +11,10 @@
 #include "structmember.h"
 #include "stringlib/eq.h"
 
-/* This must be >= 1. */
+/* This must be >= 1 */
 #define PERTURB_SHIFT 5
+
+/* This should be >= PySet_MINSIZE - 1 */
 #define LINEAR_PROBES 9
 
 /* Object used as dummy key to fill deleted entries */
@@ -123,7 +125,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         }
 
         perturb >>= PERTURB_SHIFT;
-        i = i * 5 + perturb + 1;
+        i = i * 5 + 1 + perturb;
 
         entry = &table[i & mask];
         if (entry->key == NULL)
@@ -187,7 +189,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         }
 
         perturb >>= PERTURB_SHIFT;
-        i = i * 5 + perturb + 1;
+        i = i * 5 + 1 + perturb;
 
         entry = &table[i & mask];
         if (entry->key == NULL)
@@ -257,7 +259,7 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto found_null;
         }
         perturb >>= PERTURB_SHIFT;
-        i = i * 5 + perturb + 1;
+        i = i * 5 + 1 + perturb;
     }
   found_null:
     so->fill++;
