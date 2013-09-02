@@ -27,6 +27,7 @@ set_key_error(PyObject *arg)
 
 /* This must be >= 1. */
 #define PERTURB_SHIFT 5
+#define LINEAR_PROBES 9
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
@@ -59,17 +60,17 @@ static int numfree = 0;
 /*
 The basic lookup function used by all operations.
 This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
-Open addressing is preferred over chaining since the link overhead for
-chaining would be substantial (100% with typical malloc overhead).
 
-The initial probe index is computed as hash mod the table size. Subsequent
-probe indices are computed as explained in Objects/dictobject.c.
+The initial probe index is computed as hash mod the table size.
+Subsequent probe indices are computed as explained in Objects/dictobject.c.
 
-To improve cache locality, each probe inspects nearby entries before
-moving on to probes elsewhere in memory.  Depending on alignment and the
-size of a cache line, the nearby entries are cheaper to inspect than
-other probes elsewhere in memory.  This probe strategy reduces the cost
-of hash collisions.
+To improve cache locality, each probe inspects a series of consecutive
+nearby entries before moving on to probes elsewhere in memory.  This leaves
+us with a hybrid of linear probing and open addressing.  The linear probing
+reduces the cost of hash collisions because consecutive memory accesses
+tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
+we then use open addressing with the upper bits from the hash value.  This
+helps break-up long chains of collisions.
 
 All arithmetic on hash should ignore overflow.
 
@@ -83,13 +84,14 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *table = so->table;
     setentry *freeslot = NULL;
     setentry *entry;
+    setentry *limit;
     size_t perturb = hash;
     size_t mask = so->mask;
-    size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior. */
-    size_t j = i;
+    size_t i = (size_t)hash; /* Unsigned for defined overflow behavior. */
+    size_t j;
     int cmp;
 
-    entry = &table[i];
+    entry = &table[i & mask];
     if (entry->key == NULL)
         return entry;
 
@@ -111,54 +113,37 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
-        entry = &table[j ^ 1];
-        if (entry->key == NULL)
-            break;
-        if (entry->key == key)
-            return entry;
-        if (entry->hash == hash && entry->key != dummy) {
-            PyObject *startkey = entry->key;
-            Py_INCREF(startkey);
-            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp < 0)
-                return NULL;
-            if (table != so->table || entry->key != startkey)
-                return set_lookkey(so, key, hash);
-            if (cmp > 0)
+        limit = &table[mask];
+        for (j = 0 ; j < LINEAR_PROBES ; j++) {
+            entry = (entry == limit) ? &table[0] : entry + 1;
+            if (entry->key == NULL)
+                goto found_null;
+            if (entry->key == key)
                 return entry;
+            if (entry->hash == hash && entry->key != dummy) {
+                PyObject *startkey = entry->key;
+                Py_INCREF(startkey);
+                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                Py_DECREF(startkey);
+                if (cmp < 0)
+                    return NULL;
+                if (table != so->table || entry->key != startkey)
+                    return set_lookkey(so, key, hash);
+                if (cmp > 0)
+                    return entry;
+            }
+            if (entry->key == dummy && freeslot == NULL)
+                freeslot = entry;
         }
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
 
-        entry = &table[j ^ 2];
-        if (entry->key == NULL)
-            break;
-        if (entry->key == key)
-            return entry;
-        if (entry->hash == hash && entry->key != dummy) {
-            PyObject *startkey = entry->key;
-            Py_INCREF(startkey);
-            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-            Py_DECREF(startkey);
-            if (cmp < 0)
-                return NULL;
-            if (table != so->table || entry->key != startkey)
-                return set_lookkey(so, key, hash);
-            if (cmp > 0)
-                return entry;
-        }
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
-
-        i = i * 5 + perturb + 1;
-        j = i & mask;
         perturb >>= PERTURB_SHIFT;
+        i = i * 5 + perturb + 1;
 
-        entry = &table[j];
+        entry = &table[i & mask];
         if (entry->key == NULL)
             break;
     }
+  found_null:
     return freeslot == NULL ? entry : freeslot;
 }
 
@@ -173,10 +158,11 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *table = so->table;
     setentry *freeslot = NULL;
     setentry *entry;
+    setentry *limit;
     size_t perturb = hash;
     size_t mask = so->mask;
-    size_t i = (size_t)hash & mask;
-    size_t j = i;
+    size_t i = (size_t)hash;
+    size_t j;
 
     /* Make sure this function doesn't have to handle non-unicode keys,
        including subclasses of str; e.g., one reason to subclass
@@ -187,7 +173,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         return set_lookkey(so, key, hash);
     }
 
-    entry = &table[i];
+    entry = &table[i & mask];
     if (entry->key == NULL)
         return entry;
 
@@ -200,36 +186,28 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
-        entry = &table[j ^ 1];
-        if (entry->key == NULL)
-            break;
-        if (entry->key == key
-            || (entry->hash == hash
-            && entry->key != dummy
-            && unicode_eq(entry->key, key)))
-            return entry;
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
+        limit = &table[mask];
+        for (j = 0 ; j < LINEAR_PROBES ; j++) {
+            entry = (entry == limit) ? &table[0] : entry + 1;
+            if (entry->key == NULL)
+                goto found_null;
+            if (entry->key == key
+                || (entry->hash == hash
+                    && entry->key != dummy
+                    && unicode_eq(entry->key, key)))
+                return entry;
+            if (entry->key == dummy && freeslot == NULL)
+                freeslot = entry;
+        }
 
-        entry = &table[j ^ 2];
-        if (entry->key == NULL)
-            break;
-        if (entry->key == key
-            || (entry->hash == hash
-            && entry->key != dummy
-            && unicode_eq(entry->key, key)))
-            return entry;
-        if (entry->key == dummy && freeslot == NULL)
-            freeslot = entry;
-
-        i = i * 5 + perturb + 1;
-        j = i & mask;
         perturb >>= PERTURB_SHIFT;
+        i = i * 5 + perturb + 1;
 
-        entry = &table[j];
+        entry = &table[i & mask];
         if (entry->key == NULL)
             break;
     }
+  found_null:
     return freeslot == NULL ? entry : freeslot;
 }
 
@@ -280,23 +258,22 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *entry;
     size_t perturb = hash;
     size_t mask = (size_t)so->mask;
-    size_t i, j;
+    size_t i = (size_t)hash;
+    size_t j;
 
-    i = j = (size_t)hash & mask;
     while (1) {
-        entry = &table[j];
+        entry = &table[i & mask];
         if (entry->key == NULL)
-            break;
-        entry = &table[j ^ 1];
-        if (entry->key == NULL)
-            break;
-        entry = &table[j ^ 2];
-        if (entry->key == NULL)
-            break;
-        i = i * 5 + perturb + 1;
-        j = i & mask;
+            goto found_null;
+        for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+            entry = &table[(i + j) & mask];
+            if (entry->key == NULL)
+                goto found_null;
+        }
         perturb >>= PERTURB_SHIFT;
+        i = i * 5 + perturb + 1;
     }
+  found_null:
     so->fill++;
     entry->key = key;
     entry->hash = hash;
