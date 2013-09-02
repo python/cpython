@@ -918,14 +918,15 @@ def runtest(test, verbose, quiet,
     test -- the name of the test
     verbose -- if true, print more messages
     quiet -- if true, don't print 'skipped' messages (probably redundant)
-    test_times -- a list of (time, test_name) pairs
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
+    use_resources -- list of extra resources to use
     output_on_failure -- if true, display test output on failure
     timeout -- dump the traceback and exit if a test takes more than
                timeout seconds
+    failfast, match_tests -- See regrtest command-line flags for these.
 
-    Returns one of the test result constants:
+    Returns the tuple result, test_time, where result is one of the constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
         RESOURCE_DENIED  test skipped because resource denied
         SKIPPED          test skipped for some other reason
@@ -1276,8 +1277,7 @@ def runtest_inner(test, verbose, quiet,
                 test_runner = lambda: support.run_unittest(tests)
             test_runner()
             if huntrleaks:
-                refleak = dash_R(the_module, test, test_runner,
-                    huntrleaks)
+                refleak = dash_R(the_module, test, test_runner, huntrleaks)
             test_time = time.time() - start_time
     except support.ResourceDenied as msg:
         if not quiet:
