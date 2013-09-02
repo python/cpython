@@ -95,20 +95,6 @@ To avoid slowing down lookups on a near-full table, we resize the table when
 it's USABLE_FRACTION (currently two-thirds) full.
 */
 
-/* Set a key error with the specified argument, wrapping it in a
- * tuple automatically so that tuple keys are not unpacked as the
- * exception arguments. */
-static void
-set_key_error(PyObject *arg)
-{
-    PyObject *tup;
-    tup = PyTuple_Pack(1, arg);
-    if (!tup)
-        return; /* caller will expect error to be set anyway */
-    PyErr_SetObject(PyExc_KeyError, tup);
-    Py_DECREF(tup);
-}
-
 #define PERTURB_SHIFT 5
 
 /*
@@ -1241,7 +1227,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
     if (ep == NULL)
         return -1;
     if (*value_addr == NULL) {
-        set_key_error(key);
+        _PyErr_SetKeyError(key);
         return -1;
     }
     old_value = *value_addr;
@@ -1530,7 +1516,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             else if (PyErr_Occurred())
                 return NULL;
         }
-        set_key_error(key);
+        _PyErr_SetKeyError(key);
         return NULL;
     }
     else
@@ -2302,7 +2288,7 @@ dict_pop(PyDictObject *mp, PyObject *args)
             Py_INCREF(deflt);
             return deflt;
         }
-        set_key_error(key);
+        _PyErr_SetKeyError(key);
         return NULL;
     }
     if (!PyUnicode_CheckExact(key) ||
@@ -2320,7 +2306,7 @@ dict_pop(PyDictObject *mp, PyObject *args)
             Py_INCREF(deflt);
             return deflt;
         }
-        set_key_error(key);
+        _PyErr_SetKeyError(key);
         return NULL;
     }
     *value_addr = NULL;

@@ -117,6 +117,20 @@ PyErr_SetObject(PyObject *exception, PyObject *value)
     PyErr_Restore(exception, value, tb);
 }
 
+/* Set a key error with the specified argument, wrapping it in a
+ * tuple automatically so that tuple keys are not unpacked as the
+ * exception arguments. */
+void
+_PyErr_SetKeyError(PyObject *arg)
+{
+    PyObject *tup;
+    tup = PyTuple_Pack(1, arg);
+    if (!tup)
+        return; /* caller will expect error to be set anyway */
+    PyErr_SetObject(PyExc_KeyError, tup);
+    Py_DECREF(tup);
+}
+
 void
 PyErr_SetNone(PyObject *exception)
 {
