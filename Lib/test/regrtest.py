@@ -426,6 +426,38 @@ def _parse_args(args, **kwargs):
     return ns
 
 
+def run_test_in_subprocess(testname, ns):
+    """Run the given test in a subprocess with --slaveargs.
+
+    ns is the option Namespace parsed from command-line arguments. regrtest
+    is invoked in a subprocess with the --slaveargs argument; when the
+    subprocess exits, its return code, stdout and stderr are returned as a
+    3-tuple.
+    """
+    from subprocess import Popen, PIPE
+    base_cmd = ([sys.executable] + support.args_from_interpreter_flags() +
+                ['-X', 'faulthandler', '-m', 'test.regrtest'])
+
+    slaveargs = (
+            (testname, ns.verbose, ns.quiet),
+            dict(huntrleaks=ns.huntrleaks,
+                 use_resources=ns.use_resources,
+                 debug=ns.debug, output_on_failure=ns.verbose3,
+                 timeout=ns.timeout, failfast=ns.failfast,
+                 match_tests=ns.match_tests))
+    # Running the child from the same working directory as regrtest's original
+    # invocation ensures that TEMPDIR for the child is the same when
+    # sysconfig.is_python_build() is true. See issue 15300.
+    popen = Popen(base_cmd + ['--slaveargs', json.dumps(slaveargs)],
+                  stdout=PIPE, stderr=PIPE,
+                  universal_newlines=True,
+                  close_fds=(os.name != 'nt'),
+                  cwd=support.SAVEDCWD)
+    stdout, stderr = popen.communicate()
+    retcode = popen.wait()
+    return retcode, stdout, stderr
+
+
 def main(tests=None, **kwargs):
     """Execute a test suite.
 
@@ -648,13 +680,9 @@ def main(tests=None, **kwargs):
             print("Multiprocess option requires thread support")
             sys.exit(2)
         from queue import Queue
-        from subprocess import Popen, PIPE
         debug_output_pat = re.compile(r"\[\d+ refs, \d+ blocks\]$")
         output = Queue()
         pending = MultiprocessTests(tests)
-        opt_args = support.args_from_interpreter_flags()
-        base_cmd = [sys.executable] + opt_args
-        base_cmd += ['-X', 'faulthandler', '-m', 'test.regrtest']
         def work():
             # A worker thread.
             try:
@@ -664,25 +692,7 @@ def main(tests=None, **kwargs):
                     except StopIteration:
                         output.put((None, None, None, None))
                         return
-                    args_tuple = (
-                        (test, ns.verbose, ns.quiet),
-                        dict(huntrleaks=ns.huntrleaks,
-                             use_resources=ns.use_resources,
-                             debug=ns.debug, output_on_failure=ns.verbose3,
-                             timeout=ns.timeout, failfast=ns.failfast,
-                             match_tests=ns.match_tests)
-                    )
-                    # -E is needed by some tests, e.g. test_import
-                    # Running the child from the same working directory ensures
-                    # that TEMPDIR for the child is the same when
-                    # sysconfig.is_python_build() is true. See issue 15300.
-                    popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
-                                   stdout=PIPE, stderr=PIPE,
-                                   universal_newlines=True,
-                                   close_fds=(os.name != 'nt'),
-                                   cwd=support.SAVEDCWD)
-                    stdout, stderr = popen.communicate()
-                    retcode = popen.wait()
+                    retcode, stdout, stderr = run_test_in_subprocess(test, ns)
                     # Strip last refcount output line if it exists, since it
                     # comes from the shutdown of the interpreter in the subcommand.
                     stderr = debug_output_pat.sub("", stderr)
