@@ -3426,10 +3426,10 @@ PyDoc_STRVAR(count_doc,
 Return a count object whose .next() method returns consecutive values.\n\
 Equivalent to:\n\n\
     def count(firstval=0, step=1):\n\
-    x = firstval\n\
-    while 1:\n\
-        yield x\n\
-        x += step\n");
+        x = firstval\n\
+        while 1:\n\
+            yield x\n\
+            x += step\n");
 
 static PyTypeObject count_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
