@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18901: The sunau getparams method now returns a namedtuple rather than
+  a plain tuple.  Patch by Claudiu Popa.
+
 - Issue #17487: The result of the wave getparams method now is pickleable again.
   Patch by Claudiu Popa.
 
