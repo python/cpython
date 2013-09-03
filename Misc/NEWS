@@ -54,6 +54,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16826: Don't check for PYTHONCASEOK if interpreter started with -E.
+
 - Issue #18901: The sunau getparams method now returns a namedtuple rather than
   a plain tuple.  Patch by Claudiu Popa.
 
