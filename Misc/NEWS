@@ -54,6 +54,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16826: Don't check for PYTHONCASEOK if interpreter started with -E.
+
 - Issue #18756: os.urandom() now uses a lazily-opened persistent file
   descriptor, so as to avoid using many file descriptors when run in
   parallel from multiple threads.
