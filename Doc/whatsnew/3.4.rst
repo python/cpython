@@ -365,6 +365,13 @@ Streaming struct unpacking using :func:`struct.iter_unpack`.
 (Contributed by Antoine Pitrou in :issue:`17804`.)
 
 
+sunau
+-----
+
+The :meth:`~sunau.getparams` method now returns a namedtuple rather than a
+plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
+
+
 urllib
 ------
 

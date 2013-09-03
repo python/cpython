@@ -1,5 +1,6 @@
 from test.support import run_unittest, TESTFN
 import unittest
+import pickle
 import os
 
 import sunau
@@ -61,6 +62,27 @@ class SunAUTest(unittest.TestCase):
         self.assertEqual('ULAW', self.f.getcomptype())
         self.assertEqual(self.f.readframes(nframes), output)
         self.f.close()
+
+    def test_getparams(self):
+        self.f = sunau.open(TESTFN, 'w')
+        self.f.setnchannels(nchannels)
+        self.f.setsampwidth(sampwidth)
+        self.f.setframerate(framerate)
+        self.f.setcomptype('ULAW', '')
+        output = b'\0' * nframes * nchannels * sampwidth
+        self.f.writeframes(output)
+        self.f.close()
+
+        self.f = sunau.open(TESTFN, 'rb')
+        params = self.f.getparams()
+        self.assertEqual(params.nchannels, nchannels)
+        self.assertEqual(params.sampwidth, sampwidth)
+        self.assertEqual(params.framerate, framerate)
+        self.assertEqual(params.nframes, nframes)
+        self.assertEqual(params.comptype, 'ULAW')
+
+        dump = pickle.dumps(params)
+        self.assertEqual(pickle.loads(dump), params)
 
 
 def test_main():
