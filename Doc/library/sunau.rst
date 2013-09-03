@@ -150,8 +150,9 @@ AU_read objects, as returned by :func:`.open` above, have the following methods:
 
 .. method:: AU_read.getparams()
 
-   Returns a tuple ``(nchannels, sampwidth, framerate, nframes, comptype,
-   compname)``, equivalent to output of the :meth:`get\*` methods.
+   Returns a :func:`~collections.namedtuple` ``(nchannels, sampwidth,
+   framerate, nframes, comptype, compname)``, equivalent to output of the
+   :meth:`get\*` methods.
 
 
 .. method:: AU_read.readframes(n)
