@@ -87,7 +87,7 @@ import sys
 from chunk import Chunk
 from collections import namedtuple
 
-_result = namedtuple('params',
+_wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
 
 class Wave_read:
@@ -212,7 +212,7 @@ class Wave_read:
         return self._compname
 
     def getparams(self):
-        return _result(self.getnchannels(), self.getsampwidth(),
+        return _wave_params(self.getnchannels(), self.getsampwidth(),
                        self.getframerate(), self.getnframes(),
                        self.getcomptype(), self.getcompname())
 
@@ -410,7 +410,7 @@ class Wave_write:
     def getparams(self):
         if not self._nchannels or not self._sampwidth or not self._framerate:
             raise Error('not all parameters set')
-        return _result(self._nchannels, self._sampwidth, self._framerate,
+        return _wave_params(self._nchannels, self._sampwidth, self._framerate,
               self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
