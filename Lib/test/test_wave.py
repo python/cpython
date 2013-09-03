@@ -1,5 +1,6 @@
 from test.support import TESTFN, unlink
 import wave
+import pickle
 import unittest
 
 nchannels = 2
@@ -68,6 +69,18 @@ class TestWave(unittest.TestCase):
         self.assertEqual(params.framerate, self.f.getframerate())
         self.assertEqual(params.comptype, self.f.getcomptype())
         self.assertEqual(params.compname, self.f.getcompname())
+
+    def test_getparams_picklable(self):
+        self.f = wave.open(TESTFN, 'wb')
+        self.f.setnchannels(nchannels)
+        self.f.setsampwidth(sampwidth)
+        self.f.setframerate(framerate)
+        self.f.close()
+
+        self.f = wave.open(TESTFN, 'rb')
+        params = self.f.getparams()
+        dump = pickle.dumps(params)
+        self.assertEqual(pickle.loads(dump), params)
 
     def test_wave_write_context_manager_calls_close(self):
         # Close checks for a minimum header and will raise an error
