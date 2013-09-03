@@ -2713,20 +2713,20 @@ cwr_next(cwrobject *co)
     PyObject *result = co->result;
     Py_ssize_t n = PyTuple_GET_SIZE(pool);
     Py_ssize_t r = co->r;
-    Py_ssize_t i, j, index;
+    Py_ssize_t i, index;
 
     if (co->stopped)
         return NULL;
 
     if (result == NULL) {
-        /* On the first pass, initialize result tuple using the indices */
+        /* On the first pass, initialize result tuple with pool[0] */
         result = PyTuple_New(r);
         if (result == NULL)
             goto empty;
         co->result = result;
+        elem = PyTuple_GET_ITEM(pool, 0);
         for (i=0; i<r ; i++) {
-            index = indices[i];
-            elem = PyTuple_GET_ITEM(pool, index);
+            assert(indices[i] == 0);
             Py_INCREF(elem);
             PyTuple_SET_ITEM(result, i, elem);
         }
@@ -2749,27 +2749,23 @@ cwr_next(cwrobject *co)
            empty tuple is a singleton and cached in PyTuple's freelist. */
         assert(r == 0 || Py_REFCNT(result) == 1);
 
-    /* Scan indices right-to-left until finding one that is not
-     * at its maximum (n-1). */
+       /* Scan indices right-to-left until finding one that is not
+        * at its maximum (n-1). */
         for (i=r-1 ; i >= 0 && indices[i] == n-1; i--)
             ;
 
         /* If i is negative, then the indices are all at
-       their maximum value and we're done. */
+           their maximum value and we're done. */
         if (i < 0)
             goto empty;
 
         /* Increment the current index which we know is not at its
-       maximum.  Then set all to the right to the same value. */
-        indices[i]++;
-        for (j=i+1 ; j<r ; j++)
-            indices[j] = indices[j-1];
-
-        /* Update the result tuple for the new indices
-           starting with i, the leftmost index that changed */
+           maximum.  Then set all to the right to the same value. */
+        index = indices[i] + 1;
+        assert(index < n);
+        elem = PyTuple_GET_ITEM(pool, index);
         for ( ; i<r ; i++) {
-            index = indices[i];
-            elem = PyTuple_GET_ITEM(pool, index);
+            indices[i] = index;
             Py_INCREF(elem);
             oldelem = PyTuple_GET_ITEM(result, i);
             PyTuple_SET_ITEM(result, i, elem);
