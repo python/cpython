@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16826: Don't check for PYTHONCASEOK if interpreter started with -E.
+
 - Issue #18418: After fork(), reinit all threads states, not only active ones.
   Patch by A. Jesse Jiryu Davis.
 
