@@ -71,12 +71,6 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = regrtest._parse_args([opt])
                 self.assertTrue(ns.verbose3)
 
-    def test_debug(self):
-        for opt in '-d', '--debug':
-            with self.subTest(opt=opt):
-                ns = regrtest._parse_args([opt])
-                self.assertTrue(ns.debug)
-
     def test_quiet(self):
         for opt in '-q', '--quiet':
             with self.subTest(opt=opt):

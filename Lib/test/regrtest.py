@@ -252,8 +252,6 @@ def _create_parser():
                        help='re-run failed tests in verbose mode')
     group.add_argument('-W', '--verbose3', action='store_true',
                        help='display test output on failure')
-    group.add_argument('-d', '--debug', action='store_true',
-                       help='print traceback for failed tests')
     group.add_argument('-q', '--quiet', action='store_true',
                        help='no output unless one or more tests fail')
     group.add_argument('-o', '--slow', action='store_true', dest='print_slow',
@@ -442,7 +440,7 @@ def run_test_in_subprocess(testname, ns):
             (testname, ns.verbose, ns.quiet),
             dict(huntrleaks=ns.huntrleaks,
                  use_resources=ns.use_resources,
-                 debug=ns.debug, output_on_failure=ns.verbose3,
+                 output_on_failure=ns.verbose3,
                  timeout=ns.timeout, failfast=ns.failfast,
                  match_tests=ns.match_tests))
     # Running the child from the same working directory as regrtest's original
@@ -757,7 +755,7 @@ def main(tests=None, **kwargs):
             else:
                 try:
                     result = runtest(test, ns.verbose, ns.quiet,
-                                     ns.huntrleaks, ns.debug,
+                                     ns.huntrleaks,
                                      output_on_failure=ns.verbose3,
                                      timeout=ns.timeout, failfast=ns.failfast,
                                      match_tests=ns.match_tests)
@@ -817,7 +815,7 @@ def main(tests=None, **kwargs):
             sys.stdout.flush()
             try:
                 ns.verbose = True
-                ok = runtest(test, True, ns.quiet, ns.huntrleaks, ns.debug,
+                ok = runtest(test, True, ns.quiet, ns.huntrleaks,
                              timeout=ns.timeout)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
@@ -910,7 +908,7 @@ def replace_stdout():
     atexit.register(restore_stdout)
 
 def runtest(test, verbose, quiet,
-            huntrleaks=False, debug=False, use_resources=None,
+            huntrleaks=False, use_resources=None,
             output_on_failure=False, failfast=False, match_tests=None,
             timeout=None):
     """Run a single test.
@@ -964,7 +962,7 @@ def runtest(test, verbose, quiet,
                 sys.stdout = stream
                 sys.stderr = stream
                 result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                       debug, display_failure=False)
+                                       display_failure=False)
                 if result[0] == FAILED:
                     output = stream.getvalue()
                     orig_stderr.write(output)
@@ -974,7 +972,7 @@ def runtest(test, verbose, quiet,
                 sys.stderr = orig_stderr
         else:
             support.verbose = verbose  # Tell tests to be moderately quiet
-            result = runtest_inner(test, verbose, quiet, huntrleaks, debug,
+            result = runtest_inner(test, verbose, quiet, huntrleaks,
                                    display_failure=not verbose)
         return result
     finally:
@@ -1255,7 +1253,7 @@ class saved_test_environment:
 
 
 def runtest_inner(test, verbose, quiet,
-                  huntrleaks=False, debug=False, display_failure=True):
+                  huntrleaks=False, display_failure=True):
     support.unload(test)
 
     test_time = 0.0
