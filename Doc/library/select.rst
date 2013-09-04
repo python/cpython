@@ -14,6 +14,14 @@ it also works for other file types (in particular, on Unix, it works on pipes).
 It cannot be used on regular files to determine whether a file has grown since
 it was last read.
 
+.. note::
+
+   The :mod:`selectors` module allows high-level and efficient I/O
+   multiplexing, built upon the :mod:`select` module primitives. Users are
+   encouraged to use the :mod:`selectors` module instead, unless they want
+   precise control over the OS-level primitives used.
+
+
 The module defines the following:
 
 
