@@ -305,7 +305,7 @@ class OtherFileTests(unittest.TestCase):
         finally:
             os.unlink(TESTFN)
 
-    def testModeStrings(self):
+    def testInvalidModeStrings(self):
         # check invalid mode strings
         for mode in ("", "aU", "wU+", "rw", "rt"):
             try:
@@ -315,6 +315,21 @@ class OtherFileTests(unittest.TestCase):
             else:
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
+
+    def testModeStrings(self):
+        # test that the mode attribute is correct for various mode strings
+        # given as init args
+        try:
+            for modes in [('w', 'wb'), ('wb', 'wb'), ('wb+', 'rb+'),
+                          ('w+b', 'rb+'), ('a', 'ab'), ('ab', 'ab'),
+                          ('ab+', 'ab+'), ('a+b', 'ab+'), ('r', 'rb'),
+                          ('rb', 'rb'), ('rb+', 'rb+'), ('r+b', 'rb+')]:
+                # read modes are last so that TESTFN will exist first
+                with _FileIO(TESTFN, modes[0]) as f:
+                    self.assertEqual(f.mode, modes[1])
+        finally:
+            if os.path.exists(TESTFN):
+                os.unlink(TESTFN)
 
     def testUnicodeOpen(self):
         # verify repr works for unicode too
