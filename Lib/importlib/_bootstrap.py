@@ -33,10 +33,7 @@ def _make_relax_case():
     if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
-            if sys.flags.ignore_environment:
-                return False
-            else:
-                return b'PYTHONCASEOK' in _os.environ
+            return b'PYTHONCASEOK' in _os.environ
     else:
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
