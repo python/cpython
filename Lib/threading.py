@@ -918,6 +918,11 @@ def _pickSomeNonDaemonThread():
     return None
 
 def main_thread():
+    """Return the main thread object.
+
+    In normal conditions, the main thread is the thread from which the
+    Python interpreter was started.
+    """
     return _main_thread
 
 # get thread-local implementation, either from the thread
