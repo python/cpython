@@ -21,6 +21,15 @@ import subprocess
 
 from test import lock_tests
 
+
+# Between fork() and exec(), only async-safe functions are allowed (issues
+# #12316 and #11870), and fork() from a worker thread is known to trigger
+# problems with some operating systems (issue #3863): skip problematic tests
+# on platforms known to behave badly.
+platforms_to_skip = ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
+                     'hp-ux11')
+
+
 # A trivial mutable counter.
 class Counter(object):
     def __init__(self):
@@ -468,15 +477,70 @@ class ThreadTests(BaseTestCase):
                 pid, status = os.waitpid(pid, 0)
                 self.assertEqual(0, status)
 
+    def test_main_thread(self):
+        main = threading.main_thread()
+        self.assertEqual(main.name, 'MainThread')
+        self.assertEqual(main.ident, threading.current_thread().ident)
+        self.assertEqual(main.ident, threading.get_ident())
+
+        def f():
+            self.assertNotEqual(threading.main_thread().ident,
+                                threading.current_thread().ident)
+        th = threading.Thread(target=f)
+        th.start()
+        th.join()
+
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
+    def test_main_thread_after_fork(self):
+        code = """if 1:
+            import os, threading
+
+            pid = os.fork()
+            if pid == 0:
+                main = threading.main_thread()
+                print(main.name)
+                print(main.ident == threading.current_thread().ident)
+                print(main.ident == threading.get_ident())
+            else:
+                os.waitpid(pid, 0)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        data = out.decode().replace('\r', '')
+        self.assertEqual(err, b"")
+        self.assertEqual(data, "MainThread\nTrue\nTrue\n")
+
+    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
+    def test_main_thread_after_fork_from_nonmain_thread(self):
+        code = """if 1:
+            import os, threading, sys
+
+            def f():
+                pid = os.fork()
+                if pid == 0:
+                    main = threading.main_thread()
+                    print(main.name)
+                    print(main.ident == threading.current_thread().ident)
+                    print(main.ident == threading.get_ident())
+                    # stdout is fully buffered because not a tty,
+                    # we have to flush before exit.
+                    sys.stdout.flush()
+                else:
+                    os.waitpid(pid, 0)
+
+            th = threading.Thread(target=f)
+            th.start()
+            th.join()
+        """
+        _, out, err = assert_python_ok("-c", code)
+        data = out.decode().replace('\r', '')
+        self.assertEqual(err, b"")
+        self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
-
-    # Between fork() and exec(), only async-safe functions are allowed (issues
-    # #12316 and #11870), and fork() from a worker thread is known to trigger
-    # problems with some operating systems (issue #3863): skip problematic tests
-    # on platforms known to behave badly.
-    platforms_to_skip = ('freebsd4', 'freebsd5', 'freebsd6', 'netbsd5',
-                         'hp-ux11')
 
     def _run_and_join(self, script):
         script = """if 1:

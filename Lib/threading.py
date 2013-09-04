@@ -840,20 +840,6 @@ class _MainThread(Thread):
         with _active_limbo_lock:
             _active[self._ident] = self
 
-    def _exitfunc(self):
-        self._stop()
-        t = _pickSomeNonDaemonThread()
-        while t:
-            t.join()
-            t = _pickSomeNonDaemonThread()
-        self._delete()
-
-def _pickSomeNonDaemonThread():
-    for t in enumerate():
-        if not t.daemon and t.is_alive():
-            return t
-    return None
-
 
 # Dummy thread class to represent threads not started here.
 # These aren't garbage collected when they die, nor can they be waited for.
@@ -915,7 +901,24 @@ from _thread import stack_size
 # and make it available for the interpreter
 # (Py_Main) as threading._shutdown.
 
-_shutdown = _MainThread()._exitfunc
+_main_thread = _MainThread()
+
+def _shutdown():
+    _main_thread._stop()
+    t = _pickSomeNonDaemonThread()
+    while t:
+        t.join()
+        t = _pickSomeNonDaemonThread()
+    _main_thread._delete()
+
+def _pickSomeNonDaemonThread():
+    for t in enumerate():
+        if not t.daemon and t.is_alive():
+            return t
+    return None
+
+def main_thread():
+    return _main_thread
 
 # get thread-local implementation, either from the thread
 # module, or from the python fallback
@@ -933,12 +936,13 @@ def _after_fork():
 
     # Reset _active_limbo_lock, in case we forked while the lock was held
     # by another (non-forked) thread.  http://bugs.python.org/issue874900
-    global _active_limbo_lock
+    global _active_limbo_lock, _main_thread
     _active_limbo_lock = _allocate_lock()
 
     # fork() only copied the current thread; clear references to others.
     new_active = {}
     current = current_thread()
+    _main_thread = current
     with _active_limbo_lock:
         for thread in _enumerate():
             # Any lock/condition variable may be currently locked or in an
