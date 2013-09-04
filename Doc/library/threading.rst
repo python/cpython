@@ -57,6 +57,15 @@ This module defines the following functions:
    and threads that have not yet been started.
 
 
+.. function:: main_thread()
+
+   Return the main :class:`Thread` object.  In normal conditions, the
+   main thread is the thread from which the Python interpreter was
+   started.
+
+   .. versionadded:: 3.4
+
+
 .. function:: settrace(func)
 
    .. index:: single: trace function
