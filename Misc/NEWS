@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18876: The FileIO.mode attribute now better reflects the actual mode
+  under which the file was opened.  Patch by Erik Bray.
+
 - Issue #18418: After fork(), reinit all threads states, not only active ones.
   Patch by A. Jesse Jiryu Davis.
 
