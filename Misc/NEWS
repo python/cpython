@@ -54,6 +54,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16853: Add new selectors module.
+
 - Issue #18882: Add threading.main_thread() function.
 
 - Issue #18901: The sunau getparams method now returns a namedtuple rather than
