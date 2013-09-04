@@ -91,6 +91,8 @@ New syntax features:
 New library modules:
 
 * :mod:`enum`: Implementation of the :pep:`435`.
+* :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
+  :mod:`select` module primitives.
 
 New built-in features:
 
