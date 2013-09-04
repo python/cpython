@@ -174,10 +174,11 @@ Some smaller changes made to the core Python language are:
 New Modules
 ===========
 
-.. module name
-.. -----------
+selectors
+---------
 
-* None yet.
+The new :mod:`selectors` module allows high-level and efficient I/O
+multiplexing, built upon the :mod:`select` module primitives.
 
 
 Improved Modules
