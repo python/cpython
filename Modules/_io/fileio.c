@@ -49,6 +49,7 @@ typedef struct {
     unsigned int created : 1;
     unsigned int readable : 1;
     unsigned int writable : 1;
+    unsigned int appending : 1;
     signed int seekable : 2; /* -1 means unknown */
     unsigned int closefd : 1;
     char finalizing;
@@ -156,6 +157,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->created = 0;
         self->readable = 0;
         self->writable = 0;
+        self->appending = 0;
         self->seekable = -1;
         self->closefd = 1;
         self->weakreflist = NULL;
@@ -219,7 +221,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     Py_UNICODE *widename = NULL;
 #endif
     int ret = 0;
-    int rwa = 0, plus = 0, append = 0;
+    int rwa = 0, plus = 0;
     int flags = 0;
     int fd = -1;
     int closefd = 1;
@@ -317,8 +319,8 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
                 goto bad_mode;
             rwa = 1;
             self->writable = 1;
-            flags |= O_CREAT;
-            append = 1;
+            self->appending = 1;
+            flags |= O_APPEND | O_CREAT;
             break;
         case 'b':
             break;
@@ -349,10 +351,6 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     flags |= O_BINARY;
 #endif
 
-#ifdef O_APPEND
-    if (append)
-        flags |= O_APPEND;
-#endif
 #ifdef MS_WINDOWS
     flags |= O_NOINHERIT;
 #elif defined(O_CLOEXEC)
@@ -432,7 +430,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     if (PyObject_SetAttrString((PyObject *)self, "name", nameobj) < 0)
         goto error;
 
-    if (append) {
+    if (self->appending) {
         /* For consistent behaviour, we explicitly seek to the
            end of file (otherwise, it might be done only on the
            first write()). */
@@ -1019,7 +1017,13 @@ mode_string(fileio *self)
         else
             return "xb";
     }
-    if (self->readable) {
+    if (self->appending) {
+        if (self->readable)
+            return "ab+";
+        else
+            return "ab";
+    }
+    else if (self->readable) {
         if (self->writable)
             return "rb+";
         else
