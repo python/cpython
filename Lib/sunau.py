@@ -386,7 +386,7 @@ class Au_write:
         self.setcomptype(comptype, compname)
 
     def getparams(self):
-        return _sunau_getparams(self.getnchannels(), self.getsampwidth(),
+        return _sunau_params(self.getnchannels(), self.getsampwidth(),
                   self.getframerate(), self.getnframes(),
                   self.getcomptype(), self.getcompname())
 
