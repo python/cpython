@@ -2688,7 +2688,7 @@ Tkapp_InterpAddr(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":interpaddr"))
         return NULL;
 
-    return PyLong_FromLong((long)Tkapp_Interp(self));
+    return PyLong_FromVoidPtr(Tkapp_Interp(self));
 }
 
 static PyObject *

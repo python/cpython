@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18909: Fix _tkinter.tkapp.interpaddr() on Windows 64-bit, don't cast
+  64-bit pointer to long (32 bits).
+
 - Issue #18876: The FileIO.mode attribute now better reflects the actual mode
   under which the file was opened.  Patch by Erik Bray.
 
