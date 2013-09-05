@@ -214,6 +214,12 @@ Documentation
 - Issue #18783: Removed existing mentions of Python long type in docstrings,
   error messages and comments.
 
+Tools/Demos
+-----------
+
+- Issue #18922: Now The Lib/smtpd.py and Tools/i18n/msgfmt.py scripts write
+  their version strings to stdout, and not to sderr.
+
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================
