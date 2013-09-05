@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18878: sunau.open now supports the context manager protocol.  Based on
+  patches by Claudiu Popa and R. David Murray.
+
 - Issue #18909: Fix _tkinter.tkapp.interpaddr() on Windows 64-bit, don't cast
   64-bit pointer to long (32 bits).
 

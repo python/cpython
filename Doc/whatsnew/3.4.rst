@@ -374,6 +374,8 @@ sunau
 The :meth:`~sunau.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 
+:meth:`sunau.open` now supports the context manager protocol (:issue:`18878`).
+
 
 urllib
 ------
