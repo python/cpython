@@ -218,7 +218,7 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-V', '--version'):
-            print("msgfmt.py", __version__, file=sys.stderr)
+            print("msgfmt.py", __version__)
             sys.exit(0)
         elif opt in ('-o', '--output-file'):
             outfile = arg
