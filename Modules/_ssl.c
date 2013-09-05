@@ -755,7 +755,7 @@ _get_peer_alt_names (X509 *certificate) {
 
     int i, j;
     PyObject *peer_alt_names = Py_None;
-    PyObject *v, *t;
+    PyObject *v = NULL, *t;
     X509_EXTENSION *ext = NULL;
     GENERAL_NAMES *names = NULL;
     GENERAL_NAME *name;
