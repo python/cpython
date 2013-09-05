@@ -728,7 +728,8 @@ def getclasstree(classes, unique=0):
             for parent in c.__bases__:
                 if not parent in children:
                     children[parent] = []
-                children[parent].append(c)
+                if c not in children[parent]:
+                    children[parent].append(c)
                 if unique and parent in classes: break
         elif c not in roots:
             roots.append(c)
