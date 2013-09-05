@@ -17,6 +17,10 @@
    * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
    * :ref:`Logging Cookbook <logging-cookbook>`
 
+**Source code:** :source:`Lib/logging/handlers.py`
+
+--------------
+
 .. currentmodule:: logging
 
 The following useful handlers are provided in the package. Note that three of
