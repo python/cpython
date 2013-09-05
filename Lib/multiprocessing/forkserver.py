@@ -1,6 +1,6 @@
 import errno
 import os
-import select
+import selectors
 import signal
 import socket
 import struct
@@ -149,14 +149,20 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
 
     # ignoring SIGCHLD means no need to reap zombie processes
     handler = signal.signal(signal.SIGCHLD, signal.SIG_IGN)
-    with socket.socket(socket.AF_UNIX, fileno=listener_fd) as listener:
+    with socket.socket(socket.AF_UNIX, fileno=listener_fd) as listener, \
+         selectors.DefaultSelector() as selector:
         global _forkserver_address
         _forkserver_address = listener.getsockname()
-        readers = [listener, alive_r]
+
+        selector.register(listener, selectors.EVENT_READ)
+        selector.register(alive_r, selectors.EVENT_READ)
 
         while True:
             try:
-                rfds, wfds, xfds = select.select(readers, [], [])
+                while True:
+                    rfds = [key.fileobj for (key, events) in selector.select()]
+                    if rfds:
+                        break
 
                 if alive_r in rfds:
                     # EOF because no more client processes left
