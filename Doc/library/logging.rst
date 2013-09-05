@@ -20,6 +20,9 @@
    * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
    * :ref:`Logging Cookbook <logging-cookbook>`
 
+**Source code:** :source:`Lib/logging/__init__.py`
+
+--------------
 
 .. versionadded:: 2.3
 
