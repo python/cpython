@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18830: inspect.getclasstree() no more produces duplicated entries even
+  when input list contains duplicates.
+
 - Issue #18878: sunau.open now supports the context manager protocol.  Based on
   patches by Claudiu Popa and R. David Murray.
 
