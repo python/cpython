@@ -21,6 +21,10 @@
    * :ref:`Logging Cookbook <logging-cookbook>`
 
 
+**Source code:** :source:`Lib/logging/__init__.py`
+
+--------------
+
 This module defines functions and classes which implement a flexible event
 logging system for applications and libraries.
 
