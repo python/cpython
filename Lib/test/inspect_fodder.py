@@ -49,6 +49,8 @@ class StupidGit:
 class MalodorousPervert(StupidGit):
     pass
 
+Tit = MalodorousPervert
+
 class ParrotDroppings:
     pass
 
