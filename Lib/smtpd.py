@@ -780,7 +780,7 @@ def parseargs():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-V', '--version'):
-            print(__version__, file=sys.stderr)
+            print(__version__)
             sys.exit(0)
         elif opt in ('-n', '--nosetuid'):
             options.setuid = 0
