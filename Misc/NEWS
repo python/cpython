@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18830: inspect.getclasstree() no more produces duplicated entries even
+  when input list contains duplicates.
+
 - Issue #18909: Fix _tkinter.tkapp.interpaddr() on Windows 64-bit, don't cast
   64-bit pointer to long (32 bits).
 
