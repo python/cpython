@@ -17,6 +17,10 @@
    * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
    * :ref:`Logging Cookbook <logging-cookbook>`
 
+**Source code:** :source:`Lib/logging/config.py`
+
+--------------
+
 This section describes the API for configuring the logging module.
 
 .. _logging-config-api:
