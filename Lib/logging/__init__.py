@@ -893,6 +893,7 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        self.delay = delay
         if delay:
             #We don't open the stream, but we still need to call the
             #Handler constructor to set level, formatter, lock etc.

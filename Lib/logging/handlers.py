@@ -140,8 +140,8 @@ class RotatingFileHandler(BaseRotatingHandler):
             # Issue 18940: A file may not have been created if delay is True.
             if os.path.exists(self.baseFilename):
                 os.rename(self.baseFilename, dfn)
-            #print "%s -> %s" % (self.baseFilename, dfn)
-        self.stream = self._open()
+        if not self.delay:
+            self.stream = self._open()
 
     def shouldRollover(self, record):
         """
@@ -349,15 +349,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         if os.path.exists(self.baseFilename):
             os.rename(self.baseFilename, dfn)
         if self.backupCount > 0:
-            # find the oldest log file and delete it
-            #s = glob.glob(self.baseFilename + ".20*")
-            #if len(s) > self.backupCount:
-            #    s.sort()
-            #    os.remove(s[0])
             for s in self.getFilesToDelete():
                 os.remove(s)
-        #print "%s -> %s" % (self.baseFilename, dfn)
-        self.stream = self._open()
+        if not self.delay:
+            self.stream = self._open()
         newRolloverAt = self.computeRollover(currentTime)
         while newRolloverAt <= currentTime:
             newRolloverAt = newRolloverAt + self.interval
