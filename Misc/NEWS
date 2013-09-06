@@ -193,6 +193,9 @@ Library
   existing directory caused mkstemp and related APIs to fail instead of
   retrying. Report and fix by Vlad Shcherbina.
 
+- Issue #18920: argparse's default destination for the version action (-v,
+  --version) has also been changed to stdout, to match the Python executable.
+
 Tests
 -----
 

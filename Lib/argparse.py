@@ -1037,7 +1037,8 @@ class _VersionAction(Action):
             version = parser.version
         formatter = parser._get_formatter()
         formatter.add_text(version)
-        parser.exit(message=formatter.format_help())
+        parser._print_message(formatter.format_help(), _sys.stdout)
+        parser.exit()
 
 
 class _SubParsersAction(Action):
