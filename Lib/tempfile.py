@@ -219,6 +219,13 @@ def _mkstemp_inner(dir, pre, suf, flags):
             return (fd, _os.path.abspath(file))
         except FileExistsError:
             continue    # try again
+        except PermissionError:
+            # This exception is thrown when a directory with the chosen name
+            # already exists on windows.
+            if _os.name == 'nt':
+                continue
+            else:
+                raise
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
