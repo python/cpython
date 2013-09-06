@@ -57,6 +57,11 @@ try:
 except ImportError:
     lzma = None
 
+try:
+    import resource
+except ImportError:
+    resource = None
+
 __all__ = [
     "Error", "TestFailed", "ResourceDenied", "import_module", "verbose",
     "use_resources", "max_memuse", "record_original_stdout",
@@ -77,6 +82,7 @@ __all__ = [
     "skip_unless_xattr", "import_fresh_module", "requires_zlib",
     "PIPE_MAX_SIZE", "failfast", "anticipate_failure", "run_with_tz",
     "requires_gzip", "requires_bz2", "requires_lzma", "suppress_crash_popup",
+    "SuppressCoreFiles",
     ]
 
 class Error(Exception):
@@ -2055,3 +2061,42 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
 
     # actually override the attribute
     setattr(object_to_patch, attr_name, new_value)
+
+
+class SuppressCoreFiles(object):
+
+    """Try to prevent core files from being created."""
+    old_limit = None
+
+    def __enter__(self):
+        """Try to save previous ulimit, then set the soft limit to 0."""
+        if resource is not None:
+            try:
+                self.old_limit = resource.getrlimit(resource.RLIMIT_CORE)
+                resource.setrlimit(resource.RLIMIT_CORE, (0, self.old_limit[1]))
+            except (ValueError, OSError):
+                pass
+        if sys.platform == 'darwin':
+            # Check if the 'Crash Reporter' on OSX was configured
+            # in 'Developer' mode and warn that it will get triggered
+            # when it is.
+            #
+            # This assumes that this context manager is used in tests
+            # that might trigger the next manager.
+            value = subprocess.Popen(['/usr/bin/defaults', 'read',
+                    'com.apple.CrashReporter', 'DialogType'],
+                    stdout=subprocess.PIPE).communicate()[0]
+            if value.strip() == b'developer':
+                print("this test triggers the Crash Reporter, "
+                      "that is intentional", end='')
+                sys.stdout.flush()
+
+    def __exit__(self, *ignore_exc):
+        """Return core file behavior to default."""
+        if self.old_limit is None:
+            return
+        if resource is not None:
+            try:
+                resource.setrlimit(resource.RLIMIT_CORE, self.old_limit)
+            except (ValueError, OSError):
+                pass

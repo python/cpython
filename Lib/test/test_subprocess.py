@@ -19,10 +19,6 @@ import gc
 import textwrap
 
 try:
-    import resource
-except ImportError:
-    resource = None
-try:
     import threading
 except ImportError:
     threading = None
@@ -1147,47 +1143,6 @@ class ProcessTestCase(BaseTestCase):
         fds_after_exception = os.listdir(fd_directory)
         self.assertEqual(fds_before_popen, fds_after_exception)
 
-
-# context manager
-class _SuppressCoreFiles(object):
-    """Try to prevent core files from being created."""
-    old_limit = None
-
-    def __enter__(self):
-        """Try to save previous ulimit, then set it to (0, 0)."""
-        if resource is not None:
-            try:
-                self.old_limit = resource.getrlimit(resource.RLIMIT_CORE)
-                resource.setrlimit(resource.RLIMIT_CORE, (0, self.old_limit[1]))
-            except (ValueError, resource.error):
-                pass
-
-        if sys.platform == 'darwin':
-            # Check if the 'Crash Reporter' on OSX was configured
-            # in 'Developer' mode and warn that it will get triggered
-            # when it is.
-            #
-            # This assumes that this context manager is used in tests
-            # that might trigger the next manager.
-            value = subprocess.Popen(['/usr/bin/defaults', 'read',
-                    'com.apple.CrashReporter', 'DialogType'],
-                    stdout=subprocess.PIPE).communicate()[0]
-            if value.strip() == b'developer':
-                print("this tests triggers the Crash Reporter, "
-                      "that is intentional", end='')
-                sys.stdout.flush()
-
-    def __exit__(self, *args):
-        """Return core file behavior to default."""
-        if self.old_limit is None:
-            return
-        if resource is not None:
-            try:
-                resource.setrlimit(resource.RLIMIT_CORE, self.old_limit)
-            except (ValueError, resource.error):
-                pass
-
-
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
 
@@ -1276,7 +1231,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_run_abort(self):
         # returncode handles signal termination
-        with _SuppressCoreFiles():
+        with support.SuppressCoreFiles():
             p = subprocess.Popen([sys.executable, "-c",
                                   'import os; os.abort()'])
             p.wait()
