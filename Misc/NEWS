@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18458: Prevent crashes with newer versions of libedit.  Its readline
+  emulation has changed from 0-based indexing to 1-based like gnu readline.
+
 - Issue #18852: Handle case of ``readline.__doc__`` being ``None`` in the new
   readline activation code in ``site.py``.
 
