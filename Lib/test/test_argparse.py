@@ -4359,7 +4359,7 @@ class TestOptionalsHelpVersionActions(TestCase):
     def test_version_format(self):
         parser = ErrorRaisingArgumentParser(prog='PPP')
         parser.add_argument('-v', '--version', action='version', version='%(prog)s 3.5')
-        msg = self._get_error(parser.parse_args, ['-v']).stderr
+        msg = self._get_error(parser.parse_args, ['-v']).stdout
         self.assertEqual('PPP 3.5\n', msg)
 
     def test_version_no_help(self):
@@ -4372,7 +4372,7 @@ class TestOptionalsHelpVersionActions(TestCase):
     def test_version_action(self):
         parser = ErrorRaisingArgumentParser(prog='XXX')
         parser.add_argument('-V', action='version', version='%(prog)s 3.7')
-        msg = self._get_error(parser.parse_args, ['-V']).stderr
+        msg = self._get_error(parser.parse_args, ['-V']).stdout
         self.assertEqual('XXX 3.7\n', msg)
 
     def test_no_help(self):
