@@ -152,6 +152,11 @@ class TestEnum(unittest.TestCase):
         with self.assertRaises(AttributeError):
             Season.SPRING.value = 2
 
+    def test_changing_member(self):
+        Season = self.Season
+        with self.assertRaises(AttributeError):
+            Season.WINTER = 'really cold'
+
     def test_invalid_names(self):
         with self.assertRaises(ValueError):
             class Wrong(Enum):
