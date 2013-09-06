@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18852: Handle case of ``readline.__doc__`` being ``None`` in the new
+  readline activation code in ``site.py``.
+
 - Issue #18672: Fixed format specifiers for Py_ssize_t in debugging output in
   the _sre moduel.
 
