@@ -646,6 +646,8 @@ LDLAST
 USE_THREAD_MODULE
 SIGNAL_OBJS
 USE_SIGNAL_MODULE
+TCLTK_LIBS
+TCLTK_INCLUDES
 LIBFFI_INCLUDEDIR
 PKG_CONFIG
 SHLIBS
@@ -795,6 +797,8 @@ with_system_expat
 with_system_ffi
 with_system_libmpdec
 enable_loadable_sqlite_extensions
+with_tcltk_includes
+with_tcltk_libs
 with_dbmliborder
 with_signal_module
 with_threads
@@ -1467,6 +1471,10 @@ Optional Packages:
   --with-system-ffi       build _ctypes module using an installed ffi library
   --with-system-libmpdec  build _decimal module using an installed libmpdec
                           library
+  --with-tcltk-includes='-I...'
+                          override search for Tcl and Tk include files
+  --with-tcltk-libs='-L...'
+                          override search for Tcl and Tk libs
   --with-dbmliborder=db1:db2:...
                           order to check db backends for dbm. Valid value is a
                           colon separated string with the backend names
@@ -9236,6 +9244,46 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_loadable_sqlite_extensions" >&5
 $as_echo "$enable_loadable_sqlite_extensions" >&6; }
+
+# Check for --with-tcltk-includes=path and --with-tcltk-libs=path
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tcltk-includes" >&5
+$as_echo_n "checking for --with-tcltk-includes... " >&6; }
+
+# Check whether --with-tcltk-includes was given.
+if test "${with_tcltk_includes+set}" = set; then :
+  withval=$with_tcltk_includes;
+else
+  with_tcltk_includes="default"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_tcltk_includes" >&5
+$as_echo "$with_tcltk_includes" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-tcltk-libs" >&5
+$as_echo_n "checking for --with-tcltk-libs... " >&6; }
+
+# Check whether --with-tcltk-libs was given.
+if test "${with_tcltk_libs+set}" = set; then :
+  withval=$with_tcltk_libs;
+else
+  with_tcltk_libs="default"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_tcltk_libs" >&5
+$as_echo "$with_tcltk_libs" >&6; }
+if test "x$with_tcltk_includes" = xdefault || test "x$with_tcltk_libs" = xdefault
+then
+  if test "x$with_tcltk_includes" != "x$with_tcltk_libs"
+  then
+    as_fn_error $? "use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither" "$LINENO" 5
+  fi
+  TCLTK_INCLUDES=""
+  TCLTK_LIBS=""
+else
+  TCLTK_INCLUDES="$with_tcltk_includes"
+  TCLTK_LIBS="$with_tcltk_libs"
+fi
 
 # Check for --with-dbmliborder
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-dbmliborder" >&5
