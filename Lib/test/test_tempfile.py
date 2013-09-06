@@ -386,6 +386,32 @@ class test__mkstemp_inner(TC):
         self.do_create(bin=0).write("blat\n")
         # XXX should test that the file really is a text file
 
+    def test_collision_with_existing_directory(self):
+        # _mkstemp_inner tries another name when a directory with
+        # the chosen name already exists
+        container_dir = tempfile.mkdtemp()
+        try:
+            def mock_get_candidate_names():
+                return iter(['aaa', 'aaa', 'bbb'])
+            with support.swap_attr(tempfile,
+                                   '_get_candidate_names',
+                                   mock_get_candidate_names):
+                dir = tempfile.mkdtemp(dir=container_dir)
+                self.assertTrue(dir.endswith('aaa'))
+
+                flags = tempfile._bin_openflags
+                (fd, name) = tempfile._mkstemp_inner(container_dir,
+                                                     tempfile.template,
+                                                     '',
+                                                     flags)
+                try:
+                    self.assertTrue(name.endswith('bbb'))
+                finally:
+                    os.close(fd)
+                    os.unlink(name)
+        finally:
+            support.rmtree(container_dir)
+
 test_classes.append(test__mkstemp_inner)
 
 
