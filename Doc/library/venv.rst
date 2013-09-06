@@ -21,6 +21,7 @@ site directories.  Each virtual environment has its own Python binary (allowing
 creation of environments with various Python versions) and can have its own
 independent set of installed Python packages in its site directories.
 
+See :pep:`405` for more information about Python virtual environments.
 
 Creating virtual environments
 -----------------------------
@@ -60,6 +61,19 @@ Creating virtual environments
    When a venv is active, any options that change the installation path will be
    ignored from all distutils configuration files to prevent projects being
    inadvertently installed outside of the virtual environment.
+
+   When working in a command shell, users can make a venv active by running an
+   ``activate`` script in the venv's executables directory (the precise filename
+   is shell-dependent), which prepends the venv's directory for executables to
+   the ``PATH`` environment variable for the running shell. There should be no
+   need in other circumstances to activate a venv -- scripts installed into
+   venvs have a shebang line which points to the venv's Python interpreter. This
+   means that the script will run with that interpreter regardless of the value
+   of ``PATH``. On Windows, shebang line processing is supported if you have the
+   Python Launcher for Windows installed (this was added to Python in 3.3 - see
+   :pep:`397` for more details). Thus, double-clicking an installed script in
+   a Windows Explorer window should run the script with the correct interpreter
+   without there needing to be any reference to its venv in ``PATH``.
 
 
 API
