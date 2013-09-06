@@ -189,6 +189,10 @@ Library
 
 - Issue #8860: Fixed rounding in timedelta constructor.
 
+- Issue #18849: Fixed a Windows-specific tempfile bug where collision with an
+  existing directory caused mkstemp and related APIs to fail instead of
+  retrying. Report and fix by Vlad Shcherbina.
+
 Tests
 -----
 
