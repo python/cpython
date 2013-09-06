@@ -10,6 +10,8 @@ Projected Release date: 2013-09-08
 Core and Builtins
 -----------------
 
+- Issue #18942: sys._debugmallocstats() output was damaged on Windows.
+
 - Issue #18571: Implementation of the PEP 446: file descriptors and file
   handles are now created non-inheritable; add functions
   os.get/set_inheritable(), os.get/set_handle_inheritable() and
