@@ -137,7 +137,9 @@ class RotatingFileHandler(BaseRotatingHandler):
             dfn = self.baseFilename + ".1"
             if os.path.exists(dfn):
                 os.remove(dfn)
-            os.rename(self.baseFilename, dfn)
+            # Issue 18940: A file may not have been created if delay is True.
+            if os.path.exists(self.baseFilename):
+                os.rename(self.baseFilename, dfn)
             #print "%s -> %s" % (self.baseFilename, dfn)
         self.stream = self._open()
 
@@ -343,7 +345,9 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
         dfn = self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
         if os.path.exists(dfn):
             os.remove(dfn)
-        os.rename(self.baseFilename, dfn)
+        # Issue 18940: A file may not have been created if delay is True.
+        if os.path.exists(self.baseFilename):
+            os.rename(self.baseFilename, dfn)
         if self.backupCount > 0:
             # find the oldest log file and delete it
             #s = glob.glob(self.baseFilename + ".20*")
