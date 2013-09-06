@@ -2063,7 +2063,7 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
     setattr(object_to_patch, attr_name, new_value)
 
 
-class SuppressCoreFiles(object):
+class SuppressCoreFiles:
 
     """Try to prevent core files from being created."""
     old_limit = None
