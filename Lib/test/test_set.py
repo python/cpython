@@ -1672,7 +1672,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
             for meth in (s.union, s.intersection, s.difference, s.symmetric_difference, s.isdisjoint):
                 for g in (G, I, Ig, L, R):
                     expected = meth(data)
-                    actual = meth(G(data))
+                    actual = meth(g(data))
                     if isinstance(expected, bool):
                         self.assertEqual(actual, expected)
                     else:
