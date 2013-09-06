@@ -263,6 +263,19 @@ class EnumMeta(type):
     def __repr__(cls):
         return "<enum %r>" % cls.__name__
 
+    def __setattr__(cls, name, value):
+        """Block attempts to reassign Enum members.
+
+        A simple assignment to the class namespace only changes one of the
+        several possible ways to get an Enum member from the Enum class,
+        resulting in an inconsistent Enumeration.
+
+        """
+        member_map = cls.__dict__.get('_member_map_', {})
+        if name in member_map:
+            raise AttributeError('Cannot reassign members.')
+        super().__setattr__(name, value)
+
     def _create_(cls, class_name, names=None, *, module=None, type=None):
         """Convenience method to create a new Enum class.
 
