@@ -109,7 +109,9 @@ class BaseRotatingHandler(logging.FileHandler):
                        what the source is rotated to, e.g. 'test.log.1'.
         """
         if not callable(self.rotator):
-            os.rename(source, dest)
+            # Issue 18940: A file may not have been created if delay is True.
+            if os.path.exists(source):
+                os.rename(source, dest)
         else:
             self.rotator(source, dest)
 
