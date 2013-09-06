@@ -219,6 +219,12 @@ Documentation
 - Issue #18783: Removed existing mentions of Python long type in docstrings,
   error messages and comments.
 
+Build
+-----
+
+- Issue #1584: Provide configure options to override default search paths for
+  Tcl and Tk when building _tkinter.
+
 Tools/Demos
 -----------
 
