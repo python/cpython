@@ -2282,6 +2282,34 @@ AC_ARG_ENABLE(loadable-sqlite-extensions,
 
 AC_MSG_RESULT($enable_loadable_sqlite_extensions)
 
+# Check for --with-tcltk-includes=path and --with-tcltk-libs=path
+AC_SUBST(TCLTK_INCLUDES)
+AC_SUBST(TCLTK_LIBS)
+AC_MSG_CHECKING(for --with-tcltk-includes)
+AC_ARG_WITH(tcltk-includes,
+            AS_HELP_STRING([--with-tcltk-includes='-I...'], [override search for Tcl and Tk include files]),
+            [],
+            [with_tcltk_includes="default"])
+AC_MSG_RESULT($with_tcltk_includes)
+AC_MSG_CHECKING(for --with-tcltk-libs)
+AC_ARG_WITH(tcltk-libs,
+            AS_HELP_STRING([--with-tcltk-libs='-L...'], [override search for Tcl and Tk libs]),
+            [],
+            [with_tcltk_libs="default"])
+AC_MSG_RESULT($with_tcltk_libs)
+if test "x$with_tcltk_includes" = xdefault || test "x$with_tcltk_libs" = xdefault
+then
+  if test "x$with_tcltk_includes" != "x$with_tcltk_libs"
+  then
+    AC_MSG_ERROR([use both --with-tcltk-includes='...' and --with-tcltk-libs='...' or neither])
+  fi
+  TCLTK_INCLUDES=""
+  TCLTK_LIBS=""
+else
+  TCLTK_INCLUDES="$with_tcltk_includes"
+  TCLTK_LIBS="$with_tcltk_libs"
+fi
+
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
