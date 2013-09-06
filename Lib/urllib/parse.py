@@ -728,7 +728,7 @@ def quote_from_bytes(bs, safe='/'):
     return ''.join([quoter(char) for char in bs])
 
 def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
-    """Encode a sequence of two-element tuples or dictionary into a URL query string.
+    """Encode a dict or sequence of two-element tuples into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
     sequence element is converted to a separate parameter.
@@ -737,9 +737,9 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
     parameters in the output will match the order of parameters in the
     input.
 
-    The query arg may be either a string or a bytes type. When query arg is a
-    string, the safe, encoding and error parameters are sent the quote_plus for
-    encoding.
+    The components of a query arg may each be either a string or a bytes type.
+    When a component is a string, the safe, encoding and error parameters are
+    sent to the quote_plus function for encoding.
     """
 
     if hasattr(query, "items"):
