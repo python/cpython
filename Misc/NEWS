@@ -202,6 +202,9 @@ Library
 Tests
 -----
 
+- Issue #18623: Factor out the _SuppressCoreFiles context manager into
+  test.support.  Patch by Valerie Lambert.
+
 - Issue #12037: Fix test_email for desktop Windows.
 
 - Issue #15507: test_subprocess's test_send_signal could fail if the test
