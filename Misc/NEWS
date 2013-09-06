@@ -225,6 +225,11 @@ Build
 - Issue #1584: Provide configure options to override default search paths for
   Tcl and Tk when building _tkinter.
 
+- Issue #15663: Tcl/Tk 8.5.14 is now included with the OS X 10.6+ 64-/32-bit
+  installer.  It is no longer necessary to install a third-party version of
+  Tcl/Tk 8.5 to work around the problems in the Apple-supplied Tcl/Tk 8.5
+  shipped in OS X 10.6 and later releases.
+
 Tools/Demos
 -----------
 
