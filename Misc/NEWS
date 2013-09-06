@@ -280,6 +280,10 @@ Library
 - Issue #18113: Fixed a refcount leak in the curses.panel module's
   set_userptr() method.  Reported by Atsuo Ishimoto.
 
+- Issue #18849: Fixed a Windows-specific tempfile bug where collision with an
+  existing directory caused mkstemp and related APIs to fail instead of
+  retrying. Report and fix by Vlad Shcherbina.
+
 C API
 -----
 

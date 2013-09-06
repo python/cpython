@@ -372,6 +372,32 @@ class TestMkstempInner(BaseTestCase):
         os.lseek(f.fd, 0, os.SEEK_SET)
         self.assertEqual(os.read(f.fd, 20), b"blat")
 
+    def test_collision_with_existing_directory(self):
+        # _mkstemp_inner tries another name when a directory with
+        # the chosen name already exists
+        container_dir = tempfile.mkdtemp()
+        try:
+            def mock_get_candidate_names():
+                return iter(['aaa', 'aaa', 'bbb'])
+            with support.swap_attr(tempfile,
+                                   '_get_candidate_names',
+                                   mock_get_candidate_names):
+                dir = tempfile.mkdtemp(dir=container_dir)
+                self.assertTrue(dir.endswith('aaa'))
+
+                flags = tempfile._bin_openflags
+                (fd, name) = tempfile._mkstemp_inner(container_dir,
+                                                     tempfile.template,
+                                                     '',
+                                                     flags)
+                try:
+                    self.assertTrue(name.endswith('bbb'))
+                finally:
+                    os.close(fd)
+                    os.unlink(name)
+        finally:
+            support.rmtree(container_dir)
+
 
 class TestGetTempPrefix(BaseTestCase):
     """Test gettempprefix()."""
