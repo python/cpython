@@ -2958,8 +2958,11 @@ class TestInvalidHandle(unittest.TestCase):
     @unittest.skipIf(WIN32, "skipped on Windows")
     def test_invalid_handles(self):
         conn = multiprocessing.connection.Connection(44977608)
+        # check that poll() doesn't crash
         try:
-            self.assertRaises((ValueError, OSError), conn.poll)
+            conn.poll()
+        except (ValueError, OSError):
+            pass
         finally:
             # Hack private attribute _handle to avoid printing an error
             # in conn.__del__
