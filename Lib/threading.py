@@ -33,6 +33,7 @@ __all__ = ['active_count', 'Condition', 'current_thread', 'enumerate', 'Event',
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
+_set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
 ThreadError = _thread.error
 try:
@@ -548,28 +549,33 @@ class Thread:
         else:
             self._daemonic = current_thread().daemon
         self._ident = None
+        self._tstate_lock = None
         self._started = Event()
-        self._stopped = False
-        self._block = Condition(Lock())
+        self._stopped = Event()
         self._initialized = True
         # sys.stderr is not stored in the class like
         # sys.exc_info since it can be changed between instances
         self._stderr = _sys.stderr
         _dangling.add(self)
 
-    def _reset_internal_locks(self):
+    def _reset_internal_locks(self, is_alive):
         # private!  Called by _after_fork() to reset our internal locks as
         # they may be in an invalid state leading to a deadlock or crash.
-        if hasattr(self, '_block'):  # DummyThread deletes _block
-            self._block.__init__()
         self._started._reset_internal_locks()
+        self._stopped._reset_internal_locks()
+        if is_alive:
+            self._set_tstate_lock()
+        else:
+            # The thread isn't alive after fork: it doesn't have a tstate
+            # anymore.
+            self._tstate_lock = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
         status = "initial"
         if self._started.is_set():
             status = "started"
-        if self._stopped:
+        if self._stopped.is_set():
             status = "stopped"
         if self._daemonic:
             status += " daemon"
@@ -625,9 +631,18 @@ class Thread:
     def _set_ident(self):
         self._ident = get_ident()
 
+    def _set_tstate_lock(self):
+        """
+        Set a lock object which will be released by the interpreter when
+        the underlying thread state (see pystate.h) gets deleted.
+        """
+        self._tstate_lock = _set_sentinel()
+        self._tstate_lock.acquire()
+
     def _bootstrap_inner(self):
         try:
             self._set_ident()
+            self._set_tstate_lock()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -691,10 +706,7 @@ class Thread:
                     pass
 
     def _stop(self):
-        self._block.acquire()
-        self._stopped = True
-        self._block.notify_all()
-        self._block.release()
+        self._stopped.set()
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -738,21 +750,29 @@ class Thread:
             raise RuntimeError("cannot join thread before it is started")
         if self is current_thread():
             raise RuntimeError("cannot join current thread")
+        if not self.is_alive():
+            return
+        self._stopped.wait(timeout)
+        if self._stopped.is_set():
+            self._wait_for_tstate_lock(timeout is None)
 
-        self._block.acquire()
-        try:
-            if timeout is None:
-                while not self._stopped:
-                    self._block.wait()
-            else:
-                deadline = _time() + timeout
-                while not self._stopped:
-                    delay = deadline - _time()
-                    if delay <= 0:
-                        break
-                    self._block.wait(delay)
-        finally:
-            self._block.release()
+    def _wait_for_tstate_lock(self, block):
+        # Issue #18808: wait for the thread state to be gone.
+        # When self._stopped is set, the Python part of the thread is done,
+        # but the thread's tstate has not yet been destroyed.  The C code
+        # releases self._tstate_lock when the C part of the thread is done
+        # (the code at the end of the thread's life to remove all knowledge
+        # of the thread from the C data structures).
+        # This method waits to acquire _tstate_lock if `block` is True, or
+        # sees whether it can be acquired immediately if `block` is False.
+        # If it does acquire the lock, the C code is done, and _tstate_lock
+        # is set to None.
+        lock = self._tstate_lock
+        if lock is None:
+            return  # already determined that the C code is done
+        if lock.acquire(block):
+            lock.release()
+            self._tstate_lock = None
 
     @property
     def name(self):
@@ -771,7 +791,14 @@ class Thread:
 
     def is_alive(self):
         assert self._initialized, "Thread.__init__() not called"
-        return self._started.is_set() and not self._stopped
+        if not self._started.is_set():
+            return False
+        if not self._stopped.is_set():
+            return True
+        # The Python part of the thread is done, but the C part may still be
+        # waiting to run.
+        self._wait_for_tstate_lock(False)
+        return self._tstate_lock is not None
 
     isAlive = is_alive
 
@@ -853,11 +880,6 @@ class _DummyThread(Thread):
 
     def __init__(self):
         Thread.__init__(self, name=_newname("Dummy-%d"), daemon=True)
-
-        # Thread._block consumes an OS-level locking primitive, which
-        # can never be used by a _DummyThread.  Since a _DummyThread
-        # instance is immortal, that's bad, so release this resource.
-        del self._block
 
         self._started.set()
         self._set_ident()
@@ -952,15 +974,16 @@ def _after_fork():
         for thread in _enumerate():
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.
-            thread._reset_internal_locks()
             if thread is current:
                 # There is only one active thread. We reset the ident to
                 # its new value since it can have changed.
+                thread._reset_internal_locks(True)
                 ident = get_ident()
                 thread._ident = ident
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
+                thread._reset_internal_locks(False)
                 thread._stop()
 
         _limbo.clear()
