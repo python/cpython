@@ -22,7 +22,7 @@ extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
 #endif
 
 #ifdef O_CLOEXEC
-/* Does open() supports the O_CLOEXEC flag? Possible values:
+/* Does open() support the O_CLOEXEC flag? Possible values:
 
    -1: unknown
     0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
@@ -607,7 +607,7 @@ get_inheritable(int fd, int raise)
 }
 
 /* Get the inheritable flag of the specified file descriptor.
-   Return 1 if it the file descriptor can be inherited, 0 if it cannot,
+   Return 1 if the file descriptor can be inherited, 0 if it cannot,
    raise an exception and return -1 on error. */
 int
 _Py_get_inheritable(int fd)
@@ -706,7 +706,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 }
 
 /* Make the file descriptor non-inheritable.
-   Return 0 success, set errno and return -1 on error. */
+   Return 0 on success, set errno and return -1 on error. */
 static int
 make_non_inheritable(int fd)
 {
