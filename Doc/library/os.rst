@@ -737,8 +737,6 @@ as internal buffering of data.
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``.
 
-   Availability: Unix.
-
 
 .. function:: lseek(fd, pos, how)
 
