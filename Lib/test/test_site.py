@@ -5,6 +5,7 @@ executing have not been removed.
 
 """
 import unittest
+import test.support
 from test.support import run_unittest, TESTFN, EnvironmentVarGuard
 from test.support import captured_stderr
 import builtins
@@ -377,9 +378,10 @@ class ImportSideEffectTests(unittest.TestCase):
         self.assertTrue(hasattr(builtins, "exit"))
 
     def test_setting_copyright(self):
-        # 'copyright' and 'credits' should be in builtins
+        # 'copyright', 'credits', and 'license' should be in builtins
         self.assertTrue(hasattr(builtins, "copyright"))
         self.assertTrue(hasattr(builtins, "credits"))
+        self.assertTrue(hasattr(builtins, "license"))
 
     def test_setting_help(self):
         # 'help' should be set in builtins
@@ -405,8 +407,30 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
+
+class LicenseURL(unittest.TestCase):
+    """Test accessibility of the license."""
+
+    @unittest.skipUnless(str(license).startswith('See http://'),
+                         'license is available as a file')
+    def test_license_page(self):
+        """urlopen should return the license page"""
+        pat = r'^See (http://www\.python\.org/download/releases/[^/]+/license/)$'
+        mo = re.search(pat, str(license))
+        self.assertIsNotNone(mo, msg='can\'t find appropriate url in license')
+        if mo is not None:
+            url = mo.group(1)
+            with test.support.transient_internet(url):
+                import urllib.request, urllib.error
+                try:
+                    with urllib.request.urlopen(url) as data:
+                        code = data.getcode()
+                except urllib.error.HTTPError as e:
+                    code = e.code
+                self.assertEqual(code, 200, msg=url)
+
 def test_main():
-    run_unittest(HelperFunctionsTests, ImportSideEffectTests)
+    run_unittest(HelperFunctionsTests, ImportSideEffectTests, LicenseURL)
 
 if __name__ == "__main__":
     test_main()
