@@ -744,8 +744,6 @@ as internal buffering of data.
 
    As of Python 3.3, this is equivalent to ``os.pathconf(fd, name)``.
 
-   Availability: Unix.
-
 
 .. function:: fstat(fd)
 
