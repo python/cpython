@@ -1577,8 +1577,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks. Each tuple represents a test where a failure
-      was explicitly signalled using the :meth:`TestCase.fail\*` or
-      :meth:`TestCase.assert\*` methods.
+      was explicitly signalled using the :meth:`TestCase.assert\*` methods.
 
    .. attribute:: skipped
 
