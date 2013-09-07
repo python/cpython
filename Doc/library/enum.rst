@@ -36,11 +36,15 @@ follows::
     ...     red = 1
     ...     green = 2
     ...     blue = 3
+    ...
 
-**A note on nomenclature**: we call :class:`Color` an *enumeration* (or *enum*)
-and :attr:`Color.red`, :attr:`Color.green` are *enumeration members* (or
-*enum members*).  Enumeration members also have *values* (the value of
-:attr:`Color.red` is ``1``, etc.)
+..note: Nomenclature
+  - The class :class:`Color` is an *enumeration* (or *enum*)
+  - The attributes :attr:`Color.red`, :attr:`Color.green`, etc., are
+    *enumeration members* (or *enum members*).
+  - The enum members have *names* and *values* (the name of
+    :attr:`Color.red` is ``red``, the value of :attr:`Color.blue` is
+    ``3``, etc.)
 
 Enumeration members have human readable string representations::
 
@@ -68,13 +72,13 @@ Enum members also have a property that contains just their item name::
 Enumerations support iteration, in definition order::
 
     >>> class Shake(Enum):
-    ...   vanilla = 7
-    ...   chocolate = 4
-    ...   cookies = 9
-    ...   mint = 3
+    ...     vanilla = 7
+    ...     chocolate = 4
+    ...     cookies = 9
+    ...     mint = 3
     ...
     >>> for shake in Shake:
-    ...   print(shake)
+    ...     print(shake)
     ...
     Shake.vanilla
     Shake.chocolate
@@ -124,8 +128,8 @@ Duplicating enum members and values
 Having two enum members with the same name is invalid::
 
     >>> class Shape(Enum):
-    ...   square = 2
-    ...   square = 3
+    ...     square = 2
+    ...     square = 3
     ...
     Traceback (most recent call last):
     ...
@@ -137,10 +141,10 @@ lookup of the value of A and B will return A.  By-name lookup of B will also
 return A::
 
     >>> class Shape(Enum):
-    ...   square = 2
-    ...   diamond = 1
-    ...   circle = 3
-    ...   alias_for_square = 2
+    ...     square = 2
+    ...     diamond = 1
+    ...     circle = 3
+    ...     alias_for_square = 2
     ...
     >>> Shape.square
     <Shape.square: 2>
@@ -151,7 +155,7 @@ return A::
 
 
 Ensuring unique enumeration values
-==================================
+----------------------------------
 
 By default, enumerations allow multiple names as aliases for the same value.
 When this behavior isn't desired, the following decorator can be used to
@@ -166,17 +170,18 @@ found :exc:`ValueError` is raised with the details::
     >>> from enum import Enum, unique
     >>> @unique
     ... class Mistake(Enum):
-    ...   one = 1
-    ...   two = 2
-    ...   three = 3
-    ...   four = 3
+    ...     one = 1
+    ...     two = 2
+    ...     three = 3
+    ...     four = 3
+    ...
     Traceback (most recent call last):
     ...
     ValueError: duplicate values found in <enum 'Mistake'>: four -> three
 
 
 Iteration
-=========
+---------
 
 Iterating over the members of an enum does not provide the aliases::
 
@@ -188,7 +193,7 @@ to members.  It includes all names defined in the enumeration, including the
 aliases::
 
     >>> for name, member in Shape.__members__.items():
-    ...   name, member
+    ...     name, member
     ...
     ('square', <Shape.square: 2>)
     ('diamond', <Shape.diamond: 1>)
@@ -252,20 +257,21 @@ Enumerations are Python classes, and can have methods and special methods as
 usual.  If we have this enumeration::
 
     >>> class Mood(Enum):
-    ...   funky = 1
-    ...   happy = 3
+    ...     funky = 1
+    ...     happy = 3
     ...
-    ...   def describe(self):
-    ...     # self is the member here
-    ...     return self.name, self.value
+    ...     def describe(self):
+    ...         # self is the member here
+    ...         return self.name, self.value
     ...
-    ...   def __str__(self):
-    ...     return 'my custom str! {0}'.format(self.value)
+    ...     def __str__(self):
+    ...         return 'my custom str! {0}'.format(self.value)
     ...
-    ...   @classmethod
-    ...   def favorite_mood(cls):
-    ...     # cls here is the enumeration
-    ...     return cls.happy
+    ...     @classmethod
+    ...     def favorite_mood(cls):
+    ...         # cls here is the enumeration
+    ...         return cls.happy
+    ...
 
 Then::
 
@@ -294,7 +300,8 @@ Subclassing an enumeration is allowed only if the enumeration does not define
 any members.  So this is forbidden::
 
     >>> class MoreColor(Color):
-    ...   pink = 17
+    ...     pink = 17
+    ...
     Traceback (most recent call last):
     ...
     TypeError: Cannot extend enumerations
@@ -302,12 +309,12 @@ any members.  So this is forbidden::
 But this is allowed::
 
     >>> class Foo(Enum):
-    ...   def some_behavior(self):
-    ...     pass
+    ...     def some_behavior(self):
+    ...         pass
     ...
     >>> class Bar(Foo):
-    ...   happy = 1
-    ...   sad = 2
+    ...     happy = 1
+    ...     sad = 2
     ...
 
 Allowing subclassing of enums that define members would lead to a violation of
@@ -363,10 +370,11 @@ new class derived from :class:`Enum` is returned.  In other words, the above
 assignment to :class:`Animal` is equivalent to::
 
     >>> class Animals(Enum):
-    ...   ant = 1
-    ...   bee = 2
-    ...   cat = 3
-    ...   dog = 4
+    ...     ant = 1
+    ...     bee = 2
+    ...     cat = 3
+    ...     dog = 4
+    ...
 
 The reason for defaulting to ``1`` as the starting number and not ``0`` is
 that ``0`` is ``False`` in a boolean sense, but enum members all evaluate
@@ -381,10 +389,10 @@ The solution is to specify the module name explicitly as follows::
     >>> Animals = Enum('Animals', 'ant bee cat dog', module=__name__)
 
 Derived Enumerations
-====================
+--------------------
 
 IntEnum
--------
+^^^^^^^
 
 A variation of :class:`Enum` is provided which is also a subclass of
 :class:`int`.  Members of an :class:`IntEnum` can be compared to integers;
@@ -393,12 +401,12 @@ to each other::
 
     >>> from enum import IntEnum
     >>> class Shape(IntEnum):
-    ...   circle = 1
-    ...   square = 2
+    ...     circle = 1
+    ...     square = 2
     ...
     >>> class Request(IntEnum):
-    ...   post = 1
-    ...   get = 2
+    ...     post = 1
+    ...     get = 2
     ...
     >>> Shape == 1
     False
@@ -410,12 +418,12 @@ to each other::
 However, they still can't be compared to standard :class:`Enum` enumerations::
 
     >>> class Shape(IntEnum):
-    ...   circle = 1
-    ...   square = 2
+    ...     circle = 1
+    ...     square = 2
     ...
     >>> class Color(Enum):
-    ...   red = 1
-    ...   green = 2
+    ...     red = 1
+    ...     green = 2
     ...
     >>> Shape.circle == Color.red
     False
@@ -439,7 +447,7 @@ that still expects integers.
 
 
 Others
-------
+^^^^^^
 
 While :class:`IntEnum` is part of the :mod:`enum` module, it would be very
 simple to implement independently::
@@ -472,7 +480,7 @@ Some rules:
 
 
 Interesting examples
-====================
+--------------------
 
 While :class:`Enum` and :class:`IntEnum` are expected to cover the majority of
 use-cases, they cannot cover them all.  Here are recipes for some different
@@ -481,7 +489,7 @@ one's own.
 
 
 AutoNumber
-----------
+^^^^^^^^^^
 
 Avoids having to specify the value for each enumeration member::
 
@@ -502,7 +510,7 @@ Avoids having to specify the value for each enumeration member::
 
 
 OrderedEnum
------------
+^^^^^^^^^^^
 
 An ordered enumeration that is not based on :class:`IntEnum` and so maintains
 the normal :class:`Enum` invariants (such as not being comparable to other
@@ -538,7 +546,7 @@ enumerations)::
 
 
 DuplicateFreeEnum
------------------
+^^^^^^^^^^^^^^^^^
 
 Raises an error if a duplicate member name is found instead of creating an
 alias::
@@ -558,6 +566,7 @@ alias::
     ...     green = 2
     ...     blue = 3
     ...     grene = 2
+    ...
     Traceback (most recent call last):
     ...
     ValueError: aliases not allowed in DuplicateFreeEnum:  'grene' --> 'green'
@@ -570,7 +579,7 @@ alias::
 
 
 Planet
-------
+^^^^^^
 
 If :meth:`__new__` or :meth:`__init__` is defined the value of the enum member
 will be passed to those methods::
