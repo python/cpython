@@ -361,14 +361,8 @@ def setcopyright():
     Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
     for supporting Python development.  See www.python.org for more information.""")
     here = os.path.dirname(os.__file__)
-<<<<<<< local
     builtins.license = _sitebuiltins._Printer(
         "license", "See http://www.python.org/%.3s/license.html" % sys.version,
-=======
-    builtins.license = _Printer(
-        "license",
-        "See http://www.python.org/download/releases/%.5s/license/" % sys.version,
->>>>>>> other
         ["LICENSE.txt", "LICENSE"],
         [os.path.join(here, os.pardir), here, os.curdir])
 
