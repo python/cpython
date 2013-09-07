@@ -1,10 +1,30 @@
 
 /* set object implementation
+
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
    Copyright (c) 2003-2013 Python Software Foundation.
    All rights reserved.
+
+   The basic lookup function used by all operations.
+   This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
+
+   The initial probe index is computed as hash mod the table size.
+   Subsequent probe indices are computed as explained in Objects/dictobject.c.
+
+   To improve cache locality, each probe inspects a series of consecutive
+   nearby entries before moving on to probes elsewhere in memory.  This leaves
+   us with a hybrid of linear probing and open addressing.  The linear probing
+   reduces the cost of hash collisions because consecutive memory accesses
+   tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
+   we then use open addressing with the upper bits from the hash value.  This
+   helps break-up long chains of collisions.
+
+   All arithmetic on hash should ignore overflow.
+
+   Unlike the dictionary implementation, the lookkey functions can return
+   NULL if the rich comparison returns an error.
 */
 
 #include "Python.h"
@@ -43,28 +63,6 @@ PyObject *_PySet_Dummy = dummy;
 #endif
 static PySetObject *free_list[PySet_MAXFREELIST];
 static int numfree = 0;
-
-
-/*
-The basic lookup function used by all operations.
-This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
-
-The initial probe index is computed as hash mod the table size.
-Subsequent probe indices are computed as explained in Objects/dictobject.c.
-
-To improve cache locality, each probe inspects a series of consecutive
-nearby entries before moving on to probes elsewhere in memory.  This leaves
-us with a hybrid of linear probing and open addressing.  The linear probing
-reduces the cost of hash collisions because consecutive memory accesses
-tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
-we then use open addressing with the upper bits from the hash value.  This
-helps break-up long chains of collisions.
-
-All arithmetic on hash should ignore overflow.
-
-Unlike the dictionary implementation, the lookkey functions can return
-NULL if the rich comparison returns an error.
-*/
 
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
