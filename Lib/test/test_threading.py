@@ -539,6 +539,40 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
 
+    def test_tstate_lock(self):
+        # Test an implementation detail of Thread objects.
+        started = _thread.allocate_lock()
+        finish = _thread.allocate_lock()
+        started.acquire()
+        finish.acquire()
+        def f():
+            started.release()
+            finish.acquire()
+            time.sleep(0.01)
+        # The tstate lock is None until the thread is started
+        t = threading.Thread(target=f)
+        self.assertIs(t._tstate_lock, None)
+        t.start()
+        started.acquire()
+        self.assertTrue(t.is_alive())
+        # The tstate lock can't be acquired when the thread is running
+        # (or suspended).
+        tstate_lock = t._tstate_lock
+        self.assertFalse(tstate_lock.acquire(timeout=0), False)
+        finish.release()
+        # When the thread ends, the state_lock can be successfully
+        # acquired.
+        self.assertTrue(tstate_lock.acquire(timeout=5), False)
+        # But is_alive() is still True:  we hold _tstate_lock now, which
+        # prevents is_alive() from knowing the thread's end-of-life C code
+        # is done.
+        self.assertTrue(t.is_alive())
+        # Let is_alive() find out the C code is done.
+        tstate_lock.release()
+        self.assertFalse(t.is_alive())
+        # And verify the thread disposed of _tstate_lock.
+        self.assertTrue(t._tstate_lock is None)
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -669,7 +703,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             # someone else tries to fix this test case by acquiring this lock
             # before forking instead of resetting it, the test case will
             # deadlock when it shouldn't.
-            condition = w._block
+            condition = w._stopped._cond
             orig_acquire = condition.acquire
             call_count_lock = threading.Lock()
             call_count = 0
@@ -733,7 +767,7 @@ class ThreadJoinOnShutdown(BaseTestCase):
             # causes the worker to fork.  At this point, the problematic waiter
             # lock has been acquired once by the waiter and has been put onto
             # the waiters list.
-            condition = w._block
+            condition = w._stopped._cond
             orig_release_save = condition._release_save
             def my_release_save():
                 global start_fork
@@ -859,6 +893,38 @@ class SubinterpThreadingTests(BaseTestCase):
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
                 time.sleep(0.05)
+                os.write(%d, b"x")
+            threading.Thread(target=f).start()
+            """ % (w,)
+        ret = _testcapi.run_in_subinterp(code)
+        self.assertEqual(ret, 0)
+        # The thread was joined properly.
+        self.assertEqual(os.read(r, 1), b"x")
+
+    def test_threads_join_2(self):
+        # Same as above, but a delay gets introduced after the thread's
+        # Python code returned but before the thread state is deleted.
+        # To achieve this, we register a thread-local object which sleeps
+        # a bit when deallocated.
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        code = r"""if 1:
+            import os
+            import threading
+            import time
+
+            class Sleeper:
+                def __del__(self):
+                    time.sleep(0.05)
+
+            tls = threading.local()
+
+            def f():
+                # Sleep a bit so that the thread is still running when
+                # Py_EndInterpreter is called.
+                time.sleep(0.05)
+                tls.x = Sleeper()
                 os.write(%d, b"x")
             threading.Thread(target=f).start()
             """ % (w,)
