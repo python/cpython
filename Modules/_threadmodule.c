@@ -1172,6 +1172,66 @@ yet finished.\n\
 This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
+static void
+release_sentinel(void *wr)
+{
+    /* Tricky: this function is called when the current thread state
+       is being deleted.  Therefore, only simple C code can safely
+       execute here. */
+    PyObject *obj = PyWeakref_GET_OBJECT(wr);
+    lockobject *lock;
+    if (obj != Py_None) {
+        assert(Py_TYPE(obj) == &Locktype);
+        lock = (lockobject *) obj;
+        if (lock->locked) {
+            PyThread_release_lock(lock->lock_lock);
+            lock->locked = 0;
+        }
+    }
+    /* Deallocating a weakref with a NULL callback only calls
+       PyObject_GC_Del(), which can't call any Python code. */
+    Py_DECREF(wr);
+}
+
+static PyObject *
+thread__set_sentinel(PyObject *self)
+{
+    PyObject *wr;
+    PyThreadState *tstate = PyThreadState_Get();
+    lockobject *lock;
+
+    if (tstate->on_delete_data != NULL) {
+        /* We must support the re-creation of the lock from a
+           fork()ed child. */
+        assert(tstate->on_delete == &release_sentinel);
+        wr = (PyObject *) tstate->on_delete_data;
+        tstate->on_delete = NULL;
+        tstate->on_delete_data = NULL;
+        Py_DECREF(wr);
+    }
+    lock = newlockobject();
+    if (lock == NULL)
+        return NULL;
+    /* The lock is owned by whoever called _set_sentinel(), but the weakref
+       hangs to the thread state. */
+    wr = PyWeakref_NewRef((PyObject *) lock, NULL);
+    if (wr == NULL) {
+        Py_DECREF(lock);
+        return NULL;
+    }
+    tstate->on_delete_data = (void *) wr;
+    tstate->on_delete = &release_sentinel;
+    return (PyObject *) lock;
+}
+
+PyDoc_STRVAR(_set_sentinel_doc,
+"_set_sentinel() -> lock\n\
+\n\
+Set a sentinel lock that will be released when the current thread\n\
+state is finalized (after it is untied from the interpreter).\n\
+\n\
+This is a private API for the threading module.");
+
 static PyObject *
 thread_stack_size(PyObject *self, PyObject *args)
 {
@@ -1247,6 +1307,8 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _count_doc},
     {"stack_size",              (PyCFunction)thread_stack_size,
      METH_VARARGS, stack_size_doc},
+    {"_set_sentinel",           (PyCFunction)thread__set_sentinel,
+     METH_NOARGS, _set_sentinel_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 

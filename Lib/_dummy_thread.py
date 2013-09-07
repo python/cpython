@@ -81,6 +81,10 @@ def stack_size(size=None):
         raise error("setting thread stack size not supported")
     return 0
 
+def _set_sentinel():
+    """Dummy implementation of _thread._set_sentinel()."""
+    return LockType()
+
 class LockType(object):
     """Class implementing dummy implementation of _thread.LockType.
 

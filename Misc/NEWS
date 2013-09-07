@@ -56,6 +56,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18808: Thread.join() now waits for the underlying thread state to
+  be destroyed before returning.  This prevents unpredictable aborts in
+  Py_EndInterpreter() when some non-daemon threads are still running.
+
 - Issue #18458: Prevent crashes with newer versions of libedit.  Its readline
   emulation has changed from 0-based indexing to 1-based like gnu readline.
 
