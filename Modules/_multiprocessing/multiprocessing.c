@@ -99,13 +99,15 @@ multiprocessing_send(PyObject *self, PyObject *args)
 {
     HANDLE handle;
     Py_buffer buf;
-    int ret;
+    int ret, length;
 
     if (!PyArg_ParseTuple(args, F_HANDLE "y*:send" , &handle, &buf))
         return NULL;
 
+    length = (int)Py_MIN(buf.len, INT_MAX);
+
     Py_BEGIN_ALLOW_THREADS
-    ret = send((SOCKET) handle, buf.buf, buf.len, 0);
+    ret = send((SOCKET) handle, buf.buf, length, 0);
     Py_END_ALLOW_THREADS
 
     PyBuffer_Release(&buf);
