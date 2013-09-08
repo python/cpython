@@ -878,13 +878,21 @@ else:
 
     import selectors
 
+    # poll/select have the advantage of not requiring any extra file
+    # descriptor, contrarily to epoll/kqueue (also, they require a single
+    # syscall).
+    if hasattr(selectors, 'PollSelector'):
+        _WaitSelector = selectors.PollSelector
+    else:
+        _WaitSelector = selectors.SelectSelector
+
     def wait(object_list, timeout=None):
         '''
         Wait till an object in object_list is ready/readable.
 
         Returns list of those objects in object_list which are ready/readable.
         '''
-        with selectors.DefaultSelector() as selector:
+        with _WaitSelector() as selector:
             for obj in object_list:
                 selector.register(obj, selectors.EVENT_READ)
 
