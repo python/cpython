@@ -321,12 +321,8 @@ class Request:
 
     def get_method(self):
         """Return a string indicating the HTTP request method."""
-        if getattr(self, 'method', None) is not None:
-            return self.method
-        elif self.data is not None:
-            return "POST"
-        else:
-            return "GET"
+        default_method = "POST" if self.data is not None else "GET"
+        return getattr(self, 'method', default_method)
 
     def get_full_url(self):
         return self.full_url
