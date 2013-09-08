@@ -301,7 +301,6 @@ class BaseSelectorTestCase(unittest.TestCase):
 
 class ScalableSelectorMixIn:
 
-    @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(resource, "Test needs resource module")
     def test_above_fd_setsize(self):
         # A scalable implementation should have no problem with more than
@@ -313,7 +312,7 @@ class ScalableSelectorMixIn:
             self.addCleanup(resource.setrlimit, resource.RLIMIT_NOFILE,
                             (soft, hard))
             NUM_FDS = hard
-        except OSError:
+        except (OSError, ValueError):
             NUM_FDS = soft
 
         # guard for already allocated FDs (stdin, stdout...)
