@@ -517,8 +517,6 @@ def _newname(template="Thread-%d"):
 _active_limbo_lock = _allocate_lock()
 _active = {}    # maps thread id to Thread object
 _limbo = {}
-
-# For debug and leak testing
 _dangling = WeakSet()
 
 # Main class for threads
@@ -552,14 +550,11 @@ class Thread:
         self._tstate_lock = None
         self._started = Event()
         self._stopped = Event()
-        # _is_stopped should be the same as _stopped.is_set().  The bizarre
-        # duplication is to allow test_is_alive_after_fork to pass on old
-        # Linux kernels.  See issue 18808.
-        self._is_stopped = False
         self._initialized = True
         # sys.stderr is not stored in the class like
         # sys.exc_info since it can be changed between instances
         self._stderr = _sys.stderr
+        # For debugging and _after_fork()
         _dangling.add(self)
 
     def _reset_internal_locks(self, is_alive):
@@ -711,7 +706,6 @@ class Thread:
 
     def _stop(self):
         self._stopped.set()
-        self._is_stopped = True
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -798,7 +792,7 @@ class Thread:
         assert self._initialized, "Thread.__init__() not called"
         if not self._started.is_set():
             return False
-        if not self._is_stopped:
+        if not self._stopped.is_set():
             return True
         # The Python part of the thread is done, but the C part may still be
         # waiting to run.
@@ -976,7 +970,11 @@ def _after_fork():
     current = current_thread()
     _main_thread = current
     with _active_limbo_lock:
-        for thread in _enumerate():
+        # Dangling thread instances must still have their locks reset,
+        # because someone may join() them.
+        threads = set(_enumerate())
+        threads.update(_dangling)
+        for thread in threads:
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.
             if thread is current:
