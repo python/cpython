@@ -1466,16 +1466,25 @@ class MiscTests(unittest.TestCase):
         self.assertEqual(str(err), expected_errmsg)
 
 class RequestTests(unittest.TestCase):
+    class PutRequest(Request):
+        method='PUT'
 
     def setUp(self):
         self.get = Request("http://www.python.org/~jeremy/")
         self.post = Request("http://www.python.org/~jeremy/",
                             "data",
                             headers={"X-Test": "test"})
+        self.head = Request("http://www.python.org/~jeremy/", method='HEAD')
+        self.put = self.PutRequest("http://www.python.org/~jeremy/")
+        self.force_post = self.PutRequest("http://www.python.org/~jeremy/",
+            method="POST")
 
     def test_method(self):
         self.assertEqual("POST", self.post.get_method())
         self.assertEqual("GET", self.get.get_method())
+        self.assertEquil("HEAD", self.head.get_method())
+        self.assertEqual("PUT", self.put.get_method())
+        self.assertEqual("POST", self.force_post.get_method())
 
     def test_data(self):
         self.assertFalse(self.get.data)
