@@ -271,7 +271,8 @@ class Request:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
         self.unverifiable = unverifiable
-        self.method = method
+        if method:
+            self.method = method
 
     @property
     def full_url(self):
@@ -320,7 +321,7 @@ class Request:
 
     def get_method(self):
         """Return a string indicating the HTTP request method."""
-        if self.method is not None:
+        if getattr(self, 'method', None) is not None:
             return self.method
         elif self.data is not None:
             return "POST"
