@@ -4808,30 +4808,31 @@ class InheritanceTest(unittest.TestCase):
             sock.set_inheritable(False)
             self.assertEqual(sock.get_inheritable(), False)
 
-    if fcntl:
-        def test_get_inheritable_cloexec(self):
-            sock = socket.socket()
-            with sock:
-                fd = sock.fileno()
-                self.assertEqual(sock.get_inheritable(), False)
+    @unittest.skipIf(fcntl is None, "need fcntl")
+    def test_get_inheritable_cloexec(self):
+        sock = socket.socket()
+        with sock:
+            fd = sock.fileno()
+            self.assertEqual(sock.get_inheritable(), False)
 
-                # clear FD_CLOEXEC flag
-                flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-                flags &= ~fcntl.FD_CLOEXEC
-                fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+            # clear FD_CLOEXEC flag
+            flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+            flags &= ~fcntl.FD_CLOEXEC
+            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
 
-                self.assertEqual(sock.get_inheritable(), True)
+            self.assertEqual(sock.get_inheritable(), True)
 
-        def test_set_inheritable_cloexec(self):
-            sock = socket.socket()
-            with sock:
-                fd = sock.fileno()
-                self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
-                                 fcntl.FD_CLOEXEC)
+    @unittest.skipIf(fcntl is None, "need fcntl")
+    def test_set_inheritable_cloexec(self):
+        sock = socket.socket()
+        with sock:
+            fd = sock.fileno()
+            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                             fcntl.FD_CLOEXEC)
 
-                sock.set_inheritable(True)
-                self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
-                                 0)
+            sock.set_inheritable(True)
+            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                             0)
 
 
     @unittest.skipUnless(hasattr(socket, "socketpair"),

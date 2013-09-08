@@ -2312,28 +2312,29 @@ class FDInheritanceTests(unittest.TestCase):
         os.set_inheritable(fd, True)
         self.assertEqual(os.get_inheritable(fd), True)
 
-    if fcntl:
-        def test_get_inheritable_cloexec(self):
-            fd = os.open(__file__, os.O_RDONLY)
-            self.addCleanup(os.close, fd)
-            self.assertEqual(os.get_inheritable(fd), False)
+    @unittest.skipIf(fcntl is None, "need fcntl")
+    def test_get_inheritable_cloexec(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        self.assertEqual(os.get_inheritable(fd), False)
 
-            # clear FD_CLOEXEC flag
-            flags = fcntl.fcntl(fd, fcntl.F_GETFD)
-            flags &= ~fcntl.FD_CLOEXEC
-            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+        # clear FD_CLOEXEC flag
+        flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+        flags &= ~fcntl.FD_CLOEXEC
+        fcntl.fcntl(fd, fcntl.F_SETFD, flags)
 
-            self.assertEqual(os.get_inheritable(fd), True)
+        self.assertEqual(os.get_inheritable(fd), True)
 
-        def test_set_inheritable_cloexec(self):
-            fd = os.open(__file__, os.O_RDONLY)
-            self.addCleanup(os.close, fd)
-            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
-                             fcntl.FD_CLOEXEC)
+    @unittest.skipIf(fcntl is None, "need fcntl")
+    def test_set_inheritable_cloexec(self):
+        fd = os.open(__file__, os.O_RDONLY)
+        self.addCleanup(os.close, fd)
+        self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                         fcntl.FD_CLOEXEC)
 
-            os.set_inheritable(fd, True)
-            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
-                             0)
+        os.set_inheritable(fd, True)
+        self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                         0)
 
     def test_open(self):
         fd = os.open(__file__, os.O_RDONLY)
