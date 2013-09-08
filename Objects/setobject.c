@@ -446,14 +446,13 @@ set_clear_internal(PySetObject *so)
     int table_is_malloced;
     Py_ssize_t fill;
     setentry small_copy[PySet_MINSIZE];
-#ifdef Py_DEBUG
-    Py_ssize_t i, n;
-    assert (PyAnySet_Check(so));
 
-    n = so->mask + 1;
-    i = 0;
+#ifdef Py_DEBUG
+    Py_ssize_t i = 0;
+    Py_ssize_t n = so->mask + 1;
 #endif
 
+    assert (PyAnySet_Check(so));
     table = so->table;
     assert(table != NULL);
     table_is_malloced = table != so->smalltable;
@@ -2366,7 +2365,7 @@ test_c_api(PySetObject *so)
     Py_ssize_t count;
     char *s;
     Py_ssize_t i;
-    PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x;
+    PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x=NULL;
     PyObject *ob = (PyObject *)so;
     Py_hash_t hash;
     PyObject *str;
