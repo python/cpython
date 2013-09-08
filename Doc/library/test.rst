@@ -263,11 +263,14 @@ The :mod:`test.support` module defines the following functions:
    Used when tests are executed by :mod:`test.regrtest`.
 
 
-.. function:: findfile(filename)
+.. function:: findfile(filename, subdir=None)
 
    Return the path to the file named *filename*. If no match is found
    *filename* is returned. This does not equal a failure since it could be the
    path to the file.
+
+    Setting *subdir* indicates a relative path to use to find the file
+    rather than looking directly in the path directories.
 
 
 .. function:: run_unittest(\*classes)

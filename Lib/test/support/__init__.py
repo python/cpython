@@ -853,24 +853,31 @@ if hasattr(os, "umask"):
         finally:
             os.umask(oldmask)
 
-# TEST_HOME refers to the top level directory of the "test" package
+# TEST_HOME_DIR refers to the top level directory of the "test" package
 # that contains Python's regression test suite
-TEST_HOME = os.path.dirname(os.path.abspath(__file__))
+TEST_SUPPORT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_HOME_DIR = os.path.dirname(TEST_SUPPORT_DIR)
 
-def findfile(file, here=TEST_HOME, subdir=None):
+# TEST_DATA_DIR is used as a target download location for remote resources
+TEST_DATA_DIR = os.path.join(TEST_HOME_DIR, "data")
+
+def findfile(filename, subdir=None):
     """Try to find a file on sys.path or in the test directory.  If it is not
     found the argument passed to the function is returned (this does not
-    necessarily signal failure; could still be the legitimate path)."""
-    if os.path.isabs(file):
-        return file
+    necessarily signal failure; could still be the legitimate path).
+
+    Setting *subdir* indicates a relative path to use to find the file
+    rather than looking directly in the path directories.
+    """
+    if os.path.isabs(filename):
+        return filename
     if subdir is not None:
-        file = os.path.join(subdir, file)
-    path = sys.path
-    path = [os.path.dirname(here)] + path
+        filename = os.path.join(subdir, filename)
+    path = [TEST_HOME_DIR] + sys.path
     for dn in path:
-        fn = os.path.join(dn, file)
+        fn = os.path.join(dn, filename)
         if os.path.exists(fn): return fn
-    return file
+    return filename
 
 def create_empty_file(filename):
     """Create an empty file. If the file already exists, truncate it."""
@@ -907,7 +914,7 @@ def open_urlresource(url, *args, **kw):
 
     filename = urllib.parse.urlparse(url)[2].split('/')[-1] # '/': it's URL!
 
-    fn = os.path.join(os.path.dirname(__file__), "data", filename)
+    fn = os.path.join(TEST_DATA_DIR, filename)
 
     def check_valid_file(fn):
         f = open(fn, *args, **kw)
