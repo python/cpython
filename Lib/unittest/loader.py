@@ -106,7 +106,9 @@ class TestLoader(object):
         elif (isinstance(obj, types.UnboundMethodType) and
               isinstance(parent, type) and
               issubclass(parent, case.TestCase)):
-            return self.suiteClass([parent(obj.__name__)])
+            name = parts[-1]
+            inst = parent(name)
+            return self.suiteClass([inst])
         elif isinstance(obj, suite.TestSuite):
             return obj
         elif hasattr(obj, '__call__'):
