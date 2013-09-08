@@ -109,7 +109,7 @@ class ThreadTests(BaseTestCase):
         if verbose:
             print('waiting for all tasks to complete')
         for t in threads:
-            t.join(NUMTASKS)
+            t.join()
             self.assertTrue(not t.is_alive())
             self.assertNotEqual(t.ident, 0)
             self.assertFalse(t.ident is None)
