@@ -15,6 +15,14 @@ support.import_fresh_module('tkinter')
 from tkinter import Tcl
 from _tkinter import TclError
 
+tcl_version = _tkinter.TCL_VERSION.split('.')
+try:
+    for i in range(len(tcl_version)):
+        tcl_version[i] = int(tcl_version[i])
+except ValueError:
+    pass
+tcl_version = tuple(tcl_version)
+
 
 class TkinterTest(unittest.TestCase):
 
@@ -200,9 +208,12 @@ class TclTest(unittest.TestCase):
             (('a', 3.4), ('a', 3.4)),
             ((), ()),
             (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
-            (call('dict', 'create', 1, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                    (1, '\u20ac', '\u20ac', (3.4,))),
         ]
+        if tcl_version >= (8, 5):
+            testcases += [
+                (call('dict', 'create', 1, '\u20ac', b'\xe2\x82\xac', (3.4,)),
+                        (1, '\u20ac', '\u20ac', (3.4,))),
+            ]
         for arg, res in testcases:
             self.assertEqual(splitlist(arg), res, msg=arg)
         self.assertRaises(TclError, splitlist, '{')
@@ -234,9 +245,12 @@ class TclTest(unittest.TestCase):
             (('a', (2, 3.4)), ('a', (2, 3.4))),
             ((), ()),
             (call('list', 1, '2', (3.4,)), (1, '2', (3.4,))),
-            (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
-                    (12, '\u20ac', '\u20ac', (3.4,))),
         ]
+        if tcl_version >= (8, 5):
+            testcases += [
+                (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
+                        (12, '\u20ac', '\u20ac', (3.4,))),
+            ]
         for arg, res in testcases:
             self.assertEqual(split(arg), res, msg=arg)
 
