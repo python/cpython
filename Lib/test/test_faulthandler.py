@@ -265,17 +265,33 @@ faulthandler._sigsegv()
         # By default, the module should be disabled
         code = "import faulthandler; print(faulthandler.is_enabled())"
         args = (sys.executable, '-E', '-c', code)
-        # use subprocess module directly because test.script_helper adds
-        # "-X faulthandler" to the command line
-        stdout = subprocess.check_output(args)
-        self.assertEqual(stdout.rstrip(), b"False")
+        # don't use assert_python_ok() because it always enable faulthandler
+        output = subprocess.check_output(args)
+        self.assertEqual(output.rstrip(), b"False")
 
     def test_sys_xoptions(self):
         # Test python -X faulthandler
         code = "import faulthandler; print(faulthandler.is_enabled())"
-        rc, stdout, stderr = assert_python_ok("-X", "faulthandler", "-c", code)
-        stdout = (stdout + stderr).strip()
-        self.assertEqual(stdout, b"True")
+        args = (sys.executable, "-E", "-X", "faulthandler", "-c", code)
+        # don't use assert_python_ok() because it always enable faulthandler
+        output = subprocess.check_output(args)
+        self.assertEqual(output.rstrip(), b"True")
+
+    def test_env_var(self):
+        # empty env var
+        code = "import faulthandler; print(faulthandler.is_enabled())"
+        args = (sys.executable, "-c", code)
+        env = os.environ.copy()
+        env['PYTHONFAULTHANDLER'] = ''
+        # don't use assert_python_ok() because it always enable faulthandler
+        output = subprocess.check_output(args, env=env)
+        self.assertEqual(output.rstrip(), b"False")
+
+        # non-empty env var
+        env = os.environ.copy()
+        env['PYTHONFAULTHANDLER'] = '1'
+        output = subprocess.check_output(args, env=env)
+        self.assertEqual(output.rstrip(), b"True")
 
     def check_dump_traceback(self, filename):
         """

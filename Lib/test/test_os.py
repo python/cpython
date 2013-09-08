@@ -34,6 +34,10 @@ try:
     import resource
 except ImportError:
     resource = None
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
 
 from test.script_helper import assert_python_ok
 
@@ -2300,18 +2304,36 @@ class CPUCountTests(unittest.TestCase):
 
 
 class FDInheritanceTests(unittest.TestCase):
-    def test_get_inheritable(self):
+    def test_get_set_inheritable(self):
         fd = os.open(__file__, os.O_RDONLY)
         self.addCleanup(os.close, fd)
-        for inheritable in (False, True):
-            os.set_inheritable(fd, inheritable)
-            self.assertEqual(os.get_inheritable(fd), inheritable)
+        self.assertEqual(os.get_inheritable(fd), False)
 
-    def test_set_inheritable(self):
-        fd = os.open(__file__, os.O_RDONLY)
-        self.addCleanup(os.close, fd)
         os.set_inheritable(fd, True)
         self.assertEqual(os.get_inheritable(fd), True)
+
+    if fcntl:
+        def test_get_inheritable_cloexec(self):
+            fd = os.open(__file__, os.O_RDONLY)
+            self.addCleanup(os.close, fd)
+            self.assertEqual(os.get_inheritable(fd), False)
+
+            # clear FD_CLOEXEC flag
+            flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+            flags &= ~fcntl.FD_CLOEXEC
+            fcntl.fcntl(fd, fcntl.F_SETFD, flags)
+
+            self.assertEqual(os.get_inheritable(fd), True)
+
+        def test_set_inheritable_cloexec(self):
+            fd = os.open(__file__, os.O_RDONLY)
+            self.addCleanup(os.close, fd)
+            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                             fcntl.FD_CLOEXEC)
+
+            os.set_inheritable(fd, True)
+            self.assertEqual(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC,
+                             0)
 
     def test_open(self):
         fd = os.open(__file__, os.O_RDONLY)
