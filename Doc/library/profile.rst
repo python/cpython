@@ -267,14 +267,16 @@ functions:
    Directly using the :class:`Profile` class allows formatting profile results
    without writing the profile data to a file::
 
-      import cProfile, pstats, io
+      import cProfile, pstats, StringIO
       pr = cProfile.Profile()
       pr.enable()
-      ... do something ...
+      # ... do something ...
       pr.disable()
-      s = io.StringIO()
-      ps = pstats.Stats(pr, stream=s)
-      ps.print_results()
+      s = StringIO.StringIO()
+      sortby = 'cumulative'
+      ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+      ps.print_stats()
+      print s.getvalue()
 
    .. method:: enable()
 
