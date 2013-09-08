@@ -2,6 +2,19 @@
 Python News
 +++++++++++
 
+What's New in Python 3.4.0 Alpha 3?
+===================================
+
+Projected Release date: 2013-10-XX
+
+Tests
+-----
+
+- Issue #18952: Fix regression in support data downloads introduced when
+  test.support was converted to a package. Regression noticed by Zachary
+  Ware.
+
+
 What's New in Python 3.4.0 Alpha 2?
 ===================================
 
