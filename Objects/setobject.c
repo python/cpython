@@ -45,17 +45,6 @@ static PyObject _dummy_struct;
 /* Exported for the gdb plugin's benefit. */
 PyObject *_PySet_Dummy = dummy;
 
-#define INIT_NONZERO_SET_SLOTS(so) do {                         \
-    (so)->table = (so)->smalltable;                             \
-    (so)->mask = PySet_MINSIZE - 1;                             \
-    (so)->hash = -1;                                            \
-    } while(0)
-
-#define EMPTY_TO_MINSIZE(so) do {                               \
-    memset((so)->smalltable, 0, sizeof((so)->smalltable));      \
-    (so)->used = (so)->fill = 0;                                \
-    INIT_NONZERO_SET_SLOTS(so);                                 \
-    } while(0)
 
 /* ======================================================================== */
 /* ======= Begin logic for probing the hash table ========================= */
@@ -439,6 +428,17 @@ set_discard_key(PySetObject *so, PyObject *key)
     return DISCARD_FOUND;
 }
 
+static void
+set_empty_to_minsize(PySetObject *so)
+{
+    memset(so->smalltable, 0, sizeof(so->smalltable));
+    so->fill = 0;
+    so->used = 0;
+    so->mask = PySet_MINSIZE - 1;
+    so->table = so->smalltable;
+    so->hash = -1;
+}
+
 static int
 set_clear_internal(PySetObject *so)
 {
@@ -466,7 +466,7 @@ set_clear_internal(PySetObject *so)
      */
     fill = so->fill;
     if (table_is_malloced)
-        EMPTY_TO_MINSIZE(so);
+        set_empty_to_minsize(so);
 
     else if (fill > 0) {
         /* It's a small table with something that needs to be cleared.
@@ -475,7 +475,7 @@ set_clear_internal(PySetObject *so)
          */
         memcpy(small_copy, table, sizeof(small_copy));
         table = small_copy;
-        EMPTY_TO_MINSIZE(so);
+        set_empty_to_minsize(so);
     }
     /* else it's a small table that's already empty */
 
@@ -1016,11 +1016,13 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     so = (PySetObject *)type->tp_alloc(type, 0);
     if (so == NULL)
         return NULL;
-    /* tp_alloc has already zeroed the structure */
-    assert(so->table == NULL && so->fill == 0 && so->used == 0);
-    INIT_NONZERO_SET_SLOTS(so);
 
+    so->fill = 0;
+    so->used = 0;
+    so->mask = PySet_MINSIZE - 1;
+    so->table = so->smalltable;
     so->lookup = set_lookkey_unicode;
+    so->hash = -1;
     so->weakreflist = NULL;
 
     if (iterable != NULL) {
