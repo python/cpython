@@ -1048,8 +1048,11 @@ faulthandler_env_options(void)
 {
     PyObject *xoptions, *key, *module, *res;
     _Py_IDENTIFIER(enable);
+    char *p;
 
-    if (!Py_GETENV("PYTHONFAULTHANDLER")) {
+    if (!((p = Py_GETENV("PYTHONFAULTHANDLER")) && *p != '\0')) {
+        /* PYTHONFAULTHANDLER environment variable is missing
+           or an empty string */
         int has_key;
 
         xoptions = PySys_GetXOptions();

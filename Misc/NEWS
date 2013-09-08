@@ -7,6 +7,13 @@ What's New in Python 3.4.0 Alpha 3?
 
 Projected Release date: 2013-10-XX
 
+Library
+-------
+
+- The :envvar:`PYTHONFAULTHANDLER` environment variable now only enables the
+  faulthandler module if the variable is non-empty. Same behaviour than other
+  variables like :envvar:`PYTHONDONTWRITEBYTECODE`.
+
 Tests
 -----
 
