@@ -31,12 +31,6 @@
 #include "structmember.h"
 #include "stringlib/eq.h"
 
-/* This must be >= 1 */
-#define PERTURB_SHIFT 5
-
-/* This should be >= PySet_MINSIZE - 1 */
-#define LINEAR_PROBES 9
-
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
 
@@ -48,6 +42,12 @@ PyObject *_PySet_Dummy = dummy;
 
 /* ======================================================================== */
 /* ======= Begin logic for probing the hash table ========================= */
+
+/* This should be >= PySet_MINSIZE - 1 */
+#define LINEAR_PROBES 9
+
+/* This must be >= 1 */
+#define PERTURB_SHIFT 5
 
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
@@ -151,8 +151,8 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     while (1) {
         if (entry->key == key
             || (entry->hash == hash
-            && entry->key != dummy
-            && unicode_eq(entry->key, key)))
+                && entry->key != dummy
+                && unicode_eq(entry->key, key)))
             return entry;
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
