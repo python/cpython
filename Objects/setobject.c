@@ -64,6 +64,9 @@ PyObject *_PySet_Dummy = dummy;
 static PySetObject *free_list[PySet_MAXFREELIST];
 static int numfree = 0;
 
+/* ======================================================================== */
+/* ======= Begin logic for probing the hash table ========================= */
+
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
@@ -198,38 +201,6 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
 }
 
 /*
-Internal routine to insert a new key into the table.
-Used by the public insert routine.
-Eats a reference to key.
-*/
-static int
-set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
-{
-    setentry *entry;
-
-    assert(so->lookup != NULL);
-    entry = so->lookup(so, key, hash);
-    if (entry == NULL)
-        return -1;
-    if (entry->key == NULL) {
-        /* UNUSED */
-        so->fill++;
-        entry->key = key;
-        entry->hash = hash;
-        so->used++;
-    } else if (entry->key == dummy) {
-        /* DUMMY */
-        entry->key = key;
-        entry->hash = hash;
-        so->used++;
-    } else {
-        /* ACTIVE */
-        Py_DECREF(key);
-    }
-    return 0;
-}
-
-/*
 Internal routine used by set_table_resize() to insert an item which is
 known to be absent from the set.  This routine also assumes that
 the set contains no deleted entries.  Besides the performance benefit,
@@ -264,6 +235,42 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->key = key;
     entry->hash = hash;
     so->used++;
+}
+
+/* ======== End logic for probing the hash table ========================== */
+/* ======================================================================== */
+
+
+/*
+Internal routine to insert a new key into the table.
+Used by the public insert routine.
+Eats a reference to key.
+*/
+static int
+set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
+{
+    setentry *entry;
+
+    assert(so->lookup != NULL);
+    entry = so->lookup(so, key, hash);
+    if (entry == NULL)
+        return -1;
+    if (entry->key == NULL) {
+        /* UNUSED */
+        so->fill++;
+        entry->key = key;
+        entry->hash = hash;
+        so->used++;
+    } else if (entry->key == dummy) {
+        /* DUMMY */
+        entry->key = key;
+        entry->hash = hash;
+        so->used++;
+    } else {
+        /* ACTIVE */
+        Py_DECREF(key);
+    }
+    return 0;
 }
 
 /*
