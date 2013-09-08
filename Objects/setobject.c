@@ -57,13 +57,6 @@ PyObject *_PySet_Dummy = dummy;
     INIT_NONZERO_SET_SLOTS(so);                                 \
     } while(0)
 
-/* Reuse scheme to save calls to malloc, free, and memset */
-#ifndef PySet_MAXFREELIST
-#define PySet_MAXFREELIST 80
-#endif
-static PySetObject *free_list[PySet_MAXFREELIST];
-static int numfree = 0;
-
 /* ======================================================================== */
 /* ======= Begin logic for probing the hash table ========================= */
 
@@ -565,10 +558,7 @@ set_dealloc(PySetObject *so)
     }
     if (so->table != so->smalltable)
         PyMem_DEL(so->table);
-    if (numfree < PySet_MAXFREELIST && PyAnySet_CheckExact(so))
-        free_list[numfree++] = so;
-    else
-        Py_TYPE(so)->tp_free(so);
+    Py_TYPE(so)->tp_free(so);
     Py_TRASHCAN_SAFE_END(so)
 }
 
@@ -1023,22 +1013,12 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     PySetObject *so = NULL;
 
     /* create PySetObject structure */
-    if (numfree &&
-        (type == &PySet_Type  ||  type == &PyFrozenSet_Type)) {
-        so = free_list[--numfree];
-        assert (so != NULL && PyAnySet_CheckExact(so));
-        Py_TYPE(so) = type;
-        _Py_NewReference((PyObject *)so);
-        EMPTY_TO_MINSIZE(so);
-        PyObject_GC_Track(so);
-    } else {
-        so = (PySetObject *)type->tp_alloc(type, 0);
-        if (so == NULL)
-            return NULL;
-        /* tp_alloc has already zeroed the structure */
-        assert(so->table == NULL && so->fill == 0 && so->used == 0);
-        INIT_NONZERO_SET_SLOTS(so);
-    }
+    so = (PySetObject *)type->tp_alloc(type, 0);
+    if (so == NULL)
+        return NULL;
+    /* tp_alloc has already zeroed the structure */
+    assert(so->table == NULL && so->fill == 0 && so->used == 0);
+    INIT_NONZERO_SET_SLOTS(so);
 
     so->lookup = set_lookkey_unicode;
     so->weakreflist = NULL;
@@ -1103,33 +1083,14 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 int
 PySet_ClearFreeList(void)
 {
-    int freelist_size = numfree;
-    PySetObject *so;
-
-    while (numfree) {
-        numfree--;
-        so = free_list[numfree];
-        PyObject_GC_Del(so);
-    }
-    return freelist_size;
+    return 0;
 }
 
 void
 PySet_Fini(void)
 {
-    PySet_ClearFreeList();
     Py_CLEAR(emptyfrozenset);
 }
-
-/* Print summary info about the state of the optimized allocator */
-void
-_PySet_DebugMallocStats(FILE *out)
-{
-    _PyDebugAllocatorStats(out,
-                           "free PySetObject",
-                           numfree, sizeof(PySetObject));
-}
-
 
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)

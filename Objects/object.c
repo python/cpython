@@ -1955,7 +1955,6 @@ _PyObject_DebugTypeStats(FILE *out)
     _PyFrame_DebugMallocStats(out);
     _PyList_DebugMallocStats(out);
     _PyMethod_DebugMallocStats(out);
-    _PySet_DebugMallocStats(out);
     _PyTuple_DebugMallocStats(out);
 }
 
