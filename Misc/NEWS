@@ -36,7 +36,7 @@ Library
   has a different __name__ than its name in the TestCase class dictionary.
 
 - Issue #18672: Fixed format specifiers for Py_ssize_t in debugging output in
-  the _sre moduel.
+  the _sre module.
 
 - Issue #18830: inspect.getclasstree() no more produces duplicated entries even
   when input list contains duplicates.
