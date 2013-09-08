@@ -332,6 +332,10 @@ IDLE
 Tests
 -----
 
+- Issue #18952: Fix regression in support data downloads introduced when
+  test.support was converted to a package. Regression noticed by Zachary
+  Ware.
+
 - Issue #12037: Fix test_email for desktop Windows.
 
 - Issue #15507: test_subprocess's test_send_signal could fail if the test
