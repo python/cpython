@@ -25,7 +25,7 @@ the General Decimal Arithmetic Specification:
 
 and IEEE standard 854-1987:
 
-    www.cs.berkeley.edu/~ejr/projects/754/private/drafts/854-1987/dir.html
+    http://en.wikipedia.org/wiki/IEEE_854-1987
 
 Decimal floating point has finite precision with arbitrarily large bounds.
 
