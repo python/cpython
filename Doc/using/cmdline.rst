@@ -511,9 +511,9 @@ conflict.
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
-   If this is set, Python won't try to write ``.pyc`` or ``.pyo`` files on the
-   import of source modules.  This is equivalent to specifying the :option:`-B`
-   option.
+   If this is set to a non-empty string, Python won't try to write ``.pyc`` or
+   ``.pyo`` files on the import of source modules.  This is equivalent to
+   specifying the :option:`-B` option.
 
 
 .. envvar:: PYTHONHASHSEED
@@ -582,11 +582,11 @@ conflict.
 
 .. envvar:: PYTHONFAULTHANDLER
 
-   If this environment variable is set, :func:`faulthandler.enable` is called
-   at startup: install a handler for :const:`SIGSEGV`, :const:`SIGFPE`,
-   :const:`SIGABRT`, :const:`SIGBUS` and :const:`SIGILL` signals to dump the
-   Python traceback.  This is equivalent to :option:`-X` ``faulthandler``
-   option.
+   If this environment variable is set to a non-empty string,
+   :func:`faulthandler.enable` is called at startup: install a handler for
+   :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and
+   :const:`SIGILL` signals to dump the Python traceback.  This is equivalent to
+   :option:`-X` ``faulthandler`` option.
 
    .. versionadded:: 3.3
 

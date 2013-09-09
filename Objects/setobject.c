@@ -1,21 +1,35 @@
 
 /* set object implementation
+
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Derived from Lib/sets.py and Objects/dictobject.c.
 
    Copyright (c) 2003-2013 Python Software Foundation.
    All rights reserved.
+
+   The basic lookup function used by all operations.
+   This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
+
+   The initial probe index is computed as hash mod the table size.
+   Subsequent probe indices are computed as explained in Objects/dictobject.c.
+
+   To improve cache locality, each probe inspects a series of consecutive
+   nearby entries before moving on to probes elsewhere in memory.  This leaves
+   us with a hybrid of linear probing and open addressing.  The linear probing
+   reduces the cost of hash collisions because consecutive memory accesses
+   tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
+   we then use open addressing with the upper bits from the hash value.  This
+   helps break-up long chains of collisions.
+
+   All arithmetic on hash should ignore overflow.
+
+   Unlike the dictionary implementation, the lookkey functions can return
+   NULL if the rich comparison returns an error.
 */
 
 #include "Python.h"
 #include "structmember.h"
 #include "stringlib/eq.h"
-
-/* This must be >= 1 */
-#define PERTURB_SHIFT 5
-
-/* This should be >= PySet_MINSIZE - 1 */
-#define LINEAR_PROBES 9
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
@@ -25,46 +39,15 @@ static PyObject _dummy_struct;
 /* Exported for the gdb plugin's benefit. */
 PyObject *_PySet_Dummy = dummy;
 
-#define INIT_NONZERO_SET_SLOTS(so) do {                         \
-    (so)->table = (so)->smalltable;                             \
-    (so)->mask = PySet_MINSIZE - 1;                             \
-    (so)->hash = -1;                                            \
-    } while(0)
 
-#define EMPTY_TO_MINSIZE(so) do {                               \
-    memset((so)->smalltable, 0, sizeof((so)->smalltable));      \
-    (so)->used = (so)->fill = 0;                                \
-    INIT_NONZERO_SET_SLOTS(so);                                 \
-    } while(0)
+/* ======================================================================== */
+/* ======= Begin logic for probing the hash table ========================= */
 
-/* Reuse scheme to save calls to malloc, free, and memset */
-#ifndef PySet_MAXFREELIST
-#define PySet_MAXFREELIST 80
-#endif
-static PySetObject *free_list[PySet_MAXFREELIST];
-static int numfree = 0;
+/* This should be >= PySet_MINSIZE - 1 */
+#define LINEAR_PROBES 9
 
-
-/*
-The basic lookup function used by all operations.
-This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
-
-The initial probe index is computed as hash mod the table size.
-Subsequent probe indices are computed as explained in Objects/dictobject.c.
-
-To improve cache locality, each probe inspects a series of consecutive
-nearby entries before moving on to probes elsewhere in memory.  This leaves
-us with a hybrid of linear probing and open addressing.  The linear probing
-reduces the cost of hash collisions because consecutive memory accesses
-tend to be much cheaper than scattered probes.  After LINEAR_PROBES steps,
-we then use open addressing with the upper bits from the hash value.  This
-helps break-up long chains of collisions.
-
-All arithmetic on hash should ignore overflow.
-
-Unlike the dictionary implementation, the lookkey functions can return
-NULL if the rich comparison returns an error.
-*/
+/* This must be >= 1 */
+#define PERTURB_SHIFT 5
 
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
@@ -168,8 +151,8 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     while (1) {
         if (entry->key == key
             || (entry->hash == hash
-            && entry->key != dummy
-            && unicode_eq(entry->key, key)))
+                && entry->key != dummy
+                && unicode_eq(entry->key, key)))
             return entry;
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
@@ -197,38 +180,6 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
   found_null:
     return freeslot == NULL ? entry : freeslot;
-}
-
-/*
-Internal routine to insert a new key into the table.
-Used by the public insert routine.
-Eats a reference to key.
-*/
-static int
-set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
-{
-    setentry *entry;
-
-    assert(so->lookup != NULL);
-    entry = so->lookup(so, key, hash);
-    if (entry == NULL)
-        return -1;
-    if (entry->key == NULL) {
-        /* UNUSED */
-        so->fill++;
-        entry->key = key;
-        entry->hash = hash;
-        so->used++;
-    } else if (entry->key == dummy) {
-        /* DUMMY */
-        entry->key = key;
-        entry->hash = hash;
-        so->used++;
-    } else {
-        /* ACTIVE */
-        Py_DECREF(key);
-    }
-    return 0;
 }
 
 /*
@@ -266,6 +217,42 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->key = key;
     entry->hash = hash;
     so->used++;
+}
+
+/* ======== End logic for probing the hash table ========================== */
+/* ======================================================================== */
+
+
+/*
+Internal routine to insert a new key into the table.
+Used by the public insert routine.
+Eats a reference to key.
+*/
+static int
+set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
+{
+    setentry *entry;
+
+    assert(so->lookup != NULL);
+    entry = so->lookup(so, key, hash);
+    if (entry == NULL)
+        return -1;
+    if (entry->key == NULL) {
+        /* UNUSED */
+        so->fill++;
+        entry->key = key;
+        entry->hash = hash;
+        so->used++;
+    } else if (entry->key == dummy) {
+        /* DUMMY */
+        entry->key = key;
+        entry->hash = hash;
+        so->used++;
+    } else {
+        /* ACTIVE */
+        Py_DECREF(key);
+    }
+    return 0;
 }
 
 /*
@@ -441,6 +428,17 @@ set_discard_key(PySetObject *so, PyObject *key)
     return DISCARD_FOUND;
 }
 
+static void
+set_empty_to_minsize(PySetObject *so)
+{
+    memset(so->smalltable, 0, sizeof(so->smalltable));
+    so->fill = 0;
+    so->used = 0;
+    so->mask = PySet_MINSIZE - 1;
+    so->table = so->smalltable;
+    so->hash = -1;
+}
+
 static int
 set_clear_internal(PySetObject *so)
 {
@@ -448,14 +446,13 @@ set_clear_internal(PySetObject *so)
     int table_is_malloced;
     Py_ssize_t fill;
     setentry small_copy[PySet_MINSIZE];
-#ifdef Py_DEBUG
-    Py_ssize_t i, n;
-    assert (PyAnySet_Check(so));
 
-    n = so->mask + 1;
-    i = 0;
+#ifdef Py_DEBUG
+    Py_ssize_t i = 0;
+    Py_ssize_t n = so->mask + 1;
 #endif
 
+    assert (PyAnySet_Check(so));
     table = so->table;
     assert(table != NULL);
     table_is_malloced = table != so->smalltable;
@@ -468,7 +465,7 @@ set_clear_internal(PySetObject *so)
      */
     fill = so->fill;
     if (table_is_malloced)
-        EMPTY_TO_MINSIZE(so);
+        set_empty_to_minsize(so);
 
     else if (fill > 0) {
         /* It's a small table with something that needs to be cleared.
@@ -477,7 +474,7 @@ set_clear_internal(PySetObject *so)
          */
         memcpy(small_copy, table, sizeof(small_copy));
         table = small_copy;
-        EMPTY_TO_MINSIZE(so);
+        set_empty_to_minsize(so);
     }
     /* else it's a small table that's already empty */
 
@@ -560,10 +557,7 @@ set_dealloc(PySetObject *so)
     }
     if (so->table != so->smalltable)
         PyMem_DEL(so->table);
-    if (numfree < PySet_MAXFREELIST && PyAnySet_CheckExact(so))
-        free_list[numfree++] = so;
-    else
-        Py_TYPE(so)->tp_free(so);
+    Py_TYPE(so)->tp_free(so);
     Py_TRASHCAN_SAFE_END(so)
 }
 
@@ -1018,24 +1012,16 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     PySetObject *so = NULL;
 
     /* create PySetObject structure */
-    if (numfree &&
-        (type == &PySet_Type  ||  type == &PyFrozenSet_Type)) {
-        so = free_list[--numfree];
-        assert (so != NULL && PyAnySet_CheckExact(so));
-        Py_TYPE(so) = type;
-        _Py_NewReference((PyObject *)so);
-        EMPTY_TO_MINSIZE(so);
-        PyObject_GC_Track(so);
-    } else {
-        so = (PySetObject *)type->tp_alloc(type, 0);
-        if (so == NULL)
-            return NULL;
-        /* tp_alloc has already zeroed the structure */
-        assert(so->table == NULL && so->fill == 0 && so->used == 0);
-        INIT_NONZERO_SET_SLOTS(so);
-    }
+    so = (PySetObject *)type->tp_alloc(type, 0);
+    if (so == NULL)
+        return NULL;
 
+    so->fill = 0;
+    so->used = 0;
+    so->mask = PySet_MINSIZE - 1;
+    so->table = so->smalltable;
     so->lookup = set_lookkey_unicode;
+    so->hash = -1;
     so->weakreflist = NULL;
 
     if (iterable != NULL) {
@@ -1098,33 +1084,14 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 int
 PySet_ClearFreeList(void)
 {
-    int freelist_size = numfree;
-    PySetObject *so;
-
-    while (numfree) {
-        numfree--;
-        so = free_list[numfree];
-        PyObject_GC_Del(so);
-    }
-    return freelist_size;
+    return 0;
 }
 
 void
 PySet_Fini(void)
 {
-    PySet_ClearFreeList();
     Py_CLEAR(emptyfrozenset);
 }
-
-/* Print summary info about the state of the optimized allocator */
-void
-_PySet_DebugMallocStats(FILE *out)
-{
-    _PyDebugAllocatorStats(out,
-                           "free PySetObject",
-                           numfree, sizeof(PySetObject));
-}
-
 
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2398,7 +2365,7 @@ test_c_api(PySetObject *so)
     Py_ssize_t count;
     char *s;
     Py_ssize_t i;
-    PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x;
+    PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x=NULL;
     PyObject *ob = (PyObject *)so;
     Py_hash_t hash;
     PyObject *str;

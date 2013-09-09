@@ -3,6 +3,7 @@ Tests of regrtest.py.
 """
 
 import argparse
+import faulthandler
 import getopt
 import os.path
 import unittest
@@ -25,6 +26,8 @@ class ParseArgsTestCase(unittest.TestCase):
                     regrtest._parse_args([opt])
                 self.assertIn('Run Python regression tests.', out.getvalue())
 
+    @unittest.skipUnless(hasattr(faulthandler, 'dump_traceback_later'),
+                         "faulthandler.dump_traceback_later() required")
     def test_timeout(self):
         ns = regrtest._parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
