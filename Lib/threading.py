@@ -703,28 +703,8 @@ class Thread:
                     pass
 
     def _stop(self):
-        # After calling .stop(), .is_alive() returns False and .join() returns
-        # immediately.  ._tstate_lock must be released before calling ._stop().
-        #
-        # Normal case:  C code at the end of the thread's life
-        # (release_sentinel in _threadmodule.c) releases ._tstate_lock, and
-        # that's detected by our ._wait_for_tstate_lock(), called by .join()
-        # and .is_alive().  Any number of threads _may_ call ._stop()
-        # simultaneously (for example, if multiple threads are blocked in
-        # .join() calls), and they're not serialized.  That's harmless -
-        # they'll just make redundant rebindings of ._is_stopped and
-        # ._tstate_lock.  Obscure:  we rebind ._tstate_lock last so that the
-        # "assert self._is_stopped" in ._wait_for_tstate_lock() always works
-        # (the assert is executed only if ._tstate_lock is None).
-        #
-        # Special case:  _main_thread releases ._tstate_lock via this module's
-        # _shutdown() function.
-        tlock = self._tstate_lock
-        if tlock is not None:
-            # It's OK if multiple threads get in here (see above).
-            assert not tlock.locked()
-            self._is_stopped = True
-            self._tstate_lock = None
+        self._is_stopped = True
+        self._tstate_lock = None
 
     def _delete(self):
         "Remove current thread from the dict of currently running threads."
@@ -941,10 +921,9 @@ def _shutdown():
     # the main thread's tstate_lock - that won't happen until the interpreter
     # is nearly dead.  So we release it here.  Note that just calling _stop()
     # isn't enough:  other threads may already be waiting on _tstate_lock.
-    tlock = _main_thread._tstate_lock
-    assert tlock is not None
-    assert tlock.locked()
-    tlock.release()
+    assert _main_thread._tstate_lock is not None
+    assert _main_thread._tstate_lock.locked()
+    _main_thread._tstate_lock.release()
     _main_thread._stop()
     t = _pickSomeNonDaemonThread()
     while t:
