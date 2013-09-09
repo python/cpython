@@ -4,7 +4,7 @@
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2003 Python Software Foundation.
+   Copyright (c) 2003-2013 Python Software Foundation.
    All rights reserved.
 */
 
@@ -4456,6 +4456,7 @@ repeat(elem [,n]) --> elem, elem, elem, ... endlessly or up to n times\n\
 Iterators terminating on the shortest input sequence:\n\
 accumulate(p[, func]) --> p0, p0+p1, p0+p1+p2\n\
 chain(p, q, ...) --> p0, p1, ... plast, q0, q1, ... \n\
+chain.from_iterable([p, q, ...]) --> p0, p1, ... plast, q0, q1, ... \n\
 compress(data, selectors) --> (d[0] if s[0]), (d[1] if s[1]), ...\n\
 dropwhile(pred, seq) --> seq[n], seq[n+1], starting when pred fails\n\
 groupby(iterable[, keyfunc]) --> sub-iterators grouped by value of keyfunc(v)\n\
