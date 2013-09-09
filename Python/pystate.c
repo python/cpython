@@ -208,6 +208,8 @@ new_threadstate(PyInterpreterState *interp, int init)
 
         tstate->trash_delete_nesting = 0;
         tstate->trash_delete_later = NULL;
+        tstate->on_delete = NULL;
+        tstate->on_delete_data = NULL;
 
         if (init)
             _PyThreadState_Init(tstate);
@@ -390,6 +392,9 @@ tstate_delete_common(PyThreadState *tstate)
     if (tstate->next)
         tstate->next->prev = tstate->prev;
     HEAD_UNLOCK();
+    if (tstate->on_delete != NULL) {
+        tstate->on_delete(tstate->on_delete_data);
+    }
     PyMem_RawFree(tstate);
 }
 
