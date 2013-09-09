@@ -574,6 +574,7 @@ class Thread:
         status = "initial"
         if self._started.is_set():
             status = "started"
+        self.is_alive() # easy way to get ._is_stopped set when appropriate
         if self._is_stopped:
             status = "stopped"
         if self._daemonic:
