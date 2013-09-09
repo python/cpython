@@ -109,7 +109,7 @@ class ThreadTests(BaseTestCase):
         if verbose:
             print('waiting for all tasks to complete')
         for t in threads:
-            t.join(NUMTASKS)
+            t.join()
             self.assertTrue(not t.is_alive())
             self.assertNotEqual(t.ident, 0)
             self.assertFalse(t.ident is None)
@@ -539,6 +539,40 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b"")
         self.assertEqual(data, "Thread-1\nTrue\nTrue\n")
 
+    def test_tstate_lock(self):
+        # Test an implementation detail of Thread objects.
+        started = _thread.allocate_lock()
+        finish = _thread.allocate_lock()
+        started.acquire()
+        finish.acquire()
+        def f():
+            started.release()
+            finish.acquire()
+            time.sleep(0.01)
+        # The tstate lock is None until the thread is started
+        t = threading.Thread(target=f)
+        self.assertIs(t._tstate_lock, None)
+        t.start()
+        started.acquire()
+        self.assertTrue(t.is_alive())
+        # The tstate lock can't be acquired when the thread is running
+        # (or suspended).
+        tstate_lock = t._tstate_lock
+        self.assertFalse(tstate_lock.acquire(timeout=0), False)
+        finish.release()
+        # When the thread ends, the state_lock can be successfully
+        # acquired.
+        self.assertTrue(tstate_lock.acquire(timeout=5), False)
+        # But is_alive() is still True:  we hold _tstate_lock now, which
+        # prevents is_alive() from knowing the thread's end-of-life C code
+        # is done.
+        self.assertTrue(t.is_alive())
+        # Let is_alive() find out the C code is done.
+        tstate_lock.release()
+        self.assertFalse(t.is_alive())
+        # And verify the thread disposed of _tstate_lock.
+        self.assertTrue(t._tstate_lock is None)
+
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -613,144 +647,8 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         self._run_and_join(script)
 
-    def assertScriptHasOutput(self, script, expected_output):
-        rc, out, err = assert_python_ok("-c", script)
-        data = out.decode().replace('\r', '')
-        self.assertEqual(data, expected_output)
-
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
     @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_4_joining_across_fork_in_worker_thread(self):
-        # There used to be a possible deadlock when forking from a child
-        # thread.  See http://bugs.python.org/issue6643.
-
-        # The script takes the following steps:
-        # - The main thread in the parent process starts a new thread and then
-        #   tries to join it.
-        # - The join operation acquires the Lock inside the thread's _block
-        #   Condition.  (See threading.py:Thread.join().)
-        # - We stub out the acquire method on the condition to force it to wait
-        #   until the child thread forks.  (See LOCK ACQUIRED HERE)
-        # - The child thread forks.  (See LOCK HELD and WORKER THREAD FORKS
-        #   HERE)
-        # - The main thread of the parent process enters Condition.wait(),
-        #   which releases the lock on the child thread.
-        # - The child process returns.  Without the necessary fix, when the
-        #   main thread of the child process (which used to be the child thread
-        #   in the parent process) attempts to exit, it will try to acquire the
-        #   lock in the Thread._block Condition object and hang, because the
-        #   lock was held across the fork.
-
-        script = """if 1:
-            import os, time, threading
-
-            finish_join = False
-            start_fork = False
-
-            def worker():
-                # Wait until this thread's lock is acquired before forking to
-                # create the deadlock.
-                global finish_join
-                while not start_fork:
-                    time.sleep(0.01)
-                # LOCK HELD: Main thread holds lock across this call.
-                childpid = os.fork()
-                finish_join = True
-                if childpid != 0:
-                    # Parent process just waits for child.
-                    os.waitpid(childpid, 0)
-                # Child process should just return.
-
-            w = threading.Thread(target=worker)
-
-            # Stub out the private condition variable's lock acquire method.
-            # This acquires the lock and then waits until the child has forked
-            # before returning, which will release the lock soon after.  If
-            # someone else tries to fix this test case by acquiring this lock
-            # before forking instead of resetting it, the test case will
-            # deadlock when it shouldn't.
-            condition = w._block
-            orig_acquire = condition.acquire
-            call_count_lock = threading.Lock()
-            call_count = 0
-            def my_acquire():
-                global call_count
-                global start_fork
-                orig_acquire()  # LOCK ACQUIRED HERE
-                start_fork = True
-                if call_count == 0:
-                    while not finish_join:
-                        time.sleep(0.01)  # WORKER THREAD FORKS HERE
-                with call_count_lock:
-                    call_count += 1
-            condition.acquire = my_acquire
-
-            w.start()
-            w.join()
-            print('end of main')
-            """
-        self.assertScriptHasOutput(script, "end of main\n")
-
-    @unittest.skipUnless(hasattr(os, 'fork'), "needs os.fork()")
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_5_clear_waiter_locks_to_avoid_crash(self):
-        # Check that a spawned thread that forks doesn't segfault on certain
-        # platforms, namely OS X.  This used to happen if there was a waiter
-        # lock in the thread's condition variable's waiters list.  Even though
-        # we know the lock will be held across the fork, it is not safe to
-        # release locks held across forks on all platforms, so releasing the
-        # waiter lock caused a segfault on OS X.  Furthermore, since locks on
-        # OS X are (as of this writing) implemented with a mutex + condition
-        # variable instead of a semaphore, while we know that the Python-level
-        # lock will be acquired, we can't know if the internal mutex will be
-        # acquired at the time of the fork.
-
-        script = """if True:
-            import os, time, threading
-
-            start_fork = False
-
-            def worker():
-                # Wait until the main thread has attempted to join this thread
-                # before continuing.
-                while not start_fork:
-                    time.sleep(0.01)
-                childpid = os.fork()
-                if childpid != 0:
-                    # Parent process just waits for child.
-                    (cpid, rc) = os.waitpid(childpid, 0)
-                    assert cpid == childpid
-                    assert rc == 0
-                    print('end of worker thread')
-                else:
-                    # Child process should just return.
-                    pass
-
-            w = threading.Thread(target=worker)
-
-            # Stub out the private condition variable's _release_save method.
-            # This releases the condition's lock and flips the global that
-            # causes the worker to fork.  At this point, the problematic waiter
-            # lock has been acquired once by the waiter and has been put onto
-            # the waiters list.
-            condition = w._block
-            orig_release_save = condition._release_save
-            def my_release_save():
-                global start_fork
-                orig_release_save()
-                # Waiter lock held here, condition lock released.
-                start_fork = True
-            condition._release_save = my_release_save
-
-            w.start()
-            w.join()
-            print('end of main thread')
-            """
-        output = "end of worker thread\nend of main thread\n"
-        self.assertScriptHasOutput(script, output)
-
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    def test_6_daemon_threads(self):
+    def test_4_daemon_threads(self):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
@@ -859,6 +757,38 @@ class SubinterpThreadingTests(BaseTestCase):
                 # Sleep a bit so that the thread is still running when
                 # Py_EndInterpreter is called.
                 time.sleep(0.05)
+                os.write(%d, b"x")
+            threading.Thread(target=f).start()
+            """ % (w,)
+        ret = _testcapi.run_in_subinterp(code)
+        self.assertEqual(ret, 0)
+        # The thread was joined properly.
+        self.assertEqual(os.read(r, 1), b"x")
+
+    def test_threads_join_2(self):
+        # Same as above, but a delay gets introduced after the thread's
+        # Python code returned but before the thread state is deleted.
+        # To achieve this, we register a thread-local object which sleeps
+        # a bit when deallocated.
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        code = r"""if 1:
+            import os
+            import threading
+            import time
+
+            class Sleeper:
+                def __del__(self):
+                    time.sleep(0.05)
+
+            tls = threading.local()
+
+            def f():
+                # Sleep a bit so that the thread is still running when
+                # Py_EndInterpreter is called.
+                time.sleep(0.05)
+                tls.x = Sleeper()
                 os.write(%d, b"x")
             threading.Thread(target=f).start()
             """ % (w,)

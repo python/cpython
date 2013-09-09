@@ -247,11 +247,13 @@ functions:
       import cProfile, pstats, io
       pr = cProfile.Profile()
       pr.enable()
-      ... do something ...
+      # ... do something ...
       pr.disable()
       s = io.StringIO()
-      ps = pstats.Stats(pr, stream=s)
-      ps.print_results()
+      sortby = 'cumulative'
+      ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+      ps.print_stats()
+      print(s.getvalue())
 
    .. method:: enable()
 
