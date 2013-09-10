@@ -152,8 +152,9 @@ memory but does not update the underlying file.
 
    .. method:: close()
 
-      Close the file.  Subsequent calls to other methods of the object will
-      result in an exception being raised.
+      Closes the mmap. Subsequent calls to other methods of the object will
+      result in a ValueError exception being raised. This will not close
+      the open file.
 
 
    .. method:: find(string[, start[, end]])
