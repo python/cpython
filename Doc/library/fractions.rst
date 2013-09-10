@@ -77,11 +77,20 @@ another rational number, or from a string.
    :class:`numbers.Rational`, and implements all of the methods and
    operations from that class.  :class:`Fraction` instances are hashable,
    and should be treated as immutable.  In addition,
-   :class:`Fraction` has the following methods:
+   :class:`Fraction` has the following properties and methods:
 
    .. versionchanged:: 3.2
       The :class:`Fraction` constructor now accepts :class:`float` and
       :class:`decimal.Decimal` instances.
+
+
+   .. attribute:: numerator
+
+      Numerator of the Fraction in lowest term.
+
+   .. attribute:: denominator
+
+      Denominator of the Fraction in lowest term.
 
 
    .. method:: from_float(flt)
