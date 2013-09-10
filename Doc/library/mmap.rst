@@ -155,8 +155,9 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. method:: close()
 
-      Close the file.  Subsequent calls to other methods of the object will
-      result in an exception being raised.
+      Closes the mmap. Subsequent calls to other methods of the object will
+      result in a ValueError exception being raised. This will not close
+      the open file.
 
 
    .. attribute:: closed
