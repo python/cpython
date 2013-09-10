@@ -1482,7 +1482,7 @@ class RequestTests(unittest.TestCase):
     def test_method(self):
         self.assertEqual("POST", self.post.get_method())
         self.assertEqual("GET", self.get.get_method())
-        self.assertEquil("HEAD", self.head.get_method())
+        self.assertEqual("HEAD", self.head.get_method())
         self.assertEqual("PUT", self.put.get_method())
         self.assertEqual("POST", self.force_post.get_method())
 
