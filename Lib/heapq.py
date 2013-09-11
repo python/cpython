@@ -358,6 +358,7 @@ def merge(*iterables):
 
     '''
     _heappop, _heapreplace, _StopIteration = heappop, heapreplace, StopIteration
+    _len = len
 
     h = []
     h_append = h.append
@@ -369,17 +370,20 @@ def merge(*iterables):
             pass
     heapify(h)
 
-    while 1:
+    while _len(h) > 1:
         try:
-            while 1:
-                v, itnum, next = s = h[0]   # raises IndexError when h is empty
+            while True:
+                v, itnum, next = s = h[0]
                 yield v
                 s[0] = next()               # raises StopIteration when exhausted
                 _heapreplace(h, s)          # restore heap condition
         except _StopIteration:
             _heappop(h)                     # remove empty iterator
-        except IndexError:
-            return
+    if h:
+        # fast case when only a single iterator remains
+        v, itnum, next = h[0]
+        yield v
+        yield from next.__self__
 
 # Extend the implementations of nsmallest and nlargest to use a key= argument
 _nsmallest = nsmallest
