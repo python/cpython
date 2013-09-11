@@ -21,6 +21,11 @@ Tests
   test.support was converted to a package. Regression noticed by Zachary
   Ware.
 
+IDLE
+----
+
+- Issue #18988: The "Tab" key now works when a word is already autocompleted.
+
 
 What's New in Python 3.4.0 Alpha 2?
 ===================================
