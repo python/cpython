@@ -293,6 +293,8 @@ C API
 IDLE
 ----
 
+- Issue #18988: The "Tab" key now works when a word is already autocompleted.
+
 - Issue #18489: Add tests for SearchEngine. Original patch by Phil Webster.
 
 - Issue #18429: Format / Format Paragraph, now works when comment blocks
