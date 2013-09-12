@@ -256,6 +256,8 @@ class Random(_random.Random):
 
         Optional arg random is a 0-argument function returning a random
         float in [0.0, 1.0); by default, the standard random.random.
+
+        Do not supply the 'int' argument.
         """
 
         randbelow = self._randbelow
