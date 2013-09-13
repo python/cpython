@@ -68,6 +68,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18784: The uuid module no more attempts to load libc via ctypes.CDLL,
+  if all necessary functions are already found in libuuid.
+  Patch by Evgeny Sologubov.
+
 - Issue #18672: Fixed format specifiers for Py_ssize_t in debugging output in
   the _sre module.
 
