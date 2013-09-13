@@ -544,6 +544,42 @@ class SysModuleTest(unittest.TestCase):
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'?')
 
+        env["PYTHONIOENCODING"] = "ascii"
+        p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             env=env)
+        out, err = p.communicate()
+        self.assertEqual(out, b'')
+        self.assertIn(b'UnicodeEncodeError:', err)
+        self.assertIn(rb"'\xa2'", err)
+
+        env["PYTHONIOENCODING"] = "ascii:"
+        p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             env=env)
+        out, err = p.communicate()
+        self.assertEqual(out, b'')
+        self.assertIn(b'UnicodeEncodeError:', err)
+        self.assertIn(rb"'\xa2'", err)
+
+        env["PYTHONIOENCODING"] = ":surrogateescape"
+        p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xdcbd))'],
+                             stdout=subprocess.PIPE, env=env)
+        out = p.communicate()[0].strip()
+        self.assertEqual(out, b'\xbd')
+
+    @unittest.skipUnless(test.support.FS_NONASCII,
+                         'requires OS support of non-ASCII encodings')
+    def test_ioencoding_nonascii(self):
+        env = dict(os.environ)
+
+        env["PYTHONIOENCODING"] = ""
+        p = subprocess.Popen([sys.executable, "-c",
+                                'print(%a)' % test.support.FS_NONASCII],
+                                stdout=subprocess.PIPE, env=env)
+        out = p.communicate()[0].strip()
+        self.assertEqual(out, os.fsencode(test.support.FS_NONASCII))
+
     @unittest.skipIf(sys.base_prefix != sys.prefix,
                      'Test is not venv-compatible')
     def test_executable(self):

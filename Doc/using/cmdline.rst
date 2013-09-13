@@ -538,12 +538,15 @@ conflict.
 .. envvar:: PYTHONIOENCODING
 
    If this is set before running the interpreter, it overrides the encoding used
-   for stdin/stdout/stderr, in the syntax ``encodingname:errorhandler``. The
-   ``:errorhandler`` part is optional and has the same meaning as in
-   :func:`str.encode`.
+   for stdin/stdout/stderr, in the syntax ``encodingname:errorhandler``.  Both
+   the ``encodingname`` and the ``:errorhandler`` parts are optional and have
+   the same meaning as in :func:`str.encode`.
 
    For stderr, the ``:errorhandler`` part is ignored; the handler will always be
    ``'backslashreplace'``.
+
+   .. versionchanged:: 3.4
+      The ``encodingname`` part is now optional.
 
 
 .. envvar:: PYTHONNOUSERSITE
