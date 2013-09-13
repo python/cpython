@@ -788,6 +788,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         # abandon query parameters
         path = path.split('?',1)[0]
         path = path.split('#',1)[0]
+        # Don't forget explicit trailing slash when normalizing. Issue17324
+        trailing_slash = True if path.rstrip().endswith('/') else False
         path = posixpath.normpath(urllib.parse.unquote(path))
         words = path.split('/')
         words = filter(None, words)
@@ -797,6 +799,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             head, word = os.path.split(word)
             if word in (os.curdir, os.pardir): continue
             path = os.path.join(path, word)
+        if trailing_slash:
+            path += '/'
         return path
 
     def copyfile(self, source, outputfile):

@@ -270,6 +270,9 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         #constructs the path relative to the root directory of the HTTPServer
         response = self.request(self.tempdir_name + '/test')
         self.check_status_and_reason(response, 200, data=self.data)
+        # check for trailing "/" which should return 404. See Issue17324
+        response = self.request(self.tempdir_name + '/test/')
+        self.check_status_and_reason(response, 404)
         response = self.request(self.tempdir_name + '/')
         self.check_status_and_reason(response, 200)
         response = self.request(self.tempdir_name)
