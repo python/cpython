@@ -7,6 +7,8 @@ Projected Release date: 2013-09-29
 Core and Builtins
 -----------------
 
+- Issue #18818: The "encodingname" part of PYTHONIOENCODING is now optional.
+
 Library
 -------
 
