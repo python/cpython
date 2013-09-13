@@ -1399,6 +1399,5 @@ class MockTest(unittest.TestCase):
             mock.foo
 
 
-
 if __name__ == '__main__':
     unittest.main()
