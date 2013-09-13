@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18784: The uuid module no more attempts to load libc via ctypes.CDLL,
+  if all necessary functions are already found in libuuid.
+  Patch by Evgeny Sologubov.
+
 - Issue #14971: unittest test discovery no longer gets confused when a function
   has a different __name__ than its name in the TestCase class dictionary.
 

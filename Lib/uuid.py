@@ -408,6 +408,8 @@ try:
             _uuid_generate_random = lib.uuid_generate_random
         if hasattr(lib, 'uuid_generate_time'):
             _uuid_generate_time = lib.uuid_generate_time
+            if _uuid_generate_random is not None:
+                break  # found everything we were looking for
 
     # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
     # in issue #8621 the function generates the same sequence of values
