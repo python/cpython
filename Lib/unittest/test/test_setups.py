@@ -501,5 +501,6 @@ class TestSetups(unittest.TestCase):
             with self.assertRaisesRegex(Exception, msg):
                 suite.debug()
 
+
 if __name__ == '__main__':
     unittest.main()

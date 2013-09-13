@@ -1306,3 +1306,7 @@ class Test_TestLoader(unittest.TestCase):
     def test_suiteClass__default_value(self):
         loader = unittest.TestLoader()
         self.assertTrue(loader.suiteClass is unittest.TestSuite)
+
+
+if __name__ == "__main__":
+    unittest.main()
