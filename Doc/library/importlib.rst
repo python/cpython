@@ -975,9 +975,9 @@ an :term:`importer`.
     reloading.
 
     If an exception is raised by the decorated method and a module was added to
-    :data:`sys.modules` it will be removed to prevent a partially initialized
-    module from being in left in :data:`sys.modules`. If the module was already
-    in :data:`sys.modules` then it is left alone.
+    :data:`sys.modules`, then the module will be removed to prevent a partially
+    initialized module from being in left in :data:`sys.modules`. If the module
+    was already in :data:`sys.modules` then it is left alone.
 
     .. versionchanged:: 3.3
        :attr:`__loader__` and :attr:`__package__` are automatically set
