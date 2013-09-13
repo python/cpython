@@ -100,6 +100,18 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 #define JOIN_SET(p, flag) ((void*) ((Py_uintptr_t) (JOIN_OBJ(p)) | (flag)))
 #define JOIN_OBJ(p) ((PyObject*) ((Py_uintptr_t) (p) & ~(Py_uintptr_t)1))
 
+/* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
+ * reference since this function sets it to NULL.
+*/
+void _clear_joined_ptr(PyObject **p)
+{
+    if (*p) {
+        PyObject *tmp = JOIN_OBJ(*p);
+        *p = NULL;
+        Py_DECREF(tmp);
+    }
+}
+
 /* Types defined by this extension */
 static PyTypeObject Element_Type;
 static PyTypeObject ElementIter_Type;
@@ -606,22 +618,8 @@ static int
 element_gc_clear(ElementObject *self)
 {
     Py_CLEAR(self->tag);
-
-    /* The following is like Py_CLEAR for self->text and self->tail, but
-     * written explicitily because the real pointers hide behind access
-     * macros.
-    */
-    if (self->text) {
-        PyObject *tmp = JOIN_OBJ(self->text);
-        self->text = NULL;
-        Py_DECREF(tmp);
-    }
-
-    if (self->tail) {
-        PyObject *tmp = JOIN_OBJ(self->tail);
-        self->tail = NULL;
-        Py_DECREF(tmp);
-    }
+    _clear_joined_ptr(&self->text);
+    _clear_joined_ptr(&self->tail);
 
     /* After dropping all references from extra, it's no longer valid anyway,
      * so fully deallocate it.
@@ -859,15 +857,15 @@ element_getstate(ElementObject *self)
                                      PICKLED_TAG, self->tag,
                                      PICKLED_CHILDREN, children,
                                      PICKLED_ATTRIB,
-                                     PICKLED_TEXT, self->text,
-                                     PICKLED_TAIL, self->tail);
+                                     PICKLED_TEXT, JOIN_OBJ(self->text),
+                                     PICKLED_TAIL, JOIN_OBJ(self->tail));
     else
         instancedict = Py_BuildValue("{sOsOsOsOsO}",
                                      PICKLED_TAG, self->tag,
                                      PICKLED_CHILDREN, children,
                                      PICKLED_ATTRIB, self->extra->attrib,
-                                     PICKLED_TEXT, self->text,
-                                     PICKLED_TAIL, self->tail);
+                                     PICKLED_TEXT, JOIN_OBJ(self->text),
+                                     PICKLED_TAIL, JOIN_OBJ(self->tail));
     if (instancedict) {
         Py_DECREF(children);
         return instancedict;
@@ -900,13 +898,13 @@ element_setstate_from_attributes(ElementObject *self,
     self->tag = tag;
     Py_INCREF(self->tag);
 
-    Py_CLEAR(self->text);
-    self->text = text ? text : Py_None;
-    Py_INCREF(self->text);
+    _clear_joined_ptr(&self->text);
+    self->text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
+    Py_INCREF(JOIN_OBJ(self->text));
 
-    Py_CLEAR(self->tail);
-    self->tail = tail ? tail : Py_None;
-    Py_INCREF(self->tail);
+    _clear_joined_ptr(&self->tail);
+    self->tail = tail ? JOIN_SET(tail, PyList_CheckExact(tail)) : Py_None;
+    Py_INCREF(JOIN_OBJ(self->tail));
 
     /* Handle ATTRIB and CHILDREN. */
     if (!children && !attrib)
