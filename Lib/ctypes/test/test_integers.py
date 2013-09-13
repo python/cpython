@@ -1,4 +1,4 @@
-# superseeded by test_numbers.py
+# superseded by test_numbers.py
 import unittest
 
 if __name__ == '__main__':
