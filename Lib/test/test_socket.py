@@ -757,6 +757,20 @@ class GeneralModuleTests(unittest.TestCase):
         if not fqhn in all_host_names:
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
+    def test_host_resolution(self):
+        for addr in ['0.1.1.~1', '1+.1.1.1', '::1q', '::1::2',
+                     '1:1:1:1:1:1:1:1:1']:
+            self.assertRaises(OSError, socket.gethostbyname, addr)
+            self.assertRaises(OSError, socket.gethostbyaddr, addr)
+
+        for addr in [support.HOST, '10.0.0.1', '255.255.255.255']:
+            self.assertEqual(socket.gethostbyname(addr), addr)
+
+        # we don't test support.HOSTv6 because there's a chance it doesn't have
+        # a matching name entry (e.g. 'ip6-localhost')
+        for host in [support.HOST]:
+            self.assertIn(host, socket.gethostbyaddr(host)[2])
+
     @unittest.skipUnless(hasattr(socket, 'sethostname'), "test needs socket.sethostname()")
     @unittest.skipUnless(hasattr(socket, 'gethostname'), "test needs socket.gethostname()")
     def test_sethostname(self):
