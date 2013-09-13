@@ -425,6 +425,10 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define INVALID_SOCKET (-1)
 #endif
 
+#ifndef INADDR_NONE
+#define INADDR_NONE (-1)
+#endif
+
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
@@ -787,8 +791,6 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 {
     struct addrinfo hints, *res;
     int error;
-    int d1, d2, d3, d4;
-    char ch;
 
     memset((void *) addr_ret, '\0', sizeof(*addr_ret));
     if (name[0] == '\0') {
@@ -837,7 +839,10 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
         freeaddrinfo(res);
         return siz;
     }
-    if (name[0] == '<' && strcmp(name, "<broadcast>") == 0) {
+    /* special-case broadcast - inet_addr() below can return INADDR_NONE for
+     * this */ 
+    if (strcmp(name, "255.255.255.255") == 0 ||
+        strcmp(name, "<broadcast>") == 0) {
         struct sockaddr_in *sin;
         if (af != AF_INET && af != AF_UNSPEC) {
             PyErr_SetString(PyExc_OSError,
@@ -853,20 +858,53 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
         sin->sin_addr.s_addr = INADDR_BROADCAST;
         return sizeof(sin->sin_addr);
     }
-    if (sscanf(name, "%d.%d.%d.%d%c", &d1, &d2, &d3, &d4, &ch) == 4 &&
-        0 <= d1 && d1 <= 255 && 0 <= d2 && d2 <= 255 &&
-        0 <= d3 && d3 <= 255 && 0 <= d4 && d4 <= 255) {
-        struct sockaddr_in *sin;
-        sin = (struct sockaddr_in *)addr_ret;
-        sin->sin_addr.s_addr = htonl(
-            ((long) d1 << 24) | ((long) d2 << 16) |
-            ((long) d3 << 8) | ((long) d4 << 0));
-        sin->sin_family = AF_INET;
+
+    /* avoid a name resolution in case of numeric address */
+#ifdef HAVE_INET_PTON
+    /* check for an IPv4 address */
+    if (af == AF_UNSPEC || af == AF_INET) {
+        struct sockaddr_in *sin = (struct sockaddr_in *)addr_ret;
+        memset(sin, 0, sizeof(*sin));
+        if (inet_pton(AF_INET, name, &sin->sin_addr) > 0) {
+            sin->sin_family = AF_INET;
 #ifdef HAVE_SOCKADDR_SA_LEN
-        sin->sin_len = sizeof(*sin);
+            sin->sin_len = sizeof(*sin);
 #endif
-        return 4;
+            return 4;
+        }
     }
+#ifdef ENABLE_IPV6
+    /* check for an IPv6 address - if the address contains a scope ID, we
+     * fallback to getaddrinfo(), which can handle translation from interface
+     * name to interface index */
+    if ((af == AF_UNSPEC || af == AF_INET6) && !strchr(name, '%')) {
+        struct sockaddr_in6 *sin = (struct sockaddr_in6 *)addr_ret;
+        memset(sin, 0, sizeof(*sin));
+        if (inet_pton(AF_INET6, name, &sin->sin6_addr) > 0) {
+            sin->sin6_family = AF_INET6;
+#ifdef HAVE_SOCKADDR_SA_LEN
+            sin->sin6_len = sizeof(*sin);
+#endif
+            return 16;
+        }
+    }
+#endif /* ENABLE_IPV6 */
+#else /* HAVE_INET_PTON */
+    /* check for an IPv4 address */
+    if (af == AF_INET || af == AF_UNSPEC) {
+        struct sockaddr_in *sin = (struct sockaddr_in *)addr_ret;
+        memset(sin, 0, sizeof(*sin));
+        if ((sin->sin_addr.s_addr = inet_addr(name)) != INADDR_NONE) {
+            sin->sin_family = AF_INET;
+#ifdef HAVE_SOCKADDR_SA_LEN
+            sin->sin_len = sizeof(*sin);
+#endif
+            return 4;
+        }
+    }   
+#endif /* HAVE_INET_PTON */
+
+    /* perform a name resolution */
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = af;
     Py_BEGIN_ALLOW_THREADS
@@ -4896,9 +4934,6 @@ binary format used in low-level network functions.");
 static PyObject*
 socket_inet_aton(PyObject *self, PyObject *args)
 {
-#ifndef INADDR_NONE
-#define INADDR_NONE (-1)
-#endif
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
 #endif
