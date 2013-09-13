@@ -361,3 +361,7 @@ class TestLongMessage(unittest.TestCase):
                               ['^"regex" does not match "foo"$', '^oops$',
                                '^"regex" does not match "foo"$',
                                '^"regex" does not match "foo" : oops$'])
+
+
+if __name__ == "__main__":
+    unittest.main()

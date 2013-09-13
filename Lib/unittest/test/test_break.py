@@ -282,3 +282,7 @@ class TestBreakSignalIgnored(TestBreak):
     "if threads have been used")
 class TestBreakSignalDefault(TestBreak):
     int_handler = signal.SIG_DFL
+
+
+if __name__ == "__main__":
+    unittest.main()

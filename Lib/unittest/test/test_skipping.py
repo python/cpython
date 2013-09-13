@@ -221,3 +221,7 @@ class Test_TestSkipping(unittest.TestCase):
         suite = unittest.TestSuite([test])
         suite.run(result)
         self.assertEqual(result.skipped, [(test, "testing")])
+
+
+if __name__ == "__main__":
+    unittest.main()

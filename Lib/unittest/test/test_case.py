@@ -1405,3 +1405,7 @@ test case
         with support.disable_gc():
             del case
             self.assertFalse(wr())
+
+
+if __name__ == "__main__":
+    unittest.main()
