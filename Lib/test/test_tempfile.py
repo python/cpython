@@ -7,6 +7,7 @@ import signal
 import sys
 import re
 import warnings
+import contextlib
 
 import unittest
 from test import support
@@ -255,6 +256,22 @@ class TestGetCandidateNames(BaseTestCase):
         self.assertTrue(a is b)
 
 
+@contextlib.contextmanager
+def _inside_empty_temp_dir():
+    dir = tempfile.mkdtemp()
+    try:
+        with support.swap_attr(tempfile, 'tempdir', dir):
+            yield
+    finally:
+        support.rmtree(dir)
+
+
+def _mock_candidate_names(*names):
+    return support.swap_attr(tempfile,
+                             '_get_candidate_names',
+                             lambda: iter(names))
+
+
 class TestMkstempInner(BaseTestCase):
     """Test the internal function _mkstemp_inner."""
 
@@ -372,31 +389,36 @@ class TestMkstempInner(BaseTestCase):
         os.lseek(f.fd, 0, os.SEEK_SET)
         self.assertEqual(os.read(f.fd, 20), b"blat")
 
+    def default_mkstemp_inner(self):
+        return tempfile._mkstemp_inner(tempfile.gettempdir(),
+                                       tempfile.template,
+                                       '',
+                                       tempfile._bin_openflags)
+
+    def test_collision_with_existing_file(self):
+        # _mkstemp_inner tries another name when a file with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            (fd1, name1) = self.default_mkstemp_inner()
+            os.close(fd1)
+            self.assertTrue(name1.endswith('aaa'))
+
+            (fd2, name2) = self.default_mkstemp_inner()
+            os.close(fd2)
+            self.assertTrue(name2.endswith('bbb'))
+
     def test_collision_with_existing_directory(self):
         # _mkstemp_inner tries another name when a directory with
         # the chosen name already exists
-        container_dir = tempfile.mkdtemp()
-        try:
-            def mock_get_candidate_names():
-                return iter(['aaa', 'aaa', 'bbb'])
-            with support.swap_attr(tempfile,
-                                   '_get_candidate_names',
-                                   mock_get_candidate_names):
-                dir = tempfile.mkdtemp(dir=container_dir)
-                self.assertTrue(dir.endswith('aaa'))
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            dir = tempfile.mkdtemp()
+            self.assertTrue(dir.endswith('aaa'))
 
-                flags = tempfile._bin_openflags
-                (fd, name) = tempfile._mkstemp_inner(container_dir,
-                                                     tempfile.template,
-                                                     '',
-                                                     flags)
-                try:
-                    self.assertTrue(name.endswith('bbb'))
-                finally:
-                    os.close(fd)
-                    os.unlink(name)
-        finally:
-            support.rmtree(container_dir)
+            (fd, name) = self.default_mkstemp_inner()
+            os.close(fd)
+            self.assertTrue(name.endswith('bbb'))
 
 
 class TestGetTempPrefix(BaseTestCase):
@@ -552,6 +574,27 @@ class TestMkdtemp(BaseTestCase):
             self.assertEqual(mode, expected)
         finally:
             os.rmdir(dir)
+
+    def test_collision_with_existing_file(self):
+        # mkdtemp tries another name when a file with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            file = tempfile.NamedTemporaryFile(delete=False)
+            file.close()
+            self.assertTrue(file.name.endswith('aaa'))
+            dir = tempfile.mkdtemp()
+            self.assertTrue(dir.endswith('bbb'))
+
+    def test_collision_with_existing_directory(self):
+        # mkdtemp tries another name when a directory with
+        # the chosen name already exists
+        with _inside_empty_temp_dir(), \
+             _mock_candidate_names('aaa', 'aaa', 'bbb'):
+            dir1 = tempfile.mkdtemp()
+            self.assertTrue(dir1.endswith('aaa'))
+            dir2 = tempfile.mkdtemp()
+            self.assertTrue(dir2.endswith('bbb'))
 
 
 class TestMktemp(BaseTestCase):
