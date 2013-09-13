@@ -1697,6 +1697,18 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
             self.assertEqual(len(e2), 2)
             self.assertEqualElements(e, e2)
 
+    def test_pickle_issue18997(self):
+        for dumper, loader in product(self.modules, repeat=2):
+            XMLTEXT = """<?xml version="1.0"?>
+                <group><dogs>4</dogs>
+                </group>"""
+            e1 = dumper.fromstring(XMLTEXT)
+            if hasattr(e1, '__getstate__'):
+                self.assertEqual(e1.__getstate__()['tag'], 'group')
+            e2 = self.pickleRoundTrip(e1, 'xml.etree.ElementTree', dumper, loader)
+            self.assertEqual(e2.tag, 'group')
+            self.assertEqual(e2[0].tag, 'dogs')
+
 
 class ElementTreeTypeTest(unittest.TestCase):
     def test_istype(self):
