@@ -168,7 +168,7 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure from a string.  This is exactly equivalent to
    ``Parser().parsestr(s)``.  Optional *_class* and *strict* are interpreted as
-   with the :class:``~email.parser.Parser` class constructor.
+   with the :class:`~email.parser.Parser` class constructor.
 
    .. versionchanged:: 2.2.2
       The *strict* flag was added.
@@ -178,7 +178,7 @@ in the top-level :mod:`email` package namespace.
 
    Return a message object structure tree from an open file object.  This is
    exactly equivalent to ``Parser().parse(fp)``.  Optional *_class* and *strict*
-   are interpreted as with the :class:``~email.parser.Parser` class constructor.
+   are interpreted as with the :class:`~email.parser.Parser` class constructor.
 
    .. versionchanged:: 2.2.2
       The *strict* flag was added.
