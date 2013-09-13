@@ -1780,6 +1780,5 @@ class PatchTest(unittest.TestCase):
         self.assertIs(os.path, path)
 
 
-
 if __name__ == '__main__':
     unittest.main()

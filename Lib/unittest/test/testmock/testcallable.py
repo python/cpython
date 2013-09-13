@@ -145,3 +145,7 @@ class TestCallable(unittest.TestCase):
         mock.wibble.assert_called_once_with()
 
         self.assertRaises(TypeError, mock.wibble, 'some',  'args')
+
+
+if __name__ == "__main__":
+    unittest.main()
