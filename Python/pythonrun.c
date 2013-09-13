@@ -1056,7 +1056,7 @@ initstdio(void)
     PyObject *std = NULL;
     int status = 0, fd;
     PyObject * encoding_attr;
-    char *encoding = NULL, *errors;
+    char *pythonioencoding = NULL, *encoding, *errors;
 
     /* Hack to avoid a nasty recursion issue when Python is invoked
        in verbose mode: pre-import the Latin-1 and UTF-8 codecs */
@@ -1088,19 +1088,23 @@ initstdio(void)
     }
     Py_DECREF(wrapper);
 
-    encoding = Py_GETENV("PYTHONIOENCODING");
-    errors = NULL;
-    if (encoding) {
-        encoding = _PyMem_Strdup(encoding);
-        if (encoding == NULL) {
+    pythonioencoding = Py_GETENV("PYTHONIOENCODING");
+    encoding = errors = NULL;
+    if (pythonioencoding) {
+        pythonioencoding = _PyMem_Strdup(pythonioencoding);
+        if (pythonioencoding == NULL) {
             PyErr_NoMemory();
             goto error;
         }
-        errors = strchr(encoding, ':');
+        errors = strchr(pythonioencoding, ':');
         if (errors) {
             *errors = '\0';
             errors++;
+            if (!*errors)
+                errors = NULL;
         }
+        if (*pythonioencoding)
+            encoding = pythonioencoding;
     }
 
     /* Set sys.stdin */
@@ -1180,7 +1184,7 @@ initstdio(void)
         status = -1;
     }
 
-    PyMem_Free(encoding);
+    PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return status;
