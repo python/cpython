@@ -339,3 +339,7 @@ class Test_TextTestRunner(unittest.TestCase):
         f = io.StringIO()
         runner = unittest.TextTestRunner(f)
         self.assertTrue(runner.stream.stream is f)
+
+
+if __name__ == "__main__":
+    unittest.main()
