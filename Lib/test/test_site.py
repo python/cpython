@@ -13,6 +13,8 @@ import os
 import sys
 import re
 import encodings
+import urllib.request
+import urllib.error
 import subprocess
 import sysconfig
 from copy import copy
@@ -403,27 +405,19 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
-
-class LicenseURL(unittest.TestCase):
-    """Test accessibility of the license."""
-
-    @unittest.skipUnless(str(license).startswith('See http://'),
-                         'license is available as a file')
-    def test_license_page(self):
-        """urlopen should return the license page"""
-        pat = r'^See (http://www\.python\.org/download/releases/[^/]+/license/)$'
-        mo = re.search(pat, str(license))
-        self.assertIsNotNone(mo, msg='can\'t find appropriate url in license')
-        if mo is not None:
-            url = mo.group(1)
+    @test.support.requires_resource('network')
+    def test_license_exists_at_url(self):
+        # This test is a bit fragile since it depends on the format of the
+        # string displayed by license in the absence of a LICENSE file.
+        url = license._Printer__data.split()[1]
+        req = urllib.request.Request(url, method='HEAD')
+        try:
             with test.support.transient_internet(url):
-                import urllib.request, urllib.error
-                try:
-                    with urllib.request.urlopen(url) as data:
-                        code = data.getcode()
-                except urllib.error.HTTPError as e:
-                    code = e.code
-                self.assertEqual(code, 200, msg=url)
+                with urllib.request.urlopen(req) as data:
+                    code = data.getcode()
+        except urllib.error.HTTPError as e:
+            code = e.code
+        self.assertEqual(code, 200, msg="Can't find " + url)
 
 
 if __name__ == "__main__":
