@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.2.6?
+===========================
+
+*Release date: TBD*
+
+Library
+-------
+
+- Fix tkinter regression introduced by the security fix in issue #16248.
+
+
 What's New in Python 3.2.5?
 ===========================
 
