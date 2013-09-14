@@ -12,6 +12,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18937: Add an assertLogs() context manager to unittest.TestCase
+  to ensure that a block of code emits a message using the logging module.
 
 - Issue #17324: Fix http.server's request handling case on trailing '/'. Patch
   contributed by Vajrasky Kok.
