@@ -1,8 +1,10 @@
+import contextlib
 import difflib
 import pprint
 import pickle
 import re
 import sys
+import logging
 import warnings
 import weakref
 import inspect
@@ -16,6 +18,12 @@ from .support import (
     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
     ResultWithNoStartTestRunStopTestRun
 )
+from test.support import captured_stderr
+
+
+log_foo = logging.getLogger('foo')
+log_foobar = logging.getLogger('foo.bar')
+log_quux = logging.getLogger('quux')
 
 
 class Test(object):
@@ -1250,6 +1258,94 @@ test case
             with self.assertRaises((RuntimeWarning, self.failureException)):
                 with self.assertWarnsRegex(RuntimeWarning, "o+"):
                     _runtime_warn("barz")
+
+    @contextlib.contextmanager
+    def assertNoStderr(self):
+        with captured_stderr() as buf:
+            yield
+        self.assertEqual(buf.getvalue(), "")
+
+    def assertLogRecords(self, records, matches):
+        self.assertEqual(len(records), len(matches))
+        for rec, match in zip(records, matches):
+            self.assertIsInstance(rec, logging.LogRecord)
+            for k, v in match.items():
+                self.assertEqual(getattr(rec, k), v)
+
+    def testAssertLogsDefaults(self):
+        # defaults: root logger, level INFO
+        with self.assertNoStderr():
+            with self.assertLogs() as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+            self.assertEqual(cm.output, ["INFO:foo:1"])
+            self.assertLogRecords(cm.records, [{'name': 'foo'}])
+
+    def testAssertLogsTwoMatchingMessages(self):
+        # Same, but with two matching log messages
+        with self.assertNoStderr():
+            with self.assertLogs() as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+                log_quux.warning("3")
+            self.assertEqual(cm.output, ["INFO:foo:1", "WARNING:quux:3"])
+            self.assertLogRecords(cm.records,
+                                   [{'name': 'foo'}, {'name': 'quux'}])
+
+    def checkAssertLogsPerLevel(self, level):
+        # Check level filtering
+        with self.assertNoStderr():
+            with self.assertLogs(level=level) as cm:
+                log_foo.warning("1")
+                log_foobar.error("2")
+                log_quux.critical("3")
+            self.assertEqual(cm.output, ["ERROR:foo.bar:2", "CRITICAL:quux:3"])
+            self.assertLogRecords(cm.records,
+                                   [{'name': 'foo.bar'}, {'name': 'quux'}])
+
+    def testAssertLogsPerLevel(self):
+        self.checkAssertLogsPerLevel(logging.ERROR)
+        self.checkAssertLogsPerLevel('ERROR')
+
+    def checkAssertLogsPerLogger(self, logger):
+        # Check per-logger fitering
+        with self.assertNoStderr():
+            with self.assertLogs(level='DEBUG') as outer_cm:
+                with self.assertLogs(logger, level='DEBUG') as cm:
+                    log_foo.info("1")
+                    log_foobar.debug("2")
+                    log_quux.warning("3")
+                self.assertEqual(cm.output, ["INFO:foo:1", "DEBUG:foo.bar:2"])
+                self.assertLogRecords(cm.records,
+                                       [{'name': 'foo'}, {'name': 'foo.bar'}])
+            # The outer catchall caught the quux log
+            self.assertEqual(outer_cm.output, ["WARNING:quux:3"])
+
+    def testAssertLogsPerLogger(self):
+        self.checkAssertLogsPerLogger(logging.getLogger('foo'))
+        self.checkAssertLogsPerLogger('foo')
+
+    def testAssertLogsFailureNoLogs(self):
+        # Failure due to no logs
+        with self.assertNoStderr():
+            with self.assertRaises(self.failureException):
+                with self.assertLogs():
+                    pass
+
+    def testAssertLogsFailureLevelTooHigh(self):
+        # Failure due to level too high
+        with self.assertNoStderr():
+            with self.assertRaises(self.failureException):
+                with self.assertLogs(level='WARNING'):
+                    log_foo.info("1")
+
+    def testAssertLogsFailureMismatchingLogger(self):
+        # Failure due to mismatching logger (and the logged message is
+        # passed through)
+        with self.assertLogs('quux', level='ERROR'):
+            with self.assertRaises(self.failureException):
+                with self.assertLogs('foo'):
+                    log_quux.error("1")
 
     def testDeprecatedMethodNames(self):
         """

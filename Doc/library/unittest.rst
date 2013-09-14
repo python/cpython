@@ -1031,6 +1031,47 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
+   .. method:: assertLogs(logger=None, level=None)
+
+      A context manager to test that at least one message is logged on
+      the *logger* or one of its children, with at least the given
+      *level*.
+
+      If given, *logger* should be a :class:`logging.Logger` object or a
+      :class:`str` giving the name of a logger.  The default is the root
+      logger, which will catch all messages.
+
+      If given, *level* should be either a numeric logging level or
+      its string equivalent (for example either ``"ERROR"`` or
+      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+
+      The test passes if at least one message emitted inside the ``with``
+      block matches the *logger* and *level* conditions, otherwise it fails.
+
+      The object returned by the context manager is a recording helper
+      which keeps tracks of the matching log messages.  It has two
+      attributes:
+
+      .. attribute:: records
+
+         A list of :class:`logging.LogRecord` objects of the matching
+         log messages.
+
+      .. attribute:: output
+
+         A list of :class:`str` objects with the formatted output of
+         matching messages.
+
+      Example::
+
+         with self.assertLogs('foo', level='INFO') as cm:
+            logging.getLogger('foo').info('first message')
+            logging.getLogger('foo.bar').error('second message')
+         self.assertEqual(cm.output, ['INFO:foo:first message',
+                                      'ERROR:foo.bar:second message'])
+
+      .. versionadded:: 3.4
+
 
    There are also other methods used to perform more specific checks, such as:
 
