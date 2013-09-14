@@ -12,6 +12,9 @@ Library
 
 - Fix tkinter regression introduced by the security fix in issue #16248.
 
+- Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
+  service using certificates with many wildcards (CVE-2013-2099).
+
 
 What's New in Python 3.2.5?
 ===========================
