@@ -1345,7 +1345,7 @@ class ConfigFileTest(BaseTest):
 
     def test_logger_disabling(self):
         self.apply_config(self.disable_test)
-        logger = logging.getLogger('foo')
+        logger = logging.getLogger('some_pristine_logger')
         self.assertFalse(logger.disabled)
         self.apply_config(self.disable_test)
         self.assertTrue(logger.disabled)
