@@ -158,6 +158,15 @@ class TestHeap(TestCase):
         self.assertEqual(sorted(chain(*inputs)), list(self.module.merge(*inputs)))
         self.assertEqual(list(self.module.merge()), [])
 
+    def test_merge_does_not_suppress_index_error(self):
+        # Issue 19018: Heapq.merge suppresses IndexError from user generator
+        def iterable():
+            s = list(range(10))
+            for i in range(20):
+                yield s[i]       # IndexError when i > 10
+        with self.assertRaises(IndexError):
+            list(self.module.merge(iterable(), iterable()))
+
     def test_merge_stability(self):
         class Int(int):
             pass
