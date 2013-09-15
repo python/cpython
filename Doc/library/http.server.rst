@@ -368,6 +368,15 @@ the previous example, this serves files relative to the current directory. ::
 
         python -m http.server 8000
 
+By default, server binds itself to all interfaces. To restrict it to bind to a
+particular interface only, ``--bind ADDRESS`` argument can be used. For e.g, to
+restrict the server to bind only to localhost. ::
+
+        python -m http.server 8000 --bind 127.0.0.1
+
+.. versionadded:: 3.4
+    ``--bind`` argument was introduced.
+
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
