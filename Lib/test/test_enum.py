@@ -228,6 +228,32 @@ class TestEnum(unittest.TestCase):
                 ['FALL', 'ANOTHER_SPRING'],
                 )
 
+    def test_duplicate_name(self):
+        with self.assertRaises(TypeError):
+            class Color(Enum):
+                red = 1
+                green = 2
+                blue = 3
+                red = 4
+
+        with self.assertRaises(TypeError):
+            class Color(Enum):
+                red = 1
+                green = 2
+                blue = 3
+                def red(self):
+                    return 'red'
+
+        with self.assertRaises(TypeError):
+            class Color(Enum):
+                @property
+                def red(self):
+                    return 'redder'
+                red = 1
+                green = 2
+                blue = 3
+
+
     def test_enum_with_value_name(self):
         class Huh(Enum):
             name = 1
@@ -617,17 +643,6 @@ class TestEnum(unittest.TestCase):
                 return 'no, not %s' % self.value
         self.assertIsNot(type(whatever.really), whatever)
         self.assertEqual(whatever.this.really(), 'no, not that')
-
-    def test_overwrite_enums(self):
-        class Why(Enum):
-            question = 1
-            answer = 2
-            propisition = 3
-            def question(self):
-                print(42)
-        self.assertIsNot(type(Why.question), Why)
-        self.assertNotIn(Why.question, Why._member_names_)
-        self.assertNotIn(Why.question, Why)
 
     def test_wrong_inheritance_order(self):
         with self.assertRaises(TypeError):
