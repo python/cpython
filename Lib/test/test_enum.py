@@ -477,6 +477,13 @@ class TestEnum(unittest.TestCase):
                 [Season.SUMMER, Season.WINTER, Season.AUTUMN, Season.SPRING],
                 )
 
+    def test_reversed_iteration_order(self):
+        self.assertEqual(
+                list(reversed(self.Season)),
+                [self.Season.WINTER, self.Season.AUTUMN, self.Season.SUMMER,
+                 self.Season.SPRING]
+                )
+
     def test_programatic_function_string(self):
         SummerMonth = Enum('SummerMonth', 'june july august')
         lst = list(SummerMonth)
