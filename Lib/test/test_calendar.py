@@ -399,6 +399,27 @@ class OutputTestCase(unittest.TestCase):
             '<tr><th colspan="7" class="month">January</th></tr>'
         )
 
+    def test_prweek(self):
+        with support.captured_stdout() as out:
+            week = [(1,0), (2,1), (3,2), (4,3), (5,4), (6,5), (7,6)]
+            calendar.TextCalendar().prweek(week, 1)
+            self.assertEqual(out.getvalue().strip(), "1  2  3  4  5  6  7")
+
+    def test_prmonth(self):
+        with support.captured_stdout() as out:
+            calendar.TextCalendar().prmonth(2004, 1)
+            output = out.getvalue().strip()
+            self.assertEqual(output, result_2004_01_text.strip())
+
+    def test_pryear(self):
+        with support.captured_stdout() as out:
+            calendar.TextCalendar().pryear(2004)
+            self.assertEqual(out.getvalue().strip(), result_2004_text.strip())
+
+    def test_format(self):
+        with support.captured_stdout() as out:
+            calendar.format(["1", "2", "3"], colwidth=3, spacing=1)
+            self.assertEqual(out.getvalue().strip(), "1   2   3")
 
 class CalendarTestCase(unittest.TestCase):
     def test_isleap(self):
