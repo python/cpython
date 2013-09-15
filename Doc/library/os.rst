@@ -1206,41 +1206,40 @@ Querying the size of a terminal
 Inheritance of File Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A file descriptor has a inheritable flag which indicates if the file descriptor
-can be inherited or not in child processes. Since Python 3.4, file descriptors
+.. versionadded:: 3.4
+
+A file descriptor has an "inheritable" flag which indicates if the file descriptor
+can be inherited by child processes.  Since Python 3.4, file descriptors
 created by Python are non-inheritable by default.
 
 On UNIX, non-inheritable file descriptors are closed in child processes at the
 execution of a new program, other file descriptors are inherited.
 
 On Windows, non-inheritable handles and file descriptors are closed in child
-processes, except standard streams (file descriptors 0, 1 and 2: stdin, stdout
-and stderr) which are always inherited. Using :func:`os.spawn*` functions,
+processes, except for standard streams (file descriptors 0, 1 and 2: stdin, stdout
+and stderr), which are always inherited.  Using :func:`os.spawn*` functions,
 all inheritable handles and all inheritable file descriptors are inherited.
 Using the :mod:`subprocess` module, all file descriptors except standard
-streams are closed, inheritable handles are only inherited if the *close_fds*
-parameter is ``False``.
-
-.. versionadded:: 3.4
+streams are closed, and inheritable handles are only inherited if the
+*close_fds* parameter is ``False``.
 
 .. function:: get_inheritable(fd)
 
-   Get the `inheritable flag <fd_inheritance>`_ of the specified file
-   descriptor. Return a :class:`bool`.
+   Get the "inheritable" flag of the specified file descriptor (a boolean).
 
 .. function:: set_inheritable(fd, inheritable)
 
-   Set the `inheritable flag <fd_inheritance>`_ of the specified file descriptor.
+   Set the "inheritable" flag of the specified file descriptor.
 
 .. function:: get_handle_inheritable(handle)
 
-   Get the `inheritable flag <fd_inheritance>`_ of the specified handle. Return a :class:`bool`.
+   Get the "inheritable" flag of the specified handle (a boolean).
 
    Availability: Windows.
 
 .. function:: set_handle_inheritable(handle, inheritable)
 
-   Set the `inheritable flag <fd_inheritance>`_ of the specified handle.
+   Set the "inheritable" flag of the specified handle.
 
    Availability: Windows.
 
