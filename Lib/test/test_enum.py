@@ -98,7 +98,7 @@ class TestEnum(unittest.TestCase):
         Season = self.Season
         self.assertEqual(
             set(dir(Season)),
-            set(['__class__', '__doc__', '__members__',
+            set(['__class__', '__doc__', '__members__', '__module__',
                 'SPRING', 'SUMMER', 'AUTUMN', 'WINTER']),
             )
 
@@ -106,8 +106,23 @@ class TestEnum(unittest.TestCase):
         Season = self.Season
         self.assertEqual(
             set(dir(Season.WINTER)),
-            set(['__class__', '__doc__', 'name', 'value']),
+            set(['__class__', '__doc__', '__module__', 'name', 'value']),
             )
+
+    def test_dir_with_added_behavior(self):
+        class Test(Enum):
+            this = 'that'
+            these = 'those'
+            def wowser(self):
+                return ("Wowser! I'm %s!" % self.name)
+        self.assertEqual(
+                set(dir(Test)),
+                set(['__class__', '__doc__', '__members__', '__module__', 'this', 'these']),
+                )
+        self.assertEqual(
+                set(dir(Test.this)),
+                set(['__class__', '__doc__', '__module__', 'name', 'value', 'wowser']),
+                )
 
     def test_enum_in_enum_out(self):
         Season = self.Season
