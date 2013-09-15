@@ -29,6 +29,14 @@ class _RouteClassAttributeToGetattr:
         raise AttributeError("can't delete attribute")
 
 
+def _is_descriptor(obj):
+    """Returns True if obj is a descriptor, False otherwise."""
+    return (
+            hasattr(obj, '__get__') or
+            hasattr(obj, '__set__') or
+            hasattr(obj, '__delete__'))
+
+
 def _is_dunder(name):
     """Returns True if a __dunder__ name, False otherwise."""
     return (name[:2] == name[-2:] == '__' and
@@ -50,8 +58,9 @@ def _make_class_unpicklable(cls):
     cls.__reduce__ = _break_on_call_reduce
     cls.__module__ = '<unknown>'
 
+
 class _EnumDict(dict):
-    """Keeps track of definition order of the enum items.
+    """Track enum member order and ensure member names are not reused.
 
     EnumMeta will use the names found in self._member_names as the
     enumeration member names.
@@ -62,11 +71,7 @@ class _EnumDict(dict):
         self._member_names = []
 
     def __setitem__(self, key, value):
-        """Changes anything not dundered or that doesn't have __get__.
-
-        If a descriptor is added with the same name as an enum member, the name
-        is removed from _member_names (this may leave a hole in the numerical
-        sequence of values).
+        """Changes anything not dundered or not a descriptor.
 
         If an enum member name is used twice, an error is raised; duplicate
         values are not checked for.
@@ -76,17 +81,18 @@ class _EnumDict(dict):
         """
         if _is_sunder(key):
             raise ValueError('_names_ are reserved for future Enum use')
-        elif _is_dunder(key) or hasattr(value, '__get__'):
-            if key in self._member_names:
-                # overwriting an enum with a method?  then remove the name from
-                # _member_names or it will become an enum anyway when the class
-                # is created
-                self._member_names.remove(key)
-        else:
-            if key in self._member_names:
-                raise TypeError('Attempted to reuse key: %r' % key)
+        elif _is_dunder(key):
+            pass
+        elif key in self._member_names:
+            # descriptor overwriting an enum?
+            raise TypeError('Attempted to reuse key: %r' % key)
+        elif not _is_descriptor(value):
+            if key in self:
+                # enum overwriting a descriptor?
+                raise TypeError('Key already defined as: %r' % self[key])
             self._member_names.append(key)
         super().__setitem__(key, value)
+
 
 
 # Dummy value for Enum as EnumMeta explicitly checks for it, but of course

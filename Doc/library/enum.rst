@@ -154,6 +154,12 @@ return A::
     >>> Shape(2)
     <Shape.square: 2>
 
+.. note::
+
+    Attempting to create a member with the same name as an already
+    defined attribute (another member, a method, etc.) or attempting to create
+    an attribute with the same name as a member is not allowed.
+
 
 Ensuring unique enumeration values
 ----------------------------------
