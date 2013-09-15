@@ -444,8 +444,15 @@ Major performance enhancements have been added:
 * The UTF-32 decoder is now 3x to 4x faster.
 
 * The cost of hash collisions for sets is now reduced.  Each hash table
-  probe now checks a second key/hash pair for each cache line retrieved.
-  This exploits cache locality to make collision resolution less expensive.
+  probe now checks a series of consecutive, adjacent key/hash pairs before
+  continuing to make random probes through the hash table.  This exploits
+  cache locality to make collision resolution less expensive.
+
+  The collision resolution scheme can be described as a hybrid of linear
+  probing and open addressing.  The number of additional linear probes
+  defaults to nine.  This can be changed at compile-time by defining
+  LINEAR_PROBES to be any value.  Set LINEAR_PROBES=0 to turn-off
+  linear probing entirely.
 
   (Contributed by Raymond Hettinger in :issue"`18771`.)
 
