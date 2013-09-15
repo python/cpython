@@ -32,6 +32,11 @@ Library
   faulthandler module if the variable is non-empty. Same behaviour than other
   variables like :envvar:`PYTHONDONTWRITEBYTECODE`.
 
+- Issue #1565525: New function ``traceback.clear_frames`` will clear
+  the local variables of all the stack frames referenced by a traceback
+  object.
+
+
 Tests
 -----
 

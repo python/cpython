@@ -377,6 +377,14 @@ plain tuple.  (Contributed by Claudiu Popa in :issue:`18901`.)
 :meth:`sunau.open` now supports the context manager protocol (:issue:`18878`).
 
 
+traceback
+---------
+
+A new :func:`traceback.clear_frames` function takes a traceback object
+and clears the local variables in all of the frames it references,
+reducing the amount of memory consumed (:issue:`1565525`).
+
+
 urllib
 ------
 
