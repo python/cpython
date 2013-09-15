@@ -173,8 +173,9 @@ attributes:
 
    .. note::
 
-      :func:`getmembers` does not return metaclass attributes when the argument
-      is a class (this behavior is inherited from the :func:`dir` function).
+      :func:`getmembers` will only return metaclass attributes when the
+      argument is a class and those attributes have been listed in a custom
+      :meth:`__dir__`.
 
 
 .. function:: getmoduleinfo(path)
