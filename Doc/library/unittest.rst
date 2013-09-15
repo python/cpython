@@ -883,8 +883,8 @@ Test cases
 
 
 
-   It is also possible to check that exceptions and warnings are raised using
-   the following methods:
+   It is also possible to check the production of exceptions, warnings and
+   log messages using the following methods:
 
    +---------------------------------------------------------+--------------------------------------+------------+
    | Method                                                  | Checks that                          | New in     |
@@ -900,6 +900,9 @@ Test cases
    +---------------------------------------------------------+--------------------------------------+------------+
    | :meth:`assertWarnsRegex(warn, r, fun, *args, **kwds)    | ``fun(*args, **kwds)`` raises *warn* | 3.2        |
    | <TestCase.assertWarnsRegex>`                            | and the message matches regex *r*    |            |
+   +---------------------------------------------------------+--------------------------------------+------------+
+   | :meth:`assertLogs(logger, level)`                       | The ``with`` block logs on *logger*  | 3.4        |
+   | <TestCase.assertWarns>`                                 | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)
