@@ -44,7 +44,9 @@ PyObject *_PySet_Dummy = dummy;
 /* ======= Begin logic for probing the hash table ========================= */
 
 /* This should be >= PySet_MINSIZE - 1 */
+#ifndef LINEAR_PROBES
 #define LINEAR_PROBES 9
+#endif
 
 /* This must be >= 1 */
 #define PERTURB_SHIFT 5
@@ -55,12 +57,14 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *table = so->table;
     setentry *freeslot = NULL;
     setentry *entry;
-    setentry *limit;
     size_t perturb = hash;
     size_t mask = so->mask;
     size_t i = (size_t)hash; /* Unsigned for defined overflow behavior. */
-    size_t j;
     int cmp;
+#if LINEAR_PROBES
+    setentry *limit;
+    size_t j;
+#endif
 
     entry = &table[i & mask];
     if (entry->key == NULL)
@@ -84,6 +88,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
+#if LINEAR_PROBES
         limit = &table[mask];
         for (j = 0 ; j < LINEAR_PROBES ; j++) {
             entry = (entry == limit) ? &table[0] : entry + 1;
@@ -106,13 +111,14 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
         }
+#endif
 
         perturb >>= PERTURB_SHIFT;
         i = i * 5 + 1 + perturb;
 
         entry = &table[i & mask];
         if (entry->key == NULL)
-            break;
+            goto found_null;
     }
   found_null:
     return freeslot == NULL ? entry : freeslot;
@@ -129,11 +135,13 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     setentry *table = so->table;
     setentry *freeslot = NULL;
     setentry *entry;
-    setentry *limit;
     size_t perturb = hash;
     size_t mask = so->mask;
     size_t i = (size_t)hash;
+#if LINEAR_PROBES
+    setentry *limit;
     size_t j;
+#endif
 
     /* Make sure this function doesn't have to handle non-unicode keys,
        including subclasses of str; e.g., one reason to subclass
@@ -157,6 +165,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
+#if LINEAR_PROBES
         limit = &table[mask];
         for (j = 0 ; j < LINEAR_PROBES ; j++) {
             entry = (entry == limit) ? &table[0] : entry + 1;
@@ -170,13 +179,14 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
         }
+#endif
 
         perturb >>= PERTURB_SHIFT;
         i = i * 5 + 1 + perturb;
 
         entry = &table[i & mask];
         if (entry->key == NULL)
-            break;
+            goto found_null;
     }
   found_null:
     return freeslot == NULL ? entry : freeslot;
@@ -198,17 +208,21 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t perturb = hash;
     size_t mask = (size_t)so->mask;
     size_t i = (size_t)hash;
+#if LINEAR_PROBES
     size_t j;
+#endif
 
     while (1) {
         entry = &table[i & mask];
         if (entry->key == NULL)
             goto found_null;
+#if LINEAR_PROBES
         for (j = 1 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
         }
+#endif
         perturb >>= PERTURB_SHIFT;
         i = i * 5 + 1 + perturb;
     }
