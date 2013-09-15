@@ -225,16 +225,6 @@ class EnumMeta(type):
     def __dir__(self):
         return ['__class__', '__doc__', '__members__'] + self._member_names_
 
-    @property
-    def __members__(cls):
-        """Returns a mapping of member name->value.
-
-        This mapping lists all enum members, including aliases. Note that this
-        is a read-only view of the internal mapping.
-
-        """
-        return MappingProxyType(cls._member_map_)
-
     def __getattr__(cls, name):
         """Return the enum member matching `name`
 
@@ -260,8 +250,21 @@ class EnumMeta(type):
     def __len__(cls):
         return len(cls._member_names_)
 
+    @property
+    def __members__(cls):
+        """Returns a mapping of member name->value.
+
+        This mapping lists all enum members, including aliases. Note that this
+        is a read-only view of the internal mapping.
+
+        """
+        return MappingProxyType(cls._member_map_)
+
     def __repr__(cls):
         return "<enum %r>" % cls.__name__
+
+    def __reversed__(cls):
+        return (cls._member_map_[name] for name in reversed(cls._member_names_))
 
     def __setattr__(cls, name, value):
         """Block attempts to reassign Enum members.
