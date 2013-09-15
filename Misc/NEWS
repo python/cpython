@@ -18,6 +18,9 @@ Library
 - Issue #17324: Fix http.server's request handling case on trailing '/'. Patch
   contributed by Vajrasky Kok.
 
+- Issue #19018: The heapq.merge() function no longer suppresses IndexError
+  in the underlying iterables.
+
 - Issue #18784: The uuid module no more attempts to load libc via ctypes.CDLL,
   if all necessary functions are already found in libuuid.
   Patch by Evgeny Sologubov.
