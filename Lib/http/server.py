@@ -1186,15 +1186,15 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_message("CGI script exited OK")
 
 
-def test(HandlerClass = BaseHTTPRequestHandler,
-         ServerClass = HTTPServer, protocol="HTTP/1.0", port=8000):
+def test(HandlerClass=BaseHTTPRequestHandler,
+         ServerClass=HTTPServer, protocol="HTTP/1.0", port=8000, bind=""):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
     argument).
 
     """
-    server_address = ('', port)
+    server_address = (bind, port)
 
     HandlerClass.protocol_version = protocol
     httpd = ServerClass(server_address, HandlerClass)
@@ -1212,12 +1212,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                        help='Run as CGI Server')
+    parser.add_argument('--bind', '-b', default='', metavar='ADDRESS',
+                        help='Specify alternate bind address '
+                             '[default: all interfaces]')
     parser.add_argument('port', action='store',
                         default=8000, type=int,
                         nargs='?',
                         help='Specify alternate port [default: 8000]')
     args = parser.parse_args()
     if args.cgi:
-        test(HandlerClass=CGIHTTPRequestHandler, port=args.port)
+        handler_class = CGIHTTPRequestHandler
     else:
-        test(HandlerClass=SimpleHTTPRequestHandler, port=args.port)
+        handler_class = SimpleHTTPRequestHandler
+    test(HandlerClass=handler_class, port=args.port, bind=args.bind)
