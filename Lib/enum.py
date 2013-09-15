@@ -16,6 +16,8 @@ class _RouteClassAttributeToGetattr:
     """
     def __init__(self, fget=None):
         self.fget = fget
+        if fget.__doc__ is not None:
+            self.__doc__ = fget.__doc__
 
     def __get__(self, instance, ownerclass=None):
         if instance is None:
@@ -166,6 +168,7 @@ class EnumMeta(type):
                     enum_member._value_ = member_type(*args)
             value = enum_member._value_
             enum_member._name_ = member_name
+            enum_member.__objclass__ = enum_class
             enum_member.__init__(*args)
             # If another member with the same value was already defined, the
             # new member becomes an alias to the existing one.
@@ -229,7 +232,7 @@ class EnumMeta(type):
         return isinstance(member, cls) and member.name in cls._member_map_
 
     def __dir__(self):
-        return ['__class__', '__doc__', '__members__'] + self._member_names_
+        return ['__class__', '__doc__', '__members__', '__module__'] + self._member_names_
 
     def __getattr__(cls, name):
         """Return the enum member matching `name`
@@ -455,7 +458,8 @@ class Enum(metaclass=EnumMeta):
         return "%s.%s" % (self.__class__.__name__, self._name_)
 
     def __dir__(self):
-        return (['__class__', '__doc__', 'name', 'value'])
+        added_behavior = [m for m in self.__class__.__dict__ if m[0] != '_']
+        return ['__class__', '__doc__', '__module__', 'name', 'value'] + added_behavior
 
     def __eq__(self, other):
         if type(other) is self.__class__:
@@ -492,10 +496,12 @@ class Enum(metaclass=EnumMeta):
 
     @_RouteClassAttributeToGetattr
     def name(self):
+        """The name of the Enum member."""
         return self._name_
 
     @_RouteClassAttributeToGetattr
     def value(self):
+        """The value of the Enum member."""
         return self._value_
 
 
