@@ -308,9 +308,14 @@ def classify_class_attrs(cls):
            data attributes:  C.data is just a data object, but
            C.__dict__['data'] may be a data descriptor with additional
            info, like a __doc__ string.
+
+    If one of the items in dir(cls) is stored in the metaclass it will now
+    be discovered and not have None be listed as the class in which it was
+    defined.
     """
 
     mro = getmro(cls)
+    metamro = getmro(type(cls)) # for attributes stored in the metaclass
     names = dir(cls)
     result = []
     for name in names:
@@ -321,7 +326,7 @@ def classify_class_attrs(cls):
         # getattr(). This is the case with some descriptors (bug #1785).
         # Thus, we only use getattr() as a last resort.
         homecls = None
-        for base in (cls,) + mro:
+        for base in (cls,) + mro + metamro:
             if name in base.__dict__:
                 obj = base.__dict__[name]
                 homecls = base
