@@ -126,8 +126,8 @@ Please read on for a comprehensive list of user-facing changes.
 PEP 446: Make newly created file descriptors non-inheritable
 ============================================================
 
-The :pep:`446` makes newly created file descriptors `non-inheritable
-<fd_inheritance>`_. New functions and methods:
+The :pep:`446` makes newly created file descriptors :ref:`non-inheritable
+<fd_inheritance>`.  New functions and methods:
 
 * :func:`os.get_inheritable`, :func:`os.set_inheritable`
 * :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
@@ -318,8 +318,8 @@ try/except statement by code that only cares whether or not an error occurred.
 socket
 ------
 
-Socket objects have new methods to get or set their `inheritable flag
-<fd_inheritance>`_:
+Socket objects have new methods to get or set their :ref:`inheritable flag
+<fd_inheritance>`:
 
 * :meth:`socket.socket.get_inheritable`, :meth:`socket.socket.set_inheritable`
 
