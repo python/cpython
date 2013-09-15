@@ -388,6 +388,36 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s.getvalue()
 
 
+class MiscTracebackCases(unittest.TestCase):
+    #
+    # Check non-printing functions in traceback module
+    #
+
+    def test_clear(self):
+        def outer():
+            middle()
+        def middle():
+            inner()
+        def inner():
+            i = 1
+            1/0
+
+        try:
+            outer()
+        except:
+            type_, value, tb = sys.exc_info()
+
+        # Initial assertion: there's one local in the inner frame.
+        inner_frame = tb.tb_next.tb_next.tb_next.tb_frame
+        self.assertEqual(len(inner_frame.f_locals), 1)
+
+        # Clear traceback frames
+        traceback.clear_frames(tb)
+
+        # Local variable dict should now be empty.
+        self.assertEqual(len(inner_frame.f_locals), 0)
+
+
 def test_main():
     run_unittest(__name__)
 

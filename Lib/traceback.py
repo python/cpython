@@ -7,7 +7,8 @@ import operator
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
-           'print_last', 'print_stack', 'print_tb']
+           'print_last', 'print_stack', 'print_tb',
+           'clear_frames']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -299,3 +300,13 @@ def extract_stack(f=None, limit=None):
     stack = list(_extract_stack_iter(_get_stack(f), limit=limit))
     stack.reverse()
     return stack
+
+def clear_frames(tb):
+    "Clear all references to local variables in the frames of a traceback."
+    while tb is not None:
+        try:
+            tb.tb_frame.clear()
+        except RuntimeError:
+            # Ignore the exception raised if the frame is still executing.
+            pass
+        tb = tb.tb_next
