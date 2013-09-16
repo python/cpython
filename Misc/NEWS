@@ -12,6 +12,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18873: The tokenize module now detects Python source code encoding
+  only in comment lines.
+
 - Issue #17764: Enable http.server to bind to a user specified network
   interface.  Patch contributed by Malte Swart.
 
@@ -47,6 +50,9 @@ Tests
 IDLE
 ----
 
+- Issue #18873: IDLE now detects Python source code encoding only in comment
+  lines.
+
 - Issue #18988: The "Tab" key now works when a word is already autocompleted.
 
 Documentation
@@ -54,6 +60,12 @@ Documentation
 
 - Issue #17003: Unified the size argument names in the io module with common
   practice.
+
+Tools/Demos
+-----------
+
+- Issue #18873: 2to3 and the findnocoding.py script now detect Python source
+  code encoding only in comment lines.
 
 
 What's New in Python 3.4.0 Alpha 2?
