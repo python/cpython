@@ -946,6 +946,13 @@ class TestDetectEncoding(TestCase):
         readline = self.get_readline((b'# coding: bad\n',))
         self.assertRaises(SyntaxError, detect_encoding, readline)
 
+    def test_false_encoding(self):
+        # Issue 18873: "Encoding" detected in non-comment lines
+        readline = self.get_readline((b'print("#coding=fake")',))
+        encoding, consumed_lines = detect_encoding(readline)
+        self.assertEqual(encoding, 'utf-8')
+        self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
+
     def test_open(self):
         filename = support.TESTFN + '.py'
         self.addCleanup(support.unlink, filename)

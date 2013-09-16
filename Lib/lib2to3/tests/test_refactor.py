@@ -271,6 +271,10 @@ from __future__ import print_function"""
         fn = os.path.join(TEST_DATA_DIR, "different_encoding.py")
         self.check_file_refactoring(fn)
 
+    def test_false_file_encoding(self):
+        fn = os.path.join(TEST_DATA_DIR, "false_encoding.py")
+        data = self.check_file_refactoring(fn)
+
     def test_bom(self):
         fn = os.path.join(TEST_DATA_DIR, "bom.py")
         data = self.check_file_refactoring(fn)
