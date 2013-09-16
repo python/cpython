@@ -71,7 +71,7 @@ else:
 
 encoding = encoding.lower()
 
-coding_re = re.compile("coding[:=]\s*([-\w_.]+)")
+coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 
 class EncodingMessage(SimpleDialog):
     "Inform user that an encoding declaration is needed."
@@ -125,11 +125,12 @@ def coding_spec(str):
     Raise LookupError if the encoding is declared but unknown.
     """
     # Only consider the first two lines
-    str = str.split("\n")[:2]
-    str = "\n".join(str)
-
-    match = coding_re.search(str)
-    if not match:
+    str = str.split("\n", 2)[:2]
+    for line in lst:
+        match = coding_re.match(line)
+        if match is not None:
+            break
+    else:
         return None
     name = match.group(1)
     # Check whether the encoding is known

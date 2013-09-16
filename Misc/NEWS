@@ -183,6 +183,9 @@ Library
 Tools/Demos
 -----------
 
+- Issue #18873: 2to3 and the findnocoding.py script now detect Python source
+  code encoding only in comment lines.
+
 - Issue #18817: Fix a resource warning in Lib/aifc.py demo.
 
 - Issue #18439: Make patchcheck work on Windows for ACKS, NEWS.
@@ -206,6 +209,9 @@ Build
 
 IDLE
 ----
+
+- Issue #18873: IDLE now detects Python source code encoding only in comment
+  lines.
 
 - Issue #18988: The "Tab" key now works when a word is already autocompleted.
 
