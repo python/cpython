@@ -49,6 +49,12 @@ IDLE
 
 - Issue #18988: The "Tab" key now works when a word is already autocompleted.
 
+Documentation
+-------------
+
+- Issue #17003: Unified the size argument names in the io module with common
+  practice.
+
 
 What's New in Python 3.4.0 Alpha 2?
 ===================================

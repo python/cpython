@@ -457,11 +457,11 @@ class IOBase(metaclass=abc.ABCMeta):
 
     ### Readline[s] and writelines ###
 
-    def readline(self, limit=-1):
+    def readline(self, size=-1):
         r"""Read and return a line of bytes from the stream.
 
-        If limit is specified, at most limit bytes will be read.
-        Limit should be an int.
+        If size is specified, at most size bytes will be read.
+        Size should be an int.
 
         The line terminator is always b'\n' for binary files; for text
         files, the newlines argument to open can be used to select the line
@@ -474,18 +474,18 @@ class IOBase(metaclass=abc.ABCMeta):
                 if not readahead:
                     return 1
                 n = (readahead.find(b"\n") + 1) or len(readahead)
-                if limit >= 0:
-                    n = min(n, limit)
+                if size >= 0:
+                    n = min(n, size)
                 return n
         else:
             def nreadahead():
                 return 1
-        if limit is None:
-            limit = -1
-        elif not isinstance(limit, int):
-            raise TypeError("limit must be an integer")
+        if size is None:
+            size = -1
+        elif not isinstance(size, int):
+            raise TypeError("size must be an integer")
         res = bytearray()
-        while limit < 0 or len(res) < limit:
+        while size < 0 or len(res) < size:
             b = self.read(nreadahead())
             if not b:
                 break
@@ -544,17 +544,17 @@ class RawIOBase(IOBase):
     # primitive operation, but that would lead to nasty recursion in case
     # a subclass doesn't implement either.)
 
-    def read(self, n=-1):
-        """Read and return up to n bytes, where n is an int.
+    def read(self, size=-1):
+        """Read and return up to size bytes, where size is an int.
 
         Returns an empty bytes object on EOF, or None if the object is
         set not to block and has no data to read.
         """
-        if n is None:
-            n = -1
-        if n < 0:
+        if size is None:
+            size = -1
+        if size < 0:
             return self.readall()
-        b = bytearray(n.__index__())
+        b = bytearray(size.__index__())
         n = self.readinto(b)
         if n is None:
             return None
@@ -612,8 +612,8 @@ class BufferedIOBase(IOBase):
     implementation, but wrap one.
     """
 
-    def read(self, n=None):
-        """Read and return up to n bytes, where n is an int.
+    def read(self, size=None):
+        """Read and return up to size bytes, where size is an int.
 
         If the argument is omitted, None, or negative, reads and
         returns all data until EOF.
@@ -632,9 +632,9 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("read")
 
-    def read1(self, n=None):
-        """Read up to n bytes with at most one read() system call,
-        where n is an int.
+    def read1(self, size=None):
+        """Read up to size bytes with at most one read() system call,
+        where size is an int.
         """
         self._unsupported("read1")
 
@@ -822,24 +822,24 @@ class BytesIO(BufferedIOBase):
         """
         return memoryview(self._buffer)
 
-    def read(self, n=None):
+    def read(self, size=None):
         if self.closed:
             raise ValueError("read from closed file")
-        if n is None:
-            n = -1
-        if n < 0:
-            n = len(self._buffer)
+        if size is None:
+            size = -1
+        if size < 0:
+            size = len(self._buffer)
         if len(self._buffer) <= self._pos:
             return b""
-        newpos = min(len(self._buffer), self._pos + n)
+        newpos = min(len(self._buffer), self._pos + size)
         b = self._buffer[self._pos : newpos]
         self._pos = newpos
         return bytes(b)
 
-    def read1(self, n):
+    def read1(self, size):
         """This is the same as read.
         """
-        return self.read(n)
+        return self.read(size)
 
     def write(self, b):
         if self.closed:
@@ -942,18 +942,18 @@ class BufferedReader(_BufferedIOMixin):
         self._read_buf = b""
         self._read_pos = 0
 
-    def read(self, n=None):
-        """Read n bytes.
+    def read(self, size=None):
+        """Read size bytes.
 
-        Returns exactly n bytes of data unless the underlying raw IO
+        Returns exactly size bytes of data unless the underlying raw IO
         stream reaches EOF or if the call would block in non-blocking
-        mode. If n is negative, read until EOF or until read() would
+        mode. If size is negative, read until EOF or until read() would
         block.
         """
-        if n is not None and n < -1:
+        if size is not None and size < -1:
             raise ValueError("invalid number of bytes to read")
         with self._read_lock:
-            return self._read_unlocked(n)
+            return self._read_unlocked(size)
 
     def _read_unlocked(self, n=None):
         nodata_val = b""
@@ -1013,7 +1013,7 @@ class BufferedReader(_BufferedIOMixin):
         self._read_pos = 0
         return out[:n] if out else nodata_val
 
-    def peek(self, n=0):
+    def peek(self, size=0):
         """Returns buffered bytes without advancing the position.
 
         The argument indicates a desired minimal number of bytes; we
@@ -1021,7 +1021,7 @@ class BufferedReader(_BufferedIOMixin):
         than self.buffer_size.
         """
         with self._read_lock:
-            return self._peek_unlocked(n)
+            return self._peek_unlocked(size)
 
     def _peek_unlocked(self, n=0):
         want = min(n, self.buffer_size)
@@ -1039,18 +1039,18 @@ class BufferedReader(_BufferedIOMixin):
                 self._read_pos = 0
         return self._read_buf[self._read_pos:]
 
-    def read1(self, n):
-        """Reads up to n bytes, with at most one read() system call."""
-        # Returns up to n bytes.  If at least one byte is buffered, we
+    def read1(self, size):
+        """Reads up to size bytes, with at most one read() system call."""
+        # Returns up to size bytes.  If at least one byte is buffered, we
         # only return buffered bytes.  Otherwise, we do one raw read.
-        if n < 0:
+        if size < 0:
             raise ValueError("number of bytes to read must be positive")
-        if n == 0:
+        if size == 0:
             return b""
         with self._read_lock:
             self._peek_unlocked(1)
             return self._read_unlocked(
-                min(n, len(self._read_buf) - self._read_pos))
+                min(size, len(self._read_buf) - self._read_pos))
 
     def tell(self):
         return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
@@ -1184,10 +1184,10 @@ class BufferedRWPair(BufferedIOBase):
         self.reader = BufferedReader(reader, buffer_size)
         self.writer = BufferedWriter(writer, buffer_size)
 
-    def read(self, n=None):
-        if n is None:
-            n = -1
-        return self.reader.read(n)
+    def read(self, size=None):
+        if size is None:
+            size = -1
+        return self.reader.read(size)
 
     def readinto(self, b):
         return self.reader.readinto(b)
@@ -1195,11 +1195,11 @@ class BufferedRWPair(BufferedIOBase):
     def write(self, b):
         return self.writer.write(b)
 
-    def peek(self, n=0):
-        return self.reader.peek(n)
+    def peek(self, size=0):
+        return self.reader.peek(size)
 
-    def read1(self, n):
-        return self.reader.read1(n)
+    def read1(self, size):
+        return self.reader.read1(size)
 
     def readable(self):
         return self.reader.readable()
@@ -1265,23 +1265,23 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         # Use seek to flush the read buffer.
         return BufferedWriter.truncate(self, pos)
 
-    def read(self, n=None):
-        if n is None:
-            n = -1
+    def read(self, size=None):
+        if size is None:
+            size = -1
         self.flush()
-        return BufferedReader.read(self, n)
+        return BufferedReader.read(self, size)
 
     def readinto(self, b):
         self.flush()
         return BufferedReader.readinto(self, b)
 
-    def peek(self, n=0):
+    def peek(self, size=0):
         self.flush()
-        return BufferedReader.peek(self, n)
+        return BufferedReader.peek(self, size)
 
-    def read1(self, n):
+    def read1(self, size):
         self.flush()
-        return BufferedReader.read1(self, n)
+        return BufferedReader.read1(self, size)
 
     def write(self, b):
         if self._read_buf:
@@ -1301,11 +1301,11 @@ class TextIOBase(IOBase):
     are immutable. There is no public constructor.
     """
 
-    def read(self, n=-1):
-        """Read at most n characters from stream, where n is an int.
+    def read(self, size=-1):
+        """Read at most size characters from stream, where size is an int.
 
-        Read from underlying buffer until we have n characters or we hit EOF.
-        If n is negative or omitted, read until EOF.
+        Read from underlying buffer until we have size characters or we hit EOF.
+        If size is negative or omitted, read until EOF.
 
         Returns a string.
         """
@@ -1909,16 +1909,16 @@ class TextIOWrapper(TextIOBase):
                 encoder.reset()
         return cookie
 
-    def read(self, n=None):
+    def read(self, size=None):
         self._checkReadable()
-        if n is None:
-            n = -1
+        if size is None:
+            size = -1
         decoder = self._decoder or self._get_decoder()
         try:
-            n.__index__
+            size.__index__
         except AttributeError as err:
             raise TypeError("an integer is required") from err
-        if n < 0:
+        if size < 0:
             # Read everything.
             result = (self._get_decoded_chars() +
                       decoder.decode(self.buffer.read(), final=True))
@@ -1926,12 +1926,12 @@ class TextIOWrapper(TextIOBase):
             self._snapshot = None
             return result
         else:
-            # Keep reading chunks until we have n characters to return.
+            # Keep reading chunks until we have size characters to return.
             eof = False
-            result = self._get_decoded_chars(n)
-            while len(result) < n and not eof:
+            result = self._get_decoded_chars(size)
+            while len(result) < size and not eof:
                 eof = not self._read_chunk()
-                result += self._get_decoded_chars(n - len(result))
+                result += self._get_decoded_chars(size - len(result))
             return result
 
     def __next__(self):
@@ -1943,13 +1943,13 @@ class TextIOWrapper(TextIOBase):
             raise StopIteration
         return line
 
-    def readline(self, limit=None):
+    def readline(self, size=None):
         if self.closed:
             raise ValueError("read from closed file")
-        if limit is None:
-            limit = -1
-        elif not isinstance(limit, int):
-            raise TypeError("limit must be an integer")
+        if size is None:
+            size = -1
+        elif not isinstance(size, int):
+            raise TypeError("size must be an integer")
 
         # Grab all the decoded text (we will rewind any extra bits later).
         line = self._get_decoded_chars()
@@ -2008,8 +2008,8 @@ class TextIOWrapper(TextIOBase):
                     endpos = pos + len(self._readnl)
                     break
 
-            if limit >= 0 and len(line) >= limit:
-                endpos = limit  # reached length limit
+            if size >= 0 and len(line) >= size:
+                endpos = size  # reached length size
                 break
 
             # No line ending seen yet - get more data'
@@ -2024,8 +2024,8 @@ class TextIOWrapper(TextIOBase):
                 self._snapshot = None
                 return line
 
-        if limit >= 0 and endpos > limit:
-            endpos = limit  # don't exceed limit
+        if size >= 0 and endpos > size:
+            endpos = size  # don't exceed size
 
         # Rewind _decoded_chars to just after the line ending we found.
         self._rewind_decoded_chars(len(line) - endpos)
