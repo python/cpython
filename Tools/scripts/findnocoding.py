@@ -32,13 +32,13 @@ except ImportError:
                          "no sophisticated Python source file search will be done.", file=sys.stderr)
 
 
-decl_re = re.compile(rb"coding[=:]\s*([-\w.]+)")
+decl_re = re.compile(rb'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 
 def get_declaration(line):
-    match = decl_re.search(line)
+    match = decl_re.match(line)
     if match:
         return match.group(1)
-    return ''
+    return b''
 
 def has_correct_encoding(text, codec):
     try:

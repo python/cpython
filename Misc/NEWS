@@ -68,6 +68,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18873: The tokenize module now detects Python source code encoding
+  only in comment lines.
 
 - Issue #17324: Fix http.server's request handling case on trailing '/'. Patch
   contributed by Vajrasky Kok.
@@ -304,6 +306,9 @@ C API
 IDLE
 ----
 
+- Issue #18873: IDLE now detects Python source code encoding only in comment
+  lines.
+
 - Issue #18988: The "Tab" key now works when a word is already autocompleted.
 
 - Issue #18489: Add tests for SearchEngine. Original patch by Phil Webster.
@@ -429,6 +434,9 @@ Documentation
 
 Tools/Demos
 -----------
+
+- Issue #18873: 2to3 and the findnocoding.py script now detect Python source
+  code encoding only in comment lines.
 
 - Issue #18817: Fix a resource warning in Lib/aifc.py demo.
 

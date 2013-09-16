@@ -10,7 +10,7 @@ import unicodedata
 import unittest
 
 
-CODING_RE = re.compile(r'coding[:=]\s*([-\w.]+)')
+CODING_RE = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 
 
 class EncodingTest(unittest.TestCase):
@@ -41,7 +41,7 @@ class EncodingTest(unittest.TestCase):
 
     def create_source(self, encoding):
         encoding_line = "# coding={0}".format(encoding)
-        assert CODING_RE.search(encoding_line)
+        assert CODING_RE.match(encoding_line)
         source_lines = [encoding_line.encode('utf-8')]
         source_lines.append(self.source_line.encode(encoding))
         return b'\n'.join(source_lines)
@@ -50,7 +50,7 @@ class EncodingTest(unittest.TestCase):
         # Make sure that an encoding that has never been a standard one for
         # Python works.
         encoding_line = "# coding=koi8-r"
-        assert CODING_RE.search(encoding_line)
+        assert CODING_RE.match(encoding_line)
         source = "{0}\na=42\n".format(encoding_line).encode("koi8-r")
         self.run_test(source)
 
