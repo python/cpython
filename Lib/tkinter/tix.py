@@ -126,7 +126,7 @@ class tixCommand:
             for x in self.tk.split(self.tk.call('tix', 'configure')):
                 cnf[x[0][1:]] = (x[0][1:],) + x[1:]
             return cnf
-        if isinstance(cnf, StringType):
+        if isinstance(cnf, str):
             x = self.tk.split(self.tk.call('tix', 'configure', '-'+cnf))
             return (x[0][1:],) + x[1:]
         return self.tk.call(('tix', 'configure') + self._options(cnf))
@@ -388,9 +388,9 @@ class TixWidget(tkinter.Widget):
         """Set configuration options for all subwidgets (and self)."""
         if option == '':
             return
-        elif not isinstance(option, StringType):
+        elif not isinstance(option, str):
             option = repr(option)
-        if not isinstance(value, StringType):
+        if not isinstance(value, str):
             value = repr(value)
         names = self._subwidget_names()
         for name in names:
