@@ -236,7 +236,7 @@ class Untokenizer:
                 startline = False
             toks_append(tokval)
 
-cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 
 def _get_normal_name(orig_enc):
     """Imitates get_normal_name in tokenizer.c."""
@@ -281,11 +281,10 @@ def detect_encoding(readline):
             line_string = line.decode('ascii')
         except UnicodeDecodeError:
             return None
-
-        matches = cookie_re.findall(line_string)
-        if not matches:
+        match = cookie_re.match(line_string)
+        if not match:
             return None
-        encoding = _get_normal_name(matches[0])
+        encoding = _get_normal_name(match.group(1))
         try:
             codec = lookup(encoding)
         except LookupError:
