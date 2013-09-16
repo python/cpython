@@ -287,7 +287,7 @@ will no longer inherit unneeded handles/file descriptors from their parents.
 os
 --
 
-New functions to get and set the `inheritable flag <fd_inheritance>`_ of a file
+New functions to get and set the :ref:`inheritable flag <fd_inheritance>` of a file
 descriptors or a Windows handle:
 
 * :func:`os.get_inheritable`, :func:`os.set_inheritable`
