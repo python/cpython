@@ -31,7 +31,7 @@ from token import *
 from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
-cookie_re = re.compile("coding[:=]\s*([-\w.]+)")
+cookie_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 
 import token
 __all__ = token.__all__ + ["COMMENT", "tokenize", "detect_encoding",
@@ -372,10 +372,10 @@ def detect_encoding(readline):
                 msg = '{} for {!r}'.format(msg, filename)
             raise SyntaxError(msg)
 
-        matches = cookie_re.findall(line_string)
-        if not matches:
+        match = cookie_re.match(line_string)
+        if not match:
             return None
-        encoding = _get_normal_name(matches[0])
+        encoding = _get_normal_name(match.group(1))
         try:
             codec = lookup(encoding)
         except LookupError:
