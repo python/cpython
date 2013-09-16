@@ -283,10 +283,10 @@ I/O Base Classes
       Return ``True`` if the stream can be read from.  If False, :meth:`read`
       will raise :exc:`OSError`.
 
-   .. method:: readline(limit=-1)
+   .. method:: readline(size=-1)
 
-      Read and return one line from the stream.  If *limit* is specified, at
-      most *limit* bytes will be read.
+      Read and return one line from the stream.  If *size* is specified, at
+      most *size* bytes will be read.
 
       The line terminator is always ``b'\n'`` for binary files; for text files,
       the *newlines* argument to :func:`open` can be used to select the line
@@ -366,14 +366,14 @@ I/O Base Classes
    In addition to the attributes and methods from :class:`IOBase`,
    :class:`RawIOBase` provides the following methods:
 
-   .. method:: read(n=-1)
+   .. method:: read(size=-1)
 
-      Read up to *n* bytes from the object and return them.  As a convenience,
-      if *n* is unspecified or -1, :meth:`readall` is called.  Otherwise,
-      only one system call is ever made.  Fewer than *n* bytes may be
-      returned if the operating system call returns fewer than *n* bytes.
+      Read up to *size* bytes from the object and return them.  As a convenience,
+      if *size* is unspecified or -1, :meth:`readall` is called.  Otherwise,
+      only one system call is ever made.  Fewer than *size* bytes may be
+      returned if the operating system call returns fewer than *size* bytes.
 
-      If 0 bytes are returned, and *n* was not 0, this indicates end of file.
+      If 0 bytes are returned, and *size* was not 0, this indicates end of file.
       If the object is in non-blocking mode and no bytes are available,
       ``None`` is returned.
 
@@ -442,10 +442,10 @@ I/O Base Classes
 
       .. versionadded:: 3.1
 
-   .. method:: read(n=-1)
+   .. method:: read(size=-1)
 
-      Read and return up to *n* bytes.  If the argument is omitted, ``None``, or
-      negative, data is read and returned until EOF is reached.  An empty
+      Read and return up to *size* bytes.  If the argument is omitted, ``None``,
+      or negative, data is read and returned until EOF is reached.  An empty
       :class:`bytes` object is returned if the stream is already at EOF.
 
       If the argument is positive, and the underlying raw stream is not
@@ -457,9 +457,9 @@ I/O Base Classes
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
 
-   .. method:: read1(n=-1)
+   .. method:: read1(size=-1)
 
-      Read and return up to *n* bytes, with at most one call to the underlying
+      Read and return up to *size* bytes, with at most one call to the underlying
       raw stream's :meth:`~RawIOBase.read` method.  This can be useful if you
       are implementing your own buffering on top of a :class:`BufferedIOBase`
       object.
@@ -606,21 +606,21 @@ than raw I/O does.
    :class:`BufferedReader` provides or overrides these methods in addition to
    those from :class:`BufferedIOBase` and :class:`IOBase`:
 
-   .. method:: peek([n])
+   .. method:: peek([size])
 
       Return bytes from the stream without advancing the position.  At most one
       single read on the raw stream is done to satisfy the call. The number of
       bytes returned may be less or more than requested.
 
-   .. method:: read([n])
+   .. method:: read([size])
 
-      Read and return *n* bytes, or if *n* is not given or negative, until EOF
-      or if the read call would block in non-blocking mode.
+      Read and return *size* bytes, or if *size* is not given or negative, until
+      EOF or if the read call would block in non-blocking mode.
 
-   .. method:: read1(n)
+   .. method:: read1(size)
 
-      Read and return up to *n* bytes with only one call on the raw stream.  If
-      at least one byte is buffered, only buffered bytes are returned.
+      Read and return up to *size* bytes with only one call on the raw stream.
+      If at least one byte is buffered, only buffered bytes are returned.
       Otherwise, one raw stream read call is made.
 
 
@@ -739,17 +739,17 @@ Text I/O
 
       .. versionadded:: 3.1
 
-   .. method:: read(n)
+   .. method:: read(size)
 
-      Read and return at most *n* characters from the stream as a single
-      :class:`str`.  If *n* is negative or ``None``, reads until EOF.
+      Read and return at most *size* characters from the stream as a single
+      :class:`str`.  If *size* is negative or ``None``, reads until EOF.
 
-   .. method:: readline(limit=-1)
+   .. method:: readline(size=-1)
 
       Read until newline or EOF and return a single ``str``.  If the stream is
       already at EOF, an empty string is returned.
 
-      If *limit* is specified, at most *limit* characters will be read.
+      If *size* is specified, at most *size* characters will be read.
 
    .. method:: seek(offset, whence=SEEK_SET)
 
