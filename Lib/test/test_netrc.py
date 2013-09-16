@@ -32,7 +32,7 @@ class NetrcTestCase(unittest.TestCase):
 
     def tearDown (self):
         del self.netrc
-        os.unlink(temp_filename)
+        test_support.unlink(temp_filename)
 
     def test_case_1(self):
         self.assert_(self.netrc.macros == {'macro1':['line1\n', 'line2\n'],
@@ -40,6 +40,27 @@ class NetrcTestCase(unittest.TestCase):
                                            )
         self.assert_(self.netrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
         self.assert_(self.netrc.hosts['default'] == ('log2', None, 'pass2'))
+
+    if os.name == 'posix':
+        def test_security(self):
+            # This test is incomplete since we are normally not run as root and
+            # therefore can't test the file ownership being wrong.
+            os.unlink(temp_filename)
+            d = test_support.TESTFN
+            try:
+                os.mkdir(d)
+                fn = os.path.join(d, '.netrc')
+                with open(fn, 'wt') as f:
+                    f.write(TEST_NETRC)
+                with test_support.EnvironmentVarGuard() as environ:
+                    environ.set('HOME', d)
+                    os.chmod(fn, 0600)
+                    self.netrc = netrc.netrc()
+                    self.test_case_1()
+                    os.chmod(fn, 0622)
+                    self.assertRaises(netrc.NetrcParseError, netrc.netrc)
+            finally:
+                test_support.rmtree(d)
 
 def test_main():
     test_support.run_unittest(NetrcTestCase)
