@@ -5,9 +5,6 @@ temp_filename = test_support.TESTFN
 
 class NetrcTestCase(unittest.TestCase):
 
-    def tearDown(self):
-        os.unlink(temp_filename)
-
     def make_nrc(self, test_data):
         test_data = textwrap.dedent(test_data)
         mode = 'w'
@@ -15,6 +12,7 @@ class NetrcTestCase(unittest.TestCase):
             mode += 't'
         with open(temp_filename, mode) as fp:
             fp.write(test_data)
+        self.addCleanup(os.unlink, temp_filename)
         return netrc.netrc(temp_filename)
 
     def test_default(self):
@@ -102,6 +100,28 @@ class NetrcTestCase(unittest.TestCase):
             machine bar.domain.com login foo password pass
             """, '#pass')
 
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
+    def test_security(self):
+        # This test is incomplete since we are normally not run as root and
+        # therefore can't test the file ownership being wrong.
+        d = test_support.TESTFN
+        os.mkdir(d)
+        self.addCleanup(test_support.rmtree, d)
+        fn = os.path.join(d, '.netrc')
+        with open(fn, 'wt') as f:
+            f.write("""\
+                machine foo.domain.com login bar password pass
+                default login foo password pass
+                """)
+        with test_support.EnvironmentVarGuard() as environ:
+            environ.set('HOME', d)
+            os.chmod(fn, 0600)
+            nrc = netrc.netrc()
+            self.assertEqual(nrc.hosts['foo.domain.com'],
+                             ('bar', None, 'pass'))
+            os.chmod(fn, 0o622)
+            self.assertRaises(netrc.NetrcParseError, netrc.netrc)
 
 def test_main():
     test_support.run_unittest(NetrcTestCase)
