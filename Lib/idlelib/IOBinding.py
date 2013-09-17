@@ -71,7 +71,7 @@ else:
 
 encoding = encoding.lower()
 
-coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
+coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 
 class EncodingMessage(SimpleDialog):
     "Inform user that an encoding declaration is needed."
