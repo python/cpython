@@ -68,6 +68,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19037: The mailbox module now makes all changes to maildir files
+  before moving them into place, to avoid race conditions with other programs
+  that may be accessing the maildir directory.
+
 - Issue #14984: On POSIX systems, when netrc is called without a filename
   argument (and therefore is reading the user's $HOME/.netrc file), it now
   enforces the same security rules as typical ftp clients: the .netrc file must
