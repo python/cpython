@@ -10,6 +10,12 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #14984: On POSIX systems, when netrc is called without a filename
+  argument (and therefore is reading the user's $HOME/.netrc file), it now
+  enforces the same security rules as typical ftp clients: the .netrc file must
+  be owned by the user that owns the process and must not be readable by any
+  other user.
+
 - Fix tkinter regression introduced by the security fix in issue #16248.
 
 - Issue #17980: Fix possible abuse of ssl.match_hostname() for denial of
