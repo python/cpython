@@ -88,7 +88,7 @@ class netrc:
                             try:
                                 user = pwd.getpwuid(os.getuid())[0]
                             except KeyError:
-                                user = 'uid %s ' % os.getuid()
+                                user = 'uid %s' % os.getuid()
                             raise NetrcParseError(
                                 ("~/.netrc file owner (%s) does not match"
                                  " current user (%s)") % (fowner, user),
