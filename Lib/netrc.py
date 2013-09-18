@@ -2,7 +2,7 @@
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 
-import io, os, shlex, stat, pwd
+import os, shlex, stat
 
 __all__ = ["netrc", "NetrcParseError"]
 
@@ -90,6 +90,7 @@ class netrc:
                     if os.name == 'posix' and default_netrc:
                         prop = os.fstat(fp.fileno())
                         if prop.st_uid != os.getuid():
+                            import pwd
                             try:
                                 fowner = pwd.getpwuid(prop.st_uid)[0]
                             except KeyError:
