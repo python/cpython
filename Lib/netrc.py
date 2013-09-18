@@ -2,7 +2,7 @@
 
 # Module and documentation by Eric S. Raymond, 21 Dec 1998
 
-import io, os, shlex
+import io, os, shlex, stat, pwd
 
 __all__ = ["netrc", "NetrcParseError"]
 
@@ -21,6 +21,7 @@ class NetrcParseError(Exception):
 
 class netrc:
     def __init__(self, file=None):
+        default_netrc = file is None
         if file is None:
             try:
                 file = os.path.join(os.environ['HOME'], ".netrc")
@@ -29,9 +30,9 @@ class netrc:
         self.hosts = {}
         self.macros = {}
         with open(file) as fp:
-            self._parse(file, fp)
+            self._parse(file, fp, default_netrc)
 
-    def _parse(self, file, fp):
+    def _parse(self, file, fp, default_netrc):
         lexer = shlex.shlex(fp)
         lexer.wordchars += r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
         lexer.commenters = lexer.commenters.replace('#', '')
@@ -86,6 +87,26 @@ class netrc:
                 elif tt == 'account':
                     account = lexer.get_token()
                 elif tt == 'password':
+                    if os.name == 'posix' and default_netrc:
+                        prop = os.fstat(fp.fileno())
+                        if prop.st_uid != os.getuid():
+                            try:
+                                fowner = pwd.getpwuid(prop.st_uid)[0]
+                            except KeyError:
+                                fowner = 'uid %s' % prop.st_uid
+                            try:
+                                user = pwd.getpwuid(os.getuid())[0]
+                            except KeyError:
+                                user = 'uid %s' % os.getuid()
+                            raise NetrcParseError(
+                                ("~/.netrc file owner (%s) does not match"
+                                 " current user (%s)") % (fowner, user),
+                                file, lexer.lineno)
+                        if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
+                            raise NetrcParseError(
+                               "~/.netrc access too permissive: access"
+                               " permissions must restrict access to only"
+                               " the owner", file, lexer.lineno)
                     password = lexer.get_token()
                 else:
                     raise NetrcParseError("bad follower token %r" % tt,
