@@ -286,6 +286,12 @@ class Maildir(Mailbox):
             suffix = ''
         uniq = os.path.basename(tmp_file.name).split(self.colon)[0]
         dest = os.path.join(self._path, subdir, uniq + suffix)
+        if isinstance(message, MaildirMessage):
+            os.utime(tmp_file.name,
+                     (os.path.getatime(tmp_file.name), message.get_date()))
+        # No file modification should be done after the file is moved to its
+        # final position in order to prevent race conditions with changes
+        # from other programs
         try:
             if hasattr(os, 'link'):
                 os.link(tmp_file.name, dest)
@@ -299,8 +305,6 @@ class Maildir(Mailbox):
                                          % dest)
             else:
                 raise
-        if isinstance(message, MaildirMessage):
-            os.utime(dest, (os.path.getatime(dest), message.get_date()))
         return uniq
 
     def remove(self, key):
@@ -335,11 +339,15 @@ class Maildir(Mailbox):
         else:
             suffix = ''
         self.discard(key)
+        tmp_path = os.path.join(self._path, temp_subpath)
         new_path = os.path.join(self._path, subdir, key + suffix)
-        os.rename(os.path.join(self._path, temp_subpath), new_path)
         if isinstance(message, MaildirMessage):
-            os.utime(new_path, (os.path.getatime(new_path),
-                                message.get_date()))
+            os.utime(tmp_path,
+                     (os.path.getatime(tmp_path), message.get_date()))
+        # No file modification should be done after the file is moved to its
+        # final position in order to prevent race conditions with changes
+        # from other programs
+        os.rename(tmp_path, new_path)
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
