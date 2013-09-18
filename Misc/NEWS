@@ -68,6 +68,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #14984: On POSIX systems, when netrc is called without a filename
+  argument (and therefore is reading the user's $HOME/.netrc file), it now
+  enforces the same security rules as typical ftp clients: the .netrc file must
+  be owned by the user that owns the process and must not be readable by any
+  other user.
+
 - Issue #18873: The tokenize module now detects Python source code encoding
   only in comment lines.
 
