@@ -62,7 +62,7 @@ do { memory -= size; printf("%8d - %s\n", memory, comment); } while (0)
 /* Py_CLEAR for a PyObject* that uses a join flag. Pass the pointer by
  * reference since this function sets it to NULL.
 */
-void _clear_joined_ptr(PyObject **p)
+static void _clear_joined_ptr(PyObject **p)
 {
     if (*p) {
         PyObject *tmp = JOIN_OBJ(*p);
