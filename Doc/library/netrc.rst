@@ -22,6 +22,14 @@ the Unix :program:`ftp` program and other FTP clients.
    no argument is given, the file :file:`.netrc` in the user's home directory will
    be read.  Parse errors will raise :exc:`NetrcParseError` with diagnostic
    information including the file name, line number, and terminating token.
+   If no argument is specified on a POSIX system, the presence of passwords in
+   the :file:`.netrc` file will raise a :exc:`NetrcParseError` if the file
+   ownership or permissions are insecure (owned by a user other than the user
+   running the process, or accessible for read or write by any other user).
+   This implements security behavior equivalent to that of ftp and other
+   programs that use :file:`.netrc`.
+
+   .. versionchanged:: 3.3.3 Added the POSIX permission check.
 
 
 .. exception:: NetrcParseError
