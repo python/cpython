@@ -757,6 +757,8 @@ as internal buffering of data.
 
    As of Python 3.3, this is equivalent to ``os.pathconf(fd, name)``.
 
+   Availability: Unix.
+
 
 .. function:: fstat(fd)
 
@@ -800,8 +802,6 @@ as internal buffering of data.
 
    Return ``True`` if the file descriptor *fd* is open and connected to a
    tty(-like) device, else ``False``.
-
-   Availability: Unix.
 
 
 .. function:: lockf(fd, cmd, len)
