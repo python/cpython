@@ -12,6 +12,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3015: Fixed tkinter with wantobject=False.  Any Tcl command call
+  returned empty string.
+
 - Issue #19037: The mailbox module now makes all changes to maildir files
   before moving them into place, to avoid race conditions with other programs
   that may be accessing the maildir directory.
