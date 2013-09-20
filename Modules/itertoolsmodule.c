@@ -401,7 +401,7 @@ static PyTypeObject _grouper_type = {
 typedef struct {
     PyObject_HEAD
     PyObject *it;
-    int numread;
+    int numread;  /* 0 <= numread <= LINKCELLS */
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
 } teedataobject;
@@ -409,7 +409,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     teedataobject *dataobj;
-    int index;
+    int index;    /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
 } teeobject;
 
