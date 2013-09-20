@@ -1107,10 +1107,7 @@ Tkapp_CallResult(TkappObject *self)
         res = FromObj((PyObject*)self, value);
         Tcl_DecrRefCount(value);
     } else {
-        const char *s = Tcl_GetStringResult(self->interp);
-        const char *p = s;
-
-        res = PyUnicode_FromStringAndSize(s, (int)(p-s));
+        res = PyUnicode_FromString(Tcl_GetStringResult(self->interp));
     }
     return res;
 }
