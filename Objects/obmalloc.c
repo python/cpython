@@ -1702,7 +1702,9 @@ pool_is_in_list(const poolp target, poolp list)
 p[0: S]
     Number of bytes originally asked for.  This is a size_t, big-endian (easier
     to read in a memory dump).
-p[S: 2*S]
+p[S}
+    API ID.  See PEP 445.  This is a character, but seems undocumented.
+p[S+1: 2*S]
     Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[2*S: 2*S+n]
     The requested memory, filled with copies of CLEANBYTE.
