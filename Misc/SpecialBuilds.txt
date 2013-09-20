@@ -105,7 +105,9 @@ negative indices differs from a Python slice):
 p[-2*S:-S]
     Number of bytes originally asked for.  This is a size_t, big-endian (easier
     to read in a memory dump).
-p[-S:0]
+p[-S]
+    API ID.  See PEP 445.  This is a character, but seems undocumented.
+p[-S+1:0]
     Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[0:N]
     The requested memory, filled with copies of CLEANBYTE, used to catch
