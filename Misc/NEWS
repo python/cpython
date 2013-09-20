@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3015: Fixed tkinter with wantobject=False.  Any Tcl command call
+  returned empty string.
+
 - Issue #18050: Fixed an incompatibility of the re module with Python 3.3.0
   binaries.
 
