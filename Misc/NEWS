@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18050: Fixed an incompatibility of the re module with Python 2.7.3
+  and older binaries.
+
 - Issue #19037: The mailbox module now makes all changes to maildir files
   before moving them into place, to avoid race conditions with other programs
   that may be accessing the maildir directory.

@@ -15,7 +15,11 @@
 
 MAGIC = 20031017
 
-from _sre import MAXREPEAT
+try:
+    from _sre import MAXREPEAT
+except ImportError:
+    import _sre
+    MAXREPEAT = _sre.MAXREPEAT = 65535
 
 # SRE standard exception (access as sre.error)
 # should this really be here?
