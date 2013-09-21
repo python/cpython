@@ -309,6 +309,8 @@ class PrettyPrintTests(DebuggerTests):
 
     def test_sets(self):
         'Verify the pretty-printing of sets'
+        if (gdb_major_version, gdb_minor_version) < (7, 3):
+            self.skipTest("pretty-printing of sets needs gdb 7.3 or later")
         self.assertGdbRepr(set())
         self.assertGdbRepr(set(['a', 'b']), "{'a', 'b'}")
         self.assertGdbRepr(set([4, 5, 6]), "{4, 5, 6}")
@@ -322,6 +324,8 @@ id(s)''')
 
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
+        if (gdb_major_version, gdb_minor_version) < (7, 3):
+            self.skipTest("pretty-printing of frozensets needs gdb 7.3 or later")
         self.assertGdbRepr(frozenset())
         self.assertGdbRepr(frozenset(['a', 'b']), "frozenset({'a', 'b'})")
         self.assertGdbRepr(frozenset([4, 5, 6]), "frozenset({4, 5, 6})")
