@@ -62,7 +62,6 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t i = (size_t)hash; /* Unsigned for defined overflow behavior. */
     int cmp;
 #if LINEAR_PROBES
-    setentry *limit;
     size_t j;
 #endif
 
@@ -89,9 +88,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             freeslot = entry;
 
 #if LINEAR_PROBES
-        limit = &table[mask];
-        for (j = 0 ; j < LINEAR_PROBES ; j++) {
-            entry = (entry == limit) ? &table[0] : entry + 1;
+        for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+            entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
             if (entry->key == key)
@@ -139,7 +137,6 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t mask = so->mask;
     size_t i = (size_t)hash;
 #if LINEAR_PROBES
-    setentry *limit;
     size_t j;
 #endif
 
@@ -166,9 +163,8 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
             freeslot = entry;
 
 #if LINEAR_PROBES
-        limit = &table[mask];
-        for (j = 0 ; j < LINEAR_PROBES ; j++) {
-            entry = (entry == limit) ? &table[0] : entry + 1;
+        for (j = 1 ; j <= LINEAR_PROBES ; j++) {
+            entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
             if (entry->key == key
