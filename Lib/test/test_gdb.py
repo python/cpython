@@ -5,6 +5,7 @@
 
 import os
 import re
+import pprint
 import subprocess
 import sys
 import sysconfig
@@ -17,6 +18,7 @@ try:
 except ImportError:
     _thread = None
 
+from test import support
 from test.support import run_unittest, findfile, python_is_optimized
 
 try:
@@ -837,6 +839,10 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
+    if support.verbose:
+        print("GDB version:")
+        for line in os.fsdecode(gdb_version).splitlines():
+            print(" " * 4 + line)
     run_unittest(PrettyPrintTests,
                  PyListTests,
                  StackNavigationTests,
