@@ -61,9 +61,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t mask = so->mask;
     size_t i = (size_t)hash; /* Unsigned for defined overflow behavior. */
     int cmp;
-#if LINEAR_PROBES
     size_t j;
-#endif
 
     entry = &table[i & mask];
     if (entry->key == NULL)
@@ -87,7 +85,6 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
-#if LINEAR_PROBES
         for (j = 1 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
@@ -109,7 +106,6 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
         }
-#endif
 
         perturb >>= PERTURB_SHIFT;
         i = i * 5 + 1 + perturb;
@@ -136,9 +132,7 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t perturb = hash;
     size_t mask = so->mask;
     size_t i = (size_t)hash;
-#if LINEAR_PROBES
     size_t j;
-#endif
 
     /* Make sure this function doesn't have to handle non-unicode keys,
        including subclasses of str; e.g., one reason to subclass
@@ -162,7 +156,6 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->key == dummy && freeslot == NULL)
             freeslot = entry;
 
-#if LINEAR_PROBES
         for (j = 1 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
@@ -175,7 +168,6 @@ set_lookkey_unicode(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (entry->key == dummy && freeslot == NULL)
                 freeslot = entry;
         }
-#endif
 
         perturb >>= PERTURB_SHIFT;
         i = i * 5 + 1 + perturb;
@@ -204,21 +196,17 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t perturb = hash;
     size_t mask = (size_t)so->mask;
     size_t i = (size_t)hash;
-#if LINEAR_PROBES
     size_t j;
-#endif
 
     while (1) {
         entry = &table[i & mask];
         if (entry->key == NULL)
             goto found_null;
-#if LINEAR_PROBES
         for (j = 1 ; j <= LINEAR_PROBES ; j++) {
             entry = &table[(i + j) & mask];
             if (entry->key == NULL)
                 goto found_null;
         }
-#endif
         perturb >>= PERTURB_SHIFT;
         i = i * 5 + 1 + perturb;
     }
