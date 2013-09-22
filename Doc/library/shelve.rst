@@ -47,9 +47,11 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    Like file objects, shelve objects should be closed explicitly to ensure
    that the persistent data is flushed to disk.
 
-   Since the :mod:`shelve` module stores objects using :mod:`pickle`, the same
-   security precautions apply.  Accordingly, you should avoid loading a shelf
-   from an untrusted source.
+.. warning::
+
+   Because the :mod:`shelve` module is backed by :mod:`pickle`, it is insecure
+   to load a shelf from an untrusted source.  Like with pickle, loading a shelf
+   can execute arbitrary code.
 
 Shelf objects support all methods supported by dictionaries.  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
