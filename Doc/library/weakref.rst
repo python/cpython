@@ -54,7 +54,8 @@ but keeps weak references to its elements, just like a
 :class:`finalize` provides a straight forward way to register a
 cleanup function to be called when an object is garbage collected.
 This is simpler to use than setting up a callback function on a raw
-weak reference.
+weak reference, since the module automatically ensures that the finalizer
+remains alive until the object is collected.
 
 Most programs should find that using one of these weak container types
 or :class:`finalize` is all they need -- it's not usually necessary to
@@ -246,11 +247,14 @@ These method have the same issues as the and :meth:`keyrefs` method of
 .. class:: finalize(obj, func, *args, **kwargs)
 
    Return a callable finalizer object which will be called when *obj*
-   is garbage collected.  A finalizer is *alive* until it is called
-   (either explicitly or at garbage collection), and after that it is
-   *dead*.  Calling a live finalizer returns the result of evaluating
-   ``func(*arg, **kwargs)``, whereas calling a dead finalizer returns
-   :const:`None`.
+   is garbage collected. Unlike an ordinary weak reference, a finalizer is
+   will always survive until the reference object is collected, greatly
+   simplifying lifecycle management.
+
+   A finalizer is considered *alive* until it is called (either explicitly
+   or at garbage collection), and after that it is *dead*.  Calling a live
+   finalizer returns the result of evaluating ``func(*arg, **kwargs)``,
+   whereas calling a dead finalizer returns :const:`None`.
 
    Exceptions raised by finalizer callbacks during garbage collection
    will be shown on the standard error output, but cannot be
@@ -445,8 +449,9 @@ objects can still be retrieved by ID if they do.
 Finalizer Objects
 -----------------
 
-Often one uses :class:`finalize` to register a callback without
-bothering to keep the returned finalizer object.  For instance
+The main benefit of using :class:`finalize` is that it makes it simple
+to register a callback without needing to preserve the returned finalizer
+object.  For instance
 
     >>> import weakref
     >>> class Object:
@@ -489,7 +494,7 @@ the constructor when it was created.
     CALLBACK
 
 Unless you set the :attr:`~finalize.atexit` attribute to
-:const:`False`, a finalizer will be called when the program exit if it
+:const:`False`, a finalizer will be called when the program exits if it
 is still alive.  For instance
 
     >>> obj = Object()
@@ -529,13 +534,18 @@ follows::
         def __del__(self):
             self.remove()
 
-This solution has a serious problem: the :meth:`__del__` method may be
-called at shutdown after the :mod:`shutil` module has been cleaned up,
-in which case :attr:`shutil.rmtree` will have been replaced by :const:`None`.
-This will cause the :meth:`__del__` method to fail and the directory
-will not be removed.
+Starting with Python 3.4, :meth:`__del__` methods no longer prevent
+reference cycles from being garbage collected, and module globals are
+no longer forced to :const:`None` during interpreter shutdown. So this
+code should work without any issues on CPython.
 
-Using finalizers we can avoid this problem::
+However, handling of :meth:`__del__` methods is notoriously implementation
+specific, since it depends on how the interpreter's garbage collector
+handles reference cycles and finalizers.
+
+A more robust alternative can be to define a finalizer which only references
+the specific functions and objects that it needs, rather than having access
+to the full state of the object::
 
     class TempDir:
         def __init__(self):
@@ -549,10 +559,19 @@ Using finalizers we can avoid this problem::
         def removed(self):
             return not self._finalizer.alive
 
-Defined like this, even if a :class:`TempDir` object is part of a
-reference cycle, that reference cycle can still be garbage collected.
-If the object never gets garbage collected the finalizer will still be
-called at exit.
+Defined like this, our finalizer only receives a reference to the details
+it needs to clean up the directory appropriately. If the object never gets
+garbage collected the finalizer will still be called at exit.
+
+The other advantage of weakref based finalizers is that they can be used to
+register finalizers for classes where the definition is controlled by a
+third party, such as running code when a module is unloaded::
+
+    import weakref, sys
+    def unloading_module():
+        # implicit reference to the module globals from the function body
+    weakref.finalize(sys.modules[__name__], unloading_module)
+
 
 .. note::
 
