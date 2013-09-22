@@ -220,9 +220,14 @@ The following classes are provided:
    *method* should be a string that indicates the HTTP request method that
    will be used (e.g. ``'HEAD'``).  Its value is stored in the
    :attr:`~Request.method` attribute and is used by :meth:`get_method()`.
+   Subclasses may indicate a default method by setting the
+   :attr:`~Request.method` attribute in the class itself.
 
    .. versionchanged:: 3.3
       :attr:`Request.method` argument is added to the Request class.
+
+   .. versionchanged:: 3.4
+      Default :attr:`Request.method` may be indicated at the class level.
 
 
 .. class:: OpenerDirector()
