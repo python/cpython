@@ -53,13 +53,13 @@ gdbpy_version, _ = run_gdb("--eval-command=python import sys; print sys.version_
 if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
-# Verify that "gdb" can load our custom hooks.  In theory this should never
-# fail, but we don't handle the case of the hooks file not existing if the
-# tests are run from an installed Python (we'll produce failures in that case).
+# Verify that "gdb" can load our custom hooks, as OS security settings may
+# disallow this without a customised .gdbinit.
 cmd = ['--args', sys.executable]
 _, gdbpy_errors = run_gdb('--args', sys.executable)
 if "auto-loading has been declined" in gdbpy_errors:
     msg = "gdb security settings prevent use of custom hooks: "
+    raise unittest.SkipTest(msg + gdbpy_errors.rstrip())
 
 def python_is_optimized():
     cflags = sysconfig.get_config_vars()['PY_CFLAGS']
