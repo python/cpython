@@ -231,8 +231,17 @@ class EnumMeta(type):
     def __contains__(cls, member):
         return isinstance(member, cls) and member.name in cls._member_map_
 
+    def __delattr__(cls, attr):
+        # nicer error message when someone tries to delete an attribute
+        # (see issue19025).
+        if attr in cls._member_map_:
+            raise AttributeError(
+                    "%s: cannot delete Enum member." % cls.__name__)
+        super().__delattr__(attr)
+
     def __dir__(self):
-        return ['__class__', '__doc__', '__members__', '__module__'] + self._member_names_
+        return (['__class__', '__doc__', '__members__', '__module__'] +
+                self._member_names_)
 
     def __getattr__(cls, name):
         """Return the enum member matching `name`
@@ -459,7 +468,8 @@ class Enum(metaclass=EnumMeta):
 
     def __dir__(self):
         added_behavior = [m for m in self.__class__.__dict__ if m[0] != '_']
-        return ['__class__', '__doc__', '__module__', 'name', 'value'] + added_behavior
+        return (['__class__', '__doc__', '__module__', 'name', 'value'] +
+                added_behavior)
 
     def __eq__(self, other):
         if type(other) is self.__class__:
