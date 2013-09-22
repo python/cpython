@@ -153,6 +153,10 @@ With it, objects with :meth:`__del__` methods, as well as generators
 with :keyword:`finally` clauses, can be finalized when they are part of a
 reference cycle.
 
+As part of this change, module globals are no longer forcibly set to
+:const:`None` during interpreter shutdown, instead relying on the normal
+operation of the cyclic garbage collector.
+
 .. seealso::
 
    :pep:`442` - Safe object finalization
@@ -416,9 +420,12 @@ weakref
 -------
 
 New :class:`~weakref.WeakMethod` class simulates weak references to bound
-methods.
+methods. (Contributed by Antoine Pitrou in :issue:`14631`.)
 
-(Contributed by Antoine Pitrou in :issue:`14631`.)
+New :class:`~weakref.finalize` class makes it possible to register a callback
+to be invoked when an object is garbage collected, without needing to
+carefully manage the lifecycle of the weak reference itself. (Contributed by
+Richard Oudkerk in :issue:`15528`)
 
 
 xml.etree
