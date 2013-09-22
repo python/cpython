@@ -36,34 +36,9 @@ the various releases.
     2.1             2.0+1.6.1   2001        PSF         no
     2.0.1           2.0+1.6.1   2001        PSF         yes
     2.1.1           2.1+2.0.1   2001        PSF         yes
-    2.2             2.1.1       2001        PSF         yes
     2.1.2           2.1.1       2002        PSF         yes
     2.1.3           2.1.2       2002        PSF         yes
-    2.2.1           2.2         2002        PSF         yes
-    2.2.2           2.2.1       2002        PSF         yes
-    2.2.3           2.2.2       2003        PSF         yes
-    2.3             2.2.2       2002-2003   PSF         yes
-    2.3.1           2.3         2002-2003   PSF         yes
-    2.3.2           2.3.1       2002-2003   PSF         yes
-    2.3.3           2.3.2       2002-2003   PSF         yes
-    2.3.4           2.3.3       2004        PSF         yes
-    2.3.5           2.3.4       2005        PSF         yes
-    2.4             2.3         2004        PSF         yes
-    2.4.1           2.4         2005        PSF         yes
-    2.4.2           2.4.1       2005        PSF         yes
-    2.4.3           2.4.2       2006        PSF         yes
-    2.4.4           2.4.3       2006        PSF         yes
-    2.5             2.4         2006        PSF         yes
-    2.5.1           2.5         2007        PSF         yes
-    2.5.2           2.5.1       2008        PSF         yes
-    2.5.3           2.5.2       2008        PSF         yes
-    2.6             2.5         2008        PSF         yes
-    2.6.1           2.6         2008        PSF         yes
-    2.6.2           2.6.1       2009        PSF         yes
-    2.6.3           2.6.2       2009        PSF         yes
-    2.6.4           2.6.3       2009        PSF         yes
-    2.6.5           2.6.4       2010        PSF         yes
-    2.7             2.6         2010        PSF         yes
+    2.2 and above   2.1.1       2001-now    PSF         yes
 
 Footnotes:
 
