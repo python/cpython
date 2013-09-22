@@ -9,10 +9,11 @@ import collections
 import os
 import shutil
 import functools
+import importlib
 from os.path import normcase
 
 from test.support import run_unittest, TESTFN, DirsOnSysPath
-
+from test.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
 
@@ -2372,6 +2373,47 @@ class TestUnwrap(unittest.TestCase):
             __wrapped__ = func
         self.assertIsNone(inspect.unwrap(C()))
 
+class TestMain(unittest.TestCase):
+    def test_only_source(self):
+        module = importlib.import_module('unittest')
+        rc, out, err = assert_python_ok('-m', 'inspect',
+                                        'unittest')
+        lines = out.decode().splitlines()
+        # ignore the final newline
+        self.assertEqual(lines[:-1], inspect.getsource(module).splitlines())
+        self.assertEqual(err, b'')
+
+    def test_qualname_source(self):
+        module = importlib.import_module('concurrent.futures')
+        member = getattr(module, 'ThreadPoolExecutor')
+        rc, out, err = assert_python_ok('-m', 'inspect',
+                                     'concurrent.futures:ThreadPoolExecutor')
+        lines = out.decode().splitlines()
+        # ignore the final newline
+        self.assertEqual(lines[:-1],
+                         inspect.getsource(member).splitlines())
+        self.assertEqual(err, b'')
+
+    def test_builtins(self):
+        module = importlib.import_module('unittest')
+        _, out, err = assert_python_failure('-m', 'inspect',
+                                            'sys')
+        lines = err.decode().splitlines()
+        self.assertEqual(lines, ["Can't get info for builtin modules."])
+
+    def test_details(self):
+        module = importlib.import_module('unittest')
+        rc, out, err = assert_python_ok('-m', 'inspect',
+                                        'unittest', '--details')
+        output = out.decode()
+        # Just a quick sanity check on the output
+        self.assertIn(module.__name__, output)
+        self.assertIn(module.__file__, output)
+        self.assertIn(module.__cached__, output)
+        self.assertEqual(err, b'')
+
+
+
 
 def test_main():
     run_unittest(
@@ -2380,7 +2422,7 @@ def test_main():
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
-        TestBoundArguments, TestGetClosureVars, TestUnwrap
+        TestBoundArguments, TestGetClosureVars, TestUnwrap, TestMain
     )
 
 if __name__ == "__main__":

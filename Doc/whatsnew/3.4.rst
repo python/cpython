@@ -264,10 +264,14 @@ New :func:`functools.singledispatch` decorator: see the :pep:`443`.
 inspect
 -------
 
+
+The inspect module now offers a basic command line interface to quickly
+display source code and other information for modules, classes and
+functions.
+
 :func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
 created by :func:`functools.wraps` (and any other API that sets the
 ``__wrapped__`` attribute on a wrapper function).
-
 
 mmap
 ----
