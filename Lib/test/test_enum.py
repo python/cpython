@@ -172,6 +172,27 @@ class TestEnum(unittest.TestCase):
         with self.assertRaises(AttributeError):
             Season.WINTER = 'really cold'
 
+    def test_attribute_deletion(self):
+        class Season(Enum):
+            SPRING = 1
+            SUMMER = 2
+            AUTUMN = 3
+            WINTER = 4
+
+            def spam(cls):
+                pass
+
+        self.assertTrue(hasattr(Season, 'spam'))
+        del Season.spam
+        self.assertFalse(hasattr(Season, 'spam'))
+
+        with self.assertRaises(AttributeError):
+            del Season.SPRING
+        with self.assertRaises(AttributeError):
+            del Season.DRY
+        with self.assertRaises(AttributeError):
+            del Season.SPRING.name
+
     def test_invalid_names(self):
         with self.assertRaises(ValueError):
             class Wrong(Enum):
