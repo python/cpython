@@ -12,6 +12,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18978: ``urllib.request.Request`` now allows the method to be
+  indicated on the class and no longer sets it to None in ``__init__``.
+
 - Issue #18626: the inspect module now offers a basic command line
   introspection interface (Initial patch by Claudiu Popa)
 
