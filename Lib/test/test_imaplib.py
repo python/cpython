@@ -176,6 +176,16 @@ class BaseThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.abort,
                               self.imap_class, *server.server_address)
 
+    def test_linetoolong(self):
+        class TooLongHandler(TimeoutStreamRequestHandler):
+            def handle(self):
+                # Send a very long response line
+                self.wfile.write('* OK ' + imaplib._MAXLINE*'x' + '\r\n')
+
+        with self.reaped_server(TooLongHandler) as server:
+            self.assertRaises(imaplib.IMAP4.error,
+                              self.imap_class, *server.server_address)
+
 class ThreadedNetworkedTests(BaseThreadedNetworkedTests):
 
     server_class = SocketServer.TCPServer
