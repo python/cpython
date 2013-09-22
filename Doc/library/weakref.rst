@@ -540,8 +540,8 @@ no longer forced to :const:`None` during interpreter shutdown. So this
 code should work without any issues on CPython.
 
 However, handling of :meth:`__del__` methods is notoriously implementation
-specific, since it depends on how the interpreter's garbage collector
-handles reference cycles and finalizers.
+specific, since it depends on internal details of the interpreter's garbage
+collector implementation.
 
 A more robust alternative can be to define a finalizer which only references
 the specific functions and objects that it needs, rather than having access
