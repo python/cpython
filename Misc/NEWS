@@ -10,6 +10,9 @@ Projected Release date: 2013-10-XX
 Library
 -------
 
+- Issue #18978: ``urllib.request.Request`` now allows the method to be
+  indicated on the class and no longer sets it to None in ``__init__``.
+
 - The :envvar:`PYTHONFAULTHANDLER` environment variable now only enables the
   faulthandler module if the variable is non-empty. Same behaviour than other
   variables like :envvar:`PYTHONDONTWRITEBYTECODE`.
