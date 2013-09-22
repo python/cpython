@@ -43,7 +43,7 @@ PyObject *_PySet_Dummy = dummy;
 /* ======================================================================== */
 /* ======= Begin logic for probing the hash table ========================= */
 
-/* This should be >= PySet_MINSIZE - 1 */
+/* Set this to zero to turn-off linear probing */
 #ifndef LINEAR_PROBES
 #define LINEAR_PROBES 9
 #endif
