@@ -331,17 +331,8 @@ AsString(PyObject *value, PyObject *tmp)
 {
     if (PyBytes_Check(value))
         return PyBytes_AsString(value);
-    else if (PyUnicode_Check(value)) {
-        PyObject *v = PyUnicode_AsUTF8String(value);
-        if (v == NULL)
-            return NULL;
-        if (PyList_Append(tmp, v) != 0) {
-            Py_DECREF(v);
-            return NULL;
-        }
-        Py_DECREF(v);
-        return PyBytes_AsString(v);
-    }
+    else if (PyUnicode_Check(value))
+        return PyUnicode_AsUTF8(value);
     else {
         PyObject *v = PyObject_Str(value);
         if (v == NULL)
@@ -351,7 +342,7 @@ AsString(PyObject *value, PyObject *tmp)
             return NULL;
         }
         Py_DECREF(v);
-        return PyBytes_AsString(v);
+        return PyUnicode_AsUTF8(v);
     }
 }
 
