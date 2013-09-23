@@ -12,6 +12,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19034: repr() for tkinter.Tcl_Obj now exposes string reperesentation.
+
 - Issue #18978: ``urllib.request.Request`` now allows the method to be
   indicated on the class and no longer sets it to None in ``__init__``.
 
