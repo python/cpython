@@ -829,18 +829,18 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
 
         # set a lower threshold value and add a cleanup to restore it
         old_threshold = self._diffThreshold
-        self._diffThreshold = 2**8
+        self._diffThreshold = 2**5
         self.addCleanup(lambda: setattr(self, '_diffThreshold', old_threshold))
 
         # under the threshold: diff marker (^) in error message
-        s = 'x' * (2**7)
+        s = 'x' * (2**4)
         with self.assertRaises(self.failureException) as cm:
             self.assertEqual(s + 'a', s + 'b')
         self.assertIn('^', str(cm.exception))
         self.assertEqual(s + 'a', s + 'a')
 
         # over the threshold: diff not used and marker (^) not in error message
-        s = 'x' * (2**9)
+        s = 'x' * (2**6)
         # if the path that uses difflib is taken, _truncateMessage will be
         # called -- replace it with explodingTruncation to verify that this
         # doesn't happen
@@ -856,6 +856,37 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertNotIn('^', str(cm.exception))
         self.assertEqual(str(cm.exception), '%r != %r' % (s1, s2))
         self.assertEqual(s + 'a', s + 'a')
+
+    def testAssertEqual_shorten(self):
+        # set a lower threshold value and add a cleanup to restore it
+        old_threshold = self._diffThreshold
+        self._diffThreshold = 0
+        self.addCleanup(lambda: setattr(self, '_diffThreshold', old_threshold))
+
+        s = 'x' * 100
+        s1, s2 = s + 'a', s + 'b'
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEqual(s1, s2)
+        c = 'xxxx[35 chars]' + 'x' * 61
+        self.assertEqual(str(cm.exception), "'%sa' != '%sb'" % (c, c))
+        self.assertEqual(s + 'a', s + 'a')
+
+        p = 'y' * 50
+        s1, s2 = s + 'a' + p, s + 'b' + p
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEqual(s1, s2)
+        c = 'xxxx[85 chars]xxxxxxxxxxx'
+        #print()
+        #print(str(cm.exception))
+        self.assertEqual(str(cm.exception), "'%sa%s' != '%sb%s'" % (c, p, c, p))
+
+        p = 'y' * 100
+        s1, s2 = s + 'a' + p, s + 'b' + p
+        with self.assertRaises(self.failureException) as cm:
+            self.assertEqual(s1, s2)
+        c = 'xxxx[91 chars]xxxxx'
+        d = 'y' * 40 + '[56 chars]yyyy'
+        self.assertEqual(str(cm.exception), "'%sa%s' != '%sb%s'" % (c, d, c, d))
 
     def testAssertCountEqual(self):
         a = object()
