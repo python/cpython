@@ -737,8 +737,13 @@ PyTclObject_str(PyTclObject *self, void *ignored)
 static PyObject *
 PyTclObject_repr(PyTclObject *self)
 {
-    return PyUnicode_FromFormat("<%s object at %p>",
-                                self->value->typePtr->name, self->value);
+    PyObject *repr, *str = PyTclObject_str(self, NULL);
+    if (str == NULL)
+        return NULL;
+    repr = PyUnicode_FromFormat("<%s object: %R>",
+                                self->value->typePtr->name, str);
+    Py_DECREF(str);
+    return repr;
 }
 
 #define TEST_COND(cond) ((cond) ? Py_True : Py_False)
