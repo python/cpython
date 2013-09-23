@@ -254,6 +254,37 @@ class TclTest(unittest.TestCase):
         for arg, res in testcases:
             self.assertEqual(split(arg), res, msg=arg)
 
+    def test_merge(self):
+        with support.check_warnings(('merge is deprecated',
+                                     DeprecationWarning)):
+            merge = self.interp.tk.merge
+            call = self.interp.tk.call
+            testcases = [
+                ((), ''),
+                (('a',), 'a'),
+                ((2,), '2'),
+                (('',), '{}'),
+                ('{', '\\{'),
+                (('a', 'b', 'c'), 'a b c'),
+                ((' ', '\t', '\r', '\n'), '{ } {\t} {\r} {\n}'),
+                (('a', ' ', 'c'), 'a { } c'),
+                (('a', '€'), 'a €'),
+                (('a', '\U000104a2'), 'a \U000104a2'),
+                (('a', b'\xe2\x82\xac'), 'a €'),
+                (('a', ('b', 'c')), 'a {b c}'),
+                (('a', 2), 'a 2'),
+                (('a', 3.4), 'a 3.4'),
+                (('a', (2, 3.4)), 'a {2 3.4}'),
+                ((), ''),
+                ((call('list', 1, '2', (3.4,)),), '{1 2 3.4}'),
+                ((call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),),
+                    '{12 € € 3.4}'),
+            ]
+            for args, res in testcases:
+                self.assertEqual(merge(*args), res, msg=args)
+            self.assertRaises(UnicodeDecodeError, merge, b'\x80')
+            self.assertRaises(UnicodeEncodeError, merge, '\udc80')
+
 
 class BigmemTclTest(unittest.TestCase):
 
