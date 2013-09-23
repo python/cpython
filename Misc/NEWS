@@ -12,6 +12,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18996: TestCase.assertEqual() now more cleverly shorten differing
+  strings in error report.
+
 - Issue #19034: repr() for tkinter.Tcl_Obj now exposes string reperesentation.
 
 - Issue #18978: ``urllib.request.Request`` now allows the method to be
