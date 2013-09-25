@@ -267,11 +267,25 @@ def getmembers(object, predicate=None):
     else:
         mro = ()
     results = []
-    for key in dir(object):
+    processed = set()
+    names = dir(object)
+    # add any virtual attributes to the list of names if object is a class
+    # this may result in duplicate entries if, for example, a virtual
+    # attribute with the same name as a member property exists
+    try:
+        for base in object.__bases__:
+            for k, v in base.__dict__.items():
+                if isinstance(v, types.DynamicClassAttribute):
+                    names.append(k)
+    except AttributeError:
+        pass
+    for key in names:
         # First try to get the value via __dict__. Some descriptors don't
         # like calling their __get__ (see bug #1785).
         for base in mro:
-            if key in base.__dict__:
+            if key in base.__dict__ and key not in processed:
+                # handle the normal case first; if duplicate entries exist
+                # they will be handled second
                 value = base.__dict__[key]
                 break
         else:
@@ -281,7 +295,8 @@ def getmembers(object, predicate=None):
                 continue
         if not predicate or predicate(value):
             results.append((key, value))
-    results.sort()
+        processed.add(key)
+    results.sort(key=lambda pair: pair[0])
     return results
 
 Attribute = namedtuple('Attribute', 'name kind defining_class object')
@@ -298,16 +313,15 @@ def classify_class_attrs(cls):
                'class method'    created via classmethod()
                'static method'   created via staticmethod()
                'property'        created via property()
-               'method'          any other flavor of method
+               'method'          any other flavor of method or descriptor
                'data'            not a method
 
         2. The class which defined this attribute (a class).
 
-        3. The object as obtained directly from the defining class's
-           __dict__, not via getattr.  This is especially important for
-           data attributes:  C.data is just a data object, but
-           C.__dict__['data'] may be a data descriptor with additional
-           info, like a __doc__ string.
+        3. The object as obtained by calling getattr; if this fails, or if the
+           resulting object does not live anywhere in the class' mro (including
+           metaclasses) then the object is looked up in the defining class's
+           dict (found by walking the mro).
 
     If one of the items in dir(cls) is stored in the metaclass it will now
     be discovered and not have None be listed as the class in which it was
@@ -316,46 +330,72 @@ def classify_class_attrs(cls):
 
     mro = getmro(cls)
     metamro = getmro(type(cls)) # for attributes stored in the metaclass
+    metamro = tuple([cls for cls in metamro if cls not in (type, object)])
+    possible_bases = (cls,) + mro + metamro
     names = dir(cls)
+    # add any virtual attributes to the list of names
+    # this may result in duplicate entries if, for example, a virtual
+    # attribute with the same name as a member property exists
+    for base in cls.__bases__:
+        for k, v in base.__dict__.items():
+            if isinstance(v, types.DynamicClassAttribute):
+                names.append(k)
     result = []
+    processed = set()
+    sentinel = object()
     for name in names:
         # Get the object associated with the name, and where it was defined.
+        # Normal objects will be looked up with both getattr and directly in
+        # its class' dict (in case getattr fails [bug #1785], and also to look
+        # for a docstring).
+        # For VirtualAttributes on the second pass we only look in the
+        # class's dict.
+        #
         # Getting an obj from the __dict__ sometimes reveals more than
         # using getattr.  Static and class methods are dramatic examples.
-        # Furthermore, some objects may raise an Exception when fetched with
-        # getattr(). This is the case with some descriptors (bug #1785).
-        # Thus, we only use getattr() as a last resort.
         homecls = None
-        for base in (cls,) + mro + metamro:
-            if name in base.__dict__:
-                obj = base.__dict__[name]
-                homecls = base
-                break
-        else:
-            obj = getattr(cls, name)
-            homecls = getattr(obj, "__objclass__", homecls)
+        get_obj = sentinel
+        dict_obj = sentinel
 
-        # Classify the object.
+
+        if name not in processed:
+            try:
+                get_obj = getattr(cls, name)
+            except Exception as exc:
+                pass
+            else:
+                homecls = getattr(get_obj, "__class__")
+                homecls = getattr(get_obj, "__objclass__", homecls)
+                if homecls not in possible_bases:
+                    # if the resulting object does not live somewhere in the
+                    # mro, drop it and go with the dict_obj version only
+                    homecls = None
+                    get_obj = sentinel
+
+        for base in possible_bases:
+            if name in base.__dict__:
+                dict_obj = base.__dict__[name]
+                homecls = homecls or base
+                break
+
+        # Classify the object or its descriptor.
+        if get_obj is not sentinel:
+            obj = get_obj
+        else:
+            obj = dict_obj
         if isinstance(obj, staticmethod):
             kind = "static method"
         elif isinstance(obj, classmethod):
             kind = "class method"
         elif isinstance(obj, property):
             kind = "property"
-        elif ismethoddescriptor(obj):
+        elif isfunction(obj) or ismethoddescriptor(obj):
             kind = "method"
-        elif isdatadescriptor(obj):
-            kind = "data"
         else:
-            obj_via_getattr = getattr(cls, name)
-            if (isfunction(obj_via_getattr) or
-                ismethoddescriptor(obj_via_getattr)):
-                kind = "method"
-            else:
-                kind = "data"
-            obj = obj_via_getattr
+            kind = "data"
 
         result.append(Attribute(name, kind, homecls, obj))
+        processed.add(name)
 
     return result
 
