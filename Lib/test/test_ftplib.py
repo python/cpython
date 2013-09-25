@@ -46,6 +46,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.last_received_cmd = None
         self.last_received_data = ''
         self.next_response = ''
+        self.next_retr_data = RETR_DATA
         self.push('220 welcome')
 
     def collect_incoming_data(self, data):
@@ -162,7 +163,7 @@ class DummyFTPHandler(asynchat.async_chat):
 
     def cmd_retr(self, arg):
         self.push('125 retr ok')
-        self.dtp.push(RETR_DATA)
+        self.dtp.push(self.next_retr_data)
         self.dtp.close_when_done()
 
     def cmd_list(self, arg):
@@ -174,6 +175,11 @@ class DummyFTPHandler(asynchat.async_chat):
         self.push('125 nlst ok')
         self.dtp.push(NLST_DATA)
         self.dtp.close_when_done()
+
+    def cmd_setlongretr(self, arg):
+        # For testing. Next RETR will return long line.
+        self.next_retr_data = 'x' * int(arg)
+        self.push('125 setlongretr ok')
 
 
 class DummyFTPServer(asyncore.dispatcher, threading.Thread):
@@ -361,6 +367,20 @@ class TestFTPClass(TestCase):
         conn.close()
         # IPv4 is in use, just make sure send_epsv has not been used
         self.assertEqual(self.server.handler.last_received_cmd, 'pasv')
+
+    def test_line_too_long(self):
+        self.assertRaises(ftplib.Error, self.client.sendcmd,
+                          'x' * self.client.maxline * 2)
+
+    def test_retrlines_too_long(self):
+        self.client.sendcmd('SETLONGRETR %d' % (self.client.maxline * 2))
+        received = []
+        self.assertRaises(ftplib.Error,
+                          self.client.retrlines, 'retr', received.append)
+
+    def test_storlines_too_long(self):
+        f = StringIO.StringIO('x' * self.client.maxline * 2)
+        self.assertRaises(ftplib.Error, self.client.storlines, 'stor', f)
 
 
 class TestIPv6Environment(TestCase):
