@@ -1,34 +1,8 @@
 import sys
 from collections import OrderedDict
-from types import MappingProxyType
+from types import MappingProxyType, DynamicClassAttribute
 
 __all__ = ['Enum', 'IntEnum', 'unique']
-
-
-class _RouteClassAttributeToGetattr:
-    """Route attribute access on a class to __getattr__.
-
-    This is a descriptor, used to define attributes that act differently when
-    accessed through an instance and through a class.  Instance access remains
-    normal, but access to an attribute through a class will be routed to the
-    class's __getattr__ method; this is done by raising AttributeError.
-
-    """
-    def __init__(self, fget=None):
-        self.fget = fget
-        if fget.__doc__ is not None:
-            self.__doc__ = fget.__doc__
-
-    def __get__(self, instance, ownerclass=None):
-        if instance is None:
-            raise AttributeError()
-        return self.fget(instance)
-
-    def __set__(self, instance, value):
-        raise AttributeError("can't set attribute")
-
-    def __delete__(self, instance):
-        raise AttributeError("can't delete attribute")
 
 
 def _is_descriptor(obj):
@@ -504,12 +478,12 @@ class Enum(metaclass=EnumMeta):
     # members are not set directly on the enum class -- __getattr__ is
     # used to look them up.
 
-    @_RouteClassAttributeToGetattr
+    @DynamicClassAttribute
     def name(self):
         """The name of the Enum member."""
         return self._name_
 
-    @_RouteClassAttributeToGetattr
+    @DynamicClassAttribute
     def value(self):
         """The value of the Enum member."""
         return self._value_

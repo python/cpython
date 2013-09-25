@@ -652,6 +652,14 @@ class TestClassesAndFunctions(unittest.TestCase):
             if isinstance(builtin, type):
                 inspect.classify_class_attrs(builtin)
 
+    def test_classify_VirtualAttribute(self):
+        class VA:
+            @types.DynamicClassAttribute
+            def ham(self):
+                return 'eggs'
+        should_find = inspect.Attribute('ham', 'data', VA, VA.__dict__['ham'])
+        self.assertIn(should_find, inspect.classify_class_attrs(VA))
+
     def test_getmembers_descriptors(self):
         class A(object):
             dd = _BrokenDataDescriptor()
@@ -694,6 +702,13 @@ class TestClassesAndFunctions(unittest.TestCase):
         b = B()
         self.assertIn(('f', b.f), inspect.getmembers(b))
         self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
+
+    def test_getmembers_VirtualAttribute(self):
+        class A:
+            @types.DynamicClassAttribute
+            def eggs(self):
+                return 'spam'
+        self.assertIn(('eggs', A.__dict__['eggs']), inspect.getmembers(A))
 
 
 _global_ref = object()
@@ -1081,6 +1096,15 @@ class TestGetattrStatic(unittest.TestCase):
             x = object()
 
         self.assertEqual(inspect.getattr_static(Thing, 'x'), Thing.x)
+
+    def test_classVirtualAttribute(self):
+        class Thing(object):
+            @types.DynamicClassAttribute
+            def x(self):
+                return self._x
+            _x = object()
+
+        self.assertEqual(inspect.getattr_static(Thing, 'x'), Thing.__dict__['x'])
 
     def test_inherited_classattribute(self):
         class Thing(object):
