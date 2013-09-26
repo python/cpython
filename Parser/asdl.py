@@ -16,8 +16,9 @@ import traceback
 
 import spark
 
-def output(string):
-    sys.stdout.write(string + "\n")
+def output(*strings):
+    for s in strings:
+        sys.stdout.write(str(s) + "\n")
 
 
 class Token(object):
@@ -397,7 +398,8 @@ def parse(file):
     scanner = ASDLScanner()
     parser = ASDLParser()
 
-    buf = open(file).read()
+    with open(file) as f:
+       buf = f.read()
     tokens = scanner.tokenize(buf)
     try:
         return parser.parse(tokens)
@@ -428,4 +430,4 @@ if __name__ == "__main__":
             output("Check failed")
         else:
             for dfn in mod.dfns:
-                output(dfn.type)
+                output(dfn.name, dfn.value)
