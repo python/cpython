@@ -398,8 +398,11 @@ def parse(file):
     scanner = ASDLScanner()
     parser = ASDLParser()
 
-    with open(file) as f:
+    try:
+        f = open(file)
         buf = f.read()
+    finally:
+        f.close()
     tokens = scanner.tokenize(buf)
     try:
         return parser.parse(tokens)
