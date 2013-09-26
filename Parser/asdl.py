@@ -399,7 +399,7 @@ def parse(file):
     parser = ASDLParser()
 
     with open(file) as f:
-       buf = f.read()
+        buf = f.read()
     tokens = scanner.tokenize(buf)
     try:
         return parser.parse(tokens)
