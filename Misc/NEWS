@@ -13,7 +13,7 @@ Core and Builtins
 -----------------
 
 - Issue #19098: Prevent overflow in the compiler when the recursion limit is set
-  absurbly high.
+  absurdly high.
 
 - Issue #18942: sys._debugmallocstats() output was damaged on Windows.
 
