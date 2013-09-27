@@ -239,6 +239,7 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
     asdl_seq *seq;
     int i;
     PyThreadState *tstate;
+    int recursion_limit = Py_GetRecursionLimit();
 
     if (st == NULL)
         return st;
@@ -251,8 +252,11 @@ PySymtable_Build(mod_ty mod, const char *filename, PyFutureFeatures *future)
         PySymtable_Free(st);
         return NULL;
     }
-    st->recursion_depth = tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE;
-    st->recursion_limit = Py_GetRecursionLimit() * COMPILER_STACK_FRAME_SCALE;
+    /* Be careful here to prevent overflow. */
+    st->recursion_depth = (tstate->recursion_depth < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        tstate->recursion_depth * COMPILER_STACK_FRAME_SCALE : tstate->recursion_depth;
+    st->recursion_limit = (recursion_limit < INT_MAX / COMPILER_STACK_FRAME_SCALE) ?
+        recursion_limit * COMPILER_STACK_FRAME_SCALE : recursion_limit;
 
     /* Make the initial symbol information gathering pass */
     if (!GET_IDENTIFIER(top) ||
