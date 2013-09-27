@@ -9,6 +9,9 @@ Core and Builtins
 
 - Issue #18818: The "encodingname" part of PYTHONIOENCODING is now optional.
 
+- Issue #19098: Prevent overflow in the compiler when the recursion limit is set
+  absurbly high.
+
 Library
 -------
 
