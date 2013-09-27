@@ -78,7 +78,6 @@ try:
 except ImportError:
     pass
 
-
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -1366,8 +1365,9 @@ class SocketHandlerTest(BaseTest):
 
     """Test for SocketHandler objects."""
 
-    server_class = TestTCPServer
-    address = ('localhost', 0)
+    if threading:
+        server_class = TestTCPServer
+        address = ('localhost', 0)
 
     def setUp(self):
         """Set up a TCP server to receive log messages, and a SocketHandler
@@ -1450,7 +1450,8 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     """Test for SocketHandler with unix sockets."""
 
-    server_class = TestUnixStreamServer
+    if threading:
+        server_class = TestUnixStreamServer
 
     def setUp(self):
         # override the definition in the base class
@@ -1466,8 +1467,9 @@ class DatagramHandlerTest(BaseTest):
 
     """Test for DatagramHandler."""
 
-    server_class = TestUDPServer
-    address = ('localhost', 0)
+    if threading:
+        server_class = TestUDPServer
+        address = ('localhost', 0)
 
     def setUp(self):
         """Set up a UDP server to receive log messages, and a DatagramHandler
@@ -1520,7 +1522,8 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     """Test for DatagramHandler using Unix sockets."""
 
-    server_class = TestUnixDatagramServer
+    if threading:
+        server_class = TestUnixDatagramServer
 
     def setUp(self):
         # override the definition in the base class
@@ -1536,8 +1539,9 @@ class SysLogHandlerTest(BaseTest):
 
     """Test for SysLogHandler using UDP."""
 
-    server_class = TestUDPServer
-    address = ('localhost', 0)
+    if threading:
+        server_class = TestUDPServer
+        address = ('localhost', 0)
 
     def setUp(self):
         """Set up a UDP server to receive log messages, and a SysLogHandler
@@ -1593,7 +1597,8 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     """Test for SysLogHandler with Unix sockets."""
 
-    server_class = TestUnixDatagramServer
+    if threading:
+        server_class = TestUnixDatagramServer
 
     def setUp(self):
         # override the definition in the base class
