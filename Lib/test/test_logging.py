@@ -1437,6 +1437,13 @@ class SocketHandlerTest(BaseTest):
         time.sleep(self.sock_hdlr.retryTime - now + 0.001)
         self.root_logger.error('Nor this')
 
+def _get_temp_domain_socket():
+    fd, fn = tempfile.mkstemp(prefix='test_logging_', suffix='.sock')
+    os.close(fd)
+    # just need a name - file can't be present, or we'll get an
+    # 'address already in use' error.
+    os.remove(fn)
+    return fn
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class UnixSocketHandlerTest(SocketHandlerTest):
@@ -1447,10 +1454,7 @@ class UnixSocketHandlerTest(SocketHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        fd, self.address = tempfile.mkstemp(prefix='test_logging_',
-                                            suffix='.sock')
-        os.close(fd)
-        os.remove(self.address)     # just need a name - file can't be present
+        self.address = _get_temp_domain_socket()
         SocketHandlerTest.setUp(self)
 
     def tearDown(self):
@@ -1520,10 +1524,7 @@ class UnixDatagramHandlerTest(DatagramHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        fd, self.address = tempfile.mkstemp(prefix='test_logging_',
-                                            suffix='.sock')
-        os.close(fd)
-        os.remove(self.address)     # just need a name - file can't be present
+        self.address = _get_temp_domain_socket()
         DatagramHandlerTest.setUp(self)
 
     def tearDown(self):
@@ -1596,19 +1597,12 @@ class UnixSysLogHandlerTest(SysLogHandlerTest):
 
     def setUp(self):
         # override the definition in the base class
-        fd, self.address = tempfile.mkstemp(prefix='test_logging_',
-                                            suffix='.sock')
-        os.close(fd)
-        os.remove(self.address)     # just need a name - file can't be present
+        self.address = _get_temp_domain_socket()
         SysLogHandlerTest.setUp(self)
 
     def tearDown(self):
         SysLogHandlerTest.tearDown(self)
         os.remove(self.address)
-
-#    def test_output(self):
-#        import pdb; pdb.set_trace()
-#        SysLogHandlerTest.test_output(self)
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class HTTPHandlerTest(BaseTest):
