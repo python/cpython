@@ -900,10 +900,10 @@ provided:
    disk files, rotating the log file at certain timed intervals.
 
 #. :class:`~handlers.SocketHandler` instances send messages to TCP/IP
-   sockets.
+   sockets. Since 3.4, Unix domain sockets are also supported.
 
 #. :class:`~handlers.DatagramHandler` instances send messages to UDP
-   sockets.
+   sockets. Since 3.4, Unix domain sockets are also supported.
 
 #. :class:`~handlers.SMTPHandler` instances send messages to a designated
    email address.

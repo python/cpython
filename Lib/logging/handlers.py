@@ -494,6 +494,10 @@ class SocketHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.host = host
         self.port = port
+        if port is None:
+            self.address = host
+        else:
+            self.address = (host, port)
         self.sock = None
         self.closeOnError = False
         self.retryTime = None
@@ -509,7 +513,13 @@ class SocketHandler(logging.Handler):
         A factory method which allows subclasses to define the precise
         type of socket they want.
         """
-        return socket.create_connection((self.host, self.port), timeout=timeout)
+        if self.port is not None:
+            result = socket.create_connection(self.address, timeout=timeout)
+        else:
+            result = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            result.settimeout(timeout)
+            result.connect(self.address)
+        return result
 
     def createSocket(self):
         """
@@ -643,7 +653,11 @@ class DatagramHandler(SocketHandler):
         The factory method of SocketHandler is here overridden to create
         a UDP socket (SOCK_DGRAM).
         """
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        if self.port is None:
+            family = socket.AF_UNIX
+        else:
+            family = socket.AF_INET
+        s = socket.socket(family, socket.SOCK_DGRAM)
         return s
 
     def send(self, s):
@@ -656,7 +670,7 @@ class DatagramHandler(SocketHandler):
         """
         if self.sock is None:
             self.createSocket()
-        self.sock.sendto(s, (self.host, self.port))
+        self.sock.sendto(s, self.address)
 
 class SysLogHandler(logging.Handler):
     """
