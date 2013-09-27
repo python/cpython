@@ -158,6 +158,45 @@ class AbstractTestsWithSourceFile:
         for f in get_files(self):
             self.zip_random_open_test(f, self.compression)
 
+    def zip_read1_test(self, f, compression):
+        self.make_test_archive(f, compression)
+
+        # Read the ZIP archive
+        with zipfile.ZipFile(f, "r") as zipfp, \
+             zipfp.open(TESTFN) as zipopen:
+            zipdata = []
+            while True:
+                read_data = zipopen.read1(-1)
+                if not read_data:
+                    break
+                zipdata.append(read_data)
+
+        self.assertEqual(b''.join(zipdata), self.data)
+
+    def test_read1(self):
+        for f in get_files(self):
+            self.zip_read1_test(f, self.compression)
+
+    def zip_read1_10_test(self, f, compression):
+        self.make_test_archive(f, compression)
+
+        # Read the ZIP archive
+        with zipfile.ZipFile(f, "r") as zipfp, \
+             zipfp.open(TESTFN) as zipopen:
+            zipdata = []
+            while True:
+                read_data = zipopen.read1(10)
+                self.assertLessEqual(len(read_data), 10)
+                if not read_data:
+                    break
+                zipdata.append(read_data)
+
+        self.assertEqual(b''.join(zipdata), self.data)
+
+    def test_read1_10(self):
+        for f in get_files(self):
+            self.zip_read1_10_test(f, self.compression)
+
     def zip_readline_read_test(self, f, compression):
         self.make_test_archive(f, compression)
 

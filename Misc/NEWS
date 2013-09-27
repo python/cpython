@@ -71,6 +71,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19053: ZipExtFile.read1() with non-zero argument no more returns empty
+  bytes until end of data.
+
 - Issue #19028: Fixed tkinter.Tkapp.merge() for non-string arguments.
 
 - Issue #3015: Fixed tkinter with wantobject=False.  Any Tcl command call
