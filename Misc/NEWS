@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- logging: added support for Unix domain sockets to SocketHandler and
+  DatagramHandler.
+
 - Issue #18996: TestCase.assertEqual() now more cleverly shorten differing
   strings in error report.
 
