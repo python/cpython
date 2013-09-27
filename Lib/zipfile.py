@@ -785,8 +785,11 @@ class ZipExtFile(io.BufferedIOBase):
             buf = self._readbuffer[self._offset:]
             self._readbuffer = b''
             self._offset = 0
-            data = self._read1(self.MAX_N)
-            buf += data
+            while not self._eof:
+                data = self._read1(self.MAX_N)
+                if data:
+                    buf += data
+                    break
             return buf
 
         end = n + self._offset
@@ -800,12 +803,16 @@ class ZipExtFile(io.BufferedIOBase):
         self._readbuffer = b''
         self._offset = 0
         if n > 0:
-            data = self._read1(n)
-            if n < len(data):
-                self._readbuffer = data
-                self._offset = n
-                data = data[:n]
-            buf += data
+            while not self._eof:
+                data = self._read1(n)
+                if n < len(data):
+                    self._readbuffer = data
+                    self._offset = n
+                    buf += data[:n]
+                    break
+                if data:
+                    buf += data
+                    break
         return buf
 
     def _read1(self, n):

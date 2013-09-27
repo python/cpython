@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19053: ZipExtFile.read1() with non-zero argument no more returns empty
+  bytes until end of data.
+
 - logging: added support for Unix domain sockets to SocketHandler and
   DatagramHandler.
 
