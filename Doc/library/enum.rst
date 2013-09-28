@@ -47,6 +47,12 @@ follows::
     :attr:`Color.red` is ``red``, the value of :attr:`Color.blue` is
     ``3``, etc.)
 
+.. note::
+
+    Even though we use the :keyword:`class` syntax to create Enums, Enums
+    are not normal Python classes.  See `How are Enums different?`_ for
+    more details.
+
 Enumeration members have human readable string representations::
 
     >>> print(Color.red)
@@ -515,6 +521,13 @@ Avoids having to specify the value for each enumeration member::
     >>> Color.green.value == 2
     True
 
+.. note::
+
+    The :meth:`__new__` method, if defined, is used during creation of the Enum
+    members; it is then replaced by Enum's :meth:`__new__` which is used after
+    class creation for lookup of existing members.  Due to the way Enums are
+    supposed to behave, there is no way to customize Enum's :meth:`__new__`.
+
 
 OrderedEnum
 ^^^^^^^^^^^
@@ -613,3 +626,63 @@ will be passed to those methods::
     (5.976e+24, 6378140.0)
     >>> Planet.EARTH.surface_gravity
     9.802652743337129
+
+
+How are Enums different?
+------------------------
+
+Enums have a custom metaclass that affects many aspects of both derived Enum
+classes and their instances (members).
+
+
+Enum Classes
+^^^^^^^^^^^^
+
+The :class:`EnumMeta` metaclass is responsible for providing the
+:meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
+allow one to do things with an :class:`Enum` class that fail on a typical
+class, such as `list(Color)` or `some_var in Color`.  :class:`EnumMeta` is
+responsible for ensuring that various other methods on the final :class:`Enum`
+class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
+:meth:`__str__` and :meth:`__repr__`)
+
+
+Enum Members (aka instances)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The most interesting thing about Enum members is that they are singletons.
+:class:`EnumMeta` creates them all while it is creating the :class:`Enum`
+class itself, and then puts a custom :meth:`__new__` in place to ensure
+that no new ones are ever instantiated by returning only the existing
+member instances.
+
+
+Finer Points
+^^^^^^^^^^^^
+
+Enum members are instances of an Enum class, and even though they are
+accessible as `EnumClass.member`, they are not accessible directly from
+the member::
+
+    >>> Color.red
+    <Color.red: 1>
+    >>> Color.red.blue
+    Traceback (most recent call last):
+    ...
+    AttributeError: 'Color' object has no attribute 'blue'
+
+ Likewise, the :attr:`__members__` is only available on the class.
+
+ If you give your :class:`Enum` subclass extra methods, like the `Planet`_
+ class above, those methods will show up in a :func:`dir` of the member,
+ but not of the class::
+
+    >>> dir(Planet)
+    ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
+    >>> dir(Planet.EARTH)
+    ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
+
+A :meth:`__new__` method will only be used for the creation of the
+:class:`Enum` members -- after that it is replaced.  This means if you wish to
+change how :class:`Enum` members are looked up you either have to write a
+helper function or a :func:`classmethod`.
