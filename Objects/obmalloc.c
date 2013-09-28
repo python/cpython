@@ -12,6 +12,24 @@ static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(char api_id, const void *p);
 #endif
 
+#if defined(__has_feature)  /* Clang */
+ #if __has_feature(address_sanitizer)  /* is ASAN enabled? */
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+        __attribute__((no_address_safety_analysis)) \
+        __attribute__ ((noinline))
+ #else
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+ #endif
+#else
+ #if defined(__SANITIZE_ADDRESS__)  /* GCC 4.8.x, is ASAN enabled? */
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+        __attribute__((no_address_safety_analysis)) \
+        __attribute__ ((noinline))
+ #else
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+ #endif
+#endif
+
 #ifdef WITH_PYMALLOC
 
 #ifdef MS_WINDOWS
@@ -1300,6 +1318,7 @@ redirect:
 
 /* free */
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 static void
 _PyObject_Free(void *ctx, void *p)
 {
@@ -1528,6 +1547,7 @@ redirect:
  * return a non-NULL result.
  */
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 static void *
 _PyObject_Realloc(void *ctx, void *p, size_t nbytes)
 {
