@@ -985,10 +985,7 @@ class XMLPullParserTest(unittest.TestCase):
                     ])
                 self._feed(parser, "</root>\n", chunk_size)
                 self.assert_event_tags(parser, [('end', 'root')])
-                # Closing sets the `root` attribute
-                self.assertIs(parser.root, None)
-                parser.close()
-                self.assertEqual(parser.root.tag, 'root')
+                self.assertIsNone(parser.close())
 
     def test_feed_while_iterating(self):
         parser = ET.XMLPullParser()
@@ -1021,10 +1018,7 @@ class XMLPullParserTest(unittest.TestCase):
             ])
         self._feed(parser, "</root>\n")
         self.assert_event_tags(parser, [('end', '{namespace}root')])
-        # Closing sets the `root` attribute
-        self.assertIs(parser.root, None)
-        parser.close()
-        self.assertEqual(parser.root.tag, '{namespace}root')
+        self.assertIsNone(parser.close())
 
     def test_ns_events(self):
         parser = ET.XMLPullParser(events=('start-ns', 'end-ns'))
@@ -1039,7 +1033,7 @@ class XMLPullParserTest(unittest.TestCase):
         self._feed(parser, "<empty-element/>\n")
         self._feed(parser, "</root>\n")
         self.assertEqual(list(parser.read_events()), [('end-ns', None)])
-        parser.close()
+        self.assertIsNone(parser.close())
 
     def test_events(self):
         parser = ET.XMLPullParser(events=())
@@ -1064,10 +1058,8 @@ class XMLPullParserTest(unittest.TestCase):
             ('end', '{foo}element'),
             ])
         self._feed(parser, "</root>")
-        parser.close()
-        self.assertIs(parser.root, None)
+        self.assertIsNone(parser.close())
         self.assert_event_tags(parser, [('end', 'root')])
-        self.assertEqual(parser.root.tag, 'root')
 
         parser = ET.XMLPullParser(events=('start',))
         self._feed(parser, "<!-- comment -->\n")
@@ -1085,8 +1077,7 @@ class XMLPullParserTest(unittest.TestCase):
             ('start', '{foo}empty-element'),
             ])
         self._feed(parser, "</root>")
-        parser.close()
-        self.assertEqual(parser.root.tag, 'root')
+        self.assertIsNone(parser.close())
 
     def test_events_sequence(self):
         # Test that events can be some sequence that's not just a tuple or list
