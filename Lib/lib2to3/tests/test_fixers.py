@@ -1464,27 +1464,27 @@ class Test_dict(FixerTestCase):
         a = "d.values()"
         self.check(b, a)
 
-    def test_14(self):
+    def test_28(self):
         b = "[i for i in d.viewkeys()]"
         a = "[i for i in d.keys()]"
         self.check(b, a)
 
-    def test_15(self):
+    def test_29(self):
         b = "(i for i in d.viewkeys())"
         a = "(i for i in d.keys())"
         self.check(b, a)
 
-    def test_17(self):
+    def test_30(self):
         b = "iter(d.viewkeys())"
         a = "iter(d.keys())"
         self.check(b, a)
 
-    def test_18(self):
+    def test_31(self):
         b = "list(d.viewkeys())"
         a = "list(d.keys())"
         self.check(b, a)
 
-    def test_19(self):
+    def test_32(self):
         b = "sorted(d.viewkeys())"
         a = "sorted(d.keys())"
         self.check(b, a)
