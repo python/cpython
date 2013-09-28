@@ -94,6 +94,13 @@ Documentation
 - Issue #17003: Unified the size argument names in the io module with common
   practice.
 
+Build
+-----
+
+- Issue #18596: Support the use of address sanity checking in recent versions
+  of clang and GCC by appropriately marking known false alarms in the small
+  object allocator. Patch contributed by Dhiru Kholia.
+
 Tools/Demos
 -----------
 
