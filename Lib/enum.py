@@ -471,8 +471,8 @@ class Enum(metaclass=EnumMeta):
     def __hash__(self):
         return hash(self._name_)
 
-    # _RouteClassAttributeToGetattr is used to provide access to the `name`
-    # and `value` properties of enum members while keeping some measure of
+    # DynamicClassAttribute is used to provide access to the `name` and
+    # `value` properties of enum members while keeping some measure of
     # protection from modification, while still allowing for an enumeration
     # to have members named `name` and `value`.  This works because enumeration
     # members are not set directly on the enum class -- __getattr__ is
