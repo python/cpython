@@ -15,6 +15,13 @@ Core and Builtins
 Library
 -------
 
+- Issue #18950: Fix miscellaneous bugs in the sunau module.
+  Au_read.readframes() now updates current file position and reads correct
+  number of frames from multichannel stream.  Au_write.writeframesraw() now
+  correctly updates current file position.  Au_read.getnframes() now returns an
+  integer (as in Python 2).  Au_read and Au_write now correctly works with file
+  object if start file position is not a zero.
+
 - Issue #19053: ZipExtFile.read1() with non-zero argument no more returns empty
   bytes until end of data.
 
