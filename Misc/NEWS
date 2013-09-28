@@ -71,6 +71,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #4366: Fix building extensions on all platforms when --enable-shared
+  is used.
+
 - Issue #18950: Fix miscellaneous bugs in the sunau module.
   Au_read.readframes() now updates current file position and reads correct
   number of frames from multichannel stream.  Au_write.writeframesraw() now
