@@ -1220,7 +1220,6 @@ class XMLPullParser:
         # _elementtree.c expects a list, not a deque
         self._events_queue = []
         self._index = 0
-        self.root = self._root = None
         self._parser = _parser or XMLParser(target=TreeBuilder())
         # wire up the parser for event reporting
         if events is None:
@@ -1228,6 +1227,7 @@ class XMLPullParser:
         self._parser._setevents(self._events_queue, events)
 
     def feed(self, data):
+        """Feed encoded data to parser."""
         if self._parser is None:
             raise ValueError("feed() called after end of stream")
         if data:
@@ -1236,13 +1236,26 @@ class XMLPullParser:
             except SyntaxError as exc:
                 self._events_queue.append(exc)
 
-    def close(self):
-        self._root = self._parser.close()
+    def _close_and_return_root(self):
+        # iterparse needs this to set its root attribute properly :(
+        root = self._parser.close()
         self._parser = None
-        if self._index >= len(self._events_queue):
-            self.root = self._root
+        return root
+
+    def close(self):
+        """Finish feeding data to parser.
+
+        Unlike XMLParser, does not return the root element. Use
+        read_events() to consume elements from XMLPullParser.
+        """
+        self._close_and_return_root()
 
     def read_events(self):
+        """Iterate over currently available (event, elem) pairs.
+
+        Events are consumed from the internal event queue as they are
+        retrieved from the iterator.
+        """
         events = self._events_queue
         while True:
             index = self._index
@@ -1254,6 +1267,7 @@ class XMLPullParser:
                 break
             index += 1
             # Compact the list in a O(1) amortized fashion
+            # As noted above, _elementree.c needs a list, not a deque
             if index * 2 >= len(events):
                 events[:index] = []
                 self._index = 0
@@ -1263,8 +1277,6 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
-        if self._parser is None:
-            self.root = self._root
 
 
 class _IterParseIterator:
@@ -1275,14 +1287,14 @@ class _IterParseIterator:
         self._parser = XMLPullParser(events=events, _parser=parser)
         self._file = source
         self._close_file = close_source
-        self.root = None
+        self.root = self._root = None
 
     def __next__(self):
         while 1:
             for event in self._parser.read_events():
                 return event
             if self._parser._parser is None:
-                self.root = self._parser.root
+                self.root = self._root
                 if self._close_file:
                     self._file.close()
                 raise StopIteration
@@ -1291,7 +1303,7 @@ class _IterParseIterator:
             if data:
                 self._parser.feed(data)
             else:
-                self._parser.close()
+                self._root = self._parser._close_and_return_root()
 
     def __iter__(self):
         return self
