@@ -205,6 +205,10 @@ class Au_read:
                     break
         else:
             self._info = ''
+        try:
+            self._data_pos = file.tell()
+        except (AttributeError, OSError):
+            self._data_pos = None
 
     def getfp(self):
         return self._file
@@ -222,7 +226,7 @@ class Au_read:
         if self._data_size == AUDIO_UNKNOWN_SIZE:
             return AUDIO_UNKNOWN_SIZE
         if self._encoding in _simple_encodings:
-            return self._data_size / self._framesize
+            return self._data_size // self._framesize
         return 0                # XXX--must do some arithmetic here
 
     def getcomptype(self):
@@ -257,7 +261,8 @@ class Au_read:
             if nframes == AUDIO_UNKNOWN_SIZE:
                 data = self._file.read()
             else:
-                data = self._file.read(nframes * self._framesize * self._nchannels)
+                data = self._file.read(nframes * self._framesize)
+            self._soundpos += len(data) // self._framesize
             if self._encoding == AUDIO_FILE_ENCODING_MULAW_8:
                 import audioop
                 data = audioop.ulaw2lin(data, self._sampwidth)
@@ -265,8 +270,10 @@ class Au_read:
         return None             # XXX--not implemented yet
 
     def rewind(self):
+        if self._data_pos is None:
+            raise OSError('cannot seek')
+        self._file.seek(self._data_pos)
         self._soundpos = 0
-        self._file.seek(self._hdr_size)
 
     def tell(self):
         return self._soundpos
@@ -274,7 +281,9 @@ class Au_read:
     def setpos(self, pos):
         if pos < 0 or pos > self.getnframes():
             raise Error('position not in range')
-        self._file.seek(pos * self._framesize + self._hdr_size)
+        if self._data_pos is None:
+            raise OSError('cannot seek')
+        self._file.seek(self._data_pos + pos * self._framesize)
         self._soundpos = pos
 
     def close(self):
@@ -390,10 +399,10 @@ class Au_write:
 
     def writeframesraw(self, data):
         self._ensure_header_written()
-        nframes = len(data) / self._framesize
         if self._comptype == 'ULAW':
             import audioop
             data = audioop.lin2ulaw(data, self._sampwidth)
+        nframes = len(data) // self._framesize
         self._file.write(data)
         self._nframeswritten = self._nframeswritten + nframes
         self._datawritten = self._datawritten + len(data)
@@ -455,6 +464,10 @@ class Au_write:
             length = AUDIO_UNKNOWN_SIZE
         else:
             length = self._nframes * self._framesize
+        try:
+            self._form_length_pos = self._file.tell()
+        except (AttributeError, OSError):
+            self._form_length_pos = None
         _write_u32(self._file, length)
         self._datalength = length
         _write_u32(self._file, encoding)
@@ -464,7 +477,9 @@ class Au_write:
         self._file.write(b'\0'*(header_size - len(self._info) - 24))
 
     def _patchheader(self):
-        self._file.seek(8)
+        if self._form_length_pos is None:
+            raise OSError('cannot seek')
+        self._file.seek(self._form_length_pos)
         _write_u32(self._file, self._datawritten)
         self._datalength = self._datawritten
         self._file.seek(0, 2)
