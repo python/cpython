@@ -1031,15 +1031,22 @@ XMLPullParser Objects
 
    .. method:: close()
 
-      Signal the parser that the data stream is terminated.
+      Signal the parser that the data stream is terminated. Unlike
+      :meth:`XMLParser.close`, this method always returns :const:`None`.
+      Any events not yet retrieved when the parser is closed can still be
+      read with :meth:`read_events`.
 
    .. method:: read_events()
 
       Iterate over the events which have been encountered in the data fed to the
       parser.  This method yields ``(event, elem)`` pairs, where *event* is a
       string representing the type of event (e.g. ``"end"``) and *elem* is the
-      encountered :class:`Element` object.  Events provided in a previous call
-      to :meth:`read_events` will not be yielded again.
+      encountered :class:`Element` object.
+
+      Events provided in a previous call to :meth:`read_events` will not be
+      yielded again. As events are consumed from the internal queue only as
+      they are retrieved from the iterator, multiple readers calling
+      :meth:`read_events` in parallel will have unpredictable results.
 
    .. note::
 
