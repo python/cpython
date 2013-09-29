@@ -158,7 +158,7 @@ class OperaCommandTest(CommandTestMixin, unittest.TestCase):
                    options=['-remote'],
                    arguments=['openURL({},new-window)'.format(URL)])
 
-    def test_open_new(self):
+    def test_open_new_tab(self):
         self._test('open_new_tab',
                    options=['-remote'],
                    arguments=['openURL({},new-page)'.format(URL)])
