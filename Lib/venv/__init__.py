@@ -25,18 +25,11 @@ optional arguments:
   --upgrade             Upgrade the environment directory to use this version
                         of Python, assuming Python has been upgraded in-place.
 """
-import base64
-import io
 import logging
 import os
-import os.path
 import shutil
 import sys
 import sysconfig
-try:
-    import threading
-except ImportError:
-    threading = None
 import types
 
 logger = logging.getLogger(__name__)
