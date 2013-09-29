@@ -34,6 +34,18 @@ class CommandTestCase(unittest.TestCase):
         self.assertRaises(DistutilsOptionError,
                           cmd.ensure_string_list, 'not_string_list2')
 
+        cmd.option1 = 'ok,dok'
+        cmd.ensure_string_list('option1')
+        self.assertEqual(cmd.option1, ['ok', 'dok'])
+
+        cmd.option2 = ['xxx', 'www']
+        cmd.ensure_string_list('option2')
+
+        cmd.option3 = ['ok', 2]
+        self.assertRaises(DistutilsOptionError, cmd.ensure_string_list,
+                          'option3')
+
+
     def test_make_file(self):
 
         cmd = self.cmd
@@ -76,19 +88,6 @@ class CommandTestCase(unittest.TestCase):
 
         cmd.option3 = 1
         self.assertRaises(DistutilsOptionError, cmd.ensure_string, 'option3')
-
-    def test_ensure_string_list(self):
-        cmd = self.cmd
-        cmd.option1 = 'ok,dok'
-        cmd.ensure_string_list('option1')
-        self.assertEqual(cmd.option1, ['ok', 'dok'])
-
-        cmd.option2 = ['xxx', 'www']
-        cmd.ensure_string_list('option2')
-
-        cmd.option3 = ['ok', 2]
-        self.assertRaises(DistutilsOptionError, cmd.ensure_string_list,
-                          'option3')
 
     def test_ensure_filename(self):
         cmd = self.cmd
