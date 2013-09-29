@@ -220,7 +220,8 @@ typedef struct {
     SSL *ssl;
     PySSLContext *ctx; /* weakref to SSL context */
     X509 *peer_cert;
-    int shutdown_seen_zero;
+    char shutdown_seen_zero;
+    char handshake_done;
     enum py_ssl_server_or_client socket_type;
 } PySSLSocket;
 
@@ -485,6 +486,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = sslctx;
+    self->handshake_done = 0;
     Py_INCREF(sslctx);
 
     /* Make sure the SSL error state is initialized */
@@ -590,6 +592,7 @@ static PyObject *PySSL_SSLdo_handshake(PySSLSocket *self)
     PySSL_BEGIN_ALLOW_THREADS
     self->peer_cert = SSL_get_peer_certificate(self->ssl);
     PySSL_END_ALLOW_THREADS
+    self->handshake_done = 1;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -1153,6 +1156,11 @@ PySSL_peercert(PySSLSocket *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "|p:peer_certificate", &binary_mode))
         return NULL;
 
+    if (!self->handshake_done) {
+        PyErr_SetString(PyExc_ValueError,
+                        "handshake not done yet");
+        return NULL;
+    }
     if (!self->peer_cert)
         Py_RETURN_NONE;
 
