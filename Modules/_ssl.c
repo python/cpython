@@ -486,6 +486,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = NULL;
     self->Socket = NULL;
     self->ctx = sslctx;
+    self->shutdown_seen_zero = 0;
     self->handshake_done = 0;
     Py_INCREF(sslctx);
 
