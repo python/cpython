@@ -57,6 +57,8 @@ PC/VS7.1/
     Visual Studio 2003 (7.1)
 PC/VS8.0/
     Visual Studio 2005 (8.0)
+PC/VS9.0/
+    Visual Studio 2008 (9.0)
 
 
 C RUNTIME
