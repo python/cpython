@@ -211,6 +211,10 @@ responses = {
 # maximal amount of data to read at one time in _safe_read
 MAXAMOUNT = 1048576
 
+# maximum amount of headers accepted
+_MAXHEADERS = 100
+
+
 class HTTPMessage(mimetools.Message):
 
     def addheader(self, key, value):
@@ -267,6 +271,8 @@ class HTTPMessage(mimetools.Message):
         elif self.seekable:
             tell = self.fp.tell
         while True:
+            if len(hlist) > _MAXHEADERS:
+                raise HTTPException("got more than %d headers" % _MAXHEADERS)
             if tell:
                 try:
                     startofline = tell()
@@ -1202,6 +1208,7 @@ class BadStatusLine(HTTPException):
     def __init__(self, line):
         self.args = line,
         self.line = line
+
 
 # for backwards compatibility
 error = HTTPException
