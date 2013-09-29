@@ -370,9 +370,6 @@ class Attr(Node):
         except AttributeError:
             return self.nodeName.split(":", 1)[-1]
 
-    def _get_name(self):
-        return self.name
-
     def _get_specified(self):
         return self.specified
 
