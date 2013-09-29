@@ -107,6 +107,8 @@ Documentation
 Build
 -----
 
+- Issue #19130: Correct PCbuild/readme.txt, Python 3.3 and 3.4 require VS 2010.
+
 - Issue #18596: Support the use of address sanity checking in recent versions
   of clang and GCC by appropriately marking known false alarms in the small
   object allocator. Patch contributed by Dhiru Kholia.
