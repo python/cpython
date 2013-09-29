@@ -168,12 +168,6 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--testdir'], 'expected one argument')
 
     def test_findleaks(self):
-        for opt in '-l', '--findleaks':
-            with self.subTest(opt=opt):
-                ns = regrtest._parse_args([opt])
-                self.assertTrue(ns.findleaks)
-
-    def test_findleaks(self):
         for opt in '-L', '--runleaks':
             with self.subTest(opt=opt):
                 ns = regrtest._parse_args([opt])
