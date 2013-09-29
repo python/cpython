@@ -659,7 +659,8 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
    If there is no certificate for the peer on the other end of the connection,
-   returns ``None``.
+   return ``None``.  If the SSL handshake hasn't been done yet, raise
+   :exc:`ValueError`.
 
    If the ``binary_form`` parameter is :const:`False`, and a certificate was
    received from the peer, this method returns a :class:`dict` instance.  If the
@@ -715,6 +716,9 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.2
       The returned dictionary includes additional items such as ``issuer``
       and ``notBefore``.
+
+   .. versionchanged:: 3.4
+      :exc:`ValueError` is raised when the handshake isn't done.
 
 .. method:: SSLSocket.cipher()
 

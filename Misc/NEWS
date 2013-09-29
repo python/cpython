@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19095: SSLSocket.getpeercert() now raises ValueError when the
+  SSL handshake hasn't been done.
+
 - Issue #4366: Fix building extensions on all platforms when --enable-shared
   is used.
 
