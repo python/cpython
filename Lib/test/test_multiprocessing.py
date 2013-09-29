@@ -3123,13 +3123,6 @@ def _ThisSubProcess(q):
     except pyqueue.Empty:
         pass
 
-def _TestProcess(q):
-    queue = multiprocessing.Queue()
-    subProc = multiprocessing.Process(target=_ThisSubProcess, args=(queue,))
-    subProc.daemon = True
-    subProc.start()
-    subProc.join()
-
 def _afunc(x):
     return x*x
 
@@ -3163,6 +3156,12 @@ class _file_like(object):
 class TestStdinBadfiledescriptor(unittest.TestCase):
 
     def test_queue_in_process(self):
+        def _TestProcess(q):
+            queue = multiprocessing.Queue()
+            subProc = multiprocessing.Process(target=_ThisSubProcess, args=(queue,))
+            subProc.daemon = True
+            subProc.start()
+            subProc.join()
         queue = multiprocessing.Queue()
         proc = multiprocessing.Process(target=_TestProcess, args=(queue,))
         proc.start()
