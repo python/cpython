@@ -455,6 +455,7 @@ newPySSLSocket(SSL_CTX *ctx, PySocketSockObject *sock,
     self->peer_cert = NULL;
     self->ssl = NULL;
     self->Socket = NULL;
+    self->shutdown_seen_zero = 0;
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();

@@ -71,6 +71,8 @@ Core and Builtins
 Library
 -------
 
+- Properly initialize all fields of a SSL object after allocation.
+
 - Issue #4366: Fix building extensions on all platforms when --enable-shared
   is used.
 
