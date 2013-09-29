@@ -247,7 +247,6 @@ class DisTests(unittest.TestCase):
             expected = _BIG_LINENO_FORMAT % (i + 2)
             self.do_disassembly_test(func(i), expected)
 
-    def test_big_linenos(self):
         from test import dis_module
         self.do_disassembly_test(dis_module, dis_module_expected_results)
 
@@ -272,9 +271,6 @@ class DisTests(unittest.TestCase):
         except AttributeError:
             pass
         self.assertRaises(RuntimeError, dis.dis, None)
-
-    def test_dis_object(self):
-        self.assertRaises(TypeError, dis.dis, object())
 
     def test_dis_traceback(self):
         try:
