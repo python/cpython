@@ -286,6 +286,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file,
     self->ssl = NULL;
     self->ctx = NULL;
     self->Socket = NULL;
+    self->shutdown_seen_zero = 0;
 
     /* Make sure the SSL error state is initialized */
     (void) ERR_get_state();
