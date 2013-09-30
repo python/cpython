@@ -13,6 +13,23 @@ Core and Builtins
 Library
 -------
 
+- Issue #5845: In site.py, only load readline history from ~/.python_history
+  if no history has been read already.  This avoids double writes to the
+  history file at shutdown.
+
+- Properly initialize all fields of a SSL object after allocation.
+
+- Issue #19095: SSLSocket.getpeercert() now raises ValueError when the
+  SSL handshake hasn't been done.
+
+- Issue #4366: Fix building extensions on all platforms when --enable-shared
+  is used.
+
+Build
+-----
+
+- Issue #19130: Correct PCbuild/readme.txt, Python 3.3 and 3.4 require VS 2010.
+
 
 What's New in Python 3.4.0 Alpha 3?
 ===================================

@@ -3038,15 +3038,15 @@ class TestInitializers(unittest.TestCase):
 # Verifies os.close(sys.stdin.fileno) vs. sys.stdin.close() behavior
 #
 
-def _ThisSubProcess(q):
+def _this_sub_process(q):
     try:
         item = q.get(block=False)
     except pyqueue.Empty:
         pass
 
-def _TestProcess(q):
+def _test_process(q):
     queue = multiprocessing.Queue()
-    subProc = multiprocessing.Process(target=_ThisSubProcess, args=(queue,))
+    subProc = multiprocessing.Process(target=_this_sub_process, args=(queue,))
     subProc.daemon = True
     subProc.start()
     subProc.join()
@@ -3085,7 +3085,7 @@ class TestStdinBadfiledescriptor(unittest.TestCase):
 
     def test_queue_in_process(self):
         queue = multiprocessing.Queue()
-        proc = multiprocessing.Process(target=_TestProcess, args=(queue,))
+        proc = multiprocessing.Process(target=_test_process, args=(queue,))
         proc.start()
         proc.join()
 
