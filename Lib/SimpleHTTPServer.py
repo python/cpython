@@ -150,7 +150,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         path = path.split('?',1)[0]
         path = path.split('#',1)[0]
         # Don't forget explicit trailing slash when normalizing. Issue17324
-        trailing_slash = True if path.rstrip().endswith('/') else False
+        trailing_slash = path.rstrip().endswith('/')
         path = posixpath.normpath(urllib.unquote(path))
         words = path.split('/')
         words = filter(None, words)
