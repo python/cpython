@@ -446,6 +446,9 @@ pointer.
    standard :mod:`zlib` and :mod:`hashlib` modules release the GIL when
    compressing or hashing data.
 
+
+.. _gilstate:
+
 Non-Python created threads
 --------------------------
 
@@ -923,41 +926,43 @@ Asynchronous Notifications
 
 A mechanism is provided to make asynchronous notifications to the main
 interpreter thread.  These notifications take the form of a function
-pointer and a void argument.
+pointer and a void pointer argument.
 
-.. index:: single: setcheckinterval() (in module sys)
-
-Every check interval, when the global interpreter lock is released and
-reacquired, Python will also call any such provided functions.  This can be used
-for example by asynchronous IO handlers.  The notification can be scheduled from
-a worker thread and the actual call than made at the earliest convenience by the
-main thread where it has possession of the global interpreter lock and can
-perform any Python API calls.
 
 .. c:function:: int Py_AddPendingCall(int (*func)(void *), void *arg)
 
    .. index:: single: Py_AddPendingCall()
 
-   Post a notification to the Python main thread.  If successful, *func* will be
-   called with the argument *arg* at the earliest convenience.  *func* will be
-   called having the global interpreter lock held and can thus use the full
-   Python API and can take any action such as setting object attributes to
-   signal IO completion.  It must return 0 on success, or -1 signalling an
-   exception.  The notification function won't be interrupted to perform another
-   asynchronous notification recursively, but it can still be interrupted to
-   switch threads if the global interpreter lock is released, for example, if it
-   calls back into Python code.
+   Schedule a function to be called from the main interpreter thread.  On
+   success, 0 is returned and *func* is queued for being called in the
+   main thread.  On failure, -1 is returned without setting any exception.
 
-   This function returns 0 on success in which case the notification has been
-   scheduled.  Otherwise, for example if the notification buffer is full, it
-   returns -1 without setting any exception.
+   When successfully queued, *func* will be *eventually* called from the
+   main interpreter thread with the argument *arg*.  It will be called
+   asynchronously with respect to normally running Python code, but with
+   both these conditions met:
 
-   This function can be called on any thread, be it a Python thread or some
-   other system thread.  If it is a Python thread, it doesn't matter if it holds
-   the global interpreter lock or not.
+   * on a :term:`bytecode` boundary;
+   * with the main thread holding the :term:`global interpreter lock`
+     (*func* can therefore use the full C API).
+
+   *func* must return 0 on success, or -1 on failure with an exception
+   set.  *func* won't be interrupted to perform another asynchronous
+   notification recursively, but it can still be interrupted to switch
+   threads if the global interpreter lock is released.
+
+   This function doesn't need a current thread state to run, and it doesn't
+   need the global interpreter lock.
+
+   .. warning::
+      This is a low-level function, only useful for very special cases.
+      There is no guarantee that *func* will be called as quick as
+      possible.  If the main thread is busy executing a system call,
+      *func* won't be called before the system call returns.  This
+      function is generally **not** suitable for calling Python code from
+      arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
 
    .. versionadded:: 3.1
-
 
 .. _profiling:
 
