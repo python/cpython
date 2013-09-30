@@ -32,6 +32,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16040: CVE-2013-1752: nntplib: Limit maximum line lengths to 2048 to
+  prevent readline() calls from consuming too much memory.  Patch by Jyrki
+  Pulliainen.
+
 - Issue #12641: Avoid passing "-mno-cygwin" to the mingw32 compiler, except
   when necessary.  Patch by Oscar Benjamin.
 
