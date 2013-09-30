@@ -1,13 +1,13 @@
 Building Python using VC++ 10.0
-------------------------------
+-------------------------------
 
 This directory is used to build Python for Win32 and x64 platforms, e.g. 
 Windows 2000, XP, Vista and Windows Server 2008.  In order to build 32-bit
-debug and release executables, Microsoft Visual C++ 2008 Express Edition is
+debug and release executables, Microsoft Visual C++ 2010 Express Edition is
 required at the very least.  In order to build 64-bit debug and release
-executables, Visual Studio 2008 Standard Edition is required at the very
+executables, Visual Studio 2010 Standard Edition is required at the very
 least.  In order to build all of the above, as well as generate release builds
-that make use of Profile Guided Optimisation (PG0), Visual Studio 2008
+that make use of Profile Guided Optimisation (PG0), Visual Studio 2010
 Professional Edition is required at the very least.  The official Python
 releases are built with this version of Visual Studio.
 
@@ -57,6 +57,8 @@ PC/VS7.1/
     Visual Studio 2003 (7.1)
 PC/VS8.0/
     Visual Studio 2005 (8.0)
+PC/VS9.0/
+    Visual Studio 2008 (9.0)
 
 
 C RUNTIME

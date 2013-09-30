@@ -1588,8 +1588,14 @@ else:
             context.load_cert_chain(CERTFILE)
             server = ThreadedEchoServer(context=context, chatty=False)
             with server:
-                s = context.wrap_socket(socket.socket())
+                s = context.wrap_socket(socket.socket(),
+                                        do_handshake_on_connect=False)
                 s.connect((HOST, server.port))
+                # getpeercert() raise ValueError while the handshake isn't
+                # done.
+                with self.assertRaises(ValueError):
+                    s.getpeercert()
+                s.do_handshake()
                 cert = s.getpeercert()
                 self.assertTrue(cert, "Can't get peer certificate.")
                 cipher = s.cipher()

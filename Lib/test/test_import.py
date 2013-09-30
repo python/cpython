@@ -252,17 +252,6 @@ class ImportTests(unittest.TestCase):
             if TESTFN in sys.modules:
                 del sys.modules[TESTFN]
 
-    def test_import_name_binding(self):
-        # import x.y.z binds x in the current namespace.
-        import test as x
-        import test.support
-        self.assertIs(x, test, x.__name__)
-        self.assertTrue(hasattr(test.support, "__file__"))
-
-        # import x.y.z as w binds z as w.
-        import test.support as y
-        self.assertIs(y, test.support, y.__name__)
-
     def test_import_by_filename(self):
         path = os.path.abspath(TESTFN)
         encoding = sys.getfilesystemencoding()
