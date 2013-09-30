@@ -13,6 +13,7 @@ import importlib
 from os.path import normcase
 
 from test.support import run_unittest, TESTFN, DirsOnSysPath
+from test.support import multiprocessing as has_multiprocessing
 from test.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
@@ -2407,6 +2408,8 @@ class TestMain(unittest.TestCase):
         self.assertEqual(lines[:-1], inspect.getsource(module).splitlines())
         self.assertEqual(err, b'')
 
+    @unittest.skipIf(not has_multiprocessing,
+            'multiprocessing required to test __qualname__ for source files')
     def test_qualname_source(self):
         module = importlib.import_module('concurrent.futures')
         member = getattr(module, 'ThreadPoolExecutor')
