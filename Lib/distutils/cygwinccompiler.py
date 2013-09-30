@@ -48,13 +48,14 @@ cygwin in no-cygwin mode).
 import os
 import sys
 import copy
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 import re
 
 from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
-from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
+from distutils.errors import (DistutilsExecError, CCompilerError,
+        CompileError, UnknownFileError)
 from distutils import log
 from distutils.version import LooseVersion
 from distutils.spawn import find_executable
@@ -294,11 +295,15 @@ class Mingw32CCompiler(CygwinCCompiler):
         else:
             entry_point = ''
 
-        self.set_executables(compiler='gcc -mno-cygwin -O -Wall',
-                             compiler_so='gcc -mno-cygwin -mdll -O -Wall',
-                             compiler_cxx='g++ -mno-cygwin -O -Wall',
-                             linker_exe='gcc -mno-cygwin',
-                             linker_so='%s -mno-cygwin %s %s'
+        if is_cygwingcc():
+            raise CCompilerError(
+                'Cygwin gcc cannot be used with --compiler=mingw32')
+
+        self.set_executables(compiler='gcc -O -Wall',
+                             compiler_so='gcc -mdll -O -Wall',
+                             compiler_cxx='g++ -O -Wall',
+                             linker_exe='gcc',
+                             linker_so='%s %s %s'
                                         % (self.linker_dll, shared_option,
                                            entry_point))
         # Maybe we should also append -mthreads, but then the finished
@@ -393,3 +398,8 @@ def get_versions():
     """
     commands = ['gcc -dumpversion', 'ld -v', 'dllwrap --version']
     return tuple([_find_exe_version(cmd) for cmd in commands])
+
+def is_cygwingcc():
+    '''Try to determine if the gcc that would be used is from cygwin.'''
+    out_string = check_output(['gcc', '-dumpmachine'])
+    return out_string.strip().endswith(b'cygwin')
