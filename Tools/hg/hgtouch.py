@@ -10,6 +10,7 @@ In addition to the dependency syntax, #-comments are supported.
 from __future__ import with_statement
 import errno
 import os
+import time
 
 def parse_config(repo):
     try:
@@ -36,13 +37,17 @@ def parse_config(repo):
     return result
 
 def check_rule(ui, repo, modified, output, inputs):
+    """Verify that the output is newer than any of the inputs.
+    Return (status, stamp), where status is True if the update succeeded,
+    and stamp is the newest time stamp assigned  to any file (might be in
+    the future)."""
     f_output = repo.wjoin(output)
     try:
         o_time = os.stat(f_output).st_mtime
     except OSError:
         ui.warn("Generated file %s does not exist\n" % output)
-        return False
-    need_touch = False
+        return False, 0
+    youngest = 0   # youngest dependency
     backdate = None
     backdate_source = None
     for i in inputs:
@@ -51,31 +56,34 @@ def check_rule(ui, repo, modified, output, inputs):
             i_time = os.stat(f_i).st_mtime
         except OSError:
             ui.warn(".hgtouch input file %s does not exist\n" % i)
-            return False
+            return False, 0
         if i in modified:
             # input is modified. Need to backdate at least to i_time
             if backdate is None or backdate > i_time:
                 backdate = i_time
                 backdate_source = i
             continue
-        if o_time <= i_time:
-            # generated file is older, touch
-            need_touch = True
+        youngest = max(i_time, youngest)
     if backdate is not None:
         ui.warn("Input %s for file %s locally modified\n" % (backdate_source, output))
         # set to 1s before oldest modified input
         backdate -= 1
         os.utime(f_output, (backdate, backdate))
-        return False
-    if need_touch:
+        return False, 0
+    if youngest >= o_time:
         ui.note("Touching %s\n" % output)
-        os.utime(f_output, None)
-    return True
+        youngest += 1
+        os.utime(f_output, (youngest, youngest))
+        return True, youngest
+    else:
+        # Nothing to update
+        return True, 0
 
 def do_touch(ui, repo):
     modified = repo.status()[0]
     dependencies = parse_config(repo)
     success = True
+    tstamp = 0       # newest time stamp assigned
     # try processing all rules in topological order
     hold_back = {}
     while dependencies:
@@ -85,10 +93,17 @@ def do_touch(ui, repo):
             if i in dependencies:
                 hold_back[output] = inputs
                 continue
-        success = check_rule(ui, repo, modified, output, inputs)
+        _success, _tstamp = check_rule(ui, repo, modified, output, inputs)
+        sucess = success and _success
+        tstamp = max(tstamp, _tstamp)
         # put back held back rules
         dependencies.update(hold_back)
         hold_back = {}
+    now = time.time()
+    if tstamp > now:
+        # wait until real time has passed the newest time stamp, to
+        # avoid having files dated in the future
+        time.sleep(tstamp-now)
     if hold_back:
         ui.warn("Cyclic dependency involving %s\n" % (' '.join(hold_back.keys())))
         return False
