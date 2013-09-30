@@ -239,14 +239,14 @@ class DebuggingServerTests(unittest.TestCase):
         self.assertEqual(smtp.rset(), expected)
         smtp.quit()
 
-    def testNotImplemented(self):
+    def testELHO(self):
         # EHLO isn't implemented in DebuggingServer
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
-        expected = (502, b'Error: command "EHLO" not implemented')
+        expected = (250, b'\nSIZE 33554432\nHELP')
         self.assertEqual(smtp.ehlo(), expected)
         smtp.quit()
 
-    def testNotImplemented(self):
+    def testEXPNNotImplemented(self):
         # EXPN isn't implemented in DebuggingServer
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=3)
         expected = (502, b'EXPN not implemented')

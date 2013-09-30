@@ -167,19 +167,13 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(ns.testdir, os.path.join(support.SAVEDCWD, 'foo'))
         self.checkError(['--testdir'], 'expected one argument')
 
-    def test_findleaks(self):
-        for opt in '-l', '--findleaks':
-            with self.subTest(opt=opt):
-                ns = regrtest._parse_args([opt])
-                self.assertTrue(ns.findleaks)
-
-    def test_findleaks(self):
+    def test_runleaks(self):
         for opt in '-L', '--runleaks':
             with self.subTest(opt=opt):
                 ns = regrtest._parse_args([opt])
                 self.assertTrue(ns.runleaks)
 
-    def test_findleaks(self):
+    def test_huntrleaks(self):
         for opt in '-R', '--huntrleaks':
             with self.subTest(opt=opt):
                 ns = regrtest._parse_args([opt, ':'])
@@ -207,7 +201,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt, '2', '-l'], "don't go together")
                 self.checkError([opt, '2', '-M', '4G'], "don't go together")
 
-    def test_findleaks(self):
+    def test_coverage(self):
         for opt in '-T', '--coverage':
             with self.subTest(opt=opt):
                 ns = regrtest._parse_args([opt])
