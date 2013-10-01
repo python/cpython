@@ -70,7 +70,7 @@ or on combining URL components into a URL string.
        ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
                   params='', query='', fragment='')
        >>> urlparse('www.cwi.nl/%7Eguido/Python.html')
-       ParseResult(scheme='', netloc='', path='www.cwi.nl:80/%7Eguido/Python.html',
+       ParseResult(scheme='', netloc='', path='www.cwi.nl/%7Eguido/Python.html',
                   params='', query='', fragment='')
        >>> urlparse('help/Python.html')
        ParseResult(scheme='', netloc='', path='help/Python.html', params='',
