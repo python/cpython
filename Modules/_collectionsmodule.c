@@ -1763,10 +1763,16 @@ Count elements in the iterable, updating the mappping");
 static PyObject *
 _count_elements(PyObject *self, PyObject *args)
 {
+    _Py_IDENTIFIER(__getitem__);
+    _Py_IDENTIFIER(__setitem__);
     PyObject *it, *iterable, *mapping, *oldval;
     PyObject *newval = NULL;
     PyObject *key = NULL;
     PyObject *one = NULL;
+    PyObject *mapping_getitem;
+    PyObject *mapping_setitem;
+    PyObject *dict_getitem;
+    PyObject *dict_setitem;
 
     if (!PyArg_UnpackTuple(args, "_count_elements", 2, 2, &mapping, &iterable))
         return NULL;
@@ -1781,7 +1787,15 @@ _count_elements(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (PyDict_CheckExact(mapping)) {
+    mapping_getitem = _PyType_LookupId(Py_TYPE(mapping), &PyId___getitem__);
+    dict_getitem = _PyType_LookupId(&PyDict_Type, &PyId___getitem__);
+    mapping_setitem = _PyType_LookupId(Py_TYPE(mapping), &PyId___setitem__);
+    dict_setitem = _PyType_LookupId(&PyDict_Type, &PyId___setitem__);
+
+    if (mapping_getitem != NULL &&
+        mapping_getitem == dict_getitem &&
+        mapping_setitem != NULL &&
+        mapping_setitem == dict_setitem) {
         while (1) {
             key = PyIter_Next(it);
             if (key == NULL)
