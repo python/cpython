@@ -61,7 +61,7 @@ BEGIN
             VALUE "FileDescription", "Python Core\0"
             VALUE "FileVersion", PYTHON_VERSION
             VALUE "InternalName", "Python DLL\0"
-            VALUE "LegalCopyright", "Copyright © 2001-2012 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.\0"
+            VALUE "LegalCopyright", "Copyright © 2001-2013 Python Software Foundation. Copyright © 2000 BeOpen.com. Copyright © 1995-2001 CNRI. Copyright © 1991-1995 SMC.\0"
             VALUE "OriginalFilename", PYTHON_DLL_NAME "\0"
             VALUE "ProductName", "Python\0"
             VALUE "ProductVersion", PYTHON_VERSION
