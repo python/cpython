@@ -573,6 +573,43 @@ class TestExitStack(unittest.TestCase):
         self.assertIsInstance(inner_exc, ValueError)
         self.assertIsInstance(inner_exc.__context__, ZeroDivisionError)
 
+    def test_exit_exception_non_suppressing(self):
+        # http://bugs.python.org/issue19092
+        def raise_exc(exc):
+            raise exc
+
+        def suppress_exc(*exc_details):
+            return True
+
+        try:
+            with ExitStack() as stack:
+                stack.callback(lambda: None)
+                stack.callback(raise_exc, IndexError)
+        except Exception as exc:
+            self.assertIsInstance(exc, IndexError)
+        else:
+            self.fail("Expected IndexError, but no exception was raised")
+
+        try:
+            with ExitStack() as stack:
+                stack.callback(raise_exc, KeyError)
+                stack.push(suppress_exc)
+                stack.callback(raise_exc, IndexError)
+        except Exception as exc:
+            self.assertIsInstance(exc, KeyError)
+        else:
+            self.fail("Expected KeyError, but no exception was raised")
+
+    def test_body_exception_suppress(self):
+        def suppress_exc(*exc_details):
+            return True
+        try:
+            with ExitStack() as stack:
+                stack.push(suppress_exc)
+                1/0
+        except IndexError as exc:
+            self.fail("Expected no exception, got IndexError")
+
     def test_exit_exception_chaining_suppress(self):
         with ExitStack() as stack:
             stack.push(lambda *exc: True)
