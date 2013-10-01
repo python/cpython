@@ -134,15 +134,34 @@ The :mod:`functools` module defines the following functions:
 
        @total_ordering
        class Student:
+           def _is_valid_operand(self, other):
+               return (hasattr(other, "lastname") and
+                       hasattr(other, "firstname"))
            def __eq__(self, other):
+               if not self._is_valid_operand(other):
+                   return NotImplemented
                return ((self.lastname.lower(), self.firstname.lower()) ==
                        (other.lastname.lower(), other.firstname.lower()))
            def __lt__(self, other):
+               if not self._is_valid_operand(other):
+                   return NotImplemented
                return ((self.lastname.lower(), self.firstname.lower()) <
                        (other.lastname.lower(), other.firstname.lower()))
 
+   .. note::
+
+      While this decorator makes it easy to create well behaved totally
+      ordered types, it *does* come at the cost of slower execution and
+      more complex stack traces for the derived comparison methods. If
+      performance benchmarking indicates this is a bottleneck for a given
+      application, implementing all six rich comparison methods instead is
+      likely to provide an easy speed boost.
+
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.4
+      Returning NotImplemented from the underlying comparison function for
+      unrecognised types is now supported.
 
 .. function:: partial(func, *args, **keywords)
 
