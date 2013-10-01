@@ -74,6 +74,9 @@ Library
 - Issue #12641: Avoid passing "-mno-cygwin" to the mingw32 compiler, except
   when necessary.  Patch by Oscar Benjamin.
 
+- Issue #18594: The fast path for collections.Counter() was never taken
+  due to an over-restrictive type check.
+
 - Properly initialize all fields of a SSL object after allocation.
 
 - Issue #4366: Fix building extensions on all platforms when --enable-shared

@@ -50,9 +50,6 @@ _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
 
 static PyObject *
-_PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name);
-
-static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 unsigned int
@@ -2589,7 +2586,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
     return res;
 }
 
-static PyObject *
+PyObject *
 _PyType_LookupId(PyTypeObject *type, struct _Py_Identifier *name)
 {
     PyObject *oname;
