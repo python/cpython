@@ -568,6 +568,18 @@ frozenset2({0,
             formatted = pprint.pformat(special, width=width)
             self.assertEqual(eval("(" + formatted + ")"), special)
 
+    def test_compact(self):
+        o = ([list(range(i * i)) for i in range(5)] +
+             [list(range(i)) for i in range(6)])
+        expected = """\
+[[], [0], [0, 1, 2, 3],
+ [0, 1, 2, 3, 4, 5, 6, 7, 8],
+ [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+  14, 15],
+ [], [0], [0, 1], [0, 1, 2], [0, 1, 2, 3],
+ [0, 1, 2, 3, 4]]"""
+        self.assertEqual(pprint.pformat(o, width=48, compact=True), expected)
+
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
