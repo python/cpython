@@ -187,6 +187,9 @@ creation according to their needs, the :class:`EnvBuilder` class.
         * ``__VENV_NAME__`` is replaced with the environment name (final path
           segment of environment directory).
 
+        * ``__VENV_PROMPT__`` is replaced with the prompt (the environment
+          name surrounded by parentheses and with a following space)
+
         * ``__VENV_BIN_NAME__`` is replaced with the name of the bin directory
           (either ``bin`` or ``Scripts``).
 
