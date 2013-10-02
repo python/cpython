@@ -71,6 +71,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19137: The pprint module now correctly formats instances of set and
+  frozenset subclasses.
+
 - Issue #19092: contextlib.ExitStack now correctly reraises exceptions
   from the __exit__ callbacks of inner context managers (Patch by Hrvoje
   Nikšić)
