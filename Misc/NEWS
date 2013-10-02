@@ -10,6 +10,10 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #19078: memoryview now correctly supports the reversed builtin
+  (Patch by Claudiu Popa)
+
+
 Library
 -------
 
