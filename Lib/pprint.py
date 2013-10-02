@@ -96,8 +96,8 @@ class _safe_key:
             rv = NotImplemented
 
         if rv is NotImplemented:
-            rv = (str(type(self.obj)), id(self.obj)) < \
-                 (str(type(other.obj)), id(other.obj))
+            rv = (str(_type(self.obj)), _id(self.obj)) < \
+                 (str(_type(other.obj)), _id(other.obj))
         return rv
 
 def _safe_tuple(t):
@@ -225,7 +225,7 @@ class PrettyPrinter:
                         write(typ.__name__)
                         write('({')
                         endchar = '})'
-                        indent += len(typ.__name__) + 1
+                        indent += _len(typ.__name__) + 1
                     object = sorted(object, key=_safe_key)
                 if self._indent_per_level > 1:
                     write((self._indent_per_level - 1) * ' ')
@@ -240,7 +240,7 @@ class PrettyPrinter:
                 write(endchar)
                 return
 
-            if issubclass(typ, str) and len(object) > 0 and r is str.__repr__:
+            if issubclass(typ, str) and _len(object) > 0 and r is str.__repr__:
                 def _str_parts(s):
                     """
                     Return a list of string literals comprising the repr()
@@ -255,10 +255,10 @@ class PrettyPrinter:
                             # A list of alternating (non-space, space) strings
                             parts = re.split(r'(\s+)', line) + ['']
                             current = ''
-                            for i in range(0, len(parts), 2):
+                            for i in range(0, _len(parts), 2):
                                 part = parts[i] + parts[i+1]
                                 candidate = current + part
-                                if len(repr(candidate)) > max_width:
+                                if _len(repr(candidate)) > max_width:
                                     if current:
                                         yield repr(current)
                                     current = part
