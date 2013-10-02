@@ -314,6 +314,13 @@ POP3 server.
 (Contributed by Lorenzo Catucci in :issue:`4473`.)
 
 
+pprint
+------
+
+The :mod::`pprint` module now supports *compact* mode for formatting long
+sequences (:issue:`19132`).
+
+
 smtplib
 -------
 
