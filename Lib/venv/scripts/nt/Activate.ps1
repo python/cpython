@@ -34,7 +34,7 @@ $env:VIRTUAL_ENV="__VENV_DIR__"
 function global:_OLD_VIRTUAL_PROMPT {""}
 copy-item function:prompt function:_OLD_VIRTUAL_PROMPT
 function global:prompt {
-    Write-Host -NoNewline -ForegroundColor Green '__VENV_NAME__'
+    Write-Host -NoNewline -ForegroundColor Green '__VENV_PROMPT__'
     _OLD_VIRTUAL_PROMPT
 }
 
