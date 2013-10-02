@@ -299,7 +299,7 @@ PyDoc_STRVAR(flock_doc,
 "flock(fd, operation)\n\
 \n\
 Perform the lock operation op on file descriptor fd.  See the Unix \n\
-manual page for flock(3) for details.  (On some systems, this function is\n\
+manual page for flock(2) for details.  (On some systems, this function is\n\
 emulated using fcntl().)");
 
 
