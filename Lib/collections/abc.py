@@ -643,6 +643,7 @@ class Sequence(Sized, Iterable, Container):
 Sequence.register(tuple)
 Sequence.register(str)
 Sequence.register(range)
+Sequence.register(memoryview)
 
 
 class ByteString(Sequence):
