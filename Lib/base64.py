@@ -35,11 +35,13 @@ def _bytes_from_decode_data(s):
             return s.encode('ascii')
         except UnicodeEncodeError:
             raise ValueError('string argument should contain only ASCII characters')
-    elif isinstance(s, bytes_types):
+    if isinstance(s, bytes_types):
         return s
-    else:
-        raise TypeError("argument should be bytes or ASCII string, not %s" % s.__class__.__name__)
-
+    try:
+        return memoryview(s).tobytes()
+    except TypeError:
+        raise TypeError("argument should be a bytes-like object or ASCII "
+                        "string, not %r" % s.__class__.__name__) from None
 
 
 # Base64 encoding/decoding uses binascii
@@ -54,14 +56,9 @@ def b64encode(s, altchars=None):
 
     The encoded byte string is returned.
     """
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     # Strip off the trailing newline
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
-        if not isinstance(altchars, bytes_types):
-            raise TypeError("expected bytes, not %s"
-                            % altchars.__class__.__name__)
         assert len(altchars) == 2, repr(altchars)
         return encoded.translate(bytes.maketrans(b'+/', altchars))
     return encoded
@@ -149,7 +146,7 @@ def b32encode(s):
     s is the byte string to encode.  The encoded byte string is returned.
     """
     if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
+        s = memoryview(s).tobytes()
     leftover = len(s) % 5
     # Pad the last quantum with zero bits if necessary
     if leftover:
@@ -250,8 +247,6 @@ def b16encode(s):
 
     s is the byte string to encode.  The encoded byte string is returned.
     """
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
     return binascii.hexlify(s).upper()
 
 
@@ -306,12 +301,26 @@ def decode(input, output):
         s = binascii.a2b_base64(line)
         output.write(s)
 
+def _input_type_check(s):
+    try:
+        m = memoryview(s)
+    except TypeError as err:
+        msg = "expected bytes-like object, not %s" % s.__class__.__name__
+        raise TypeError(msg) from err
+    if m.format not in ('c', 'b', 'B'):
+        msg = ("expected single byte elements, not %r from %s" %
+                                          (m.format, s.__class__.__name__))
+        raise TypeError(msg)
+    if m.ndim != 1:
+        msg = ("expected 1-D data, not %d-D data from %s" %
+                                          (m.ndim, s.__class__.__name__))
+        raise TypeError(msg)
+
 
 def encodebytes(s):
     """Encode a bytestring into a bytestring containing multiple lines
     of base-64 data."""
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
+    _input_type_check(s)
     pieces = []
     for i in range(0, len(s), MAXBINSIZE):
         chunk = s[i : i + MAXBINSIZE]
@@ -328,8 +337,7 @@ def encodestring(s):
 
 def decodebytes(s):
     """Decode a bytestring of base-64 data into a bytestring."""
-    if not isinstance(s, bytes_types):
-        raise TypeError("expected bytes, not %s" % s.__class__.__name__)
+    _input_type_check(s)
     return binascii.a2b_base64(s)
 
 def decodestring(s):

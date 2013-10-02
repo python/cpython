@@ -2285,6 +2285,24 @@ class TransformCodecTest(unittest.TestCase):
             sout = reader.readline()
             self.assertEqual(sout, b"\x80")
 
+    def test_buffer_api_usage(self):
+        # We check all the transform codecs accept memoryview input
+        # for encoding and decoding
+        # and also that they roundtrip correctly
+        original = b"12345\x80"
+        for encoding in bytes_transform_encodings:
+            data = original
+            view = memoryview(data)
+            data = codecs.encode(data, encoding)
+            view_encoded = codecs.encode(view, encoding)
+            self.assertEqual(view_encoded, data)
+            view = memoryview(data)
+            data = codecs.decode(data, encoding)
+            self.assertEqual(data, original)
+            view_decoded = codecs.decode(view, encoding)
+            self.assertEqual(view_decoded, data)
+
+
 
 @unittest.skipUnless(sys.platform == 'win32',
                      'code pages are specific to Windows')

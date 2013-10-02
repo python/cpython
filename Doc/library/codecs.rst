@@ -1208,36 +1208,41 @@ mappings.
 
 .. tabularcolumns:: |l|L|L|
 
-+----------------------+---------------------------+------------------------------+
-| Codec                | Purpose                   | Encoder/decoder              |
-+======================+===========================+==============================+
-| base64_codec [#b64]_ | Convert operand to MIME   | :meth:`base64.b64encode`,    |
-|                      | base64 (the result always | :meth:`base64.b64decode`     |
-|                      | includes a trailing       |                              |
-|                      | ``'\n'``)                 |                              |
-+----------------------+---------------------------+------------------------------+
-| bz2_codec            | Compress the operand      | :meth:`bz2.compress`,        |
-|                      | using bz2                 | :meth:`bz2.decompress`       |
-+----------------------+---------------------------+------------------------------+
-| hex_codec            | Convert operand to        | :meth:`base64.b16encode`,    |
-|                      | hexadecimal               | :meth:`base64.b16decode`     |
-|                      | representation, with two  |                              |
-|                      | digits per byte           |                              |
-+----------------------+---------------------------+------------------------------+
-| quopri_codec         | Convert operand to MIME   | :meth:`quopri.encodestring`, |
-|                      | quoted printable          | :meth:`quopri.decodestring`  |
-+----------------------+---------------------------+------------------------------+
-| uu_codec             | Convert the operand using | :meth:`uu.encode`,           |
-|                      | uuencode                  | :meth:`uu.decode`            |
-+----------------------+---------------------------+------------------------------+
-| zlib_codec           | Compress the operand      | :meth:`zlib.compress`,       |
-|                      | using gzip                | :meth:`zlib.decompress`      |
-+----------------------+---------------------------+------------------------------+
++----------------------+------------------------------+------------------------------+
+| Codec                | Purpose                      | Encoder / decoder            |
++======================+==============================+==============================+
+| base64_codec [#b64]_ | Convert operand to MIME      | :meth:`base64.b64encode` /   |
+|                      | base64 (the result always    | :meth:`base64.b64decode`     |
+|                      | includes a trailing          |                              |
+|                      | ``'\n'``)                    |                              |
+|                      |                              |                              |
+|                      | .. versionchanged:: 3.4      |                              |
+|                      |    accepts any               |                              |
+|                      |    :term:`bytes-like object` |                              |
+|                      |    as input for encoding and |                              |
+|                      |    decoding                  |                              |
++----------------------+------------------------------+------------------------------+
+| bz2_codec            | Compress the operand         | :meth:`bz2.compress` /       |
+|                      | using bz2                    | :meth:`bz2.decompress`       |
++----------------------+------------------------------+------------------------------+
+| hex_codec            | Convert operand to           | :meth:`base64.b16encode` /   |
+|                      | hexadecimal                  | :meth:`base64.b16decode`     |
+|                      | representation, with two     |                              |
+|                      | digits per byte              |                              |
++----------------------+------------------------------+------------------------------+
+| quopri_codec         | Convert operand to MIME      | :meth:`quopri.encodestring` /|
+|                      | quoted printable             | :meth:`quopri.decodestring`  |
++----------------------+------------------------------+------------------------------+
+| uu_codec             | Convert the operand using    | :meth:`uu.encode` /          |
+|                      | uuencode                     | :meth:`uu.decode`            |
++----------------------+------------------------------+------------------------------+
+| zlib_codec           | Compress the operand         | :meth:`zlib.compress` /      |
+|                      | using gzip                   | :meth:`zlib.decompress`      |
++----------------------+------------------------------+------------------------------+
 
-.. [#b64] Rather than accepting any :term:`bytes-like object`,
-   ``'base64_codec'`` accepts only :class:`bytes` and :class:`bytearray` for
-   encoding and only :class:`bytes`, :class:`bytearray`, and ASCII-only
-   instances of :class:`str` for decoding
+.. [#b64] In addition to :term:`bytes-like objects <bytes-like object>`,
+   ``'base64_codec'`` also accepts ASCII-only instances of :class:`str` for
+   decoding
 
 
 The following codecs provide :class:`str` to :class:`str` mappings.

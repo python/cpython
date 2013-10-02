@@ -27,6 +27,10 @@ byte strings, but only using the Base64 standard alphabet.
    ASCII-only Unicode strings are now accepted by the decoding functions of
    the modern interface.
 
+.. versionchanged:: 3.4
+   Any :term:`bytes-like object`\ s are now accepted by all
+   encoding and decoding functions in this module.
+
 The modern interface provides:
 
 .. function:: b64encode(s, altchars=None)
