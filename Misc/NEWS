@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19137: The pprint module now correctly formats empty set and frozenset
+  and instances of set and frozenset subclasses.
+
 - Issue #16040: CVE-2013-1752: nntplib: Limit maximum line lengths to 2048 to
   prevent readline() calls from consuming too much memory.  Patch by Jyrki
   Pulliainen.
