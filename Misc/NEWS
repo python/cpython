@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19137: The pprint module now correctly formats instances of set and
+  frozenset subclasses.
+
 - Issue #10042: functools.total_ordering now correctly handles
   NotImplemented being returned by the underlying comparison function (Patch
   by Katie Miller)
