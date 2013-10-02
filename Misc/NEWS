@@ -79,7 +79,8 @@ Library
   when necessary.  Patch by Oscar Benjamin.
 
 - Issue #18594: The fast path for collections.Counter() was never taken
-  due to an over-restrictive type check.
+  due to an over-restrictive type check.  And the fallback path did
+  not implement the same algorithm as the pure python code.
 
 - Properly initialize all fields of a SSL object after allocation.
 
