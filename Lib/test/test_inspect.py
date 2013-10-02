@@ -2412,7 +2412,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(err, b'')
 
     @unittest.skipIf(ThreadPoolExecutor is None,
-            'multiprocessing required to test __qualname__ for source files')
+            'threads required to test __qualname__ for source files')
     def test_qualname_source(self):
         rc, out, err = assert_python_ok('-m', 'inspect',
                                      'concurrent.futures:ThreadPoolExecutor')
