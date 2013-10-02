@@ -49,6 +49,9 @@ The :mod:`pprint` module defines one class:
    will be formatted on a separate line.  If *compact* is true, as many items
    as will fit within the *width* will be formatted on each output line.
 
+   .. versionchanged:: 3.4
+      Added the *compact* parameter.
+
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
       >>> stuff.insert(0, stuff[:])
@@ -81,6 +84,9 @@ The :mod:`pprint` module also provides several shortcut functions:
    *width*, *depth* and *compact* will be passed to the :class:`PrettyPrinter`
    constructor as formatting parameters.
 
+   .. versionchanged:: 3.4
+      Added the *compact* parameter.
+
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
                      compact=False)
@@ -91,6 +97,9 @@ The :mod:`pprint` module also provides several shortcut functions:
    inspecting values (you can even reassign ``print = pprint.pprint`` for use
    within a scope).  *indent*, *width*, *depth* and *compact* will be passed
    to the :class:`PrettyPrinter` constructor as formatting parameters.
+
+   .. versionchanged:: 3.4
+      Added the *compact* parameter.
 
       >>> import pprint
       >>> stuff = ['spam', 'eggs', 'lumberjack', 'knights', 'ni']
