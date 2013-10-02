@@ -782,6 +782,8 @@ class TestCollectionABCs(ABCTestCase):
             self.assertTrue(issubclass(sample, Sequence))
         self.assertIsInstance(range(10), Sequence)
         self.assertTrue(issubclass(range, Sequence))
+        self.assertIsInstance(memoryview(b""), Sequence)
+        self.assertTrue(issubclass(memoryview, Sequence))
         self.assertTrue(issubclass(str, Sequence))
         self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
             '__getitem__')

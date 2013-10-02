@@ -10,6 +10,9 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #18690: memoryview is now automatically registered with
+  collections.abc.Sequence
+
 - Issue #19078: memoryview now correctly supports the reversed builtin
   (Patch by Claudiu Popa)
 
