@@ -893,9 +893,6 @@ buildbottest:	all platform
 		fi
 		$(TESTRUNNER) -j 1 -u all -W --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
-# Like touch, but also working on 2.7 (where the target is a no-op)
-buildbottouch:	touch
-
 QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io test_lib2to3 \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing test_mailbox test_socket test_poll \
