@@ -168,6 +168,8 @@ class ExecutionLoader(InspectLoader):
         set to."""
         raise NotImplementedError
 
+_register(machinery.ExtensionFileLoader)
+
 
 class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
 
