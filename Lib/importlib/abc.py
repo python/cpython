@@ -237,6 +237,8 @@ class ExecutionLoader(InspectLoader):
         super().init_module_attrs(module)
         _bootstrap._init_file_attrs(self, module)
 
+_register(machinery.ExtensionFileLoader)
+
 
 class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
 

@@ -836,7 +836,7 @@ find and load modules.
 
 .. class:: ExtensionFileLoader(fullname, path)
 
-   A concrete implementation of :class:`importlib.abc.InspectLoader` for
+   A concrete implementation of :class:`importlib.abc.ExecutionLoader` for
    extension modules.
 
    The *fullname* argument specifies the name of the module the loader is to
@@ -869,6 +869,10 @@ find and load modules.
    .. method:: get_source(fullname)
 
       Returns ``None`` as extension modules do not have source code.
+
+   .. method:: get_filename(fullname)
+
+      Returns :attr:`path`.
 
 
 :mod:`importlib.util` -- Utility code for importers
