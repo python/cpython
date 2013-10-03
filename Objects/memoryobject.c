@@ -1330,7 +1330,7 @@ memory_cast(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
             "memoryview: casts are restricted to C-contiguous views");
         return NULL;
     }
-    if (zero_in_shape(self)) {
+    if ((shape || self->view.ndim != 1) && zero_in_shape(self)) {
         PyErr_SetString(PyExc_TypeError,
             "memoryview: cannot cast view with zeros in shape or strides");
         return NULL;

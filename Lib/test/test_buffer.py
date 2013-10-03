@@ -2432,15 +2432,22 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, get_contiguous, nd[::-1], PyBUF_READ, 'C')
 
     def test_memoryview_cast_zero_shape(self):
-        # Casts are undefined if shape contains zeros. These arrays are
-        # regarded as C-contiguous by Numpy and PyBuffer_GetContiguous(),
-        # so they are not caught by the test for C-contiguity in memory_cast().
+        # Casts are undefined if buffer is multidimensional and shape
+        # contains zeros. These arrays are regarded as C-contiguous by
+        # Numpy and PyBuffer_GetContiguous(), so they are not caught by
+        # the test for C-contiguity in memory_cast().
         items = [1,2,3]
         for shape in ([0,3,3], [3,0,3], [0,3,3]):
             ex = ndarray(items, shape=shape)
             self.assertTrue(ex.c_contiguous)
             msrc = memoryview(ex)
             self.assertRaises(TypeError, msrc.cast, 'c')
+        # Monodimensional empty view can be cast (issue #19014).
+        for fmt, _, _ in iter_format(1, 'memoryview'):
+            msrc = memoryview(b'')
+            m = msrc.cast(fmt)
+            self.assertEqual(m.tobytes(), b'')
+            self.assertEqual(m.tolist(), [])
 
     def test_memoryview_struct_module(self):
 

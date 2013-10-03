@@ -12,6 +12,8 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #19014: memoryview.cast() is now allowed on zero-length views.
+
 - Issue #19098: Prevent overflow in the compiler when the recursion limit is set
   absurdly high.
 
