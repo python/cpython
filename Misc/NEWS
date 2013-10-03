@@ -206,8 +206,6 @@ Library
 - Issue #19151: Fix docstring and use of _get_supported_file_loaders() to
   reflect 2-tuples.
 
-- Issue #19152: Add ExtensionFileLoader.get_filename().
-
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
   docstrings and ValueError messages. Patch by Zhongyue Luo
 
