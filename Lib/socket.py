@@ -136,7 +136,7 @@ class socket(_socket.socket):
         address(es).
         """
         closed = getattr(self, '_closed', False)
-        s = "<%s.%s%s fd=%i, family=%i, type=%i, proto=%i" \
+        s = "<%s.%s%s fd=%i, family=%s, type=%s, proto=%i" \
             % (self.__class__.__module__,
                self.__class__.__name__,
                " [closed]" if closed else "",
