@@ -358,6 +358,9 @@ Library
 - Issue #18598: Tweak exception message for importlib.import_module() to
   include the module name when a key argument is missing.
 
+- Issue #19951: Fix docstring and use of _get_suppported_file_loaders() to
+  reflect 2-tuples.
+
 - Issue #18676: Change 'positive' to 'non-negative' in queue.py put and get
   docstrings and ValueError messages. Patch by Zhongyue Luo
 
