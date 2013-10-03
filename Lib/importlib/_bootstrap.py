@@ -781,7 +781,7 @@ class WindowsRegistryFinder:
             _os.stat(filepath)
         except OSError:
             return None
-        for loader, suffixes, _ in _get_supported_file_loaders():
+        for loader, suffixes in _get_supported_file_loaders():
             if filepath.endswith(tuple(suffixes)):
                 return loader(fullname, filepath)
 
@@ -1643,7 +1643,7 @@ def _calc___package__(globals):
 def _get_supported_file_loaders():
     """Returns a list of file-based module loaders.
 
-    Each item is a tuple (loader, suffixes, allow_packages).
+    Each item is a tuple (loader, suffixes).
     """
     extensions = ExtensionFileLoader, _imp.extension_suffixes()
     source = SourceFileLoader, SOURCE_SUFFIXES
