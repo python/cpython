@@ -71,6 +71,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18037: 2to3 now escapes '\u' and '\U' in native strings.
+
 - Issue #19137: The pprint module now correctly formats instances of set and
   frozenset subclasses.
 
