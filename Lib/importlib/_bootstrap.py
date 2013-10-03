@@ -1153,6 +1153,11 @@ class ExtensionFileLoader:
         """Return None as extension modules have no source code."""
         return None
 
+    @_check_name
+    def get_filename(self, fullname):
+        """Return the path to the source file as found by the finder."""
+        return self.path
+
 
 class _NamespacePath:
     """Represents a namespace package's path.  It uses the module name
