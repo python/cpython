@@ -203,7 +203,7 @@ Library
 
 - Issue #18405: Improve the entropy of crypt.mksalt().
 
-- Issue #19151: Fix docstring and use of _get_suppported_file_loaders() to
+- Issue #19151: Fix docstring and use of _get_supported_file_loaders() to
   reflect 2-tuples.
 
 - Issue #19152: Add ExtensionFileLoader.get_filename().
