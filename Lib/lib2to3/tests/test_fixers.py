@@ -2824,6 +2824,43 @@ class Test_unicode(FixerTestCase):
         a = """R'''x''' """
         self.check(b, a)
 
+    def test_native_literal_escape_u(self):
+        b = """'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = """'\\\\\\\\u20ac\\\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+        b = """r'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = """r'\\\\\\\\u20ac\\\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+    def test_bytes_literal_escape_u(self):
+        b = """b'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = """b'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+        b = """br'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = """br'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+    def test_unicode_literal_escape_u(self):
+        b = """u'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = """'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+        b = """ur'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = """r'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+    def test_native_unicode_literal_escape_u(self):
+        f = 'from __future__ import unicode_literals\n'
+        b = f + """'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = f + """'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
+        b = f + """r'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        a = f + """r'\\\\\\u20ac\\U0001d121\\\\u20ac'"""
+        self.check(b, a)
+
 class Test_callable(FixerTestCase):
     fixer = "callable"
 
