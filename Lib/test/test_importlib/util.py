@@ -6,6 +6,15 @@ import sys
 import types
 
 
+def import_importlib(module_name):
+    """Import a module from importlib both w/ and w/o _frozen_importlib."""
+    fresh = ('importlib',) if '.' in module_name else ()
+    frozen = support.import_fresh_module(module_name)
+    source = support.import_fresh_module(module_name, fresh=fresh,
+                                         blocked=('_frozen_importlib',))
+    return frozen, source
+
+
 CASE_INSENSITIVE_FS = True
 # Windows is the only OS that is *always* case-insensitive
 # (OS X *can* be case-sensitive).
