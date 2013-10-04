@@ -1,8 +1,3 @@
-import importlib
-import importlib.util
-from importlib import abc
-from importlib import machinery
-
 import contextlib
 import inspect
 import io
@@ -16,6 +11,10 @@ from unittest import mock
 
 from . import util
 
+frozen_init, source_init = util.import_importlib('importlib')
+frozen_abc, source_abc = util.import_importlib('importlib.abc')
+frozen_util, source_util = util.import_importlib('importlib.util')
+
 ##### Inheritance ##############################################################
 class InheritanceTests:
 
@@ -27,8 +26,19 @@ class InheritanceTests:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.superclasses = [getattr(self.abc, class_name)
+                             for class_name in self.superclass_names]
+        if hasattr(self, 'subclass_names'):
+            # Because test.support.import_fresh_module() creates a new
+            # importlib._bootstrap per module, inheritance checks fail when
+            # checking across module boundaries (i.e. the _bootstrap in abc is
+            # not the same as the one in machinery). That means stealing one of
+            # the modules from the other to make sure the same instance is used.
+            self.subclasses = [getattr(self.abc.machinery, class_name)
+                                for class_name in self.subclass_names]
         assert self.subclasses or self.superclasses, self.__class__
-        self.__test = getattr(abc, self.__class__.__name__)
+        testing = self.__class__.__name__.partition('_')[2]
+        self.__test = getattr(self.abc, testing)
 
     def test_subclasses(self):
         # Test that the expected subclasses inherit.
@@ -42,59 +52,104 @@ class InheritanceTests:
             self.assertTrue(issubclass(self.__test, superclass),
                "{0} is not a superclass of {1}".format(superclass, self.__test))
 
+def create_inheritance_tests(base_class):
+    def set_frozen(ns):
+        ns['abc'] = frozen_abc
+    def set_source(ns):
+        ns['abc'] = source_abc
 
-class MetaPathFinder(InheritanceTests, unittest.TestCase):
-
-    superclasses = [abc.Finder]
-    subclasses = [machinery.BuiltinImporter, machinery.FrozenImporter,
-                    machinery.PathFinder, machinery.WindowsRegistryFinder]
-
-
-class PathEntryFinder(InheritanceTests, unittest.TestCase):
-
-    superclasses = [abc.Finder]
-    subclasses = [machinery.FileFinder]
-
-
-class ResourceLoader(InheritanceTests, unittest.TestCase):
-
-    superclasses = [abc.Loader]
+    classes = []
+    for prefix, ns_set in [('Frozen', set_frozen), ('Source', set_source)]:
+        classes.append(types.new_class('_'.join([prefix, base_class.__name__]),
+                                       (base_class, unittest.TestCase),
+                                       exec_body=ns_set))
+    return classes
 
 
-class InspectLoader(InheritanceTests, unittest.TestCase):
+class MetaPathFinder(InheritanceTests):
+    superclass_names = ['Finder']
+    subclass_names = ['BuiltinImporter', 'FrozenImporter', 'PathFinder',
+                      'WindowsRegistryFinder']
 
-    superclasses = [abc.Loader]
-    subclasses = [machinery.BuiltinImporter,
-                    machinery.FrozenImporter, machinery.ExtensionFileLoader]
-
-
-class ExecutionLoader(InheritanceTests, unittest.TestCase):
-
-    superclasses = [abc.InspectLoader]
+tests = create_inheritance_tests(MetaPathFinder)
+Frozen_MetaPathFinderInheritanceTests, Source_MetaPathFinderInheritanceTests = tests
 
 
-class FileLoader(InheritanceTests, unittest.TestCase):
+class PathEntryFinder(InheritanceTests):
+    superclass_names = ['Finder']
+    subclass_names = ['FileFinder']
 
-    superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
-    subclasses = [machinery.SourceFileLoader, machinery.SourcelessFileLoader]
+tests = create_inheritance_tests(PathEntryFinder)
+Frozen_PathEntryFinderInheritanceTests, Source_PathEntryFinderInheritanceTests = tests
 
 
-class SourceLoader(InheritanceTests, unittest.TestCase):
+class ResourceLoader(InheritanceTests):
+    superclass_names = ['Loader']
 
-    superclasses = [abc.ResourceLoader, abc.ExecutionLoader]
-    subclasses = [machinery.SourceFileLoader]
+tests = create_inheritance_tests(ResourceLoader)
+Frozen_ResourceLoaderInheritanceTests, Source_ResourceLoaderInheritanceTests = tests
 
+
+class InspectLoader(InheritanceTests):
+    superclass_names = ['Loader']
+    subclass_names = ['BuiltinImporter', 'FrozenImporter', 'ExtensionFileLoader']
+
+tests = create_inheritance_tests(InspectLoader)
+Frozen_InspectLoaderInheritanceTests, Source_InspectLoaderInheritanceTests = tests
+
+
+class ExecutionLoader(InheritanceTests):
+    superclass_names = ['InspectLoader']
+
+tests = create_inheritance_tests(ExecutionLoader)
+Frozen_ExecutionLoaderInheritanceTests, Source_ExecutionLoaderInheritanceTests = tests
+
+
+class FileLoader(InheritanceTests):
+    superclass_names = ['ResourceLoader', 'ExecutionLoader']
+    subclass_names = ['SourceFileLoader', 'SourcelessFileLoader']
+
+tests = create_inheritance_tests(FileLoader)
+Frozen_FileLoaderInheritanceTests, Source_FileLoaderInheritanceTests = tests
+
+
+class SourceLoader(InheritanceTests):
+    superclass_names = ['ResourceLoader', 'ExecutionLoader']
+    subclass_names = ['SourceFileLoader']
+
+tests = create_inheritance_tests(SourceLoader)
+Frozen_SourceLoaderInheritanceTests, Source_SourceLoaderInheritanceTests = tests
 
 ##### Default return values ####################################################
-class MetaPathFinderSubclass(abc.MetaPathFinder):
+def make_abc_subclasses(base_class):
+    classes = []
+    for kind, abc in [('Frozen', frozen_abc), ('Source', source_abc)]:
+        name = '_'.join([kind, base_class.__name__])
+        base_classes = base_class, getattr(abc, base_class.__name__)
+        classes.append(types.new_class(name, base_classes))
+    return classes
+
+def make_return_value_tests(base_class, test_class):
+    frozen_class, source_class = make_abc_subclasses(base_class)
+    tests = []
+    for prefix, class_in_test in [('Frozen', frozen_class), ('Source', source_class)]:
+        def set_ns(ns):
+            ns['ins'] = class_in_test()
+        tests.append(types.new_class('_'.join([prefix, test_class.__name__]),
+                                     (test_class, unittest.TestCase),
+                                     exec_body=set_ns))
+    return tests
+
+
+class MetaPathFinder:
 
     def find_module(self, fullname, path):
         return super().find_module(fullname, path)
 
+Frozen_MPF, Source_MPF = make_abc_subclasses(MetaPathFinder)
 
-class MetaPathFinderDefaultsTests(unittest.TestCase):
 
-    ins = MetaPathFinderSubclass()
+class MetaPathFinderDefaultsTests:
 
     def test_find_module(self):
         # Default should return None.
@@ -105,15 +160,19 @@ class MetaPathFinderDefaultsTests(unittest.TestCase):
         self.ins.invalidate_caches()
 
 
-class PathEntryFinderSubclass(abc.PathEntryFinder):
+tests = make_return_value_tests(MetaPathFinder, MetaPathFinderDefaultsTests)
+Frozen_MPFDefaultTests, Source_MPFDefaultTests = tests
+
+
+class PathEntryFinder:
 
     def find_loader(self, fullname):
         return super().find_loader(fullname)
 
+Frozen_PEF, Source_PEF = make_abc_subclasses(PathEntryFinder)
 
-class PathEntryFinderDefaultsTests(unittest.TestCase):
 
-    ins = PathEntryFinderSubclass()
+class PathEntryFinderDefaultsTests:
 
     def test_find_loader(self):
         self.assertEqual((None, []), self.ins.find_loader('something'))
@@ -126,15 +185,20 @@ class PathEntryFinderDefaultsTests(unittest.TestCase):
         self.ins.invalidate_caches()
 
 
-class LoaderSubclass(abc.Loader):
+tests = make_return_value_tests(PathEntryFinder, PathEntryFinderDefaultsTests)
+Frozen_PEFDefaultTests, Source_PEFDefaultTests = tests
+
+
+class Loader:
 
     def load_module(self, fullname):
         return super().load_module(fullname)
 
 
-class LoaderDefaultsTests(unittest.TestCase):
+Frozen_L, Source_L = make_abc_subclasses(Loader)
 
-    ins = LoaderSubclass()
+
+class LoaderDefaultsTests:
 
     def test_load_module(self):
         with self.assertRaises(ImportError):
@@ -150,22 +214,31 @@ class LoaderDefaultsTests(unittest.TestCase):
         self.assertTrue(repr(mod))
 
 
-class ResourceLoaderSubclass(LoaderSubclass, abc.ResourceLoader):
+tests = make_return_value_tests(Loader, LoaderDefaultsTests)
+Frozen_LDefaultTests, SourceLDefaultTests = tests
+
+
+class ResourceLoader(Loader):
 
     def get_data(self, path):
         return super().get_data(path)
 
 
-class ResourceLoaderDefaultsTests(unittest.TestCase):
+Frozen_RL, Source_RL = make_abc_subclasses(ResourceLoader)
 
-    ins = ResourceLoaderSubclass()
+
+class ResourceLoaderDefaultsTests:
 
     def test_get_data(self):
         with self.assertRaises(IOError):
             self.ins.get_data('/some/path')
 
 
-class InspectLoaderSubclass(LoaderSubclass, abc.InspectLoader):
+tests = make_return_value_tests(ResourceLoader, ResourceLoaderDefaultsTests)
+Frozen_RLDefaultTests, Source_RLDefaultTests = tests
+
+
+class InspectLoader(Loader):
 
     def is_package(self, fullname):
         return super().is_package(fullname)
@@ -174,9 +247,10 @@ class InspectLoaderSubclass(LoaderSubclass, abc.InspectLoader):
         return super().get_source(fullname)
 
 
-class InspectLoaderDefaultsTests(unittest.TestCase):
+Frozen_IL, Source_IL = make_abc_subclasses(InspectLoader)
 
-    ins = InspectLoaderSubclass()
+
+class InspectLoaderDefaultsTests:
 
     def test_is_package(self):
         with self.assertRaises(ImportError):
@@ -187,37 +261,52 @@ class InspectLoaderDefaultsTests(unittest.TestCase):
             self.ins.get_source('blah')
 
 
-class ExecutionLoaderSubclass(InspectLoaderSubclass, abc.ExecutionLoader):
+tests = make_return_value_tests(InspectLoader, InspectLoaderDefaultsTests)
+Frozen_ILDefaultTests, Source_ILDefaultTests = tests
+
+
+class ExecutionLoader(InspectLoader):
 
     def get_filename(self, fullname):
         return super().get_filename(fullname)
 
+Frozen_EL, Source_EL = make_abc_subclasses(ExecutionLoader)
 
-class ExecutionLoaderDefaultsTests(unittest.TestCase):
 
-    ins = ExecutionLoaderSubclass()
+class ExecutionLoaderDefaultsTests:
 
     def test_get_filename(self):
         with self.assertRaises(ImportError):
             self.ins.get_filename('blah')
 
+
+tests = make_return_value_tests(ExecutionLoader, InspectLoaderDefaultsTests)
+Frozen_ELDefaultTests, Source_ELDefaultsTests = tests
+
 ##### Loader concrete methods ##################################################
-class LoaderConcreteMethodTests(unittest.TestCase):
+class LoaderConcreteMethodTests:
 
     def test_init_module_attrs(self):
-        loader = LoaderSubclass()
+        loader = self.LoaderSubclass()
         module = types.ModuleType('blah')
         loader.init_module_attrs(module)
         self.assertEqual(module.__loader__, loader)
 
 
+class Frozen_LoaderConcreateMethodTests(LoaderConcreteMethodTests, unittest.TestCase):
+    LoaderSubclass = Frozen_L
+
+class Source_LoaderConcreateMethodTests(LoaderConcreteMethodTests, unittest.TestCase):
+    LoaderSubclass = Source_L
+
+
 ##### InspectLoader concrete methods ###########################################
-class InspectLoaderSourceToCodeTests(unittest.TestCase):
+class InspectLoaderSourceToCodeTests:
 
     def source_to_module(self, data, path=None):
         """Help with source_to_code() tests."""
         module = types.ModuleType('blah')
-        loader = InspectLoaderSubclass()
+        loader = self.InspectLoaderSubclass()
         if path is None:
             code = loader.source_to_code(data)
         else:
@@ -242,54 +331,67 @@ class InspectLoaderSourceToCodeTests(unittest.TestCase):
     def test_source_to_code_path(self):
         # Specifying a path should set it for the code object.
         path = 'path/to/somewhere'
-        loader = InspectLoaderSubclass()
+        loader = self.InspectLoaderSubclass()
         code = loader.source_to_code('', path)
         self.assertEqual(code.co_filename, path)
 
     def test_source_to_code_no_path(self):
         # Not setting a path should still work and be set to <string> since that
         # is a pre-existing practice as a default to compile().
-        loader = InspectLoaderSubclass()
+        loader = self.InspectLoaderSubclass()
         code = loader.source_to_code('')
         self.assertEqual(code.co_filename, '<string>')
 
 
-class InspectLoaderGetCodeTests(unittest.TestCase):
+class Frozen_ILSourceToCodeTests(InspectLoaderSourceToCodeTests, unittest.TestCase):
+    InspectLoaderSubclass = Frozen_IL
+
+class Source_ILSourceToCodeTests(InspectLoaderSourceToCodeTests, unittest.TestCase):
+    InspectLoaderSubclass = Source_IL
+
+
+class InspectLoaderGetCodeTests:
 
     def test_get_code(self):
         # Test success.
         module = types.ModuleType('blah')
-        with mock.patch.object(InspectLoaderSubclass, 'get_source') as mocked:
+        with mock.patch.object(self.InspectLoaderSubclass, 'get_source') as mocked:
             mocked.return_value = 'attr = 42'
-            loader = InspectLoaderSubclass()
+            loader = self.InspectLoaderSubclass()
             code = loader.get_code('blah')
         exec(code, module.__dict__)
         self.assertEqual(module.attr, 42)
 
     def test_get_code_source_is_None(self):
         # If get_source() is None then this should be None.
-        with mock.patch.object(InspectLoaderSubclass, 'get_source') as mocked:
+        with mock.patch.object(self.InspectLoaderSubclass, 'get_source') as mocked:
             mocked.return_value = None
-            loader = InspectLoaderSubclass()
+            loader = self.InspectLoaderSubclass()
             code = loader.get_code('blah')
         self.assertIsNone(code)
 
     def test_get_code_source_not_found(self):
         # If there is no source then there is no code object.
-        loader = InspectLoaderSubclass()
+        loader = self.InspectLoaderSubclass()
         with self.assertRaises(ImportError):
             loader.get_code('blah')
 
 
-class InspectLoaderInitModuleTests(unittest.TestCase):
+class Frozen_ILGetCodeTests(InspectLoaderGetCodeTests, unittest.TestCase):
+    InspectLoaderSubclass = Frozen_IL
 
-    @staticmethod
-    def mock_is_package(return_value):
-        return mock.patch.object(InspectLoaderSubclass, 'is_package',
+class Source_ILGetCodeTests(InspectLoaderGetCodeTests, unittest.TestCase):
+    InspectLoaderSubclass = Source_IL
+
+
+class InspectLoaderInitModuleTests:
+
+    def mock_is_package(self, return_value):
+        return mock.patch.object(self.InspectLoaderSubclass, 'is_package',
                                  return_value=return_value)
 
     def init_module_attrs(self, name):
-        loader = InspectLoaderSubclass()
+        loader = self.InspectLoaderSubclass()
         module = types.ModuleType(name)
         loader.init_module_attrs(module)
         self.assertEqual(module.__loader__, loader)
@@ -329,7 +431,14 @@ class InspectLoaderInitModuleTests(unittest.TestCase):
             self.assertFalse(hasattr(module, '__path__'))
 
 
-class InspectLoaderLoadModuleTests(unittest.TestCase):
+class Frozen_ILInitModuleTests(InspectLoaderInitModuleTests, unittest.TestCase):
+    InspectLoaderSubclass = Frozen_IL
+
+class Source_ILInitModuleTests(InspectLoaderInitModuleTests, unittest.TestCase):
+    InspectLoaderSubclass = Source_IL
+
+
+class InspectLoaderLoadModuleTests:
 
     """Test InspectLoader.load_module()."""
 
@@ -340,14 +449,14 @@ class InspectLoaderLoadModuleTests(unittest.TestCase):
         self.addCleanup(support.unload, self.module_name)
 
     def mock_get_code(self):
-        return mock.patch.object(InspectLoaderSubclass, 'get_code')
+        return mock.patch.object(self.InspectLoaderSubclass, 'get_code')
 
     def test_get_code_ImportError(self):
         # If get_code() raises ImportError, it should propagate.
         with self.mock_get_code() as mocked_get_code:
             mocked_get_code.side_effect = ImportError
             with self.assertRaises(ImportError):
-                loader = InspectLoaderSubclass()
+                loader = self.InspectLoaderSubclass()
                 loader.load_module(self.module_name)
 
     def test_get_code_None(self):
@@ -355,7 +464,7 @@ class InspectLoaderLoadModuleTests(unittest.TestCase):
         with self.mock_get_code() as mocked_get_code:
             mocked_get_code.return_value = None
             with self.assertRaises(ImportError):
-                loader = InspectLoaderSubclass()
+                loader = self.InspectLoaderSubclass()
                 loader.load_module(self.module_name)
 
     def test_module_returned(self):
@@ -363,21 +472,28 @@ class InspectLoaderLoadModuleTests(unittest.TestCase):
         code = compile('attr = 42', '<string>', 'exec')
         with self.mock_get_code() as mocked_get_code:
             mocked_get_code.return_value = code
-            loader = InspectLoaderSubclass()
+            loader = self.InspectLoaderSubclass()
             module = loader.load_module(self.module_name)
             self.assertEqual(module, sys.modules[self.module_name])
 
 
+class Frozen_ILLoadModuleTests(InspectLoaderLoadModuleTests, unittest.TestCase):
+    InspectLoaderSubclass = Frozen_IL
+
+class Source_ILLoadModuleTests(InspectLoaderLoadModuleTests, unittest.TestCase):
+    InspectLoaderSubclass = Source_IL
+
+
 ##### ExecutionLoader concrete methods #########################################
-class ExecutionLoaderGetCodeTests(unittest.TestCase):
+class ExecutionLoaderGetCodeTests:
 
     def mock_methods(self, *, get_source=False, get_filename=False):
         source_mock_context, filename_mock_context = None, None
         if get_source:
-            source_mock_context = mock.patch.object(ExecutionLoaderSubclass,
+            source_mock_context = mock.patch.object(self.ExecutionLoaderSubclass,
                                                     'get_source')
         if get_filename:
-            filename_mock_context = mock.patch.object(ExecutionLoaderSubclass,
+            filename_mock_context = mock.patch.object(self.ExecutionLoaderSubclass,
                                                       'get_filename')
         return source_mock_context, filename_mock_context
 
@@ -388,7 +504,7 @@ class ExecutionLoaderGetCodeTests(unittest.TestCase):
         with source_mock_context as source_mock, filename_mock_context as name_mock:
             source_mock.return_value = 'attr = 42'
             name_mock.return_value = path
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             code = loader.get_code('blah')
         self.assertEqual(code.co_filename, path)
         module = types.ModuleType('blah')
@@ -400,13 +516,13 @@ class ExecutionLoaderGetCodeTests(unittest.TestCase):
         source_mock_context, _ = self.mock_methods(get_source=True)
         with source_mock_context as mocked:
             mocked.return_value = None
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             code = loader.get_code('blah')
         self.assertIsNone(code)
 
     def test_get_code_source_not_found(self):
         # If there is no source then there is no code object.
-        loader = ExecutionLoaderSubclass()
+        loader = self.ExecutionLoaderSubclass()
         with self.assertRaises(ImportError):
             loader.get_code('blah')
 
@@ -418,7 +534,7 @@ class ExecutionLoaderGetCodeTests(unittest.TestCase):
         with source_mock_context as source_mock, filename_mock_context as name_mock:
             source_mock.return_value = 'attr = 42'
             name_mock.side_effect = ImportError
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             code = loader.get_code('blah')
         self.assertEqual(code.co_filename, '<string>')
         module = types.ModuleType('blah')
@@ -426,13 +542,23 @@ class ExecutionLoaderGetCodeTests(unittest.TestCase):
         self.assertEqual(module.attr, 42)
 
 
-class ExecutionLoaderInitModuleTests(unittest.TestCase):
+class Frozen_ELGetCodeTests(ExecutionLoaderGetCodeTests, unittest.TestCase):
+    ExecutionLoaderSubclass = Frozen_EL
 
-    @staticmethod
+class Source_ELGetCodeTests(ExecutionLoaderGetCodeTests, unittest.TestCase):
+    ExecutionLoaderSubclass = Source_EL
+
+
+class ExecutionLoaderInitModuleTests:
+
+    def mock_is_package(self, return_value):
+        return mock.patch.object(self.ExecutionLoaderSubclass, 'is_package',
+                                 return_value=return_value)
+
     @contextlib.contextmanager
-    def mock_methods(is_package, filename):
-        is_package_manager = InspectLoaderInitModuleTests.mock_is_package(is_package)
-        get_filename_manager = mock.patch.object(ExecutionLoaderSubclass,
+    def mock_methods(self, is_package, filename):
+        is_package_manager = self.mock_is_package(is_package)
+        get_filename_manager = mock.patch.object(self.ExecutionLoaderSubclass,
                 'get_filename', return_value=filename)
         with is_package_manager as mock_is_package:
             with get_filename_manager as mock_get_filename:
@@ -444,7 +570,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         name = 'blah'
         path = os.path.join('some', 'path', '{}.py'.format(name))
         with self.mock_methods(False, path):
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertIs(module.__loader__, loader)
@@ -457,7 +583,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         name = 'pkg'
         path = os.path.join('some', 'pkg', '__init__.py')
         with self.mock_methods(True, path):
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertIs(module.__loader__, loader)
@@ -471,7 +597,7 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         name = 'pkg.submodule'
         path = os.path.join('some', 'pkg', 'submodule.py')
         with self.mock_methods(False, path):
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertEqual(module.__package__, 'pkg')
@@ -484,14 +610,21 @@ class ExecutionLoaderInitModuleTests(unittest.TestCase):
         path = 'blah.py'
         with self.mock_methods(False, path) as mocked_methods:
             mocked_methods['get_filename'].side_effect = ImportError
-            loader = ExecutionLoaderSubclass()
+            loader = self.ExecutionLoaderSubclass()
             module = types.ModuleType(name)
             loader.init_module_attrs(module)
         self.assertFalse(hasattr(module, '__file__'))
 
 
+class Frozen_ELInitModuleTests(ExecutionLoaderInitModuleTests, unittest.TestCase):
+    ExecutionLoaderSubclass = Frozen_EL
+
+class Source_ELInitModuleTests(ExecutionLoaderInitModuleTests, unittest.TestCase):
+    ExecutionLoaderSubclass = Source_EL
+
+
 ##### SourceLoader concrete methods ############################################
-class SourceOnlyLoaderMock(abc.SourceLoader):
+class SourceLoader:
 
     # Globals that should be defined for all modules.
     source = (b"_ = '::'.join([__name__, __file__, __cached__, __package__, "
@@ -512,17 +645,22 @@ class SourceOnlyLoaderMock(abc.SourceLoader):
         return '<module>'
 
 
-class SourceLoaderMock(SourceOnlyLoaderMock):
+Frozen_SourceOnlyL, Source_SourceOnlyL = make_abc_subclasses(SourceLoader)
+
+
+class SourceLoader(SourceLoader):
 
     source_mtime = 1
 
-    def __init__(self, path, magic=importlib.util.MAGIC_NUMBER):
+    def __init__(self, path, magic=None):
         super().__init__(path)
-        self.bytecode_path = importlib.util.cache_from_source(self.path)
+        self.bytecode_path = self.util.cache_from_source(self.path)
         self.source_size = len(self.source)
+        if magic is None:
+            magic = self.util.MAGIC_NUMBER
         data = bytearray(magic)
-        data.extend(importlib._w_long(self.source_mtime))
-        data.extend(importlib._w_long(self.source_size))
+        data.extend(self.init._w_long(self.source_mtime))
+        data.extend(self.init._w_long(self.source_size))
         code_object = compile(self.source, self.path, 'exec',
                                 dont_inherit=True)
         data.extend(marshal.dumps(code_object))
@@ -547,7 +685,14 @@ class SourceLoaderMock(SourceOnlyLoaderMock):
         return path == self.bytecode_path
 
 
-class SourceLoaderTestHarness(unittest.TestCase):
+Frozen_SL, Source_SL = make_abc_subclasses(SourceLoader)
+Frozen_SL.util = frozen_util
+Source_SL.util = source_util
+Frozen_SL.init = frozen_init
+Source_SL.init = source_init
+
+
+class SourceLoaderTestHarness:
 
     def setUp(self, *, is_package=True, **kwargs):
         self.package = 'pkg'
@@ -558,7 +703,7 @@ class SourceLoaderTestHarness(unittest.TestCase):
             module_name = 'mod'
             self.path = os.path.join(self.package, '.'.join(['mod', 'py']))
             self.name = '.'.join([self.package, module_name])
-        self.cached = importlib.util.cache_from_source(self.path)
+        self.cached = self.util.cache_from_source(self.path)
         self.loader = self.loader_mock(self.path, **kwargs)
 
     def verify_module(self, module):
@@ -593,8 +738,6 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
     importlib.util.module_for_loader.
 
     """
-
-    loader_mock = SourceOnlyLoaderMock
 
     def test_get_source(self):
         # Verify the source code is returned as a string.
@@ -659,6 +802,15 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
         self.assertEqual(returned_source, source)
 
 
+class Frozen_SourceOnlyLTests(SourceOnlyLoaderTests, unittest.TestCase):
+    loader_mock = Frozen_SourceOnlyL
+    util = frozen_util
+
+class Source_SourceOnlyLTests(SourceOnlyLoaderTests, unittest.TestCase):
+    loader_mock = Source_SourceOnlyL
+    util = source_util
+
+
 @unittest.skipIf(sys.dont_write_bytecode, "sys.dont_write_bytecode is true")
 class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
 
@@ -668,15 +820,13 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
 
     """
 
-    loader_mock = SourceLoaderMock
-
     def verify_code(self, code_object, *, bytecode_written=False):
         super().verify_code(code_object)
         if bytecode_written:
             self.assertIn(self.cached, self.loader.written)
-            data = bytearray(importlib.util.MAGIC_NUMBER)
-            data.extend(importlib._w_long(self.loader.source_mtime))
-            data.extend(importlib._w_long(self.loader.source_size))
+            data = bytearray(self.util.MAGIC_NUMBER)
+            data.extend(self.init._w_long(self.loader.source_mtime))
+            data.extend(self.init._w_long(self.loader.source_size))
             data.extend(marshal.dumps(code_object))
             self.assertEqual(self.loader.written[self.cached], bytes(data))
 
@@ -690,7 +840,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         self.loader.bytecode_path = "<does not exist>"
         # Sanity check
         with self.assertRaises(OSError):
-            bytecode_path = importlib.util.cache_from_source(self.path)
+            bytecode_path = self.util.cache_from_source(self.path)
             self.loader.get_data(bytecode_path)
         code_object = self.loader.get_code(self.name)
         self.verify_code(code_object, bytecode_written=True)
@@ -729,13 +879,13 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
     def test_no_set_data(self):
         # If set_data is not defined, one can still read bytecode.
         self.setUp(magic=b'0000')
-        original_set_data = self.loader.__class__.set_data
+        original_set_data = self.loader.__class__.mro()[1].set_data
         try:
-            del self.loader.__class__.set_data
+            del self.loader.__class__.mro()[1].set_data
             code_object = self.loader.get_code(self.name)
             self.verify_code(code_object)
         finally:
-            self.loader.__class__.set_data = original_set_data
+            self.loader.__class__.mro()[1].set_data = original_set_data
 
     def test_set_data_raises_exceptions(self):
         # Raising NotImplementedError or OSError is okay for set_data.
@@ -750,14 +900,25 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         self.verify_code(code_object)
 
 
-class SourceLoaderGetSourceTests(unittest.TestCase):
+class Frozen_SLBytecodeTests(SourceLoaderBytecodeTests, unittest.TestCase):
+    loader_mock = Frozen_SL
+    init = frozen_init
+    util = frozen_util
+
+class SourceSLBytecodeTests(SourceLoaderBytecodeTests, unittest.TestCase):
+    loader_mock = Source_SL
+    init = source_init
+    util = source_util
+
+
+class SourceLoaderGetSourceTests:
 
     """Tests for importlib.abc.SourceLoader.get_source()."""
 
     def test_default_encoding(self):
         # Should have no problems with UTF-8 text.
         name = 'mod'
-        mock = SourceOnlyLoaderMock('mod.file')
+        mock = self.SourceOnlyLoaderMock('mod.file')
         source = 'x = "ü"'
         mock.source = source.encode('utf-8')
         returned_source = mock.get_source(name)
@@ -766,7 +927,7 @@ class SourceLoaderGetSourceTests(unittest.TestCase):
     def test_decoded_source(self):
         # Decoding should work.
         name = 'mod'
-        mock = SourceOnlyLoaderMock("mod.file")
+        mock = self.SourceOnlyLoaderMock("mod.file")
         source = "# coding: Latin-1\nx='ü'"
         assert source.encode('latin-1') != source.encode('utf-8')
         mock.source = source.encode('latin-1')
@@ -776,14 +937,21 @@ class SourceLoaderGetSourceTests(unittest.TestCase):
     def test_universal_newlines(self):
         # PEP 302 says universal newlines should be used.
         name = 'mod'
-        mock = SourceOnlyLoaderMock('mod.file')
+        mock = self.SourceOnlyLoaderMock('mod.file')
         source = "x = 42\r\ny = -13\r\n"
         mock.source = source.encode('utf-8')
         expect = io.IncrementalNewlineDecoder(None, True).decode(source)
         self.assertEqual(mock.get_source(name), expect)
 
 
-class SourceLoaderInitModuleAttrTests(unittest.TestCase):
+class Frozen_SourceOnlyLGetSourceTests(SourceLoaderGetSourceTests, unittest.TestCase):
+    SourceOnlyLoaderMock = Frozen_SourceOnlyL
+
+class Source_SourceOnlyLGetSourceTests(SourceLoaderGetSourceTests, unittest.TestCase):
+    SourceOnlyLoaderMock = Source_SourceOnlyL
+
+
+class SourceLoaderInitModuleAttrTests:
 
     """Tests for importlib.abc.SourceLoader.init_module_attrs()."""
 
@@ -791,14 +959,31 @@ class SourceLoaderInitModuleAttrTests(unittest.TestCase):
         # If __file__ set, __cached__ == importlib.util.cached_from_source(__file__).
         name = 'blah'
         path = 'blah.py'
-        loader = SourceOnlyLoaderMock(path)
+        loader = self.SourceOnlyLoaderMock(path)
         module = types.ModuleType(name)
         loader.init_module_attrs(module)
         self.assertEqual(module.__loader__, loader)
         self.assertEqual(module.__package__, '')
         self.assertEqual(module.__file__, path)
-        self.assertEqual(module.__cached__, importlib.util.cache_from_source(path))
+        self.assertEqual(module.__cached__, self.util.cache_from_source(path))
 
+    def test_no_get_filename(self):
+        # No __file__, no __cached__.
+        with mock.patch.object(self.SourceOnlyLoaderMock, 'get_filename') as mocked:
+            mocked.side_effect = ImportError
+            name = 'blah'
+            loader = self.SourceOnlyLoaderMock('blah.py')
+            module = types.ModuleType(name)
+            loader.init_module_attrs(module)
+        self.assertFalse(hasattr(module, '__file__'))
+        self.assertFalse(hasattr(module, '__cached__'))
+
+
+class Frozen_SLInitModuleAttrTests(SourceLoaderInitModuleAttrTests, unittest.TestCase):
+    SourceOnlyLoaderMock = Frozen_SourceOnlyL
+    util = frozen_util
+
+    # Difficult to test under source thanks to cross-module mocking needs.
     @mock.patch('importlib._bootstrap.cache_from_source')
     def test_cache_from_source_NotImplementedError(self, mock_cache_from_source):
         # If importlib.util.cache_from_source() raises NotImplementedError don't set
@@ -806,22 +991,16 @@ class SourceLoaderInitModuleAttrTests(unittest.TestCase):
         mock_cache_from_source.side_effect = NotImplementedError
         name = 'blah'
         path = 'blah.py'
-        loader = SourceOnlyLoaderMock(path)
+        loader = self.SourceOnlyLoaderMock(path)
         module = types.ModuleType(name)
         loader.init_module_attrs(module)
         self.assertEqual(module.__file__, path)
         self.assertFalse(hasattr(module, '__cached__'))
 
-    def test_no_get_filename(self):
-        # No __file__, no __cached__.
-        with mock.patch.object(SourceOnlyLoaderMock, 'get_filename') as mocked:
-            mocked.side_effect = ImportError
-            name = 'blah'
-            loader = SourceOnlyLoaderMock('blah.py')
-            module = types.ModuleType(name)
-            loader.init_module_attrs(module)
-        self.assertFalse(hasattr(module, '__file__'))
-        self.assertFalse(hasattr(module, '__cached__'))
+
+class Source_SLInitModuleAttrTests(SourceLoaderInitModuleAttrTests, unittest.TestCase):
+    SourceOnlyLoaderMock = Source_SourceOnlyL
+    util = source_util
 
 
 
