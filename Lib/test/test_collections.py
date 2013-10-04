@@ -852,6 +852,24 @@ class TestCollectionABCs(ABCTestCase):
 ### Counter
 ################################################################################
 
+class CounterSubclassWithSetItem(Counter):
+    # Test a counter subclass that overrides __setitem__
+    def __init__(self, *args, **kwds):
+        self.called = False
+        Counter.__init__(self, *args, **kwds)
+    def __setitem__(self, key, value):
+        self.called = True
+        Counter.__setitem__(self, key, value)
+
+class CounterSubclassWithGet(Counter):
+    # Test a counter subclass that overrides get()
+    def __init__(self, *args, **kwds):
+        self.called = False
+        Counter.__init__(self, *args, **kwds)
+    def get(self, key, default):
+        self.called = True
+        return Counter.get(self, key, default)
+
 class TestCounter(unittest.TestCase):
 
     def test_basics(self):
@@ -1058,6 +1076,12 @@ class TestCounter(unittest.TestCase):
         _count_elements(m, elems)
         self.assertEqual(m,
              OrderedDict([('a', 5), ('b', 2), ('r', 2), ('c', 1), ('d', 1)]))
+
+        # test fidelity to the pure python version
+        c = CounterSubclassWithSetItem('abracadabra')
+        self.assertTrue(c.called)
+        c = CounterSubclassWithGet('abracadabra')
+        self.assertTrue(c.called)
 
 
 ################################################################################
