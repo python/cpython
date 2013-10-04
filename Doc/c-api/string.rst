@@ -241,7 +241,7 @@ called with a non-string parameter.
 .. c:function:: PyObject* PyString_Format(PyObject *format, PyObject *args)
 
    Return a new string object from *format* and *args*. Analogous to ``format %
-   args``.  The *args* argument must be a tuple.
+   args``.  The *args* argument must be a tuple or dict.
 
 
 .. c:function:: void PyString_InternInPlace(PyObject **string)
