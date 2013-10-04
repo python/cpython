@@ -41,7 +41,7 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 .. note::
 
    For better multithreading performance, the Python :term:`GIL` is released for
-   data larger than 2048 bytes at object creation or on update.
+   data larger than 2047 bytes at object creation or on update.
 
 .. note::
 
@@ -132,7 +132,7 @@ A hash object has the following methods:
 
    .. versionchanged:: 3.1
       The Python GIL is released to allow other threads to run while hash
-      updates on data larger than 2048 bytes is taking place when using hash
+      updates on data larger than 2047 bytes is taking place when using hash
       algorithms supplied by OpenSSL.
 
 
