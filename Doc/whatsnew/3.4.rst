@@ -516,6 +516,9 @@ Deprecated Python modules, functions and methods
 * The :mod:`imp` module is pending deprecation. To keep compatibility with
   Python 2/3 code bases, the module's removal is currently not scheduled.
 
+* The :mod:`formatter` module is pending deprecation and is slated for removal
+  in Python 3.6.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------
@@ -554,9 +557,9 @@ that may require changes to your code.
 * Import now resets relevant attributes (e.g. ``__name__``, ``__loader__``,
   ``__package__``, ``__file__``, ``__cached__``) unconditionally when reloading.
 
-* Frozen packages no longer set ``__path__`` to a list containg the package name
-  but an empty list instead. Determing if a module is a package should be done
-  using ``hasattr(module, '__path__')``.
+* Frozen packages no longer set ``__path__`` to a list containing the package
+  name but an empty list instead. Determing if a module is a package should be
+  done using ``hasattr(module, '__path__')``.
 
 * :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
   argument is not set. Previously only ``NULL`` was returned with no exception
