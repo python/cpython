@@ -41,7 +41,7 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 .. note::
 
    For better multithreading performance, the Python :term:`GIL` is released for
-   strings of more than 2047 bytes at object creation or on update.
+   data larger than 2048 bytes at object creation or on update.
 
 .. note::
 
