@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18716: Deprecate the formatter module.
+
 - Issue #18037: 2to3 now escapes '\u' and '\U' in native strings.
 
 - Issue #17839: base64.decodebytes and base64.encodebytes now accept any
