@@ -874,6 +874,8 @@ find and load modules.
 
       Returns :attr:`path`.
 
+      .. versionadded:: 3.4
+
 
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
