@@ -188,7 +188,7 @@ class InspectLoader(Loader):
     load_module = _bootstrap._LoaderBasics.load_module
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter,
-            machinery.ExtensionFileLoader, _bootstrap.NamespaceLoader)
+          _bootstrap.NamespaceLoader)
 
 
 class ExecutionLoader(InspectLoader):
@@ -237,7 +237,7 @@ class ExecutionLoader(InspectLoader):
         super().init_module_attrs(module)
         _bootstrap._init_file_attrs(self, module)
 
-_register(machinery.ExtensionFileLoader)
+_register(ExecutionLoader, machinery.ExtensionFileLoader)
 
 
 class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
