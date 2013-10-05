@@ -595,7 +595,7 @@ alias::
 
     This is a useful example for subclassing Enum to add or change other
     behaviors as well as disallowing aliases.  If the only desired change is
-    disallowing aliases the :func:`unique` decorator can be used instead.
+    disallowing aliases, the :func:`unique` decorator can be used instead.
 
 
 Planet
