@@ -1783,9 +1783,9 @@ error:
 PyDoc_STRVAR(float_as_integer_ratio_doc,
 "float.as_integer_ratio() -> (int, int)\n"
 "\n"
-"Returns a pair of integers, whose ratio is exactly equal to the original\n"
+"Return a pair of integers, whose ratio is exactly equal to the original\n"
 "float and with a positive denominator.\n"
-"Raises OverflowError on infinities and a ValueError on NaNs.\n"
+"Raise OverflowError on infinities and a ValueError on NaNs.\n"
 "\n"
 ">>> (10.0).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -1970,7 +1970,7 @@ PyDoc_STRVAR(float_setformat_doc,
 "'IEEE, big-endian' or 'IEEE, little-endian', and in addition can only be\n"
 "one of the latter two if it appears to match the underlying C reality.\n"
 "\n"
-"Overrides the automatic determination of C-level floating point type.\n"
+"Override the automatic determination of C-level floating point type.\n"
 "This affects how floats are converted to and from binary strings.");
 
 static PyObject *
@@ -2017,9 +2017,9 @@ PyDoc_STRVAR(float__format__doc,
 
 static PyMethodDef float_methods[] = {
     {"conjugate",       (PyCFunction)float_float,       METH_NOARGS,
-     "Returns self, the complex conjugate of any float."},
+     "Return self, the complex conjugate of any float."},
     {"__trunc__",       (PyCFunction)float_trunc, METH_NOARGS,
-     "Returns the Integral closest to x between 0 and x."},
+     "Return the Integral closest to x between 0 and x."},
     {"as_integer_ratio", (PyCFunction)float_as_integer_ratio, METH_NOARGS,
      float_as_integer_ratio_doc},
     {"fromhex", (PyCFunction)float_fromhex,
@@ -2027,14 +2027,14 @@ static PyMethodDef float_methods[] = {
     {"hex", (PyCFunction)float_hex,
      METH_NOARGS, float_hex_doc},
     {"is_integer",      (PyCFunction)float_is_integer,  METH_NOARGS,
-     "Returns True if the float is an integer."},
+     "Return True if the float is an integer."},
 #if 0
     {"is_inf",          (PyCFunction)float_is_inf,      METH_NOARGS,
-     "Returns True if the float is positive or negative infinite."},
+     "Return True if the float is positive or negative infinite."},
     {"is_finite",       (PyCFunction)float_is_finite,   METH_NOARGS,
-     "Returns True if the float is finite, neither infinite nor NaN."},
+     "Return True if the float is finite, neither infinite nor NaN."},
     {"is_nan",          (PyCFunction)float_is_nan,      METH_NOARGS,
-     "Returns True if the float is not a number (NaN)."},
+     "Return True if the float is not a number (NaN)."},
 #endif
     {"__getnewargs__",          (PyCFunction)float_getnewargs,  METH_NOARGS},
     {"__getformat__",           (PyCFunction)float_getformat,
