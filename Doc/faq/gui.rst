@@ -47,13 +47,15 @@ well as in freeware or shareware.
 Qt
 ---
 
-There are bindings available for the Qt toolkit (`PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/>`_) and for KDE (`PyKDE <http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).  If
-you're writing open source software, you don't need to pay for PyQt, but if you
-want to write proprietary applications, you must buy a PyQt license from
-`Riverbank Computing <http://www.riverbankcomputing.co.uk>`_ and (up to Qt 4.4;
-Qt 4.5 upwards is licensed under the LGPL license) a Qt license from `Trolltech
-<http://www.trolltech.com>`_.
+There are bindings available for the Qt toolkit (using either `PyQt
+<http://www.riverbankcomputing.co.uk/software/pyqt/>`_ or `PySide
+<http://www.pyside.org/>`_) and for KDE (`PyKDE http://www.riverbankcomputing.co.uk/software/pykde/intro>`__).
+PyQt is currently more mature than PySide, but you must buy a PyQt license from
+`Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_
+if you want to write proprietary applications.  PySide is free for all applications.
+
+Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
+are available from `Nokia <http://qt.nokia.com/>`_.
 
 Gtk+
 ----
