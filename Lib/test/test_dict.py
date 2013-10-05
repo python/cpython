@@ -33,9 +33,11 @@ class DictTest(unittest.TestCase):
         self.assertEqual(d.keys(), [])
         d = {'a': 1, 'b': 2}
         k = d.keys()
+        self.assertEqual(set(k), {'a', 'b'})
+        self.assertIn('a', k)
+        self.assertIn('b', k)
         self.assertTrue(d.has_key('a'))
         self.assertTrue(d.has_key('b'))
-
         self.assertRaises(TypeError, d.keys, None)
 
     def test_values(self):
