@@ -3474,10 +3474,16 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
             goto Done;
         }
 
-        /* if base < 0:
-               base = base % modulus
-           Having the base positive just makes things easier. */
-        if (Py_SIZE(a) < 0) {
+        /* Reduce base by modulus in some cases:
+           1. If base < 0.  Forcing the base non-negative makes things easier.
+           2. If base is obviously larger than the modulus.  The "small
+              exponent" case later can multiply directly by base repeatedly,
+              while the "large exponent" case multiplies directly by base 31
+              times.  It can be unboundedly faster to multiply by
+              base % modulus instead.
+           We could _always_ do this reduction, but l_divmod() isn't cheap,
+           so we only do it when it buys something. */
+        if (Py_SIZE(a) < 0 || Py_SIZE(a) > Py_SIZE(c)) {
             if (l_divmod(a, c, NULL, &temp) < 0)
                 goto Error;
             Py_DECREF(a);
