@@ -885,7 +885,7 @@ complex_conjugate(PyObject *self)
 PyDoc_STRVAR(complex_conjugate_doc,
 "complex.conjugate() -> complex\n"
 "\n"
-"Returns the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
+"Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
 
 static PyObject *
 complex_getnewargs(PyComplexObject *v)
@@ -897,7 +897,7 @@ complex_getnewargs(PyComplexObject *v)
 PyDoc_STRVAR(complex__format__doc,
 "complex.__format__() -> str\n"
 "\n"
-"Converts to a string according to format_spec.");
+"Convert to a string according to format_spec.");
 
 static PyObject *
 complex__format__(PyObject* self, PyObject* args)
