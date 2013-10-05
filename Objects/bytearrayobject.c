@@ -2431,21 +2431,21 @@ bytearray_remove(PyByteArrayObject *self, PyObject *arg)
 /* XXX These two helpers could be optimized if argsize == 1 */
 
 static Py_ssize_t
-lstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
+lstrip_helper(char *myptr, Py_ssize_t mysize,
               void *argptr, Py_ssize_t argsize)
 {
     Py_ssize_t i = 0;
-    while (i < mysize && memchr(argptr, myptr[i], argsize))
+    while (i < mysize && memchr(argptr, (unsigned char) myptr[i], argsize))
         i++;
     return i;
 }
 
 static Py_ssize_t
-rstrip_helper(unsigned char *myptr, Py_ssize_t mysize,
+rstrip_helper(char *myptr, Py_ssize_t mysize,
               void *argptr, Py_ssize_t argsize)
 {
     Py_ssize_t i = mysize - 1;
-    while (i >= 0 && memchr(argptr, myptr[i], argsize))
+    while (i >= 0 && memchr(argptr, (unsigned char) myptr[i], argsize))
         i--;
     return i + 1;
 }
@@ -2460,7 +2460,7 @@ static PyObject *
 bytearray_strip(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
-    void *myptr, *argptr;
+    char *myptr, *argptr;
     PyObject *arg = Py_None;
     Py_buffer varg;
     if (!PyArg_ParseTuple(args, "|O:strip", &arg))
@@ -2472,7 +2472,7 @@ bytearray_strip(PyByteArrayObject *self, PyObject *args)
     else {
         if (_getbuffer(arg, &varg) < 0)
             return NULL;
-        argptr = varg.buf;
+        argptr = (char *) varg.buf;
         argsize = varg.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -2497,7 +2497,7 @@ static PyObject *
 bytearray_lstrip(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t left, right, mysize, argsize;
-    void *myptr, *argptr;
+    char *myptr, *argptr;
     PyObject *arg = Py_None;
     Py_buffer varg;
     if (!PyArg_ParseTuple(args, "|O:lstrip", &arg))
@@ -2509,7 +2509,7 @@ bytearray_lstrip(PyByteArrayObject *self, PyObject *args)
     else {
         if (_getbuffer(arg, &varg) < 0)
             return NULL;
-        argptr = varg.buf;
+        argptr = (char *) varg.buf;
         argsize = varg.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -2531,7 +2531,7 @@ static PyObject *
 bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
 {
     Py_ssize_t right, mysize, argsize;
-    void *myptr, *argptr;
+    char *myptr, *argptr;
     PyObject *arg = Py_None;
     Py_buffer varg;
     if (!PyArg_ParseTuple(args, "|O:rstrip", &arg))
@@ -2543,7 +2543,7 @@ bytearray_rstrip(PyByteArrayObject *self, PyObject *args)
     else {
         if (_getbuffer(arg, &varg) < 0)
             return NULL;
-        argptr = varg.buf;
+        argptr = (char *) varg.buf;
         argsize = varg.len;
     }
     myptr = PyByteArray_AS_STRING(self);
