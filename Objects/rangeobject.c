@@ -139,7 +139,7 @@ PyDoc_STRVAR(range_doc,
 "range(stop) -> range object\n\
 range(start, stop[, step]) -> range object\n\
 \n\
-Returns a virtual sequence of numbers from start to stop by step.");
+Return a virtual sequence of numbers from start to stop by step.");
 
 static void
 range_dealloc(rangeobject *r)
@@ -672,14 +672,14 @@ static PyObject * range_iter(PyObject *seq);
 static PyObject * range_reverse(PyObject *seq);
 
 PyDoc_STRVAR(reverse_doc,
-"Returns a reverse iterator.");
+"Return a reverse iterator.");
 
 PyDoc_STRVAR(count_doc,
 "rangeobject.count(value) -> integer -- return number of occurrences of value");
 
 PyDoc_STRVAR(index_doc,
 "rangeobject.index(value, [start, [stop]]) -> integer -- return index of value.\n"
-"Raises ValueError if the value is not present.");
+"Raise ValueError if the value is not present.");
 
 static PyMethodDef range_methods[] = {
     {"__reversed__",    (PyCFunction)range_reverse, METH_NOARGS, reverse_doc},
