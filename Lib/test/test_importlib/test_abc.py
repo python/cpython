@@ -100,6 +100,7 @@ Frozen_InspectLoaderInheritanceTests, Source_InspectLoaderInheritanceTests = tes
 
 class ExecutionLoader(InheritanceTests):
     superclass_names = ['InspectLoader']
+    subclass_names = ['ExtensionFileLoader']
 
 tests = create_inheritance_tests(ExecutionLoader)
 Frozen_ExecutionLoaderInheritanceTests, Source_ExecutionLoaderInheritanceTests = tests
