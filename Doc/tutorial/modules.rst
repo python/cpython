@@ -379,7 +379,9 @@ There are also many different operations you might want to perform on sound data
 (such as mixing, adding echo, applying an equalizer function, creating an
 artificial stereo effect), so in addition you will be writing a never-ending
 stream of modules to perform these operations.  Here's a possible structure for
-your package (expressed in terms of a hierarchical filesystem)::
+your package (expressed in terms of a hierarchical filesystem):
+
+.. code-block:: text
 
    sound/                          Top-level package
          __init__.py               Initialize the sound package
