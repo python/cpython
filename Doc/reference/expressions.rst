@@ -1218,8 +1218,8 @@ Conditional expressions
 
 .. productionlist::
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
-   expression: `conditional_expression` | `lambda_form`
-   expression_nocond: `or_test` | `lambda_form_nocond`
+   expression: `conditional_expression` | `lambda_expr`
+   expression_nocond: `or_test` | `lambda_expr_nocond`
 
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
@@ -1243,10 +1243,10 @@ Lambdas
    pair: anonymous; function
 
 .. productionlist::
-   lambda_form: "lambda" [`parameter_list`]: `expression`
-   lambda_form_nocond: "lambda" [`parameter_list`]: `expression_nocond`
+   lambda_expr: "lambda" [`parameter_list`]: `expression`
+   lambda_expr_nocond: "lambda" [`parameter_list`]: `expression_nocond`
 
-Lambda forms (lambda expressions) have the same syntactic position as
+Lambda expressions (sometimes called lambda forms) have the same syntactic position as
 expressions.  They are a shorthand to create anonymous functions; the expression
 ``lambda arguments: expression`` yields a function object.  The unnamed object
 behaves like a function object defined with ::
@@ -1255,7 +1255,8 @@ behaves like a function object defined with ::
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
-functions created with lambda forms cannot contain statements or annotations.
+functions created with lambda expressions cannot contain statements or
+annotations.
 
 
 .. _exprlists:
