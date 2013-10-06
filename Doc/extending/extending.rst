@@ -384,6 +384,8 @@ optionally followed by an import of the module::
           imports it. */
        PyImport_ImportModule("spam");
 
+       ...
+
 .. note::
 
    Removing entries from ``sys.modules`` or importing compiled modules into
