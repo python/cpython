@@ -20,6 +20,6 @@ User documentation and API reference are provided in another document:
    :ref:`distutils-index`
       The manual for developers and packagers of Python modules.  This describes
       how to prepare :mod:`distutils`\ -based packages so that they may be
-      easily installed into an existing Python installation.  If also contains
+      easily installed into an existing Python installation.  It also contains
       instructions for end-users wanting to install a distutils-based package,
       :ref:`install-index`.
