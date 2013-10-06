@@ -23,16 +23,17 @@ as mirroring other ftp servers.  It is also used by the module
 Here's a sample session using the :mod:`ftplib` module::
 
    >>> from ftplib import FTP
-   >>> ftp = FTP('ftp.cwi.nl')   # connect to host, default port
-   >>> ftp.login()               # user anonymous, passwd anonymous@
-   >>> ftp.retrlines('LIST')     # list directory contents
-   total 24418
-   drwxrwsr-x   5 ftp-usr  pdmaint     1536 Mar 20 09:48 .
-   dr-xr-srwt 105 ftp-usr  pdmaint     1536 Mar 21 14:32 ..
-   -rw-r--r--   1 ftp-usr  pdmaint     5305 Mar 20 09:48 INDEX
-    .
-    .
-    .
+   >>> ftp = FTP('ftp.debian.org')     # connect to host, default port
+   >>> ftp.login()                     # user anonymous, passwd anonymous@
+   '230 Login successful.'
+   >>> ftp.cwd('debian')               # change into "debian" directory
+   >>> ftp.retrlines('LIST')           # list directory contents
+   -rw-rw-r--    1 1176     1176         1063 Jun 15 10:18 README
+   ...
+   drwxr-sr-x    5 1176     1176         4096 Dec 19  2000 pool
+   drwxr-sr-x    4 1176     1176         4096 Nov 17  2008 project
+   drwxr-xr-x    3 1176     1176         4096 Oct 10  2012 tools
+   '226 Directory send OK.'
    >>> ftp.retrbinary('RETR README', open('README', 'wb').write)
    '226 Transfer complete.'
    >>> ftp.quit()
@@ -423,7 +424,8 @@ FTP_TLS Objects
 
 .. method:: FTP_TLS.auth()
 
-   Set up secure control connection by using TLS or SSL, depending on what specified in :meth:`ssl_version` attribute.
+   Set up secure control connection by using TLS or SSL, depending on what
+   specified in :meth:`ssl_version` attribute.
 
 .. method:: FTP_TLS.ccc()
 
@@ -440,5 +442,3 @@ FTP_TLS Objects
 .. method:: FTP_TLS.prot_c()
 
    Set up clear text data connection.
-
-
