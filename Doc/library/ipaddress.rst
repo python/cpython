@@ -282,10 +282,10 @@ only be applied between compatible objects (i.e. IPv4 with IPv4, IPv6 with
 IPv6).
 
 
-Logical operators
-"""""""""""""""""
+Comparison operators
+""""""""""""""""""""
 
-Address objects can be compared with the usual set of logical operators.  Some
+Address objects can be compared with the usual set of comparison operators.  Some
 examples::
 
    >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
