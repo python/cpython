@@ -242,21 +242,32 @@ The special characters are:
 
 ``(?P<name>...)``
    Similar to regular parentheses, but the substring matched by the group is
-   accessible within the rest of the regular expression via the symbolic group
-   name *name*.  Group names must be valid Python identifiers, and each group
-   name must be defined only once within a regular expression.  A symbolic group
-   is also a numbered group, just as if the group were not named.  So the group
-   named ``id`` in the example below can also be referenced as the numbered group
-   ``1``.
+   accessible via the symbolic group name *name*.  Group names must be valid
+   Python identifiers, and each group name must be defined only once within a
+   regular expression.  A symbolic group is also a numbered group, just as if
+   the group were not named.
 
-   For example, if the pattern is ``(?P<id>[a-zA-Z_]\w*)``, the group can be
-   referenced by its name in arguments to methods of match objects, such as
-   ``m.group('id')`` or ``m.end('id')``, and also by name in the regular
-   expression itself (using ``(?P=id)``) and replacement text given to
-   ``.sub()`` (using ``\g<id>``).
+   Named groups can be referenced in three contexts.  If the pattern is
+   ``(?P<quote>['"]).*?(?P=quote)`` (i.e. matching a string quoted with either
+   single or double quotes):
+
+   +---------------------------------------+----------------------------------+
+   | Context of reference to group "quote" | Ways to reference it             |
+   +=======================================+==================================+
+   | in the same pattern itself            | * ``(?P=quote)`` (as shown)      |
+   |                                       | * ``\1``                         |
+   +---------------------------------------+----------------------------------+
+   | when processing match object ``m``    | * ``m.group('quote')``           |
+   |                                       | * ``m.end('quote')`` (etc.)      |
+   +---------------------------------------+----------------------------------+
+   | in a string passed to the ``repl``    | * ``\g<quote>``                  |
+   | argument of ``re.sub()``              | * ``\g<1>``                      |
+   |                                       | * ``\1``                         |
+   +---------------------------------------+----------------------------------+
 
 ``(?P=name)``
-   Matches whatever text was matched by the earlier group named *name*.
+   A backreference to a named group; it matches whatever text was matched by the
+   earlier group named *name*.
 
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
@@ -667,7 +678,8 @@ form.
    when not adjacent to a previous match, so ``sub('x*', '-', 'abc')`` returns
    ``'-a-b-c-'``.
 
-   In addition to character escapes and backreferences as described above,
+   In string-type *repl* arguments, in addition to the character escapes and
+   backreferences described above,
    ``\g<name>`` will use the substring matched by the group named ``name``, as
    defined by the ``(?P<name>...)`` syntax. ``\g<number>`` uses the corresponding
    group number; ``\g<2>`` is therefore equivalent to ``\2``, but isn't ambiguous
