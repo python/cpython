@@ -347,20 +347,20 @@ Answer 2: Fortunately, there is `Stackless Python <http://www.stackless.com>`_,
 which has a completely redesigned interpreter loop that avoids the C stack.
 
 
-Why can't lambda forms contain statements?
-------------------------------------------
+Why can't lambda expressions contain statements?
+------------------------------------------------
 
-Python lambda forms cannot contain statements because Python's syntactic
+Python lambda expressions cannot contain statements because Python's syntactic
 framework can't handle statements nested inside expressions.  However, in
 Python, this is not a serious problem.  Unlike lambda forms in other languages,
 where they add functionality, Python lambdas are only a shorthand notation if
 you're too lazy to define a function.
 
 Functions are already first class objects in Python, and can be declared in a
-local scope.  Therefore the only advantage of using a lambda form instead of a
+local scope.  Therefore the only advantage of using a lambda instead of a
 locally-defined function is that you don't need to invent a name for the
 function -- but that's just a local variable to which the function object (which
-is exactly the same type of object that a lambda form yields) is assigned!
+is exactly the same type of object that a lambda expression yields) is assigned!
 
 
 Can Python be compiled to machine code, C or some other language?
