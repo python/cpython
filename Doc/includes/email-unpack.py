@@ -8,41 +8,27 @@ import email
 import errno
 import mimetypes
 
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 
 def main():
-    parser = OptionParser(usage="""\
+    parser = ArgumentParser(description="""\
 Unpack a MIME message into a directory of files.
-
-Usage: %prog [options] msgfile
 """)
-    parser.add_option('-d', '--directory',
-                      type='string', action='store',
-                      help="""Unpack the MIME message into the named
-                      directory, which will be created if it doesn't already
-                      exist.""")
-    opts, args = parser.parse_args()
-    if not opts.directory:
-        parser.print_help()
-        sys.exit(1)
+    parser.add_argument('-d', '--directory', required=True,
+                        help="""Unpack the MIME message into the named
+                        directory, which will be created if it doesn't already
+                        exist.""")
+    parser.add_argument('msgfile')
+    args = parser.parse_args()
+
+    with open(args.msgfile) as fp:
+        msg = email.message_from_file(fp)
 
     try:
-        msgfile = args[0]
-    except IndexError:
-        parser.print_help()
-        sys.exit(1)
-
-    try:
-        os.mkdir(opts.directory)
-    except OSError as e:
-        # Ignore directory exists error
-        if e.errno != errno.EEXIST:
-            raise
-
-    fp = open(msgfile)
-    msg = email.message_from_file(fp)
-    fp.close()
+        os.mkdir(args.directory)
+    except FileExistsError:
+        pass
 
     counter = 1
     for part in msg.walk():
@@ -59,9 +45,8 @@ Usage: %prog [options] msgfile
                 ext = '.bin'
             filename = 'part-%03d%s' % (counter, ext)
         counter += 1
-        fp = open(os.path.join(opts.directory, filename), 'wb')
-        fp.write(part.get_payload(decode=True))
-        fp.close()
+        with open(os.path.join(args.directory, filename), 'wb') as fp:
+            fp.write(part.get_payload(decode=True))
 
 
 if __name__ == '__main__':
