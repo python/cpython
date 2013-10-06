@@ -147,7 +147,7 @@ the :mod:`glob` module.)
 .. function:: getctime(path)
 
    Return the system's ctime which, on some systems (like Unix) is the time of the
-   last change, and, on others (like Windows), is the creation time for *path*.
+   last metadata change, and, on others (like Windows), is the creation time for *path*.
    The return value is a number giving the number of seconds since the epoch (see
    the  :mod:`time` module).  Raise :exc:`os.error` if the file does not exist or
    is inaccessible.
