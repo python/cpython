@@ -2159,8 +2159,6 @@ features:
    - If *times* and *ns* are both ``None``,
      this is equivalent to specifying ``ns=(atime_ns, mtime_ns)``
      where both times are the current time.
-     (The effect is similar to running the Unix program
-     :program:`touch` on *path*.)
 
    It is an error to specify tuples for both *times* and *ns*.
 
