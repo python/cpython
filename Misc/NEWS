@@ -60,6 +60,11 @@ Library
 - Issue #4366: Fix building extensions on all platforms when --enable-shared
   is used.
 
+Documentation
+-------------
+
+- Issue #18972: Modernize email examples and use the argparse module in them.
+
 Build
 -----
 
