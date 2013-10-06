@@ -312,7 +312,7 @@ Common patterns for working with :class:`Counter` objects::
     dict(c)                         # convert to a regular dictionary
     c.items()                       # convert to a list of (elem, cnt) pairs
     Counter(dict(list_of_pairs))    # convert from a list of (elem, cnt) pairs
-    c.most_common()[:-n:-1]         # n least common elements
+    c.most_common()[:-n-1:-1]       # n least common elements
     +c                              # remove zero and negative counts
 
 Several mathematical operations are provided for combining :class:`Counter`
