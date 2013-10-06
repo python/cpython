@@ -327,7 +327,7 @@ the second character.  For example, ``\$`` matches the character ``'$'``.
 ``\number``
    Matches the contents of the group of the same number.  Groups are numbered
    starting from 1.  For example, ``(.+) \1`` matches ``'the the'`` or ``'55 55'``,
-   but not ``'the end'`` (note the space after the group).  This special sequence
+   but not ``'thethe'`` (note the space after the group).  This special sequence
    can only be used to match one of the first 99 groups.  If the first digit of
    *number* is 0, or *number* is 3 octal digits long, it will not be interpreted as
    a group match, but as the character with octal value *number*. Inside the
