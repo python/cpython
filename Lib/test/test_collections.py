@@ -1080,8 +1080,10 @@ class TestCounter(unittest.TestCase):
         # test fidelity to the pure python version
         c = CounterSubclassWithSetItem('abracadabra')
         self.assertTrue(c.called)
+        self.assertEqual(dict(c), {'a': 5, 'b': 2, 'c': 1, 'd': 1, 'r':2 })
         c = CounterSubclassWithGet('abracadabra')
         self.assertTrue(c.called)
+        self.assertEqual(dict(c), {'a': 5, 'b': 2, 'c': 1, 'd': 1, 'r':2 })
 
 
 ################################################################################
