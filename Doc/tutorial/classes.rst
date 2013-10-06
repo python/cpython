@@ -168,7 +168,6 @@ binding::
        def do_global():
            global spam
            spam = "global spam"
-
        spam = "test spam"
        do_local()
        print("After local assignment:", spam)
