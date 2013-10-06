@@ -20,7 +20,7 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
 
    Return a new hmac object.  If *msg* is present, the method call ``update(msg)``
    is made. *digestmod* is the digest constructor or module for the HMAC object to
-   use. It defaults to  the :func:`hashlib.md5` constructor.
+   use. It defaults to  the :data:`hashlib.md5` constructor.
 
 
 An HMAC object has the following methods:
