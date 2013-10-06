@@ -598,10 +598,10 @@ the help options::
 
    >>> parser = argparse.ArgumentParser(prog='PROG', prefix_chars='+/')
    >>> parser.print_help()
-   usage: PROG [-h]
+   usage: PROG [+h]
 
    optional arguments:
-     -h, --help  show this help message and exit
+     +h, ++help  show this help message and exit
 
 
 The add_argument() method
