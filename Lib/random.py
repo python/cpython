@@ -220,10 +220,11 @@ class Random(_random.Random):
                    Method=_MethodType, BuiltinMethod=_BuiltinMethodType):
         "Return a random int in the range [0,n).  Raises ValueError if n==0."
 
+        random = self.random
         getrandbits = self.getrandbits
         # Only call self.getrandbits if the original random() builtin method
         # has not been overridden or if a new getrandbits() was supplied.
-        if type(self.random) is BuiltinMethod or type(getrandbits) is Method:
+        if type(random) is BuiltinMethod or type(getrandbits) is Method:
             k = n.bit_length()  # don't use (n-1) here because n can be 1
             r = getrandbits(k)          # 0 <= r < 2**k
             while r >= n:
@@ -231,7 +232,6 @@ class Random(_random.Random):
             return r
         # There's an overriden random() method but no new getrandbits() method,
         # so we can only use random() from here.
-        random = self.random
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"
                 "enough bits to choose from a population range this large.\n"
