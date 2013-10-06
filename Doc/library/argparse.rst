@@ -1696,7 +1696,7 @@ Argument groups
 Mutual exclusion
 ^^^^^^^^^^^^^^^^
 
-.. method:: add_mutually_exclusive_group(required=False)
+.. method:: ArgumentParser.add_mutually_exclusive_group(required=False)
 
    Create a mutually exclusive group. :mod:`argparse` will make sure that only
    one of the arguments in the mutually exclusive group was present on the
