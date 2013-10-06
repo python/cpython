@@ -198,7 +198,9 @@ argument values::
    >>>
 
 There are, however, enough ways to crash Python with :mod:`ctypes`, so you
-should be careful anyway.
+should be careful anyway.  The :mod:`faulthandler` module can be helpful in
+debugging crashes (e.g. from segmentation faults produced by erroneous C library
+calls).
 
 ``None``, integers, bytes objects and (unicode) strings are the only native
 Python objects that can directly be used as parameters in these function calls.
