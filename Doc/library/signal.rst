@@ -36,7 +36,11 @@ at a later point(for example at the next :term:`bytecode` instruction).
 This has consequences:
 
 * It makes little sense to catch synchronous errors like :const:`SIGFPE` or
-  :const:`SIGSEGV`.
+  :const:`SIGSEGV` that are caused by an invalid operation in C code.  Python
+  will return from the signal handler to the C code, which is likely to raise
+  the same signal again, causing Python to apparently hang.  From Python 3.3
+  onwards, you can use the :mod:`faulthandler` module to report on synchronous
+  errors.
 
 * A long-running calculation implemented purely in C (such as regular
   expression matching on a large body of text) may run uninterrupted for an
