@@ -378,7 +378,7 @@ All methods are executed atomically.
 
       When invoked with the floating-point *timeout* argument set to a positive
       value, block for at most the number of seconds specified by *timeout*
-      and as long as the lock cannot be acquired.  A negative *timeout* argument
+      and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
       when *blocking* is false.
 
