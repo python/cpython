@@ -20,7 +20,7 @@ available for Python:
       of the library, GTK+ 2.  It provides an object oriented interface that
       is slightly higher level than the C one.  There are also bindings to
       `GNOME <http://www.gnome.org>`_.  One well known PyGTK application is
-      `PythonCAD <http://www.pythoncad.org/>`_. An online `tutorial
+      `WingIDE <http://wingide.com/>`_. An online `tutorial
       <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
 
    `PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/>`_
