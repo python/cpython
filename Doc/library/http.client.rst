@@ -649,7 +649,7 @@ request using http.client::
     >>> conn = http.client.HTTPConnection("localhost", 8080)
     >>> conn.request("PUT", "/file", BODY)
     >>> response = conn.getresponse()
-    >>> print(resp.status, response.reason)
+    >>> print(response.status, response.reason)
     200, OK
 
 .. _httpmessage-objects:
