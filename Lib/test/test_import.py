@@ -149,15 +149,23 @@ class ImportTests(unittest.TestCase):
         sys.path.append('')
         importlib.invalidate_caches()
 
+        namespace = {}
         try:
             make_legacy_pyc(filename)
             # This used to crash.
-            exec('import ' + module)
+            exec('import ' + module, None, namespace)
         finally:
             # Cleanup.
             del sys.path[-1]
             unlink(filename + 'c')
             unlink(filename + 'o')
+
+            # Remove references to the module (unload the module)
+            namespace.clear()
+            try:
+                del sys.modules[module]
+            except KeyError:
+                pass
 
     def test_failing_import_sticks(self):
         source = TESTFN + ".py"
