@@ -37,9 +37,6 @@ this should open a window demonstrating a simple Tk interface.
    `Modern Tkinter for Busy Python Developers <http://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
-   `An Introduction to Tkinter <http://www.pythonware.com/library/an-introduction-to-tkinter.htm>`_
-      Fredrik Lundh's on-line reference material.
-
    `Python and Tkinter Programming <http://www.amazon.com/exec/obidos/ASIN/1884777813>`_
       The book by John Grayson (ISBN 1-884777-81-3).
 
