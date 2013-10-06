@@ -600,8 +600,8 @@ your results will "less often" show up as negative in profile statistics.
 
 .. _profile-timers:
 
-Using a customer timer
-======================
+Using a custom timer
+====================
 
 If you want to change how current time is determined (for example, to force use
 of wall-clock time or elapsed process time), pass the timing function you want
