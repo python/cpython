@@ -35,7 +35,7 @@ Example::
 
 .. function:: quote(s)
 
-   .. deprecated:: 1.6
+   .. deprecated:: 2.7
       Prior to Python 2.7, this function was not publicly documented.  It is
       finally exposed publicly in Python 3.3 as the
       :func:`quote <shlex.quote>` function in the :mod:`shlex` module.
