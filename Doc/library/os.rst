@@ -1557,8 +1557,8 @@ features:
    The default *mode* is ``0o777`` (octal).  On some systems, *mode* is
    ignored.  Where it is used, the current umask value is first masked out.
 
-   If *exists_ok* is ``False`` (the default), an :exc:`OSError` is raised if
-   the target directory already exists.  If *exists_ok* is ``True`` an
+   If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if
+   the target directory already exists.  If *exist_ok* is ``True`` an
    :exc:`OSError` is still raised if the umask-masked *mode* is different from
    the existing mode, on systems where the mode is used.  :exc:`OSError` will
    also be raised if the directory creation fails.
