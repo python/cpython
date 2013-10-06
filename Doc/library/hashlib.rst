@@ -23,12 +23,14 @@ algorithm (defined in Internet :rfc:`1321`).  The terms "secure hash" and
 digests.  The modern term is secure hash.
 
 .. note::
-   If you want the adler32 or crc32 hash functions they are available in
+
+   If you want the adler32 or crc32 hash functions, they are available in
    the :mod:`zlib` module.
 
 .. warning::
 
-   Some algorithms have known hash collision weaknesses, see the FAQ at the end.
+   Some algorithms have known hash collision weaknesses, refer to the "See
+   also" section at the end.
 
 There is one constructor method named for each type of :dfn:`hash`.  All return
 a hash object with the same simple interface. For example: use :func:`sha1` to
