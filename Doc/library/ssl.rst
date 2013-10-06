@@ -1303,10 +1303,10 @@ use the ``openssl ciphers`` command on your system.
 .. seealso::
 
    Class :class:`socket.socket`
-            Documentation of underlying :mod:`socket` class
+       Documentation of underlying :mod:`socket` class
 
-   `TLS (Transport Layer Security) and SSL (Secure Socket Layer) <http://www3.rad.com/networks/applications/secure/tls.htm>`_
-      Debby Koren
+   `SSL/TLS Strong Encryption: An Introduction <http://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
+       Intro from the Apache webserver documentation
 
    `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <http://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
