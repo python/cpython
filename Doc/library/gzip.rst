@@ -77,6 +77,9 @@ The module defines the following items:
    .. versionchanged:: 2.7
       Support for zero-padded files was added.
 
+   .. versionadded:: 2.7
+      The *mtime* argument.
+
 
 .. function:: open(filename[, mode[, compresslevel]])
 
