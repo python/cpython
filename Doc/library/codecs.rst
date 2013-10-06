@@ -65,7 +65,7 @@ It defines the following functions:
       ``factory(stream, errors='strict')``
 
    The factory functions must return objects providing the interfaces defined by
-   the base classes :class:`StreamWriter` and :class:`StreamReader`, respectively.
+   the base classes :class:`StreamReader` and :class:`StreamWriter`, respectively.
    Stream codecs can maintain state.
 
    Possible values for errors are
