@@ -734,7 +734,7 @@ This module provides the following functions.
 
    .. method:: CCompiler.execute(func, args[, msg=None, level=1])
 
-      Invokes :func:`distutils.util.execute` This method invokes a  Python function
+      Invokes :func:`distutils.util.execute`. This method invokes a  Python function
       *func* with the given arguments *args*, after  logging and taking into account
       the *dry_run* flag.
 
