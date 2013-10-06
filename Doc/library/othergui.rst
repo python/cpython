@@ -14,7 +14,7 @@ available for Python:
       the C one. It comes with many more widgets than Tkinter provides, and has
       good Python-specific reference documentation. There are also bindings to
       `GNOME <http://www.gnome.org>`_.  One well known PyGTK application is
-      `PythonCAD <http://www.pythoncad.org/>`_. An online `tutorial
+      `WingIDE <http://wingide.com/>`_. An online `tutorial
       <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
 
    `PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/>`_
