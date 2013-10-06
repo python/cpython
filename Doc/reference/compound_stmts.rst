@@ -535,17 +535,17 @@ function.  The annotation values are available as values of a dictionary keyed
 by the parameters' names in the :attr:`__annotations__` attribute of the
 function object.
 
-.. index:: pair: lambda; form
+.. index:: pair: lambda; expression
 
 It is also possible to create anonymous functions (functions not bound to a
-name), for immediate use in expressions.  This uses lambda forms, described in
-section :ref:`lambda`.  Note that the lambda form is merely a shorthand for a
+name), for immediate use in expressions.  This uses lambda expressions, described in
+section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda form.  The ":keyword:`def`" form is actually more powerful
+defined by a lambda expression.  The ":keyword:`def`" form is actually more powerful
 since it allows the execution of multiple statements and annotations.
 
-**Programmer's note:** Functions are first-class objects.  A "``def``" form
+**Programmer's note:** Functions are first-class objects.  A "``def``" statement
 executed inside a function definition defines a local function that can be
 returned or passed around.  Free variables used in the nested function can
 access the local variables of the function containing the def.  See section
