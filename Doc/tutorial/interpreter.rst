@@ -252,7 +252,7 @@ of your user site-packages directory.  Start Python and run this code:
 
    >>> import site
    >>> site.getusersitepackages()
-   '/home/user/.local/lib/python3.2/site-packages'
+   '/home/user/.local/lib/python2.7/site-packages'
 
 Now you can create a file named :file:`usercustomize.py` in that directory and
 put anything you want in it.  It will affect every invocation of Python, unless
