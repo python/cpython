@@ -537,7 +537,7 @@ like those in :meth:`str.encode` and :meth:`bytes.decode`.
 
 Reading Unicode from a file is therefore simple::
 
-    with open('unicode.rst', encoding='utf-8') as f:
+    with open('unicode.txt', encoding='utf-8') as f:
         for line in f:
             print(repr(line))
 
