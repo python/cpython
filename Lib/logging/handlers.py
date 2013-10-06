@@ -518,7 +518,11 @@ class SocketHandler(logging.Handler):
         else:
             result = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             result.settimeout(timeout)
-            result.connect(self.address)
+            try:
+                result.connect(self.address)
+            except OSError:
+                result.close()  # Issue 19182
+                raise
         return result
 
     def createSocket(self):
