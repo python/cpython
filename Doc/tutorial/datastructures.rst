@@ -54,6 +54,12 @@ objects:
    will see this notation frequently in the Python Library Reference.)
 
 
+.. method:: list.clear()
+   :noindex:
+
+   Remove all items from the list.  Equivalent to ``del a[:]``.
+
+
 .. method:: list.index(x)
    :noindex:
 
@@ -77,6 +83,12 @@ objects:
    :noindex:
 
    Reverse the elements of the list in place.
+
+
+.. method:: list.copy()
+   :noindex:
+
+   Return a shallow copy of the list.  Equivalent to ``a[:]``.
 
 
 An example that uses most of the list methods::
