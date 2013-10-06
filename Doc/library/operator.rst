@@ -267,7 +267,7 @@ expect a function argument.
                   return resolve_attr(obj, attr)
           else:
               def g(obj):
-                  return tuple(resolve_att(obj, attr) for attr in items)
+                  return tuple(resolve_attr(obj, attr) for attr in items)
           return g
 
       def resolve_attr(obj, attr):
