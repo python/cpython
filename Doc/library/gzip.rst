@@ -116,13 +116,11 @@ The module defines the following items:
       .. versionadded:: 3.2
 
    .. versionchanged:: 3.1
-      Support for the :keyword:`with` statement was added.
+      Support for the :keyword:`with` statement was added, along with the
+      *mtime* argument.
 
    .. versionchanged:: 3.2
-      Support for zero-padded files was added.
-
-   .. versionchanged:: 3.2
-      Support for unseekable files was added.
+      Support for zero-padded and unseekable files was added.
 
    .. versionchanged:: 3.3
       The :meth:`io.BufferedIOBase.read1` method is now implemented.
