@@ -719,9 +719,7 @@ Philbrick (philbrick@hks.com)::
               action, voltage);
        printf("-- Lovely plumage, the %s -- It's %s!\n", type, state);
 
-       Py_INCREF(Py_None);
-
-       return Py_None;
+       Py_RETURN_NONE;
    }
 
    static PyMethodDef keywdarg_methods[] = {
