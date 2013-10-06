@@ -143,7 +143,7 @@ importing the :func:`curses.wrapper` function and using it like this::
        stdscr.clear()
 
        # This raises ZeroDivisionError when i == 10.
-       for i in range(0, 10):
+       for i in range(0, 11):
            v = i-10
            stdscr.addstr(i, 0, '10 divided by {} is {}'.format(v, 10/v))
 
@@ -177,8 +177,8 @@ smaller windows, in order to redraw or clear them separately. The
 :func:`~curses.newwin` function creates a new window of a given size,
 returning the new window object. ::
 
-   begin_x = 20 ; begin_y = 7
-   height = 5 ; width = 40
+   begin_x = 20; begin_y = 7
+   height = 5; width = 40
    win = curses.newwin(height, width, begin_y, begin_x)
 
 Note that the coordinate system used in curses is unusual.
@@ -227,7 +227,7 @@ displayed.  ::
    # explained in the next section
    for y in range(0, 99):
        for x in range(0, 99):
-           pad.addch(y,x, ord('a') + (x*x+y*y) % 26 )
+           pad.addch(y,x, ord('a') + (x*x+y*y) % 26)
 
    # Displays a section of the pad in the middle of the screen.
    # (0,0) : coordinate of upper-left corner of pad area to display.
@@ -389,7 +389,7 @@ again, such combinations are not guaranteed to work on all terminals.
 
 An example, which displays a line of text using color pair 1::
 
-   stdscr.addstr( "Pretty text", curses.color_pair(1) )
+   stdscr.addstr("Pretty text", curses.color_pair(1))
    stdscr.refresh()
 
 As I said before, a color pair consists of a foreground and background color.
@@ -412,7 +412,7 @@ When you change a color pair, any text already displayed using that color pair
 will change to the new colors.  You can also display new text in this color
 with::
 
-   stdscr.addstr(0,0, "RED ALERT!", curses.color_pair(1) )
+   stdscr.addstr(0,0, "RED ALERT!", curses.color_pair(1))
 
 Very fancy terminals can change the definitions of the actual colors to a given
 RGB value.  This lets you change color 1, which is usually red, to purple or
