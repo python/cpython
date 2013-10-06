@@ -250,7 +250,7 @@ Equality comparisons are defined though::
     True
 
 Comparisons against non-enumeration values will always compare not equal
-(again, class:`IntEnum` was explicitly designed to behave differently, see
+(again, :class:`IntEnum` was explicitly designed to behave differently, see
 below)::
 
     >>> Color.blue == 2
@@ -594,8 +594,8 @@ alias::
 .. note::
 
     This is a useful example for subclassing Enum to add or change other
-    behaviors as well as disallowing aliases.  If the only change desired is
-    no aliases allowed the :func:`unique` decorator can be used instead.
+    behaviors as well as disallowing aliases.  If the only desired change is
+    disallowing aliases, the :func:`unique` decorator can be used instead.
 
 
 Planet
@@ -671,11 +671,11 @@ the member::
     ...
     AttributeError: 'Color' object has no attribute 'blue'
 
- Likewise, the :attr:`__members__` is only available on the class.
+Likewise, the :attr:`__members__` is only available on the class.
 
- If you give your :class:`Enum` subclass extra methods, like the `Planet`_
- class above, those methods will show up in a :func:`dir` of the member,
- but not of the class::
+If you give your :class:`Enum` subclass extra methods, like the `Planet`_
+class above, those methods will show up in a :func:`dir` of the member,
+but not of the class::
 
     >>> dir(Planet)
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
