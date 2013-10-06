@@ -128,13 +128,13 @@ creation according to their needs, the :class:`EnvBuilder` class.
                 env_dir is the target directory to create an environment in.
                 """
                 env_dir = os.path.abspath(env_dir)
-                context = self.create_directories(env_dir)
+                context = self.ensure_directories(env_dir)
                 self.create_configuration(context)
                 self.setup_python(context)
                 self.setup_scripts(context)
                 self.post_setup(context)
 
-        Each of the methods :meth:`create_directories`,
+        Each of the methods :meth:`ensure_directories`,
         :meth:`create_configuration`, :meth:`setup_python`,
         :meth:`setup_scripts` and :meth:`post_setup` can be overridden.
 
