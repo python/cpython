@@ -67,7 +67,7 @@ The module defines the following items:
    object.
 
    When *fileobj* is not ``None``, the *filename* argument is only used to be
-   included in the :program:`gzip` file header, which may includes the original
+   included in the :program:`gzip` file header, which may include the original
    filename of the uncompressed file.  It defaults to the filename of *fileobj*, if
    discernible; otherwise, it defaults to the empty string, and in this case the
    original filename is not included in the header.
