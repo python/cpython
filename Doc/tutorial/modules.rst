@@ -477,7 +477,7 @@ list of module names that should be imported when ``from package import *`` is
 encountered.  It is up to the package author to keep this list up-to-date when a
 new version of the package is released.  Package authors may also decide not to
 support it, if they don't see a use for importing \* from their package.  For
-example, the file :file:`sounds/effects/__init__.py` could contain the following
+example, the file :file:`sound/effects/__init__.py` could contain the following
 code::
 
    __all__ = ["echo", "surround", "reverse"]
