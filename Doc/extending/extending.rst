@@ -372,6 +372,8 @@ to :c:func:`Py_Initialize`::
        /* Add a static module */
        initspam();
 
+       ...
+
 An example may be found in the file :file:`Demo/embed/demo.c` in the Python
 source distribution.
 
