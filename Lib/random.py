@@ -162,18 +162,17 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, int=int):
+    def randrange(self, start, stop=None, step=1, _int=int):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
         endpoint; in Python this is usually not what you want.
 
-        Do not supply the 'int' argument.
         """
 
         # This code is a bit messy to make it fast for the
         # common case while still doing adequate error checking.
-        istart = int(start)
+        istart = _int(start)
         if istart != start:
             raise ValueError("non-integer arg 1 for randrange()")
         if stop is None:
@@ -182,7 +181,7 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange()")
 
         # stop argument supplied.
-        istop = int(stop)
+        istop = _int(stop)
         if istop != stop:
             raise ValueError("non-integer stop for randrange()")
         width = istop - istart
@@ -192,7 +191,7 @@ class Random(_random.Random):
             raise ValueError("empty range for randrange() (%d,%d, %d)" % (istart, istop, width))
 
         # Non-unit step argument supplied.
-        istep = int(step)
+        istep = _int(step)
         if istep != step:
             raise ValueError("non-integer step for randrange()")
         if istep > 0:
@@ -251,7 +250,7 @@ class Random(_random.Random):
             raise IndexError('Cannot choose from an empty sequence')
         return seq[i]
 
-    def shuffle(self, x, random=None, int=int):
+    def shuffle(self, x, random=None):
         """x, random=random.random -> shuffle list x in place; return None.
 
         Optional arg random is a 0-argument function returning a random
@@ -260,11 +259,18 @@ class Random(_random.Random):
         Do not supply the 'int' argument.
         """
 
-        randbelow = self._randbelow
-        for i in reversed(range(1, len(x))):
-            # pick an element in x[:i+1] with which to exchange x[i]
-            j = randbelow(i+1) if random is None else int(random() * (i+1))
-            x[i], x[j] = x[j], x[i]
+        if random is None:
+            randbelow = self._randbelow
+            for i in reversed(range(1, len(x))):
+                # pick an element in x[:i+1] with which to exchange x[i]
+                j = randbelow(i+1)
+                x[i], x[j] = x[j], x[i]
+        else:
+            _int = int
+            for i in reversed(range(1, len(x))):
+                # pick an element in x[:i+1] with which to exchange x[i]
+                j = _int(random() * (i+1))
+                x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k):
         """Chooses k unique random elements from a population sequence or set.
