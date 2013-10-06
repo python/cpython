@@ -46,7 +46,7 @@ produces either the sum or the max::
 Assuming the Python code above is saved into a file called ``prog.py``, it can
 be run at the command line and provides useful help messages::
 
-   $ prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] [--sum] N [N ...]
 
    Process some integers.
@@ -61,15 +61,15 @@ be run at the command line and provides useful help messages::
 When run with the appropriate arguments, it prints either the sum or the max of
 the command-line integers::
 
-   $ prog.py 1 2 3 4
+   $ python prog.py 1 2 3 4
    4
 
-   $ prog.py 1 2 3 4 --sum
+   $ python prog.py 1 2 3 4 --sum
    10
 
 If invalid arguments are passed in, it will issue an error::
 
-   $ prog.py a b c
+   $ python prog.py a b c
    usage: prog.py [-h] [--sum] N [N ...]
    prog.py: error: argument N: invalid int value: 'a'
 
