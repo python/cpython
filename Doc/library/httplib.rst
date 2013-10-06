@@ -626,6 +626,6 @@ be created via ``PUT`` request. Here is an example session that shows how to do
     >>> conn = httplib.HTTPConnection("localhost", 8080)
     >>> conn.request("PUT", "/file", BODY)
     >>> response = conn.getresponse()
-    >>> print resp.status, response.reason
+    >>> print response.status, response.reason
     200, OK
 
