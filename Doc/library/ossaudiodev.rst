@@ -296,7 +296,7 @@ simple calculations.
 
       fmt = dsp.setfmt(fmt)
       channels = dsp.channels(channels)
-      rate = dsp.rate(channels)
+      rate = dsp.rate(rate)
 
 
 .. method:: oss_audio_device.bufsize()
