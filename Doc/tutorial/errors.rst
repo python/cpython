@@ -45,7 +45,7 @@ programs, however, and result in error messages as shown here::
    >>> 10 * (1/0)
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
-   ZeroDivisionError: int division or modulo by zero
+   ZeroDivisionError: division by zero
    >>> 4 + spam*3
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
