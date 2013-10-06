@@ -184,7 +184,7 @@ brackets:
    list_comprehension: `expression` `list_for`
    list_for: "for" `target_list` "in" `old_expression_list` [`list_iter`]
    old_expression_list: `old_expression` [("," `old_expression`)+ [","]]
-   old_expression: `or_test` | `old_lambda_form`
+   old_expression: `or_test` | `old_lambda_expr`
    list_iter: `list_for` | `list_if`
    list_if: "if" `old_expression` [`list_iter`]
 
@@ -1255,7 +1255,7 @@ Conditional Expressions
 
 .. productionlist::
    conditional_expression: `or_test` ["if" `or_test` "else" `expression`]
-   expression: `conditional_expression` | `lambda_form`
+   expression: `conditional_expression` | `lambda_expr`
 
 Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
@@ -1275,14 +1275,13 @@ Lambdas
 
 .. index::
    pair: lambda; expression
-   pair: lambda; form
    pair: anonymous; function
 
 .. productionlist::
-   lambda_form: "lambda" [`parameter_list`]: `expression`
-   old_lambda_form: "lambda" [`parameter_list`]: `old_expression`
+   lambda_expr: "lambda" [`parameter_list`]: `expression`
+   old_lambda_expr: "lambda" [`parameter_list`]: `old_expression`
 
-Lambda forms (lambda expressions) have the same syntactic position as
+Lambda expressions (sometimes called lambda forms) have the same syntactic position as
 expressions.  They are a shorthand to create anonymous functions; the expression
 ``lambda arguments: expression`` yields a function object.  The unnamed object
 behaves like a function object defined with ::
@@ -1291,7 +1290,7 @@ behaves like a function object defined with ::
        return expression
 
 See section :ref:`function` for the syntax of parameter lists.  Note that
-functions created with lambda forms cannot contain statements.
+functions created with lambda expressions cannot contain statements.
 
 
 .. _exprlists:

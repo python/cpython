@@ -509,14 +509,14 @@ receiving any excess positional parameters, defaulting to the empty tuple.  If
 the form "``**identifier``" is present, it is initialized to a new dictionary
 receiving any excess keyword arguments, defaulting to a new empty dictionary.
 
-.. index:: pair: lambda; form
+.. index:: pair: lambda; expression
 
 It is also possible to create anonymous functions (functions not bound to a
-name), for immediate use in expressions.  This uses lambda forms, described in
-section :ref:`lambda`.  Note that the lambda form is merely a shorthand for a
+name), for immediate use in expressions.  This uses lambda expressions, described in
+section :ref:`lambda`.  Note that the lambda expression is merely a shorthand for a
 simplified function definition; a function defined in a ":keyword:`def`"
 statement can be passed around or assigned to another name just like a function
-defined by a lambda form.  The ":keyword:`def`" form is actually more powerful
+defined by a lambda expression.  The ":keyword:`def`" form is actually more powerful
 since it allows the execution of multiple statements.
 
 **Programmer's note:** Functions are first-class objects.  A "``def``" form
