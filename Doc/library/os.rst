@@ -1868,8 +1868,8 @@ features:
    On some Unix systems (such as Linux), the following attributes may also be
    available:
 
-   * :attr:`st_blocks` - number of blocks allocated for file
-   * :attr:`st_blksize` - filesystem blocksize
+   * :attr:`st_blocks` - number of 512-byte blocks allocated for file
+   * :attr:`st_blksize` - filesystem blocksize for efficient file system I/O
    * :attr:`st_rdev` - type of device if an inode device
    * :attr:`st_flags` - user defined flags for file
 
