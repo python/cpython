@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Fix macro expansion of _PyErr_OCCURRED(), and make sure to use it in at
+  least one place so as to avoid regressions.
+
 - Issue #19014: memoryview.cast() is now allowed on zero-length views.
 
 - Issue #19098: Prevent overflow in the compiler when the recursion limit is set
