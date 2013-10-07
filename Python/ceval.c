@@ -2162,7 +2162,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             }
             else {
                 v = PyObject_GetItem(locals, name);
-                if (v == NULL && PyErr_Occurred()) {
+                if (v == NULL && _PyErr_OCCURRED()) {
                     if (!PyErr_ExceptionMatches(PyExc_KeyError))
                         goto error;
                     PyErr_Clear();
@@ -2207,7 +2207,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                                        (PyDictObject *)f->f_builtins,
                                        name);
                 if (v == NULL) {
-                    if (!PyErr_Occurred())
+                    if (!_PyErr_OCCURRED())
                         format_exc_check_arg(PyExc_NameError,
                                              NAME_ERROR_MSG, name);
                     goto error;
