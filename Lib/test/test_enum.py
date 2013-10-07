@@ -58,6 +58,35 @@ try:
 except Exception:
     pass
 
+
+class TestHelpers(unittest.TestCase):
+    # _is_descriptor, _is_sunder, _is_dunder
+
+    def test_is_descriptor(self):
+        class foo:
+            pass
+        for attr in ('__get__','__set__','__delete__'):
+            obj = foo()
+            self.assertFalse(enum._is_descriptor(obj))
+            setattr(obj, attr, 1)
+            self.assertTrue(enum._is_descriptor(obj))
+
+    def test_is_sunder(self):
+        for s in ('_a_', '_aa_'):
+            self.assertTrue(enum._is_sunder(s))
+
+        for s in ('a', 'a_', '_a', '__a', 'a__', '__a__', '_a__', '__a_', '_',
+                '__', '___', '____', '_____',):
+            self.assertFalse(enum._is_sunder(s))
+
+    def test_is_dunder(self):
+        for s in ('__a__', '__aa__'):
+            self.assertTrue(enum._is_dunder(s))
+        for s in ('a', 'a_', '_a', '__a', 'a__', '_a_', '_a__', '__a_', '_',
+                '__', '___', '____', '_____',):
+            self.assertFalse(enum._is_dunder(s))
+
+
 class TestEnum(unittest.TestCase):
     def setUp(self):
         class Season(Enum):
