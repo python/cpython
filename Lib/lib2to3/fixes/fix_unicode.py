@@ -28,8 +28,7 @@ class FixUnicode(fixer_base.BaseFix):
             return new
         elif node.type == token.STRING:
             val = node.value
-            if (not self.unicode_literals and val[0] in 'rR\'"' and
-                '\\' in val):
+            if not self.unicode_literals and val[0] in '\'"' and '\\' in val:
                 val = r'\\'.join([
                     v.replace('\\u', r'\\u').replace('\\U', r'\\U')
                     for v in val.split(r'\\')
