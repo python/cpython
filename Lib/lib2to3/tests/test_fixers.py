@@ -2889,7 +2889,7 @@ class Test_unicode(FixerTestCase):
         self.check(b, a)
 
         b = r"""r'\\\u20ac\U0001d121\\u20ac'"""
-        a = r"""r'\\\\u20ac\\U0001d121\\u20ac'"""
+        a = r"""r'\\\u20ac\U0001d121\\u20ac'"""
         self.check(b, a)
 
     def test_bytes_literal_escape_u(self):
