@@ -49,9 +49,6 @@ PyAPI_DATA(PyTypeObject) _PyWeakref_CallableProxyType;
         ((Py_TYPE(op) == &_PyWeakref_ProxyType) || \
          (Py_TYPE(op) == &_PyWeakref_CallableProxyType))
 
-/* This macro calls PyWeakref_CheckRef() last since that can involve a
-   function call; this makes it more likely that the function call
-   will be avoided. */
 #define PyWeakref_Check(op) \
         (PyWeakref_CheckRef(op) || PyWeakref_CheckProxy(op))
 
