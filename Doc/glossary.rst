@@ -365,6 +365,10 @@ Glossary
       fraction.  Integer division can be forced by using the ``//`` operator
       instead of the ``/`` operator.  See also :term:`__future__`.
 
+   importing
+      The process by which Python code in one module is made available to
+      Python code in another module.
+
    importer
       An object that both finds and loads a module; both a
       :term:`finder` and :term:`loader` object.
@@ -509,6 +513,13 @@ Glossary
       for a member during lookup. See `The Python 2.3 Method Resolution Order
       <http://www.python.org/download/releases/2.3/mro/>`_.
 
+   module
+      An object that serves as an organizational unit of Python code.  Modules
+      have a namespace containing arbitrary Python objects.  Modules are loaded
+      into Python by the process of :term:`importing`.
+
+      See also :term:`package`.
+
    MRO
       See :term:`method resolution order`.
 
@@ -561,6 +572,11 @@ Glossary
       Any data with state (attributes or value) and defined behavior
       (methods).  Also the ultimate base class of any :term:`new-style
       class`.
+
+   package
+      A Python :term:`module` which can contain submodules or recursively,
+      subpackages.  Technically, a package is a Python module with an
+      ``__path__`` attribute.
 
    parameter
       A named entity in a :term:`function` (or method) definition that
