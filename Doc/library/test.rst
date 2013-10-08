@@ -442,13 +442,6 @@ The :mod:`test.support` module defines the following functions:
    A decorator for running tests that require support for symbolic links.
 
 
-.. function:: suppress_crash_popup()
-
-   A context manager that disables Windows Error Reporting dialogs using
-   `SetErrorMode <http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621%28v=vs.85%29.aspx>`_.
-   On other platforms it's a no-op.
-
-
 .. decorator:: anticipate_failure(condition)
 
    A decorator to conditionally mark tests with
@@ -591,6 +584,21 @@ The :mod:`test.support` module defines the following classes:
 .. method:: EnvironmentVarGuard.unset(envvar)
 
    Temporarily unset the environment variable ``envvar``.
+
+
+.. class:: SuppressCrashReport()
+
+   A context manager used to try to prevent crash dialog popups on tests that
+   are expected to crash a subprocess.
+
+   On Windows, it disables Windows Error Reporting dialogs using
+   `SetErrorMode <http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
+
+   On UNIX, :func:`resource.setrlimit` is used to set
+   :attr:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
+   creation.
+
+   On both platforms, the old value is restored by :meth:`__exit__`.
 
 
 .. class:: WarningsRecorder()

@@ -81,8 +81,7 @@ __all__ = [
     "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
     "skip_unless_xattr", "import_fresh_module", "requires_zlib",
     "PIPE_MAX_SIZE", "failfast", "anticipate_failure", "run_with_tz",
-    "requires_gzip", "requires_bz2", "requires_lzma", "suppress_crash_popup",
-    "SuppressCoreFiles",
+    "requires_gzip", "requires_bz2", "requires_lzma", "SuppressCrashReport"
     ]
 
 class Error(Exception):
@@ -2013,27 +2012,67 @@ def skip_unless_xattr(test):
     return test if ok else unittest.skip(msg)(test)
 
 
-if sys.platform.startswith('win'):
-    @contextlib.contextmanager
-    def suppress_crash_popup():
-        """Disable Windows Error Reporting dialogs using SetErrorMode."""
-        # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621%28v=vs.85%29.aspx
-        # GetErrorMode is not available on Windows XP and Windows Server 2003,
-        # but SetErrorMode returns the previous value, so we can use that
-        import ctypes
-        k32 = ctypes.windll.kernel32
-        SEM_NOGPFAULTERRORBOX = 0x02
-        old_error_mode = k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
-        k32.SetErrorMode(old_error_mode | SEM_NOGPFAULTERRORBOX)
-        try:
-            yield
-        finally:
-            k32.SetErrorMode(old_error_mode)
-else:
-    # this is a no-op for other platforms
-    @contextlib.contextmanager
-    def suppress_crash_popup():
-        yield
+class SuppressCrashReport:
+    """Try to prevent a crash report from popping up.
+
+    On Windows, don't display the Windows Error Reporting dialog.  On UNIX,
+    disable the creation of coredump file.
+    """
+    old_value = None
+
+    def __enter__(self):
+        """On Windows, disable Windows Error Reporting dialogs using
+        SetErrorMode.
+
+        On UNIX, try to save the previous core file size limit, then set
+        soft limit to 0.
+        """
+        if sys.platform.startswith('win'):
+            # see http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx
+            # GetErrorMode is not available on Windows XP and Windows Server 2003,
+            # but SetErrorMode returns the previous value, so we can use that
+            import ctypes
+            self._k32 = ctypes.windll.kernel32
+            SEM_NOGPFAULTERRORBOX = 0x02
+            self.old_value = self._k32.SetErrorMode(SEM_NOGPFAULTERRORBOX)
+            self._k32.SetErrorMode(self.old_value | SEM_NOGPFAULTERRORBOX)
+        else:
+            if resource is not None:
+                try:
+                    self.old_value = resource.getrlimit(resource.RLIMIT_CORE)
+                    resource.setrlimit(resource.RLIMIT_CORE,
+                                       (0, self.old_value[1]))
+                except (ValueError, OSError):
+                    pass
+            if sys.platform == 'darwin':
+                # Check if the 'Crash Reporter' on OSX was configured
+                # in 'Developer' mode and warn that it will get triggered
+                # when it is.
+                #
+                # This assumes that this context manager is used in tests
+                # that might trigger the next manager.
+                value = subprocess.Popen(['/usr/bin/defaults', 'read',
+                        'com.apple.CrashReporter', 'DialogType'],
+                        stdout=subprocess.PIPE).communicate()[0]
+                if value.strip() == b'developer':
+                    print("this test triggers the Crash Reporter, "
+                          "that is intentional", end='', flush=True)
+
+        return self
+
+    def __exit__(self, *ignore_exc):
+        """Restore Windows ErrorMode or core file behavior to initial value."""
+        if self.old_value is None:
+            return
+
+        if sys.platform.startswith('win'):
+            self._k32.SetErrorMode(self.old_value)
+        else:
+            if resource is not None:
+                try:
+                    resource.setrlimit(resource.RLIMIT_CORE, self.old_value)
+                except (ValueError, OSError):
+                    pass
 
 
 def patch(test_instance, object_to_patch, attr_name, new_value):
@@ -2068,42 +2107,3 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
 
     # actually override the attribute
     setattr(object_to_patch, attr_name, new_value)
-
-
-class SuppressCoreFiles:
-
-    """Try to prevent core files from being created."""
-    old_limit = None
-
-    def __enter__(self):
-        """Try to save previous ulimit, then set the soft limit to 0."""
-        if resource is not None:
-            try:
-                self.old_limit = resource.getrlimit(resource.RLIMIT_CORE)
-                resource.setrlimit(resource.RLIMIT_CORE, (0, self.old_limit[1]))
-            except (ValueError, OSError):
-                pass
-        if sys.platform == 'darwin':
-            # Check if the 'Crash Reporter' on OSX was configured
-            # in 'Developer' mode and warn that it will get triggered
-            # when it is.
-            #
-            # This assumes that this context manager is used in tests
-            # that might trigger the next manager.
-            value = subprocess.Popen(['/usr/bin/defaults', 'read',
-                    'com.apple.CrashReporter', 'DialogType'],
-                    stdout=subprocess.PIPE).communicate()[0]
-            if value.strip() == b'developer':
-                print("this test triggers the Crash Reporter, "
-                      "that is intentional", end='')
-                sys.stdout.flush()
-
-    def __exit__(self, *ignore_exc):
-        """Return core file behavior to default."""
-        if self.old_limit is None:
-            return
-        if resource is not None:
-            try:
-                resource.setrlimit(resource.RLIMIT_CORE, self.old_limit)
-            except (ValueError, OSError):
-                pass
