@@ -912,7 +912,7 @@ repetition is performed; a negative repetition factor yields an empty sequence.
 
 The ``/`` (division) and ``//`` (floor division) operators yield the quotient of
 their arguments.  The numeric arguments are first converted to a common type.
-Integer division yields a float, while floor division of integers results in an
+Division of integers yields a float, while floor division of integers results in an
 integer; the result is that of mathematical division with the 'floor' function
 applied to the result.  Division by zero raises the :exc:`ZeroDivisionError`
 exception.
@@ -972,8 +972,8 @@ the left or right by the number of bits given by the second argument.
 
 .. index:: exception: ValueError
 
-A right shift by *n* bits is defined as division by ``pow(2,n)``.  A left shift
-by *n* bits is defined as multiplication with ``pow(2,n)``.
+A right shift by *n* bits is defined as floor division by ``pow(2,n)``.  A left
+shift by *n* bits is defined as multiplication with ``pow(2,n)``.
 
 .. note::
 
