@@ -63,7 +63,7 @@ A few concepts we can learn from the four commands:
 
 * That's a snippet of the help text. It's very useful in that you can
   come across a program you have never used before, and can figure out
-  how it works simply by reading it's help text.
+  how it works simply by reading its help text.
 
 
 The basics
