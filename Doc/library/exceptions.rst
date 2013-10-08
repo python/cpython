@@ -356,7 +356,7 @@ The following exceptions are the exceptions that are usually raised.
    if it has another type (such as a string), the object's value is printed and
    the exit status is one.
 
-   Instances have an attribute :attr:`code` which is set to the proposed exit
+   Instances have an attribute :attr:`!code` which is set to the proposed exit
    status or error message (defaulting to ``None``). Also, this exception derives
    directly from :exc:`BaseException` and not :exc:`Exception`, since it is not
    technically an error.
