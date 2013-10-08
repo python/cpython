@@ -529,6 +529,8 @@ Glossary
       have a namespace containing arbitrary Python objects.  Modules are loaded
       into Python by the process of :term:`importing`.
 
+      See also :term:`package`.
+
    MRO
       See :term:`method resolution order`.
 
@@ -567,6 +569,8 @@ Glossary
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
 
+      See also :term:`module`.
+
    nested scope
       The ability to refer to a variable in an enclosing definition.  For
       instance, a function defined inside another function can refer to
@@ -588,9 +592,11 @@ Glossary
       class`.
 
    package
-      A Python module which can contain submodules or recursively,
+      A Python :term:`module` which can contain submodules or recursively,
       subpackages.  Technically, a package is a Python module with an
       ``__path__`` attribute.
+
+      See also :term:`regular package` and :term:`namespace package`.
 
    parameter
       A named entity in a :term:`function` (or method) definition that
@@ -736,6 +742,8 @@ Glossary
    regular package
       A traditional :term:`package`, such as a directory containing an
       ``__init__.py`` file.
+
+      See also :term:`namespace package`.
 
    __slots__
       A declaration inside a class that saves memory by pre-declaring space for
