@@ -219,8 +219,8 @@ are always available.  They are listed here in alphabetical order.
 
    Future statements are specified by bits which can be bitwise ORed together to
    specify multiple statements.  The bitfield required to specify a given feature
-   can be found as the :attr:`compiler_flag` attribute on the :class:`_Feature`
-   instance in the :mod:`__future__` module.
+   can be found as the :attr:`~__future__._Feature.compiler_flag` attribute on
+   the :class:`~__future__._Feature` instance in the :mod:`__future__` module.
 
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
@@ -707,7 +707,7 @@ are always available.  They are listed here in alphabetical order.
 
    One useful application of the second form of :func:`iter` is to read lines of
    a file until a certain line is reached.  The following example reads a file
-   until the :meth:`readline` method returns an empty string::
+   until the :meth:`~io.TextIOBase.readline` method returns an empty string::
 
       with open('mydata.txt') as fp:
           for line in iter(fp.readline, ''):
@@ -810,8 +810,8 @@ are always available.  They are listed here in alphabetical order.
 
    .. note::
 
-      :class:`object` does *not* have a :attr:`__dict__`, so you can't assign
-      arbitrary attributes to an instance of the :class:`object` class.
+      :class:`object` does *not* have a :attr:`~object.__dict__`, so you can't
+      assign arbitrary attributes to an instance of the :class:`object` class.
 
 
 .. function:: oct(x)
@@ -889,9 +889,9 @@ are always available.  They are listed here in alphabetical order.
      size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
      the buffer will typically be 4096 or 8192 bytes long.
 
-   * "Interactive" text files (files for which :meth:`isatty` returns True) use
-     line buffering.  Other text files use the policy described above for binary
-     files.
+   * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
+     returns True) use line buffering.  Other text files use the policy
+     described above for binary files.
 
    *encoding* is the name of the encoding used to decode or encode the file.
    This should only be used in text mode.  The default encoding is platform
@@ -1096,10 +1096,10 @@ are always available.  They are listed here in alphabetical order.
    turns the :meth:`voltage` method into a "getter" for a read-only attribute
    with the same name.
 
-   A property object has :attr:`getter`, :attr:`setter`, and :attr:`deleter`
-   methods usable as decorators that create a copy of the property with the
-   corresponding accessor function set to the decorated function.  This is
-   best explained with an example::
+   A property object has :attr:`~property.getter`, :attr:`~property.setter`,
+   and :attr:`~property.deleter` methods usable as decorators that create a
+   copy of the property with the corresponding accessor function set to the
+   decorated function.  This is best explained with an example::
 
       class C:
           def __init__(self):
@@ -1205,13 +1205,13 @@ are always available.  They are listed here in alphabetical order.
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
-   ``None``.  Slice objects have read-only data attributes :attr:`start`,
-   :attr:`stop` and :attr:`step` which merely return the argument values (or their
-   default).  They have no other explicit functionality; however they are used by
-   Numerical Python and other third party extensions.  Slice objects are also
-   generated when extended indexing syntax is used.  For example:
-   ``a[start:stop:step]`` or ``a[start:stop, i]``.  See :func:`itertools.islice`
-   for an alternate version that returns an iterator.
+   ``None``.  Slice objects have read-only data attributes :attr:`~slice.start`,
+   :attr:`~slice.stop` and :attr:`~slice.step` which merely return the argument
+   values (or their default).  They have no other explicit functionality;
+   however they are used by Numerical Python and other third party extensions.
+   Slice objects are also generated when extended indexing syntax is used.  For
+   example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See
+   :func:`itertools.islice` for an alternate version that returns an iterator.
 
 
 .. function:: sorted(iterable[, key][, reverse])
@@ -1291,9 +1291,10 @@ are always available.  They are listed here in alphabetical order.
    been overridden in a class. The search order is same as that used by
    :func:`getattr` except that the *type* itself is skipped.
 
-   The :attr:`__mro__` attribute of the *type* lists the method resolution
-   search order used by both :func:`getattr` and :func:`super`.  The attribute
-   is dynamic and can change whenever the inheritance hierarchy is updated.
+   The :attr:`~class.__mro__` attribute of the *type* lists the method
+   resolution search order used by both :func:`getattr` and :func:`super`.  The
+   attribute is dynamic and can change whenever the inheritance hierarchy is
+   updated.
 
    If the second argument is omitted, the super object returned is unbound.  If
    the second argument is an object, ``isinstance(obj, type)`` must be true.  If
@@ -1356,7 +1357,8 @@ are always available.  They are listed here in alphabetical order.
 
 
    With one argument, return the type of an *object*.  The return value is a
-   type object and generally the same object as returned by ``object.__class__``.
+   type object and generally the same object as returned by
+   :attr:`object.__class__ <instance.__class__>`.
 
    The :func:`isinstance` built-in function is recommended for testing the type
    of an object, because it takes subclasses into account.
@@ -1364,11 +1366,11 @@ are always available.  They are listed here in alphabetical order.
 
    With three arguments, return a new type object.  This is essentially a
    dynamic form of the :keyword:`class` statement. The *name* string is the
-   class name and becomes the :attr:`__name__` attribute; the *bases* tuple
-   itemizes the base classes and becomes the :attr:`__bases__` attribute;
-   and the *dict* dictionary is the namespace containing definitions for class
-   body and becomes the :attr:`__dict__` attribute.  For example, the
-   following two statements create identical :class:`type` objects:
+   class name and becomes the :attr:`~class.__name__` attribute; the *bases*
+   tuple itemizes the base classes and becomes the :attr:`~class.__bases__`
+   attribute; and the *dict* dictionary is the namespace containing definitions
+   for class body and becomes the :attr:`~object.__dict__` attribute.  For
+   example, the following two statements create identical :class:`type` objects:
 
       >>> class X:
       ...     a = 1
@@ -1380,7 +1382,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: vars([object])
 
-   Return the :attr:`__dict__` attribute for a module, class, instance,
+   Return the :attr:`~object.__dict__` attribute for a module, class, instance,
    or any other object with a :attr:`__dict__` attribute.
 
    Objects such as modules and instances have an updateable :attr:`__dict__`
