@@ -283,7 +283,7 @@ the same library that the Python runtime is using.
    frame *f* is executed, interpreting bytecode and executing calls as needed.
    The additional *throwflag* parameter can mostly be ignored - if true, then
    it causes an exception to immediately be thrown; this is used for the
-   :meth:`throw` methods of generator objects.
+   :meth:`~generator.throw` methods of generator objects.
 
 
 .. c:function:: int PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
