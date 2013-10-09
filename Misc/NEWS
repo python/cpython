@@ -29,7 +29,8 @@ Core and Builtins
 Library
 -------
 
-- Issue 19158:  a rare race in BoundedSemaphore could allow .release() too often.
+- Issue #19158:  a rare race in BoundedSemaphore could allow .release() too
+  often.
 
 - Issue #18716: Deprecate the formatter module.
 
