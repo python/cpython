@@ -139,7 +139,8 @@ directories, libraries to link with, etc.).
 
 All of this is done through another keyword argument to :func:`setup`, the
 :option:`ext_modules` option.  :option:`ext_modules` is just a list of
-:class:`Extension` instances, each of which describes a single extension module.
+:class:`~distutils.core.Extension` instances, each of which describes a
+single extension module.
 Suppose your distribution includes a single extension, called :mod:`foo` and
 implemented by :file:`foo.c`.  If no additional instructions to the
 compiler/linker are needed, describing this extension is quite simple::
@@ -165,8 +166,8 @@ following sections.
 Extension names and packages
 ----------------------------
 
-The first argument to the :class:`Extension` constructor is always the name of
-the extension, including any package names.  For example, ::
+The first argument to the :class:`~distutils.core.Extension` constructor is
+always the name of the extension, including any package names.  For example, ::
 
     Extension('foo', ['src/foo1.c', 'src/foo2.c'])
 
@@ -196,7 +197,8 @@ will compile :file:`foo.c` to the extension :mod:`pkg.foo`, and :file:`bar.c` to
 Extension source files
 ----------------------
 
-The second argument to the :class:`Extension` constructor is a list of source
+The second argument to the :class:`~distutils.core.Extension` constructor is
+a list of source
 files.  Since the Distutils currently only support C, C++, and Objective-C
 extensions, these are normally C/C++/Objective-C source files.  (Be sure to use
 appropriate extensions to distinguish C++\ source files: :file:`.cc` and
@@ -232,9 +234,9 @@ linked into the executable.
 Preprocessor options
 --------------------
 
-Three optional arguments to :class:`Extension` will help if you need to specify
-include directories to search or preprocessor macros to define/undefine:
-``include_dirs``, ``define_macros``, and ``undef_macros``.
+Three optional arguments to :class:`~distutils.core.Extension` will help if
+you need to specify include directories to search or preprocessor macros to
+define/undefine: ``include_dirs``, ``define_macros``, and ``undef_macros``.
 
 For example, if your extension requires header files in the :file:`include`
 directory under your distribution root, use the ``include_dirs`` option::
