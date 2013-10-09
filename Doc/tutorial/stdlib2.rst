@@ -71,9 +71,9 @@ formatting numbers with group separators::
 Templating
 ==========
 
-The :mod:`string` module includes a versatile :class:`Template` class with a
-simplified syntax suitable for editing by end-users.  This allows users to
-customize their applications without having to alter the application.
+The :mod:`string` module includes a versatile :class:`~string.Template` class
+with a simplified syntax suitable for editing by end-users.  This allows users
+to customize their applications without having to alter the application.
 
 The format uses placeholder names formed by ``$`` with valid Python identifiers
 (alphanumeric characters and underscores).  Surrounding the placeholder with
@@ -85,11 +85,11 @@ spaces.  Writing ``$$`` creates a single escaped ``$``::
    >>> t.substitute(village='Nottingham', cause='the ditch fund')
    'Nottinghamfolk send $10 to the ditch fund.'
 
-The :meth:`substitute` method raises a :exc:`KeyError` when a placeholder is not
-supplied in a dictionary or a keyword argument. For mail-merge style
-applications, user supplied data may be incomplete and the
-:meth:`safe_substitute` method may be more appropriate --- it will leave
-placeholders unchanged if data is missing::
+The :meth:`~string.Template.substitute` method raises a :exc:`KeyError` when a
+placeholder is not supplied in a dictionary or a keyword argument.  For
+mail-merge style applications, user supplied data may be incomplete and the
+:meth:`~string.Template.safe_substitute` method may be more appropriate ---
+it will leave placeholders unchanged if data is missing::
 
    >>> t = Template('Return the $item to $owner.')
    >>> d = dict(item='unladen swallow')
@@ -132,8 +132,9 @@ templates for XML files, plain text reports, and HTML web reports.
 Working with Binary Data Record Layouts
 =======================================
 
-The :mod:`struct` module provides :func:`pack` and :func:`unpack` functions for
-working with variable length binary record formats.  The following example shows
+The :mod:`struct` module provides :func:`~struct.pack` and
+:func:`~struct.unpack` functions for working with variable length binary
+record formats.  The following example shows
 how to loop through header information in a ZIP file without using the
 :mod:`zipfile` module.  Pack codes ``"H"`` and ``"I"`` represent two and four
 byte unsigned numbers respectively.  The ``"<"`` indicates that they are
@@ -201,7 +202,7 @@ While those tools are powerful, minor design errors can result in problems that
 are difficult to reproduce.  So, the preferred approach to task coordination is
 to concentrate all access to a resource in a single thread and then use the
 :mod:`queue` module to feed that thread with requests from other threads.
-Applications using :class:`Queue` objects for inter-thread communication and
+Applications using :class:`~queue.Queue` objects for inter-thread communication and
 coordination are easier to design, more readable, and more reliable.
 
 
@@ -231,8 +232,9 @@ This produces the following output:
 By default, informational and debugging messages are suppressed and the output
 is sent to standard error.  Other output options include routing messages
 through email, datagrams, sockets, or to an HTTP Server.  New filters can select
-different routing based on message priority: :const:`DEBUG`, :const:`INFO`,
-:const:`WARNING`, :const:`ERROR`, and :const:`CRITICAL`.
+different routing based on message priority: :const:`~logging.DEBUG`,
+:const:`~logging.INFO`, :const:`~logging.WARNING`, :const:`~logging.ERROR`,
+and :const:`~logging.CRITICAL`.
 
 The logging system can be configured directly from Python or can be loaded from
 a user editable configuration file for customized logging without altering the
@@ -289,11 +291,11 @@ Many data structure needs can be met with the built-in list type. However,
 sometimes there is a need for alternative implementations with different
 performance trade-offs.
 
-The :mod:`array` module provides an :class:`array()` object that is like a list
-that stores only homogeneous data and stores it more compactly.  The following
-example shows an array of numbers stored as two byte unsigned binary numbers
-(typecode ``"H"``) rather than the usual 16 bytes per entry for regular lists of
-Python int objects::
+The :mod:`array` module provides an :class:`~array.array()` object that is like
+a list that stores only homogeneous data and stores it more compactly.  The
+following example shows an array of numbers stored as two byte unsigned binary
+numbers (typecode ``"H"``) rather than the usual 16 bytes per entry for regular
+lists of Python int objects::
 
    >>> from array import array
    >>> a = array('H', [4000, 10, 700, 22222])
@@ -302,10 +304,10 @@ Python int objects::
    >>> a[1:3]
    array('H', [10, 700])
 
-The :mod:`collections` module provides a :class:`deque()` object that is like a
-list with faster appends and pops from the left side but slower lookups in the
-middle. These objects are well suited for implementing queues and breadth first
-tree searches::
+The :mod:`collections` module provides a :class:`~collections.deque()` object
+that is like a list with faster appends and pops from the left side but slower
+lookups in the middle. These objects are well suited for implementing queues
+and breadth first tree searches::
 
    >>> from collections import deque
    >>> d = deque(["task1", "task2", "task3"])
@@ -351,8 +353,8 @@ not want to run a full list sort::
 Decimal Floating Point Arithmetic
 =================================
 
-The :mod:`decimal` module offers a :class:`Decimal` datatype for decimal
-floating point arithmetic.  Compared to the built-in :class:`float`
+The :mod:`decimal` module offers a :class:`~decimal.Decimal` datatype for
+decimal floating point arithmetic.  Compared to the built-in :class:`float`
 implementation of binary floating point, the class is especially helpful for
 
 * financial applications and other uses which require exact decimal
@@ -373,13 +375,15 @@ becomes significant if the results are rounded to the nearest cent::
    >>> round(.70 * 1.05, 2)
    0.73
 
-The :class:`Decimal` result keeps a trailing zero, automatically inferring four
-place significance from multiplicands with two place significance.  Decimal
-reproduces mathematics as done by hand and avoids issues that can arise when
-binary floating point cannot exactly represent decimal quantities.
+The :class:`~decimal.Decimal` result keeps a trailing zero, automatically
+inferring four place significance from multiplicands with two place
+significance.  Decimal reproduces mathematics as done by hand and avoids
+issues that can arise when binary floating point cannot exactly represent
+decimal quantities.
 
-Exact representation enables the :class:`Decimal` class to perform modulo
-calculations and equality tests that are unsuitable for binary floating point::
+Exact representation enables the :class:`~decimal.Decimal` class to perform
+modulo calculations and equality tests that are unsuitable for binary floating
+point::
 
    >>> Decimal('1.00') % Decimal('.10')
    Decimal('0.00')
