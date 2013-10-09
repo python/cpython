@@ -182,7 +182,6 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->recursion_critical = 0;
         tstate->tracing = 0;
         tstate->use_tracing = 0;
-        tstate->tick_counter = 0;
         tstate->gilstate_counter = 0;
         tstate->async_exc = NULL;
 #ifdef WITH_THREAD
