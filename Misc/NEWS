@@ -76,7 +76,8 @@ Core and Builtins
 Library
 -------
 
-- Issue 19158:  a rare race in BoundedSemaphore could allow .release() too often.
+- Issue #19158:  a rare race in BoundedSemaphore could allow .release() too
+  often.
 
 - Issue #18037: 2to3 now escapes '\u' and '\U' in native strings.
 
