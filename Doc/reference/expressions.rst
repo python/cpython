@@ -336,10 +336,10 @@ the internal evaluation stack.  When the execution is resumed by calling one of
 the generator's methods, the function can proceed exactly as if the
 :keyword:`yield` expression was just another external call.  The value of the
 :keyword:`yield` expression after resuming depends on the method which resumed
-the execution. If :meth:`__next__` is used (typically via either a
+the execution. If :meth:`~generator.__next__` is used (typically via either a
 :keyword:`for` or the :func:`next` builtin) then the result is :const:`None`,
-otherwise, if :meth:`send` is used, then the result will be the value passed
-in to that method.
+otherwise, if :meth:`~generator.send` is used, then the result will be the
+value passed in to that method.
 
 .. index:: single: coroutine
 
@@ -352,16 +352,17 @@ transferred to the generator's caller.
 :keyword:`yield` expressions are allowed in the :keyword:`try` clause of a
 :keyword:`try` ...  :keyword:`finally` construct.  If the generator is not
 resumed before it is finalized (by reaching a zero reference count or by being
-garbage collected), the generator-iterator's :meth:`close` method will be
-called, allowing any pending :keyword:`finally` clauses to execute.
+garbage collected), the generator-iterator's :meth:`~generator.close` method
+will be called, allowing any pending :keyword:`finally` clauses to execute.
 
 When ``yield from <expr>`` is used, it treats the supplied expression as
 a subiterator. All values produced by that subiterator are passed directly
 to the caller of the current generator's methods. Any values passed in with
-:meth:`send` and any exceptions passed in with :meth:`throw` are passed to
-the underlying iterator if it has the appropriate methods. If this is not the
-case, then :meth:`send` will raise :exc:`AttributeError` or :exc:`TypeError`,
-while :meth:`throw` will just raise the passed in exception immediately.
+:meth:`~generator.send` and any exceptions passed in with
+:meth:`~generator.throw` are passed to the underlying iterator if it has the
+appropriate methods.  If this is not the case, then :meth:`~generator.send`
+will raise :exc:`AttributeError` or :exc:`TypeError`, while
+:meth:`~generator.throw` will just raise the passed in exception immediately.
 
 When the underlying iterator is complete, the :attr:`~StopIteration.value`
 attribute of the raised :exc:`StopIteration` instance becomes the value of
@@ -388,6 +389,7 @@ Note that calling any of the generator methods below when the generator
 is already executing raises a :exc:`ValueError` exception.
 
 .. index:: exception: StopIteration
+.. class:: generator
 
 
 .. method:: generator.__next__()
@@ -438,6 +440,7 @@ is already executing raises a :exc:`ValueError` exception.
    other exception, it is propagated to the caller.  :meth:`close` does nothing
    if the generator has already exited due to an exception or normal exit.
 
+.. class:: .
 
 .. index:: single: yield; examples
 
@@ -630,10 +633,10 @@ follows.  If the slice list contains at least one comma, the key is a tuple
 containing the conversion of the slice items; otherwise, the conversion of the
 lone slice item is the key.  The conversion of a slice item that is an
 expression is that expression.  The conversion of a proper slice is a slice
-object (see section :ref:`types`) whose :attr:`start`, :attr:`stop` and
-:attr:`step` attributes are the values of the expressions given as lower bound,
-upper bound and stride, respectively, substituting ``None`` for missing
-expressions.
+object (see section :ref:`types`) whose :attr:`~slice.start`,
+:attr:`~slice.stop` and :attr:`~slice.step` attributes are the values of the
+expressions given as lower bound, upper bound and stride, respectively,
+substituting ``None`` for missing expressions.
 
 
 .. index::
