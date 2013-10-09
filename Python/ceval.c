@@ -1247,7 +1247,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                    a try: finally: block uninterruptible. */
                 goto fast_next_opcode;
             }
-            tstate->tick_counter++;
 #ifdef WITH_TSC
             ticked = 1;
 #endif
