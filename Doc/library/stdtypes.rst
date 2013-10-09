@@ -339,8 +339,8 @@ Notes:
       pair: C; language
 
    Conversion from floating point to integer may round or truncate
-   as in C; see functions :func:`floor` and :func:`ceil` in the :mod:`math` module
-   for well-defined conversions.
+   as in C; see functions :func:`math.floor` and :func:`math.ceil` for
+   well-defined conversions.
 
 (4)
    float also accepts the strings "nan" and "inf" with an optional prefix "+"
@@ -631,7 +631,7 @@ efficiency across a variety of numeric types (including :class:`int`,
 :class:`float`, :class:`decimal.Decimal` and :class:`fractions.Fraction`)
 Python's hash for numeric types is based on a single mathematical function
 that's defined for any rational number, and hence applies to all instances of
-:class:`int` and :class:`fraction.Fraction`, and all finite instances of
+:class:`int` and :class:`fractions.Fraction`, and all finite instances of
 :class:`float` and :class:`decimal.Decimal`.  Essentially, this function is
 given by reduction modulo ``P`` for a fixed prime ``P``.  The value of ``P`` is
 made available to Python as the :attr:`modulus` attribute of
@@ -1303,7 +1303,7 @@ The advantage of the :class:`range` type over a regular :class:`list` or
 only stores the ``start``, ``stop`` and ``step`` values, calculating individual
 items and subranges as needed).
 
-Range objects implement the :class:`collections.Sequence` ABC, and provide
+Range objects implement the :class:`collections.abc.Sequence` ABC, and provide
 features such as containment tests, element index lookup, slicing and
 support for negative indices (see :ref:`typesseq`):
 
@@ -1326,9 +1326,9 @@ support for negative indices (see :ref:`typesseq`):
 Testing range objects for equality with ``==`` and ``!=`` compares
 them as sequences.  That is, two range objects are considered equal if
 they represent the same sequence of values.  (Note that two range
-objects that compare equal might have different :attr:`start`,
-:attr:`stop` and :attr:`step` attributes, for example ``range(0) ==
-range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
+objects that compare equal might have different :attr:`~range.start`,
+:attr:`~range.stop` and :attr:`~range.step` attributes, for example
+``range(0) == range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
 
 .. versionchanged:: 3.2
    Implement the Sequence ABC.
@@ -1342,7 +1342,8 @@ range(2, 1, 3)`` or ``range(0, 3, 2) == range(0, 4, 2)``.)
    object identity).
 
 .. versionadded:: 3.3
-   The :attr:`start`, :attr:`stop` and :attr:`step` attributes.
+   The :attr:`~range.start`, :attr:`~range.stop` and :attr:`~range.step`
+   attributes.
 
 
 .. index::
@@ -2298,7 +2299,7 @@ in the range 0 to 255 (inclusive) as well as bytes and byte array sequences.
    (inclusive) as their first argument.
 
 
-Each bytes and bytearray instance provides a :meth:`decode` convenience
+Each bytes and bytearray instance provides a :meth:`~bytes.decode` convenience
 method that is the inverse of :meth:`str.encode`:
 
 .. method:: bytes.decode(encoding="utf-8", errors="strict")
@@ -2809,11 +2810,11 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`add` and :meth:`remove`.  Since it is mutable, it has no hash value
-and cannot be used as either a dictionary key or as an element of another set.
-The :class:`frozenset` type is immutable and :term:`hashable` --- its contents cannot be
-altered after it is created; it can therefore be used as a dictionary key or as
-an element of another set.
+like :meth:`~set.add` and :meth:`~set.remove`.  Since it is mutable, it has no
+hash value and cannot be used as either a dictionary key or as an element of
+another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
+its contents cannot be altered after it is created; it can therefore be used as
+a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
@@ -3354,12 +3355,12 @@ statement is not, strictly speaking, an operation on a module object; ``import
 foo`` does not require a module object named *foo* to exist, rather it requires
 an (external) *definition* for a module named *foo* somewhere.)
 
-A special attribute of every module is :attr:`__dict__`. This is the dictionary
-containing the module's symbol table. Modifying this dictionary will actually
-change the module's symbol table, but direct assignment to the :attr:`__dict__`
-attribute is not possible (you can write ``m.__dict__['a'] = 1``, which defines
-``m.a`` to be ``1``, but you can't write ``m.__dict__ = {}``).  Modifying
-:attr:`__dict__` directly is not recommended.
+A special attribute of every module is :attr:`~object.__dict__`. This is the
+dictionary containing the module's symbol table. Modifying this dictionary will
+actually change the module's symbol table, but direct assignment to the
+:attr:`__dict__` attribute is not possible (you can write
+``m.__dict__['a'] = 1``, which defines ``m.a`` to be ``1``, but you can't write
+``m.__dict__ = {}``).  Modifying :attr:`__dict__` directly is not recommended.
 
 Modules built into the interpreter are written like this: ``<module 'sys'
 (built-in)>``.  If loaded from a file, they are written as ``<module 'os' from
@@ -3594,7 +3595,7 @@ types, where they are relevant.  Some of these are not reported by the
 
    This method can be overridden by a metaclass to customize the method
    resolution order for its instances.  It is called at class instantiation, and
-   its result is stored in :attr:`__mro__`.
+   its result is stored in :attr:`~class.__mro__`.
 
 
 .. method:: class.__subclasses__

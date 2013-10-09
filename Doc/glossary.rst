@@ -556,9 +556,9 @@ Glossary
       dictionaries.  There are the local, global and built-in namespaces as well
       as nested namespaces in objects (in methods).  Namespaces support
       modularity by preventing naming conflicts.  For instance, the functions
-      :func:`builtins.open` and :func:`os.open` are distinguished by their
-      namespaces.  Namespaces also aid readability and maintainability by making
-      it clear which module implements a function.  For instance, writing
+      :func:`builtins.open <.open>` and :func:`os.open` are distinguished by
+      their namespaces.  Namespaces also aid readability and maintainability by
+      making it clear which module implements a function.  For instance, writing
       :func:`random.seed` or :func:`itertools.islice` makes it clear that those
       functions are implemented by the :mod:`random` and :mod:`itertools`
       modules, respectively.
@@ -583,8 +583,8 @@ Glossary
    new-style class
       Old name for the flavor of classes now used for all class objects.  In
       earlier Python versions, only new-style classes could use Python's newer,
-      versatile features like :attr:`__slots__`, descriptors, properties,
-      :meth:`__getattribute__`, class methods, and static methods.
+      versatile features like :attr:`~object.__slots__`, descriptors,
+      properties, :meth:`__getattribute__`, class methods, and static methods.
 
    object
       Any data with state (attributes or value) and defined behavior
@@ -803,7 +803,8 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`__class__` attribute or can be retrieved with ``type(obj)``.
+      :attr:`~instance.__class__` attribute or can be retrieved with
+      ``type(obj)``.
 
    universal newlines
       A manner of interpreting text streams in which all of the following are
