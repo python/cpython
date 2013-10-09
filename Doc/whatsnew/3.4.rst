@@ -523,7 +523,8 @@ Deprecated Python modules, functions and methods
 Deprecated functions and types of the C API
 -------------------------------------------
 
-* None yet.
+* The ``PyThreadState.tick_counter`` field has been value: its value was meaningless
+  since Python 3.2 ("new GIL").
 
 
 Deprecated features

@@ -100,16 +100,6 @@ typedef struct _ts {
 
     PyObject *dict;  /* Stores per-thread state */
 
-    /* XXX doesn't mean anything anymore (the comment below is obsolete)
-       => deprecate or remove? */
-    /* tick_counter is incremented whenever the check_interval ticker
-     * reaches zero. The purpose is to give a useful measure of the number
-     * of interpreted bytecode instructions in a given thread.  This
-     * extremely lightweight statistic collector may be of interest to
-     * profilers (like psyco.jit()), although nothing in the core uses it.
-     */
-    int tick_counter;
-
     int gilstate_counter;
 
     PyObject *async_exc; /* Asynchronous exception to raise */
