@@ -1,5 +1,5 @@
-:mod:`fcntl` --- The :func:`fcntl` and :func:`ioctl` system calls
-=================================================================
+:mod:`fcntl` --- The ``fcntl`` and ``ioctl`` system calls
+=========================================================
 
 .. module:: fcntl
    :platform: Unix
@@ -17,7 +17,8 @@ interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
 ``sys.stdin.fileno()``, or a :class:`io.IOBase` object, such as ``sys.stdin``
-itself, which provides a :meth:`fileno` that returns a genuine file descriptor.
+itself, which provides a :meth:`~io.IOBase.fileno` that returns a genuine file
+descriptor.
 
 .. versionchanged:: 3.3
    Operations in this module used to raise a :exc:`IOError` where they now
@@ -30,7 +31,8 @@ The module defines the following functions:
 .. function:: fcntl(fd, op[, arg])
 
    Perform the requested operation on file descriptor *fd* (file objects providing
-   a :meth:`fileno` method are accepted as well). The operation is defined by *op*
+   a :meth:`~io.IOBase.fileno` method are accepted as well). The operation is
+   defined by *op*
    and is operating system dependent.  These codes are also found in the
    :mod:`fcntl` module. The argument *arg* is optional, and defaults to the integer
    value ``0``.  When present, it can either be an integer value, or a string.
@@ -50,8 +52,8 @@ The module defines the following functions:
 
 .. function:: ioctl(fd, op[, arg[, mutate_flag]])
 
-   This function is identical to the :func:`fcntl` function, except that the
-   argument handling is even more complicated.
+   This function is identical to the :func:`~fcntl.fcntl` function, except
+   that the argument handling is even more complicated.
 
    The op parameter is limited to values that can fit in 32-bits.
 
@@ -59,7 +61,8 @@ The module defines the following functions:
    integer ``0``), an object supporting the read-only buffer interface (most likely
    a plain Python string) or an object supporting the read-write buffer interface.
 
-   In all but the last case, behaviour is as for the :func:`fcntl` function.
+   In all but the last case, behaviour is as for the :func:`~fcntl.fcntl`
+   function.
 
    If a mutable buffer is passed, then the behaviour is determined by the value of
    the *mutate_flag* parameter.
@@ -94,16 +97,16 @@ The module defines the following functions:
 .. function:: flock(fd, op)
 
    Perform the lock operation *op* on file descriptor *fd* (file objects providing
-   a :meth:`fileno` method are accepted as well). See the Unix manual
+   a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
    using :c:func:`fcntl`.)
 
 
 .. function:: lockf(fd, operation, [length, [start, [whence]]])
 
-   This is essentially a wrapper around the :func:`fcntl` locking calls.  *fd* is
-   the file descriptor of the file to lock or unlock, and *operation* is one of the
-   following values:
+   This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
+   *fd* is the file descriptor of the file to lock or unlock, and *operation*
+   is one of the following values:
 
    * :const:`LOCK_UN` -- unlock
    * :const:`LOCK_SH` -- acquire a shared lock
@@ -118,13 +121,13 @@ The module defines the following functions:
    systems, :const:`LOCK_EX` can only be used if the file descriptor refers to a
    file opened for writing.
 
-   *length* is the number of bytes to lock, *start* is the byte offset at which the
-   lock starts, relative to *whence*, and *whence* is as with :func:`fileobj.seek`,
-   specifically:
+   *length* is the number of bytes to lock, *start* is the byte offset at
+   which the lock starts, relative to *whence*, and *whence* is as with
+   :func:`io.IOBase.seek`, specifically:
 
-   * :const:`0` -- relative to the start of the file (:const:`SEEK_SET`)
-   * :const:`1` -- relative to the current buffer position (:const:`SEEK_CUR`)
-   * :const:`2` -- relative to the end of the file (:const:`SEEK_END`)
+   * :const:`0` -- relative to the start of the file (:data:`os.SEEK_SET`)
+   * :const:`1` -- relative to the current buffer position (:data:`os.SEEK_CUR`)
+   * :const:`2` -- relative to the end of the file (:data:`os.SEEK_END`)
 
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *length* is 0 which means to lock to the end of the file.  The
@@ -149,7 +152,8 @@ lay-out for the *lockdata* variable is system dependent --- therefore using the
 .. seealso::
 
    Module :mod:`os`
-      If the locking flags :const:`O_SHLOCK` and :const:`O_EXLOCK` are present
-      in the :mod:`os` module (on BSD only), the :func:`os.open` function
-      provides an alternative to the :func:`lockf` and :func:`flock` functions.
+      If the locking flags :data:`~os.O_SHLOCK` and :data:`~os.O_EXLOCK` are
+      present in the :mod:`os` module (on BSD only), the :func:`os.open`
+      function provides an alternative to the :func:`lockf` and :func:`flock`
+      functions.
 
