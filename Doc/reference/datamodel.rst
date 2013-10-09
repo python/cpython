@@ -316,7 +316,7 @@ Sequences
          represented by integers in the range 0 <= x < 256.  Bytes literals
          (like ``b'abc'``) and the built-in function :func:`bytes` can be used to
          construct bytes objects.  Also, bytes objects can be decoded to strings
-         via the :meth:`decode` method.
+         via the :meth:`~bytes.decode` method.
 
    Mutable sequences
       .. index::
@@ -378,7 +378,7 @@ Set types
 
       These represent a mutable set. They are created by the built-in :func:`set`
       constructor and can be modified afterwards by several methods, such as
-      :meth:`add`.
+      :meth:`~set.add`.
 
    Frozen sets
       .. index:: object: frozenset
@@ -604,7 +604,7 @@ Callable types
       A function or method which uses the :keyword:`yield` statement (see section
       :ref:`yield`) is called a :dfn:`generator function`.  Such a function, when
       called, always returns an iterator object which can be used to execute the
-      body of the function:  calling the iterator's :meth:`iterator__next__`
+      body of the function:  calling the iterator's :meth:`iterator.__next__`
       method will cause the function to execute until it provides a value
       using the :keyword:`yield` statement.  When the function executes a
       :keyword:`return` statement or falls off the end, a :exc:`StopIteration`
@@ -748,10 +748,10 @@ Custom classes
 
    Special attributes: :attr:`__name__` is the class name; :attr:`__module__` is
    the module name in which the class was defined; :attr:`__dict__` is the
-   dictionary containing the class's namespace; :attr:`__bases__` is a tuple
-   (possibly empty or a singleton) containing the base classes, in the order of
-   their occurrence in the base class list; :attr:`__doc__` is the class's
-   documentation string, or None if undefined.
+   dictionary containing the class's namespace; :attr:`~class.__bases__` is a
+   tuple (possibly empty or a singleton) containing the base classes, in the
+   order of their occurrence in the base class list; :attr:`__doc__` is the
+   class's documentation string, or None if undefined.
 
 Class instances
    .. index::
@@ -793,8 +793,8 @@ Class instances
       single: __dict__ (instance attribute)
       single: __class__ (instance attribute)
 
-   Special attributes: :attr:`__dict__` is the attribute dictionary;
-   :attr:`__class__` is the instance's class.
+   Special attributes: :attr:`~object.__dict__` is the attribute dictionary;
+   :attr:`~instance.__class__` is the instance's class.
 
 I/O objects (also known as file objects)
    .. index::
@@ -812,9 +812,9 @@ I/O objects (also known as file objects)
 
    A :term:`file object` represents an open file.  Various shortcuts are
    available to create file objects: the :func:`open` built-in function, and
-   also :func:`os.popen`, :func:`os.fdopen`, and the :meth:`makefile` method
-   of socket objects (and perhaps by other functions or methods provided
-   by extension modules).
+   also :func:`os.popen`, :func:`os.fdopen`, and the
+   :meth:`~socket.socket.makefile` method of socket objects (and perhaps by
+   other functions or methods provided by extension modules).
 
    The objects ``sys.stdin``, ``sys.stdout`` and ``sys.stderr`` are
    initialized to file objects corresponding to the interpreter's standard
@@ -983,9 +983,9 @@ Internal types
          single: stop (slice object attribute)
          single: step (slice object attribute)
 
-      Special read-only attributes: :attr:`start` is the lower bound; :attr:`stop` is
-      the upper bound; :attr:`step` is the step value; each is ``None`` if omitted.
-      These attributes can have any type.
+      Special read-only attributes: :attr:`~slice.start` is the lower bound;
+      :attr:`~slice.stop` is the upper bound; :attr:`~slice.step` is the step
+      value; each is ``None`` if omitted.  These attributes can have any type.
 
       Slice objects support one method:
 
@@ -1039,7 +1039,8 @@ When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
 of individual elements, but extracting a slice may not make sense.  (One example
-of this is the :class:`NodeList` interface in the W3C's Document Object Model.)
+of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
+Object Model.)
 
 
 .. _customization:
@@ -1763,10 +1764,10 @@ case the instance is itself a class.
 
    :pep:`3119` - Introducing Abstract Base Classes
       Includes the specification for customizing :func:`isinstance` and
-      :func:`issubclass` behavior through :meth:`__instancecheck__` and
-      :meth:`__subclasscheck__`, with motivation for this functionality in the
-      context of adding Abstract Base Classes (see the :mod:`abc` module) to the
-      language.
+      :func:`issubclass` behavior through :meth:`~class.__instancecheck__` and
+      :meth:`~class.__subclasscheck__`, with motivation for this functionality
+      in the context of adding Abstract Base Classes (see the :mod:`abc`
+      module) to the language.
 
 
 .. _callable-types:
@@ -1796,9 +1797,10 @@ a sequence, the allowable keys should be the integers *k* for which ``0 <= k <
 N`` where *N* is the length of the sequence, or slice objects, which define a
 range of items.  It is also recommended that mappings provide the methods
 :meth:`keys`, :meth:`values`, :meth:`items`, :meth:`get`, :meth:`clear`,
-:meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`copy`, and
+:meth:`setdefault`, :meth:`pop`, :meth:`popitem`, :meth:`!copy`, and
 :meth:`update` behaving similar to those for Python's standard dictionary
-objects.  The :mod:`collections` module provides a :class:`MutableMapping`
+objects.  The :mod:`collections` module provides a
+:class:`~collections.abc.MutableMapping`
 abstract base class to help create those methods from a base set of
 :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__`, and :meth:`keys`.
 Mutable sequences should provide methods :meth:`append`, :meth:`count`,
