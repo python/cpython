@@ -140,7 +140,7 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 
    Return 1 if found and removed, 0 if not found (no action taken), and -1 if an
    error is encountered.  Does not raise :exc:`KeyError` for missing keys.  Raise a
-   :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`discard`
+   :exc:`TypeError` if the *key* is unhashable.  Unlike the Python :meth:`~set.discard`
    method, this function does not automatically convert unhashable sets into
    temporary frozensets. Raise :exc:`PyExc_SystemError` if *set* is an not an
    instance of :class:`set` or its subtype.

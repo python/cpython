@@ -58,8 +58,9 @@ distutils; this section explains building extension modules only.
 It is common to pre-compute arguments to :func:`setup`, to better structure the
 driver script. In the example above, the\ ``ext_modules`` argument to
 :func:`setup` is a list of extension modules, each of which is an instance of
-the :class:`Extension`. In the example, the instance defines an extension named
-``demo`` which is build by compiling a single source file, :file:`demo.c`.
+the :class:`~distutils.extension.Extension`. In the example, the instance
+defines an extension named ``demo`` which is build by compiling a single source
+file, :file:`demo.c`.
 
 In many cases, building an extension is more complex, since additional
 preprocessor defines and libraries may be needed. This is demonstrated in the
