@@ -289,9 +289,11 @@ class BoundedSemaphore(Semaphore):
         self._initial_value = value
 
     def release(self):
-        if self._value >= self._initial_value:
-            raise ValueError("Semaphore released too many times")
-        return Semaphore.release(self)
+        with self._cond:
+            if self._value >= self._initial_value:
+                raise ValueError("Semaphore released too many times")
+            self._value += 1
+            self._cond.notify()
 
 
 class Event:
