@@ -40,9 +40,9 @@ the :mod:`io` APIs instead.
 
    Return the file descriptor associated with *p* as an :c:type:`int`.  If the
    object is an integer, its value is returned.  If not, the
-   object's :meth:`fileno` method is called if it exists; the method must return
-   an integer, which is returned as the file descriptor value.  Sets an
-   exception and returns ``-1`` on failure.
+   object's :meth:`~io.IOBase.fileno` method is called if it exists; the
+   method must return an integer, which is returned as the file descriptor
+   value.  Sets an exception and returns ``-1`` on failure.
 
 
 .. c:function:: PyObject* PyFile_GetLine(PyObject *p, int n)
@@ -50,7 +50,8 @@ the :mod:`io` APIs instead.
    .. index:: single: EOFError (built-in exception)
 
    Equivalent to ``p.readline([n])``, this function reads one line from the
-   object *p*.  *p* may be a file object or any object with a :meth:`readline`
+   object *p*.  *p* may be a file object or any object with a
+   :meth:`~io.IOBase.readline`
    method.  If *n* is ``0``, exactly one line is read, regardless of the length of
    the line.  If *n* is greater than ``0``, no more than *n* bytes will be read
    from the file; a partial line can be returned.  In both cases, an empty string
