@@ -431,6 +431,7 @@ Note that calling any of the generator methods below when the generator
 is already executing raises a :exc:`ValueError` exception.
 
 .. index:: exception: StopIteration
+.. class:: generator
 
 
 .. method:: generator.next()
@@ -444,6 +445,7 @@ is already executing raises a :exc:`ValueError` exception.
    exits without yielding another value, a :exc:`StopIteration` exception is
    raised.
 
+.. class:: .
 
 .. method:: generator.send(value)
 
@@ -660,10 +662,10 @@ is a tuple containing the conversion of the slice items; otherwise, the
 conversion of the lone slice item is the key.  The conversion of a slice item
 that is an expression is that expression.  The conversion of an ellipsis slice
 item is the built-in ``Ellipsis`` object.  The conversion of a proper slice is a
-slice object (see section :ref:`types`) whose :attr:`start`, :attr:`stop` and
-:attr:`step` attributes are the values of the expressions given as lower bound,
-upper bound and stride, respectively, substituting ``None`` for missing
-expressions.
+slice object (see section :ref:`types`) whose :attr:`~slice.start`,
+:attr:`~slice.stop` and :attr:`~slice.step` attributes are the values of the
+expressions given as lower bound, upper bound and stride, respectively,
+substituting ``None`` for missing expressions.
 
 
 .. index::

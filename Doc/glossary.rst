@@ -563,7 +563,7 @@ Glossary
    new-style class
       Any class which inherits from :class:`object`.  This includes all built-in
       types like :class:`list` and :class:`dict`.  Only new-style classes can
-      use Python's newer, versatile features like :attr:`__slots__`,
+      use Python's newer, versatile features like :attr:`~object.__slots__`,
       descriptors, properties, and :meth:`__getattribute__`.
 
       More information can be found in :ref:`newstyle`.
@@ -703,7 +703,8 @@ Glossary
    type
       The type of a Python object determines what kind of object it is; every
       object has a type.  An object's type is accessible as its
-      :attr:`__class__` attribute or can be retrieved with ``type(obj)``.
+      :attr:`~instance.__class__` attribute or can be retrieved with
+      ``type(obj)``.
 
    universal newlines
       A manner of interpreting text streams in which all of the following are
