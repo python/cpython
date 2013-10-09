@@ -455,9 +455,9 @@ These are the generic codec APIs:
 
    Encode the :c:type:`Py_UNICODE` buffer *s* of the given *size* and return a Python
    string object.  *encoding* and *errors* have the same meaning as the parameters
-   of the same name in the Unicode :meth:`encode` method.  The codec to be used is
-   looked up using the Python codec registry.  Return *NULL* if an exception was
-   raised by the codec.
+   of the same name in the Unicode :meth:`~unicode.encode` method.  The codec
+   to be used is looked up using the Python codec registry.  Return *NULL* if
+   an exception was raised by the codec.
 
    .. versionchanged:: 2.5
       This function used an :c:type:`int` type for *size*. This might require

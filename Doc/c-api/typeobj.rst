@@ -603,7 +603,7 @@ The following three fields only exist if the
 
    On the other hand, even if you know a member can never be part of a cycle, as a
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
-   :func:`get_referents` function will include it.
+   :func:`~gc.get_referents` function will include it.
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
    :c:func:`local_traverse` to have these specific names; don't name them just
@@ -733,7 +733,7 @@ set.
    reference list head than the base type.  Since the list head is always found via
    :c:member:`~PyTypeObject.tp_weaklistoffset`, this should not be a problem.
 
-   When a type defined by a class statement has no :attr:`__slots__` declaration,
+   When a type defined by a class statement has no :attr:`~object.__slots__` declaration,
    and none of its base types are weakly referenceable, the type is made weakly
    referenceable by adding a weak reference list head slot to the instance layout
    and setting the :c:member:`~PyTypeObject.tp_weaklistoffset` of that slot's offset.
@@ -927,7 +927,7 @@ The next fields, up to and including :c:member:`~PyTypeObject.tp_weaklist`, only
    dictionary at a difference offset than the base type.  Since the dictionary is
    always found via :c:member:`~PyTypeObject.tp_dictoffset`, this should not be a problem.
 
-   When a type defined by a class statement has no :attr:`__slots__` declaration,
+   When a type defined by a class statement has no :attr:`~object.__slots__` declaration,
    and none of its base types has an instance variable dictionary, a dictionary
    slot is added to the instance layout and the :c:member:`~PyTypeObject.tp_dictoffset` is set to
    that slot's offset.
@@ -935,7 +935,7 @@ The next fields, up to and including :c:member:`~PyTypeObject.tp_weaklist`, only
    When a type defined by a class statement has a :attr:`__slots__` declaration,
    the type inherits its :c:member:`~PyTypeObject.tp_dictoffset` from its base type.
 
-   (Adding a slot named :attr:`__dict__` to the :attr:`__slots__` declaration does
+   (Adding a slot named :attr:`~object.__dict__` to the :attr:`__slots__` declaration does
    not have the expected effect, it just causes confusion.  Maybe this should be
    added as a feature just like :attr:`__weakref__` though.)
 

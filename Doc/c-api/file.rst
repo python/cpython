@@ -111,7 +111,8 @@ change in future releases of Python.
    .. index:: single: EOFError (built-in exception)
 
    Equivalent to ``p.readline([n])``, this function reads one line from the
-   object *p*.  *p* may be a file object or any object with a :meth:`readline`
+   object *p*.  *p* may be a file object or any object with a
+   :meth:`~io.IOBase.readline`
    method.  If *n* is ``0``, exactly one line is read, regardless of the length of
    the line.  If *n* is greater than ``0``, no more than *n* bytes will be read
    from the file; a partial line can be returned.  In both cases, an empty string

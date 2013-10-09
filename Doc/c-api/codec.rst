@@ -52,19 +52,19 @@ and *NULL* returned.
 
 .. c:function:: PyObject* PyCodec_IncrementalEncoder(const char *encoding, const char *errors)
 
-   Get an :class:`IncrementalEncoder` object for the given *encoding*.
+   Get an :class:`~codecs.IncrementalEncoder` object for the given *encoding*.
 
 .. c:function:: PyObject* PyCodec_IncrementalDecoder(const char *encoding, const char *errors)
 
-   Get an :class:`IncrementalDecoder` object for the given *encoding*.
+   Get an :class:`~codecs.IncrementalDecoder` object for the given *encoding*.
 
 .. c:function:: PyObject* PyCodec_StreamReader(const char *encoding, PyObject *stream, const char *errors)
 
-   Get a :class:`StreamReader` factory function for the given *encoding*.
+   Get a :class:`~codecs.StreamReader` factory function for the given *encoding*.
 
 .. c:function:: PyObject* PyCodec_StreamWriter(const char *encoding, PyObject *stream, const char *errors)
 
-   Get a :class:`StreamWriter` factory function for the given *encoding*.
+   Get a :class:`~codecs.StreamWriter` factory function for the given *encoding*.
 
 
 Registry API for Unicode encoding error handlers
