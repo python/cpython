@@ -1325,8 +1325,7 @@ this database is based on the UnicodeData.txt file version\n\
 6.0.0 which is publically available from ftp://ftp.unicode.org/.\n\
 \n\
 The module uses the same names and symbols as defined by the\n\
-UnicodeData File Format 6.0.0 (see\n\
-http://www.unicode.org/reports/tr44/tr44-6.html).");
+UnicodeData File Format 6.0.0.");
 
 
 static struct PyModuleDef unicodedatamodule = {
