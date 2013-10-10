@@ -1176,7 +1176,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 
     /* We got an EOF, return a empty string. */
     if (p == NULL) {
-        p = PyMem_Malloc(1);
+        p = PyMem_RawMalloc(1);
         if (p != NULL)
             *p = '\0';
         RESTORE_LOCALE(saved_locale)
@@ -1204,7 +1204,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
     /* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
        release the original. */
     q = p;
-    p = PyMem_Malloc(n+2);
+    p = PyMem_RawMalloc(n+2);
     if (p != NULL) {
         strncpy(p, q, n);
         p[n] = '\n';

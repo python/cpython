@@ -10,6 +10,11 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #16742: The result of the C callback PyOS_ReadlineFunctionPointer must
+  now be a string allocated by PyMem_RawMalloc() or PyMem_RawRealloc() (or NULL
+  if an error occurred), instead of a string allocated by PyMem_Malloc() or
+  PyMem_Realloc().
+
 - Issue #19199: Remove ``PyThreadState.tick_counter`` field
 
 - Fix macro expansion of _PyErr_OCCURRED(), and make sure to use it in at
