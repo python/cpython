@@ -403,9 +403,15 @@ by the local file.
 
    Print the argument list of the current function.
 
-.. pdbcommand:: p(rint) expression
+.. pdbcommand:: p expression
 
    Evaluate the *expression* in the current context and print its value.
+
+   .. note::
+
+      ``print()`` can also be used, but is not a debugger command --- this executes the
+      Python :func:`print` function.
+
 
 .. pdbcommand:: pp expression
 
