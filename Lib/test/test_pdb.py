@@ -205,7 +205,8 @@ def test_pdb_breakpoint_commands():
     ...     'enable 1',
     ...     'clear 1',
     ...     'commands 2',
-    ...     'print 42',
+    ...     'p "42"',
+    ...     'print("42", 7*6)',     # Issue 18764 (not about breakpoints)
     ...     'end',
     ...     'continue',  # will stop at breakpoint 2 (line 4)
     ...     'clear',     # clear all!
@@ -252,11 +253,13 @@ def test_pdb_breakpoint_commands():
     (Pdb) clear 1
     Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
     (Pdb) commands 2
-    (com) print 42
+    (com) p "42"
+    (com) print("42", 7*6)
     (com) end
     (Pdb) continue
     1
-    42
+    '42'
+    42 42
     > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(4)test_function()
     -> print(2)
     (Pdb) clear
