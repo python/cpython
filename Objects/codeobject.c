@@ -74,6 +74,11 @@ PyCode_New(int argcount, int kwonlyargcount,
         PyErr_BadInternalCall();
         return NULL;
     }
+
+    /* Ensure that the filename is a ready Unicode string */
+    if (PyUnicode_READY(filename) < 0)
+        return NULL;
+
     n_cellvars = PyTuple_GET_SIZE(cellvars);
     intern_strings(names);
     intern_strings(varnames);
