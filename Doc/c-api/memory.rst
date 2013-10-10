@@ -288,8 +288,8 @@ Customize PyObject Arena Allocator
 Python has a *pymalloc* allocator for allocations smaller than 512 bytes. This
 allocator is optimized for small objects with a short lifetime. It uses memory
 mappings called "arenas" with a fixed size of 256 KB. It falls back to
-:c:func:`PyMem_Malloc` and :c:func:`PyMem_Realloc` for allocations larger than
-512 bytes.  *pymalloc* is the default allocator used by
+:c:func:`PyMem_RawMalloc` and :c:func:`PyMem_RawRealloc` for allocations larger
+than 512 bytes.  *pymalloc* is the default allocator used by
 :c:func:`PyObject_Malloc`.
 
 The default arena allocator uses the following functions:
