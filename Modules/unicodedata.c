@@ -1322,10 +1322,10 @@ PyDoc_STRVAR(unicodedata_docstring,
 "This module provides access to the Unicode Character Database which\n\
 defines character properties for all Unicode characters. The data in\n\
 this database is based on the UnicodeData.txt file version\n\
-6.0.0 which is publically available from ftp://ftp.unicode.org/.\n\
+6.3.0 which is publically available from ftp://ftp.unicode.org/.\n\
 \n\
 The module uses the same names and symbols as defined by the\n\
-UnicodeData File Format 6.0.0 (see\n\
+UnicodeData File Format 6.3.0 (see\n\
 http://www.unicode.org/reports/tr44/tr44-6.html).");
 
 
