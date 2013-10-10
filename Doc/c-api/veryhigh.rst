@@ -166,6 +166,14 @@ the same library that the Python runtime is using.
    resulting string.  For example, The :mod:`readline` module sets
    this hook to provide line-editing and tab-completion features.
 
+   The result must be a string allocated by :c:func:`PyMem_RawMalloc` or
+   :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred.
+
+   .. versionchanged:: 3.4
+      The result must be allocated by :c:func:`PyMem_RawMalloc` or
+      :c:func:`PyMem_RawRealloc`, instead of being allocated by
+      :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
+
 
 .. c:function:: struct _node* PyParser_SimpleParseString(const char *str, int start)
 
