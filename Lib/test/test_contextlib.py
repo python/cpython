@@ -1,5 +1,6 @@
 """Unit tests for contextlib.py, and other context managers."""
 
+import io
 import sys
 import tempfile
 import unittest
@@ -653,6 +654,14 @@ class TestIgnored(unittest.TestCase):
         with ignored(LookupError):
             'Hello'[50]
 
+class TestRedirectStdout(unittest.TestCase):
+
+    def test_redirect_to_string_io(self):
+        f = io.StringIO()
+        with redirect_stdout(f):
+            help(pow)
+        s = f.getvalue()
+        self.assertIn('pow', s)
 
 if __name__ == "__main__":
     unittest.main()
