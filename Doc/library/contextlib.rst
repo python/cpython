@@ -115,6 +115,37 @@ Functions and classes provided:
 
    .. versionadded:: 3.4
 
+.. function:: redirect_stdout(new_target)
+
+   Context manager for temporarily redirecting :data:`sys.stdout` to
+   another file or file-like object.
+
+   This tool adds flexibility to existing functions or classes whose output
+   is hardwired to stdout.
+
+   For example, the output of :func:`help` normally is sent to *sys.stdout*.
+   You can capture that output in a string by redirecting the output to a
+   :class:`io.StringIO` object::
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            help(pow)
+        s = f.getvalue()
+
+   To send the output of :func:`help` to a file on disk, redirect the output
+   to a regular file::
+
+        with open('help.txt', 'w') as f:
+            with redirect_stdout(f):
+                help(pow)
+
+   To send the output of :func:`help` to *sys.stderr*::
+
+        with redirect_stdout(sys.stderr):
+            help(pow)
+
+   .. versionadded:: 3.4
+
 .. class:: ContextDecorator()
 
    A base class that enables a context manager to also be used as a decorator.

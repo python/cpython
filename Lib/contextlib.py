@@ -4,7 +4,8 @@ import sys
 from collections import deque
 from functools import wraps
 
-__all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack", "ignored"]
+__all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack",
+           "ignored", "redirect_stdout"]
 
 
 class ContextDecorator(object):
@@ -139,6 +140,43 @@ class closing(object):
         return self.thing
     def __exit__(self, *exc_info):
         self.thing.close()
+
+class redirect_stdout:
+    """Context manager for temporarily redirecting stdout to another file
+
+        # How to send help() to stderr
+
+        with redirect_stdout(sys.stderr):
+            help(dir)
+
+        # How to write help() to a file
+
+        with open('help.txt', 'w') as f:
+            with redirect_stdout(f):
+                help(pow)
+
+        # How to capture disassembly to a string
+
+        import dis
+        import io
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            dis.dis('x**2 - y**2')
+        s = f.getvalue()
+
+    """
+
+    def __init__(self, new_target):
+        self.new_target = new_target
+
+    def __enter__(self):
+        self.old_target = sys.stdout
+        sys.stdout = self.new_target
+        return self.new_target
+
+    def __exit__(self, exctype, excinst, exctb):
+        sys.stdout = self.old_target
 
 @contextmanager
 def ignored(*exceptions):
