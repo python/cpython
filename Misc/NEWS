@@ -10,6 +10,8 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #19221: Upgrade Unicode database to version 6.3.0.
+
 - Issue #16742: The result of the C callback PyOS_ReadlineFunctionPointer must
   now be a string allocated by PyMem_RawMalloc() or PyMem_RawRealloc() (or NULL
   if an error occurred), instead of a string allocated by PyMem_Malloc() or
