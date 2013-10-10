@@ -5,7 +5,7 @@
 Iterator Protocol
 =================
 
-There are only a couple of functions specifically for working with iterators.
+There are two functions specifically for working with iterators.
 
 .. c:function:: int PyIter_Check(PyObject *o)
 
@@ -14,11 +14,10 @@ There are only a couple of functions specifically for working with iterators.
 
 .. c:function:: PyObject* PyIter_Next(PyObject *o)
 
-   Return the next value from the iteration *o*.  If the object is an iterator,
-   this retrieves the next value from the iteration, and returns *NULL* with no
-   exception set if there are no remaining items.  If the object is not an
-   iterator, :exc:`TypeError` is raised, or if there is an error in retrieving the
-   item, returns *NULL* and passes along the exception.
+   Return the next value from the iteration *o*.  The object must be an iterator
+   (it is up to the caller to check this).  If there are no remaining values,
+   returns *NULL* with no exception set.  If an error occurs while retrieving
+   the item, returns *NULL* and passes along the exception.
 
 To write a loop which iterates over an iterator, the C code should look
 something like this::
