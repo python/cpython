@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18764: remove the 'print' alias for the PDB 'p' command so that it no
+  longer shadows the print function.
+
 - Issue #19158:  a rare race in BoundedSemaphore could allow .release() too
   often.
 

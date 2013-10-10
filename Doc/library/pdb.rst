@@ -41,7 +41,7 @@ of the debugger is::
 .. versionchanged:: 3.3
    Tab-completion via the :mod:`readline` module is available for commands and
    command arguments, e.g. the current global and local names are offered as
-   arguments of the ``print`` command.
+   arguments of the ``p`` command.
 
 :file:`pdb.py` can also be invoked as a script to debug other scripts.  For
 example::
@@ -309,7 +309,7 @@ by the local file.
    ``end`` to terminate the commands. An example::
 
       (Pdb) commands 1
-      (com) print some_variable
+      (com) p some_variable
       (com) end
       (Pdb)
 
@@ -409,7 +409,7 @@ by the local file.
 
 .. pdbcommand:: pp expression
 
-   Like the :pdbcmd:`print` command, except the value of the expression is
+   Like the :pdbcmd:`p` command, except the value of the expression is
    pretty-printed using the :mod:`pprint` module.
 
 .. pdbcommand:: whatis expression
