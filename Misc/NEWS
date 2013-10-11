@@ -36,6 +36,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19209: Remove import of copyreg from the os module to speed up
+  interpreter startup. stat_result and statvfs_result are now hard-coded to
+  reside in the os module.
+
 - Issue #19205: Don't import the 're' module in site and sysconfig module to
   to speed up interpreter start.
 
