@@ -281,7 +281,7 @@ class StatAttributeTests(unittest.TestCase):
         except OSError as e:
             # On AtheOS, glibc always returns ENOSYS
             if e.errno == errno.ENOSYS:
-                return
+                self.skipTest('os.statvfs() failed with ENOSYS')
 
         # Make sure direct access works
         self.assertEqual(result.f_bfree, result[3])
@@ -326,7 +326,8 @@ class StatAttributeTests(unittest.TestCase):
         except OSError as e:
             # On AtheOS, glibc always returns ENOSYS
             if e.errno == errno.ENOSYS:
-                return
+                self.skipTest('os.statvfs() failed with ENOSYS')
+
         p = pickle.dumps(result)
         self.assertIn(b'\x03cos\nstatvfs_result\n', p)
         unpickled = pickle.loads(p)
