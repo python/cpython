@@ -431,10 +431,13 @@ class StartupImportTests(unittest.TestCase):
         modules = eval(stdout.decode('utf-8'))
         self.assertIn('site', modules)
 
+        # http://bugs.python.org/issue19205
         re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
         self.assertFalse(modules.intersection(re_mods))
-
+        # http://bugs.python.org/issue9548
         self.assertNotIn('locale', modules)
+        # http://bugs.python.org/issue19209
+        self.assertNotIn('copyreg', modules)
 
 
 if __name__ == "__main__":
