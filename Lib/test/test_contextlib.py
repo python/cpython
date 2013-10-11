@@ -632,26 +632,26 @@ class TestExitStack(unittest.TestCase):
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1], cm)
 
-class TestIgnored(unittest.TestCase):
+class TestIgnore(unittest.TestCase):
 
     def test_no_exception(self):
 
-        with ignored(ValueError):
+        with ignore(ValueError):
             self.assertEqual(pow(2, 5), 32)
 
     def test_exact_exception(self):
 
-        with ignored(TypeError):
+        with ignore(TypeError):
             len(5)
 
     def test_multiple_exception_args(self):
 
-        with ignored(ZeroDivisionError, TypeError):
+        with ignore(ZeroDivisionError, TypeError):
             len(5)
 
     def test_exception_hierarchy(self):
 
-        with ignored(LookupError):
+        with ignore(LookupError):
             'Hello'[50]
 
 class TestRedirectStdout(unittest.TestCase):

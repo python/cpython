@@ -5,7 +5,7 @@ from collections import deque
 from functools import wraps
 
 __all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack",
-           "ignored", "redirect_stdout"]
+           "ignore", "redirect_stdout"]
 
 
 class ContextDecorator(object):
@@ -179,10 +179,10 @@ class redirect_stdout:
         sys.stdout = self.old_target
 
 @contextmanager
-def ignored(*exceptions):
+def ignore(*exceptions):
     """Context manager to ignore specified exceptions
 
-         with ignored(OSError):
+         with ignore(OSError):
              os.remove(somefile)
 
     """
