@@ -434,6 +434,8 @@ class StartupImportTests(unittest.TestCase):
         re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
         self.assertFalse(modules.intersection(re_mods))
 
+        self.assertNotIn('locale', modules)
+
 
 if __name__ == "__main__":
     unittest.main()
