@@ -426,8 +426,8 @@ def aliasmbcs():
     while they are always available as "mbcs" in each locale. Make
     them usable by aliasing to "mbcs" in such a case."""
     if sys.platform == 'win32':
-        import locale, codecs
-        enc = locale.getdefaultlocale()[1]
+        import _bootlocale, codecs
+        enc = _bootlocale.getpreferredencoding(False)
         if enc.startswith('cp'):            # "cp***" ?
             try:
                 codecs.lookup(enc)

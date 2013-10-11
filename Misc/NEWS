@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9548: Add a minimal "_bootlocale" module that is imported by the
+  _io module instead of the full locale module.
+
 - Issue #18764: remove the 'print' alias for the PDB 'p' command so that it no
   longer shadows the print function.
 
