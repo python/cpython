@@ -1,7 +1,6 @@
 """Access to Python's configuration information."""
 
 import os
-import re
 import sys
 from os.path import pardir, realpath
 
@@ -222,6 +221,7 @@ def _parse_makefile(filename, vars=None):
     """
     # Regexes needed for parsing Makefile (and similar syntaxes,
     # like old-style Setup files).
+    import re
     _variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)")
     _findvar1_rx = re.compile(r"\$\(([A-Za-z][A-Za-z0-9_]*)\)")
     _findvar2_rx = re.compile(r"\${([A-Za-z][A-Za-z0-9_]*)}")
@@ -435,6 +435,7 @@ def parse_config_h(fp, vars=None):
     """
     if vars is None:
         vars = {}
+    import re
     define_rx = re.compile("#define ([A-Z][A-Za-z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Za-z0-9_]+) [*]/\n")
 
@@ -658,6 +659,7 @@ def get_platform():
         return "%s-%s.%s" % (osname, version, release)
     elif osname[:6] == "cygwin":
         osname = "cygwin"
+        import re
         rel_re = re.compile(r'[\d.]+')
         m = rel_re.match(release)
         if m:

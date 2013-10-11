@@ -70,7 +70,6 @@ ImportError exception, it is silently ignored.
 
 import sys
 import os
-import re
 import builtins
 import _sitebuiltins
 
@@ -436,8 +435,7 @@ def aliasmbcs():
                 encodings._cache[enc] = encodings._unknown
                 encodings.aliases.aliases[enc] = 'mbcs'
 
-
-CONFIG_LINE = re.compile(r'^(?P<key>(\w|[-_])+)\s*=\s*(?P<value>.*)\s*$')
+CONFIG_LINE = r'^(?P<key>(\w|[-_])+)\s*=\s*(?P<value>.*)\s*$'
 
 def venv(known_paths):
     global PREFIXES, ENABLE_USER_SITE
@@ -460,6 +458,8 @@ def venv(known_paths):
         ]
 
     if candidate_confs:
+        import re
+        config_line = re.compile(CONFIG_LINE)
         virtual_conf = candidate_confs[0]
         system_site = "true"
         with open(virtual_conf) as f:
