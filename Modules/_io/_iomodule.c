@@ -546,7 +546,7 @@ _PyIO_get_locale_module(_PyIO_State *state)
         }
         Py_CLEAR(state->locale_module);
     }
-    mod = PyImport_ImportModule("locale");
+    mod = PyImport_ImportModule("_bootlocale");
     if (mod == NULL)
         return NULL;
     state->locale_module = PyWeakref_NewRef(mod, NULL);

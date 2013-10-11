@@ -554,8 +554,8 @@ if sys.platform.startswith("win"):
     # On Win32, this will return the ANSI code page
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
-        import _locale
-        return _locale._getdefaultlocale()[1]
+        import _bootlocale
+        return _bootlocale.getpreferredencoding(False)
 else:
     # On Unix, if CODESET is available, use that.
     try:
@@ -574,27 +574,16 @@ else:
         def getpreferredencoding(do_setlocale = True):
             """Return the charset that the user is likely using,
             according to the system configuration."""
+            import _bootlocale
             if do_setlocale:
                 oldloc = setlocale(LC_CTYPE)
                 try:
                     setlocale(LC_CTYPE, "")
                 except Error:
                     pass
-                result = nl_langinfo(CODESET)
-                if not result and sys.platform == 'darwin':
-                    # nl_langinfo can return an empty string
-                    # when the setting has an invalid value.
-                    # Default to UTF-8 in that case because
-                    # UTF-8 is the default charset on OSX and
-                    # returning nothing will crash the
-                    # interpreter.
-                    result = 'UTF-8'
+            result = _bootlocale.getpreferredencoding(False)
+            if do_setlocale:
                 setlocale(LC_CTYPE, oldloc)
-            else:
-                result = nl_langinfo(CODESET)
-                if not result and sys.platform == 'darwin':
-                    # See above for explanation
-                    result = 'UTF-8'
             return result
 
 

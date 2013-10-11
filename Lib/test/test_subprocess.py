@@ -883,8 +883,9 @@ class ProcessTestCase(BaseTestCase):
         #
         # UTF-16 and UTF-32-BE are sufficient to check both with BOM and
         # without, and UTF-16 and UTF-32.
+        import _bootlocale
         for encoding in ['utf-16', 'utf-32-be']:
-            old_getpreferredencoding = locale.getpreferredencoding
+            old_getpreferredencoding = _bootlocale.getpreferredencoding
             # Indirectly via io.TextIOWrapper, Popen() defaults to
             # locale.getpreferredencoding(False) and earlier in Python 3.2 to
             # locale.getpreferredencoding().
@@ -895,7 +896,7 @@ class ProcessTestCase(BaseTestCase):
                     encoding)
             args = [sys.executable, '-c', code]
             try:
-                locale.getpreferredencoding = getpreferredencoding
+                _bootlocale.getpreferredencoding = getpreferredencoding
                 # We set stdin to be non-None because, as of this writing,
                 # a different code path is used when the number of pipes is
                 # zero or one.
@@ -904,7 +905,7 @@ class ProcessTestCase(BaseTestCase):
                                          stdout=subprocess.PIPE)
                 stdout, stderr = popen.communicate(input='')
             finally:
-                locale.getpreferredencoding = old_getpreferredencoding
+                _bootlocale.getpreferredencoding = old_getpreferredencoding
             self.assertEqual(stdout, '1\n2\n3\n4')
 
     def test_no_leaking(self):
