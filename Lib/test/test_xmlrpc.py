@@ -380,6 +380,11 @@ def http_server(evt, numrequests, requestHandler=None):
             if name == 'div':
                 return 'This is the div function'
 
+        class Fixture:
+            @staticmethod
+            def getData():
+                return '42'
+
     def my_function():
         '''This is my function'''
         return True
@@ -411,7 +416,8 @@ def http_server(evt, numrequests, requestHandler=None):
         serv.register_function(pow)
         serv.register_function(lambda x,y: x+y, 'add')
         serv.register_function(my_function)
-        serv.register_instance(TestInstanceClass())
+        testInstance = TestInstanceClass()
+        serv.register_instance(testInstance, allow_dotted_names=True)
         evt.set()
 
         # handle up to 'numrequests' requests
@@ -591,7 +597,8 @@ class SimpleServerTestCase(BaseServerTestCase):
     def test_introspection1(self):
         expected_methods = set(['pow', 'div', 'my_function', 'add',
                                 'system.listMethods', 'system.methodHelp',
-                                'system.methodSignature', 'system.multicall'])
+                                'system.methodSignature', 'system.multicall',
+                                'Fixture'])
         try:
             p = xmlrpclib.ServerProxy(URL)
             meth = p.system.listMethods()
@@ -689,6 +696,12 @@ class SimpleServerTestCase(BaseServerTestCase):
         # Get the test to run faster by sending a request with test_simple1.
         # This avoids waiting for the socket timeout.
         self.test_simple1()
+
+    def test_allow_dotted_names_true(self):
+        # XXX also need allow_dotted_names_false test.
+        server = xmlrpclib.ServerProxy("http://%s:%d/RPC2" % (ADDR, PORT))
+        data = server.Fixture.getData()
+        self.assertEqual(data, '42')
 
     def test_unicode_host(self):
         server = xmlrpclib.ServerProxy("http://%s:%d/RPC2" % (ADDR, PORT))
