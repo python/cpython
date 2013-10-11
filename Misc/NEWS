@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19205: Don't import the 're' module in site and sysconfig module to
+  to speed up interpreter start.
+
 - Issue #9548: Add a minimal "_bootlocale" module that is imported by the
   _io module instead of the full locale module.
 
