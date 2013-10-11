@@ -26,6 +26,7 @@ import locale
 import codecs
 import decimal
 import fractions
+import pickle
 try:
     import threading
 except ImportError:
@@ -264,6 +265,13 @@ class StatAttributeTests(unittest.TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             self.check_stat_attributes(fname)
 
+    def test_stat_result_pickle(self):
+        result = os.stat(self.fname)
+        p = pickle.dumps(result)
+        self.assertIn(b'\x03cos\nstat_result\n', p)
+        unpickled = pickle.loads(p)
+        self.assertEqual(result, unpickled)
+
     def test_statvfs_attributes(self):
         if not hasattr(os, "statvfs"):
             return
@@ -309,6 +317,20 @@ class StatAttributeTests(unittest.TestCase):
             result2 = os.statvfs_result((0,1,2,3,4,5,6,7,8,9,10,11,12,13,14))
         except TypeError:
             pass
+
+    @unittest.skipUnless(hasattr(os, 'statvfs'),
+                         "need os.statvfs()")
+    def test_statvfs_result_pickle(self):
+        try:
+            result = os.statvfs(self.fname)
+        except OSError as e:
+            # On AtheOS, glibc always returns ENOSYS
+            if e.errno == errno.ENOSYS:
+                return
+        p = pickle.dumps(result)
+        self.assertIn(b'\x03cos\nstatvfs_result\n', p)
+        unpickled = pickle.loads(p)
+        self.assertEqual(result, unpickled)
 
     def test_utime_dir(self):
         delta = 1000000

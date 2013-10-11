@@ -11974,7 +11974,7 @@ INITFUNC(void)
             return NULL;
 #endif
 
-        stat_result_desc.name = MODNAME ".stat_result";
+        stat_result_desc.name = "os.stat_result"; /* see issue #19209 */
         stat_result_desc.fields[7].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[8].name = PyStructSequence_UnnamedField;
         stat_result_desc.fields[9].name = PyStructSequence_UnnamedField;
@@ -11983,7 +11983,7 @@ INITFUNC(void)
         structseq_new = StatResultType.tp_new;
         StatResultType.tp_new = statresult_new;
 
-        statvfs_result_desc.name = MODNAME ".statvfs_result";
+        statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
         if (PyStructSequence_InitType2(&StatVFSResultType,
                                        &statvfs_result_desc) < 0)
             return NULL;
