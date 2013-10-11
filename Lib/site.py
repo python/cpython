@@ -465,7 +465,7 @@ def venv(known_paths):
         with open(virtual_conf) as f:
             for line in f:
                 line = line.strip()
-                m = CONFIG_LINE.match(line)
+                m = config_line.match(line)
                 if m:
                     d = m.groupdict()
                     key, value = d['key'].lower(), d['value']
