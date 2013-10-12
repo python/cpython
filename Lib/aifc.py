@@ -486,7 +486,7 @@ class Aifc_read:
                 try:
                     import cl
                 except ImportError:
-                    if self._comptype == 'ULAW':
+                    if self._comptype in ('ULAW', 'ulaw'):
                         try:
                             import audioop
                             self._convert = self._ulaw2lin
@@ -495,9 +495,9 @@ class Aifc_read:
                         except ImportError:
                             pass
                     raise Error, 'cannot read compressed AIFF-C files'
-                if self._comptype == 'ULAW':
+                if self._comptype in ('ULAW', 'ulaw'):
                     scheme = cl.G711_ULAW
-                elif self._comptype == 'ALAW':
+                elif self._comptype in ('ALAW', 'alaw'):
                     scheme = cl.G711_ALAW
                 else:
                     raise Error, 'unsupported compression type'
@@ -654,7 +654,7 @@ class Aifc_write:
     def setcomptype(self, comptype, compname):
         if self._nframeswritten:
             raise Error, 'cannot change parameters after starting to write'
-        if comptype not in ('NONE', 'ULAW', 'ALAW', 'G722'):
+        if comptype not in ('NONE', 'ULAW', 'ulaw', 'ALAW', 'alaw', 'G722'):
             raise Error, 'unsupported compression type'
         self._comptype = comptype
         self._compname = compname
@@ -674,7 +674,7 @@ class Aifc_write:
         nchannels, sampwidth, framerate, nframes, comptype, compname = info
         if self._nframeswritten:
             raise Error, 'cannot change parameters after starting to write'
-        if comptype not in ('NONE', 'ULAW', 'ALAW', 'G722'):
+        if comptype not in ('NONE', 'ULAW', 'ulaw', 'ALAW', 'alaw', 'G722'):
             raise Error, 'unsupported compression type'
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
@@ -803,7 +803,7 @@ class Aifc_write:
         try:
             import cl
         except ImportError:
-            if self._comptype == 'ULAW':
+            if self._comptype in ('ULAW', 'ulaw'):
                 try:
                     import audioop
                     self._convert = self._lin2ulaw
@@ -811,9 +811,9 @@ class Aifc_write:
                 except ImportError:
                     pass
             raise Error, 'cannot write compressed AIFF-C files'
-        if self._comptype == 'ULAW':
+        if self._comptype in ('ULAW', 'ulaw'):
             scheme = cl.G711_ULAW
-        elif self._comptype == 'ALAW':
+        elif self._comptype in ('ALAW', 'alaw'):
             scheme = cl.G711_ALAW
         else:
             raise Error, 'unsupported compression type'
@@ -866,7 +866,7 @@ class Aifc_write:
         _write_short(self._file, self._nchannels)
         self._nframes_pos = self._file.tell()
         _write_ulong(self._file, self._nframes)
-        if self._comptype in ('ULAW', 'ALAW', 'G722'):
+        if self._comptype in ('ULAW', 'ulaw', 'ALAW', 'alaw', 'G722'):
             _write_short(self._file, 8)
         else:
             _write_short(self._file, self._sampwidth * 8)
