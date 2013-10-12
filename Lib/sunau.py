@@ -414,14 +414,17 @@ class Au_write:
             self._patchheader()
 
     def close(self):
-        self._ensure_header_written()
-        if self._nframeswritten != self._nframes or \
-                  self._datalength != self._datawritten:
-            self._patchheader()
-        self._file.flush()
-        if self._opened and self._file:
-            self._file.close()
-        self._file = None
+        if self._file:
+            try:
+                self._ensure_header_written()
+                if self._nframeswritten != self._nframes or \
+                        self._datalength != self._datawritten:
+                    self._patchheader()
+                self._file.flush()
+                if self._opened and self._file:
+                    self._file.close()
+            finally:
+                self._file = None
 
     #
     # private methods
