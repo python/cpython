@@ -263,7 +263,7 @@ class CmdLineTest(unittest.TestCase):
             path = path.encode("ascii", "backslashreplace")
             sys.stdout.buffer.write(path)"""
         rc1, out1, err1 = assert_python_ok('-c', code, PYTHONPATH="")
-        rc2, out2, err2 = assert_python_ok('-c', code)
+        rc2, out2, err2 = assert_python_ok('-c', code, __isolated=False)
         # regarding to Posix specification, outputs should be equal
         # for empty and unset PYTHONPATH
         self.assertEqual(out1, out2)
