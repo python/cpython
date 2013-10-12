@@ -83,7 +83,7 @@ typedef struct {
                            else w_more(c, p)
 
 static void
-w_more(int c, WFILE *p)
+w_more(char c, WFILE *p)
 {
     Py_ssize_t size, newsize;
     if (p->str == NULL)
@@ -100,7 +100,7 @@ w_more(int c, WFILE *p)
         p->ptr = PyBytes_AS_STRING((PyBytesObject *)p->str) + size;
         p->end =
             PyBytes_AS_STRING((PyBytesObject *)p->str) + newsize;
-        *p->ptr++ = Py_SAFE_DOWNCAST(c, int, char);
+        *p->ptr++ = c;
     }
 }
 
@@ -159,7 +159,7 @@ w_pstring(const char *s, Py_ssize_t n, WFILE *p)
 static void
 w_short_pstring(const char *s, Py_ssize_t n, WFILE *p)
 {
-    w_byte(n, p);
+    w_byte(Py_SAFE_DOWNCAST(n, Py_ssize_t, unsigned char), p);
     w_string(s, n, p);
 }
 
