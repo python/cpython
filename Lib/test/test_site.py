@@ -425,19 +425,24 @@ class StartupImportTests(unittest.TestCase):
     def test_startup_imports(self):
         # This tests checks which modules are loaded by Python when it
         # initially starts upon startup.
-        args = [sys.executable, '-I', '-c',
-                'import sys; print(set(sys.modules))']
-        stdout = subprocess.check_output(args)
-        modules = eval(stdout.decode('utf-8'))
+        popen = subprocess.Popen([sys.executable, '-I', '-v', '-c',
+                                  'import sys; print(set(sys.modules))'],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        stdout, stderr = popen.communicate()
+        stdout = stdout.decode('utf-8')
+        stderr = stderr.decode('utf-8')
+        modules = eval(stdout)
+
         self.assertIn('site', modules)
 
         # http://bugs.python.org/issue19205
         re_mods = {'re', '_sre', 'sre_compile', 'sre_constants', 'sre_parse'}
-        self.assertFalse(modules.intersection(re_mods))
+        self.assertFalse(modules.intersection(re_mods), stderr)
         # http://bugs.python.org/issue9548
-        self.assertNotIn('locale', modules)
+        self.assertNotIn('locale', modules, stderr)
         # http://bugs.python.org/issue19209
-        self.assertNotIn('copyreg', modules)
+        self.assertNotIn('copyreg', modules, stderr)
 
 
 if __name__ == "__main__":
