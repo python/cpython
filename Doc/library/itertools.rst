@@ -135,6 +135,9 @@ loops that truncate the stream.
        '0.93', '0.25', '0.71', '0.79', '0.63', '0.88', '0.39', '0.91', '0.32',
        '0.83', '0.54', '0.95', '0.20', '0.60', '0.91', '0.30', '0.80', '0.60']
 
+    See :func:`functools.reduce` for a similar function that returns only the
+    final accumulated value.
+
     .. versionadded:: 3.2
 
     .. versionchanged:: 3.3
