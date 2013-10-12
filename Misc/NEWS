@@ -76,6 +76,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19131: The aifc module now correctly reads and writes sampwidth of
+  compressed streams.
+
 - Issue #19158:  a rare race in BoundedSemaphore could allow .release() too
   often.
 
