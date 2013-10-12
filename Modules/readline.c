@@ -54,14 +54,16 @@ extern char **completion_matches(char *, CPFunction *);
  * with the "real" readline and cannot be detected at compile-time,
  * hence we use a runtime check to detect if we're using libedit
  *
- * Currently there is one know API incompatibility:
+ * Currently there is one known API incompatibility:
  * - 'get_history' has a 1-based index with GNU readline, and a 0-based
- *   index with libedit's emulation.
+ *   index with older versions of libedit's emulation.
  * - Note that replace_history and remove_history use a 0-based index
- *   with both implementation.
+ *   with both implementations.
  */
 static int using_libedit_emulation = 0;
 static const char libedit_version_tag[] = "EditLine wrapper";
+
+static int libedit_history_start = 0;
 #endif /* __APPLE__ */
 
 static void
@@ -555,21 +557,21 @@ get_history_item(PyObject *self, PyObject *args)
         return NULL;
 #ifdef  __APPLE__
     if (using_libedit_emulation) {
-        /* Libedit emulation uses 0-based indexes,
-         * the real one uses 1-based indexes,
-         * adjust the index to ensure that Python
-         * code doesn't have to worry about the
-         * difference.
+        /* Older versions of libedit's readline emulation
+         * use 0-based indexes, while readline and newer
+         * versions of libedit use 1-based indexes.
          */
         int length = _py_get_history_length();
-        idx --;
+
+        idx = idx - 1 + libedit_history_start;
 
         /*
          * Apple's readline emulation crashes when
          * the index is out of range, therefore
          * test for that and fail gracefully.
          */
-        if (idx < 0 || idx >= length) {
+        if (idx < (0 + libedit_history_start)
+                || idx >= (length + libedit_history_start)) {
             Py_RETURN_NONE;
         }
     }
@@ -883,6 +885,17 @@ setup_readline(void)
      */
     if (using_libedit_emulation)
         rl_initialize();
+
+    /* Detect if libedit's readline emulation uses 0-based
+     * indexing or 1-based indexing.
+     */
+    add_history("1");
+    if (history_get(1) == NULL) {
+        libedit_history_start = 0;
+    } else {
+        libedit_history_start = 1;
+    }
+    clear_history();
 #endif /* __APPLE__ */
 
     using_history();
@@ -1090,11 +1103,8 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
         if (length > 0)
 #ifdef __APPLE__
             if (using_libedit_emulation) {
-                /*
-                 * Libedit's emulation uses 0-based indexes,
-                 * the real readline uses 1-based indexes.
-                 */
-                line = history_get(length - 1)->line;
+                /* handle older 0-based or newer 1-based indexing */
+                line = history_get(length + libedit_history_start - 1)->line;
             } else
 #endif /* __APPLE__ */
             line = history_get(length)->line;
