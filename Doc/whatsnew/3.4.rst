@@ -604,7 +604,7 @@ that may require changes to your code.
   libraries that assumed the previous behaviour was intentional can use
   :func:`inspect.unwrap` to gain equivalent behaviour.
 
-* (C API) The result of the :c:var:`PyOS_ReadlineFunctionPointer` callback must
+* (C API) The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
   now be a string allocated by :c:func:`PyMem_RawMalloc` or
   :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
   string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
