@@ -123,7 +123,7 @@ class CmdLineTest(unittest.TestCase):
         if not __debug__:
             cmd_line_switches += ('-' + 'O' * sys.flags.optimize,)
         run_args = cmd_line_switches + (script_name,) + tuple(example_args)
-        rc, out, err = assert_python_ok(*run_args)
+        rc, out, err = assert_python_ok(*run_args, __isolated=False)
         self._check_output(script_name, rc, out + err, expected_file,
                            expected_argv0, expected_path0,
                            expected_package, expected_loader)
@@ -294,7 +294,7 @@ class CmdLineTest(unittest.TestCase):
                 pkg_dir = os.path.join(script_dir, 'test_pkg')
                 make_pkg(pkg_dir, "import sys; print('init_argv0==%r' % sys.argv[0])")
                 script_name = _make_test_script(pkg_dir, 'script')
-                rc, out, err = assert_python_ok('-m', 'test_pkg.script', *example_args)
+                rc, out, err = assert_python_ok('-m', 'test_pkg.script', *example_args, __isolated=False)
                 if verbose > 1:
                     print(out)
                 expected = "init_argv0==%r" % '-m'
@@ -311,7 +311,8 @@ class CmdLineTest(unittest.TestCase):
                 with open("-c", "w") as f:
                     f.write("data")
                     rc, out, err = assert_python_ok('-c',
-                        'import sys; print("sys.path[0]==%r" % sys.path[0])')
+                        'import sys; print("sys.path[0]==%r" % sys.path[0])',
+                        __isolated=False)
                     if verbose > 1:
                         print(out)
                     expected = "sys.path[0]==%r" % ''
@@ -325,7 +326,8 @@ class CmdLineTest(unittest.TestCase):
             with support.change_cwd(path=script_dir):
                 with open("-m", "w") as f:
                     f.write("data")
-                    rc, out, err = assert_python_ok('-m', 'other', *example_args)
+                    rc, out, err = assert_python_ok('-m', 'other', *example_args,
+                                                    __isolated=False)
                     self._check_output(script_name, rc, out,
                                       script_name, script_name, '', '',
                                       importlib.machinery.SourceFileLoader)

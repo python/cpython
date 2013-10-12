@@ -17,8 +17,17 @@ from test.support import make_legacy_pyc, strip_python_stderr, temp_dir
 
 # Executing the interpreter in a subprocess
 def _assert_python(expected_success, *args, **env_vars):
+    if '__isolated' in env_vars:
+        isolated = env_vars.pop('__isolated')
+    else:
+        isolated = not env_vars
     cmd_line = [sys.executable, '-X', 'faulthandler']
-    if not env_vars:
+    if isolated:
+        # isolated mode: ignore Python environment variables, ignore user
+        # site-packages, and don't add the current directory to sys.path
+        cmd_line.append('-I')
+    elif not env_vars:
+        # ignore Python environment variables
         cmd_line.append('-E')
     # Need to preserve the original environment, for in-place testing of
     # shared library builds.
@@ -51,6 +60,11 @@ def assert_python_ok(*args, **env_vars):
     Assert that running the interpreter with `args` and optional environment
     variables `env_vars` succeeds (rc == 0) and return a (return code, stdout,
     stderr) tuple.
+
+    If the __cleanenv keyword is set, env_vars is used a fresh environment.
+
+    Python is started in isolated mode (command line option -I),
+    except if the __isolated keyword is set to False.
     """
     return _assert_python(True, *args, **env_vars)
 
@@ -59,6 +73,8 @@ def assert_python_failure(*args, **env_vars):
     Assert that running the interpreter with `args` and optional environment
     variables `env_vars` fails (rc != 0) and return a (return code, stdout,
     stderr) tuple.
+
+    See assert_python_ok() for more options.
     """
     return _assert_python(False, *args, **env_vars)
 
