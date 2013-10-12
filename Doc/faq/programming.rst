@@ -1599,6 +1599,32 @@ You can program the class's constructor to keep track of all instances by
 keeping a list of weak references to each instance.
 
 
+Why does the result of ``id()`` appear to be not unique?
+--------------------------------------------------------
+
+The :func:`id` builtin returns an integer that is guaranteed to be unique during
+the lifetime of the object.  Since in CPython, this is the object's memory
+address, it happens frequently that after an object is deleted from memory, the
+next freshly created object is allocated at the same position in memory.  This
+is illustrated by this example:
+
+>>> id(1000)
+13901272
+>>> id(2000)
+13901272
+
+The two ids belong to different integer objects that are created before, and
+deleted immediately after execution of the ``id()`` call.  To be sure that
+objects whose id you want to examine are still alive, create another reference
+to the object:
+
+>>> a = 1000; b = 2000
+>>> id(a)
+13901272
+>>> id(b)
+13891296
+
+
 Modules
 =======
 
