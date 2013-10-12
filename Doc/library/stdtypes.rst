@@ -189,11 +189,22 @@ such objects are ordered arbitrarily but consistently. The ``<``, ``<=``, ``>``
 and ``>=`` operators will raise a :exc:`TypeError` exception when any operand is
 a complex number.
 
-.. index:: single: __cmp__() (instance method)
+.. index::
+   single: __cmp__() (instance method)
+   single: __eq__() (instance method)
+   single: __ne__() (instance method)
+   single: __lt__() (instance method)
+   single: __le__() (instance method)
+   single: __gt__() (instance method)
+   single: __ge__() (instance method)
 
-Instances of a class normally compare as non-equal unless the class defines the
-:meth:`__cmp__` method.  Refer to :ref:`customization`) for information on the
-use of this method to effect object comparisons.
+Non-identical instances of a class normally compare as non-equal unless the
+class defines the :meth:`__eq__` method or the :meth:`__cmp__` method.
+
+Instances of a class cannot be ordered with respect to other instances of the
+same class, or other types of object, unless the class defines either enough of
+the rich comparison methods (:meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, and
+:meth:`__ge__`) or the :meth:`__cmp__` method.
 
 .. impl-detail::
 
