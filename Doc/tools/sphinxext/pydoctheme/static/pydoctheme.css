@@ -168,3 +168,11 @@ div.footer {
 div.footer a:hover {
     color: #0095C4;
 }
+
+.refcount {
+    color: #060;
+}
+
+.notlimited {
+    color: #922;
+}
