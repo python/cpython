@@ -10,6 +10,7 @@
 **.vsprops = BIN
 
 **.aif  = BIN
+**.aiff = BIN
 **.au   = BIN
 **.bmp  = BIN
 **.db   = BIN
@@ -23,6 +24,7 @@
 **.png  = BIN
 **.psd  = BIN
 **.tar  = BIN
+**.wav  = BIN
 **.xar  = BIN
 **.zip  = BIN
 
