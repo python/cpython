@@ -5,7 +5,7 @@
 
     Sphinx extension with Python doc-specific markup.
 
-    :copyright: 2008, 2009, 2010, 2011, 2012 by Georg Brandl.
+    :copyright: 2008-2013 by Georg Brandl.
     :license: Python license.
 """
 
@@ -13,7 +13,12 @@ ISSUE_URI = 'http://bugs.python.org/issue%s'
 SOURCE_URI = 'http://hg.python.org/cpython/file/default/%s'
 
 from docutils import nodes, utils
+
+import sphinx
 from sphinx.util.nodes import split_explicit_title
+from sphinx.writers.html import HTMLTranslator
+from sphinx.writers.latex import LaTeXTranslator
+from sphinx.locale import versionlabels
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -22,21 +27,17 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
 
-# monkey-patch HTML translator to give versionmodified paragraphs a class
-def new_visit_versionmodified(self, node):
-    self.body.append(self.starttag(node, 'p', CLASS=node['type']))
-    text = versionlabels[node['type']] % node['version']
-    if len(node):
-        text += ':'
-    else:
-        text += '.'
-    self.body.append('<span class="versionmodified">%s</span> ' % text)
-
-from sphinx.writers.html import HTMLTranslator
-from sphinx.writers.latex import LaTeXTranslator
-from sphinx.locale import versionlabels
-HTMLTranslator.visit_versionmodified = new_visit_versionmodified
-HTMLTranslator.visit_versionmodified = new_visit_versionmodified
+if sphinx.__version__[:3] < '1.2':
+    # monkey-patch HTML translator to give versionmodified paragraphs a class
+    def new_visit_versionmodified(self, node):
+        self.body.append(self.starttag(node, 'p', CLASS=node['type']))
+        text = versionlabels[node['type']] % node['version']
+        if len(node):
+            text += ':'
+        else:
+            text += '.'
+        self.body.append('<span class="versionmodified">%s</span> ' % text)
+    HTMLTranslator.visit_versionmodified = new_visit_versionmodified
 
 # monkey-patch HTML and LaTeX translators to keep doctest blocks in the
 # doctest docs themselves
