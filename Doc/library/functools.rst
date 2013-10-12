@@ -185,6 +185,18 @@ The :mod:`functools` module defines the following functions:
    a default when the sequence is empty.  If *initializer* is not given and
    *sequence* contains only one item, the first item is returned.
 
+   Equivalent to::
+
+      def reduce(function, iterable, initializer=None):
+          it = iter(iterable)
+          if initializer is None:
+              value = next(it)
+          else:
+              value = initializer
+          for element in it:
+              value = function(value, element)
+          return value
+
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
