@@ -754,10 +754,17 @@ the more significant byte last.
 
 .. opcode:: MAKE_FUNCTION (argc)
 
-   Pushes a new function object on the stack.  TOS is the
-   :term:`qualified name` of the function; TOS1 is the code associated with
-   the function.  The function object is defined to have *argc* default parameters,
-   which are found below TOS1.
+   Pushes a new function object on the stack.  From bottom to top, the consumed
+   stack must consist of
+
+   * ``argc & 0xFF`` default argument objects in positional order
+   * ``(argc >> 8) & 0xFF`` pairs of name and default argument, with the name
+     just below the object on the stack, for keyword-only parameters
+   * ``(argc >> 16) & 0x7FFF`` parameter annotation objects
+   * a tuple listing the parameter names for the annotations (only if there are
+     ony annotation objects)
+   * the code associated with the function (at TOS1)
+   * the :term:`qualified name` of the function (at TOS)
 
 
 .. opcode:: MAKE_CLOSURE (argc)
