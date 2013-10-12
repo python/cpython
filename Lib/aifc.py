@@ -480,7 +480,7 @@ class Aifc_read:
                         pass
                     else:
                         self._convert = self._adpcm2lin
-                        self._framesize = self._framesize // 4
+                        self._sampwidth = 2
                         return
                 # for ULAW and ALAW try Compression Library
                 try:
@@ -490,21 +490,20 @@ class Aifc_read:
                         try:
                             import audioop
                             self._convert = self._ulaw2lin
-                            self._framesize = self._framesize // 2
+                            self._sampwidth = 2
                             return
                         except ImportError:
                             pass
                     raise Error, 'cannot read compressed AIFF-C files'
                 if self._comptype == 'ULAW':
                     scheme = cl.G711_ULAW
-                    self._framesize = self._framesize // 2
                 elif self._comptype == 'ALAW':
                     scheme = cl.G711_ALAW
-                    self._framesize = self._framesize // 2
                 else:
                     raise Error, 'unsupported compression type'
                 self._decomp = cl.OpenDecompressor(scheme)
                 self._convert = self._decomp_data
+                self._sampwidth = 2
         else:
             self._comptype = 'NONE'
             self._compname = 'not compressed'
@@ -867,7 +866,10 @@ class Aifc_write:
         _write_short(self._file, self._nchannels)
         self._nframes_pos = self._file.tell()
         _write_ulong(self._file, self._nframes)
-        _write_short(self._file, self._sampwidth * 8)
+        if self._comptype in ('ULAW', 'ALAW', 'G722'):
+            _write_short(self._file, 8)
+        else:
+            _write_short(self._file, self._sampwidth * 8)
         _write_float(self._file, self._framerate)
         if self._aifc:
             self._file.write(self._comptype)
