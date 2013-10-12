@@ -108,3 +108,103 @@ Tuple Objects
 .. c:function:: int PyTuple_ClearFreeList()
 
    Clear the free list. Return the total number of freed items.
+
+
+Struct Sequence Objects
+-----------------------
+
+Struct sequence objects are the C equivalent of :func:`~collections.namedtuple`
+objects, i.e. a sequence whose items can also be accessed through attributes.
+To create a struct sequence, you first have to create a specific struct sequence
+type.
+
+.. c:function:: PyTypeObject* PyStructSequence_NewType(PyStructSequence_Desc *desc)
+
+   Create a new struct sequence type from the data in *desc*, described below. Instances
+   of the resulting type can be created with :c:func:`PyStructSequence_New`.
+
+
+.. c:function:: void PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
+
+   Initializes a struct sequence type *type* from *desc* in place.
+
+
+.. c:type:: PyStructSequence_Desc
+
+   Contains the meta information of a struct sequence type to create.
+
+   +-------------------+------------------------------+------------------------------------+
+   | Field             | C Type                       | Meaning                            |
+   +===================+==============================+====================================+
+   | ``name``          | ``char *``                   | name of the struct sequence type   |
+   +-------------------+------------------------------+------------------------------------+
+   | ``doc``           | ``char *``                   | pointer to docstring for the type  |
+   |                   |                              | or NULL to omit                    |
+   +-------------------+------------------------------+------------------------------------+
+   | ``fields``        | ``PyStructSequence_Field *`` | pointer to *NULL*-terminated array |
+   |                   |                              | with field names of the new type   |
+   +-------------------+------------------------------+------------------------------------+
+   | ``n_in_sequence`` | ``int``                      | number of fields visible to the    |
+   |                   |                              | Python side (if used as tuple)     |
+   +-------------------+------------------------------+------------------------------------+
+
+
+.. c:type:: PyStructSequence_Field
+
+   Describes a field of a struct sequence. As a struct sequence is modeled as a
+   tuple, all fields are typed as :c:type:`PyObject\*`.  The index in the
+   :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
+   field of the struct sequence is described.
+
+   +-----------+---------------+--------------------------------------+
+   | Field     | C Type        | Meaning                              |
+   +===========+===============+======================================+
+   | ``name``  | ``char *``    | name for the field or *NULL* to end  |
+   |           |               | the list of named fields, set to     |
+   |           |               | PyStructSequence_UnnamedField to     |
+   |           |               | leave unnamed                        |
+   +-----------+---------------+--------------------------------------+
+   | ``doc``   | ``char *``    | field docstring or *NULL* to omit    |
+   +-----------+---------------+--------------------------------------+
+
+
+.. c:var:: char* PyStructSequence_UnnamedField
+
+   Special value for a field name to leave it unnamed.
+
+
+.. c:function:: PyObject* PyStructSequence_New(PyTypeObject *type)
+
+   Creates an instance of *type*, which must have been created with
+   :c:func:`PyStructSequence_NewType`.
+
+
+.. c:function:: PyObject* PyStructSequence_GetItem(PyObject *p, Py_ssize_t pos)
+
+   Return the object at position *pos* in the struct sequence pointed to by *p*.
+   No bounds checking is performed.
+
+
+.. c:function:: PyObject* PyStructSequence_GET_ITEM(PyObject *p, Py_ssize_t pos)
+
+   Macro equivalent of :c:func:`PyStructSequence_GetItem`.
+
+
+.. c:function:: void PyStructSequence_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
+
+   Sets the field at index *pos* of the struct sequence *p* to value *o*.  Like
+   :c:func:`PyTuple_SET_ITEM`, this should only be used to fill in brand new
+   instances.
+
+   .. note::
+
+      This function "steals" a reference to *o*.
+
+
+.. c:function:: PyObject* PyStructSequence_SET_ITEM(PyObject *p, Py_ssize_t *pos, PyObject *o)
+
+   Macro equivalent of :c:func:`PyStructSequence_SetItem`.
+
+   .. note::
+
+      This function "steals" a reference to *o*.
