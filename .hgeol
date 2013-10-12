@@ -10,6 +10,7 @@
 **.vsprops = BIN
 
 **.aif  = BIN
+**.aifc = BIN
 **.aiff = BIN
 **.au   = BIN
 **.bmp  = BIN
