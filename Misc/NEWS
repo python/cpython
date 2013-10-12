@@ -10,6 +10,9 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #4555: All exported C symbols are now prefixed with either
+  "Py" or "_Py".
+
 - Issue #19219: Speed up marshal.loads(), and make pyc files slightly
   (5% to 10%) smaller.
 
