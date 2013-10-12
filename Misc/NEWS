@@ -76,6 +76,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18919: If the close() method of a writer in the sunau or wave module
+  failed, second invocation of close() and destructor no more raise an
+  exception.
+
 - Issue #19131: The aifc module now correctly reads and writes sampwidth of
   compressed streams.
 
