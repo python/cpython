@@ -696,7 +696,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     k = 0;
     switch (TYPE(n)) {
         case file_input:
-            stmts = asdl_seq_new(num_stmts(n), arena);
+            stmts = _Py_asdl_seq_new(num_stmts(n), arena);
             if (!stmts)
                 goto out;
             for (i = 0; i < NCH(n) - 1; i++) {
@@ -736,7 +736,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
         }
         case single_input:
             if (TYPE(CHILD(n, 0)) == NEWLINE) {
-                stmts = asdl_seq_new(1, arena);
+                stmts = _Py_asdl_seq_new(1, arena);
                 if (!stmts)
                     goto out;
                 asdl_seq_SET(stmts, 0, Pass(n->n_lineno, n->n_col_offset,
@@ -748,7 +748,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
             else {
                 n = CHILD(n, 0);
                 num = num_stmts(n);
-                stmts = asdl_seq_new(num, arena);
+                stmts = _Py_asdl_seq_new(num, arena);
                 if (!stmts)
                     goto out;
                 if (num == 1) {
@@ -1099,7 +1099,7 @@ seq_for_testlist(struct compiling *c, const node *n)
     int i;
     assert(TYPE(n) == testlist || TYPE(n) == testlist_star_expr || TYPE(n) == testlist_comp);
 
-    seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+    seq = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
     if (!seq)
         return NULL;
 
@@ -1279,22 +1279,22 @@ ast_for_arguments(struct compiling *c, const node *n)
         if (TYPE(ch) == DOUBLESTAR) break;
         if (TYPE(ch) == tfpdef || TYPE(ch) == vfpdef) nkwonlyargs++;
     }
-    posargs = (nposargs ? asdl_seq_new(nposargs, c->c_arena) : NULL);
+    posargs = (nposargs ? _Py_asdl_seq_new(nposargs, c->c_arena) : NULL);
     if (!posargs && nposargs)
         return NULL;
     kwonlyargs = (nkwonlyargs ?
-                   asdl_seq_new(nkwonlyargs, c->c_arena) : NULL);
+                   _Py_asdl_seq_new(nkwonlyargs, c->c_arena) : NULL);
     if (!kwonlyargs && nkwonlyargs)
         return NULL;
     posdefaults = (nposdefaults ?
-                    asdl_seq_new(nposdefaults, c->c_arena) : NULL);
+                    _Py_asdl_seq_new(nposdefaults, c->c_arena) : NULL);
     if (!posdefaults && nposdefaults)
         return NULL;
     /* The length of kwonlyargs and kwdefaults are same
        since we set NULL as default for keyword only argument w/o default
        - we have sequence data structure, but no dictionary */
     kwdefaults = (nkwonlyargs ?
-                   asdl_seq_new(nkwonlyargs, c->c_arena) : NULL);
+                   _Py_asdl_seq_new(nkwonlyargs, c->c_arena) : NULL);
     if (!kwdefaults && nkwonlyargs)
         return NULL;
 
@@ -1462,7 +1462,7 @@ ast_for_decorators(struct compiling *c, const node *n)
     int i;
 
     REQ(n, decorators);
-    decorator_seq = asdl_seq_new(NCH(n), c->c_arena);
+    decorator_seq = _Py_asdl_seq_new(NCH(n), c->c_arena);
     if (!decorator_seq)
         return NULL;
 
@@ -1658,7 +1658,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
     if (n_fors == -1)
         return NULL;
 
-    comps = asdl_seq_new(n_fors, c->c_arena);
+    comps = _Py_asdl_seq_new(n_fors, c->c_arena);
     if (!comps)
         return NULL;
 
@@ -1699,7 +1699,7 @@ ast_for_comprehension(struct compiling *c, const node *n)
             if (n_ifs == -1)
                 return NULL;
 
-            ifs = asdl_seq_new(n_ifs, c->c_arena);
+            ifs = _Py_asdl_seq_new(n_ifs, c->c_arena);
             if (!ifs)
                 return NULL;
 
@@ -1921,7 +1921,7 @@ ast_for_atom(struct compiling *c, const node *n)
             /* it's a simple set */
             asdl_seq *elts;
             size = (NCH(ch) + 1) / 2; /* +1 in case no trailing comma */
-            elts = asdl_seq_new(size, c->c_arena);
+            elts = _Py_asdl_seq_new(size, c->c_arena);
             if (!elts)
                 return NULL;
             for (i = 0; i < NCH(ch); i += 2) {
@@ -1940,11 +1940,11 @@ ast_for_atom(struct compiling *c, const node *n)
         } else {
             /* it's a dict */
             size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
-            keys = asdl_seq_new(size, c->c_arena);
+            keys = _Py_asdl_seq_new(size, c->c_arena);
             if (!keys)
                 return NULL;
 
-            values = asdl_seq_new(size, c->c_arena);
+            values = _Py_asdl_seq_new(size, c->c_arena);
             if (!values)
                 return NULL;
 
@@ -2139,7 +2139,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             expr_ty e;
             int simple = 1;
             asdl_seq *slices, *elts;
-            slices = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+            slices = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!slices)
                 return NULL;
             for (j = 0; j < NCH(n); j += 2) {
@@ -2155,7 +2155,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
                                  Load, LINENO(n), n->n_col_offset, c->c_arena);
             }
             /* extract Index values and put them in a Tuple */
-            elts = asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
+            elts = _Py_asdl_seq_new(asdl_seq_LEN(slices), c->c_arena);
             if (!elts)
                 return NULL;
             for (j = 0; j < asdl_seq_LEN(slices); ++j) {
@@ -2288,7 +2288,7 @@ ast_for_expr(struct compiling *c, const node *n)
                 n = CHILD(n, 0);
                 goto loop;
             }
-            seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+            seq = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
             if (!seq)
                 return NULL;
             for (i = 0; i < NCH(n); i += 2) {
@@ -2324,10 +2324,10 @@ ast_for_expr(struct compiling *c, const node *n)
                 expr_ty expression;
                 asdl_int_seq *ops;
                 asdl_seq *cmps;
-                ops = asdl_int_seq_new(NCH(n) / 2, c->c_arena);
+                ops = _Py_asdl_int_seq_new(NCH(n) / 2, c->c_arena);
                 if (!ops)
                     return NULL;
-                cmps = asdl_seq_new(NCH(n) / 2, c->c_arena);
+                cmps = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
                 if (!cmps) {
                     return NULL;
                 }
@@ -2453,10 +2453,10 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
         return NULL;
     }
 
-    args = asdl_seq_new(nargs + ngens, c->c_arena);
+    args = _Py_asdl_seq_new(nargs + ngens, c->c_arena);
     if (!args)
         return NULL;
-    keywords = asdl_seq_new(nkeywords, c->c_arena);
+    keywords = _Py_asdl_seq_new(nkeywords, c->c_arena);
     if (!keywords)
         return NULL;
     nargs = 0;
@@ -2633,7 +2633,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
 
         /* a normal assignment */
         REQ(CHILD(n, 1), EQUAL);
-        targets = asdl_seq_new(NCH(n) / 2, c->c_arena);
+        targets = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
         if (!targets)
             return NULL;
         for (i = 0; i < NCH(n) - 2; i += 2) {
@@ -2674,7 +2674,7 @@ ast_for_exprlist(struct compiling *c, const node *n, expr_context_ty context)
 
     REQ(n, exprlist);
 
-    seq = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+    seq = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
     if (!seq)
         return NULL;
     for (i = 0; i < NCH(n); i += 2) {
@@ -2904,7 +2904,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
     if (TYPE(n) == import_name) {
         n = CHILD(n, 1);
         REQ(n, dotted_as_names);
-        aliases = asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
+        aliases = _Py_asdl_seq_new((NCH(n) + 1) / 2, c->c_arena);
         if (!aliases)
                 return NULL;
         for (i = 0; i < NCH(n); i += 2) {
@@ -2966,7 +2966,7 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             return NULL;
         }
 
-        aliases = asdl_seq_new((n_children + 1) / 2, c->c_arena);
+        aliases = _Py_asdl_seq_new((n_children + 1) / 2, c->c_arena);
         if (!aliases)
             return NULL;
 
@@ -3005,7 +3005,7 @@ ast_for_global_stmt(struct compiling *c, const node *n)
     int i;
 
     REQ(n, global_stmt);
-    s = asdl_seq_new(NCH(n) / 2, c->c_arena);
+    s = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
     if (!s)
         return NULL;
     for (i = 1; i < NCH(n); i += 2) {
@@ -3026,7 +3026,7 @@ ast_for_nonlocal_stmt(struct compiling *c, const node *n)
     int i;
 
     REQ(n, nonlocal_stmt);
-    s = asdl_seq_new(NCH(n) / 2, c->c_arena);
+    s = _Py_asdl_seq_new(NCH(n) / 2, c->c_arena);
     if (!s)
         return NULL;
     for (i = 1; i < NCH(n); i += 2) {
@@ -3079,7 +3079,7 @@ ast_for_suite(struct compiling *c, const node *n)
     REQ(n, suite);
 
     total = num_stmts(n);
-    seq = asdl_seq_new(total, c->c_arena);
+    seq = _Py_asdl_seq_new(total, c->c_arena);
     if (!seq)
         return NULL;
     if (TYPE(CHILD(n, 0)) == simple_stmt) {
@@ -3198,7 +3198,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         if (has_else) {
             asdl_seq *suite_seq2;
 
-            orelse = asdl_seq_new(1, c->c_arena);
+            orelse = _Py_asdl_seq_new(1, c->c_arena);
             if (!orelse)
                 return NULL;
             expression = ast_for_expr(c, CHILD(n, NCH(n) - 6));
@@ -3222,7 +3222,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 
         for (i = 0; i < n_elif; i++) {
             int off = 5 + (n_elif - i - 1) * 4;
-            asdl_seq *newobj = asdl_seq_new(1, c->c_arena);
+            asdl_seq *newobj = _Py_asdl_seq_new(1, c->c_arena);
             if (!newobj)
                 return NULL;
             expression = ast_for_expr(c, CHILD(n, off));
@@ -3434,7 +3434,7 @@ ast_for_try_stmt(struct compiling *c, const node *n)
     if (n_except > 0) {
         int i;
         /* process except statements to create a try ... except */
-        handlers = asdl_seq_new(n_except, c->c_arena);
+        handlers = _Py_asdl_seq_new(n_except, c->c_arena);
         if (handlers == NULL)
             return NULL;
 
@@ -3485,7 +3485,7 @@ ast_for_with_stmt(struct compiling *c, const node *n)
     REQ(n, with_stmt);
 
     n_items = (NCH(n) - 2) / 2;
-    items = asdl_seq_new(n_items, c->c_arena);
+    items = _Py_asdl_seq_new(n_items, c->c_arena);
     if (!items)
         return NULL;
     for (i = 1; i < NCH(n) - 2; i += 2) {
