@@ -468,15 +468,13 @@ class Aifc_read:
             if self._comptype != b'NONE':
                 if self._comptype == b'G722':
                     self._convert = self._adpcm2lin
-                    self._framesize = self._framesize // 4
                 elif self._comptype in (b'ulaw', b'ULAW'):
                     self._convert = self._ulaw2lin
-                    self._framesize = self._framesize // 2
                 elif self._comptype in (b'alaw', b'ALAW'):
                     self._convert = self._alaw2lin
-                    self._framesize = self._framesize // 2
                 else:
                     raise Error('unsupported compression type')
+                self._sampwidth = 2
         else:
             self._comptype = b'NONE'
             self._compname = b'not compressed'
@@ -804,7 +802,10 @@ class Aifc_write:
         _write_short(self._file, self._nchannels)
         self._nframes_pos = self._file.tell()
         _write_ulong(self._file, self._nframes)
-        _write_short(self._file, self._sampwidth * 8)
+        if self._comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
+            _write_short(self._file, 8)
+        else:
+            _write_short(self._file, self._sampwidth * 8)
         _write_float(self._file, self._framerate)
         if self._aifc:
             self._file.write(self._comptype)
