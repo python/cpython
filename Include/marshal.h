@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#define Py_MARSHAL_VERSION 3
+#define Py_MARSHAL_VERSION 4
 
 PyAPI_FUNC(void) PyMarshal_WriteLongToFile(long, FILE *, int);
 PyAPI_FUNC(void) PyMarshal_WriteObjectToFile(PyObject *, FILE *, int);
