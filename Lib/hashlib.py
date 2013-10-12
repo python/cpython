@@ -147,6 +147,14 @@ except ImportError:
     new = __py_new
     __get_hash = __get_builtin_constructor
 
+# PBKDF2 requires OpenSSL 1.0+ with HMAC and SHA
+try:
+    from _hashlib import pbkdf2_hmac
+except ImportError:
+    pass
+else:
+    __all__ += ('pbkdf2_hmac',)
+
 for __func_name in __always_supported:
     # try them all, some may not work due to the OpenSSL
     # version not supporting that algorithm.

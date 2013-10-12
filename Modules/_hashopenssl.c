@@ -22,6 +22,7 @@
 #include <openssl/evp.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
+#include "openssl/err.h"
 
 #define MUNCH_SIZE INT_MAX
 
@@ -61,6 +62,34 @@ DEFINE_CONSTS_FOR_NEW(sha384)
 DEFINE_CONSTS_FOR_NEW(sha512)
 #endif
 
+static PyObject *
+_setException(PyObject *exc)
+{
+    unsigned long errcode;
+    const char *lib, *func, *reason;
+
+    errcode = ERR_peek_last_error();
+    if (!errcode) {
+        PyErr_SetString(exc, "unknown reasons");
+        return NULL;
+    }
+    ERR_clear_error();
+
+    lib = ERR_lib_error_string(errcode);
+    func = ERR_func_error_string(errcode);
+    reason = ERR_reason_error_string(errcode);
+
+    if (lib && func) {
+        PyErr_Format(exc, "[%s: %s] %s", lib, func, reason);
+    }
+    else if (lib) {
+        PyErr_Format(exc, "[%s] %s", lib, reason);
+    }
+    else {
+        PyErr_SetString(exc, reason);
+    }
+    return NULL;
+}
 
 static EVPobject *
 newEVPobject(PyObject *name)
@@ -466,6 +495,109 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     return ret_obj;
 }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) \
+     && !defined(OPENSSL_NO_SHA))
+#define PY_PBKDF2_HMAC 1
+
+PyDoc_STRVAR(pbkdf2_hmac__doc__,
+"pbkdf2_hmac(hash_name, password, salt, iterations, dklen=None) -> key\n\
+\n\
+Password based key derivation function 2 (PKCS #5 v2.0) with HMAC as\n\
+pseudorandom function.");
+
+static PyObject *
+pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
+{
+    static char *kwlist[] = {"hash_name", "password", "salt", "iterations",
+                             "dklen", NULL};
+    PyObject *key_obj = NULL, *dklen_obj = Py_None;
+    char *name, *key;
+    Py_buffer password, salt;
+    long iterations, dklen;
+    int retval;
+    const EVP_MD *digest;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "sy*y*l|O:pbkdf2_hmac",
+                                     kwlist, &name, &password, &salt,
+                                     &iterations, &dklen_obj)) {
+        return NULL;
+    }
+
+    digest = EVP_get_digestbyname(name);
+    if (digest == NULL) {
+        PyErr_SetString(PyExc_ValueError, "unsupported hash type");
+        goto end;
+    }
+
+    if (password.len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "password is too long.");
+        goto end;
+    }
+
+    if (salt.len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "salt is too long.");
+        goto end;
+    }
+
+    if (iterations < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "iteration value must be greater than 0.");
+        goto end;
+    }
+    if (iterations > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "iteration value is too great.");
+        goto end;
+    }
+
+    if (dklen_obj == Py_None) {
+        dklen = EVP_MD_size(digest);
+    } else {
+        dklen = PyLong_AsLong(dklen_obj);
+        if ((dklen == -1) && PyErr_Occurred()) {
+            goto end;
+        }
+    }
+    if (dklen < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "key length must be greater than 0.");
+        goto end;
+    }
+    if (dklen > INT_MAX) {
+        /* INT_MAX is always smaller than dkLen max (2^32 - 1) * hLen */
+        PyErr_SetString(PyExc_OverflowError,
+                        "key length is too great.");
+        goto end;
+    }
+
+    key_obj = PyBytes_FromStringAndSize(NULL, dklen);
+    if (key_obj == NULL) {
+        goto end;
+    }
+    key = PyBytes_AS_STRING(key_obj);
+
+    Py_BEGIN_ALLOW_THREADS
+    retval = PKCS5_PBKDF2_HMAC((char*)password.buf, password.len,
+                               (unsigned char *)salt.buf, salt.len,
+                               iterations, digest, dklen,
+                               (unsigned char *)key);
+    Py_END_ALLOW_THREADS
+
+    if (!retval) {
+        Py_CLEAR(key_obj);
+        _setException(PyExc_ValueError);
+        goto end;
+    }
+
+  end:
+    PyBuffer_Release(&password);
+    PyBuffer_Release(&salt);
+    return key_obj;
+}
+
+#endif
 
 /* State for our callback function so that it can accumulate a result. */
 typedef struct _internal_name_mapper_state {
@@ -588,6 +720,10 @@ GEN_CONSTRUCTOR(sha512)
 
 static struct PyMethodDef EVP_functions[] = {
     {"new", (PyCFunction)EVP_new, METH_VARARGS|METH_KEYWORDS, EVP_new__doc__},
+#ifdef PY_PBKDF2_HMAC
+    {"pbkdf2_hmac", (PyCFunction)pbkdf2_hmac, METH_VARARGS|METH_KEYWORDS,
+     pbkdf2_hmac__doc__},
+#endif
     CONSTRUCTOR_METH_DEF(md5),
     CONSTRUCTOR_METH_DEF(sha1),
 #ifdef _OPENSSL_SUPPORTS_SHA2

@@ -32,6 +32,10 @@ digests.  The modern term is secure hash.
    Some algorithms have known hash collision weaknesses, refer to the "See
    also" section at the end.
 
+
+Hash algorithms
+---------------
+
 There is one constructor method named for each type of :dfn:`hash`.  All return
 a hash object with the same simple interface. For example: use :func:`sha1` to
 create a SHA1 hash object. You can now feed this object with :term:`bytes-like
@@ -174,6 +178,43 @@ A hash object has the following methods:
    compute the digests of data sharing a common initial substring.
 
 
+Key Derivation Function
+-----------------------
+
+Key derivation and key stretching algorithms are designed for secure password
+hashing. Naive algorithms such as ``sha1(password)`` are not resistant
+against brute-force attacks. A good password hashing function must be tunable,
+slow and include a salt.
+
+
+.. function:: pbkdf2_hmac(name, password, salt, rounds, dklen=None)
+
+   The function provides PKCS#5 password-based key derivation function 2. It
+   uses HMAC as pseudorandom function.
+
+   The string *name* is the desired name of the hash digest algorithm for
+   HMAC, e.g. 'sha1' or 'sha256'. *password* and *salt* are interpreted as
+   buffers of bytes. Applications and libraries should limit *password* to
+   a sensible value (e.g. 1024). *salt* should be about 16 or more bytes from
+   a proper source, e.g. :func:`os.urandom`.
+
+   The number of *rounds* should be chosen based on the hash algorithm and
+   computing power. As of 2013 a value of at least 100,000 rounds of SHA-256
+   have been suggested.
+
+   *dklen* is the length of the derived key. If *dklen* is ``None`` then the
+   digest size of the hash algorithm *name* is used, e.g. 64 for SHA-512.
+
+   >>> import hashlib, binascii
+   >>> dk = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
+   >>> binascii.hexlify(dk)
+   b'0394a2ede332c9a13eb82e9b24631604c31df978b4e2f0fbd2c549944f9d79a5'
+
+   .. versionadded:: 3.4
+
+   .. note:: *pbkdf2_hmac* is only available with OpenSSL 1.0 and newer.
+
+
 .. seealso::
 
    Module :mod:`hmac`
@@ -189,3 +230,5 @@ A hash object has the following methods:
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
+   http://www.ietf.org/rfc/rfc2898.txt
+      PKCS #5: Password-Based Cryptography Specification Version 2.0
