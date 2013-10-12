@@ -261,6 +261,14 @@ functools
 New :func:`functools.singledispatch` decorator: see the :pep:`443`.
 
 
+hashlib
+-------
+
+New :func:`hashlib.pbkdf2_hmac` function.
+
+(Contributed by Christian Heimes in :issue:`18582`)
+
+
 inspect
 -------
 
