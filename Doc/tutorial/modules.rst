@@ -183,57 +183,45 @@ directory. This is an error unless the replacement is intended.  See section
 "Compiled" Python files
 -----------------------
 
-As an important speed-up of the start-up time for short programs that use a lot
-of standard modules, if a file called :file:`spam.pyc` exists in the directory
-where :file:`spam.py` is found, this is assumed to contain an
-already-"byte-compiled" version of the module :mod:`spam`. The modification time
-of the version of :file:`spam.py` used to create :file:`spam.pyc` is recorded in
-:file:`spam.pyc`, and the :file:`.pyc` file is ignored if these don't match.
+To speed up loading modules, Python caches the compiled version of each module
+in the ``__pycache__`` directory under the name :file:`module.{version}.pyc``,
+where the version encodes the format of the compiled file; it generally contains
+the Python version number.  For example, in CPython release 3.3 the compiled
+version of spam.py would be cached as ``__pycache__/spam.cpython-33.pyc``.  This
+naming convention allows compiled modules from different releases and different
+versions of Python to coexist.
 
-Normally, you don't need to do anything to create the :file:`spam.pyc` file.
-Whenever :file:`spam.py` is successfully compiled, an attempt is made to write
-the compiled version to :file:`spam.pyc`.  It is not an error if this attempt
-fails; if for any reason the file is not written completely, the resulting
-:file:`spam.pyc` file will be recognized as invalid and thus ignored later.  The
-contents of the :file:`spam.pyc` file are platform independent, so a Python
-module directory can be shared by machines of different architectures.
+Python checks the modification date of the source against the compiled version
+to see if it's out of date and needs to be recompiled.  This is a completely
+automatic process.  Also, the compiled modules are platform-independent, so the
+same library can be shared among systems with different architectures.
+
+Python does not check the cache in two circumstances.  First, it always
+recompiles and does not store the result for the module that's loaded directly
+from the command line.  Second, it does not check the cache if there is no
+source module.  To support a non-source (compiled only) distribution, the
+compiled module must be in the source directory, and there must not be a source
+module.
 
 Some tips for experts:
 
-* When the Python interpreter is invoked with the :option:`-O` flag, optimized
-  code is generated and stored in :file:`.pyo` files.  The optimizer currently
-  doesn't help much; it only removes :keyword:`assert` statements.  When
-  :option:`-O` is used, *all* :term:`bytecode` is optimized; ``.pyc`` files are
-  ignored and ``.py`` files are compiled to optimized bytecode.
+* You can use the :option:`-O` or :option:`-OO` switches on the Python command
+  to reduce the size of a compiled module.  The ``-O`` switch removes assert
+  statements, the ``-OO`` switch removes both assert statements and __doc__
+  strings.  Since some programs may rely on having these available, you should
+  only use this option if you know what you're doing.  "Optimized" modules have
+  a .pyo rather than a .pyc suffix and are usually smaller.  Future releases may
+  change the effects of optimization.
 
-* Passing two :option:`-O` flags to the Python interpreter (:option:`-OO`) will
-  cause the bytecode compiler to perform optimizations that could in some rare
-  cases result in malfunctioning programs.  Currently only ``__doc__`` strings are
-  removed from the bytecode, resulting in more compact :file:`.pyo` files.  Since
-  some programs may rely on having these available, you should only use this
-  option if you know what you're doing.
+* A program doesn't run any faster when it is read from a ``.pyc`` or ``.pyo``
+  file than when it is read from a ``.py`` file; the only thing that's faster
+  about ``.pyc`` or ``.pyo`` files is the speed with which they are loaded.
 
-* A program doesn't run any faster when it is read from a :file:`.pyc` or
-  :file:`.pyo` file than when it is read from a :file:`.py` file; the only thing
-  that's faster about :file:`.pyc` or :file:`.pyo` files is the speed with which
-  they are loaded.
+* The module :mod:`compileall` can create .pyc files (or .pyo files when
+  :option:`-O` is used) for all modules in a directory.
 
-* When a script is run by giving its name on the command line, the bytecode for
-  the script is never written to a :file:`.pyc` or :file:`.pyo` file.  Thus, the
-  startup time of a script may be reduced by moving most of its code to a module
-  and having a small bootstrap script that imports that module.  It is also
-  possible to name a :file:`.pyc` or :file:`.pyo` file directly on the command
-  line.
-
-* It is possible to have a file called :file:`spam.pyc` (or :file:`spam.pyo`
-  when :option:`-O` is used) without a file :file:`spam.py` for the same module.
-  This can be used to distribute a library of Python code in a form that is
-  moderately hard to reverse engineer.
-
-  .. index:: module: compileall
-
-* The module :mod:`compileall` can create :file:`.pyc` files (or :file:`.pyo`
-  files when :option:`-O` is used) for all modules in a directory.
+* There is more detail on this process, including a flow chart of the
+  decisions, in PEP 3147.
 
 
 .. _tut-standardmodules:
