@@ -13,7 +13,7 @@ if sys.platform.startswith("win"):
 else:
     try:
         _locale.CODESET
-    except ImportError:
+    except AttributeError:
         def getpreferredencoding(do_setlocale=True):
             # This path for legacy systems needs the more complex
             # getdefaultlocale() function, import the full locale module.
