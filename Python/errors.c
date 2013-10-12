@@ -1014,7 +1014,7 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
    XXX The functionality of this function is quite similar to the
    functionality in tb_displayline() in traceback.c. */
 
-PyObject *
+static PyObject *
 err_programtext(FILE *fp, int lineno)
 {
     int i;
