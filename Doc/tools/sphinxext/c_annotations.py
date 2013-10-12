@@ -73,10 +73,10 @@ class Annotations(dict):
             par = node.parent
             if par['domain'] != 'c':
                 continue
-            if par['notlimited']:
-                node.insert(0, nodes.emphasis(' Not part of the stable API.',
-                                              ' Not part of the stable API.',
-                                              classes=['notlimited']))
+            if par['stableabi']:
+                node.insert(0, nodes.emphasis(' Part of the stable ABI.',
+                                              ' Part of the stable ABI.',
+                                              classes=['stableabi']))
             if par['objtype'] != 'function':
                 continue
             if not par[0].has_key('names') or not par[0]['names']:
@@ -108,10 +108,10 @@ def setup(app):
     # monkey-patch C object...
     CObject.option_spec = {
         'noindex': directives.flag,
-        'notlimited': directives.flag,
+        'stableabi': directives.flag,
     }
     old_handle_signature = CObject.handle_signature
     def new_handle_signature(self, sig, signode):
-        signode.parent['notlimited'] = 'notlimited' in self.options
+        signode.parent['stableabi'] = 'stableabi' in self.options
         return old_handle_signature(self, sig, signode)
     CObject.handle_signature = new_handle_signature
