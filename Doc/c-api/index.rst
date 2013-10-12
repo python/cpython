@@ -13,6 +13,7 @@ document the API functions in detail.
    :maxdepth: 2
 
    intro.rst
+   stable.rst
    veryhigh.rst
    refcounting.rst
    exceptions.rst
@@ -22,5 +23,4 @@ document the API functions in detail.
    init.rst
    memory.rst
    objimpl.rst
-   stable.rst
    apiabiversion.rst
