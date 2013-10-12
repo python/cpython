@@ -566,7 +566,7 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 
 #endif
 
-int
+static int
 get_inheritable(int fd, int raise)
 {
 #ifdef MS_WINDOWS
