@@ -168,7 +168,7 @@ Other Language Changes
 
 Some smaller changes made to the core Python language are:
 
-* Unicode database updated to UCD version 6.2.
+* Unicode database updated to UCD version 6.3.
 
 * :func:`min` and :func:`max` now accept a *default* argument that can be used
   to specify the value they return if the iterable they are evaluating has no
