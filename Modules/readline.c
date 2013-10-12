@@ -55,11 +55,11 @@ extern char **completion_matches(char *, CPFunction *);
  * with the "real" readline and cannot be detected at compile-time,
  * hence we use a runtime check to detect if we're using libedit
  *
- * Currently there is one know API incompatibility:
+ * Currently there is one known API incompatibility:
  * - 'get_history' has a 1-based index with GNU readline, and a 0-based
- *   index with libedit's emulation.
+ *   index with older versions of libedit's emulation.
  * - Note that replace_history and remove_history use a 0-based index
- *   with both implementation.
+ *   with both implementations.
  */
 static int using_libedit_emulation = 0;
 static const char libedit_version_tag[] = "EditLine wrapper";
