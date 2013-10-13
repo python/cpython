@@ -271,9 +271,9 @@ the :mod:`glob` module.)
 .. function:: samestat(stat1, stat2)
 
    Return ``True`` if the stat tuples *stat1* and *stat2* refer to the same file.
-   These structures may have been returned by :func:`fstat`, :func:`lstat`, or
-   :func:`stat`.  This function implements the underlying comparison used by
-   :func:`samefile` and :func:`sameopenfile`.
+   These structures may have been returned by :func:`os.fstat`,
+   :func:`os.lstat`, or :func:`os.stat`.  This function implements the
+   underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
 
    Availability: Unix, Windows.
 
