@@ -518,8 +518,8 @@ task isn't already covered by the URL parsing functions above.
    Convert a mapping object or a sequence of two-element tuples, which may
    either be a :class:`str` or a :class:`bytes`,  to a "percent-encoded"
    string.  If the resultant string is to be used as a *data* for POST
-   operation with :func:`urlopen` function, then it should be properly encoded
-   to bytes, otherwise it would result in a :exc:`TypeError`.
+   operation with :func:`~urllib.request.urlopen` function, then it should be
+   properly encoded to bytes, otherwise it would result in a :exc:`TypeError`.
 
    The resulting string is a series of ``key=value`` pairs separated by ``'&'``
    characters, where both *key* and *value* are quoted using :func:`quote_plus`
