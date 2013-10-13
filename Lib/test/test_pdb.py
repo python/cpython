@@ -620,6 +620,36 @@ class PdbTestCase(unittest.TestCase):
         stderr = stderr and bytes.decode(stderr)
         return stdout, stderr
 
+    def _assert_find_function(self, file_content, func_name, expected):
+        file_content = textwrap.dedent(file_content)
+
+        with open(support.TESTFN, 'w') as f:
+            f.write(file_content)
+
+        expected = None if not expected else (
+            expected[0], support.TESTFN, expected[1])
+        self.assertEqual(
+            expected, pdb.find_function(func_name, support.TESTFN))
+
+    def test_find_function_empty_file(self):
+        self._assert_find_function('', 'foo', None)
+
+    def test_find_function_found(self):
+        self._assert_find_function(
+            """\
+            def foo():
+                pass
+
+            def bar():
+                pass
+
+            def quux():
+                pass
+            """,
+            'bar',
+            ('bar', 4),
+        )
+
     def test_issue7964(self):
         # open the file as binary so we can force \r\n newline
         with open(support.TESTFN, 'wb') as f:

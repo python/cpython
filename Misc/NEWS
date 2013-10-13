@@ -114,6 +114,8 @@ Tests
 - Issue #18919: Unified and extended tests for audio modules: aifc, sunau and
   wave.
 
+- Issue #18714: Added tests for ``pdb.find_function()``.
+
 Documentation
 -------------
 
