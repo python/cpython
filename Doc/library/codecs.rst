@@ -65,9 +65,9 @@ It defines the following functions:
    The various functions or classes take the following arguments:
 
    *encode* and *decode*: These must be functions or methods which have the same
-   interface as the :meth:`encode`/:meth:`decode` methods of Codec instances (see
-   Codec Interface). The functions/methods are expected to work in a stateless
-   mode.
+   interface as the :meth:`~Codec.encode`/:meth:`~Codec.decode` methods of Codec
+   instances (see :ref:`Codec Interface <codec-objects>`). The functions/methods
+   are expected to work in a stateless mode.
 
    *incrementalencoder* and *incrementaldecoder*: These have to be factory
    functions providing the following interface:
@@ -333,8 +333,8 @@ implement the file protocols.
 
 The :class:`Codec` class defines the interface for stateless encoders/decoders.
 
-To simplify and standardize error handling, the :meth:`encode` and
-:meth:`decode` methods may implement different error handling schemes by
+To simplify and standardize error handling, the :meth:`~Codec.encode` and
+:meth:`~Codec.decode` methods may implement different error handling schemes by
 providing the *errors* string argument.  The following string values are defined
 and implemented by all standard Python codecs:
 
@@ -428,12 +428,14 @@ interfaces of the stateless encoder and decoder:
 The :class:`IncrementalEncoder` and :class:`IncrementalDecoder` classes provide
 the basic interface for incremental encoding and decoding. Encoding/decoding the
 input isn't done with one call to the stateless encoder/decoder function, but
-with multiple calls to the :meth:`encode`/:meth:`decode` method of the
-incremental encoder/decoder. The incremental encoder/decoder keeps track of the
-encoding/decoding process during method calls.
+with multiple calls to the
+:meth:`~IncrementalEncoder.encode`/:meth:`~IncrementalDecoder.decode` method of
+the incremental encoder/decoder. The incremental encoder/decoder keeps track of
+the encoding/decoding process during method calls.
 
-The joined output of calls to the :meth:`encode`/:meth:`decode` method is the
-same as if all the single inputs were joined into one, and this input was
+The joined output of calls to the
+:meth:`~IncrementalEncoder.encode`/:meth:`~IncrementalDecoder.decode` method is
+the same as if all the single inputs were joined into one, and this input was
 encoded/decoded with the stateless encoder/decoder.
 
 

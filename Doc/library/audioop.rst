@@ -241,7 +241,7 @@ to be stateless (i.e. to be able to tolerate packet loss) you should not only
 transmit the data but also the state.  Note that you should send the *initial*
 state (the one you passed to :func:`lin2adpcm`) along to the decoder, not the
 final state (as returned by the coder).  If you want to use
-:func:`struct.struct` to store the state in binary you can code the first
+:class:`struct.Struct` to store the state in binary you can code the first
 element (the predicted value) in 16 bits and the second (the delta index) in 8.
 
 The ADPCM coders have never been tried against other ADPCM coders, only against

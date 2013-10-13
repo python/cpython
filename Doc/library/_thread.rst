@@ -177,7 +177,7 @@ In addition to these methods, lock objects can also be used via the
   equivalent to calling :func:`_thread.exit`.
 
 * Not all built-in functions that may block waiting for I/O allow other threads
-  to run.  (The most popular ones (:func:`time.sleep`, :meth:`file.read`,
+  to run.  (The most popular ones (:func:`time.sleep`, :meth:`io.FileIO.read`,
   :func:`select.select`) work as expected.)
 
 * It is not possible to interrupt the :meth:`acquire` method on a lock --- the

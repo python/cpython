@@ -185,7 +185,7 @@ Telnet Objects
    Read until one from a list of a regular expressions matches.
 
    The first argument is a list of regular expressions, either compiled
-   (:class:`re.RegexObject` instances) or uncompiled (byte strings). The
+   (:ref:`regex objects <re-objects>`) or uncompiled (byte strings). The
    optional second argument is a timeout, in seconds; the default is to block
    indefinitely.
 
