@@ -1344,14 +1344,6 @@ Tools/Demos
 - Issue #12990: The "Python Launcher" on OSX could not launch python scripts
   that have paths that include wide characters.
 
-What's New in Python 3.3.1 release candidate 1?
-===============================================
-
-*Release date: 24-Mar-2013*
-
-Core and Builtins
------------------
-
 - Issue #17328: Fix possible refleak in dict.setdefault.
 
 - Issue #17275: Corrected class name in init error messages of the C version of
