@@ -1061,6 +1061,30 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
 
+    def test_fullmatch(self):
+        # Issue 16203: Proposal: add re.fullmatch() method.
+        self.assertEqual(re.fullmatch(r"a", "a").span(), (0, 1))
+        self.assertEqual(re.fullmatch(r"a|ab", "ab").span(), (0, 2))
+        self.assertEqual(re.fullmatch(r".*?$", "abc").span(), (0, 3))
+        self.assertEqual(re.fullmatch(r".*?", "abc").span(), (0, 3))
+        self.assertEqual(re.fullmatch(r"a.*?b", "ab").span(), (0, 2))
+        self.assertEqual(re.fullmatch(r"a.*?b", "abb").span(), (0, 3))
+        self.assertEqual(re.fullmatch(r"a.*?b", "axxb").span(), (0, 4))
+        self.assertEqual(re.fullmatch(r"abc$", "abc\n"), None)
+        self.assertEqual(re.fullmatch(r"abc\Z", "abc\n"), None)
+        self.assertEqual(re.fullmatch(r"(?m)abc$", "abc\n"), None)
+        self.assertEqual(re.fullmatch(r"ab(?=c)cd", "abcd").span(), (0, 4))
+        self.assertEqual(re.fullmatch(r"ab(?<=b)cd", "abcd").span(), (0, 4))
+        self.assertEqual(re.fullmatch(r"(?=a|ab)ab", "ab").span(), (0, 2))
+
+        self.assertEqual(
+            re.compile(r"bc").fullmatch("abcd", pos=1, endpos=3).span(), (1, 3))
+        self.assertEqual(
+            re.compile(r".*?$").fullmatch("abcd", pos=1, endpos=3).span(), (1, 3))
+        self.assertEqual(
+            re.compile(r".*?").fullmatch("abcd", pos=1, endpos=3).span(), (1, 3))
+
+
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
