@@ -126,6 +126,10 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Return immediately if the sound driver is busy.
 
+   .. note::
+
+      This flag is not supported on modern Windows platforms.
+
 
 .. data:: MB_ICONASTERISK
 
