@@ -302,6 +302,9 @@ IDLE
 Tests
 -----
 
+- Issue #18919: Added tests for the sunau module.  Unified and extended tests
+  for audio modules: aifc, sunau and wave.
+
 - Issue #18792: Use "127.0.0.1" or "::1" instead of "localhost" as much as
   possible, since "localhost" goes through a DNS lookup under recent Windows
   versions.
