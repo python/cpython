@@ -122,8 +122,9 @@ to call::
    stdscr.keypad(False)
    curses.echo()
 
-to reverse the curses-friendly terminal settings. Then call the :func:`endwin`
-function to restore the terminal to its original operating mode. ::
+to reverse the curses-friendly terminal settings. Then call the
+:func:`~curses.endwin` function to restore the terminal to its original
+operating mode. ::
 
    curses.endwin()
 
@@ -152,7 +153,7 @@ importing the :func:`curses.wrapper` function and using it like this::
 
    wrapper(main)
 
-The :func:`wrapper` function takes a callable object and does the
+The :func:`~curses.wrapper` function takes a callable object and does the
 initializations described above, also initializing colors if color
 support is present.  :func:`wrapper` then runs your provided callable.
 Once the callable returns, :func:`wrapper` will restore the original
@@ -170,7 +171,7 @@ Windows are the basic abstraction in curses.  A window object represents a
 rectangular area of the screen, and supports methods to display text,
 erase it, allow the user to input strings, and so forth.
 
-The ``stdscr`` object returned by the :func:`initscr` function is a
+The ``stdscr`` object returned by the :func:`~curses.initscr` function is a
 window object that covers the entire screen.  Many programs may need
 only this single window, but you might wish to divide the screen into
 smaller windows, in order to redraw or clear them separately. The
@@ -267,14 +268,14 @@ twisty maze of functions, all subtly different.  For example,
 :c:func:`addstr` displays a string at the current cursor location in
 the ``stdscr`` window, while :c:func:`mvaddstr` moves to a given y,x
 coordinate first before displaying the string. :c:func:`waddstr` is just
-like :func:`addstr`, but allows specifying a window to use instead of
+like :c:func:`addstr`, but allows specifying a window to use instead of
 using ``stdscr`` by default. :c:func:`mvwaddstr` allows specifying both
 a window and a coordinate.
 
 Fortunately the Python interface hides all these details.  ``stdscr``
-is a window object like any other, and methods such as :meth:`addstr`
-accept multiple argument forms.  Usually there are four different
-forms.
+is a window object like any other, and methods such as
+:meth:`~curses.window.addstr` accept multiple argument forms.  Usually there
+are four different forms.
 
 +---------------------------------+-----------------------------------------------+
 | Form                            | Description                                   |
@@ -325,7 +326,7 @@ apparently random location.
 If your application doesn't need a blinking cursor at all, you can
 call ``curs_set(False)`` to make it invisible.  For compatibility
 with older curses versions, there's a ``leaveok(bool)`` function
-that's a synonym for :func:`curs_set`.  When *bool* is true, the
+that's a synonym for :func:`~curses.curs_set`.  When *bool* is true, the
 curses library will attempt to suppress the flashing cursor, and you
 won't need to worry about leaving it in odd locations.
 
@@ -372,10 +373,11 @@ The curses library also supports color on those terminals that provide it. The
 most common such terminal is probably the Linux console, followed by color
 xterms.
 
-To use color, you must call the :func:`start_color` function soon after calling
-:func:`initscr`, to initialize the default color set (the
-:func:`curses.wrapper` function does this automatically).  Once that's
-done, the :func:`has_colors` function returns TRUE if the terminal in use can
+To use color, you must call the :func:`~curses.start_color` function soon
+after calling :func:`~curses.initscr`, to initialize the default color set
+(the :func:`curses.wrapper` function does this automatically).  Once that's
+done, the :func:`~curses.has_colors` function returns TRUE if the terminal
+in use can
 actually display color.  (Note: curses uses the American spelling 'color',
 instead of the Canadian/British spelling 'colour'.  If you're used to the
 British spelling, you'll have to resign yourself to misspelling it for the sake
@@ -383,9 +385,10 @@ of these functions.)
 
 The curses library maintains a finite number of color pairs, containing a
 foreground (or text) color and a background color.  You can get the attribute
-value corresponding to a color pair with the :func:`color_pair` function; this
-can be bitwise-OR'ed with other attributes such as :const:`A_REVERSE`, but
-again, such combinations are not guaranteed to work on all terminals.
+value corresponding to a color pair with the :func:`~curses.color_pair`
+function; this can be bitwise-OR'ed with other attributes such as
+:const:`A_REVERSE`, but again, such combinations are not guaranteed to work
+on all terminals.
 
 An example, which displays a line of text using color pair 1::
 
@@ -418,9 +421,10 @@ Very fancy terminals can change the definitions of the actual colors to a given
 RGB value.  This lets you change color 1, which is usually red, to purple or
 blue or any other color you like.  Unfortunately, the Linux console doesn't
 support this, so I'm unable to try it out, and can't provide any examples.  You
-can check if your terminal can do this by calling :func:`can_change_color`,
-which returns True if the capability is there.  If you're lucky enough to have
-such a talented terminal, consult your system's man pages for more information.
+can check if your terminal can do this by calling
+:func:`~curses.can_change_color`, which returns True if the capability is
+there.  If you're lucky enough to have such a talented terminal, consult your
+system's man pages for more information.
 
 
 User Input
@@ -434,7 +438,7 @@ collections of widgets.)
 There are two methods for getting input from a window:
 
 * :meth:`~curses.window.getch` refreshes the screen and then waits for
-  the user to hit a key, displaying the key if :func:`echo` has been
+  the user to hit a key, displaying the key if :func:`~curses.echo` has been
   called earlier.  You can optionally specify a coordinate to which
   the cursor should be moved before pausing.
 
