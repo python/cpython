@@ -334,7 +334,7 @@ dl.glossary dt {
     font-style: italic;
 }
 
-p.deprecated {
+.deprecated {
     background-color: #ffe4e4;
     border: 1px solid #f66;
     padding: 7px
