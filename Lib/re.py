@@ -85,17 +85,16 @@ resulting RE will match the second character.
     \\       Matches a literal backslash.
 
 This module exports the following functions:
-    match     Match a regular expression pattern to the beginning of a string.
-    fullmatch Match a regular expression pattern to all of a string.
-    search    Search a string for the presence of a pattern.
-    sub       Substitute occurrences of a pattern found in a string.
-    subn      Same as sub, but also return the number of substitutions made.
-    split     Split a string by the occurrences of a pattern.
-    findall   Find all occurrences of a pattern in a string.
-    finditer  Return an iterator yielding a match object for each match.
-    compile   Compile a pattern into a RegexObject.
-    purge     Clear the regular expression cache.
-    escape    Backslash all non-alphanumerics in a string.
+    match    Match a regular expression pattern to the beginning of a string.
+    search   Search a string for the presence of a pattern.
+    sub      Substitute occurrences of a pattern found in a string.
+    subn     Same as sub, but also return the number of substitutions made.
+    split    Split a string by the occurrences of a pattern.
+    findall  Find all occurrences of a pattern in a string.
+    finditer Return an iterator yielding a match object for each match.
+    compile  Compile a pattern into a RegexObject.
+    purge    Clear the regular expression cache.
+    escape   Backslash all non-alphanumerics in a string.
 
 Some of the functions in this module takes flags as optional parameters:
     A  ASCII       For string patterns, make \w, \W, \b, \B, \d, \D
@@ -124,7 +123,7 @@ import sre_compile
 import sre_parse
 
 # public symbols
-__all__ = [ "match", "fullmatch", "search", "sub", "subn", "split", "findall",
+__all__ = [ "match", "search", "sub", "subn", "split", "findall",
     "compile", "purge", "template", "escape", "A", "I", "L", "M", "S", "X",
     "U", "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "error" ]
@@ -154,11 +153,6 @@ def match(pattern, string, flags=0):
     """Try to apply the pattern at the start of the string, returning
     a match object, or None if no match was found."""
     return _compile(pattern, flags).match(string)
-
-def fullmatch(pattern, string, flags=0):
-    """Try to apply the pattern to all of the string, returning
-    a match object, or None if no match was found."""
-    return _compile(pattern, flags).fullmatch(string)
 
 def search(pattern, string, flags=0):
     """Scan through string looking for a match to the pattern, returning
