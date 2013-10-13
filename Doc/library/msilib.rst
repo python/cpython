@@ -429,8 +429,9 @@ GUI classes
 -----------
 
 :mod:`msilib` provides several classes that wrap the GUI tables in an MSI
-database. However, no standard user interface is provided; use :mod:`bdist_msi`
-to create MSI files with a user-interface for installing Python packages.
+database. However, no standard user interface is provided; use
+:mod:`~distutils.command.bdist_msi` to create MSI files with a user-interface
+for installing Python packages.
 
 
 .. class:: Control(dlg, name)

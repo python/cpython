@@ -275,7 +275,7 @@ The module :mod:`socket` exports the following constants and functions:
           RCVALL_*
 
    Constants for Windows' WSAIoctl(). The constants are used as arguments to the
-   :meth:`ioctl` method of socket objects.
+   :meth:`~socket.socket.ioctl` method of socket objects.
 
 
 .. data:: TIPC_*

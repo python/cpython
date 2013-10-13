@@ -111,13 +111,13 @@ can be implemented by using a synchronous server and doing an explicit fork in
 the request handler class :meth:`handle` method.
 
 Another approach to handling multiple simultaneous requests in an environment
-that supports neither threads nor :func:`fork` (or where these are too expensive
-or inappropriate for the service) is to maintain an explicit table of partially
-finished requests and to use :func:`select` to decide which request to work on
-next (or whether to handle a new incoming request).  This is particularly
-important for stream services where each client can potentially be connected for
-a long time (if threads or subprocesses cannot be used).  See :mod:`asyncore`
-for another way to manage this.
+that supports neither threads nor :func:`~os.fork` (or where these are too
+expensive or inappropriate for the service) is to maintain an explicit table of
+partially finished requests and to use :func:`~select.select` to decide which
+request to work on next (or whether to handle a new incoming request).  This is
+particularly important for stream services where each client can potentially be
+connected for a long time (if threads or subprocesses cannot be used).  See
+:mod:`asyncore` for another way to manage this.
 
 .. XXX should data and methods be intermingled, or separate?
    how should the distinction between class and instance variables be drawn?

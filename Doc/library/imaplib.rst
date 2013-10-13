@@ -310,8 +310,9 @@ An :class:`IMAP4` instance has the following methods:
 
    Opens socket to *port* at *host*.  This method is implicitly called by
    the :class:`IMAP4` constructor.  The connection objects established by this
-   method will be used in the ``read``, ``readline``, ``send``, and ``shutdown``
-   methods.  You may override this method.
+   method will be used in the :meth:`IMAP4.read`, :meth:`IMAP4.readline`,
+   :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.  You may override
+   this method.
 
 
 .. method:: IMAP4.partial(message_num, message_part, start, length)

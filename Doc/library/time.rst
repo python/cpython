@@ -677,8 +677,8 @@ The module defines the following functions and data items:
       of many format specifiers in :func:`strftime` and :func:`strptime`.
 
    Module :mod:`calendar`
-      General calendar-related functions.   :func:`timegm` is the inverse of
-      :func:`gmtime` from this module.
+      General calendar-related functions.   :func:`~calendar.timegm` is the
+      inverse of :func:`gmtime` from this module.
 
 .. rubric:: Footnotes
 
