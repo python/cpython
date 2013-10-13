@@ -76,6 +76,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18776: atexit callbacks now display their full traceback when they
+  raise an exception.
+
 - Issue #17827: Add the missing documentation for ``codecs.encode`` and
   ``codecs.decode``.
 
