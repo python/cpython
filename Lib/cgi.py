@@ -676,7 +676,6 @@ class FieldStorage:
                 encoding=self.encoding, errors=self.errors)
             for key, value in query:
                 self.list.append(MiniFieldStorage(key, value))
-            FieldStorageClass = None
 
         klass = self.FieldStorageClass or self.__class__
         first_line = self.fp.readline() # bytes
