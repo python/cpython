@@ -337,7 +337,11 @@ dl.glossary dt {
 .deprecated, .deprecated-removed {
     background-color: #ffe4e4;
     border: 1px solid #f66;
-    padding: 7px
+    padding: 7px;
+}
+
+div.deprecated p {
+    margin-bottom: 0;
 }
 
 .system-message {
