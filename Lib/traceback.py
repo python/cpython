@@ -72,7 +72,7 @@ def print_tb(tb, limit=None, file=None):
         n = n+1
 
 def format_tb(tb, limit = None):
-    """A shorthand for 'format_list(extract_stack(f, limit))."""
+    """A shorthand for 'format_list(extract_tb(tb, limit))'."""
     return format_list(extract_tb(tb, limit))
 
 def extract_tb(tb, limit = None):
