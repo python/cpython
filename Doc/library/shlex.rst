@@ -12,9 +12,9 @@
 
 --------------
 
-The :class:`shlex` class makes it easy to write lexical analyzers for simple
-syntaxes resembling that of the Unix shell.  This will often be useful for
-writing minilanguages, (for example, in run control files for Python
+The :class:`~shlex.shlex` class makes it easy to write lexical analyzers for
+simple syntaxes resembling that of the Unix shell.  This will often be useful
+for writing minilanguages, (for example, in run control files for Python
 applications) or for parsing quoted strings.
 
 The :mod:`shlex` module defines the following functions:
@@ -24,15 +24,16 @@ The :mod:`shlex` module defines the following functions:
 
    Split the string *s* using shell-like syntax. If *comments* is :const:`False`
    (the default), the parsing of comments in the given string will be disabled
-   (setting the :attr:`commenters` attribute of the :class:`shlex` instance to
-   the empty string).  This function operates in POSIX mode by default, but uses
-   non-POSIX mode if the *posix* argument is false.
+   (setting the :attr:`~shlex.commenters` attribute of the
+   :class:`~shlex.shlex` instance to the empty string).  This function operates
+   in POSIX mode by default, but uses non-POSIX mode if the *posix* argument is
+   false.
 
    .. note::
 
-      Since the :func:`split` function instantiates a :class:`shlex` instance,
-      passing ``None`` for *s* will read the string to split from standard
-      input.
+      Since the :func:`split` function instantiates a :class:`~shlex.shlex`
+      instance, passing ``None`` for *s* will read the string to split from
+      standard input.
 
 
 .. function:: quote(s)
@@ -73,17 +74,19 @@ The :mod:`shlex` module defines the following class:
 
 .. class:: shlex(instream=None, infile=None, posix=False)
 
-   A :class:`shlex` instance or subclass instance is a lexical analyzer object.
-   The initialization argument, if present, specifies where to read characters
-   from. It must be a file-/stream-like object with :meth:`read` and
-   :meth:`readline` methods, or a string.  If no argument is given, input will
-   be taken from ``sys.stdin``.  The second optional argument is a filename
-   string, which sets the initial value of the :attr:`infile` attribute.  If the
-   *instream* argument is omitted or equal to ``sys.stdin``, this second
-   argument defaults to "stdin".  The *posix* argument defines the operational
-   mode: when *posix* is not true (default), the :class:`shlex` instance will
-   operate in compatibility mode.  When operating in POSIX mode, :class:`shlex`
-   will try to be as close as possible to the POSIX shell parsing rules.
+   A :class:`~shlex.shlex` instance or subclass instance is a lexical analyzer
+   object.  The initialization argument, if present, specifies where to read
+   characters from. It must be a file-/stream-like object with
+   :meth:`~io.TextIOBase.read` and :meth:`~io.TextIOBase.readline` methods, or
+   a string.  If no argument is given, input will be taken from ``sys.stdin``.
+   The second optional argument is a filename string, which sets the initial
+   value of the :attr:`~shlex.infile` attribute.  If the *instream*
+   argument is omitted or equal to ``sys.stdin``, this second argument
+   defaults to "stdin".  The *posix* argument defines the operational mode:
+   when *posix* is not true (default), the :class:`~shlex.shlex` instance will
+   operate in compatibility mode.  When operating in POSIX mode,
+   :class:`~shlex.shlex` will try to be as close as possible to the POSIX shell
+   parsing rules.
 
 
 .. seealso::
@@ -97,14 +100,14 @@ The :mod:`shlex` module defines the following class:
 shlex Objects
 -------------
 
-A :class:`shlex` instance has the following methods:
+A :class:`~shlex.shlex` instance has the following methods:
 
 
 .. method:: shlex.get_token()
 
    Return a token.  If tokens have been stacked using :meth:`push_token`, pop a
    token off the stack.  Otherwise, read one from the input stream.  If reading
-   encounters an immediate end-of-file, :attr:`self.eof` is returned (the empty
+   encounters an immediate end-of-file, :attr:`eof` is returned (the empty
    string (``''``) in non-POSIX mode, and ``None`` in POSIX mode).
 
 
@@ -122,9 +125,9 @@ A :class:`shlex` instance has the following methods:
 
 .. method:: shlex.sourcehook(filename)
 
-   When :class:`shlex` detects a source request (see :attr:`source` below) this
-   method is given the following token as argument, and expected to return a tuple
-   consisting of a filename and an open file-like object.
+   When :class:`~shlex.shlex` detects a source request (see :attr:`source`
+   below) this method is given the following token as argument, and expected
+   to return a tuple consisting of a filename and an open file-like object.
 
    Normally, this method first strips any quotes off the argument.  If the result
    is an absolute pathname, or there was no previous source request in effect, or
@@ -141,8 +144,9 @@ A :class:`shlex` instance has the following methods:
 
    This hook is exposed so that you can use it to implement directory search paths,
    addition of file extensions, and other namespace hacks. There is no
-   corresponding 'close' hook, but a shlex instance will call the :meth:`close`
-   method of the sourced input stream when it returns EOF.
+   corresponding 'close' hook, but a shlex instance will call the
+   :meth:`~io.IOBase.close` method of the sourced input stream when it returns
+   EOF.
 
    For more explicit control of source stacking, use the :meth:`push_source` and
    :meth:`pop_source` methods.
@@ -172,8 +176,8 @@ A :class:`shlex` instance has the following methods:
    messages in the standard, parseable format understood by Emacs and other Unix
    tools.
 
-Instances of :class:`shlex` subclasses have some public instance variables which
-either control lexical analysis or can be used for debugging:
+Instances of :class:`~shlex.shlex` subclasses have some public instance
+variables which either control lexical analysis or can be used for debugging:
 
 
 .. attribute:: shlex.commenters
@@ -218,8 +222,8 @@ either control lexical analysis or can be used for debugging:
 .. attribute:: shlex.whitespace_split
 
    If ``True``, tokens will only be split in whitespaces. This is useful, for
-   example, for parsing command lines with :class:`shlex`, getting tokens in a
-   similar way to shell arguments.
+   example, for parsing command lines with :class:`~shlex.shlex`, getting
+   tokens in a similar way to shell arguments.
 
 
 .. attribute:: shlex.infile
@@ -231,7 +235,8 @@ either control lexical analysis or can be used for debugging:
 
 .. attribute:: shlex.instream
 
-   The input stream from which this :class:`shlex` instance is reading characters.
+   The input stream from which this :class:`~shlex.shlex` instance is reading
+   characters.
 
 
 .. attribute:: shlex.source
@@ -240,16 +245,16 @@ either control lexical analysis or can be used for debugging:
    string will be recognized as a lexical-level inclusion request similar to the
    ``source`` keyword in various shells.  That is, the immediately following token
    will opened as a filename and input taken from that stream until EOF, at which
-   point the :meth:`close` method of that stream will be called and the input
-   source will again become the original input stream. Source requests may be
-   stacked any number of levels deep.
+   point the :meth:`~io.IOBase.close` method of that stream will be called and
+   the input source will again become the original input stream.  Source
+   requests may be stacked any number of levels deep.
 
 
 .. attribute:: shlex.debug
 
-   If this attribute is numeric and ``1`` or more, a :class:`shlex` instance will
-   print verbose progress output on its behavior.  If you need to use this, you can
-   read the module source code to learn the details.
+   If this attribute is numeric and ``1`` or more, a :class:`~shlex.shlex`
+   instance will print verbose progress output on its behavior.  If you need
+   to use this, you can read the module source code to learn the details.
 
 
 .. attribute:: shlex.lineno
@@ -273,7 +278,7 @@ either control lexical analysis or can be used for debugging:
 Parsing Rules
 -------------
 
-When operating in non-POSIX mode, :class:`shlex` will try to obey to the
+When operating in non-POSIX mode, :class:`~shlex.shlex` will try to obey to the
 following rules.
 
 * Quote characters are not recognized within words (``Do"Not"Separate`` is
@@ -287,16 +292,17 @@ following rules.
 * Closing quotes separate words (``"Do"Separate`` is parsed as ``"Do"`` and
   ``Separate``);
 
-* If :attr:`whitespace_split` is ``False``, any character not declared to be a
-  word character, whitespace, or a quote will be returned as a single-character
-  token. If it is ``True``, :class:`shlex` will only split words in whitespaces;
+* If :attr:`~shlex.whitespace_split` is ``False``, any character not
+  declared to be a word character, whitespace, or a quote will be returned as
+  a single-character token. If it is ``True``, :class:`~shlex.shlex` will only
+  split words in whitespaces;
 
 * EOF is signaled with an empty string (``''``);
 
 * It's not possible to parse empty strings, even if quoted.
 
-When operating in POSIX mode, :class:`shlex` will try to obey to the following
-parsing rules.
+When operating in POSIX mode, :class:`~shlex.shlex` will try to obey to the
+following parsing rules.
 
 * Quotes are stripped out, and do not separate words (``"Do"Not"Separate"`` is
   parsed as the single word ``DoNotSeparate``);
@@ -304,14 +310,16 @@ parsing rules.
 * Non-quoted escape characters (e.g. ``'\'``) preserve the literal value of the
   next character that follows;
 
-* Enclosing characters in quotes which are not part of :attr:`escapedquotes`
-  (e.g. ``"'"``) preserve the literal value of all characters within the quotes;
+* Enclosing characters in quotes which are not part of
+  :attr:`~shlex.escapedquotes` (e.g. ``"'"``) preserve the literal value
+  of all characters within the quotes;
 
-* Enclosing characters in quotes which are part of :attr:`escapedquotes` (e.g.
-  ``'"'``) preserves the literal value of all characters within the quotes, with
-  the exception of the characters mentioned in :attr:`escape`. The escape
-  characters retain its special meaning only when followed by the quote in use, or
-  the escape character itself. Otherwise the escape character will be considered a
+* Enclosing characters in quotes which are part of
+  :attr:`~shlex.escapedquotes` (e.g. ``'"'``) preserves the literal value
+  of all characters within the quotes, with the exception of the characters
+  mentioned in :attr:`~shlex.escape`.  The escape characters retain its
+  special meaning only when followed by the quote in use, or the escape
+  character itself. Otherwise the escape character will be considered a
   normal character.
 
 * EOF is signaled with a :const:`None` value;
