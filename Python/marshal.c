@@ -841,7 +841,7 @@ r_object(RFILE *p)
     long i, n;
     int type, code = r_byte(p);
     int flag, is_interned = 0;
-    PyObject *retval;
+    PyObject *retval = NULL;
 
     if (code == EOF) {
         PyErr_SetString(PyExc_EOFError,
