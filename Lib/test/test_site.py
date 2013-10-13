@@ -445,6 +445,11 @@ class StartupImportTests(unittest.TestCase):
         self.assertNotIn('locale', modules, stderr)
         # http://bugs.python.org/issue19209
         self.assertNotIn('copyreg', modules, stderr)
+        # http://bugs.python.org/issue19218>
+        collection_mods = {'_collections', 'collections', 'functools',
+                           'heapq', 'itertools', 'keyword', 'operator',
+                           'reprlib', 'types', 'weakref'}
+        self.assertFalse(modules.intersection(re_mods), stderr)
 
 
 if __name__ == "__main__":
