@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17827: Add the missing documentation for ``codecs.encode`` and
+  ``codecs.decode``.
+
 - Issue #19218: Rename collections.abc to _collections_abc in order to
   speed up interpreter start.
 
