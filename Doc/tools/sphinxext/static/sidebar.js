@@ -2,7 +2,8 @@
  * sidebar.js
  * ~~~~~~~~~~
  *
- * This script makes the Sphinx sidebar collapsible.
+ * This script makes the Sphinx sidebar collapsible and implements intelligent
+ * scrolling.
  *
  * .sphinxsidebar contains .sphinxsidebarwrapper.  This script adds in
  * .sphixsidebar, after .sphinxsidebarwrapper, the #sidebarbutton used to
@@ -24,6 +25,8 @@ $(function() {
   // global elements used by the functions.
   // the 'sidebarbutton' element is defined as global after its
   // creation, in the add_sidebar_button function
+  var jwindow = $(window);
+  var jdocument = $(document);
   var bodywrapper = $('.bodywrapper');
   var sidebar = $('.sphinxsidebar');
   var sidebarwrapper = $('.sphinxsidebarwrapper');
@@ -42,6 +45,13 @@ $(function() {
   var dark_color = '#AAAAAA';
   var light_color = '#CCCCCC';
 
+  function get_viewport_height() {
+    if (window.innerHeight)
+      return window.innerHeight;
+    else
+      return jwindow.height();
+  }
+
   function sidebar_is_collapsed() {
     return sidebarwrapper.is(':not(:visible)');
   }
@@ -51,6 +61,8 @@ $(function() {
       expand_sidebar();
     else
       collapse_sidebar();
+    // adjust the scrolling of the sidebar
+    scroll_sidebar();
   }
 
   function collapse_sidebar() {
@@ -95,11 +107,7 @@ $(function() {
     );
     var sidebarbutton = $('#sidebarbutton');
     // find the height of the viewport to center the '<<' in the page
-    var viewport_height;
-    if (window.innerHeight)
- 	  viewport_height = window.innerHeight;
-    else
-	  viewport_height = $(window).height();
+    var viewport_height = get_viewport_height();
     var sidebar_offset = sidebar.offset().top;
     var sidebar_height = Math.max(bodywrapper.height(), sidebar.height());
     sidebarbutton.find('span').css({
@@ -152,4 +160,34 @@ $(function() {
   add_sidebar_button();
   var sidebarbutton = $('#sidebarbutton');
   set_position_from_cookie();
+
+
+  /* intelligent scrolling */
+  function scroll_sidebar() {
+    var sidebar_height = sidebarwrapper.height();
+    var viewport_height = get_viewport_height();
+    var offset = sidebar.position()['top'];
+    var wintop = jwindow.scrollTop();
+    var winbot = wintop + viewport_height;
+    var curtop = sidebarwrapper.position()['top'];
+    var curbot = curtop + sidebar_height;
+    // does sidebar fit in window?
+    if (sidebar_height < viewport_height) {
+      // yes: easy case -- always keep at the top
+      sidebarwrapper.css('top', $u.min([$u.max([0, wintop - offset - 10]),
+                            jdocument.height() - sidebar_height - 200]));
+    }
+    else {
+      // no: only scroll if top/bottom edge of sidebar is at
+      // top/bottom edge of window
+      if (curtop > wintop && curbot > winbot) {
+        sidebarwrapper.css('top', $u.max([wintop - offset - 10, 0]));
+      }
+      else if (curtop < wintop && curbot < winbot) {
+        sidebarwrapper.css('top', $u.min([winbot - sidebar_height - offset - 20,
+                              jdocument.height() - sidebar_height - 200]));
+      }
+    }
+  }
+  jwindow.scroll(scroll_sidebar);
 });
