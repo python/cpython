@@ -105,6 +105,12 @@ Library
 - Issue #4366: Fix building extensions on all platforms when --enable-shared
   is used.
 
+Tests
+-----
+
+- Issue #18919: Unified and extended tests for audio modules: aifc, sunau and
+  wave.
+
 Documentation
 -------------
 
