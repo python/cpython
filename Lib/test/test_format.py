@@ -336,14 +336,12 @@ class FormatTest(unittest.TestCase):
         self.assertEqual(format(f, ".3f"), "1.200")
         with self.assertRaises(ValueError) as cm:
             format(f, ".%sf" % (INT_MAX + 1))
-        self.assertEqual(str(cm.exception), "precision too big")
 
         c = complex(f)
         self.assertEqual(format(c, ".0f"), "1+0j")
         self.assertEqual(format(c, ".3f"), "1.200+0.000j")
         with self.assertRaises(ValueError) as cm:
             format(c, ".%sf" % (INT_MAX + 1))
-        self.assertEqual(str(cm.exception), "precision too big")
 
 
 if __name__ == "__main__":
