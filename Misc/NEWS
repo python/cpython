@@ -427,6 +427,9 @@ IDLE
 Tests
 -----
 
+- Issue #18919: Unified and extended tests for audio modules: aifc, sunau and
+  wave.
+
 - Issue #18952: Fix regression in support data downloads introduced when
   test.support was converted to a package. Regression noticed by Zachary
   Ware.
