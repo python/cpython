@@ -1784,7 +1784,8 @@ values.  If they're used anyway, ``0`` is substituted for them.
 
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :func:`strftime` function, and platform
-variations are common.
+variations are common.  To see the full set of format codes supported on your
+platform, consult the :manpage:`strftime(3)` documentation.
 
 The following is a list of all the format codes that the C standard (1989
 version) requires, and these work on all platforms with a standard C
