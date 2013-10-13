@@ -140,30 +140,6 @@ PAX_NUMBER_FIELDS = {
 }
 
 #---------------------------------------------------------
-# Bits used in the mode field, values in octal.
-#---------------------------------------------------------
-S_IFLNK = 0o120000        # symbolic link
-S_IFREG = 0o100000        # regular file
-S_IFBLK = 0o060000        # block device
-S_IFDIR = 0o040000        # directory
-S_IFCHR = 0o020000        # character device
-S_IFIFO = 0o010000        # fifo
-
-TSUID   = 0o4000          # set UID on execution
-TSGID   = 0o2000          # set GID on execution
-TSVTX   = 0o1000          # reserved
-
-TUREAD  = 0o400           # read by owner
-TUWRITE = 0o200           # write by owner
-TUEXEC  = 0o100           # execute/search by owner
-TGREAD  = 0o040           # read by group
-TGWRITE = 0o020           # write by group
-TGEXEC  = 0o010           # execute/search by group
-TOREAD  = 0o004           # read by other
-TOWRITE = 0o002           # write by other
-TOEXEC  = 0o001           # execute/search by other
-
-#---------------------------------------------------------
 # initialization
 #---------------------------------------------------------
 if os.name in ("nt", "ce"):
