@@ -50,10 +50,22 @@ _profile_hook = None
 _trace_hook = None
 
 def setprofile(func):
+    """Set a profile function for all threads started from the threading module.
+
+    The func will be passed to sys.setprofile() for each thread, before its
+    run() method is called.
+
+    """
     global _profile_hook
     _profile_hook = func
 
 def settrace(func):
+    """Set a trace function for all threads started from the threading module.
+
+    The func will be passed to sys.settrace() for each thread, before its run()
+    method is called.
+
+    """
     global _trace_hook
     _trace_hook = func
 
@@ -62,11 +74,27 @@ def settrace(func):
 Lock = _allocate_lock
 
 def RLock(*args, **kwargs):
+    """Factory function that returns a new reentrant lock.
+
+    A reentrant lock must be released by the thread that acquired it. Once a
+    thread has acquired a reentrant lock, the same thread may acquire it again
+    without blocking; the thread must release it once for each time it has
+    acquired it.
+
+    """
     if _CRLock is None:
         return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
 
 class _RLock:
+    """This class implements reentrant lock objects.
+
+    A reentrant lock must be released by the thread that acquired it. Once a
+    thread has acquired a reentrant lock, the same thread may acquire it
+    again without blocking; the thread must release it once for each time it
+    has acquired it.
+
+    """
 
     def __init__(self):
         self._block = _allocate_lock()
@@ -83,6 +111,31 @@ class _RLock:
                 self.__class__.__name__, owner, self._count)
 
     def acquire(self, blocking=True, timeout=-1):
+        """Acquire a lock, blocking or non-blocking.
+
+        When invoked without arguments: if this thread already owns the lock,
+        increment the recursion level by one, and return immediately. Otherwise,
+        if another thread owns the lock, block until the lock is unlocked. Once
+        the lock is unlocked (not owned by any thread), then grab ownership, set
+        the recursion level to one, and return. If more than one thread is
+        blocked waiting until the lock is unlocked, only one at a time will be
+        able to grab ownership of the lock. There is no return value in this
+        case.
+
+        When invoked with the blocking argument set to true, do the same thing
+        as when called without arguments, and return true.
+
+        When invoked with the blocking argument set to false, do not block. If a
+        call without an argument would block, return false immediately;
+        otherwise, do the same thing as when called without arguments, and
+        return true.
+
+        When invoked with the floating-point timeout argument set to a positive
+        value, block for at most the number of seconds specified by timeout
+        and as long as the lock cannot be acquired.  Return true if the lock has
+        been acquired, false if the timeout has elapsed.
+
+        """
         me = get_ident()
         if self._owner == me:
             self._count += 1
@@ -96,6 +149,21 @@ class _RLock:
     __enter__ = acquire
 
     def release(self):
+        """Release a lock, decrementing the recursion level.
+
+        If after the decrement it is zero, reset the lock to unlocked (not owned
+        by any thread), and if any other threads are blocked waiting for the
+        lock to become unlocked, allow exactly one of them to proceed. If after
+        the decrement the recursion level is still nonzero, the lock remains
+        locked and owned by the calling thread.
+
+        Only call this method when the calling thread owns the lock. A
+        RuntimeError is raised if this method is called when the lock is
+        unlocked.
+
+        There is no return value.
+
+        """
         if self._owner != get_ident():
             raise RuntimeError("cannot release un-acquired lock")
         self._count = count = self._count - 1
@@ -129,6 +197,16 @@ _PyRLock = _RLock
 
 
 class Condition:
+    """Class that implements a condition variable.
+
+    A condition variable allows one or more threads to wait until they are
+    notified by another thread.
+
+    If the lock argument is given and not None, it must be a Lock or RLock
+    object, and it is used as the underlying lock. Otherwise, a new RLock object
+    is created and used as the underlying lock.
+
+    """
 
     def __init__(self, lock=None):
         if lock is None:
@@ -179,6 +257,28 @@ class Condition:
             return True
 
     def wait(self, timeout=None):
+        """Wait until notified or until a timeout occurs.
+
+        If the calling thread has not acquired the lock when this method is
+        called, a RuntimeError is raised.
+
+        This method releases the underlying lock, and then blocks until it is
+        awakened by a notify() or notify_all() call for the same condition
+        variable in another thread, or until the optional timeout occurs. Once
+        awakened or timed out, it re-acquires the lock and returns.
+
+        When the timeout argument is present and not None, it should be a
+        floating point number specifying a timeout for the operation in seconds
+        (or fractions thereof).
+
+        When the underlying lock is an RLock, it is not released using its
+        release() method, since this may not actually unlock the lock when it
+        was acquired multiple times recursively. Instead, an internal interface
+        of the RLock class is used, which really unlocks it even when it has
+        been recursively acquired several times. Another internal interface is
+        then used to restore the recursion level when the lock is reacquired.
+
+        """
         if not self._is_owned():
             raise RuntimeError("cannot wait on un-acquired lock")
         waiter = _allocate_lock()
@@ -204,6 +304,13 @@ class Condition:
             self._acquire_restore(saved_state)
 
     def wait_for(self, predicate, timeout=None):
+        """Wait until a condition evaluates to True.
+
+        predicate should be a callable which result will be interpreted as a
+        boolean value.  A timeout may be provided giving the maximum time to
+        wait.
+
+        """
         endtime = None
         waittime = timeout
         result = predicate()
@@ -220,6 +327,15 @@ class Condition:
         return result
 
     def notify(self, n=1):
+        """Wake up one or more threads waiting on this condition, if any.
+
+        If the calling thread has not acquired the lock when this method is
+        called, a RuntimeError is raised.
+
+        This method wakes up at most n of the threads waiting for the condition
+        variable; it is a no-op if no threads are waiting.
+
+        """
         if not self._is_owned():
             raise RuntimeError("cannot notify on un-acquired lock")
         all_waiters = self._waiters
@@ -234,12 +350,26 @@ class Condition:
                 pass
 
     def notify_all(self):
+        """Wake up all threads waiting on this condition.
+
+        If the calling thread has not acquired the lock when this method
+        is called, a RuntimeError is raised.
+
+        """
         self.notify(len(self._waiters))
 
     notifyAll = notify_all
 
 
 class Semaphore:
+    """This class implements semaphore objects.
+
+    Semaphores manage a counter representing the number of release() calls minus
+    the number of acquire() calls, plus an initial value. The acquire() method
+    blocks if necessary until it can return without making the counter
+    negative. If not given, value defaults to 1.
+
+    """
 
     # After Tim Peters' semaphore class, but not quite the same (no maximum)
 
@@ -250,6 +380,29 @@ class Semaphore:
         self._value = value
 
     def acquire(self, blocking=True, timeout=None):
+        """Acquire a semaphore, decrementing the internal counter by one.
+
+        When invoked without arguments: if the internal counter is larger than
+        zero on entry, decrement it by one and return immediately. If it is zero
+        on entry, block, waiting until some other thread has called release() to
+        make it larger than zero. This is done with proper interlocking so that
+        if multiple acquire() calls are blocked, release() will wake exactly one
+        of them up. The implementation may pick one at random, so the order in
+        which blocked threads are awakened should not be relied on. There is no
+        return value in this case.
+
+        When invoked with blocking set to true, do the same thing as when called
+        without arguments, and return true.
+
+        When invoked with blocking set to false, do not block. If a call without
+        an argument would block, return false immediately; otherwise, do the
+        same thing as when called without arguments, and return true.
+
+        When invoked with a timeout other than None, it will block for at
+        most timeout seconds.  If acquire does not complete successfully in
+        that interval, return false.  Return true otherwise.
+
+        """
         if not blocking and timeout is not None:
             raise ValueError("can't specify timeout for non-blocking acquire")
         rc = False
@@ -274,6 +427,12 @@ class Semaphore:
     __enter__ = acquire
 
     def release(self):
+        """Release a semaphore, incrementing the internal counter by one.
+
+        When the counter is zero on entry and another thread is waiting for it
+        to become larger than zero again, wake up that thread.
+
+        """
         with self._cond:
             self._value += 1
             self._cond.notify()
@@ -283,12 +442,36 @@ class Semaphore:
 
 
 class BoundedSemaphore(Semaphore):
-    """Semaphore that checks that # releases is <= # acquires"""
+    """Implements a bounded semaphore.
+
+    A bounded semaphore checks to make sure its current value doesn't exceed its
+    initial value. If it does, ValueError is raised. In most situations
+    semaphores are used to guard resources with limited capacity.
+
+    If the semaphore is released too many times it's a sign of a bug. If not
+    given, value defaults to 1.
+
+    Like regular semaphores, bounded semaphores manage a counter representing
+    the number of release() calls minus the number of acquire() calls, plus an
+    initial value. The acquire() method blocks if necessary until it can return
+    without making the counter negative. If not given, value defaults to 1.
+
+    """
+
     def __init__(self, value=1):
         Semaphore.__init__(self, value)
         self._initial_value = value
 
     def release(self):
+        """Release a semaphore, incrementing the internal counter by one.
+
+        When the counter is zero on entry and another thread is waiting for it
+        to become larger than zero again, wake up that thread.
+
+        If the number of releases exceeds the number of acquires,
+        raise a ValueError.
+
+        """
         with self._cond:
             if self._value >= self._initial_value:
                 raise ValueError("Semaphore released too many times")
@@ -297,6 +480,13 @@ class BoundedSemaphore(Semaphore):
 
 
 class Event:
+    """Class implementing event objects.
+
+    Events manage a flag that can be set to true with the set() method and reset
+    to false with the clear() method. The wait() method blocks until the flag is
+    true.  The flag is initially false.
+
+    """
 
     # After Tim Peters' event class (without is_posted())
 
@@ -309,11 +499,18 @@ class Event:
         self._cond.__init__()
 
     def is_set(self):
+        """Return true if and only if the internal flag is true."""
         return self._flag
 
     isSet = is_set
 
     def set(self):
+        """Set the internal flag to true.
+
+        All threads waiting for it to become true are awakened. Threads
+        that call wait() once the flag is true will not block at all.
+
+        """
         self._cond.acquire()
         try:
             self._flag = True
@@ -322,6 +519,12 @@ class Event:
             self._cond.release()
 
     def clear(self):
+        """Reset the internal flag to false.
+
+        Subsequently, threads calling wait() will block until set() is called to
+        set the internal flag to true again.
+
+        """
         self._cond.acquire()
         try:
             self._flag = False
@@ -329,6 +532,20 @@ class Event:
             self._cond.release()
 
     def wait(self, timeout=None):
+        """Block until the internal flag is true.
+
+        If the internal flag is true on entry, return immediately. Otherwise,
+        block until another thread calls set() to set the flag to true, or until
+        the optional timeout occurs.
+
+        When the timeout argument is present and not None, it should be a
+        floating point number specifying a timeout for the operation in seconds
+        (or fractions thereof).
+
+        This method returns the internal flag on exit, so it will always return
+        True except if a timeout is given and the operation times out.
+
+        """
         self._cond.acquire()
         try:
             signaled = self._flag
@@ -351,19 +568,22 @@ class Event:
 # similar to 'draining' except that threads leave with a BrokenBarrierError,
 # and a 'broken' state in which all threads get the exception.
 class Barrier:
+    """Implements a Barrier.
+
+    Useful for synchronizing a fixed number of threads at known synchronization
+    points.  Threads block on 'wait()' and are simultaneously once they have all
+    made that call.
+
     """
-    Barrier.  Useful for synchronizing a fixed number of threads
-    at known synchronization points.  Threads block on 'wait()' and are
-    simultaneously once they have all made that call.
-    """
+
     def __init__(self, parties, action=None, timeout=None):
-        """
-        Create a barrier, initialised to 'parties' threads.
-        'action' is a callable which, when supplied, will be called
-        by one of the threads after they have all entered the
-        barrier and just prior to releasing them all.
-        If a 'timeout' is provided, it is uses as the default for
-        all subsequent 'wait()' calls.
+        """Create a barrier, initialised to 'parties' threads.
+
+        'action' is a callable which, when supplied, will be called by one of
+        the threads after they have all entered the barrier and just prior to
+        releasing them all. If a 'timeout' is provided, it is uses as the
+        default for all subsequent 'wait()' calls.
+
         """
         self._cond = Condition(Lock())
         self._action = action
@@ -373,12 +593,13 @@ class Barrier:
         self._count = 0
 
     def wait(self, timeout=None):
-        """
-        Wait for the barrier.  When the specified number of threads have
-        started waiting, they are all simultaneously awoken. If an 'action'
-        was provided for the barrier, one of the threads will have executed
-        that callback prior to returning.
+        """Wait for the barrier.
+
+        When the specified number of threads have started waiting, they are all
+        simultaneously awoken. If an 'action' was provided for the barrier, one
+        of the threads will have executed that callback prior to returning.
         Returns an individual index number from 0 to 'parties-1'.
+
         """
         if timeout is None:
             timeout = self._timeout
@@ -445,10 +666,11 @@ class Barrier:
                 self._cond.notify_all()
 
     def reset(self):
-        """
-        Reset the barrier to the initial state.
+        """Reset the barrier to the initial state.
+
         Any threads currently waiting will get the BrokenBarrier exception
         raised.
+
         """
         with self._cond:
             if self._count > 0:
@@ -464,11 +686,11 @@ class Barrier:
             self._cond.notify_all()
 
     def abort(self):
-        """
-        Place the barrier into a 'broken' state.
-        Useful in case of error.  Any currently waiting threads and
-        threads attempting to 'wait()' will have BrokenBarrierError
-        raised.
+        """Place the barrier into a 'broken' state.
+
+        Useful in case of error.  Any currently waiting threads and threads
+        attempting to 'wait()' will have BrokenBarrierError raised.
+
         """
         with self._cond:
             self._break()
@@ -481,16 +703,12 @@ class Barrier:
 
     @property
     def parties(self):
-        """
-        Return the number of threads required to trip the barrier.
-        """
+        """Return the number of threads required to trip the barrier."""
         return self._parties
 
     @property
     def n_waiting(self):
-        """
-        Return the number of threads that are currently waiting at the barrier.
-        """
+        """Return the number of threads currently waiting at the barrier."""
         # We don't need synchronization here since this is an ephemeral result
         # anyway.  It returns the correct value in the steady state.
         if self._state == 0:
@@ -499,13 +717,12 @@ class Barrier:
 
     @property
     def broken(self):
-        """
-        Return True if the barrier is in a broken state
-        """
+        """Return True if the barrier is in a broken state."""
         return self._state == -2
 
-#exception raised by the Barrier class
-class BrokenBarrierError(RuntimeError): pass
+# exception raised by the Barrier class
+class BrokenBarrierError(RuntimeError):
+    pass
 
 
 # Helper to generate new thread names
@@ -524,6 +741,13 @@ _dangling = WeakSet()
 # Main class for threads
 
 class Thread:
+    """A class that represents a thread of control.
+
+    This class can be safely subclassed in a limited fashion. There are two ways
+    to specify the activity: by passing a callable object to the constructor, or
+    by overriding the run() method in a subclass.
+
+    """
 
     __initialized = False
     # Need to store a reference to sys.exc_info for printing
@@ -537,6 +761,27 @@ class Thread:
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs=None, *, daemon=None):
+        """This constructor should always be called with keyword arguments. Arguments are:
+
+        *group* should be None; reserved for future extension when a ThreadGroup
+        class is implemented.
+
+        *target* is the callable object to be invoked by the run()
+        method. Defaults to None, meaning nothing is called.
+
+        *name* is the thread name. By default, a unique name is constructed of
+        the form "Thread-N" where N is a small decimal number.
+
+        *args* is the argument tuple for the target invocation. Defaults to ().
+
+        *kwargs* is a dictionary of keyword arguments for the target
+        invocation. Defaults to {}.
+
+        If a subclass overrides the constructor, it must make sure to invoke
+        the base class constructor (Thread.__init__()) before doing anything
+        else to the thread.
+
+        """
         assert group is None, "group argument must be None for now"
         if kwargs is None:
             kwargs = {}
@@ -586,6 +831,15 @@ class Thread:
         return "<%s(%s, %s)>" % (self.__class__.__name__, self._name, status)
 
     def start(self):
+        """Start the thread's activity.
+
+        It must be called at most once per thread object. It arranges for the
+        object's run() method to be invoked in a separate thread of control.
+
+        This method will raise a RuntimeError if called more than once on the
+        same thread object.
+
+        """
         if not self._initialized:
             raise RuntimeError("thread.__init__() not called")
 
@@ -602,6 +856,14 @@ class Thread:
         self._started.wait()
 
     def run(self):
+        """Method representing the thread's activity.
+
+        You may override this method in a subclass. The standard run() method
+        invokes the callable object passed to the object's constructor as the
+        target argument, if any, with sequential and keyword arguments taken
+        from the args and kwargs arguments, respectively.
+
+        """
         try:
             if self._target:
                 self._target(*self._args, **self._kwargs)
@@ -765,6 +1027,29 @@ class Thread:
                 raise
 
     def join(self, timeout=None):
+        """Wait until the thread terminates.
+
+        This blocks the calling thread until the thread whose join() method is
+        called terminates -- either normally or through an unhandled exception
+        or until the optional timeout occurs.
+
+        When the timeout argument is present and not None, it should be a
+        floating point number specifying a timeout for the operation in seconds
+        (or fractions thereof). As join() always returns None, you must call
+        isAlive() after join() to decide whether a timeout happened -- if the
+        thread is still alive, the join() call timed out.
+
+        When the timeout argument is not present or None, the operation will
+        block until the thread terminates.
+
+        A thread can be join()ed many times.
+
+        join() raises a RuntimeError if an attempt is made to join the current
+        thread as that would cause a deadlock. It is also an error to join() a
+        thread before it has been started and attempts to do so raises the same
+        exception.
+
+        """
         if not self._initialized:
             raise RuntimeError("Thread.__init__() not called")
         if not self._started.is_set():
@@ -792,6 +1077,12 @@ class Thread:
 
     @property
     def name(self):
+        """A string used for identification purposes only.
+
+        It has no semantics. Multiple threads may be given the same name. The
+        initial name is set by the constructor.
+
+        """
         assert self._initialized, "Thread.__init__() not called"
         return self._name
 
@@ -802,10 +1093,24 @@ class Thread:
 
     @property
     def ident(self):
+        """Thread identifier of this thread or None if it has not been started.
+
+        This is a nonzero integer. See the thread.get_ident() function. Thread
+        identifiers may be recycled when a thread exits and another thread is
+        created. The identifier is available even after the thread has exited.
+
+        """
         assert self._initialized, "Thread.__init__() not called"
         return self._ident
 
     def is_alive(self):
+        """Return whether the thread is alive.
+
+        This method returns True just before the run() method starts until just
+        after the run() method terminates. The module function enumerate()
+        returns a list of all alive threads.
+
+        """
         assert self._initialized, "Thread.__init__() not called"
         if self._is_stopped or not self._started.is_set():
             return False
@@ -816,6 +1121,17 @@ class Thread:
 
     @property
     def daemon(self):
+        """A boolean value indicating whether this thread is a daemon thread.
+
+        This must be set before start() is called, otherwise RuntimeError is
+        raised. Its initial value is inherited from the creating thread; the
+        main thread is not a daemon thread and therefore all threads created in
+        the main thread default to daemon = False.
+
+        The entire Python program exits when no alive non-daemon threads are
+        left.
+
+        """
         assert self._initialized, "Thread.__init__() not called"
         return self._daemonic
 
@@ -844,9 +1160,10 @@ class Thread:
 class Timer(Thread):
     """Call a function after a specified number of seconds:
 
-    t = Timer(30.0, f, args=None, kwargs=None)
-    t.start()
-    t.cancel() # stop the timer's action if it's still waiting
+            t = Timer(30.0, f, args=None, kwargs=None)
+            t.start()
+            t.cancel()     # stop the timer's action if it's still waiting
+
     """
 
     def __init__(self, interval, function, args=None, kwargs=None):
@@ -858,7 +1175,7 @@ class Timer(Thread):
         self.finished = Event()
 
     def cancel(self):
-        """Stop the timer if it hasn't finished yet"""
+        """Stop the timer if it hasn't finished yet."""
         self.finished.set()
 
     def run(self):
@@ -909,6 +1226,12 @@ class _DummyThread(Thread):
 # Global API functions
 
 def current_thread():
+    """Return the current Thread object, corresponding to the caller's thread of control.
+
+    If the caller's thread of control was not created through the threading
+    module, a dummy thread object with limited functionality is returned.
+
+    """
     try:
         return _active[get_ident()]
     except KeyError:
@@ -917,6 +1240,12 @@ def current_thread():
 currentThread = current_thread
 
 def active_count():
+    """Return the number of Thread objects currently alive.
+
+    The returned count is equal to the length of the list returned by
+    enumerate().
+
+    """
     with _active_limbo_lock:
         return len(_active) + len(_limbo)
 
@@ -927,6 +1256,13 @@ def _enumerate():
     return list(_active.values()) + list(_limbo.values())
 
 def enumerate():
+    """Return a list of all Thread objects currently alive.
+
+    The list includes daemonic threads, dummy thread objects created by
+    current_thread(), and the main thread. It excludes terminated threads and
+    threads that have not yet been started.
+
+    """
     with _active_limbo_lock:
         return list(_active.values()) + list(_limbo.values())
 
