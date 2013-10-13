@@ -371,8 +371,8 @@ The :class:`Enum` class is callable, providing the following functional API::
     >>> list(Animal)
     [<Animal.ant: 1>, <Animal.bee: 2>, <Animal.cat: 3>, <Animal.dog: 4>]
 
-The semantics of this API resemble :class:`namedtuple`. The first argument
-of the call to :class:`Enum` is the name of the enumeration.
+The semantics of this API resemble :class:`~collections.namedtuple`. The first
+argument of the call to :class:`Enum` is the name of the enumeration.
 
 The second argument is the *source* of enumeration member names.  It can be a
 whitespace-separated string of names, a sequence of names, a sequence of

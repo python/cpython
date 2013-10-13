@@ -634,7 +634,8 @@ Python 2.6 adds an :mod:`abc` module that lets you define Abstract Base Classes
 (ABCs).  You can then use :func:`isinstance` and :func:`issubclass` to check
 whether an instance or a class implements a particular ABC.  The
 :mod:`collections.abc` module defines a set of useful ABCs such as
-:class:`Iterable`, :class:`Container`, and :class:`MutableMapping`.
+:class:`~collections.abc.Iterable`, :class:`~collections.abc.Container`, and
+:class:`~collections.abc.MutableMapping`.
 
 For Python, many of the advantages of interface specifications can be obtained
 by an appropriate test discipline for components.  There is also a tool,

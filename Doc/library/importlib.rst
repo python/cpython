@@ -165,7 +165,7 @@ Functions
 
    It is legal though generally not very useful to reload built-in or
    dynamically loaded modules (this is not true for e.g. :mod:`sys`,
-   :mod:`__main__`, :mod:`__builtin__` and other key modules where reloading is
+   :mod:`__main__`, :mod:`builtins` and other key modules where reloading is
    frowned upon). In many cases, however, extension modules are not designed to
    be initialized more than once, and may fail in arbitrary ways when reloaded.
 

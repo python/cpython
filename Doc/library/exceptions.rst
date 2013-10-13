@@ -146,10 +146,9 @@ The following exceptions are the exceptions that are usually raised.
 
 .. exception:: EOFError
 
-   Raised when one of the built-in functions (:func:`input` or :func:`raw_input`)
-   hits an end-of-file condition (EOF) without reading any data. (N.B.: the
-   :meth:`file.read` and :meth:`file.readline` methods return an empty string
-   when they hit EOF.)
+   Raised when the :func:`input` function hits an end-of-file condition (EOF)
+   without reading any data. (N.B.: the :meth:`io.IOBase.read` and
+   :meth:`io.IOBase.readline` methods return an empty string when they hit EOF.)
 
 
 .. exception:: FloatingPointError
@@ -366,7 +365,7 @@ The following exceptions are the exceptions that are usually raised.
    executed, and so that a debugger can execute a script without running the risk
    of losing control.  The :func:`os._exit` function can be used if it is
    absolutely positively necessary to exit immediately (for example, in the child
-   process after a call to :func:`fork`).
+   process after a call to :func:`os.fork`).
 
    The exception inherits from :exc:`BaseException` instead of :exc:`Exception` so
    that it is not accidentally caught by code that catches :exc:`Exception`.  This
@@ -629,7 +628,7 @@ module for more information.
 
 .. exception:: BytesWarning
 
-   Base class for warnings related to :class:`bytes` and :class:`buffer`.
+   Base class for warnings related to :class:`bytes` and :class:`bytearray`.
 
 
 .. exception:: ResourceWarning

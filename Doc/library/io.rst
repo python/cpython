@@ -157,7 +157,7 @@ standard stream implementations.
       The abstract base classes also provide default implementations of some
       methods in order to help implementation of concrete stream classes.  For
       example, :class:`BufferedIOBase` provides unoptimized implementations of
-      ``readinto()`` and ``readline()``.
+      :meth:`~IOBase.readinto` and :meth:`~IOBase.readline`.
 
 At the top of the I/O hierarchy is the abstract base class :class:`IOBase`.  It
 defines the basic interface to a stream.  Note, however, that there is no
@@ -228,7 +228,7 @@ I/O Base Classes
 
    The basic type used for binary data read from or written to a file is
    :class:`bytes`.  :class:`bytearray`\s are accepted too, and in some cases
-   (such as :class:`readinto`) required.  Text I/O classes work with
+   (such as :meth:`readinto`) required.  Text I/O classes work with
    :class:`str` data.
 
    Note that calling any method (even inquiries) on a closed stream is
