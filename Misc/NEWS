@@ -321,6 +321,8 @@ Tests
 Documentation
 -------------
 
+- Issue #18758: Fixed and improved cross-references.
+
 - Issue #18718: datetime documentation contradictory on leap second support.
 
 - Issue #17701: Improving strftime documentation.

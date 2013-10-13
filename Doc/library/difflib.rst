@@ -632,10 +632,12 @@ The :class:`Differ` class has this constructor:
 
       Compare two sequences of lines, and generate the delta (a sequence of lines).
 
-      Each sequence must contain individual single-line strings ending with newlines.
-      Such sequences can be obtained from the :meth:`readlines` method of file-like
-      objects.  The delta generated also consists of newline-terminated strings, ready
-      to be printed as-is via the :meth:`writelines` method of a file-like object.
+      Each sequence must contain individual single-line strings ending with
+      newlines.  Such sequences can be obtained from the
+      :meth:`~file.readlines` method of file-like objects.  The delta
+      generated also consists of newline-terminated strings, ready to be
+      printed as-is via the :meth:`~file.writelines` method of a
+      file-like object.
 
 
 .. _differ-examples:
@@ -645,7 +647,7 @@ Differ Example
 
 This example compares two texts. First we set up the texts, sequences of
 individual single-line strings ending with newlines (such sequences can also be
-obtained from the :meth:`readlines` method of file-like objects):
+obtained from the :meth:`~file.readlines` method of file-like objects):
 
    >>> text1 = '''  1. Beautiful is better than ugly.
    ...   2. Explicit is better than implicit.

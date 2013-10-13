@@ -329,12 +329,12 @@ The :class:`Attributes` Interface
 ---------------------------------
 
 :class:`Attributes` objects implement a portion of the mapping protocol,
-including the methods :meth:`~collections.abc.Mapping.copy`,
-:meth:`~collections.abc.Mapping.get`,
-:meth:`~collections.abc.Mapping.has_key`,
-:meth:`~collections.abc.Mapping.items`,
-:meth:`~collections.abc.Mapping.keys`,
-and :meth:`~collections.abc.Mapping.values`.  The following methods
+including the methods :meth:`~collections.Mapping.copy`,
+:meth:`~collections.Mapping.get`,
+:meth:`~collections.Mapping.has_key`,
+:meth:`~collections.Mapping.items`,
+:meth:`~collections.Mapping.keys`,
+and :meth:`~collections.Mapping.values`.  The following methods
 are also provided:
 
 

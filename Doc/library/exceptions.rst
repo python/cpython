@@ -356,7 +356,7 @@ The following exceptions are the exceptions that are actually raised.
    executed, and so that a debugger can execute a script without running the risk
    of losing control.  The :func:`os._exit` function can be used if it is
    absolutely positively necessary to exit immediately (for example, in the child
-   process after a call to :func:`fork`).
+   process after a call to :func:`os.fork`).
 
    The exception inherits from :exc:`BaseException` instead of :exc:`StandardError`
    or :exc:`Exception` so that it is not accidentally caught by code that catches

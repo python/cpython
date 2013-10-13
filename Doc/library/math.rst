@@ -136,8 +136,9 @@ Number-theoretic and representation functions
 
 .. function:: trunc(x)
 
-   Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
-   a long integer).  Uses the ``__trunc__`` method.
+   Return the :class:`~numbers.Real` value *x* truncated to an
+   :class:`~numbers.Integral` (usually a long integer).  Uses the
+   ``__trunc__`` method.
 
    .. versionadded:: 2.6
 

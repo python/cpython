@@ -180,8 +180,9 @@ ZipFile Objects
    .. note::
 
       The file-like object is read-only and provides the following methods:
-      :meth:`!read`, :meth:`!readline`, :meth:`!readlines`, :meth:`!__iter__`,
-      :meth:`!next`.
+      :meth:`~file.read`, :meth:`~file.readline`,
+      :meth:`~file.readlines`, :meth:`__iter__`,
+      :meth:`~object.next`.
 
    .. note::
 

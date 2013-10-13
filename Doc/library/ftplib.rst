@@ -265,8 +265,8 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Store a file in ASCII transfer mode.  *command* should be an appropriate
    ``STOR`` command (see :meth:`storbinary`).  Lines are read until EOF from the
-   open file object *file* using its :meth:`readline` method to provide the data to
-   be stored.  *callback* is an optional single parameter callable
+   open file object *file* using its :meth:`~file.readline` method to provide
+   the data to be stored.  *callback* is an optional single parameter callable
    that is called on each line after it is sent.
 
    .. versionchanged:: 2.6
