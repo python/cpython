@@ -273,7 +273,7 @@ class _TestProcess(BaseTestCase):
 
     @classmethod
     def _test_terminate(cls):
-        time.sleep(1000)
+        time.sleep(100)
 
     def test_terminate(self):
         if self.TYPE == 'threads':
@@ -299,7 +299,19 @@ class _TestProcess(BaseTestCase):
 
         p.terminate()
 
-        self.assertEqual(join(), None)
+        if hasattr(signal, 'alarm'):
+            def handler(*args):
+                raise RuntimeError('join took too long: pid=%s' % p.pid)
+            old_handler = signal.signal(signal.SIGALRM, handler)
+            try:
+                signal.alarm(10)
+                self.assertEqual(join(), None)
+                signal.alarm(0)
+            finally:
+                signal.signal(signal.SIGALRM, old_handler)
+        else:
+            self.assertEqual(join(), None)
+
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
 
         self.assertEqual(p.is_alive(), False)
