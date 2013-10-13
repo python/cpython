@@ -205,6 +205,19 @@ been expanded so that they match the FCC NTSC versions.  The change in
 results should be less than 1% and may better match results found elsewhere.
 
 
+contextlib
+----------
+
+The new :class:`contextlib.ignore` context manager helps to clarify the
+intent of code that deliberately ignores failures from a particular
+operation.
+
+The new :class:`contextlib.redirect_stdio` context manager makes it easier
+for utility scripts to handle inflexible APIs that don't provide any
+options to retrieve their output as a string or direct it to somewhere
+other than :data:`sys.stdout`.
+
+
 dis
 ---
 

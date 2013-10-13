@@ -99,21 +99,26 @@ Functions and classes provided:
    Return a context manager that ignores the specified exceptions if they
    occur in the body of a with-statement.
 
+   As with any other mechanism that completely suppresses exceptions, it
+   should only be used to cover very specific errors where silently
+   ignoring the exception is known to be the right thing to do.
+
    For example::
 
        from contextlib import ignore
 
-       with ignore(OSError):
+       with ignore(FileNotFoundError):
            os.remove('somefile.tmp')
 
    This code is equivalent to::
 
        try:
            os.remove('somefile.tmp')
-       except OSError:
+       except FileNotFoundError:
            pass
 
    .. versionadded:: 3.4
+
 
 .. function:: redirect_stdout(new_target)
 
@@ -143,6 +148,11 @@ Functions and classes provided:
 
         with redirect_stdout(sys.stderr):
             help(pow)
+
+   Note that the global side effect on :data:`sys.stdout` means that this
+   context manager is not suitable for use in library code and most threaded
+   applications. It also has no effect on the output of subprocesses.
+   However, it is still a useful approach for many utility scripts.
 
    .. versionadded:: 3.4
 
