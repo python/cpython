@@ -64,6 +64,20 @@ class TestInteractiveConsole(unittest.TestCase):
         self.console.interact()
         self.assertTrue(hook.called)
 
+    def test_banner(self):
+        # with banner
+        self.infunc.side_effect = EOFError('Finished')
+        self.console.interact(banner='Foo')
+        self.assertEqual(len(self.stderr.method_calls), 2)
+        banner_call = self.stderr.method_calls[0]
+        self.assertEqual(banner_call, ['write', ('Foo\n',), {}])
+
+        # no banner
+        self.stderr.reset_mock()
+        self.infunc.side_effect = EOFError('Finished')
+        self.console.interact(banner='')
+        self.assertEqual(len(self.stderr.method_calls), 1)
+
 
 def test_main():
     support.run_unittest(TestInteractiveConsole)

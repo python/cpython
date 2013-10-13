@@ -216,7 +216,7 @@ class InteractiveConsole(InteractiveInterpreter):
             self.write("Python %s on %s\n%s\n(%s)\n" %
                        (sys.version, sys.platform, cprt,
                         self.__class__.__name__))
-        else:
+        elif banner:
             self.write("%s\n" % str(banner))
         more = 0
         while 1:
