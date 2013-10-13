@@ -197,6 +197,19 @@ The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 
+codecs
+------
+
+The :meth:`codecs.encode` and :meth:`codecs.decode` convenience functions are
+now properly documented. These functions have existed in the :mod:`codecs`
+module since ~2004, but were previously only discoverable through runtime
+introspection.
+
+Unlike the convenience methods on :class:`str`, :class:`bytes` and
+:class:`bytearray`, these convenience functions support arbitrary codecs,
+rather than being limited to Unicode text encodings.
+
+
 colorsys
 --------
 
