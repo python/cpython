@@ -143,8 +143,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    By default, the diff control lines (those with ``***`` or ``---``) are created
    with a trailing newline.  This is helpful so that inputs created from
-   :func:`file.readlines` result in diffs that are suitable for use with
-   :func:`file.writelines` since both the inputs and outputs have trailing
+   :func:`io.IOBase.readlines` result in diffs that are suitable for use with
+   :func:`io.IOBase.writelines` since both the inputs and outputs have trailing
    newlines.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
@@ -275,8 +275,8 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    By default, the diff control lines (those with ``---``, ``+++``, or ``@@``) are
    created with a trailing newline.  This is helpful so that inputs created from
-   :func:`file.readlines` result in diffs that are suitable for use with
-   :func:`file.writelines` since both the inputs and outputs have trailing
+   :func:`io.IOBase.readlines` result in diffs that are suitable for use with
+   :func:`io.IOBase.writelines` since both the inputs and outputs have trailing
    newlines.
 
    For inputs that do not have trailing newlines, set the *lineterm* argument to
@@ -629,10 +629,12 @@ The :class:`Differ` class has this constructor:
 
       Compare two sequences of lines, and generate the delta (a sequence of lines).
 
-      Each sequence must contain individual single-line strings ending with newlines.
-      Such sequences can be obtained from the :meth:`readlines` method of file-like
-      objects.  The delta generated also consists of newline-terminated strings, ready
-      to be printed as-is via the :meth:`writelines` method of a file-like object.
+      Each sequence must contain individual single-line strings ending with
+      newlines.  Such sequences can be obtained from the
+      :meth:`~io.IOBase.readlines` method of file-like objects.  The delta
+      generated also consists of newline-terminated strings, ready to be
+      printed as-is via the :meth:`~io.IOBase.writelines` method of a
+      file-like object.
 
 
 .. _differ-examples:
@@ -642,7 +644,7 @@ Differ Example
 
 This example compares two texts. First we set up the texts, sequences of
 individual single-line strings ending with newlines (such sequences can also be
-obtained from the :meth:`readlines` method of file-like objects):
+obtained from the :meth:`~io.BaseIO.readlines` method of file-like objects):
 
    >>> text1 = '''  1. Beautiful is better than ugly.
    ...   2. Explicit is better than implicit.

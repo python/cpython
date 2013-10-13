@@ -103,8 +103,8 @@ Restrictions
 
 .. class:: Shelf(dict, protocol=None, writeback=False, keyencoding='utf-8')
 
-   A subclass of :class:`collections.MutableMapping` which stores pickled values
-   in the *dict* object.
+   A subclass of :class:`collections.abc.MutableMapping` which stores pickled
+   values in the *dict* object.
 
    By default, version 0 pickles are used to serialize values.  The version of the
    pickle protocol can be specified with the *protocol* parameter. See the

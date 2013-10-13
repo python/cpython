@@ -371,7 +371,8 @@ are changed on a section proxy, they are actually mutated in the original
 parser.
 
 :mod:`configparser` objects behave as close to actual dictionaries as possible.
-The mapping interface is complete and adheres to the ``MutableMapping`` ABC.
+The mapping interface is complete and adheres to the
+:class:`~collections.abc.MutableMapping` ABC.
 However, there are a few differences that should be taken into account:
 
 * By default, all keys in sections are accessible in a case-insensitive manner

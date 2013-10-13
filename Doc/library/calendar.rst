@@ -272,10 +272,11 @@ For simple text calendars this module provides the following functions.
 
 .. function:: timegm(tuple)
 
-   An unrelated but handy function that takes a time tuple such as returned by the
-   :func:`gmtime` function in the :mod:`time` module, and returns the corresponding
-   Unix timestamp value, assuming an epoch of 1970, and the POSIX encoding.  In
-   fact, :func:`time.gmtime` and :func:`timegm` are each others' inverse.
+   An unrelated but handy function that takes a time tuple such as returned by
+   the :func:`~time.gmtime` function in the :mod:`time` module, and returns the
+   corresponding Unix timestamp value, assuming an epoch of 1970, and the POSIX
+   encoding.  In fact, :func:`time.gmtime` and :func:`timegm` are each others'
+   inverse.
 
 
 The :mod:`calendar` module exports the following data attributes:

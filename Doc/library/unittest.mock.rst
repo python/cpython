@@ -210,8 +210,8 @@ the `new_callable` argument to `patch`.
       Accessing any attribute not in this list will raise an `AttributeError`.
 
       If `spec` is an object (rather than a list of strings) then
-      :attr:`__class__` returns the class of the spec object. This allows mocks
-      to pass `isinstance` tests.
+      :attr:`~instance.__class__` returns the class of the spec object. This
+      allows mocks to pass `isinstance` tests.
 
     * `spec_set`: A stricter variant of `spec`. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
@@ -1969,8 +1969,8 @@ mock_open
     default) then a `MagicMock` will be created for you, with the API limited
     to methods or attributes available on standard file handles.
 
-    `read_data` is a string for the `read` method of the file handle to return.
-    This is an empty string by default.
+    `read_data` is a string for the `~io.IOBase.read` method of the file handle
+    to return.  This is an empty string by default.
 
 Using `open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
