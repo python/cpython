@@ -868,7 +868,6 @@ r_object(RFILE *p)
     switch (type) {
 
     case TYPE_NULL:
-        retval = NULL;
         break;
 
     case TYPE_NONE:
@@ -911,7 +910,6 @@ r_object(RFILE *p)
         {
             char buf[256], *ptr;
             double dx;
-            retval = NULL;
             n = r_byte(p);
             if (n == EOF) {
                 PyErr_SetString(PyExc_EOFError,
@@ -936,15 +934,11 @@ r_object(RFILE *p)
             unsigned char *buf;
             double x;
             buf = (unsigned char *) r_string(8, p);
-            if (buf == NULL) {
-                retval = NULL;
+            if (buf == NULL)
                 break;
-            }
             x = _PyFloat_Unpack8(buf, 1);
-            if (x == -1.0 && PyErr_Occurred()) {
-                retval = NULL;
+            if (x == -1.0 && PyErr_Occurred())
                 break;
-            }
             retval = PyFloat_FromDouble(x);
             R_REF(retval);
             break;
@@ -954,7 +948,6 @@ r_object(RFILE *p)
         {
             char buf[256], *ptr;
             Py_complex c;
-            retval = NULL;
             n = r_byte(p);
             if (n == EOF) {
                 PyErr_SetString(PyExc_EOFError,
@@ -993,25 +986,17 @@ r_object(RFILE *p)
             unsigned char *buf;
             Py_complex c;
             buf = (unsigned char *) r_string(8, p);
-            if (buf == NULL) {
-                retval = NULL;
+            if (buf == NULL)
                 break;
-            }
             c.real = _PyFloat_Unpack8(buf, 1);
-            if (c.real == -1.0 && PyErr_Occurred()) {
-                retval = NULL;
+            if (c.real == -1.0 && PyErr_Occurred())
                 break;
-            }
             buf = (unsigned char *) r_string(8, p);
-            if (buf == NULL) {
-                retval = NULL;
+            if (buf == NULL)
                 break;
-            }
             c.imag = _PyFloat_Unpack8(buf, 1);
-            if (c.imag == -1.0 && PyErr_Occurred()) {
-                retval = NULL;
+            if (c.imag == -1.0 && PyErr_Occurred())
                 break;
-            }
             retval = PyComplex_FromCComplex(c);
             R_REF(retval);
             break;
@@ -1021,24 +1006,18 @@ r_object(RFILE *p)
         {
             char *ptr;
             n = r_long(p);
-            if (PyErr_Occurred()) {
-                retval = NULL;
+            if (PyErr_Occurred())
                 break;
-            }
             if (n < 0 || n > SIZE32_MAX) {
                 PyErr_SetString(PyExc_ValueError, "bad marshal data (string size out of range)");
-                retval = NULL;
                 break;
             }
             v = PyBytes_FromStringAndSize((char *)NULL, n);
-            if (v == NULL) {
-                retval = NULL;
+            if (v == NULL)
                 break;
-            }
             ptr = r_string(n, p);
             if (ptr == NULL) {
                 Py_DECREF(v);
-                retval = NULL;
                 break;
             }
             memcpy(PyBytes_AS_STRING(v), ptr, n);
@@ -1051,13 +1030,10 @@ r_object(RFILE *p)
         is_interned = 1;
     case TYPE_ASCII:
         n = r_long(p);
-        if (PyErr_Occurred()) {
-            retval = NULL;
+        if (PyErr_Occurred())
             break;
-        }
         if (n < 0 || n > SIZE32_MAX) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
-            retval = NULL;
             break;
         }
         goto _read_ascii;
@@ -1075,15 +1051,11 @@ r_object(RFILE *p)
         {
             char *ptr;
             ptr = r_string(n, p);
-            if (ptr == NULL) {
-                retval = NULL;
+            if (ptr == NULL)
                 break;
-            }
             v = PyUnicode_FromKindAndData(PyUnicode_1BYTE_KIND, ptr, n);
-            if (v == NULL) {
-                retval = NULL;
+            if (v == NULL)
                 break;
-            }
             if (is_interned)
                 PyUnicode_InternInPlace(&v);
             retval = v;
@@ -1098,30 +1070,23 @@ r_object(RFILE *p)
         char *buffer;
 
         n = r_long(p);
-        if (PyErr_Occurred()) {
-            retval = NULL;
+        if (PyErr_Occurred())
             break;
-        }
         if (n < 0 || n > SIZE32_MAX) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (unicode size out of range)");
-            retval = NULL;
             break;
         }
         if (n != 0) {
             buffer = r_string(n, p);
-            if (buffer == NULL) {
-                retval = NULL;
+            if (buffer == NULL)
                 break;
-            }
             v = PyUnicode_DecodeUTF8(buffer, n, "surrogatepass");
         }
         else {
             v = PyUnicode_New(0, 0);
         }
-        if (v == NULL) {
-            retval = NULL;
+        if (v == NULL)
             break;
-        }
         if (is_interned)
             PyUnicode_InternInPlace(&v);
         retval = v;
@@ -1134,22 +1099,17 @@ r_object(RFILE *p)
         goto _read_tuple;
     case TYPE_TUPLE:
         n = r_long(p);
-        if (PyErr_Occurred()) {
-            retval = NULL;
+        if (PyErr_Occurred())
             break;
-        }
         if (n < 0 || n > SIZE32_MAX) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (tuple size out of range)");
-            retval = NULL;
             break;
         }
     _read_tuple:
         v = PyTuple_New(n);
         R_REF(v);
-        if (v == NULL) {
-            retval = NULL;
+        if (v == NULL)
             break;
-        }
         for (i = 0; i < n; i++) {
             v2 = r_object(p);
             if ( v2 == NULL ) {
@@ -1167,21 +1127,16 @@ r_object(RFILE *p)
 
     case TYPE_LIST:
         n = r_long(p);
-        if (PyErr_Occurred()) {
-            retval = NULL;
+        if (PyErr_Occurred())
             break;
-        }
         if (n < 0 || n > SIZE32_MAX) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (list size out of range)");
-            retval = NULL;
             break;
         }
         v = PyList_New(n);
         R_REF(v);
-        if (v == NULL) {
-            retval = NULL;
+        if (v == NULL)
             break;
-        }
         for (i = 0; i < n; i++) {
             v2 = r_object(p);
             if ( v2 == NULL ) {
@@ -1200,10 +1155,8 @@ r_object(RFILE *p)
     case TYPE_DICT:
         v = PyDict_New();
         R_REF(v);
-        if (v == NULL) {
-            retval = NULL;
+        if (v == NULL)
             break;
-        }
         for (;;) {
             PyObject *key, *val;
             key = r_object(p);
@@ -1225,13 +1178,10 @@ r_object(RFILE *p)
     case TYPE_SET:
     case TYPE_FROZENSET:
         n = r_long(p);
-        if (PyErr_Occurred()) {
-            retval = NULL;
+        if (PyErr_Occurred())
             break;
-        }
         if (n < 0 || n > SIZE32_MAX) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (set size out of range)");
-            retval = NULL;
             break;
         }
         v = (type == TYPE_SET) ? PySet_New(NULL) : PyFrozenSet_New(NULL);
@@ -1245,10 +1195,8 @@ r_object(RFILE *p)
             if (idx < 0)
                 Py_CLEAR(v); /* signal error */
         }
-        if (v == NULL) {
-            retval = NULL;
+        if (v == NULL)
             break;
-        }
         for (i = 0; i < n; i++) {
             v2 = r_object(p);
             if ( v2 == NULL ) {
@@ -1291,10 +1239,8 @@ r_object(RFILE *p)
             PyObject *lnotab = NULL;
 
             idx = r_ref_reserve(flag, p);
-            if (idx < 0) {
-                retval = NULL;
+            if (idx < 0)
                 break;
-            }
 
             v = NULL;
 
@@ -1381,13 +1327,11 @@ r_object(RFILE *p)
         n = r_long(p);
         if (n < 0 || n >= PyList_GET_SIZE(p->refs)) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
-            retval = NULL;
             break;
         }
         v = PyList_GET_ITEM(p->refs, n);
         if (v == Py_None) {
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
-            retval = NULL;
             break;
         }
         Py_INCREF(v);
@@ -1398,7 +1342,6 @@ r_object(RFILE *p)
         /* Bogus data got written, which isn't ideal.
            This will let you keep working and recover. */
         PyErr_SetString(PyExc_ValueError, "bad marshal data (unknown type code)");
-        retval = NULL;
         break;
 
     }
