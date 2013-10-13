@@ -599,6 +599,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log(INF), INF)
         self.assertRaises(ValueError, math.log, NINF)
         self.assertTrue(math.isnan(math.log(NAN)))
+        # Log values should match for int and long (issue #18739).
+        for n in range(1, 1000):
+            self.assertEqual(math.log(n), math.log(long(n)))
 
     def testLog1p(self):
         self.assertRaises(TypeError, math.log1p)
@@ -621,6 +624,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.log(INF), INF)
         self.assertRaises(ValueError, math.log10, NINF)
         self.assertTrue(math.isnan(math.log10(NAN)))
+        # Log values should match for int and long (issue #18739).
+        for n in range(1, 1000):
+            self.assertEqual(math.log10(n), math.log10(long(n)))
 
     def testModf(self):
         self.assertRaises(TypeError, math.modf)
