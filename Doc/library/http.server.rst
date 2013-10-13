@@ -29,8 +29,8 @@ handler.  Code to create and run the server looks like this::
 
 .. class:: HTTPServer(server_address, RequestHandlerClass)
 
-   This class builds on the :class:`TCPServer` class by storing the server
-   address as instance variables named :attr:`server_name` and
+   This class builds on the :class:`~socketserver.TCPServer` class by storing
+   the server address as instance variables named :attr:`server_name` and
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
@@ -319,7 +319,7 @@ of which this module provides three different variants:
       file's contents are returned; otherwise a directory listing is generated
       by calling the :meth:`list_directory` method. This method uses
       :func:`os.listdir` to scan the directory, and returns a ``404`` error
-      response if the :func:`listdir` fails.
+      response if the :func:`~os.listdir` fails.
 
       If the request was mapped to a file, it is opened and the contents are
       returned.  Any :exc:`OSError` exception in opening the requested file is

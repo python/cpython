@@ -906,8 +906,9 @@ but avoids executing code when it fetches attributes.
    that raise AttributeError). It can also return descriptors objects
    instead of instance members.
 
-   If the instance :attr:`__dict__` is shadowed by another member (for example a
-   property) then this function will be unable to find instance members.
+   If the instance :attr:`~object.__dict__` is shadowed by another member (for
+   example a property) then this function will be unable to find instance
+   members.
 
    .. versionadded:: 3.2
 

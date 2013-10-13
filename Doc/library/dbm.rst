@@ -317,8 +317,9 @@ The module defines the following:
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
    by the prevailing umask).
 
-   In addition to the methods provided by the :class:`collections.MutableMapping` class,
-   :class:`dumbdbm` objects provide the following method:
+   In addition to the methods provided by the
+   :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
+   provide the following method:
 
    .. method:: dumbdbm.sync()
 

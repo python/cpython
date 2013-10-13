@@ -531,9 +531,10 @@ The solution would be to use the low-level decoding interface to catch the case
 of partial coding sequences.  The work of implementing this has already been
 done for you: the built-in :func:`open` function can return a file-like object
 that assumes the file's contents are in a specified encoding and accepts Unicode
-parameters for methods such as :meth:`read` and :meth:`write`.  This works through
-:func:`open`\'s *encoding* and *errors* parameters which are interpreted just
-like those in :meth:`str.encode` and :meth:`bytes.decode`.
+parameters for methods such as :meth:`~io.TextIOBase.read` and
+:meth:`~io.TextIOBase.write`.  This works through:func:`open`\'s *encoding* and
+*errors* parameters which are interpreted just like those in :meth:`str.encode`
+and :meth:`bytes.decode`.
 
 Reading Unicode from a file is therefore simple::
 
@@ -656,7 +657,8 @@ encodings, taking a stream that returns data in encoding #1
 and behaving like a stream returning data in encoding #2.
 
 For example, if you have an input file *f* that's in Latin-1, you
-can wrap it with a :class:`StreamRecoder` to return bytes encoded in UTF-8::
+can wrap it with a :class:`~codecs.StreamRecoder` to return bytes encoded in
+UTF-8::
 
     new_f = codecs.StreamRecoder(f,
         # en/decoder: used by read() to encode its results and
