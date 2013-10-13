@@ -94,6 +94,7 @@ Functions and classes provided:
    without needing to explicitly close ``page``.  Even if an error occurs,
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
+
 .. function:: ignore(*exceptions)
 
    Return a context manager that ignores the specified exceptions if they
@@ -155,6 +156,7 @@ Functions and classes provided:
    However, it is still a useful approach for many utility scripts.
 
    .. versionadded:: 3.4
+
 
 .. class:: ContextDecorator()
 
