@@ -290,11 +290,11 @@ and off individually.  They are described here in more detail.
 
    Converts the use of iterator's :meth:`~iterator.next` methods to the
    :func:`next` function.  It also renames :meth:`next` methods to
-   :meth:`~object.__next__`.
+   :meth:`~iterator.__next__`.
 
 .. 2to3fixer:: nonzero
 
-   Renames :meth:`~object.__nonzero__` to :meth:`~object.__bool__`.
+   Renames :meth:`__nonzero__` to :meth:`~object.__bool__`.
 
 .. 2to3fixer:: numliterals
 

@@ -169,11 +169,11 @@ and (read-only) attributes:
    be used in a :keyword:`with` statement.
 
 
-The following methods each map to exactly one :func:`ioctl` system call.  The
+The following methods each map to exactly one :c:func:`ioctl` system call.  The
 correspondence is obvious: for example, :meth:`setfmt` corresponds to the
 ``SNDCTL_DSP_SETFMT`` ioctl, and :meth:`sync` to ``SNDCTL_DSP_SYNC`` (this can
 be useful when consulting the OSS documentation).  If the underlying
-:func:`ioctl` fails, they all raise :exc:`OSError`.
+:c:func:`ioctl` fails, they all raise :exc:`OSError`.
 
 
 .. method:: oss_audio_device.nonblock()

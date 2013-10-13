@@ -234,9 +234,9 @@ other than :data:`sys.stdout`.
 dis
 ---
 
-The :mod:`dis` module is now built around an :class:`Instruction` class that
-provides details of individual bytecode operations and a
-:func:`get_instructions` iterator that emits the Instruction stream for a
+The :mod:`dis` module is now built around an :class:`~dis.Instruction` class
+that provides details of individual bytecode operations and a
+:func:`~dis.get_instructions` iterator that emits the Instruction stream for a
 given piece of Python code. The various display tools in the :mod:`dis`
 module have been updated to be based on these new components.
 

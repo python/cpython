@@ -89,7 +89,7 @@ following warnings category classes are currently defined:
 |                                  | Unicode.                                      |
 +----------------------------------+-----------------------------------------------+
 | :exc:`BytesWarning`              | Base category for warnings related to         |
-|                                  | :class:`bytes` and :class:`buffer`.           |
+|                                  | :class:`bytes` and :class:`bytearray`.        |
 +----------------------------------+-----------------------------------------------+
 | :exc:`ResourceWarning`           | Base category for warnings related to         |
 |                                  | resource usage.                               |

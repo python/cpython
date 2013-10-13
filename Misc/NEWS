@@ -122,6 +122,8 @@ Tests
 Documentation
 -------------
 
+- Issue #18758: Fixed and improved cross-references.
+
 - Issue #18972: Modernize email examples and use the argparse module in them.
 
 Build

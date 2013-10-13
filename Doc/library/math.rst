@@ -31,7 +31,7 @@ Number-theoretic and representation functions
 
    Return the ceiling of *x*, the smallest integer greater than or equal to *x*.
    If *x* is not a float, delegates to ``x.__ceil__()``, which should return an
-   :class:`Integral` value.
+   :class:`~numbers.Integral` value.
 
 
 .. function:: copysign(x, y)
@@ -53,7 +53,7 @@ Number-theoretic and representation functions
 
    Return the floor of *x*, the largest integer less than or equal to *x*.
    If *x* is not a float, delegates to ``x.__floor__()``, which should return an
-   :class:`Integral` value.
+   :class:`~numbers.Integral` value.
 
 
 .. function:: fmod(x, y)
@@ -133,8 +133,9 @@ Number-theoretic and representation functions
 
 .. function:: trunc(x)
 
-   Return the :class:`Real` value *x* truncated to an :class:`Integral` (usually
-   an integer). Delegates to ``x.__trunc__()``.
+   Return the :class:`~numbers.Real` value *x* truncated to an
+   :class:`~numbers.Integral` (usually an integer). Delegates to
+   ``x.__trunc__()``.
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern

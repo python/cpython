@@ -1009,7 +1009,7 @@ When a :class:`MaildirMessage` instance is created based upon a
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be
       specified and will be formatted appropriately and appended to *from_*. If
-      *time_* is specified, it should be a :class:`struct_time` instance, a
+      *time_* is specified, it should be a :class:`time.struct_time` instance, a
       tuple suitable for passing to :meth:`time.strftime`, or ``True`` (to use
       :meth:`time.gmtime`).
 
@@ -1380,7 +1380,7 @@ When a :class:`BabylMessage` instance is created based upon an
       Set the "From " line to *from_*, which should be specified without a
       leading "From " or trailing newline. For convenience, *time_* may be
       specified and will be formatted appropriately and appended to *from_*. If
-      *time_* is specified, it should be a :class:`struct_time` instance, a
+      *time_* is specified, it should be a :class:`time.struct_time` instance, a
       tuple suitable for passing to :meth:`time.strftime`, or ``True`` (to use
       :meth:`time.gmtime`).
 

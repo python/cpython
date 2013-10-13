@@ -210,8 +210,8 @@ the `new_callable` argument to `patch`.
       Accessing any attribute not in this list will raise an `AttributeError`.
 
       If `spec` is an object (rather than a list of strings) then
-      :attr:`__class__` returns the class of the spec object. This allows mocks
-      to pass `isinstance` tests.
+      :attr:`~instance.__class__` returns the class of the spec object. This
+      allows mocks to pass `isinstance` tests.
 
     * `spec_set`: A stricter variant of `spec`. If used, attempting to *set*
       or get an attribute on the mock that isn't on the object passed as
@@ -1989,7 +1989,8 @@ mock_open
     default) then a `MagicMock` will be created for you, with the API limited
     to methods or attributes available on standard file handles.
 
-    `read_data` is a string for the `read`, `readline`, and `readlines` methods
+    `read_data` is a string for the :meth:`~io.IOBase.read`,
+    :meth:`~io.IOBase.readline`, and :meth:`~io.IOBase.readlines` methods
     of the file handle to return.  Calls to those methods will take data from
     `read_data` until it is depleted.  The mock of these methods is pretty
     simplistic.  If you need more control over the data that you are feeding to
