@@ -506,6 +506,17 @@ Major performance enhancements have been added:
 
   (Contributed by Raymond Hettinger in :issue"`18771`.)
 
+* The interpreter starts about 30% faster. A couple of measures lead to the
+  speedup. The interpreter loads less modules on startup, e.g. the :mod:`re`,
+  :mod:`collections` and :mod:`locale` modules and their dependencies are no
+  longer imported by default. The marshal module has been improved to load
+  compiled Python code faster.
+
+  (Contributed by Antoine Pitrou, Christian Heimes and Victor Stinner in
+  :issue:`19219`, :issue:`19218`, :issue:`19209`, :issue:`19205` and
+  :issue:`9548`)
+
+
 
 Build and C API Changes
 =======================
