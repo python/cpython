@@ -3,9 +3,9 @@ __all__ = ['deque', 'defaultdict', 'namedtuple', 'UserDict', 'UserList',
 
 # For backwards compatibility, continue to make the collections ABCs
 # available through the collections module.
-from collections.abc import *
-import collections.abc
-__all__ += collections.abc.__all__
+from _collections_abc import *
+import _collections_abc
+__all__ += _collections_abc.__all__
 
 from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter, eq as _eq

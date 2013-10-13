@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19218: Rename collections.abc to _collections_abc in order to
+  speed up interpreter start.
+
 - Issue #18582: Add 'pbkdf2_hmac' to the hashlib module. It implements PKCS#5
   password-based key derivation functions with HMAC as pseudorandom function.
 
