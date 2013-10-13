@@ -19,7 +19,7 @@ systems the :mod:`posix` module is not available, but a subset is always
 available through the :mod:`os` interface.  Once :mod:`os` is imported, there is
 *no* performance penalty in using it instead of :mod:`posix`.  In addition,
 :mod:`os` provides some additional functionality, such as automatically calling
-:func:`putenv` when an entry in ``os.environ`` is changed.
+:func:`~os.putenv` when an entry in ``os.environ`` is changed.
 
 Errors are reported as exceptions; the usual exceptions are given for type
 errors, while errors reported by the system calls raise :exc:`OSError`.
@@ -74,9 +74,10 @@ In addition to many functions described in the :mod:`os` module documentation,
    pathname of your home directory, equivalent to ``getenv("HOME")`` in C.
 
    Modifying this dictionary does not affect the string environment passed on by
-   :func:`execv`, :func:`popen` or :func:`system`; if you need to change the
-   environment, pass ``environ`` to :func:`execve` or add variable assignments and
-   export statements to the command string for :func:`system` or :func:`popen`.
+   :func:`~os.execv`, :func:`~os.popen` or :func:`~os.system`; if you need to
+   change the environment, pass ``environ`` to :func:`~os.execve` or add
+   variable assignments and export statements to the command string for
+   :func:`~os.system` or :func:`~os.popen`.
 
    .. versionchanged:: 3.2
       On Unix, keys and values are bytes.
