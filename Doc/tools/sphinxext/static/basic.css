@@ -38,6 +38,8 @@ div.related li.right {
 /* -- sidebar --------------------------------------------------------------- */
 
 div.sphinxsidebarwrapper {
+    position: relative;
+    top: 0;
     padding: 10px 5px 0 10px;
     word-wrap: break-word;
 }
