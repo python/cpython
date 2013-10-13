@@ -208,6 +208,13 @@ This module defines the following functions and objects:
 
    .. versionadded:: 2.5
 
+
+.. exception:: ThreadError
+
+   Raised for various threading-related errors as described below.  Note that
+   many interfaces use :exc:`RuntimeError` instead of :exc:`ThreadError`.
+
+
 Detailed interfaces for the objects are documented below.
 
 The design of this module is loosely based on Java's threading model. However,
@@ -406,7 +413,7 @@ blocks until a call to :meth:`release` in another thread changes it to unlocked,
 then the :meth:`acquire` call resets it to locked and returns.  The
 :meth:`release` method should only be called in the locked state; it changes the
 state to unlocked and returns immediately. If an attempt is made to release an
-unlocked lock, a :exc:`RuntimeError` will be raised.
+unlocked lock, a :exc:`ThreadError` will be raised.
 
 When more than one thread is blocked in :meth:`acquire` waiting for the state to
 turn to unlocked, only one thread proceeds when a :meth:`release` call resets
