@@ -122,7 +122,7 @@ div.body tt.xref, div.body a tt {
     font-weight: normal;
 }
 
-p.deprecated {
+.deprecated {
     border-radius: 3px;
 }
 
