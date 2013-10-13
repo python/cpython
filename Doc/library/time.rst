@@ -471,8 +471,10 @@ The module defines the following functions and data items:
       >>> strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
       'Thu, 28 Jun 2001 14:17:15 +0000'
 
-   Additional directives may be supported on certain platforms, but only the ones
-   listed here have a meaning standardized by ANSI C.
+   Additional directives may be supported on certain platforms, but only the
+   ones listed here have a meaning standardized by ANSI C.  To see the full set
+   of format codes supported on your platform, consult the :manpage:`strftime(3)`
+   documentation.
 
    On some platforms, an optional field width and precision specification can
    immediately follow the initial ``'%'`` of a directive in the following order;
