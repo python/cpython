@@ -4,24 +4,25 @@
  * regular expression matching engine
  *
  * partial history:
- * 1999-10-24 fl  created (based on existing template matcher code)
- * 2000-03-06 fl  first alpha, sort of
- * 2000-08-01 fl  fixes for 1.6b1
- * 2000-08-07 fl  use PyOS_CheckStack() if available
- * 2000-09-20 fl  added expand method
- * 2001-03-20 fl  lots of fixes for 2.1b2
- * 2001-04-15 fl  export copyright as Python attribute, not global
- * 2001-04-28 fl  added __copy__ methods (work in progress)
- * 2001-05-14 fl  fixes for 1.5.2 compatibility
- * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
- * 2001-10-18 fl  fixed group reset issue (from Matthew Mueller)
- * 2001-10-20 fl  added split primitive; reenable unicode for 1.6/2.0/2.1
- * 2001-10-21 fl  added sub/subn primitive
- * 2001-10-24 fl  added finditer primitive (for 2.2 only)
- * 2001-12-07 fl  fixed memory leak in sub/subn (Guido van Rossum)
- * 2002-11-09 fl  fixed empty sub/subn return type
- * 2003-04-18 mvl fully support 4-byte codes
- * 2003-10-17 gn  implemented non recursive scheme
+ * 1999-10-24 fl   created (based on existing template matcher code)
+ * 2000-03-06 fl   first alpha, sort of
+ * 2000-08-01 fl   fixes for 1.6b1
+ * 2000-08-07 fl   use PyOS_CheckStack() if available
+ * 2000-09-20 fl   added expand method
+ * 2001-03-20 fl   lots of fixes for 2.1b2
+ * 2001-04-15 fl   export copyright as Python attribute, not global
+ * 2001-04-28 fl   added __copy__ methods (work in progress)
+ * 2001-05-14 fl   fixes for 1.5.2 compatibility
+ * 2001-07-01 fl   added BIGCHARSET support (from Martin von Loewis)
+ * 2001-10-18 fl   fixed group reset issue (from Matthew Mueller)
+ * 2001-10-20 fl   added split primitive; reenable unicode for 1.6/2.0/2.1
+ * 2001-10-21 fl   added sub/subn primitive
+ * 2001-10-24 fl   added finditer primitive (for 2.2 only)
+ * 2001-12-07 fl   fixed memory leak in sub/subn (Guido van Rossum)
+ * 2002-11-09 fl   fixed empty sub/subn return type
+ * 2003-04-18 mvl  fully support 4-byte codes
+ * 2003-10-17 gn   implemented non recursive scheme
+ * 2013-02-04 mrab added fullmatch primitive
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -746,11 +747,12 @@ do { \
 #define JUMP_ASSERT          12
 #define JUMP_ASSERT_NOT      13
 
-#define DO_JUMP(jumpvalue, jumplabel, nextpattern) \
+#define DO_JUMP(jumpvalue, jumplabel, nextpattern, matchall) \
     DATA_ALLOC(SRE_MATCH_CONTEXT, nextctx); \
     nextctx->last_ctx_pos = ctx_pos; \
     nextctx->jump = jumpvalue; \
     nextctx->pattern = nextpattern; \
+    nextctx->match_all = matchall; \
     ctx_pos = alloc_pos; \
     ctx = nextctx; \
     goto entrance; \
@@ -769,6 +771,7 @@ typedef struct {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
+    int match_all;
 } SRE_MATCH_CONTEXT;
 
 /* check if string matches the given pattern.  returns <0 for
@@ -791,6 +794,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
     ctx->last_ctx_pos = -1;
     ctx->jump = JUMP_NONE;
     ctx->pattern = pattern;
+    ctx->match_all = state->match_all;
     ctx_pos = alloc_pos;
 
 entrance:
@@ -864,6 +868,8 @@ entrance:
         case SRE_OP_SUCCESS:
             /* end of pattern */
             TRACE(("|%p|%p|SUCCESS\n", ctx->pattern, ctx->ptr));
+            if (ctx->match_all && ctx->ptr != state->end)
+                RETURN_FAILURE;
             state->ptr = ctx->ptr;
             RETURN_SUCCESS;
 
@@ -972,7 +978,7 @@ entrance:
                      !SRE_CHARSET(ctx->pattern + 3, (SRE_CODE) SRE_CHARGET(state, ctx->ptr, 0))))
                     continue;
                 state->ptr = ctx->ptr;
-                DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1);
+                DO_JUMP(JUMP_BRANCH, jump_branch, ctx->pattern+1, ctx->match_all);
                 if (ret) {
                     if (ctx->u.rep)
                         MARK_POP_DISCARD(ctx->lastmark);
@@ -1019,7 +1025,8 @@ entrance:
             if (ctx->count < (Py_ssize_t) ctx->pattern[1])
                 RETURN_FAILURE;
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS) {
+            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
+                (!ctx->match_all || ctx->ptr == state->end)) {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -1042,7 +1049,7 @@ entrance:
                         break;
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_REPEAT_ONE_1, jump_repeat_one_1,
-                            ctx->pattern+ctx->pattern[0]);
+                            ctx->pattern+ctx->pattern[0], ctx->match_all);
                     if (ret) {
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
@@ -1059,7 +1066,7 @@ entrance:
                 while (ctx->count >= (Py_ssize_t) ctx->pattern[1]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_REPEAT_ONE_2, jump_repeat_one_2,
-                            ctx->pattern+ctx->pattern[0]);
+                            ctx->pattern+ctx->pattern[0], ctx->match_all);
                     if (ret) {
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
@@ -1104,7 +1111,8 @@ entrance:
                 ctx->ptr += state->charsize * ctx->count;
             }
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS) {
+            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
+                (!ctx->match_all || ctx->ptr == state->end)) {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -1116,7 +1124,7 @@ entrance:
                        || ctx->count <= (Py_ssize_t)ctx->pattern[2]) {
                     state->ptr = ctx->ptr;
                     DO_JUMP(JUMP_MIN_REPEAT_ONE,jump_min_repeat_one,
-                            ctx->pattern+ctx->pattern[0]);
+                            ctx->pattern+ctx->pattern[0], ctx->match_all);
                     if (ret) {
                         RETURN_ON_ERROR(ret);
                         RETURN_SUCCESS;
@@ -1155,7 +1163,7 @@ entrance:
             state->repeat = ctx->u.rep;
 
             state->ptr = ctx->ptr;
-            DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0]);
+            DO_JUMP(JUMP_REPEAT, jump_repeat, ctx->pattern+ctx->pattern[0], ctx->match_all);
             state->repeat = ctx->u.rep->prev;
             PyObject_FREE(ctx->u.rep);
 
@@ -1187,7 +1195,7 @@ entrance:
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
-                        ctx->u.rep->pattern+3);
+                        ctx->u.rep->pattern+3, ctx->match_all);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1209,7 +1217,7 @@ entrance:
                 DATA_PUSH(&ctx->u.rep->last_ptr);
                 ctx->u.rep->last_ptr = state->ptr;
                 DO_JUMP(JUMP_MAX_UNTIL_2, jump_max_until_2,
-                        ctx->u.rep->pattern+3);
+                        ctx->u.rep->pattern+3, ctx->match_all);
                 DATA_POP(&ctx->u.rep->last_ptr);
                 if (ret) {
                     MARK_POP_DISCARD(ctx->lastmark);
@@ -1225,7 +1233,7 @@ entrance:
             /* cannot match more repeated items here.  make sure the
                tail matches */
             state->repeat = ctx->u.rep->prev;
-            DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern);
+            DO_JUMP(JUMP_MAX_UNTIL_3, jump_max_until_3, ctx->pattern, ctx->match_all);
             RETURN_ON_SUCCESS(ret);
             state->repeat = ctx->u.rep;
             state->ptr = ctx->ptr;
@@ -1250,7 +1258,7 @@ entrance:
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MIN_UNTIL_1, jump_min_until_1,
-                        ctx->u.rep->pattern+3);
+                        ctx->u.rep->pattern+3, ctx->match_all);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1264,7 +1272,7 @@ entrance:
 
             /* see if the tail matches */
             state->repeat = ctx->u.rep->prev;
-            DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern);
+            DO_JUMP(JUMP_MIN_UNTIL_2, jump_min_until_2, ctx->pattern, ctx->match_all);
             if (ret) {
                 RETURN_ON_ERROR(ret);
                 RETURN_SUCCESS;
@@ -1285,7 +1293,7 @@ entrance:
             DATA_PUSH(&ctx->u.rep->last_ptr);
             ctx->u.rep->last_ptr = state->ptr;
             DO_JUMP(JUMP_MIN_UNTIL_3,jump_min_until_3,
-                    ctx->u.rep->pattern+3);
+                    ctx->u.rep->pattern+3, ctx->match_all);
             DATA_POP(&ctx->u.rep->last_ptr);
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1378,7 +1386,7 @@ entrance:
             state->ptr = ctx->ptr - state->charsize * ctx->pattern[1];
             if (state->ptr < state->beginning)
                 RETURN_FAILURE;
-            DO_JUMP(JUMP_ASSERT, jump_assert, ctx->pattern+2);
+            DO_JUMP(JUMP_ASSERT, jump_assert, ctx->pattern+2, 0);
             RETURN_ON_FAILURE(ret);
             ctx->pattern += ctx->pattern[0];
             break;
@@ -1390,7 +1398,7 @@ entrance:
                    ctx->ptr, ctx->pattern[1]));
             state->ptr = ctx->ptr - state->charsize * ctx->pattern[1];
             if (state->ptr >= state->beginning) {
-                DO_JUMP(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
+                DO_JUMP(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2, 0);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_FAILURE;
@@ -1893,6 +1901,44 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
     state.ptr = state.start;
 
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
+
+    if (state.logical_charsize == 1) {
+        status = sre_match(&state, PatternObject_GetCode(self));
+    } else {
+        status = sre_umatch(&state, PatternObject_GetCode(self));
+    }
+
+    TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
+    if (PyErr_Occurred())
+        return NULL;
+
+    state_fini(&state);
+
+    return pattern_new_match(self, &state, status);
+}
+
+static PyObject*
+pattern_fullmatch(PatternObject* self, PyObject* args, PyObject* kw)
+{
+    SRE_STATE state;
+    Py_ssize_t status;
+
+    PyObject* string;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:fullmatch", kwlist,
+                                     &string, &start, &end))
+        return NULL;
+
+    string = state_init(&state, self, string, start, end);
+    if (!string)
+        return NULL;
+
+    state.match_all = 1;
+    state.ptr = state.start;
+
+    TRACE(("|%p|%p|FULLMATCH\n", PatternObject_GetCode(self), state.ptr));
 
     if (state.logical_charsize == 1) {
         status = sre_match(&state, PatternObject_GetCode(self));
@@ -2530,6 +2576,10 @@ PyDoc_STRVAR(pattern_match_doc,
 "match(string[, pos[, endpos]]) -> match object or None.\n\
     Matches zero or more characters at the beginning of the string");
 
+PyDoc_STRVAR(pattern_fullmatch_doc,
+"fullmatch(string[, pos[, endpos]]) -> match object or None.\n\
+    Matches against all of the string");
+
 PyDoc_STRVAR(pattern_search_doc,
 "search(string[, pos[, endpos]]) -> match object or None.\n\
     Scan through string looking for a match, and return a corresponding\n\
@@ -2565,6 +2615,8 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
 static PyMethodDef pattern_methods[] = {
     {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS,
         pattern_match_doc},
+    {"fullmatch", (PyCFunction) pattern_fullmatch, METH_VARARGS|METH_KEYWORDS,
+        pattern_fullmatch_doc},
     {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS,
         pattern_search_doc},
     {"sub", (PyCFunction) pattern_sub, METH_VARARGS|METH_KEYWORDS,
