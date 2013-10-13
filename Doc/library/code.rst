@@ -132,11 +132,14 @@ interpreter objects as well as the following additions.
 
 .. method:: InteractiveConsole.interact(banner=None)
 
-   Closely emulate the interactive Python console. The optional banner argument
+   Closely emulate the interactive Python console. The optional *banner* argument
    specify the banner to print before the first interaction; by default it prints a
    banner similar to the one printed by the standard Python interpreter, followed
    by the class name of the console object in parentheses (so as not to confuse
    this with the real interpreter -- since it's so close!).
+
+   .. versionchanged:: 3.4
+      To suppress printing any banner, pass an empty string.
 
 
 .. method:: InteractiveConsole.push(line)
