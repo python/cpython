@@ -1297,6 +1297,8 @@ r_object(RFILE *p)
             if (name == NULL)
                 goto code_error;
             firstlineno = (int)r_long(p);
+            if (firstlineno == -1 && PyErr_Occurred())
+                break;
             lnotab = r_object(p);
             if (lnotab == NULL)
                 goto code_error;
@@ -1326,6 +1328,8 @@ r_object(RFILE *p)
     case TYPE_REF:
         n = r_long(p);
         if (n < 0 || n >= PyList_GET_SIZE(p->refs)) {
+            if (n == -1 && PyErr_Occurred())
+                break;
             PyErr_SetString(PyExc_ValueError, "bad marshal data (invalid reference)");
             break;
         }
