@@ -164,7 +164,7 @@ static double
 _PyOS_ascii_strtod(const char *nptr, char **endptr)
 {
     char *fail_pos;
-    double val = -1.0;
+    double val;
     struct lconv *locale_data;
     const char *decimal_point;
     size_t decimal_point_len;
