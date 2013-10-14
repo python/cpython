@@ -1,4 +1,5 @@
-from test.test_support import findfile, TESTFN, unlink, run_unittest
+from test.test_support import (findfile, TESTFN, unlink, captured_stdout,
+                               run_unittest)
 import unittest
 from test import audiotests
 import os
@@ -225,7 +226,10 @@ class AIFCLowLevelTest(unittest.TestCase):
         b += 'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
         b += 'SSND' + struct.pack('>L', 8) + '\x00' * 8
         b += 'MARK' + struct.pack('>LhB', 3, 1, 1)
-        f = aifc.open(io.BytesIO(b))
+        with captured_stdout() as s:
+            f = aifc.open(io.BytesIO(b))
+        self.assertEqual(s.getvalue(), 'Warning: MARK chunk contains '
+                                       'only 0 markers instead of 1\n')
         self.assertEqual(f.getmarkers(), None)
 
     def test_read_comm_kludge_compname_even(self):
@@ -233,7 +237,9 @@ class AIFCLowLevelTest(unittest.TestCase):
         b += 'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
         b += 'NONE' + struct.pack('B', 4) + 'even' + '\x00'
         b += 'SSND' + struct.pack('>L', 8) + '\x00' * 8
-        f = aifc.open(io.BytesIO(b))
+        with captured_stdout() as s:
+            f = aifc.open(io.BytesIO(b))
+        self.assertEqual(s.getvalue(), 'Warning: bad COMM chunk size\n')
         self.assertEqual(f.getcompname(), 'even')
 
     def test_read_comm_kludge_compname_odd(self):
@@ -241,7 +247,9 @@ class AIFCLowLevelTest(unittest.TestCase):
         b += 'COMM' + struct.pack('>LhlhhLL', 18, 0, 0, 0, 0, 0, 0)
         b += 'NONE' + struct.pack('B', 3) + 'odd'
         b += 'SSND' + struct.pack('>L', 8) + '\x00' * 8
-        f = aifc.open(io.BytesIO(b))
+        with captured_stdout() as s:
+            f = aifc.open(io.BytesIO(b))
+        self.assertEqual(s.getvalue(), 'Warning: bad COMM chunk size\n')
         self.assertEqual(f.getcompname(), 'odd')
 
     def test_write_params_raises(self):
