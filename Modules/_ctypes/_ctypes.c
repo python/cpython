@@ -4202,7 +4202,7 @@ Array_subscript(PyObject *_self, PyObject *item)
             i += self->b_length;
         return Array_item(_self, i);
     }
-    else if PySlice_Check(item) {
+    else if (PySlice_Check(item)) {
         StgDictObject *stgdict, *itemdict;
         PyObject *proto;
         PyObject *np;

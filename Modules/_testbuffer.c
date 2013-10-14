@@ -1815,7 +1815,7 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
         if (init_slice(base, key, 0) < 0)
             goto err_occurred;
     }
-    else if PyTuple_Check(key) {
+    else if (PyTuple_Check(key)) {
         /* multi-dimensional slice */
         PyObject *tuple = key;
         Py_ssize_t i, n;
