@@ -294,7 +294,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
       :func:`copyreg.pickle`.  It is a mapping whose keys are classes
       and whose values are reduction functions.  A reduction function
       takes a single argument of the associated class and should
-      conform to the same interface as a :meth:`~object.__reduce__`
+      conform to the same interface as a :meth:`__reduce__`
       method.
 
       By default, a pickler object will not have a
@@ -390,8 +390,8 @@ The following types can be pickled:
 
 * classes that are defined at the top level of a module
 
-* instances of such classes whose :attr:`__dict__` or the result of calling
-  :meth:`__getstate__` is picklable  (see section :ref:`pickle-inst` for
+* instances of such classes whose :attr:`~object.__dict__` or the result of
+  calling :meth:`__getstate__` is picklable  (see section :ref:`pickle-inst` for
   details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
@@ -435,6 +435,8 @@ conversions can be made by the class's :meth:`__setstate__` method.
 Pickling Class Instances
 ------------------------
 
+.. currentmodule:: None
+
 In this section, we describe the general mechanisms available to you to define,
 customize, and control how class instances are pickled and unpickled.
 
@@ -470,7 +472,7 @@ methods:
    defines the method :meth:`__getstate__`, it is called and the returned object
    is pickled as the contents for the instance, instead of the contents of the
    instance's dictionary.  If the :meth:`__getstate__` method is absent, the
-   instance's :attr:`__dict__` is pickled as usual.
+   instance's :attr:`~object.__dict__` is pickled as usual.
 
 
 .. method:: object.__setstate__(state)
@@ -539,7 +541,7 @@ or both.
    * Optionally, the object's state, which will be passed to the object's
      :meth:`__setstate__` method as previously described.  If the object has no
      such method then, the value must be a dictionary and it will be added to
-     the object's :attr:`__dict__` attribute.
+     the object's :attr:`~object.__dict__` attribute.
 
    * Optionally, an iterator (and not a sequence) yielding successive items.
      These items will be appended to the object either using
@@ -565,6 +567,8 @@ or both.
    the extended version.  The main use for this method is to provide
    backwards-compatible reduce values for older Python releases.
 
+.. currentmodule:: pickle
+
 .. _pickle-persistent:
 
 Persistence of External Objects
@@ -582,19 +586,19 @@ any newer protocol).
 
 The resolution of such persistent IDs is not defined by the :mod:`pickle`
 module; it will delegate this resolution to the user defined methods on the
-pickler and unpickler, :meth:`persistent_id` and :meth:`persistent_load`
-respectively.
+pickler and unpickler, :meth:`~Pickler.persistent_id` and
+:meth:`~Unpickler.persistent_load` respectively.
 
 To pickle objects that have an external persistent id, the pickler must have a
-custom :meth:`persistent_id` method that takes an object as an argument and
-returns either ``None`` or the persistent id for that object.  When ``None`` is
-returned, the pickler simply pickles the object as normal.  When a persistent ID
-string is returned, the pickler will pickle that object, along with a marker so
-that the unpickler will recognize it as a persistent ID.
+custom :meth:`~Pickler.persistent_id` method that takes an object as an
+argument and returns either ``None`` or the persistent id for that object.
+When ``None`` is returned, the pickler simply pickles the object as normal.
+When a persistent ID string is returned, the pickler will pickle that object,
+along with a marker so that the unpickler will recognize it as a persistent ID.
 
 To unpickle external objects, the unpickler must have a custom
-:meth:`persistent_load` method that takes a persistent ID object and returns the
-referenced object.
+:meth:`~Unpickler.persistent_load` method that takes a persistent ID object and
+returns the referenced object.
 
 Here is a comprehensive example presenting how persistent ID can be used to
 pickle external objects by reference.
@@ -651,7 +655,7 @@ Handling Stateful Objects
 
 Here's an example that shows how to modify pickling behavior for a class.
 The :class:`TextReader` class opens a text file, and returns the line number and
-line contents each time its :meth:`readline` method is called. If a
+line contents each time its :meth:`!readline` method is called. If a
 :class:`TextReader` instance is pickled, all attributes *except* the file object
 member are saved. When the instance is unpickled, the file is reopened, and
 reading resumes from the last location. The :meth:`__setstate__` and
@@ -730,9 +734,10 @@ apply the string argument "echo hello world".  Although this example is
 inoffensive, it is not difficult to imagine one that could damage your system.
 
 For this reason, you may want to control what gets unpickled by customizing
-:meth:`Unpickler.find_class`.  Unlike its name suggests, :meth:`find_class` is
-called whenever a global (i.e., a class or a function) is requested.  Thus it is
-possible to either completely forbid globals or restrict them to a safe subset.
+:meth:`Unpickler.find_class`.  Unlike its name suggests,
+:meth:`Unpickler.find_class` is called whenever a global (i.e., a class or
+a function) is requested.  Thus it is possible to either completely forbid
+globals or restrict them to a safe subset.
 
 Here is an example of an unpickler allowing only few safe classes from the
 :mod:`builtins` module to be loaded::
