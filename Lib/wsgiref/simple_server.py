@@ -155,3 +155,4 @@ if __name__ == '__main__':
     import webbrowser
     webbrowser.open('http://localhost:8000/xyz?abc')
     httpd.handle_request()  # serve one request, then exit
+    httpd.server_close()
