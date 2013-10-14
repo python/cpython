@@ -5155,7 +5155,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
     PyObject *all = (PyObject *)NULL;
     PyObject *idna = NULL;
 
-    family = socktype = protocol = flags = 0;
+    socktype = protocol = flags = 0;
     family = AF_UNSPEC;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|iiii:getaddrinfo",
                           kwnames, &hobj, &pobj, &family, &socktype,
