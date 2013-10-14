@@ -614,7 +614,6 @@ r_string(Py_ssize_t n, RFILE *p)
     }
     if (!p->readable) {
         assert(p->fp != NULL);
-        /* The result fits into int because it must be <=n. */
         read = fread(p->buf, 1, n, p->fp);
     }
     else {
@@ -649,7 +648,6 @@ r_string(Py_ssize_t n, RFILE *p)
     }
     return p->buf;
 }
-
 
 static int
 r_byte(RFILE *p)
