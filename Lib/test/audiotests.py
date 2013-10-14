@@ -141,18 +141,18 @@ class AudioTestsWithSourceFile(AudioTests):
                           self.sndfilenframes, self.comptype, self.compname)
 
     def test_close(self):
-        testfile = open(self.sndfilepath, 'rb')
-        f = self.f = self.module.open(testfile)
-        self.assertFalse(testfile.closed)
-        f.close()
-        self.assertEqual(testfile.closed, self.close_fd)
-        testfile = open(TESTFN, 'wb')
-        fout = self.module.open(testfile, 'wb')
-        self.assertFalse(testfile.closed)
-        with self.assertRaises(self.module.Error):
-            fout.close()
-        self.assertEqual(testfile.closed, self.close_fd)
-        fout.close() # do nothing
+        with open(self.sndfilepath, 'rb') as testfile:
+            f = self.f = self.module.open(testfile)
+            self.assertFalse(testfile.closed)
+            f.close()
+            self.assertEqual(testfile.closed, self.close_fd)
+        with open(TESTFN, 'wb') as testfile:
+            fout = self.fout = self.module.open(testfile, 'wb')
+            self.assertFalse(testfile.closed)
+            with self.assertRaises(self.module.Error):
+                fout.close()
+            self.assertEqual(testfile.closed, self.close_fd)
+            fout.close() # do nothing
 
     def test_read(self):
         framesize = self.nchannels * self.sampwidth
