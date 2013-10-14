@@ -352,9 +352,9 @@ The following types can be pickled:
 
 * classes that are defined at the top level of a module
 
-* instances of such classes whose :attr:`__dict__` or the result of calling
-  :meth:`__getstate__` is picklable  (see section :ref:`pickle-protocol` for
-  details).
+* instances of such classes whose :attr:`~object.__dict__` or the result of
+  calling :meth:`__getstate__` is picklable  (see section :ref:`pickle-protocol`
+  for details).
 
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
@@ -443,7 +443,7 @@ Pickling and unpickling normal class instances
    defines the method :meth:`__getstate__`, it is called and the return state is
    pickled as the contents for the instance, instead of the contents of the
    instance's dictionary.  If there is no :meth:`__getstate__` method, the
-   instance's :attr:`__dict__` is pickled.
+   instance's :attr:`~object.__dict__` is pickled.
 
 .. method:: object.__setstate__(state)
 
@@ -511,7 +511,8 @@ Pickling and unpickling extension types
    * Optionally, the object's state, which will be passed to the object's
      :meth:`__setstate__` method as described in section :ref:`pickle-inst`.  If
      the object has no :meth:`__setstate__` method, then, as above, the value
-     must be a dictionary and it will be added to the object's :attr:`__dict__`.
+     must be a dictionary and it will be added to the object's
+     :attr:`~object.__dict__`.
 
    * Optionally, an iterator (and not a sequence) yielding successive list
      items.  These list items will be pickled, and appended to the object using
@@ -569,19 +570,20 @@ the :mod:`pickle` module; it will delegate this resolution to user defined
 functions on the pickler and unpickler. [#]_
 
 To define external persistent id resolution, you need to set the
-:attr:`persistent_id` attribute of the pickler object and the
-:attr:`persistent_load` attribute of the unpickler object.
+:attr:`~Pickler.persistent_id` attribute of the pickler object and the
+:attr:`~Unpickler.persistent_load` attribute of the unpickler object.
 
 To pickle objects that have an external persistent id, the pickler must have a
-custom :func:`persistent_id` method that takes an object as an argument and
-returns either ``None`` or the persistent id for that object.  When ``None`` is
-returned, the pickler simply pickles the object as normal.  When a persistent id
-string is returned, the pickler will pickle that string, along with a marker so
-that the unpickler will recognize the string as a persistent id.
+custom :func:`~Pickler.persistent_id` method that takes an object as an
+argument and returns either ``None`` or the persistent id for that object.
+When ``None`` is returned, the pickler simply pickles the object as normal.
+When a persistent id string is returned, the pickler will pickle that string,
+along with a marker so that the unpickler will recognize the string as a
+persistent id.
 
 To unpickle external objects, the unpickler must have a custom
-:func:`persistent_load` function that takes a persistent id string and returns
-the referenced object.
+:func:`~Unpickler.persistent_load` function that takes a persistent id string
+and returns the referenced object.
 
 Here's a silly example that *might* shed more light::
 
@@ -631,13 +633,14 @@ Here's a silly example that *might* shed more light::
    j = up.load()
    print j
 
-In the :mod:`cPickle` module, the unpickler's :attr:`persistent_load` attribute
-can also be set to a Python list, in which case, when the unpickler reaches a
-persistent id, the persistent id string will simply be appended to this list.
-This functionality exists so that a pickle data stream can be "sniffed" for
-object references without actually instantiating all the objects in a pickle.
-[#]_  Setting :attr:`persistent_load` to a list is usually used in conjunction
-with the :meth:`noload` method on the Unpickler.
+In the :mod:`cPickle` module, the unpickler's :attr:`~Unpickler.persistent_load`
+attribute can also be set to a Python list, in which case, when the unpickler
+reaches a persistent id, the persistent id string will simply be appended to
+this list.  This functionality exists so that a pickle data stream can be
+"sniffed" for object references without actually instantiating all the objects
+in a pickle.
+[#]_  Setting :attr:`~Unpickler.persistent_load` to a list is usually used in
+conjunction with the :meth:`~Unpickler.noload` method on the Unpickler.
 
 .. BAW: Both pickle and cPickle support something called inst_persistent_id()
    which appears to give unknown types a second shot at producing a persistent
@@ -675,13 +678,13 @@ want to disallow all unpickling of instances.  If this sounds like a hack,
 you're right.  Refer to the source code to make this work.
 
 Things are a little cleaner with :mod:`cPickle`, but not by much. To control
-what gets unpickled, you can set the unpickler's :attr:`find_global` attribute
-to a function or ``None``.  If it is ``None`` then any attempts to unpickle
-instances will raise an :exc:`UnpicklingError`.  If it is a function, then it
-should accept a module name and a class name, and return the corresponding class
-object.  It is responsible for looking up the class and performing any necessary
-imports, and it may raise an error to prevent instances of the class from being
-unpickled.
+what gets unpickled, you can set the unpickler's :attr:`~Unpickler.find_global`
+attribute to a function or ``None``.  If it is ``None`` then any attempts to
+unpickle instances will raise an :exc:`UnpicklingError`.  If it is a function,
+then it should accept a module name and a class name, and return the
+corresponding class object.  It is responsible for looking up the class and
+performing any necessary imports, and it may raise an error to prevent
+instances of the class from being unpickled.
 
 The moral of the story is that you should be really careful about the source of
 the strings your application unpickles.
@@ -732,7 +735,7 @@ can't be sure if the ASCII or binary format was used. ::
 
 Here's a larger example that shows how to modify pickling behavior for a class.
 The :class:`TextReader` class opens a text file, and returns the line number and
-line contents each time its :meth:`readline` method is called. If a
+line contents each time its :meth:`!readline` method is called. If a
 :class:`TextReader` instance is pickled, all attributes *except* the file object
 member are saved. When the instance is unpickled, the file is reopened, and
 reading resumes from the last location. The :meth:`__setstate__` and
