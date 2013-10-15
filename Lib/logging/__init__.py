@@ -857,7 +857,7 @@ class StreamHandler(Handler):
                 try:
                     if (isinstance(msg, unicode) and
                         getattr(stream, 'encoding', None)):
-                        ufs = fs.decode(stream.encoding)
+                        ufs = u'%s\n'
                         try:
                             stream.write(ufs % msg)
                         except UnicodeEncodeError:
