@@ -301,7 +301,7 @@ class _TestProcess(BaseTestCase):
 
         if hasattr(signal, 'alarm'):
             def handler(*args):
-                raise RuntimeError('join took too long: pid=%s' % p.pid)
+                raise RuntimeError('join took too long: %s' % p)
             old_handler = signal.signal(signal.SIGALRM, handler)
             try:
                 signal.alarm(10)
