@@ -19,8 +19,6 @@ __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent']
 # since 0xa0 is not in range(128).
 _whitespace = '\t\n\x0b\x0c\r '
 
-_default_placeholder = ' [...]'
-
 class TextWrapper:
     """
     Object for wrapping/filling text.  The public interface consists of
@@ -64,6 +62,10 @@ class TextWrapper:
         compound words.
       drop_whitespace (default: true)
         Drop leading and trailing whitespace from lines.
+      max_lines (default: None)
+        Truncate wrapped lines.
+      placeholder (default: ' [...]')
+        Append to the last line of truncated text.
     """
 
     unicode_whitespace_trans = {}
@@ -106,7 +108,10 @@ class TextWrapper:
                  break_long_words=True,
                  drop_whitespace=True,
                  break_on_hyphens=True,
-                 tabsize=8):
+                 tabsize=8,
+                 *,
+                 max_lines=None,
+                 placeholder=' [...]'):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -117,6 +122,8 @@ class TextWrapper:
         self.drop_whitespace = drop_whitespace
         self.break_on_hyphens = break_on_hyphens
         self.tabsize = tabsize
+        self.max_lines = max_lines
+        self.placeholder = placeholder
 
 
     # -- Private methods -----------------------------------------------
@@ -225,6 +232,13 @@ class TextWrapper:
         lines = []
         if self.width <= 0:
             raise ValueError("invalid width %r (must be > 0)" % self.width)
+        if self.max_lines is not None:
+            if self.max_lines > 1:
+                indent = self.subsequent_indent
+            else:
+                indent = self.initial_indent
+            if len(indent) + len(self.placeholder.lstrip()) > self.width:
+                raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped
         # from a stack of chucks.
@@ -267,15 +281,41 @@ class TextWrapper:
             # fit on *any* line (not just this one).
             if chunks and len(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
+                cur_len = sum(map(len, cur_line))
 
             # If the last chunk on this line is all whitespace, drop it.
             if self.drop_whitespace and cur_line and cur_line[-1].strip() == '':
+                cur_len -= len(cur_line[-1])
                 del cur_line[-1]
 
-            # Convert current line back to a string and store it in list
-            # of all lines (return value).
             if cur_line:
-                lines.append(indent + ''.join(cur_line))
+                if (self.max_lines is None or
+                    len(lines) + 1 < self.max_lines or
+                    (not chunks or
+                     self.drop_whitespace and
+                     len(chunks) == 1 and
+                     not chunks[0].strip()) and cur_len <= width):
+                    # Convert current line back to a string and store it in
+                    # list of all lines (return value).
+                    lines.append(indent + ''.join(cur_line))
+                else:
+                    while cur_line:
+                        if (cur_line[-1].strip() and
+                            cur_len + len(self.placeholder) <= width):
+                            cur_line.append(self.placeholder)
+                            lines.append(indent + ''.join(cur_line))
+                            break
+                        cur_len -= len(cur_line[-1])
+                        del cur_line[-1]
+                    else:
+                        if lines:
+                            prev_line = lines[-1].rstrip()
+                            if (len(prev_line) + len(self.placeholder) <=
+                                    self.width):
+                                lines[-1] = prev_line + self.placeholder
+                                break
+                        lines.append(indent + self.placeholder.lstrip())
+                    break
 
         return lines
 
@@ -308,36 +348,6 @@ class TextWrapper:
         """
         return "\n".join(self.wrap(text))
 
-    def shorten(self, text, *, placeholder=_default_placeholder):
-        """shorten(text: str) -> str
-
-        Collapse and truncate the given text to fit in 'self.width' columns.
-        """
-        max_length = self.width
-        if max_length < len(placeholder.strip()):
-            raise ValueError("placeholder too large for max width")
-        sep = ' '
-        sep_len = len(sep)
-        parts = []
-        cur_len = 0
-        chunks = self._split_chunks(text)
-        for chunk in chunks:
-            if not chunk.strip():
-                continue
-            chunk_len = len(chunk) + sep_len if parts else len(chunk)
-            if cur_len + chunk_len > max_length:
-                break
-            parts.append(chunk)
-            cur_len += chunk_len
-        else:
-            # No truncation necessary
-            return sep.join(parts)
-        max_truncated_length = max_length - len(placeholder)
-        while parts and cur_len > max_truncated_length:
-            last = parts.pop()
-            cur_len -= len(last) + sep_len
-        return (sep.join(parts) + placeholder).strip()
-
 
 # -- Convenience interface ---------------------------------------------
 
@@ -366,7 +376,7 @@ def fill(text, width=70, **kwargs):
     w = TextWrapper(width=width, **kwargs)
     return w.fill(text)
 
-def shorten(text, width, *, placeholder=_default_placeholder, **kwargs):
+def shorten(text, width, **kwargs):
     """Collapse and truncate the given text to fit in the given width.
 
     The text first has its whitespace collapsed.  If it then fits in
@@ -378,8 +388,8 @@ def shorten(text, width, *, placeholder=_default_placeholder, **kwargs):
         >>> textwrap.shorten("Hello  world!", width=11)
         'Hello [...]'
     """
-    w = TextWrapper(width=width, **kwargs)
-    return w.shorten(text, placeholder=placeholder)
+    w = TextWrapper(width=width, max_lines=1, **kwargs)
+    return w.fill(' '.join(text.strip().split()))
 
 
 # -- Loosely related functionality -------------------------------------
