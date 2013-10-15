@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18725: The textwrap module now supports truncating multiline text.
+
 - Issue #18776: atexit callbacks now display their full traceback when they
   raise an exception.
 
