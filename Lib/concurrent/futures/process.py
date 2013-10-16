@@ -49,8 +49,9 @@ import atexit
 import os
 from concurrent.futures import _base
 import queue
+from queue import Full
 import multiprocessing
-from multiprocessing.queues import SimpleQueue, Full
+from multiprocessing import SimpleQueue
 from multiprocessing.connection import wait
 import threading
 import weakref
