@@ -2,7 +2,7 @@ import fcntl
 import io
 import os
 
-from . import popen
+from . import context
 from . import popen_fork
 from . import reduction
 from . import spawn
@@ -41,16 +41,16 @@ class Popen(popen_fork.Popen):
 
     def _launch(self, process_obj):
         from . import semaphore_tracker
-        tracker_fd = semaphore_tracker._semaphore_tracker_fd
+        tracker_fd = semaphore_tracker.getfd()
         self._fds.append(tracker_fd)
         prep_data = spawn.get_preparation_data(process_obj._name)
         fp = io.BytesIO()
-        popen.set_spawning_popen(self)
+        context.set_spawning_popen(self)
         try:
             reduction.dump(prep_data, fp)
             reduction.dump(process_obj, fp)
         finally:
-            popen.set_spawning_popen(None)
+            context.set_spawning_popen(None)
 
         parent_r = child_w = child_r = parent_w = None
         try:
@@ -70,8 +70,3 @@ class Popen(popen_fork.Popen):
             for fd in (child_r, child_w, parent_w):
                 if fd is not None:
                     os.close(fd)
-
-    @staticmethod
-    def ensure_helpers_running():
-        from . import semaphore_tracker
-        semaphore_tracker.ensure_running()

@@ -23,11 +23,12 @@ from time import time as _time
 from traceback import format_exc
 
 from . import connection
+from . import context
 from . import pool
 from . import process
-from . import popen
 from . import reduction
 from . import util
+from . import get_context
 
 #
 # Register some things for pickling
@@ -438,7 +439,8 @@ class BaseManager(object):
     _registry = {}
     _Server = Server
 
-    def __init__(self, address=None, authkey=None, serializer='pickle'):
+    def __init__(self, address=None, authkey=None, serializer='pickle',
+                 ctx=None):
         if authkey is None:
             authkey = process.current_process().authkey
         self._address = address     # XXX not final address if eg ('', 0)
@@ -447,6 +449,7 @@ class BaseManager(object):
         self._state.value = State.INITIAL
         self._serializer = serializer
         self._Listener, self._Client = listener_client[serializer]
+        self._ctx = ctx or get_context()
 
     def get_server(self):
         '''
@@ -478,7 +481,7 @@ class BaseManager(object):
         reader, writer = connection.Pipe(duplex=False)
 
         # spawn process which runs a server
-        self._process = process.Process(
+        self._process = self._ctx.Process(
             target=type(self)._run_server,
             args=(self._registry, self._address, self._authkey,
                   self._serializer, writer, initializer, initargs),
@@ -800,7 +803,7 @@ class BaseProxy(object):
 
     def __reduce__(self):
         kwds = {}
-        if popen.get_spawning_popen() is not None:
+        if context.get_spawning_popen() is not None:
             kwds['authkey'] = self._authkey
 
         if getattr(self, '_isauto', False):

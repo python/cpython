@@ -12,9 +12,9 @@ import os
 import pickle
 import sys
 
+from . import get_start_method, set_start_method
 from . import process
 from . import util
-from . import popen
 
 __all__ = ['_main', 'freeze_support', 'set_executable', 'get_executable',
            'get_preparation_data', 'get_command_line', 'import_main_path']
@@ -91,7 +91,7 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
     else:
         from . import semaphore_tracker
-        semaphore_tracker._semaphore_tracker_fd = tracker_fd
+        semaphore_tracker._semaphore_tracker._fd = tracker_fd
         fd = pipe_handle
     exitcode = _main(fd)
     sys.exit(exitcode)
@@ -154,7 +154,7 @@ def get_preparation_data(name):
         sys_argv=sys.argv,
         orig_dir=process.ORIGINAL_DIR,
         dir=os.getcwd(),
-        start_method=popen.get_start_method(),
+        start_method=get_start_method(),
         )
 
     if sys.platform != 'win32' or (not WINEXE and not WINSERVICE):
@@ -204,7 +204,7 @@ def prepare(data):
         process.ORIGINAL_DIR = data['orig_dir']
 
     if 'start_method' in data:
-        popen.set_start_method(data['start_method'], start_helpers=False)
+        set_start_method(data['start_method'])
 
     if 'main_path' in data:
         import_main_path(data['main_path'])

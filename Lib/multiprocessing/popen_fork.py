@@ -81,7 +81,3 @@ class Popen(object):
             os.close(child_w)
             util.Finalize(self, os.close, (parent_r,))
             self.sentinel = parent_r
-
-    @staticmethod
-    def ensure_helpers_running():
-        pass
