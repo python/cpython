@@ -7,7 +7,7 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = ['Process', 'current_process', 'active_children']
+__all__ = ['BaseProcess', 'current_process', 'active_children']
 
 #
 # Imports
@@ -59,13 +59,14 @@ def _cleanup():
 # The `Process` class
 #
 
-class Process(object):
+class BaseProcess(object):
     '''
     Process objects represent activity that is run in a separate process
 
     The class is analogous to `threading.Thread`
     '''
-    _Popen = None
+    def _Popen(self):
+        raise NotImplementedError
 
     def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
                  *, daemon=None):
@@ -101,11 +102,7 @@ class Process(object):
         assert not _current_process._config.get('daemon'), \
                'daemonic processes are not allowed to have children'
         _cleanup()
-        if self._Popen is not None:
-            Popen = self._Popen
-        else:
-            from .popen import Popen
-        self._popen = Popen(self)
+        self._popen = self._Popen(self)
         self._sentinel = self._popen.sentinel
         _children.add(self)
 
@@ -229,10 +226,12 @@ class Process(object):
     ##
 
     def _bootstrap(self):
-        from . import util
+        from . import util, context
         global _current_process, _process_counter, _children
 
         try:
+            if self._start_method is not None:
+                context._force_start_method(self._start_method)
             _process_counter = itertools.count(1)
             _children = set()
             if sys.stdin is not None:
@@ -282,7 +281,7 @@ class Process(object):
 
 class AuthenticationString(bytes):
     def __reduce__(self):
-        from .popen import get_spawning_popen
+        from .context import get_spawning_popen
         if get_spawning_popen() is None:
             raise TypeError(
                 'Pickling an AuthenticationString object is '
@@ -294,7 +293,7 @@ class AuthenticationString(bytes):
 # Create object representing the main process
 #
 
-class _MainProcess(Process):
+class _MainProcess(BaseProcess):
 
     def __init__(self):
         self._identity = ()

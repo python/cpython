@@ -20,7 +20,7 @@ import _multiprocessing
 
 from time import time as _time
 
-from . import popen
+from . import context
 from . import process
 from . import util
 
@@ -50,14 +50,15 @@ class SemLock(object):
 
     _rand = tempfile._RandomNameSequence()
 
-    def __init__(self, kind, value, maxvalue):
-        unlink_immediately = (sys.platform == 'win32' or
-                              popen.get_start_method() == 'fork')
+    def __init__(self, kind, value, maxvalue, *, ctx):
+        ctx = ctx or get_context()
+        ctx = ctx.get_context()
+        unlink_now = sys.platform == 'win32' or ctx._name == 'fork'
         for i in range(100):
             try:
                 sl = self._semlock = _multiprocessing.SemLock(
                     kind, value, maxvalue, self._make_name(),
-                    unlink_immediately)
+                    unlink_now)
             except FileExistsError:
                 pass
             else:
@@ -99,10 +100,10 @@ class SemLock(object):
         return self._semlock.__exit__(*args)
 
     def __getstate__(self):
-        popen.assert_spawning(self)
+        context.assert_spawning(self)
         sl = self._semlock
         if sys.platform == 'win32':
-            h = popen.get_spawning_popen().duplicate_for_child(sl.handle)
+            h = context.get_spawning_popen().duplicate_for_child(sl.handle)
         else:
             h = sl.handle
         return (h, sl.kind, sl.maxvalue, sl.name)
@@ -123,8 +124,8 @@ class SemLock(object):
 
 class Semaphore(SemLock):
 
-    def __init__(self, value=1):
-        SemLock.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX)
+    def __init__(self, value=1, *, ctx):
+        SemLock.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX, ctx=ctx)
 
     def get_value(self):
         return self._semlock._get_value()
@@ -142,8 +143,8 @@ class Semaphore(SemLock):
 
 class BoundedSemaphore(Semaphore):
 
-    def __init__(self, value=1):
-        SemLock.__init__(self, SEMAPHORE, value, value)
+    def __init__(self, value=1, *, ctx):
+        SemLock.__init__(self, SEMAPHORE, value, value, ctx=ctx)
 
     def __repr__(self):
         try:
@@ -159,8 +160,8 @@ class BoundedSemaphore(Semaphore):
 
 class Lock(SemLock):
 
-    def __init__(self):
-        SemLock.__init__(self, SEMAPHORE, 1, 1)
+    def __init__(self, *, ctx):
+        SemLock.__init__(self, SEMAPHORE, 1, 1, ctx=ctx)
 
     def __repr__(self):
         try:
@@ -184,8 +185,8 @@ class Lock(SemLock):
 
 class RLock(SemLock):
 
-    def __init__(self):
-        SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1)
+    def __init__(self, *, ctx):
+        SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1, ctx=ctx)
 
     def __repr__(self):
         try:
@@ -210,15 +211,15 @@ class RLock(SemLock):
 
 class Condition(object):
 
-    def __init__(self, lock=None):
-        self._lock = lock or RLock()
-        self._sleeping_count = Semaphore(0)
-        self._woken_count = Semaphore(0)
-        self._wait_semaphore = Semaphore(0)
+    def __init__(self, lock=None, *, ctx):
+        self._lock = lock or ctx.RLock()
+        self._sleeping_count = ctx.Semaphore(0)
+        self._woken_count = ctx.Semaphore(0)
+        self._wait_semaphore = ctx.Semaphore(0)
         self._make_methods()
 
     def __getstate__(self):
-        popen.assert_spawning(self)
+        context.assert_spawning(self)
         return (self._lock, self._sleeping_count,
                 self._woken_count, self._wait_semaphore)
 
@@ -332,9 +333,9 @@ class Condition(object):
 
 class Event(object):
 
-    def __init__(self):
-        self._cond = Condition(Lock())
-        self._flag = Semaphore(0)
+    def __init__(self, *, ctx):
+        self._cond = ctx.Condition(ctx.Lock())
+        self._flag = ctx.Semaphore(0)
 
     def is_set(self):
         self._cond.acquire()
@@ -383,11 +384,11 @@ class Event(object):
 
 class Barrier(threading.Barrier):
 
-    def __init__(self, parties, action=None, timeout=None):
+    def __init__(self, parties, action=None, timeout=None, *, ctx):
         import struct
         from .heap import BufferWrapper
         wrapper = BufferWrapper(struct.calcsize('i') * 2)
-        cond = Condition()
+        cond = ctx.Condition()
         self.__setstate__((parties, action, timeout, cond, wrapper))
         self._state = 0
         self._count = 0

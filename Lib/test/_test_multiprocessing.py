@@ -3555,6 +3555,32 @@ class TestIgnoreEINTR(unittest.TestCase):
             conn.close()
 
 class TestStartMethod(unittest.TestCase):
+    @classmethod
+    def _check_context(cls, conn):
+        conn.send(multiprocessing.get_start_method())
+
+    def check_context(self, ctx):
+        r, w = ctx.Pipe(duplex=False)
+        p = ctx.Process(target=self._check_context, args=(w,))
+        p.start()
+        w.close()
+        child_method = r.recv()
+        r.close()
+        p.join()
+        self.assertEqual(child_method, ctx.get_start_method())
+
+    def test_context(self):
+        for method in ('fork', 'spawn', 'forkserver'):
+            try:
+                ctx = multiprocessing.get_context(method)
+            except ValueError:
+                continue
+            self.assertEqual(ctx.get_start_method(), method)
+            self.assertIs(ctx.get_context(), ctx)
+            self.assertRaises(ValueError, ctx.set_start_method, 'spawn')
+            self.assertRaises(ValueError, ctx.set_start_method, None)
+            self.check_context(ctx)
+
     def test_set_get(self):
         multiprocessing.set_forkserver_preload(PRELOAD)
         count = 0
@@ -3562,13 +3588,19 @@ class TestStartMethod(unittest.TestCase):
         try:
             for method in ('fork', 'spawn', 'forkserver'):
                 try:
-                    multiprocessing.set_start_method(method)
+                    multiprocessing.set_start_method(method, force=True)
                 except ValueError:
                     continue
                 self.assertEqual(multiprocessing.get_start_method(), method)
+                ctx = multiprocessing.get_context()
+                self.assertEqual(ctx.get_start_method(), method)
+                self.assertTrue(type(ctx).__name__.lower().startswith(method))
+                self.assertTrue(
+                    ctx.Process.__name__.lower().startswith(method))
+                self.check_context(multiprocessing)
                 count += 1
         finally:
-            multiprocessing.set_start_method(old_method)
+            multiprocessing.set_start_method(old_method, force=True)
         self.assertGreaterEqual(count, 1)
 
     def test_get_all(self):
@@ -3753,9 +3785,9 @@ def install_tests_in_module_dict(remote_globs, start_method):
         multiprocessing.process._cleanup()
         dangling[0] = multiprocessing.process._dangling.copy()
         dangling[1] = threading._dangling.copy()
-        old_start_method[0] = multiprocessing.get_start_method()
+        old_start_method[0] = multiprocessing.get_start_method(allow_none=True)
         try:
-            multiprocessing.set_start_method(start_method)
+            multiprocessing.set_start_method(start_method, force=True)
         except ValueError:
             raise unittest.SkipTest(start_method +
                                     ' start method not supported')
@@ -3771,7 +3803,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
         multiprocessing.get_logger().setLevel(LOG_LEVEL)
 
     def tearDownModule():
-        multiprocessing.set_start_method(old_start_method[0])
+        multiprocessing.set_start_method(old_start_method[0], force=True)
         # pause a bit so we don't get warning about dangling threads/processes
         time.sleep(0.5)
         multiprocessing.process._cleanup()
