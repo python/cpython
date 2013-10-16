@@ -1812,6 +1812,24 @@ state_fini(SRE_STATE* state)
     (((char*)(member) - (char*)(state)->beginning) / (state)->charsize)
 
 LOCAL(PyObject*)
+getslice(int logical_charsize, const void *ptr,
+         PyObject* string, Py_ssize_t start, Py_ssize_t end)
+{
+    if (logical_charsize == 1) {
+        if (PyBytes_CheckExact(string) &&
+            start == 0 && end == PyBytes_GET_SIZE(string)) {
+            Py_INCREF(string);
+            return string;
+        }
+        return PyBytes_FromStringAndSize(
+                (const char *)ptr + start, end - start);
+    }
+    else {
+        return PyUnicode_Substring(string, start, end);
+    }
+}
+
+LOCAL(PyObject*)
 state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
 {
     Py_ssize_t i, j;
@@ -1831,7 +1849,7 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
         j = STATE_OFFSET(state, state->mark[index+1]);
     }
 
-    return PySequence_GetSlice(string, i, j);
+    return getslice(state->logical_charsize, state->beginning, string, i, j);
 }
 
 static void
@@ -1993,45 +2011,6 @@ deepcopy(PyObject** object, PyObject* memo)
 #endif
 
 static PyObject*
-join_list(PyObject* list, PyObject* string)
-{
-    /* join list elements */
-
-    PyObject* joiner;
-    PyObject* function;
-    PyObject* args;
-    PyObject* result;
-
-    joiner = PySequence_GetSlice(string, 0, 0);
-    if (!joiner)
-        return NULL;
-
-    if (PyList_GET_SIZE(list) == 0) {
-        Py_DECREF(list);
-        return joiner;
-    }
-
-    function = PyObject_GetAttrString(joiner, "join");
-    if (!function) {
-        Py_DECREF(joiner);
-        return NULL;
-    }
-    args = PyTuple_New(1);
-    if (!args) {
-        Py_DECREF(function);
-        Py_DECREF(joiner);
-        return NULL;
-    }
-    PyTuple_SET_ITEM(args, 0, list);
-    result = PyObject_CallObject(function, args);
-    Py_DECREF(args); /* also removes list */
-    Py_DECREF(function);
-    Py_DECREF(joiner);
-
-    return result;
-}
-
-static PyObject*
 pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
 {
     SRE_STATE state;
@@ -2086,7 +2065,8 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
         case 0:
             b = STATE_OFFSET(&state, state.start);
             e = STATE_OFFSET(&state, state.ptr);
-            item = PySequence_GetSlice(string, b, e);
+            item = getslice(state.logical_charsize, state.beginning,
+                            string, b, e);
             if (!item)
                 goto error;
             break;
@@ -2216,7 +2196,7 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
         }
 
         /* get segment before this match */
-        item = PySequence_GetSlice(
+        item = getslice(state.logical_charsize, state.beginning,
             string, STATE_OFFSET(&state, last),
             STATE_OFFSET(&state, state.start)
             );
@@ -2245,7 +2225,7 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
     }
 
     /* get segment following last match (even if empty) */
-    item = PySequence_GetSlice(
+    item = getslice(state.logical_charsize, state.beginning,
         string, STATE_OFFSET(&state, last), state.endpos
         );
     if (!item)
@@ -2271,6 +2251,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 {
     SRE_STATE state;
     PyObject* list;
+    PyObject* joiner;
     PyObject* item;
     PyObject* filter;
     PyObject* args;
@@ -2360,7 +2341,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
         if (i < b) {
             /* get segment before this match */
-            item = PySequence_GetSlice(string, i, b);
+            item = getslice(state.logical_charsize, state.beginning,
+                string, i, b);
             if (!item)
                 goto error;
             status = PyList_Append(list, item);
@@ -2415,7 +2397,8 @@ next:
 
     /* get segment following last match */
     if (i < state.endpos) {
-        item = PySequence_GetSlice(string, i, state.endpos);
+        item = getslice(state.logical_charsize, state.beginning,
+                        string, i, state.endpos);
         if (!item)
             goto error;
         status = PyList_Append(list, item);
@@ -2429,10 +2412,24 @@ next:
     Py_DECREF(filter);
 
     /* convert list to single string (also removes list) */
-    item = join_list(list, string);
-
-    if (!item)
+    joiner = getslice(state.logical_charsize, state.beginning, string, 0, 0);
+    if (!joiner) {
+        Py_DECREF(list);
         return NULL;
+    }
+    if (PyList_GET_SIZE(list) == 0) {
+        Py_DECREF(list);
+        item = joiner;
+    }
+    else {
+        if (state.logical_charsize == 1)
+            item = _PyBytes_Join(joiner, list);
+        else
+            item = PyUnicode_Join(joiner, list);
+        Py_DECREF(joiner);
+        if (!item)
+            return NULL;
+    }
 
     if (subn)
         return Py_BuildValue("Nn", item, n);
@@ -3189,6 +3186,12 @@ match_dealloc(MatchObject* self)
 static PyObject*
 match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
 {
+    Py_ssize_t length;
+    int logical_charsize, charsize;
+    Py_buffer view;
+    PyObject *result;
+    void* ptr;
+
     if (index < 0 || index >= self->groups) {
         /* raise IndexError if we were given a bad group number */
         PyErr_SetString(
@@ -3206,9 +3209,14 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
         return def;
     }
 
-    return PySequence_GetSlice(
-        self->string, self->mark[index], self->mark[index+1]
-        );
+    ptr = getstring(self->string, &length, &logical_charsize, &charsize, &view);
+    if (ptr == NULL)
+        return NULL;
+    result = getslice(logical_charsize, ptr,
+                      self->string, self->mark[index], self->mark[index+1]);
+    if (logical_charsize == 1 && view.buf != NULL)
+        PyBuffer_Release(&view);
+    return result;
 }
 
 static Py_ssize_t
