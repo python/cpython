@@ -7,7 +7,7 @@
 
 import re
 
-__all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent']
+__all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
 
 # Hardcode the recognized whitespace characters to the US-ASCII
 # whitespace characters.  The main reason for doing this is that in
