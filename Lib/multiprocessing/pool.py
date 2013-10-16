@@ -24,7 +24,7 @@ import traceback
 # If threading is available then ThreadPool should be provided.  Therefore
 # we avoid top-level imports which are liable to fail on some systems.
 from . import util
-from . import Process, cpu_count, TimeoutError, SimpleQueue
+from . import get_context, cpu_count, TimeoutError
 
 #
 # Constants representing the state of a pool
@@ -137,10 +137,12 @@ class Pool(object):
     '''
     Class which supports an async version of applying functions to arguments.
     '''
-    Process = Process
+    def Process(self, *args, **kwds):
+        return self._ctx.Process(*args, **kwds)
 
     def __init__(self, processes=None, initializer=None, initargs=(),
-                 maxtasksperchild=None):
+                 maxtasksperchild=None, context=None):
+        self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.Queue()
         self._cache = {}
@@ -232,8 +234,8 @@ class Pool(object):
             self._repopulate_pool()
 
     def _setup_queues(self):
-        self._inqueue = SimpleQueue()
-        self._outqueue = SimpleQueue()
+        self._inqueue = self._ctx.SimpleQueue()
+        self._outqueue = self._ctx.SimpleQueue()
         self._quick_put = self._inqueue._writer.send
         self._quick_get = self._outqueue._reader.recv
 

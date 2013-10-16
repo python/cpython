@@ -15,7 +15,7 @@ import pickle
 import socket
 import sys
 
-from . import popen
+from . import context
 from . import util
 
 __all__ = ['send_handle', 'recv_handle', 'ForkingPickler', 'register', 'dump']
@@ -183,7 +183,7 @@ else:
 
     def DupFd(fd):
         '''Return a wrapper for an fd.'''
-        popen_obj = popen.get_spawning_popen()
+        popen_obj = context.get_spawning_popen()
         if popen_obj is not None:
             return popen_obj.DupFd(popen_obj.duplicate_for_child(fd))
         elif HAVE_SEND_HANDLE:
