@@ -33,10 +33,11 @@ Here are the methods of the :class:`Message` class:
 
 .. class:: Message(policy=compat32)
 
-   The *policy* argument determiens the :mod:`~email.policy` that will be used
-   to update the message model.  The default value, :class:`compat32
-   <email.policy.Compat32>` maintains backward compatibility with the
-   Python 3.2 version of the email package.  For more information see the
+   If *policy* is specified (it must be an instance of a :mod:`~email.policy`
+   class) use the rules it specifies to udpate and serialize the representation
+   of the message.  If *policy* is not set, use the :class`compat32
+   <email.policy.Compat32>` policy, which maintains backward compatibility with
+   the Python 3.2 version of the email package.  For more information see the
    :mod:`~email.policy` documentation.
 
    .. versionchanged:: 3.3 The *policy* keyword argument was added.
@@ -465,7 +466,8 @@ Here are the methods of the :class:`Message` class:
       to ``False``.
 
 
-   .. method:: set_param(param, value, header='Content-Type', requote=True, charset=None, language='')
+   .. method:: set_param(param, value, header='Content-Type', requote=True,
+                         charset=None, language='', replace=False)
 
       Set a parameter in the :mailheader:`Content-Type` header.  If the
       parameter already exists in the header, its value will be replaced with
@@ -481,6 +483,12 @@ Here are the methods of the :class:`Message` class:
       according to :rfc:`2231`. Optional *language* specifies the RFC 2231
       language, defaulting to the empty string.  Both *charset* and *language*
       should be strings.
+
+      If *replace* is ``False`` (the default) the header is moved to the
+      end of the list of headers.  If *replace* is ``True``, the header
+      will be updated in place.
+
+      .. versionchanged: 3.4 ``replace`` keyword was added.
 
 
    .. method:: del_param(param, header='content-type', requote=True)

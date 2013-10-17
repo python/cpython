@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 import test.support
+import collections
 import email
 from email.message import Message
 from email._policybase import compat32
@@ -42,6 +43,8 @@ class TestEmailBase(unittest.TestCase):
     # here we make minimal changes in the test_email tests compared to their
     # pre-3.3 state.
     policy = compat32
+    # Likewise, the default message object is Message.
+    message = Message
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -54,10 +57,22 @@ class TestEmailBase(unittest.TestCase):
         with openfile(filename) as fp:
             return email.message_from_file(fp, policy=self.policy)
 
-    def _str_msg(self, string, message=Message, policy=None):
+    def _str_msg(self, string, message=None, policy=None):
         if policy is None:
             policy = self.policy
+        if message is None:
+            message = self.message
         return email.message_from_string(string, message, policy=policy)
+
+    def _bytes_msg(self, bytestring, message=None, policy=None):
+        if policy is None:
+            policy = self.policy
+        if message is None:
+            message = self.message
+        return email.message_from_bytes(bytestring, message, policy=policy)
+
+    def _make_message(self):
+        return self.message(policy=self.policy)
 
     def _bytes_repr(self, b):
         return [repr(x) for x in b.splitlines(keepends=True)]
@@ -123,6 +138,7 @@ def parameterize(cls):
 
     """
     paramdicts = {}
+    testers = collections.defaultdict(list)
     for name, attr in cls.__dict__.items():
         if name.endswith('_params'):
             if not hasattr(attr, 'keys'):
@@ -134,7 +150,15 @@ def parameterize(cls):
                     d[n] = x
                 attr = d
             paramdicts[name[:-7] + '_as_'] = attr
+        if '_as_' in name:
+            testers[name.split('_as_')[0] + '_as_'].append(name)
     testfuncs = {}
+    for name in paramdicts:
+        if name not in testers:
+            raise ValueError("No tester found for {}".format(name))
+    for name in testers:
+        if name not in paramdicts:
+            raise ValueError("No params found for {}".format(name))
     for name, attr in cls.__dict__.items():
         for paramsname, paramsdict in paramdicts.items():
             if name.startswith(paramsname):

@@ -30,6 +30,7 @@ class PolicyAPITests(unittest.TestCase):
         'raise_on_defect':          False,
         'header_factory':           email.policy.EmailPolicy.header_factory,
         'refold_source':            'long',
+        'content_manager':          email.policy.EmailPolicy.content_manager,
         })
 
     # For each policy under test, we give here what we expect the defaults to
