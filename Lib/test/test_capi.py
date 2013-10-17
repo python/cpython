@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import unittest
+import textwrap
 from test import support
 try:
     import _posixsubprocess
@@ -218,36 +219,81 @@ class Test6012(unittest.TestCase):
         self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
 
 
-class EmbeddingTest(unittest.TestCase):
+@unittest.skipIf(
+    sys.platform.startswith('win'),
+    "interpreter embedding tests aren't built under Windows")
+class EmbeddingTests(unittest.TestCase):
+    # XXX only tested under Unix checkouts
 
-    @unittest.skipIf(
-        sys.platform.startswith('win'),
-        "test doesn't work under Windows")
-    def test_subinterps(self):
-        # XXX only tested under Unix checkouts
+    def setUp(self):
         basepath = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        oldcwd = os.getcwd()
+        self.test_exe = exe = os.path.join(basepath, "Modules", "_testembed")
+        if not os.path.exists(exe):
+            self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
         # "Py_Initialize: Unable to get the locale encoding
         # LookupError: no codec search functions registered: can't find encoding"
+        self.oldcwd = os.getcwd()
         os.chdir(basepath)
-        try:
-            exe = os.path.join(basepath, "Modules", "_testembed")
-            if not os.path.exists(exe):
-                self.skipTest("%r doesn't exist" % exe)
-            p = subprocess.Popen([exe],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            (out, err) = p.communicate()
-            self.assertEqual(p.returncode, 0,
-                             "bad returncode %d, stderr is %r" %
-                             (p.returncode, err))
-            if support.verbose:
-                print()
-                print(out.decode('latin1'))
-                print(err.decode('latin1'))
-        finally:
-            os.chdir(oldcwd)
+
+    def tearDown(self):
+        os.chdir(self.oldcwd)
+
+    def run_embedded_interpreter(self, *args):
+        """Runs a test in the embedded interpreter"""
+        cmd = [self.test_exe]
+        cmd.extend(args)
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        (out, err) = p.communicate()
+        self.assertEqual(p.returncode, 0,
+                         "bad returncode %d, stderr is %r" %
+                         (p.returncode, err))
+        return out.decode("latin1"), err.decode("latin1")
+
+    def test_subinterps(self):
+        # This is just a "don't crash" test
+        out, err = self.run_embedded_interpreter()
+        if support.verbose:
+            print()
+            print(out)
+            print(err)
+
+    def test_forced_io_encoding(self):
+        # Checks forced configuration of embedded interpreter IO streams
+        out, err = self.run_embedded_interpreter("forced_io_encoding")
+        if support.verbose:
+            print()
+            print(out)
+            print(err)
+        expected_output = textwrap.dedent("""\
+        --- Use defaults ---
+        Expected encoding: default
+        Expected errors: default
+        stdin: {0.stdin.encoding}:strict
+        stdout: {0.stdout.encoding}:strict
+        stderr: {0.stderr.encoding}:backslashreplace
+        --- Set errors only ---
+        Expected encoding: default
+        Expected errors: surrogateescape
+        stdin: {0.stdin.encoding}:surrogateescape
+        stdout: {0.stdout.encoding}:surrogateescape
+        stderr: {0.stderr.encoding}:backslashreplace
+        --- Set encoding only ---
+        Expected encoding: latin-1
+        Expected errors: default
+        stdin: latin-1:strict
+        stdout: latin-1:strict
+        stderr: latin-1:backslashreplace
+        --- Set encoding and errors ---
+        Expected encoding: latin-1
+        Expected errors: surrogateescape
+        stdin: latin-1:surrogateescape
+        stdout: latin-1:surrogateescape
+        stderr: latin-1:backslashreplace""").format(sys)
+
+        self.assertEqual(out.strip(), expected_output)
 
 class SkipitemTest(unittest.TestCase):
 
@@ -358,7 +404,7 @@ class TestThreadState(unittest.TestCase):
 
 def test_main():
     support.run_unittest(CAPITest, TestPendingCalls, Test6012,
-                         EmbeddingTest, SkipitemTest, TestThreadState,
+                         EmbeddingTests, SkipitemTest, TestThreadState,
                          SubinterpreterTest)
 
     for name in dir(_testcapi):
