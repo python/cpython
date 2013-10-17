@@ -1139,8 +1139,10 @@ class TestEnum(unittest.TestCase):
             green = ()
             blue = ()
         self.assertEqual(list(ColorInAList), [ColorInAList.red, ColorInAList.green, ColorInAList.blue])
-        self.assertEqual(ColorInAList.red.value, [1])
-        self.assertEqual(ColorInAList([1]), ColorInAList.red)
+        for enum, value in zip(ColorInAList, range(3)):
+            value += 1
+            self.assertEqual(enum.value, [value])
+            self.assertIs(ColorInAList([value]), enum)
 
     def test_conflicting_types_resolved_in_new(self):
         class LabelledIntEnum(int, Enum):
