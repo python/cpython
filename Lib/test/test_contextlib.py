@@ -632,28 +632,6 @@ class TestExitStack(unittest.TestCase):
         stack.push(cm)
         self.assertIs(stack._exit_callbacks[-1], cm)
 
-class TestIgnore(unittest.TestCase):
-
-    def test_no_exception(self):
-
-        with ignore(ValueError):
-            self.assertEqual(pow(2, 5), 32)
-
-    def test_exact_exception(self):
-
-        with ignore(TypeError):
-            len(5)
-
-    def test_multiple_exception_args(self):
-
-        with ignore(ZeroDivisionError, TypeError):
-            len(5)
-
-    def test_exception_hierarchy(self):
-
-        with ignore(LookupError):
-            'Hello'[50]
-
 class TestRedirectStdout(unittest.TestCase):
 
     def test_redirect_to_string_io(self):
@@ -662,6 +640,28 @@ class TestRedirectStdout(unittest.TestCase):
             help(pow)
         s = f.getvalue()
         self.assertIn('pow', s)
+
+class TestSuppress(unittest.TestCase):
+
+    def test_no_exception(self):
+
+        with suppress(ValueError):
+            self.assertEqual(pow(2, 5), 32)
+
+    def test_exact_exception(self):
+
+        with suppress(TypeError):
+            len(5)
+
+    def test_multiple_exception_args(self):
+
+        with suppress(ZeroDivisionError, TypeError):
+            len(5)
+
+    def test_exception_hierarchy(self):
+
+        with suppress(LookupError):
+            'Hello'[50]
 
 if __name__ == "__main__":
     unittest.main()
