@@ -42,6 +42,12 @@ Core and Builtins
 Library
 -------
 
+
+- Issue #19262: Initial check in of the 'asyncio' package (a.k.a. Tulip,
+  a.k.a. PEP 3156).  There are no docs yet, and the PEP is slightly
+  out of date with the code.  This module will have *provisional* status
+  in Python 3.4.
+
 - Issue #19276: Fixed the wave module on 64-bit big-endian platforms.
 
 - Issue #19266: Rename the new-in-3.4 ``contextlib.ignore`` context manager

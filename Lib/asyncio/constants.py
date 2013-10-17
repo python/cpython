@@ -1,0 +1,4 @@
+"""Constants."""
+
+
+LOG_THRESHOLD_FOR_CONNLOST_WRITES = 5
