@@ -88,8 +88,7 @@ The available exception and functions in this module are:
    that are expected to be most common should come at the end of the dictionary.
 
    .. versionchanged:: 3.3
-      Added the *method*, *wbits*, *memlevel*, *strategy* and *zdict*
-      parameters.
+      Added the *zdict* parameter and keyword argument support.
 
 
 .. function:: crc32(data[, value])
