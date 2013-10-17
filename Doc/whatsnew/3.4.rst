@@ -221,14 +221,17 @@ results should be less than 1% and may better match results found elsewhere.
 contextlib
 ----------
 
-The new :class:`contextlib.ignore` context manager helps to clarify the
-intent of code that deliberately ignores failures from a particular
-operation.
+The new :class:`contextlib.suppress` context manager helps to clarify the
+intent of code that deliberately suppresses exceptions from a single
+statement. (Contributed by Raymond Hettinger in :issue:`15806` and
+Zero Piraeus in :issue:`19266`)
+
 
 The new :class:`contextlib.redirect_stdio` context manager makes it easier
 for utility scripts to handle inflexible APIs that don't provide any
 options to retrieve their output as a string or direct it to somewhere
-other than :data:`sys.stdout`.
+other than :data:`sys.stdout`. (Contribute by Raymond Hettinger in
+:issue:`15805`)
 
 
 dis
@@ -283,7 +286,7 @@ result:  a bytes object containing the fully formatted message.
 A pair of new subclasses of :class:`~email.message.Message` have been added,
 along with a new sub-module, :mod:`~email.contentmanager`.  All documentation
 is currently in the new module, which is being added as part of the new
-:term:`provisional <provosional package>` email API.  These classes provide a
+:term:`provisional <provisional package>` email API.  These classes provide a
 number of new methods that make extracting content from and inserting content
 into email messages much easier.  See the :mod:`~email.contentmanager`
 documentation for details.
