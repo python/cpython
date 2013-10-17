@@ -68,9 +68,13 @@ def _has_surrogates(s):
 # How to deal with a string containing bytes before handing it to the
 # application through the 'normal' interface.
 def _sanitize(string):
-    # Turn any escaped bytes into unicode 'unknown' char.
-    original_bytes = string.encode('ascii', 'surrogateescape')
-    return original_bytes.decode('ascii', 'replace')
+    # Turn any escaped bytes into unicode 'unknown' char.  If the escaped
+    # bytes happen to be utf-8 they will instead get decoded, even if they
+    # were invalid in the charset the source was supposed to be in.  This
+    # seems like it is not a bad thing; a defect was still registered.
+    original_bytes = string.encode('utf-8', 'surrogateescape')
+    return original_bytes.decode('utf-8', 'replace')
+
 
 
 # Helpers
