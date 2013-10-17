@@ -354,12 +354,16 @@ class _TestProcess(BaseTestCase):
             else:
                 os.kill(pid, signal.SIGTERM)
                 def handler(*args):
-                    raise RuntimeError('join took too long: %s' % p)
+                    raise RuntimeError('waitpid() took too long')
                 old_handler = signal.signal(signal.SIGALRM, handler)
                 try:
                     signal.alarm(10)
                     pid_status = os.waitpid(pid, 0)
                     self.assertEqual(pid_status[0], pid)
+                except RuntimeError:
+                    print('os.waitpid() =',
+                          os.waitpid(pid, os.WNOHANG), file=sys.stderr)
+                    raise
                 finally:
                     signal.alarm(0)
                     signal.signal(signal.SIGALRM, old_handler)
