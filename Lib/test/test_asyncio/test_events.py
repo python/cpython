@@ -1320,7 +1320,7 @@ class HandleTests(unittest.TestCase):
         self.assertRaises(
             AssertionError, events.make_handle, h1, ())
 
-    @unittest.mock.patch('asyncio.events.asyncio_log')
+    @unittest.mock.patch('asyncio.events.logger')
     def test_callback_with_exception(self, log):
         def callback():
             raise ValueError()

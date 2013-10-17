@@ -3,4 +3,5 @@
 import logging
 
 
-asyncio_log = logging.getLogger("asyncio")
+# Name the logger after the package.
+logger = logging.getLogger(__package__)

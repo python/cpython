@@ -626,7 +626,7 @@ class SelectorTransportTests(unittest.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertEqual(1, self.loop.remove_reader_count[7])
 
-    @unittest.mock.patch('asyncio.log.asyncio_log.exception')
+    @unittest.mock.patch('asyncio.log.logger.exception')
     def test_fatal_error(self, m_exc):
         exc = OSError()
         tr = _SelectorTransport(self.loop, self.sock, self.protocol, None)
@@ -823,7 +823,7 @@ class SelectorSocketTransportTests(unittest.TestCase):
         self.loop.assert_writer(7, transport._write_ready)
         self.assertEqual(collections.deque([b'data']), transport._buffer)
 
-    @unittest.mock.patch('asyncio.selector_events.asyncio_log')
+    @unittest.mock.patch('asyncio.selector_events.logger')
     def test_write_exception(self, m_log):
         err = self.sock.send.side_effect = OSError()
 
@@ -937,7 +937,7 @@ class SelectorSocketTransportTests(unittest.TestCase):
         transport._write_ready()
         transport._fatal_error.assert_called_with(err)
 
-    @unittest.mock.patch('asyncio.selector_events.asyncio_log')
+    @unittest.mock.patch('asyncio.selector_events.logger')
     def test_write_ready_exception_and_close(self, m_log):
         self.sock.send.side_effect = OSError()
         remove_writer = self.loop.remove_writer = unittest.mock.Mock()
@@ -1072,7 +1072,7 @@ class SelectorSslTransportTests(unittest.TestCase):
         transport.write(b'data')
         self.assertEqual(transport._conn_lost, 2)
 
-    @unittest.mock.patch('asyncio.selector_events.asyncio_log')
+    @unittest.mock.patch('asyncio.selector_events.logger')
     def test_write_exception(self, m_log):
         transport = self._make_one()
         transport._conn_lost = 1
@@ -1325,7 +1325,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         self.assertEqual(
             [(b'data', ('0.0.0.0', 12345))], list(transport._buffer))
 
-    @unittest.mock.patch('asyncio.selector_events.asyncio_log')
+    @unittest.mock.patch('asyncio.selector_events.logger')
     def test_sendto_exception(self, m_log):
         data = b'data'
         err = self.sock.sendto.side_effect = OSError()
@@ -1475,7 +1475,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
 
         self.assertTrue(transport._fatal_error.called)
 
-    @unittest.mock.patch('asyncio.log.asyncio_log.exception')
+    @unittest.mock.patch('asyncio.log.logger.exception')
     def test_fatal_error_connected(self, m_exc):
         transport = _SelectorDatagramTransport(
             self.loop, self.sock, self.protocol, ('0.0.0.0', 1))

@@ -12,7 +12,7 @@ import sys
 import threading
 import socket
 
-from .log import asyncio_log
+from .log import logger
 
 
 class Handle:
@@ -36,8 +36,8 @@ class Handle:
         try:
             self._callback(*self._args)
         except Exception:
-            asyncio_log.exception('Exception in callback %s %r',
-                                self._callback, self._args)
+            logger.exception('Exception in callback %s %r',
+                             self._callback, self._args)
         self = None  # Needed to break cycles when an exception occurs.
 
 
