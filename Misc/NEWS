@@ -123,6 +123,8 @@ Library
 Tests
 -----
 
+- Issue #19275: Fix test_site on AMD64 Snow Leopard
+
 - Issue #14407: Fix unittest test discovery in test_concurrent_futures.
 
 - Issue #18919: Unified and extended tests for audio modules: aifc, sunau and
