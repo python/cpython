@@ -95,26 +95,36 @@ Functions and classes provided:
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
 
-.. function:: ignore(*exceptions)
+.. function:: suppress(*exceptions)
 
-   Return a context manager that ignores the specified exceptions if they
-   occur in the body of a with-statement.
+   Return a context manager that suppresses any of the specified exceptions
+   if they occur in the body of a with statement and then resumes execution
+   with the first statement following the end of the with statement.
 
-   As with any other mechanism that completely suppresses exceptions, it
-   should only be used to cover very specific errors where silently
-   ignoring the exception is known to be the right thing to do.
+   As with any other mechanism that completely suppresses exceptions, this
+   context manager should be used only to cover very specific errors where
+   silently continuing with program execution is known to be the right
+   thing to do.
 
    For example::
 
-       from contextlib import ignore
+       from contextlib import suppress
 
-       with ignore(FileNotFoundError):
+       with suppress(FileNotFoundError):
            os.remove('somefile.tmp')
+
+       with suppress(FileNotFoundError):
+           os.remove('someotherfile.tmp')
 
    This code is equivalent to::
 
        try:
            os.remove('somefile.tmp')
+       except FileNotFoundError:
+           pass
+
+       try:
+           os.remove('someotherfile.tmp')
        except FileNotFoundError:
            pass
 
