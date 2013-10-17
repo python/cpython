@@ -443,8 +443,9 @@ class StartupImportTests(unittest.TestCase):
             self.assertFalse(modules.intersection(re_mods), stderr)
         # http://bugs.python.org/issue9548
         self.assertNotIn('locale', modules, stderr)
-        # http://bugs.python.org/issue19209
-        self.assertNotIn('copyreg', modules, stderr)
+        if sys.platform != 'darwin':
+            # http://bugs.python.org/issue19209
+            self.assertNotIn('copyreg', modules, stderr)
         # http://bugs.python.org/issue19218>
         collection_mods = {'_collections', 'collections', 'functools',
                            'heapq', 'itertools', 'keyword', 'operator',
