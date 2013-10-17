@@ -300,6 +300,9 @@ class _TestProcess(BaseTestCase):
         p.terminate()
 
         if hasattr(signal, 'alarm'):
+            # On the Gentoo buildbot waitpid() often seems to block forever.
+            # We use alarm() to interrupt it if it blocks for too long, and
+            # then try to print a backtrace for the child process using gdb.
             def handler(*args):
                 raise RuntimeError('join took too long: %s' % p)
             old_handler = signal.signal(signal.SIGALRM, handler)
@@ -307,6 +310,16 @@ class _TestProcess(BaseTestCase):
                 signal.alarm(10)
                 self.assertEqual(join(), None)
                 signal.alarm(0)
+            except RuntimeError:
+                print('os.waitpid() =', os.waitpid(p.pid, os.WNOHANG))
+                import subprocess
+                p = subprocess.Popen(['gdb', sys.executable, str(p.pid)],
+                                     stdin=subprocess.PIPE)
+                try:
+                    p.communicate(b'bt 50', timeout=10)
+                except subprocess.TimeoutExpired:
+                    p.kill()
+                raise
             finally:
                 signal.signal(signal.SIGALRM, old_handler)
         else:
