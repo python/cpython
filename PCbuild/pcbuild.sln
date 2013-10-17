@@ -76,6 +76,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_freeze_importlib", "_freez
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_sha3", "_sha3.vcxproj", "{254A0C05-6696-4B08-8CB2-EF7D533AEE01}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_overlapped", "_overlapped.vcxproj", "{EB6E69DD-04BF-4543-9B92-49FAABCEAC2E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
