@@ -1,9 +1,12 @@
 """Tests for streams.py."""
 
 import gc
-import ssl
 import unittest
 import unittest.mock
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 from asyncio import events
 from asyncio import streams
