@@ -16,7 +16,7 @@ import weakref
 
 from . import events
 from . import futures
-from .log import asyncio_log
+from .log import logger
 
 # If you set _DEBUG to true, @coroutine will wrap the resulting
 # generator objects in a CoroWrapper instance (defined below).  That
@@ -62,8 +62,8 @@ class CoroWrapper:
             code = func.__code__
             filename = code.co_filename
             lineno = code.co_firstlineno
-            asyncio_log.error('Coroutine %r defined at %s:%s was never yielded from',
-                              func.__name__, filename, lineno)
+            logger.error('Coroutine %r defined at %s:%s was never yielded from',
+                         func.__name__, filename, lineno)
 
 
 def coroutine(func):

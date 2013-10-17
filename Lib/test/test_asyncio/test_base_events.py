@@ -183,7 +183,7 @@ class BaseEventLoopTests(unittest.TestCase):
         self.assertTrue(self.loop._process_events.called)
 
     @unittest.mock.patch('asyncio.base_events.time')
-    @unittest.mock.patch('asyncio.base_events.asyncio_log')
+    @unittest.mock.patch('asyncio.base_events.logger')
     def test__run_once_logging(self, m_logging, m_time):
         # Log to INFO level if timeout > 1.0 sec.
         idx = -1
@@ -579,7 +579,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.loop._accept_connection(MyProto, sock)
         self.assertFalse(sock.close.called)
 
-    @unittest.mock.patch('asyncio.selector_events.asyncio_log')
+    @unittest.mock.patch('asyncio.selector_events.logger')
     def test_accept_connection_exception(self, m_log):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10

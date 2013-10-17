@@ -10,7 +10,7 @@ import logging
 import traceback
 
 from . import events
-from .log import asyncio_log
+from .log import logger
 
 # States for Future.
 _PENDING = 'PENDING'
@@ -99,8 +99,8 @@ class _TracebackLogger:
 
     def __del__(self):
         if self.tb:
-            asyncio_log.error('Future/Task exception was never retrieved:\n%s',
-                              ''.join(self.tb))
+            logger.error('Future/Task exception was never retrieved:\n%s',
+                         ''.join(self.tb))
 
 
 class Future:

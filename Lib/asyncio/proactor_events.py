@@ -10,7 +10,7 @@ from . import base_events
 from . import constants
 from . import futures
 from . import transports
-from .log import asyncio_log
+from .log import logger
 
 
 class _ProactorBasePipeTransport(transports.BaseTransport):
@@ -50,7 +50,7 @@ class _ProactorBasePipeTransport(transports.BaseTransport):
             self._read_fut.cancel()
 
     def _fatal_error(self, exc):
-        asyncio_log.exception('Fatal error for %s', self)
+        logger.exception('Fatal error for %s', self)
         self._force_close(exc)
 
     def _force_close(self, exc):
@@ -164,7 +164,7 @@ class _ProactorWritePipeTransport(_ProactorBasePipeTransport,
 
         if self._conn_lost:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
-                asyncio_log.warning('socket.send() raised exception.')
+                logger.warning('socket.send() raised exception.')
             self._conn_lost += 1
             return
         self._buffer.append(data)
@@ -246,7 +246,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
 
     def __init__(self, proactor):
         super().__init__()
-        asyncio_log.debug('Using proactor: %s', proactor.__class__.__name__)
+        logger.debug('Using proactor: %s', proactor.__class__.__name__)
         self._proactor = proactor
         self._selector = proactor   # convenient alias
         proactor.set_loop(self)
@@ -335,7 +335,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 f = self._proactor.accept(sock)
             except OSError:
                 if sock.fileno() != -1:
-                    asyncio_log.exception('Accept failed')
+                    logger.exception('Accept failed')
                     sock.close()
             except futures.CancelledError:
                 sock.close()
