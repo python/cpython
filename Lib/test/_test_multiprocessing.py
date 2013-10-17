@@ -273,7 +273,10 @@ class _TestProcess(BaseTestCase):
 
     @classmethod
     def _test_terminate(cls):
+        print('signal.getsignal(SIGTERM) =', signal.getsignal(signal.SIGTERM))
+        print('starting sleep')
         time.sleep(100)
+        print('finished sleep')
 
     def test_terminate(self):
         if self.TYPE == 'threads':
@@ -313,12 +316,11 @@ class _TestProcess(BaseTestCase):
             except RuntimeError:
                 print('os.waitpid() =', os.waitpid(p.pid, os.WNOHANG))
                 import subprocess
-                p = subprocess.Popen(['gdb', sys.executable, str(p.pid)],
-                                     stdin=subprocess.PIPE)
                 try:
-                    p.communicate(b'bt 50', timeout=10)
+                    subprocess.check_call(['strace', '-p', str(p.pid)],
+                                          timeout=10)
                 except subprocess.TimeoutExpired:
-                    p.kill()
+                    pass
                 raise
             finally:
                 signal.signal(signal.SIGALRM, old_handler)
