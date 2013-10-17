@@ -18,7 +18,7 @@ from . import protocols
 from . import selector_events
 from . import tasks
 from . import transports
-from .log import asyncio_log
+from .log import logger
 
 
 __all__ = ['SelectorEventLoop', 'STDIN', 'STDOUT', 'STDERR']
@@ -79,7 +79,7 @@ class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 try:
                     signal.set_wakeup_fd(-1)
                 except ValueError as nexc:
-                    asyncio_log.info('set_wakeup_fd(-1) failed: %s', nexc)
+                    logger.info('set_wakeup_fd(-1) failed: %s', nexc)
 
             if exc.errno == errno.EINVAL:
                 raise RuntimeError('sig {} cannot be caught'.format(sig))
@@ -124,7 +124,7 @@ class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
             try:
                 signal.set_wakeup_fd(-1)
             except ValueError as exc:
-                asyncio_log.info('set_wakeup_fd(-1) failed: %s', exc)
+                logger.info('set_wakeup_fd(-1) failed: %s', exc)
 
         return True
 
@@ -185,7 +185,7 @@ class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
             if transp is not None:
                 transp._process_exited(returncode)
         except Exception:
-            asyncio_log.exception('Unknown exception in SIGCHLD handler')
+            logger.exception('Unknown exception in SIGCHLD handler')
 
     def _subprocess_closed(self, transport):
         pid = transport.get_pid()
@@ -244,7 +244,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
     def _fatal_error(self, exc):
         # should be called by exception handler only
-        asyncio_log.exception('Fatal error for %s', self)
+        logger.exception('Fatal error for %s', self)
         self._close(exc)
 
     def _close(self, exc):
@@ -294,8 +294,8 @@ class _UnixWritePipeTransport(transports.WriteTransport):
 
         if self._conn_lost or self._closing:
             if self._conn_lost >= constants.LOG_THRESHOLD_FOR_CONNLOST_WRITES:
-                asyncio_log.warning('pipe closed by peer or '
-                                    'os.write(pipe, data) raised exception.')
+                logger.warning('pipe closed by peer or '
+                               'os.write(pipe, data) raised exception.')
             self._conn_lost += 1
             return
 
@@ -369,7 +369,7 @@ class _UnixWritePipeTransport(transports.WriteTransport):
 
     def _fatal_error(self, exc):
         # should be called by exception handler only
-        asyncio_log.exception('Fatal error for %s', self)
+        logger.exception('Fatal error for %s', self)
         self._close(exc)
 
     def _close(self, exc=None):

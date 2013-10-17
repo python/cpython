@@ -87,7 +87,7 @@ class SelectorEventLoopTests(unittest.TestCase):
             signal.SIGINT, lambda: True)
 
     @unittest.mock.patch('asyncio.unix_events.signal')
-    @unittest.mock.patch('asyncio.unix_events.asyncio_log')
+    @unittest.mock.patch('asyncio.unix_events.logger')
     def test_add_signal_handler_install_error2(self, m_logging, m_signal):
         m_signal.NSIG = signal.NSIG
 
@@ -104,7 +104,7 @@ class SelectorEventLoopTests(unittest.TestCase):
         self.assertEqual(1, m_signal.set_wakeup_fd.call_count)
 
     @unittest.mock.patch('asyncio.unix_events.signal')
-    @unittest.mock.patch('asyncio.unix_events.asyncio_log')
+    @unittest.mock.patch('asyncio.unix_events.logger')
     def test_add_signal_handler_install_error3(self, m_logging, m_signal):
         class Err(OSError):
             errno = errno.EINVAL
@@ -149,7 +149,7 @@ class SelectorEventLoopTests(unittest.TestCase):
             m_signal.signal.call_args[0])
 
     @unittest.mock.patch('asyncio.unix_events.signal')
-    @unittest.mock.patch('asyncio.unix_events.asyncio_log')
+    @unittest.mock.patch('asyncio.unix_events.logger')
     def test_remove_signal_handler_cleanup_error(self, m_logging, m_signal):
         m_signal.NSIG = signal.NSIG
         self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
@@ -270,7 +270,7 @@ class SelectorEventLoopTests(unittest.TestCase):
         self.assertFalse(m_WEXITSTATUS.called)
         self.assertFalse(m_WTERMSIG.called)
 
-    @unittest.mock.patch('asyncio.unix_events.asyncio_log')
+    @unittest.mock.patch('asyncio.unix_events.logger')
     @unittest.mock.patch('os.WTERMSIG')
     @unittest.mock.patch('os.WEXITSTATUS')
     @unittest.mock.patch('os.WIFSIGNALED')
@@ -360,7 +360,7 @@ class UnixReadPipeTransportTests(unittest.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertFalse(self.protocol.data_received.called)
 
-    @unittest.mock.patch('asyncio.log.asyncio_log.exception')
+    @unittest.mock.patch('asyncio.log.logger.exception')
     @unittest.mock.patch('os.read')
     def test__read_ready_error(self, m_read, m_logexc):
         tr = unix_events._UnixReadPipeTransport(
@@ -550,7 +550,7 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         self.loop.assert_writer(5, tr._write_ready)
         self.assertEqual([b'data'], tr._buffer)
 
-    @unittest.mock.patch('asyncio.unix_events.asyncio_log')
+    @unittest.mock.patch('asyncio.unix_events.logger')
     @unittest.mock.patch('os.write')
     def test_write_err(self, m_write, m_log):
         tr = unix_events._UnixWritePipeTransport(
@@ -648,7 +648,7 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         self.loop.assert_writer(5, tr._write_ready)
         self.assertEqual([b'data'], tr._buffer)
 
-    @unittest.mock.patch('asyncio.log.asyncio_log.exception')
+    @unittest.mock.patch('asyncio.log.logger.exception')
     @unittest.mock.patch('os.write')
     def test__write_ready_err(self, m_write, m_logexc):
         tr = unix_events._UnixWritePipeTransport(

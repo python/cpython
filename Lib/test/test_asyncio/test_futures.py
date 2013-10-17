@@ -170,20 +170,20 @@ class FutureTests(unittest.TestCase):
         self.assertRaises(AssertionError, test)
         fut.cancel()
 
-    @unittest.mock.patch('asyncio.futures.asyncio_log')
+    @unittest.mock.patch('asyncio.futures.logger')
     def test_tb_logger_abandoned(self, m_log):
         fut = futures.Future(loop=self.loop)
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.futures.asyncio_log')
+    @unittest.mock.patch('asyncio.futures.logger')
     def test_tb_logger_result_unretrieved(self, m_log):
         fut = futures.Future(loop=self.loop)
         fut.set_result(42)
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.futures.asyncio_log')
+    @unittest.mock.patch('asyncio.futures.logger')
     def test_tb_logger_result_retrieved(self, m_log):
         fut = futures.Future(loop=self.loop)
         fut.set_result(42)
@@ -191,7 +191,7 @@ class FutureTests(unittest.TestCase):
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.futures.asyncio_log')
+    @unittest.mock.patch('asyncio.futures.logger')
     def test_tb_logger_exception_unretrieved(self, m_log):
         fut = futures.Future(loop=self.loop)
         fut.set_exception(RuntimeError('boom'))
@@ -199,7 +199,7 @@ class FutureTests(unittest.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertTrue(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.futures.asyncio_log')
+    @unittest.mock.patch('asyncio.futures.logger')
     def test_tb_logger_exception_retrieved(self, m_log):
         fut = futures.Future(loop=self.loop)
         fut.set_exception(RuntimeError('boom'))
@@ -207,7 +207,7 @@ class FutureTests(unittest.TestCase):
         del fut
         self.assertFalse(m_log.error.called)
 
-    @unittest.mock.patch('asyncio.futures.asyncio_log')
+    @unittest.mock.patch('asyncio.futures.logger')
     def test_tb_logger_exception_result_retrieved(self, m_log):
         fut = futures.Future(loop=self.loop)
         fut.set_exception(RuntimeError('boom'))
