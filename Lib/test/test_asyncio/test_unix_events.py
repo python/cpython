@@ -10,6 +10,9 @@ import sys
 import unittest
 import unittest.mock
 
+if sys.platform == 'win32':
+    raise unittest.SkipTest('UNIX only')
+
 
 from asyncio import events
 from asyncio import futures
