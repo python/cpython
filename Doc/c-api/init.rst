@@ -86,6 +86,33 @@ Process-wide parameters
 =======================
 
 
+.. c:function:: int Py_SetStandardStreamEncoding(char *encoding, char *errors)
+
+   .. index::
+      single: Py_Initialize()
+      single: main()
+      triple: stdin; stdout; sdterr
+
+   This function should be called before :c:func:`Py_Initialize`. It
+   specifies which encoding and error handling to use with standard io,
+   with the same meanings as in :func:`str.encode`.
+
+   It overrides :envvar:`PYTHONIOENCODING` values, and allows embedding code
+   to control io encoding when the environment variable does not work.
+
+   ``encoding`` and/or ``errors`` may be NULL to use
+   :envvar:`PYTHONIOENCODING` and/or default values (depending on other
+   settings).
+
+   Note that :data:`sys.stderr` always uses the "backslashreplace" error
+   handler, regardless of this (or any other) setting.
+
+   If :c:func:`Py_Finalize` is called, this function will need to be called
+   again in order to affect subsequent calls to :c:func:`Py_Initialize`.
+
+   Returns 0 if successful.
+
+
 .. c:function:: void Py_SetProgramName(wchar_t *name)
 
    .. index::

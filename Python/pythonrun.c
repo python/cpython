@@ -134,6 +134,40 @@ Py_IsInitialized(void)
     return initialized;
 }
 
+/* Helper to allow an embedding application to override the normal
+ * mechanism that attempts to figure out an appropriate IO encoding
+ */
+
+static char *_Py_StandardStreamEncoding = NULL;
+static char *_Py_StandardStreamErrors = NULL;
+
+int
+Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
+{
+    if (Py_IsInitialized()) {
+        /* This is too late to have any effect */
+        return -1;
+    }
+    if (encoding) {
+        _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
+        if (!_Py_StandardStreamEncoding) {
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    if (errors) {
+        _Py_StandardStreamErrors = _PyMem_RawStrdup(errors);
+        if (!_Py_StandardStreamErrors) {
+            if (_Py_StandardStreamEncoding) {
+                PyMem_RawFree(_Py_StandardStreamEncoding);
+            }
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /* Global initializations.  Can be undone by Py_Finalize().  Don't
    call this twice without an intervening Py_Finalize() call.  When
    initializations fail, a fatal error is issued and the function does
@@ -1088,23 +1122,29 @@ initstdio(void)
     }
     Py_DECREF(wrapper);
 
-    pythonioencoding = Py_GETENV("PYTHONIOENCODING");
-    encoding = errors = NULL;
-    if (pythonioencoding) {
-        pythonioencoding = _PyMem_Strdup(pythonioencoding);
-        if (pythonioencoding == NULL) {
-            PyErr_NoMemory();
-            goto error;
+    encoding = _Py_StandardStreamEncoding;
+    errors = _Py_StandardStreamErrors;
+    if (!encoding || !errors) {
+        pythonioencoding = Py_GETENV("PYTHONIOENCODING");
+        if (pythonioencoding) {
+            char *err;
+            pythonioencoding = _PyMem_Strdup(pythonioencoding);
+            if (pythonioencoding == NULL) {
+                PyErr_NoMemory();
+                goto error;
+            }
+            err = strchr(pythonioencoding, ':');
+            if (err) {
+                *err = '\0';
+                err++;
+                if (*err && !errors) {
+                    errors = err;
+                }
+            }
+            if (*pythonioencoding && !encoding) {
+                encoding = pythonioencoding;
+            }
         }
-        errors = strchr(pythonioencoding, ':');
-        if (errors) {
-            *errors = '\0';
-            errors++;
-            if (!*errors)
-                errors = NULL;
-        }
-        if (*pythonioencoding)
-            encoding = pythonioencoding;
     }
 
     /* Set sys.stdin */
@@ -1184,6 +1224,15 @@ initstdio(void)
         status = -1;
     }
 
+    /* We won't need them anymore. */
+    if (_Py_StandardStreamEncoding) {
+        PyMem_RawFree(_Py_StandardStreamEncoding);
+        _Py_StandardStreamEncoding = NULL;
+    }
+    if (_Py_StandardStreamErrors) {
+        PyMem_RawFree(_Py_StandardStreamErrors);
+        _Py_StandardStreamErrors = NULL;
+    }
     PyMem_Free(pythonioencoding);
     Py_XDECREF(bimod);
     Py_XDECREF(iomod);

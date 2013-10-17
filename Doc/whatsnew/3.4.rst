@@ -564,7 +564,10 @@ Build and C API Changes
 
 Changes to Python's build process and to the C API include:
 
-* None yet.
+* The new :c:func:`Py_SetStandardStreamEncoding` pre-initialization API
+  allows applications embedding the CPython interpreter to reliably force
+  a particular encoding and error handler for the standard streams
+  (Contributed by Bastien Montagne and Nick Coghlan in :issue:`16129`)
 
 
 Deprecated

@@ -120,6 +120,14 @@ Library
 - Issue #4366: Fix building extensions on all platforms when --enable-shared
   is used.
 
+C API
+-----
+
+- Issue #16129: Added a `Py_SetStandardStreamEncoding` pre-initialization API
+  to allow embedding applications like Blender to force a particular
+  encoding and error handler for the standard IO streams (initial patch by
+  Bastien Montagne)
+
 Tests
 -----
 
