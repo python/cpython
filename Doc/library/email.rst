@@ -53,6 +53,7 @@ Contents of the :mod:`email` package documentation:
    email.generator.rst
    email.policy.rst
    email.headerregistry.rst
+   email.contentmanager.rst
    email.mime.rst
    email.header.rst
    email.charset.rst

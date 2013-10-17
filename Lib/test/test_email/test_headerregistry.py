@@ -661,13 +661,25 @@ class TestContentTypeHeader(TestHeaderBase):
             'text/plain; name="ascii_is_the_default"'),
 
         'rfc2231_bad_character_in_charset_parameter_value': (
-            "text/plain; charset*=ascii''utf-8%E2%80%9D",
+            "text/plain; charset*=ascii''utf-8%F1%F2%F3",
             'text/plain',
             'text',
             'plain',
             {'charset': 'utf-8\uFFFD\uFFFD\uFFFD'},
             [errors.UndecodableBytesDefect],
             'text/plain; charset="utf-8\uFFFD\uFFFD\uFFFD"'),
+
+        'rfc2231_utf_8_in_supposedly_ascii_charset_parameter_value': (
+            "text/plain; charset*=ascii''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [errors.UndecodableBytesDefect],
+            'text/plain; charset="utf-8”"',
+            ),
+            # XXX: if the above were *re*folded, it would get tagged as utf-8
+            # instead of ascii in the param, since it now contains non-ASCII.
 
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'

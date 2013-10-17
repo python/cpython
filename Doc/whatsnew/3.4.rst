@@ -280,6 +280,21 @@ result:  a bytes object containing the fully formatted message.
 
 (Contributed by R. David Murray in :issue:`18600`.)
 
+A pair of new subclasses of :class:`~email.message.Message` have been added,
+along with a new sub-module, :mod:`~email.contentmanager`.  All documentation
+is currently in the new module, which is being added as part of the new
+:term:`provisional <provosional package>` email API.  These classes provide a
+number of new methods that make extracting content from and inserting content
+into email messages much easier.  See the :mod:`~email.contentmanager`
+documentation for details.
+
+These API additions complete the bulk of the work that was planned as part of
+the email6 project.  The currently provisional API is scheduled to become final
+in Python 3.5 (possibly with a few minor additions in the area of error
+handling).
+
+(Contributed by R. David Murray in :issue:`18891`.)
+
 
 functools
 ---------

@@ -5,6 +5,7 @@ code that adds all the email6 features.
 from email._policybase import Policy, Compat32, compat32, _extend_docstrings
 from email.utils import _has_surrogates
 from email.headerregistry import HeaderRegistry as HeaderRegistry
+from email.contentmanager import raw_data_manager
 
 __all__ = [
     'Compat32',
@@ -58,10 +59,22 @@ class EmailPolicy(Policy):
                            special treatment, while all other fields are
                            treated as unstructured.  This list will be
                            completed before the extension is marked stable.)
+
+    content_manager     -- an object with at least two methods: get_content
+                           and set_content.  When the get_content or
+                           set_content method of a Message object is called,
+                           it calls the corresponding method of this object,
+                           passing it the message object as its first argument,
+                           and any arguments or keywords that were passed to
+                           it as additional arguments.  The default
+                           content_manager is
+                           :data:`~email.contentmanager.raw_data_manager`.
+
     """
 
     refold_source = 'long'
     header_factory = HeaderRegistry()
+    content_manager = raw_data_manager
 
     def __init__(self, **kw):
         # Ensure that each new instance gets a unique header factory

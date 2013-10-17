@@ -371,7 +371,7 @@ added matters.  To illustrate::
    to) :rfc:`5322`, :rfc:`2047`, and the current MIME RFCs.
 
    This policy adds new header parsing and folding algorithms.  Instead of
-   simple strings, headers are custom objects with custom attributes depending
+   simple strings, headers are ``str`` subclasses with attributes that depend
    on the type of the field.  The parsing and folding algorithm fully implement
    :rfc:`2047` and :rfc:`5322`.
 
@@ -408,6 +408,20 @@ added matters.  To illustrate::
       fields are treated as unstructured.  This list will be completed before
       the extension is marked stable.)
 
+   .. attribute:: content_manager
+
+      An object with at least two methods: get_content and set_content.  When
+      the :meth:`~email.message.Message.get_content` or
+      :meth:`~email.message.Message.set_content` method of a
+      :class:`~email.message.Message` object is called, it calls the
+      corresponding method of this object, passing it the message object as its
+      first argument, and any arguments or keywords that were passed to it as
+      additional arguments.  By default ``content_manager`` is set to
+      :data:`~email.contentmanager.raw_data_manager`.
+
+      .. versionadded 3.4
+
+
    The class provides the following concrete implementations of the abstract
    methods of :class:`Policy`:
 
@@ -427,7 +441,7 @@ added matters.  To illustrate::
       The name is returned unchanged.  If the input value has a ``name``
       attribute and it matches *name* ignoring case, the value is returned
       unchanged.  Otherwise the *name* and *value* are passed to
-      ``header_factory``, and the resulting custom header object is returned as
+      ``header_factory``, and the resulting header object is returned as
       the value.  In this case a ``ValueError`` is raised if the input value
       contains CR or LF characters.
 
@@ -435,7 +449,7 @@ added matters.  To illustrate::
 
       If the value has a ``name`` attribute, it is returned to unmodified.
       Otherwise the *name*, and the *value* with any CR or LF characters
-      removed, are passed to the ``header_factory``, and the resulting custom
+      removed, are passed to the ``header_factory``, and the resulting
       header object is returned.  Any surrogateescaped bytes get turned into
       the unicode unknown-character glyph.
 
@@ -445,9 +459,9 @@ added matters.  To illustrate::
       A value is considered to be a 'source value' if and only if it does not
       have a ``name`` attribute (having a ``name`` attribute means it is a
       header object of some sort).  If a source value needs to be refolded
-      according to the policy, it is converted into a custom header object by
+      according to the policy, it is converted into a header object by
       passing the *name* and the *value* with any CR and LF characters removed
-      to the ``header_factory``.  Folding of a custom header object is done by
+      to the ``header_factory``.  Folding of a header object is done by
       calling its ``fold`` method with the current policy.
 
       Source values are split into lines using :meth:`~str.splitlines`.  If
@@ -502,23 +516,23 @@ With all of these :class:`EmailPolicies <.EmailPolicy>`, the effective API of
 the email package is changed from the Python 3.2 API in the following ways:
 
    * Setting a header on a :class:`~email.message.Message` results in that
-     header being parsed and a custom header object created.
+     header being parsed and a header object created.
 
    * Fetching a header value from a :class:`~email.message.Message` results
-     in that header being parsed and a custom header object created and
+     in that header being parsed and a header object created and
      returned.
 
-   * Any custom header object, or any header that is refolded due to the
+   * Any header object, or any header that is refolded due to the
      policy settings, is folded using an algorithm that fully implements the
      RFC folding algorithms, including knowing where encoded words are required
      and allowed.
 
 From the application view, this means that any header obtained through the
-:class:`~email.message.Message` is a custom header object with custom
+:class:`~email.message.Message` is a header object with extra
 attributes, whose string value is the fully decoded unicode value of the
 header.  Likewise, a header may be assigned a new value, or a new header
 created, using a unicode string, and the policy will take care of converting
 the unicode string into the correct RFC encoded form.
 
-The custom header objects and their attributes are described in
+The header objects and their attributes are described in
 :mod:`~email.headerregistry`.
