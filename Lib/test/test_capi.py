@@ -292,7 +292,8 @@ class EmbeddingTests(unittest.TestCase):
         stdin: latin-1:surrogateescape
         stdout: latin-1:surrogateescape
         stderr: latin-1:backslashreplace""").format(sys)
-
+        # Looks like this overspecifies the output :(
+        self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
 
 class SkipitemTest(unittest.TestCase):
