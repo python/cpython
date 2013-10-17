@@ -76,6 +76,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19276: Fixed the wave module on 64-bit big-endian platforms.
+
 - Issue #18776: atexit callbacks now display their full traceback when they
   raise an exception.
 
