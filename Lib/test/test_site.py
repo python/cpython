@@ -450,7 +450,7 @@ class StartupImportTests(unittest.TestCase):
         collection_mods = {'_collections', 'collections', 'functools',
                            'heapq', 'itertools', 'keyword', 'operator',
                            'reprlib', 'types', 'weakref'}
-        self.assertFalse(modules.intersection(re_mods), stderr)
+        self.assertFalse(modules.intersection(collection_mods), stderr)
 
 
 if __name__ == "__main__":
