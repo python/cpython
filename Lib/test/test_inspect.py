@@ -126,7 +126,6 @@ class TestPredicates(IsTestBase):
     def test_get_slot_members(self):
         class C(object):
             __slots__ = ("a", "b")
-
         x = C()
         x.a = 42
         members = dict(inspect.getmembers(x))
@@ -469,13 +468,13 @@ class _BrokenDataDescriptor(object):
     A broken data descriptor. See bug #1785.
     """
     def __get__(*args):
-        raise AssertionError("should not __get__ data descriptors")
+        raise AttributeError("broken data descriptor")
 
     def __set__(*args):
         raise RuntimeError
 
     def __getattr__(*args):
-        raise AssertionError("should not __getattr__ data descriptors")
+        raise AttributeError("broken data descriptor")
 
 
 class _BrokenMethodDescriptor(object):
@@ -483,10 +482,10 @@ class _BrokenMethodDescriptor(object):
     A broken method descriptor. See bug #1785.
     """
     def __get__(*args):
-        raise AssertionError("should not __get__ method descriptors")
+        raise AttributeError("broken method descriptor")
 
     def __getattr__(*args):
-        raise AssertionError("should not __getattr__ method descriptors")
+        raise AttributeError("broken method descriptor")
 
 
 # Helper for testing classify_class_attrs.
@@ -656,13 +655,77 @@ class TestClassesAndFunctions(unittest.TestCase):
             if isinstance(builtin, type):
                 inspect.classify_class_attrs(builtin)
 
-    def test_classify_VirtualAttribute(self):
-        class VA:
+    def test_classify_DynamicClassAttribute(self):
+        class Meta(type):
+            def __getattr__(self, name):
+                if name == 'ham':
+                    return 'spam'
+                return super().__getattr__(name)
+        class VA(metaclass=Meta):
             @types.DynamicClassAttribute
             def ham(self):
                 return 'eggs'
-        should_find = inspect.Attribute('ham', 'data', VA, VA.__dict__['ham'])
-        self.assertIn(should_find, inspect.classify_class_attrs(VA))
+        should_find_dca = inspect.Attribute('ham', 'data', VA, VA.__dict__['ham'])
+        self.assertIn(should_find_dca, inspect.classify_class_attrs(VA))
+        should_find_ga = inspect.Attribute('ham', 'data', VA, 'spam')
+        self.assertIn(should_find_ga, inspect.classify_class_attrs(VA))
+
+    def test_classify_VirtualAttribute(self):
+        class Meta(type):
+            def __dir__(cls):
+                return ['__class__', '__module__', '__name__', 'BOOM']
+            def __getattr__(self, name):
+                if name =='BOOM':
+                    return 42
+                return super().__getattr(name)
+        class Class(metaclass=Meta):
+            pass
+        should_find = inspect.Attribute('BOOM', 'data', Class, 42)
+        self.assertIn(should_find, inspect.classify_class_attrs(Class))
+
+    def test_classify_VirtualAttribute_multi_classes(self):
+        class Meta1(type):
+            def __dir__(cls):
+                return ['__class__', '__module__', '__name__', 'one']
+            def __getattr__(self, name):
+                if name =='one':
+                    return 1
+                return super().__getattr__(name)
+        class Meta2(type):
+            def __dir__(cls):
+                return ['__class__', '__module__', '__name__', 'two']
+            def __getattr__(self, name):
+                if name =='two':
+                    return 2
+                return super().__getattr__(name)
+        class Meta3(Meta1, Meta2):
+            def __dir__(cls):
+                return list(sorted(set(['__class__', '__module__', '__name__', 'three'] +
+                    Meta1.__dir__(cls) + Meta2.__dir__(cls))))
+            def __getattr__(self, name):
+                if name =='three':
+                    return 3
+                return super().__getattr__(name)
+        class Class1(metaclass=Meta1):
+            pass
+        class Class2(Class1, metaclass=Meta3):
+            pass
+
+        should_find1 = inspect.Attribute('one', 'data', Class1, 1)
+        should_find2 = inspect.Attribute('two', 'data', Class2, 2)
+        should_find3 = inspect.Attribute('three', 'data', Class2, 3)
+        cca = inspect.classify_class_attrs(Class2)
+        for sf in (should_find1, should_find2, should_find3):
+            self.assertIn(sf, cca)
+
+    def test_classify_class_attrs_with_buggy_dir(self):
+        class M(type):
+            def __dir__(cls):
+                return ['__class__', '__name__', 'missing']
+        class C(metaclass=M):
+            pass
+        attrs = [a[0] for a in inspect.classify_class_attrs(C)]
+        self.assertNotIn('missing', attrs)
 
     def test_getmembers_descriptors(self):
         class A(object):
@@ -708,11 +771,26 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
 
     def test_getmembers_VirtualAttribute(self):
-        class A:
+        class M(type):
+            def __getattr__(cls, name):
+                if name == 'eggs':
+                    return 'scrambled'
+                return super().__getattr__(name)
+        class A(metaclass=M):
             @types.DynamicClassAttribute
             def eggs(self):
                 return 'spam'
-        self.assertIn(('eggs', A.__dict__['eggs']), inspect.getmembers(A))
+        self.assertIn(('eggs', 'scrambled'), inspect.getmembers(A))
+        self.assertIn(('eggs', 'spam'), inspect.getmembers(A()))
+
+    def test_getmembers_with_buggy_dir(self):
+        class M(type):
+            def __dir__(cls):
+                return ['__class__', '__name__', 'missing']
+        class C(metaclass=M):
+            pass
+        attrs = [a[0] for a in inspect.getmembers(C)]
+        self.assertNotIn('missing', attrs)
 
 
 _global_ref = object()

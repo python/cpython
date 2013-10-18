@@ -280,18 +280,22 @@ def getmembers(object, predicate=None):
     except AttributeError:
         pass
     for key in names:
-        # First try to get the value via __dict__. Some descriptors don't
-        # like calling their __get__ (see bug #1785).
-        for base in mro:
-            if key in base.__dict__ and key not in processed:
-                # handle the normal case first; if duplicate entries exist
-                # they will be handled second
-                value = base.__dict__[key]
-                break
-        else:
-            try:
-                value = getattr(object, key)
-            except AttributeError:
+        # First try to get the value via getattr.  Some descriptors don't
+        # like calling their __get__ (see bug #1785), so fall back to
+        # looking in the __dict__.
+        try:
+            value = getattr(object, key)
+            # handle the duplicate key
+            if key in processed:
+                raise AttributeError
+        except AttributeError:
+            for base in mro:
+                if key in base.__dict__:
+                    value = base.__dict__[key]
+                    break
+            else:
+                # could be a (currently) missing slot member, or a buggy
+                # __dir__; discard and move on
                 continue
         if not predicate or predicate(value):
             results.append((key, value))
@@ -336,7 +340,7 @@ def classify_class_attrs(cls):
     # add any virtual attributes to the list of names
     # this may result in duplicate entries if, for example, a virtual
     # attribute with the same name as a member property exists
-    for base in cls.__bases__:
+    for base in mro:
         for k, v in base.__dict__.items():
             if isinstance(v, types.DynamicClassAttribute):
                 names.append(k)
@@ -356,36 +360,43 @@ def classify_class_attrs(cls):
         homecls = None
         get_obj = sentinel
         dict_obj = sentinel
-
-
         if name not in processed:
             try:
                 get_obj = getattr(cls, name)
             except Exception as exc:
                 pass
             else:
-                homecls = getattr(get_obj, "__class__")
                 homecls = getattr(get_obj, "__objclass__", homecls)
                 if homecls not in possible_bases:
                     # if the resulting object does not live somewhere in the
-                    # mro, drop it and go with the dict_obj version only
+                    # mro, drop it and search the mro manually
                     homecls = None
-                    get_obj = sentinel
-
+                    last_cls = None
+                    last_obj = None
+                    for srch_cls in ((cls,) + mro):
+                        srch_obj = getattr(srch_cls, name, None)
+                        if srch_obj is get_obj:
+                            last_cls = srch_cls
+                            last_obj = srch_obj
+                    if last_cls is not None:
+                        homecls = last_cls
         for base in possible_bases:
             if name in base.__dict__:
                 dict_obj = base.__dict__[name]
                 homecls = homecls or base
                 break
-
+        if homecls is None:
+            # unable to locate the attribute anywhere, most likely due to
+            # buggy custom __dir__; discard and move on
+            continue
         # Classify the object or its descriptor.
         if get_obj is not sentinel:
             obj = get_obj
         else:
             obj = dict_obj
-        if isinstance(obj, staticmethod):
+        if isinstance(dict_obj, staticmethod):
             kind = "static method"
-        elif isinstance(obj, classmethod):
+        elif isinstance(dict_obj, classmethod):
             kind = "class method"
         elif isinstance(obj, property):
             kind = "property"
@@ -393,10 +404,8 @@ def classify_class_attrs(cls):
             kind = "method"
         else:
             kind = "data"
-
         result.append(Attribute(name, kind, homecls, obj))
         processed.add(name)
-
     return result
 
 # ----------------------------------------------------------- class helpers
