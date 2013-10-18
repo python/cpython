@@ -238,7 +238,7 @@ class EventLoopTestsMixin:
         self.loop.run_forever()
         t1 = time.monotonic()
         self.assertEqual(results, ['hello world'])
-        self.assertTrue(0.09 <= t1-t0 <= 0.12, t1-t0)
+        self.assertTrue(0.08 <= t1-t0 <= 0.2, t1-t0)
 
     def test_call_soon(self):
         results = []

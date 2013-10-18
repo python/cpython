@@ -375,21 +375,21 @@ class UnixReadPipeTransportTests(unittest.TestCase):
         m_logexc.assert_called_with('Fatal error for %s', tr)
 
     @unittest.mock.patch('os.read')
-    def test_pause(self, m_read):
+    def test_pause_reading(self, m_read):
         tr = unix_events._UnixReadPipeTransport(
             self.loop, self.pipe, self.protocol)
 
         m = unittest.mock.Mock()
         self.loop.add_reader(5, m)
-        tr.pause()
+        tr.pause_reading()
         self.assertFalse(self.loop.readers)
 
     @unittest.mock.patch('os.read')
-    def test_resume(self, m_read):
+    def test_resume_reading(self, m_read):
         tr = unix_events._UnixReadPipeTransport(
             self.loop, self.pipe, self.protocol)
 
-        tr.resume()
+        tr.resume_reading()
         self.loop.assert_reader(5, tr._read_ready)
 
     @unittest.mock.patch('os.read')

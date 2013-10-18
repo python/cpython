@@ -29,15 +29,15 @@ class BaseTransport:
 class ReadTransport(BaseTransport):
     """ABC for read-only transports."""
 
-    def pause(self):
+    def pause_reading(self):
         """Pause the receiving end.
 
         No data will be passed to the protocol's data_received()
-        method until resume() is called.
+        method until resume_reading() is called.
         """
         raise NotImplementedError
 
-    def resume(self):
+    def resume_reading(self):
         """Resume the receiving end.
 
         Data received will once again be passed to the protocol's
