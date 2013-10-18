@@ -33,8 +33,8 @@ class TransportTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, transport.write, 'data')
         self.assertRaises(NotImplementedError, transport.write_eof)
         self.assertRaises(NotImplementedError, transport.can_write_eof)
-        self.assertRaises(NotImplementedError, transport.pause)
-        self.assertRaises(NotImplementedError, transport.resume)
+        self.assertRaises(NotImplementedError, transport.pause_reading)
+        self.assertRaises(NotImplementedError, transport.resume_reading)
         self.assertRaises(NotImplementedError, transport.close)
         self.assertRaises(NotImplementedError, transport.abort)
 
