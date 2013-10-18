@@ -10,6 +10,11 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #18810: Shift stat calls in importlib.machinery.FileFinder such that
+  the code is optimistic that if something exists in a directory named exactly
+  like the possible package being searched for that it's in actuality a
+  directory.
+
 - Issue #18416: importlib.machinery.PathFinder now treats '' as the cwd and
   importlib.machinery.FileFinder no longer special-cases '' to '.'. This leads
   to modules imported from cwd to now possess an absolute file path for
