@@ -121,7 +121,7 @@ class BaseEventLoopTests(unittest.TestCase):
         t0 = self.loop.time()
         self.loop.run_forever()
         t1 = self.loop.time()
-        self.assertTrue(0.09 <= t1-t0 <= 0.12, t1-t0)
+        self.assertTrue(0.09 <= t1-t0 <= 0.9, t1-t0)
 
     def test_run_once_in_executor_handle(self):
         def cb():
