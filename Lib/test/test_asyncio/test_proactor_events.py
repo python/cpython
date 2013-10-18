@@ -308,7 +308,7 @@ class ProactorSocketTransportTests(unittest.TestCase):
             tr.write_eof()
         tr.close()
 
-    def test_pause_resume(self):
+    def test_pause_resume_reading(self):
         tr = _ProactorSocketTransport(
             self.loop, self.sock, self.protocol)
         futures = []
@@ -323,12 +323,12 @@ class ProactorSocketTransportTests(unittest.TestCase):
         self.protocol.data_received.assert_called_with(b'data1')
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
-        tr.pause()
+        tr.pause_reading()
         self.assertTrue(tr._paused)
         for i in range(10):
             self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data2')
-        tr.resume()
+        tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop._run_once()
         self.protocol.data_received.assert_called_with(b'data3')

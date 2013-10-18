@@ -232,10 +232,10 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 self._loop.call_soon(self._protocol.eof_received)
                 self._loop.call_soon(self._call_connection_lost, None)
 
-    def pause(self):
+    def pause_reading(self):
         self._loop.remove_reader(self._fileno)
 
-    def resume(self):
+    def resume_reading(self):
         self._loop.add_reader(self._fileno, self._read_ready)
 
     def close(self):
