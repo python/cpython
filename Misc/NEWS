@@ -230,7 +230,6 @@ Library
   existing directory caused mkstemp and related APIs to fail instead of
   retrying. Report and fix by Vlad Shcherbina.
 
-
 Tools/Demos
 -----------
 
@@ -3301,7 +3300,6 @@ Extension Modules
 
 - Issue #7567: Don't call `setupterm' twice.
 
-
 Tools/Demos
 -----------
 
@@ -4538,7 +4536,6 @@ Core and Builtins
 
 - Issue #7466: Segmentation fault when the garbage collector is called in the
   middle of populating a tuple.  Patch by Florent Xicluna.
-
 
 Library
 -------
@@ -7013,7 +7010,6 @@ Build
 
 - Issue #3215: Build sqlite3 as sqlite3.dll, not sqlite3.pyd.
 
-
 Documentation
 -------------
 
@@ -7078,7 +7074,6 @@ Core and Builtins
 - Added checks for integer overflows, contributed by Google. Some are
   only available if asserts are left in the code, in cases where they
   can't be triggered from Python code.
-
 
 Extension Modules
 -----------------
@@ -7386,7 +7381,6 @@ Build
   This option should be used in combination with ``--enable-universalsdk=``.
 
   NOTE: 64-bit and 4-way builds are only suppported on Mac OS X 10.5 (or later).
-
 
 C API
 -----
@@ -8262,7 +8256,6 @@ Core and builtins
 - Issue #1703448: A joined thread could show up in the
   threading.enumerate() list after the join() for a brief period until
   it actually exited.
-
 
 Library
 -------
@@ -9356,7 +9349,6 @@ Tools
   platform.python_implementation(); this will now be saved in the
   benchmark pickle.
 
-
 Documentation
 -------------
 
@@ -9407,7 +9399,6 @@ Documentation
   applied to a newly created list object and add notes that this isn't
   a good idea.
 
-
 Tools/Demos
 -----------
 
@@ -9419,7 +9410,6 @@ Tools/Demos
 
 - Bug #1546372: Fixed small bugglet in pybench that caused a missing
   file not to get reported properly.
-
 
 Build
 -----
@@ -9503,7 +9493,6 @@ Build
   pybuildbot.identify to include some information about the build
   environment.
 
-
 C API
 -----
 
@@ -9566,7 +9555,6 @@ C API
 - Bug #1542693: remove semi-colon at end of PyImport_ImportModuleEx
   macro so it can be used as an expression.
 
-
 Windows
 -------
 
@@ -9579,7 +9567,6 @@ Windows
   _CRT_NONSTDC_NO_DEPRECATE.
 
 - Bug #1216: Restore support for Visual Studio 2002.
-
 
 Mac
 ---
