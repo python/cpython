@@ -117,7 +117,7 @@ class DynamicClassAttribute:
         self.fset = fset
         self.fdel = fdel
         # next two lines make DynamicClassAttribute act the same as property
-        self.__doc__ = doc or fget.__doc__ or self.__doc__
+        self.__doc__ = doc or fget.__doc__
         self.overwrite_doc = doc is None
         # support for abstract methods
         self.__isabstractmethod__ = bool(getattr(fget, '__isabstractmethod__', False))
