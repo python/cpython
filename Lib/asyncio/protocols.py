@@ -29,6 +29,34 @@ class BaseProtocol:
         aborted or closed).
         """
 
+    def pause_writing(self):
+        """Called when the transport's buffer goes over the high-water mark.
+
+        Pause and resume calls are paired -- pause_writing() is called
+        once when the buffer goes strictly over the high-water mark
+        (even if subsequent writes increases the buffer size even
+        more), and eventually resume_writing() is called once when the
+        buffer size reaches the low-water mark.
+
+        Note that if the buffer size equals the high-water mark,
+        pause_writing() is not called -- it must go strictly over.
+        Conversely, resume_writing() is called when the buffer size is
+        equal or lower than the low-water mark.  These end conditions
+        are important to ensure that things go as expected when either
+        mark is zero.
+
+        NOTE: This is the only Protocol callback that is not called
+        through EventLoop.call_soon() -- if it were, it would have no
+        effect when it's most needed (when the app keeps writing
+        without yielding until pause_writing() is called).
+        """
+
+    def resume_writing(self):
+        """Called when the transport's buffer drains below the low-water mark.
+
+        See pause_writing() for details.
+        """
+
 
 class Protocol(BaseProtocol):
     """ABC representing a protocol.
