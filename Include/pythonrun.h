@@ -28,8 +28,13 @@ PyAPI_FUNC(wchar_t *) Py_GetProgramName(void);
 PyAPI_FUNC(void) Py_SetPythonHome(wchar_t *);
 PyAPI_FUNC(wchar_t *) Py_GetPythonHome(void);
 
+#ifndef Py_LIMITED_API
+/* Only used by applications that embed the interpreter and need to
+ * override the standard encoding determination mechanism
+ */
 PyAPI_FUNC(int) Py_SetStandardStreamEncoding(const char *encoding,
                                              const char *errors);
+#endif
 
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
