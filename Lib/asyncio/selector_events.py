@@ -406,13 +406,13 @@ class _SelectorSocketTransport(_SelectorTransport):
         if waiter is not None:
             self._loop.call_soon(waiter.set_result, None)
 
-    def pause(self):
-        assert not self._closing, 'Cannot pause() when closing'
+    def pause_reading(self):
+        assert not self._closing, 'Cannot pause_reading() when closing'
         assert not self._paused, 'Already paused'
         self._paused = True
         self._loop.remove_reader(self._sock_fd)
 
-    def resume(self):
+    def resume_reading(self):
         assert self._paused, 'Not paused'
         self._paused = False
         if self._closing:
@@ -590,19 +590,19 @@ class _SelectorSslTransport(_SelectorTransport):
         if self._waiter is not None:
             self._loop.call_soon(self._waiter.set_result, None)
 
-    def pause(self):
+    def pause_reading(self):
         # XXX This is a bit icky, given the comment at the top of
         # _on_ready().  Is it possible to evoke a deadlock?  I don't
         # know, although it doesn't look like it; write() will still
         # accept more data for the buffer and eventually the app will
-        # call resume() again, and things will flow again.
+        # call resume_reading() again, and things will flow again.
 
-        assert not self._closing, 'Cannot pause() when closing'
+        assert not self._closing, 'Cannot pause_reading() when closing'
         assert not self._paused, 'Already paused'
         self._paused = True
         self._loop.remove_reader(self._sock_fd)
 
-    def resume(self):
+    def resume_reading(self):
         assert self._paused, 'Not paused'
         self._paused = False
         if self._closing:

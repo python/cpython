@@ -94,12 +94,12 @@ class _ProactorReadPipeTransport(_ProactorBasePipeTransport,
         self._paused = False
         self._loop.call_soon(self._loop_reading)
 
-    def pause(self):
-        assert not self._closing, 'Cannot pause() when closing'
+    def pause_reading(self):
+        assert not self._closing, 'Cannot pause_reading() when closing'
         assert not self._paused, 'Already paused'
         self._paused = True
 
-    def resume(self):
+    def resume_reading(self):
         assert self._paused, 'Not paused'
         self._paused = False
         if self._closing:
