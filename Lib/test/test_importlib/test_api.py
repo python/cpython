@@ -1,15 +1,15 @@
 from . import util
 
-import importlib
-from importlib import _bootstrap
-from importlib import machinery
+frozen_init, source_init = util.import_importlib('importlib')
+frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
+
 import sys
 from test import support
 import types
 import unittest
 
 
-class ImportModuleTests(unittest.TestCase):
+class ImportModuleTests:
 
     """Test importlib.import_module."""
 
@@ -17,7 +17,7 @@ class ImportModuleTests(unittest.TestCase):
         # Test importing a top-level module.
         with util.mock_modules('top_level') as mock:
             with util.import_state(meta_path=[mock]):
-                module = importlib.import_module('top_level')
+                module = self.init.import_module('top_level')
                 self.assertEqual(module.__name__, 'top_level')
 
     def test_absolute_package_import(self):
@@ -27,7 +27,7 @@ class ImportModuleTests(unittest.TestCase):
         name = '{0}.mod'.format(pkg_name)
         with util.mock_modules(pkg_long_name, name) as mock:
             with util.import_state(meta_path=[mock]):
-                module = importlib.import_module(name)
+                module = self.init.import_module(name)
                 self.assertEqual(module.__name__, name)
 
     def test_shallow_relative_package_import(self):
@@ -39,17 +39,17 @@ class ImportModuleTests(unittest.TestCase):
         relative_name = '.{0}'.format(module_name)
         with util.mock_modules(pkg_long_name, absolute_name) as mock:
             with util.import_state(meta_path=[mock]):
-                importlib.import_module(pkg_name)
-                module = importlib.import_module(relative_name, pkg_name)
+                self.init.import_module(pkg_name)
+                module = self.init.import_module(relative_name, pkg_name)
                 self.assertEqual(module.__name__, absolute_name)
 
     def test_deep_relative_package_import(self):
         modules = ['a.__init__', 'a.b.__init__', 'a.c']
         with util.mock_modules(*modules) as mock:
             with util.import_state(meta_path=[mock]):
-                importlib.import_module('a')
-                importlib.import_module('a.b')
-                module = importlib.import_module('..c', 'a.b')
+                self.init.import_module('a')
+                self.init.import_module('a.b')
+                module = self.init.import_module('..c', 'a.b')
                 self.assertEqual(module.__name__, 'a.c')
 
     def test_absolute_import_with_package(self):
@@ -60,15 +60,15 @@ class ImportModuleTests(unittest.TestCase):
         name = '{0}.mod'.format(pkg_name)
         with util.mock_modules(pkg_long_name, name) as mock:
             with util.import_state(meta_path=[mock]):
-                importlib.import_module(pkg_name)
-                module = importlib.import_module(name, pkg_name)
+                self.init.import_module(pkg_name)
+                module = self.init.import_module(name, pkg_name)
                 self.assertEqual(module.__name__, name)
 
     def test_relative_import_wo_package(self):
         # Relative imports cannot happen without the 'package' argument being
         # set.
         with self.assertRaises(TypeError):
-            importlib.import_module('.support')
+            self.init.import_module('.support')
 
 
     def test_loaded_once(self):
@@ -77,7 +77,7 @@ class ImportModuleTests(unittest.TestCase):
         # module currently being imported.
         b_load_count = 0
         def load_a():
-            importlib.import_module('a.b')
+            self.init.import_module('a.b')
         def load_b():
             nonlocal b_load_count
             b_load_count += 1
@@ -85,11 +85,17 @@ class ImportModuleTests(unittest.TestCase):
         modules = ['a.__init__', 'a.b']
         with util.mock_modules(*modules, module_code=code) as mock:
             with util.import_state(meta_path=[mock]):
-                importlib.import_module('a.b')
+                self.init.import_module('a.b')
         self.assertEqual(b_load_count, 1)
 
+class Frozen_ImportModuleTests(ImportModuleTests, unittest.TestCase):
+    init = frozen_init
 
-class FindLoaderTests(unittest.TestCase):
+class Source_ImportModuleTests(ImportModuleTests, unittest.TestCase):
+    init = source_init
+
+
+class FindLoaderTests:
 
     class FakeMetaFinder:
         @staticmethod
@@ -103,7 +109,7 @@ class FindLoaderTests(unittest.TestCase):
             loader = 'a loader!'
             module.__loader__ = loader
             sys.modules[name] = module
-            found = importlib.find_loader(name)
+            found = self.init.find_loader(name)
             self.assertEqual(loader, found)
 
     def test_sys_modules_loader_is_None(self):
@@ -114,7 +120,7 @@ class FindLoaderTests(unittest.TestCase):
             module.__loader__ = None
             sys.modules[name] = module
             with self.assertRaises(ValueError):
-                importlib.find_loader(name)
+                self.init.find_loader(name)
 
     def test_sys_modules_loader_is_not_set(self):
         # Should raise ValueError
@@ -128,14 +134,14 @@ class FindLoaderTests(unittest.TestCase):
                 pass
             sys.modules[name] = module
             with self.assertRaises(ValueError):
-                importlib.find_loader(name)
+                self.init.find_loader(name)
 
     def test_success(self):
         # Return the loader found on sys.meta_path.
         name = 'some_mod'
         with util.uncache(name):
             with util.import_state(meta_path=[self.FakeMetaFinder]):
-                self.assertEqual((name, None), importlib.find_loader(name))
+                self.assertEqual((name, None), self.init.find_loader(name))
 
     def test_success_path(self):
         # Searching on a path should work.
@@ -144,14 +150,20 @@ class FindLoaderTests(unittest.TestCase):
         with util.uncache(name):
             with util.import_state(meta_path=[self.FakeMetaFinder]):
                 self.assertEqual((name, path),
-                                 importlib.find_loader(name, path))
+                                 self.init.find_loader(name, path))
 
     def test_nothing(self):
         # None is returned upon failure to find a loader.
-        self.assertIsNone(importlib.find_loader('nevergoingtofindthismodule'))
+        self.assertIsNone(self.init.find_loader('nevergoingtofindthismodule'))
+
+class Frozen_FindLoaderTests(FindLoaderTests, unittest.TestCase):
+    init = frozen_init
+
+class Source_FindLoaderTests(FindLoaderTests, unittest.TestCase):
+    init = source_init
 
 
-class ReloadTests(unittest.TestCase):
+class ReloadTests:
 
     """Test module reloading for builtin and extension modules."""
 
@@ -159,8 +171,8 @@ class ReloadTests(unittest.TestCase):
         for mod in ('tokenize', 'time', 'marshal'):
             with self.subTest(module=mod):
                 with support.CleanImport(mod):
-                    module = importlib.import_module(mod)
-                    importlib.reload(module)
+                    module = self.init.import_module(mod)
+                    self.init.reload(module)
 
     def test_module_replaced(self):
         def code():
@@ -172,14 +184,20 @@ class ReloadTests(unittest.TestCase):
                                  module_code={'top_level': code})
         with mock:
             with util.import_state(meta_path=[mock]):
-                module = importlib.import_module('top_level')
-                reloaded = importlib.reload(module)
+                module = self.init.import_module('top_level')
+                reloaded = self.init.reload(module)
                 actual = sys.modules['top_level']
                 self.assertEqual(actual.spam, 3)
                 self.assertEqual(reloaded.spam, 3)
 
+class Frozen_ReloadTests(ReloadTests, unittest.TestCase):
+    init = frozen_init
 
-class InvalidateCacheTests(unittest.TestCase):
+class Source_ReloadTests(ReloadTests, unittest.TestCase):
+    init = source_init
+
+
+class InvalidateCacheTests:
 
     def test_method_called(self):
         # If defined the method should be called.
@@ -198,7 +216,7 @@ class InvalidateCacheTests(unittest.TestCase):
         self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
         sys.path_importer_cache[key] = path_ins
         self.addCleanup(lambda: sys.meta_path.remove(meta_ins))
-        importlib.invalidate_caches()
+        self.init.invalidate_caches()
         self.assertTrue(meta_ins.called)
         self.assertTrue(path_ins.called)
 
@@ -207,19 +225,27 @@ class InvalidateCacheTests(unittest.TestCase):
         key = 'gobbledeegook'
         sys.path_importer_cache[key] = None
         self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
-        importlib.invalidate_caches()  # Shouldn't trigger an exception.
+        self.init.invalidate_caches()  # Shouldn't trigger an exception.
+
+class Frozen_InvalidateCacheTests(InvalidateCacheTests, unittest.TestCase):
+    init = frozen_init
+
+class Source_InvalidateCacheTests(InvalidateCacheTests, unittest.TestCase):
+    init = source_init
 
 
 class FrozenImportlibTests(unittest.TestCase):
 
     def test_no_frozen_importlib(self):
         # Should be able to import w/o _frozen_importlib being defined.
-        module = support.import_fresh_module('importlib', blocked=['_frozen_importlib'])
-        self.assertFalse(isinstance(module.__loader__,
-                                    machinery.FrozenImporter))
+        # Can't do an isinstance() check since separate copies of importlib
+        # may have been used for import, so just check the name is not for the
+        # frozen loader.
+        self.assertNotEqual(source_init.__loader__.__class__.__name__,
+                            'FrozenImporter')
 
 
-class StartupTests(unittest.TestCase):
+class StartupTests:
 
     def test_everyone_has___loader__(self):
         # Issue #17098: all modules should have __loader__ defined.
@@ -227,10 +253,16 @@ class StartupTests(unittest.TestCase):
             if isinstance(module, types.ModuleType):
                 self.assertTrue(hasattr(module, '__loader__'),
                                 '{!r} lacks a __loader__ attribute'.format(name))
-                if importlib.machinery.BuiltinImporter.find_module(name):
+                if self.machinery.BuiltinImporter.find_module(name):
                     self.assertIsNot(module.__loader__, None)
-                elif importlib.machinery.FrozenImporter.find_module(name):
+                elif self.machinery.FrozenImporter.find_module(name):
                     self.assertIsNot(module.__loader__, None)
+
+class Frozen_StartupTests(StartupTests, unittest.TestCase):
+    machinery = frozen_machinery
+
+class Source_StartupTests(StartupTests, unittest.TestCase):
+    machinery = source_machinery
 
 
 if __name__ == '__main__':
