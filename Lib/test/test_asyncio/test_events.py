@@ -215,7 +215,7 @@ class EventLoopTestsMixin:
         t0 = self.loop.time()
         self.loop.run_until_complete(tasks.sleep(0.1, loop=self.loop))
         t1 = self.loop.time()
-        self.assertTrue(0.08 <= t1-t0 <= 0.12, t1-t0)
+        self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
 
     def test_run_until_complete_stopped(self):
         @tasks.coroutine
@@ -238,7 +238,7 @@ class EventLoopTestsMixin:
         self.loop.run_forever()
         t1 = time.monotonic()
         self.assertEqual(results, ['hello world'])
-        self.assertTrue(0.08 <= t1-t0 <= 0.2, t1-t0)
+        self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
 
     def test_call_soon(self):
         results = []
@@ -462,8 +462,8 @@ class EventLoopTestsMixin:
 
         self.loop.add_signal_handler(signal.SIGALRM, my_handler, *some_args)
 
-        signal.setitimer(signal.ITIMER_REAL, 0.01, 0)  # Send SIGALRM once.
-        self.loop.call_later(0.015, self.loop.stop)
+        signal.setitimer(signal.ITIMER_REAL, 0.1, 0)  # Send SIGALRM once.
+        self.loop.call_later(0.5, self.loop.stop)
         self.loop.run_forever()
         self.assertEqual(caught, 1)
 
