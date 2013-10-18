@@ -1406,16 +1406,15 @@ class FileFinder:
         # Check if the module is the name of a directory (and thus a package).
         if cache_module in cache:
             base_path = _path_join(self.path, tail_module)
-            if _path_isdir(base_path):
-                for suffix, loader in self._loaders:
-                    init_filename = '__init__' + suffix
-                    full_path = _path_join(base_path, init_filename)
-                    if _path_isfile(full_path):
-                        return (loader(fullname, full_path), [base_path])
-                else:
-                    # A namespace package, return the path if we don't also
-                    #  find a module in the next section.
-                    is_namespace = True
+            for suffix, loader in self._loaders:
+                init_filename = '__init__' + suffix
+                full_path = _path_join(base_path, init_filename)
+                if _path_isfile(full_path):
+                    return (loader(fullname, full_path), [base_path])
+            else:
+                # If a namespace package, return the path if we don't
+                #  find a module in the next section.
+                is_namespace = _path_isdir(base_path)
         # Check for a file w/ a proper suffix exists.
         for suffix, loader in self._loaders:
             full_path = _path_join(self.path, tail_module + suffix)
