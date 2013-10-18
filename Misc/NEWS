@@ -135,6 +135,11 @@ Library
 - Issue #4366: Fix building extensions on all platforms when --enable-shared
   is used.
 
+- Issue #19030: Fixed `inspect.getmembers` and `inspect.classify_class_attrs`
+  to attempt activating descriptors before falling back to a __dict__ search
+  for faulty descriptors.  `inspect.classify_class_attrs` no longer returns
+  Attributes whose home class is None.
+
 C API
 -----
 
