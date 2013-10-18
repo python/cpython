@@ -131,6 +131,14 @@ class TestGzip(BaseTest):
                 if not ztxt: break
         self.assertEqual(contents, b'a'*201)
 
+    def test_exclusive_write(self):
+        with gzip.GzipFile(self.filename, 'xb') as f:
+            f.write(data1 * 50)
+        with gzip.GzipFile(self.filename, 'rb') as f:
+            self.assertEqual(f.read(), data1 * 50)
+        with self.assertRaises(FileExistsError):
+            gzip.GzipFile(self.filename, 'xb')
+
     def test_buffered_reader(self):
         # Issue #7471: a GzipFile can be wrapped in a BufferedReader for
         # performance.
@@ -206,6 +214,9 @@ class TestGzip(BaseTest):
         self.test_write()
         with gzip.GzipFile(self.filename, 'r') as f:
             self.assertEqual(f.myfileobj.mode, 'rb')
+        support.unlink(self.filename)
+        with gzip.GzipFile(self.filename, 'x') as f:
+            self.assertEqual(f.myfileobj.mode, 'xb')
 
     def test_1647484(self):
         for mode in ('wb', 'rb'):
@@ -414,34 +425,58 @@ class TestGzip(BaseTest):
 class TestOpen(BaseTest):
     def test_binary_modes(self):
         uncompressed = data1 * 50
+
         with gzip.open(self.filename, "wb") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read())
             self.assertEqual(file_data, uncompressed)
+
         with gzip.open(self.filename, "rb") as f:
             self.assertEqual(f.read(), uncompressed)
+
         with gzip.open(self.filename, "ab") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read())
             self.assertEqual(file_data, uncompressed * 2)
 
+        with self.assertRaises(FileExistsError):
+            gzip.open(self.filename, "xb")
+        support.unlink(self.filename)
+        with gzip.open(self.filename, "xb") as f:
+            f.write(uncompressed)
+        with open(self.filename, "rb") as f:
+            file_data = gzip.decompress(f.read())
+            self.assertEqual(file_data, uncompressed)
+
     def test_implicit_binary_modes(self):
         # Test implicit binary modes (no "b" or "t" in mode string).
         uncompressed = data1 * 50
+
         with gzip.open(self.filename, "w") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read())
             self.assertEqual(file_data, uncompressed)
+
         with gzip.open(self.filename, "r") as f:
             self.assertEqual(f.read(), uncompressed)
+
         with gzip.open(self.filename, "a") as f:
             f.write(uncompressed)
         with open(self.filename, "rb") as f:
             file_data = gzip.decompress(f.read())
             self.assertEqual(file_data, uncompressed * 2)
+
+        with self.assertRaises(FileExistsError):
+            gzip.open(self.filename, "x")
+        support.unlink(self.filename)
+        with gzip.open(self.filename, "x") as f:
+            f.write(uncompressed)
+        with open(self.filename, "rb") as f:
+            file_data = gzip.decompress(f.read())
+            self.assertEqual(file_data, uncompressed)
 
     def test_text_modes(self):
         uncompressed = data1.decode("ascii") * 50
@@ -476,6 +511,8 @@ class TestOpen(BaseTest):
             gzip.open(123.456)
         with self.assertRaises(ValueError):
             gzip.open(self.filename, "wbt")
+        with self.assertRaises(ValueError):
+            gzip.open(self.filename, "xbt")
         with self.assertRaises(ValueError):
             gzip.open(self.filename, "rb", encoding="utf-8")
         with self.assertRaises(ValueError):

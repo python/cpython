@@ -23,9 +23,9 @@ def open(filename, mode="rb", compresslevel=9,
     The filename argument can be an actual filename (a str or bytes object), or
     an existing file object to read from or write to.
 
-    The mode argument can be "r", "rb", "w", "wb", "a" or "ab" for binary mode,
-    or "rt", "wt" or "at" for text mode. The default mode is "rb", and the
-    default compresslevel is 9.
+    The mode argument can be "r", "rb", "w", "wb", "x", "xb", "a" or "ab" for
+    binary mode, or "rt", "wt", "xt" or "at" for text mode. The default mode is
+    "rb", and the default compresslevel is 9.
 
     For binary mode, this function is equivalent to the GzipFile constructor:
     GzipFile(filename, mode, compresslevel). In this case, the encoding, errors
@@ -151,11 +151,11 @@ class GzipFile(io.BufferedIOBase):
         fileobj, if discernible; otherwise, it defaults to the empty string,
         and in this case the original filename is not included in the header.
 
-        The mode argument can be any of 'r', 'rb', 'a', 'ab', 'w', or 'wb',
-        depending on whether the file will be read or written.  The default
+        The mode argument can be any of 'r', 'rb', 'a', 'ab', 'w', 'wb', 'x', or
+        'xb' depending on whether the file will be read or written.  The default
         is the mode of fileobj if discernible; otherwise, the default is 'rb'.
         A mode of 'r' is equivalent to one of 'rb', and similarly for 'w' and
-        'wb', and 'a' and 'ab'.
+        'wb', 'a' and 'ab', and 'x' and 'xb'.
 
         The compresslevel argument is an integer from 0 to 9 controlling the
         level of compression; 1 is fastest and produces the least compression,
@@ -201,7 +201,7 @@ class GzipFile(io.BufferedIOBase):
             self.min_readsize = 100
             fileobj = _PaddedFile(fileobj)
 
-        elif mode.startswith(('w', 'a')):
+        elif mode.startswith(('w', 'a', 'x')):
             self.mode = WRITE
             self._init_write(filename)
             self.compress = zlib.compressobj(compresslevel,
