@@ -54,8 +54,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #19201: Add "x" mode (exclusive creation) in opening file to lzma
-  module. Patch by Tim Heaney and Vajrasky Kok.
+- Issues #19201, #19223: Add "x" mode (exclusive creation) in opening file to
+  bz2 and lzma modules. Patches by Tim Heaney and Vajrasky Kok.
 
 - Fix a reference count leak in _sre.
 

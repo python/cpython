@@ -37,8 +37,8 @@ All of the classes in this module may safely be accessed from multiple threads.
    file object to read from or write to.
 
    The *mode* argument can be any of ``'r'``, ``'rb'``, ``'w'``, ``'wb'``,
-   ``'a'``, or ``'ab'`` for binary mode, or ``'rt'``, ``'wt'``, or ``'at'`` for
-   text mode. The default is ``'rb'``.
+   ``'x'``, ``'xb'``, ``'a'`` or ``'ab'`` for binary mode, or ``'rt'``,
+   ``'wt'``, ``'xt'``, or ``'at'`` for text mode. The default is ``'rb'``.
 
    The *compresslevel* argument is an integer from 1 to 9, as for the
    :class:`BZ2File` constructor.
@@ -54,6 +54,9 @@ All of the classes in this module may safely be accessed from multiple threads.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.4
+      The ``'x'`` (exclusive creation) mode was added.
+
 
 .. class:: BZ2File(filename, mode='r', buffering=None, compresslevel=9)
 
@@ -64,8 +67,9 @@ All of the classes in this module may safely be accessed from multiple threads.
    be used to read or write the compressed data.
 
    The *mode* argument can be either ``'r'`` for reading (default), ``'w'`` for
-   overwriting, or ``'a'`` for appending. These can equivalently be given as
-   ``'rb'``, ``'wb'``, and ``'ab'`` respectively.
+   overwriting, ``'x'`` for exclusive creation, or ``'a'`` for appending. These
+   can equivalently be given as ``'rb'``, ``'wb'``, ``'xb'`` and ``'ab'``
+   respectively.
 
    If *filename* is a file object (rather than an actual file name), a mode of
    ``'w'`` does not truncate the file, and is instead equivalent to ``'a'``.
@@ -107,6 +111,9 @@ All of the classes in this module may safely be accessed from multiple threads.
    .. versionchanged:: 3.3
       The ``'a'`` (append) mode was added, along with support for reading
       multi-stream files.
+
+   .. versionchanged:: 3.4
+      The ``'x'`` (exclusive creation) mode was added.
 
 
 Incremental (de)compression
