@@ -1302,7 +1302,7 @@ class PathFinder:
 
         """
         if path == '':
-            path = '.'
+            path = _os.getcwd()
         try:
             finder = sys.path_importer_cache[path]
         except KeyError:
@@ -1373,7 +1373,7 @@ class FileFinder:
             loaders.extend((suffix, loader) for suffix in suffixes)
         self._loaders = loaders
         # Base (directory) path
-        self.path = path or '.'
+        self.path = path
         self._path_mtime = -1
         self._path_cache = set()
         self._relaxed_path_cache = set()

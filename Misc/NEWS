@@ -10,6 +10,13 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #18416: importlib.machinery.PathFinder now treats '' as the cwd and
+  importlib.machinery.FileFinder no longer special-cases '' to '.'. This leads
+  to modules imported from cwd to now possess an absolute file path for
+  __file__ (this does not affect modules specified by path on the CLI but it
+  does affect -m/runpy). It also allows FileFinder to be more consistent by not
+  having an edge case.
+
 - Issue #4555: All exported C symbols are now prefixed with either
   "Py" or "_Py".
 
