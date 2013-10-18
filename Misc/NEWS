@@ -54,6 +54,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19201: Add "x" mode (exclusive creation) in opening file to lzma
+  module. Patch by Tim Heaney and Vajrasky Kok.
+
 - Fix a reference count leak in _sre.
 
 - Issue #19262: Initial check in of the 'asyncio' package (a.k.a. Tulip,

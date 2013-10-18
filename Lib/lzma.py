@@ -54,9 +54,9 @@ class LZMAFile(io.BufferedIOBase):
         bytes object), in which case the named file is opened, or it can
         be an existing file object to read from or write to.
 
-        mode can be "r" for reading (default), "w" for (over)writing, or
-        "a" for appending. These can equivalently be given as "rb", "wb"
-        and "ab" respectively.
+        mode can be "r" for reading (default), "w" for (over)writing,
+        "x" for creating exclusively, or "a" for appending. These can
+        equivalently be given as "rb", "wb", "xb" and "ab" respectively.
 
         format specifies the container format to use for the file.
         If mode is "r", this defaults to FORMAT_AUTO. Otherwise, the
@@ -112,7 +112,7 @@ class LZMAFile(io.BufferedIOBase):
             self._decompressor = LZMADecompressor(**self._init_args)
             self._buffer = b""
             self._buffer_offset = 0
-        elif mode in ("w", "wb", "a", "ab"):
+        elif mode in ("w", "wb", "a", "ab", "x", "xb"):
             if format is None:
                 format = FORMAT_XZ
             mode_code = _MODE_WRITE
@@ -426,8 +426,9 @@ def open(filename, mode="rb", *,
     object), in which case the named file is opened, or it can be an
     existing file object to read from or write to.
 
-    The mode argument can be "r", "rb" (default), "w", "wb", "a" or "ab"
-    for binary mode, or "rt", "wt" or "at" for text mode.
+    The mode argument can be "r", "rb" (default), "w", "wb", "x", "xb",
+    "a", or "ab" for binary mode, or "rt", "wt", "xt", or "at" for text
+    mode.
 
     The format, check, preset and filters arguments specify the
     compression settings, as for LZMACompressor, LZMADecompressor and
