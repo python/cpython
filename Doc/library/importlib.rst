@@ -722,6 +722,10 @@ find and load modules.
      Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
      finders stored in :attr:`sys.path_importer_cache`.
 
+  .. versionchanged:: 3.4
+     Calls objects in :data:sys.path_hooks with the current working directory
+     for ``''`` (i.e. the empty string).
+
 
 .. class:: FileFinder(path, \*loader_details)
 
@@ -747,6 +751,9 @@ find and load modules.
    to call :func:`importlib.invalidate_caches`.
 
    .. versionadded:: 3.3
+
+   .. versionchange:: 3.4
+      The empty string is no longer special-cased to be changed into ``'.'``.
 
    .. attribute:: path
 
