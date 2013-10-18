@@ -93,12 +93,12 @@ Process-wide parameters
       single: main()
       triple: stdin; stdout; sdterr
 
-   This function should be called before :c:func:`Py_Initialize`. It
-   specifies which encoding and error handling to use with standard io,
-   with the same meanings as in :func:`str.encode`.
+   This function should be called before :c:func:`Py_Initialize`, if it is
+   called at all. It specifies which encoding and error handling to use
+   with standard IO, with the same meanings as in :func:`str.encode`.
 
    It overrides :envvar:`PYTHONIOENCODING` values, and allows embedding code
-   to control io encoding when the environment variable does not work.
+   to control IO encoding when the environment variable does not work.
 
    ``encoding`` and/or ``errors`` may be NULL to use
    :envvar:`PYTHONIOENCODING` and/or default values (depending on other
@@ -110,7 +110,10 @@ Process-wide parameters
    If :c:func:`Py_Finalize` is called, this function will need to be called
    again in order to affect subsequent calls to :c:func:`Py_Initialize`.
 
-   Returns 0 if successful.
+   Returns 0 if successful, a nonzero value on error (e.g. calling after the
+   interpreter has already been initialized).
+
+   .. versionadded:: 3.4
 
 
 .. c:function:: void Py_SetProgramName(wchar_t *name)

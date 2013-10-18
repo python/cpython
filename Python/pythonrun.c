@@ -148,11 +148,17 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
         /* This is too late to have any effect */
         return -1;
     }
+    /* Can't call PyErr_NoMemory() on errors, as Python hasn't been
+     * initialised yet.
+     *
+     * However, the raw memory allocators are initialised appropriately
+     * as C static variables, so _PyMem_RawStrdup is OK even though
+     * Py_Initialize hasn't been called yet.
+     */
     if (encoding) {
         _Py_StandardStreamEncoding = _PyMem_RawStrdup(encoding);
         if (!_Py_StandardStreamEncoding) {
-            PyErr_NoMemory();
-            return -1;
+            return -2;
         }
     }
     if (errors) {
@@ -161,8 +167,7 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
             if (_Py_StandardStreamEncoding) {
                 PyMem_RawFree(_Py_StandardStreamEncoding);
             }
-            PyErr_NoMemory();
-            return -1;
+            return -3;
         }
     }
     return 0;
