@@ -260,7 +260,6 @@ class EmbeddingTests(unittest.TestCase):
             print(out)
             print(err)
 
-    @unittest.skip
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         out, err = self.run_embedded_interpreter("forced_io_encoding")
@@ -272,15 +271,15 @@ class EmbeddingTests(unittest.TestCase):
         --- Use defaults ---
         Expected encoding: default
         Expected errors: default
-        stdin: {0.stdin.encoding}:strict
-        stdout: {0.stdout.encoding}:strict
-        stderr: {0.stderr.encoding}:backslashreplace
+        stdin: {0.__stdin__.encoding}:strict
+        stdout: {0.__stdout__.encoding}:strict
+        stderr: {0.__stderr__.encoding}:backslashreplace
         --- Set errors only ---
         Expected encoding: default
         Expected errors: surrogateescape
-        stdin: {0.stdin.encoding}:surrogateescape
-        stdout: {0.stdout.encoding}:surrogateescape
-        stderr: {0.stderr.encoding}:backslashreplace
+        stdin: {0.__stdin__.encoding}:surrogateescape
+        stdout: {0.__stdout__.encoding}:surrogateescape
+        stderr: {0.__stderr__.encoding}:backslashreplace
         --- Set encoding only ---
         Expected encoding: latin-1
         Expected errors: default
@@ -293,7 +292,7 @@ class EmbeddingTests(unittest.TestCase):
         stdin: latin-1:surrogateescape
         stdout: latin-1:surrogateescape
         stderr: latin-1:backslashreplace""").format(sys)
-        # Looks like this overspecifies the output :(
+        # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
 
