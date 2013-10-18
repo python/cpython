@@ -384,7 +384,8 @@ The following types can be pickled:
 
 * tuples, lists, sets, and dictionaries containing only picklable objects
 
-* functions defined at the top level of a module
+* functions defined at the top level of a module (using :keyword:`def`, not
+  :keyword:`lambda`)
 
 * built-in functions defined at the top level of a module
 
@@ -402,7 +403,7 @@ raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 
 Note that functions (built-in and user-defined) are pickled by "fully qualified"
-name reference, not by value.  This means that only the function name is
+name reference, not by value. [#]_  This means that only the function name is
 pickled, along with the name of the module the function is defined in.  Neither
 the function's code, nor any of its function attributes are pickled.  Thus the
 defining module must be importable in the unpickling environment, and the module
@@ -849,6 +850,9 @@ The following example reads the resulting pickled data. ::
 .. rubric:: Footnotes
 
 .. [#] Don't confuse this with the :mod:`marshal` module
+
+.. [#] This is why :keyword:`lambda` functions cannot be pickled:  all
+    :keyword:`lambda` functions share the same name:  ``<lambda>``.
 
 .. [#] The exception raised will likely be an :exc:`ImportError` or an
    :exc:`AttributeError` but it could be something else.
