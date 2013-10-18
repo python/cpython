@@ -15,6 +15,17 @@ def import_importlib(module_name):
     return frozen, source
 
 
+def test_both(test_class, **kwargs):
+    frozen_tests = types.new_class('Frozen_'+test_class.__name__,
+                                   (test_class, unittest.TestCase))
+    source_tests = types.new_class('Source_'+test_class.__name__,
+                                   (test_class, unittest.TestCase))
+    for attr, (frozen_value, source_value) in kwargs.items():
+        setattr(frozen_tests, attr, frozen_value)
+        setattr(source_tests, attr, source_value)
+    return frozen_tests, source_tests
+
+
 CASE_INSENSITIVE_FS = True
 # Windows is the only OS that is *always* case-insensitive
 # (OS X *can* be case-sensitive).
