@@ -362,6 +362,8 @@ def classify_class_attrs(cls):
         dict_obj = sentinel
         if name not in processed:
             try:
+                if name == '__dict__':
+                    raise Exception("__dict__ is special, we don't want the proxy")
                 get_obj = getattr(cls, name)
             except Exception as exc:
                 pass
