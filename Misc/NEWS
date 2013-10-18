@@ -42,7 +42,6 @@ Core and Builtins
 Library
 -------
 
-
 - Issue #19262: Initial check in of the 'asyncio' package (a.k.a. Tulip,
   a.k.a. PEP 3156).  There are no docs yet, and the PEP is slightly
   out of date with the code.  This module will have *provisional* status
@@ -178,7 +177,6 @@ What's New in Python 3.4.0 Alpha 3?
 
 Release date: 2013-09-29
 
-
 Core and Builtins
 -----------------
 
@@ -259,7 +257,6 @@ Library
 - Issue #1565525: New function ``traceback.clear_frames`` will clear
   the local variables of all the stack frames referenced by a traceback
   object.
-
 
 Tests
 -----
@@ -728,7 +725,6 @@ Core and Builtins
 
 - Issue #14439: Python now prints the traceback on runpy failure at startup.
 
-
 - Issue #17469: Fix _Py_GetAllocatedBlocks() and sys.getallocatedblocks()
   when running on valgrind.
 
@@ -1122,7 +1118,6 @@ Library
 - Issue #18076: Introduce importlib.util.decode_source().
 - Issue #18357: add tests for dictview set difference.
   Patch by Fraser Tweedale.
-
 
 - importlib.abc.SourceLoader.get_source() no longer changes SyntaxError or
   UnicodeDecodeError into ImportError.
