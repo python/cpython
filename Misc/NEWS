@@ -58,6 +58,8 @@ Library
 - Issue #18891: Completed the new email package (provisional) API additions
   by adding new classes EmailMessage, MIMEPart, and ContentManager.
 
+- Issue #18281: Unused stat constants removed from `tarfile`.
+
 - Issue #18468: The re.split, re.findall, and re.sub functions and the group()
   and groups() methods of match object now always return a string or a bytes
   object.
@@ -183,6 +185,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18929: `inspect.classify_class_attrs()` now correctly finds class
+  attributes returned by `dir()` that are located in the metaclass.
+
 - Issue #18950: Fix miscellaneous bugs in the sunau module.
   Au_read.readframes() now updates current file position and reads correct
   number of frames from multichannel stream.  Au_write.writeframesraw() now
@@ -295,6 +300,9 @@ Core and Builtins
 -----------------
 
 - Issue #18942: sys._debugmallocstats() output was damaged on Windows.
+
+- Issue #18780: %-formatting now prints value instead of str for
+  int subclasses when using %d, %i, and %u codes.
 
 - Issue #18571: Implementation of the PEP 446: file descriptors and file
   handles are now created non-inheritable; add functions
