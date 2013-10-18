@@ -1390,7 +1390,7 @@ class FileFinder:
         is_namespace = False
         tail_module = fullname.rpartition('.')[2]
         try:
-            mtime = _os.stat(self.path).st_mtime
+            mtime = _os.stat(self.path or _os.getcwd()).st_mtime
         except OSError:
             mtime = -1
         if mtime != self._path_mtime:
@@ -1432,7 +1432,7 @@ class FileFinder:
         """Fill the cache of potential modules and packages for this directory."""
         path = self.path
         try:
-            contents = _os.listdir(path)
+            contents = _os.listdir(path or _os.getcwd())
         except (FileNotFoundError, PermissionError, NotADirectoryError):
             # Directory has either been removed, turned into a file, or made
             # unreadable.
