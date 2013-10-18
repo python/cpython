@@ -18,7 +18,7 @@ else:
     from test import lock_tests
 
 if threading is not None:
-    class ModuleLockAsRLockTests(lock_tests.RLockTests):
+    class ModuleLockAsRLockTests:
         locktype = classmethod(lambda cls: cls.LockType("some_lock"))
 
         # _is_owned() unsupported
