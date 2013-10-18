@@ -39,8 +39,8 @@ Reading and writing compressed files
    opened, or it can be an existing file object to read from or write to.
 
    The *mode* argument can be any of ``"r"``, ``"rb"``, ``"w"``, ``"wb"``,
-   ``"a"`` or ``"ab"`` for binary mode, or ``"rt"``, ``"wt"``, or ``"at"`` for
-   text mode. The default is ``"rb"``.
+   ``"x"``, ``"xb"``, ``"a"`` or ``"ab"`` for binary mode, or ``"rt"``,
+   ``"wt"``, ``"xt"``, or ``"at"`` for text mode. The default is ``"rb"``.
 
    When opening a file for reading, the *format* and *filters* arguments have
    the same meanings as for :class:`LZMADecompressor`. In this case, the *check*
@@ -57,6 +57,9 @@ Reading and writing compressed files
    :class:`io.TextIOWrapper` instance with the specified encoding, error
    handling behavior, and line ending(s).
 
+   .. versionchanged:: 3.4
+      Added support for the ``"x"``, ``"xb"`` and ``"xt"`` modes.
+
 
 .. class:: LZMAFile(filename=None, mode="r", \*, format=None, check=-1, preset=None, filters=None)
 
@@ -69,8 +72,9 @@ Reading and writing compressed files
    file will not be closed when the :class:`LZMAFile` is closed.
 
    The *mode* argument can be either ``"r"`` for reading (default), ``"w"`` for
-   overwriting, or ``"a"`` for appending. These can equivalently be given as
-   ``"rb"``, ``"wb"``, and ``"ab"`` respectively.
+   overwriting, ``"x"`` for exclusive creation, or ``"a"`` for appending. These
+   can equivalently be given as ``"rb"``, ``"wb"``, ``"xb"`` and ``"ab"``
+   respectively.
 
    If *filename* is a file object (rather than an actual file name), a mode of
    ``"w"`` does not truncate the file, and is instead equivalent to ``"a"``.
@@ -97,6 +101,9 @@ Reading and writing compressed files
       Return buffered data without advancing the file position. At least one
       byte of data will be returned, unless EOF has been reached. The exact
       number of bytes returned is unspecified (the *size* argument is ignored).
+
+   .. versionchanged:: 3.4
+      Added support for the ``"x"`` and ``"xb"`` modes.
 
 
 Compressing and decompressing data in memory
