@@ -35,8 +35,8 @@ The module defines the following items:
    :class:`bytes` object), or an existing file object to read from or write to.
 
    The *mode* argument can be any of ``'r'``, ``'rb'``, ``'a'``, ``'ab'``,
-   ``'w'``, or ``'wb'`` for binary mode, or ``'rt'``, ``'at'``, or ``'wt'`` for
-   text mode. The default is ``'rb'``.
+   ``'w'``, ``'wb'``, ``'x'`` or ``'xb'`` for binary mode, or ``'rt'``,
+   ``'at'``, ``'wt'``, or ``'xt'`` for text mode. The default is ``'rb'``.
 
    The *compresslevel* argument is an integer from 0 to 9, as for the
    :class:`GzipFile` constructor.
@@ -52,6 +52,9 @@ The module defines the following items:
    .. versionchanged:: 3.3
       Added support for *filename* being a file object, support for text mode,
       and the *encoding*, *errors* and *newline* arguments.
+
+   .. versionchanged:: 3.4
+      Added support for the ``'x'``, ``'xb'`` and ``'xt'`` modes.
 
 
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
@@ -73,8 +76,9 @@ The module defines the following items:
    original filename is not included in the header.
 
    The *mode* argument can be any of ``'r'``, ``'rb'``, ``'a'``, ``'ab'``, ``'w'``,
-   or ``'wb'``, depending on whether the file will be read or written.  The default
-   is the mode of *fileobj* if discernible; otherwise, the default is ``'rb'``.
+   ``'wb'``, ``'x'``, or ``'xb'``, depending on whether the file will be read or
+   written.  The default is the mode of *fileobj* if discernible; otherwise, the
+   default is ``'rb'``.
 
    Note that the file is always opened in binary mode. To open a compressed file
    in text mode, use :func:`.open` (or wrap your :class:`GzipFile` with an
@@ -124,6 +128,9 @@ The module defines the following items:
 
    .. versionchanged:: 3.3
       The :meth:`io.BufferedIOBase.read1` method is now implemented.
+
+   .. versionchanged:: 3.4
+      Added support for the ``'x'`` and ``'xb'`` modes.
 
 
 .. function:: compress(data, compresslevel=9)
