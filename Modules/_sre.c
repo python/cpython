@@ -2427,6 +2427,7 @@ next:
         else
             item = PyUnicode_Join(joiner, list);
         Py_DECREF(joiner);
+        Py_DECREF(list);
         if (!item)
             return NULL;
     }
