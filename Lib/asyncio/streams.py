@@ -106,7 +106,7 @@ class StreamReader:
     def _maybe_resume_transport(self):
         if self._paused and self.byte_count <= self.limit:
             self._paused = False
-            self._transport.resume()
+            self._transport.resume_reading()
 
     def feed_eof(self):
         self.eof = True
@@ -133,7 +133,7 @@ class StreamReader:
             not self._paused and
             self.byte_count > 2*self.limit):
             try:
-                self._transport.pause()
+                self._transport.pause_reading()
             except NotImplementedError:
                 # The transport can't be paused.
                 # We'll just have to buffer all data.

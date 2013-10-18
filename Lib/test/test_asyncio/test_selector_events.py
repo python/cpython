@@ -676,15 +676,15 @@ class SelectorSocketTransportTests(unittest.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsNone(fut.result())
 
-    def test_pause_resume(self):
+    def test_pause_resume_reading(self):
         tr = _SelectorSocketTransport(
             self.loop, self.sock, self.protocol)
         self.assertFalse(tr._paused)
         self.loop.assert_reader(7, tr._read_ready)
-        tr.pause()
+        tr.pause_reading()
         self.assertTrue(tr._paused)
         self.assertFalse(7 in self.loop.readers)
-        tr.resume()
+        tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(7, tr._read_ready)
 
@@ -1044,14 +1044,14 @@ class SelectorSslTransportTests(unittest.TestCase):
         self.assertTrue(transport._waiter.done())
         self.assertIs(exc, transport._waiter.exception())
 
-    def test_pause_resume(self):
+    def test_pause_resume_reading(self):
         tr = self._make_one()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(1, tr._on_ready)
-        tr.pause()
+        tr.pause_reading()
         self.assertTrue(tr._paused)
         self.assertFalse(1 in self.loop.readers)
-        tr.resume()
+        tr.resume_reading()
         self.assertFalse(tr._paused)
         self.loop.assert_reader(1, tr._on_ready)
 
