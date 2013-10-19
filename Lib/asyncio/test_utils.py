@@ -7,6 +7,7 @@ import unittest.mock
 import os
 import sys
 import threading
+import time
 import unittest
 import unittest.mock
 from wsgiref.simple_server import make_server, WSGIRequestHandler, WSGIServer
@@ -44,6 +45,20 @@ def run_briefly(loop):
         loop.run_until_complete(t)
     finally:
         gen.close()
+
+
+def run_until(loop, pred, timeout=None):
+    if timeout is not None:
+        deadline = time.time() + timeout
+    while not pred():
+        if timeout is not None:
+            timeout = deadline - time.time()
+            if timeout <= 0:
+                return False
+            loop.run_until_complete(tasks.sleep(timeout, loop=loop))
+        else:
+            run_briefly(loop)
+    return True
 
 
 def run_once(loop):

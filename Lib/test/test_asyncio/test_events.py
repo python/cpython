@@ -558,13 +558,14 @@ class EventLoopTestsMixin:
         self.assertEqual(host, '0.0.0.0')
         client = socket.socket()
         client.connect(('127.0.0.1', port))
-        client.send(b'xxx')
+        client.sendall(b'xxx')
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(proto, MyProto)
         self.assertEqual('INITIAL', proto.state)
         test_utils.run_briefly(self.loop)
         self.assertEqual('CONNECTED', proto.state)
-        test_utils.run_briefly(self.loop)  # windows iocp
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0,
+                             timeout=10)
         self.assertEqual(3, proto.nbytes)
 
         # extra info is available
@@ -623,6 +624,8 @@ class EventLoopTestsMixin:
         self.assertIsInstance(proto, MyProto)
         test_utils.run_briefly(self.loop)
         self.assertEqual('CONNECTED', proto.state)
+        test_utils.run_until(self.loop, lambda: proto.nbytes > 0,
+                             timeout=10)
         self.assertEqual(3, proto.nbytes)
 
         # extra info is available
