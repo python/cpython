@@ -48,7 +48,7 @@ class _GeneratorContextManager(ContextDecorator):
         try:
             return next(self.gen)
         except StopIteration:
-            raise RuntimeError("generator didn't yield")
+            raise RuntimeError("generator didn't yield") from None
 
     def __exit__(self, type, value, traceback):
         if type is None:
@@ -117,6 +117,9 @@ def contextmanager(func):
     return helper
 
 
+# Unfortunately, this was originally published as a class, so
+# backwards compatibility prevents the use of the wrapper function
+# approach used for the other classes
 class closing(object):
     """Context to automatically close something at the end of a block.
 
@@ -141,55 +144,75 @@ class closing(object):
     def __exit__(self, *exc_info):
         self.thing.close()
 
-class redirect_stdout:
+class _RedirectStdout:
+    """Helper for redirect_stdout."""
+
+    def __init__(self, new_target):
+        self._new_target = new_target
+        self._old_target = self._sentinel = object()
+
+    def __enter__(self):
+        if self._old_target is not self._sentinel:
+            raise RuntimeError("Cannot reenter {!r}".format(self))
+        self._old_target = sys.stdout
+        sys.stdout = self._new_target
+        return self._new_target
+
+    def __exit__(self, exctype, excinst, exctb):
+        restore_stdout = self._old_target
+        self._old_target = self._sentinel
+        sys.stdout = restore_stdout
+
+# Use a wrapper function since we don't care about supporting inheritance
+# and a function gives much cleaner output in help()
+def redirect_stdout(target):
     """Context manager for temporarily redirecting stdout to another file
 
         # How to send help() to stderr
-
         with redirect_stdout(sys.stderr):
             help(dir)
 
         # How to write help() to a file
-
         with open('help.txt', 'w') as f:
             with redirect_stdout(f):
                 help(pow)
-
-        # How to capture disassembly to a string
-
-        import dis
-        import io
-
-        f = io.StringIO()
-        with redirect_stdout(f):
-            dis.dis('x**2 - y**2')
-        s = f.getvalue()
-
     """
+    return _RedirectStdout(target)
 
-    def __init__(self, new_target):
-        self.new_target = new_target
+
+class _SuppressExceptions:
+    """Helper for suppress."""
+    def __init__(self, *exceptions):
+        self._exceptions = exceptions
 
     def __enter__(self):
-        self.old_target = sys.stdout
-        sys.stdout = self.new_target
-        return self.new_target
+        pass
 
     def __exit__(self, exctype, excinst, exctb):
-        sys.stdout = self.old_target
+        # Unlike isinstance and issubclass, exception handling only
+        # looks at the concrete type heirarchy (ignoring the instance
+        # and subclass checking hooks). However, all exceptions are
+        # also required to be concrete subclasses of BaseException, so
+        # if there's a discrepancy in behaviour, we currently consider it
+        # the fault of the strange way the exception has been defined rather
+        # than the fact that issubclass can be customised while the
+        # exception checks can't.
+        # See http://bugs.python.org/issue12029 for more details
+        return exctype is not None and issubclass(exctype, self._exceptions)
 
-@contextmanager
+# Use a wrapper function since we don't care about supporting inheritance
+# and a function gives much cleaner output in help()
 def suppress(*exceptions):
     """Context manager to suppress specified exceptions
 
-         with suppress(OSError):
-             os.remove(somefile)
+    After the exception is suppressed, execution proceeds with the next
+    statement following the with statement.
 
+         with suppress(FileNotFoundError):
+             os.remove(somefile)
+         # Execution still resumes here if the file was already removed
     """
-    try:
-        yield
-    except exceptions:
-        pass
+    return _SuppressExceptions(*exceptions)
 
 # Inspired by discussions on http://bugs.python.org/issue13585
 class ExitStack(object):
