@@ -670,7 +670,8 @@ compiler_scope_qualname(struct compiler *c, identifier scope_name)
         return NULL;
 
     stack_size = PyList_GET_SIZE(c->c_stack);
-    global_scope = stack_size <= 1;
+    assert(stack_size >= 1);
+    global_scope = stack_size == 1;
     if (scope_name != NULL && !global_scope) {
         int scope;
         PyObject *mangled;
