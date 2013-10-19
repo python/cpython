@@ -23,3 +23,4 @@ The following modules are documented in this chapter:
    decimal.rst
    fractions.rst
    random.rst
+   statistics.rst
