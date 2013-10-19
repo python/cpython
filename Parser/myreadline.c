@@ -140,13 +140,13 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
     while (n > 0 && p[n-1] != '\n') {
         size_t incr = n+2;
         if (incr > INT_MAX) {
-            PyMem_FREE(p);
+            PyMem_RawFree(p);
             PyErr_SetString(PyExc_OverflowError, "input line too long");
             return NULL;
         }
         pr = (char *)PyMem_RawRealloc(p, n + incr);
         if (pr == NULL) {
-            PyMem_FREE(p);
+            PyMem_RawFree(p);
             PyErr_NoMemory();
             return NULL;
         }
@@ -157,7 +157,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
     }
     pr = (char *)PyMem_RawRealloc(p, n+1);
     if (pr == NULL) {
-        PyMem_FREE(p);
+        PyMem_RawFree(p);
         PyErr_NoMemory();
         return NULL;
     }
