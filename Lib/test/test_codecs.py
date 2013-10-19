@@ -840,10 +840,9 @@ class UTF7Test(ReadTest, unittest.TestCase):
             (b'a+////,+IKw-b', 'a\uffff\ufffd\u20acb'),
         ]
         for raw, expected in tests:
-            with self.subTest(raw=raw):
-                self.assertRaises(UnicodeDecodeError, codecs.utf_7_decode,
-                                raw, 'strict', True)
-                self.assertEqual(raw.decode('utf-7', 'replace'), expected)
+            self.assertRaises(UnicodeDecodeError, codecs.utf_7_decode,
+                              raw, 'strict', True)
+            self.assertEqual(raw.decode('utf-7', 'replace'), expected)
 
     def test_nonbmp(self):
         self.assertEqual('\U000104A0'.encode(self.encoding), b'+2AHcoA-')
