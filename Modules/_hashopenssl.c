@@ -20,6 +20,7 @@
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
+#include <openssl/hmac.h>
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include "openssl/err.h"
@@ -495,9 +496,96 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
     return ret_obj;
 }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) \
-     && !defined(OPENSSL_NO_SHA))
+
+
+#if (!defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA))
+
 #define PY_PBKDF2_HMAC 1
+
+/* Improved implementation of PKCS5_PBKDF2_HMAC()
+ *
+ * PKCS5_PBKDF2_HMAC_fast() hashes the password exactly one time instead of
+ * `iter` times. Today (2013) the iteration count is typically 100,000 or
+ * more. The improved algorithm is not subject to a Denial-of-Service
+ * vulnerability with overly large passwords.
+ *
+ * Also OpenSSL < 1.0 don't provide PKCS5_PBKDF2_HMAC(), only
+ * PKCS5_PBKDF2_SHA1.
+ */
+int PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
+                           const unsigned char *salt, int saltlen,
+                           int iter, const EVP_MD *digest,
+                           int keylen, unsigned char *out)
+{
+    unsigned char digtmp[EVP_MAX_MD_SIZE], *p, itmp[4];
+    int cplen, j, k, tkeylen, mdlen;
+    unsigned long i = 1;
+    HMAC_CTX hctx_tpl, hctx;
+
+    mdlen = EVP_MD_size(digest);
+    if (mdlen < 0)
+        return 0;
+
+    HMAC_CTX_init(&hctx_tpl);
+    HMAC_CTX_init(&hctx);
+    p = out;
+    tkeylen = keylen;
+    if (!pass)
+        passlen = 0;
+    else if(passlen == -1)
+        passlen = strlen(pass);
+    if (!HMAC_Init_ex(&hctx_tpl, pass, passlen, digest, NULL)) {
+        HMAC_CTX_cleanup(&hctx_tpl);
+        return 0;
+    }
+    while(tkeylen) {
+        if(tkeylen > mdlen)
+            cplen = mdlen;
+        else
+            cplen = tkeylen;
+        /* We are unlikely to ever use more than 256 blocks (5120 bits!)
+         * but just in case...
+         */
+        itmp[0] = (unsigned char)((i >> 24) & 0xff);
+        itmp[1] = (unsigned char)((i >> 16) & 0xff);
+        itmp[2] = (unsigned char)((i >> 8) & 0xff);
+        itmp[3] = (unsigned char)(i & 0xff);
+        if (!HMAC_CTX_copy(&hctx, &hctx_tpl)) {
+            HMAC_CTX_cleanup(&hctx_tpl);
+            return 0;
+        }
+        if (!HMAC_Update(&hctx, salt, saltlen)
+                || !HMAC_Update(&hctx, itmp, 4)
+                || !HMAC_Final(&hctx, digtmp, NULL)) {
+            HMAC_CTX_cleanup(&hctx_tpl);
+            HMAC_CTX_cleanup(&hctx);
+            return 0;
+        }
+        memcpy(p, digtmp, cplen);
+        for (j = 1; j < iter; j++) {
+            if (!HMAC_CTX_copy(&hctx, &hctx_tpl)) {
+                HMAC_CTX_cleanup(&hctx_tpl);
+                return 0;
+            }
+            if (!HMAC_Update(&hctx, digtmp, mdlen)
+                    || !HMAC_Final(&hctx, digtmp, NULL)) {
+                HMAC_CTX_cleanup(&hctx_tpl);
+                HMAC_CTX_cleanup(&hctx);
+                return 0;
+            }
+            HMAC_CTX_cleanup(&hctx);
+            for (k = 0; k < cplen; k++) {
+                p[k] ^= digtmp[k];
+            }
+        }
+        tkeylen-= cplen;
+        i++;
+        p+= cplen;
+    }
+    HMAC_CTX_cleanup(&hctx_tpl);
+    return 1;
+}
+
 
 PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "pbkdf2_hmac(hash_name, password, salt, iterations, dklen=None) -> key\n\
@@ -579,10 +667,10 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
-    retval = PKCS5_PBKDF2_HMAC((char*)password.buf, password.len,
-                               (unsigned char *)salt.buf, salt.len,
-                               iterations, digest, dklen,
-                               (unsigned char *)key);
+    retval = PKCS5_PBKDF2_HMAC_fast((char*)password.buf, password.len,
+                                    (unsigned char *)salt.buf, salt.len,
+                                    iterations, digest, dklen,
+                                    (unsigned char *)key);
     Py_END_ALLOW_THREADS
 
     if (!retval) {
