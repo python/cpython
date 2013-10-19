@@ -57,6 +57,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19254: Provide an optimized Python implementation of PBKDF2_HMAC.
+
 - Issues #19201, #19222, #19223: Add "x" mode (exclusive creation) in opening
   file to bz2, gzip and lzma modules. Patches by Tim Heaney and Vajrasky Kok.
 
