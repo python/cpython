@@ -190,6 +190,12 @@ Build
 
 - Issue #15663: Update OS X 10.6+ installer to use Tcl/Tk 8.5.15.
 
+- Issue #14499: Fix several problems with OS X universal build support:
+    1. ppc arch detection for extension module builds broke with Xcode 5
+    2. ppc arch detection in configure did not work on OS X 10.4
+    3. -sysroot and -arch flags were unnecessarily duplicated
+    4. there was no obvious way to configure an intel-32 only build.
+
 What's New in Python 3.4.0 Alpha 3?
 ===================================
 
