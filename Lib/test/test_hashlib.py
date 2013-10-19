@@ -548,8 +548,7 @@ class HashLibTestCase(unittest.TestCase):
         self.assertEqual(expected_hash, hasher.hexdigest())
 
 
-class KDFTests:
-    hashlibmod = None
+class KDFTests(unittest.TestCase):
 
     pbkdf2_test_vectors = [
         (b'password', b'salt', 1, None),
@@ -600,9 +599,7 @@ class KDFTests:
             (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),],
     }
 
-    def test_pbkdf2_hmac(self):
-        pbkdf2 = self.hashlibmod.pbkdf2_hmac
-
+    def _test_pbkdf2_hmac(self, pbkdf2):
         for digest_name, results in self.pbkdf2_results.items():
             for i, vector in enumerate(self.pbkdf2_test_vectors):
                 password, salt, rounds, dklen = vector
@@ -631,13 +628,13 @@ class KDFTests:
         with self.assertRaisesRegex(ValueError, 'unsupported hash type'):
             pbkdf2('unknown', b'pass', b'salt', 1)
 
+    def test_pbkdf2_hmac_py(self):
+        self._test_pbkdf2_hmac(py_hashlib.pbkdf2_hmac)
 
-class PyKDFTests(KDFTests, unittest.TestCase):
-    hashlibmod = py_hashlib
-
-
-class CKDFTests(KDFTests, unittest.TestCase):
-    hashlibmod = c_hashlib
+    @unittest.skipUnless(hasattr(c_hashlib, 'pbkdf2_hmac'),
+                     '   test requires OpenSSL > 1.0')
+    def test_pbkdf2_hmac_c(self):
+        self._test_pbkdf2_hmac(c_hashlib.pbkdf2_hmac)
 
 
 if __name__ == "__main__":
