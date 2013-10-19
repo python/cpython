@@ -313,7 +313,7 @@ mean.
 
    If the optional second argument *mu* is given, it should be the mean
    of *data*. If it is missing or None (the default), the mean is
-   automatically caclulated.
+   automatically calculated.
 
    Use this function to calculate the variance from the entire population.
    To estimate the variance from a sample, the :func:`variance` function is
@@ -397,7 +397,7 @@ a small variance indicates it is clustered closely around the mean.
 
    If the optional second argument *xbar* is given, it should be the mean
    of *data*. If it is missing or None (the default), the mean is
-   automatically caclulated.
+   automatically calculated.
 
    Use this function when your data is a sample from a population. To
    calculate the variance from the entire population, see :func:`pvariance`.
