@@ -498,7 +498,8 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
 
 
 
-#if (!defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA))
+#if (OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) \
+     && !defined(OPENSSL_NO_SHA))
 
 #define PY_PBKDF2_HMAC 1
 
