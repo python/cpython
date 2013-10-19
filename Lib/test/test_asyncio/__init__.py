@@ -3,6 +3,11 @@ import sys
 import unittest
 from test.support import run_unittest
 
+try:
+    import threading
+except ImportError:
+    raise unittest.SkipTest("No module named '_thread'")
+
 
 def suite():
     tests_file = os.path.join(os.path.dirname(__file__), 'tests.txt')
