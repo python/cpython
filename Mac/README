@@ -7,7 +7,7 @@ Python on Mac OS X README
     Ronald Oussoren (2010-04),
     Ned Deily (2012-06)
 
-:Version: 3.3.0
+:Version: 3.4.0
 
 This document provides a quick overview of some Mac OS X specific features in
 the Python distribution.
@@ -99,6 +99,8 @@ values are available:
 
   * ``intel``:	  ``i386``, ``x86_64``
 
+  * ``intel-32``: ``i386``
+
   * ``32-bit``:   ``ppc``, ``i386``
 
   * ``3-way``:	  ``i386``, ``x86_64``, ``ppc``
@@ -125,7 +127,7 @@ following combinations of SDKs and universal-archs flavors are available:
 
   * 10.7 and 10.8 SDKs with Xcode 4 support ``intel`` only
 
-The makefile for a framework build will also install ``python3.3-32``
+The makefile for a framework build will also install ``python3.4-32``
 binaries when the universal architecture includes at least one 32-bit
 architecture (that is, for all flavors but ``64-bit``).
 
@@ -149,7 +151,7 @@ Using ``arch`` is not a perfect solution as the selected architecture will
 not automatically carry through to subprocesses launched by programs and tests
 under that Python.  If you want to ensure that Python interpreters launched in
 subprocesses also run in 32-bit-mode if the main interpreter does, use
-a ``python3.3-32`` binary and use the value of ``sys.executable`` as the
+a ``python3.4-32`` binary and use the value of ``sys.executable`` as the
 ``subprocess`` ``Popen`` executable value.
 
 
@@ -169,7 +171,7 @@ will have to do the work yourself if you really want this.
 
 A second reason for using frameworks is that they put Python-related items in
 only two places: "/Library/Framework/Python.framework" and 
-"/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.3",
+"/Applications/Python <VERSION>" where ``<VERSION>`` can be e.g. "3.4",
 "2.7", etc.  This simplifies matters for users installing
 Python from a binary distribution if they want to get rid of it again. Moreover,
 due to the way frameworks work, a user without admin privileges can install a
