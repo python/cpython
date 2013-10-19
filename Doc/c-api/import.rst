@@ -118,7 +118,7 @@ Importing Modules
    encoded string instead of a Unicode object.
 
 
-.. c:function:: PyObject* PyImport_ExecCodeModule(char *name, PyObject *co)
+.. c:function:: PyObject* PyImport_ExecCodeModule(const char *name, PyObject *co)
 
    .. index:: builtin: compile
 
@@ -145,7 +145,7 @@ Importing Modules
    :c:func:`PyImport_ExecCodeModuleWithPathnames`.
 
 
-.. c:function:: PyObject* PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
+.. c:function:: PyObject* PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
 
    Like :c:func:`PyImport_ExecCodeModule`, but the :attr:`__file__` attribute of
    the module object is set to *pathname* if it is non-``NULL``.
@@ -162,7 +162,7 @@ Importing Modules
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname, char *cpathname)
+.. c:function:: PyObject* PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co, const char *pathname, const char *cpathname)
 
    Like :c:func:`PyImport_ExecCodeModuleObject`, but *name*, *pathname* and
    *cpathname* are UTF-8 encoded strings. Attempts are also made to figure out
@@ -246,7 +246,7 @@ Importing Modules
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyImport_ImportFrozenModule(char *name)
+.. c:function:: int PyImport_ImportFrozenModule(const char *name)
 
    Similar to :c:func:`PyImport_ImportFrozenModuleObject`, but the name is a
    UTF-8 encoded string instead of a Unicode object.

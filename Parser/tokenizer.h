@@ -35,7 +35,7 @@ struct tok_state {
     int indstack[MAXINDENT];            /* Stack of indents */
     int atbol;          /* Nonzero if at begin of new line */
     int pendin;         /* Pending indents (if > 0) or dedents (if < 0) */
-    char *prompt, *nextprompt;          /* For interactive prompting */
+    const char *prompt, *nextprompt;          /* For interactive prompting */
     int lineno;         /* Current line number */
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
@@ -69,8 +69,8 @@ struct tok_state {
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);
 extern struct tok_state *PyTokenizer_FromUTF8(const char *, int);
-extern struct tok_state *PyTokenizer_FromFile(FILE *, char*,
-                                              char *, char *);
+extern struct tok_state *PyTokenizer_FromFile(FILE *, const char*,
+                                              const char *, const char *);
 extern void PyTokenizer_Free(struct tok_state *);
 extern int PyTokenizer_Get(struct tok_state *, char **, char **);
 extern char * PyTokenizer_RestoreEncoding(struct tok_state* tok,

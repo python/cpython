@@ -109,7 +109,7 @@ my_fgets(char *buf, int len, FILE *fp)
 /* Readline implementation using fgets() */
 
 char *
-PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
+PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n;
     char *p, *pr;
@@ -170,13 +170,13 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 
    Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
-char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, char *);
+char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
 
 
 /* Interface used by tokenizer.c and bltinmodule.c */
 
 char *
-PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
+PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     char *rv, *res;
     size_t len;

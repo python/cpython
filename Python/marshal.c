@@ -1466,15 +1466,15 @@ PyMarshal_ReadObjectFromFile(FILE *fp)
 }
 
 PyObject *
-PyMarshal_ReadObjectFromString(char *str, Py_ssize_t len)
+PyMarshal_ReadObjectFromString(const char *str, Py_ssize_t len)
 {
     RFILE rf;
     PyObject *result;
     rf.fp = NULL;
     rf.readable = NULL;
     rf.current_filename = NULL;
-    rf.ptr = str;
-    rf.end = str + len;
+    rf.ptr = (char *)str;
+    rf.end = (char *)str + len;
     rf.buf = NULL;
     rf.depth = 0;
     rf.refs = PyList_New(0);

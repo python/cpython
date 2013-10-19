@@ -38,7 +38,8 @@ typedef struct {
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);
 PyAPI_FUNC(node *) PyParser_ParseFile (FILE *, const char *, grammar *, int,
-                                             char *, char *, perrdetail *);
+                                             const char *, const char *,
+                                             perrdetail *);
 
 PyAPI_FUNC(node *) PyParser_ParseStringFlags(const char *, grammar *, int,
                                               perrdetail *, int);
@@ -48,8 +49,8 @@ PyAPI_FUNC(node *) PyParser_ParseFileFlags(
     const char *enc,
     grammar *g,
     int start,
-    char *ps1,
-    char *ps2,
+    const char *ps1,
+    const char *ps2,
     perrdetail *err_ret,
     int flags);
 PyAPI_FUNC(node *) PyParser_ParseFileFlagsEx(
@@ -58,8 +59,8 @@ PyAPI_FUNC(node *) PyParser_ParseFileFlagsEx(
     const char *enc,
     grammar *g,
     int start,
-    char *ps1,
-    char *ps2,
+    const char *ps1,
+    const char *ps2,
     perrdetail *err_ret,
     int *flags);
 PyAPI_FUNC(node *) PyParser_ParseFileObject(
@@ -68,8 +69,8 @@ PyAPI_FUNC(node *) PyParser_ParseFileObject(
     const char *enc,
     grammar *g,
     int start,
-    char *ps1,
-    char *ps2,
+    const char *ps1,
+    const char *ps2,
     perrdetail *err_ret,
     int *flags);
 

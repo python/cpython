@@ -26,8 +26,8 @@ extern "C" {
 /* External C interface */
 
 PyObject *
-PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding,
-              char *errors, char *newline, int closefd)
+PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding,
+              const char *errors, const char *newline, int closefd)
 {
     PyObject *io, *stream;
     _Py_IDENTIFIER(open);

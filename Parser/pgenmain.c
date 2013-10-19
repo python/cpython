@@ -138,7 +138,7 @@ Py_FatalError(const char *msg)
 /* No-nonsense my_readline() for tokenizer.c */
 
 char *
-PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
+PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n = 1000;
     char *p = (char *)PyMem_MALLOC(n);

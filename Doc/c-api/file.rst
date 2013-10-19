@@ -17,7 +17,7 @@ error reporting in the interpreter; third-party code is advised to access
 the :mod:`io` APIs instead.
 
 
-.. c:function:: PyFile_FromFd(int fd, char *name, char *mode, int buffering, char *encoding, char *errors, char *newline, int closefd)
+.. c:function:: PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding, const char *errors, const char *newline, int closefd)
 
    Create a Python file object from the file descriptor of an already
    opened file *fd*.  The arguments *name*, *encoding*, *errors* and *newline*

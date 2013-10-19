@@ -11874,7 +11874,7 @@ do_argstrip(PyObject *self, int striptype, PyObject *args)
 {
     PyObject *sep = NULL;
 
-    if (!PyArg_ParseTuple(args, (char *)stripformat[striptype], &sep))
+    if (!PyArg_ParseTuple(args, stripformat[striptype], &sep))
         return NULL;
 
     if (sep != NULL && sep != Py_None) {

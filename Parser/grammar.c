@@ -29,7 +29,7 @@ newgrammar(int start)
 }
 
 dfa *
-adddfa(grammar *g, int type, char *name)
+adddfa(grammar *g, int type, const char *name)
 {
     dfa *d;
 
@@ -85,7 +85,7 @@ addarc(dfa *d, int from, int to, int lbl)
 }
 
 int
-addlabel(labellist *ll, int type, char *str)
+addlabel(labellist *ll, int type, const char *str)
 {
     int i;
     label *lb;
@@ -111,7 +111,7 @@ addlabel(labellist *ll, int type, char *str)
 /* Same, but rather dies than adds */
 
 int
-findlabel(labellist *ll, int type, char *str)
+findlabel(labellist *ll, int type, const char *str)
 {
     int i;
 

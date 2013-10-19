@@ -69,13 +69,13 @@ typedef struct {
 /* FUNCTIONS */
 
 grammar *newgrammar(int start);
-dfa *adddfa(grammar *g, int type, char *name);
+dfa *adddfa(grammar *g, int type, const char *name);
 int addstate(dfa *d);
 void addarc(dfa *d, int from, int to, int lbl);
 dfa *PyGrammar_FindDFA(grammar *g, int type);
 
-int addlabel(labellist *ll, int type, char *str);
-int findlabel(labellist *ll, int type, char *str);
+int addlabel(labellist *ll, int type, const char *str);
+int findlabel(labellist *ll, int type, const char *str);
 const char *PyGrammar_LabelRepr(label *lb);
 void translatelabels(grammar *g);
 

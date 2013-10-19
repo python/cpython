@@ -93,7 +93,7 @@ PyAPI_FUNC(unsigned PY_LONG_LONG) PyLong_AsUnsignedLongLongMask(PyObject *);
 PyAPI_FUNC(PY_LONG_LONG) PyLong_AsLongLongAndOverflow(PyObject *, int *);
 #endif /* HAVE_LONG_LONG */
 
-PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
+PyAPI_FUNC(PyObject *) PyLong_FromString(const char *, char **, int);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, Py_ssize_t, int);
 PyAPI_FUNC(PyObject *) PyLong_FromUnicodeObject(PyObject *u, int base);
@@ -189,8 +189,8 @@ PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
 /* These aren't really part of the int object, but they're handy. The
    functions are in Python/mystrtoul.c.
  */
-PyAPI_FUNC(unsigned long) PyOS_strtoul(char *, char **, int);
-PyAPI_FUNC(long) PyOS_strtol(char *, char **, int);
+PyAPI_FUNC(unsigned long) PyOS_strtoul(const char *, char **, int);
+PyAPI_FUNC(long) PyOS_strtol(const char *, char **, int);
 
 #ifdef __cplusplus
 }

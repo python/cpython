@@ -3651,18 +3651,16 @@ parsenumber(struct compiling *c, const char *s)
     end = s + strlen(s) - 1;
     imflag = *end == 'j' || *end == 'J';
     if (s[0] == '0') {
-        x = (long) PyOS_strtoul((char *)s, (char **)&end, 0);
+        x = (long) PyOS_strtoul(s, (char **)&end, 0);
         if (x < 0 && errno == 0) {
-            return PyLong_FromString((char *)s,
-                                     (char **)0,
-                                     0);
+            return PyLong_FromString(s, (char **)0, 0);
         }
     }
     else
-        x = PyOS_strtol((char *)s, (char **)&end, 0);
+        x = PyOS_strtol(s, (char **)&end, 0);
     if (*end == '\0') {
         if (errno != 0)
-            return PyLong_FromString((char *)s, (char **)0, 0);
+            return PyLong_FromString(s, (char **)0, 0);
         return PyLong_FromLong(x);
     }
     /* XXX Huge floats may silently fail */
@@ -3685,8 +3683,8 @@ parsenumber(struct compiling *c, const char *s)
 static PyObject *
 decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 {
-    char *s, *t;
-    t = s = (char *)*sPtr;
+    const char *s, *t;
+    t = s = *sPtr;
     /* while (s < end && *s != '\\') s++; */ /* inefficient for u".." */
     while (s < end && (*s & 0x80)) s++;
     *sPtr = s;

@@ -166,6 +166,8 @@ Library
 C API
 -----
 
+- Issue #1772673: The type of `char*` arguments now changed to `const char*`.
+
 - Issue #16129: Added a `Py_SetStandardStreamEncoding` pre-initialization API
   to allow embedding applications like Blender to force a particular
   encoding and error handler for the standard IO streams (initial patch by

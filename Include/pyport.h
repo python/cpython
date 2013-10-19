@@ -673,8 +673,10 @@ extern char * _getpty(int *, int, mode_t, int);
 /* BSDI does not supply a prototype for the 'openpty' and 'forkpty'
    functions, even though they are included in libutil. */
 #include <termios.h>
-extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
-extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
+extern int openpty(int *, int *, char *,
+                   const struct termios *, const struct winsize *);
+extern pid_t forkpty(int *, char *,
+                     const struct termios *, const struct winsize *);
 #endif /* !defined(HAVE_PTY_H) && !defined(HAVE_LIBUTIL_H) */
 #endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
 

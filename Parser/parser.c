@@ -134,13 +134,13 @@ push(stack *s, int type, dfa *d, int newstate, int lineno, int col_offset)
 /* PARSER PROPER */
 
 static int
-classify(parser_state *ps, int type, char *str)
+classify(parser_state *ps, int type, const char *str)
 {
     grammar *g = ps->p_grammar;
     int n = g->g_ll.ll_nlabels;
 
     if (type == NAME) {
-        char *s = str;
+        const char *s = str;
         label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {

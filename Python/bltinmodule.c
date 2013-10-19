@@ -1335,7 +1335,7 @@ min_max(PyObject *args, PyObject *kwds, int op)
 
     if (positional)
         v = args;
-    else if (!PyArg_UnpackTuple(args, (char *)name, 1, 1, &v))
+    else if (!PyArg_UnpackTuple(args, name, 1, 1, &v))
         return NULL;
 
     emptytuple = PyTuple_New(0);
