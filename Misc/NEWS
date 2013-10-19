@@ -59,6 +59,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12866: The audioop module now supports 24-bit samples.
+
 - Issue #19254: Provide an optimized Python implementation of pbkdf2_hmac.
 
 - Issues #19201, #19222, #19223: Add "x" mode (exclusive creation) in opening

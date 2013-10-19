@@ -197,6 +197,12 @@ The :meth:`~aifc.getparams` method now returns a namedtuple rather than a
 plain tuple.  (Contributed by Claudiu Popa in :issue:`17818`.)
 
 
+audioop
+-------
+
+Added support for 24-bit samples (:issue:`12866`).
+
+
 codecs
 ------
 
