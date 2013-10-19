@@ -675,7 +675,7 @@ that may require changes to your code.
   :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
   string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
 
-* :cls:`importlib.machinery.PathFinder` now passes on the current working
+* :class:`importlib.machinery.PathFinder` now passes on the current working
   directory to objects in :data:`sys.path_hooks` for the empty string. This
   results in :data:`sys.path_importer_cache` never containing ``''``, thus
   iterating through :data:`sys.path_importer_cache` based on :data:`sys.path`
@@ -684,5 +684,5 @@ that may require changes to your code.
   ``-m`` with the interpreter (this does not influence when the path to a file
   is specified on the command-line).
 
-* :cls:`importlib.machinery.FileFinder` no longer special-cases the empty string
+* :class:`importlib.machinery.FileFinder` no longer special-cases the empty string
   to be changed to ``'.'``.
