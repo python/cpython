@@ -371,7 +371,7 @@ importmap(const char *modname, const char *symbol,
 {
     PyObject *o, *mod;
 
-    mod = PyImport_ImportModule((char *)modname);
+    mod = PyImport_ImportModule(modname);
     if (mod == NULL)
         return -1;
 

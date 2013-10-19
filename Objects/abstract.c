@@ -223,7 +223,7 @@ PyObject_DelItem(PyObject *o, PyObject *key)
 }
 
 int
-PyObject_DelItemString(PyObject *o, char *key)
+PyObject_DelItemString(PyObject *o, const char *key)
 {
     PyObject *okey;
     int ret;
@@ -1950,7 +1950,7 @@ PyMapping_Length(PyObject *o)
 #define PyMapping_Length PyMapping_Size
 
 PyObject *
-PyMapping_GetItemString(PyObject *o, char *key)
+PyMapping_GetItemString(PyObject *o, const char *key)
 {
     PyObject *okey, *r;
 
@@ -1966,7 +1966,7 @@ PyMapping_GetItemString(PyObject *o, char *key)
 }
 
 int
-PyMapping_SetItemString(PyObject *o, char *key, PyObject *value)
+PyMapping_SetItemString(PyObject *o, const char *key, PyObject *value)
 {
     PyObject *okey;
     int r;
@@ -1985,7 +1985,7 @@ PyMapping_SetItemString(PyObject *o, char *key, PyObject *value)
 }
 
 int
-PyMapping_HasKeyString(PyObject *o, char *key)
+PyMapping_HasKeyString(PyObject *o, const char *key)
 {
     PyObject *v;
 

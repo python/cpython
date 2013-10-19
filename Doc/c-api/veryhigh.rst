@@ -155,7 +155,7 @@ the same library that the Python runtime is using.
    Python source code.
 
 
-.. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, char *)
+.. c:var:: char* (*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *)
 
    Can be set to point to a function with the prototype
    ``char *func(FILE *stdin, FILE *stdout, char *prompt)``,

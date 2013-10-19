@@ -1043,7 +1043,7 @@ rlhandler(char *text)
 extern PyThreadState* _PyOS_ReadlineTState;
 
 static char *
-readline_until_enter_or_signal(char *prompt, int *signal)
+readline_until_enter_or_signal(const char *prompt, int *signal)
 {
     char * not_done_reading = "";
     fd_set selectset;
@@ -1145,7 +1145,7 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 
 
 static char *
-call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
+call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n;
     char *p, *q;

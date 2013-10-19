@@ -261,10 +261,10 @@ PyAPI_DATA(PyThreadState *) _Py_Finalizing;
 
 /* Stuff with no proper home (yet) */
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(char *) PyOS_Readline(FILE *, FILE *, char *);
+PyAPI_FUNC(char *) PyOS_Readline(FILE *, FILE *, const char *);
 #endif
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
-PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, char *);
+PyAPI_DATA(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *);
 #ifndef Py_LIMITED_API
 PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
 #endif

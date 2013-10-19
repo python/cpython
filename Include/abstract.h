@@ -144,7 +144,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      /* Implemented elsewhere:
 
-     int PyObject_HasAttrString(PyObject *o, char *attr_name);
+     int PyObject_HasAttrString(PyObject *o, const char *attr_name);
 
      Returns 1 if o has the attribute attr_name, and 0 otherwise.
      This is equivalent to the Python expression:
@@ -156,7 +156,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      /* Implemented elsewhere:
 
-     PyObject* PyObject_GetAttrString(PyObject *o, char *attr_name);
+     PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name);
 
      Retrieve an attributed named attr_name form object o.
      Returns the attribute value on success, or NULL on failure.
@@ -189,7 +189,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      /* Implemented elsewhere:
 
-     int PyObject_SetAttrString(PyObject *o, char *attr_name, PyObject *v);
+     int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v);
 
      Set the value of the attribute named attr_name, for object o,
      to the value, v. Returns -1 on failure.  This is
@@ -209,7 +209,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
      /* implemented as a macro:
 
-     int PyObject_DelAttrString(PyObject *o, char *attr_name);
+     int PyObject_DelAttrString(PyObject *o, const char *attr_name);
 
      Delete attribute named attr_name, for object o. Returns
      -1 on failure.  This is the equivalent of the Python
@@ -434,7 +434,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
      statement: o[key]=v.
        */
 
-     PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, char *key);
+     PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
 
        /*
      Remove the mapping for object, key, from the object *o.
@@ -1156,7 +1156,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
      /* implemented as a macro:
 
-     int PyMapping_DelItemString(PyObject *o, char *key);
+     int PyMapping_DelItemString(PyObject *o, const char *key);
 
      Remove the mapping for object, key, from the object *o.
      Returns -1 on failure.  This is equivalent to
@@ -1174,7 +1174,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
        */
 #define PyMapping_DelItem(O,K) PyObject_DelItem((O),(K))
 
-     PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject *o, char *key);
+     PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject *o, const char *key);
 
        /*
      On success, return 1 if the mapping object has the key, key,
@@ -1218,7 +1218,8 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
        */
 
-     PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o, char *key);
+     PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
+                                                    const char *key);
 
        /*
      Return element of o corresponding to the object, key, or NULL
@@ -1226,7 +1227,7 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
      o[key].
        */
 
-     PyAPI_FUNC(int) PyMapping_SetItemString(PyObject *o, char *key,
+     PyAPI_FUNC(int) PyMapping_SetItemString(PyObject *o, const char *key,
                                             PyObject *value);
 
        /*
