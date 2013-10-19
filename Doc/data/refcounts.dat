@@ -508,13 +508,13 @@ PyImport_AddModule:const char*:name::
 PyImport_Cleanup:void:::
 
 PyImport_ExecCodeModule:PyObject*::+1:
-PyImport_ExecCodeModule:char*:name::
+PyImport_ExecCodeModule:const char*:name::
 PyImport_ExecCodeModule:PyObject*:co:0:
 
 PyImport_ExecCodeModuleEx:PyObject*::+1:
-PyImport_ExecCodeModuleEx:char*:name::
+PyImport_ExecCodeModuleEx:const char*:name::
 PyImport_ExecCodeModuleEx:PyObject*:co:0:
-PyImport_ExecCodeModuleEx:char*:pathname::
+PyImport_ExecCodeModuleEx:const char*:pathname::
 
 PyImport_GetMagicNumber:long:::
 
@@ -524,7 +524,7 @@ PyImport_Import:PyObject*::+1:
 PyImport_Import:PyObject*:name:0:
 
 PyImport_ImportFrozenModule:int:::
-PyImport_ImportFrozenModule:char*:::
+PyImport_ImportFrozenModule:const char*:::
 
 PyImport_ImportModule:PyObject*::+1:
 PyImport_ImportModule:const char*:name::
@@ -673,7 +673,7 @@ PyLong_FromUnsignedLongLong:PyObject*::+1:
 PyLong_FromUnsignedLongLong:unsigned long long:v::
 
 PyLong_FromString:PyObject*::+1:
-PyLong_FromString:char*:str::
+PyLong_FromString:const char*:str::
 PyLong_FromString:char**:pend::
 PyLong_FromString:int:base::
 
@@ -701,7 +701,7 @@ PyMapping_DelItemString:const char*:key::
 
 PyMapping_GetItemString:PyObject*::+1:
 PyMapping_GetItemString:PyObject*:o:0:
-PyMapping_GetItemString:char*:key::
+PyMapping_GetItemString:const char*:key::
 
 PyMapping_HasKey:int:::
 PyMapping_HasKey:PyObject*:o:0:
@@ -709,7 +709,7 @@ PyMapping_HasKey:PyObject*:key::
 
 PyMapping_HasKeyString:int:::
 PyMapping_HasKeyString:PyObject*:o:0:
-PyMapping_HasKeyString:char*:key::
+PyMapping_HasKeyString:const char*:key::
 
 PyMapping_Items:PyObject*::+1:
 PyMapping_Items:PyObject*:o:0:
@@ -722,7 +722,7 @@ PyMapping_Length:PyObject*:o:0:
 
 PyMapping_SetItemString:int:::
 PyMapping_SetItemString:PyObject*:o:0:
-PyMapping_SetItemString:char*:key::
+PyMapping_SetItemString:const char*:key::
 PyMapping_SetItemString:PyObject*:v:+1:
 
 PyMapping_Values:PyObject*::+1:
@@ -735,7 +735,7 @@ PyMarshal_ReadObjectFromFile:PyObject*::+1:
 PyMarshal_ReadObjectFromFile:FILE*:file::
 
 PyMarshal_ReadObjectFromString:PyObject*::+1:
-PyMarshal_ReadObjectFromString:char*:string::
+PyMarshal_ReadObjectFromString:const char*:string::
 PyMarshal_ReadObjectFromString:int:len::
 
 PyMarshal_WriteObjectToString:PyObject*::+1:

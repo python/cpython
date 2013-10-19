@@ -94,7 +94,8 @@ PyParser_ParseStringFlagsFilenameEx(const char *s, const char *filename_str,
 
 node *
 PyParser_ParseFile(FILE *fp, const char *filename, grammar *g, int start,
-                   char *ps1, char *ps2, perrdetail *err_ret)
+                   const char *ps1, const char *ps2,
+                   perrdetail *err_ret)
 {
     return PyParser_ParseFileFlags(fp, filename, NULL,
                                    g, start, ps1, ps2, err_ret, 0);
@@ -103,7 +104,8 @@ PyParser_ParseFile(FILE *fp, const char *filename, grammar *g, int start,
 node *
 PyParser_ParseFileFlags(FILE *fp, const char *filename, const char *enc,
                         grammar *g, int start,
-                        char *ps1, char *ps2, perrdetail *err_ret, int flags)
+                        const char *ps1, const char *ps2,
+                        perrdetail *err_ret, int flags)
 {
     int iflags = flags;
     return PyParser_ParseFileFlagsEx(fp, filename, enc, g, start, ps1,
@@ -113,15 +115,15 @@ PyParser_ParseFileFlags(FILE *fp, const char *filename, const char *enc,
 node *
 PyParser_ParseFileObject(FILE *fp, PyObject *filename,
                          const char *enc, grammar *g, int start,
-                         char *ps1, char *ps2, perrdetail *err_ret,
-                         int *flags)
+                         const char *ps1, const char *ps2,
+                         perrdetail *err_ret, int *flags)
 {
     struct tok_state *tok;
 
     if (initerr(err_ret, filename) < 0)
         return NULL;
 
-    if ((tok = PyTokenizer_FromFile(fp, (char *)enc, ps1, ps2)) == NULL) {
+    if ((tok = PyTokenizer_FromFile(fp, enc, ps1, ps2)) == NULL) {
         err_ret->error = E_NOMEM;
         return NULL;
     }
@@ -135,7 +137,8 @@ PyParser_ParseFileObject(FILE *fp, PyObject *filename,
 node *
 PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
                           const char *enc, grammar *g, int start,
-                          char *ps1, char *ps2, perrdetail *err_ret, int *flags)
+                          const char *ps1, const char *ps2,
+                          perrdetail *err_ret, int *flags)
 {
     node *n;
     PyObject *fileobj = NULL;

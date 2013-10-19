@@ -31,7 +31,7 @@
                || c == '_'\
                || (c >= 128))
 
-extern char *PyOS_Readline(FILE *, FILE *, char *);
+extern char *PyOS_Readline(FILE *, FILE *, const char *);
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
    NULL if interrupted */
@@ -780,7 +780,7 @@ PyTokenizer_FromString(const char *str, int exec_input)
     struct tok_state *tok = tok_new();
     if (tok == NULL)
         return NULL;
-    str = (char *)decode_str(str, exec_input, tok);
+    str = decode_str(str, exec_input, tok);
     if (str == NULL) {
         PyTokenizer_Free(tok);
         return NULL;
@@ -823,7 +823,8 @@ PyTokenizer_FromUTF8(const char *str, int exec_input)
 /* Set up tokenizer for file */
 
 struct tok_state *
-PyTokenizer_FromFile(FILE *fp, char* enc, char *ps1, char *ps2)
+PyTokenizer_FromFile(FILE *fp, const char* enc,
+                     const char *ps1, const char *ps2)
 {
     struct tok_state *tok = tok_new();
     if (tok == NULL)

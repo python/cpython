@@ -80,7 +80,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    *NULL* on failure.
 
 
-.. c:function:: PyObject* PyLong_FromString(char *str, char **pend, int base)
+.. c:function:: PyObject* PyLong_FromString(const char *str, char **pend, int base)
 
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
    is interpreted according to the radix in *base*.  If *pend* is non-*NULL*,

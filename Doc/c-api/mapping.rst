@@ -22,7 +22,7 @@ Mapping Protocol
    expression ``len(o)``.
 
 
-.. c:function:: int PyMapping_DelItemString(PyObject *o, char *key)
+.. c:function:: int PyMapping_DelItemString(PyObject *o, const char *key)
 
    Remove the mapping for object *key* from the object *o*. Return ``-1`` on
    failure.  This is equivalent to the Python statement ``del o[key]``.
@@ -67,13 +67,13 @@ Mapping Protocol
    the Python expression ``list(o.items())``.
 
 
-.. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, char *key)
+.. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, const char *key)
 
    Return element of *o* corresponding to the object *key* or *NULL* on failure.
    This is the equivalent of the Python expression ``o[key]``.
 
 
-.. c:function:: int PyMapping_SetItemString(PyObject *o, char *key, PyObject *v)
+.. c:function:: int PyMapping_SetItemString(PyObject *o, const char *key, PyObject *v)
 
    Map the object *key* to the value *v* in object *o*. Returns ``-1`` on failure.
    This is the equivalent of the Python statement ``o[key] = v``.

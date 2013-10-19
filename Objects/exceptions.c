@@ -121,11 +121,11 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    char *name;
-    char *dot;
+    const char *name;
+    const char *dot;
 
-    name = (char *)Py_TYPE(self)->tp_name;
-    dot = strrchr(name, '.');
+    name = Py_TYPE(self)->tp_name;
+    dot = (const char *) strrchr(name, '.');
     if (dot != NULL) name = dot+1;
 
     return PyUnicode_FromFormat("%s%R", name, self->args);

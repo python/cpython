@@ -441,7 +441,7 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
         return -1;
     }
     return PyDict_SetItemString(interp->codec_error_registry,
-                                (char *)name, error);
+                                name, error);
 }
 
 /* Lookup the error handling callback function registered under the
@@ -457,7 +457,7 @@ PyObject *PyCodec_LookupError(const char *name)
 
     if (name==NULL)
         name = "strict";
-    handler = PyDict_GetItemString(interp->codec_error_registry, (char *)name);
+    handler = PyDict_GetItemString(interp->codec_error_registry, name);
     if (!handler)
         PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
     else

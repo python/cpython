@@ -84,7 +84,7 @@ Dictionary Objects
    on failure.
 
 
-.. c:function:: int PyDict_DelItemString(PyObject *p, char *key)
+.. c:function:: int PyDict_DelItemString(PyObject *p, const char *key)
 
    Remove the entry in dictionary *p* which has a key specified by the string
    *key*.  Return ``0`` on success or ``-1`` on failure.

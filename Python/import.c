@@ -517,7 +517,7 @@ _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
 }
 
 int
-_PyImport_FixupBuiltin(PyObject *mod, char *name)
+_PyImport_FixupBuiltin(PyObject *mod, const char *name)
 {
     int res;
     PyObject *nameobj;
@@ -656,22 +656,23 @@ remove_module(PyObject *name)
  * interface.  The other two exist primarily for backward compatibility.
  */
 PyObject *
-PyImport_ExecCodeModule(char *name, PyObject *co)
+PyImport_ExecCodeModule(const char *name, PyObject *co)
 {
     return PyImport_ExecCodeModuleWithPathnames(
         name, co, (char *)NULL, (char *)NULL);
 }
 
 PyObject *
-PyImport_ExecCodeModuleEx(char *name, PyObject *co, char *pathname)
+PyImport_ExecCodeModuleEx(const char *name, PyObject *co, const char *pathname)
 {
     return PyImport_ExecCodeModuleWithPathnames(
         name, co, pathname, (char *)NULL);
 }
 
 PyObject *
-PyImport_ExecCodeModuleWithPathnames(char *name, PyObject *co, char *pathname,
-                                     char *cpathname)
+PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
+                                     const char *pathname,
+                                     const char *cpathname)
 {
     PyObject *m = NULL;
     PyObject *nameobj, *pathobj = NULL, *cpathobj = NULL;
@@ -1019,7 +1020,7 @@ get_frozen_object(PyObject *name)
     size = p->size;
     if (size < 0)
         size = -size;
-    return PyMarshal_ReadObjectFromString((char *)p->code, size);
+    return PyMarshal_ReadObjectFromString((const char *)p->code, size);
 }
 
 static PyObject *
@@ -1071,7 +1072,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     ispackage = (size < 0);
     if (ispackage)
         size = -size;
-    co = PyMarshal_ReadObjectFromString((char *)p->code, size);
+    co = PyMarshal_ReadObjectFromString((const char *)p->code, size);
     if (co == NULL)
         return -1;
     if (!PyCode_Check(co)) {
@@ -1113,7 +1114,7 @@ err_return:
 }
 
 int
-PyImport_ImportFrozenModule(char *name)
+PyImport_ImportFrozenModule(const char *name)
 {
     PyObject *nameobj;
     int ret;
