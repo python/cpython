@@ -57,18 +57,18 @@ for each release.
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
         * SQLite 3.7.13
-        * Tcl 8.5.14
-        * Tk 8.5.14
+        * Tcl 8.5.15
+        * Tk 8.5.15
         * XZ 5.0.3
 
     - uses system-supplied versions of third-party libraries
 
         * readline module links with Apple BSD editline (libedit)
 
-    - requires ActiveState Tcl/Tk 8.5.14 (or later) to be installed for building
+    - requires ActiveState Tcl/Tk 8.5.15 (or later) to be installed for building
 
         * Beginning with Python 3.4 alpha2, this installer now includes its own
-          private copy of Tcl and Tk 8.5.14 libraries and thus is no longer
+          private copy of Tcl and Tk 8.5.15 libraries and thus is no longer
           dependent on the buggy releases of Aqua Cocoa Tk 8.5 shipped with
           OS X 10.6 or on installing a newer third-party version of Tcl/Tk
           in /Library/Frameworks, such as from ActiveState.  Because this
