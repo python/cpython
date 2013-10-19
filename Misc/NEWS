@@ -9,6 +9,8 @@ What's New in Python 2.7.6?
 Core and Builtins
 -----------------
 
+- Issue #19279: UTF-7 decoder no more produces illegal unicode strings.
+
 - Issue #18739: Fix an inconsistency between math.log(n) and math.log(long(n));
   the results could be off from one another by a ulp or two.
 

@@ -1671,6 +1671,7 @@ PyObject *PyUnicode_DecodeUTF7Stateful(const char *s,
                                        (base64buffer >> (base64bits-16));
                     base64bits -= 16;
                     base64buffer &= (1 << base64bits) - 1; /* clear high bits */
+                    assert(outCh <= 0xffff);
                     if (surrogate) {
                         /* expecting a second surrogate */
                         if (outCh >= 0xDC00 && outCh <= 0xDFFF) {
@@ -1737,6 +1738,7 @@ PyObject *PyUnicode_DecodeUTF7Stateful(const char *s,
                 inShift = 1;
                 shiftOutStart = p;
                 base64bits = 0;
+                base64buffer = 0;
             }
         }
         else if (DECODE_DIRECT(ch)) { /* character decodes as itself */
