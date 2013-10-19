@@ -196,9 +196,9 @@ def library_recipes():
     if DEPTARGET > '10.5':
         result.extend([
           dict(
-              name="Tcl 8.5.14",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tcl8.5.14-src.tar.gz",
-              checksum='44b50e58ab45dd272f6714dce2129123',
+              name="Tcl 8.5.15",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tcl8.5.15-src.tar.gz",
+              checksum='f3df162f92c69b254079c4d0af7a690f',
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -212,9 +212,9 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.5.14",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tk8.5.14-src.tar.gz",
-              checksum='a9c48921b3688020470cd3a6dd4e867d',
+              name="Tk 8.5.15",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tk8.5.15-src.tar.gz",
+              checksum='55b8e33f903210a4e1c8bce0f820657f',
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',

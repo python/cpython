@@ -188,6 +188,7 @@ Build
 
 - Issue #19130: Correct PCbuild/readme.txt, Python 3.3 and 3.4 require VS 2010.
 
+- Issue #15663: Update OS X 10.6+ installer to use Tcl/Tk 8.5.15.
 
 What's New in Python 3.4.0 Alpha 3?
 ===================================
