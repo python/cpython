@@ -1389,6 +1389,8 @@ class PyBuildExt(build_ext):
             zlib_h = zlib_inc[0] + '/zlib.h'
             version = '"0.0.0"'
             version_req = '"1.1.3"'
+            if host_platform == 'darwin' and is_macosx_sdk_path(zlib_h):
+                zlib_h = os.path.join(macosx_sdk_root(), zlib_h[1:])
             fp = open(zlib_h)
             while 1:
                 line = fp.readline()
