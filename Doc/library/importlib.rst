@@ -723,7 +723,7 @@ find and load modules.
      finders stored in :attr:`sys.path_importer_cache`.
 
   .. versionchanged:: 3.4
-     Calls objects in :data:sys.path_hooks with the current working directory
+     Calls objects in :data:`sys.path_hooks` with the current working directory
      for ``''`` (i.e. the empty string).
 
 
@@ -752,7 +752,7 @@ find and load modules.
 
    .. versionadded:: 3.3
 
-   .. versionchange:: 3.4
+   .. versionchanged:: 3.4
       The empty string is no longer special-cased to be changed into ``'.'``.
 
    .. attribute:: path
