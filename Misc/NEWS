@@ -196,6 +196,11 @@ Build
     3. -sysroot and -arch flags were unnecessarily duplicated
     4. there was no obvious way to configure an intel-32 only build.
 
+- Issue #19019: Change the OS X installer build script to use CFLAGS instead
+  of OPT for special build options.  By setting OPT, some compiler-specific
+  options like -fwrapv were overridden and thus not used, which could result
+  in broken interpreters when building with clang.
+
 What's New in Python 3.4.0 Alpha 3?
 ===================================
 
