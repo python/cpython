@@ -641,27 +641,67 @@ class TestRedirectStdout(unittest.TestCase):
         s = f.getvalue()
         self.assertIn('pow', s)
 
+    def test_enter_result_is_target(self):
+        f = io.StringIO()
+        with redirect_stdout(f) as enter_result:
+            self.assertIs(enter_result, f)
+
+    def test_cm_is_reusable(self):
+        f = io.StringIO()
+        write_to_f = redirect_stdout(f)
+        with write_to_f:
+            print("Hello", end=" ")
+        with write_to_f:
+            print("World!")
+        s = f.getvalue()
+        self.assertEqual(s, "Hello World!\n")
+
+    # If this is ever made reentrant, update the reusable-but-not-reentrant
+    # example at the end of the contextlib docs accordingly.
+    def test_nested_reentry_fails(self):
+        f = io.StringIO()
+        write_to_f = redirect_stdout(f)
+        with self.assertRaisesRegex(RuntimeError, "Cannot reenter"):
+            with write_to_f:
+                print("Hello", end=" ")
+                with write_to_f:
+                    print("World!")
+
+
 class TestSuppress(unittest.TestCase):
 
-    def test_no_exception(self):
+    def test_no_result_from_enter(self):
+        with suppress(ValueError) as enter_result:
+            self.assertIsNone(enter_result)
 
+    def test_no_exception(self):
         with suppress(ValueError):
             self.assertEqual(pow(2, 5), 32)
 
     def test_exact_exception(self):
-
         with suppress(TypeError):
             len(5)
 
     def test_multiple_exception_args(self):
-
+        with suppress(ZeroDivisionError, TypeError):
+            1/0
         with suppress(ZeroDivisionError, TypeError):
             len(5)
 
     def test_exception_hierarchy(self):
-
         with suppress(LookupError):
             'Hello'[50]
+
+    def test_cm_is_reentrant(self):
+        ignore_exceptions = suppress(Exception)
+        with ignore_exceptions:
+            pass
+        with ignore_exceptions:
+            len(5)
+        with ignore_exceptions:
+            1/0
+            with ignore_exceptions: # Check nested usage
+                len(5)
 
 if __name__ == "__main__":
     unittest.main()

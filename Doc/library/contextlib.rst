@@ -128,6 +128,8 @@ Functions and classes provided:
        except FileNotFoundError:
            pass
 
+   This context manager is :ref:`reentrant <reentrant-cms>`.
+
    .. versionadded:: 3.4
 
 
@@ -164,6 +166,8 @@ Functions and classes provided:
    context manager is not suitable for use in library code and most threaded
    applications. It also has no effect on the output of subprocesses.
    However, it is still a useful approach for many utility scripts.
+
+   This context manager is :ref:`reusable but not reentrant <reusable-cms>`.
 
    .. versionadded:: 3.4
 
@@ -593,3 +597,115 @@ an explicit ``with`` statement.
       The specification, background, and examples for the Python :keyword:`with`
       statement.
 
+
+Reusable and reentrant context managers
+---------------------------------------
+
+Most context managers are written in a way that means they can only be
+used effectively in a :keyword:`with` statement once. These single use
+context managers must be created afresh each time they're used -
+attempting to use them a second time will trigger an exception or
+otherwise not work correctly.
+
+This common limitation means that it is generally advisable to create
+context managers directly in the header of the :keyword:`with` statement
+where they are used (as shown in all of the usage examples above).
+
+Files are an example of effectively single use context managers, since
+the first :keyword:`with` statement will close the file, preventing any
+further IO operations using that file object.
+
+Context managers created using :func:`contextmanager` are also single use
+context managers, and will complain about the underlying generator failing
+to yield if an attempt is made to use them a second time::
+
+    >>> from contextlib import contextmanager
+    >>> @contextmanager
+    ... def singleuse():
+    ...     print("Before")
+    ...     yield
+    ...     print("After")
+    ...
+    >>> cm = singleuse()
+    >>> with cm:
+    ...     pass
+    ...
+    Before
+    After
+    >>> with cm:
+    ...    pass
+    ...
+    Traceback (most recent call last):
+        ...
+    RuntimeError: generator didn't yield
+
+
+.. _reentrant-cms:
+
+Reentrant context managers
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+More sophisticated context managers may be "reentrant". These context
+managers can not only be used in multiple :keyword:`with` statements,
+but may also be used *inside* a :keyword:`with` statement that is already
+using the same context manager.
+
+:class:`threading.RLock` is an example of a reentrant context manager, as is
+:func:`suppress`. Here's a toy example of reentrant use (real world
+examples of reentrancy are more likely to occur with objects like recursive
+locks and are likely to be far more complicated than this example)::
+
+    >>> from contextlib import suppress
+    >>> ignore_raised_exception = suppress(ZeroDivisionError)
+    >>> with ignore_raised_exception:
+    ...     with ignore_raised_exception:
+    ...         1/0
+    ...     print("This line runs")
+    ...     1/0
+    ...     print("This is skipped")
+    ...
+    This line runs
+    >>> # The second exception is also suppressed
+
+
+.. _reusable-cms:
+
+Reusable context managers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Distinct from both single use and reentrant context managers are "reusable"
+context managers (or, to be completely explicit, "reusable, but not
+reentrant" context managers, since reentrant context managers are also
+reusable). These context managers support being used multiple times, but
+will fail (or otherwise not work correctly) if the specific context manager
+instance has already been used in a containing with statement.
+
+An example of a reusable context manager is :func:`redirect_stdout`::
+
+    >>> from contextlib import redirect_stdout
+    >>> from io import StringIO
+    >>> f = StringIO()
+    >>> collect_output = redirect_stdout(f)
+    >>> with collect_output:
+    ...     print("Collected")
+    ...
+    >>> print("Not collected")
+    Not collected
+    >>> with collect_output:
+    ...     print("Also collected")
+    ...
+    >>> print(f.getvalue())
+    Collected
+    Also collected
+
+However, this context manager is not reentrant, so attempting to reuse it
+within a containing with statement fails:
+
+    >>> with collect_output:
+    ...     # Nested reuse is not permitted
+    ...     with collect_output:
+    ...         pass
+    ...
+    Traceback (most recent call last):
+      ...
+    RuntimeError: Cannot reenter <...>

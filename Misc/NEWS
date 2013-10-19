@@ -74,7 +74,7 @@ Library
 - Issue #19266: Rename the new-in-3.4 ``contextlib.ignore`` context manager
   to ``contextlib.suppress`` in order to be more consistent with existing
   descriptions of that operation elsewhere in the language and standard
-  library documentation (Patch by Zero Piraeus)
+  library documentation (Patch by Zero Piraeus).
 
 - Issue #18891: Completed the new email package (provisional) API additions
   by adding new classes EmailMessage, MIMEPart, and ContentManager.
