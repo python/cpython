@@ -155,6 +155,7 @@ target_cc_map = {
         '10.6': ('gcc-4.2', 'g++-4.2'),
         '10.7': ('clang', 'clang++'),
         '10.8': ('clang', 'clang++'),
+        '10.9': ('clang', 'clang++'),
 }
 
 CC, CXX = target_cc_map[DEPTARGET]
