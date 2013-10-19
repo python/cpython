@@ -676,7 +676,7 @@ curses_window_addch_impl(PyObject *self, int group_left_1, int x, int y, PyObjec
     }
     else
 #else
-    type = PyCurses_ConvertToCchar_t(cwself, chobj, &cch);
+    type = PyCurses_ConvertToCchar_t(cwself, ch, &cch);
 #endif
     if (type == 1) {
         funcname = "addch";
