@@ -6,9 +6,12 @@
 
 
 The :mod:`audioop` module contains some useful operations on sound fragments.
-It operates on sound fragments consisting of signed integer samples 8, 16 or 32
-bits wide, stored in bytes objects.  All scalar items are integers, unless
-specified otherwise.
+It operates on sound fragments consisting of signed integer samples 8, 16, 24
+or 32 bits wide, stored in bytes objects.  All scalar items are integers,
+unless specified otherwise.
+
+.. versionchanged:: 3.4
+   Support for 24-bit samples was added.
 
 .. index::
    single: Intel/DVI ADPCM
@@ -35,7 +38,7 @@ The module defines the following variables and functions:
 .. function:: add(fragment1, fragment2, width)
 
    Return a fragment which is the addition of the two samples passed as parameters.
-   *width* is the sample width in bytes, either ``1``, ``2`` or ``4``.  Both
+   *width* is the sample width in bytes, either ``1``, ``2``, ``3`` or ``4``.  Both
    fragments should have the same length.  Samples are truncated in case of overflow.
 
 
@@ -133,19 +136,19 @@ The module defines the following variables and functions:
 
 .. function:: lin2lin(fragment, width, newwidth)
 
-   Convert samples between 1-, 2- and 4-byte formats.
+   Convert samples between 1-, 2-, 3- and 4-byte formats.
 
    .. note::
 
-      In some audio formats, such as .WAV files, 16 and 32 bit samples are
+      In some audio formats, such as .WAV files, 16, 24 and 32 bit samples are
       signed, but 8 bit samples are unsigned.  So when converting to 8 bit wide
       samples for these formats, you need to also add 128 to the result::
 
          new_frames = audioop.lin2lin(frames, old_width, 1)
          new_frames = audioop.bias(new_frames, 1, 128)
 
-      The same, in reverse, has to be applied when converting from 8 to 16 or 32
-      bit width samples.
+      The same, in reverse, has to be applied when converting from 8 to 16, 24
+      or 32 bit width samples.
 
 
 .. function:: lin2ulaw(fragment, width)
