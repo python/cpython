@@ -2160,9 +2160,31 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
     return res;
 }
 
+/*[clinic]
+module dict
+
+@coexist
+dict.__contains__
+
+  key: object
+  /
+
+True if D has a key k, else False"
+[clinic]*/
+
+PyDoc_STRVAR(dict___contains____doc__,
+"True if D has a key k, else False\"\n"
+"\n"
+"dict.__contains__(key)");
+
+#define DICT___CONTAINS___METHODDEF    \
+    {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
+
 static PyObject *
-dict_contains(PyDictObject *mp, PyObject *key)
+dict___contains__(PyObject *self, PyObject *key)
+/*[clinic checksum: 61c5c802ea1d35699a1a754f1f3538ea9b259cf4]*/
 {
+    register PyDictObject *mp = (PyDictObject *)self;
     Py_hash_t hash;
     PyDictKeyEntry *ep;
     PyObject **value_addr;
@@ -2447,9 +2469,6 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
     return sizeof(PyDictKeysObject) + (DK_SIZE(keys)-1) * sizeof(PyDictKeyEntry);
 }
 
-PyDoc_STRVAR(contains__doc__,
-"D.__contains__(k) -> True if D has a key k, else False");
-
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
 
 PyDoc_STRVAR(sizeof__doc__,
@@ -2498,8 +2517,7 @@ PyDoc_STRVAR(values__doc__,
              "D.values() -> an object providing a view on D's values");
 
 static PyMethodDef mapp_methods[] = {
-    {"__contains__",(PyCFunction)dict_contains,     METH_O | METH_COEXIST,
-     contains__doc__},
+    DICT___CONTAINS___METHODDEF
     {"__getitem__", (PyCFunction)dict_subscript,        METH_O | METH_COEXIST,
      getitem__doc__},
     {"__sizeof__",      (PyCFunction)dict_sizeof,       METH_NOARGS,

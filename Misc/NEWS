@@ -10,6 +10,9 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #16612: Add "Argument Clinic", a compile-time preprocessor for
+  C files to generate argument parsing code.  (See PEP 436.)
+
 - Issue #18810: Shift stat calls in importlib.machinery.FileFinder such that
   the code is optimistic that if something exists in a directory named exactly
   like the possible package being searched for that it's in actuality a

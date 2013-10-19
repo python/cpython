@@ -549,68 +549,141 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 
 /* Addch, Addstr, Addnstr */
 
+/*[clinic]
+module curses
+
+class curses.window
+
+curses.window.addch
+
+    [
+    x: int
+      X-coordinate.
+    y: int
+      Y-coordinate.
+    ]
+
+    ch: object
+      Character to add.
+
+    [
+    attr: long
+      Attributes for the character.
+    ]
+    /
+
+Paint character ch at (y, x) with attributes attr.
+
+Paint character ch at (y, x) with attributes attr,
+overwriting any character previously painted at that location.
+By default, the character position and attributes are the
+current settings for the window object.
+[clinic]*/
+
+PyDoc_STRVAR(curses_window_addch__doc__,
+"Paint character ch at (y, x) with attributes attr.\n"
+"\n"
+"curses.window.addch([x, y,] ch, [attr])\n"
+"  x\n"
+"    X-coordinate.\n"
+"  y\n"
+"    Y-coordinate.\n"
+"  ch\n"
+"    Character to add.\n"
+"  attr\n"
+"    Attributes for the character.\n"
+"\n"
+"Paint character ch at (y, x) with attributes attr,\n"
+"overwriting any character previously painted at that location.\n"
+"By default, the character position and attributes are the\n"
+"current settings for the window object.");
+
+#define CURSES_WINDOW_ADDCH_METHODDEF    \
+    {"addch", (PyCFunction)curses_window_addch, METH_VARARGS, curses_window_addch__doc__},
+
 static PyObject *
-PyCursesWindow_AddCh(PyCursesWindowObject *self, PyObject *args)
+curses_window_addch_impl(PyObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr);
+
+static PyObject *
+curses_window_addch(PyObject *self, PyObject *args)
 {
-    int rtn, x, y, use_xy = FALSE;
-    PyObject *chobj;
+    PyObject *return_value = NULL;
+    int group_left_1 = 0;
+    int x;
+    int y;
+    PyObject *ch;
+    int group_right_1 = 0;
+    long attr;
+
+    switch (PyTuple_Size(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "O:addch", &ch))
+                return NULL;
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "Ol:addch", &ch, &attr))
+                return NULL;
+            group_right_1 = 1;
+            break;
+        case 3:
+            if (!PyArg_ParseTuple(args, "iiO:addch", &x, &y, &ch))
+                return NULL;
+            group_left_1 = 1;
+            break;
+        case 4:
+            if (!PyArg_ParseTuple(args, "iiOl:addch", &x, &y, &ch, &attr))
+                return NULL;
+            group_right_1 = 1;
+            group_left_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "curses.window.addch requires 1 to 4 arguments");
+            return NULL;
+    }
+    return_value = curses_window_addch_impl(self, group_left_1, x, y, ch, group_right_1, attr);
+
+    return return_value;
+}
+
+static PyObject *
+curses_window_addch_impl(PyObject *self, int group_left_1, int x, int y, PyObject *ch, int group_right_1, long attr)
+/*[clinic checksum: 98ade780397a48d0be48439763424b3b00c92089]*/
+{
+    PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
+    int coordinates_group = group_left_1;
+    int attr_group = group_right_1;
+    int rtn;
     int type;
-    chtype ch;
+    chtype cch;
 #ifdef HAVE_NCURSESW
     cchar_t wch;
 #endif
-    attr_t attr = A_NORMAL;
-    long lattr;
     const char *funcname;
 
-    switch (PyTuple_Size(args)) {
-    case 1:
-        if (!PyArg_ParseTuple(args, "O;ch or int", &chobj))
-            return NULL;
-        break;
-    case 2:
-        if (!PyArg_ParseTuple(args, "Ol;ch or int,attr", &chobj, &lattr))
-            return NULL;
-        attr = lattr;
-        break;
-    case 3:
-        if (!PyArg_ParseTuple(args,"iiO;y,x,ch or int", &y, &x, &chobj))
-            return NULL;
-        use_xy = TRUE;
-        break;
-    case 4:
-        if (!PyArg_ParseTuple(args,"iiOl;y,x,ch or int, attr",
-                              &y, &x, &chobj, &lattr))
-            return NULL;
-        attr = lattr;
-        use_xy = TRUE;
-        break;
-    default:
-        PyErr_SetString(PyExc_TypeError, "addch requires 1 to 4 arguments");
-        return NULL;
-    }
+    if (!attr_group)
+      attr = A_NORMAL;
 
 #ifdef HAVE_NCURSESW
-    type = PyCurses_ConvertToCchar_t(self, chobj, &ch, &wch);
+    type = PyCurses_ConvertToCchar_t(cwself, ch, &cch, &wch);
     if (type == 2) {
         funcname = "add_wch";
         wch.attr = attr;
-        if (use_xy == TRUE)
-            rtn = mvwadd_wch(self->win,y,x, &wch);
+        if (coordinates_group)
+            rtn = mvwadd_wch(cwself->win,y,x, &wch);
         else {
-            rtn = wadd_wch(self->win, &wch);
+            rtn = wadd_wch(cwself->win, &wch);
         }
     }
     else
 #else
-    type = PyCurses_ConvertToCchar_t(self, chobj, &ch);
+    type = PyCurses_ConvertToCchar_t(cwself, chobj, &cch);
 #endif
     if (type == 1) {
         funcname = "addch";
-        if (use_xy == TRUE)
-            rtn = mvwaddch(self->win,y,x, ch | attr);
+        if (coordinates_group)
+            rtn = mvwaddch(cwself->win,y,x, cch | attr);
         else {
-            rtn = waddch(self->win, ch | attr);
+            rtn = waddch(cwself->win, cch | attr);
         }
     }
     else {
@@ -1954,7 +2027,7 @@ PyCursesWindow_set_encoding(PyCursesWindowObject *self, PyObject *value)
 
 
 static PyMethodDef PyCursesWindow_Methods[] = {
-    {"addch",           (PyCFunction)PyCursesWindow_AddCh, METH_VARARGS},
+    CURSES_WINDOW_ADDCH_METHODDEF
     {"addnstr",         (PyCFunction)PyCursesWindow_AddNStr, METH_VARARGS},
     {"addstr",          (PyCFunction)PyCursesWindow_AddStr, METH_VARARGS},
     {"attroff",         (PyCFunction)PyCursesWindow_AttrOff, METH_VARARGS},
