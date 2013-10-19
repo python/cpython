@@ -2651,10 +2651,10 @@ os_access_impl(PyObject *self, path_t *path, int mode, int dir_fd, int effective
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    if (path.wide != NULL)
-        attr = GetFileAttributesW(path.wide);
+    if (path->wide != NULL)
+        attr = GetFileAttributesW(path->wide);
     else
-        attr = GetFileAttributesA(path.narrow);
+        attr = GetFileAttributesA(path->narrow);
     Py_END_ALLOW_THREADS
 
     /*
