@@ -104,7 +104,6 @@ struct compiler_unit {
     PySTEntryObject *u_ste;
 
     PyObject *u_name;
-    PyObject *u_qualname;  /* dot-separated qualified name (lazy) */
     int u_scope_type;
 
     /* The following fields are dicts that map objects to
@@ -507,7 +506,6 @@ compiler_unit_free(struct compiler_unit *u)
     }
     Py_CLEAR(u->u_ste);
     Py_CLEAR(u->u_name);
-    Py_CLEAR(u->u_qualname);
     Py_CLEAR(u->u_consts);
     Py_CLEAR(u->u_names);
     Py_CLEAR(u->u_varnames);
@@ -660,11 +658,6 @@ compiler_scope_qualname(struct compiler *c, identifier scope_name)
     PyObject *capsule, *name, *seq, *dot_str, *locals_str;
 
     u = c->u;
-    if (u->u_qualname != NULL) {
-        Py_INCREF(u->u_qualname);
-        return u->u_qualname;
-    }
-
     seq = PyList_New(0);
     if (seq == NULL)
         return NULL;
@@ -714,7 +707,6 @@ compiler_scope_qualname(struct compiler *c, identifier scope_name)
         goto _error;
     name = PyUnicode_Join(dot_str, seq);
     Py_DECREF(seq);
-    u->u_qualname = name;
     Py_XINCREF(name);
     return name;
 
