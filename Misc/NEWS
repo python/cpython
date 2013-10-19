@@ -78,6 +78,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18235: Fix the sysconfig variables LDSHARED and BLDSHARED under AIX.
+  Patch by David Edelsohn.
+
 - Issue #19276: Fixed the wave module on 64-bit big-endian platforms.
 
 - Issue #18776: atexit callbacks now display their full traceback when they
