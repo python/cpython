@@ -12656,28 +12656,76 @@ unicode_swapcase(PyObject *self)
     return case_operation(self, do_swapcase);
 }
 
-PyDoc_STRVAR(maketrans__doc__,
-             "str.maketrans(x[, y[, z]]) -> dict (static method)\n\
-\n\
-Return a translation table usable for str.translate().\n\
-If there is only one argument, it must be a dictionary mapping Unicode\n\
-ordinals (integers) or characters to Unicode ordinals, strings or None.\n\
-Character keys will be then converted to ordinals.\n\
-If there are two arguments, they must be strings of equal length, and\n\
-in the resulting dictionary, each character in x will be mapped to the\n\
-character at the same position in y. If there is a third argument, it\n\
-must be a string, whose characters will be mapped to None in the result.");
+/*[clinic]
+module str
 
-static PyObject*
+@staticmethod
+str.maketrans as unicode_maketrans
+
+  x: object
+
+  y: unicode=NULL
+
+  z: unicode=NULL
+
+  /
+
+Return a translation table usable for str.translate().
+
+If there is only one argument, it must be a dictionary mapping Unicode
+ordinals (integers) or characters to Unicode ordinals, strings or None.
+Character keys will be then converted to ordinals.
+If there are two arguments, they must be strings of equal length, and
+in the resulting dictionary, each character in x will be mapped to the
+character at the same position in y. If there is a third argument, it
+must be a string, whose characters will be mapped to None in the result.
+[clinic]*/
+
+PyDoc_STRVAR(unicode_maketrans__doc__,
+"Return a translation table usable for str.translate().\n"
+"\n"
+"str.maketrans(x, y=None, z=None)\n"
+"\n"
+"If there is only one argument, it must be a dictionary mapping Unicode\n"
+"ordinals (integers) or characters to Unicode ordinals, strings or None.\n"
+"Character keys will be then converted to ordinals.\n"
+"If there are two arguments, they must be strings of equal length, and\n"
+"in the resulting dictionary, each character in x will be mapped to the\n"
+"character at the same position in y. If there is a third argument, it\n"
+"must be a string, whose characters will be mapped to None in the result.");
+
+#define UNICODE_MAKETRANS_METHODDEF    \
+    {"maketrans", (PyCFunction)unicode_maketrans, METH_VARARGS|METH_STATIC, unicode_maketrans__doc__},
+
+static PyObject *
+unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
+
+static PyObject *
 unicode_maketrans(PyObject *null, PyObject *args)
 {
-    PyObject *x, *y = NULL, *z = NULL;
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y = NULL;
+    PyObject *z = NULL;
+
+    if (!PyArg_ParseTuple(args,
+        "O|UU:maketrans",
+        &x, &y, &z))
+        goto exit;
+    return_value = unicode_maketrans_impl(x, y, z);
+
+exit:
+    return return_value;
+}
+
+static PyObject *
+unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
+/*[clinic checksum: 137db9c3199e7906b7967009f511c24fa3235b5f]*/
+{
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;
     int res;
 
-    if (!PyArg_ParseTuple(args, "O|UU:maketrans", &x, &y, &z))
-        return NULL;
     new = PyDict_New();
     if (!new)
         return NULL;
@@ -13317,8 +13365,7 @@ static PyMethodDef unicode_methods[] = {
     {"format", (PyCFunction) do_string_format, METH_VARARGS | METH_KEYWORDS, format__doc__},
     {"format_map", (PyCFunction) do_string_format_map, METH_O, format_map__doc__},
     {"__format__", (PyCFunction) unicode__format__, METH_VARARGS, p_format__doc__},
-    {"maketrans", (PyCFunction) unicode_maketrans,
-     METH_VARARGS | METH_STATIC, maketrans__doc__},
+    UNICODE_MAKETRANS_METHODDEF
     {"__sizeof__", (PyCFunction) unicode__sizeof__, METH_NOARGS, sizeof__doc__},
 #if 0
     /* These methods are just used for debugging the implementation. */

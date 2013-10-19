@@ -8,6 +8,8 @@
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '__BORLANDC__' or '_MSC_VER'. */
 
+
+
 #ifdef __APPLE__
    /*
     * Step 1 of support for weak-linking a number of symbols existing on
@@ -712,7 +714,7 @@ dir_fd_converter(PyObject *o, void *p)
  *   path.function_name
  *     If non-NULL, path_converter will use that as the name
  *     of the function in error messages.
- *     (If path.argument_name is NULL it omits the function name.)
+ *     (If path.function_name is NULL it omits the function name.)
  *   path.argument_name
  *     If non-NULL, path_converter will use that as the name
  *     of the parameter in error messages.
@@ -775,6 +777,9 @@ typedef struct {
     PyObject *object;
     PyObject *cleanup;
 } path_t;
+
+#define PATH_T_INITIALIZE(function_name, nullable, allow_fd) \
+    {function_name, NULL, nullable, allow_fd, NULL, NULL, 0, 0, NULL, NULL}
 
 static void
 path_cleanup(path_t *path) {
@@ -1312,6 +1317,7 @@ path_error(path_t *path)
     return PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
 #endif
 }
+
 
 /* POSIX generic methods */
 
@@ -2347,46 +2353,143 @@ posix_do_stat(char *function_name, path_t *path,
     return _pystat_fromstructstat(&st);
 }
 
-PyDoc_STRVAR(posix_stat__doc__,
-"stat(path, *, dir_fd=None, follow_symlinks=True) -> stat result\n\n\
-Perform a stat system call on the given path.\n\
-\n\
-path may be specified as either a string or as an open file descriptor.\n\
-\n\
-If dir_fd is not None, it should be a file descriptor open to a directory,\n\
-  and path should be relative; path will then be relative to that directory.\n\
-  dir_fd may not be supported on your platform; if it is unavailable, using\n\
-  it will raise a NotImplementedError.\n\
-If follow_symlinks is False, and the last element of the path is a symbolic\n\
-  link, stat will examine the symbolic link itself instead of the file the\n\
-  link points to.\n\
-It is an error to use dir_fd or follow_symlinks when specifying path as\n\
-  an open file descriptor.");
+#ifdef HAVE_FSTATAT
+    #define OS_STAT_DIR_FD_CONVERTER dir_fd_converter
+#else
+    #define OS_STAT_DIR_FD_CONVERTER dir_fd_unavailable
+#endif
+
+
+/*[python]
+
+class path_t_converter(CConverter):
+
+    type = "path_t"
+    impl_by_reference = True
+    parse_by_reference = True
+
+    converter = 'path_converter'
+
+    def converter_init(self, *, allow_fd=False, nullable=False):
+        def strify(value):
+            return str(int(bool(value)))
+
+        # right now path_t doesn't support default values.
+        # to support a default value, you'll need to override initialize().
+
+        assert self.default is unspecified
+
+        self.nullable = nullable
+        self.allow_fd = allow_fd
+
+        self.c_default = 'PATH_T_INITIALIZE("{}", {}, {})'.format(
+            self.function.name,
+            strify(nullable),
+            strify(allow_fd),
+            )
+
+    def cleanup(self):
+        return "path_cleanup(&" + self.name + ");\n"
+
+
+class dir_fd_converter(CConverter):
+    type = 'int'
+    converter = 'OS_STAT_DIR_FD_CONVERTER'
+
+    def converter_init(self):
+        if self.default in (unspecified, None):
+            self.c_default = 'DEFAULT_DIR_FD'
+
+
+[python]*/
+/*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
+/*[clinic]
+module os
+
+os.stat -> object(doc_default='stat_result')
+
+    path : path_t(allow_fd=True)
+        Path to be examined; can be string, bytes, or open-file-descriptor int.
+
+    *
+
+    dir_fd : dir_fd = None
+        If not None, it should be a file descriptor open to a directory,
+        and path should be a relative string; path will then be relative to
+        that directory.
+
+    follow_symlinks: bool = True
+        If False, and the last element of the path is a symbolic link,
+        stat will examine the symbolic link itself instead of the file
+        the link points to.
+
+Perform a stat system call on the given path.
+
+dir_fd and follow_symlinks may not be implemented
+  on your platform.  If they are unavailable, using them will raise a
+  NotImplementedError.
+
+It's an error to use dir_fd or follow_symlinks when specifying path as
+  an open file descriptor.
+
+[clinic]*/
+
+PyDoc_STRVAR(os_stat__doc__,
+"Perform a stat system call on the given path.\n"
+"\n"
+"os.stat(path, *, dir_fd=None, follow_symlinks=True) -> stat_result\n"
+"  path\n"
+"    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
+"  dir_fd\n"
+"    If not None, it should be a file descriptor open to a directory,\n"
+"    and path should be a relative string; path will then be relative to\n"
+"    that directory.\n"
+"  follow_symlinks\n"
+"    If False, and the last element of the path is a symbolic link,\n"
+"    stat will examine the symbolic link itself instead of the file\n"
+"    the link points to.\n"
+"\n"
+"dir_fd and follow_symlinks may not be implemented\n"
+"  on your platform.  If they are unavailable, using them will raise a\n"
+"  NotImplementedError.\n"
+"\n"
+"It\'s an error to use dir_fd or follow_symlinks when specifying path as\n"
+"  an open file descriptor.");
+
+#define OS_STAT_METHODDEF    \
+    {"stat", (PyCFunction)os_stat, METH_VARARGS|METH_KEYWORDS, os_stat__doc__},
 
 static PyObject *
-posix_stat(PyObject *self, PyObject *args, PyObject *kwargs)
+os_stat_impl(PyObject *self, path_t *path, int dir_fd, int follow_symlinks);
+
+static PyObject *
+os_stat(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
-    path_t path;
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
+    path_t path = PATH_T_INITIALIZE("stat", 0, 1);
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
-    PyObject *return_value;
 
-    memset(&path, 0, sizeof(path));
-    path.function_name = "stat";
-    path.allow_fd = 1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|$O&p:stat", keywords,
-        path_converter, &path,
-#ifdef HAVE_FSTATAT
-        dir_fd_converter, &dir_fd,
-#else
-        dir_fd_unavailable, &dir_fd,
-#endif
-        &follow_symlinks))
-        return NULL;
-    return_value = posix_do_stat("stat", &path, dir_fd, follow_symlinks);
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "O&|$O&p:stat", _keywords,
+        path_converter, &path, OS_STAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks))
+        goto exit;
+    return_value = os_stat_impl(self, &path, dir_fd, follow_symlinks);
+
+exit:
+    /* Cleanup for path */
     path_cleanup(&path);
+
     return return_value;
+}
+
+static PyObject *
+os_stat_impl(PyObject *self, path_t *path, int dir_fd, int follow_symlinks)
+/*[clinic checksum: 9d9af08e8cfafd12f94e73ea3065eb3056f99515]*/
+{
+    return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
 
 PyDoc_STRVAR(posix_lstat__doc__,
@@ -2414,44 +2517,120 @@ posix_lstat(PyObject *self, PyObject *args, PyObject *kwargs)
 #endif
         ))
         return NULL;
-    return_value = posix_do_stat("stat", &path, dir_fd, follow_symlinks);
+    return_value = posix_do_stat("lstat", &path, dir_fd, follow_symlinks);
     path_cleanup(&path);
     return return_value;
 }
 
-PyDoc_STRVAR(posix_access__doc__,
-"access(path, mode, *, dir_fd=None, effective_ids=False,\
- follow_symlinks=True)\n\n\
-Use the real uid/gid to test for access to a path.  Returns True if granted,\n\
-False otherwise.\n\
-\n\
-If dir_fd is not None, it should be a file descriptor open to a directory,\n\
-  and path should be relative; path will then be relative to that directory.\n\
-If effective_ids is True, access will use the effective uid/gid instead of\n\
-  the real uid/gid.\n\
-If follow_symlinks is False, and the last element of the path is a symbolic\n\
-  link, access will examine the symbolic link itself instead of the file the\n\
-  link points to.\n\
-dir_fd, effective_ids, and follow_symlinks may not be implemented\n\
-  on your platform.  If they are unavailable, using them will raise a\n\
-  NotImplementedError.\n\
-\n\
-Note that most operations will use the effective uid/gid, therefore this\n\
-  routine can be used in a suid/sgid environment to test if the invoking user\n\
-  has the specified access to the path.\n\
-The mode argument can be F_OK to test existence, or the inclusive-OR\n\
-  of R_OK, W_OK, and X_OK.");
+
+#ifdef HAVE_FACCESSAT
+    #define OS_ACCESS_DIR_FD_CONVERTER dir_fd_converter
+#else
+    #define OS_ACCESS_DIR_FD_CONVERTER dir_fd_unavailable
+#endif
+/*[clinic]
+os.access -> object(doc_default='True if granted, False otherwise')
+
+    path: path_t(allow_fd=True)
+        Path to be tested; can be string, bytes, or open-file-descriptor int.
+
+    mode: int
+        Operating-system mode bitfield.  Can be F_OK to test existence,
+        or the inclusive-OR of R_OK, W_OK, and X_OK.
+
+    *
+
+    dir_fd : dir_fd = None
+        If not None, it should be a file descriptor open to a directory,
+        and path should be relative; path will then be relative to that
+        directory.
+
+    effective_ids: bool = False
+        If True, access will use the effective uid/gid instead of
+        the real uid/gid.
+
+    follow_symlinks: bool = True
+        If False, and the last element of the path is a symbolic link,
+        access will examine the symbolic link itself instead of the file
+        the link points to.
+
+Use the real uid/gid to test for access to a path.
+
+{parameters}
+dir_fd, effective_ids, and follow_symlinks may not be implemented
+  on your platform.  If they are unavailable, using them will raise a
+  NotImplementedError.
+
+Note that most operations will use the effective uid/gid, therefore this
+  routine can be used in a suid/sgid environment to test if the invoking user
+  has the specified access to the path.
+
+[clinic]*/
+
+PyDoc_STRVAR(os_access__doc__,
+"Use the real uid/gid to test for access to a path.\n"
+"\n"
+"os.access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True) -> True if granted, False otherwise\n"
+"  path\n"
+"    Path to be tested; can be string, bytes, or open-file-descriptor int.\n"
+"  mode\n"
+"    Operating-system mode bitfield.  Can be F_OK to test existence,\n"
+"    or the inclusive-OR of R_OK, W_OK, and X_OK.\n"
+"  dir_fd\n"
+"    If not None, it should be a file descriptor open to a directory,\n"
+"    and path should be relative; path will then be relative to that\n"
+"    directory.\n"
+"  effective_ids\n"
+"    If True, access will use the effective uid/gid instead of\n"
+"    the real uid/gid.\n"
+"  follow_symlinks\n"
+"    If False, and the last element of the path is a symbolic link,\n"
+"    access will examine the symbolic link itself instead of the file\n"
+"    the link points to.\n"
+"\n"
+"{parameters}\n"
+"dir_fd, effective_ids, and follow_symlinks may not be implemented\n"
+"  on your platform.  If they are unavailable, using them will raise a\n"
+"  NotImplementedError.\n"
+"\n"
+"Note that most operations will use the effective uid/gid, therefore this\n"
+"  routine can be used in a suid/sgid environment to test if the invoking user\n"
+"  has the specified access to the path.");
+
+#define OS_ACCESS_METHODDEF    \
+    {"access", (PyCFunction)os_access, METH_VARARGS|METH_KEYWORDS, os_access__doc__},
 
 static PyObject *
-posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
+os_access_impl(PyObject *self, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
+
+static PyObject *
+os_access(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *keywords[] = {"path", "mode", "dir_fd", "effective_ids",
-                                "follow_symlinks", NULL};
-    path_t path;
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
+    path_t path = PATH_T_INITIALIZE("access", 0, 1);
     int mode;
     int dir_fd = DEFAULT_DIR_FD;
     int effective_ids = 0;
     int follow_symlinks = 1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "O&i|$O&pp:access", _keywords,
+        path_converter, &path, &mode, OS_STAT_DIR_FD_CONVERTER, &dir_fd, &effective_ids, &follow_symlinks))
+        goto exit;
+    return_value = os_access_impl(self, &path, mode, dir_fd, effective_ids, follow_symlinks);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+static PyObject *
+os_access_impl(PyObject *self, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
+/*[clinic checksum: 0147557eb43243df57ba616cc7c35f232c69bc6a]*/
+{
     PyObject *return_value = NULL;
 
 #ifdef MS_WINDOWS
@@ -2459,17 +2638,6 @@ posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
 #else
     int result;
 #endif
-
-    memset(&path, 0, sizeof(path));
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&i|$O&pp:access", keywords,
-        path_converter, &path, &mode,
-#ifdef HAVE_FACCESSAT
-        dir_fd_converter, &dir_fd,
-#else
-        dir_fd_unavailable, &dir_fd,
-#endif
-        &effective_ids, &follow_symlinks))
-        return NULL;
 
 #ifndef HAVE_FACCESSAT
     if (follow_symlinks_specified("access", follow_symlinks))
@@ -2514,11 +2682,11 @@ posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
             flags |= AT_SYMLINK_NOFOLLOW;
         if (effective_ids)
             flags |= AT_EACCESS;
-        result = faccessat(dir_fd, path.narrow, mode, flags);
+        result = faccessat(dir_fd, path->narrow, mode, flags);
     }
     else
 #endif
-        result = access(path.narrow, mode);
+        result = access(path->narrow, mode);
     Py_END_ALLOW_THREADS
     return_value = PyBool_FromLong(!result);
 #endif
@@ -2526,7 +2694,6 @@ posix_access(PyObject *self, PyObject *args, PyObject *kwargs)
 #ifndef HAVE_FACCESSAT
 exit:
 #endif
-    path_cleanup(&path);
     return return_value;
 }
 
@@ -2543,35 +2710,76 @@ exit:
 #define X_OK 1
 #endif
 
+
 #ifdef HAVE_TTYNAME
-PyDoc_STRVAR(posix_ttyname__doc__,
-"ttyname(fd) -> string\n\n\
-Return the name of the terminal device connected to 'fd'.");
+
+/*[clinic]
+os.ttyname -> DecodeFSDefault
+
+    fd: int
+        Integer file descriptor handle.
+
+    /
+
+Return the name of the terminal device connected to 'fd'.
+[clinic]*/
+
+PyDoc_STRVAR(os_ttyname__doc__,
+"Return the name of the terminal device connected to \'fd\'.\n"
+"\n"
+"os.ttyname(fd)\n"
+"  fd\n"
+"    Integer file descriptor handle.");
+
+#define OS_TTYNAME_METHODDEF    \
+    {"ttyname", (PyCFunction)os_ttyname, METH_VARARGS, os_ttyname__doc__},
+
+static char *
+os_ttyname_impl(PyObject *self, int fd);
 
 static PyObject *
-posix_ttyname(PyObject *self, PyObject *args)
+os_ttyname(PyObject *self, PyObject *args)
 {
-    int id;
-    char *ret;
+    PyObject *return_value = NULL;
+    int fd;
+    char *_return_value;
 
-    if (!PyArg_ParseTuple(args, "i:ttyname", &id))
-        return NULL;
+    if (!PyArg_ParseTuple(args,
+        "i:ttyname",
+        &fd))
+        goto exit;
+    _return_value = os_ttyname_impl(self, fd);
+    if (_return_value == NULL)
+        goto exit;
+    return_value = PyUnicode_DecodeFSDefault(_return_value);
+
+exit:
+    return return_value;
+}
+
+static char *
+os_ttyname_impl(PyObject *self, int fd)
+/*[clinic checksum: ea680155d87bb733f542d67653eca732dd0981a8]*/
+{
+    char *ret;
 
 #if defined(__VMS)
     /* file descriptor 0 only, the default input device (stdin) */
-    if (id == 0) {
+    if (fd == 0) {
         ret = ttyname();
     }
     else {
         ret = NULL;
     }
 #else
-    ret = ttyname(id);
+    ret = ttyname(fd);
 #endif
     if (ret == NULL)
-        return posix_error();
-    return PyUnicode_DecodeFSDefault(ret);
+        posix_error();
+    return ret;
 }
+#else
+#define OS_TTYNAME_METHODDEF
 #endif
 
 #ifdef HAVE_CTERMID
@@ -10912,13 +11120,13 @@ posix_set_handle_inheritable(PyObject *self, PyObject *args)
 #endif   /* MS_WINDOWS */
 
 
+
 static PyMethodDef posix_methods[] = {
-    {"access",          (PyCFunction)posix_access,
-                        METH_VARARGS | METH_KEYWORDS,
-                        posix_access__doc__},
-#ifdef HAVE_TTYNAME
-    {"ttyname",         posix_ttyname, METH_VARARGS, posix_ttyname__doc__},
-#endif
+
+    OS_STAT_METHODDEF
+    OS_ACCESS_METHODDEF
+    OS_TTYNAME_METHODDEF
+
     {"chdir",           (PyCFunction)posix_chdir,
                         METH_VARARGS | METH_KEYWORDS,
                         posix_chdir__doc__},
@@ -11002,9 +11210,6 @@ static PyMethodDef posix_methods[] = {
     {"rmdir",           (PyCFunction)posix_rmdir,
                         METH_VARARGS | METH_KEYWORDS,
                         posix_rmdir__doc__},
-    {"stat",            (PyCFunction)posix_stat,
-                        METH_VARARGS | METH_KEYWORDS,
-                        posix_stat__doc__},
     {"stat_float_times", stat_float_times, METH_VARARGS, stat_float_times__doc__},
 #if defined(HAVE_SYMLINK)
     {"symlink",         (PyCFunction)posix_symlink,
