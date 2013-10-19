@@ -276,6 +276,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
             self._proactor.close()
             self._proactor = None
             self._selector = None
+            super().close()
 
     def sock_recv(self, sock, n):
         return self._proactor.recv(sock, n)

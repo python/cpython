@@ -56,6 +56,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._close_self_pipe()
             self._selector.close()
             self._selector = None
+            super().close()
 
     def _socketpair(self):
         raise NotImplementedError
