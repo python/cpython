@@ -604,7 +604,7 @@ class _SelectorSslTransport(_SelectorTransport):
         # Verify hostname if requested.
         peercert = self._sock.getpeercert()
         if (self._server_hostname is not None and
-            self._sslcontext.verify_mode == ssl.CERT_REQUIRED):
+            self._sslcontext.verify_mode != ssl.CERT_NONE):
             try:
                 ssl.match_hostname(peercert, self._server_hostname)
             except Exception as exc:
