@@ -952,7 +952,7 @@ def buildPython():
                "--with-universal-archs=%s "
                "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
-               "OPT='-g -O3 -I%s/libraries/usr/local/include' 2>&1"%(
+               "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')), shellQuote(SDKPATH),
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
