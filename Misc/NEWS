@@ -10,6 +10,8 @@ Projected release date: 2013-10-20
 Core and Builtins
 -----------------
 
+- Issue #19279: UTF-7 decoder no more produces illegal strings.
+
 - Issue #16612: Add "Argument Clinic", a compile-time preprocessor for
   C files to generate argument parsing code.  (See PEP 436.)
 
