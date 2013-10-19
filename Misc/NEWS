@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18235: Fix the sysconfig variables LDSHARED and BLDSHARED under AIX.
+  Patch by David Edelsohn.
+
 - Issue #18606: Add the new "statistics" module (PEP 450).  Contributed
   by Steven D'Aprano.
 

@@ -368,7 +368,7 @@ def _generate_posix_vars():
     # -- these paths are relative to the Python source, but when installed
     # the scripts are in another directory.
     if _PYTHON_BUILD:
-        vars['LDSHARED'] = vars['BLDSHARED']
+        vars['BLDSHARED'] = vars['LDSHARED']
 
     # There's a chicken-and-egg situation on OS X with regards to the
     # _sysconfigdata module after the changes introduced by #15298:
