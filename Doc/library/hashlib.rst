@@ -212,7 +212,11 @@ slow and include a salt.
 
    .. versionadded:: 3.4
 
-   .. note:: *pbkdf2_hmac* is only available with OpenSSL 1.0 and newer.
+   .. note:: A fast implementation of *pbkdf2_hmac* is only available with
+      OpenSSL 1.0 and newer. The Python implementation uses an inline
+      version of :mod:`hmac` and is about three times slower. Contrary to
+      OpenSSL's current code the length of the password has only a minimal
+      impact on the runtime of the Python implementation.
 
 
 .. seealso::

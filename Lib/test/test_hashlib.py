@@ -18,11 +18,13 @@ except ImportError:
 import unittest
 import warnings
 from test import support
-from test.support import _4G, bigmemtest
+from test.support import _4G, bigmemtest, import_fresh_module
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 COMPILED_WITH_PYDEBUG = hasattr(sys, 'gettotalrefcount')
 
+c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
+py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
 
 def hexstr(s):
     assert isinstance(s, bytes), repr(s)
@@ -545,6 +547,10 @@ class HashLibTestCase(unittest.TestCase):
 
         self.assertEqual(expected_hash, hasher.hexdigest())
 
+
+class KDFTests:
+    hashlibmod = None
+
     pbkdf2_test_vectors = [
         (b'password', b'salt', 1, None),
         (b'password', b'salt', 2, None),
@@ -594,10 +600,8 @@ class HashLibTestCase(unittest.TestCase):
             (bytes.fromhex('9d9e9c4cd21fe4be24d5b8244c759665'), None),],
     }
 
-    @unittest.skipUnless(hasattr(hashlib, 'pbkdf2_hmac'),
-                         'pbkdf2_hmac required for this test.')
     def test_pbkdf2_hmac(self):
-        pbkdf2 = hashlib.pbkdf2_hmac
+        pbkdf2 = self.hashlibmod.pbkdf2_hmac
 
         for digest_name, results in self.pbkdf2_results.items():
             for i, vector in enumerate(self.pbkdf2_test_vectors):
@@ -626,6 +630,14 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pbkdf2, 'sha1', b'pass', b'salt', 1, -1)
         with self.assertRaisesRegex(ValueError, 'unsupported hash type'):
             pbkdf2('unknown', b'pass', b'salt', 1)
+
+
+class PyKDFTests(KDFTests, unittest.TestCase):
+    hashlibmod = py_hashlib
+
+
+class CKDFTests(KDFTests, unittest.TestCase):
+    hashlibmod = c_hashlib
 
 
 if __name__ == "__main__":
