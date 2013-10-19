@@ -4341,6 +4341,7 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                     Py_UCS4 outCh = (Py_UCS4)(base64buffer >> (base64bits-16));
                     base64bits -= 16;
                     base64buffer &= (1 << base64bits) - 1; /* clear high bits */
+                    assert(outCh <= 0xffff);
                     if (surrogate) {
                         /* expecting a second surrogate */
                         if (Py_UNICODE_IS_LOW_SURROGATE(outCh)) {
@@ -4408,6 +4409,7 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
                 inShift = 1;
                 shiftOutStart = writer.pos;
                 base64bits = 0;
+                base64buffer = 0;
             }
         }
         else if (DECODE_DIRECT(ch)) { /* character decodes as itself */
