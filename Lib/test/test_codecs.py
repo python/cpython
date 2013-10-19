@@ -611,6 +611,35 @@ class UTF7Test(ReadTest):
             ]
         )
 
+    def test_errors(self):
+        tests = [
+            ('a\xffb', u'a\ufffdb'),
+            ('a+IK', u'a\ufffd'),
+            ('a+IK-b', u'a\ufffdb'),
+            ('a+IK,b', u'a\ufffdb'),
+            ('a+IKx', u'a\u20ac\ufffd'),
+            ('a+IKx-b', u'a\u20ac\ufffdb'),
+            ('a+IKwgr', u'a\u20ac\ufffd'),
+            ('a+IKwgr-b', u'a\u20ac\ufffdb'),
+            ('a+IKwgr,', u'a\u20ac\ufffd'),
+            ('a+IKwgr,-b', u'a\u20ac\ufffd-b'),
+            ('a+IKwgrB', u'a\u20ac\u20ac\ufffd'),
+            ('a+IKwgrB-b', u'a\u20ac\u20ac\ufffdb'),
+            ('a+/,+IKw-b', u'a\ufffd\u20acb'),
+            ('a+//,+IKw-b', u'a\ufffd\u20acb'),
+            ('a+///,+IKw-b', u'a\uffff\ufffd\u20acb'),
+            ('a+////,+IKw-b', u'a\uffff\ufffd\u20acb'),
+        ]
+        for raw, expected in tests:
+            self.assertRaises(UnicodeDecodeError, codecs.utf_7_decode,
+                              raw, 'strict', True)
+            self.assertEqual(raw.decode('utf-7', 'replace'), expected)
+
+    def test_nonbmp(self):
+        self.assertEqual(u'\U000104A0'.encode(self.encoding), '+2AHcoA-')
+        self.assertEqual(u'\ud801\udca0'.encode(self.encoding), '+2AHcoA-')
+        self.assertEqual('+2AHcoA-'.decode(self.encoding), u'\U000104A0')
+
 class UTF16ExTest(unittest.TestCase):
 
     def test_errors(self):

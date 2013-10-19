@@ -1060,6 +1060,24 @@ class EncodingTest(BaseTest):
         #Compare against what the data should be when encoded in CP-1251
         self.assertEqual(s, '\xe4\xee \xf1\xe2\xe8\xe4\xe0\xed\xe8\xff\n')
 
+    def test_encoding_utf16_unicode(self):
+        # Issue #19267
+        log = logging.getLogger("test")
+        message = u'b\u0142\u0105d'
+        writer_class = codecs.getwriter('utf-16-le')
+        writer_class.encoding = 'utf-16-le'
+        stream = cStringIO.StringIO()
+        writer = writer_class(stream, 'strict')
+        handler = logging.StreamHandler(writer)
+        log.addHandler(handler)
+        try:
+            log.warning(message)
+        finally:
+            log.removeHandler(handler)
+            handler.close()
+        s = stream.getvalue()
+        self.assertEqual(s, 'b\x00B\x01\x05\x01d\x00\n\x00')
+
 
 class WarningsTest(BaseTest):
 
