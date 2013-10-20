@@ -55,6 +55,8 @@ MSG_OOB = 0x1                           # Process data out of band
 
 # The standard FTP server control port
 FTP_PORT = 21
+# The sizehint parameter passed to readline() calls
+MAXLINE = 8192
 
 
 # Exception raised when an error or invalid response is received
@@ -101,6 +103,7 @@ class FTP:
     debugging = 0
     host = ''
     port = FTP_PORT
+    maxline = MAXLINE
     sock = None
     file = None
     welcome = None
@@ -180,7 +183,9 @@ class FTP:
     # Internal: return one line from the server, stripping CRLF.
     # Raise EOFError if the connection is closed
     def getline(self):
-        line = self.file.readline()
+        line = self.file.readline(self.maxline + 1)
+        if len(line) > self.maxline:
+            raise Error("got more than %d bytes" % self.maxline)
         if self.debugging > 1:
             print '*get*', self.sanitize(line)
         if not line: raise EOFError
@@ -432,7 +437,9 @@ class FTP:
         conn = self.transfercmd(cmd)
         fp = conn.makefile('rb')
         while 1:
-            line = fp.readline()
+            line = fp.readline(self.maxline + 1)
+            if len(line) > self.maxline:
+                raise Error("got more than %d bytes" % self.maxline)
             if self.debugging > 2: print '*retr*', repr(line)
             if not line:
                 break
@@ -485,7 +492,9 @@ class FTP:
         self.voidcmd('TYPE A')
         conn = self.transfercmd(cmd)
         while 1:
-            buf = fp.readline()
+            buf = fp.readline(self.maxline + 1)
+            if len(buf) > self.maxline:
+                raise Error("got more than %d bytes" % self.maxline)
             if not buf: break
             if buf[-2:] != CRLF:
                 if buf[-1] in CRLF: buf = buf[:-1]
@@ -710,7 +719,9 @@ else:
             fp = conn.makefile('rb')
             try:
                 while 1:
-                    line = fp.readline()
+                    line = fp.readline(self.maxline + 1)
+                    if len(line) > self.maxline:
+                        raise Error("got more than %d bytes" % self.maxline)
                     if self.debugging > 2: print '*retr*', repr(line)
                     if not line:
                         break
@@ -748,7 +759,9 @@ else:
             conn = self.transfercmd(cmd)
             try:
                 while 1:
-                    buf = fp.readline()
+                    buf = fp.readline(self.maxline + 1)
+                    if len(buf) > self.maxline:
+                        raise Error("got more than %d bytes" % self.maxline)
                     if not buf: break
                     if buf[-2:] != CRLF:
                         if buf[-1] in CRLF: buf = buf[:-1]
@@ -905,7 +918,9 @@ class Netrc:
         fp = open(filename, "r")
         in_macro = 0
         while 1:
-            line = fp.readline()
+            line = fp.readline(self.maxline + 1)
+            if len(line) > self.maxline:
+                raise Error("got more than %d bytes" % self.maxline)
             if not line: break
             if in_macro and line.strip():
                 macro_lines.append(line)
