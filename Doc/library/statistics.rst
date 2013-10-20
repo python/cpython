@@ -454,7 +454,7 @@ Exceptions
 
 A single exception is defined:
 
-.. exception:: `StatisticsError`
+.. exception:: StatisticsError
 
    Subclass of :exc:`ValueError` for statistics-related exceptions.
 
