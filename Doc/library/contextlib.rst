@@ -597,9 +597,10 @@ an explicit ``with`` statement.
       The specification, background, and examples for the Python :keyword:`with`
       statement.
 
+.. _single-use-reusable-and-reentrant-cms:
 
-Reusable and reentrant context managers
----------------------------------------
+Single use, reusable and reentrant context managers
+---------------------------------------------------
 
 Most context managers are written in a way that means they can only be
 used effectively in a :keyword:`with` statement once. These single use

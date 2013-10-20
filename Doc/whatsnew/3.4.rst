@@ -86,13 +86,15 @@ Summary -- Release highlights
 
 New syntax features:
 
-* None yet.
+* No new syntax features are planned for Python 3.4.
 
 New library modules:
 
-* :mod:`enum`: Implementation of the :pep:`435`.
+* :mod:`asyncio`: New provisonal API for asynchronous IO (:pep:`3156`).
+* :mod:`enum`: Support for enumeration types (:pep:`435`).
 * :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
   :mod:`select` module primitives.
+* :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
 
 New built-in features:
 
@@ -105,6 +107,8 @@ Implementation improvements:
 * A more efficient :mod:`marshal` format (:issue:`16475`).
 * Improve finalization of Python modules to avoid setting their globals
   to None, in most cases (:issue:`18214`).
+* "Argument Clinic", providing improved introspection support for builtin
+  and standard library extension types implemented in C (:pep:`436`)
 
 Significantly Improved Library Modules:
 
@@ -176,15 +180,50 @@ Some smaller changes made to the core Python language are:
 
 * Module objects are now :mod:`weakref`'able.
 
+* Module ``__file__`` attributes (and related values) should now always
+  contain absolute paths by default, with the sole exception of
+  ``__main__.__file__`` when a script has been executed directly using
+  a relative path (Contributed by Brett Cannon in :issue:`18416`).
+
 
 New Modules
 ===========
 
+
+asyncio
+-------
+
+The new :mod:`asyncio` module (defined in :pep:`3156`) provides a standard
+pluggable event loop model for Python, providing solid asynchronous IO
+support in the standard library, and making it easier for other event loop
+implementations to interoperate with the standard library and each other.
+
+For Python 3.4, this module is considered a :term:`provisional API`.
+
+enum
+----
+
+The new :mod:`enum` module provides a standard implementation of enumeration
+types, allowing other modules (such as :mod:`socket`) to provide more
+informative error messages and better debugging support by replacing opaque
+integer constants with backwards compatible enumeration values.
+
+
 selectors
 ---------
 
-The new :mod:`selectors` module allows high-level and efficient I/O
-multiplexing, built upon the :mod:`select` module primitives.
+The new :mod:`selectors` module (created as part of implementing :pep:`3156`)
+allows high-level and efficient I/O multiplexing, built upon the
+:mod:`select` module primitives.
+
+
+statistics
+----------
+
+The new :mod:`statistics` module (defined in :pep:`450`) offers some core
+statistics functionality directly in the standard library. This module
+supports calculation of the mean, median, mode, variance and standard
+deviation of a data series.
 
 
 Improved Modules
@@ -232,12 +271,16 @@ intent of code that deliberately suppresses exceptions from a single
 statement. (Contributed by Raymond Hettinger in :issue:`15806` and
 Zero Piraeus in :issue:`19266`)
 
-
 The new :class:`contextlib.redirect_stdio` context manager makes it easier
 for utility scripts to handle inflexible APIs that don't provide any
 options to retrieve their output as a string or direct it to somewhere
-other than :data:`sys.stdout`. (Contribute by Raymond Hettinger in
-:issue:`15805`)
+other than :data:`sys.stdout`. In conjunction with :class:`io.StringIO`,
+this context manager is also useful for checking expected output from
+command line utilities. (Contribute by Raymond Hettinger in :issue:`15805`)
+
+The :mod:`contextlib` documentation has also been updated to include a
+:ref:`discussion <single-use-reusable-and-reentrant-cms>` of the
+differences between single use, reusable and reentrant context managers.
 
 
 dis
@@ -567,7 +610,6 @@ Major performance enhancements have been added:
   :issue:`9548`)
 
 
-
 Build and C API Changes
 =======================
 
@@ -577,6 +619,15 @@ Changes to Python's build process and to the C API include:
   allows applications embedding the CPython interpreter to reliably force
   a particular encoding and error handler for the standard streams
   (Contributed by Bastien Montagne and Nick Coghlan in :issue:`16129`)
+
+* Most Python C APIs that don't mutate string arguments are now correctly
+  marked as accepting ``const char *`` rather than ``char *`` (Contributed
+  by Serhiy Storchaka in :issue:`1772673`).
+
+* "Argument Clinic" (:pep:`436`) is now part of the CPython build process
+  and can be used to simplify the process of defining and maintaining
+  accurate signatures for builtins and standard library extension modules
+  implemented in C.
 
 
 Deprecated
@@ -618,7 +669,7 @@ Deprecated functions and types of the C API
 Deprecated features
 -------------------
 
-* None yet.
+* No feature deprecations are planned for Python 3.4.
 
 
 Porting to Python 3.4
