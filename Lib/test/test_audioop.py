@@ -121,6 +121,9 @@ class TestAudioop(unittest.TestCase):
                          b'\x00\x24\x7f\x80\x7f\x80\xfe')
         self.assertEqual(audioop.add(datas[2], datas[2], 2),
                 packs[2](0, 0x2468, 0x7fff, -0x8000, 0x7fff, -0x8000, -2))
+        self.assertEqual(audioop.add(datas[3], datas[3], 3),
+                packs[3](0, 0x2468ac, 0x7fffff, -0x800000,
+                       0x7fffff, -0x800000, -2))
         self.assertEqual(audioop.add(datas[4], datas[4], 4),
                 packs[4](0, 0x2468acf0, 0x7fffffff, -0x80000000,
                        0x7fffffff, -0x80000000, -2))
@@ -145,6 +148,17 @@ class TestAudioop(unittest.TestCase):
                 packs[2](-1, 0x1233, 0x4566, -0x4568, 0x7ffe, 0x7fff, -2))
         self.assertEqual(audioop.bias(datas[2], 2, -0x80000000),
                 datas[2])
+        self.assertEqual(audioop.bias(datas[3], 3, 1),
+                packs[3](1, 0x123457, 0x45678a, -0x456788,
+                         -0x800000, -0x7fffff, 0))
+        self.assertEqual(audioop.bias(datas[3], 3, -1),
+                packs[3](-1, 0x123455, 0x456788, -0x45678a,
+                         0x7ffffe, 0x7fffff, -2))
+        self.assertEqual(audioop.bias(datas[3], 3, 0x7fffffff),
+                packs[3](-1, 0x123455, 0x456788, -0x45678a,
+                         0x7ffffe, 0x7fffff, -2))
+        self.assertEqual(audioop.bias(datas[3], 3, -0x80000000),
+                datas[3])
         self.assertEqual(audioop.bias(datas[4], 4, 1),
                 packs[4](1, 0x12345679, 0x456789ac, -0x456789aa,
                          -0x80000000, -0x7fffffff, 0))
@@ -164,24 +178,43 @@ class TestAudioop(unittest.TestCase):
 
         self.assertEqual(audioop.lin2lin(datas[1], 1, 2),
             packs[2](0, 0x1200, 0x4500, -0x4500, 0x7f00, -0x8000, -0x100))
+        self.assertEqual(audioop.lin2lin(datas[1], 1, 3),
+            packs[3](0, 0x120000, 0x450000, -0x450000,
+                     0x7f0000, -0x800000, -0x10000))
         self.assertEqual(audioop.lin2lin(datas[1], 1, 4),
             packs[4](0, 0x12000000, 0x45000000, -0x45000000,
                      0x7f000000, -0x80000000, -0x1000000))
         self.assertEqual(audioop.lin2lin(datas[2], 2, 1),
             b'\x00\x12\x45\xba\x7f\x80\xff')
+        self.assertEqual(audioop.lin2lin(datas[2], 2, 3),
+            packs[3](0, 0x123400, 0x456700, -0x456700,
+                     0x7fff00, -0x800000, -0x100))
         self.assertEqual(audioop.lin2lin(datas[2], 2, 4),
             packs[4](0, 0x12340000, 0x45670000, -0x45670000,
                      0x7fff0000, -0x80000000, -0x10000))
+        self.assertEqual(audioop.lin2lin(datas[3], 3, 1),
+            b'\x00\x12\x45\xba\x7f\x80\xff')
+        self.assertEqual(audioop.lin2lin(datas[3], 3, 2),
+            packs[2](0, 0x1234, 0x4567, -0x4568, 0x7fff, -0x8000, -1))
+        self.assertEqual(audioop.lin2lin(datas[3], 3, 4),
+            packs[4](0, 0x12345600, 0x45678900, -0x45678900,
+                     0x7fffff00, -0x80000000, -0x100))
         self.assertEqual(audioop.lin2lin(datas[4], 4, 1),
             b'\x00\x12\x45\xba\x7f\x80\xff')
         self.assertEqual(audioop.lin2lin(datas[4], 4, 2),
             packs[2](0, 0x1234, 0x4567, -0x4568, 0x7fff, -0x8000, -1))
+        self.assertEqual(audioop.lin2lin(datas[4], 4, 3),
+            packs[3](0, 0x123456, 0x456789, -0x45678a,
+                     0x7fffff, -0x800000, -1))
 
     def test_adpcm2lin(self):
         self.assertEqual(audioop.adpcm2lin(b'\x07\x7f\x7f', 1, None),
                          (b'\x00\x00\x00\xff\x00\xff', (-179, 40)))
         self.assertEqual(audioop.adpcm2lin(b'\x07\x7f\x7f', 2, None),
                          (packs[2](0, 0xb, 0x29, -0x16, 0x72, -0xb3), (-179, 40)))
+        self.assertEqual(audioop.adpcm2lin(b'\x07\x7f\x7f', 3, None),
+                         (packs[3](0, 0xb00, 0x2900, -0x1600, 0x7200,
+                                   -0xb300), (-179, 40)))
         self.assertEqual(audioop.adpcm2lin(b'\x07\x7f\x7f', 4, None),
                          (packs[4](0, 0xb0000, 0x290000, -0x160000, 0x720000,
                                    -0xb30000), (-179, 40)))
@@ -260,6 +293,9 @@ class TestAudioop(unittest.TestCase):
                          b'\x00\x24\x7f\x80\x7f\x80\xfe')
         self.assertEqual(audioop.mul(datas[2], 2, 2),
                 packs[2](0, 0x2468, 0x7fff, -0x8000, 0x7fff, -0x8000, -2))
+        self.assertEqual(audioop.mul(datas[3], 3, 2),
+                packs[3](0, 0x2468ac, 0x7fffff, -0x800000,
+                         0x7fffff, -0x800000, -2))
         self.assertEqual(audioop.mul(datas[4], 4, 2),
                 packs[4](0, 0x2468acf0, 0x7fffffff, -0x80000000,
                          0x7fffffff, -0x80000000, -2))
