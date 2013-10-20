@@ -985,10 +985,12 @@ audioop_bias(PyObject *self, PyObject *args)
             val = GETINTX(unsigned char, cp, i);
         else if (size == 2)
             val = GETINTX(unsigned short, cp, i);
-        else if (size == 2)
+        else if (size == 3)
             val = ((unsigned int)GETINT24(cp, i)) & 0xffffffu;
-        else
+        else {
+            assert(size == 4);
             val = GETINTX(PY_UINT32_T, cp, i);
+        }
 
         val += (unsigned int)bias;
         /* wrap around in case of overflow */
@@ -998,10 +1000,12 @@ audioop_bias(PyObject *self, PyObject *args)
             SETINTX(unsigned char, ncp, i, val);
         else if (size == 2)
             SETINTX(unsigned short, ncp, i, val);
-        else if (size == 2)
+        else if (size == 3)
             SETINT24(ncp, i, (int)val);
-        else
+        else {
+            assert(size == 4);
             SETINTX(PY_UINT32_T, ncp, i, val);
+        }
     }
     return rv;
 }
