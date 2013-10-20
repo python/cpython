@@ -62,6 +62,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16038: CVE-2013-1752: ftplib: Limit amount of data read by
+  limiting the call to readline().  Original patch by Michał
+  Jastrzębski and Giampaolo Rodola.
+
 - Issue #17087: Improved the repr for regular expression match objects.
 
 - Issue #18235: Fix the sysconfig variables LDSHARED and BLDSHARED under AIX.
