@@ -588,3 +588,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.loop._accept_connection(MyProto, sock)
         self.assertTrue(sock.close.called)
         self.assertTrue(m_log.exception.called)
+
+
+if __name__ == '__main__':
+    unittest.main()

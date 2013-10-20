@@ -768,3 +768,7 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         tr.write_eof()
         self.assertTrue(tr._closing)
         self.assertFalse(self.protocol.connection_lost.called)
+
+
+if __name__ == '__main__':
+    unittest.main()

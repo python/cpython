@@ -1483,3 +1483,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         transport._fatal_error(err)
         self.protocol.connection_refused.assert_called_with(err)
         m_exc.assert_called_with('Fatal error for %s', transport)
+
+
+if __name__ == '__main__':
+    unittest.main()

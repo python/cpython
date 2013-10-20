@@ -53,3 +53,7 @@ class TransportTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, transport.send_signal, 1)
         self.assertRaises(NotImplementedError, transport.terminate)
         self.assertRaises(NotImplementedError, transport.kill)
+
+
+if __name__ == '__main__':
+    unittest.main()
