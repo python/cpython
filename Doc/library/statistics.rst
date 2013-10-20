@@ -454,9 +454,9 @@ Exceptions
 
 A single exception is defined:
 
-:exc:`StatisticsError`
+.. exception:: `StatisticsError`
 
-Subclass of :exc:`ValueError` for statistics-related exceptions.
+   Subclass of :exc:`ValueError` for statistics-related exceptions.
 
 ..
    # This modelines must appear within the last ten lines of the file.
