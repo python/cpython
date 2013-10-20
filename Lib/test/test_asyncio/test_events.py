@@ -1233,6 +1233,26 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(-signal.SIGTERM, proto.returncode)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     "Don't support subprocess for Windows yet")
+    def test_subprocess_wait_no_same_group(self):
+        proto = None
+        transp = None
+
+        @tasks.coroutine
+        def connect():
+            nonlocal proto
+            # start the new process in a new session
+            transp, proto = yield from self.loop.subprocess_shell(
+                functools.partial(MySubprocessProtocol, self.loop),
+                'exit 7', stdin=None, stdout=None, stderr=None,
+                start_new_session=True)
+            self.assertIsInstance(proto, MySubprocessProtocol)
+
+        self.loop.run_until_complete(connect())
+        self.loop.run_until_complete(proto.completed)
+        self.assertEqual(7, proto.returncode)
+
 
 if sys.platform == 'win32':
     from asyncio import windows_events
