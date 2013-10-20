@@ -707,7 +707,6 @@ compiler_scope_qualname(struct compiler *c, identifier scope_name)
         goto _error;
     name = PyUnicode_Join(dot_str, seq);
     Py_DECREF(seq);
-    Py_XINCREF(name);
     return name;
 
 _error:
