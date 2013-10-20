@@ -93,3 +93,7 @@ class ProactorTests(unittest.TestCase):
                 protocols.Protocol, ADDRESS)
 
         return 'done'
+
+
+if __name__ == '__main__':
+    unittest.main()
