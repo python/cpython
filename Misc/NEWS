@@ -62,6 +62,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18958: Improve error message for json.load(s) while passing a string
+  that starts with a UTF-8 BOM.
+
 - Issue #19307: Improve error message for json.load(s) while passing objects
   of the wrong type.
 
