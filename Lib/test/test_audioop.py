@@ -1,7 +1,6 @@
 import audioop
 import sys
 import unittest
-from test.support import run_unittest
 
 def pack(width, data):
     return b''.join(v.to_bytes(width, sys.byteorder, signed=True) for v in data)
@@ -415,8 +414,5 @@ class TestAudioop(unittest.TestCase):
             self.assertRaises(audioop.error, audioop.alaw2lin, data, size)
             self.assertRaises(audioop.error, audioop.adpcm2lin, data, size, state)
 
-def test_main():
-    run_unittest(TestAudioop)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
