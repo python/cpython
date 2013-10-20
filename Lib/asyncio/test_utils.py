@@ -126,6 +126,7 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
         yield httpd
     finally:
         httpd.shutdown()
+        httpd.server_close()
         server_thread.join()
 
 
