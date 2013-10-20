@@ -168,7 +168,7 @@ class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _sig_chld(self):
         try:
             try:
-                pid, status = os.waitpid(0, os.WNOHANG)
+                pid, status = os.waitpid(-1, os.WNOHANG)
             except ChildProcessError:
                 return
             if pid == 0:
