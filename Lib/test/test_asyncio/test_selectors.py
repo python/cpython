@@ -143,3 +143,7 @@ class BaseSelectorTests(unittest.TestCase):
     if hasattr(selectors.DefaultSelector, 'fileno'):
         def test_fileno(self):
             self.assertIsInstance(selectors.DefaultSelector().fileno(), int)
+
+
+if __name__ == '__main__':
+    unittest.main()
