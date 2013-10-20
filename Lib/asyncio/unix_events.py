@@ -167,23 +167,25 @@ class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def _sig_chld(self):
         try:
-            try:
-                pid, status = os.waitpid(-1, os.WNOHANG)
-            except ChildProcessError:
-                return
-            if pid == 0:
-                self.call_soon(self._sig_chld)
-                return
-            elif os.WIFSIGNALED(status):
-                returncode = -os.WTERMSIG(status)
-            elif os.WIFEXITED(status):
-                returncode = os.WEXITSTATUS(status)
-            else:
-                self.call_soon(self._sig_chld)
-                return
-            transp = self._subprocesses.get(pid)
-            if transp is not None:
-                transp._process_exited(returncode)
+            # because of signal coalescing, we must keep calling waitpid() as
+            # long as we're able to reap a child
+            while True:
+                try:
+                    pid, status = os.waitpid(-1, os.WNOHANG)
+                except ChildProcessError:
+                    break
+                if pid == 0:
+                    break
+                elif os.WIFSIGNALED(status):
+                    returncode = -os.WTERMSIG(status)
+                elif os.WIFEXITED(status):
+                    returncode = os.WEXITSTATUS(status)
+                else:
+                    # shouldn't happen
+                    continue
+                transp = self._subprocesses.get(pid)
+                if transp is not None:
+                    transp._process_exited(returncode)
         except Exception:
             logger.exception('Unknown exception in SIGCHLD handler')
 
