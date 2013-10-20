@@ -1,5 +1,5 @@
 import decimal
-from io import StringIO
+from io import StringIO, BytesIO
 from collections import OrderedDict
 from test.test_json import PyTest, CTest
 
@@ -69,6 +69,13 @@ class TestDecode:
         s = '["abc\\y"]'
         msg = 'escape'
         self.assertRaisesRegex(ValueError, msg, self.loads, s)
+
+    def test_invalid_input_type(self):
+        msg = 'the JSON object must be str'
+        for value in [1, 3.14, b'bytes', b'\xff\x00', [], {}, None]:
+            self.assertRaisesRegex(TypeError, msg, self.loads, value)
+        with self.assertRaisesRegex(TypeError, msg):
+            self.json.load(BytesIO(b'[1,2,3]'))
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
