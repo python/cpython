@@ -670,19 +670,26 @@ Glossary
    positional argument
       See :term:`argument`.
 
-   provisional package
-      A provisional package is one which has been deliberately excluded from
+   provisional API
+      A provisional API is one which has been deliberately excluded from
       the standard library's backwards compatibility guarantees.  While major
-      changes to such packages are not expected, as long as they are marked
+      changes to such interfaces are not expected, as long as they are marked
       provisional, backwards incompatible changes (up to and including removal
-      of the package) may occur if deemed necessary by core developers.  Such
+      of the interface) may occur if deemed necessary by core developers.  Such
       changes will not be made gratuitously -- they will occur only if serious
-      flaws are uncovered that were missed prior to the inclusion of the
-      package.
+      fundamental flaws are uncovered that were missed prior to the inclusion
+      of the API.
+
+      Even for provisional APIs, backwards incompatible changes are seen as
+      a "solution of last resort" - every attempt will still be made to find
+      a backwards compatible resolution to any identified problems.
 
       This process allows the standard library to continue to evolve over
       time, without locking in problematic design errors for extended periods
       of time.  See :pep:`411` for more details.
+
+   provisional package
+      See :term:`provisional API`.
 
    Python 3000
       Nickname for the Python 3.x release line (coined long ago when the
