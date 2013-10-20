@@ -13,7 +13,7 @@ Core and Builtins
 - Issue #19301: Give classes and functions that are explicitly marked global a
   global qualname.
 
-- Issue #19279: UTF-7 decoder no more produces illegal strings.
+- Issue #19279: UTF-7 decoder no longer produces illegal strings.
 
 - Issue #16612: Add "Argument Clinic", a compile-time preprocessor for
   C files to generate argument parsing code.  (See PEP 436.)
