@@ -313,6 +313,8 @@ def loads(s, encoding=None, cls=None, object_hook=None, parse_float=None,
     if not isinstance(s, str):
         raise TypeError('the JSON object must be str, not {!r}'.format(
                             s.__class__.__name__))
+    if s.startswith(u'\ufeff'):
+        raise ValueError("Unexpected UTF-8 BOM (decode using utf-8-sig)")
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
             parse_constant is None and object_pairs_hook is None and not kw):
