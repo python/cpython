@@ -77,5 +77,19 @@ class TestDecode:
         with self.assertRaisesRegex(TypeError, msg):
             self.json.load(BytesIO(b'[1,2,3]'))
 
+    def test_string_with_utf8_bom(self):
+        # see #18958
+        bom_json = "[1,2,3]".encode('utf-8-sig').decode('utf-8')
+        with self.assertRaises(ValueError) as cm:
+            self.loads(bom_json)
+        self.assertIn('BOM', str(cm.exception))
+        with self.assertRaises(ValueError) as cm:
+            self.json.load(StringIO(bom_json))
+        self.assertIn('BOM', str(cm.exception))
+        # make sure that the BOM is not detected in the middle of a string
+        bom_in_str = '"{}"'.format(''.encode('utf-8-sig').decode('utf-8'))
+        self.assertEqual(self.loads(bom_in_str), '\ufeff')
+        self.assertEqual(self.json.load(StringIO(bom_in_str)), '\ufeff')
+
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
