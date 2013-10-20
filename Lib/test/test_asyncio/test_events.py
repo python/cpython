@@ -17,7 +17,7 @@ import time
 import errno
 import unittest
 import unittest.mock
-from test.support import find_unused_port, IPV6_ENABLED
+from test.support import find_unused_port
 
 
 from asyncio import futures
@@ -687,7 +687,7 @@ class EventLoopTestsMixin:
 
         server.close()
 
-    @unittest.skipUnless(IPV6_ENABLED, 'IPv6 not supported or enabled')
+    @unittest.skipUnless(socket.has_ipv6, 'IPv6 not supported')
     def test_create_server_dual_stack(self):
         f_proto = futures.Future(loop=self.loop)
 
