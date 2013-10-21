@@ -1235,8 +1235,9 @@ location listed above.
                         doc = getdoc(value)
                     else:
                         doc = None
-                    push(self.docother(getattr(object, name),
-                                       name, mod, maxlen=70, doc=doc) + '\n')
+                    push(self.docother(
+                        getattr(object, name, None) or homecls.__dict__[name],
+                        name, mod, maxlen=70, doc=doc) + '\n')
             return attrs
 
         attrs = [(name, kind, cls, value)
@@ -1258,7 +1259,6 @@ location listed above.
             else:
                 tag = "inherited from %s" % classname(thisclass,
                                                       object.__module__)
-
             # Sort attrs by name.
             attrs.sort()
 
@@ -1273,6 +1273,7 @@ location listed above.
                                      lambda t: t[1] == 'data descriptor')
             attrs = spilldata("Data and other attributes %s:\n" % tag, attrs,
                               lambda t: t[1] == 'data')
+
             assert attrs == []
             attrs = inherited
 
