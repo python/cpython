@@ -1909,8 +1909,8 @@ Utility functions
 
 .. function:: sizeof(obj_or_type)
 
-   Returns the size in bytes of a ctypes type or instance memory buffer. Does the
-   same as the C ``sizeof()`` function.
+   Returns the size in bytes of a ctypes type or instance memory buffer.
+   Does the same as the C ``sizeof`` operator.
 
 
 .. function:: string_at(address, size=-1)
