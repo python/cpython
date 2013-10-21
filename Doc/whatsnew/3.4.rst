@@ -564,6 +564,16 @@ Add an event-driven parser for non-blocking applications,
 
 (Contributed by Antoine Pitrou in :issue:`17741`.)
 
+
+zipfile.PyZipfile
+-----------------
+
+Add a filter function to ignore some packages (tests for instance),
+:meth:`~zipfile.PyZipFile.writepy`.
+
+(Contributed by Christian Tismer in :issue:`19274`.)
+
+
 Other improvements
 ==================
 
