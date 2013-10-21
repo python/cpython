@@ -513,10 +513,11 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
  * Also OpenSSL < 1.0 don't provide PKCS5_PBKDF2_HMAC(), only
  * PKCS5_PBKDF2_SHA1.
  */
-int PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
-                           const unsigned char *salt, int saltlen,
-                           int iter, const EVP_MD *digest,
-                           int keylen, unsigned char *out)
+static int
+PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
+                       const unsigned char *salt, int saltlen,
+                       int iter, const EVP_MD *digest,
+                       int keylen, unsigned char *out)
 {
     unsigned char digtmp[EVP_MAX_MD_SIZE], *p, itmp[4];
     int cplen, j, k, tkeylen, mdlen;
