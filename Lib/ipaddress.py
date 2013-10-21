@@ -975,11 +975,23 @@ class _BaseNetwork(_IPAddressBase):
         """Test if this address is allocated for private networks.
 
         Returns:
-            A boolean, True if the address is reserved per RFC 4193.
+            A boolean, True if the address is reserved per
+            iana-ipv4-special-registry or iana-ipv6-special-registry.
 
         """
         return (self.network_address.is_private and
                 self.broadcast_address.is_private)
+
+    @property
+    def is_global(self):
+        """Test if this address is allocated for private networks.
+
+        Returns:
+            A boolean, True if the address is not reserved per
+            iana-ipv4-special-registry or iana-ipv6-special-registry.
+
+        """
+        return not self.is_private
 
     @property
     def is_unspecified(self):
@@ -1225,15 +1237,37 @@ class IPv4Address(_BaseV4, _BaseAddress):
         """Test if this address is allocated for private networks.
 
         Returns:
-            A boolean, True if the address is reserved per RFC 1918.
+            A boolean, True if the address is reserved per
+            iana-ipv4-special-registry.
 
         """
-        private_10 = IPv4Network('10.0.0.0/8')
-        private_172 = IPv4Network('172.16.0.0/12')
-        private_192 = IPv4Network('192.168.0.0/16')
-        return (self in private_10 or
-                self in private_172 or
-                self in private_192)
+        return (self in IPv4Network('0.0.0.0/8') or
+                self in IPv4Network('10.0.0.0/8') or
+                self in IPv4Network('100.64.0.0/10') or
+                self in IPv4Network('127.0.0.0/8') or
+                self in IPv4Network('169.254.0.0/16') or
+                self in IPv4Network('172.16.0.0/12') or
+                self in IPv4Network('192.0.0.0/29') or
+                self in IPv4Network('192.0.0.170/31') or
+                self in IPv4Network('192.0.2.0/24') or
+                self in IPv4Network('192.168.0.0/16') or
+                self in IPv4Network('198.18.0.0/15') or
+                self in IPv4Network('198.51.100.0/24') or
+                self in IPv4Network('203.0.113.0/24') or
+                self in IPv4Network('240.0.0.0/4') or
+                self in IPv4Network('255.255.255.255/32'))
+
+    @property
+    def is_global(self):
+        """Test if this address is allocated for private networks.
+
+        Returns:
+            A boolean, True if the address is not reserved per
+            iana-ipv4-special-registry.
+
+        """
+        return not self.is_private
+
 
     @property
     def is_multicast(self):
@@ -1826,11 +1860,31 @@ class IPv6Address(_BaseV6, _BaseAddress):
         """Test if this address is allocated for private networks.
 
         Returns:
-            A boolean, True if the address is reserved per RFC 4193.
+            A boolean, True if the address is reserved per
+            iana-ipv6-special-registry.
 
         """
-        private_network = IPv6Network('fc00::/7')
-        return self in private_network
+        return (self in IPv6Network('::1/128') or
+                self in IPv6Network('::/128') or
+                self in IPv6Network('::ffff:0:0/96') or
+                self in IPv6Network('100::/64') or
+                self in IPv6Network('2001::/23') or
+                self in IPv6Network('2001:2::/48') or
+                self in IPv6Network('2001:db8::/32') or
+                self in IPv6Network('2001:10::/28') or
+                self in IPv6Network('fc00::/7') or
+                self in IPv6Network('fe80::/10'))
+
+    @property
+    def is_global(self):
+        """Test if this address is allocated for public networks.
+
+        Returns:
+            A boolean, true if the address is not reserved per
+            iana-ipv6-special-registry.
+
+        """
+        return not self.is_private
 
     @property
     def is_unspecified(self):
