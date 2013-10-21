@@ -3,7 +3,6 @@
 import collections
 import errno
 import fcntl
-import functools
 import os
 import signal
 import socket
@@ -167,22 +166,26 @@ class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def _sig_chld(self):
         try:
-            # because of signal coalescing, we must keep calling waitpid() as
-            # long as we're able to reap a child
+            # Because of signal coalescing, we must keep calling waitpid() as
+            # long as we're able to reap a child.
             while True:
                 try:
                     pid, status = os.waitpid(-1, os.WNOHANG)
                 except ChildProcessError:
-                    break
+                    break  # No more child processes exist.
                 if pid == 0:
-                    break
+                    break  # All remaining child processes are still alive.
                 elif os.WIFSIGNALED(status):
+                    # A child process died because of a signal.
                     returncode = -os.WTERMSIG(status)
                 elif os.WIFEXITED(status):
+                    # A child process exited (e.g. sys.exit()).
                     returncode = os.WEXITSTATUS(status)
                 else:
-                    # shouldn't happen
-                    continue
+                    # A child exited, but we don't understand its status.
+                    # This shouldn't happen, but if it does, let's just
+                    # return that status; perhaps that helps debug it.
+                    returncode = status
                 transp = self._subprocesses.get(pid)
                 if transp is not None:
                     transp._process_exited(returncode)
@@ -480,18 +483,15 @@ class _UnixSubprocessTransport(transports.SubprocessTransport):
         loop = self._loop
         if proc.stdin is not None:
             transp, proto = yield from loop.connect_write_pipe(
-                functools.partial(
-                    _UnixWriteSubprocessPipeProto, self, STDIN),
+                lambda: _UnixWriteSubprocessPipeProto(self, STDIN),
                 proc.stdin)
         if proc.stdout is not None:
             transp, proto = yield from loop.connect_read_pipe(
-                functools.partial(
-                    _UnixReadSubprocessPipeProto, self, STDOUT),
+                lambda: _UnixReadSubprocessPipeProto(self, STDOUT),
                 proc.stdout)
         if proc.stderr is not None:
             transp, proto = yield from loop.connect_read_pipe(
-                functools.partial(
-                    _UnixReadSubprocessPipeProto, self, STDERR),
+                lambda: _UnixReadSubprocessPipeProto(self, STDERR),
                 proc.stderr)
         if not self._pipes:
             self._try_connected()
