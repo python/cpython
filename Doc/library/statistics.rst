@@ -83,7 +83,7 @@ Function details
 
    .. note::
 
-      The mean is strongly effected by outliers and is not a robust estimator
+      The mean is strongly affected by outliers and is not a robust estimator
       for central location: the mean is not necessarily a typical example of the
       data points.  For more robust, although less efficient, measures of
       central location, see :func:`median` and :func:`mode`.  (In this case,
