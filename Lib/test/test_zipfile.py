@@ -597,21 +597,18 @@ class PyZipFileTests(unittest.TestCase):
 
         with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
 
-            stdout = sys.stdout
-
             # first make sure that the test folder gives error messages
-            sys.stdout = reportSIO = io.StringIO()
-            zipfp.writepy(packagedir)
+            # (on the badsyntax_... files)
+            with captured_stdout() as reportSIO:
+                zipfp.writepy(packagedir)
             reportStr = reportSIO.getvalue()
             self.assertTrue('SyntaxError' in reportStr)
 
             # then check that the filter works
-            sys.stdout = reportSIO = io.StringIO()
-            zipfp.writepy(packagedir, filterfunc=lambda whatever:False)
+            with captured_stdout() as reportSIO:
+                zipfp.writepy(packagedir, filterfunc=lambda whatever: False)
             reportStr = reportSIO.getvalue()
             self.assertTrue('SyntaxError' not in reportStr)
-
-            sys.stdout = stdout
 
     def test_write_with_optimization(self):
         import email
