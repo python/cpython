@@ -1,5 +1,5 @@
 /* trees.c -- output deflated data using Huffman coding
- * Copyright (C) 1995-2010 Jean-loup Gailly
+ * Copyright (C) 1995-2012 Jean-loup Gailly
  * detect_data_type() function provided freely by Cosmin Truta, 2006
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
@@ -74,11 +74,6 @@ local const uch bl_order[BL_CODES]
  * probability, to avoid transmitting the lengths for unused bit length codes.
  */
 
-#define Buf_size (8 * 2*sizeof(char))
-/* Number of bits used within bi_buf. (bi_buf might be implemented on
- * more than 16 bits on some systems.)
- */
-
 /* ===========================================================================
  * Local data. These are initialized only once.
  */
@@ -151,8 +146,8 @@ local void send_tree      OF((deflate_state *s, ct_data *tree, int max_code));
 local int  build_bl_tree  OF((deflate_state *s));
 local void send_all_trees OF((deflate_state *s, int lcodes, int dcodes,
                               int blcodes));
-local void compress_block OF((deflate_state *s, ct_data *ltree,
-                              ct_data *dtree));
+local void compress_block OF((deflate_state *s, const ct_data *ltree,
+                              const ct_data *dtree));
 local int  detect_data_type OF((deflate_state *s));
 local unsigned bi_reverse OF((unsigned value, int length));
 local void bi_windup      OF((deflate_state *s));
@@ -399,7 +394,6 @@ void ZLIB_INTERNAL _tr_init(s)
 
     s->bi_buf = 0;
     s->bi_valid = 0;
-    s->last_eob_len = 8; /* enough lookahead for inflate */
 #ifdef DEBUG
     s->compressed_len = 0L;
     s->bits_sent = 0L;
@@ -883,15 +877,17 @@ void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
 }
 
 /* ===========================================================================
+ * Flush the bits in the bit buffer to pending output (leaves at most 7 bits)
+ */
+void ZLIB_INTERNAL _tr_flush_bits(s)
+    deflate_state *s;
+{
+    bi_flush(s);
+}
+
+/* ===========================================================================
  * Send one empty static block to give enough lookahead for inflate.
  * This takes 10 bits, of which 7 may remain in the bit buffer.
- * The current inflate code requires 9 bits of lookahead. If the
- * last two codes for the previous block (real code plus EOB) were coded
- * on 5 bits or less, inflate may have only 5+3 bits of lookahead to decode
- * the last real code. In this case we send two empty static blocks instead
- * of one. (There are no problems if the previous block is stored or fixed.)
- * To simplify the code, we assume the worst case of last real code encoded
- * on one bit only.
  */
 void ZLIB_INTERNAL _tr_align(s)
     deflate_state *s;
@@ -902,20 +898,6 @@ void ZLIB_INTERNAL _tr_align(s)
     s->compressed_len += 10L; /* 3 for block type, 7 for EOB */
 #endif
     bi_flush(s);
-    /* Of the 10 bits for the empty block, we have already sent
-     * (10 - bi_valid) bits. The lookahead for the last real code (before
-     * the EOB of the previous block) was thus at least one plus the length
-     * of the EOB plus what we have just sent of the empty static block.
-     */
-    if (1 + s->last_eob_len + 10 - s->bi_valid < 9) {
-        send_bits(s, STATIC_TREES<<1, 3);
-        send_code(s, END_BLOCK, static_ltree);
-#ifdef DEBUG
-        s->compressed_len += 10L;
-#endif
-        bi_flush(s);
-    }
-    s->last_eob_len = 7;
 }
 
 /* ===========================================================================
@@ -990,7 +972,8 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
     } else if (s->strategy == Z_FIXED || static_lenb == opt_lenb) {
 #endif
         send_bits(s, (STATIC_TREES<<1)+last, 3);
-        compress_block(s, (ct_data *)static_ltree, (ct_data *)static_dtree);
+        compress_block(s, (const ct_data *)static_ltree,
+                       (const ct_data *)static_dtree);
 #ifdef DEBUG
         s->compressed_len += 3 + s->static_len;
 #endif
@@ -998,7 +981,8 @@ void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
         send_bits(s, (DYN_TREES<<1)+last, 3);
         send_all_trees(s, s->l_desc.max_code+1, s->d_desc.max_code+1,
                        max_blindex+1);
-        compress_block(s, (ct_data *)s->dyn_ltree, (ct_data *)s->dyn_dtree);
+        compress_block(s, (const ct_data *)s->dyn_ltree,
+                       (const ct_data *)s->dyn_dtree);
 #ifdef DEBUG
         s->compressed_len += 3 + s->opt_len;
 #endif
@@ -1075,8 +1059,8 @@ int ZLIB_INTERNAL _tr_tally (s, dist, lc)
  */
 local void compress_block(s, ltree, dtree)
     deflate_state *s;
-    ct_data *ltree; /* literal tree */
-    ct_data *dtree; /* distance tree */
+    const ct_data *ltree; /* literal tree */
+    const ct_data *dtree; /* distance tree */
 {
     unsigned dist;      /* distance of matched string */
     int lc;             /* match length or unmatched char (if dist == 0) */
@@ -1118,7 +1102,6 @@ local void compress_block(s, ltree, dtree)
     } while (lx < s->last_lit);
 
     send_code(s, END_BLOCK, ltree);
-    s->last_eob_len = ltree[END_BLOCK].Len;
 }
 
 /* ===========================================================================
@@ -1226,7 +1209,6 @@ local void copy_block(s, buf, len, header)
     int      header;  /* true if block header must be written */
 {
     bi_windup(s);        /* align on byte boundary */
-    s->last_eob_len = 8; /* enough lookahead for inflate */
 
     if (header) {
         put_short(s, (ush)len);

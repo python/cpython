@@ -44,8 +44,8 @@ The lastest zlib FAQ is at http://zlib.net/zlib_faq.html
 
  6. Where's the zlib documentation (man pages, etc.)?
 
-    It's in zlib.h .  Examples of zlib usage are in the files example.c and
-    minigzip.c, with more in examples/ .
+    It's in zlib.h .  Examples of zlib usage are in the files test/example.c
+    and test/minigzip.c, with more in examples/ .
 
  7. Why don't you use GNU autoconf or libtool or ...?
 
@@ -84,8 +84,10 @@ The lastest zlib FAQ is at http://zlib.net/zlib_faq.html
 
 13. How can I make a Unix shared library?
 
-    make clean
-    ./configure -s
+    By default a shared (and a static) library is built for Unix.  So:
+
+    make distclean
+    ./configure
     make
 
 14. How do I install a shared zlib library on Unix?
@@ -325,7 +327,7 @@ The lastest zlib FAQ is at http://zlib.net/zlib_faq.html
     correctly points to the zlib specification in RFC 1950 for the "deflate"
     transfer encoding, there have been reports of servers and browsers that
     incorrectly produce or expect raw deflate data per the deflate
-    specficiation in RFC 1951, most notably Microsoft.  So even though the
+    specification in RFC 1951, most notably Microsoft.  So even though the
     "deflate" transfer encoding using the zlib format would be the more
     efficient approach (and in fact exactly what the zlib format was designed
     for), using the "gzip" transfer encoding is probably more reliable due to
