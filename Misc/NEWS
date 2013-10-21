@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17400: ipaddress should make it easy to identify rfc6598 addresses.
+
 - Load SSL's error strings in hashlib.
 
 - Issue #18527: Upgrade internal copy of zlib to 1.2.8.
