@@ -384,9 +384,6 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 
    .. method:: PyZipFile.writepy(pathname, basename='', filterfunc=None)
 
-      .. versionadded:: 3.4
-         The *filterfunc* parameter.
-
       Search for files :file:`\*.py` and add the corresponding file to the
       archive.
 
@@ -418,6 +415,9 @@ The :class:`PyZipFile` constructor takes the same parameters as the
          test/testall.pyc             # Module test.testall
          test/bogus/__init__.pyc      # Subpackage directory
          test/bogus/myfile.pyc        # Submodule test.bogus.myfile
+
+      .. versionadded:: 3.4
+         The *filterfunc* parameter.
 
 
 .. _zipinfo-objects:
