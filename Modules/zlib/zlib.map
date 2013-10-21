@@ -66,3 +66,18 @@ ZLIB_1.2.3.5 {
     gzclose_r;
     gzclose_w;
 } ZLIB_1.2.3.4;
+
+ZLIB_1.2.5.1 {
+    deflatePending;
+} ZLIB_1.2.3.5;
+
+ZLIB_1.2.5.2 {
+    deflateResetKeep;
+    gzgetc_;
+    inflateResetKeep;
+} ZLIB_1.2.5.1;
+
+ZLIB_1.2.7.1 {
+    inflateGetDictionary;
+    gzvprintf;
+} ZLIB_1.2.5.2;
