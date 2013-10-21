@@ -11,6 +11,7 @@ import re
 import string
 import test.support
 import time
+import types
 import unittest
 import xml.etree
 import textwrap
@@ -207,6 +208,77 @@ missing_pattern = "no Python documentation found for '%s'"
 
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ImportError: No module named %r"
+
+expected_dynamicattribute_pattern = """
+Help on class DA in module %s:
+
+class DA(builtins.object)
+ |  Data descriptors defined here:
+ |
+ |  __dict__
+ |      dictionary for instance variables (if defined)
+ |
+ |  __weakref__
+ |      list of weak references to the object (if defined)
+ |
+ |  ham
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from Meta:
+ |
+ |  ham = 'spam'
+""".strip()
+
+expected_virtualattribute_pattern1 = """
+Help on class Class in module %s:
+
+class Class(builtins.object)
+ |  Data and other attributes inherited from Meta:
+ |
+ |  LIFE = 42
+""".strip()
+
+expected_virtualattribute_pattern2 = """
+Help on class Class1 in module %s:
+
+class Class1(builtins.object)
+ |  Data and other attributes inherited from Meta1:
+ |
+ |  one = 1
+""".strip()
+
+expected_virtualattribute_pattern3 = """
+Help on class Class2 in module %s:
+
+class Class2(Class1)
+ |  Method resolution order:
+ |      Class2
+ |      Class1
+ |      builtins.object
+ |
+ |  Data and other attributes inherited from Meta1:
+ |
+ |  one = 1
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from Meta3:
+ |
+ |  three = 3
+ |
+ |  ----------------------------------------------------------------------
+ |  Data and other attributes inherited from Meta2:
+ |
+ |  two = 2
+""".strip()
+
+expected_missingattribute_pattern = """
+Help on class C in module %s:
+
+class C(builtins.object)
+ |  Data and other attributes defined here:
+ |
+ |  here = 'present!'
+""".strip()
 
 def run_pydoc(module_name, *args, **env):
     """
@@ -636,6 +708,108 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+class PydocWithMetaClasses(unittest.TestCase):
+    def test_DynamicClassAttribute(self):
+        class Meta(type):
+            def __getattr__(self, name):
+                if name == 'ham':
+                    return 'spam'
+                return super().__getattr__(name)
+        class DA(metaclass=Meta):
+            @types.DynamicClassAttribute
+            def ham(self):
+                return 'eggs'
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper(DA)
+        expected_text = expected_dynamicattribute_pattern % __name__
+        result = output.getvalue().strip()
+        if result != expected_text:
+            print_diffs(expected_text, result)
+            self.fail("outputs are not equal, see diff above")
+
+    def test_virtualClassAttributeWithOneMeta(self):
+        class Meta(type):
+            def __dir__(cls):
+                return ['__class__', '__module__', '__name__', 'LIFE']
+            def __getattr__(self, name):
+                if name =='LIFE':
+                    return 42
+                return super().__getattr(name)
+        class Class(metaclass=Meta):
+            pass
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper(Class)
+        expected_text = expected_virtualattribute_pattern1 % __name__
+        result = output.getvalue().strip()
+        if result != expected_text:
+            print_diffs(expected_text, result)
+            self.fail("outputs are not equal, see diff above")
+
+    def test_virtualClassAttributeWithTwoMeta(self):
+        class Meta1(type):
+            def __dir__(cls):
+                return ['__class__', '__module__', '__name__', 'one']
+            def __getattr__(self, name):
+                if name =='one':
+                    return 1
+                return super().__getattr__(name)
+        class Meta2(type):
+            def __dir__(cls):
+                return ['__class__', '__module__', '__name__', 'two']
+            def __getattr__(self, name):
+                if name =='two':
+                    return 2
+                return super().__getattr__(name)
+        class Meta3(Meta1, Meta2):
+            def __dir__(cls):
+                return list(sorted(set(
+                    ['__class__', '__module__', '__name__', 'three'] +
+                    Meta1.__dir__(cls) + Meta2.__dir__(cls))))
+            def __getattr__(self, name):
+                if name =='three':
+                    return 3
+                return super().__getattr__(name)
+        class Class1(metaclass=Meta1):
+            pass
+        class Class2(Class1, metaclass=Meta3):
+            pass
+        fail1 = fail2 = False
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper(Class1)
+        expected_text1 = expected_virtualattribute_pattern2 % __name__
+        result1 = output.getvalue().strip()
+        if result1 != expected_text1:
+            print_diffs(expected_text1, result1)
+            fail1 = True
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper(Class2)
+        expected_text2 = expected_virtualattribute_pattern3 % __name__
+        result2 = output.getvalue().strip()
+        if result2 != expected_text2:
+            print_diffs(expected_text2, result2)
+            fail2 = True
+        if fail1 or fail2:
+            self.fail("outputs are not equal, see diff above")
+
+    def test_buggy_dir(self):
+        class M(type):
+            def __dir__(cls):
+                return ['__class__', '__name__', 'missing', 'here']
+        class C(metaclass=M):
+            here = 'present!'
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper(C)
+        expected_text = expected_missingattribute_pattern % __name__
+        result = output.getvalue().strip()
+        if result != expected_text:
+            print_diffs(expected_text, result)
+            self.fail("outputs are not equal, see diff above")
+
 @reap_threads
 def test_main():
     try:
@@ -645,6 +819,7 @@ def test_main():
                                   PydocServerTest,
                                   PydocUrlHandlerTest,
                                   TestHelper,
+                                  PydocWithMetaClasses,
                                   )
     finally:
         reap_children()
