@@ -10,8 +10,14 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
-- Issue 19306: Add extra hints to the faulthandler module's stack
+- Issue #19306: Add extra hints to the faulthandler module's stack
   dumps that these are "upside down".
+
+Library
+-------
+
+- Issue #19274: Add a filterfunc parameter to PyZipFile.writepy.
+
 
 What's New in Python 3.4.0 Alpha 4?
 ===================================
