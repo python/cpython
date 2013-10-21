@@ -271,7 +271,7 @@ intent of code that deliberately suppresses exceptions from a single
 statement. (Contributed by Raymond Hettinger in :issue:`15806` and
 Zero Piraeus in :issue:`19266`)
 
-The new :class:`contextlib.redirect_stdio` context manager makes it easier
+The new :func:`contextlib.redirect_stdout` context manager makes it easier
 for utility scripts to handle inflexible APIs that don't provide any
 options to retrieve their output as a string or direct it to somewhere
 other than :data:`sys.stdout`. In conjunction with :class:`io.StringIO`,
