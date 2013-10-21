@@ -266,7 +266,7 @@ class SelectorEventLoopTests(unittest.TestCase):
         self.loop._subprocesses[7] = transp
 
         self.loop._sig_chld()
-        self.assertFalse(transp._process_exited.called)
+        self.assertTrue(transp._process_exited.called)
         self.assertFalse(m_WEXITSTATUS.called)
         self.assertFalse(m_WTERMSIG.called)
 
