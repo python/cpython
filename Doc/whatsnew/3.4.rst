@@ -434,7 +434,7 @@ POP3 server.
 pprint
 ------
 
-The :mod::`pprint` module now supports *compact* mode for formatting long
+The :mod:`pprint` module now supports *compact* mode for formatting long
 sequences (:issue:`19132`).
 
 
