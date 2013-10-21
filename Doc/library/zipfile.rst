@@ -382,7 +382,10 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 
    Instances have one method in addition to those of :class:`ZipFile` objects:
 
-   .. method:: PyZipFile.writepy(pathname, basename='')
+   .. method:: PyZipFile.writepy(pathname, basename='', filterfunc=None)
+
+      .. versionadded:: 3.4
+         The *filterfunc* parameter.
 
       Search for files :file:`\*.py` and add the corresponding file to the
       archive.
@@ -404,7 +407,10 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       package directory, then all :file:`\*.py[co]` are added under the package
       name as a file path, and if any subdirectories are package directories,
       all of these are added recursively.  *basename* is intended for internal
-      use only.  The :meth:`writepy` method makes archives with file names like
+      use only.  When *filterfunc(pathname)* is given, it will be called for every
+      invocation. When it returns a False value, that path and its subpaths will
+      be ignored.
+      The :meth:`writepy` method makes archives with file names like
       this::
 
          string.pyc                   # Top level name
