@@ -1319,6 +1319,11 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network(
                 '127.42.0.0/16').is_loopback)
         self.assertEqual(False, ipaddress.ip_network('128.0.0.0').is_loopback)
+        self.assertEqual(True, ipaddress.ip_network('100.64.0.0/10').is_private)
+        self.assertEqual(True,
+                         ipaddress.ip_network('192.0.2.128/25').is_private)
+        self.assertEqual(True,
+                         ipaddress.ip_network('192.0.3.0/24').is_global)
 
         # test addresses
         self.assertEqual(True, ipaddress.ip_address('0.0.0.0').is_unspecified)
@@ -1384,6 +1389,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False, ipaddress.ip_network('::1').is_unspecified)
         self.assertEqual(False, ipaddress.ip_network('::/127').is_unspecified)
 
+        self.assertEqual(True,
+                         ipaddress.ip_network('2001::1/128').is_private)
+        self.assertEqual(True,
+                         ipaddress.ip_network('200::1/128').is_global)
         # test addresses
         self.assertEqual(True, ipaddress.ip_address('ffff::').is_multicast)
         self.assertEqual(True, ipaddress.ip_address(2**128 - 1).is_multicast)
