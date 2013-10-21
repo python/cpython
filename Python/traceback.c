@@ -471,13 +471,13 @@ dump_decimal(int fd, int value)
     write(fd, buffer, len);
 }
 
-/* Format an integer in range [0; 0xffffffff] to hexdecimal of 'width' digits,
+/* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
    and write it into the file fd.
 
    This function is signal safe. */
 
 static void
-dump_hexadecimal(int width, unsigned long value, int fd)
+dump_hexadecimal(int fd, unsigned long value, int width)
 {
     int len;
     char buffer[sizeof(unsigned long) * 2 + 1];
@@ -544,15 +544,15 @@ dump_ascii(int fd, PyObject *text)
         }
         else if (ch < 0xff) {
             PUTS(fd, "\\x");
-            dump_hexadecimal(2, ch, fd);
+            dump_hexadecimal(fd, ch, 2);
         }
         else if (ch < 0xffff) {
             PUTS(fd, "\\u");
-            dump_hexadecimal(4, ch, fd);
+            dump_hexadecimal(fd, ch, 4);
         }
         else {
             PUTS(fd, "\\U");
-            dump_hexadecimal(8, ch, fd);
+            dump_hexadecimal(fd, ch, 8);
         }
     }
     if (truncated)
@@ -603,7 +603,7 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     unsigned int depth;
 
     if (write_header)
-        PUTS(fd, "Traceback (most recent call first):\n");
+        PUTS(fd, "Stack (most recent call first):\n");
 
     frame = _PyThreadState_GetFrame(tstate);
     if (frame == NULL)
@@ -641,8 +641,8 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
         PUTS(fd, "Current thread 0x");
     else
         PUTS(fd, "Thread 0x");
-    dump_hexadecimal(sizeof(long)*2, (unsigned long)tstate->thread_id, fd);
-    PUTS(fd, ":\n");
+    dump_hexadecimal(fd, (unsigned long)tstate->thread_id, sizeof(long)*2);
+    PUTS(fd, " (most recent call first):\n");
 }
 
 const char*
