@@ -847,6 +847,7 @@ PyInit__hashlib(void)
     PyObject *m, *openssl_md_meth_names;
 
     OpenSSL_add_all_digests();
+    ERR_load_crypto_strings();
 
     /* TODO build EVP_functions openssl_* entries dynamically based
      * on what hashes are supported rather than listing many
