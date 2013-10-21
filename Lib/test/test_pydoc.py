@@ -214,18 +214,18 @@ Help on class DA in module %s:
 
 class DA(builtins.object)
  |  Data descriptors defined here:
- |
+ |\x20\x20
  |  __dict__
  |      dictionary for instance variables (if defined)
- |
+ |\x20\x20
  |  __weakref__
  |      list of weak references to the object (if defined)
- |
+ |\x20\x20
  |  ham
- |
+ |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta:
- |
+ |\x20\x20
  |  ham = 'spam'
 """.strip()
 
@@ -234,7 +234,7 @@ Help on class Class in module %s:
 
 class Class(builtins.object)
  |  Data and other attributes inherited from Meta:
- |
+ |\x20\x20
  |  LIFE = 42
 """.strip()
 
@@ -243,7 +243,7 @@ Help on class Class1 in module %s:
 
 class Class1(builtins.object)
  |  Data and other attributes inherited from Meta1:
- |
+ |\x20\x20
  |  one = 1
 """.strip()
 
@@ -255,19 +255,19 @@ class Class2(Class1)
  |      Class2
  |      Class1
  |      builtins.object
- |
+ |\x20\x20
  |  Data and other attributes inherited from Meta1:
- |
+ |\x20\x20
  |  one = 1
- |
+ |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta3:
- |
+ |\x20\x20
  |  three = 3
- |
+ |\x20\x20
  |  ----------------------------------------------------------------------
  |  Data and other attributes inherited from Meta2:
- |
+ |\x20\x20
  |  two = 2
 """.strip()
 
@@ -276,7 +276,7 @@ Help on class C in module %s:
 
 class C(builtins.object)
  |  Data and other attributes defined here:
- |
+ |\x20\x20
  |  here = 'present!'
 """.strip()
 
