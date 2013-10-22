@@ -887,6 +887,9 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
+    # Issue #19293
+    @unittest.skipIf(sys.platform.startswith("aix"),
+                     'cannot be interrupted with signal on AIX')
     def test_write_pipe_disconnect_on_close(self):
         proto = None
         transport = None
@@ -986,9 +989,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_interactive(self):
         proto = None
         transp = None
@@ -1087,9 +1087,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_kill(self):
         proto = None
         transp = None
@@ -1113,9 +1110,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_send_signal(self):
         proto = None
         transp = None
@@ -1200,9 +1194,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_close_client_stream(self):
         proto = None
         transp = None
