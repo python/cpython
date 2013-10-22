@@ -1200,6 +1200,9 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
+    # Issue #19293
+    @unittest.skipIf(sys.platform.startswith("aix"),
+                     'cannot be interrupted with signal on AIX')
     def test_subprocess_close_client_stream(self):
         proto = None
         transp = None
