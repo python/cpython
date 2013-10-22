@@ -160,7 +160,7 @@ write code that handles both IP versions correctly.
 
    .. attribute:: is_global
 
-      ``True`` if the address is allocated for private networks.  See
+      ``True`` if the address is allocated for public networks.  See
       iana-ipv4-special-registry (for IPv4) or iana-ipv6-special-registry
       (for IPv6).
 

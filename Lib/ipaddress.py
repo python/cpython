@@ -984,7 +984,7 @@ class _BaseNetwork(_IPAddressBase):
 
     @property
     def is_global(self):
-        """Test if this address is allocated for private networks.
+        """Test if this address is allocated for public networks.
 
         Returns:
             A boolean, True if the address is not reserved per
@@ -1233,6 +1233,7 @@ class IPv4Address(_BaseV4, _BaseAddress):
         return self in reserved_network
 
     @property
+    @functools.lru_cache()
     def is_private(self):
         """Test if this address is allocated for private networks.
 
@@ -1259,14 +1260,14 @@ class IPv4Address(_BaseV4, _BaseAddress):
 
     @property
     def is_global(self):
-        """Test if this address is allocated for private networks.
+        """Test if this address is allocated for public networks.
 
         Returns:
             A boolean, True if the address is not reserved per
             iana-ipv4-special-registry.
 
         """
-        return not self.is_private
+        return self in IPv4Network('100.64.0.0/10') or not self.is_private
 
 
     @property
@@ -1856,6 +1857,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
         return self in sitelocal_network
 
     @property
+    @functools.lru_cache()
     def is_private(self):
         """Test if this address is allocated for private networks.
 
