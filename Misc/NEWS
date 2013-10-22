@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15207: Fix mimetypes to read from correct part of Windows registry
+  Original patch by Dave Chambers
+
 - Issue #16595: Add prlimit() to resource module.
 
 - Issue #19324: Expose Linux-specific constants in resource module.
