@@ -72,9 +72,9 @@ class FaultHandlerTests(unittest.TestCase):
         Raise an error if the output doesn't match the expected format.
         """
         if all_threads:
-            header = 'Current thread XXX'
+            header = 'Current thread XXX (most recent call first)'
         else:
-            header = 'Traceback (most recent call first)'
+            header = 'Stack (most recent call first)'
         regex = """
 ^Fatal Python error: {name}
 
@@ -306,7 +306,7 @@ funcA()
         else:
             lineno = 8
         expected = [
-            'Traceback (most recent call first):',
+            'Stack (most recent call first):',
             '  File "<string>", line %s in funcB' % lineno,
             '  File "<string>", line 11 in funcA',
             '  File "<string>", line 13 in <module>'
@@ -338,7 +338,7 @@ def {func_name}():
             func_name=func_name,
         )
         expected = [
-            'Traceback (most recent call first):',
+            'Stack (most recent call first):',
             '  File "<string>", line 4 in %s' % truncated,
             '  File "<string>", line 6 in <module>'
         ]
@@ -392,13 +392,13 @@ waiter.join()
         else:
             lineno = 10
         regex = """
-^Thread 0x[0-9a-f]+:
+^Thread 0x[0-9a-f]+ \(most recent call first\):
 (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
 ){{1,3}}  File "<string>", line 23 in run
   File ".*threading.py", line [0-9]+ in _bootstrap_inner
   File ".*threading.py", line [0-9]+ in _bootstrap
 
-Current thread XXX:
+Current thread XXX \(most recent call first\):
   File "<string>", line {lineno} in dump
   File "<string>", line 28 in <module>$
 """.strip()
@@ -461,7 +461,7 @@ if file is not None:
             count = loops
             if repeat:
                 count *= 2
-            header = r'Timeout \(%s\)!\nThread 0x[0-9a-f]+:\n' % timeout_str
+            header = r'Timeout \(%s\)!\nThread 0x[0-9a-f]+ \(most recent call first\):\n' % timeout_str
             regex = expected_traceback(9, 20, header, min_count=count)
             self.assertRegex(trace, regex)
         else:
@@ -563,9 +563,9 @@ sys.exit(exitcode)
         trace = '\n'.join(trace)
         if not unregister:
             if all_threads:
-                regex = 'Current thread XXX:\n'
+                regex = 'Current thread XXX \(most recent call first\):\n'
             else:
-                regex = 'Traceback \(most recent call first\):\n'
+                regex = 'Stack \(most recent call first\):\n'
             regex = expected_traceback(7, 28, regex)
             self.assertRegex(trace, regex)
         else:

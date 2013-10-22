@@ -1,5 +1,5 @@
 /* gzguts.h -- zlib internal header definitions for gz* operations
- * Copyright (C) 2004, 2005, 2010 Mark Adler
+ * Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -12,7 +12,7 @@
 #  endif
 #endif
 
-#if ((__GNUC__-0) * 10 + __GNUC_MINOR__-0 >= 33) && !defined(NO_VIZ)
+#ifdef HAVE_HIDDEN
 #  define ZLIB_INTERNAL __attribute__((visibility ("hidden")))
 #else
 #  define ZLIB_INTERNAL
@@ -27,13 +27,80 @@
 #endif
 #include <fcntl.h>
 
+#ifdef _WIN32
+#  include <stddef.h>
+#endif
+
+#if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
+#  include <io.h>
+#endif
+
+#ifdef WINAPI_FAMILY
+#  define open _open
+#  define read _read
+#  define write _write
+#  define close _close
+#endif
+
 #ifdef NO_DEFLATE       /* for compatibility with old definition */
 #  define NO_GZCOMPRESS
 #endif
 
+#if defined(STDC99) || (defined(__TURBOC__) && __TURBOC__ >= 0x550)
+#  ifndef HAVE_VSNPRINTF
+#    define HAVE_VSNPRINTF
+#  endif
+#endif
+
+#if defined(__CYGWIN__)
+#  ifndef HAVE_VSNPRINTF
+#    define HAVE_VSNPRINTF
+#  endif
+#endif
+
+#if defined(MSDOS) && defined(__BORLANDC__) && (BORLANDC > 0x410)
+#  ifndef HAVE_VSNPRINTF
+#    define HAVE_VSNPRINTF
+#  endif
+#endif
+
+#ifndef HAVE_VSNPRINTF
+#  ifdef MSDOS
+/* vsnprintf may exist on some MS-DOS compilers (DJGPP?),
+   but for now we just assume it doesn't. */
+#    define NO_vsnprintf
+#  endif
+#  ifdef __TURBOC__
+#    define NO_vsnprintf
+#  endif
+#  ifdef WIN32
+/* In Win32, vsnprintf is available as the "non-ANSI" _vsnprintf. */
+#    if !defined(vsnprintf) && !defined(NO_vsnprintf)
+#      if !defined(_MSC_VER) || ( defined(_MSC_VER) && _MSC_VER < 1500 )
+#         define vsnprintf _vsnprintf
+#      endif
+#    endif
+#  endif
+#  ifdef __SASC
+#    define NO_vsnprintf
+#  endif
+#  ifdef VMS
+#    define NO_vsnprintf
+#  endif
+#  ifdef __OS400__
+#    define NO_vsnprintf
+#  endif
+#  ifdef __MVS__
+#    define NO_vsnprintf
+#  endif
+#endif
+
+/* unlike snprintf (which is required in C99, yet still not supported by
+   Microsoft more than a decade later!), _snprintf does not guarantee null
+   termination of the result -- however this is only used in gzlib.c where
+   the result is assured to fit in the space provided */
 #ifdef _MSC_VER
-#  include <io.h>
-#  define vsnprintf _vsnprintf
+#  define snprintf _snprintf
 #endif
 
 #ifndef local
@@ -52,7 +119,7 @@
 #  include <windows.h>
 #  define zstrerror() gz_strwinerror((DWORD)GetLastError())
 #else
-#  ifdef STDC
+#  ifndef NO_STRERROR
 #    include <errno.h>
 #    define zstrerror() strerror(errno)
 #  else
@@ -68,7 +135,15 @@
     ZEXTERN z_off64_t ZEXPORT gzoffset64 OF((gzFile));
 #endif
 
-/* default i/o buffer size -- double this for output when reading */
+/* default memLevel */
+#if MAX_MEM_LEVEL >= 8
+#  define DEF_MEM_LEVEL 8
+#else
+#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
+#endif
+
+/* default i/o buffer size -- double this for output when reading (this and
+   twice this must be able to fit in an unsigned type) */
 #define GZBUFSIZE 8192
 
 /* gzip modes, also provide a little integrity check on the passed structure */
@@ -84,23 +159,25 @@
 
 /* internal gzip file state data structure */
 typedef struct {
+        /* exposed contents for gzgetc() macro */
+    struct gzFile_s x;      /* "x" for exposed */
+                            /* x.have: number of bytes available at x.next */
+                            /* x.next: next output data to deliver or write */
+                            /* x.pos: current position in uncompressed data */
         /* used for both reading and writing */
     int mode;               /* see gzip modes above */
     int fd;                 /* file descriptor */
     char *path;             /* path or fd for error messages */
-    z_off64_t pos;          /* current position in uncompressed data */
     unsigned size;          /* buffer size, zero if not allocated yet */
     unsigned want;          /* requested buffer size, default is GZBUFSIZE */
     unsigned char *in;      /* input buffer */
     unsigned char *out;     /* output buffer (double-sized when reading) */
-    unsigned char *next;    /* next output data to deliver or write */
+    int direct;             /* 0 if processing gzip, 1 if transparent */
         /* just for reading */
-    unsigned have;          /* amount of output data unused at next */
-    int eof;                /* true if end of input file reached */
-    z_off64_t start;        /* where the gzip data started, for rewinding */
-    z_off64_t raw;          /* where the raw data started, for seeking */
     int how;                /* 0: get header, 1: copy, 2: decompress */
-    int direct;             /* true if last read direct, false if gzip */
+    z_off64_t start;        /* where the gzip data started, for rewinding */
+    int eof;                /* true if end of input file reached */
+    int past;               /* true if read requested past end */
         /* just for writing */
     int level;              /* compression level */
     int strategy;           /* compression strategy */

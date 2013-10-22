@@ -706,11 +706,23 @@ static struct PyModuleDef _sha256module = {
 PyMODINIT_FUNC
 PyInit__sha256(void)
 {
+    PyObject *m;
+
     Py_TYPE(&SHA224type) = &PyType_Type;
     if (PyType_Ready(&SHA224type) < 0)
         return NULL;
     Py_TYPE(&SHA256type) = &PyType_Type;
     if (PyType_Ready(&SHA256type) < 0)
         return NULL;
-    return PyModule_Create(&_sha256module);
+
+    m = PyModule_Create(&_sha256module);
+    if (m == NULL)
+        return NULL;
+
+    Py_INCREF((PyObject *)&SHA224type);
+    PyModule_AddObject(m, "SHA224Type", (PyObject *)&SHA224type);
+    Py_INCREF((PyObject *)&SHA256type);
+    PyModule_AddObject(m, "SHA256Type", (PyObject *)&SHA256type);
+    return m;
+
 }

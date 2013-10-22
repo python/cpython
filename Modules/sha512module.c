@@ -772,13 +772,24 @@ static struct PyModuleDef _sha512module = {
 PyMODINIT_FUNC
 PyInit__sha512(void)
 {
+    PyObject *m;
+
     Py_TYPE(&SHA384type) = &PyType_Type;
     if (PyType_Ready(&SHA384type) < 0)
         return NULL;
     Py_TYPE(&SHA512type) = &PyType_Type;
     if (PyType_Ready(&SHA512type) < 0)
         return NULL;
-    return PyModule_Create(&_sha512module);
+
+    m = PyModule_Create(&_sha512module);
+    if (m == NULL)
+        return NULL;
+
+    Py_INCREF((PyObject *)&SHA384type);
+    PyModule_AddObject(m, "SHA384Type", (PyObject *)&SHA384type);
+    Py_INCREF((PyObject *)&SHA512type);
+    PyModule_AddObject(m, "SHA512Type", (PyObject *)&SHA512type);
+    return m;
 }
 
 #endif

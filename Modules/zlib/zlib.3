@@ -1,4 +1,4 @@
-.TH ZLIB 3 "19 Apr 2010"
+.TH ZLIB 3 "28 Apr 2013"
 .SH NAME
 zlib \- compression/decompression library
 .SH SYNOPSIS
@@ -36,9 +36,9 @@ All functions of the compression library are documented in the file
 .IR zlib.h .
 The distribution source includes examples of use of the library
 in the files
-.I example.c
+.I test/example.c
 and
-.IR minigzip.c,
+.IR test/minigzip.c,
 as well as other examples in the
 .IR examples/
 directory.
@@ -65,7 +65,7 @@ A Python interface to
 written by A.M. Kuchling (amk@magnet.com),
 is available in Python 1.5 and later versions:
 .IP
-http://www.python.org/doc/lib/module-zlib.html
+http://docs.python.org/library/zlib.html
 .LP
 .I zlib
 is built into
@@ -95,11 +95,11 @@ http://zlib.net/
 The data format used by the zlib library is described by RFC
 (Request for Comments) 1950 to 1952 in the files:
 .IP
-http://www.ietf.org/rfc/rfc1950.txt (for the zlib header and trailer format)
+http://tools.ietf.org/html/rfc1950 (for the zlib header and trailer format)
 .br
-http://www.ietf.org/rfc/rfc1951.txt (for the deflate compressed data format)
+http://tools.ietf.org/html/rfc1951 (for the deflate compressed data format)
 .br
-http://www.ietf.org/rfc/rfc1952.txt (for the gzip header and trailer format)
+http://tools.ietf.org/html/rfc1952 (for the gzip header and trailer format)
 .LP
 Mark Nelson wrote an article about
 .I zlib
@@ -125,8 +125,8 @@ before asking for help.
 Send questions and/or comments to zlib@gzip.org,
 or (for the Windows DLL version) to Gilles Vollant (info@winimage.com).
 .SH AUTHORS
-Version 1.2.5
-Copyright (C) 1995-2010 Jean-loup Gailly (jloup@gzip.org)
+Version 1.2.8
+Copyright (C) 1995-2013 Jean-loup Gailly (jloup@gzip.org)
 and Mark Adler (madler@alumni.caltech.edu).
 .LP
 This software is provided "as-is,"

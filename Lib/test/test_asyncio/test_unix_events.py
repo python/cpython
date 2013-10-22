@@ -266,7 +266,7 @@ class SelectorEventLoopTests(unittest.TestCase):
         self.loop._subprocesses[7] = transp
 
         self.loop._sig_chld()
-        self.assertFalse(transp._process_exited.called)
+        self.assertTrue(transp._process_exited.called)
         self.assertFalse(m_WEXITSTATUS.called)
         self.assertFalse(m_WTERMSIG.called)
 
@@ -311,6 +311,13 @@ class UnixReadPipeTransportTests(unittest.TestCase):
         fcntl_patcher = unittest.mock.patch('fcntl.fcntl')
         fcntl_patcher.start()
         self.addCleanup(fcntl_patcher.stop)
+
+        fstat_patcher = unittest.mock.patch('os.fstat')
+        m_fstat = fstat_patcher.start()
+        st = unittest.mock.Mock()
+        st.st_mode = stat.S_IFIFO
+        m_fstat.return_value = st
+        self.addCleanup(fstat_patcher.stop)
 
     def test_ctor(self):
         tr = unix_events._UnixReadPipeTransport(
@@ -768,3 +775,7 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         tr.write_eof()
         self.assertTrue(tr._closing)
         self.assertFalse(self.protocol.connection_lost.called)
+
+
+if __name__ == '__main__':
+    unittest.main()

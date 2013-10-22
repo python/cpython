@@ -3637,6 +3637,22 @@ match_regs_get(MatchObject *self)
         return match_regs(self);
 }
 
+static PyObject *
+match_repr(MatchObject *self)
+{
+    PyObject *result;
+    PyObject *group0 = match_getslice_by_index(self, 0, Py_None);
+    if (group0 == NULL)
+        return NULL;
+    result = PyUnicode_FromFormat(
+            "<%s object; span=(%d, %d), match=%.50R>",
+            Py_TYPE(self)->tp_name,
+            self->mark[0], self->mark[1], group0);
+    Py_DECREF(group0);
+    return result;
+}
+
+
 static PyGetSetDef match_getset[] = {
     {"lastindex", (getter)match_lastindex_get, (setter)NULL},
     {"lastgroup", (getter)match_lastgroup_get, (setter)NULL},
@@ -3665,7 +3681,7 @@ static PyTypeObject Match_Type = {
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
     0,                          /* tp_reserved */
-    0,                          /* tp_repr */
+    (reprfunc)match_repr,       /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
     0,                          /* tp_as_mapping */

@@ -576,10 +576,18 @@ static struct PyModuleDef _SHA3module = {
 PyMODINIT_FUNC
 PyInit__sha3(void)
 {
+    PyObject *m;
+
     Py_TYPE(&SHA3type) = &PyType_Type;
     if (PyType_Ready(&SHA3type) < 0) {
         return NULL;
     }
 
-    return PyModule_Create(&_SHA3module);
+    m = PyModule_Create(&_SHA3module);
+    if (m == NULL)
+        return NULL;
+
+    Py_INCREF((PyObject *)&SHA3type);
+    PyModule_AddObject(m, "SHA3Type", (PyObject *)&SHA3type);
+    return m;
 }
