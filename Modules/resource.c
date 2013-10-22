@@ -106,6 +106,44 @@ resource_getrusage(PyObject *self, PyObject *args)
     return result;
 }
 
+static int
+py2rlimit(PyObject *curobj, PyObject *maxobj, struct rlimit *rl_out)
+{
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+    rl_out->rlim_cur = PyLong_AsLong(curobj);
+    if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
+        return -1;
+    rl_out->rlim_max = PyLong_AsLong(maxobj);
+    if (rl_out->rlim_max == (rlim_t)-1 && PyErr_Occurred())
+        return -1;
+#else
+    /* The limits are probably bigger than a long */
+    rl_out->rlim_cur = PyLong_AsLongLong(curobj);
+    if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
+        return -1;
+    rl_out->rlim_max = PyLong_AsLongLong(maxobj);
+    if (rl_out->rlim_max == (rlim_t)-1 && PyErr_Occurred())
+        return -1;
+#endif
+
+    rl_out->rlim_cur = rl_out->rlim_cur & RLIM_INFINITY;
+    rl_out->rlim_max = rl_out->rlim_max & RLIM_INFINITY;
+    return 0;
+
+}
+
+static PyObject*
+rlimit2py(struct rlimit rl)
+{
+#if defined(HAVE_LONG_LONG)
+    if (sizeof(rl.rlim_cur) > sizeof(long)) {
+        return Py_BuildValue("LL",
+                             (PY_LONG_LONG) rl.rlim_cur,
+                             (PY_LONG_LONG) rl.rlim_max);
+    }
+#endif
+    return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
+}
 
 static PyObject *
 resource_getrlimit(PyObject *self, PyObject *args)
@@ -126,15 +164,7 @@ resource_getrlimit(PyObject *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
     }
-
-#if defined(HAVE_LONG_LONG)
-    if (sizeof(rl.rlim_cur) > sizeof(long)) {
-        return Py_BuildValue("LL",
-                             (PY_LONG_LONG) rl.rlim_cur,
-                             (PY_LONG_LONG) rl.rlim_max);
-    }
-#endif
-    return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
+    return rlimit2py(rl);
 }
 
 static PyObject *
@@ -166,25 +196,10 @@ resource_setrlimit(PyObject *self, PyObject *args)
     curobj = PyTuple_GET_ITEM(limits, 0);
     maxobj = PyTuple_GET_ITEM(limits, 1);
 
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-    rl.rlim_cur = PyLong_AsLong(curobj);
-    if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
+    if (py2rlimit(curobj, maxobj, &rl) < 0) {
         goto error;
-    rl.rlim_max = PyLong_AsLong(maxobj);
-    if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        goto error;
-#else
-    /* The limits are probably bigger than a long */
-    rl.rlim_cur = PyLong_AsLongLong(curobj);
-    if (rl.rlim_cur == (rlim_t)-1 && PyErr_Occurred())
-        goto error;
-    rl.rlim_max = PyLong_AsLongLong(maxobj);
-    if (rl.rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        goto error;
-#endif
+    }
 
-    rl.rlim_cur = rl.rlim_cur & RLIM_INFINITY;
-    rl.rlim_max = rl.rlim_max & RLIM_INFINITY;
     if (setrlimit(resource, &rl) == -1) {
         if (errno == EINVAL)
             PyErr_SetString(PyExc_ValueError,
@@ -204,6 +219,48 @@ resource_setrlimit(PyObject *self, PyObject *args)
     Py_DECREF(limits);
     return NULL;
 }
+
+#ifdef HAVE_PRLIMIT
+static PyObject *
+resource_prlimit(PyObject *self, PyObject *args)
+{
+    struct rlimit old_limit, new_limit;
+    int resource, retval;
+    pid_t pid;
+    PyObject *curobj=NULL, *maxobj=NULL;
+
+    if (!PyArg_ParseTuple(args, _Py_PARSE_PID "i|(OO):prlimit",
+                          &pid, &resource, &curobj, &maxobj))
+        return NULL;
+
+    if (resource < 0 || resource >= RLIM_NLIMITS) {
+        PyErr_SetString(PyExc_ValueError,
+                        "invalid resource specified");
+        return NULL;
+    }
+
+    if (curobj != NULL) {
+        if (py2rlimit(curobj, maxobj, &new_limit) < 0) {
+            return NULL;
+        }
+        retval = prlimit(pid, resource, &new_limit, &old_limit);
+    }
+    else {
+        retval = prlimit(pid, resource, NULL, &old_limit);
+    }
+
+    if (retval == -1) {
+        if (errno == EINVAL) {
+            PyErr_SetString(PyExc_ValueError,
+                            "current limit exceeds maximum limit");
+        } else {
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
+        return NULL;
+    }
+    return rlimit2py(old_limit);
+}
+#endif /* HAVE_PRLIMIT */
 
 static PyObject *
 resource_getpagesize(PyObject *self, PyObject *unused)
@@ -229,6 +286,9 @@ static struct PyMethodDef
 resource_methods[] = {
     {"getrusage",    resource_getrusage,   METH_VARARGS},
     {"getrlimit",    resource_getrlimit,   METH_VARARGS},
+#ifdef HAVE_PRLIMIT
+    {"prlimit",      resource_prlimit,     METH_VARARGS},
+#endif
     {"setrlimit",    resource_setrlimit,   METH_VARARGS},
     {"getpagesize",  resource_getpagesize, METH_NOARGS},
     {NULL, NULL}                             /* sentinel */

@@ -139,6 +139,18 @@ class ResourceTest(unittest.TestCase):
         self.assertIsInstance(resource.RLIMIT_SIGPENDING, int)
 
 
+    @unittest.skipUnless(hasattr(resource, 'prlimit'), 'no prlimit')
+    def test_prlimit(self):
+        self.assertRaises(TypeError, resource.prlimit)
+        self.assertRaises(PermissionError, resource.prlimit,
+                          1, resource.RLIMIT_AS)
+        self.assertRaises(ProcessLookupError, resource.prlimit,
+                          -1, resource.RLIMIT_AS)
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS), (-1, -1))
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, (-1, -1)),
+                         (-1, -1))
+
+
 def test_main(verbose=None):
     support.run_unittest(ResourceTest)
 

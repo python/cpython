@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16595: Add prlimit() to resource module.
+
 - Issue #19324: Expose Linux-specific constants in resource module.
 
 - Issue #17400: ipaddress should make it easy to identify rfc6598 addresses.
