@@ -1,8 +1,11 @@
 import enum
+import inspect
+import pydoc
 import unittest
 from collections import OrderedDict
+from enum import Enum, IntEnum, EnumMeta, unique
+from io import StringIO
 from pickle import dumps, loads, PicklingError
-from enum import Enum, IntEnum, unique
 
 # for pickle tests
 try:
@@ -1194,6 +1197,118 @@ class TestUnique(unittest.TestCase):
                 triple = 3
                 turkey = 3
 
+
+expected_help_output = """
+Help on class Color in module %s:
+
+class Color(enum.Enum)
+ |  Method resolution order:
+ |      Color
+ |      enum.Enum
+ |      builtins.object
+ |\x20\x20
+ |  Data and other attributes defined here:
+ |\x20\x20
+ |  blue = <Color.blue: 3>
+ |\x20\x20
+ |  green = <Color.green: 2>
+ |\x20\x20
+ |  red = <Color.red: 1>
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from enum.Enum:
+ |\x20\x20
+ |  name
+ |      The name of the Enum member.
+ |\x20\x20
+ |  value
+ |      The value of the Enum member.
+ |\x20\x20
+ |  ----------------------------------------------------------------------
+ |  Data descriptors inherited from enum.EnumMeta:
+ |\x20\x20
+ |  __members__
+ |      Returns a mapping of member name->value.
+ |\x20\x20\x20\x20\x20\x20
+ |      This mapping lists all enum members, including aliases. Note that this
+ |      is a read-only view of the internal mapping.
+""".strip()
+
+class TestStdLib(unittest.TestCase):
+
+    class Color(Enum):
+        red = 1
+        green = 2
+        blue = 3
+
+    def test_pydoc(self):
+        # indirectly test __objclass__
+        expected_text = expected_help_output % __name__
+        output = StringIO()
+        helper = pydoc.Helper(output=output)
+        helper(self.Color)
+        result = output.getvalue().strip()
+        if result != expected_text:
+            print_diffs(expected_text, result)
+            self.fail("outputs are not equal, see diff above")
+
+    def test_inspect_getmembers(self):
+        values = dict((
+                ('__class__', EnumMeta),
+                ('__doc__', None),
+                ('__members__', self.Color.__members__),
+                ('__module__', __name__),
+                ('blue', self.Color.blue),
+                ('green', self.Color.green),
+                ('name', Enum.__dict__['name']),
+                ('red', self.Color.red),
+                ('value', Enum.__dict__['value']),
+                ))
+        result = dict(inspect.getmembers(self.Color))
+        self.assertEqual(values.keys(), result.keys())
+        failed = False
+        for k in values.keys():
+            if result[k] != values[k]:
+                print()
+                print('\n%s\n     key: %s\n  result: %s\nexpected: %s\n%s\n' %
+                        ('=' * 75, k, result[k], values[k], '=' * 75), sep='')
+                failed = True
+        if failed:
+            self.fail("result does not equal expected, see print above")
+
+    def test_inspect_classify_class_attrs(self):
+        # indirectly test __objclass__
+        from inspect import Attribute
+        values = [
+                Attribute(name='__class__', kind='data',
+                    defining_class=object, object=EnumMeta),
+                Attribute(name='__doc__', kind='data',
+                    defining_class=self.Color, object=None),
+                Attribute(name='__members__', kind='property',
+                    defining_class=EnumMeta, object=EnumMeta.__members__),
+                Attribute(name='__module__', kind='data',
+                    defining_class=self.Color, object=__name__),
+                Attribute(name='blue', kind='data',
+                    defining_class=self.Color, object=self.Color.blue),
+                Attribute(name='green', kind='data',
+                    defining_class=self.Color, object=self.Color.green),
+                Attribute(name='red', kind='data',
+                    defining_class=self.Color, object=self.Color.red),
+                Attribute(name='name', kind='data',
+                    defining_class=Enum, object=Enum.__dict__['name']),
+                Attribute(name='value', kind='data',
+                    defining_class=Enum, object=Enum.__dict__['value']),
+                ]
+        values.sort(key=lambda item: item.name)
+        result = list(inspect.classify_class_attrs(self.Color))
+        result.sort(key=lambda item: item.name)
+        failed = False
+        for v, r in zip(values, result):
+            if r != v:
+                print('\n%s\n%s\n%s\n%s\n' % ('=' * 75, r, v, '=' * 75), sep='')
+                failed = True
+        if failed:
+            self.fail("result does not equal expected, see print above")
 
 if __name__ == '__main__':
     unittest.main()
