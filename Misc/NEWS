@@ -10,6 +10,9 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #18603: Ensure that PyOS_mystricmp and PyOS_mystrnicmp are in the
+  Python executable and not removed by the linker's optimizer.
+
 - Issue #19306: Add extra hints to the faulthandler module's stack
   dumps that these are "upside down".
 
@@ -67,6 +70,9 @@ Core and Builtins
   PyMem_Realloc().
 
 - Issue #19199: Remove ``PyThreadState.tick_counter`` field
+=======
+- Issue #19279: UTF-7 decoder no more produces illegal strings.
+>>>>>>> other
 
 - Fix macro expansion of _PyErr_OCCURRED(), and make sure to use it in at
   least one place so as to avoid regressions.
