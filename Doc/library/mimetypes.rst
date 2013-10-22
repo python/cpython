@@ -85,6 +85,9 @@ behavior of the module.
    :const:`knownfiles` takes precedence over those named before it.  Calling
    :func:`init` repeatedly is allowed.
 
+   Specifying an empty list for *files* will prevent the system defaults from
+   being applied: only the well-known values will be present from a built-in list.
+
    .. versionchanged:: 3.2
       Previously, Windows registry settings were ignored.
 
