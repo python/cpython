@@ -438,6 +438,12 @@ The :mod:`pprint` module now supports *compact* mode for formatting long
 sequences (:issue:`19132`).
 
 
+resource
+--------
+
+New :func:`resource.prlimit` function and Linux specific constants.
+(Contributed by Christian Heimes in :issue:`16595` and :issue:`19324`.)
+
 smtplib
 -------
 
