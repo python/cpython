@@ -84,26 +84,30 @@ class HashLibTestCase(unittest.TestCase):
                 if constructor:
                     constructors.add(constructor)
 
+        def add_builtin_constructor(name):
+            constructor = getattr(hashlib, "__get_builtin_constructor")(name)
+            self.constructors_to_test[name].add(constructor)
+
         _md5 = self._conditional_import_module('_md5')
         if _md5:
-            self.constructors_to_test['md5'].add(_md5.md5)
+            add_builtin_constructor('md5')
         _sha1 = self._conditional_import_module('_sha1')
         if _sha1:
-            self.constructors_to_test['sha1'].add(_sha1.sha1)
+            add_builtin_constructor('sha1')
         _sha256 = self._conditional_import_module('_sha256')
         if _sha256:
-            self.constructors_to_test['sha224'].add(_sha256.sha224)
-            self.constructors_to_test['sha256'].add(_sha256.sha256)
+            add_builtin_constructor('sha224')
+            add_builtin_constructor('sha256')
         _sha512 = self._conditional_import_module('_sha512')
         if _sha512:
-            self.constructors_to_test['sha384'].add(_sha512.sha384)
-            self.constructors_to_test['sha512'].add(_sha512.sha512)
+            add_builtin_constructor('sha384')
+            add_builtin_constructor('sha512')
         _sha3 = self._conditional_import_module('_sha3')
         if _sha3:
-            self.constructors_to_test['sha3_224'].add(_sha3.sha3_224)
-            self.constructors_to_test['sha3_256'].add(_sha3.sha3_256)
-            self.constructors_to_test['sha3_384'].add(_sha3.sha3_384)
-            self.constructors_to_test['sha3_512'].add(_sha3.sha3_512)
+            add_builtin_constructor('sha3_224')
+            add_builtin_constructor('sha3_256')
+            add_builtin_constructor('sha3_384')
+            add_builtin_constructor('sha3_512')
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
@@ -132,8 +136,10 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(TypeError, hashlib.new, 1)
 
     def test_get_builtin_constructor(self):
-        get_builtin_constructor = hashlib.__dict__[
-                '__get_builtin_constructor']
+        get_builtin_constructor = getattr(hashlib,
+                                          '__get_builtin_constructor')
+        builtin_constructor_cache = getattr(hashlib,
+                                            '__builtin_constructor_cache')
         self.assertRaises(ValueError, get_builtin_constructor, 'test')
         try:
             import _md5
@@ -141,6 +147,8 @@ class HashLibTestCase(unittest.TestCase):
             pass
         # This forces an ImportError for "import _md5" statements
         sys.modules['_md5'] = None
+        # clear the cache
+        builtin_constructor_cache.clear()
         try:
             self.assertRaises(ValueError, get_builtin_constructor, 'md5')
         finally:
@@ -149,6 +157,9 @@ class HashLibTestCase(unittest.TestCase):
             else:
                 del sys.modules['_md5']
         self.assertRaises(TypeError, get_builtin_constructor, 3)
+        constructor = get_builtin_constructor('md5')
+        self.assertIs(constructor, _md5.md5)
+        self.assertEqual(sorted(builtin_constructor_cache), ['MD5', 'md5'])
 
     def test_hexdigest(self):
         for cons in self.hash_constructors:
