@@ -96,6 +96,10 @@ int Py_HashRandomizationFlag = 0; /* for -R and PYTHONHASHSEED */
 
 PyThreadState *_Py_Finalizing = NULL;
 
+/* Hack to force loading of object files */
+int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t) = \
+    PyOS_mystrnicmp; /* Python/pystrcmp.o */
+
 /* PyModule_GetWarningsModule is no longer necessary as of 2.6
 since _warnings is builtin.  This API should not be used. */
 PyObject *
