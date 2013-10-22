@@ -613,7 +613,7 @@ Major performance enhancements have been added:
   LINEAR_PROBES to be any value.  Set LINEAR_PROBES=0 to turn-off
   linear probing entirely.
 
-  (Contributed by Raymond Hettinger in :issue"`18771`.)
+  (Contributed by Raymond Hettinger in :issue:`18771`.)
 
 * The interpreter starts about 30% faster. A couple of measures lead to the
   speedup. The interpreter loads fewer modules on startup, e.g. the :mod:`re`,
