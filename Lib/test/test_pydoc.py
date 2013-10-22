@@ -215,11 +215,9 @@ Help on class DA in module %s:
 class DA(builtins.object)
  |  Data descriptors defined here:
  |\x20\x20
- |  __dict__
- |      dictionary for instance variables (if defined)
+ |  __dict__%s
  |\x20\x20
- |  __weakref__
- |      list of weak references to the object (if defined)
+ |  __weakref__%s
  |\x20\x20
  |  ham
  |\x20\x20
@@ -709,6 +707,10 @@ class TestHelper(unittest.TestCase):
                          sorted(keyword.kwlist))
 
 class PydocWithMetaClasses(unittest.TestCase):
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
     def test_DynamicClassAttribute(self):
         class Meta(type):
             def __getattr__(self, name):
@@ -719,15 +721,22 @@ class PydocWithMetaClasses(unittest.TestCase):
             @types.DynamicClassAttribute
             def ham(self):
                 return 'eggs'
+        expected_text_data_docstrings = tuple('\n |      ' + s if s else ''
+                                      for s in expected_data_docstrings)
         output = StringIO()
         helper = pydoc.Helper(output=output)
         helper(DA)
-        expected_text = expected_dynamicattribute_pattern % __name__
+        expected_text = expected_dynamicattribute_pattern % (
+                (__name__,) + expected_text_data_docstrings[:2])
         result = output.getvalue().strip()
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
     def test_virtualClassAttributeWithOneMeta(self):
         class Meta(type):
             def __dir__(cls):
@@ -747,6 +756,10 @@ class PydocWithMetaClasses(unittest.TestCase):
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
     def test_virtualClassAttributeWithTwoMeta(self):
         class Meta1(type):
             def __dir__(cls):
@@ -795,6 +808,10 @@ class PydocWithMetaClasses(unittest.TestCase):
         if fail1 or fail2:
             self.fail("outputs are not equal, see diff above")
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
+                     'trace function introduces __locals__ unexpectedly')
     def test_buggy_dir(self):
         class M(type):
             def __dir__(cls):
