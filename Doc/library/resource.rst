@@ -151,6 +151,52 @@ platform.
    The maximum area (in bytes) of address space which may be taken by the process.
 
 
+.. data:: RLIMIT_MSGQUEUE
+
+   The number of bytes that can be allocated for POSIX message queues.
+
+   Availability: Linux 2.6.8 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_NICE
+
+   The ceiling for the process's nice level (calculated as 20 - rlim_cur).
+
+   Availability: Linux 2.6.12 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_RTPRIO
+
+   The ceiling of the real-time priority.
+
+   Availability: Linux 2.6.12 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_RTTIME
+
+   The time limit (in microseconds) on CPU time that a process can spend
+   under real-time scheduling without making a blocking syscall.
+
+   Availability: Linux 2.6.25 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_SIGPENDING
+
+   The number of signals which the process may queue.
+
+   Availability: Linux 2.6.8 or later.
+
+   .. versionadded:: 3.4
+
+
 Resource Usage
 --------------
 
