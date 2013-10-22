@@ -326,6 +326,28 @@ PyInit_resource(void)
     PyModule_AddIntMacro(m, RLIMIT_SBSIZE);
 #endif
 
+/* Linux specific */
+#ifdef RLIMIT_MSGQUEUE
+    PyModule_AddIntMacro(m, RLIMIT_MSGQUEUE);
+#endif
+
+#ifdef RLIMIT_NICE
+    PyModule_AddIntMacro(m, RLIMIT_NICE);
+#endif
+
+#ifdef RLIMIT_RTPRIO
+    PyModule_AddIntMacro(m, RLIMIT_RTPRIO);
+#endif
+
+#ifdef RLIMIT_RTTIME
+    PyModule_AddIntMacro(m, RLIMIT_RTTIME);
+#endif
+
+#ifdef RLIMIT_SIGPENDING
+    PyModule_AddIntMacro(m, RLIMIT_SIGPENDING);
+#endif
+
+/* target */
 #ifdef RUSAGE_SELF
     PyModule_AddIntMacro(m, RUSAGE_SELF);
 #endif
