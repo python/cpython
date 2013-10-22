@@ -70,9 +70,6 @@ Core and Builtins
   PyMem_Realloc().
 
 - Issue #19199: Remove ``PyThreadState.tick_counter`` field
-=======
-- Issue #19279: UTF-7 decoder no more produces illegal strings.
->>>>>>> other
 
 - Fix macro expansion of _PyErr_OCCURRED(), and make sure to use it in at
   least one place so as to avoid regressions.
