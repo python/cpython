@@ -872,10 +872,8 @@ PyInit__hashlib(void)
         return NULL;
     }
 
-#if HASH_OBJ_CONSTRUCTOR
-    Py_INCREF(&EVPtype);
+    Py_INCREF((PyObject *)&EVPtype);
     PyModule_AddObject(m, "HASH", (PyObject *)&EVPtype);
-#endif
 
     /* these constants are used by the convenience constructors */
     INIT_CONSTRUCTOR_CONSTANTS(md5);
