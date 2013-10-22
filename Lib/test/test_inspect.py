@@ -667,8 +667,18 @@ class TestClassesAndFunctions(unittest.TestCase):
                 return 'eggs'
         should_find_dca = inspect.Attribute('ham', 'data', VA, VA.__dict__['ham'])
         self.assertIn(should_find_dca, inspect.classify_class_attrs(VA))
-        should_find_ga = inspect.Attribute('ham', 'data', VA, 'spam')
+        should_find_ga = inspect.Attribute('ham', 'data', Meta, 'spam')
         self.assertIn(should_find_ga, inspect.classify_class_attrs(VA))
+
+    def test_classify_metaclass_class_attribute(self):
+        class Meta(type):
+            fish = 'slap'
+            def __dir__(self):
+                return ['__class__', '__modules__', '__name__', 'fish']
+        class Class(metaclass=Meta):
+            pass
+        should_find = inspect.Attribute('fish', 'data', Meta, 'slap')
+        self.assertIn(should_find, inspect.classify_class_attrs(Class))
 
     def test_classify_VirtualAttribute(self):
         class Meta(type):
@@ -680,7 +690,7 @@ class TestClassesAndFunctions(unittest.TestCase):
                 return super().__getattr(name)
         class Class(metaclass=Meta):
             pass
-        should_find = inspect.Attribute('BOOM', 'data', Class, 42)
+        should_find = inspect.Attribute('BOOM', 'data', Meta, 42)
         self.assertIn(should_find, inspect.classify_class_attrs(Class))
 
     def test_classify_VirtualAttribute_multi_classes(self):
@@ -711,9 +721,9 @@ class TestClassesAndFunctions(unittest.TestCase):
         class Class2(Class1, metaclass=Meta3):
             pass
 
-        should_find1 = inspect.Attribute('one', 'data', Class1, 1)
-        should_find2 = inspect.Attribute('two', 'data', Class2, 2)
-        should_find3 = inspect.Attribute('three', 'data', Class2, 3)
+        should_find1 = inspect.Attribute('one', 'data', Meta1, 1)
+        should_find2 = inspect.Attribute('two', 'data', Meta2, 2)
+        should_find3 = inspect.Attribute('three', 'data', Meta3, 3)
         cca = inspect.classify_class_attrs(Class2)
         for sf in (should_find1, should_find2, should_find3):
             self.assertIn(sf, cca)

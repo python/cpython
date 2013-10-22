@@ -5,6 +5,7 @@ import socket
 import time
 import unittest
 import unittest.mock
+from test.support import find_unused_port, IPV6_ENABLED
 
 from asyncio import base_events
 from asyncio import events
@@ -533,6 +534,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
+    @unittest.skipUnless(IPV6_ENABLED, 'IPv6 not supported or enabled')
     def test_create_datagram_endpoint_no_matching_family(self):
         coro = self.loop.create_datagram_endpoint(
             protocols.DatagramProtocol,
@@ -588,3 +590,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.loop._accept_connection(MyProto, sock)
         self.assertTrue(sock.close.called)
         self.assertTrue(m_log.exception.called)
+
+
+if __name__ == '__main__':
+    unittest.main()

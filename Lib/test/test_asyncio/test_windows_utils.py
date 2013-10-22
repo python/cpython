@@ -138,3 +138,7 @@ class PopenTests(unittest.TestCase):
         # allow for partial reads...
         self.assertTrue(msg.upper().rstrip().startswith(out))
         self.assertTrue(b"stderr".startswith(err))
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,7 +1,6 @@
 import audioop
 import sys
 import unittest
-from test.support import run_unittest
 
 def pack(width, data):
     return b''.join(v.to_bytes(width, sys.byteorder, signed=True) for v in data)
@@ -87,6 +86,7 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.avgpp(packs[w](9, 10, 5, 5, 0, 1), w), 10)
         self.assertEqual(audioop.avgpp(datas[1], 1), 196)
         self.assertEqual(audioop.avgpp(datas[2], 2), 50534)
+        self.assertEqual(audioop.avgpp(datas[3], 3), 12937096)
         self.assertEqual(audioop.avgpp(datas[4], 4), 3311897002)
 
     def test_rms(self):
@@ -100,6 +100,7 @@ class TestAudioop(unittest.TestCase):
                                    -minvalues[w], delta=1)
         self.assertEqual(audioop.rms(datas[1], 1), 77)
         self.assertEqual(audioop.rms(datas[2], 2), 20001)
+        self.assertEqual(audioop.rms(datas[3], 3), 5120523)
         self.assertEqual(audioop.rms(datas[4], 4), 1310854152)
 
     def test_cross(self):
@@ -227,10 +228,9 @@ class TestAudioop(unittest.TestCase):
     def test_lin2adpcm(self):
         self.assertEqual(audioop.lin2adpcm(datas[1], 1, None),
                          (b'\x07\x7f\x7f', (-221, 39)))
-        self.assertEqual(audioop.lin2adpcm(datas[2], 2, None),
-                         (b'\x07\x7f\x7f', (31, 39)))
-        self.assertEqual(audioop.lin2adpcm(datas[4], 4, None),
-                         (b'\x07\x7f\x7f', (31, 39)))
+        for w in 2, 3, 4:
+            self.assertEqual(audioop.lin2adpcm(datas[w], w, None),
+                             (b'\x07\x7f\x7f', (31, 39)))
 
         # Very cursory test
         for w in 1, 2, 3, 4:
@@ -240,10 +240,9 @@ class TestAudioop(unittest.TestCase):
     def test_lin2alaw(self):
         self.assertEqual(audioop.lin2alaw(datas[1], 1),
                          b'\xd5\x87\xa4\x24\xaa\x2a\x5a')
-        self.assertEqual(audioop.lin2alaw(datas[2], 2),
-                         b'\xd5\x87\xa4\x24\xaa\x2a\x55')
-        self.assertEqual(audioop.lin2alaw(datas[4], 4),
-                         b'\xd5\x87\xa4\x24\xaa\x2a\x55')
+        for w in 2, 3, 4:
+            self.assertEqual(audioop.lin2alaw(datas[w], w),
+                             b'\xd5\x87\xa4\x24\xaa\x2a\x55')
 
     def test_alaw2lin(self):
         encoded = b'\x00\x03\x24\x2a\x51\x54\x55\x58\x6b\x71\x7f'\
@@ -262,10 +261,9 @@ class TestAudioop(unittest.TestCase):
     def test_lin2ulaw(self):
         self.assertEqual(audioop.lin2ulaw(datas[1], 1),
                          b'\xff\xad\x8e\x0e\x80\x00\x67')
-        self.assertEqual(audioop.lin2ulaw(datas[2], 2),
-                         b'\xff\xad\x8e\x0e\x80\x00\x7e')
-        self.assertEqual(audioop.lin2ulaw(datas[4], 4),
-                         b'\xff\xad\x8e\x0e\x80\x00\x7e')
+        for w in 2, 3, 4:
+            self.assertEqual(audioop.lin2ulaw(datas[w], w),
+                             b'\xff\xad\x8e\x0e\x80\x00\x7e')
 
     def test_ulaw2lin(self):
         encoded = b'\x00\x0e\x28\x3f\x57\x6a\x76\x7c\x7e\x7f'\
@@ -416,8 +414,5 @@ class TestAudioop(unittest.TestCase):
             self.assertRaises(audioop.error, audioop.alaw2lin, data, size)
             self.assertRaises(audioop.error, audioop.adpcm2lin, data, size, state)
 
-def test_main():
-    run_unittest(TestAudioop)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

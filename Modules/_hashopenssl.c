@@ -513,10 +513,11 @@ EVP_new(PyObject *self, PyObject *args, PyObject *kwdict)
  * Also OpenSSL < 1.0 don't provide PKCS5_PBKDF2_HMAC(), only
  * PKCS5_PBKDF2_SHA1.
  */
-int PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
-                           const unsigned char *salt, int saltlen,
-                           int iter, const EVP_MD *digest,
-                           int keylen, unsigned char *out)
+static int
+PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
+                       const unsigned char *salt, int saltlen,
+                       int iter, const EVP_MD *digest,
+                       int keylen, unsigned char *out)
 {
     unsigned char digtmp[EVP_MAX_MD_SIZE], *p, itmp[4];
     int cplen, j, k, tkeylen, mdlen;
@@ -846,6 +847,7 @@ PyInit__hashlib(void)
     PyObject *m, *openssl_md_meth_names;
 
     OpenSSL_add_all_digests();
+    ERR_load_crypto_strings();
 
     /* TODO build EVP_functions openssl_* entries dynamically based
      * on what hashes are supported rather than listing many
@@ -870,10 +872,8 @@ PyInit__hashlib(void)
         return NULL;
     }
 
-#if HASH_OBJ_CONSTRUCTOR
-    Py_INCREF(&EVPtype);
+    Py_INCREF((PyObject *)&EVPtype);
     PyModule_AddObject(m, "HASH", (PyObject *)&EVPtype);
-#endif
 
     /* these constants are used by the convenience constructors */
     INIT_CONSTRUCTOR_CONSTANTS(md5);

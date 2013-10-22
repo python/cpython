@@ -27,6 +27,7 @@ tracebacks:
 * Only the filename, the function name and the line number are
   displayed. (no source code)
 * It is limited to 100 frames and 100 threads.
+* The order is reversed: the most recent call is shown first.
 
 By default, the Python traceback is written to :data:`sys.stderr`. To see
 tracebacks, applications must be run in the terminal. A log file can
@@ -129,7 +130,7 @@ Example of a segmentation fault on Linux: ::
     >>> ctypes.string_at(0)
     Fatal Python error: Segmentation fault
 
-    Current thread 0x00007fb899f39700:
+    Current thread 0x00007fb899f39700 (most recent call first):
       File "/home/python/cpython/Lib/ctypes/__init__.py", line 486 in string_at
       File "<stdin>", line 1 in <module>
     Segmentation fault

@@ -1,3 +1,5 @@
+import sys
+import os
 import unittest
 from test import support
 import time
@@ -128,6 +130,29 @@ class ResourceTest(unittest.TestCase):
         pagesize = resource.getpagesize()
         self.assertIsInstance(pagesize, int)
         self.assertGreaterEqual(pagesize, 0)
+
+    @unittest.skipUnless(sys.platform == 'linux', 'test requires Linux')
+    def test_linux_constants(self):
+        self.assertIsInstance(resource.RLIMIT_MSGQUEUE, int)
+        self.assertIsInstance(resource.RLIMIT_NICE, int)
+        self.assertIsInstance(resource.RLIMIT_RTPRIO, int)
+        self.assertIsInstance(resource.RLIMIT_RTTIME, int)
+        self.assertIsInstance(resource.RLIMIT_SIGPENDING, int)
+
+
+    @unittest.skipUnless(hasattr(resource, 'prlimit'), 'no prlimit')
+    def test_prlimit(self):
+        self.assertRaises(TypeError, resource.prlimit)
+        if os.geteuid() != 0:
+            self.assertRaises(PermissionError, resource.prlimit,
+                              1, resource.RLIMIT_AS)
+        self.assertRaises(ProcessLookupError, resource.prlimit,
+                          -1, resource.RLIMIT_AS)
+        limit = resource.getrlimit(resource.RLIMIT_AS)
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS), limit)
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, limit),
+                         limit)
+
 
 def test_main(verbose=None):
     support.run_unittest(ResourceTest)

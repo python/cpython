@@ -478,3 +478,7 @@ class BaseProactorEventLoopTests(unittest.TestCase):
         self.loop._stop_serving(sock)
         self.assertTrue(sock.close.called)
         self.proactor._stop_serving.assert_called_with(sock)
+
+
+if __name__ == '__main__':
+    unittest.main()

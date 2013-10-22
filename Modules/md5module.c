@@ -572,8 +572,17 @@ static struct PyModuleDef _md5module = {
 PyMODINIT_FUNC
 PyInit__md5(void)
 {
+    PyObject *m;
+
     Py_TYPE(&MD5type) = &PyType_Type;
     if (PyType_Ready(&MD5type) < 0)
         return NULL;
-    return PyModule_Create(&_md5module);
+
+    m = PyModule_Create(&_md5module);
+    if (m == NULL)
+        return NULL;
+
+    Py_INCREF((PyObject *)&MD5type);
+    PyModule_AddObject(m, "MD5Type", (PyObject *)&MD5type);
+    return m;
 }

@@ -3,19 +3,52 @@ Python News
 +++++++++++
 
 What's New in Python 3.4.0 Beta 1?
-================================
+==================================
 
 Projected release date: 2013-11-24
 
 Core and Builtins
 -----------------
 
+- Issue #18603: Ensure that PyOS_mystricmp and PyOS_mystrnicmp are in the
+  Python executable and not removed by the linker's optimizer.
+
+- Issue #19306: Add extra hints to the faulthandler module's stack
+  dumps that these are "upside down".
+
 Library
 -------
 
+- Issue #16595: Add prlimit() to resource module.
+
+- Issue #19324: Expose Linux-specific constants in resource module.
+
+- Issue #17400: ipaddress should make it easy to identify rfc6598 addresses.
+
+- Load SSL's error strings in hashlib.
+
+- Issue #18527: Upgrade internal copy of zlib to 1.2.8.
+
+- Issue #19274: Add a filterfunc parameter to PyZipFile.writepy.
+
+- Issue #8964: fix platform._sys_version to handle IronPython 2.6+.
+  Patch by Martin Matusiak.
+
+- Issue #18958: Improve error message for json.load(s) while passing a string
+  that starts with a UTF-8 BOM.
+
+- Issue #19307: Improve error message for json.load(s) while passing objects
+  of the wrong type.
+
+- Issue #16038: CVE-2013-1752: ftplib: Limit amount of data read by
+  limiting the call to readline().  Original patch by Michał
+  Jastrzębski and Giampaolo Rodola.
+
+- Issue #17087: Improved the repr for regular expression match objects.
+
 
 What's New in Python 3.4.0 Alpha 4?
-================================
+===================================
 
 Release date: 2013-10-20
 
@@ -25,7 +58,7 @@ Core and Builtins
 - Issue #19301: Give classes and functions that are explicitly marked global a
   global qualname.
 
-- Issue #19279: UTF-7 decoder no more produces illegal strings.
+- Issue #19279: UTF-7 decoder no longer produces illegal strings.
 
 - Issue #16612: Add "Argument Clinic", a compile-time preprocessor for
   C files to generate argument parsing code.  (See PEP 436.)
