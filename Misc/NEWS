@@ -12,6 +12,9 @@ What's New in Python 3.3.3 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #18603: Ensure that PyOS_mystricmp and PyOS_mystrnicmp are in the
+  Python executable and not removed by the linker's optimizer.
+
 - Issue #19279: UTF-7 decoder no more produces illegal strings.
 
 - Fix macro expansion of _PyErr_OCCURRED(), and make sure to use it in at
