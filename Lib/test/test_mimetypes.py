@@ -85,6 +85,8 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         # Use file types that should *always* exist:
         eq = self.assertEqual
         eq(self.db.guess_type("foo.txt"), ("text/plain", None))
+        eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
+        eq(self.db.guess_type("image.png"), ("image/png", None))
 
 def test_main():
     test_support.run_unittest(MimeTypesTestCase,
