@@ -3,7 +3,7 @@ $! Martin P.J. Zinser
 $!
 $! In case of problems with the install you might contact me at
 $! zinser@zinser.no-ip.info(preferred) or
-$! zinser@sysdev.deutsche-boerse.com (work)
+$! martin.zinser@eurexchange.com (work)
 $!
 $! Make procedure history for Zlib
 $!
@@ -14,9 +14,16 @@ $! 0.02 20061008 Adapt to new Makefile.in
 $! 0.03 20091224 Add support for large file check
 $! 0.04 20100110 Add new gzclose, gzlib, gzread, gzwrite
 $! 0.05 20100221 Exchange zlibdefs.h by zconf.h.in
+$! 0.06 20120111 Fix missing amiss_err, update zconf_h.in, fix new exmples
+$!               subdir path, update module search in makefile.in
+$! 0.07 20120115 Triggered by work done by Alexey Chupahin completly redesigned
+$!               shared image creation
+$! 0.08 20120219 Make it work on VAX again, pre-load missing symbols to shared
+$!               image
+$! 0.09 20120305 SMS.  P1 sets builder ("MMK", "MMS", " " (built-in)).
+$!               "" -> automatic, preference: MMK, MMS, built-in.
 $!
 $ on error then goto err_exit
-$ set proc/parse=ext
 $!
 $ true  = 1
 $ false = 0
@@ -32,31 +39,43 @@ $ s_case   = False
 $!
 $! Setup variables holding "config" information
 $!
-$ Make    = ""
+$ Make    = "''p1'"
 $ name     = "Zlib"
 $ version  = "?.?.?"
 $ v_string = "ZLIB_VERSION"
 $ v_file   = "zlib.h"
-$ ccopt   = ""
+$ ccopt   = "/include = []"
 $ lopts   = ""
 $ dnsrl   = ""
-$ aconf_in_file = "zconf.h.in#zconf.h_in"
+$ aconf_in_file = "zconf.h.in#zconf.h_in#zconf_h.in"
 $ conf_check_string = ""
 $ linkonly = false
 $ optfile  = name + ".opt"
+$ mapfile  = name + ".map"
 $ libdefs  = ""
+$ vax      = f$getsyi("HW_MODEL").lt.1024
 $ axp      = f$getsyi("HW_MODEL").ge.1024 .and. f$getsyi("HW_MODEL").lt.4096
+$ ia64     = f$getsyi("HW_MODEL").ge.4096
 $!
-$ whoami = f$parse(f$enviornment("Procedure"),,,,"NO_CONCEAL")
+$! 2012-03-05 SMS.
+$! Why is this needed?  And if it is needed, why not simply ".not. vax"?
+$!
+$!!! if axp .or. ia64 then  set proc/parse=extended
+$!
+$ whoami = f$parse(f$environment("Procedure"),,,,"NO_CONCEAL")
 $ mydef  = F$parse(whoami,,,"DEVICE")
 $ mydir  = f$parse(whoami,,,"DIRECTORY") - "]["
 $ myproc = f$parse(whoami,,,"Name") + f$parse(whoami,,,"type")
 $!
 $! Check for MMK/MMS
 $!
-$ If F$Search ("Sys$System:MMS.EXE") .nes. "" Then Make = "MMS"
-$ If F$Type (MMK) .eqs. "STRING" Then Make = "MMK"
-$!
+$ if (Make .eqs. "")
+$ then
+$   If F$Search ("Sys$System:MMS.EXE") .nes. "" Then Make = "MMS"
+$   If F$Type (MMK) .eqs. "STRING" Then Make = "MMK"
+$ else
+$   Make = f$edit( Make, "trim")
+$ endif
 $!
 $ gosub find_version
 $!
@@ -69,6 +88,7 @@ $! Look for the compiler used
 $!
 $ gosub check_compiler
 $ close topt
+$ close optf
 $!
 $ if its_decc
 $ then
@@ -82,6 +102,15 @@ $     else
 $       ccopt = "/decc" + ccopt
 $       define sys decc$library_include:
 $     endif
+$   endif
+$!
+$! 2012-03-05 SMS.
+$! Why /NAMES = AS_IS?  Why not simply ".not. vax"?  And why not on VAX?
+$!
+$   if axp .or. ia64
+$   then
+$       ccopt = ccopt + "/name=as_is/opt=(inline=speed)"
+$       s_case = true
 $   endif
 $ endif
 $ if its_vaxc .or. its_gnuc
@@ -122,15 +151,20 @@ $   gosub check_config
 $ endif
 $ goto aconf_loop
 $ACONF_EXIT:
+$ write aconf ""
+$ write aconf "/* VMS specifics added by make_vms.com: */"
 $ write aconf "#define VMS 1"
 $ write aconf "#include <unistd.h>"
 $ write aconf "#include <unixio.h>"
 $ write aconf "#ifdef _LARGEFILE"
-$ write aconf "#define off64_t __off64_t"
-$ write aconf "#define fopen64 fopen"
-$ write aconf "#define fseeko64 fseeko"
-$ write aconf "#define lseek64 lseek"
-$ write aconf "#define ftello64 ftell"
+$ write aconf "# define off64_t __off64_t"
+$ write aconf "# define fopen64 fopen"
+$ write aconf "# define fseeko64 fseeko"
+$ write aconf "# define lseek64 lseek"
+$ write aconf "# define ftello64 ftell"
+$ write aconf "#endif"
+$ write aconf "#if !defined( __VAX) && (__CRTL_VER >= 70312000)"
+$ write aconf "# define HAVE_VSNPRINTF"
 $ write aconf "#endif"
 $ close aconf_in
 $ close aconf
@@ -139,8 +173,9 @@ $! Build the thing plain or with mms
 $!
 $ write sys$output "Compiling Zlib sources ..."
 $ if make.eqs.""
-$  then
-$   dele example.obj;*,minigzip.obj;*
+$ then
+$   if (f$search( "example.obj;*") .nes. "") then delete example.obj;*
+$   if (f$search( "minigzip.obj;*") .nes. "") then delete minigzip.obj;*
 $   CALL MAKE adler32.OBJ "CC ''CCOPT' adler32" -
                 adler32.c zlib.h zconf.h
 $   CALL MAKE compress.OBJ "CC ''CCOPT' compress" -
@@ -174,41 +209,34 @@ $   CALL MAKE zutil.OBJ "CC ''CCOPT' zutil" -
 $   write sys$output "Building Zlib ..."
 $   CALL MAKE libz.OLB "lib/crea libz.olb *.obj" *.OBJ
 $   write sys$output "Building example..."
-$   CALL MAKE example.OBJ "CC ''CCOPT' example" -
-                example.c zlib.h zconf.h
+$   CALL MAKE example.OBJ "CC ''CCOPT' [.test]example" -
+                [.test]example.c zlib.h zconf.h
 $   call make example.exe "LINK example,libz.olb/lib" example.obj libz.olb
-$   if f$search("x11vms:xvmsutils.olb") .nes. ""
-$   then
-$     write sys$output "Building minigzip..."
-$     CALL MAKE minigzip.OBJ "CC ''CCOPT' minigzip" -
-                minigzip.c zlib.h zconf.h
-$     call make minigzip.exe -
-                "LINK minigzip,libz.olb/lib,x11vms:xvmsutils.olb/lib" -
-                minigzip.obj libz.olb
-$   endif
-$  else
+$   write sys$output "Building minigzip..."
+$   CALL MAKE minigzip.OBJ "CC ''CCOPT' [.test]minigzip" -
+              [.test]minigzip.c zlib.h zconf.h
+$   call make minigzip.exe -
+              "LINK minigzip,libz.olb/lib" -
+              minigzip.obj libz.olb
+$ else
 $   gosub crea_mms
 $   write sys$output "Make ''name' ''version' with ''Make' "
 $   'make'
-$  endif
-$!
-$! Alpha gets a shareable image
-$!
-$ If axp
-$ Then
-$   gosub crea_olist
-$   write sys$output "Creating libzshr.exe"
-$   call anal_obj_axp modules.opt _link.opt
-$   if s_case
-$   then
-$      open/append optf modules.opt
-$      write optf "case_sensitive=YES"
-$      close optf
-$   endif
-$   LINK_'lopts'/SHARE=libzshr.exe modules.opt/opt,_link.opt/opt
 $ endif
+$!
+$! Create shareable image
+$!
+$ gosub crea_olist
+$ write sys$output "Creating libzshr.exe"
+$ call map_2_shopt 'mapfile' 'optfile'
+$ LINK_'lopts'/SHARE=libzshr.exe modules.opt/opt,'optfile'/opt
 $ write sys$output "Zlib build completed"
+$ delete/nolog tmp.opt;*
 $ exit
+$AMISS_ERR:
+$ write sys$output "No source for config.hin found."
+$ write sys$output "Tried any of ''aconf_in_file'"
+$ goto err_exit
 $CC_ERR:
 $ write sys$output "C compiler required to build ''name'"
 $ goto err_exit
@@ -216,7 +244,6 @@ $ERR_EXIT:
 $ set message/facil/ident/sever/text
 $ close/nolog optf
 $ close/nolog topt
-$ close/nolog conf_hin
 $ close/nolog aconf_in
 $ close/nolog aconf
 $ close/nolog out
@@ -397,7 +424,7 @@ $ copy sys$input: out
 $ deck
 # descrip.mms: MMS description file for building zlib on VMS
 # written by Martin P.J. Zinser
-# <zinser@zinser.no-ip.info or zinser@sysdev.deutsche-boerse.com>
+# <zinser@zinser.no-ip.info or martin.zinser@eurexchange.com>
 
 OBJS = adler32.obj, compress.obj, crc32.obj, gzclose.obj, gzlib.obj\
        gzread.obj, gzwrite.obj, uncompr.obj, infback.obj\
@@ -407,10 +434,9 @@ OBJS = adler32.obj, compress.obj, crc32.obj, gzclose.obj, gzlib.obj\
 $ eod
 $ write out "CFLAGS=", ccopt
 $ write out "LOPTS=", lopts
+$ write out "all : example.exe minigzip.exe libz.olb"
 $ copy sys$input: out
 $ deck
-
-all : example.exe minigzip.exe libz.olb
         @ write sys$output " Example applications available"
 
 libz.olb : libz.olb($(OBJS))
@@ -420,7 +446,7 @@ example.exe : example.obj libz.olb
               link $(LOPTS) example,libz.olb/lib
 
 minigzip.exe : minigzip.obj libz.olb
-              link $(LOPTS) minigzip,libz.olb/lib,x11vms:xvmsutils.olb/lib
+              link $(LOPTS) minigzip,libz.olb/lib
 
 clean :
 	delete *.obj;*,libz.olb;*,*.opt;*,*.exe;*
@@ -431,7 +457,7 @@ adler32.obj  : adler32.c zutil.h zlib.h zconf.h
 compress.obj : compress.c zlib.h zconf.h
 crc32.obj    : crc32.c zutil.h zlib.h zconf.h
 deflate.obj  : deflate.c deflate.h zutil.h zlib.h zconf.h
-example.obj  : example.c zlib.h zconf.h
+example.obj  : [.test]example.c zlib.h zconf.h
 gzclose.obj  : gzclose.c zutil.h zlib.h zconf.h
 gzlib.obj    : gzlib.c zutil.h zlib.h zconf.h
 gzread.obj   : gzread.c zutil.h zlib.h zconf.h
@@ -439,7 +465,7 @@ gzwrite.obj  : gzwrite.c zutil.h zlib.h zconf.h
 inffast.obj  : inffast.c zutil.h zlib.h zconf.h inftrees.h inffast.h
 inflate.obj  : inflate.c zutil.h zlib.h zconf.h
 inftrees.obj : inftrees.c zutil.h zlib.h zconf.h inftrees.h
-minigzip.obj : minigzip.c zlib.h zconf.h
+minigzip.obj : [.test]minigzip.c zlib.h zconf.h
 trees.obj    : trees.c deflate.h zutil.h zlib.h zconf.h
 uncompr.obj  : uncompr.c zlib.h zconf.h
 zutil.obj    : zutil.c zutil.h zlib.h zconf.h
@@ -455,13 +481,18 @@ $!
 $CREA_OLIST:
 $ open/read min makefile.in
 $ open/write mod modules.opt
-$ src_check = "OBJC ="
+$ src_check_list = "OBJZ =#OBJG ="
 $MRLOOP:
 $ read/end=mrdone min rec
-$ if (f$extract(0,6,rec) .nes. src_check) then goto mrloop
+$ i = 0
+$SRC_CHECK_LOOP:
+$ src_check = f$element(i, "#", src_check_list)
+$ i = i+1
+$ if src_check .eqs. "#" then goto mrloop
+$ if (f$extract(0,6,rec) .nes. src_check) then goto src_check_loop
 $ rec = rec - src_check
 $ gosub extra_filnam
-$ if (f$element(1,"\",rec) .eqs. "\") then goto mrdone
+$ if (f$element(1,"\",rec) .eqs. "\") then goto mrloop
 $MRSLOOP:
 $ read/end=mrdone min rec
 $ gosub extra_filnam
@@ -672,124 +703,6 @@ $ endif
 $ return
 $!------------------------------------------------------------------------------
 $!
-$! Analyze Object files for OpenVMS AXP to extract Procedure and Data
-$! information to build a symbol vector for a shareable image
-$! All the "brains" of this logic was suggested by Hartmut Becker
-$! (Hartmut.Becker@compaq.com). All the bugs were introduced by me
-$! (zinser@zinser.no-ip.info), so if you do have problem reports please do not
-$! bother Hartmut/HP, but get in touch with me
-$!
-$! Version history
-$! 0.01 20040406 Skip over shareable images in option file
-$! 0.02 20041109 Fix option file for shareable images with case_sensitive=YES
-$! 0.03 20050107 Skip over Identification labels in option file
-$! 0.04 20060117 Add uppercase alias to code compiled with /name=as_is
-$!
-$ ANAL_OBJ_AXP: Subroutine
-$ V = 'F$Verify(0)
-$ SAY := "WRITE_ SYS$OUTPUT"
-$
-$ IF F$SEARCH("''P1'") .EQS. ""
-$ THEN
-$    SAY "ANAL_OBJ_AXP-E-NOSUCHFILE:  Error, inputfile ''p1' not available"
-$    goto exit_aa
-$ ENDIF
-$ IF "''P2'" .EQS. ""
-$ THEN
-$    SAY "ANAL_OBJ_AXP:  Error, no output file provided"
-$    goto exit_aa
-$ ENDIF
-$
-$ open/read in 'p1
-$ create a.tmp
-$ open/append atmp a.tmp
-$ loop:
-$ read/end=end_loop in line
-$ if f$locate("/SHARE",f$edit(line,"upcase")) .lt. f$length(line)
-$ then
-$   write sys$output "ANAL_SKP_SHR-i-skipshare, ''line'"
-$   goto loop
-$ endif
-$ if f$locate("IDENTIFICATION=",f$edit(line,"upcase")) .lt. f$length(line)
-$ then
-$   write sys$output "ANAL_OBJ_AXP-i-ident: Identification ", -
-                     f$element(1,"=",line)
-$   goto loop
-$ endif
-$ f= f$search(line)
-$ if f .eqs. ""
-$ then
-$	write sys$output "ANAL_OBJ_AXP-w-nosuchfile, ''line'"
-$	goto loop
-$ endif
-$ define/user sys$output nl:
-$ define/user sys$error nl:
-$ anal/obj/gsd 'f /out=x.tmp
-$ open/read xtmp x.tmp
-$ XLOOP:
-$ read/end=end_xloop xtmp xline
-$ xline = f$edit(xline,"compress")
-$ write atmp xline
-$ goto xloop
-$ END_XLOOP:
-$ close xtmp
-$ goto loop
-$ end_loop:
-$ close in
-$ close atmp
-$ if f$search("a.tmp") .eqs. "" -
-	then $ exit
-$ ! all global definitions
-$ search a.tmp "symbol:","EGSY$V_DEF 1","EGSY$V_NORM 1"/out=b.tmp
-$ ! all procedures
-$ search b.tmp "EGSY$V_NORM 1"/wind=(0,1) /out=c.tmp
-$ search c.tmp "symbol:"/out=d.tmp
-$ define/user sys$output nl:
-$ edito/edt/command=sys$input d.tmp
-sub/symbol: "/symbol_vector=(/whole
-sub/"/=PROCEDURE)/whole
-exit
-$ ! all data
-$ search b.tmp "EGSY$V_DEF 1"/wind=(0,1) /out=e.tmp
-$ search e.tmp "symbol:"/out=f.tmp
-$ define/user sys$output nl:
-$ edito/edt/command=sys$input f.tmp
-sub/symbol: "/symbol_vector=(/whole
-sub/"/=DATA)/whole
-exit
-$ sort/nodupl d.tmp,f.tmp g.tmp
-$ open/read raw_vector g.tmp
-$ open/write case_vector 'p2'
-$ RAWLOOP:
-$ read/end=end_rawloop raw_vector raw_element
-$ write case_vector raw_element
-$ if f$locate("=PROCEDURE)",raw_element) .lt. f$length(raw_element)
-$ then
-$     name = f$element(1,"=",raw_element) - "("
-$     if f$edit(name,"UPCASE") .nes. name then -
-          write case_vector f$fao(" symbol_vector=(!AS/!AS=PROCEDURE)", -
-	                          f$edit(name,"UPCASE"), name)
-$ endif
-$ if f$locate("=DATA)",raw_element) .lt. f$length(raw_element)
-$ then
-$     name = f$element(1,"=",raw_element) - "("
-$     if f$edit(name,"UPCASE") .nes. name then -
-          write case_vector f$fao(" symbol_vector=(!AS/!AS=DATA)", -
-	                          f$edit(name,"UPCASE"), name)
-$ endif
-$ goto rawloop
-$ END_RAWLOOP:
-$ close raw_vector
-$ close case_vector
-$ delete a.tmp;*,b.tmp;*,c.tmp;*,d.tmp;*,e.tmp;*,f.tmp;*,g.tmp;*
-$ if f$search("x.tmp") .nes. "" -
-	then $ delete x.tmp;*
-$!
-$ EXIT_AA:
-$ if V then set verify
-$ endsubroutine
-$!------------------------------------------------------------------------------
-$!
 $! Write configuration to both permanent and temporary config file
 $!
 $! Version history
@@ -802,3 +715,153 @@ $  write confh 'p1'
 $  close confh
 $ENDSUBROUTINE
 $!------------------------------------------------------------------------------
+$!
+$! Analyze the project map file and create the symbol vector for a shareable
+$! image from it
+$!
+$! Version history
+$! 0.01 20120128 First version
+$! 0.02 20120226 Add pre-load logic
+$!
+$ MAP_2_SHOPT: Subroutine
+$!
+$ SAY := "WRITE_ SYS$OUTPUT"
+$!
+$ IF F$SEARCH("''P1'") .EQS. ""
+$ THEN
+$    SAY "MAP_2_SHOPT-E-NOSUCHFILE:  Error, inputfile ''p1' not available"
+$    goto exit_m2s
+$ ENDIF
+$ IF "''P2'" .EQS. ""
+$ THEN
+$    SAY "MAP_2_SHOPT:  Error, no output file provided"
+$    goto exit_m2s
+$ ENDIF
+$!
+$ module1 = "deflate#deflateEnd#deflateInit_#deflateParams#deflateSetDictionary"
+$ module2 = "gzclose#gzerror#gzgetc#gzgets#gzopen#gzprintf#gzputc#gzputs#gzread"
+$ module3 = "gzseek#gztell#inflate#inflateEnd#inflateInit_#inflateSetDictionary"
+$ module4 = "inflateSync#uncompress#zlibVersion#compress"
+$ open/read map 'p1
+$ if axp .or. ia64
+$ then
+$     open/write aopt a.opt
+$     open/write bopt b.opt
+$     write aopt " CASE_SENSITIVE=YES"
+$     write bopt "SYMBOL_VECTOR= (-"
+$     mod_sym_num = 1
+$ MOD_SYM_LOOP:
+$     if f$type(module'mod_sym_num') .nes. ""
+$     then
+$         mod_in = 0
+$ MOD_SYM_IN:
+$         shared_proc = f$element(mod_in, "#", module'mod_sym_num')
+$         if shared_proc .nes. "#"
+$         then
+$             write aopt f$fao(" symbol_vector=(!AS/!AS=PROCEDURE)",-
+        		       f$edit(shared_proc,"upcase"),shared_proc)
+$             write bopt f$fao("!AS=PROCEDURE,-",shared_proc)
+$             mod_in = mod_in + 1
+$             goto mod_sym_in
+$         endif
+$         mod_sym_num = mod_sym_num + 1
+$         goto mod_sym_loop
+$     endif
+$MAP_LOOP:
+$     read/end=map_end map line
+$     if (f$locate("{",line).lt. f$length(line)) .or. -
+         (f$locate("global:", line) .lt. f$length(line))
+$     then
+$         proc = true
+$         goto map_loop
+$     endif
+$     if f$locate("}",line).lt. f$length(line) then proc = false
+$     if f$locate("local:", line) .lt. f$length(line) then proc = false
+$     if proc
+$     then
+$         shared_proc = f$edit(line,"collapse")
+$         chop_semi = f$locate(";", shared_proc)
+$         if chop_semi .lt. f$length(shared_proc) then -
+              shared_proc = f$extract(0, chop_semi, shared_proc)
+$         write aopt f$fao(" symbol_vector=(!AS/!AS=PROCEDURE)",-
+        			 f$edit(shared_proc,"upcase"),shared_proc)
+$         write bopt f$fao("!AS=PROCEDURE,-",shared_proc)
+$     endif
+$     goto map_loop
+$MAP_END:
+$     close/nolog aopt
+$     close/nolog bopt
+$     open/append libopt 'p2'
+$     open/read aopt a.opt
+$     open/read bopt b.opt
+$ALOOP:
+$     read/end=aloop_end aopt line
+$     write libopt line
+$     goto aloop
+$ALOOP_END:
+$     close/nolog aopt
+$     sv = ""
+$BLOOP:
+$     read/end=bloop_end bopt svn
+$     if (svn.nes."")
+$     then
+$        if (sv.nes."") then write libopt sv
+$        sv = svn
+$     endif
+$     goto bloop
+$BLOOP_END:
+$     write libopt f$extract(0,f$length(sv)-2,sv), "-"
+$     write libopt ")"
+$     close/nolog bopt
+$     delete/nolog/noconf a.opt;*,b.opt;*
+$ else
+$     if vax
+$     then
+$     open/append libopt 'p2'
+$     mod_sym_num = 1
+$ VMOD_SYM_LOOP:
+$     if f$type(module'mod_sym_num') .nes. ""
+$     then
+$         mod_in = 0
+$ VMOD_SYM_IN:
+$         shared_proc = f$element(mod_in, "#", module'mod_sym_num')
+$         if shared_proc .nes. "#"
+$         then
+$     	      write libopt f$fao("UNIVERSAL=!AS",-
+      	  			     f$edit(shared_proc,"upcase"))
+$             mod_in = mod_in + 1
+$             goto vmod_sym_in
+$         endif
+$         mod_sym_num = mod_sym_num + 1
+$         goto vmod_sym_loop
+$     endif
+$VMAP_LOOP:
+$     	  read/end=vmap_end map line
+$     	  if (f$locate("{",line).lt. f$length(line)) .or. -
+   	      (f$locate("global:", line) .lt. f$length(line))
+$     	  then
+$     	      proc = true
+$     	      goto vmap_loop
+$     	  endif
+$     	  if f$locate("}",line).lt. f$length(line) then proc = false
+$     	  if f$locate("local:", line) .lt. f$length(line) then proc = false
+$     	  if proc
+$     	  then
+$     	      shared_proc = f$edit(line,"collapse")
+$     	      chop_semi = f$locate(";", shared_proc)
+$     	      if chop_semi .lt. f$length(shared_proc) then -
+      	  	  shared_proc = f$extract(0, chop_semi, shared_proc)
+$     	      write libopt f$fao("UNIVERSAL=!AS",-
+      	  			     f$edit(shared_proc,"upcase"))
+$     	  endif
+$     	  goto vmap_loop
+$VMAP_END:
+$     else
+$         write sys$output "Unknown Architecture (Not VAX, AXP, or IA64)"
+$         write sys$output "No options file created"
+$     endif
+$ endif
+$ EXIT_M2S:
+$ close/nolog map
+$ close/nolog libopt
+$ endsubroutine

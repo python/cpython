@@ -9,7 +9,9 @@ def global_function():
             pass
         global inner_global_function
         def inner_global_function():
-            pass
+            def inner_function2():
+                pass
+            return inner_function2
         return LocalClass
     return lambda: inner_function
 
@@ -120,6 +122,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(global_function()()().__qualname__,
                          'global_function.<locals>.inner_function.<locals>.LocalClass')
         self.assertEqual(inner_global_function.__qualname__, 'inner_global_function')
+        self.assertEqual(inner_global_function().__qualname__, 'inner_global_function.<locals>.inner_function2')
         self.b.__qualname__ = 'c'
         self.assertEqual(self.b.__qualname__, 'c')
         self.b.__qualname__ = 'd'

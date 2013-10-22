@@ -271,7 +271,7 @@ intent of code that deliberately suppresses exceptions from a single
 statement. (Contributed by Raymond Hettinger in :issue:`15806` and
 Zero Piraeus in :issue:`19266`)
 
-The new :class:`contextlib.redirect_stdio` context manager makes it easier
+The new :func:`contextlib.redirect_stdout` context manager makes it easier
 for utility scripts to handle inflexible APIs that don't provide any
 options to retrieve their output as a string or direct it to somewhere
 other than :data:`sys.stdout`. In conjunction with :class:`io.StringIO`,
@@ -434,9 +434,15 @@ POP3 server.
 pprint
 ------
 
-The :mod::`pprint` module now supports *compact* mode for formatting long
+The :mod:`pprint` module now supports *compact* mode for formatting long
 sequences (:issue:`19132`).
 
+
+resource
+--------
+
+New :func:`resource.prlimit` function and Linux specific constants.
+(Contributed by Christian Heimes in :issue:`16595` and :issue:`19324`.)
 
 smtplib
 -------
@@ -564,6 +570,16 @@ Add an event-driven parser for non-blocking applications,
 
 (Contributed by Antoine Pitrou in :issue:`17741`.)
 
+
+zipfile.PyZipfile
+-----------------
+
+Add a filter function to ignore some packages (tests for instance),
+:meth:`~zipfile.PyZipFile.writepy`.
+
+(Contributed by Christian Tismer in :issue:`19274`.)
+
+
 Other improvements
 ==================
 
@@ -597,7 +613,7 @@ Major performance enhancements have been added:
   LINEAR_PROBES to be any value.  Set LINEAR_PROBES=0 to turn-off
   linear probing entirely.
 
-  (Contributed by Raymond Hettinger in :issue"`18771`.)
+  (Contributed by Raymond Hettinger in :issue:`18771`.)
 
 * The interpreter starts about 30% faster. A couple of measures lead to the
   speedup. The interpreter loads fewer modules on startup, e.g. the :mod:`re`,

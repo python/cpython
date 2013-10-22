@@ -1104,6 +1104,28 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(re.compile(pattern, re.S).findall(b'xyz'),
                                  [b'xyz'], msg=pattern)
 
+    def test_match_repr(self):
+        for string in '[abracadabra]', S('[abracadabra]'):
+            m = re.search(r'(.+)(.*?)\1', string)
+            self.assertEqual(repr(m), "<%s.%s object; "
+                             "span=(1, 12), match='abracadabra'>" %
+                             (type(m).__module__, type(m).__qualname__))
+        for string in (b'[abracadabra]', B(b'[abracadabra]'),
+                       bytearray(b'[abracadabra]'),
+                       memoryview(b'[abracadabra]')):
+            m = re.search(rb'(.+)(.*?)\1', string)
+            self.assertEqual(repr(m), "<%s.%s object; "
+                             "span=(1, 12), match=b'abracadabra'>" %
+                             (type(m).__module__, type(m).__qualname__))
+
+        first, second = list(re.finditer("(aa)|(bb)", "aa bb"))
+        self.assertEqual(repr(first), "<%s.%s object; "
+                         "span=(0, 2), match='aa'>" %
+                         (type(second).__module__, type(first).__qualname__))
+        self.assertEqual(repr(second), "<%s.%s object; "
+                         "span=(3, 5), match='bb'>" %
+                         (type(second).__module__, type(second).__qualname__))
+
 
     def test_bug_2537(self):
         # issue 2537: empty submatches

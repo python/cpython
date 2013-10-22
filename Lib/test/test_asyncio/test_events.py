@@ -896,8 +896,8 @@ class EventLoopTestsMixin:
             proto = MyWritePipeProto(loop=self.loop)
             return proto
 
-        rpipe, wpipe = os.pipe()
-        pipeobj = io.open(wpipe, 'wb', 1024)
+        rsock, wsock = self.loop._socketpair()
+        pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
         @tasks.coroutine
         def connect():
@@ -913,11 +913,10 @@ class EventLoopTestsMixin:
         self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
-        test_utils.run_briefly(self.loop)
-        data = os.read(rpipe, 1024)
+        data = self.loop.run_until_complete(self.loop.sock_recv(rsock, 1024))
         self.assertEqual(b'1', data)
 
-        os.close(rpipe)
+        rsock.close()
 
         self.loop.run_until_complete(proto.done)
         self.assertEqual('CLOSED', proto.state)
@@ -986,9 +985,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_interactive(self):
         proto = None
         transp = None
@@ -1087,9 +1083,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_kill(self):
         proto = None
         transp = None
@@ -1113,9 +1106,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipIf(sys.platform == 'win32',
                      "Don't support subprocess for Windows yet")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_subprocess_send_signal(self):
         proto = None
         transp = None
@@ -1232,6 +1222,26 @@ class EventLoopTestsMixin:
         transp.close()
         self.loop.run_until_complete(proto.completed)
         self.assertEqual(-signal.SIGTERM, proto.returncode)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     "Don't support subprocess for Windows yet")
+    def test_subprocess_wait_no_same_group(self):
+        proto = None
+        transp = None
+
+        @tasks.coroutine
+        def connect():
+            nonlocal proto
+            # start the new process in a new session
+            transp, proto = yield from self.loop.subprocess_shell(
+                functools.partial(MySubprocessProtocol, self.loop),
+                'exit 7', stdin=None, stdout=None, stderr=None,
+                start_new_session=True)
+            self.assertIsInstance(proto, MySubprocessProtocol)
+
+        self.loop.run_until_complete(connect())
+        self.loop.run_until_complete(proto.completed)
+        self.assertEqual(7, proto.returncode)
 
 
 if sys.platform == 'win32':

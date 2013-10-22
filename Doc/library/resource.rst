@@ -74,6 +74,27 @@ this module for those platforms.
    ``setrlimit`` may also raise :exc:`error` if the underlying system call
    fails.
 
+.. function:: prlimit(pid, resource[, limits])
+
+   Combines :func:`setrlimit` and :func:`getrlimit` in one function and
+   supports to get and set the resources limits of an arbitrary process. If
+   *pid* is 0, then the call applies to the current process. *resource* and
+   *limits* have the same meaning as in :func:`setrlimit`, except that
+   *limits* is optional.
+
+   When *limits* is not given the function returns the *resource* limit of the
+   process *pid*. When *limits* is given the *resource* limit of the process is
+   set and the former resource limit is returned.
+
+   Raises :exc:`ProcessLookupError` when *pid* can't be found and
+   :exc:`PermissionError` when the user doesn't have ``CAP_SYS_RESOURCE`` for
+   the process.
+
+   Availability: Linux (glibc 2.13+)
+
+   .. versionadded:: 3.4
+
+
 These symbols define resources whose consumption can be controlled using the
 :func:`setrlimit` and :func:`getrlimit` functions described below. The values of
 these symbols are exactly the constants used by C programs.
@@ -149,6 +170,52 @@ platform.
 .. data:: RLIMIT_AS
 
    The maximum area (in bytes) of address space which may be taken by the process.
+
+
+.. data:: RLIMIT_MSGQUEUE
+
+   The number of bytes that can be allocated for POSIX message queues.
+
+   Availability: Linux 2.6.8 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_NICE
+
+   The ceiling for the process's nice level (calculated as 20 - rlim_cur).
+
+   Availability: Linux 2.6.12 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_RTPRIO
+
+   The ceiling of the real-time priority.
+
+   Availability: Linux 2.6.12 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_RTTIME
+
+   The time limit (in microseconds) on CPU time that a process can spend
+   under real-time scheduling without making a blocking syscall.
+
+   Availability: Linux 2.6.25 or later.
+
+   .. versionadded:: 3.4
+
+
+.. data:: RLIMIT_SIGPENDING
+
+   The number of signals which the process may queue.
+
+   Availability: Linux 2.6.8 or later.
+
+   .. versionadded:: 3.4
 
 
 Resource Usage

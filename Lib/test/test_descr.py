@@ -4519,8 +4519,10 @@ order (MRO) for bases """
 
         global Y
         class Y:
-            pass
+            class Inside:
+                pass
         self.assertEqual(Y.__qualname__, 'Y')
+        self.assertEqual(Y.Inside.__qualname__, 'Y.Inside')
 
     def test_qualname_dict(self):
         ns = {'__qualname__': 'some.name'}

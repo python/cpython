@@ -374,10 +374,6 @@ or subtracting from an empty counter.
 
 .. seealso::
 
-    * `Counter class <http://code.activestate.com/recipes/576611/>`_
-      adapted for Python 2.5 and an early `Bag recipe
-      <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
-
     * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
@@ -920,11 +916,6 @@ and more efficient to use a simple class declaration:
     >>> class Status:
         open, pending, closed = range(3)
 
-.. seealso::
-
-    * `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
-      adapted for Python 2.4.
-
     * `Recipe for named tuple abstract base class with a metaclass mix-in
       <http://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
       by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
@@ -987,10 +978,6 @@ The :class:`OrderedDict` constructor and :meth:`update` method both accept
 keyword arguments, but their order is lost because Python's function call
 semantics pass-in keyword arguments using a regular unordered dictionary.
 
-.. seealso::
-
-    `Equivalent OrderedDict recipe <http://code.activestate.com/recipes/576693/>`_
-    that runs on Python 2.4 or later.
 
 :class:`OrderedDict` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
