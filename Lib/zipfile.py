@@ -1582,7 +1582,8 @@ class PyZipFile(ZipFile):
         """
         if filterfunc and not filterfunc(pathname):
             if self.debug:
-                print('pathname "%s" skipped by filterfunc' % pathname)
+                label = 'path' if os.path.isdir(pathname) else 'file'
+                print('%s "%s" skipped by filterfunc' % (label, pathname))
             return
         dir, name = os.path.split(pathname)
         if os.path.isdir(pathname):
@@ -1611,6 +1612,10 @@ class PyZipFile(ZipFile):
                             self.writepy(path, basename,
                                          filterfunc=filterfunc)  # Recursive call
                     elif ext == ".py":
+                        if filterfunc and not filterfunc(path):
+                            if self.debug:
+                                print('file "%s" skipped by filterfunc' % path)
+                            continue
                         fname, arcname = self._get_codename(path[0:-3],
                                                             basename)
                         if self.debug:
@@ -1624,6 +1629,10 @@ class PyZipFile(ZipFile):
                     path = os.path.join(pathname, filename)
                     root, ext = os.path.splitext(filename)
                     if ext == ".py":
+                        if filterfunc and not filterfunc(path):
+                            if self.debug:
+                                print('file "%s" skipped by filterfunc' % path)
+                            continue
                         fname, arcname = self._get_codename(path[0:-3],
                                                             basename)
                         if self.debug:

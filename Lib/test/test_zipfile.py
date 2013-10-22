@@ -604,10 +604,19 @@ class PyZipFileTests(unittest.TestCase):
             reportStr = reportSIO.getvalue()
             self.assertTrue('SyntaxError' in reportStr)
 
-            # then check that the filter works
+            # then check that the filter works on the whole package
             with captured_stdout() as reportSIO:
                 zipfp.writepy(packagedir, filterfunc=lambda whatever: False)
             reportStr = reportSIO.getvalue()
+            self.assertTrue('SyntaxError' not in reportStr)
+
+            # then check that the filter works on individual files
+            with captured_stdout() as reportSIO:
+                zipfp.writepy(packagedir, filterfunc=lambda fn:
+                                                     'bad' not in fn)
+            reportStr = reportSIO.getvalue()
+            if reportStr:
+                print(reportStr)
             self.assertTrue('SyntaxError' not in reportStr)
 
     def test_write_with_optimization(self):
@@ -645,6 +654,26 @@ class PyZipFileTests(unittest.TestCase):
                 self.assertCompiledIn('mod1.py', names)
                 self.assertCompiledIn('mod2.py', names)
                 self.assertNotIn('mod2.txt', names)
+
+        finally:
+            shutil.rmtree(TESTFN2)
+
+    def test_write_python_directory_filtered(self):
+        os.mkdir(TESTFN2)
+        try:
+            with open(os.path.join(TESTFN2, "mod1.py"), "w") as fp:
+                fp.write("print(42)\n")
+
+            with open(os.path.join(TESTFN2, "mod2.py"), "w") as fp:
+                fp.write("print(42 * 42)\n")
+
+            with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
+                zipfp.writepy(TESTFN2, filterfunc=lambda fn:
+                                                  not fn.endswith('mod2.py'))
+
+                names = zipfp.namelist()
+                self.assertCompiledIn('mod1.py', names)
+                self.assertNotIn('mod2.py', names)
 
         finally:
             shutil.rmtree(TESTFN2)
