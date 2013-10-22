@@ -887,9 +887,6 @@ class EventLoopTestsMixin:
 
     @unittest.skipUnless(sys.platform != 'win32',
                          "Don't support pipes for Windows")
-    # Issue #19293
-    @unittest.skipIf(sys.platform.startswith("aix"),
-                     'cannot be interrupted with signal on AIX')
     def test_write_pipe_disconnect_on_close(self):
         proto = None
         transport = None
@@ -899,8 +896,8 @@ class EventLoopTestsMixin:
             proto = MyWritePipeProto(loop=self.loop)
             return proto
 
-        rpipe, wpipe = os.pipe()
-        pipeobj = io.open(wpipe, 'wb', 1024)
+        rsock, wsock = self.loop._socketpair()
+        pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
         @tasks.coroutine
         def connect():
@@ -916,11 +913,10 @@ class EventLoopTestsMixin:
         self.assertEqual('CONNECTED', proto.state)
 
         transport.write(b'1')
-        test_utils.run_briefly(self.loop)
-        data = os.read(rpipe, 1024)
+        data = self.loop.run_until_complete(self.loop.sock_recv(rsock, 1024))
         self.assertEqual(b'1', data)
 
-        os.close(rpipe)
+        rsock.close()
 
         self.loop.run_until_complete(proto.done)
         self.assertEqual('CLOSED', proto.state)
