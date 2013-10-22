@@ -1,4 +1,5 @@
 import sys
+import os
 import unittest
 from test import support
 import time
@@ -142,13 +143,15 @@ class ResourceTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(resource, 'prlimit'), 'no prlimit')
     def test_prlimit(self):
         self.assertRaises(TypeError, resource.prlimit)
-        self.assertRaises(PermissionError, resource.prlimit,
-                          1, resource.RLIMIT_AS)
+        if os.geteuid() != 0:
+            self.assertRaises(PermissionError, resource.prlimit,
+                              1, resource.RLIMIT_AS)
         self.assertRaises(ProcessLookupError, resource.prlimit,
                           -1, resource.RLIMIT_AS)
-        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS), (-1, -1))
-        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, (-1, -1)),
-                         (-1, -1))
+        limit = resource.getrlimit(resource.RLIMIT_AS)
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS), limit)
+        self.assertEqual(resource.prlimit(0, resource.RLIMIT_AS, limit),
+                         limit)
 
 
 def test_main(verbose=None):
