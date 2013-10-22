@@ -312,6 +312,13 @@ class UnixReadPipeTransportTests(unittest.TestCase):
         fcntl_patcher.start()
         self.addCleanup(fcntl_patcher.stop)
 
+        fstat_patcher = unittest.mock.patch('os.fstat')
+        m_fstat = fstat_patcher.start()
+        st = unittest.mock.Mock()
+        st.st_mode = stat.S_IFIFO
+        m_fstat.return_value = st
+        self.addCleanup(fstat_patcher.stop)
+
     def test_ctor(self):
         tr = unix_events._UnixReadPipeTransport(
             self.loop, self.pipe, self.protocol)
