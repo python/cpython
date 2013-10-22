@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15207: Fix mimetypes to read from correct part of Windows registry
+  Original patch by Dave Chambers
+
 - Issue #8964: fix platform._sys_version to handle IronPython 2.6+.
   Patch by Martin Matusiak.
 
