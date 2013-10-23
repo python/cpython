@@ -922,8 +922,8 @@ class BlockParser:
             if self.is_start_line(line):
                 break
 
+        output = output_output()
         if checksum:
-            output = output_output()
             if self.verify:
                 computed = compute_checksum(output)
                 if checksum != computed:
@@ -2054,7 +2054,7 @@ class DSLParser:
         except SyntaxError:
             pass
         if not module:
-            fail("Function " + clinic.name + " has an invalid parameter declaration:\n\t" + line)
+            fail("Function " + self.function.name + " has an invalid parameter declaration:\n\t" + line)
 
         function_args = module.body[0].args
         parameter = function_args.args[0]
