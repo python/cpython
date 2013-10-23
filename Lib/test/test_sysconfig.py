@@ -352,8 +352,10 @@ class TestSysConfig(unittest.TestCase):
             self.assertTrue(os.path.exists(Python_h), Python_h)
             self.assertTrue(sysconfig._is_python_source_dir(srcdir))
         elif os.name == 'posix':
-            self.assertEqual(os.path.dirname(sysconfig.get_makefile_filename()),
-                                srcdir)
+            makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
+            # Issue #19340: srcdir has been realpath'ed already
+            makefile_dir = os.path.realpath(makefile_dir)
+            self.assertEqual(makefile_dir, srcdir)
 
     def test_srcdir_independent_of_cwd(self):
         # srcdir should be independent of the current working directory
