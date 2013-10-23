@@ -568,6 +568,9 @@ Tools/Demos
 Build
 -----
 
+- Issue #19356: Avoid using a C variabled named "_self", it's a reserved
+  word in some C compilers.
+
 - Issue #19130: Correct PCbuild/readme.txt, Python 3.3 and 3.4 require VS 2010.
 
 - Issue #16067: Add description into MSI file to replace installer's temporary name.
