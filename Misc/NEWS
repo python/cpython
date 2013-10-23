@@ -52,6 +52,12 @@ Library
 
 - Issue #17087: Improved the repr for regular expression match objects.
 
+Build
+-----
+
+- Issue #19356: Avoid using a C variabled named "_self", it's a reserved
+  word in some C compilers.
+
 
 What's New in Python 3.4.0 Alpha 4?
 ===================================
@@ -654,7 +660,6 @@ Tools/Demos
 
 - Issue #18922: Now The Lib/smtpd.py and Tools/i18n/msgfmt.py scripts write
   their version strings to stdout, and not to sderr.
-
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================

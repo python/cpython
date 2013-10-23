@@ -816,9 +816,9 @@ element_deepcopy(ElementObject* self, PyObject* args)
 }
 
 static PyObject*
-element_sizeof(PyObject* _self, PyObject* args)
+element_sizeof(PyObject* myself, PyObject* args)
 {
-    ElementObject *self = (ElementObject*)_self;
+    ElementObject *self = (ElementObject*)myself;
     Py_ssize_t result = sizeof(ElementObject);
     if (self->extra) {
         result += sizeof(ElementObjectExtra);
