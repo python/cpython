@@ -10,9 +10,9 @@
 /**************************************************************/
 
 static void
-CThunkObject_dealloc(PyObject *_self)
+CThunkObject_dealloc(PyObject *myself)
 {
-    CThunkObject *self = (CThunkObject *)_self;
+    CThunkObject *self = (CThunkObject *)myself;
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->converters);
     Py_XDECREF(self->callable);
@@ -23,9 +23,9 @@ CThunkObject_dealloc(PyObject *_self)
 }
 
 static int
-CThunkObject_traverse(PyObject *_self, visitproc visit, void *arg)
+CThunkObject_traverse(PyObject *myself, visitproc visit, void *arg)
 {
-    CThunkObject *self = (CThunkObject *)_self;
+    CThunkObject *self = (CThunkObject *)myself;
     Py_VISIT(self->converters);
     Py_VISIT(self->callable);
     Py_VISIT(self->restype);
@@ -33,9 +33,9 @@ CThunkObject_traverse(PyObject *_self, visitproc visit, void *arg)
 }
 
 static int
-CThunkObject_clear(PyObject *_self)
+CThunkObject_clear(PyObject *myself)
 {
-    CThunkObject *self = (CThunkObject *)_self;
+    CThunkObject *self = (CThunkObject *)myself;
     Py_CLEAR(self->converters);
     Py_CLEAR(self->callable);
     Py_CLEAR(self->restype);
