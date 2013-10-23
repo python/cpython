@@ -293,12 +293,12 @@ check_decoded(PyObject *decoded)
 #define SEEN_ALL (SEEN_CR | SEEN_LF | SEEN_CRLF)
 
 PyObject *
-_PyIncrementalNewlineDecoder_decode(PyObject *_self,
+_PyIncrementalNewlineDecoder_decode(PyObject *myself,
                                     PyObject *input, int final)
 {
     PyObject *output;
     Py_ssize_t output_len;
-    nldecoder_object *self = (nldecoder_object *) _self;
+    nldecoder_object *self = (nldecoder_object *) myself;
 
     if (self->decoder == NULL) {
         PyErr_SetString(PyExc_ValueError,
