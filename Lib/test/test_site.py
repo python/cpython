@@ -179,14 +179,20 @@ class HelperFunctionsTests(unittest.TestCase):
         rc = subprocess.call([sys.executable, '-s', '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite],
             env=env)
-        self.assertEqual(rc, 0)
+        if usersite == site.getsitepackages()[0]:
+            self.assertEqual(rc, 1)
+        else:
+            self.assertEqual(rc, 0)
 
         env = os.environ.copy()
         env["PYTHONNOUSERSITE"] = "1"
         rc = subprocess.call([sys.executable, '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite],
             env=env)
-        self.assertEqual(rc, 0)
+        if usersite == site.getsitepackages()[0]:
+            self.assertEqual(rc, 1)
+        else:
+            self.assertEqual(rc, 0)
 
         env = os.environ.copy()
         env["PYTHONUSERBASE"] = "/tmp"
