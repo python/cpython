@@ -24,7 +24,7 @@ class UseCache(unittest.TestCase):
     def test_using_cache(self):
         # [use cache]
         module_to_use = "some module found!"
-        with util.uncache(module_to_use):
+        with util.uncache('some_module'):
             sys.modules['some_module'] = module_to_use
             module = import_util.import_('some_module')
             self.assertEqual(id(module_to_use), id(module))
