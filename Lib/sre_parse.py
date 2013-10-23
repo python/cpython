@@ -769,35 +769,33 @@ def parse_template(source, pattern):
     # group references
     s = Tokenizer(source)
     sget = s.get
-    p = []
-    a = p.append
-    def literal(literal, p=p, pappend=a):
-        if p and p[-1][0] is LITERAL:
-            p[-1] = LITERAL, p[-1][1] + literal
-        else:
-            pappend((LITERAL, literal))
-    sep = source[:0]
-    if isinstance(sep, str):
-        makechar = chr
-    else:
-        makechar = chr
-    while 1:
+    groups = []
+    literals = []
+    literal = []
+    lappend = literal.append
+    def addgroup(index):
+        if literal:
+            literals.append(''.join(literal))
+            del literal[:]
+        groups.append((len(literals), index))
+        literals.append(None)
+    while True:
         this = sget()
         if this is None:
             break # end of replacement string
-        if this and this[0] == "\\":
+        if this[0] == "\\":
             # group
-            c = this[1:2]
+            c = this[1]
             if c == "g":
                 name = ""
                 if s.match("<"):
-                    while 1:
+                    while True:
                         char = sget()
                         if char is None:
                             raise error("unterminated group name")
                         if char == ">":
                             break
-                        name = name + char
+                        name += char
                 if not name:
                     raise error("missing group name")
                 try:
@@ -811,50 +809,38 @@ def parse_template(source, pattern):
                         index = pattern.groupindex[name]
                     except KeyError:
                         raise IndexError("unknown group name")
-                a((MARK, index))
+                addgroup(index)
             elif c == "0":
                 if s.next in OCTDIGITS:
-                    this = this + sget()
+                    this += sget()
                     if s.next in OCTDIGITS:
-                        this = this + sget()
-                literal(makechar(int(this[1:], 8) & 0xff))
+                        this += sget()
+                lappend(chr(int(this[1:], 8) & 0xff))
             elif c in DIGITS:
                 isoctal = False
                 if s.next in DIGITS:
-                    this = this + sget()
+                    this += sget()
                     if (c in OCTDIGITS and this[2] in OCTDIGITS and
                         s.next in OCTDIGITS):
-                        this = this + sget()
+                        this += sget()
                         isoctal = True
-                        literal(makechar(int(this[1:], 8) & 0xff))
+                        lappend(chr(int(this[1:], 8) & 0xff))
                 if not isoctal:
-                    a((MARK, int(this[1:])))
+                    addgroup(int(this[1:]))
             else:
                 try:
-                    this = makechar(ESCAPES[this][1])
+                    this = chr(ESCAPES[this][1])
                 except KeyError:
                     pass
-                literal(this)
+                lappend(this)
         else:
-            literal(this)
-    # convert template to groups and literals lists
-    i = 0
-    groups = []
-    groupsappend = groups.append
-    literals = [None] * len(p)
-    if isinstance(source, str):
-        encode = lambda x: x
-    else:
+            lappend(this)
+    if literal:
+        literals.append(''.join(literal))
+    if not isinstance(source, str):
         # The tokenizer implicitly decodes bytes objects as latin-1, we must
         # therefore re-encode the final representation.
-        encode = lambda x: x.encode('latin-1')
-    for c, s in p:
-        if c is MARK:
-            groupsappend((i, s))
-            # literal[i] is already None
-        else:
-            literals[i] = encode(s)
-        i = i + 1
+        literals = [None if s is None else s.encode('latin-1') for s in literals]
     return groups, literals
 
 def expand_template(template, match):

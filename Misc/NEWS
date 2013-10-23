@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19365: Optimized the parsing of long replacement string in re.sub*()
+  functions.
+
 - Issue #19352: Fix unittest discovery when a module can be reached
   through several paths (e.g. under Debian/Ubuntu with virtualenv).
 
