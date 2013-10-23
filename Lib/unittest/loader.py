@@ -256,8 +256,8 @@ class TestLoader(object):
                     yield _make_failed_import_test(name, self.suiteClass)
                 else:
                     mod_file = os.path.abspath(getattr(module, '__file__', full_path))
-                    realpath = os.path.splitext(mod_file)[0]
-                    fullpath_noext = os.path.splitext(full_path)[0]
+                    realpath = os.path.splitext(os.path.realpath(mod_file))[0]
+                    fullpath_noext = os.path.splitext(os.path.realpath(full_path))[0]
                     if realpath.lower() != fullpath_noext.lower():
                         module_dir = os.path.dirname(realpath)
                         mod_name = os.path.splitext(os.path.basename(full_path))[0]
