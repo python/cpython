@@ -339,7 +339,7 @@ def _optimize_unicode(charset, fixup):
     else:
         code = 'I'
     # Convert block indices to byte array of 256 bytes
-    mapping = array.array('b', mapping).tobytes()
+    mapping = array.array('B', mapping).tobytes()
     # Convert byte array to word array
     mapping = array.array(code, mapping)
     assert mapping.itemsize == _sre.CODESIZE
