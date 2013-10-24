@@ -24,6 +24,7 @@ class TestGdbm(unittest.TestCase):
         self.g[b'bytes'] = b'data'
         key_set = set(self.g.keys())
         self.assertEqual(key_set, set([b'a', b'bytes', b'12345678910']))
+        self.assertIn('a', self.g)
         self.assertIn(b'a', self.g)
         self.assertEqual(self.g[b'bytes'], b'data')
         key = self.g.firstkey()
