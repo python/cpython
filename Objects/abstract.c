@@ -82,15 +82,17 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
     PyObject *hint, *result;
     Py_ssize_t res;
     _Py_IDENTIFIER(__length_hint__);
-    res = PyObject_Length(o);
-    if (res < 0 && PyErr_Occurred()) {
-        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
-            return -1;
+    if (_PyObject_HasLen(o)) {
+        res = PyObject_Length(o);
+        if (res < 0 && PyErr_Occurred()) {
+            if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
+                return -1;
+            }
+            PyErr_Clear();
         }
-        PyErr_Clear();
-    }
-    else {
-        return res;
+        else {
+            return res;
+        }
     }
     hint = _PyObject_LookupSpecial(o, &PyId___length_hint__);
     if (hint == NULL) {
