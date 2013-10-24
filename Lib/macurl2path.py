@@ -75,23 +75,3 @@ def pathname2url(pathname):
 def _pncomp2url(component):
     component = urllib.quote(component[:31], safe='')  # We want to quote slashes
     return component
-
-def test():
-    for url in ["index.html",
-                "bar/index.html",
-                "/foo/bar/index.html",
-                "/foo/bar/",
-                "/"]:
-        print '%r -> %r' % (url, url2pathname(url))
-    for path in ["drive:",
-                 "drive:dir:",
-                 "drive:dir:file",
-                 "drive:file",
-                 "file",
-                 ":file",
-                 ":dir:",
-                 ":dir:file"]:
-        print '%r -> %r' % (path, pathname2url(path))
-
-if __name__ == '__main__':
-    test()

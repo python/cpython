@@ -53,7 +53,6 @@ class TestUntestedModules(unittest.TestCase):
             import imputil
             import keyword
             import linecache
-            import macurl2path
             import mailcap
             import mimify
             import nntplib
