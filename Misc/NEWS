@@ -81,6 +81,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19327: Fixed the working of regular expressions with too big charset.
+
 - Issue #19350: Increasing the test coverage of macurl2path. Patch by Colin
   Williams.
 
