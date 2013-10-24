@@ -427,6 +427,8 @@ class ReTests(unittest.TestCase):
                                   u"\u2222").group(1), u"\u2222")
         self.assertEqual(re.match(u"([\u2222\u2223])",
                                   u"\u2222", re.UNICODE).group(1), u"\u2222")
+        r = u'[%s]' % u''.join(map(unichr, range(256, 2**16, 255)))
+        self.assertEqual(re.match(r, u"\uff01", re.UNICODE).group(), u"\uff01")
 
     def test_big_codesize(self):
         # Issue #1160
