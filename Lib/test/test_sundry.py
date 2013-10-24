@@ -45,7 +45,6 @@ class TestUntestedModules(unittest.TestCase):
             import html.entities
             import imghdr
             import keyword
-            import macurl2path
             import mailcap
             import nturl2path
             import os2emxpath
