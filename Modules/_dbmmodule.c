@@ -225,9 +225,9 @@ dbm_contains(PyObject *self, PyObject *arg)
         if (key.dptr == NULL)
             return -1;
     }
-    if (!PyBytes_Check(arg)) {
+    else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
-                     "dbm key must be string, not %.100s",
+                     "dbm key must be bytes or string, not %.100s",
                      arg->ob_type->tp_name);
         return -1;
     }

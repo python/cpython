@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19287: Fixed the "in" operator of dbm.ndbm databases for string
+  argument.  Original patch by Arfrever Frehtes Taifersar Arahesis.
+
 - Issue #19327: Fixed the working of regular expressions with too big charset.
 
 - Issue #19350: Increasing the test coverage of macurl2path. Patch by Colin
