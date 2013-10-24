@@ -24,6 +24,7 @@ class DbmTestCase(unittest.TestCase):
         self.d[b'bytes'] = b'data'
         self.d['12345678910'] = '019237410982340912840198242'
         self.d.keys()
+        self.assertIn('a', self.d)
         self.assertIn(b'a', self.d)
         self.assertEqual(self.d[b'bytes'], b'data')
         self.d.close()
