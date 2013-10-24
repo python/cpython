@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19379: Lazily import linecache in the warnings module, to make
+  startup with warnings faster until a warning gets printed.
+
 - Issue #19327: Fixed the working of regular expressions with too big charset.
 
 - Issue #17400: New 'is_global' attribute for ipaddress to tell if an address
