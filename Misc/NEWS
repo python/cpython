@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19350: Increasing the test coverage of macurl2path. Patch by Colin
+  Williams.
+
 - Issue #19365: Optimized the parsing of long replacement string in re.sub*()
   functions.
 

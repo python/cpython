@@ -7,7 +7,7 @@ import unittest
 class TestUntestedModules(unittest.TestCase):
     def test_untested_modules_can_be_imported(self):
         untested = ('bdb', 'encodings', 'formatter', 'imghdr',
-                    'macurl2path', 'nturl2path', 'tabnanny')
+                    'nturl2path', 'tabnanny')
         with support.check_warnings(quiet=True):
             for name in untested:
                 try:
@@ -47,6 +47,7 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.command.upload
 
             import html.entities
+
             try:
                 import tty  # Not available on Windows
             except ImportError:
