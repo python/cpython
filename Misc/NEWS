@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19350: Increasing the test coverage of macurl2path. Patch by Colin
+  Williams.
+
 - Issue #19352: Fix unittest discovery when a module can be reached
   through several paths (e.g. under Debian/Ubuntu with virtualenv).
 
