@@ -158,6 +158,12 @@ write code that handles both IP versions correctly.
       ``True`` if the address is reserved for multicast use.  See
       :RFC:`3171` (for IPv4) or :RFC:`2373` (for IPv6).
 
+   .. attribute:: is_private
+
+      ``True`` if the address is allocated for private networks.  See
+      iana-ipv4-special-registry (for IPv4) or iana-ipv6-special-registry
+      (for IPv6).
+
    .. attribute:: is_global
 
       ``True`` if the address is allocated for public networks.  See
