@@ -1244,7 +1244,6 @@ class IPv4Address(_BaseV4, _BaseAddress):
         """
         return (self in IPv4Network('0.0.0.0/8') or
                 self in IPv4Network('10.0.0.0/8') or
-                self in IPv4Network('100.64.0.0/10') or
                 self in IPv4Network('127.0.0.0/8') or
                 self in IPv4Network('169.254.0.0/16') or
                 self in IPv4Network('172.16.0.0/12') or
@@ -1257,17 +1256,6 @@ class IPv4Address(_BaseV4, _BaseAddress):
                 self in IPv4Network('203.0.113.0/24') or
                 self in IPv4Network('240.0.0.0/4') or
                 self in IPv4Network('255.255.255.255/32'))
-
-    @property
-    def is_global(self):
-        """Test if this address is allocated for public networks.
-
-        Returns:
-            A boolean, True if the address is not reserved per
-            iana-ipv4-special-registry.
-
-        """
-        return self in IPv4Network('100.64.0.0/10') or not self.is_private
 
 
     @property
@@ -1500,6 +1488,21 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
+
+    @property
+    @functools.lru_cache()
+    def is_global(self):
+        """Test if this address is allocated for public networks.
+
+        Returns:
+            A boolean, True if the address is not reserved per
+            iana-ipv4-special-registry.
+
+        """
+        return (not (self.network_address in IPv4Network('100.64.0.0/10') and
+                    self.broadcast_address in IPv4Network('100.64.0.0/10')) and
+                not self.is_private)
+
 
 
 class _BaseV6:
