@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19288: Fixed the "in" operator of dbm.gnu databases for string
+  argument.  Original patch by Arfrever Frehtes Taifersar Arahesis.
+
 - Issue #19287: Fixed the "in" operator of dbm.ndbm databases for string
   argument.  Original patch by Arfrever Frehtes Taifersar Arahesis.
 
