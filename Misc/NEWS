@@ -10,6 +10,8 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #19369: Optimized the usage of __length_hint__().
+
 - Issue #18603: Ensure that PyOS_mystricmp and PyOS_mystrnicmp are in the
   Python executable and not removed by the linker's optimizer.
 
