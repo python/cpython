@@ -451,7 +451,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
             count = *(set++);
 
             if (sizeof(SRE_CODE) == 2) {
-                block = ((char*)set)[ch >> 8];
+                block = ((unsigned char*)set)[ch >> 8];
                 set += 128;
                 if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
                     return ok;
@@ -461,7 +461,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
                 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
                  * warnings when c's type supports only numbers < N+1 */
                 if (!(ch & ~65535))
-                    block = ((char*)set)[ch >> 8];
+                    block = ((unsigned char*)set)[ch >> 8];
                 else
                     block = -1;
                 set += 64;
