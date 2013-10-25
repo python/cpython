@@ -353,6 +353,27 @@ def _simple(av):
     lo, hi = av[2].getwidth()
     return lo == hi == 1 and av[2][0][0] != SUBPATTERN
 
+def _generate_overlap_table(prefix):
+    """
+    Generate an overlap table for the following prefix.
+    An overlap table is a table of the same size as the prefix which
+    informs about the potential self-overlap for each index in the prefix:
+    - if overlap[i] == 0, prefix[i:] can't overlap prefix[0:...]
+    - if overlap[i] == k with 0 < k <= i, prefix[i-k+1:i+1] overlaps with
+      prefix[0:k]
+    """
+    table = [0] * len(prefix)
+    for i in range(1, len(prefix)):
+        idx = table[i - 1]
+        while prefix[i] != prefix[idx]:
+            if idx == 0:
+                table[i] = 0
+                break
+            idx = table[idx - 1]
+        else:
+            table[i] = idx + 1
+    return table
+
 def _compile_info(code, pattern, flags):
     # internal: compile an info block.  in the current version,
     # this contains min/max pattern width, and an optional literal
@@ -449,12 +470,7 @@ def _compile_info(code, pattern, flags):
         emit(prefix_skip) # skip
         code.extend(prefix)
         # generate overlap table
-        table = [-1] + ([0]*len(prefix))
-        for i in range(len(prefix)):
-            table[i+1] = table[i]+1
-            while table[i+1] > 0 and prefix[i] != prefix[table[i+1]-1]:
-                table[i+1] = table[table[i+1]-1]+1
-        code.extend(table[1:]) # don't store first entry
+        code.extend(_generate_overlap_table(prefix))
     elif charset:
         _compile_charset(charset, flags, code)
     code[skip] = len(code) - skip
