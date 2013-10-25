@@ -6,7 +6,7 @@ from . import util as builtin_util
 import sys
 import unittest
 
-class FinderTests(abc.FinderTests):
+class FinderTests(unittest.TestCase, abc.FinderTests):
 
     """Test find_module() for built-in modules."""
 
@@ -46,10 +46,5 @@ class FinderTests(abc.FinderTests):
 
 
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(FinderTests)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

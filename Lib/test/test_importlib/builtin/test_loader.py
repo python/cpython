@@ -9,7 +9,7 @@ import types
 import unittest
 
 
-class LoaderTests(abc.LoaderTests):
+class LoaderTests(unittest.TestCase, abc.LoaderTests):
 
     """Test load_module() for built-in modules."""
 

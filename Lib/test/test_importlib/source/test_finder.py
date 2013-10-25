@@ -13,7 +13,7 @@ import unittest
 import warnings
 
 
-class FinderTests(abc.FinderTests):
+class FinderTests(unittest.TestCase, abc.FinderTests):
 
     """For a top-level module, it should just be found directly in the
     directory being searched. This is true for a directory with source

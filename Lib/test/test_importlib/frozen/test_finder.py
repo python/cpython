@@ -4,7 +4,7 @@ from .. import abc
 import unittest
 
 
-class FinderTests(abc.FinderTests):
+class FinderTests(unittest.TestCase, abc.FinderTests):
 
     """Test finding frozen modules."""
 
