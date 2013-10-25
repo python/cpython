@@ -487,7 +487,7 @@ _Py_Uid_Converter(PyObject *obj, void *p)
      * but this value would get interpreted as (uid_t)-1  by chown
      * and its siblings.   That's not what the user meant!  So we
      * throw an overflow exception instead.   (We already
-     * handled a real -1 with PyLong_AsLongAndOverflow() above.) 
+     * handled a real -1 with PyLong_AsLongAndOverflow() above.)
      */
     if (uid == (uid_t)-1)
         goto overflow;
@@ -594,7 +594,7 @@ _Py_Gid_Converter(PyObject *obj, void *p)
      * but this value would get interpreted as (gid_t)-1  by chown
      * and its siblings.   That's not what the user meant!  So we
      * throw an overflow exception instead.   (We already
-     * handled a real -1 with PyLong_AsLongAndOverflow() above.) 
+     * handled a real -1 with PyLong_AsLongAndOverflow() above.)
      */
     if (gid == (gid_t)-1)
         goto overflow;
@@ -2666,7 +2666,7 @@ os_access_impl(PyObject *self, path_t *path, int mode, int dir_fd, int effective
      * (Directories cannot be read-only on Windows.)
     */
     return_value = PyBool_FromLong(
-        (attr != 0xFFFFFFFF) &&
+        (attr != INVALID_FILE_ATTRIBUTES) &&
             (!(mode & 2) ||
             !(attr & FILE_ATTRIBUTE_READONLY) ||
             (attr & FILE_ATTRIBUTE_DIRECTORY)));
@@ -2938,7 +2938,7 @@ posix_chmod(PyObject *self, PyObject *args, PyObject *kwargs)
         attr = GetFileAttributesW(path.wide);
     else
         attr = GetFileAttributesA(path.narrow);
-    if (attr == 0xFFFFFFFF)
+    if (attr == INVALID_FILE_ATTRIBUTES)
         result = 0;
     else {
         if (mode & _S_IWRITE)
@@ -7795,7 +7795,7 @@ posix_dup(PyObject *self, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "i:dup", &fd))
         return NULL;
-    
+
     fd = _Py_dup(fd);
     if (fd == -1)
         return NULL;
