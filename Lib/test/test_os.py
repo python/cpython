@@ -1591,7 +1591,7 @@ class Win32ListdirTests(unittest.TestCase):
 
     def test_listdir_extended_path(self):
         """Test when the path starts with '\\\\?\\'."""
-        # See: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath 
+        # See: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#maxpath
         # unicode
         path = '\\\\?\\' + os.path.abspath(support.TESTFN)
         self.assertEqual(
