@@ -3,10 +3,12 @@ from test.support import verbose, run_unittest, gc_collect, bigmemtest, _2G, \
 import io
 import re
 from re import Scanner
+import sre_compile
 import sre_constants
 import sys
 import string
 import traceback
+import unittest
 from weakref import proxy
 
 # Misc tests from Tim Peters' re.doc
@@ -14,8 +16,6 @@ from weakref import proxy
 # WARNING: Don't change details in these tests if you don't know
 # what you're doing. Some of these tests were carefully modeled to
 # cover most of the code.
-
-import unittest
 
 class S(str):
     def __getitem__(self, index):
@@ -1140,6 +1140,22 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(1), "")
                 self.assertEqual(m.group(2), "y")
 
+
+class ImplementationTest(unittest.TestCase):
+    """
+    Test implementation details of the re module.
+    """
+
+    def test_overlap_table(self):
+        f = sre_compile._generate_overlap_table
+        self.assertEqual(f(""), [])
+        self.assertEqual(f("a"), [0])
+        self.assertEqual(f("abcd"), [0, 0, 0, 0])
+        self.assertEqual(f("aaaa"), [0, 1, 2, 3])
+        self.assertEqual(f("ababba"), [0, 0, 1, 2, 0, 1])
+        self.assertEqual(f("abcabdac"), [0, 0, 0, 1, 2, 0, 1, 0])
+
+
 def run_re_tests():
     from test.re_tests import tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
@@ -1269,7 +1285,7 @@ def run_re_tests():
 
 
 def test_main():
-    run_unittest(ReTests)
+    run_unittest(__name__)
     run_re_tests()
 
 if __name__ == "__main__":
