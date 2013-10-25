@@ -57,13 +57,39 @@ for each release.
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
         * SQLite 3.7.13
+        * Tcl 8.5.15
 
     - uses system-supplied versions of third-party libraries
 
         * readline module links with Apple BSD editline (libedit)
         * builds Oracle Sleepycat DB 4.8 (Python 2.x only)
 
-    - requires ActiveState Tcl/Tk 8.5.9 (or later) to be installed for building
+    - requires ActiveState Tcl/Tk 8.5.14 (or later) to be installed for building
+
+        * Beginning with Python 2.7.6, this installer now includes its own
+          private copy of Tcl and Tk 8.5.15 libraries and thus is no longer
+          dependent on the buggy releases of Aqua Cocoa Tk 8.5 shipped with
+          OS X 10.6 or on installing a newer third-party version of Tcl/Tk
+          in /Library/Frameworks, such as from ActiveState.  If it is
+          necessary to fallback to using a third-party Tcl/Tk because of
+          a problem with the private Tcl/Tk, there is a backup version of
+          the _tkinter extension included which will dynamically link to
+          Tcl and Tk frameworks in /Library/Frameworks as in previous releases.
+          To enable (for all users of this Python 2.7)::
+
+              sudo bash
+              cd /Library/Frameworks/Python.framework/Versions/2.7
+              cd ./lib/python2.7/lib-dynload
+              cp -p _tkinter.so.framework _tkinter.so
+              exit
+
+          To restore using Python's private versions of Tcl and Tk::
+
+              sudo bash
+              cd /Library/Frameworks/Python.framework/Versions/2.7
+              cd ./lib/python2.7/lib-dynload
+              cp -p _tkinter.so.private _tkinter.so
+              exit
 
     - recommended build environment:
 
