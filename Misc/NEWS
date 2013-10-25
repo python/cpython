@@ -592,6 +592,9 @@ Build
 - Issue #15172: Document NASM 2.10+ as requirement for building OpenSSL 1.0.1
   on Windows.
 
+- Issue #1584: Provide options to override default search paths for
+  Tcl and Tk when building _tkinter.
+
 
 What's New in Python 3.3.2?
 ===========================
