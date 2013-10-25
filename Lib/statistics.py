@@ -101,8 +101,6 @@ __all__ = [ 'StatisticsError',
 
 import collections
 import math
-import numbers
-import operator
 
 from fractions import Fraction
 from decimal import Decimal
