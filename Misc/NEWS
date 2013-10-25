@@ -531,6 +531,9 @@ Tests
 Documentation
 -------------
 
+- Issue #19392: Document that `imp.reload()` now also requires `__loader__` to
+  be set on the module being reloaded.
+
 - Issue #18758: Fixed and improved cross-references.
 
 - Issue #18743: Fix references to non-existant "StringIO" module.
