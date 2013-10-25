@@ -121,9 +121,10 @@ Functions
    so it must have been successfully imported before.  This is useful if you
    have edited the module source file using an external editor and want to try
    out the new version without leaving the Python interpreter.  The return value
-   is the module object (the same as the *module* argument).
+   is the module object (which can be different if re-importing causes a
+   different object to be placed in :data:`sys.modules`).
 
-   When :func:`.reload` is executed:
+   When :func:`reload` is executed:
 
    * Python modules' code is recompiled and the module-level code re-executed,
      defining a new set of objects which are bound to names in the module's
