@@ -90,7 +90,7 @@ this module for those platforms.
    :exc:`PermissionError` when the user doesn't have ``CAP_SYS_RESOURCE`` for
    the process.
 
-   Availability: Linux (glibc 2.13+)
+   Availability: Linux 2.6.36 or later with glibc 2.13 or later
 
    .. versionadded:: 3.4
 

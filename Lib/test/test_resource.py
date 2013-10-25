@@ -141,6 +141,7 @@ class ResourceTest(unittest.TestCase):
 
 
     @unittest.skipUnless(hasattr(resource, 'prlimit'), 'no prlimit')
+    @support.requires_linux_version(2, 6, 36)
     def test_prlimit(self):
         self.assertRaises(TypeError, resource.prlimit)
         if os.geteuid() != 0:
