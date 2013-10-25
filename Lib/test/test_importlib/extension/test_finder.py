@@ -4,7 +4,7 @@ from . import util
 
 import unittest
 
-class FinderTests(abc.FinderTests):
+class FinderTests(unittest.TestCase, abc.FinderTests):
 
     """Test the finder for extension modules."""
 
