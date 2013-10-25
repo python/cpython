@@ -74,6 +74,11 @@ Library
 
 - Issue #17087: Improved the repr for regular expression match objects.
 
+Tests
+-----
+
+- Issue 19384: Fix test_py_compile for root user, patch by Claudiu Popa.
+
 Build
 -----
 
