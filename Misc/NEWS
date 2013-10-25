@@ -411,6 +411,10 @@ Library
   existing directory caused mkstemp and related APIs to fail instead of
   retrying. Report and fix by Vlad Shcherbina.
 
+- Issue #19400: Prevent extension module build failures with Xcode 5 on OS X
+  10.8+ when using a universal Python that included a PPC architecture,
+  such as with a python.org 32-bit-only binary installer.
+
 C API
 -----
 

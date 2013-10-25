@@ -235,13 +235,19 @@ def _remove_unsupported_archs(_config_vars):
     if re.search('-arch\s+ppc', _config_vars['CFLAGS']) is not None:
         # NOTE: Cannot use subprocess here because of bootstrap
         # issues when building Python itself
-        status = os.system("'%s' -arch ppc -x c /dev/null 2>/dev/null"%(
-            _config_vars['CC'].replace("'", "'\"'\"'"),))
-        # The Apple compiler drivers return status 255 if no PPC
-        if (status >> 8) == 255:
-            # Compiler doesn't support PPC, remove the related
-            # '-arch' flags if not explicitly overridden by an
-            # environment variable
+        status = os.system(
+            """echo 'int main{};' | """
+            """'%s' -c -arch ppc -x c -o /dev/null /dev/null 2>/dev/null"""
+            %(_config_vars['CC'].replace("'", "'\"'\"'"),))
+        if status:
+            # The compile failed for some reason.  Because of differences
+            # across Xcode and compiler versions, there is no reliable way
+            # to be sure why it failed.  Assume here it was due to lack of
+            # PPC support and remove the related '-arch' flags from each
+            # config variables not explicitly overriden by an environment
+            # variable.  If the error was for some other reason, we hope the
+            # failure will show up again when trying to compile an extension
+            # module.
             for cv in _UNIVERSAL_CONFIG_VARS:
                 if cv in _config_vars and cv not in os.environ:
                     flags = _config_vars[cv]
