@@ -3608,8 +3608,8 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         wcscpy(wnamebuf, po_wchars);
         if (len > 0) {
             wchar_t wch = wnamebuf[len-1];
-            if (wch != L'/' && wch != L'\\' && wch != L':')
-                wnamebuf[len++] = L'\\';
+            if (wch != SEP && wch != ALTSEP && wch != L':')
+                wnamebuf[len++] = SEP;
             wcscpy(wnamebuf + len, L"*.*");
         }
         if ((list = PyList_New(0)) == NULL) {
@@ -3663,8 +3663,8 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     len = path->length;
     if (len > 0) {
         char ch = namebuf[len-1];
-        if (ch != SEP && ch != ALTSEP && ch != ':')
-            namebuf[len++] = '/';
+        if (ch != '\\' && ch != '/' && ch != ':')
+            namebuf[len++] = '\\';
         strcpy(namebuf + len, "*.*");
     }
 
