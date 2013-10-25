@@ -478,6 +478,20 @@ class TestGetTempDir(BaseTestCase):
 
         self.assertTrue(a is b)
 
+    def test_case_sensitive(self):
+        # gettempdir should not flatten its case
+        # even on a case-insensitive file system
+        case_sensitive_tempdir = tempfile.mkdtemp("-Temp")
+        _tempdir, tempfile.tempdir = tempfile.tempdir, None
+        try:
+            with support.EnvironmentVarGuard() as env:
+                # Fake the first env var which is checked as a candidate
+                env["TMPDIR"] = case_sensitive_tempdir
+                self.assertEqual(tempfile.gettempdir(), case_sensitive_tempdir)
+        finally:
+            tempfile.tempdir = _tempdir
+            support.rmdir(case_sensitive_tempdir)
+
 
 class TestMkstemp(BaseTestCase):
     """Test mkstemp()."""
