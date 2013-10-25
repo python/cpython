@@ -280,6 +280,9 @@ Build
   OS X 10.8 systems because the Apple-deprecated QuickDraw headers have
   been removed from Xcode 4.  Skip building it in this case.
 
+- Issue #1584: Provide options to override default search paths for
+  Tcl and Tk when building _tkinter.
+
 IDLE
 ----
 
