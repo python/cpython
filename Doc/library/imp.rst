@@ -179,6 +179,10 @@ This module provides an interface to the mechanisms used to implement the
    the class does not affect the method definitions of the instances --- they
    continue to use the old class definition.  The same is true for derived classes.
 
+   .. versionchanged:: 3.3
+      Relies on both ``__name__`` and ``__loader__`` being defined on the module
+      being reloaded instead of just ``__name__``.
+
    .. deprecated:: 3.4
       Use :func:`importlib.reload` instead.
 
