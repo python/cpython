@@ -1,3 +1,4 @@
+import contextlib
 import sys
 import os
 import unittest
@@ -133,12 +134,9 @@ class ResourceTest(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == 'linux', 'test requires Linux')
     def test_linux_constants(self):
-        self.assertIsInstance(resource.RLIMIT_MSGQUEUE, int)
-        self.assertIsInstance(resource.RLIMIT_NICE, int)
-        self.assertIsInstance(resource.RLIMIT_RTPRIO, int)
-        self.assertIsInstance(resource.RLIMIT_RTTIME, int)
-        self.assertIsInstance(resource.RLIMIT_SIGPENDING, int)
-
+        for attr in ['MSGQUEUE', 'NICE', 'RTPRIO', 'RTTIME', 'SIGPENDING']:
+            with contextlib.suppress(AttributeError):
+                self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 
     @unittest.skipUnless(hasattr(resource, 'prlimit'), 'no prlimit')
     @support.requires_linux_version(2, 6, 36)
