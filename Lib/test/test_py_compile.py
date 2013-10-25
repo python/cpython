@@ -3,6 +3,7 @@ import os
 import py_compile
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
 
@@ -75,6 +76,8 @@ class PyCompileTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.pyc_path))
         self.assertFalse(os.path.exists(self.cache_path))
 
+    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                     'non-root user required')
     @unittest.skipIf(os.name == 'nt',
                      'cannot control directory permissions on Windows')
     def test_exceptions_propagate(self):
