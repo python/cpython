@@ -279,7 +279,7 @@ class BaseSelectorTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
-    def test_interrupted_retry(self):
+    def test_select_interrupt(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
 
