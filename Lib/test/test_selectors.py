@@ -264,18 +264,19 @@ class BaseSelectorTestCase(unittest.TestCase):
         t = time()
         self.assertEqual(1, len(s.select(0)))
         self.assertEqual(1, len(s.select(-1)))
-        self.assertTrue(time() - t < 0.5)
+        self.assertLess(time() - t, 0.5)
 
         s.unregister(wr)
         s.register(rd, selectors.EVENT_READ)
         t = time()
         self.assertFalse(s.select(0))
         self.assertFalse(s.select(-1))
-        self.assertTrue(time() - t < 0.5)
+        self.assertLess(time() - t, 0.5)
 
-        t = time()
+        t0 = time()
         self.assertFalse(s.select(1))
-        self.assertTrue(0.5 < time() - t < 1.5)
+        t1 = time()
+        self.assertTrue(0.5 < t1 - t0 < 1.5, t1 - t0)
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
