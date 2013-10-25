@@ -685,7 +685,8 @@ Deprecated functions and types of the C API
 Deprecated features
 -------------------
 
-* No feature deprecations are planned for Python 3.4.
+* The site module adding a "site-python" directory to sys.path, if it
+  exists, is deprecated (:issue:`19375`).
 
 
 Porting to Python 3.4
