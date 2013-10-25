@@ -601,6 +601,11 @@ Build
   problems in the Apple-supplied Tcl/Tk 8.5 shipped in OS X 10.6
   and later releases.
 
+- Issue #19019: Change the OS X installer build script to use CFLAGS instead
+  of OPT for special build options.  By setting OPT, some compiler-specific
+  options like -fwrapv were overridden and thus not used, which could result
+  in broken interpreters when building with clang.
+
 
 What's New in Python 3.3.2?
 ===========================
