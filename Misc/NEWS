@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13234: Fix os.listdir to work with extended paths on Windows.
+  Patch by Santoso Wijaya.
+
 - Issue #19375: The site module adding a "site-python" directory to sys.path,
   if it exists, is now deprecated.
 
