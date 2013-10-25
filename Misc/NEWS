@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19375: The site module adding a "site-python" directory to sys.path,
+  if it exists, is now deprecated.
+
 - Issue #19379: Lazily import linecache in the warnings module, to make
   startup with warnings faster until a warning gets printed.
 
