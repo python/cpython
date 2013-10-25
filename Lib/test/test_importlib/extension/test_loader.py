@@ -1,20 +1,21 @@
-from importlib import machinery
 from . import util as ext_util
 from .. import abc
 from .. import util
+
+machinery = util.import_importlib('importlib.machinery')
 
 import os.path
 import sys
 import unittest
 
 
-class LoaderTests(unittest.TestCase, abc.LoaderTests):
+class LoaderTests(abc.LoaderTests):
 
     """Test load_module() for extension modules."""
 
     def setUp(self):
-        self.loader = machinery.ExtensionFileLoader(ext_util.NAME,
-                                                     ext_util.FILEPATH)
+        self.loader = self.machinery.ExtensionFileLoader(ext_util.NAME,
+                                                         ext_util.FILEPATH)
 
     def load_module(self, fullname):
         return self.loader.load_module(fullname)
@@ -36,7 +37,7 @@ class LoaderTests(unittest.TestCase, abc.LoaderTests):
                 self.assertEqual(getattr(module, attr), value)
             self.assertIn(ext_util.NAME, sys.modules)
             self.assertIsInstance(module.__loader__,
-                                  machinery.ExtensionFileLoader)
+                                  self.machinery.ExtensionFileLoader)
 
     def test_package(self):
         # No extension module as __init__ available for testing.
@@ -64,16 +65,15 @@ class LoaderTests(unittest.TestCase, abc.LoaderTests):
 
     def test_is_package(self):
         self.assertFalse(self.loader.is_package(ext_util.NAME))
-        for suffix in machinery.EXTENSION_SUFFIXES:
+        for suffix in self.machinery.EXTENSION_SUFFIXES:
             path = os.path.join('some', 'path', 'pkg', '__init__' + suffix)
-            loader = machinery.ExtensionFileLoader('pkg', path)
+            loader = self.machinery.ExtensionFileLoader('pkg', path)
             self.assertTrue(loader.is_package('pkg'))
 
+Frozen_LoaderTests, Source_LoaderTests = util.test_both(
+        LoaderTests, machinery=machinery)
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(LoaderTests)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -1,17 +1,20 @@
-from importlib import machinery
 from .. import abc
+from .. import util as test_util
 from . import util
+
+machinery = test_util.import_importlib('importlib.machinery')
 
 import unittest
 
-class FinderTests(unittest.TestCase, abc.FinderTests):
+
+class FinderTests(abc.FinderTests):
 
     """Test the finder for extension modules."""
 
     def find_module(self, fullname):
-        importer = machinery.FileFinder(util.PATH,
-                                        (machinery.ExtensionFileLoader,
-                                         machinery.EXTENSION_SUFFIXES))
+        importer = self.machinery.FileFinder(util.PATH,
+                                            (self.machinery.ExtensionFileLoader,
+                                             self.machinery.EXTENSION_SUFFIXES))
         return importer.find_module(fullname)
 
     def test_module(self):
@@ -36,11 +39,9 @@ class FinderTests(unittest.TestCase, abc.FinderTests):
     def test_failure(self):
         self.assertIsNone(self.find_module('asdfjkl;'))
 
-
-def test_main():
-    from test.support import run_unittest
-    run_unittest(FinderTests)
+Frozen_FinderTests, Source_FinderTests = test_util.test_both(
+        FinderTests, machinery=machinery)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
