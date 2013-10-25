@@ -1,31 +1,32 @@
-from importlib import machinery
+from .. import util as test_util
 from . import util
+
+machinery = test_util.import_importlib('importlib.machinery')
 
 import collections
 import sys
 import unittest
 
 
-class PathHookTests(unittest.TestCase):
+class PathHookTests:
 
     """Test the path hook for extension modules."""
     # XXX Should it only succeed for pre-existing directories?
     # XXX Should it only work for directories containing an extension module?
 
     def hook(self, entry):
-        return machinery.FileFinder.path_hook((machinery.ExtensionFileLoader,
-            machinery.EXTENSION_SUFFIXES))(entry)
+        return self.machinery.FileFinder.path_hook(
+                (self.machinery.ExtensionFileLoader,
+                 self.machinery.EXTENSION_SUFFIXES))(entry)
 
     def test_success(self):
         # Path hook should handle a directory where a known extension module
         # exists.
         self.assertTrue(hasattr(self.hook(util.PATH), 'find_module'))
 
-
-def test_main():
-    from test.support import run_unittest
-    run_unittest(PathHookTests)
+Frozen_PathHooksTests, Source_PathHooksTests = test_util.test_both(
+        PathHookTests, machinery=machinery)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
