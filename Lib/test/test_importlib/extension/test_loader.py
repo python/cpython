@@ -8,7 +8,7 @@ import sys
 import unittest
 
 
-class LoaderTests(abc.LoaderTests):
+class LoaderTests(unittest.TestCase, abc.LoaderTests):
 
     """Test load_module() for extension modules."""
 

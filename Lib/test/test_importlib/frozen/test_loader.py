@@ -7,7 +7,7 @@ from test.support import captured_stdout
 import types
 
 
-class LoaderTests(abc.LoaderTests):
+class LoaderTests(unittest.TestCase, abc.LoaderTests):
 
     def test_module(self):
         with util.uncache('__hello__'), captured_stdout() as stdout:

@@ -19,7 +19,7 @@ import unittest
 from test.support import make_legacy_pyc, unload
 
 
-class SimpleTest(unittest.TestCase):
+class SimpleTest(unittest.TestCase, abc.LoaderTests):
 
     """Should have no issue importing a source module [basic]. And if there is
     a syntax error, it should raise a SyntaxError [syntax error].
@@ -176,6 +176,11 @@ class SimpleTest(unittest.TestCase):
             self.assertEqual(mod.x, 5)
             # The pyc file was created.
             os.stat(compiled)
+
+    def test_unloadable(self):
+        loader = machinery.SourceFileLoader('good name', {})
+        with self.assertRaises(ImportError):
+            loader.load_module('bad name')
 
 
 class BadBytecodeTest(unittest.TestCase):
