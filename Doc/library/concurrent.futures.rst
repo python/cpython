@@ -164,6 +164,9 @@ uses a pool of processes to execute calls asynchronously.
 allows it to side-step the :term:`Global Interpreter Lock` but also means that
 only picklable objects can be executed and returned.
 
+The ``__main__`` module must be importable by worker subprocesses. This means
+that :class:`ProcessPoolExecutor` will not work in the interactive interpreter.
+
 Calling :class:`Executor` or :class:`Future` methods from a callable submitted
 to a :class:`ProcessPoolExecutor` will result in deadlock.
 
