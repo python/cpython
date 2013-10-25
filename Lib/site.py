@@ -326,6 +326,11 @@ def addsitepackages(known_paths, prefixes=None):
     """Add site-packages (and possibly site-python) to sys.path"""
     for sitedir in getsitepackages(prefixes):
         if os.path.isdir(sitedir):
+            if "site-python" in sitedir:
+                import warnings
+                warnings.warn('"site-python" directories will not be '
+                              'supported in 3.5 anymore',
+                              DeprecationWarning)
             addsitedir(sitedir, known_paths)
 
     return known_paths
