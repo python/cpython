@@ -3,6 +3,7 @@
 from functools import singledispatch as simplegeneric
 import importlib
 import importlib.util
+import importlib.machinery
 import os
 import os.path
 import sys
