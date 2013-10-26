@@ -1059,10 +1059,10 @@ class Thread:
 
         if timeout is None:
             self._wait_for_tstate_lock()
-        elif timeout >= 0:
-            self._wait_for_tstate_lock(timeout=timeout)
-        # else it's a negative timeout - precise behavior isn't documented
-        # then, but historically .join() returned in this case
+        else:
+            # the behavior of a negative timeout isn't documented, but
+            # historically .join() has acted as if timeout=0 then
+            self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
