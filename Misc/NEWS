@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19339: telnetlib module is now using time.monotonic() when available
+  to compute timeout.
+
 - Issue #19399: fix sporadic test_subprocess failure.
 
 - Issue #13234: Fix os.listdir to work with extended paths on Windows.
