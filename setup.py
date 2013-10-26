@@ -908,7 +908,7 @@ class PyBuildExt(build_ext):
                     if allow_db_ver((5, x)):
                         yield x
             elif major == 4:
-                for x in range(max_db_ver[1]+1):
+                for x in range(9):
                     if allow_db_ver((4, x)):
                         yield x
             elif major == 3:
