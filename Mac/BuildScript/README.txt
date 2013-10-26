@@ -68,30 +68,30 @@ for each release.
     - requires ActiveState Tcl/Tk 8.5.15 (or later) to be installed for building
 
         * Beginning with Python 3.4 alpha2, this installer now includes its own
-          private copy of Tcl and Tk 8.5.15 libraries and thus is no longer
+          builtin copy of Tcl and Tk 8.5.15 libraries and thus is no longer
           dependent on the buggy releases of Aqua Cocoa Tk 8.5 shipped with
           OS X 10.6 or on installing a newer third-party version of Tcl/Tk
           in /Library/Frameworks, such as from ActiveState.  Because this
           is a new feature, it should be considered somewhat experimental and
           subject to change prior to the final release of Python 3.4.  If it
           is necessary to fallback to using a third-party Tcl/Tk because of
-          a problem with the private Tcl/Tk, there is a backup version of
+          a problem with the builtin Tcl/Tk, there is a backup version of
           the _tkinter extension included which will dynamically link to
           Tcl and Tk frameworks in /Library/Frameworks as in previous releases.
           To enable (for all users of this Python 3.4)::
 
               sudo bash
               cd /Library/Frameworks/Python.framework/Versions/3.4
-              cd ./lib/python3.4/lib-dynload
-              cp -p _tkinter.so.framework _tkinter.so
+              cd ./lib/python3.4
+              cp -p ./lib-tkinter/library/_tkinter.so ./lib-dynload
               exit
 
-          To restore using Python's private versions of Tcl and Tk::
+          To restore using Python's builtin versions of Tcl and Tk::
 
               sudo bash
               cd /Library/Frameworks/Python.framework/Versions/3.4
-              cd ./lib/python3.4/lib-dynload
-              cp -p _tkinter.so.private _tkinter.so
+              cd ./lib/python3.4
+              cp -p ./lib-tkinter/builtin/_tkinter.so ./lib-dynload
               exit
 
     - recommended build environment:
