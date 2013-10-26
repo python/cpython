@@ -1056,10 +1056,13 @@ class Thread:
             raise RuntimeError("cannot join thread before it is started")
         if self is current_thread():
             raise RuntimeError("cannot join current thread")
+
         if timeout is None:
             self._wait_for_tstate_lock()
-        else:
+        elif timeout >= 0:
             self._wait_for_tstate_lock(timeout=timeout)
+        # else it's a negative timeout - precise behavior isn't documented
+        # then, but historically .join() returned in this case
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
