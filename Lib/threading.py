@@ -1061,7 +1061,7 @@ class Thread:
             self._wait_for_tstate_lock()
         else:
             # the behavior of a negative timeout isn't documented, but
-            # historically .join() has acted as if timeout=0 then
+            # historically .join(timeout=x) for x<0 has acted as if timeout=0
             self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
