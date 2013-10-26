@@ -1155,6 +1155,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\Modules\sre.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\sre_constants.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\Modules\sre_lib.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\Modules\_stat.c"
 				>
 			</File>

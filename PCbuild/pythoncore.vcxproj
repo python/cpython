@@ -449,6 +449,9 @@
     <ClInclude Include="..\Include\weakrefobject.h" />
     <ClInclude Include="..\Modules\_math.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
+    <ClInclude Include="..\Modules\sre.h" />
+    <ClInclude Include="..\Modules\sre_constants.h" />
+    <ClInclude Include="..\Modules\sre_lib.h" />
     <ClInclude Include="..\Modules\_io\_iomodule.h" />
     <ClInclude Include="..\Modules\zlib\crc32.h" />
     <ClInclude Include="..\Modules\zlib\deflate.h" />
