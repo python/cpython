@@ -36,6 +36,10 @@ To do:
 import sys
 import socket
 import selectors
+try:
+    from time import monotonic as _time
+except ImportError:
+    from time import time as _time
 
 __all__ = ["Telnet"]
 
@@ -304,8 +308,7 @@ class Telnet:
             self.cookedq = self.cookedq[i:]
             return buf
         if timeout is not None:
-            from time import time
-            deadline = time() + timeout
+            deadline = _time() + timeout
         with _TelnetSelector() as selector:
             selector.register(self, selectors.EVENT_READ)
             while not self.eof:
@@ -320,7 +323,7 @@ class Telnet:
                         self.cookedq = self.cookedq[i:]
                         return buf
                 if timeout is not None:
-                    timeout = deadline - time()
+                    timeout = deadline - _time()
                     if timeout < 0:
                         break
         return self.read_very_lazy()
@@ -610,8 +613,7 @@ class Telnet:
                 if not re: import re
                 list[i] = re.compile(list[i])
         if timeout is not None:
-            from time import time
-            deadline = time() + timeout
+            deadline = _time() + timeout
         with _TelnetSelector() as selector:
             selector.register(self, selectors.EVENT_READ)
             while not self.eof:
@@ -625,7 +627,7 @@ class Telnet:
                         return (i, m, text)
                 if timeout is not None:
                     ready = selector.select(timeout)
-                    timeout = deadline - time()
+                    timeout = deadline - _time()
                     if not ready:
                         if timeout < 0:
                             break
