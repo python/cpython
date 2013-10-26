@@ -636,10 +636,11 @@ class TestRedirectStdout(unittest.TestCase):
 
     def test_redirect_to_string_io(self):
         f = io.StringIO()
+        msg = "Consider an API like help(), which prints directly to stdout"
         with redirect_stdout(f):
-            help(pow)
-        s = f.getvalue()
-        self.assertIn('pow', s)
+            print(msg)
+        s = f.getvalue().strip()
+        self.assertEqual(s, msg)
 
     def test_enter_result_is_target(self):
         f = io.StringIO()
