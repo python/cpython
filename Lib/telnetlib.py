@@ -38,6 +38,10 @@ import errno
 import sys
 import socket
 import select
+try:
+    from time import monotonic as _time
+except ImportError:
+    from time import time as _time
 
 __all__ = ["Telnet"]
 
@@ -302,8 +306,7 @@ class Telnet:
         n = len(match)
         call_timeout = timeout
         if timeout is not None:
-            from time import time
-            time_start = time()
+            time_start = _time()
         self.process_rawq()
         i = self.cookedq.find(match)
         if i < 0:
@@ -316,7 +319,7 @@ class Telnet:
                 except select.error as e:
                     if e.errno == errno.EINTR:
                         if timeout is not None:
-                            elapsed = time() - time_start
+                            elapsed = _time() - time_start
                             call_timeout = timeout-elapsed
                         continue
                     raise
@@ -327,7 +330,7 @@ class Telnet:
                         self.process_rawq()
                         i = self.cookedq.find(match, i)
                 if timeout is not None:
-                    elapsed = time() - time_start
+                    elapsed = _time() - time_start
                     if elapsed >= timeout:
                         break
                     call_timeout = timeout-elapsed
@@ -356,8 +359,7 @@ class Telnet:
         s_args = s_reply
         if timeout is not None:
             s_args = s_args + (timeout,)
-            from time import time
-            time_start = time()
+            time_start = _time()
         while not self.eof and select.select(*s_args) == s_reply:
             i = max(0, len(self.cookedq)-n)
             self.fill_rawq()
@@ -369,7 +371,7 @@ class Telnet:
                 self.cookedq = self.cookedq[i:]
                 return buf
             if timeout is not None:
-                elapsed = time() - time_start
+                elapsed = _time() - time_start
                 if elapsed >= timeout:
                     break
                 s_args = s_reply + (timeout-elapsed,)
@@ -665,8 +667,7 @@ class Telnet:
                 expect_list[i] = re.compile(expect_list[i])
         call_timeout = timeout
         if timeout is not None:
-            from time import time
-            time_start = time()
+            time_start = _time()
         self.process_rawq()
         m = None
         for i in indices:
@@ -686,7 +687,7 @@ class Telnet:
                 except select.error as e:
                     if e.errno == errno.EINTR:
                         if timeout is not None:
-                            elapsed = time() - time_start
+                            elapsed = _time() - time_start
                             call_timeout = timeout-elapsed
                         continue
                     raise
@@ -702,7 +703,7 @@ class Telnet:
                                 self.cookedq = self.cookedq[e:]
                                 break
                 if timeout is not None:
-                    elapsed = time() - time_start
+                    elapsed = _time() - time_start
                     if elapsed >= timeout:
                         break
                     call_timeout = timeout-elapsed
@@ -727,8 +728,7 @@ class Telnet:
                 if not re: import re
                 list[i] = re.compile(list[i])
         if timeout is not None:
-            from time import time
-            time_start = time()
+            time_start = _time()
         while 1:
             self.process_rawq()
             for i in indices:
@@ -741,7 +741,7 @@ class Telnet:
             if self.eof:
                 break
             if timeout is not None:
-                elapsed = time() - time_start
+                elapsed = _time() - time_start
                 if elapsed >= timeout:
                     break
                 s_args = ([self.fileno()], [], [], timeout-elapsed)
