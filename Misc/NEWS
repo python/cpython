@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19339: telnetlib module is now using time.monotonic() when available
+  to compute timeout.
+
 - Issue #19288: Fixed the "in" operator of dbm.gnu databases for string
   argument.  Original patch by Arfrever Frehtes Taifersar Arahesis.
 
