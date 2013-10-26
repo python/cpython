@@ -75,7 +75,7 @@ For full details, see the
 
 .. seealso::
 
-   .. :pep:`4XX` - Python 3.4 Release Schedule
+   :pep:`429` - Python 3.4 Release Schedule
 
 
 Summary -- Release highlights
@@ -96,32 +96,30 @@ New library modules:
   :mod:`select` module primitives.
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
 
-New built-in features:
+New expected features for Python implementations:
 
-* :ref:`PEP 442: Safe object finalization <pep-442>`.
-* :ref:`PEP 445: Configurable memory allocators <pep-445>`.
 * :ref:`PEP 446: Make newly created file descriptors non-inheritable <pep-446>`.
-
-Implementation improvements:
-
-* A more efficient :mod:`marshal` format (:issue:`16475`).
-* Improve finalization of Python modules to avoid setting their globals
-  to None, in most cases (:issue:`18214`).
-* "Argument Clinic", providing improved introspection support for builtin
-  and standard library extension types implemented in C (:pep:`436`)
+* command line option for :ref:`isolated mode <using-on-misc-options>`,
+  (:issue:`16499`).
 
 Significantly Improved Library Modules:
 
-* Single-dispatch generic functions (:pep:`443`)
+* Single-dispatch generic functions in :mod:`functoools` (:pep:`443`)
 * SHA-3 (Keccak) support for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 * :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
   on Unix (:issue:`8713`).
 
-Security improvements:
+CPython implementation improvements:
 
-* command line option for :ref:`isolated mode <using-on-misc-options>`,
-  :issue:`16499`.
+* :ref:`PEP 442: Safe object finalization <pep-442>`
+* :ref:`PEP 445: Configurable memory allocators <pep-445>`
+* Improve finalization of Python modules to avoid setting their globals
+  to None, in most cases (:issue:`18214`).
+* A more efficient :mod:`marshal` format (:issue:`16475`).
+* "Argument Clinic", an initial step towards providing improved introspection
+  support for builtin and standard library extension types implemented in C
+  (:pep:`436`)
 
 Please read on for a comprehensive list of user-facing changes.
 
@@ -130,41 +128,17 @@ Please read on for a comprehensive list of user-facing changes.
 PEP 446: Make newly created file descriptors non-inheritable
 ============================================================
 
-The :pep:`446` makes newly created file descriptors :ref:`non-inheritable
+:pep:`446` makes newly created file descriptors :ref:`non-inheritable
 <fd_inheritance>`.  New functions and methods:
 
 * :func:`os.get_inheritable`, :func:`os.set_inheritable`
 * :func:`os.get_handle_inheritable`, :func:`os.set_handle_inheritable`
 * :meth:`socket.socket.get_inheritable`, :meth:`socket.socket.set_inheritable`
 
-
-.. _pep-445:
-
-PEP 445: Add new APIs to customize Python memory allocators
-===========================================================
-
-The :pep:`445` adds new Application Programming Interfaces (API) to customize
-Python memory allocators.
-
-
-.. _pep-442:
-
-PEP 442: Safe object finalization
-=================================
-
-This PEP removes the current limitations and quirks of object finalization.
-With it, objects with :meth:`__del__` methods, as well as generators
-with :keyword:`finally` clauses, can be finalized when they are part of a
-reference cycle.
-
-As part of this change, module globals are no longer forcibly set to
-:const:`None` during interpreter shutdown, instead relying on the normal
-operation of the cyclic garbage collector.
-
 .. seealso::
 
-   :pep:`442` - Safe object finalization
-      PEP written and implemented by Antoine Pitrou
+   :pep:`446` - Make newly created file descriptors non-inheritable
+      PEP written and implemented by Victor Stinner.
 
 
 Other Language Changes
@@ -200,13 +174,25 @@ implementations to interoperate with the standard library and each other.
 
 For Python 3.4, this module is considered a :term:`provisional API`.
 
+.. seealso::
+
+   :pep:`3156` - Asynchronous IO Support Rebooted: the "asyncio" Module
+      PEP written and implementation led by Guido van Rossum.
+
 enum
 ----
 
-The new :mod:`enum` module provides a standard implementation of enumeration
-types, allowing other modules (such as :mod:`socket`) to provide more
-informative error messages and better debugging support by replacing opaque
-integer constants with backwards compatible enumeration values.
+The new :mod:`enum` module (defined in :pep:`435`) provides a standard
+implementation of enumeration types, allowing other modules (such as
+:mod:`socket`) to provide more informative error messages and better
+debugging support by replacing opaque integer constants with backwards
+compatible enumeration values.
+
+.. seealso::
+
+   :pep:`435` - Adding an Enum type to the Python standard library
+      PEP written by Barry Warsaw, Eli Bendersky and Ethan Furman,
+      implemented by Ethan Furman.
 
 
 selectors
@@ -224,6 +210,11 @@ The new :mod:`statistics` module (defined in :pep:`450`) offers some core
 statistics functionality directly in the standard library. This module
 supports calculation of the mean, median, mode, variance and standard
 deviation of a data series.
+
+.. seealso::
+
+   :pep:`450` - Adding A Statistics Module To The Standard Library
+      PEP written and implemented by Steven D'Aprano
 
 
 Improved Modules
@@ -366,13 +357,22 @@ inspect
 -------
 
 
-The inspect module now offers a basic command line interface to quickly
-display source code and other information for modules, classes and
-functions.
+The inspect module now offers a basic :ref:`command line interface
+<inspect-module-cli>` to quickly display source code and other
+information for modules, classes and functions. (Contributed by Claudiu Popa
+and Nick Coghlan in :issue:`18626`)
 
 :func:`~inspect.unwrap` makes it easy to unravel wrapper function chains
 created by :func:`functools.wraps` (and any other API that sets the
-``__wrapped__`` attribute on a wrapper function).
+``__wrapped__`` attribute on a wrapper function). (Contributed by
+Daniel Urban, Aaron Iles and Nick Coghlan in :issue:`13266`)
+
+As part of the implementation of the new :mod:`enum` module, the
+:mod:`inspect` module now has substantially better support for custom
+``__dir__`` methods and dynamic class attributes provided through
+metaclasses (Contributed by Ethan Furman in :issue:`18929` and
+:issue:`19030`)
+
 
 mmap
 ----
@@ -436,6 +436,15 @@ pprint
 
 The :mod:`pprint` module now supports *compact* mode for formatting long
 sequences (:issue:`19132`).
+
+
+pydoc
+-----
+
+While significant changes have not been made to :mod:`pydoc` directly,
+its handling of custom ``__dir__`` methods and various descriptor
+behaviours has been improved substantially by the underlying changes in
+the :mod:`inspect` module.
 
 
 resource
@@ -626,8 +635,46 @@ Major performance enhancements have been added:
   :issue:`9548`)
 
 
-Build and C API Changes
-=======================
+CPython Implementation Changes
+==============================
+
+
+.. _pep-445:
+
+PEP 445: Customization of CPython memory allocators
+---------------------------------------------------
+
+:pep:`445` adds new C level interfaces to customize memory allocation in
+the CPython interpreter.
+
+.. seealso::
+
+   :pep:`445` - Add new APIs to customize Python memory allocators
+      PEP written and implemented by Victor Stinner.
+
+
+.. _pep-442:
+
+PEP 442: Safe object finalization
+---------------------------------
+
+:pep:`442` removes the current limitations and quirks of object finalization
+in CPython. With it, objects with :meth:`__del__` methods, as well as
+generators with :keyword:`finally` clauses, can be finalized when they are
+part of a reference cycle.
+
+As part of this change, module globals are no longer forcibly set to
+:const:`None` during interpreter shutdown in most cases, instead relying
+on the normal operation of the cyclic garbage collector.
+
+.. seealso::
+
+   :pep:`442` - Safe object finalization
+      PEP written and implemented by Antoine Pitrou.
+
+
+Other build and C API changes
+-----------------------------
 
 Changes to Python's build process and to the C API include:
 
@@ -644,6 +691,12 @@ Changes to Python's build process and to the C API include:
   and can be used to simplify the process of defining and maintaining
   accurate signatures for builtins and standard library extension modules
   implemented in C.
+
+  .. note::
+     The Argument Clinic PEP is not fully up to date with the state of the
+     implementation. This has been deemed acceptable by the release manager
+     and core development team in this case, as Argument Clinic will not
+     be made available as a public API for third party use in Python 3.4.
 
 
 Deprecated
@@ -737,12 +790,14 @@ that may require changes to your code.
   exceptions now.
 
 * :func:`functools.update_wrapper` and :func:`functools.wraps` now correctly
-  set the ``__wrapped__`` attribute even if the wrapped function had a
-  wrapped attribute set. This means ``__wrapped__`` attributes now correctly
-  link a stack of decorated functions rather than every ``__wrapped__``
-  attribute in the chain referring to the innermost function. Introspection
-  libraries that assumed the previous behaviour was intentional can use
-  :func:`inspect.unwrap` to gain equivalent behaviour.
+  set the ``__wrapped__`` attribute to the function being wrapper, even if
+  that function also had its ``__wrapped__`` attribute set. This means
+  ``__wrapped__`` attributes now correctly link a stack of decorated
+  functions rather than every ``__wrapped__`` attribute in the chain
+  referring to the innermost function. Introspection libraries that
+  assumed the previous behaviour was intentional can use
+  :func:`inspect.unwrap` to access the first function in the chain that has
+  no ``__wrapped__`` attribute.
 
 * (C API) The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
   now be a string allocated by :c:func:`PyMem_RawMalloc` or

@@ -1009,6 +1009,8 @@ updated as expected:
    .. versionadded:: 3.3
 
 
+.. _inspect-module-cli:
+
 Command Line Interface
 ----------------------
 
