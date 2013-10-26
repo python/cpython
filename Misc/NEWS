@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19399: fix sporadic test_subprocess failure.
+
 - Issue #13234: Fix os.listdir to work with extended paths on Windows.
   Patch by Santoso Wijaya.
 
