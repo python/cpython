@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19393: Fix symtable.symtable function to not be confused when there are
+  functions or classes named "top".
+
 - Issue #19339: telnetlib module is now using time.monotonic() when available
   to compute timeout.
 
