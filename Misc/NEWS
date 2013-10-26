@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19393: Fix symtable.symtable function to not be confused when there are
+  functions or classes named "top".
+
 - Issue #19327: Fixed the working of regular expressions with too big charset.
 
 - Issue #19350: Increasing the test coverage of macurl2path. Patch by Colin
