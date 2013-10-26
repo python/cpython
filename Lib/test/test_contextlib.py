@@ -14,6 +14,20 @@ except ImportError:
 
 class ContextManagerTestCase(unittest.TestCase):
 
+    def test_instance_docstring_given_function_docstring(self):
+        # Issue 19330: ensure context manager instances have good docstrings
+        # See http://bugs.python.org/issue19404 for why this doesn't currently
+        # affect help() output :(
+        def gen_with_docstring():
+            """This has a docstring"""
+            yield
+        gen_docstring = gen_with_docstring.__doc__
+        cm_with_docstring = contextmanager(gen_with_docstring)
+        self.assertEqual(cm_with_docstring.__doc__, gen_docstring)
+        obj = cm_with_docstring()
+        self.assertEqual(obj.__doc__, gen_docstring)
+        self.assertNotEqual(obj.__doc__, type(obj).__doc__)
+
     def test_contextmanager_plain(self):
         state = []
         @contextmanager
@@ -109,7 +123,11 @@ class ContextManagerTestCase(unittest.TestCase):
 
 class ClosingTestCase(unittest.TestCase):
 
-    # XXX This needs more work
+    def test_instance_docs(self):
+        # Issue 19330: ensure context manager instances have good docstrings
+        cm_docstring = closing.__doc__
+        obj = closing(None)
+        self.assertEqual(obj.__doc__, cm_docstring)
 
     def test_closing(self):
         state = []
@@ -205,6 +223,7 @@ class LockContextTestCase(unittest.TestCase):
 
 
 class mycontext(ContextDecorator):
+    """Example decoration-compatible context manager for testing"""
     started = False
     exc = None
     catch = False
@@ -219,6 +238,12 @@ class mycontext(ContextDecorator):
 
 
 class TestContextDecorator(unittest.TestCase):
+
+    def test_instance_docs(self):
+        # Issue 19330: ensure context manager instances have good docstrings
+        cm_docstring = mycontext.__doc__
+        obj = mycontext()
+        self.assertEqual(obj.__doc__, cm_docstring)
 
     def test_contextdecorator(self):
         context = mycontext()
@@ -372,6 +397,12 @@ class TestContextDecorator(unittest.TestCase):
 
 
 class TestExitStack(unittest.TestCase):
+
+    def test_instance_docs(self):
+        # Issue 19330: ensure context manager instances have good docstrings
+        cm_docstring = ExitStack.__doc__
+        obj = ExitStack()
+        self.assertEqual(obj.__doc__, cm_docstring)
 
     def test_no_resources(self):
         with ExitStack():
@@ -634,6 +665,12 @@ class TestExitStack(unittest.TestCase):
 
 class TestRedirectStdout(unittest.TestCase):
 
+    def test_instance_docs(self):
+        # Issue 19330: ensure context manager instances have good docstrings
+        cm_docstring = redirect_stdout.__doc__
+        obj = redirect_stdout(None)
+        self.assertEqual(obj.__doc__, cm_docstring)
+
     def test_redirect_to_string_io(self):
         f = io.StringIO()
         msg = "Consider an API like help(), which prints directly to stdout"
@@ -671,6 +708,12 @@ class TestRedirectStdout(unittest.TestCase):
 
 class TestSuppress(unittest.TestCase):
 
+    def test_instance_docs(self):
+        # Issue 19330: ensure context manager instances have good docstrings
+        cm_docstring = suppress.__doc__
+        obj = suppress()
+        self.assertEqual(obj.__doc__, cm_docstring)
+
     def test_no_result_from_enter(self):
         with suppress(ValueError) as enter_result:
             self.assertIsNone(enter_result)
@@ -683,15 +726,25 @@ class TestSuppress(unittest.TestCase):
         with suppress(TypeError):
             len(5)
 
+    def test_exception_hierarchy(self):
+        with suppress(LookupError):
+            'Hello'[50]
+
+    def test_other_exception(self):
+        with self.assertRaises(ZeroDivisionError):
+            with suppress(TypeError):
+                1/0
+
+    def test_no_args(self):
+        with self.assertRaises(ZeroDivisionError):
+            with suppress():
+                1/0
+
     def test_multiple_exception_args(self):
         with suppress(ZeroDivisionError, TypeError):
             1/0
         with suppress(ZeroDivisionError, TypeError):
             len(5)
-
-    def test_exception_hierarchy(self):
-        with suppress(LookupError):
-            'Hello'[50]
 
     def test_cm_is_reentrant(self):
         ignore_exceptions = suppress(Exception)
