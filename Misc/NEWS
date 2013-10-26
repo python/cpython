@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #18685: Restore re performance to pre-PEP 393 levels.
+
 - Issue #19339: telnetlib module is now using time.monotonic() when available
   to compute timeout.
 
