@@ -77,6 +77,8 @@ class ReTests(unittest.TestCase):
         self.assertTypedEqual(re.sub(b'y', B(b'a'), B(b'xyz')), b'xaz')
         self.assertTypedEqual(re.sub(b'y', bytearray(b'a'), bytearray(b'xyz')), b'xaz')
         self.assertTypedEqual(re.sub(b'y', memoryview(b'a'), memoryview(b'xyz')), b'xaz')
+        for y in ("\xe0", "\u0430", "\U0001d49c"):
+            self.assertEqual(re.sub(y, 'a', 'x%sz' % y), 'xaz')
 
         self.assertEqual(re.sub("(?i)b+", "x", "bbbb BBBB"), 'x x')
         self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y'),
@@ -250,6 +252,13 @@ class ReTests(unittest.TestCase):
                                   [b'', b'a', b'b', b'c'])
             self.assertTypedEqual(re.split(b"(:*)", string),
                                   [b'', b':', b'a', b':', b'b', b'::', b'c'])
+        for a, b, c in ("\xe0\xdf\xe7", "\u0430\u0431\u0432",
+                        "\U0001d49c\U0001d49e\U0001d4b5"):
+            string = ":%s:%s::%s" % (a, b, c)
+            self.assertEqual(re.split(":", string), ['', a, b, '', c])
+            self.assertEqual(re.split(":*", string), ['', a, b, c])
+            self.assertEqual(re.split("(:*)", string),
+                             ['', ':', a, ':', b, '::', c])
 
         self.assertEqual(re.split("(?::*)", ":a:b::c"), ['', 'a', 'b', 'c'])
         self.assertEqual(re.split("(:)*", ":a:b::c"),
@@ -287,6 +296,14 @@ class ReTests(unittest.TestCase):
                                   [b":", b"::", b":::"])
             self.assertTypedEqual(re.findall(b"(:)(:*)", string),
                                   [(b":", b""), (b":", b":"), (b":", b"::")])
+        for x in ("\xe0", "\u0430", "\U0001d49c"):
+            xx = x * 2
+            xxx = x * 3
+            string = "a%sb%sc%sd" % (x, xx, xxx)
+            self.assertEqual(re.findall("%s+" % x, string), [x, xx, xxx])
+            self.assertEqual(re.findall("(%s+)" % x, string), [x, xx, xxx])
+            self.assertEqual(re.findall("(%s)(%s*)" % (x, x), string),
+                             [(x, ""), (x, x), (x, xx)])
 
     def test_bug_117612(self):
         self.assertEqual(re.findall(r"(a|(b))", "aba"),
@@ -305,6 +322,12 @@ class ReTests(unittest.TestCase):
             self.assertEqual(re.match(b'(a)', string).group(0), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1), b'a')
             self.assertEqual(re.match(b'(a)', string).group(1, 1), (b'a', b'a'))
+        for a in ("\xe0", "\u0430", "\U0001d49c"):
+            self.assertEqual(re.match(a, a).groups(), ())
+            self.assertEqual(re.match('(%s)' % a, a).groups(), (a,))
+            self.assertEqual(re.match('(%s)' % a, a).group(0), a)
+            self.assertEqual(re.match('(%s)' % a, a).group(1), a)
+            self.assertEqual(re.match('(%s)' % a, a).group(1, 1), (a, a))
 
         pat = re.compile('((a)|(b))(c)?')
         self.assertEqual(pat.match('a').groups(), ('a', 'a', None, None))
