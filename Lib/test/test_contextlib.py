@@ -14,20 +14,6 @@ except ImportError:
 
 class ContextManagerTestCase(unittest.TestCase):
 
-    def test_instance_docstring_given_function_docstring(self):
-        # Issue 19330: ensure context manager instances have good docstrings
-        # See http://bugs.python.org/issue19404 for why this doesn't currently
-        # affect help() output :(
-        def gen_with_docstring():
-            """This has a docstring"""
-            yield
-        gen_docstring = gen_with_docstring.__doc__
-        cm_with_docstring = contextmanager(gen_with_docstring)
-        self.assertEqual(cm_with_docstring.__doc__, gen_docstring)
-        obj = cm_with_docstring()
-        self.assertEqual(obj.__doc__, gen_docstring)
-        self.assertNotEqual(obj.__doc__, type(obj).__doc__)
-
     def test_contextmanager_plain(self):
         state = []
         @contextmanager
@@ -115,14 +101,20 @@ class ContextManagerTestCase(unittest.TestCase):
         self.assertEqual(baz.__name__,'baz')
         self.assertEqual(baz.foo, 'bar')
 
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -O2 and above")
+    @support.requires_docstrings
     def test_contextmanager_doc_attrib(self):
         baz = self._create_contextmanager_attribs()
         self.assertEqual(baz.__doc__, "Whee!")
 
+    @support.requires_docstrings
+    def test_instance_docstring_given_cm_docstring(self):
+        baz = self._create_contextmanager_attribs()(None)
+        self.assertEqual(baz.__doc__, "Whee!")
+
+
 class ClosingTestCase(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_instance_docs(self):
         # Issue 19330: ensure context manager instances have good docstrings
         cm_docstring = closing.__doc__
@@ -239,6 +231,7 @@ class mycontext(ContextDecorator):
 
 class TestContextDecorator(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_instance_docs(self):
         # Issue 19330: ensure context manager instances have good docstrings
         cm_docstring = mycontext.__doc__
@@ -398,6 +391,7 @@ class TestContextDecorator(unittest.TestCase):
 
 class TestExitStack(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_instance_docs(self):
         # Issue 19330: ensure context manager instances have good docstrings
         cm_docstring = ExitStack.__doc__
@@ -665,6 +659,7 @@ class TestExitStack(unittest.TestCase):
 
 class TestRedirectStdout(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_instance_docs(self):
         # Issue 19330: ensure context manager instances have good docstrings
         cm_docstring = redirect_stdout.__doc__
@@ -708,6 +703,7 @@ class TestRedirectStdout(unittest.TestCase):
 
 class TestSuppress(unittest.TestCase):
 
+    @support.requires_docstrings
     def test_instance_docs(self):
         # Issue 19330: ensure context manager instances have good docstrings
         cm_docstring = suppress.__doc__

@@ -1697,9 +1697,13 @@ def run_unittest(*classes):
 #=======================================================================
 # Check for the presence of docstrings.
 
-HAVE_DOCSTRINGS = (check_impl_detail(cpython=False) or
-                   sys.platform == 'win32' or
-                   sysconfig.get_config_var('WITH_DOC_STRINGS'))
+# Rather than trying to enumerate all the cases where docstrings may be
+# disabled, we just check for that directly
+
+def _check_docstrings():
+    """Just used to check if docstrings are enabled"""
+
+HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None)
 
 requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
                                           "test requires docstrings")
