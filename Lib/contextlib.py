@@ -37,6 +37,16 @@ class _GeneratorContextManager(ContextDecorator):
     def __init__(self, func, *args, **kwds):
         self.gen = func(*args, **kwds)
         self.func, self.args, self.kwds = func, args, kwds
+        # Issue 19330: ensure context manager instances have good docstrings
+        doc = getattr(func, "__doc__", None)
+        if doc is None:
+            doc = type(self).__doc__
+        self.__doc__ = doc
+        # Unfortunately, this still doesn't provide good help output when
+        # inspecting the created context manager instances, since pydoc
+        # currently bypasses the instance docstring and shows the docstring
+        # for the class instead.
+        # See http://bugs.python.org/issue19404 for more details.
 
     def _recreate_cm(self):
         # _GCM instances are one-shot context managers, so the
@@ -117,9 +127,6 @@ def contextmanager(func):
     return helper
 
 
-# Unfortunately, this was originally published as a class, so
-# backwards compatibility prevents the use of the wrapper function
-# approach used for the other classes
 class closing(object):
     """Context to automatically close something at the end of a block.
 
@@ -144,8 +151,18 @@ class closing(object):
     def __exit__(self, *exc_info):
         self.thing.close()
 
-class _RedirectStdout:
-    """Helper for redirect_stdout."""
+class redirect_stdout:
+    """Context manager for temporarily redirecting stdout to another file
+
+        # How to send help() to stderr
+        with redirect_stdout(sys.stderr):
+            help(dir)
+
+        # How to write help() to a file
+        with open('help.txt', 'w') as f:
+            with redirect_stdout(f):
+                help(pow)
+    """
 
     def __init__(self, new_target):
         self._new_target = new_target
@@ -163,46 +180,9 @@ class _RedirectStdout:
         self._old_target = self._sentinel
         sys.stdout = restore_stdout
 
-# Use a wrapper function since we don't care about supporting inheritance
-# and a function gives much cleaner output in help()
-def redirect_stdout(target):
-    """Context manager for temporarily redirecting stdout to another file
-
-        # How to send help() to stderr
-        with redirect_stdout(sys.stderr):
-            help(dir)
-
-        # How to write help() to a file
-        with open('help.txt', 'w') as f:
-            with redirect_stdout(f):
-                help(pow)
-    """
-    return _RedirectStdout(target)
 
 
-class _SuppressExceptions:
-    """Helper for suppress."""
-    def __init__(self, *exceptions):
-        self._exceptions = exceptions
-
-    def __enter__(self):
-        pass
-
-    def __exit__(self, exctype, excinst, exctb):
-        # Unlike isinstance and issubclass, exception handling only
-        # looks at the concrete type heirarchy (ignoring the instance
-        # and subclass checking hooks). However, all exceptions are
-        # also required to be concrete subclasses of BaseException, so
-        # if there's a discrepancy in behaviour, we currently consider it
-        # the fault of the strange way the exception has been defined rather
-        # than the fact that issubclass can be customised while the
-        # exception checks can't.
-        # See http://bugs.python.org/issue12029 for more details
-        return exctype is not None and issubclass(exctype, self._exceptions)
-
-# Use a wrapper function since we don't care about supporting inheritance
-# and a function gives much cleaner output in help()
-def suppress(*exceptions):
+class suppress:
     """Context manager to suppress specified exceptions
 
     After the exception is suppressed, execution proceeds with the next
@@ -212,7 +192,25 @@ def suppress(*exceptions):
              os.remove(somefile)
          # Execution still resumes here if the file was already removed
     """
-    return _SuppressExceptions(*exceptions)
+
+    def __init__(self, *exceptions):
+        self._exceptions = exceptions
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exctype, excinst, exctb):
+        # Unlike isinstance and issubclass, CPython exception handling
+        # currently only looks at the concrete type hierarchy (ignoring
+        # the instance and subclass checking hooks). While Guido considers
+        # that a bug rather than a feature, it's a fairly hard one to fix
+        # due to various internal implementation details. suppress provides
+        # the simpler issubclass based semantics, rather than trying to
+        # exactly reproduce the limitations of the CPython interpreter.
+        #
+        # See http://bugs.python.org/issue12029 for more details
+        return exctype is not None and issubclass(exctype, self._exceptions)
+
 
 # Inspired by discussions on http://bugs.python.org/issue13585
 class ExitStack(object):
