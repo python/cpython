@@ -122,6 +122,11 @@ def quoted_for_c_string(s):
         s = s.replace(old, new)
     return s
 
+is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
+
+def is_legal_py_identifier(s):
+    return all(is_legal_c_identifier(field) for field in s.split('.'))
+
 # added "self", "cls", and "null" just to be safe
 # (clinic will generate variables with these names)
 c_keywords = set("""
@@ -131,8 +136,11 @@ return self short signed sizeof static struct switch typedef
 typeof union unsigned void volatile while
 """.strip().split())
 
-def legal_c_identifier(s):
-    # if we picked a C keyword, pick something else
+def ensure_legal_c_identifier(s):
+    # for now, just complain if what we're given isn't legal
+    if not is_legal_c_identifier(s):
+        fail("Illegal C identifier: {}".format(s))
+    # but if we picked a C keyword, pick something else
     if s in c_keywords:
         return s + "_value"
     return s
@@ -1311,7 +1319,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
         """
-        name = legal_c_identifier(self.name)
+        name = ensure_legal_c_identifier(self.name)
 
         # declarations
         d = self.declaration()
@@ -1359,7 +1367,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         if self.encoding:
             list.append(self.encoding)
 
-        s = ("&" if self.parse_by_reference else "") + legal_c_identifier(self.name)
+        s = ("&" if self.parse_by_reference else "") + ensure_legal_c_identifier(self.name)
         list.append(s)
 
     #
@@ -1377,7 +1385,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             prototype.append(" ")
         if by_reference:
             prototype.append('*')
-        prototype.append(legal_c_identifier(self.name))
+        prototype.append(ensure_legal_c_identifier(self.name))
         return "".join(prototype)
 
     def declaration(self):
@@ -1575,7 +1583,7 @@ class Py_buffer_converter(CConverter):
             self.format_unit = 'z*' if nullable else 's*'
 
     def cleanup(self):
-        return "PyBuffer_Release(&" + legal_c_identifier(self.name) + ");\n"
+        return "PyBuffer_Release(&" + ensure_legal_c_identifier(self.name) + ");\n"
 
 
 def add_c_return_converter(f, name=None):
@@ -1894,6 +1902,11 @@ class DSLParser:
         full_name, _, c_basename = line.partition(' as ')
         full_name = full_name.strip()
         c_basename = c_basename.strip() or None
+
+        if not is_legal_py_identifier(full_name):
+            fail("Illegal function name: {}".format(full_name))
+        if c_basename and not is_legal_c_identifier(c_basename):
+            fail("Illegal C basename: {}".format(c_basename))
 
         if not returns:
             return_converter = CReturnConverter()
