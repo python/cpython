@@ -81,6 +81,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16041: CVE-2013-1752: poplib: Limit maximum line lengths to 2048 to
+  prevent readline() calls from consuming too much memory.  Patch by Jyrki
+  Pulliainen.
+
 - Issue #17997: Change behavior of ``ssl.match_hostname()`` to follow RFC 6125,
   for security reasons.  It now doesn't match multiple wildcards nor wildcards
   inside IDN fragments.
