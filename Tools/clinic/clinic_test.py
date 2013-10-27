@@ -560,6 +560,20 @@ Docstring
         self.assertEqual("Docstring\n\nfoo.bar()", function.docstring)
         self.assertEqual(0, len(function.parameters))
 
+    def test_illegal_module_line(self):
+        self.parse_function_should_fail("""
+module foo
+foo.bar => int
+    /
+""")
+
+    def test_illegal_c_basename(self):
+        self.parse_function_should_fail("""
+module foo
+foo.bar as 935
+    /
+""")
+
     def test_single_star(self):
         self.parse_function_should_fail("""
 module foo
