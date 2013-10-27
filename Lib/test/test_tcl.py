@@ -277,9 +277,12 @@ class TclTest(unittest.TestCase):
                 (('a', (2, 3.4)), 'a {2 3.4}'),
                 ((), ''),
                 ((call('list', 1, '2', (3.4,)),), '{1 2 3.4}'),
-                ((call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),),
-                    '{12 € € 3.4}'),
             ]
+            if tcl_version >= (8, 5):
+                testcases += [
+                    ((call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),),
+                     '{12 € € 3.4}'),
+                ]
             for args, res in testcases:
                 self.assertEqual(merge(*args), res, msg=args)
             self.assertRaises(UnicodeDecodeError, merge, b'\x80')
