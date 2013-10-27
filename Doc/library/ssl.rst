@@ -283,10 +283,10 @@ Certificate handling
    Verify that *cert* (in decoded format as returned by
    :meth:`SSLSocket.getpeercert`) matches the given *hostname*.  The rules
    applied are those for checking the identity of HTTPS servers as outlined
-   in :rfc:`2818`, except that IP addresses are not currently supported.
-   In addition to HTTPS, this function should be suitable for checking the
-   identity of servers in various SSL-based protocols such as FTPS, IMAPS,
-   POPS and others.
+   in :rfc:`2818` and :rfc:`6125`, except that IP addresses are not currently
+   supported. In addition to HTTPS, this function should be suitable for
+   checking the identity of servers in various SSL-based protocols such as
+   FTPS, IMAPS, POPS and others.
 
    :exc:`CertificateError` is raised on failure. On success, the function
    returns nothing::
@@ -300,6 +300,13 @@ Certificate handling
       ssl.CertificateError: hostname 'example.org' doesn't match 'example.com'
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.3.3
+      The function now follows :rfc:`6125`, section 6.4.3 and does neither
+      match multiple wildcards (e.g. ``*.*.com`` or ``*a*.example.org``) nor
+      a wildcard inside an internationalized domain names (IDN) fragment.
+      IDN A-labels such as ``www*.xn--pthon-kva.org`` are still supported,
+      but ``x*.python.org`` no longer matches ``xn--tda.python.org``.
 
 .. function:: cert_time_to_seconds(timestring)
 
