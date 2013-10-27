@@ -358,11 +358,7 @@ class BasicSocketTests(unittest.TestCase):
         fail(cert, 'Xa.com')
         fail(cert, '.a.com')
 
-        cert = {'subject': ((('commonName', 'a.*.com'),),)}
-        ok(cert, 'a.foo.com')
-        fail(cert, 'a..com')
-        fail(cert, 'a.com')
-
+        # only match one left-most wildcard
         cert = {'subject': ((('commonName', 'f*.com'),),)}
         ok(cert, 'foo.com')
         ok(cert, 'f.com')
@@ -376,6 +372,36 @@ class BasicSocketTests(unittest.TestCase):
         ok(cert, 'null.python.org\x00example.org') # or raise an error?
         fail(cert, 'example.org')
         fail(cert, 'null.python.org')
+
+        # error cases with wildcards
+        cert = {'subject': ((('commonName', '*.*.a.com'),),)}
+        fail(cert, 'bar.foo.a.com')
+        fail(cert, 'a.com')
+        fail(cert, 'Xa.com')
+        fail(cert, '.a.com')
+
+        cert = {'subject': ((('commonName', 'a.*.com'),),)}
+        fail(cert, 'a.foo.com')
+        fail(cert, 'a..com')
+        fail(cert, 'a.com')
+
+        # wildcard doesn't match IDNA prefix 'xn--'
+        idna = 'püthon.python.org'.encode("idna").decode("ascii")
+        cert = {'subject': ((('commonName', idna),),)}
+        ok(cert, idna)
+        cert = {'subject': ((('commonName', 'x*.python.org'),),)}
+        fail(cert, idna)
+        cert = {'subject': ((('commonName', 'xn--p*.python.org'),),)}
+        fail(cert, idna)
+
+        # wildcard in first fragment and  IDNA A-labels in sequent fragments
+        # are supported.
+        idna = 'www*.pythön.org'.encode("idna").decode("ascii")
+        cert = {'subject': ((('commonName', idna),),)}
+        ok(cert, 'www.pythön.org'.encode("idna").decode("ascii"))
+        ok(cert, 'www1.pythön.org'.encode("idna").decode("ascii"))
+        fail(cert, 'ftp.pythön.org'.encode("idna").decode("ascii"))
+        fail(cert, 'pythön.org'.encode("idna").decode("ascii"))
 
         # Slightly fake real-world example
         cert = {'notAfter': 'Jun 26 21:41:46 2011 GMT',
@@ -437,7 +463,7 @@ class BasicSocketTests(unittest.TestCase):
         cert = {'subject': ((('commonName', 'a*b.com'),),)}
         ok(cert, 'axxb.com')
         cert = {'subject': ((('commonName', 'a*b.co*'),),)}
-        ok(cert, 'axxb.com')
+        fail(cert, 'axxb.com')
         cert = {'subject': ((('commonName', 'a*b*.com'),),)}
         with self.assertRaises(ssl.CertificateError) as cm:
             ssl.match_hostname(cert, 'axxbxxc.com')
