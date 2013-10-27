@@ -201,152 +201,116 @@ def _compile_charset(charset, flags, code, fixup=None):
 def _optimize_charset(charset, fixup):
     # internal: optimize character set
     out = []
-    outappend = out.append
-    charmap = [0]*256
-    try:
-        for op, av in charset:
-            if op is NEGATE:
-                outappend((op, av))
-            elif op is LITERAL:
-                charmap[fixup(av)] = 1
-            elif op is RANGE:
-                for i in range(fixup(av[0]), fixup(av[1])+1):
-                    charmap[i] = 1
-            elif op is CATEGORY:
-                # XXX: could append to charmap tail
-                return charset # cannot compress
-    except IndexError:
-        # character set contains unicode characters
-        return _optimize_unicode(charset, fixup)
+    tail = []
+    charmap = bytearray(256)
+    for op, av in charset:
+        while True:
+            try:
+                if op is LITERAL:
+                    charmap[fixup(av)] = 1
+                elif op is RANGE:
+                    for i in range(fixup(av[0]), fixup(av[1])+1):
+                        charmap[i] = 1
+                elif op is NEGATE:
+                    out.append((op, av))
+                else:
+                    tail.append((op, av))
+            except IndexError:
+                if len(charmap) == 256:
+                    # character set contains non-UCS1 character codes
+                    charmap += b'\0' * 0xff00
+                    continue
+                # character set contains non-BMP character codes
+                tail.append((op, av))
+            break
+
     # compress character map
-    i = p = n = 0
     runs = []
-    runsappend = runs.append
-    for c in charmap:
-        if c:
-            if n == 0:
-                p = i
-            n = n + 1
-        elif n:
-            runsappend((p, n))
-            n = 0
-        i = i + 1
-    if n:
-        runsappend((p, n))
-    if len(runs) <= 2:
+    q = 0
+    while True:
+        p = charmap.find(1, q)
+        if p < 0:
+            break
+        if len(runs) >= 2:
+            runs = None
+            break
+        q = charmap.find(0, p)
+        if q < 0:
+            runs.append((p, len(charmap)))
+            break
+        runs.append((p, q))
+    if runs is not None:
         # use literal/range
-        for p, n in runs:
-            if n == 1:
-                outappend((LITERAL, p))
+        for p, q in runs:
+            if q - p == 1:
+                out.append((LITERAL, p))
             else:
-                outappend((RANGE, (p, p+n-1)))
+                out.append((RANGE, (p, q - 1)))
+        out += tail
         if len(out) < len(charset):
             return out
-    else:
-        # use bitmap
+        return charset
+
+    # use bitmap
+    if len(charmap) == 256:
         data = _mk_bitmap(charmap)
-        outappend((CHARSET, data))
+        out.append((CHARSET, data))
+        out += tail
         return out
-    return charset
 
-def _mk_bitmap(bits):
-    data = []
-    dataappend = data.append
-    if _sre.CODESIZE == 2:
-        start = (1, 0)
-    else:
-        start = (1, 0)
-    m, v = start
-    for c in bits:
-        if c:
-            v = v + m
-        m = m + m
-        if m > MAXCODE:
-            dataappend(v)
-            m, v = start
-    return data
+    # To represent a big charset, first a bitmap of all characters in the
+    # set is constructed. Then, this bitmap is sliced into chunks of 256
+    # characters, duplicate chunks are eliminated, and each chunk is
+    # given a number. In the compiled expression, the charset is
+    # represented by a 32-bit word sequence, consisting of one word for
+    # the number of different chunks, a sequence of 256 bytes (64 words)
+    # of chunk numbers indexed by their original chunk position, and a
+    # sequence of 256-bit chunks (8 words each).
 
-# To represent a big charset, first a bitmap of all characters in the
-# set is constructed. Then, this bitmap is sliced into chunks of 256
-# characters, duplicate chunks are eliminated, and each chunk is
-# given a number. In the compiled expression, the charset is
-# represented by a 32-bit word sequence, consisting of one word for
-# the number of different chunks, a sequence of 256 bytes (64 words)
-# of chunk numbers indexed by their original chunk position, and a
-# sequence of 256-bit chunks (8 words each).
+    # Compression is normally good: in a typical charset, large ranges of
+    # Unicode will be either completely excluded (e.g. if only cyrillic
+    # letters are to be matched), or completely included (e.g. if large
+    # subranges of Kanji match). These ranges will be represented by
+    # chunks of all one-bits or all zero-bits.
 
-# Compression is normally good: in a typical charset, large ranges of
-# Unicode will be either completely excluded (e.g. if only cyrillic
-# letters are to be matched), or completely included (e.g. if large
-# subranges of Kanji match). These ranges will be represented by
-# chunks of all one-bits or all zero-bits.
+    # Matching can be also done efficiently: the more significant byte of
+    # the Unicode character is an index into the chunk number, and the
+    # less significant byte is a bit index in the chunk (just like the
+    # CHARSET matching).
 
-# Matching can be also done efficiently: the more significant byte of
-# the Unicode character is an index into the chunk number, and the
-# less significant byte is a bit index in the chunk (just like the
-# CHARSET matching).
-
-# The BIGCHARSET opcode still supports only subsets
-# of the basic multilingual plane; an efficient representation
-# for all of Unicode has not yet been developed. This means,
-# in particular, that negated charsets cannot be represented as
-# bigcharsets.
-
-def _optimize_unicode(charset, fixup):
-    try:
-        import array
-    except ImportError:
-        return charset
-    charmap = [0]*65536
-    negate = 0
-    try:
-        for op, av in charset:
-            if op is NEGATE:
-                negate = 1
-            elif op is LITERAL:
-                charmap[fixup(av)] = 1
-            elif op is RANGE:
-                for i in range(fixup(av[0]), fixup(av[1])+1):
-                    charmap[i] = 1
-            elif op is CATEGORY:
-                # XXX: could expand category
-                return charset # cannot compress
-    except IndexError:
-        # non-BMP characters; XXX now they should work
-        return charset
-    if negate:
-        if sys.maxunicode != 65535:
-            # XXX: negation does not work with big charsets
-            # XXX2: now they should work, but removing this will make the
-            # charmap 17 times bigger
-            return charset
-        for i in range(65536):
-            charmap[i] = not charmap[i]
+    charmap = bytes(charmap) # should be hashable
     comps = {}
-    mapping = [0]*256
+    mapping = bytearray(256)
     block = 0
-    data = []
-    for i in range(256):
-        chunk = tuple(charmap[i*256:(i+1)*256])
-        new = comps.setdefault(chunk, block)
-        mapping[i] = new
-        if new == block:
-            block = block + 1
-            data = data + _mk_bitmap(chunk)
-    header = [block]
-    if _sre.CODESIZE == 2:
-        code = 'H'
-    else:
-        code = 'I'
-    # Convert block indices to byte array of 256 bytes
-    mapping = array.array('B', mapping).tobytes()
-    # Convert byte array to word array
-    mapping = array.array(code, mapping)
-    assert mapping.itemsize == _sre.CODESIZE
-    assert len(mapping) * mapping.itemsize == 256
-    header = header + mapping.tolist()
-    data[0:0] = header
-    return [(BIGCHARSET, data)]
+    data = bytearray()
+    for i in range(0, 65536, 256):
+        chunk = charmap[i: i + 256]
+        if chunk in comps:
+            mapping[i // 256] = comps[chunk]
+        else:
+            mapping[i // 256] = comps[chunk] = block
+            block += 1
+            data += chunk
+    data = _mk_bitmap(data)
+    data[0:0] = [block] + _bytes_to_codes(mapping)
+    out.append((BIGCHARSET, data))
+    out += tail
+    return out
+
+_CODEBITS = _sre.CODESIZE * 8
+_BITS_TRANS = b'0' + b'1' * 255
+def _mk_bitmap(bits, _CODEBITS=_CODEBITS, _int=int):
+    s = bits.translate(_BITS_TRANS)[::-1]
+    return [_int(s[i - _CODEBITS: i], 2)
+            for i in range(len(s), 0, -_CODEBITS)]
+
+def _bytes_to_codes(b):
+    # Convert block indices to word array
+    import array
+    a = array.array('I', b)
+    assert a.itemsize == _sre.CODESIZE
+    assert len(a) * a.itemsize == len(b)
+    return a.tolist()
 
 def _simple(av):
     # check if av is a "simple" operator
