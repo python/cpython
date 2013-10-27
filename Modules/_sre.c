@@ -2749,8 +2749,7 @@ _compile(PyObject* self_, PyObject* args)
     \_________\_____/        /
                \____________/
 
-   It also helps that SRE_CODE is always an unsigned type, either 2 bytes or 4
-   bytes wide (the latter if Python is compiled for "wide" unicode support).
+   It also helps that SRE_CODE is always an unsigned type.
 */
 
 /* Defining this one enables tracing of the validator */
