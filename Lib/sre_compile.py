@@ -276,10 +276,10 @@ def _mk_bitmap(bits):
 # set is constructed. Then, this bitmap is sliced into chunks of 256
 # characters, duplicate chunks are eliminated, and each chunk is
 # given a number. In the compiled expression, the charset is
-# represented by a 16-bit word sequence, consisting of one word for
-# the number of different chunks, a sequence of 256 bytes (128 words)
+# represented by a 32-bit word sequence, consisting of one word for
+# the number of different chunks, a sequence of 256 bytes (64 words)
 # of chunk numbers indexed by their original chunk position, and a
-# sequence of chunks (16 words each).
+# sequence of 256-bit chunks (8 words each).
 
 # Compression is normally good: in a typical charset, large ranges of
 # Unicode will be either completely excluded (e.g. if only cyrillic
@@ -292,9 +292,9 @@ def _mk_bitmap(bits):
 # less significant byte is a bit index in the chunk (just like the
 # CHARSET matching).
 
-# In UCS-4 mode, the BIGCHARSET opcode still supports only subsets
+# The BIGCHARSET opcode still supports only subsets
 # of the basic multilingual plane; an efficient representation
-# for all of UTF-16 has not yet been developed. This means,
+# for all of Unicode has not yet been developed. This means,
 # in particular, that negated charsets cannot be represented as
 # bigcharsets.
 
