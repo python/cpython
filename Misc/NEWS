@@ -5,9 +5,9 @@ Python News
 What's New in Python 3.3.3 release candidate 1?
 ===============================================
 
-*Not yet released, see sections below for changes released in 3.3.2*
+.. *Not yet released, see sections below for changes released in 3.3.2*
 
-.. *Release date: TBD*
+*Release date: 27-Oct-2013*
 
 Core and Builtins
 -----------------
@@ -80,6 +80,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #16039: CVE-2013-1752: Change use of readline in imaplib module to limit
+  line length.  Patch by Emil Lind.
 
 - Issue #19393: Fix symtable.symtable function to not be confused when there are
   functions or classes named "top".
@@ -425,7 +428,8 @@ C API
 -----
 
 - Issue #18351: Fix various issues with a helper function in importlib used
-  by PyImport_ExecCodeModuleWithPathnames() (and thus by extension PyImport_ExecCodeModule() and PyImport_ExecCodeModuleEx()).
+  by PyImport_ExecCodeModuleWithPathnames() (and thus by extension
+  PyImport_ExecCodeModule() and PyImport_ExecCodeModuleEx()).
 
 IDLE
 ----
