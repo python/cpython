@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more than
+  100 headers are read.  Adapted from patch by Jyrki Pulliainen.
+
 - Issue #16040: CVE-2013-1752: nntplib: Limit maximum line lengths to 2048 to
   prevent readline() calls from consuming too much memory.  Patch by Jyrki
   Pulliainen.
