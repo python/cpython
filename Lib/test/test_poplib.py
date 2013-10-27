@@ -94,7 +94,7 @@ class DummyPOP3Handler(asynchat.async_chat):
 
     def cmd_list(self, arg):
         if arg:
-            self.push('+OK %s %s' %(arg, arg))
+            self.push('+OK %s %s' % (arg, arg))
         else:
             self.push('+OK')
             asynchat.async_chat.push(self, LIST_RESP)
@@ -278,6 +278,10 @@ class TestPOP3Class(TestCase):
         foo = self.client.retr('foo')
         self.assertEqual(foo, expected)
 
+    def test_too_long_lines(self):
+        self.assertRaises(poplib.error_proto, self.client._shortcmd,
+                          'echo +%s' % ((poplib._MAXLINE + 10) * 'a'))
+
     def test_dele(self):
         self.assertOK(self.client.dele('foo'))
 
@@ -400,7 +404,13 @@ if SUPPORTS_SSL:
 
         def tearDown(self):
             if self.client.file is not None and self.client.sock is not None:
-                self.client.quit()
+                try:
+                    self.client.quit()
+                except poplib.error_proto:
+                    # happens in the test_too_long_lines case; the overlong
+                    # response will be treated as response to QUIT and raise
+                    # this exception
+                    pass
             self.server.stop()
 
         def test_stls(self):
