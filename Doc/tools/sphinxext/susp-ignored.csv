@@ -18,14 +18,14 @@ faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,y
 faq/windows,,:bd8afb90ebf2,"Python 3.3.0 (v3.3.0:bd8afb90ebf2, Sep 29 2012, 10:55:48) [MSC v.1600 32 bit (Intel)] on win32"
 howto/cporting,,:encode,"if (!PyArg_ParseTuple(args, ""O:encode_object"", &myobj))"
 howto/cporting,,:say,"if (!PyArg_ParseTuple(args, ""U:say_hello"", &name))"
-howto/curses,,:black,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
-howto/curses,,:blue,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
-howto/curses,,:cyan,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
-howto/curses,,:green,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
-howto/curses,,:magenta,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
-howto/curses,,:red,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
-howto/curses,,:white,"7:white."
-howto/curses,,:yellow,"They are: 0:black, 1:red, 2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and"
+howto/curses,,:black,"colors when it activates color mode.  They are: 0:black, 1:red,"
+howto/curses,,:red,"colors when it activates color mode.  They are: 0:black, 1:red,"
+howto/curses,,:green,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/curses,,:yellow,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/curses,,:blue,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/curses,,:magenta,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/curses,,:cyan,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
+howto/curses,,:white,"2:green, 3:yellow, 4:blue, 5:magenta, 6:cyan, and 7:white.  The"
 howto/ipaddress,,:DB8,>>> ipaddress.ip_address('2001:DB8::1')
 howto/ipaddress,,::,>>> ipaddress.ip_address('2001:DB8::1')
 howto/ipaddress,,:db8,IPv6Address('2001:db8::1')
@@ -88,7 +88,6 @@ howto/urllib2,,:example,"for example ""joe@password:example.com"""
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/bisect,32,:hi,all(val >= x for val in a[i:hi])
 library/bisect,42,:hi,all(val > x for val in a[i:hi])
-library/concurrent.futures,,:url,"future_to_url = {executor.submit(load_url, url, 60):url for url in URLS}"
 library/configparser,,:home,my_dir: ${Common:home_dir}/twosheds
 library/configparser,,:option,${section:option}
 library/configparser,,:path,python_dir: ${Frameworks:path}/Python/Versions/${Frameworks:Python}
@@ -213,9 +212,9 @@ library/urllib.request,,:close,Connection:close
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
-library/venv,,:param,":param nodist: If True, Distribute is not installed into the created"
+library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
+library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
 library/venv,,:param,":param nopip: If True, pip is not installed into the created"
-library/venv,,:param,":param progress: If Distribute or pip are installed, the progress of the"
 library/venv,,:param,:param context: The information for the environment creation request
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,,:pass,user:pass
@@ -249,6 +248,7 @@ using/cmdline,,:line,action:message:category:module:line
 using/cmdline,,:line,file:line: category: message
 using/cmdline,,:message,action:message:category:module:line
 using/cmdline,,:module,action:message:category:module:line
+using/unix,,:Packaging,http://en.opensuse.org/Portal:Packaging
 whatsnew/2.0,418,:len,
 whatsnew/2.3,,::,
 whatsnew/2.3,,:config,
@@ -283,9 +283,7 @@ whatsnew/3.2,,:gz,">>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') a
 whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:platform,:platform:
-whatsnew/changelog,,:password,: Unquote before b64encoding user:password during Basic
-whatsnew/changelog,,:close,Connection:close header.
 whatsnew/changelog,,:PythonCmd,"With Tk < 8.5 _tkinter.c:PythonCmd() raised UnicodeDecodeError, caused"
-whatsnew/changelog,,:close,: Connection:close header is sent by requests using URLOpener
 whatsnew/changelog,,::,": Fix FTP tests for IPv6, bind to ""::1"" instead of ""localhost""."
-whatsnew/changelog,,:test,: test_subprocess:test_leaking_fds_on_error no longer gives a
+whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
+whatsnew/changelog,,:password,user:password

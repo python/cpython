@@ -1801,7 +1801,7 @@ with the :class:`Pool` class.
    .. versionadded:: 3.3
       Pool objects now support the context manager protocol -- see
       :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
-      pool object, and :meth:~contextmanager.`__exit__` calls :meth:`terminate`.
+      pool object, and :meth:`~contextmanager.__exit__` calls :meth:`terminate`.
 
 
 .. class:: AsyncResult
@@ -1974,7 +1974,7 @@ multiple connections at the same time.
    .. versionadded:: 3.3
       Listener objects now support the context manager protocol -- see
       :ref:`typecontextmanager`.  :meth:`~contextmanager.__enter__` returns the
-      listener object, and :meth:~contextmanager.`__exit__` calls :meth:`close`.
+      listener object, and :meth:`~contextmanager.__exit__` calls :meth:`close`.
 
 .. function:: wait(object_list, timeout=None)
 
