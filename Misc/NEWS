@@ -129,6 +129,11 @@ Build
 - Issue #19356: Avoid using a C variabled named "_self", it's a reserved
   word in some C compilers.
 
+Tools/Demos
+-----------
+
+- Issue #19390: Argument Clinic no longer accepts malformed Python
+  and C ids.
 
 What's New in Python 3.4.0 Alpha 4?
 ===================================
