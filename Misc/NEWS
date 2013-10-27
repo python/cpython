@@ -129,6 +129,8 @@ Build
 - Issue #19356: Avoid using a C variabled named "_self", it's a reserved
   word in some C compilers.
 
+- Issue #15792: Correct build options on Win64. Patch by Jeremy Kloth.
+
 Tools/Demos
 -----------
 
