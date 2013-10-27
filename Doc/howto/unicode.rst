@@ -532,7 +532,7 @@ of partial coding sequences.  The work of implementing this has already been
 done for you: the built-in :func:`open` function can return a file-like object
 that assumes the file's contents are in a specified encoding and accepts Unicode
 parameters for methods such as :meth:`~io.TextIOBase.read` and
-:meth:`~io.TextIOBase.write`.  This works through:func:`open`\'s *encoding* and
+:meth:`~io.TextIOBase.write`.  This works through :func:`open`\'s *encoding* and
 *errors* parameters which are interpreted just like those in :meth:`str.encode`
 and :meth:`bytes.decode`.
 
