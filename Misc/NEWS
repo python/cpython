@@ -23,6 +23,24 @@ Library
 
 - Issue #19329: Optimized compiling charsets in regular expressions.
 
+- Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more than
+  100 headers are read.  Adapted from patch by Jyrki Pulliainen.
+
+- Issue #16040: CVE-2013-1752: nntplib: Limit maximum line lengths to 2048 to
+  prevent readline() calls from consuming too much memory.  Patch by Jyrki
+  Pulliainen.
+
+- Issue #16041: CVE-2013-1752: poplib: Limit maximum line lengths to 2048 to
+  prevent readline() calls from consuming too much memory.  Patch by Jyrki
+  Pulliainen.
+
+- Issue #17997: Change behavior of ``ssl.match_hostname()`` to follow RFC 6125,
+  for security reasons.  It now doesn't match multiple wildcards nor wildcards
+  inside IDN fragments.
+
+- Issue #16039: CVE-2013-1752: Change use of readline in imaplib module to limit
+  line length.  Patch by Emil Lind.
+
 - Issue #19330: the unnecessary wrapper functions have been removed from the
   implementations of the new contextlib.redirect_stdout and
   contextlib.suppress context managers, which also ensures they provide
