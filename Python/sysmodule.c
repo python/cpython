@@ -1573,7 +1573,7 @@ _PySys_Init(void)
     if (m == NULL)
         return NULL;
     sysdict = PyModule_GetDict(m);
-#define SET_SYS_FROM_STRING(key, value)                    \
+#define SET_SYS_FROM_STRING_BORROW(key, value)             \
     do {                                                   \
         int res;                                           \
         PyObject *v = (value);                             \
@@ -1581,7 +1581,18 @@ _PySys_Init(void)
             return NULL;                                   \
         res = PyDict_SetItemString(sysdict, key, v);       \
         if (res < 0) {                                     \
-            Py_DECREF(v);                                  \
+            return NULL;                                   \
+        }                                                  \
+    } while (0)
+#define SET_SYS_FROM_STRING(key, value)                    \
+    do {                                                   \
+        int res;                                           \
+        PyObject *v = (value);                             \
+        if (v == NULL)                                     \
+            return NULL;                                   \
+        res = PyDict_SetItemString(sysdict, key, v);       \
+        Py_DECREF(v);                                      \
+        if (res < 0) {                                     \
             return NULL;                                   \
         }                                                  \
     } while (0)
@@ -1606,10 +1617,10 @@ _PySys_Init(void)
 
     /* stdin/stdout/stderr are now set by pythonrun.c */
 
-    SET_SYS_FROM_STRING("__displayhook__",
-                        PyDict_GetItemString(sysdict, "displayhook"));
-    SET_SYS_FROM_STRING("__excepthook__",
-                        PyDict_GetItemString(sysdict, "excepthook"));
+    SET_SYS_FROM_STRING_BORROW("__displayhook__",
+                               PyDict_GetItemString(sysdict, "displayhook"));
+    SET_SYS_FROM_STRING_BORROW("__excepthook__",
+                               PyDict_GetItemString(sysdict, "excepthook"));
     SET_SYS_FROM_STRING("version",
                          PyUnicode_FromString(Py_GetVersion()));
     SET_SYS_FROM_STRING("hexversion",
@@ -1679,9 +1690,9 @@ _PySys_Init(void)
     else {
         Py_INCREF(warnoptions);
     }
-    SET_SYS_FROM_STRING("warnoptions", warnoptions);
+    SET_SYS_FROM_STRING_BORROW("warnoptions", warnoptions);
 
-    SET_SYS_FROM_STRING("_xoptions", get_xoptions());
+    SET_SYS_FROM_STRING_BORROW("_xoptions", get_xoptions());
 
     /* version_info */
     if (VersionInfoType.tp_name == NULL) {
