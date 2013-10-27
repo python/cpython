@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19329: Optimized compiling charsets in regular expressions.
+
 - Issue #19330: the unnecessary wrapper functions have been removed from the
   implementations of the new contextlib.redirect_stdout and
   contextlib.suppress context managers, which also ensures they provide
