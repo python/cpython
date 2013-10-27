@@ -23,6 +23,9 @@ Library
 
 - Issue #19329: Optimized compiling charsets in regular expressions.
 
+- Issue #19227: Try to fix deadlocks caused by re-seeding then OpenSSL
+  pseudo-random number generator on fork().
+
 - Issue #16037: HTTPMessage.readheaders() raises an HTTPException when more than
   100 headers are read.  Adapted from patch by Jyrki Pulliainen.
 
