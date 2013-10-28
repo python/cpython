@@ -18,7 +18,7 @@ ENCODER(big5)
         DBCHAR code;
 
         if (c < 0x80) {
-            REQUIRE_OUTBUF(1)
+            REQUIRE_OUTBUF(1);
             **outbuf = (unsigned char)c;
             NEXT(1, 1);
             continue;
@@ -27,15 +27,15 @@ ENCODER(big5)
         if (c > 0xFFFF)
             return 1;
 
-        REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2);
 
         if (TRYMAP_ENC(big5, code, c))
             ;
         else
             return 1;
 
-        OUTBYTE1(code >> 8)
-        OUTBYTE2(code & 0xFF)
+        OUTBYTE1(code >> 8);
+        OUTBYTE2(code & 0xFF);
         NEXT(1, 2);
     }
 
@@ -77,7 +77,7 @@ ENCODER(cp950)
         DBCHAR code;
 
         if (c < 0x80) {
-            WRITEBYTE1((unsigned char)c)
+            WRITEBYTE1((unsigned char)c);
             NEXT(1, 1);
             continue;
         }
@@ -85,7 +85,7 @@ ENCODER(cp950)
         if (c > 0xFFFF)
             return 1;
 
-        REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2);
         if (TRYMAP_ENC(cp950ext, code, c))
             ;
         else if (TRYMAP_ENC(big5, code, c))
@@ -93,8 +93,8 @@ ENCODER(cp950)
         else
             return 1;
 
-        OUTBYTE1(code >> 8)
-        OUTBYTE2(code & 0xFF)
+        OUTBYTE1(code >> 8);
+        OUTBYTE2(code & 0xFF);
         NEXT(1, 2);
     }
 

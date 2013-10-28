@@ -25,33 +25,33 @@ ENCODER(cp932)
         unsigned char c1, c2;
 
         if (c <= 0x80) {
-            WRITEBYTE1((unsigned char)c)
+            WRITEBYTE1((unsigned char)c);
             NEXT(1, 1);
             continue;
         }
         else if (c >= 0xff61 && c <= 0xff9f) {
-            WRITEBYTE1(c - 0xfec0)
+            WRITEBYTE1(c - 0xfec0);
             NEXT(1, 1);
             continue;
         }
         else if (c >= 0xf8f0 && c <= 0xf8f3) {
             /* Windows compatibility */
-            REQUIRE_OUTBUF(1)
+            REQUIRE_OUTBUF(1);
             if (c == 0xf8f0)
-                OUTBYTE1(0xa0)
+                OUTBYTE1(0xa0);
             else
-                OUTBYTE1(c - 0xfef1 + 0xfd)
+                OUTBYTE1(c - 0xfef1 + 0xfd);
             NEXT(1, 1);
             continue;
         }
 
         if (c > 0xFFFF)
             return 1;
-        REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2);
 
         if (TRYMAP_ENC(cp932ext, code, c)) {
-            OUTBYTE1(code >> 8)
-            OUTBYTE2(code & 0xff)
+            OUTBYTE1(code >> 8);
+            OUTBYTE2(code & 0xff);
         }
         else if (TRYMAP_ENC(jisxcommon, code, c)) {
             if (code & 0x8000) /* MSB set: JIS X 0212 */
@@ -62,15 +62,15 @@ ENCODER(cp932)
             c2 = code & 0xff;
             c2 = (((c1 - 0x21) & 1) ? 0x5e : 0) + (c2 - 0x21);
             c1 = (c1 - 0x21) >> 1;
-            OUTBYTE1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1)
-            OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
+            OUTBYTE1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1);
+            OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41);
         }
         else if (c >= 0xe000 && c < 0xe758) {
             /* User-defined area */
             c1 = (Py_UCS4)(c - 0xe000) / 188;
             c2 = (Py_UCS4)(c - 0xe000) % 188;
-            OUTBYTE1(c1 + 0xf0)
-            OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
+            OUTBYTE1(c1 + 0xf0);
+            OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41);
         }
         else
             return 1;
@@ -156,7 +156,7 @@ ENCODER(euc_jis_2004)
         Py_ssize_t insize;
 
         if (c < 0x80) {
-            WRITEBYTE1(c)
+            WRITEBYTE1(c);
             NEXT(1, 1);
             continue;
         }
@@ -201,7 +201,7 @@ ENCODER(euc_jis_2004)
                 ;
             else if (c >= 0xff61 && c <= 0xff9f) {
                 /* JIS X 0201 half-width katakana */
-                WRITEBYTE2(0x8e, c - 0xfec0)
+                WRITEBYTE2(0x8e, c - 0xfec0);
                 NEXT(1, 2);
                 continue;
             }
@@ -226,11 +226,11 @@ ENCODER(euc_jis_2004)
 
         if (code & 0x8000) {
             /* Codeset 2 */
-            WRITEBYTE3(0x8f, code >> 8, (code & 0xFF) | 0x80)
+            WRITEBYTE3(0x8f, code >> 8, (code & 0xFF) | 0x80);
             NEXT(insize, 3);
         } else {
             /* Codeset 1 */
-            WRITEBYTE2((code >> 8) | 0x80, (code & 0xFF) | 0x80)
+            WRITEBYTE2((code >> 8) | 0x80, (code & 0xFF) | 0x80);
             NEXT(insize, 2);
         }
     }
@@ -333,7 +333,7 @@ ENCODER(euc_jp)
         DBCHAR code;
 
         if (c < 0x80) {
-            WRITEBYTE1((unsigned char)c)
+            WRITEBYTE1((unsigned char)c);
             NEXT(1, 1);
             continue;
         }
@@ -345,7 +345,7 @@ ENCODER(euc_jp)
             ;
         else if (c >= 0xff61 && c <= 0xff9f) {
             /* JIS X 0201 half-width katakana */
-            WRITEBYTE2(0x8e, c - 0xfec0)
+            WRITEBYTE2(0x8e, c - 0xfec0);
             NEXT(1, 2);
             continue;
         }
@@ -367,11 +367,11 @@ ENCODER(euc_jp)
 
         if (code & 0x8000) {
             /* JIS X 0212 */
-            WRITEBYTE3(0x8f, code >> 8, (code & 0xFF) | 0x80)
+            WRITEBYTE3(0x8f, code >> 8, (code & 0xFF) | 0x80);
             NEXT(1, 3);
         } else {
             /* JIS X 0208 */
-            WRITEBYTE2((code >> 8) | 0x80, (code & 0xFF) | 0x80)
+            WRITEBYTE2((code >> 8) | 0x80, (code & 0xFF) | 0x80);
             NEXT(1, 2);
         }
     }
@@ -470,14 +470,14 @@ ENCODER(shift_jis)
             code = NOCHAR;
 
         if (code < 0x80 || (code >= 0xa1 && code <= 0xdf)) {
-            REQUIRE_OUTBUF(1)
+            REQUIRE_OUTBUF(1);
 
-            OUTBYTE1((unsigned char)code)
+            OUTBYTE1((unsigned char)code);
             NEXT(1, 1);
             continue;
         }
 
-        REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2);
 
         if (code == NOCHAR) {
             if (TRYMAP_ENC(jisxcommon, code, c))
@@ -497,8 +497,8 @@ ENCODER(shift_jis)
         c2 = code & 0xff;
         c2 = (((c1 - 0x21) & 1) ? 0x5e : 0) + (c2 - 0x21);
         c1 = (c1 - 0x21) >> 1;
-        OUTBYTE1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1)
-        OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41)
+        OUTBYTE1(c1 < 0x1f ? c1 + 0x81 : c1 + 0xc1);
+        OUTBYTE2(c2 < 0x3f ? c2 + 0x40 : c2 + 0x41);
         NEXT(1, 2);
     }
 
@@ -572,12 +572,12 @@ ENCODER(shift_jis_2004)
         JISX0201_ENCODE(c, code)
 
         if (code < 0x80 || (code >= 0xa1 && code <= 0xdf)) {
-            WRITEBYTE1((unsigned char)code)
+            WRITEBYTE1((unsigned char)code);
             NEXT(1, 1);
             continue;
         }
 
-        REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2);
         insize = 1;
 
         if (code == NOCHAR) {
@@ -654,8 +654,8 @@ ENCODER(shift_jis_2004)
         if (c1 & 1)
             c2 += 0x5e;
         c1 >>= 1;
-        OUTBYTE1(c1 + (c1 < 0x1f ? 0x81 : 0xc1))
-        OUTBYTE2(c2 + (c2 < 0x3f ? 0x40 : 0x41))
+        OUTBYTE1(c1 + (c1 < 0x1f ? 0x81 : 0xc1));
+        OUTBYTE2(c2 + (c2 < 0x3f ? 0x40 : 0x41));
 
         NEXT(insize, 2);
     }
