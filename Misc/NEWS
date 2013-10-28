@@ -2,10 +2,19 @@
 Python News
 +++++++++++
 
+What's New in Python 3.3.3?
+===========================
+
+*Release date: XX-Nov-2013*
+
+Tests
+-----
+
+- Issue #18964: Fix test_tcl when run with Tcl/Tk versions  < 8.5.
+
+
 What's New in Python 3.3.3 release candidate 1?
 ===============================================
-
-.. *Not yet released, see sections below for changes released in 3.3.2*
 
 *Release date: 27-Oct-2013*
 
