@@ -81,14 +81,18 @@ ENCODER(big5hkscs)
                     }
                 }
             }
-            else if (TRYMAP_ENC(big5, code, c));
-            else return 1;
+            else if (TRYMAP_ENC(big5, code, c))
+                ;
+            else
+                return 1;
         }
         else if (c < 0x20000)
             return insize;
         else if (c < 0x30000) {
-            if (TRYMAP_ENC(big5hkscs_nonbmp, code, c & 0xffff));
-            else return insize;
+            if (TRYMAP_ENC(big5hkscs_nonbmp, code, c & 0xffff))
+                ;
+            else
+                return insize;
         }
         else
             return insize;
