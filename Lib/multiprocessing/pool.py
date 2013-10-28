@@ -147,7 +147,8 @@ class Pool(object):
 
         self._task_handler = threading.Thread(
             target=Pool._handle_tasks,
-            args=(self._taskqueue, self._quick_put, self._outqueue, self._pool)
+            args=(self._taskqueue, self._quick_put, self._outqueue,
+                  self._pool, self._cache)
             )
         self._task_handler.daemon = True
         self._task_handler._state = RUN
@@ -338,7 +339,7 @@ class Pool(object):
         debug('worker handler exiting')
 
     @staticmethod
-    def _handle_tasks(taskqueue, put, outqueue, pool):
+    def _handle_tasks(taskqueue, put, outqueue, pool, cache):
         thread = threading.current_thread()
 
         for taskseq, set_length in iter(taskqueue.get, None):
@@ -349,9 +350,12 @@ class Pool(object):
                     break
                 try:
                     put(task)
-                except IOError:
-                    debug('could not put task on queue')
-                    break
+                except Exception as e:
+                    job, ind = task[:2]
+                    try:
+                        cache[job]._set(ind, (False, e))
+                    except KeyError:
+                        pass
             else:
                 if set_length:
                     debug('doing set_length()')
