@@ -197,7 +197,8 @@ ENCODER(euc_jis_2004)
                     }
                 }
             }
-            else if (TRYMAP_ENC(jisxcommon, code, c));
+            else if (TRYMAP_ENC(jisxcommon, code, c))
+                ;
             else if (c >= 0xff61 && c <= 0xff9f) {
                 /* JIS X 0201 half-width katakana */
                 WRITEBYTE2(0x8e, c - 0xfec0)
@@ -215,8 +216,10 @@ ENCODER(euc_jis_2004)
         }
         else if (c >> 16 == EMPBASE >> 16) {
             EMULATE_JISX0213_2000_ENCODE_EMP(code, c)
-            else if (TRYMAP_ENC(jisx0213_emp, code, c & 0xffff));
-            else return insize;
+            else if (TRYMAP_ENC(jisx0213_emp, code, c & 0xffff))
+                ;
+            else
+                return insize;
         }
         else
             return insize;
@@ -278,7 +281,8 @@ DECODER(euc_jis_2004)
             }
             else if (TRYMAP_DEC(jisx0212, decoded, c2, c3))
                 OUTCHAR(decoded);
-            else return 1;
+            else
+                return 1;
             NEXT_IN(3);
         }
         else {
@@ -290,8 +294,10 @@ DECODER(euc_jis_2004)
 
             /* JIS X 0213 Plane 1 */
             EMULATE_JISX0213_2000_DECODE_PLANE1(writer, c, c2)
-            else if (c == 0x21 && c2 == 0x40) OUTCHAR(0xff3c);
-            else if (c == 0x22 && c2 == 0x32) OUTCHAR(0xff5e);
+            else if (c == 0x21 && c2 == 0x40)
+                OUTCHAR(0xff3c);
+            else if (c == 0x22 && c2 == 0x32)
+                OUTCHAR(0xff5e);
             else if (TRYMAP_DEC(jisx0208, decoded, c, c2))
                 OUTCHAR(decoded);
             else if (TRYMAP_DEC(jisx0213_1_bmp, decoded, c, c2))
@@ -306,7 +312,8 @@ DECODER(euc_jis_2004)
                 NEXT_IN(2);
                 continue;
             }
-            else return 1;
+            else
+                return 1;
             NEXT_IN(2);
         }
     }
@@ -334,7 +341,8 @@ ENCODER(euc_jp)
         if (c > 0xFFFF)
             return 1;
 
-        if (TRYMAP_ENC(jisxcommon, code, c));
+        if (TRYMAP_ENC(jisxcommon, code, c))
+            ;
         else if (c >= 0xff61 && c <= 0xff9f) {
             /* JIS X 0201 half-width katakana */
             WRITEBYTE2(0x8e, c - 0xfec0)
@@ -448,9 +456,12 @@ ENCODER(shift_jis)
 #ifdef STRICT_BUILD
         JISX0201_R_ENCODE(c, code)
 #else
-        if (c < 0x80) code = c;
-        else if (c == 0x00a5) code = 0x5c; /* YEN SIGN */
-        else if (c == 0x203e) code = 0x7e; /* OVERLINE */
+        if (c < 0x80)
+            code = c;
+        else if (c == 0x00a5)
+            code = 0x5c; /* YEN SIGN */
+        else if (c == 0x203e)
+            code = 0x7e; /* OVERLINE */
 #endif
         else JISX0201_K_ENCODE(c, code)
         else if (c > 0xFFFF)
@@ -469,7 +480,8 @@ ENCODER(shift_jis)
         REQUIRE_OUTBUF(2)
 
         if (code == NOCHAR) {
-            if (TRYMAP_ENC(jisxcommon, code, c));
+            if (TRYMAP_ENC(jisxcommon, code, c))
+                ;
 #ifndef STRICT_BUILD
             else if (c == 0xff3c)
                 code = 0x2140; /* FULL-WIDTH REVERSE SOLIDUS */
@@ -502,7 +514,8 @@ DECODER(shift_jis)
 #ifdef STRICT_BUILD
         JISX0201_R_DECODE(c, writer)
 #else
-        if (c < 0x80) OUTCHAR(c);
+        if (c < 0x80)
+            OUTCHAR(c);
 #endif
         else JISX0201_K_DECODE(c, writer)
         else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xea)){
@@ -608,12 +621,15 @@ ENCODER(shift_jis_2004)
                     if (code & 0x8000)
                         return 1;
                 }
-                else return 1;
+                else
+                    return 1;
             }
             else if (c >> 16 == EMPBASE >> 16) {
                 EMULATE_JISX0213_2000_ENCODE_EMP(code, c)
-                else if (TRYMAP_ENC(jisx0213_emp, code, c&0xffff));
-                else return insize;
+                else if (TRYMAP_ENC(jisx0213_emp, code, c&0xffff))
+                    ;
+                else
+                    return insize;
             }
             else
                 return insize;
@@ -623,14 +639,20 @@ ENCODER(shift_jis_2004)
         c2 = (code & 0xff) - 0x21;
 
         if (c1 & 0x80) { /* Plane 2 */
-            if (c1 >= 0xee) c1 -= 0x87;
-            else if (c1 >= 0xac || c1 == 0xa8) c1 -= 0x49;
-            else c1 -= 0x43;
+            if (c1 >= 0xee)
+                c1 -= 0x87;
+            else if (c1 >= 0xac || c1 == 0xa8)
+                c1 -= 0x49;
+            else
+                c1 -= 0x43;
         }
-        else /* Plane 1 */
+        else {
+            /* Plane 1 */
             c1 -= 0x21;
+        }
 
-        if (c1 & 1) c2 += 0x5e;
+        if (c1 & 1)
+            c2 += 0x5e;
         c1 >>= 1;
         OUTBYTE1(c1 + (c1 < 0x1f ? 0x81 : 0xc1))
         OUTBYTE2(c2 + (c2 < 0x3f ? 0x40 : 0x41))
@@ -678,9 +700,12 @@ DECODER(shift_jis_2004)
                 NEXT_IN(2);
             }
             else { /* Plane 2 */
-                if (c1 >= 0x67) c1 += 0x07;
-                else if (c1 >= 0x63 || c1 == 0x5f) c1 -= 0x37;
-                else c1 -= 0x3d;
+                if (c1 >= 0x67)
+                    c1 += 0x07;
+                else if (c1 >= 0x63 || c1 == 0x5f)
+                    c1 -= 0x37;
+                else
+                    c1 -= 0x3d;
 
                 EMULATE_JISX0213_2000_DECODE_PLANE2(writer,
                                 c1, c2)

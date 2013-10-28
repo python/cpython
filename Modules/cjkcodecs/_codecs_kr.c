@@ -47,8 +47,10 @@ ENCODER(euc_kr)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        if (TRYMAP_ENC(cp949, code, c));
-        else return 1;
+        if (TRYMAP_ENC(cp949, code, c))
+            ;
+        else
+            return 1;
 
         if ((code & 0x8000) == 0) {
             /* KS X 1001 coded character */
@@ -182,8 +184,10 @@ ENCODER(cp949)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        if (TRYMAP_ENC(cp949, code, c));
-        else return 1;
+        if (TRYMAP_ENC(cp949, code, c))
+            ;
+        else
+            return 1;
 
         OUTBYTE1((code >> 8) | 0x80)
         if (code & 0x8000)
@@ -213,7 +217,8 @@ DECODER(cp949)
             OUTCHAR(decoded);
         else if (TRYMAP_DEC(cp949ext, decoded, c, INBYTE2))
             OUTCHAR(decoded);
-        else return 1;
+        else
+            return 1;
 
         NEXT_IN(2);
     }

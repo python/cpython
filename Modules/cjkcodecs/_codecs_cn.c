@@ -33,10 +33,13 @@
         OUTCHAR(decoded);
 
 #define GBK_ENCODE(code, assi) \
-    if ((code) == 0x2014) (assi) = 0xa1aa; \
-    else if ((code) == 0x2015) (assi) = 0xa844; \
-    else if ((code) == 0x00b7) (assi) = 0xa1a4; \
-    else if ((code) != 0x30fb && TRYMAP_ENC(gbcommon, assi, code));
+    if ((code) == 0x2014) \
+        (assi) = 0xa1aa; \
+    else if ((code) == 0x2015) \
+        (assi) = 0xa844; \
+    else if ((code) == 0x00b7) \
+        (assi) = 0xa1a4; \
+    else if ((code) != 0x30fb && TRYMAP_ENC(gbcommon, assi, code))
 
 /*
  * GB2312 codec
@@ -58,8 +61,10 @@ ENCODER(gb2312)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        if (TRYMAP_ENC(gbcommon, code, c));
-        else return 1;
+        if (TRYMAP_ENC(gbcommon, code, c))
+            ;
+        else
+            return 1;
 
         if (code & 0x8000) /* MSB set: GBK */
             return 1;
@@ -89,7 +94,8 @@ DECODER(gb2312)
             OUTCHAR(decoded);
             NEXT_IN(2);
         }
-        else return 1;
+        else
+            return 1;
     }
 
     return 0;
@@ -118,7 +124,9 @@ ENCODER(gbk)
         REQUIRE_OUTBUF(2)
 
         GBK_ENCODE(c, code)
-        else return 1;
+            ;
+        else
+            return 1;
 
         OUTBYTE1((code >> 8) | 0x80)
         if (code & 0x8000)
@@ -146,7 +154,8 @@ DECODER(gbk)
         REQUIRE_INBUF(2)
 
         GBK_DECODE(c, INBYTE2, writer)
-        else return 1;
+        else
+            return 1;
 
         NEXT_IN(2);
     }
@@ -192,7 +201,9 @@ ENCODER(gb18030)
         REQUIRE_OUTBUF(2)
 
         GBK_ENCODE(c, code)
-        else if (TRYMAP_ENC(gb18030ext, code, c));
+            ;
+        else if (TRYMAP_ENC(gb18030ext, code, c))
+            ;
         else {
             const struct _gb18030_to_unibmp_ranges *utrrange;
 
@@ -292,7 +303,8 @@ DECODER(gb18030)
         GBK_DECODE(c, c2, writer)
         else if (TRYMAP_DEC(gb18030ext, decoded, c, c2))
             OUTCHAR(decoded);
-        else return 1;
+        else
+            return 1;
 
         NEXT_IN(2);
     }
@@ -343,8 +355,10 @@ ENCODER(hz)
         if (c > 0xFFFF)
             return 1;
 
-        if (TRYMAP_ENC(gbcommon, code, c));
-        else return 1;
+        if (TRYMAP_ENC(gbcommon, code, c))
+            ;
+        else
+            return 1;
 
         if (code & 0x8000) /* MSB set: GBK */
             return 1;

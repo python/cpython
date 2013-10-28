@@ -29,8 +29,10 @@ ENCODER(big5)
 
         REQUIRE_OUTBUF(2)
 
-        if (TRYMAP_ENC(big5, code, c));
-        else return 1;
+        if (TRYMAP_ENC(big5, code, c))
+            ;
+        else
+            return 1;
 
         OUTBYTE1(code >> 8)
         OUTBYTE2(code & 0xFF)
@@ -84,9 +86,12 @@ ENCODER(cp950)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        if (TRYMAP_ENC(cp950ext, code, c));
-        else if (TRYMAP_ENC(big5, code, c));
-        else return 1;
+        if (TRYMAP_ENC(cp950ext, code, c))
+            ;
+        else if (TRYMAP_ENC(big5, code, c))
+            ;
+        else
+            return 1;
 
         OUTBYTE1(code >> 8)
         OUTBYTE2(code & 0xFF)
