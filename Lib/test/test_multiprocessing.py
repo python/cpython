@@ -1117,6 +1117,16 @@ class _TestPool(BaseTestCase):
         self.assertEqual(pmap(sqr, range(100), chunksize=20),
                          map(sqr, range(100)))
 
+    def test_map_unplicklable(self):
+        # Issue #19425 -- failure to pickle should not cause a hang
+        if self.TYPE == 'threads':
+            return
+        class A(object):
+            def __reduce__(self):
+                raise RuntimeError('cannot pickle')
+        with self.assertRaises(RuntimeError):
+            self.pool.map(sqr, [A()]*10)
+
     def test_map_chunksize(self):
         try:
             self.pool.map_async(sqr, [], chunksize=1).get(timeout=TIMEOUT1)
