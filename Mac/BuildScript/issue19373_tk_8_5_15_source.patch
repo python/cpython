@@ -1,0 +1,13 @@
+Issue #19373: Patch to Tk 8.5.15 to correct refresh problem on OS x 10.9.
+From upstream checkin https://core.tcl.tk/tk/info/5a5abf71f9
+
+--- tk8.5.15/macosx/tkMacOSXDraw.c	2013-09-16 09:41:21.000000000 -0700
++++ Tk_Source_Code-5a5abf71f9fdb0da/macosx/tkMacOSXDraw.c	2013-10-27 13:27:00.000000000 -0700
+@@ -1688,6 +1688,7 @@
+ {
+     if (dcPtr->context) {
+ 	CGContextSynchronize(dcPtr->context);
++	[[dcPtr->view window] setViewsNeedDisplay:YES];
+ 	[[dcPtr->view window] enableFlushWindow];
+ 	if (dcPtr->focusLocked) {
+ 	    [dcPtr->view unlockFocus];

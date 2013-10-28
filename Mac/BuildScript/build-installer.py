@@ -215,6 +215,9 @@ def library_recipes():
               name="Tk 8.5.15",
               url="ftp://ftp.tcl.tk/pub/tcl//tcl8_5/tk8.5.15-src.tar.gz",
               checksum='55b8e33f903210a4e1c8bce0f820657f',
+              patches=[
+                  "issue19373_tk_8_5_15_source.patch",
+                   ],
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
@@ -797,8 +800,6 @@ def buildRecipe(recipe, basedir, archList):
 
     workDir = extractArchive(buildDir, sourceArchive)
     os.chdir(workDir)
-    if 'buildDir' in recipe:
-        os.chdir(recipe['buildDir'])
 
     for patch in recipe.get('patches', ()):
         if isinstance(patch, tuple):
@@ -824,6 +825,9 @@ def buildRecipe(recipe, basedir, archList):
             fn = fn[:-4]
         runCommand('sh %s' % shellQuote(fn))
         os.unlink(fn)
+
+    if 'buildDir' in recipe:
+        os.chdir(recipe['buildDir'])
 
     if configure is not None:
         configure_args = [
