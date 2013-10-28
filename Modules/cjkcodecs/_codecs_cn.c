@@ -40,14 +40,15 @@
         OUTCHAR(decoded);                                           \
     }
 
-#define GBK_ENCODE(code, assi) \
-    if ((code) == 0x2014) { \
-        (assi) = 0xa1aa; \
-    } else if ((code) == 0x2015) { \
-        (assi) = 0xa844; \
-    } else if ((code) == 0x00b7) { \
-        (assi) = 0xa1a4; \
+#define GBK_ENCODE(code, assi)                                         \
+    if ((code) == 0x2014) {                                            \
+        (assi) = 0xa1aa;                                               \
+    } else if ((code) == 0x2015) {                                     \
+        (assi) = 0xa844;                                               \
+    } else if ((code) == 0x00b7) {                                     \
+        (assi) = 0xa1a4;                                               \
     } else if ((code) != 0x30fb && TRYMAP_ENC(gbcommon, assi, code)) { \
+        ;                                                              \
     }
 
 /*
@@ -98,7 +99,7 @@ DECODER(gb2312)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
         if (TRYMAP_DEC(gb2312, decoded, c ^ 0x80, INBYTE2 ^ 0x80)) {
             OUTCHAR(decoded);
             NEXT_IN(2);
@@ -159,7 +160,7 @@ DECODER(gbk)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
 
         GBK_DECODE(c, INBYTE2, writer)
         else
@@ -267,7 +268,7 @@ DECODER(gb18030)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
 
         c2 = INBYTE2;
         if (c2 >= 0x30 && c2 <= 0x39) { /* 4 bytes seq */
@@ -275,7 +276,7 @@ DECODER(gb18030)
             unsigned char c3, c4;
             Py_UCS4 lseq;
 
-            REQUIRE_INBUF(4)
+            REQUIRE_INBUF(4);
             c3 = INBYTE3;
             c4 = INBYTE4;
             if (c < 0x81 || c3 < 0x81 || c4 < 0x30 || c4 > 0x39)
@@ -405,7 +406,7 @@ DECODER(hz)
         if (c == '~') {
             unsigned char c2 = INBYTE2;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             if (c2 == '~') {
                 OUTCHAR('~');
                 NEXT_IN(2);
@@ -431,7 +432,7 @@ DECODER(hz)
             NEXT_IN(1);
         }
         else { /* GB mode */
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             if (TRYMAP_DEC(gb2312, decoded, c, INBYTE2)) {
                 OUTCHAR(decoded);
                 NEXT_IN(2);

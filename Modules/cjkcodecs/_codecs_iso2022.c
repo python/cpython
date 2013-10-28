@@ -73,7 +73,7 @@
 #define F_SHIFTED               0x01
 #define F_ESCTHROUGHOUT         0x02
 
-#define STATE_SETG(dn, v)       ((state)->c[dn]) = (v);
+#define STATE_SETG(dn, v)       do { ((state)->c[dn]) = (v); } while (0)
 #define STATE_GETG(dn)          ((state)->c[dn])
 
 #define STATE_G0                STATE_GETG(0)
@@ -85,10 +85,10 @@
 #define STATE_SETG2(v)          STATE_SETG(2, v)
 #define STATE_SETG3(v)          STATE_SETG(3, v)
 
-#define STATE_SETFLAG(f)        ((state)->c[4]) |= (f);
+#define STATE_SETFLAG(f)        do { ((state)->c[4]) |= (f); } while (0)
 #define STATE_GETFLAG(f)        ((state)->c[4] & (f))
-#define STATE_CLEARFLAG(f)      ((state)->c[4]) &= ~(f);
-#define STATE_CLEARFLAGS()      ((state)->c[4]) = 0;
+#define STATE_CLEARFLAG(f)      do { ((state)->c[4]) &= ~(f); } while (0)
+#define STATE_CLEARFLAGS()      do { ((state)->c[4]) = 0; } while (0)
 
 #define ISO2022_CONFIG          ((const struct iso2022_config *)config)
 #define CONFIG_ISSET(flag)      (ISO2022_CONFIG->flags & (flag))
@@ -132,9 +132,9 @@ CODEC_INIT(iso2022)
 
 ENCODER_INIT(iso2022)
 {
-    STATE_CLEARFLAGS()
-    STATE_SETG0(CHARSET_ASCII)
-    STATE_SETG1(CHARSET_ASCII)
+    STATE_CLEARFLAGS();
+    STATE_SETG0(CHARSET_ASCII);
+    STATE_SETG1(CHARSET_ASCII);
     return 0;
 }
 
@@ -143,12 +143,12 @@ ENCODER_RESET(iso2022)
     if (STATE_GETFLAG(F_SHIFTED)) {
         WRITEBYTE1(SI);
         NEXT_OUT(1);
-        STATE_CLEARFLAG(F_SHIFTED)
+        STATE_CLEARFLAG(F_SHIFTED);
     }
     if (STATE_G0 != CHARSET_ASCII) {
         WRITEBYTE3(ESC, '(', 'B');
         NEXT_OUT(3);
-        STATE_SETG0(CHARSET_ASCII)
+        STATE_SETG0(CHARSET_ASCII);
     }
     return 0;
 }
@@ -164,12 +164,12 @@ ENCODER(iso2022)
         if (c < 0x80) {
             if (STATE_G0 != CHARSET_ASCII) {
                 WRITEBYTE3(ESC, '(', 'B');
-                STATE_SETG0(CHARSET_ASCII)
+                STATE_SETG0(CHARSET_ASCII);
                 NEXT_OUT(3);
             }
             if (STATE_GETFLAG(F_SHIFTED)) {
                 WRITEBYTE1(SI);
-                STATE_CLEARFLAG(F_SHIFTED)
+                STATE_CLEARFLAG(F_SHIFTED);
                 NEXT_OUT(1);
             }
             WRITEBYTE1((unsigned char)c);
@@ -211,24 +211,24 @@ ENCODER(iso2022)
         case 0: /* G0 */
             if (STATE_GETFLAG(F_SHIFTED)) {
                 WRITEBYTE1(SI);
-                STATE_CLEARFLAG(F_SHIFTED)
+                STATE_CLEARFLAG(F_SHIFTED);
                 NEXT_OUT(1);
             }
             if (STATE_G0 != dsg->mark) {
                 if (dsg->width == 1) {
                     WRITEBYTE3(ESC, '(', ESCMARK(dsg->mark));
-                    STATE_SETG0(dsg->mark)
+                    STATE_SETG0(dsg->mark);
                     NEXT_OUT(3);
                 }
                 else if (dsg->mark == CHARSET_JISX0208) {
                     WRITEBYTE3(ESC, '$', ESCMARK(dsg->mark));
-                    STATE_SETG0(dsg->mark)
+                    STATE_SETG0(dsg->mark);
                     NEXT_OUT(3);
                 }
                 else {
                     WRITEBYTE4(ESC, '$', '(',
                         ESCMARK(dsg->mark));
-                    STATE_SETG0(dsg->mark)
+                    STATE_SETG0(dsg->mark);
                     NEXT_OUT(4);
                 }
             }
@@ -237,19 +237,18 @@ ENCODER(iso2022)
             if (STATE_G1 != dsg->mark) {
                 if (dsg->width == 1) {
                     WRITEBYTE3(ESC, ')', ESCMARK(dsg->mark));
-                    STATE_SETG1(dsg->mark)
+                    STATE_SETG1(dsg->mark);
                     NEXT_OUT(3);
                 }
                 else {
-                    WRITEBYTE4(ESC, '$', ')',
-                        ESCMARK(dsg->mark));
-                    STATE_SETG1(dsg->mark)
+                    WRITEBYTE4(ESC, '$', ')', ESCMARK(dsg->mark));
+                    STATE_SETG1(dsg->mark);
                     NEXT_OUT(4);
                 }
             }
             if (!STATE_GETFLAG(F_SHIFTED)) {
                 WRITEBYTE1(SO);
-                STATE_SETFLAG(F_SHIFTED)
+                STATE_SETFLAG(F_SHIFTED);
                 NEXT_OUT(1);
             }
             break;
@@ -274,17 +273,17 @@ ENCODER(iso2022)
 
 DECODER_INIT(iso2022)
 {
-    STATE_CLEARFLAGS()
-    STATE_SETG0(CHARSET_ASCII)
-    STATE_SETG1(CHARSET_ASCII)
-    STATE_SETG2(CHARSET_ASCII)
+    STATE_CLEARFLAGS();
+    STATE_SETG0(CHARSET_ASCII);
+    STATE_SETG1(CHARSET_ASCII);
+    STATE_SETG2(CHARSET_ASCII);
     return 0;
 }
 
 DECODER_RESET(iso2022)
 {
-    STATE_SETG0(CHARSET_ASCII)
-    STATE_CLEARFLAG(F_SHIFTED)
+    STATE_SETG0(CHARSET_ASCII);
+    STATE_CLEARFLAG(F_SHIFTED);
     return 0;
 }
 
@@ -303,8 +302,9 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
             break;
         }
         else if (CONFIG_ISSET(USE_JISX0208_EXT) && i+1 < *inleft &&
-                 (*inbuf)[i] == '&' && (*inbuf)[i+1] == '@')
+                 (*inbuf)[i] == '&' && (*inbuf)[i+1] == '@') {
             i += 2;
+        }
     }
 
     if (i >= MAX_ESCSEQLEN)
@@ -358,14 +358,15 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
     if (charset != CHARSET_ASCII) {
         const struct iso2022_designation *dsg;
 
-        for (dsg = CONFIG_DESIGNATIONS; dsg->mark; dsg++)
+        for (dsg = CONFIG_DESIGNATIONS; dsg->mark; dsg++) {
             if (dsg->mark == charset)
                 break;
+        }
         if (!dsg->mark)
             return esclen;
     }
 
-    STATE_SETG(designation, charset)
+    STATE_SETG(designation, charset);
     *inleft -= esclen;
     (*inbuf) += esclen;
     return 0;
@@ -433,14 +434,14 @@ DECODER(iso2022)
             OUTCHAR(c); /* assume as ISO-8859-1 */
             NEXT_IN(1);
             if (IS_ESCEND(c)) {
-                STATE_CLEARFLAG(F_ESCTHROUGHOUT)
+                STATE_CLEARFLAG(F_ESCTHROUGHOUT);
             }
             continue;
         }
 
         switch (c) {
         case ESC:
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             if (IS_ISO2022ESC(INBYTE2)) {
                 err = iso2022processesc(config, state,
                                         inbuf, &inleft);
@@ -448,7 +449,7 @@ DECODER(iso2022)
                     return err;
             }
             else if (CONFIG_ISSET(USE_G2) && INBYTE2 == 'N') {/* SS2 */
-                REQUIRE_INBUF(3)
+                REQUIRE_INBUF(3);
                 err = iso2022processg2(config, state,
                                        inbuf, &inleft, writer);
                 if (err != 0)
@@ -456,24 +457,24 @@ DECODER(iso2022)
             }
             else {
                 OUTCHAR(ESC);
-                STATE_SETFLAG(F_ESCTHROUGHOUT)
+                STATE_SETFLAG(F_ESCTHROUGHOUT);
                 NEXT_IN(1);
             }
             break;
         case SI:
             if (CONFIG_ISSET(NO_SHIFT))
                 goto bypass;
-            STATE_CLEARFLAG(F_SHIFTED)
+            STATE_CLEARFLAG(F_SHIFTED);
             NEXT_IN(1);
             break;
         case SO:
             if (CONFIG_ISSET(NO_SHIFT))
                 goto bypass;
-            STATE_SETFLAG(F_SHIFTED)
+            STATE_SETFLAG(F_SHIFTED);
             NEXT_IN(1);
             break;
         case LF:
-            STATE_CLEARFLAG(F_SHIFTED)
+            STATE_CLEARFLAG(F_SHIFTED);
             OUTCHAR(LF);
             NEXT_IN(1);
             break;
@@ -493,38 +494,41 @@ DECODER(iso2022)
                     charset = STATE_G0;
 
                 if (charset == CHARSET_ASCII) {
-bypass:                                 OUTCHAR(c);
-                                        NEXT_IN(1);
-                                        break;
-                                }
+bypass:
+                    OUTCHAR(c);
+                    NEXT_IN(1);
+                    break;
+                }
 
-                                if (dsgcache != NULL &&
-                                    dsgcache->mark == charset)
-                                        dsg = dsgcache;
-                                else {
-                                        for (dsg = CONFIG_DESIGNATIONS;
-                                             dsg->mark != charset
+                if (dsgcache != NULL &&
+                    dsgcache->mark == charset)
+                        dsg = dsgcache;
+                else {
+                    for (dsg = CONFIG_DESIGNATIONS;
+                         dsg->mark != charset
 #ifdef Py_DEBUG
-                                                && dsg->mark != '\0'
+                            && dsg->mark != '\0'
 #endif
-                                             ;dsg++)
-                                                /* noop */;
-                                        assert(dsg->mark != '\0');
-                                        dsgcache = dsg;
-                                }
+                         ; dsg++)
+                    {
+                        /* noop */
+                    }
+                    assert(dsg->mark != '\0');
+                    dsgcache = dsg;
+                }
 
-                                REQUIRE_INBUF(dsg->width)
-                                decoded = dsg->decoder(*inbuf);
-                                if (decoded == MAP_UNMAPPABLE)
-                                        return dsg->width;
+                REQUIRE_INBUF(dsg->width);
+                decoded = dsg->decoder(*inbuf);
+                if (decoded == MAP_UNMAPPABLE)
+                    return dsg->width;
 
-                                if (decoded < 0x10000) {
-                                        OUTCHAR(decoded);
-                                }
-                                else if (decoded < 0x30000) {
-                                        OUTCHAR(decoded);
-                                }
-                                else { /* JIS X 0213 pairs */
+                if (decoded < 0x10000) {
+                    OUTCHAR(decoded);
+                }
+                else if (decoded < 0x30000) {
+                    OUTCHAR(decoded);
+                }
+                else { /* JIS X 0213 pairs */
                     OUTCHAR2(decoded >> 16, decoded & 0xffff);
                 }
                 NEXT_IN(dsg->width);
@@ -800,9 +804,10 @@ jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length, void *config)
         else
             return MAP_UNMAPPABLE;
         return coded;
+
     case 2: /* second character of unicode pair */
         coded = find_pairencmap((ucs2_t)data[0], (ucs2_t)data[1],
-                        jisx0213_pair_encmap, JISX0213_ENCPAIRS);
+                                jisx0213_pair_encmap, JISX0213_ENCPAIRS);
         if (coded == DBCINV) {
             *length = 1;
             coded = find_pairencmap((ucs2_t)data[0], 0,
@@ -812,14 +817,17 @@ jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length, void *config)
         }
         else
             return coded;
+
     case -1: /* flush unterminated */
         *length = 1;
         coded = find_pairencmap((ucs2_t)data[0], 0,
-                        jisx0213_pair_encmap, JISX0213_ENCPAIRS);
+                                jisx0213_pair_encmap, JISX0213_ENCPAIRS);
         if (coded == DBCINV)
             return MAP_UNMAPPABLE;
         else
             return coded;
+        break;
+
     default:
         return MAP_UNMAPPABLE;
     }

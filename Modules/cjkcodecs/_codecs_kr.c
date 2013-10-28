@@ -58,9 +58,10 @@ ENCODER(euc_kr)
             OUTBYTE2((code & 0xFF) | 0x80);
             NEXT(1, 2);
         }
-        else {          /* Mapping is found in CP949 extension,
-                 * but we encode it in KS X 1001:1998 Annex 3,
-                 * make-up sequence for EUC-KR. */
+        else {
+            /* Mapping is found in CP949 extension,
+               but we encode it in KS X 1001:1998 Annex 3,
+               make-up sequence for EUC-KR. */
 
             REQUIRE_OUTBUF(8);
 
@@ -115,14 +116,14 @@ DECODER(euc_kr)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
 
         if (c == EUCKR_JAMO_FIRSTBYTE &&
             INBYTE2 == EUCKR_JAMO_FILLER) {
             /* KS X 1001:1998 Annex 3 make-up sequence */
             DBCHAR cho, jung, jong;
 
-            REQUIRE_INBUF(8)
+            REQUIRE_INBUF(8);
             if ((*inbuf)[2] != EUCKR_JAMO_FIRSTBYTE ||
                 (*inbuf)[4] != EUCKR_JAMO_FIRSTBYTE ||
                 (*inbuf)[6] != EUCKR_JAMO_FIRSTBYTE)
@@ -212,7 +213,7 @@ DECODER(cp949)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
         if (TRYMAP_DEC(ksx1001, decoded, c ^ 0x80, INBYTE2 ^ 0x80))
             OUTCHAR(decoded);
         else if (TRYMAP_DEC(cp949ext, decoded, c, INBYTE2))
@@ -369,7 +370,7 @@ DECODER(johab)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
         c2 = INBYTE2;
 
         if (c < 0xd8) {

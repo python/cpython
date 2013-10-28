@@ -54,7 +54,7 @@ DECODER(big5)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
         if (TRYMAP_DEC(big5, decoded, c, INBYTE2)) {
             OUTCHAR(decoded);
             NEXT_IN(2);
@@ -113,7 +113,7 @@ DECODER(cp950)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
 
         if (TRYMAP_DEC(cp950ext, decoded, c, INBYTE2))
             OUTCHAR(decoded);
