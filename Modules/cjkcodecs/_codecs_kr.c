@@ -105,6 +105,7 @@ DECODER(euc_kr)
 {
     while (inleft > 0) {
         unsigned char c = INBYTE1;
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -148,7 +149,8 @@ DECODER(euc_kr)
             OUTCHAR(0xac00 + cho*588 + jung*28 + jong);
             NEXT_IN(8);
         }
-        else TRYMAP_DEC(ksx1001, writer, c ^ 0x80, INBYTE2 ^ 0x80) {
+        else if (TRYMAP_DEC(ksx1001, decoded, c ^ 0x80, INBYTE2 ^ 0x80)) {
+            OUTCHAR(decoded);
             NEXT_IN(2);
         }
         else
@@ -198,6 +200,7 @@ DECODER(cp949)
 {
     while (inleft > 0) {
         unsigned char c = INBYTE1;
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -206,8 +209,10 @@ DECODER(cp949)
         }
 
         REQUIRE_INBUF(2)
-        TRYMAP_DEC(ksx1001, writer, c ^ 0x80, INBYTE2 ^ 0x80);
-        else TRYMAP_DEC(cp949ext, writer, c, INBYTE2);
+        if (TRYMAP_DEC(ksx1001, decoded, c ^ 0x80, INBYTE2 ^ 0x80))
+            OUTCHAR(decoded);
+        else if (TRYMAP_DEC(cp949ext, decoded, c, INBYTE2))
+            OUTCHAR(decoded);
         else return 1;
 
         NEXT_IN(2);
@@ -350,7 +355,8 @@ static const unsigned char johabjamo_jongseong[32] = {
 DECODER(johab)
 {
     while (inleft > 0) {
-        unsigned char    c = INBYTE1, c2;
+        unsigned char c = INBYTE1, c2;
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -424,9 +430,13 @@ DECODER(johab)
                 t1 = t1 + (t2 < 0x5e ? 0 : 1) + 0x21;
                 t2 = (t2 < 0x5e ? t2 : t2 - 0x5e) + 0x21;
 
-                TRYMAP_DEC(ksx1001, writer, t1, t2);
-                else return 1;
-                NEXT_IN(2);
+                if (TRYMAP_DEC(ksx1001, decoded, t1, t2)) {
+                    OUTCHAR(decoded);
+                    NEXT_IN(2);
+                }
+                else {
+                    return 1;
+                }
             }
         }
     }
