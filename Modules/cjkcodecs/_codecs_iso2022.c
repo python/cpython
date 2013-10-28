@@ -566,7 +566,7 @@ static Py_UCS4
 ksx1001_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
-    TRYMAP_DEC_CHAR(ksx1001, u, data[0], data[1])
+    if (TRYMAP_DEC(ksx1001, u, data[0], data[1]))
         return u;
     else
         return MAP_UNMAPPABLE;
@@ -604,7 +604,7 @@ jisx0208_decoder(const unsigned char *data)
     Py_UCS4 u;
     if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
-    else TRYMAP_DEC_CHAR(jisx0208, u, data[0], data[1])
+    else if (TRYMAP_DEC(jisx0208, u, data[0], data[1]))
         return u;
     else
         return MAP_UNMAPPABLE;
@@ -643,7 +643,7 @@ static Py_UCS4
 jisx0212_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
-    TRYMAP_DEC_CHAR(jisx0212, u, data[0], data[1])
+    if (TRYMAP_DEC(jisx0212, u, data[0], data[1]))
         return u;
     else
         return MAP_UNMAPPABLE;
@@ -697,11 +697,11 @@ jisx0213_2000_1_decoder(const unsigned char *data)
     EMULATE_JISX0213_2000_DECODE_PLANE1(u, data[0], data[1])
     else if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
-    else TRYMAP_DEC_CHAR(jisx0208, u, data[0], data[1]);
-    else TRYMAP_DEC_CHAR(jisx0213_1_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC_CHAR(jisx0213_1_emp, u, data[0], data[1])
+    else if (TRYMAP_DEC(jisx0208, u, data[0], data[1]));
+    else if (TRYMAP_DEC(jisx0213_1_bmp, u, data[0], data[1]));
+    else if (TRYMAP_DEC(jisx0213_1_emp, u, data[0], data[1]))
         u |= 0x20000;
-    else TRYMAP_DEC_CHAR(jisx0213_pair, u, data[0], data[1]);
+    else if (TRYMAP_DEC(jisx0213_pair, u, data[0], data[1]));
     else
         return MAP_UNMAPPABLE;
     return u;
@@ -712,8 +712,8 @@ jisx0213_2000_2_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
     EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(u, data[0], data[1])
-    TRYMAP_DEC_CHAR(jisx0213_2_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC_CHAR(jisx0213_2_emp, u, data[0], data[1])
+    if (TRYMAP_DEC(jisx0213_2_bmp, u, data[0], data[1]));
+    else if (TRYMAP_DEC(jisx0213_2_emp, u, data[0], data[1]))
         u |= 0x20000;
     else
         return MAP_UNMAPPABLE;
@@ -727,11 +727,11 @@ jisx0213_2004_1_decoder(const unsigned char *data)
     Py_UCS4 u;
     if (data[0] == 0x21 && data[1] == 0x40) /* F/W REVERSE SOLIDUS */
         return 0xff3c;
-    else TRYMAP_DEC_CHAR(jisx0208, u, data[0], data[1]);
-    else TRYMAP_DEC_CHAR(jisx0213_1_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC_CHAR(jisx0213_1_emp, u, data[0], data[1])
+    else if (TRYMAP_DEC(jisx0208, u, data[0], data[1]));
+    else if (TRYMAP_DEC(jisx0213_1_bmp, u, data[0], data[1]));
+    else if (TRYMAP_DEC(jisx0213_1_emp, u, data[0], data[1]))
         u |= 0x20000;
-    else TRYMAP_DEC_CHAR(jisx0213_pair, u, data[0], data[1]);
+    else if (TRYMAP_DEC(jisx0213_pair, u, data[0], data[1]));
     else
         return MAP_UNMAPPABLE;
     return u;
@@ -741,8 +741,8 @@ static Py_UCS4
 jisx0213_2004_2_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
-    TRYMAP_DEC_CHAR(jisx0213_2_bmp, u, data[0], data[1]);
-    else TRYMAP_DEC_CHAR(jisx0213_2_emp, u, data[0], data[1])
+    if (TRYMAP_DEC(jisx0213_2_bmp, u, data[0], data[1]));
+    else if (TRYMAP_DEC(jisx0213_2_emp, u, data[0], data[1]))
         u |= 0x20000;
     else
         return MAP_UNMAPPABLE;
@@ -950,7 +950,7 @@ static Py_UCS4
 gb2312_decoder(const unsigned char *data)
 {
     Py_UCS4 u;
-    TRYMAP_DEC_CHAR(gb2312, u, data[0], data[1])
+    if (TRYMAP_DEC(gb2312, u, data[0], data[1]))
         return u;
     else
         return MAP_UNMAPPABLE;

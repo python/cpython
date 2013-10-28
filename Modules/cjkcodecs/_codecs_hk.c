@@ -118,13 +118,14 @@ DECODER(big5hkscs)
         REQUIRE_INBUF(2)
 
         if (0xc6 > c || c > 0xc8 || (c < 0xc7 && INBYTE2 < 0xa1)) {
-            TRYMAP_DEC(big5, writer, c, INBYTE2) {
+            if (TRYMAP_DEC(big5, decoded, c, INBYTE2)) {
+                OUTCHAR(decoded);
                 NEXT_IN(2);
                 continue;
             }
         }
 
-        TRYMAP_DEC_CHAR(big5hkscs, decoded, c, INBYTE2)
+        if (TRYMAP_DEC(big5hkscs, decoded, c, INBYTE2))
         {
             int s = BH2S(c, INBYTE2);
             const unsigned char *hintbase;

@@ -177,29 +177,13 @@ static const struct dbcs_map *mapping_list;
 #define TRYMAP_ENC(charset, assi, uni)                          \
     if TRYMAP_ENC_COND(charset, assi, uni)
 
-Py_LOCAL_INLINE(int)
-_TRYMAP_DEC_WRITE(_PyUnicodeWriter *writer, Py_UCS4 c)
-{
-    if (c == UNIINV || _PyUnicodeWriter_WriteChar(writer, c) < 0)
-        return UNIINV;
-    else
-        return c;
-}
-
-#define _TRYMAP_DEC(m, writer, val)                             \
-    ((m)->map != NULL &&                                        \
-     (val) >= (m)->bottom &&                                    \
-     (val)<= (m)->top &&                                        \
-     _TRYMAP_DEC_WRITE(writer, (m)->map[(val) - (m)->bottom]) != UNIINV)
-#define _TRYMAP_DEC_CHAR(m, assi, val)                             \
+#define _TRYMAP_DEC(m, assi, val)                             \
     ((m)->map != NULL &&                                        \
      (val) >= (m)->bottom &&                                    \
      (val)<= (m)->top &&                                        \
      ((assi) = (m)->map[(val) - (m)->bottom]) != UNIINV)
-#define TRYMAP_DEC(charset, writer, c1, c2)                     \
-    if _TRYMAP_DEC(&charset##_decmap[c1], writer, c2)
-#define TRYMAP_DEC_CHAR(charset, assi, c1, c2)                     \
-    if _TRYMAP_DEC_CHAR(&charset##_decmap[c1], assi, c2)
+#define TRYMAP_DEC(charset, assi, c1, c2)                     \
+    _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
 
 #define _TRYMAP_ENC_MPLANE(m, assplane, asshi, asslo, val)        \
     ((m)->map != NULL && (val) >= (m)->bottom &&                  \
@@ -210,8 +194,6 @@ _TRYMAP_DEC_WRITE(_PyUnicodeWriter *writer, Py_UCS4 c)
 #define TRYMAP_ENC_MPLANE(charset, assplane, asshi, asslo, uni) \
     if _TRYMAP_ENC_MPLANE(&charset##_encmap[(uni) >> 8], \
                        assplane, asshi, asslo, (uni) & 0xff)
-#define TRYMAP_DEC_MPLANE(charset, writer, plane, c1, c2)         \
-    if _TRYMAP_DEC(&charset##_decmap[plane][c1], writer, c2)
 
 #define BEGIN_MAPPINGS_LIST static const struct dbcs_map _mapping_list[] = {
 #define MAPPING_ENCONLY(enc) {#enc, (void*)enc##_encmap, NULL},
