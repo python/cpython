@@ -5,6 +5,7 @@ from test.support import bigmemtest, _4G
 import unittest
 from io import BytesIO
 import os
+import pickle
 import random
 import subprocess
 import sys
@@ -628,6 +629,11 @@ class BZ2CompressorTest(BaseTest):
         finally:
             data = None
 
+    def testPickle(self):
+        with self.assertRaises(TypeError):
+            pickle.dumps(BZ2Compressor())
+
+
 class BZ2DecompressorTest(BaseTest):
     def test_Constructor(self):
         self.assertRaises(TypeError, BZ2Decompressor, 42)
@@ -678,6 +684,10 @@ class BZ2DecompressorTest(BaseTest):
             data = None
             compressed = None
             decompressed = None
+
+    def testPickle(self):
+        with self.assertRaises(TypeError):
+            pickle.dumps(BZ2Decompressor())
 
 
 class CompressDecompressTest(BaseTest):

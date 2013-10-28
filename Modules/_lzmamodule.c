@@ -564,6 +564,14 @@ Compressor_flush(Compressor *self, PyObject *noargs)
     return result;
 }
 
+static PyObject *
+Compressor_getstate(Compressor *self, PyObject *noargs)
+{
+    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
+                 Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 static int
 Compressor_init_xz(lzma_stream *lzs, int check, uint32_t preset,
                    PyObject *filterspecs)
@@ -735,6 +743,7 @@ static PyMethodDef Compressor_methods[] = {
      Compressor_compress_doc},
     {"flush", (PyCFunction)Compressor_flush, METH_NOARGS,
      Compressor_flush_doc},
+    {"__getstate__", (PyCFunction)Compressor_getstate, METH_NOARGS},
     {NULL}
 };
 
@@ -892,6 +901,14 @@ Decompressor_decompress(Decompressor *self, PyObject *args)
     return result;
 }
 
+static PyObject *
+Decompressor_getstate(Decompressor *self, PyObject *noargs)
+{
+    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
+                 Py_TYPE(self)->tp_name);
+    return NULL;
+}
+
 static int
 Decompressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 {
@@ -1019,6 +1036,7 @@ Decompressor_dealloc(Decompressor *self)
 static PyMethodDef Decompressor_methods[] = {
     {"decompress", (PyCFunction)Decompressor_decompress, METH_VARARGS,
      Decompressor_decompress_doc},
+    {"__getstate__", (PyCFunction)Decompressor_getstate, METH_NOARGS},
     {NULL}
 };
 
