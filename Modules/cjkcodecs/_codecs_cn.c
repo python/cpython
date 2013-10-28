@@ -27,8 +27,10 @@
     if ((dc1) == 0xa1 && (dc2) == 0xaa) OUTCHAR(0x2014); \
     else if ((dc1) == 0xa8 && (dc2) == 0x44) OUTCHAR(0x2015); \
     else if ((dc1) == 0xa1 && (dc2) == 0xa4) OUTCHAR(0x00b7); \
-    else TRYMAP_DEC(gb2312, writer, dc1 ^ 0x80, dc2 ^ 0x80); \
-    else TRYMAP_DEC(gbkext, writer, dc1, dc2);
+    else if (TRYMAP_DEC(gb2312, decoded, dc1 ^ 0x80, dc2 ^ 0x80)) \
+        OUTCHAR(decoded); \
+    else if (TRYMAP_DEC(gbkext, decoded, dc1, dc2)) \
+        OUTCHAR(decoded);
 
 #define GBK_ENCODE(code, assi) \
     if ((code) == 0x2014) (assi) = 0xa1aa; \
@@ -74,6 +76,7 @@ DECODER(gb2312)
 {
     while (inleft > 0) {
         unsigned char c = **inbuf;
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -82,7 +85,8 @@ DECODER(gb2312)
         }
 
         REQUIRE_INBUF(2)
-        TRYMAP_DEC(gb2312, writer, c ^ 0x80, INBYTE2 ^ 0x80) {
+        if (TRYMAP_DEC(gb2312, decoded, c ^ 0x80, INBYTE2 ^ 0x80)) {
+            OUTCHAR(decoded);
             NEXT_IN(2);
         }
         else return 1;
@@ -131,6 +135,7 @@ DECODER(gbk)
 {
     while (inleft > 0) {
         unsigned char c = INBYTE1;
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -236,6 +241,7 @@ DECODER(gb18030)
 {
     while (inleft > 0) {
         unsigned char c = INBYTE1, c2;
+        Py_UCS4 decoded;
 
         if (c < 0x80) {
             OUTCHAR(c);
@@ -284,7 +290,8 @@ DECODER(gb18030)
         }
 
         GBK_DECODE(c, c2, writer)
-        else TRYMAP_DEC(gb18030ext, writer, c, c2);
+        else if (TRYMAP_DEC(gb18030ext, decoded, c, c2))
+            OUTCHAR(decoded);
         else return 1;
 
         NEXT_IN(2);
@@ -372,6 +379,7 @@ DECODER(hz)
 {
     while (inleft > 0) {
         unsigned char c = INBYTE1;
+        Py_UCS4 decoded;
 
         if (c == '~') {
             unsigned char c2 = INBYTE2;
@@ -403,7 +411,8 @@ DECODER(hz)
         }
         else { /* GB mode */
             REQUIRE_INBUF(2)
-            TRYMAP_DEC(gb2312, writer, c, INBYTE2) {
+            if (TRYMAP_DEC(gb2312, decoded, c, INBYTE2)) {
+                OUTCHAR(decoded);
                 NEXT_IN(2);
             }
             else
