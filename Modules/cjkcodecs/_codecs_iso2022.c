@@ -578,9 +578,10 @@ ksx1001_encoder(const Py_UCS4 *data, Py_ssize_t *length)
     DBCHAR coded;
     assert(*length == 1);
     if (*data < 0x10000) {
-        TRYMAP_ENC(cp949, coded, *data)
+        if (TRYMAP_ENC(cp949, coded, *data)) {
             if (!(coded & 0x8000))
                 return coded;
+        }
     }
     return MAP_UNMAPPABLE;
 }
@@ -618,7 +619,7 @@ jisx0208_encoder(const Py_UCS4 *data, Py_ssize_t *length)
     if (*data < 0x10000) {
         if (*data == 0xff3c) /* F/W REVERSE SOLIDUS */
             return 0x2140;
-        else TRYMAP_ENC(jisxcommon, coded, *data) {
+        else if (TRYMAP_ENC(jisxcommon, coded, *data)) {
             if (!(coded & 0x8000))
                 return coded;
         }
@@ -655,7 +656,7 @@ jisx0212_encoder(const Py_UCS4 *data, Py_ssize_t *length)
     DBCHAR coded;
     assert(*length == 1);
     if (*data < 0x10000) {
-        TRYMAP_ENC(jisxcommon, coded, *data) {
+        if (TRYMAP_ENC(jisxcommon, coded, *data)) {
             if (coded & 0x8000)
                 return coded & 0x7fff;
         }
@@ -759,19 +760,18 @@ jisx0213_encoder(const Py_UCS4 *data, Py_ssize_t *length, void *config)
         if (*data >= 0x10000) {
             if ((*data) >> 16 == 0x20000 >> 16) {
                 EMULATE_JISX0213_2000_ENCODE_EMP(coded, *data)
-                else TRYMAP_ENC(jisx0213_emp, coded,
-                                (*data) & 0xffff)
+                else if (TRYMAP_ENC(jisx0213_emp, coded, (*data) & 0xffff))
                     return coded;
             }
             return MAP_UNMAPPABLE;
         }
 
         EMULATE_JISX0213_2000_ENCODE_BMP(coded, *data)
-        else TRYMAP_ENC(jisx0213_bmp, coded, *data) {
+        else if (TRYMAP_ENC(jisx0213_bmp, coded, *data)) {
             if (coded == MULTIC)
                 return MAP_MULTIPLE_AVAIL;
         }
-        else TRYMAP_ENC(jisxcommon, coded, *data) {
+        else if (TRYMAP_ENC(jisxcommon, coded, *data)) {
             if (coded & 0x8000)
                 return MAP_UNMAPPABLE;
         }
@@ -962,7 +962,7 @@ gb2312_encoder(const Py_UCS4 *data, Py_ssize_t *length)
     DBCHAR coded;
     assert(*length == 1);
     if (*data < 0x10000) {
-        TRYMAP_ENC(gbcommon, coded, *data) {
+        if (TRYMAP_ENC(gbcommon, coded, *data)) {
             if (!(coded & 0x8000))
                 return coded;
         }

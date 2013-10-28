@@ -36,7 +36,7 @@
     if ((code) == 0x2014) (assi) = 0xa1aa; \
     else if ((code) == 0x2015) (assi) = 0xa844; \
     else if ((code) == 0x00b7) (assi) = 0xa1a4; \
-    else if ((code) != 0x30fb && TRYMAP_ENC_COND(gbcommon, assi, code));
+    else if ((code) != 0x30fb && TRYMAP_ENC(gbcommon, assi, code));
 
 /*
  * GB2312 codec
@@ -58,7 +58,7 @@ ENCODER(gb2312)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        TRYMAP_ENC(gbcommon, code, c);
+        if (TRYMAP_ENC(gbcommon, code, c));
         else return 1;
 
         if (code & 0x8000) /* MSB set: GBK */
@@ -192,7 +192,7 @@ ENCODER(gb18030)
         REQUIRE_OUTBUF(2)
 
         GBK_ENCODE(c, code)
-        else TRYMAP_ENC(gb18030ext, code, c);
+        else if (TRYMAP_ENC(gb18030ext, code, c));
         else {
             const struct _gb18030_to_unibmp_ranges *utrrange;
 
@@ -343,7 +343,7 @@ ENCODER(hz)
         if (c > 0xFFFF)
             return 1;
 
-        TRYMAP_ENC(gbcommon, code, c);
+        if (TRYMAP_ENC(gbcommon, code, c));
         else return 1;
 
         if (code & 0x8000) /* MSB set: GBK */
