@@ -141,12 +141,12 @@ ENCODER_INIT(iso2022)
 ENCODER_RESET(iso2022)
 {
     if (STATE_GETFLAG(F_SHIFTED)) {
-        WRITEBYTE1(SI)
+        WRITEBYTE1(SI);
         NEXT_OUT(1);
         STATE_CLEARFLAG(F_SHIFTED)
     }
     if (STATE_G0 != CHARSET_ASCII) {
-        WRITEBYTE3(ESC, '(', 'B')
+        WRITEBYTE3(ESC, '(', 'B');
         NEXT_OUT(3);
         STATE_SETG0(CHARSET_ASCII)
     }
@@ -163,16 +163,16 @@ ENCODER(iso2022)
 
         if (c < 0x80) {
             if (STATE_G0 != CHARSET_ASCII) {
-                WRITEBYTE3(ESC, '(', 'B')
+                WRITEBYTE3(ESC, '(', 'B');
                 STATE_SETG0(CHARSET_ASCII)
                 NEXT_OUT(3);
             }
             if (STATE_GETFLAG(F_SHIFTED)) {
-                WRITEBYTE1(SI)
+                WRITEBYTE1(SI);
                 STATE_CLEARFLAG(F_SHIFTED)
                 NEXT_OUT(1);
             }
-            WRITEBYTE1((unsigned char)c)
+            WRITEBYTE1((unsigned char)c);
             NEXT(1, 1);
             continue;
         }
@@ -210,24 +210,24 @@ ENCODER(iso2022)
         switch (dsg->plane) {
         case 0: /* G0 */
             if (STATE_GETFLAG(F_SHIFTED)) {
-                WRITEBYTE1(SI)
+                WRITEBYTE1(SI);
                 STATE_CLEARFLAG(F_SHIFTED)
                 NEXT_OUT(1);
             }
             if (STATE_G0 != dsg->mark) {
                 if (dsg->width == 1) {
-                    WRITEBYTE3(ESC, '(', ESCMARK(dsg->mark))
+                    WRITEBYTE3(ESC, '(', ESCMARK(dsg->mark));
                     STATE_SETG0(dsg->mark)
                     NEXT_OUT(3);
                 }
                 else if (dsg->mark == CHARSET_JISX0208) {
-                    WRITEBYTE3(ESC, '$', ESCMARK(dsg->mark))
+                    WRITEBYTE3(ESC, '$', ESCMARK(dsg->mark));
                     STATE_SETG0(dsg->mark)
                     NEXT_OUT(3);
                 }
                 else {
                     WRITEBYTE4(ESC, '$', '(',
-                        ESCMARK(dsg->mark))
+                        ESCMARK(dsg->mark));
                     STATE_SETG0(dsg->mark)
                     NEXT_OUT(4);
                 }
@@ -236,19 +236,19 @@ ENCODER(iso2022)
         case 1: /* G1 */
             if (STATE_G1 != dsg->mark) {
                 if (dsg->width == 1) {
-                    WRITEBYTE3(ESC, ')', ESCMARK(dsg->mark))
+                    WRITEBYTE3(ESC, ')', ESCMARK(dsg->mark));
                     STATE_SETG1(dsg->mark)
                     NEXT_OUT(3);
                 }
                 else {
                     WRITEBYTE4(ESC, '$', ')',
-                        ESCMARK(dsg->mark))
+                        ESCMARK(dsg->mark));
                     STATE_SETG1(dsg->mark)
                     NEXT_OUT(4);
                 }
             }
             if (!STATE_GETFLAG(F_SHIFTED)) {
-                WRITEBYTE1(SO)
+                WRITEBYTE1(SO);
                 STATE_SETFLAG(F_SHIFTED)
                 NEXT_OUT(1);
             }
@@ -259,11 +259,11 @@ ENCODER(iso2022)
         }
 
         if (dsg->width == 1) {
-            WRITEBYTE1((unsigned char)encoded)
+            WRITEBYTE1((unsigned char)encoded);
             NEXT_OUT(1);
         }
         else {
-            WRITEBYTE2(encoded >> 8, encoded & 0xff)
+            WRITEBYTE2(encoded >> 8, encoded & 0xff);
             NEXT_OUT(2);
         }
         NEXT_INCHAR(insize);
@@ -371,20 +371,21 @@ iso2022processesc(const void *config, MultibyteCodec_State *state,
     return 0;
 }
 
-#define ISO8859_7_DECODE(c, writer)                            \
-    if ((c) < 0xa0)                                            \
-        OUTCHAR(c);                                            \
-    else if ((c) < 0xc0 && (0x288f3bc9L & (1L << ((c)-0xa0)))) \
-        OUTCHAR(c);                                            \
-    else if ((c) >= 0xb4 && (c) <= 0xfe && ((c) >= 0xd4 ||     \
-             (0xbffffd77L & (1L << ((c)-0xb4)))))              \
-        OUTCHAR(0x02d0 + (c));                                 \
-    else if ((c) == 0xa1)                                      \
-        OUTCHAR(0x2018);                                       \
-    else if ((c) == 0xa2)                                      \
-        OUTCHAR(0x2019);                                       \
-    else if ((c) == 0xaf)                                      \
-        OUTCHAR(0x2015);
+#define ISO8859_7_DECODE(c, writer)                                \
+    if ((c) < 0xa0) {                                              \
+        OUTCHAR(c);                                                \
+    } else if ((c) < 0xc0 && (0x288f3bc9L & (1L << ((c)-0xa0)))) { \
+        OUTCHAR(c);                                                \
+    } else if ((c) >= 0xb4 && (c) <= 0xfe && ((c) >= 0xd4 ||       \
+             (0xbffffd77L & (1L << ((c)-0xb4))))) {                \
+        OUTCHAR(0x02d0 + (c));                                     \
+    } else if ((c) == 0xa1) {                                      \
+        OUTCHAR(0x2018);                                           \
+    } else if ((c) == 0xa2) {                                      \
+        OUTCHAR(0x2019);                                           \
+    } else if ((c) == 0xaf) {                                      \
+        OUTCHAR(0x2015);                                           \
+    }
 
 static Py_ssize_t
 iso2022processg2(const void *config, MultibyteCodec_State *state,

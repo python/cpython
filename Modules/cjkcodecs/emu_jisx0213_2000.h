@@ -11,17 +11,20 @@
                     (c) == 0x525D || (c) == 0x541E ||                   \
                     (c) == 0x5653 || (c) == 0x59F8 ||                   \
                     (c) == 0x5C5B || (c) == 0x5E77 ||                   \
-                    (c) == 0x7626 || (c) == 0x7E6B))                    \
+                    (c) == 0x7626 || (c) == 0x7E6B)) {                  \
         return EMULATE_JISX0213_2000_ENCODE_INVALID;                    \
-    else if (config == (void *)2000 && (c) == 0x9B1D)                   \
+    }                                                                   \
+    else if (config == (void *)2000 && (c) == 0x9B1D) {                 \
         (assi) = 0x8000 | 0x7d3b;                                       \
+    }
 
 #define EMULATE_JISX0213_2000_ENCODE_EMP(assi, c)                       \
-    if (config == (void *)2000 && (c) == 0x20B9F)                       \
-        return EMULATE_JISX0213_2000_ENCODE_INVALID;
+    if (config == (void *)2000 && (c) == 0x20B9F) {                     \
+        return EMULATE_JISX0213_2000_ENCODE_INVALID;                    \
+    }
 
 #ifndef EMULATE_JISX0213_2000_DECODE_INVALID
-#define EMULATE_JISX0213_2000_DECODE_INVALID 2
+#  define EMULATE_JISX0213_2000_DECODE_INVALID 2
 #endif
 
 #define EMULATE_JISX0213_2000_DECODE_PLANE1(assi, c1, c2)               \
@@ -35,12 +38,17 @@
                      ((c1) == 0x7E && (c2) == 0x7B) ||                  \
                      ((c1) == 0x7E && (c2) == 0x7C) ||                  \
                      ((c1) == 0x7E && (c2) == 0x7D) ||                  \
-                     ((c1) == 0x7E && (c2) == 0x7E)))                   \
-        return EMULATE_JISX0213_2000_DECODE_INVALID;
+                     ((c1) == 0x7E && (c2) == 0x7E))) {                 \
+        return EMULATE_JISX0213_2000_DECODE_INVALID;                    \
+    }
 
-#define EMULATE_JISX0213_2000_DECODE_PLANE2(writer, c1, c2)               \
-    if (config == (void *)2000 && (c1) == 0x7D && (c2) == 0x3B)         \
-        OUTCHAR(0x9B1D);
-#define EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(assi, c1, c2)               \
-    if (config == (void *)2000 && (c1) == 0x7D && (c2) == 0x3B)         \
-        (assi) = 0x9B1D;
+#define EMULATE_JISX0213_2000_DECODE_PLANE2(writer, c1, c2)             \
+    if (config == (void *)2000 && (c1) == 0x7D && (c2) == 0x3B) {       \
+        OUTCHAR(0x9B1D);                                                \
+    }
+
+#define EMULATE_JISX0213_2000_DECODE_PLANE2_CHAR(assi, c1, c2)          \
+    if (config == (void *)2000 && (c1) == 0x7D && (c2) == 0x3B) {       \
+        (assi) = 0x9B1D;                                                \
+    }
+
