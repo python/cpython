@@ -92,6 +92,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19395: Raise an exception when attempting to pickle a bz2 or lzma
+  compressor/decompressor object, rather than creating a pickle that would
+  cause a segfault when loaded and used.
+
 - Issue #19227: Try to fix deadlocks caused by re-seeding then OpenSSL
   pseudo-random number generator on fork().
 

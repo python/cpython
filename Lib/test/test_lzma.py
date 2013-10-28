@@ -1,5 +1,6 @@
 from io import BytesIO, UnsupportedOperation
 import os
+import pickle
 import random
 import unittest
 
@@ -215,6 +216,14 @@ class CompressorDecompressorTestCase(unittest.TestCase):
             self.assertEqual(ddata, input)
         finally:
             input = cdata = ddata = None
+
+    # Pickling raises an exception; there's no way to serialize an lzma_stream.
+
+    def test_pickle(self):
+        with self.assertRaises(TypeError):
+            pickle.dumps(LZMACompressor())
+        with self.assertRaises(TypeError):
+            pickle.dumps(LZMADecompressor())
 
 
 class CompressDecompressFunctionTestCase(unittest.TestCase):
