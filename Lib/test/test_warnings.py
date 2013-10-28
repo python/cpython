@@ -788,6 +788,25 @@ class BootstrapTest(unittest.TestCase):
                 env=env)
             self.assertEqual(retcode, 0)
 
+class FinalizationTest(unittest.TestCase):
+    def test_finalization(self):
+        # Issue #19421: warnings.warn() should not crash
+        # during Python finalization
+        code = """
+import warnings
+warn = warnings.warn
+
+class A:
+    def __del__(self):
+        warn("test")
+
+a=A()
+        """
+        rc, out, err = assert_python_ok("-c", code)
+        # note: "__main__" filename is not correct, it should be the name
+        # of the script
+        self.assertEqual(err, b'__main__:7: UserWarning: test')
+
 
 def setUpModule():
     py_warnings.onceregistry.clear()
