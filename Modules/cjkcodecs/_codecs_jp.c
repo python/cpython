@@ -49,11 +49,11 @@ ENCODER(cp932)
             return 1;
         REQUIRE_OUTBUF(2)
 
-        TRYMAP_ENC(cp932ext, code, c) {
+        if (TRYMAP_ENC(cp932ext, code, c)) {
             OUTBYTE1(code >> 8)
             OUTBYTE2(code & 0xff)
         }
-        else TRYMAP_ENC(jisxcommon, code, c) {
+        else if (TRYMAP_ENC(jisxcommon, code, c)) {
             if (code & 0x8000) /* MSB set: JIS X 0212 */
                 return 1;
 
@@ -165,7 +165,7 @@ ENCODER(euc_jis_2004)
 
         if (c <= 0xFFFF) {
             EMULATE_JISX0213_2000_ENCODE_BMP(code, c)
-            else TRYMAP_ENC(jisx0213_bmp, code, c) {
+            else if (TRYMAP_ENC(jisx0213_bmp, code, c)) {
                 if (code == MULTIC) {
                     if (inlen - *inpos < 2) {
                         if (flags & MBENC_FLUSH) {
@@ -197,7 +197,7 @@ ENCODER(euc_jis_2004)
                     }
                 }
             }
-            else TRYMAP_ENC(jisxcommon, code, c);
+            else if (TRYMAP_ENC(jisxcommon, code, c));
             else if (c >= 0xff61 && c <= 0xff9f) {
                 /* JIS X 0201 half-width katakana */
                 WRITEBYTE2(0x8e, c - 0xfec0)
@@ -215,7 +215,7 @@ ENCODER(euc_jis_2004)
         }
         else if (c >> 16 == EMPBASE >> 16) {
             EMULATE_JISX0213_2000_ENCODE_EMP(code, c)
-            else TRYMAP_ENC(jisx0213_emp, code, c & 0xffff);
+            else if (TRYMAP_ENC(jisx0213_emp, code, c & 0xffff));
             else return insize;
         }
         else
@@ -334,7 +334,7 @@ ENCODER(euc_jp)
         if (c > 0xFFFF)
             return 1;
 
-        TRYMAP_ENC(jisxcommon, code, c);
+        if (TRYMAP_ENC(jisxcommon, code, c));
         else if (c >= 0xff61 && c <= 0xff9f) {
             /* JIS X 0201 half-width katakana */
             WRITEBYTE2(0x8e, c - 0xfec0)
@@ -469,7 +469,7 @@ ENCODER(shift_jis)
         REQUIRE_OUTBUF(2)
 
         if (code == NOCHAR) {
-            TRYMAP_ENC(jisxcommon, code, c);
+            if (TRYMAP_ENC(jisxcommon, code, c));
 #ifndef STRICT_BUILD
             else if (c == 0xff3c)
                 code = 0x2140; /* FULL-WIDTH REVERSE SOLIDUS */
@@ -570,7 +570,7 @@ ENCODER(shift_jis_2004)
         if (code == NOCHAR) {
             if (c <= 0xffff) {
                 EMULATE_JISX0213_2000_ENCODE_BMP(code, c)
-                else TRYMAP_ENC(jisx0213_bmp, code, c) {
+                else if (TRYMAP_ENC(jisx0213_bmp, code, c)) {
                     if (code == MULTIC) {
                         if (inlen - *inpos < 2) {
                             if (flags & MBENC_FLUSH) {
@@ -603,7 +603,7 @@ ENCODER(shift_jis_2004)
                         }
                     }
                 }
-                else TRYMAP_ENC(jisxcommon, code, c) {
+                else if (TRYMAP_ENC(jisxcommon, code, c)) {
                     /* abandon JIS X 0212 codes */
                     if (code & 0x8000)
                         return 1;
@@ -612,7 +612,7 @@ ENCODER(shift_jis_2004)
             }
             else if (c >> 16 == EMPBASE >> 16) {
                 EMULATE_JISX0213_2000_ENCODE_EMP(code, c)
-                else TRYMAP_ENC(jisx0213_emp, code, c&0xffff);
+                else if (TRYMAP_ENC(jisx0213_emp, code, c&0xffff));
                 else return insize;
             }
             else

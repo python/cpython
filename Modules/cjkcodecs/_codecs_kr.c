@@ -47,7 +47,7 @@ ENCODER(euc_kr)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        TRYMAP_ENC(cp949, code, c);
+        if (TRYMAP_ENC(cp949, code, c));
         else return 1;
 
         if ((code & 0x8000) == 0) {
@@ -182,7 +182,7 @@ ENCODER(cp949)
             return 1;
 
         REQUIRE_OUTBUF(2)
-        TRYMAP_ENC(cp949, code, c);
+        if (TRYMAP_ENC(cp949, code, c));
         else return 1;
 
         OUTBYTE1((code >> 8) | 0x80)
@@ -279,7 +279,7 @@ ENCODER(johab)
         }
         else if (c >= 0x3131 && c <= 0x3163)
             code = u2johabjamo[c - 0x3131];
-        else TRYMAP_ENC(cp949, code, c) {
+        else if (TRYMAP_ENC(cp949, code, c)) {
             unsigned char c1, c2, t2;
             unsigned short t1;
 

@@ -172,10 +172,8 @@ static const struct dbcs_map *mapping_list;
     ((m)->map != NULL && (val) >= (m)->bottom &&                \
         (val)<= (m)->top && ((assi) = (m)->map[(val) -          \
         (m)->bottom]) != NOCHAR)
-#define TRYMAP_ENC_COND(charset, assi, uni)                     \
+#define TRYMAP_ENC(charset, assi, uni)                     \
     _TRYMAP_ENC(&charset##_encmap[(uni) >> 8], assi, (uni) & 0xff)
-#define TRYMAP_ENC(charset, assi, uni)                          \
-    if TRYMAP_ENC_COND(charset, assi, uni)
 
 #define _TRYMAP_DEC(m, assi, val)                             \
     ((m)->map != NULL &&                                        \

@@ -54,7 +54,7 @@ ENCODER(big5hkscs)
         REQUIRE_OUTBUF(2)
 
         if (c < 0x10000) {
-            TRYMAP_ENC(big5hkscs_bmp, code, c) {
+            if (TRYMAP_ENC(big5hkscs_bmp, code, c)) {
                 if (code == MULTIC) {
                     Py_UCS4 c2;
                     if (inlen - *inpos >= 2)
@@ -81,13 +81,13 @@ ENCODER(big5hkscs)
                     }
                 }
             }
-            else TRYMAP_ENC(big5, code, c);
+            else if (TRYMAP_ENC(big5, code, c));
             else return 1;
         }
         else if (c < 0x20000)
             return insize;
         else if (c < 0x30000) {
-            TRYMAP_ENC(big5hkscs_nonbmp, code, c & 0xffff);
+            if (TRYMAP_ENC(big5hkscs_nonbmp, code, c & 0xffff));
             else return insize;
         }
         else
