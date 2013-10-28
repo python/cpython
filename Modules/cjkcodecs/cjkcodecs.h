@@ -185,16 +185,6 @@ static const struct dbcs_map *mapping_list;
 #define TRYMAP_DEC(charset, assi, c1, c2)                     \
     _TRYMAP_DEC(&charset##_decmap[c1], assi, c2)
 
-#define _TRYMAP_ENC_MPLANE(m, assplane, asshi, asslo, val)        \
-    ((m)->map != NULL && (val) >= (m)->bottom &&                  \
-        (val)<= (m)->top &&                                       \
-        ((assplane) = (m)->map[((val) - (m)->bottom)*3]) != 0 &&  \
-        (((asshi) = (m)->map[((val) - (m)->bottom)*3 + 1]), 1) && \
-        (((asslo) = (m)->map[((val) - (m)->bottom)*3 + 2]), 1))
-#define TRYMAP_ENC_MPLANE(charset, assplane, asshi, asslo, uni) \
-    if _TRYMAP_ENC_MPLANE(&charset##_encmap[(uni) >> 8], \
-                       assplane, asshi, asslo, (uni) & 0xff)
-
 #define BEGIN_MAPPINGS_LIST static const struct dbcs_map _mapping_list[] = {
 #define MAPPING_ENCONLY(enc) {#enc, (void*)enc##_encmap, NULL},
 #define MAPPING_DECONLY(enc) {#enc, NULL, (void*)enc##_decmap},
