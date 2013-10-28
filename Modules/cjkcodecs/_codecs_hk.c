@@ -44,14 +44,14 @@ ENCODER(big5hkscs)
         Py_ssize_t insize;
 
         if (c < 0x80) {
-            REQUIRE_OUTBUF(1)
+            REQUIRE_OUTBUF(1);
             **outbuf = (unsigned char)c;
             NEXT(1, 1);
             continue;
         }
 
         insize = 1;
-        REQUIRE_OUTBUF(2)
+        REQUIRE_OUTBUF(2);
 
         if (c < 0x10000) {
             if (TRYMAP_ENC(big5hkscs_bmp, code, c)) {
@@ -97,8 +97,8 @@ ENCODER(big5hkscs)
         else
             return insize;
 
-        OUTBYTE1(code >> 8)
-        OUTBYTE2(code & 0xFF)
+        OUTBYTE1(code >> 8);
+        OUTBYTE2(code & 0xFF);
         NEXT(insize, 2);
     }
 
