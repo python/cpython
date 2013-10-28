@@ -113,8 +113,11 @@ static const struct dbcs_map *mapping_list;
     } while (0)
 
 #define REQUIRE_INBUF(n)                        \
-    if (inleft < (n))                           \
-        return MBERR_TOOFEW;
+    do {                                        \
+        if (inleft < (n))                       \
+            return MBERR_TOOFEW;                \
+    } while (0)
+
 #define REQUIRE_OUTBUF(n)                       \
     do {                                        \
         if (outleft < (n))                      \
