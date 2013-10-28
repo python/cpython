@@ -534,7 +534,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
                 goto handle_error;
         if (strcmp(module_str, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
-            if (argv != NULL && PyList_Size(argv) > 0) {
+            /* PyList_Check() is needed because sys.argv is set to None during
+               Python finalization */
+            if (argv != NULL && PyList_Check(argv) && PyList_Size(argv) > 0) {
                 int is_true;
                 *filename = PyList_GetItem(argv, 0);
                 Py_INCREF(*filename);
