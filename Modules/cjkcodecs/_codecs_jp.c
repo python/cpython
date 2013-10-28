@@ -107,7 +107,7 @@ DECODER(cp932)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
         c2 = INBYTE2;
 
         if (TRYMAP_DEC(cp932ext, decoded, c, c2))
@@ -254,7 +254,7 @@ DECODER(euc_jis_2004)
             /* JIS X 0201 half-width katakana */
             unsigned char c2;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             c2 = INBYTE2;
             if (c2 >= 0xa1 && c2 <= 0xdf) {
                 OUTCHAR(0xfec0 + c2);
@@ -266,7 +266,7 @@ DECODER(euc_jis_2004)
         else if (c == 0x8f) {
             unsigned char c2, c3;
 
-            REQUIRE_INBUF(3)
+            REQUIRE_INBUF(3);
             c2 = INBYTE2 ^ 0x80;
             c3 = INBYTE3 ^ 0x80;
 
@@ -288,7 +288,7 @@ DECODER(euc_jis_2004)
         else {
             unsigned char c2;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             c ^= 0x80;
             c2 = INBYTE2 ^ 0x80;
 
@@ -395,7 +395,7 @@ DECODER(euc_jp)
             /* JIS X 0201 half-width katakana */
             unsigned char c2;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             c2 = INBYTE2;
             if (c2 >= 0xa1 && c2 <= 0xdf) {
                 OUTCHAR(0xfec0 + c2);
@@ -407,7 +407,7 @@ DECODER(euc_jp)
         else if (c == 0x8f) {
             unsigned char c2, c3;
 
-            REQUIRE_INBUF(3)
+            REQUIRE_INBUF(3);
             c2 = INBYTE2;
             c3 = INBYTE3;
             /* JIS X 0212 */
@@ -421,7 +421,7 @@ DECODER(euc_jp)
         else {
             unsigned char c2;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             c2 = INBYTE2;
             /* JIS X 0208 */
 #ifndef STRICT_BUILD
@@ -521,7 +521,7 @@ DECODER(shift_jis)
         else if ((c >= 0x81 && c <= 0x9f) || (c >= 0xe0 && c <= 0xea)){
             unsigned char c1, c2;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             c2 = INBYTE2;
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
                 return 1;
@@ -638,7 +638,8 @@ ENCODER(shift_jis_2004)
         c1 = code >> 8;
         c2 = (code & 0xff) - 0x21;
 
-        if (c1 & 0x80) { /* Plane 2 */
+        if (c1 & 0x80) {
+            /* Plane 2 */
             if (c1 >= 0xee)
                 c1 -= 0x87;
             else if (c1 >= 0xac || c1 == 0xa8)
@@ -673,7 +674,7 @@ DECODER(shift_jis_2004)
             unsigned char c1, c2;
             Py_UCS4 code, decoded;
 
-            REQUIRE_INBUF(2)
+            REQUIRE_INBUF(2);
             c2 = INBYTE2;
             if (c2 < 0x40 || (c2 > 0x7e && c2 < 0x80) || c2 > 0xfc)
                 return 1;

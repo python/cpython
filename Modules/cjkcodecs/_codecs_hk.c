@@ -119,7 +119,7 @@ DECODER(big5hkscs)
             continue;
         }
 
-        REQUIRE_INBUF(2)
+        REQUIRE_INBUF(2);
 
         if (0xc6 > c || c > 0xc8 || (c < 0xc7 && INBYTE2 < 0xa1)) {
             if (TRYMAP_DEC(big5, decoded, c, INBYTE2)) {

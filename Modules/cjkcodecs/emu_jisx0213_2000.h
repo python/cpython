@@ -2,7 +2,7 @@
  * standards. */
 
 #ifndef EMULATE_JISX0213_2000_ENCODE_INVALID
-#define EMULATE_JISX0213_2000_ENCODE_INVALID 1
+#  define EMULATE_JISX0213_2000_ENCODE_INVALID 1
 #endif
 
 #define EMULATE_JISX0213_2000_ENCODE_BMP(assi, c)                       \
