@@ -2660,9 +2660,8 @@ PyBytes_FromObject(PyObject *x)
     return new;
 
   error:
-    /* Error handling when new != NULL */
     Py_XDECREF(it);
-    Py_DECREF(new);
+    Py_XDECREF(new);
     return NULL;
 }
 
