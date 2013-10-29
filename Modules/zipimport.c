@@ -914,6 +914,8 @@ read_directory(PyObject *archive)
 
         /* Start of file header */
         l = PyMarshal_ReadLongFromFile(fp);
+        if (l == -1 && PyErr_Occurred())
+            goto error;
         if (l != 0x02014B50)
             break;              /* Bad: Central Dir File Header */
 
@@ -937,6 +939,9 @@ read_directory(PyObject *archive)
         if (fread(dummy, 1, 8, fp) != 8) /* Skip unused fields, avoid fseek */
             goto file_error;
         file_offset = PyMarshal_ReadLongFromFile(fp) + arc_offset;
+        if (PyErr_Occurred())
+            goto error;
+
         if (name_size > MAXPATHLEN)
             name_size = MAXPATHLEN;
 
@@ -1082,9 +1087,10 @@ get_data(PyObject *archive, PyObject *toc_entry)
     l = PyMarshal_ReadLongFromFile(fp);
     if (l != 0x04034B50) {
         /* Bad: Local File Header */
-        PyErr_Format(ZipImportError,
-                     "bad local file header in %U",
-                     archive);
+        if (!PyErr_Occurred())
+            PyErr_Format(ZipImportError,
+                         "bad local file header in %U",
+                         archive);
         fclose(fp);
         return NULL;
     }
@@ -1096,6 +1102,10 @@ get_data(PyObject *archive, PyObject *toc_entry)
 
     l = 30 + PyMarshal_ReadShortFromFile(fp) +
         PyMarshal_ReadShortFromFile(fp);        /* local header size */
+    if (PyErr_Occurred()) {
+        fclose(fp);
+        return NULL;
+    }
     file_offset += l;           /* Start of file data */
 
     bytes_size = compress == 0 ? data_size : data_size + 1;
