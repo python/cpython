@@ -278,8 +278,10 @@ _ctypes_alloc_format_string(const char *prefix, const char *suffix)
     if (prefix)
         len += strlen(prefix);
     result = PyMem_Malloc(len + 1);
-    if (result == NULL)
+    if (result == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
     if (prefix)
         strcpy(result, prefix);
     else
