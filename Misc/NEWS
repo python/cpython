@@ -10,6 +10,9 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #17936: Fix O(n**2) behaviour when adding or removing many subclasses
+  of a given type.
+
 - Issue #19428: zipimport now handles errors when reading truncated or invalid
   ZIP archive.
 
