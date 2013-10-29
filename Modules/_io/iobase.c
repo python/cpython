@@ -1,9 +1,9 @@
 /*
     An implementation of the I/O abstract base classes hierarchy
     as defined by PEP 3116 - "New I/O"
-    
+
     Classes defined here: IOBase, RawIOBase.
-    
+
     Written by Amaury Forgeot d'Arc and Antoine Pitrou
 */
 
@@ -19,7 +19,7 @@
 
 typedef struct {
     PyObject_HEAD
-    
+
     PyObject *dict;
     PyObject *weakreflist;
 } iobase;
@@ -530,7 +530,10 @@ iobase_readline(PyObject *self, PyObject *args)
         }
 
         old_size = PyByteArray_GET_SIZE(buffer);
-        PyByteArray_Resize(buffer, old_size + PyBytes_GET_SIZE(b));
+        if (PyByteArray_Resize(buffer, old_size + PyBytes_GET_SIZE(b)) < 0) {
+            Py_DECREF(b);
+            goto fail;
+        }
         memcpy(PyByteArray_AS_STRING(buffer) + old_size,
                PyBytes_AS_STRING(b), PyBytes_GET_SIZE(b));
 
@@ -835,7 +838,7 @@ rawiobase_readall(PyObject *self, PyObject *args)
     int r;
     PyObject *chunks = PyList_New(0);
     PyObject *result;
-    
+
     if (chunks == NULL)
         return NULL;
 
