@@ -99,7 +99,7 @@ get_default_action(void)
 
 
 /* The item is a borrowed reference. */
-static const char *
+static PyObject*
 get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
@@ -152,13 +152,12 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
             return NULL;
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln))
-            return _PyUnicode_AsString(action);
+            return action;
     }
 
     action = get_default_action();
-    if (action != NULL) {
-        return _PyUnicode_AsString(action);
-    }
+    if (action != NULL)
+        return action;
 
     PyErr_SetString(PyExc_ValueError,
                     MODULE_NAME ".defaultaction not found");
@@ -192,23 +191,26 @@ static PyObject *
 normalize_module(PyObject *filename)
 {
     PyObject *module;
-    const char *mod_str;
+    int kind;
+    void *data;
     Py_ssize_t len;
 
-    int rc = PyObject_IsTrue(filename);
-    if (rc == -1)
-        return NULL;
-    else if (rc == 0)
-        return PyUnicode_FromString("<unknown>");
-
-    mod_str = _PyUnicode_AsString(filename);
-    if (mod_str == NULL)
-        return NULL;
     len = PyUnicode_GetLength(filename);
     if (len < 0)
         return NULL;
+
+    if (len == 0)
+        return PyUnicode_FromString("<unknown>");
+
+    kind = PyUnicode_KIND(filename);
+    data = PyUnicode_DATA(filename);
+
+    /* if filename.endswith(".py"): */
     if (len >= 3 &&
-        strncmp(mod_str + (len - 3), ".py", 3) == 0) {
+        PyUnicode_READ(kind, data, len-3) == '.' &&
+        PyUnicode_READ(kind, data, len-2) == 'p' &&
+        PyUnicode_READ(kind, data, len-1) == 'y')
+    {
         module = PyUnicode_Substring(filename, 0, len-3);
     }
     else {
@@ -273,19 +275,37 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
 
     /* Print "  source_line\n" */
     if (sourceline) {
-        char *source_line_str = _PyUnicode_AsString(sourceline);
-        if (source_line_str == NULL)
-                return;
-        while (*source_line_str == ' ' || *source_line_str == '\t' ||
-                *source_line_str == '\014')
-            source_line_str++;
+        int kind;
+        void *data;
+        Py_ssize_t i, len;
+        Py_UCS4 ch;
+        PyObject *truncated;
 
-        PyFile_WriteString(source_line_str, f_stderr);
+        if (PyUnicode_READY(sourceline) < 1)
+            goto error;
+
+        kind = PyUnicode_KIND(sourceline);
+        data = PyUnicode_DATA(sourceline);
+        len = PyUnicode_GET_LENGTH(sourceline);
+        for (i=0; i<len; i++) {
+            ch = PyUnicode_READ(kind, data, i);
+            if (ch != ' ' && ch != '\t' && ch != '\014')
+                break;
+        }
+
+        truncated = PyUnicode_Substring(sourceline, i, len);
+        if (truncated == NULL)
+            goto error;
+
+        PyFile_WriteObject(sourceline, f_stderr, Py_PRINT_RAW);
+        Py_DECREF(truncated);
         PyFile_WriteString("\n", f_stderr);
     }
     else {
         _Py_DisplaySourceLine(f_stderr, filename, lineno, 2);
     }
+
+error:
     PyErr_Clear();
 }
 
@@ -296,7 +316,7 @@ warn_explicit(PyObject *category, PyObject *message,
 {
     PyObject *key = NULL, *text = NULL, *result = NULL, *lineno_obj = NULL;
     PyObject *item = Py_None;
-    const char *action;
+    PyObject *action;
     int rc;
 
     if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
@@ -354,7 +374,7 @@ warn_explicit(PyObject *category, PyObject *message,
     if (action == NULL)
         goto cleanup;
 
-    if (strcmp(action, "error") == 0) {
+    if (PyUnicode_CompareWithASCIIString(action, "error") == 0) {
         PyErr_SetObject(category, message);
         goto cleanup;
     }
@@ -362,13 +382,13 @@ warn_explicit(PyObject *category, PyObject *message,
     /* Store in the registry that we've been here, *except* when the action
        is "always". */
     rc = 0;
-    if (strcmp(action, "always") != 0) {
+    if (PyUnicode_CompareWithASCIIString(action, "always") != 0) {
         if (registry != NULL && registry != Py_None &&
                 PyDict_SetItem(registry, key, Py_True) < 0)
             goto cleanup;
-        else if (strcmp(action, "ignore") == 0)
+        else if (PyUnicode_CompareWithASCIIString(action, "ignore") == 0)
             goto return_none;
-        else if (strcmp(action, "once") == 0) {
+        else if (PyUnicode_CompareWithASCIIString(action, "once") == 0) {
             if (registry == NULL || registry == Py_None) {
                 registry = get_once_registry();
                 if (registry == NULL)
@@ -377,24 +397,15 @@ warn_explicit(PyObject *category, PyObject *message,
             /* _once_registry[(text, category)] = 1 */
             rc = update_registry(registry, text, category, 0);
         }
-        else if (strcmp(action, "module") == 0) {
+        else if (PyUnicode_CompareWithASCIIString(action, "module") == 0) {
             /* registry[(text, category, 0)] = 1 */
             if (registry != NULL && registry != Py_None)
                 rc = update_registry(registry, text, category, 0);
         }
-        else if (strcmp(action, "default") != 0) {
-            PyObject *to_str = PyObject_Str(item);
-            const char *err_str = "???";
-
-            if (to_str != NULL) {
-                err_str = _PyUnicode_AsString(to_str);
-                if (err_str == NULL)
-                        goto cleanup;
-            }
+        else if (PyUnicode_CompareWithASCIIString(action, "default") != 0) {
             PyErr_Format(PyExc_RuntimeError,
-                        "Unrecognized action (%s) in warnings.filters:\n %s",
-                        action, err_str);
-            Py_XDECREF(to_str);
+                        "Unrecognized action (%R) in warnings.filters:\n %R",
+                        action, item);
             goto cleanup;
         }
     }
@@ -528,11 +539,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             Py_INCREF(*filename);
     }
     else {
-        const char *module_str = _PyUnicode_AsString(*module);
         *filename = NULL;
-        if (module_str == NULL)
-                goto handle_error;
-        if (strcmp(module_str, "__main__") == 0) {
+        if (PyUnicode_CompareWithASCIIString(*module, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             /* PyList_Check() is needed because sys.argv is set to None during
                Python finalization */
@@ -651,7 +659,7 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *registry = NULL;
     PyObject *module_globals = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOi|OOO:warn_explicit",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOUi|OOO:warn_explicit",
                 kwd_list, &message, &category, &filename, &lineno, &module,
                 &registry, &module_globals))
         return NULL;
