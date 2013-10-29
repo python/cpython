@@ -147,6 +147,9 @@ Build
 
 - Issue #15792: Correct build options on Win64. Patch by Jeremy Kloth.
 
+- Issue #19373: Apply upstream change to Tk 8.5.15 fixing OS X 10.9
+  screen refresh problem for OS X installer build.
+
 Tools/Demos
 -----------
 
