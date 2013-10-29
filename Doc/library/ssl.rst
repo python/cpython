@@ -32,7 +32,7 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
 
    OpenSSL's internal random number generator does not properly handle fork.
    Applications must change the PRNG state of the parent process if they use
-   any SSL feature with with :func:`os.fork`. Any successful call of
+   any SSL feature with :func:`os.fork`. Any successful call of
    :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
    :func:`~ssl.RAND_pseudo_bytes` is sufficient.
 
