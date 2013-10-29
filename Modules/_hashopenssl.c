@@ -717,9 +717,9 @@ _openssl_hash_name_mapper(const OBJ_NAME *openssl_obj_name, void *arg)
         state->error = 1;
     } else {
         if (PySet_Add(state->set, py_name) != 0) {
-            Py_DECREF(py_name);
             state->error = 1;
         }
+        Py_DECREF(py_name);
     }
 }
 
