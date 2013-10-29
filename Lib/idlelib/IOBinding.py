@@ -125,7 +125,7 @@ def coding_spec(str):
     Raise LookupError if the encoding is declared but unknown.
     """
     # Only consider the first two lines
-    str = str.split("\n", 2)[:2]
+    lst = str.split("\n", 2)[:2]
     for line in lst:
         match = coding_re.match(line)
         if match is not None:

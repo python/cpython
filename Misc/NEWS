@@ -12,6 +12,11 @@ Core and Builtins
 Library
 -------
 
+IDLE
+----
+
+- Issue #19426: Fixed the opening of Python source file with specified encoding.
+
 
 What's New in Python 2.7.6 release candidate 1?
 ===============================================
