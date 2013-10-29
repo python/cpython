@@ -1898,7 +1898,7 @@ Notes:
    making assumptions about the output value. Field orderings will vary (for
    example, "month/day/year" versus "day/month/year"), and the output may
    contain Unicode characters encoded using the locale's default encoding (for
-   example, if the current locale is ``js_JP``, the default encoding could be
+   example, if the current locale is ``ja_JP``, the default encoding could be
    any one of ``eucJP``, ``SJIS``, or ``utf-8``; use :meth:`locale.getlocale`
    to determine the current locale's encoding).
 
