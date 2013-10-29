@@ -417,6 +417,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
            that). Use 'B' for bytes. */
         stgdict->format = _ctypes_alloc_format_string(NULL, "B");
     }
+    if (stgdict->format == NULL)
+        return -1;
 
 #define realdict ((PyObject *)&stgdict->dict)
     for (i = 0; i < len; ++i) {
@@ -483,7 +485,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             char *fieldfmt = dict->format ? dict->format : "B";
             char *fieldname = _PyUnicode_AsString(name);
             char *ptr;
-            Py_ssize_t len; 
+            Py_ssize_t len;
             char *buf;
 
             if (fieldname == NULL)
