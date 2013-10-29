@@ -540,7 +540,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     }
     else {
         *filename = NULL;
-        if (PyUnicode_CompareWithASCIIString(*module, "__main__") == 0) {
+        if (*module != Py_None && PyUnicode_CompareWithASCIIString(*module, "__main__") == 0) {
             PyObject *argv = PySys_GetObject("argv");
             /* PyList_Check() is needed because sys.argv is set to None during
                Python finalization */
@@ -564,8 +564,8 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
             else {
                 /* embedded interpreters don't have sys.argv, see bug #839151 */
                 *filename = PyUnicode_FromString("__main__");
-                    if (*filename == NULL)
-                        goto handle_error;
+                if (*filename == NULL)
+                    goto handle_error;
             }
         }
         if (*filename == NULL) {
@@ -621,8 +621,15 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level)
     if (!setup_context(stack_level, &filename, &lineno, &module, &registry))
         return NULL;
 
-    res = warn_explicit(category, message, filename, lineno, module, registry,
-                        NULL);
+    if (module != Py_None) {
+        res = warn_explicit(category, message, filename, lineno, module, registry,
+                            NULL);
+    }
+    else {
+        /* FIXME: emitting warnings at exit does crash Python */
+        res = Py_None;
+        Py_INCREF(res);
+    }
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
