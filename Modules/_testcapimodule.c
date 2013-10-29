@@ -65,6 +65,69 @@ test_config(PyObject *self)
 }
 
 static PyObject*
+test_sizeof_c_types(PyObject *self)
+{
+#define CHECK_SIZEOF(TYPE, EXPECTED)         \
+    if (EXPECTED != sizeof(TYPE))  {         \
+        PyErr_Format(TestError,              \
+            "sizeof(%s) = %u instead of %u", \
+            #TYPE, sizeof(TYPE), EXPECTED);  \
+        return (PyObject*)NULL;              \
+    }
+#define IS_SIGNED(TYPE) (((TYPE)-1) < (TYPE)0)
+#define CHECK_SIGNNESS(TYPE, SIGNED)         \
+    if (IS_SIGNED(TYPE) != SIGNED) {         \
+        PyErr_Format(TestError,              \
+            "%s signness is, instead of %i",  \
+            #TYPE, IS_SIGNED(TYPE), SIGNED); \
+        return (PyObject*)NULL;              \
+    }
+
+    /* integer types */
+    CHECK_SIZEOF(Py_UCS1, 1);
+    CHECK_SIZEOF(Py_UCS2, 2);
+    CHECK_SIZEOF(Py_UCS4, 4);
+    CHECK_SIGNNESS(Py_UCS1, 0);
+    CHECK_SIGNNESS(Py_UCS2, 0);
+    CHECK_SIGNNESS(Py_UCS4, 0);
+#ifdef HAVE_INT32_T
+    CHECK_SIZEOF(PY_INT32_T, 4);
+    CHECK_SIGNNESS(PY_INT32_T, 1);
+#endif
+#ifdef HAVE_UINT32_T
+    CHECK_SIZEOF(PY_UINT32_T, 4);
+    CHECK_SIGNNESS(PY_UINT32_T, 0);
+#endif
+#ifdef HAVE_INT64_T
+    CHECK_SIZEOF(PY_INT64_T, 8);
+    CHECK_SIGNNESS(PY_INT64_T, 1);
+#endif
+#ifdef HAVE_UINT64_T
+    CHECK_SIZEOF(PY_UINT64_T, 8);
+    CHECK_SIGNNESS(PY_UINT64_T, 0);
+#endif
+
+    /* pointer/size types */
+    CHECK_SIZEOF(size_t, sizeof(void *));
+    CHECK_SIGNNESS(size_t, 0);
+    CHECK_SIZEOF(Py_ssize_t, sizeof(void *));
+    CHECK_SIGNNESS(Py_ssize_t, 1);
+
+    CHECK_SIZEOF(Py_uintptr_t, sizeof(void *));
+    CHECK_SIGNNESS(Py_uintptr_t, 0);
+    CHECK_SIZEOF(Py_intptr_t, sizeof(void *));
+    CHECK_SIGNNESS(Py_intptr_t, 1);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+#undef IS_SIGNED
+#undef CHECK_SIGNESS
+#undef CHECK_SIZEOF
+}
+
+
+static PyObject*
 test_list_api(PyObject *self)
 {
     PyObject* list;
@@ -2783,6 +2846,7 @@ static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
+    {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
