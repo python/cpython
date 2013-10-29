@@ -336,12 +336,13 @@ class WarnTests(BaseTest):
                 module=self.module) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
-
-            self.module.warn_explicit("text", UserWarning, "nonascii\xe9\u20ac", 1)
-            self.assertEqual(w[-1].filename, "nonascii\xe9\u20ac")
-
-            self.module.warn_explicit("text", UserWarning, "surrogate\udc80", 1)
-            self.assertEqual(w[-1].filename, "surrogate\udc80")
+            for filename in ("nonascii\xe9\u20ac", "surrogate\udc80"):
+                try:
+                    os.fsencode(filename)
+                except UnicodeEncodeError:
+                    continue
+                self.module.warn_explicit("text", UserWarning, filename, 1)
+                self.assertEqual(w[-1].filename, filename)
 
     def test_warn_explicit_type_errors(self):
         # warn_explicit() should error out gracefully if it is given objects
