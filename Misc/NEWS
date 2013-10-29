@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19227: Remove pthread_atfork() handler. The handler was added to
+  solve #18747 but has caused issues.
+
 - Issue #19420: Fix reference leak in module initalization code of
   _hashopenssl.c
 
