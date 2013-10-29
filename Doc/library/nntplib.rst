@@ -234,25 +234,25 @@ indicates an error, the method raises one of the above exceptions.
 
 .. method:: NNTP.next()
 
-   Send a ``NEXT`` command.  Return as for :meth:`stat`.
+   Send a ``NEXT`` command.  Return as for :meth:`.stat`.
 
 
 .. method:: NNTP.last()
 
-   Send a ``LAST`` command.  Return as for :meth:`stat`.
+   Send a ``LAST`` command.  Return as for :meth:`.stat`.
 
 
 .. method:: NNTP.head(id)
 
-   Send a ``HEAD`` command, where *id* has the same meaning as for :meth:`stat`.
+   Send a ``HEAD`` command, where *id* has the same meaning as for :meth:`.stat`.
    Return a tuple ``(response, number, id, list)`` where the first three are the
-   same as for :meth:`stat`, and *list* is a list of the article's headers (an
+   same as for :meth:`.stat`, and *list* is a list of the article's headers (an
    uninterpreted list of lines, without trailing newlines).
 
 
 .. method:: NNTP.body(id,[file])
 
-   Send a ``BODY`` command, where *id* has the same meaning as for :meth:`stat`.
+   Send a ``BODY`` command, where *id* has the same meaning as for :meth:`.stat`.
    If the *file* parameter is supplied, then the body is stored in a file.  If
    *file* is a string, then the method will open a file object with that name,
    write to it then close it. If *file* is a file object, then it will start
@@ -263,7 +263,7 @@ indicates an error, the method raises one of the above exceptions.
 .. method:: NNTP.article(id)
 
    Send an ``ARTICLE`` command, where *id* has the same meaning as for
-   :meth:`stat`.  Return as for :meth:`head`.
+   :meth:`.stat`.  Return as for :meth:`head`.
 
 
 .. method:: NNTP.slave()
@@ -290,7 +290,7 @@ indicates an error, the method raises one of the above exceptions.
 .. method:: NNTP.post(file)
 
    Post an article using the ``POST`` command.  The *file* argument is an open file
-   object which is read until EOF using its :meth:`readline` method.  It should be
+   object which is read until EOF using its :meth:`~file.readline` method.  It should be
    a well-formed news article, including the required headers.  The :meth:`post`
    method automatically escapes lines beginning with ``.``.
 
