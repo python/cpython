@@ -28,6 +28,14 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    operating system socket APIs.  The installed version of OpenSSL may also
    cause variations in behavior.
 
+.. warning::
+
+   OpenSSL's internal random number generator does not properly handle fork.
+   Applications must change the PRNG state of the parent process if they use
+   any SSL feature with with :func:`os.fork`. Any successful call of
+   :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
+   :func:`~ssl.RAND_pseudo_bytes` is sufficient.
+
 This section documents the objects and functions in the ``ssl`` module; for more
 general information about TLS, SSL, and certificates, the reader is referred to
 the documents in the "See Also" section at the bottom.
