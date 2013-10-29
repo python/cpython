@@ -332,12 +332,16 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    PyObject *args = PyTuple_New(3);
+    PyObject *args;
     PyObject *whatstr;
     PyObject *result;
 
+    args = PyTuple_New(3);
     if (args == NULL)
         return NULL;
+    if (PyFrame_FastToLocalsWithError(frame) < 0)
+        return NULL;
+
     Py_INCREF(frame);
     whatstr = whatstrings[what];
     Py_INCREF(whatstr);
@@ -349,7 +353,6 @@ call_trampoline(PyThreadState *tstate, PyObject* callback,
     PyTuple_SET_ITEM(args, 2, arg);
 
     /* call the Python-level function */
-    PyFrame_FastToLocals(frame);
     result = PyEval_CallObject(callback, args);
     PyFrame_LocalsToFast(frame, 1);
     if (result == NULL)
