@@ -10,6 +10,10 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #18408: Add a new PyFrame_FastToLocalsWithError() function to handle
+  exceptions when merging fast locals into f_locals of a frame.
+  PyEval_GetLocals() now raises an exception and return NULL on failure.
+
 - Issue #19369: Optimized the usage of __length_hint__().
 
 - Issue #18603: Ensure that PyOS_mystricmp and PyOS_mystrnicmp are in the

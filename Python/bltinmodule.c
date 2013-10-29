@@ -755,8 +755,11 @@ builtin_eval(PyObject *self, PyObject *args)
     }
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
-        if (locals == Py_None)
+        if (locals == Py_None) {
             locals = PyEval_GetLocals();
+            if (locals == NULL)
+                return NULL;
+        }
     }
     else if (locals == Py_None)
         locals = globals;
@@ -820,6 +823,8 @@ builtin_exec(PyObject *self, PyObject *args)
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
             locals = PyEval_GetLocals();
+            if (locals == NULL)
+                return NULL;
         }
         if (!globals || !locals) {
             PyErr_SetString(PyExc_SystemError,
@@ -1926,13 +1931,9 @@ builtin_vars(PyObject *self, PyObject *args)
         return NULL;
     if (v == NULL) {
         d = PyEval_GetLocals();
-        if (d == NULL) {
-            if (!PyErr_Occurred())
-                PyErr_SetString(PyExc_SystemError,
-                                "vars(): no locals!?");
-        }
-        else
-            Py_INCREF(d);
+        if (d == NULL)
+            return NULL;
+        Py_INCREF(d);
     }
     else {
         _Py_IDENTIFIER(__dict__);
