@@ -101,16 +101,17 @@ PyType_Modified(PyTypeObject *type)
        needed.
      */
     PyObject *raw, *ref;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
 
     if (!PyType_HasFeature(type, Py_TPFLAGS_VALID_VERSION_TAG))
         return;
 
     raw = type->tp_subclasses;
     if (raw != NULL) {
-        n = PyList_GET_SIZE(raw);
-        for (i = 0; i < n; i++) {
-            ref = PyList_GET_ITEM(raw, i);
+        assert(PyDict_CheckExact(raw));
+        i = 0;
+        while (PyDict_Next(raw, &i, NULL, &ref)) {
+            assert(PyWeakref_CheckRef(ref));
             ref = PyWeakref_GET_OBJECT(ref);
             if (ref != Py_None) {
                 PyType_Modified((PyTypeObject *)ref);
@@ -435,6 +436,7 @@ static int mro_internal(PyTypeObject *);
 static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, char *);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
+static void remove_all_subclasses(PyTypeObject *type, PyObject *bases);
 static void update_all_slots(PyTypeObject *);
 
 typedef int (*update_callback)(PyTypeObject *, void *);
@@ -448,15 +450,15 @@ mro_subclasses(PyTypeObject *type, PyObject* temp)
 {
     PyTypeObject *subclass;
     PyObject *ref, *subclasses, *old_mro;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
 
     subclasses = type->tp_subclasses;
     if (subclasses == NULL)
         return 0;
-    assert(PyList_Check(subclasses));
-    n = PyList_GET_SIZE(subclasses);
-    for (i = 0; i < n; i++) {
-        ref = PyList_GET_ITEM(subclasses, i);
+    assert(PyDict_CheckExact(subclasses));
+    i = 0;
+
+    while (PyDict_Next(subclasses, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));
         subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
         assert(subclass != NULL);
@@ -575,13 +577,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
     /* for now, sod that: just remove from all old_bases,
        add to all new_bases */
 
-    for (i = PyTuple_GET_SIZE(old_bases) - 1; i >= 0; i--) {
-        ob = PyTuple_GET_ITEM(old_bases, i);
-        if (PyType_Check(ob)) {
-            remove_subclass(
-                (PyTypeObject*)ob, type);
-        }
-    }
+    remove_all_subclasses(type, old_bases);
 
     for (i = PyTuple_GET_SIZE(value) - 1; i >= 0; i--) {
         ob = PyTuple_GET_ITEM(value, i);
@@ -2733,10 +2729,14 @@ static void
 type_dealloc(PyTypeObject *type)
 {
     PyHeapTypeObject *et;
+    PyObject *tp, *val, *tb;
 
     /* Assert this is a heap-allocated type object */
     assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
     _PyObject_GC_UNTRACK(type);
+    PyErr_Fetch(&tp, &val, &tb);
+    remove_all_subclasses(type, type->tp_bases);
+    PyErr_Restore(tp, val, tb);
     PyObject_ClearWeakRefs((PyObject *)type);
     et = (PyHeapTypeObject *)type;
     Py_XDECREF(type->tp_base);
@@ -2761,7 +2761,7 @@ static PyObject *
 type_subclasses(PyTypeObject *type, PyObject *args_ignored)
 {
     PyObject *list, *raw, *ref;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
 
     list = PyList_New(0);
     if (list == NULL)
@@ -2769,10 +2769,9 @@ type_subclasses(PyTypeObject *type, PyObject *args_ignored)
     raw = type->tp_subclasses;
     if (raw == NULL)
         return list;
-    assert(PyList_Check(raw));
-    n = PyList_GET_SIZE(raw);
-    for (i = 0; i < n; i++) {
-        ref = PyList_GET_ITEM(raw, i);
+    assert(PyDict_CheckExact(raw));
+    i = 0;
+    while (PyDict_Next(raw, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));
         ref = PyWeakref_GET_OBJECT(ref);
         if (ref != Py_None) {
@@ -2961,8 +2960,8 @@ type_clear(PyTypeObject *type)
            class's dict; the cycle will be broken that way.
 
        tp_subclasses:
-           A list of weak references can't be part of a cycle; and
-           lists have their own tp_clear.
+           A dict of weak references can't be part of a cycle; and
+           dicts have their own tp_clear.
 
        slots (in PyHeapTypeObject):
            A tuple of strings can't be part of a cycle.
@@ -4353,51 +4352,57 @@ PyType_Ready(PyTypeObject *type)
 static int
 add_subclass(PyTypeObject *base, PyTypeObject *type)
 {
-    Py_ssize_t i;
-    int result;
-    PyObject *list, *ref, *newobj;
+    int result = -1;
+    PyObject *dict, *key, *newobj;
 
-    list = base->tp_subclasses;
-    if (list == NULL) {
-        base->tp_subclasses = list = PyList_New(0);
-        if (list == NULL)
+    dict = base->tp_subclasses;
+    if (dict == NULL) {
+        base->tp_subclasses = dict = PyDict_New();
+        if (dict == NULL)
             return -1;
     }
-    assert(PyList_Check(list));
-    newobj = PyWeakref_NewRef((PyObject *)type, NULL);
-    if (newobj == NULL)
+    assert(PyDict_CheckExact(dict));
+    key = PyLong_FromVoidPtr((void *) type);
+    if (key == NULL)
         return -1;
-    i = PyList_GET_SIZE(list);
-    while (--i >= 0) {
-        ref = PyList_GET_ITEM(list, i);
-        assert(PyWeakref_CheckRef(ref));
-        if (PyWeakref_GET_OBJECT(ref) == Py_None)
-            return PyList_SetItem(list, i, newobj);
+    newobj = PyWeakref_NewRef((PyObject *)type, NULL);
+    if (newobj != NULL) {
+        result = PyDict_SetItem(dict, key, newobj);
+        Py_DECREF(newobj);
     }
-    result = PyList_Append(list, newobj);
-    Py_DECREF(newobj);
+    Py_DECREF(key);
     return result;
 }
 
 static void
 remove_subclass(PyTypeObject *base, PyTypeObject *type)
 {
-    Py_ssize_t i;
-    PyObject *list, *ref;
+    PyObject *dict, *key;
 
-    list = base->tp_subclasses;
-    if (list == NULL) {
+    dict = base->tp_subclasses;
+    if (dict == NULL) {
         return;
     }
-    assert(PyList_Check(list));
-    i = PyList_GET_SIZE(list);
-    while (--i >= 0) {
-        ref = PyList_GET_ITEM(list, i);
-        assert(PyWeakref_CheckRef(ref));
-        if (PyWeakref_GET_OBJECT(ref) == (PyObject*)type) {
-            /* this can't fail, right? */
-            PySequence_DelItem(list, i);
-            return;
+    assert(PyDict_CheckExact(dict));
+    key = PyLong_FromVoidPtr((void *) type);
+    if (key == NULL || PyDict_DelItem(dict, key)) {
+        /* This can happen if the type initialization errored out before
+           the base subclasses were updated (e.g. a non-str __qualname__
+           was passed in the type dict). */
+        PyErr_Clear();
+    }
+    Py_XDECREF(key);
+}
+
+static void
+remove_all_subclasses(PyTypeObject *type, PyObject *bases)
+{
+    if (bases) {
+        Py_ssize_t i;
+        for (i = 0; i < PyTuple_GET_SIZE(bases); i++) {
+            PyObject *base = PyTuple_GET_ITEM(bases, i);
+            if (PyType_Check(base))
+                remove_subclass((PyTypeObject*) base, type);
         }
     }
 }
@@ -6173,15 +6178,14 @@ recurse_down_subclasses(PyTypeObject *type, PyObject *name,
 {
     PyTypeObject *subclass;
     PyObject *ref, *subclasses, *dict;
-    Py_ssize_t i, n;
+    Py_ssize_t i;
 
     subclasses = type->tp_subclasses;
     if (subclasses == NULL)
         return 0;
-    assert(PyList_Check(subclasses));
-    n = PyList_GET_SIZE(subclasses);
-    for (i = 0; i < n; i++) {
-        ref = PyList_GET_ITEM(subclasses, i);
+    assert(PyDict_CheckExact(subclasses));
+    i = 0;
+    while (PyDict_Next(subclasses, &i, NULL, &ref)) {
         assert(PyWeakref_CheckRef(ref));
         subclass = (PyTypeObject *)PyWeakref_GET_OBJECT(ref);
         assert(subclass != NULL);
