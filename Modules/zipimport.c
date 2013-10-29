@@ -117,6 +117,8 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
         if (flen == -1)
             break;
         filename = PyUnicode_Substring(path, 0, flen);
+        if (filename == NULL)
+            goto error;
     }
     if (filename == NULL) {
         PyErr_SetString(ZipImportError, "not a Zip file");
@@ -469,9 +471,12 @@ zipimporter_load_module(PyObject *obj, PyObject *args)
     if (ispackage) {
         /* add __path__ to the module *before* the code gets
            executed */
-        PyObject *pkgpath, *fullpath;
-        PyObject *subname = get_subname(fullname);
+        PyObject *pkgpath, *fullpath, *subname;
         int err;
+
+        subname = get_subname(fullname);
+        if (subname == NULL)
+            goto error;
 
         fullpath = PyUnicode_FromFormat("%U%c%U%U",
                                 self->archive, SEP,
