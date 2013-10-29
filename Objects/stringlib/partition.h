@@ -29,6 +29,11 @@ STRINGLIB(partition)(PyObject* str_obj,
         PyTuple_SET_ITEM(out, 0, STRINGLIB_NEW(str, str_len));
         PyTuple_SET_ITEM(out, 1, STRINGLIB_NEW(NULL, 0));
         PyTuple_SET_ITEM(out, 2, STRINGLIB_NEW(NULL, 0));
+
+        if (PyErr_Occurred()) {
+            Py_DECREF(out);
+            return NULL;
+        }
 #else
         Py_INCREF(str_obj);
         PyTuple_SET_ITEM(out, 0, (PyObject*) str_obj);
@@ -79,6 +84,11 @@ STRINGLIB(rpartition)(PyObject* str_obj,
         PyTuple_SET_ITEM(out, 0, STRINGLIB_NEW(NULL, 0));
         PyTuple_SET_ITEM(out, 1, STRINGLIB_NEW(NULL, 0));
         PyTuple_SET_ITEM(out, 2, STRINGLIB_NEW(str, str_len));
+
+        if (PyErr_Occurred()) {
+            Py_DECREF(out);
+            return NULL;
+        }
 #else
         Py_INCREF(STRINGLIB_EMPTY);
         PyTuple_SET_ITEM(out, 0, (PyObject*) STRINGLIB_EMPTY);
