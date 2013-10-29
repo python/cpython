@@ -3766,6 +3766,7 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
             return NULL;
         _PyUnicode_UTF8(unicode) = PyObject_MALLOC(PyBytes_GET_SIZE(bytes) + 1);
         if (_PyUnicode_UTF8(unicode) == NULL) {
+            PyErr_NoMemory();
             Py_DECREF(bytes);
             return NULL;
         }
