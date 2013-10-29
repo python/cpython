@@ -3021,7 +3021,8 @@ PyUnicode_Decode(const char *s,
             return PyUnicode_DecodeUTF8Stateful(s, size, errors, NULL);
         else if ((strcmp(lower, "latin-1") == 0) ||
                  (strcmp(lower, "latin1") == 0) ||
-                 (strcmp(lower, "iso-8859-1") == 0))
+                 (strcmp(lower, "iso-8859-1") == 0) ||
+                 (strcmp(lower, "iso8859-1") == 0))
             return PyUnicode_DecodeLatin1(s, size, errors);
 #ifdef HAVE_MBCS
         else if (strcmp(lower, "mbcs") == 0)
@@ -3392,7 +3393,8 @@ PyUnicode_AsEncodedString(PyObject *unicode,
         }
         else if ((strcmp(lower, "latin-1") == 0) ||
                  (strcmp(lower, "latin1") == 0) ||
-                 (strcmp(lower, "iso-8859-1") == 0))
+                 (strcmp(lower, "iso-8859-1") == 0) ||
+                 (strcmp(lower, "iso8859-1") == 0))
             return _PyUnicode_AsLatin1String(unicode, errors);
 #ifdef HAVE_MBCS
         else if (strcmp(lower, "mbcs") == 0)
