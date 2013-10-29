@@ -65,6 +65,45 @@ test_config(PyObject *self)
 }
 
 static PyObject*
+test_sizeof_c_types(PyObject *self)
+{
+#define CHECK_SIZEOF(EXPECTED, TYPE)         \
+    if (EXPECTED != sizeof(TYPE))  {         \
+        PyErr_Format(TestError,              \
+            "sizeof(%s) = %u instead of %u", \
+            #TYPE, sizeof(TYPE), EXPECTED);  \
+        return (PyObject*)NULL;              \
+    }
+
+    /* integer types */
+    CHECK_SIZEOF(1, Py_UCS1);
+    CHECK_SIZEOF(2, Py_UCS2);
+    CHECK_SIZEOF(4, Py_UCS4);
+#ifdef HAVE_INT32_T
+    CHECK_SIZEOF(4, PY_INT32_T);
+#endif
+#ifdef HAVE_UINT32_T
+    CHECK_SIZEOF(4, PY_UINT32_T);
+#endif
+#ifdef HAVE_INT64_T
+    CHECK_SIZEOF(8, PY_INT64_T);
+#endif
+#ifdef HAVE_UINT64_T
+    CHECK_SIZEOF(8, PY_UINT64_T);
+#endif
+
+    /* pointer/size types */
+    CHECK_SIZEOF(sizeof(void *), size_t);
+    CHECK_SIZEOF(sizeof(void *), Py_ssize_t);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+#undef CHECK_SIZEOF
+}
+
+
+static PyObject*
 test_list_api(PyObject *self)
 {
     PyObject* list;
@@ -2783,6 +2822,7 @@ static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
+    {"test_sizeof_c_types",     (PyCFunction)test_sizeof_c_types, METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
