@@ -2472,7 +2472,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         TARGET(IMPORT_STAR) {
             PyObject *from = POP(), *locals;
             int err;
-            PyFrame_FastToLocals(f);
+            if (PyFrame_FastToLocalsWithError(f) < 0)
+                goto error;
+
             locals = f->f_locals;
             if (locals == NULL) {
                 PyErr_SetString(PyExc_SystemError,
@@ -4005,9 +4007,15 @@ PyObject *
 PyEval_GetLocals(void)
 {
     PyFrameObject *current_frame = PyEval_GetFrame();
-    if (current_frame == NULL)
+    if (current_frame == NULL) {
+        PyErr_SetString(PyExc_SystemError, "frame does not exist");
         return NULL;
-    PyFrame_FastToLocals(current_frame);
+    }
+
+    if (PyFrame_FastToLocalsWithError(current_frame) < 0)
+        return NULL;
+
+    assert(current_frame->f_locals != NULL);
     return current_frame->f_locals;
 }
 
@@ -4017,8 +4025,9 @@ PyEval_GetGlobals(void)
     PyFrameObject *current_frame = PyEval_GetFrame();
     if (current_frame == NULL)
         return NULL;
-    else
-        return current_frame->f_globals;
+
+    assert(current_frame->f_globals != NULL);
+    return current_frame->f_globals;
 }
 
 PyFrameObject *

@@ -1407,12 +1407,11 @@ static PyObject *
 _dir_locals(void)
 {
     PyObject *names;
-    PyObject *locals = PyEval_GetLocals();
+    PyObject *locals;
 
-    if (locals == NULL) {
-        PyErr_SetString(PyExc_SystemError, "frame does not exist");
+    locals = PyEval_GetLocals();
+    if (locals == NULL)
         return NULL;
-    }
 
     names = PyMapping_Keys(locals);
     if (!names)

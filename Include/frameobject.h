@@ -78,6 +78,8 @@ PyAPI_FUNC(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
 /* Conversions between "fast locals" and locals in dictionary */
 
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
+
+PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
 PyAPI_FUNC(int) PyFrame_ClearFreeList(void);
