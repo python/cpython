@@ -2144,6 +2144,8 @@ PyObject_CallFunction(PyObject *callable, const char *format, ...)
     }
     else
         args = PyTuple_New(0);
+    if (args == NULL)
+        return NULL;
 
     return call_function_tail(callable, args);
 }
