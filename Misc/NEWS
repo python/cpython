@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19420: Fix reference leak in module initalization code of
+  _hashopenssl.c
+
 - Issue #19329: Optimized compiling charsets in regular expressions.
 
 - Issue #19227: Try to fix deadlocks caused by re-seeding then OpenSSL
