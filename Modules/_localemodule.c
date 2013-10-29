@@ -151,8 +151,10 @@ PyLocale_localeconv(PyObject* self)
     do { \
         if (obj == NULL) \
             goto failed; \
-        if (PyDict_SetItemString(result, key, obj) < 0) \
+        if (PyDict_SetItemString(result, key, obj) < 0) { \
+            Py_DECREF(obj); \
             goto failed; \
+        } \
         Py_DECREF(obj); \
     } while (0)
 
@@ -196,7 +198,6 @@ PyLocale_localeconv(PyObject* self)
 
   failed:
     Py_XDECREF(result);
-    Py_XDECREF(x);
     return NULL;
 }
 
