@@ -331,6 +331,18 @@ class WarnTests(BaseTest):
             warning_tests.__name__ = module_name
             sys.argv = argv
 
+    def test_warn_explicit_non_ascii_filename(self):
+        with original_warnings.catch_warnings(record=True,
+                module=self.module) as w:
+            self.module.resetwarnings()
+            self.module.filterwarnings("always", category=UserWarning)
+
+            self.module.warn_explicit("text", UserWarning, "nonascii\xe9\u20ac", 1)
+            self.assertEqual(w[-1].filename, "nonascii\xe9\u20ac")
+
+            self.module.warn_explicit("text", UserWarning, "surrogate\udc80", 1)
+            self.assertEqual(w[-1].filename, "surrogate\udc80")
+
     def test_warn_explicit_type_errors(self):
         # warn_explicit() should error out gracefully if it is given objects
         # of the wrong types.

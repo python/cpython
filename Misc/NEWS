@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19424: Fix the warnings module to accept filename containing surrogate
+  characters.
+
 - Issue #19227: Remove pthread_atfork() handler. The handler was added to
   solve #18747 but has caused issues.
 
