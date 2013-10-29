@@ -4280,6 +4280,10 @@ Array_subscript(PyObject *myself, PyObject *item)
         for (cur = start, i = 0; i < slicelen;
              cur += step, i++) {
             PyObject *v = Array_item(myself, cur);
+            if (v == NULL) {
+                Py_DECREF(np);
+                return NULL;
+            }
             PyList_SET_ITEM(np, i, v);
         }
         return np;
