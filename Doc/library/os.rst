@@ -2582,6 +2582,10 @@ written in Python, such as a mail server's external command delivery program.
    Note that some platforms including FreeBSD <= 6.3, Cygwin and OS/2 EMX have
    known issues when using fork() from a thread.
 
+   .. warning::
+
+      See :mod:`ssl` for applications that use the SSL module with fork().
+
    Availability: Unix.
 
 
