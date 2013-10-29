@@ -377,7 +377,7 @@ The module :mod:`curses` defines the following functions:
    is to be displayed.
 
 
-.. function:: newwin(begin_y, begin_x)
+.. function:: newwin(nlines, ncols)
               newwin(nlines, ncols, begin_y, begin_x)
 
    Return a new window, whose left-upper corner is at  ``(begin_y, begin_x)``, and
