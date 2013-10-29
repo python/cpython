@@ -10573,25 +10573,42 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
 {
     Py_ssize_t i;
     int kind;
-    void *data;
     Py_UCS4 chr;
 
     assert(_PyUnicode_CHECK(uni));
     if (PyUnicode_READY(uni) == -1)
         return -1;
     kind = PyUnicode_KIND(uni);
-    data = PyUnicode_DATA(uni);
-    /* Compare Unicode string and source character set string */
-    for (i = 0; (chr = PyUnicode_READ(kind, data, i)) && str[i]; i++)
-        if (chr != str[i])
-            return (chr < (unsigned char)(str[i])) ? -1 : 1;
-    /* This check keeps Python strings that end in '\0' from comparing equal
-     to C strings identical up to that point. */
-    if (PyUnicode_GET_LENGTH(uni) != i || chr)
-        return 1; /* uni is longer */
-    if (str[i])
-        return -1; /* str is longer */
-    return 0;
+    if (kind == PyUnicode_1BYTE_KIND) {
+        char *data = PyUnicode_1BYTE_DATA(uni);
+        Py_ssize_t len1 = PyUnicode_GET_LENGTH(uni);
+        size_t len, len2 = strlen(str);
+        int cmp;
+
+        len = Py_MIN(len1, len2);
+        cmp = memcmp(data, str, len);
+        if (cmp != 0)
+            return cmp;
+        if (len1 > len2)
+            return 1; /* uni is longer */
+        if (len2 > len1)
+            return -1; /* str is longer */
+        return 0;
+    }
+    else {
+        void *data = PyUnicode_DATA(uni);
+        /* Compare Unicode string and source character set string */
+        for (i = 0; (chr = PyUnicode_READ(kind, data, i)) && str[i]; i++)
+            if (chr != str[i])
+                return (chr < (unsigned char)(str[i])) ? -1 : 1;
+        /* This check keeps Python strings that end in '\0' from comparing equal
+         to C strings identical up to that point. */
+        if (PyUnicode_GET_LENGTH(uni) != i || chr)
+            return 1; /* uni is longer */
+        if (str[i])
+            return -1; /* str is longer */
+        return 0;
+    }
 }
 
 
