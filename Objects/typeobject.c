@@ -5324,10 +5324,10 @@ slot_tp_str(PyObject *self)
     func = lookup_method(self, &PyId___str__);
     if (func == NULL)
         return NULL;
-        res = PyEval_CallObject(func, NULL);
-        Py_DECREF(func);
-        return res;
-    }
+    res = PyEval_CallObject(func, NULL);
+    Py_DECREF(func);
+    return res;
+}
 
 static Py_hash_t
 slot_tp_hash(PyObject *self)
