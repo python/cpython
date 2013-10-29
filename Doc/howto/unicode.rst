@@ -514,7 +514,7 @@ columns and can return Unicode values from an SQL query.
 
 Unicode data is usually converted to a particular encoding before it gets
 written to disk or sent over a socket.  It's possible to do all the work
-yourself: open a file, read an 8-bit bytes object from it, and convert the string
+yourself: open a file, read an 8-bit bytes object from it, and convert the bytes
 with ``bytes.decode(encoding)``.  However, the manual approach is not recommended.
 
 One problem is the multi-byte nature of encodings; one Unicode character can be
