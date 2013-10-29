@@ -3187,6 +3187,7 @@ dec_format(PyObject *dec, PyObject *args)
             replace_fillchar = 1;
             fmt = dec_strdup(fmt, size);
             if (fmt == NULL) {
+                PyErr_NoMemory();
                 return NULL;
             }
             fmt[0] = '_';
