@@ -2,21 +2,19 @@
 
 import errno
 import socket
+import subprocess
 import weakref
 import struct
 import _winapi
 
+from . import base_subprocess
 from . import futures
 from . import proactor_events
 from . import selector_events
 from . import tasks
 from . import windows_utils
 from .log import logger
-
-try:
-    import _overlapped
-except ImportError:
-    from . import _overlapped
+from . import _overlapped
 
 
 __all__ = ['SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor']
@@ -167,6 +165,19 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
 
     def _stop_serving(self, server):
         server.close()
+
+    @tasks.coroutine
+    def _make_subprocess_transport(self, protocol, args, shell,
+                                   stdin, stdout, stderr, bufsize,
+                                   extra=None, **kwargs):
+        transp = _WindowsSubprocessTransport(self, protocol, args, shell,
+                                             stdin, stdout, stderr, bufsize,
+                                             extra=None, **kwargs)
+        yield from transp._post_init()
+        return transp
+
+    def _subprocess_closed(self, transport):
+        pass
 
 
 class IocpProactor:
@@ -413,3 +424,16 @@ class IocpProactor:
         if self._iocp is not None:
             _winapi.CloseHandle(self._iocp)
             self._iocp = None
+
+
+class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
+
+    def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
+        self._proc = windows_utils.Popen(
+            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
+            bufsize=bufsize, **kwargs)
+        def callback(f):
+            returncode = self._proc.poll()
+            self._process_exited(returncode)
+        f = self._loop._proactor.wait_for_handle(int(self._proc._handle))
+        f.add_done_callback(callback)
