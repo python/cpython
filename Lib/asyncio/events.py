@@ -42,7 +42,7 @@ class Handle:
 
 
 def make_handle(callback, args):
-    # TODO: Inline this?
+    # TODO: Inline this?  Or make it a private EventLoop method?
     assert not isinstance(callback, Handle), 'A Handle is not a callback'
     return Handle(callback, args)
 
@@ -338,7 +338,6 @@ class DefaultEventLoopPolicy(threading.local, AbstractEventLoopPolicy):
 
     def set_event_loop(self, loop):
         """Set the event loop."""
-        # TODO: The isinstance() test violates the PEP.
         self._set_called = True
         assert loop is None or isinstance(loop, AbstractEventLoop)
         self._loop = loop
@@ -375,7 +374,6 @@ def get_event_loop_policy():
 def set_event_loop_policy(policy):
     """XXX"""
     global _event_loop_policy
-    # TODO: The isinstance() test violates the PEP.
     assert policy is None or isinstance(policy, AbstractEventLoopPolicy)
     _event_loop_policy = policy
 
