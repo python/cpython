@@ -153,6 +153,33 @@ class BaseSelectorTestCase(unittest.TestCase):
         # unknown file obj
         self.assertRaises(KeyError, s.get_key, 999999)
 
+    def test_get_map(self):
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+
+        rd, wr = socketpair()
+        self.addCleanup(rd.close)
+        self.addCleanup(wr.close)
+
+        keys = s.get_map()
+        self.assertFalse(keys)
+        self.assertEqual(len(keys), 0)
+        self.assertEqual(list(keys), [])
+        key = s.register(rd, selectors.EVENT_READ, "data")
+        self.assertIn(rd, keys)
+        self.assertEqual(key, keys[rd])
+        self.assertEqual(len(keys), 1)
+        self.assertEqual(list(keys), [rd.fileno()])
+        self.assertEqual(list(keys.values()), [key])
+
+        # unknown file obj
+        with self.assertRaises(KeyError):
+            keys[999999]
+
+        # Read-only mapping
+        with self.assertRaises(TypeError):
+            del keys[rd]
+
     def test_select(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
