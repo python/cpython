@@ -11,11 +11,7 @@ if sys.platform != 'win32':
 import _winapi
 
 from asyncio import windows_utils
-
-try:
-    import _overlapped
-except ImportError:
-    from asyncio import _overlapped
+from asyncio import _overlapped
 
 
 class WinsocketpairTests(unittest.TestCase):
