@@ -1459,7 +1459,6 @@ pyepoll_poll(pyEpoll_Object *self, PyObject *args, PyObject *kwds)
 
     evs = PyMem_New(struct epoll_event, maxevents);
     if (evs == NULL) {
-        Py_DECREF(self);
         PyErr_NoMemory();
         return NULL;
     }
