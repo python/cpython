@@ -10,6 +10,8 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
+
 - Issue #14984: On POSIX systems, when netrc is called without a filename
   argument (and therefore is reading the user's $HOME/.netrc file), it now
   enforces the same security rules as typical ftp clients: the .netrc file must
