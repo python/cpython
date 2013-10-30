@@ -164,6 +164,14 @@ below:
       This returns the :class:`SelectorKey` instance associated to this file
       object, or raises :exc:`KeyError` if the file object is not registered.
 
+   .. method:: get_map()
+
+      Return a mapping of file objects to selector keys.
+
+      This returns a :class:`~collections.abc.Mapping` instance mapping
+      registered file objects to their associated :class:`SelectorKey`
+      instance.
+
 
 .. class:: DefaultSelector()
 
