@@ -468,7 +468,12 @@ class _SelectorSocketTransport(_SelectorTransport):
                 self._protocol.data_received(data)
             else:
                 keep_open = self._protocol.eof_received()
-                if not keep_open:
+                if keep_open:
+                    # We're keeping the connection open so the
+                    # protocol can write more, but we still can't
+                    # receive more, so remove the reader callback.
+                    self._loop.remove_reader(self._sock_fd)
+                else:
                     self.close()
 
     def write(self, data):
