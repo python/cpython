@@ -2716,7 +2716,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
         TARGET(WITH_CLEANUP) {
-            /* At the top of the stack are 1-3 values indicating
+            /* At the top of the stack are 1-6 values indicating
                how/why we entered the finally clause:
                - TOP = None
                - (TOP, SECOND) = (WHY_{RETURN,CONTINUE}), retval
@@ -2729,9 +2729,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                otherwise we must call
                  EXIT(None, None, None)
 
-               In the first two cases, we remove EXIT from the
+               In the first three cases, we remove EXIT from the
                stack, leaving the rest in the same order.  In the
-               third case, we shift the bottom 3 values of the
+               fourth case, we shift the bottom 3 values of the
                stack down, and replace the empty spot with NULL.
 
                In addition, if the stack represents an exception,
