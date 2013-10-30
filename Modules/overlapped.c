@@ -228,6 +228,172 @@ overlapped_PostQueuedCompletionStatus(PyObject *self, PyObject *args)
 }
 
 /*
+ * Wait for a handle
+ */
+
+struct PostCallbackData {
+    HANDLE CompletionPort;
+    LPOVERLAPPED Overlapped;
+};
+
+static VOID CALLBACK
+PostToQueueCallback(PVOID lpParameter, BOOL TimerOrWaitFired)
+{
+    struct PostCallbackData *p = (struct PostCallbackData*) lpParameter;
+
+    PostQueuedCompletionStatus(p->CompletionPort, TimerOrWaitFired,
+                               0, p->Overlapped);
+    /* ignore possible error! */
+    PyMem_Free(p);
+}
+
+PyDoc_STRVAR(
+    RegisterWaitWithQueue_doc,
+    "RegisterWaitWithQueue(Object, CompletionPort, Overlapped, Timeout)\n"
+    "    -> WaitHandle\n\n"
+    "Register wait for Object; when complete CompletionPort is notified.\n");
+
+static PyObject *
+overlapped_RegisterWaitWithQueue(PyObject *self, PyObject *args)
+{
+    HANDLE NewWaitObject;
+    HANDLE Object;
+    ULONG Milliseconds;
+    struct PostCallbackData data, *pdata;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE F_HANDLE F_POINTER F_DWORD,
+                          &Object,
+                          &data.CompletionPort,
+                          &data.Overlapped,
+                          &Milliseconds))
+        return NULL;
+
+    pdata = PyMem_Malloc(sizeof(struct PostCallbackData));
+    if (pdata == NULL)
+        return SetFromWindowsErr(0);
+
+    *pdata = data;
+
+    if (!RegisterWaitForSingleObject(
+            &NewWaitObject, Object, (WAITORTIMERCALLBACK)PostToQueueCallback,
+            pdata, Milliseconds,
+            WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
+    {
+        PyMem_Free(pdata);
+        return SetFromWindowsErr(0);
+    }
+
+    return Py_BuildValue(F_HANDLE, NewWaitObject);
+}
+
+PyDoc_STRVAR(
+    UnregisterWait_doc,
+    "UnregisterWait(WaitHandle) -> None\n\n"
+    "Unregister wait handle.\n");
+
+static PyObject *
+overlapped_UnregisterWait(PyObject *self, PyObject *args)
+{
+    HANDLE WaitHandle;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE, &WaitHandle))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = UnregisterWait(WaitHandle);
+    Py_END_ALLOW_THREADS
+
+    if (!ret)
+        return SetFromWindowsErr(0);
+    Py_RETURN_NONE;
+}
+
+/*
+ * Event functions -- currently only used by tests
+ */
+
+PyDoc_STRVAR(
+    CreateEvent_doc,
+    "CreateEvent(EventAttributes, ManualReset, InitialState, Name)"
+    " -> Handle\n\n"
+    "Create an event.  EventAttributes must be None.\n");
+
+static PyObject *
+overlapped_CreateEvent(PyObject *self, PyObject *args)
+{
+    PyObject *EventAttributes;
+    BOOL ManualReset;
+    BOOL InitialState;
+    Py_UNICODE *Name;
+    HANDLE Event;
+
+    if (!PyArg_ParseTuple(args, "O" F_BOOL F_BOOL "Z",
+                          &EventAttributes, &ManualReset,
+                          &InitialState, &Name))
+        return NULL;
+
+    if (EventAttributes != Py_None) {
+        PyErr_SetString(PyExc_ValueError, "EventAttributes must be None");
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    Event = CreateEventW(NULL, ManualReset, InitialState, Name);
+    Py_END_ALLOW_THREADS
+
+    if (Event == NULL)
+        return SetFromWindowsErr(0);
+    return Py_BuildValue(F_HANDLE, Event);
+}
+
+PyDoc_STRVAR(
+    SetEvent_doc,
+    "SetEvent(Handle) -> None\n\n"
+    "Set event.\n");
+
+static PyObject *
+overlapped_SetEvent(PyObject *self, PyObject *args)
+{
+    HANDLE Handle;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE, &Handle))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = SetEvent(Handle);
+    Py_END_ALLOW_THREADS
+
+    if (!ret)
+        return SetFromWindowsErr(0);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(
+    ResetEvent_doc,
+    "ResetEvent(Handle) -> None\n\n"
+    "Reset event.\n");
+
+static PyObject *
+overlapped_ResetEvent(PyObject *self, PyObject *args)
+{
+    HANDLE Handle;
+    BOOL ret;
+
+    if (!PyArg_ParseTuple(args, F_HANDLE, &Handle))
+        return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ret = ResetEvent(Handle);
+    Py_END_ALLOW_THREADS
+
+    if (!ret)
+        return SetFromWindowsErr(0);
+    Py_RETURN_NONE;
+}
+
+/*
  * Bind socket handle to local port without doing slow getaddrinfo()
  */
 
@@ -1147,6 +1313,16 @@ static PyMethodDef overlapped_functions[] = {
      METH_VARARGS, FormatMessage_doc},
     {"BindLocal", overlapped_BindLocal,
      METH_VARARGS, BindLocal_doc},
+    {"RegisterWaitWithQueue", overlapped_RegisterWaitWithQueue,
+     METH_VARARGS, RegisterWaitWithQueue_doc},
+    {"UnregisterWait", overlapped_UnregisterWait,
+     METH_VARARGS, UnregisterWait_doc},
+    {"CreateEvent", overlapped_CreateEvent,
+     METH_VARARGS, CreateEvent_doc},
+    {"SetEvent", overlapped_SetEvent,
+     METH_VARARGS, SetEvent_doc},
+    {"ResetEvent", overlapped_ResetEvent,
+     METH_VARARGS, ResetEvent_doc},
     {NULL}
 };
 

@@ -5,13 +5,17 @@ import unittest
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
+import _winapi
+
 import asyncio
 
 from asyncio import windows_events
+from asyncio import futures
 from asyncio import protocols
 from asyncio import streams
 from asyncio import transports
 from asyncio import test_utils
+from asyncio import _overlapped
 
 
 class UpperProto(protocols.Protocol):
@@ -93,6 +97,42 @@ class ProactorTests(unittest.TestCase):
                 protocols.Protocol, ADDRESS)
 
         return 'done'
+
+    def test_wait_for_handle(self):
+        event = _overlapped.CreateEvent(None, True, False, None)
+        self.addCleanup(_winapi.CloseHandle, event)
+
+        # Wait for unset event with 0.2s timeout;
+        # result should be False at timeout
+        f = self.loop._proactor.wait_for_handle(event, 0.2)
+        start = self.loop.time()
+        self.loop.run_until_complete(f)
+        elapsed = self.loop.time() - start
+        self.assertFalse(f.result())
+        self.assertTrue(0.18 < elapsed < 0.22, elapsed)
+
+        _overlapped.SetEvent(event)
+
+        # Wait for for set event;
+        # result should be True immediately
+        f = self.loop._proactor.wait_for_handle(event, 10)
+        start = self.loop.time()
+        self.loop.run_until_complete(f)
+        elapsed = self.loop.time() - start
+        self.assertTrue(f.result())
+        self.assertTrue(0 <= elapsed < 0.02, elapsed)
+
+        _overlapped.ResetEvent(event)
+
+        # Wait for unset event with a cancelled future;
+        # CancelledError should be raised immediately
+        f = self.loop._proactor.wait_for_handle(event, 10)
+        f.cancel()
+        start = self.loop.time()
+        with self.assertRaises(futures.CancelledError):
+            self.loop.run_until_complete(f)
+        elapsed = self.loop.time() - start
+        self.assertTrue(0 <= elapsed < 0.02, elapsed)
 
 
 if __name__ == '__main__':
