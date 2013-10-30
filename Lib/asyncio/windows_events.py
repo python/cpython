@@ -46,6 +46,22 @@ class _OverlappedFuture(futures.Future):
         return super().cancel()
 
 
+class _WaitHandleFuture(futures.Future):
+    """Subclass of Future which represents a wait handle."""
+
+    def __init__(self, wait_handle, *, loop=None):
+        super().__init__(loop=loop)
+        self._wait_handle = wait_handle
+
+    def cancel(self):
+        super().cancel()
+        try:
+            _overlapped.UnregisterWait(self._wait_handle)
+        except OSError as e:
+            if e.winerror != _overlapped.ERROR_IO_PENDING:
+                raise
+
+
 class PipeServer(object):
     """Class representing a pipe server.
 
@@ -270,6 +286,30 @@ class IocpProactor:
             else:
                 return windows_utils.PipeHandle(handle)
         return self._register(ov, None, finish, wait_for_post=True)
+
+    def wait_for_handle(self, handle, timeout=None):
+        if timeout is None:
+            ms = _winapi.INFINITE
+        else:
+            ms = int(timeout * 1000 + 0.5)
+
+        # We only create ov so we can use ov.address as a key for the cache.
+        ov = _overlapped.Overlapped(NULL)
+        wh = _overlapped.RegisterWaitWithQueue(
+            handle, self._iocp, ov.address, ms)
+        f = _WaitHandleFuture(wh, loop=self._loop)
+
+        def finish(timed_out, _, ov):
+            if not f.cancelled():
+                try:
+                    _overlapped.UnregisterWait(wh)
+                except OSError as e:
+                    if e.winerror != _overlapped.ERROR_IO_PENDING:
+                        raise
+            return not timed_out
+
+        self._cache[ov.address] = (f, ov, None, finish)
+        return f
 
     def _register_with_iocp(self, obj):
         # To get notifications of finished ops on this objects sent to the
