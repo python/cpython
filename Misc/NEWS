@@ -18,6 +18,11 @@ Whats' New in Python 2.7.6?
 
 *Release date: 2013-11-02*
 
+Library
+-------
+
+- Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
+
 IDLE
 ----
 
