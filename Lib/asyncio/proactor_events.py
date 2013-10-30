@@ -267,8 +267,15 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         return _ProactorReadPipeTransport(self, sock, protocol, waiter, extra)
 
     def _make_write_pipe_transport(self, sock, protocol, waiter=None,
-                                   extra=None):
-        return _ProactorWritePipeTransport(self, sock, protocol, waiter, extra)
+                                   extra=None, check_for_hangup=True):
+        if check_for_hangup:
+            # We want connection_lost() to be called when other end closes
+            return _ProactorDuplexPipeTransport(self,
+                                                sock, protocol, waiter, extra)
+        else:
+            # If other end closes we may not notice for a long time
+            return _ProactorWritePipeTransport(self, sock, protocol, waiter,
+                                               extra)
 
     def close(self):
         if self._proactor is not None:
