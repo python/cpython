@@ -388,6 +388,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
         else:
             self.pythonexe = sys.executable
 
+        self.nocgi_path = os.path.join(self.parent_dir, 'nocgi.py')
+        with open(self.nocgi_path, 'w') as fp:
+            fp.write(cgi_file1 % self.pythonexe)
+        os.chmod(self.nocgi_path, 0o777)
+
         self.file1_path = os.path.join(self.cgi_dir, 'file1.py')
         with open(self.file1_path, 'w') as file1:
             file1.write(cgi_file1 % self.pythonexe)
@@ -406,6 +411,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             os.chdir(self.cwd)
             if self.pythonexe != sys.executable:
                 os.remove(self.pythonexe)
+            os.remove(self.nocgi_path)
             os.remove(self.file1_path)
             os.remove(self.file2_path)
             os.rmdir(self.cgi_dir)
@@ -456,6 +462,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('/cgi-bin/file1.py')
         self.assertEqual((b'Hello World\n', 'text/html', 200), \
              (res.read(), res.getheader('Content-type'), res.status))
+
+    def test_issue19435(self):
+        res = self.request('///////////nocgi.py/../cgi-bin/nothere.sh')
+        self.assertEqual(res.status, 404)
 
     def test_post(self):
         params = urllib.parse.urlencode(
