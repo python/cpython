@@ -10580,7 +10580,7 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
         return -1;
     kind = PyUnicode_KIND(uni);
     if (kind == PyUnicode_1BYTE_KIND) {
-        char *data = PyUnicode_1BYTE_DATA(uni);
+        const void *data = PyUnicode_1BYTE_DATA(uni);
         Py_ssize_t len1 = PyUnicode_GET_LENGTH(uni);
         size_t len, len2 = strlen(str);
         int cmp;
