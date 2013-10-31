@@ -263,23 +263,28 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
 
     name = _PyObject_GetAttrId(category, &PyId___name__);
     if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
-        return;
+        goto error;
 
     f_stderr = PySys_GetObject("stderr");
     if (f_stderr == NULL) {
         fprintf(stderr, "lost sys.stderr\n");
-        Py_DECREF(name);
-        return;
+        goto error;
     }
 
     /* Print "filename:lineno: category: text\n" */
-    PyFile_WriteObject(filename, f_stderr, Py_PRINT_RAW);
-    PyFile_WriteString(lineno_str, f_stderr);
-    PyFile_WriteObject(name, f_stderr, Py_PRINT_RAW);
-    PyFile_WriteString(": ", f_stderr);
-    PyFile_WriteObject(text, f_stderr, Py_PRINT_RAW);
-    PyFile_WriteString("\n", f_stderr);
-    Py_XDECREF(name);
+    if (PyFile_WriteObject(filename, f_stderr, Py_PRINT_RAW) < 0)
+        goto error;
+    if (PyFile_WriteString(lineno_str, f_stderr) < 0)
+        goto error;
+    if (PyFile_WriteObject(name, f_stderr, Py_PRINT_RAW) < 0)
+        goto error;
+    if (PyFile_WriteString(": ", f_stderr) < 0)
+        goto error;
+    if (PyFile_WriteObject(text, f_stderr, Py_PRINT_RAW) < 0)
+        goto error;
+    if (PyFile_WriteString("\n", f_stderr) < 0)
+        goto error;
+    Py_CLEAR(name);
 
     /* Print "  source_line\n" */
     if (sourceline) {
@@ -314,6 +319,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     }
 
 error:
+    Py_XDECREF(name);
     PyErr_Clear();
 }
 
