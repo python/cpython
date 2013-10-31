@@ -679,16 +679,15 @@ information into logging calls. For a usage example , see the section on
       (possibly modified) versions of the arguments passed in.
 
 In addition to the above, :class:`LoggerAdapter` supports the following
-methods of :class:`Logger`, i.e. :meth:`debug`, :meth:`info`, :meth:`warning`,
-:meth:`error`, :meth:`exception`, :meth:`critical`, :meth:`log`,
-:meth:`isEnabledFor`, :meth:`getEffectiveLevel`, :meth:`setLevel`,
-:meth:`hasHandlers`. These methods have the same signatures as their
-counterparts in :class:`Logger`, so you can use the two types of instances
-interchangeably.
+methods of :class:`Logger`: :meth:`~Logger.debug`, :meth:`~Logger.info`,
+:meth:`~Logger.warning`, :meth:`~Logger.error`, :meth:`~Logger.exception`,
+:meth:`~Logger.critical`, :meth:`~Logger.log` and :meth:`~Logger.isEnabledFor`.
+These methods have the same signatures as their counterparts in :class:`Logger`,
+so you can use the two types of instances interchangeably for these calls.
 
 .. versionchanged:: 2.7
-   The :meth:`isEnabledFor` method was added to :class:`LoggerAdapter`.  This
-   method delegates to the underlying logger.
+   The :meth:`~Logger.isEnabledFor` method was added to :class:`LoggerAdapter`.
+   This method delegates to the underlying logger.
 
 
 Thread Safety
