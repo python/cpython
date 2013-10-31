@@ -1117,6 +1117,7 @@ r_object(RFILE *p)
         R_REF(v);
         if (v == NULL)
             break;
+
         for (i = 0; i < n; i++) {
             v2 = r_object(p);
             if ( v2 == NULL ) {
@@ -1170,10 +1171,17 @@ r_object(RFILE *p)
             if (key == NULL)
                 break;
             val = r_object(p);
-            if (val != NULL)
-                PyDict_SetItem(v, key, val);
+            if (val == NULL) {
+                Py_DECREF(key);
+                break;
+            }
+            if (PyDict_SetItem(v, key, val) < 0) {
+                Py_DECREF(key);
+                Py_DECREF(val);
+                break;
+            }
             Py_DECREF(key);
-            Py_XDECREF(val);
+            Py_DECREF(val);
         }
         if (PyErr_Occurred()) {
             Py_DECREF(v);
@@ -1204,6 +1212,7 @@ r_object(RFILE *p)
         }
         if (v == NULL)
             break;
+
         for (i = 0; i < n; i++) {
             v2 = r_object(p);
             if ( v2 == NULL ) {
