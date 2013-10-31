@@ -345,7 +345,7 @@ def main(args=None):
     elif not hasattr(sys, 'base_prefix'):
         compatible = False
     if not compatible:
-        raise ValueError('This script is only for use with Python 3.3')
+        raise ValueError('This script is only for use with Python >= 3.3')
     else:
         import argparse
 
