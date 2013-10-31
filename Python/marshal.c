@@ -827,11 +827,12 @@ r_ref_insert(PyObject *o, Py_ssize_t idx, int flag, RFILE *p)
 static PyObject *
 r_ref(PyObject *o, int flag, RFILE *p)
 {
-    if (o != NULL && flag) { /* currently only FLAG_REF is defined */
-        if (PyList_Append(p->refs, o) < 0) {
-            Py_DECREF(o); /* release the new object */
-            return NULL;
-        }
+    assert(flag & FLAG_REF);
+    if (o == NULL)
+        return NULL;
+    if (PyList_Append(p->refs, o) < 0) {
+        Py_DECREF(o); /* release the new object */
+        return NULL;
     }
     return o;
 }
