@@ -2245,6 +2245,10 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        argtypes would be a ctypes type).
     */
     stgdict->format = _ctypes_alloc_format_string(NULL, "X{}");
+    if (stgdict->format == NULL) {
+        Py_DECREF((PyObject *)stgdict);
+        return NULL;
+    }
     stgdict->flags |= TYPEFLAG_ISPOINTER;
 
     /* create the new instance (which is a class,
