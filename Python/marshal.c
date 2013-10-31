@@ -612,6 +612,7 @@ r_string(Py_ssize_t n, RFILE *p)
         }
         p->buf_size = n;
     }
+
     if (!p->readable) {
         assert(p->fp != NULL);
         read = fread(p->buf, 1, n, p->fp);
@@ -731,25 +732,31 @@ r_PyLong(RFILE *p)
     ob = _PyLong_New(size);
     if (ob == NULL)
         return NULL;
+
     Py_SIZE(ob) = n > 0 ? size : -size;
 
     for (i = 0; i < size-1; i++) {
         d = 0;
         for (j=0; j < PyLong_MARSHAL_RATIO; j++) {
             md = r_short(p);
-            if (PyErr_Occurred())
-                break;
+            if (PyErr_Occurred()) {
+                Py_DECREF(ob);
+                return NULL;
+            }
             if (md < 0 || md > PyLong_MARSHAL_BASE)
                 goto bad_digit;
             d += (digit)md << j*PyLong_MARSHAL_SHIFT;
         }
         ob->ob_digit[i] = d;
     }
+
     d = 0;
     for (j=0; j < shorts_in_top_digit; j++) {
         md = r_short(p);
-        if (PyErr_Occurred())
-            break;
+        if (PyErr_Occurred()) {
+            Py_DECREF(ob);
+            return NULL;
+        }
         if (md < 0 || md > PyLong_MARSHAL_BASE)
             goto bad_digit;
         /* topmost marshal digit should be nonzero */
