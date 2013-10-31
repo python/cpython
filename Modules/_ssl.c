@@ -528,6 +528,10 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 
     self->socket_type = socket_type;
     self->Socket = PyWeakref_NewRef((PyObject *) sock, NULL);
+    if (self->Socket == NULL) {
+        Py_DECREF(self);
+        return NULL;
+    }
     return self;
 }
 
