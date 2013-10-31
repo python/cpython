@@ -5430,9 +5430,6 @@ load(UnpicklerObject *self)
         break;                  /* and we are done! */
     }
 
-    if (_Unpickler_SkipConsumed(self) < 0)
-        return NULL;
-
     /* XXX: It is not clear what this is actually for. */
     if ((err = PyErr_Occurred())) {
         if (err == PyExc_EOFError) {
@@ -5440,6 +5437,9 @@ load(UnpicklerObject *self)
         }
         return NULL;
     }
+
+    if (_Unpickler_SkipConsumed(self) < 0)
+        return NULL;
 
     PDATA_POP(self->stack, value);
     return value;
