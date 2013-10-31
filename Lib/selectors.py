@@ -351,8 +351,8 @@ if hasattr(select, 'epoll'):
             return ready
 
         def close(self):
-            super().close()
             self._epoll.close()
+            super().close()
 
 
 if hasattr(select, 'kqueue'):
@@ -414,8 +414,8 @@ if hasattr(select, 'kqueue'):
             return ready
 
         def close(self):
-            super().close()
             self._kqueue.close()
+            super().close()
 
 
 # Choose the best implementation: roughly, epoll|kqueue > poll > select.
