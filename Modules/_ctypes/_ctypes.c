@@ -1309,8 +1309,10 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     stgdict->ndim = itemdict->ndim + 1;
     stgdict->shape = PyMem_Malloc(sizeof(Py_ssize_t) * stgdict->ndim);
-    if (stgdict->shape == NULL)
+    if (stgdict->shape == NULL) {
+        PyErr_NoMemory();
         goto error;
+    }
     stgdict->shape[0] = length;
     memmove(&stgdict->shape[1], itemdict->shape,
         sizeof(Py_ssize_t) * (stgdict->ndim - 1));
