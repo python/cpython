@@ -346,14 +346,18 @@ fill_and_set_sslerror(PyObject *type, int ssl_errno, const char *errstr,
                                    lib_obj, errstr, lineno);
     else
         msg = PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
-
     if (msg == NULL)
         goto fail;
+
     init_value = Py_BuildValue("iN", ssl_errno, msg);
+    if (init_value == NULL)
+        goto fail;
+
     err_value = PyObject_CallObject(type, init_value);
     Py_DECREF(init_value);
     if (err_value == NULL)
         goto fail;
+
     if (reason_obj == NULL)
         reason_obj = Py_None;
     if (_PyObject_SetAttrId(err_value, &PyId_reason, reason_obj))
