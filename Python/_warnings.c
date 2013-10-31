@@ -144,11 +144,19 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         ln_obj = PyTuple_GET_ITEM(tmp_item, 4);
 
         good_msg = check_matched(msg, text);
+        if (good_msg == -1)
+            return NULL;
+
         good_mod = check_matched(mod, module);
+        if (good_mod == -1)
+            return NULL;
+
         is_subclass = PyObject_IsSubclass(category, cat);
+        if (is_subclass == -1)
+            return NULL;
+
         ln = PyLong_AsSsize_t(ln_obj);
-        if (good_msg == -1 || good_mod == -1 || is_subclass == -1 ||
-            (ln == -1 && PyErr_Occurred()))
+        if (ln == -1 && PyErr_Occurred())
             return NULL;
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln))
