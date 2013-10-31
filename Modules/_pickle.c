@@ -872,18 +872,21 @@ _Unpickler_SetStringInput(UnpicklerObject *self, PyObject *input)
 static int
 _Unpickler_SkipConsumed(UnpicklerObject *self)
 {
-    Py_ssize_t consumed = self->next_read_idx - self->prefetched_idx;
+    Py_ssize_t consumed;
+    PyObject *r;
 
-    if (consumed > 0) {
-        PyObject *r;
-        assert(self->peek);  /* otherwise we did something wrong */
-        /* This makes an useless copy... */
-        r = PyObject_CallFunction(self->read, "n", consumed);
-        if (r == NULL)
-            return -1;
-        Py_DECREF(r);
-        self->prefetched_idx = self->next_read_idx;
-    }
+    consumed = self->next_read_idx - self->prefetched_idx;
+    if (consumed <= 0)
+        return 0;
+
+    assert(self->peek);  /* otherwise we did something wrong */
+    /* This makes an useless copy... */
+    r = PyObject_CallFunction(self->read, "n", consumed);
+    if (r == NULL)
+        return -1;
+    Py_DECREF(r);
+
+    self->prefetched_idx = self->next_read_idx;
     return 0;
 }
 
