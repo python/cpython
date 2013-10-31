@@ -1101,6 +1101,8 @@ r_object(RFILE *p)
 
     case TYPE_SMALL_TUPLE:
         n = (unsigned char) r_byte(p);
+        if (PyErr_Occurred())
+            break;
         goto _read_tuple;
     case TYPE_TUPLE:
         n = r_long(p);
