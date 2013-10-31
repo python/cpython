@@ -333,6 +333,13 @@ warn_explicit(PyObject *category, PyObject *message,
     PyObject *action;
     int rc;
 
+    /* module can be None if a warning is emitted late during Python shutdown.
+       In this case, the Python warnings module was probably unloaded, filters
+       are no more available to choose as action. It is safer to ignore the
+       warning and do nothing. */
+    if (module == Py_None)
+        Py_RETURN_NONE;
+
     if (registry && !PyDict_Check(registry) && (registry != Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'registry' must be a dict");
         return NULL;
@@ -635,15 +642,8 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level)
     if (!setup_context(stack_level, &filename, &lineno, &module, &registry))
         return NULL;
 
-    if (module != Py_None) {
-        res = warn_explicit(category, message, filename, lineno, module, registry,
-                            NULL);
-    }
-    else {
-        /* FIXME: emitting warnings at exit does crash Python */
-        res = Py_None;
-        Py_INCREF(res);
-    }
+    res = warn_explicit(category, message, filename, lineno, module, registry,
+                        NULL);
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
