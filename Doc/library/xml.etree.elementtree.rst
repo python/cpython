@@ -379,7 +379,7 @@ Functions
 
    Parses an XML section into an element tree incrementally, and reports what's
    going on to the user.  *source* is a filename or :term:`file object`
-   containing XML data.  *events* is a list of events to report back.  The
+   containing XML data.  *events* is a tuple of events to report back.  The
    supported events are the strings ``"start"``, ``"end"``, ``"start-ns"``
    and ``"end-ns"`` (the "ns" events are used to get detailed namespace
    information).  If *events* is omitted, only ``"end"`` events are reported.
