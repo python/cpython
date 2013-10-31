@@ -84,9 +84,9 @@ class CodecCallbackTest(unittest.TestCase):
         tests = [(u'\U0001f49d', '&#128157;'),
                  (u'\ud83d', '&#55357;'),
                  (u'\udc9d', '&#56477;'),
-                 (u'\ud83d\udc9d', '&#128157;' if len(u'\U0001f49d') > 1 else
-                                   '&#55357;&#56477;'),
                 ]
+        if u'\ud83d\udc9d' != u'\U0001f49d':
+            tests += [(u'\ud83d\udc9d', '&#55357;&#56477;')]
         for encoding in ['ascii', 'latin1', 'iso-8859-15']:
             for s, exp in tests:
                 self.assertEqual(s.encode(encoding, 'xmlcharrefreplace'),

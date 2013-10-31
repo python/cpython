@@ -12,6 +12,12 @@ Core and Builtins
 Library
 -------
 
+Tests
+-----
+
+- Issue #19457: Fixed xmlcharrefreplace tests on wide build when tests are
+  loaded from .py[co] files.
+
 
 Whats' New in Python 2.7.6?
 ===========================
