@@ -753,9 +753,6 @@ find and load modules.
 
    .. versionadded:: 3.3
 
-   .. versionchanged:: 3.4
-      The empty string is no longer special-cased to be changed into ``'.'``.
-
    .. attribute:: path
 
       The path the finder will search in.

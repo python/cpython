@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19410: Undo the special-casing removal of '' for
+  importlib.machinery.FileFinder.
+
 - Issue #19424: Fix the warnings module to accept filename containing surrogate
   characters.
 
