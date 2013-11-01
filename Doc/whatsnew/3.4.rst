@@ -812,6 +812,3 @@ that may require changes to your code.
   working directory will also now have an absolute path, including when using
   ``-m`` with the interpreter (this does not influence when the path to a file
   is specified on the command-line).
-
-* :class:`importlib.machinery.FileFinder` no longer special-cases the empty string
-  to be changed to ``'.'``.
