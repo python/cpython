@@ -127,6 +127,8 @@ Library
 - Issue #8964: fix platform._sys_version to handle IronPython 2.6+.
   Patch by Martin Matusiak.
 
+- Issue #19413: Restore pre-3.3 reload() semantics of re-finding modules.
+
 - Issue #18958: Improve error message for json.load(s) while passing a string
   that starts with a UTF-8 BOM.
 
