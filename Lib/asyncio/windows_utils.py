@@ -18,18 +18,18 @@ import _winapi
 
 __all__ = ['socketpair', 'pipe', 'Popen', 'PIPE', 'PipeHandle']
 
-#
+
 # Constants/globals
-#
+
 
 BUFSIZE = 8192
 PIPE = subprocess.PIPE
 STDOUT = subprocess.STDOUT
 _mmap_counter = itertools.count()
 
-#
+
 # Replacement for socket.socketpair()
-#
+
 
 def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
     """A socket pair usable as a self-pipe, for Windows.
@@ -57,9 +57,9 @@ def socketpair(family=socket.AF_INET, type=socket.SOCK_STREAM, proto=0):
     lsock.close()
     return (ssock, csock)
 
-#
+
 # Replacement for os.pipe() using handles instead of fds
-#
+
 
 def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     """Like os.pipe() but with overlapped support and using handles not fds."""
@@ -105,9 +105,9 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
             _winapi.CloseHandle(h2)
         raise
 
-#
+
 # Wrapper for a pipe handle
-#
+
 
 class PipeHandle:
     """Wrapper for an overlapped pipe handle which is vaguely file-object like.
@@ -137,9 +137,9 @@ class PipeHandle:
     def __exit__(self, t, v, tb):
         self.close()
 
-#
+
 # Replacement for subprocess.Popen using overlapped pipe handles
-#
+
 
 class Popen(subprocess.Popen):
     """Replacement for subprocess.Popen using overlapped pipe handles.
