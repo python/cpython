@@ -573,7 +573,7 @@ class _SelectorSslTransport(_SelectorTransport):
             'server_side': server_side,
             'do_handshake_on_connect': False,
         }
-        if server_hostname is not None and not server_side and ssl.HAS_SNI:
+        if server_hostname and not server_side and ssl.HAS_SNI:
             wrap_kwargs['server_hostname'] = server_hostname
         sslsock = sslcontext.wrap_socket(rawsock, **wrap_kwargs)
 
@@ -619,7 +619,7 @@ class _SelectorSslTransport(_SelectorTransport):
 
         # Verify hostname if requested.
         peercert = self._sock.getpeercert()
-        if (self._server_hostname is not None and
+        if (self._server_hostname and
             self._sslcontext.verify_mode != ssl.CERT_NONE):
             try:
                 ssl.match_hostname(peercert, self._server_hostname)
