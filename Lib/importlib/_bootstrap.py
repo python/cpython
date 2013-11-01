@@ -65,10 +65,20 @@ def _path_split(path):
     return '', path
 
 
+def _path_stat(path):
+    """Stat the path.
+
+    Made a separate function to make it easier to override in experiments
+    (e.g. cache stat results).
+
+    """
+    return _os.stat(path)
+
+
 def _path_is_mode_type(path, mode):
     """Test whether the path is the specified mode type."""
     try:
-        stat_info = _os.stat(path)
+        stat_info = _path_stat(path)
     except OSError:
         return False
     return (stat_info.st_mode & 0o170000) == mode
@@ -458,7 +468,7 @@ def _get_sourcefile(bytecode_path):
 def _calc_mode(path):
     """Calculate the mode permissions for a bytecode file."""
     try:
-        mode = _os.stat(path).st_mode
+        mode = _path_stat(path).st_mode
     except OSError:
         mode = 0o666
     # We always ensure write access so we can update cached files
@@ -880,7 +890,7 @@ class WindowsRegistryFinder:
         if filepath is None:
             return None
         try:
-            _os.stat(filepath)
+            _path_stat(filepath)
         except OSError:
             return None
         for loader, suffixes in _get_supported_file_loaders():
@@ -1074,7 +1084,7 @@ class SourceFileLoader(FileLoader, SourceLoader):
 
     def path_stats(self, path):
         """Return the metadata for the path."""
-        st = _os.stat(path)
+        st = _path_stat(path)
         return {'mtime': st.st_mtime, 'size': st.st_size}
 
     def _cache_bytecode(self, source_path, bytecode_path, data):
@@ -1392,7 +1402,7 @@ class FileFinder:
         is_namespace = False
         tail_module = fullname.rpartition('.')[2]
         try:
-            mtime = _os.stat(self.path or _os.getcwd()).st_mtime
+            mtime = _path_stat(self.path or _os.getcwd()).st_mtime
         except OSError:
             mtime = -1
         if mtime != self._path_mtime:
