@@ -137,6 +137,17 @@ class AbstractEventLoop:
         """Return whether the event loop is currently running."""
         raise NotImplementedError
 
+    def close(self):
+        """Close the loop.
+
+        The loop should not be running.
+
+        This is idempotent and irreversible.
+
+        No other methods should be called after this one.
+        """
+        raise NotImplementedError
+
     # Methods scheduling callbacks.  All these return Handles.
 
     def call_soon(self, callback, *args):
@@ -213,6 +224,8 @@ class AbstractEventLoop:
                                  local_addr=None, remote_addr=None, *,
                                  family=0, proto=0, flags=0):
         raise NotImplementedError
+
+    # Pipes and subprocesses.
 
     def connect_read_pipe(self, protocol_factory, pipe):
         """Register read pipe in eventloop.

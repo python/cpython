@@ -186,6 +186,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         self.call_soon(_raise_stop_error)
 
     def close(self):
+        """Close the event loop.
+
+        This clears the queues and shuts down the executor,
+        but does not wait for the executor to finish.
+        """
         self._ready.clear()
         self._scheduled.clear()
         executor = self._default_executor
