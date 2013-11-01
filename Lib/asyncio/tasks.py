@@ -62,8 +62,9 @@ class CoroWrapper:
             code = func.__code__
             filename = code.co_filename
             lineno = code.co_firstlineno
-            logger.error('Coroutine %r defined at %s:%s was never yielded from',
-                         func.__name__, filename, lineno)
+            logger.error(
+                'Coroutine %r defined at %s:%s was never yielded from',
+                func.__name__, filename, lineno)
 
 
 def coroutine(func):
