@@ -444,7 +444,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
-    def test_create_connection_server_hostname_default(self):
+    def test_create_connection_ssl_server_hostname_default(self):
         self.loop.getaddrinfo = unittest.mock.Mock()
 
         def mock_getaddrinfo(*args, **kwds):
@@ -490,8 +490,8 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
                                                          server_side=False,
                                                          server_hostname='')
 
-    def test_create_connection_server_hostname_errors(self):
-        # When not using ssl, server_hostname must be None (but '' is OK).
+    def test_create_connection_no_ssl_server_hostname_errors(self):
+        # When not using ssl, server_hostname must be None.
         coro = self.loop.create_connection(MyProto, 'python.org', 80,
                                            server_hostname='')
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
@@ -499,6 +499,7 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
                                            server_hostname='python.org')
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
+    def test_create_connection_ssl_server_hostname_errors(self):
         # When using ssl, server_hostname may be None if host is non-empty.
         coro = self.loop.create_connection(MyProto, '', 80, ssl=True)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
