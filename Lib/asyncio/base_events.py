@@ -300,7 +300,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError('You must set server_hostname '
                                  'when using ssl without a host')
             server_hostname = host
-            
+
         if host is not None or port is not None:
             if sock is not None:
                 raise ValueError(
