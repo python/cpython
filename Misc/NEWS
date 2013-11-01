@@ -15,9 +15,6 @@ Library
 Tests
 -----
 
-- Issue #19457: Fixed xmlcharrefreplace tests on wide build when tests are
-  loaded from .py[co] files.
-
 
 Whats' New in Python 2.7.6?
 ===========================
@@ -33,6 +30,12 @@ IDLE
 ----
 
 - Issue #19426: Fixed the opening of Python source file with specified encoding.
+
+Tests
+-----
+
+- Issue #19457: Fixed xmlcharrefreplace tests on wide build when tests are
+  loaded from .py[co] files.
 
 
 What's New in Python 2.7.6 release candidate 1?
