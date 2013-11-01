@@ -1,8 +1,10 @@
 from . import util
 
 frozen_init, source_init = util.import_importlib('importlib')
+frozen_util, source_util = util.import_importlib('importlib.util')
 frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
 
+import os.path
 import sys
 from test import support
 import types
@@ -190,11 +192,129 @@ class ReloadTests:
                 self.assertEqual(actual.spam, 3)
                 self.assertEqual(reloaded.spam, 3)
 
+    def test_reload_missing_loader(self):
+        with support.CleanImport('types'):
+            import types
+            loader = types.__loader__
+            del types.__loader__
+            reloaded = self.init.reload(types)
+
+            self.assertIs(reloaded, types)
+            self.assertIs(sys.modules['types'], types)
+            self.assertEqual(reloaded.__loader__.path, loader.path)
+
+    def test_reload_loader_replaced(self):
+        with support.CleanImport('types'):
+            import types
+            types.__loader__ = None
+            self.init.invalidate_caches()
+            reloaded = self.init.reload(types)
+
+            self.assertIsNot(reloaded.__loader__, None)
+            self.assertIs(reloaded, types)
+            self.assertIs(sys.modules['types'], types)
+
+    def test_reload_location_changed(self):
+        name = 'spam'
+        with support.temp_cwd(None) as cwd:
+            with util.uncache('spam'):
+                with support.DirsOnSysPath(cwd):
+                    self.init.invalidate_caches()
+                    path = os.path.join(cwd, name + '.py')
+                    cached = self.util.cache_from_source(path)
+                    expected = {'__name__': name,
+                                '__package__': '',
+                                '__file__': path,
+                                '__cached__': cached,
+                                '__doc__': None,
+                                '__builtins__': __builtins__,
+                                }
+                    support.create_empty_file(path)
+                    module = self.init.import_module(name)
+                    ns = vars(module)
+                    del ns['__initializing__']
+                    loader = ns.pop('__loader__')
+                    self.assertEqual(loader.path, path)
+                    self.assertEqual(ns, expected)
+
+                    self.init.invalidate_caches()
+                    init_path = os.path.join(cwd, name, '__init__.py')
+                    cached = self.util.cache_from_source(init_path)
+                    expected = {'__name__': name,
+                                '__package__': name,
+                                '__file__': init_path,
+                                '__cached__': cached,
+                                '__path__': [os.path.dirname(init_path)],
+                                '__doc__': None,
+                                '__builtins__': __builtins__,
+                                }
+                    os.mkdir(name)
+                    os.rename(path, init_path)
+                    reloaded = self.init.reload(module)
+                    ns = vars(reloaded)
+                    del ns['__initializing__']
+                    loader = ns.pop('__loader__')
+                    self.assertIs(reloaded, module)
+                    self.assertEqual(loader.path, init_path)
+                    self.assertEqual(ns, expected)
+
+    def test_reload_namespace_changed(self):
+        self.maxDiff = None
+        name = 'spam'
+        with support.temp_cwd(None) as cwd:
+            with util.uncache('spam'):
+                with support.DirsOnSysPath(cwd):
+                    self.init.invalidate_caches()
+                    bad_path = os.path.join(cwd, name, '__init.py')
+                    cached = self.util.cache_from_source(bad_path)
+                    expected = {'__name__': name,
+                                '__package__': name,
+                                '__doc__': None,
+                                }
+                    os.mkdir(name)
+                    with open(bad_path, 'w') as init_file:
+                        init_file.write('eggs = None')
+                    module = self.init.import_module(name)
+                    ns = vars(module)
+                    del ns['__initializing__']
+                    loader = ns.pop('__loader__')
+                    path = ns.pop('__path__')
+                    self.assertEqual(list(path),
+                                     [os.path.dirname(bad_path)] * 2)
+                    with self.assertRaises(AttributeError):
+                        # a NamespaceLoader
+                        loader.path
+                    self.assertEqual(ns, expected)
+
+                    self.init.invalidate_caches()
+                    init_path = os.path.join(cwd, name, '__init__.py')
+                    cached = self.util.cache_from_source(init_path)
+                    expected = {'__name__': name,
+                                '__package__': name,
+                                '__file__': init_path,
+                                '__cached__': cached,
+                                '__path__': [os.path.dirname(init_path)],
+                                '__doc__': None,
+                                '__builtins__': __builtins__,
+                                'eggs': None,
+                                }
+                    os.rename(bad_path, init_path)
+                    reloaded = self.init.reload(module)
+                    ns = vars(reloaded)
+                    del ns['__initializing__']
+                    loader = ns.pop('__loader__')
+                    self.assertIs(reloaded, module)
+                    self.assertEqual(loader.path, init_path)
+                    self.assertEqual(ns, expected)
+
+
 class Frozen_ReloadTests(ReloadTests, unittest.TestCase):
     init = frozen_init
+    util = frozen_util
 
 class Source_ReloadTests(ReloadTests, unittest.TestCase):
     init = source_init
+    util = source_util
 
 
 class InvalidateCacheTests:

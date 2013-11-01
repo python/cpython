@@ -107,7 +107,7 @@ def reload(module):
     if not module or not isinstance(module, types.ModuleType):
         raise TypeError("reload() argument must be module")
     name = module.__name__
-    if name not in sys.modules:
+    if sys.modules.get(name) is not module:
         msg = "module {} not in sys.modules"
         raise ImportError(msg.format(name), name=name)
     if name in _RELOADING:
@@ -118,7 +118,11 @@ def reload(module):
         if parent_name and parent_name not in sys.modules:
             msg = "parent {!r} not in sys.modules"
             raise ImportError(msg.format(parent_name), name=parent_name)
-        module.__loader__.load_module(name)
+        loader = _bootstrap._find_module(name, None)
+        if loader is None:
+            raise ImportError(_bootstrap._ERR_MSG.format(name), name=name)
+        module.__loader__ = loader
+        loader.load_module(name)
         # The module may have replaced itself in sys.modules!
         return sys.modules[module.__name__]
     finally:
