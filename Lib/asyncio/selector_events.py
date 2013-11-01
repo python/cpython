@@ -684,7 +684,10 @@ class _SelectorSslTransport(_SelectorTransport):
                 self._protocol.data_received(data)
             else:
                 try:
-                    self._protocol.eof_received()
+                    keep_open = self._protocol.eof_received()
+                    if keep_open:
+                        logger.warning('returning true from eof_received() '
+                                       'has no effect when using ssl')
                 finally:
                     self.close()
 
