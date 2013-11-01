@@ -1276,7 +1276,6 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return windows_events.SelectorEventLoop()
 
-
     class ProactorEventLoopTests(EventLoopTestsMixin,
                                  SubprocessTestsMixin,
                                  unittest.TestCase):

@@ -77,7 +77,7 @@ class ProactorTests(unittest.TestCase):
             stream_reader = streams.StreamReader(loop=self.loop)
             protocol = streams.StreamReaderProtocol(stream_reader)
             trans, proto = yield from self.loop.create_pipe_connection(
-                lambda:protocol, ADDRESS)
+                lambda: protocol, ADDRESS)
             self.assertIsInstance(trans, transports.Transport)
             self.assertEqual(protocol, proto)
             clients.append((stream_reader, trans))
