@@ -90,12 +90,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         except (BlockingIOError, InterruptedError):
             pass
 
-    def _start_serving(self, protocol_factory, sock, ssl=None, server=None):
+    def _start_serving(self, protocol_factory, sock,
+                       sslcontext=None, server=None):
         self.add_reader(sock.fileno(), self._accept_connection,
-                        protocol_factory, sock, ssl, server)
+                        protocol_factory, sock, sslcontext, server)
 
-    def _accept_connection(self, protocol_factory, sock, ssl=None,
-                           server=None):
+    def _accept_connection(self, protocol_factory, sock,
+                           sslcontext=None, server=None):
         try:
             conn, addr = sock.accept()
             conn.setblocking(False)
@@ -113,13 +114,13 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
                 self.remove_reader(sock.fileno())
                 self.call_later(constants.ACCEPT_RETRY_DELAY,
                                 self._start_serving,
-                                protocol_factory, sock, ssl, server)
+                                protocol_factory, sock, sslcontext, server)
             else:
                 raise  # The event loop will catch, log and ignore it.
         else:
-            if ssl:
+            if sslcontext:
                 self._make_ssl_transport(
-                    conn, protocol_factory(), ssl, None,
+                    conn, protocol_factory(), sslcontext, None,
                     server_side=True, extra={'peername': addr}, server=server)
             else:
                 self._make_socket_transport(
@@ -558,17 +559,23 @@ class _SelectorSslTransport(_SelectorTransport):
     def __init__(self, loop, rawsock, protocol, sslcontext, waiter=None,
                  server_side=False, server_hostname=None,
                  extra=None, server=None):
+        if ssl is None:
+            raise RuntimeError('stdlib ssl module not available')
+
         if server_side:
-            assert isinstance(
-                sslcontext, ssl.SSLContext), 'Must pass an SSLContext'
+            if not sslcontext:
+                raise ValueError('Server side ssl needs a valid SSLContext')
         else:
-            # Client-side may pass ssl=True to use a default context.
-            # The default is the same as used by urllib.
-            if sslcontext is None:
+            if not sslcontext:
+                # Client side may pass ssl=True to use a default
+                # context; in that case the sslcontext passed is None.
+                # The default is the same as used by urllib with
+                # cadefault=True.
                 sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                 sslcontext.options |= ssl.OP_NO_SSLv2
                 sslcontext.set_default_verify_paths()
                 sslcontext.verify_mode = ssl.CERT_REQUIRED
+
         wrap_kwargs = {
             'server_side': server_side,
             'do_handshake_on_connect': False,
