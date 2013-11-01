@@ -63,34 +63,6 @@ DEFINE_CONSTS_FOR_NEW(sha384)
 DEFINE_CONSTS_FOR_NEW(sha512)
 #endif
 
-static PyObject *
-_setException(PyObject *exc)
-{
-    unsigned long errcode;
-    const char *lib, *func, *reason;
-
-    errcode = ERR_peek_last_error();
-    if (!errcode) {
-        PyErr_SetString(exc, "unknown reasons");
-        return NULL;
-    }
-    ERR_clear_error();
-
-    lib = ERR_lib_error_string(errcode);
-    func = ERR_func_error_string(errcode);
-    reason = ERR_reason_error_string(errcode);
-
-    if (lib && func) {
-        PyErr_Format(exc, "[%s: %s] %s", lib, func, reason);
-    }
-    else if (lib) {
-        PyErr_Format(exc, "[%s] %s", lib, reason);
-    }
-    else {
-        PyErr_SetString(exc, reason);
-    }
-    return NULL;
-}
 
 static EVPobject *
 newEVPobject(PyObject *name)
@@ -588,6 +560,34 @@ PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
     return 1;
 }
 
+static PyObject *
+_setException(PyObject *exc)
+{
+    unsigned long errcode;
+    const char *lib, *func, *reason;
+
+    errcode = ERR_peek_last_error();
+    if (!errcode) {
+        PyErr_SetString(exc, "unknown reasons");
+        return NULL;
+    }
+    ERR_clear_error();
+
+    lib = ERR_lib_error_string(errcode);
+    func = ERR_func_error_string(errcode);
+    reason = ERR_reason_error_string(errcode);
+
+    if (lib && func) {
+        PyErr_Format(exc, "[%s: %s] %s", lib, func, reason);
+    }
+    else if (lib) {
+        PyErr_Format(exc, "[%s] %s", lib, reason);
+    }
+    else {
+        PyErr_SetString(exc, reason);
+    }
+    return NULL;
+}
 
 PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "pbkdf2_hmac(hash_name, password, salt, iterations, dklen=None) -> key\n\
