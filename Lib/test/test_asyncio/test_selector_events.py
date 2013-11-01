@@ -43,6 +43,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertIsInstance(
             self.loop._make_socket_transport(m, m), _SelectorSocketTransport)
 
+    @unittest.skipIf(ssl is None, 'No ssl module')
     def test_make_ssl_transport(self):
         m = unittest.mock.Mock()
         self.loop.add_reader = unittest.mock.Mock()
@@ -51,6 +52,16 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop.remove_writer = unittest.mock.Mock()
         self.assertIsInstance(
             self.loop._make_ssl_transport(m, m, m, m), _SelectorSslTransport)
+
+    @unittest.mock.patch('asyncio.selector_events.ssl', None)
+    def test_make_ssl_transport_without_ssl_error(self):
+        m = unittest.mock.Mock()
+        self.loop.add_reader = unittest.mock.Mock()
+        self.loop.add_writer = unittest.mock.Mock()
+        self.loop.remove_reader = unittest.mock.Mock()
+        self.loop.remove_writer = unittest.mock.Mock()
+        with self.assertRaises(RuntimeError):
+            self.loop._make_ssl_transport(m, m, m, m)
 
     def test_close(self):
         ssock = self.loop._ssock
@@ -1275,6 +1286,15 @@ class SelectorSslTransportTests(unittest.TestCase):
         self.sslcontext.wrap_socket.assert_called_with(
             self.sock, do_handshake_on_connect=False, server_side=False,
             server_hostname='localhost')
+
+
+class SelectorSslWithoutSslTransportTests(unittest.TestCase):
+
+    @unittest.mock.patch('asyncio.selector_events.ssl', None)
+    def test_ssl_transport_requires_ssl_module(self):
+        Mock = unittest.mock.Mock
+        with self.assertRaises(RuntimeError):
+            transport = _SelectorSslTransport(Mock(), Mock(), Mock(), Mock())
 
 
 class SelectorDatagramTransportTests(unittest.TestCase):

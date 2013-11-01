@@ -466,6 +466,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                       ssl=None,
                       reuse_address=None):
         """XXX"""
+        if isinstance(ssl, bool):
+            raise TypeError('ssl argument must be an SSLContext or None')
         if host is not None or port is not None:
             if sock is not None:
                 raise ValueError(
