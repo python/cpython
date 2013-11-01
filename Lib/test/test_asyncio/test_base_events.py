@@ -1,5 +1,6 @@
 """Tests for base_events.py"""
 
+import errno
 import logging
 import socket
 import time
@@ -8,6 +9,7 @@ import unittest.mock
 from test.support import find_unused_port, IPV6_ENABLED
 
 from asyncio import base_events
+from asyncio import constants
 from asyncio import events
 from asyncio import futures
 from asyncio import protocols
@@ -585,11 +587,18 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
     def test_accept_connection_exception(self, m_log):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
-        sock.accept.side_effect = OSError()
+        sock.accept.side_effect = OSError(errno.EMFILE, 'Too many open files')
+        self.loop.remove_reader = unittest.mock.Mock()
+        self.loop.call_later = unittest.mock.Mock()
 
         self.loop._accept_connection(MyProto, sock)
-        self.assertTrue(sock.close.called)
         self.assertTrue(m_log.exception.called)
+        self.assertFalse(sock.close.called)
+        self.loop.remove_reader.assert_called_with(10)
+        self.loop.call_later.assert_called_with(constants.ACCEPT_RETRY_DELAY,
+                                                # self.loop._start_serving
+                                                unittest.mock.ANY,
+                                                MyProto, sock, None, None)
 
 
 if __name__ == '__main__':

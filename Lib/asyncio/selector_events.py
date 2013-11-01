@@ -5,6 +5,7 @@ also includes support for signal handling, see the unix_events sub-module.
 """
 
 import collections
+import errno
 import socket
 try:
     import ssl
@@ -98,15 +99,23 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         try:
             conn, addr = sock.accept()
             conn.setblocking(False)
-        except (BlockingIOError, InterruptedError):
+        except (BlockingIOError, InterruptedError, ConnectionAbortedError):
             pass  # False alarm.
-        except Exception:
-            # Bad error. Stop serving.
-            self.remove_reader(sock.fileno())
-            sock.close()
+        except OSError as exc:
             # There's nowhere to send the error, so just log it.
             # TODO: Someone will want an error handler for this.
-            logger.exception('Accept failed')
+            if exc.errno in (errno.EMFILE, errno.ENFILE,
+                             errno.ENOBUFS, errno.ENOMEM):
+                # Some platforms (e.g. Linux keep reporting the FD as
+                # ready, so we remove the read handler temporarily.
+                # We'll try again in a while.
+                logger.exception('Accept out of system resource (%s)', exc)
+                self.remove_reader(sock.fileno())
+                self.call_later(constants.ACCEPT_RETRY_DELAY,
+                                self._start_serving,
+                                protocol_factory, sock, ssl, server)
+            else:
+                raise  # The event loop will catch, log and ignore it.
         else:
             if ssl:
                 self._make_ssl_transport(
