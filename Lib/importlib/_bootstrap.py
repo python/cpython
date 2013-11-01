@@ -1510,15 +1510,19 @@ def _find_module(name, path):
     """Find a module's loader."""
     if not sys.meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
+    is_reload = name in sys.modules
     for finder in sys.meta_path:
         with _ImportLockContext():
             loader = finder.find_module(name, path)
         if loader is not None:
             # The parent import may have already imported this module.
-            if name not in sys.modules:
+            if is_reload or name not in sys.modules:
                 return loader
             else:
-                return sys.modules[name].__loader__
+                try:
+                    return sys.modules[name].__loader__
+                except AttributeError:
+                    return loader
     else:
         return None
 
