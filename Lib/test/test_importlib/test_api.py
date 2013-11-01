@@ -279,8 +279,8 @@ class ReloadTests:
                     del ns['__initializing__']
                     loader = ns.pop('__loader__')
                     path = ns.pop('__path__')
-                    self.assertEqual(list(path),
-                                     [os.path.dirname(bad_path)] * 2)
+                    self.assertEqual(set(path),
+                                     set([os.path.dirname(bad_path)]))
                     with self.assertRaises(AttributeError):
                         # a NamespaceLoader
                         loader.path
