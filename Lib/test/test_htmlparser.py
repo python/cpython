@@ -96,7 +96,9 @@ class TestCaseBase(unittest.TestCase):
             parser = self.get_collector()
             parser.feed(source)
             parser.close()
-        self.assertRaises(html.parser.HTMLParseError, parse)
+        with self.assertRaises(html.parser.HTMLParseError):
+            with self.assertWarns(DeprecationWarning):
+                parse()
 
 
 class HTMLParserStrictTestCase(TestCaseBase):
@@ -360,7 +362,16 @@ text
 class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
 
     def get_collector(self):
-        return EventCollector(strict=False)
+        return EventCollector()
+
+    def test_deprecation_warnings(self):
+        with self.assertWarns(DeprecationWarning):
+            EventCollector(strict=True)
+        with self.assertWarns(DeprecationWarning):
+            EventCollector(strict=False)
+        with self.assertRaises(html.parser.HTMLParseError):
+            with self.assertWarns(DeprecationWarning):
+                EventCollector().error('test')
 
     def test_tolerant_parsing(self):
         self._run_check('<html <html>te>>xt&a<<bc</a></html>\n'
@@ -676,7 +687,7 @@ class AttributesStrictTestCase(TestCaseBase):
 class AttributesTolerantTestCase(AttributesStrictTestCase):
 
     def get_collector(self):
-        return EventCollector(strict=False)
+        return EventCollector()
 
     def test_attr_funky_names2(self):
         self._run_check(

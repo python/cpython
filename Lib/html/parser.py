@@ -94,6 +94,8 @@ class HTMLParseError(Exception):
         return result
 
 
+_strict_sentinel = object()
+
 class HTMLParser(_markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
 
@@ -116,16 +118,18 @@ class HTMLParser(_markupbase.ParserBase):
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
-    def __init__(self, strict=False):
+    def __init__(self, strict=_strict_sentinel):
         """Initialize and reset this instance.
 
         If strict is set to False (the default) the parser will parse invalid
         markup, otherwise it will raise an error.  Note that the strict mode
-        is deprecated.
+        and argument are deprecated.
         """
-        if strict:
-            warnings.warn("The strict mode is deprecated.",
+        if strict is not _strict_sentinel:
+            warnings.warn("The strict argument and mode are deprecated.",
                           DeprecationWarning, stacklevel=2)
+        else:
+            strict = False  # default
         self.strict = strict
         self.reset()
 
@@ -151,6 +155,8 @@ class HTMLParser(_markupbase.ParserBase):
         self.goahead(1)
 
     def error(self, message):
+        warnings.warn("The 'error' method is deprecated.",
+                      DeprecationWarning, stacklevel=2)
         raise HTMLParseError(message, self.getpos())
 
     __starttag_text = None

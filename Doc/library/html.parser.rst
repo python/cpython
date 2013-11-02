@@ -74,7 +74,7 @@ as they are encountered::
        def handle_data(self, data):
            print("Encountered some data  :", data)
 
-   parser = MyHTMLParser(strict=False)
+   parser = MyHTMLParser()
    parser.feed('<html><head><title>Test</title></head>'
                '<body><h1>Parse me!</h1></body></html>')
 
@@ -272,7 +272,7 @@ examples::
        def handle_decl(self, data):
            print("Decl     :", data)
 
-   parser = MyHTMLParser(strict=False)
+   parser = MyHTMLParser()
 
 Parsing a doctype::
 

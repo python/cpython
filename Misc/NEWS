@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15114: The html.parser module now raises a DeprecationWarning when the
+  strict argument of HTMLParser or the HTMLParser.error method are used.
+
 - Issue #19410: Undo the special-casing removal of '' for
   importlib.machinery.FileFinder.
 
