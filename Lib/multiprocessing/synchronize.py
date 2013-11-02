@@ -115,8 +115,8 @@ class SemLock(object):
 
     @staticmethod
     def _make_name():
-        return '/%s-%s' % (process.current_process()._config['semprefix'],
-                           next(SemLock._rand))
+        return '%s-%s' % (process.current_process()._config['semprefix'],
+                          next(SemLock._rand))
 
 #
 # Semaphore
