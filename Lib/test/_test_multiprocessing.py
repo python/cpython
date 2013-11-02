@@ -723,7 +723,7 @@ class _TestQueue(BaseTestCase):
         start = time.time()
         self.assertRaises(pyqueue.Empty, q.get, True, 0.2)
         delta = time.time() - start
-        self.assertGreaterEqual(delta, 0.19)
+        self.assertGreaterEqual(delta, 0.18)
 
 #
 #
