@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19286: Directories in ``package_data`` are no longer added to
+  the filelist, preventing failure outlined in the ticket.
+
 - Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
 
 Tests
