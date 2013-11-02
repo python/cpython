@@ -764,11 +764,5 @@ class AttributesTolerantTestCase(AttributesStrictTestCase):
                          ("data", "spam"), ("endtag", "a")])
 
 
-
-def test_main():
-    support.run_unittest(HTMLParserStrictTestCase, HTMLParserTolerantTestCase,
-                         AttributesStrictTestCase, AttributesTolerantTestCase)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
