@@ -1,5 +1,6 @@
 """Tests for base_events.py"""
 
+import errno
 import logging
 import socket
 import time
@@ -8,6 +9,7 @@ import unittest.mock
 from test.support import find_unused_port, IPV6_ENABLED
 
 from asyncio import base_events
+from asyncio import constants
 from asyncio import events
 from asyncio import futures
 from asyncio import protocols
@@ -442,6 +444,71 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
         self.assertRaises(
             OSError, self.loop.run_until_complete, coro)
 
+    def test_create_connection_ssl_server_hostname_default(self):
+        self.loop.getaddrinfo = unittest.mock.Mock()
+
+        def mock_getaddrinfo(*args, **kwds):
+            f = futures.Future(loop=self.loop)
+            f.set_result([(socket.AF_INET, socket.SOCK_STREAM,
+                           socket.SOL_TCP, '', ('1.2.3.4', 80))])
+            return f
+
+        self.loop.getaddrinfo.side_effect = mock_getaddrinfo
+        self.loop.sock_connect = unittest.mock.Mock()
+        self.loop.sock_connect.return_value = ()
+        self.loop._make_ssl_transport = unittest.mock.Mock()
+
+        def mock_make_ssl_transport(sock, protocol, sslcontext, waiter,
+                                    **kwds):
+            waiter.set_result(None)
+
+        self.loop._make_ssl_transport.side_effect = mock_make_ssl_transport
+        ANY = unittest.mock.ANY
+        # First try the default server_hostname.
+        self.loop._make_ssl_transport.reset_mock()
+        coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True)
+        self.loop.run_until_complete(coro)
+        self.loop._make_ssl_transport.assert_called_with(
+            ANY, ANY, ANY, ANY,
+            server_side=False,
+            server_hostname='python.org')
+        # Next try an explicit server_hostname.
+        self.loop._make_ssl_transport.reset_mock()
+        coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True,
+                                           server_hostname='perl.com')
+        self.loop.run_until_complete(coro)
+        self.loop._make_ssl_transport.assert_called_with(
+            ANY, ANY, ANY, ANY,
+            server_side=False,
+            server_hostname='perl.com')
+        # Finally try an explicit empty server_hostname.
+        self.loop._make_ssl_transport.reset_mock()
+        coro = self.loop.create_connection(MyProto, 'python.org', 80, ssl=True,
+                                           server_hostname='')
+        self.loop.run_until_complete(coro)
+        self.loop._make_ssl_transport.assert_called_with(ANY, ANY, ANY, ANY,
+                                                         server_side=False,
+                                                         server_hostname='')
+
+    def test_create_connection_no_ssl_server_hostname_errors(self):
+        # When not using ssl, server_hostname must be None.
+        coro = self.loop.create_connection(MyProto, 'python.org', 80,
+                                           server_hostname='')
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+        coro = self.loop.create_connection(MyProto, 'python.org', 80,
+                                           server_hostname='python.org')
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+
+    def test_create_connection_ssl_server_hostname_errors(self):
+        # When using ssl, server_hostname may be None if host is non-empty.
+        coro = self.loop.create_connection(MyProto, '', 80, ssl=True)
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+        coro = self.loop.create_connection(MyProto, None, 80, ssl=True)
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+        coro = self.loop.create_connection(MyProto, None, None,
+                                           ssl=True, sock=socket.socket())
+        self.assertRaises(ValueError, self.loop.run_until_complete, coro)
+
     def test_create_server_empty_host(self):
         # if host is empty string use None instead
         host = object()
@@ -585,11 +652,18 @@ class BaseEventLoopWithSelectorTests(unittest.TestCase):
     def test_accept_connection_exception(self, m_log):
         sock = unittest.mock.Mock()
         sock.fileno.return_value = 10
-        sock.accept.side_effect = OSError()
+        sock.accept.side_effect = OSError(errno.EMFILE, 'Too many open files')
+        self.loop.remove_reader = unittest.mock.Mock()
+        self.loop.call_later = unittest.mock.Mock()
 
         self.loop._accept_connection(MyProto, sock)
-        self.assertTrue(sock.close.called)
         self.assertTrue(m_log.exception.called)
+        self.assertFalse(sock.close.called)
+        self.loop.remove_reader.assert_called_with(10)
+        self.loop.call_later.assert_called_with(constants.ACCEPT_RETRY_DELAY,
+                                                # self.loop._start_serving
+                                                unittest.mock.ANY,
+                                                MyProto, sock, None, None)
 
 
 if __name__ == '__main__':

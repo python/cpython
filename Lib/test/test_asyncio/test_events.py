@@ -1276,7 +1276,6 @@ if sys.platform == 'win32':
         def create_event_loop(self):
             return windows_events.SelectorEventLoop()
 
-
     class ProactorEventLoopTests(EventLoopTestsMixin,
                                  SubprocessTestsMixin,
                                  unittest.TestCase):
@@ -1471,6 +1470,8 @@ class AbstractEventLoopTests(unittest.TestCase):
             NotImplementedError, loop.stop)
         self.assertRaises(
             NotImplementedError, loop.is_running)
+        self.assertRaises(
+            NotImplementedError, loop.close)
         self.assertRaises(
             NotImplementedError, loop.call_later, None, None)
         self.assertRaises(

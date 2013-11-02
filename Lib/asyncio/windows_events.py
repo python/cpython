@@ -138,6 +138,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     @tasks.coroutine
     def start_serving_pipe(self, protocol_factory, address):
         server = PipeServer(address)
+
         def loop(f=None):
             pipe = None
             try:
@@ -160,6 +161,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
                     pipe.close()
             else:
                 f.add_done_callback(loop)
+
         self.call_soon(loop)
         return [server]
 
@@ -209,6 +211,7 @@ class IocpProactor:
             ov.WSARecv(conn.fileno(), nbytes, flags)
         else:
             ov.ReadFile(conn.fileno(), nbytes)
+
         def finish(trans, key, ov):
             try:
                 return ov.getresult()
@@ -217,6 +220,7 @@ class IocpProactor:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
+
         return self._register(ov, conn, finish)
 
     def send(self, conn, buf, flags=0):
@@ -226,6 +230,7 @@ class IocpProactor:
             ov.WSASend(conn.fileno(), buf, flags)
         else:
             ov.WriteFile(conn.fileno(), buf)
+
         def finish(trans, key, ov):
             try:
                 return ov.getresult()
@@ -234,6 +239,7 @@ class IocpProactor:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
+
         return self._register(ov, conn, finish)
 
     def accept(self, listener):
@@ -241,6 +247,7 @@ class IocpProactor:
         conn = self._get_accept_socket(listener.family)
         ov = _overlapped.Overlapped(NULL)
         ov.AcceptEx(listener.fileno(), conn.fileno())
+
         def finish_accept(trans, key, ov):
             ov.getresult()
             # Use SO_UPDATE_ACCEPT_CONTEXT so getsockname() etc work.
@@ -249,6 +256,7 @@ class IocpProactor:
                             _overlapped.SO_UPDATE_ACCEPT_CONTEXT, buf)
             conn.settimeout(listener.gettimeout())
             return conn, conn.getpeername()
+
         return self._register(ov, listener, finish_accept)
 
     def connect(self, conn, address):
@@ -264,26 +272,31 @@ class IocpProactor:
                 raise
         ov = _overlapped.Overlapped(NULL)
         ov.ConnectEx(conn.fileno(), address)
+
         def finish_connect(trans, key, ov):
             ov.getresult()
             # Use SO_UPDATE_CONNECT_CONTEXT so getsockname() etc work.
             conn.setsockopt(socket.SOL_SOCKET,
                             _overlapped.SO_UPDATE_CONNECT_CONTEXT, 0)
             return conn
+
         return self._register(ov, conn, finish_connect)
 
     def accept_pipe(self, pipe):
         self._register_with_iocp(pipe)
         ov = _overlapped.Overlapped(NULL)
         ov.ConnectNamedPipe(pipe.fileno())
+
         def finish(trans, key, ov):
             ov.getresult()
             return pipe
+
         return self._register(ov, pipe, finish)
 
     def connect_pipe(self, address):
         ov = _overlapped.Overlapped(NULL)
         ov.WaitNamedPipeAndConnect(address, self._iocp, ov.address)
+
         def finish(err, handle, ov):
             # err, handle were arguments passed to PostQueuedCompletionStatus()
             # in a function run in a thread pool.
@@ -296,6 +309,7 @@ class IocpProactor:
                 raise OSError(0, msg, None, err)
             else:
                 return windows_utils.PipeHandle(handle)
+
         return self._register(ov, None, finish, wait_for_post=True)
 
     def wait_for_handle(self, handle, timeout=None):
@@ -432,8 +446,10 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
         self._proc = windows_utils.Popen(
             args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
             bufsize=bufsize, **kwargs)
+
         def callback(f):
             returncode = self._proc.poll()
             self._process_exited(returncode)
+
         f = self._loop._proactor.wait_for_handle(int(self._proc._handle))
         f.add_done_callback(callback)

@@ -43,6 +43,7 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.assertIsInstance(
             self.loop._make_socket_transport(m, m), _SelectorSocketTransport)
 
+    @unittest.skipIf(ssl is None, 'No ssl module')
     def test_make_ssl_transport(self):
         m = unittest.mock.Mock()
         self.loop.add_reader = unittest.mock.Mock()
@@ -51,6 +52,16 @@ class BaseSelectorEventLoopTests(unittest.TestCase):
         self.loop.remove_writer = unittest.mock.Mock()
         self.assertIsInstance(
             self.loop._make_ssl_transport(m, m, m, m), _SelectorSslTransport)
+
+    @unittest.mock.patch('asyncio.selector_events.ssl', None)
+    def test_make_ssl_transport_without_ssl_error(self):
+        m = unittest.mock.Mock()
+        self.loop.add_reader = unittest.mock.Mock()
+        self.loop.add_writer = unittest.mock.Mock()
+        self.loop.remove_reader = unittest.mock.Mock()
+        self.loop.remove_writer = unittest.mock.Mock()
+        with self.assertRaises(RuntimeError):
+            self.loop._make_ssl_transport(m, m, m, m)
 
     def test_close(self):
         ssock = self.loop._ssock
@@ -1003,8 +1014,7 @@ class SelectorSslTransportTests(unittest.TestCase):
             self.loop, self.sock, self.protocol, self.sslcontext,
             waiter=waiter)
         self.assertTrue(self.sslsock.do_handshake.called)
-        self.loop.assert_reader(1, tr._on_ready)
-        self.loop.assert_writer(1, tr._on_ready)
+        self.loop.assert_reader(1, tr._read_ready)
         test_utils.run_briefly(self.loop)
         self.assertIsNone(waiter.result())
 
@@ -1047,13 +1057,13 @@ class SelectorSslTransportTests(unittest.TestCase):
     def test_pause_resume_reading(self):
         tr = self._make_one()
         self.assertFalse(tr._paused)
-        self.loop.assert_reader(1, tr._on_ready)
+        self.loop.assert_reader(1, tr._read_ready)
         tr.pause_reading()
         self.assertTrue(tr._paused)
         self.assertFalse(1 in self.loop.readers)
         tr.resume_reading()
         self.assertFalse(tr._paused)
-        self.loop.assert_reader(1, tr._on_ready)
+        self.loop.assert_reader(1, tr._read_ready)
 
     def test_write_no_data(self):
         transport = self._make_one()
@@ -1084,139 +1094,172 @@ class SelectorSslTransportTests(unittest.TestCase):
         transport.write(b'data')
         m_log.warning.assert_called_with('socket.send() raised exception.')
 
-    def test_on_ready_recv(self):
+    def test_read_ready_recv(self):
         self.sslsock.recv.return_value = b'data'
         transport = self._make_one()
-        transport._on_ready()
+        transport._read_ready()
         self.assertTrue(self.sslsock.recv.called)
         self.assertEqual((b'data',), self.protocol.data_received.call_args[0])
 
-    def test_on_ready_recv_eof(self):
+    def test_read_ready_write_wants_read(self):
+        self.loop.add_writer = unittest.mock.Mock()
+        self.sslsock.recv.side_effect = BlockingIOError
+        transport = self._make_one()
+        transport._write_wants_read = True
+        transport._write_ready = unittest.mock.Mock()
+        transport._buffer.append(b'data')
+        transport._read_ready()
+
+        self.assertFalse(transport._write_wants_read)
+        transport._write_ready.assert_called_with()
+        self.loop.add_writer.assert_called_with(
+            transport._sock_fd, transport._write_ready)
+
+    def test_read_ready_recv_eof(self):
         self.sslsock.recv.return_value = b''
         transport = self._make_one()
         transport.close = unittest.mock.Mock()
-        transport._on_ready()
+        transport._read_ready()
         transport.close.assert_called_with()
         self.protocol.eof_received.assert_called_with()
 
-    def test_on_ready_recv_conn_reset(self):
+    def test_read_ready_recv_conn_reset(self):
         err = self.sslsock.recv.side_effect = ConnectionResetError()
         transport = self._make_one()
         transport._force_close = unittest.mock.Mock()
-        transport._on_ready()
+        transport._read_ready()
         transport._force_close.assert_called_with(err)
 
-    def test_on_ready_recv_retry(self):
+    def test_read_ready_recv_retry(self):
         self.sslsock.recv.side_effect = ssl.SSLWantReadError
         transport = self._make_one()
-        transport._on_ready()
+        transport._read_ready()
         self.assertTrue(self.sslsock.recv.called)
         self.assertFalse(self.protocol.data_received.called)
 
-        self.sslsock.recv.side_effect = ssl.SSLWantWriteError
-        transport._on_ready()
-        self.assertFalse(self.protocol.data_received.called)
-
         self.sslsock.recv.side_effect = BlockingIOError
-        transport._on_ready()
+        transport._read_ready()
         self.assertFalse(self.protocol.data_received.called)
 
         self.sslsock.recv.side_effect = InterruptedError
-        transport._on_ready()
+        transport._read_ready()
         self.assertFalse(self.protocol.data_received.called)
 
-    def test_on_ready_recv_exc(self):
+    def test_read_ready_recv_write(self):
+        self.loop.remove_reader = unittest.mock.Mock()
+        self.loop.add_writer = unittest.mock.Mock()
+        self.sslsock.recv.side_effect = ssl.SSLWantWriteError
+        transport = self._make_one()
+        transport._read_ready()
+        self.assertFalse(self.protocol.data_received.called)
+        self.assertTrue(transport._read_wants_write)
+
+        self.loop.remove_reader.assert_called_with(transport._sock_fd)
+        self.loop.add_writer.assert_called_with(
+            transport._sock_fd, transport._write_ready)
+
+    def test_read_ready_recv_exc(self):
         err = self.sslsock.recv.side_effect = OSError()
         transport = self._make_one()
         transport._fatal_error = unittest.mock.Mock()
-        transport._on_ready()
+        transport._read_ready()
         transport._fatal_error.assert_called_with(err)
 
-    def test_on_ready_send(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send(self):
         self.sslsock.send.return_value = 4
         transport = self._make_one()
         transport._buffer = collections.deque([b'data'])
-        transport._on_ready()
+        transport._write_ready()
         self.assertEqual(collections.deque(), transport._buffer)
         self.assertTrue(self.sslsock.send.called)
 
-    def test_on_ready_send_none(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send_none(self):
         self.sslsock.send.return_value = 0
         transport = self._make_one()
         transport._buffer = collections.deque([b'data1', b'data2'])
-        transport._on_ready()
+        transport._write_ready()
         self.assertTrue(self.sslsock.send.called)
         self.assertEqual(collections.deque([b'data1data2']), transport._buffer)
 
-    def test_on_ready_send_partial(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send_partial(self):
         self.sslsock.send.return_value = 2
         transport = self._make_one()
         transport._buffer = collections.deque([b'data1', b'data2'])
-        transport._on_ready()
+        transport._write_ready()
         self.assertTrue(self.sslsock.send.called)
         self.assertEqual(collections.deque([b'ta1data2']), transport._buffer)
 
-    def test_on_ready_send_closing_partial(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send_closing_partial(self):
         self.sslsock.send.return_value = 2
         transport = self._make_one()
         transport._buffer = collections.deque([b'data1', b'data2'])
-        transport._on_ready()
+        transport._write_ready()
         self.assertTrue(self.sslsock.send.called)
         self.assertFalse(self.sslsock.close.called)
 
-    def test_on_ready_send_closing(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send_closing(self):
         self.sslsock.send.return_value = 4
         transport = self._make_one()
         transport.close()
         transport._buffer = collections.deque([b'data'])
-        transport._on_ready()
+        transport._write_ready()
         self.assertFalse(self.loop.writers)
         self.protocol.connection_lost.assert_called_with(None)
 
-    def test_on_ready_send_closing_empty_buffer(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send_closing_empty_buffer(self):
         self.sslsock.send.return_value = 4
         transport = self._make_one()
         transport.close()
         transport._buffer = collections.deque()
-        transport._on_ready()
+        transport._write_ready()
         self.assertFalse(self.loop.writers)
         self.protocol.connection_lost.assert_called_with(None)
 
-    def test_on_ready_send_retry(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
-
+    def test_write_ready_send_retry(self):
         transport = self._make_one()
         transport._buffer = collections.deque([b'data'])
 
-        self.sslsock.send.side_effect = ssl.SSLWantReadError
-        transport._on_ready()
-        self.assertTrue(self.sslsock.send.called)
-        self.assertEqual(collections.deque([b'data']), transport._buffer)
-
         self.sslsock.send.side_effect = ssl.SSLWantWriteError
-        transport._on_ready()
+        transport._write_ready()
         self.assertEqual(collections.deque([b'data']), transport._buffer)
 
         self.sslsock.send.side_effect = BlockingIOError()
-        transport._on_ready()
+        transport._write_ready()
         self.assertEqual(collections.deque([b'data']), transport._buffer)
 
-    def test_on_ready_send_exc(self):
-        self.sslsock.recv.side_effect = ssl.SSLWantReadError
+    def test_write_ready_send_read(self):
+        transport = self._make_one()
+        transport._buffer = collections.deque([b'data'])
+
+        self.loop.remove_writer = unittest.mock.Mock()
+        self.sslsock.send.side_effect = ssl.SSLWantReadError
+        transport._write_ready()
+        self.assertFalse(self.protocol.data_received.called)
+        self.assertTrue(transport._write_wants_read)
+        self.loop.remove_writer.assert_called_with(transport._sock_fd)
+
+    def test_write_ready_send_exc(self):
         err = self.sslsock.send.side_effect = OSError()
 
         transport = self._make_one()
         transport._buffer = collections.deque([b'data'])
         transport._fatal_error = unittest.mock.Mock()
-        transport._on_ready()
+        transport._write_ready()
         transport._fatal_error.assert_called_with(err)
         self.assertEqual(collections.deque(), transport._buffer)
+
+    def test_write_ready_read_wants_write(self):
+        self.loop.add_reader = unittest.mock.Mock()
+        self.sslsock.send.side_effect = BlockingIOError
+        transport = self._make_one()
+        transport._read_wants_write = True
+        transport._read_ready = unittest.mock.Mock()
+        transport._write_ready()
+
+        self.assertFalse(transport._read_wants_write)
+        transport._read_ready.assert_called_with()
+        self.loop.add_reader.assert_called_with(
+            transport._sock_fd, transport._read_ready)
 
     def test_write_eof(self):
         tr = self._make_one()
@@ -1243,6 +1286,15 @@ class SelectorSslTransportTests(unittest.TestCase):
         self.sslcontext.wrap_socket.assert_called_with(
             self.sock, do_handshake_on_connect=False, server_side=False,
             server_hostname='localhost')
+
+
+class SelectorSslWithoutSslTransportTests(unittest.TestCase):
+
+    @unittest.mock.patch('asyncio.selector_events.ssl', None)
+    def test_ssl_transport_requires_ssl_module(self):
+        Mock = unittest.mock.Mock
+        with self.assertRaises(RuntimeError):
+            transport = _SelectorSslTransport(Mock(), Mock(), Mock(), Mock())
 
 
 class SelectorDatagramTransportTests(unittest.TestCase):
