@@ -73,7 +73,10 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
     def test_screen(self):
         widget = self.create()
         self.assertEqual(widget['screen'], '')
-        display = os.environ['DISPLAY']
+        try:
+            display = os.environ['DISPLAY']
+        except KeyError:
+            self.skipTest('No $DISPLAY set.')
         self.checkInvalidParam(widget, 'screen', display,
                 errmsg="can't modify -screen option after widget is created")
         widget2 = self.create(screen=display)
@@ -82,13 +85,10 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
     def test_use(self):
         widget = self.create()
         self.assertEqual(widget['use'], '')
-        widget1 = self.create(container=True)
-        self.assertEqual(widget1['use'], '')
-        self.checkInvalidParam(widget1, 'use', '0x44022',
-                errmsg="can't modify -use option after widget is created")
-        wid = hex(widget1.winfo_id())
+        parent = self.create(container=True)
+        wid = parent.winfo_id()
         widget2 = self.create(use=wid)
-        self.assertEqual(widget2['use'], wid)
+        self.assertEqual(int(widget2['use']), wid)
 
 
 @add_standard_options(StandardOptionsTests)
