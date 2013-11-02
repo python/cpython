@@ -147,6 +147,8 @@ Library
 Tests
 -----
 
+- Issue #19085: Added basic tests for all tkinter widget options.
+
 - Issue 19384: Fix test_py_compile for root user, patch by Claudiu Popa.
 
 Build
