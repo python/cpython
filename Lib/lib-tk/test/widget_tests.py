@@ -6,6 +6,7 @@ from test_ttk.support import tcl_version, requires_tcl, pixels_conv, tcl_obj_eq
 
 
 noconv = str if tcl_version < (8, 5) else False
+noconv_meth = noconv and staticmethod(noconv)
 
 def int_round(x):
     return int(round(x))
@@ -13,7 +14,7 @@ def int_round(x):
 _sentinel = object()
 
 class AbstractWidgetTest(object):
-    _conv_pixels = staticmethod(int_round) if tcl_version[:2] != (8, 5) else int
+    _conv_pixels = staticmethod(int_round if tcl_version[:2] != (8, 5) else int)
     _conv_pad_pixels = None
     wantobjects = True
 

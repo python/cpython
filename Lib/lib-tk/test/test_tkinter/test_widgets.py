@@ -4,7 +4,7 @@ import os
 from test.test_support import requires, run_unittest
 
 from test_ttk.support import tcl_version, requires_tcl, widget_eq
-from widget_tests import (add_standard_options, noconv, int_round,
+from widget_tests import (add_standard_options, noconv, noconv_meth, int_round,
     AbstractWidgetTest, StandardOptionsTests,
     IntegerSizeTests, PixelSizeTests)
 
@@ -12,7 +12,7 @@ requires('gui')
 
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _conv_pad_pixels = noconv
+    _conv_pad_pixels = noconv_meth
 
     def test_class(self):
         widget = self.create()
@@ -130,7 +130,7 @@ class LabelFrameTest(AbstractToplevelTest, unittest.TestCase):
 
 
 class AbstractLabelTest(AbstractWidgetTest, IntegerSizeTests):
-    _conv_pixels = noconv
+    _conv_pixels = noconv_meth
 
     def test_highlightthickness(self):
         widget = self.create()
@@ -240,7 +240,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength',
     )
-    _conv_pixels = AbstractWidgetTest._conv_pixels
+    _conv_pixels = staticmethod(AbstractWidgetTest._conv_pixels)
 
     def _create(self, **kwargs):
         return Tkinter.Menubutton(self.root, **kwargs)
@@ -858,7 +858,7 @@ class MenuTest(AbstractWidgetTest, unittest.TestCase):
         'postcommand', 'relief', 'selectcolor', 'takefocus',
         'tearoff', 'tearoffcommand', 'title', 'type',
     )
-    _conv_pixels = noconv
+    _conv_pixels = noconv_meth
 
     def _create(self, **kwargs):
         return Tkinter.Menu(self.root, **kwargs)
@@ -894,7 +894,7 @@ class MessageTest(AbstractWidgetTest, unittest.TestCase):
         'justify', 'padx', 'pady', 'relief',
         'takefocus', 'text', 'textvariable', 'width',
     )
-    _conv_pad_pixels = noconv
+    _conv_pad_pixels = noconv_meth
 
     def _create(self, **kwargs):
         return Tkinter.Message(self.root, **kwargs)

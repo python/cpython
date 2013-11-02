@@ -7,7 +7,7 @@ import sys
 import support
 from test_functions import MockTclObj, MockStateSpec
 from support import tcl_version
-from widget_tests import (add_standard_options, noconv,
+from widget_tests import (add_standard_options, noconv, noconv_meth,
     AbstractWidgetTest, StandardOptionsTests,
     IntegerSizeTests, PixelSizeTests)
 
@@ -117,7 +117,7 @@ class WidgetTest(unittest.TestCase):
 
 
 class AbstractToplevelTest(AbstractWidgetTest, PixelSizeTests):
-    _conv_pixels = noconv
+    _conv_pixels = noconv_meth
 
 
 @add_standard_options(StandardTtkOptionsTests)
@@ -197,7 +197,7 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength',
     )
-    _conv_pixels = noconv
+    _conv_pixels = noconv_meth
 
     def _create(self, **kwargs):
         return ttk.Label(self.root, **kwargs)
@@ -362,7 +362,7 @@ class ComboboxTest(AbstractWidgetTest, unittest.TestCase):
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.combo, 'values', '')
+        self.checkParam(self.combo, 'values', () if tcl_version < (8, 5) else '')
 
         self.combo['values'] = ['a', 1, 'c']
 
@@ -758,7 +758,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
         'class', 'command', 'cursor', 'from', 'length',
         'orient', 'style', 'takefocus', 'to', 'value', 'variable',
     )
-    _conv_pixels = noconv
+    _conv_pixels = noconv_meth
     default_orient = 'horizontal'
 
     def setUp(self):
@@ -862,7 +862,7 @@ class ProgressbarTest(AbstractWidgetTest, unittest.TestCase):
         'mode', 'maximum', 'phase',
         'style', 'takefocus', 'value', 'variable',
     )
-    _conv_pixels = noconv
+    _conv_pixels = noconv_meth
     default_orient = 'horizontal'
 
     def _create(self, **kwargs):
@@ -1144,7 +1144,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'columns', 'a b c',
                         expected=('a', 'b', 'c'))
         self.checkParam(widget, 'columns', ('a', 'b', 'c'))
-        self.checkParam(widget, 'columns', '')
+        self.checkParam(widget, 'columns', () if tcl_version < (8, 5) else '')
 
     def test_displaycolumns(self):
         widget = self.create()
