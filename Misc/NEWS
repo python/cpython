@@ -15,6 +15,11 @@ Library
 
 - Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
 
+Tests
+-----
+
+- Issue #19085: Added basic tests for all tkinter widget options.
+
 
 What's New in Python 3.3.3 release candidate 1?
 ===============================================
