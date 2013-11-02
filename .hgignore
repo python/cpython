@@ -86,6 +86,7 @@ PCbuild/*.*sdf
 PCbuild/Win32-temp-*
 PCbuild/x64-temp-*
 PCbuild/amd64
+PCbuild/ipch
 BuildLog.htm
 __pycache__
 Modules/_freeze_importlib
