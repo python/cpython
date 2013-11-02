@@ -301,10 +301,16 @@ class _MainProcess(BaseProcess):
         self._parent_pid = None
         self._popen = None
         self._config = {'authkey': AuthenticationString(os.urandom(32)),
-                        'semprefix': 'mp'}
+                        'semprefix': '/mp'}
         # Note that some versions of FreeBSD only allow named
-        # semaphores to have names of up to 14 characters.  Therfore
+        # semaphores to have names of up to 14 characters.  Therefore
         # we choose a short prefix.
+        #
+        # On MacOSX in a sandbox it may be necessary to use a
+        # different prefix -- see #19478.
+        #
+        # Everything in self._config will be inherited by descendant
+        # processes.
 
 
 _current_process = _MainProcess()
