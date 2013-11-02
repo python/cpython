@@ -15,6 +15,8 @@ Library
 Tests
 -----
 
+- Issue #19085: Added basic tests for all tkinter widget options.
+
 
 Whats' New in Python 2.7.6?
 ===========================
