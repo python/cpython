@@ -77,3 +77,42 @@ def simulate_mouse_click(widget, x, y):
     widget.event_generate('<Motion>', x=x, y=y)
     widget.event_generate('<ButtonPress-1>', x=x, y=y)
     widget.event_generate('<ButtonRelease-1>', x=x, y=y)
+
+
+import _tkinter
+tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
+
+def requires_tcl(*version):
+    return unittest.skipUnless(tcl_version >= version,
+            'requires Tcl version >= ' + '.'.join(map(str, version)))
+
+units = {
+    'c': 72 / 2.54,     # centimeters
+    'i': 72,            # inches
+    'm': 72 / 25.4,     # millimeters
+    'p': 1,             # points
+}
+
+def pixels_conv(value):
+    return float(value[:-1]) * units[value[-1:]]
+
+def tcl_obj_eq(actual, expected):
+    if actual == expected:
+        return True
+    if isinstance(actual, _tkinter.Tcl_Obj):
+        if isinstance(expected, str):
+            return str(actual) == expected
+    if isinstance(actual, tuple):
+        if isinstance(expected, tuple):
+            return (len(actual) == len(expected) and
+                    all(tcl_obj_eq(act, exp)
+                        for act, exp in zip(actual, expected)))
+    return False
+
+def widget_eq(actual, expected):
+    if actual == expected:
+        return True
+    if isinstance(actual, (str, tkinter.Widget)):
+        if isinstance(expected, (str, tkinter.Widget)):
+            return str(actual) == str(expected)
+    return False
