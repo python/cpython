@@ -14,6 +14,17 @@ class TextTest(unittest.TestCase):
     def tearDown(self):
         self.text.destroy()
 
+    def test_debug(self):
+        text = self.text
+        olddebug = text.debug()
+        try:
+            text.debug(0)
+            self.assertEqual(text.debug(), 0)
+            text.debug(1)
+            self.assertEqual(text.debug(), 1)
+        finally:
+            text.debug(olddebug)
+            self.assertEqual(text.debug(), olddebug)
 
     def test_search(self):
         text = self.text
