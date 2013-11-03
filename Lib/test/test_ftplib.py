@@ -16,7 +16,7 @@ try:
 except ImportError:
     ssl = None
 
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
 threading = support.import_module('threading')
@@ -780,6 +780,7 @@ class TestFTPClass(TestCase):
         self.assertRaises(ftplib.Error, self.client.storlines, 'stor', f)
 
 
+@skipUnless(support.IPV6_ENABLED, "IPv6 not enabled")
 class TestIPv6Environment(TestCase):
 
     def setUp(self):
@@ -820,6 +821,7 @@ class TestIPv6Environment(TestCase):
         retr()
 
 
+@skipUnless(ssl, "SSL not available")
 class TestTLS_FTPClassMixin(TestFTPClass):
     """Repeat TestFTPClass tests starting the TLS layer for both control
     and data connections first.
@@ -835,6 +837,7 @@ class TestTLS_FTPClassMixin(TestFTPClass):
         self.client.prot_p()
 
 
+@skipUnless(ssl, "SSL not available")
 class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 
@@ -1027,12 +1030,9 @@ class TestNetrcDeprecation(TestCase):
 
 
 def test_main():
-    tests = [TestFTPClass, TestTimeouts, TestNetrcDeprecation]
-    if support.IPV6_ENABLED:
-        tests.append(TestIPv6Environment)
-
-    if ssl is not None:
-        tests.extend([TestTLS_FTPClassMixin, TestTLS_FTPClass])
+    tests = [TestFTPClass, TestTimeouts, TestNetrcDeprecation,
+             TestIPv6Environment,
+             TestTLS_FTPClassMixin, TestTLS_FTPClass]
 
     thread_info = support.threading_setup()
     try:

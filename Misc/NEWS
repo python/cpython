@@ -165,6 +165,8 @@ Library
 Tests
 -----
 
+- Issue #18702: All skipped tests now reported as skipped.
+
 - Issue #19439: interpreter embedding tests are now executed on Windows
   (Patch by Zachary Ware)
 
