@@ -316,7 +316,7 @@ class StatAttributeTests(unittest.TestCase):
                 return buf.value
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
-    @unittest.skipUnless(get_file_system(support.TESTFN) == "NTFS",
+    @unittest.skipUnless(get_file_system(test_support.TESTFN) == "NTFS",
                          "requires NTFS")
     def test_1565150(self):
         t1 = 1159195039.25
@@ -324,7 +324,7 @@ class StatAttributeTests(unittest.TestCase):
         self.assertEqual(os.stat(self.fname).st_mtime, t1)
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
-    @unittest.skipUnless(get_file_system(support.TESTFN) == "NTFS",
+    @unittest.skipUnless(get_file_system(test_support.TESTFN) == "NTFS",
                          "requires NTFS")
     def test_large_time(self):
         t1 = 5000000000 # some day in 2128
