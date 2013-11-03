@@ -11,7 +11,7 @@ noconv = str if tcl_version < (8, 5) else False
 _sentinel = object()
 
 class AbstractWidgetTest:
-    _conv_pixels = round if tcl_version[:2] != (8, 5) else int
+    _conv_pixels = round
     _conv_pad_pixels = None
     wantobjects = True
 
