@@ -342,7 +342,25 @@ handling).
 functools
 ---------
 
-New :func:`functools.singledispatch` decorator: see the :pep:`443`.
+The new :func:`~functools.partialmethod` descriptor bring partial argument
+application to descriptors, just as :func:`~functools.partial` provides
+for normal callables. The new descriptor also makes it easier to get
+arbitrary callables (including :func:`~functools.partial` instances)
+to behave like normal instance methods when included in a class definition.
+
+(Contributed by Alon Horev and Nick Coghlan in :issue:`4331`)
+
+The new :func:`~functools.singledispatch` decorator brings support for
+single-dispatch generic functions to the Python standard library. Where
+object oriented programming focuses on grouping multiple operations on a
+common set of data into a class, a generic function focuses on grouping
+multiple implementations of an operation that allows it to work with
+*different* kinds of data.
+
+.. seealso::
+
+   :pep:`443` - Single-dispatch generic functions
+      PEP written and implemented by Łukasz Langa.
 
 
 hashlib

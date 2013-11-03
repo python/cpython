@@ -1192,6 +1192,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4331: Added functools.partialmethod (Initial patch by Alon Horev)
+
 - Issue #13461: Fix a crash in the TextIOWrapper.tell method on 64-bit
   platforms.  Patch by Yogesh Chaudhari.
 
