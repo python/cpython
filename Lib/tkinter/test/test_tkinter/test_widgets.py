@@ -610,6 +610,19 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
         else:
             self.checkEnumParam(widget, 'wrap', 'char', 'none', 'word')
 
+    def test_bbox(self):
+        widget = self.create()
+        bbox = widget.bbox('1.1')
+        self.assertEqual(len(bbox), 4)
+        for item in bbox:
+            self.assertIsInstance(item, int)
+
+        self.assertIsNone(widget.bbox('end'))
+        self.assertRaises(tkinter.TclError, widget.bbox, 'noindex')
+        self.assertRaises(tkinter.TclError, widget.bbox, None)
+        self.assertRaises(TypeError, widget.bbox)
+        self.assertRaises(TypeError, widget.bbox, '1.1', 'end')
+
 
 @add_standard_options(PixelSizeTests, StandardOptionsTests)
 class CanvasTest(AbstractWidgetTest, unittest.TestCase):
