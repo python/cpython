@@ -2911,11 +2911,11 @@ class Text(Widget, XView, YView):
 
         """
         Widget.__init__(self, master, 'text', cnf, kw)
-    def bbox(self, *args):
+    def bbox(self, index):
         """Return a tuple of (x,y,width,height) which gives the bounding
-        box of the visible part of the character at the index in ARGS."""
+        box of the visible part of the character at the given index."""
         return self._getints(
-            self.tk.call((self._w, 'bbox') + args)) or None
+                self.tk.call(self._w, 'bbox', index)) or None
     def tk_textSelectTo(self, index):
         self.tk.call('tk_textSelectTo', self._w, index)
     def tk_textBackspace(self):
@@ -2951,8 +2951,9 @@ class Text(Widget, XView, YView):
     def debug(self, boolean=None):
         """Turn on the internal consistency checks of the B-Tree inside the text
         widget according to BOOLEAN."""
-        return self.tk.getboolean(self.tk.call(
-            self._w, 'debug', boolean))
+        if boolean is None:
+            return self.tk.call(self._w, 'debug')
+        self.tk.call(self._w, 'debug', boolean)
     def delete(self, index1, index2=None):
         """Delete the characters between INDEX1 and INDEX2 (not included)."""
         self.tk.call(self._w, 'delete', index1, index2)
