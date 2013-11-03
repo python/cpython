@@ -1122,7 +1122,8 @@ binascii_hexlify(PyObject *self, PyObject *args)
 PyDoc_STRVAR(doc_hexlify,
 "b2a_hex(data) -> s; Hexadecimal representation of binary data.\n\
 \n\
-This function is also available as \"hexlify()\".");
+The return value is a bytes object.  This function is also\n\
+available as \"hexlify()\".");
 
 
 static int
