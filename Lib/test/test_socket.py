@@ -817,16 +817,17 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(TypeError, socket.if_nametoindex, 0)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
 
+    @unittest.skipUnless(hasattr(sys, 'getrefcount'),
+                         'test needs sys.getrefcount()')
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
-        if hasattr(sys, "getrefcount"):
-            try:
-                # On some versions, this loses a reference
-                orig = sys.getrefcount(__name__)
-                socket.getnameinfo(__name__,0)
-            except TypeError:
-                if sys.getrefcount(__name__) != orig:
-                    self.fail("socket.getnameinfo loses a reference")
+        try:
+            # On some versions, this loses a reference
+            orig = sys.getrefcount(__name__)
+            socket.getnameinfo(__name__,0)
+        except TypeError:
+            if sys.getrefcount(__name__) != orig:
+                self.fail("socket.getnameinfo loses a reference")
 
     def testInterpreterCrash(self):
         # Making sure getnameinfo doesn't crash the interpreter
@@ -931,17 +932,17 @@ class GeneralModuleTests(unittest.TestCase):
         # Check that setting it to an invalid type raises TypeError
         self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
 
+    @unittest.skipUnless(hasattr(socket, 'inet_aton'),
+                         'test needs socket.inet_aton()')
     def testIPv4_inet_aton_fourbytes(self):
-        if not hasattr(socket, 'inet_aton'):
-            return  # No inet_aton, nothing to check
         # Test that issue1008086 and issue767150 are fixed.
         # It must return 4 bytes.
         self.assertEqual(b'\x00'*4, socket.inet_aton('0.0.0.0'))
         self.assertEqual(b'\xff'*4, socket.inet_aton('255.255.255.255'))
 
+    @unittest.skipUnless(hasattr(socket, 'inet_pton'),
+                         'test needs socket.inet_pton()')
     def testIPv4toString(self):
-        if not hasattr(socket, 'inet_pton'):
-            return # No inet_pton() on this platform
         from socket import inet_aton as f, inet_pton, AF_INET
         g = lambda a: inet_pton(AF_INET, a)
 
@@ -970,9 +971,9 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid(g, '1.2.3.4.5')
         assertInvalid(g, '::1')
 
+    @unittest.skipUnless(hasattr(socket, 'inet_pton'),
+                         'test needs socket.inet_pton()')
     def testIPv6toString(self):
-        if not hasattr(socket, 'inet_pton'):
-            return # No inet_pton() on this platform
         try:
             from socket import inet_pton, AF_INET6, has_ipv6
             if not has_ipv6:
@@ -1024,9 +1025,9 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid('::1.2.3.4:0')
         assertInvalid('0.100.200.0:3:4:5:6:7:8')
 
+    @unittest.skipUnless(hasattr(socket, 'inet_ntop'),
+                         'test needs socket.inet_ntop()')
     def testStringToIPv4(self):
-        if not hasattr(socket, 'inet_ntop'):
-            return # No inet_ntop() on this platform
         from socket import inet_ntoa as f, inet_ntop, AF_INET
         g = lambda a: inet_ntop(AF_INET, a)
         assertInvalid = lambda func,a: self.assertRaises(
@@ -1048,9 +1049,9 @@ class GeneralModuleTests(unittest.TestCase):
         assertInvalid(g, b'\x00' * 5)
         assertInvalid(g, b'\x00' * 16)
 
+    @unittest.skipUnless(hasattr(socket, 'inet_ntop'),
+                         'test needs socket.inet_ntop()')
     def testStringToIPv6(self):
-        if not hasattr(socket, 'inet_ntop'):
-            return # No inet_ntop() on this platform
         try:
             from socket import inet_ntop, AF_INET6, has_ipv6
             if not has_ipv6:
@@ -3660,6 +3661,8 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.cli.connect((HOST, self.port))
         time.sleep(1.0)
 
+@unittest.skipUnless(hasattr(socket, 'socketpair'),
+                     'test needs socket.socketpair()')
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicSocketPairTest(SocketPairTest):
 
@@ -3722,26 +3725,27 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
     def _testSetBlocking(self):
         pass
 
-    if hasattr(socket, "SOCK_NONBLOCK"):
-        @support.requires_linux_version(2, 6, 28)
-        def testInitNonBlocking(self):
-            # reinit server socket
-            self.serv.close()
-            self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
-                                                      socket.SOCK_NONBLOCK)
-            self.port = support.bind_port(self.serv)
-            self.serv.listen(1)
-            # actual testing
-            start = time.time()
-            try:
-                self.serv.accept()
-            except OSError:
-                pass
-            end = time.time()
-            self.assertTrue((end - start) < 1.0, "Error creating with non-blocking mode.")
-
-        def _testInitNonBlocking(self):
+    @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
+                         'test needs socket.SOCK_NONBLOCK')
+    @support.requires_linux_version(2, 6, 28)
+    def testInitNonBlocking(self):
+        # reinit server socket
+        self.serv.close()
+        self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM |
+                                                  socket.SOCK_NONBLOCK)
+        self.port = support.bind_port(self.serv)
+        self.serv.listen(1)
+        # actual testing
+        start = time.time()
+        try:
+            self.serv.accept()
+        except OSError:
             pass
+        end = time.time()
+        self.assertTrue((end - start) < 1.0, "Error creating with non-blocking mode.")
+
+    def _testInitNonBlocking(self):
+        pass
 
     def testInheritFlags(self):
         # Issue #7995: when calling accept() on a listening socket with a
@@ -4431,12 +4435,12 @@ class TCPTimeoutTest(SocketTCPTest):
         if not ok:
             self.fail("accept() returned success when we did not expect it")
 
+    @unittest.skipUnless(hasattr(signal, 'alarm'),
+                         'test needs signal.alarm()')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
         # plaform that doesn't support signal.alarm() or os.kill(), though
         # the bug should have existed on all platforms.
-        if not hasattr(signal, "alarm"):
-            return                  # can only test on *nix
         self.serv.settimeout(5.0)   # must be longer than alarm
         class Alarm(Exception):
             pass
@@ -4496,6 +4500,7 @@ class TestExceptions(unittest.TestCase):
         self.assertTrue(issubclass(socket.gaierror, OSError))
         self.assertTrue(issubclass(socket.timeout, OSError))
 
+@unittest.skipUnless(sys.platform == 'linux', 'Linux specific test')
 class TestLinuxAbstractNamespace(unittest.TestCase):
 
     UNIX_PATH_MAX = 108
@@ -4531,6 +4536,7 @@ class TestLinuxAbstractNamespace(unittest.TestCase):
         finally:
             s.close()
 
+@unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'test needs socket.AF_UNIX')
 class TestUnixDomain(unittest.TestCase):
 
     def setUp(self):
@@ -4680,10 +4686,10 @@ def isTipcAvailable():
         for line in f:
             if line.startswith("tipc "):
                 return True
-    if support.verbose:
-        print("TIPC module is not loaded, please 'sudo modprobe tipc'")
     return False
 
+@unittest.skipUnless(isTipcAvailable(),
+                     "TIPC module is not loaded, please 'sudo modprobe tipc'")
 class TIPCTest(unittest.TestCase):
     def testRDM(self):
         srv = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
@@ -4706,6 +4712,8 @@ class TIPCTest(unittest.TestCase):
         self.assertEqual(msg, MSG)
 
 
+@unittest.skipUnless(isTipcAvailable(),
+                     "TIPC module is not loaded, please 'sudo modprobe tipc'")
 class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
     def __init__(self, methodName = 'runTest'):
         unittest.TestCase.__init__(self, methodName = methodName)
@@ -5028,15 +5036,10 @@ def test_main():
         InheritanceTest,
         NonblockConstantTest
     ])
-    if hasattr(socket, "socketpair"):
-        tests.append(BasicSocketPairTest)
-    if hasattr(socket, "AF_UNIX"):
-        tests.append(TestUnixDomain)
-    if sys.platform == 'linux':
-        tests.append(TestLinuxAbstractNamespace)
-    if isTipcAvailable():
-        tests.append(TIPCTest)
-        tests.append(TIPCThreadableTest)
+    tests.append(BasicSocketPairTest)
+    tests.append(TestUnixDomain)
+    tests.append(TestLinuxAbstractNamespace)
+    tests.extend([TIPCTest, TIPCThreadableTest])
     tests.extend([BasicCANTest, CANTest])
     tests.extend([BasicRDSTest, RDSTest])
     tests.extend([

@@ -271,11 +271,10 @@ class WarnTests(BaseTest):
         finally:
             warning_tests.__file__ = filename
 
+    @unittest.skipUnless(hasattr(sys, 'argv'), 'test needs sys.argv')
     def test_missing_filename_main_with_argv(self):
         # If __file__ is not specified and the caller is __main__ and sys.argv
         # exists, then use sys.argv[0] as the file.
-        if not hasattr(sys, 'argv'):
-            return
         filename = warning_tests.__file__
         module_name = warning_tests.__name__
         try:

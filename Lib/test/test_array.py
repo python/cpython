@@ -11,6 +11,7 @@ import operator
 import io
 import math
 import struct
+import sys
 import warnings
 
 import array
@@ -993,15 +994,15 @@ class BaseTest:
         s = None
         self.assertRaises(ReferenceError, len, p)
 
+    @unittest.skipUnless(hasattr(sys, 'getrefcount'),
+                         'test needs sys.getrefcount()')
     def test_bug_782369(self):
-        import sys
-        if hasattr(sys, "getrefcount"):
-            for i in range(10):
-                b = array.array('B', range(64))
-            rc = sys.getrefcount(10)
-            for i in range(10):
-                b = array.array('B', range(64))
-            self.assertEqual(rc, sys.getrefcount(10))
+        for i in range(10):
+            b = array.array('B', range(64))
+        rc = sys.getrefcount(10)
+        for i in range(10):
+            b = array.array('B', range(64))
+        self.assertEqual(rc, sys.getrefcount(10))
 
     def test_subclass_with_kwargs(self):
         # SF bug #1486663 -- this used to erroneously raise a TypeError
