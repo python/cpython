@@ -9,7 +9,6 @@ import subprocess
 import sys
 import time
 import unittest
-import textwrap
 from test import support
 try:
     import _posixsubprocess
@@ -219,15 +218,17 @@ class Test6012(unittest.TestCase):
         self.assertEqual(_testcapi.argparsing("Hello", "World"), 1)
 
 
-@unittest.skipIf(
-    sys.platform.startswith('win'),
-    "interpreter embedding tests aren't built under Windows")
 class EmbeddingTests(unittest.TestCase):
-    # XXX only tested under Unix checkouts
-
     def setUp(self):
         basepath = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        self.test_exe = exe = os.path.join(basepath, "Modules", "_testembed")
+        exename = "_testembed"
+        if sys.platform.startswith("win"):
+            ext = ("_d" if "_d" in sys.executable else "") + ".exe"
+            exename += ext
+            exepath = os.path.dirname(sys.executable)
+        else:
+            exepath = os.path.join(basepath, "Modules")
+        self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
         # This is needed otherwise we get a fatal error:
@@ -260,6 +261,16 @@ class EmbeddingTests(unittest.TestCase):
             print(out)
             print(err)
 
+    @staticmethod
+    def _get_default_pipe_encoding():
+        rp, wp = os.pipe()
+        try:
+            with os.fdopen(wp, 'w') as w:
+                default_pipe_encoding = w.encoding
+        finally:
+            os.close(rp)
+        return default_pipe_encoding
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         out, err = self.run_embedded_interpreter("forced_io_encoding")
@@ -267,31 +278,34 @@ class EmbeddingTests(unittest.TestCase):
             print()
             print(out)
             print(err)
-        expected_output = textwrap.dedent("""\
-        --- Use defaults ---
-        Expected encoding: default
-        Expected errors: default
-        stdin: {0.__stdin__.encoding}:strict
-        stdout: {0.__stdout__.encoding}:strict
-        stderr: {0.__stderr__.encoding}:backslashreplace
-        --- Set errors only ---
-        Expected encoding: default
-        Expected errors: surrogateescape
-        stdin: {0.__stdin__.encoding}:surrogateescape
-        stdout: {0.__stdout__.encoding}:surrogateescape
-        stderr: {0.__stderr__.encoding}:backslashreplace
-        --- Set encoding only ---
-        Expected encoding: latin-1
-        Expected errors: default
-        stdin: latin-1:strict
-        stdout: latin-1:strict
-        stderr: latin-1:backslashreplace
-        --- Set encoding and errors ---
-        Expected encoding: latin-1
-        Expected errors: surrogateescape
-        stdin: latin-1:surrogateescape
-        stdout: latin-1:surrogateescape
-        stderr: latin-1:backslashreplace""").format(sys)
+        expected_stdin_encoding = sys.__stdin__.encoding
+        expected_pipe_encoding = self._get_default_pipe_encoding()
+        expected_output = os.linesep.join([
+        "--- Use defaults ---",
+        "Expected encoding: default",
+        "Expected errors: default",
+        "stdin: {0}:strict",
+        "stdout: {1}:strict",
+        "stderr: {1}:backslashreplace",
+        "--- Set errors only ---",
+        "Expected encoding: default",
+        "Expected errors: surrogateescape",
+        "stdin: {0}:surrogateescape",
+        "stdout: {1}:surrogateescape",
+        "stderr: {1}:backslashreplace",
+        "--- Set encoding only ---",
+        "Expected encoding: latin-1",
+        "Expected errors: default",
+        "stdin: latin-1:strict",
+        "stdout: latin-1:strict",
+        "stderr: latin-1:backslashreplace",
+        "--- Set encoding and errors ---",
+        "Expected encoding: latin-1",
+        "Expected errors: surrogateescape",
+        "stdin: latin-1:surrogateescape",
+        "stdout: latin-1:surrogateescape",
+        "stderr: latin-1:backslashreplace"]).format(expected_stdin_encoding,
+                                                    expected_pipe_encoding)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
