@@ -6,10 +6,12 @@ import unittest
 import functools
 import contextlib
 from test import support
-from nntplib import NNTP, GroupInfo, _have_ssl
+from nntplib import NNTP, GroupInfo
 import nntplib
-if _have_ssl:
+try:
     import ssl
+except ImportError:
+    ssl = None
 
 TIMEOUT = 30
 
@@ -199,23 +201,23 @@ class NetworkedNNTPTestsMixin:
         resp, caps = self.server.capabilities()
         _check_caps(caps)
 
-    if _have_ssl:
-        def test_starttls(self):
-            file = self.server.file
-            sock = self.server.sock
-            try:
-                self.server.starttls()
-            except nntplib.NNTPPermanentError:
-                self.skipTest("STARTTLS not supported by server.")
-            else:
-                # Check that the socket and internal pseudo-file really were
-                # changed.
-                self.assertNotEqual(file, self.server.file)
-                self.assertNotEqual(sock, self.server.sock)
-                # Check that the new socket really is an SSL one
-                self.assertIsInstance(self.server.sock, ssl.SSLSocket)
-                # Check that trying starttls when it's already active fails.
-                self.assertRaises(ValueError, self.server.starttls)
+    @unittest.skipUnless(ssl, 'requires SSL support')
+    def test_starttls(self):
+        file = self.server.file
+        sock = self.server.sock
+        try:
+            self.server.starttls()
+        except nntplib.NNTPPermanentError:
+            self.skipTest("STARTTLS not supported by server.")
+        else:
+            # Check that the socket and internal pseudo-file really were
+            # changed.
+            self.assertNotEqual(file, self.server.file)
+            self.assertNotEqual(sock, self.server.sock)
+            # Check that the new socket really is an SSL one
+            self.assertIsInstance(self.server.sock, ssl.SSLSocket)
+            # Check that trying starttls when it's already active fails.
+            self.assertRaises(ValueError, self.server.starttls)
 
     def test_zlogin(self):
         # This test must be the penultimate because further commands will be
@@ -300,25 +302,24 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
         if cls.server is not None:
             cls.server.quit()
 
+@unittest.skipUnless(ssl, 'requires SSL support')
+class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
 
-if _have_ssl:
-    class NetworkedNNTP_SSLTests(NetworkedNNTPTests):
+    # Technical limits for this public NNTP server (see http://www.aioe.org):
+    # "Only two concurrent connections per IP address are allowed and
+    # 400 connections per day are accepted from each IP address."
 
-        # Technical limits for this public NNTP server (see http://www.aioe.org):
-        # "Only two concurrent connections per IP address are allowed and
-        # 400 connections per day are accepted from each IP address."
+    NNTP_HOST = 'nntp.aioe.org'
+    GROUP_NAME = 'comp.lang.python'
+    GROUP_PAT = 'comp.lang.*'
 
-        NNTP_HOST = 'nntp.aioe.org'
-        GROUP_NAME = 'comp.lang.python'
-        GROUP_PAT = 'comp.lang.*'
+    NNTP_CLASS = getattr(nntplib, 'NNTP_SSL', None)
 
-        NNTP_CLASS = nntplib.NNTP_SSL
+    # Disabled as it produces too much data
+    test_list = None
 
-        # Disabled as it produces too much data
-        test_list = None
-
-        # Disabled as the connection will already be encrypted.
-        test_starttls = None
+    # Disabled as the connection will already be encrypted.
+    test_starttls = None
 
 
 #
@@ -1407,12 +1408,13 @@ class MiscTests(unittest.TestCase):
         gives(2000, 6, 23, "000623", "000000")
         gives(2010, 6, 5, "100605", "000000")
 
+    @unittest.skipUnless(ssl, 'requires SSL support')
+    def test_ssl_support(self):
+        self.assertTrue(hasattr(nntplib, 'NNTP_SSL'))
 
 def test_main():
     tests = [MiscTests, NNTPv1Tests, NNTPv2Tests, CapsAfterLoginNNTPv2Tests,
-            SendReaderNNTPv2Tests, NetworkedNNTPTests]
-    if _have_ssl:
-        tests.append(NetworkedNNTP_SSLTests)
+            SendReaderNNTPv2Tests, NetworkedNNTPTests, NetworkedNNTP_SSLTests]
     support.run_unittest(*tests)
 
 
