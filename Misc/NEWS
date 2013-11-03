@@ -31,6 +31,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6160: The bbox() method of tkinter.Spinbox now returns a tuple of
+  integers instead of a string.  Based on patch by Guilherme Polo.
+
 - Issue #19403: contextlib.redirect_stdout is now reentrant
 
 - Issue #19286: Directories in ``package_data`` are no longer added to
