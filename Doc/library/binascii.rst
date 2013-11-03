@@ -145,7 +145,7 @@ The :mod:`binascii` module defines the following functions:
 
    Return the hexadecimal representation of the binary *data*.  Every byte of
    *data* is converted into the corresponding 2-digit hex representation.  The
-   resulting string is therefore twice as long as the length of *data*.
+   returned bytes object is therefore twice as long as the length of *data*.
 
 
 .. function:: a2b_hex(hexstr)
