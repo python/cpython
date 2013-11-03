@@ -35,6 +35,9 @@ Library
   TypeError instead of TclError on wrong number of arguments.  Original patch
   by Guilherme Polo.
 
+- Issue #10197: Rework subprocess.get[status]output to use subprocess
+  functionality and thus to work on Windows. Patch by Nick Coghlan
+
 - Issue #6160: The bbox() method of tkinter.Spinbox now returns a tuple of
   integers instead of a string.  Based on patch by Guilherme Polo.
 
