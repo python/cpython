@@ -266,15 +266,16 @@ class SysModuleTest(unittest.TestCase):
         #  still has 5 elements
         maj, min, buildno, plat, csd = sys.getwindowsversion()
 
+    @unittest.skipUnless(hasattr(sys, "setdlopenflags"),
+                         'test needs sys.setdlopenflags()')
     def test_dlopenflags(self):
-        if hasattr(sys, "setdlopenflags"):
-            self.assertTrue(hasattr(sys, "getdlopenflags"))
-            self.assertRaises(TypeError, sys.getdlopenflags, 42)
-            oldflags = sys.getdlopenflags()
-            self.assertRaises(TypeError, sys.setdlopenflags)
-            sys.setdlopenflags(oldflags+1)
-            self.assertEqual(sys.getdlopenflags(), oldflags+1)
-            sys.setdlopenflags(oldflags)
+        self.assertTrue(hasattr(sys, "getdlopenflags"))
+        self.assertRaises(TypeError, sys.getdlopenflags, 42)
+        oldflags = sys.getdlopenflags()
+        self.assertRaises(TypeError, sys.setdlopenflags)
+        sys.setdlopenflags(oldflags+1)
+        self.assertEqual(sys.getdlopenflags(), oldflags+1)
+        sys.setdlopenflags(oldflags)
 
     def test_refcount(self):
         # n here must be a global in order for this test to pass while

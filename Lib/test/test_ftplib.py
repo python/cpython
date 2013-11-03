@@ -15,7 +15,7 @@ try:
 except ImportError:
     ssl = None
 
-from unittest import TestCase
+from unittest import TestCase, SkipTest, skipUnless
 from test import test_support
 from test.test_support import HOST, HOSTv6
 threading = test_support.import_module('threading')
@@ -579,7 +579,15 @@ class TestFTPClass(TestCase):
         self.assertRaises(ftplib.Error, self.client.storlines, 'stor', f)
 
 
+@skipUnless(socket.has_ipv6, "IPv6 not enabled")
 class TestIPv6Environment(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            DummyFTPServer((HOST, 0), af=socket.AF_INET6)
+        except socket.error:
+            raise SkipTest("IPv6 not enabled")
 
     def setUp(self):
         self.server = DummyFTPServer((HOSTv6, 0), af=socket.AF_INET6)
@@ -615,6 +623,7 @@ class TestIPv6Environment(TestCase):
         retr()
 
 
+@skipUnless(ssl, "SSL not available")
 class TestTLS_FTPClassMixin(TestFTPClass):
     """Repeat TestFTPClass tests starting the TLS layer for both control
     and data connections first.
@@ -630,6 +639,7 @@ class TestTLS_FTPClassMixin(TestFTPClass):
         self.client.prot_p()
 
 
+@skipUnless(ssl, "SSL not available")
 class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 
@@ -783,17 +793,9 @@ class TestTimeouts(TestCase):
 
 
 def test_main():
-    tests = [TestFTPClass, TestTimeouts]
-    if socket.has_ipv6:
-        try:
-            DummyFTPServer((HOST, 0), af=socket.AF_INET6)
-        except socket.error:
-            pass
-        else:
-            tests.append(TestIPv6Environment)
-
-    if ssl is not None:
-        tests.extend([TestTLS_FTPClassMixin, TestTLS_FTPClass])
+    tests = [TestFTPClass, TestTimeouts,
+             TestIPv6Environment,
+             TestTLS_FTPClassMixin, TestTLS_FTPClass]
 
     thread_info = test_support.threading_setup()
     try:

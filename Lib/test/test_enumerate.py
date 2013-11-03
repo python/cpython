@@ -188,11 +188,10 @@ class TestReversed(unittest.TestCase):
         self.assertRaises(TypeError, reversed)
         self.assertRaises(TypeError, reversed, [], 'extra')
 
+    @unittest.skipUnless(hasattr(sys, 'getrefcount'), 'test needs sys.getrefcount()')
     def test_bug1229429(self):
         # this bug was never in reversed, it was in
         # PyObject_CallMethod, and reversed_new calls that sometimes.
-        if not hasattr(sys, "getrefcount"):
-            return
         def f():
             pass
         r = f.__reversed__ = object()

@@ -78,33 +78,34 @@ class TestShutil(unittest.TestCase):
         filename = tempfile.mktemp()
         self.assertRaises(OSError, shutil.rmtree, filename)
 
-    # See bug #1071513 for why we don't run this on cygwin
-    # and bug #1076467 for why we don't run this as root.
-    if (hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin'
-        and not (hasattr(os, 'geteuid') and os.geteuid() == 0)):
-        def test_on_error(self):
-            self.errorState = 0
-            os.mkdir(TESTFN)
-            self.childpath = os.path.join(TESTFN, 'a')
-            f = open(self.childpath, 'w')
-            f.close()
-            old_dir_mode = os.stat(TESTFN).st_mode
-            old_child_mode = os.stat(self.childpath).st_mode
-            # Make unwritable.
-            os.chmod(self.childpath, stat.S_IREAD)
-            os.chmod(TESTFN, stat.S_IREAD)
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'requires os.chmod()')
+    @unittest.skipIf(sys.platform[:6] == 'cygwin',
+                     "This test can't be run on Cygwin (issue #1071513).")
+    @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
+                     "This test can't be run reliably as root (issue #1076467).")
+    def test_on_error(self):
+        self.errorState = 0
+        os.mkdir(TESTFN)
+        self.childpath = os.path.join(TESTFN, 'a')
+        f = open(self.childpath, 'w')
+        f.close()
+        old_dir_mode = os.stat(TESTFN).st_mode
+        old_child_mode = os.stat(self.childpath).st_mode
+        # Make unwritable.
+        os.chmod(self.childpath, stat.S_IREAD)
+        os.chmod(TESTFN, stat.S_IREAD)
 
-            shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
-            # Test whether onerror has actually been called.
-            self.assertEqual(self.errorState, 2,
-                             "Expected call to onerror function did not happen.")
+        shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
+        # Test whether onerror has actually been called.
+        self.assertEqual(self.errorState, 2,
+                            "Expected call to onerror function did not happen.")
 
-            # Make writable again.
-            os.chmod(TESTFN, old_dir_mode)
-            os.chmod(self.childpath, old_child_mode)
+        # Make writable again.
+        os.chmod(TESTFN, old_dir_mode)
+        os.chmod(self.childpath, old_child_mode)
 
-            # Clean up.
-            shutil.rmtree(TESTFN)
+        # Clean up.
+        shutil.rmtree(TESTFN)
 
     def check_args_to_onerror(self, func, arg, exc):
         # test_rmtree_errors deliberately runs rmtree
@@ -308,37 +309,38 @@ class TestShutil(unittest.TestCase):
             finally:
                 shutil.rmtree(TESTFN, ignore_errors=True)
 
-    if hasattr(os, "mkfifo"):
-        # Issue #3002: copyfile and copytree block indefinitely on named pipes
-        def test_copyfile_named_pipe(self):
-            os.mkfifo(TESTFN)
-            try:
-                self.assertRaises(shutil.SpecialFileError,
-                                  shutil.copyfile, TESTFN, TESTFN2)
-                self.assertRaises(shutil.SpecialFileError,
-                                  shutil.copyfile, __file__, TESTFN)
-            finally:
-                os.remove(TESTFN)
+    # Issue #3002: copyfile and copytree block indefinitely on named pipes
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    def test_copyfile_named_pipe(self):
+        os.mkfifo(TESTFN)
+        try:
+            self.assertRaises(shutil.SpecialFileError,
+                              shutil.copyfile, TESTFN, TESTFN2)
+            self.assertRaises(shutil.SpecialFileError,
+                              shutil.copyfile, __file__, TESTFN)
+        finally:
+            os.remove(TESTFN)
 
-        def test_copytree_named_pipe(self):
-            os.mkdir(TESTFN)
+    @unittest.skipUnless(hasattr(os, "mkfifo"), 'requires os.mkfifo()')
+    def test_copytree_named_pipe(self):
+        os.mkdir(TESTFN)
+        try:
+            subdir = os.path.join(TESTFN, "subdir")
+            os.mkdir(subdir)
+            pipe = os.path.join(subdir, "mypipe")
+            os.mkfifo(pipe)
             try:
-                subdir = os.path.join(TESTFN, "subdir")
-                os.mkdir(subdir)
-                pipe = os.path.join(subdir, "mypipe")
-                os.mkfifo(pipe)
-                try:
-                    shutil.copytree(TESTFN, TESTFN2)
-                except shutil.Error as e:
-                    errors = e.args[0]
-                    self.assertEqual(len(errors), 1)
-                    src, dst, error_msg = errors[0]
-                    self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
-                else:
-                    self.fail("shutil.Error should have been raised")
-            finally:
-                shutil.rmtree(TESTFN, ignore_errors=True)
-                shutil.rmtree(TESTFN2, ignore_errors=True)
+                shutil.copytree(TESTFN, TESTFN2)
+            except shutil.Error as e:
+                errors = e.args[0]
+                self.assertEqual(len(errors), 1)
+                src, dst, error_msg = errors[0]
+                self.assertEqual("`%s` is a named pipe" % pipe, error_msg)
+            else:
+                self.fail("shutil.Error should have been raised")
+        finally:
+            shutil.rmtree(TESTFN, ignore_errors=True)
+            shutil.rmtree(TESTFN2, ignore_errors=True)
 
     @unittest.skipUnless(hasattr(os, 'chflags') and
                          hasattr(errno, 'EOPNOTSUPP') and

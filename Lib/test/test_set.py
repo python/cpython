@@ -561,10 +561,10 @@ class TestSet(TestJointOps):
         s = None
         self.assertRaises(ReferenceError, str, p)
 
-    # C API test only available in a debug build
-    if hasattr(set, "test_c_api"):
-        def test_c_api(self):
-            self.assertEqual(set().test_c_api(), True)
+    @unittest.skipUnless(hasattr(set, "test_c_api"),
+                         'C API test only available in a debug build')
+    def test_c_api(self):
+        self.assertEqual(set().test_c_api(), True)
 
 class SetSubclass(set):
     pass

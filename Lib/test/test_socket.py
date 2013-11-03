@@ -343,16 +343,17 @@ class GeneralModuleTests(unittest.TestCase):
         if not fqhn in all_host_names:
             self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
+    @unittest.skipUnless(hasattr(sys, 'getrefcount'),
+                         'test needs sys.getrefcount()')
     def testRefCountGetNameInfo(self):
         # Testing reference count for getnameinfo
-        if hasattr(sys, "getrefcount"):
-            try:
-                # On some versions, this loses a reference
-                orig = sys.getrefcount(__name__)
-                socket.getnameinfo(__name__,0)
-            except TypeError:
-                self.assertEqual(sys.getrefcount(__name__), orig,
-                                 "socket.getnameinfo loses a reference")
+        try:
+            # On some versions, this loses a reference
+            orig = sys.getrefcount(__name__)
+            socket.getnameinfo(__name__,0)
+        except TypeError:
+            self.assertEqual(sys.getrefcount(__name__), orig,
+                             "socket.getnameinfo loses a reference")
 
     def testInterpreterCrash(self):
         # Making sure getnameinfo doesn't crash the interpreter
@@ -459,17 +460,17 @@ class GeneralModuleTests(unittest.TestCase):
         # Check that setting it to an invalid type raises TypeError
         self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
 
+    @unittest.skipUnless(hasattr(socket, 'inet_aton'),
+                         'test needs socket.inet_aton()')
     def testIPv4_inet_aton_fourbytes(self):
-        if not hasattr(socket, 'inet_aton'):
-            return  # No inet_aton, nothing to check
         # Test that issue1008086 and issue767150 are fixed.
         # It must return 4 bytes.
         self.assertEqual('\x00'*4, socket.inet_aton('0.0.0.0'))
         self.assertEqual('\xff'*4, socket.inet_aton('255.255.255.255'))
 
+    @unittest.skipUnless(hasattr(socket, 'inet_pton'),
+                         'test needs socket.inet_pton()')
     def testIPv4toString(self):
-        if not hasattr(socket, 'inet_pton'):
-            return # No inet_pton() on this platform
         from socket import inet_aton as f, inet_pton, AF_INET
         g = lambda a: inet_pton(AF_INET, a)
 
@@ -484,9 +485,9 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual('\xaa\xaa\xaa\xaa', g('170.170.170.170'))
         self.assertEqual('\xff\xff\xff\xff', g('255.255.255.255'))
 
+    @unittest.skipUnless(hasattr(socket, 'inet_pton'),
+                         'test needs socket.inet_pton()')
     def testIPv6toString(self):
-        if not hasattr(socket, 'inet_pton'):
-            return # No inet_pton() on this platform
         try:
             from socket import inet_pton, AF_INET6, has_ipv6
             if not has_ipv6:
@@ -503,9 +504,9 @@ class GeneralModuleTests(unittest.TestCase):
             f('45ef:76cb:1a:56ef:afeb:bac:1924:aeae')
         )
 
+    @unittest.skipUnless(hasattr(socket, 'inet_ntop'),
+                         'test needs socket.inet_ntop()')
     def testStringToIPv4(self):
-        if not hasattr(socket, 'inet_ntop'):
-            return # No inet_ntop() on this platform
         from socket import inet_ntoa as f, inet_ntop, AF_INET
         g = lambda a: inet_ntop(AF_INET, a)
 
@@ -518,9 +519,9 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEqual('170.85.170.85', g('\xaa\x55\xaa\x55'))
         self.assertEqual('255.255.255.255', g('\xff\xff\xff\xff'))
 
+    @unittest.skipUnless(hasattr(socket, 'inet_ntop'),
+                         'test needs socket.inet_ntop()')
     def testStringToIPv6(self):
-        if not hasattr(socket, 'inet_ntop'):
-            return # No inet_ntop() on this platform
         try:
             from socket import inet_ntop, AF_INET6, has_ipv6
             if not has_ipv6:
@@ -871,6 +872,8 @@ class TCPCloserTest(ThreadedTCPSocketTest):
         self.cli.connect((HOST, self.port))
         time.sleep(1.0)
 
+@unittest.skipUnless(hasattr(socket, 'socketpair'),
+                     'test needs socket.socketpair()')
 @unittest.skipUnless(thread, 'Threading required for this test.')
 class BasicSocketPairTest(SocketPairTest):
 
@@ -1456,12 +1459,12 @@ class TCPTimeoutTest(SocketTCPTest):
         if not ok:
             self.fail("accept() returned success when we did not expect it")
 
+    @unittest.skipUnless(hasattr(signal, 'alarm'),
+                         'test needs signal.alarm()')
     def testInterruptedTimeout(self):
         # XXX I don't know how to do this test on MSWindows or any other
         # plaform that doesn't support signal.alarm() or os.kill(), though
         # the bug should have existed on all platforms.
-        if not hasattr(signal, "alarm"):
-            return                  # can only test on *nix
         self.serv.settimeout(5.0)   # must be longer than alarm
         class Alarm(Exception):
             pass
@@ -1521,6 +1524,7 @@ class TestExceptions(unittest.TestCase):
         self.assertTrue(issubclass(socket.gaierror, socket.error))
         self.assertTrue(issubclass(socket.timeout, socket.error))
 
+@unittest.skipUnless(sys.platform == 'linux', 'Linux specific test')
 class TestLinuxAbstractNamespace(unittest.TestCase):
 
     UNIX_PATH_MAX = 108
@@ -1635,11 +1639,11 @@ def isTipcAvailable():
         for line in f:
             if line.startswith("tipc "):
                 return True
-    if test_support.verbose:
-        print "TIPC module is not loaded, please 'sudo modprobe tipc'"
     return False
 
-class TIPCTest (unittest.TestCase):
+@unittest.skipUnless(isTipcAvailable(),
+                     "TIPC module is not loaded, please 'sudo modprobe tipc'")
+class TIPCTest(unittest.TestCase):
     def testRDM(self):
         srv = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
         cli = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
@@ -1659,7 +1663,9 @@ class TIPCTest (unittest.TestCase):
         self.assertEqual(msg, MSG)
 
 
-class TIPCThreadableTest (unittest.TestCase, ThreadableTest):
+@unittest.skipUnless(isTipcAvailable(),
+                     "TIPC module is not loaded, please 'sudo modprobe tipc'")
+class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
     def __init__(self, methodName = 'runTest'):
         unittest.TestCase.__init__(self, methodName = methodName)
         ThreadableTest.__init__(self)
@@ -1712,13 +1718,9 @@ def test_main():
         NetworkConnectionAttributesTest,
         NetworkConnectionBehaviourTest,
     ])
-    if hasattr(socket, "socketpair"):
-        tests.append(BasicSocketPairTest)
-    if sys.platform == 'linux2':
-        tests.append(TestLinuxAbstractNamespace)
-    if isTipcAvailable():
-        tests.append(TIPCTest)
-        tests.append(TIPCThreadableTest)
+    tests.append(BasicSocketPairTest)
+    tests.append(TestLinuxAbstractNamespace)
+    tests.extend([TIPCTest, TIPCThreadableTest])
 
     thread_info = test_support.threading_setup()
     test_support.run_unittest(*tests)

@@ -31,11 +31,10 @@ class CompileallTests(unittest.TestCase):
         compare = struct.pack('<4sl', imp.get_magic(), mtime)
         return data, compare
 
+    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def recreation_check(self, metadata):
         """Check that compileall recreates bytecode when the new metadata is
         used."""
-        if not hasattr(os, 'stat'):
-            return
         py_compile.compile(self.source_path)
         self.assertEqual(*self.data())
         with open(self.bc_path, 'rb') as file:
