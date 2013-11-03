@@ -14,7 +14,7 @@ def int_round(x):
 _sentinel = object()
 
 class AbstractWidgetTest(object):
-    _conv_pixels = staticmethod(int_round if tcl_version[:2] != (8, 5) else int)
+    _conv_pixels = staticmethod(int_round)
     _conv_pad_pixels = None
     wantobjects = True
 
