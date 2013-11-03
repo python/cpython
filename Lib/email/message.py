@@ -636,7 +636,7 @@ class Message:
         If your application doesn't care whether the parameter was RFC 2231
         encoded, it can turn the return value into a string as follows:
 
-            param = msg.get_param('foo')
+            rawparam = msg.get_param('foo')
             param = email.utils.collapse_rfc2231_value(rawparam)
 
         """
