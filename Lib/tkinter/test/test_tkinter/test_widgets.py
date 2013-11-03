@@ -457,6 +457,18 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         widget = self.create()
         self.checkBooleanParam(widget, 'wrap')
 
+    def test_bbox(self):
+        widget = self.create()
+        bbox = widget.bbox(0)
+        self.assertEqual(len(bbox), 4)
+        for item in bbox:
+            self.assertIsInstance(item, int)
+
+        self.assertRaises(tkinter.TclError, widget.bbox, 'noindex')
+        self.assertRaises(tkinter.TclError, widget.bbox, None)
+        self.assertRaises(TypeError, widget.bbox)
+        self.assertRaises(TypeError, widget.bbox, 0, 1)
+
 
 @add_standard_options(StandardOptionsTests)
 class TextTest(AbstractWidgetTest, unittest.TestCase):
