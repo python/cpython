@@ -11,7 +11,7 @@ import os
 import time
 import errno
 
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 from test import support as test_support
 threading = test_support.import_module('threading')
 
@@ -288,35 +288,37 @@ if hasattr(poplib, 'POP3_SSL'):
             else:
                 DummyPOP3Handler.handle_read(self)
 
+requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 
-    class TestPOP3_SSLClass(TestPOP3Class):
-        # repeat previous tests by using poplib.POP3_SSL
+@requires_ssl
+class TestPOP3_SSLClass(TestPOP3Class):
+    # repeat previous tests by using poplib.POP3_SSL
 
-        def setUp(self):
-            self.server = DummyPOP3Server((HOST, PORT))
-            self.server.handler = DummyPOP3_SSLHandler
-            self.server.start()
-            self.client = poplib.POP3_SSL(self.server.host, self.server.port)
+    def setUp(self):
+        self.server = DummyPOP3Server((HOST, PORT))
+        self.server.handler = DummyPOP3_SSLHandler
+        self.server.start()
+        self.client = poplib.POP3_SSL(self.server.host, self.server.port)
 
-        def test__all__(self):
-            self.assertIn('POP3_SSL', poplib.__all__)
+    def test__all__(self):
+        self.assertIn('POP3_SSL', poplib.__all__)
 
-        def test_context(self):
-            ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-            self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
-                              self.server.port, keyfile=CERTFILE, context=ctx)
-            self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
-                              self.server.port, certfile=CERTFILE, context=ctx)
-            self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
-                              self.server.port, keyfile=CERTFILE,
-                              certfile=CERTFILE, context=ctx)
+    def test_context(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
+                          self.server.port, keyfile=CERTFILE, context=ctx)
+        self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
+                          self.server.port, certfile=CERTFILE, context=ctx)
+        self.assertRaises(ValueError, poplib.POP3_SSL, self.server.host,
+                          self.server.port, keyfile=CERTFILE,
+                          certfile=CERTFILE, context=ctx)
 
-            self.client.quit()
-            self.client = poplib.POP3_SSL(self.server.host, self.server.port,
-                                          context=ctx)
-            self.assertIsInstance(self.client.sock, ssl.SSLSocket)
-            self.assertIs(self.client.sock.context, ctx)
-            self.assertTrue(self.client.noop().startswith(b'+OK'))
+        self.client.quit()
+        self.client = poplib.POP3_SSL(self.server.host, self.server.port,
+                                      context=ctx)
+        self.assertIsInstance(self.client.sock, ssl.SSLSocket)
+        self.assertIs(self.client.sock.context, ctx)
+        self.assertTrue(self.client.noop().startswith(b'+OK'))
 
 
 class TestTimeouts(TestCase):
@@ -374,9 +376,8 @@ class TestTimeouts(TestCase):
 
 
 def test_main():
-    tests = [TestPOP3Class, TestTimeouts]
-    if SUPPORTS_SSL:
-        tests.append(TestPOP3_SSLClass)
+    tests = [TestPOP3Class, TestTimeouts,
+             TestPOP3_SSLClass]
     thread_info = test_support.threading_setup()
     try:
         test_support.run_unittest(*tests)

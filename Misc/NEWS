@@ -29,6 +29,8 @@ Library
 Tests
 -----
 
+- Issue #18702: All skipped tests now reported as skipped.
+
 - Issue #19085: Added basic tests for all tkinter widget options.
 
 
