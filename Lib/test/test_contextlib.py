@@ -666,11 +666,18 @@ class TestRedirectStdout(unittest.TestCase):
         obj = redirect_stdout(None)
         self.assertEqual(obj.__doc__, cm_docstring)
 
+    def test_no_redirect_in_init(self):
+        orig_stdout = sys.stdout
+        redirect_stdout(None)
+        self.assertIs(sys.stdout, orig_stdout)
+
     def test_redirect_to_string_io(self):
         f = io.StringIO()
         msg = "Consider an API like help(), which prints directly to stdout"
+        orig_stdout = sys.stdout
         with redirect_stdout(f):
             print(msg)
+        self.assertIs(sys.stdout, orig_stdout)
         s = f.getvalue().strip()
         self.assertEqual(s, msg)
 
@@ -682,23 +689,26 @@ class TestRedirectStdout(unittest.TestCase):
     def test_cm_is_reusable(self):
         f = io.StringIO()
         write_to_f = redirect_stdout(f)
+        orig_stdout = sys.stdout
         with write_to_f:
             print("Hello", end=" ")
         with write_to_f:
             print("World!")
+        self.assertIs(sys.stdout, orig_stdout)
         s = f.getvalue()
         self.assertEqual(s, "Hello World!\n")
 
-    # If this is ever made reentrant, update the reusable-but-not-reentrant
-    # example at the end of the contextlib docs accordingly.
-    def test_nested_reentry_fails(self):
+    def test_cm_is_reentrant(self):
         f = io.StringIO()
         write_to_f = redirect_stdout(f)
-        with self.assertRaisesRegex(RuntimeError, "Cannot reenter"):
+        orig_stdout = sys.stdout
+        with write_to_f:
+            print("Hello", end=" ")
             with write_to_f:
-                print("Hello", end=" ")
-                with write_to_f:
-                    print("World!")
+                print("World!")
+        self.assertIs(sys.stdout, orig_stdout)
+        s = f.getvalue()
+        self.assertEqual(s, "Hello World!\n")
 
 
 class TestSuppress(unittest.TestCase):

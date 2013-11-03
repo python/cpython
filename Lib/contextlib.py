@@ -166,20 +166,16 @@ class redirect_stdout:
 
     def __init__(self, new_target):
         self._new_target = new_target
-        self._old_target = self._sentinel = object()
+        # We use a list of old targets to make this CM re-entrant
+        self._old_targets = []
 
     def __enter__(self):
-        if self._old_target is not self._sentinel:
-            raise RuntimeError("Cannot reenter {!r}".format(self))
-        self._old_target = sys.stdout
+        self._old_targets.append(sys.stdout)
         sys.stdout = self._new_target
         return self._new_target
 
     def __exit__(self, exctype, excinst, exctb):
-        restore_stdout = self._old_target
-        self._old_target = self._sentinel
-        sys.stdout = restore_stdout
-
+        sys.stdout = self._old_targets.pop()
 
 
 class suppress:
