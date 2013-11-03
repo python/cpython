@@ -1058,10 +1058,12 @@ handling consistency are valid for these functions.
 
    Return ``(status, output)`` of executing *cmd* in a shell.
 
-   Execute the string *cmd* in a shell with :func:`os.popen` and return a 2-tuple
-   ``(status, output)``.  *cmd* is actually run as ``{ cmd ; } 2>&1``, so that the
-   returned output will contain output or error messages.  A trailing newline is
-   stripped from the output.  The exit status for the command can be interpreted
+   Execute the string *cmd* in a shell with :class:`Popen` and return a 2-tuple
+   ``(status, output)`` via :func:`Popen.communicate`. Universal newlines mode
+   is used; see the notes on :ref:`frequently-used-arguments` for more details.
+
+   A trailing newline is stripped from the output.
+   The exit status for the command can be interpreted
    according to the rules for the C function :c:func:`wait`.  Example::
 
       >>> subprocess.getstatusoutput('ls /bin/ls')
@@ -1071,7 +1073,8 @@ handling consistency are valid for these functions.
       >>> subprocess.getstatusoutput('/bin/junk')
       (256, 'sh: /bin/junk: not found')
 
-   Availability: UNIX.
+   .. versionchanged:: 3.3
+      Availability: Unix & Windows
 
 
 .. function:: getoutput(cmd)
@@ -1084,7 +1087,8 @@ handling consistency are valid for these functions.
       >>> subprocess.getoutput('ls /bin/ls')
       '/bin/ls'
 
-   Availability: UNIX.
+   .. versionchanged:: 3.3
+      Availability: Unix & Windows
 
 
 Notes
