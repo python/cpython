@@ -127,8 +127,7 @@ class build_py (Command):
             # Each pattern has to be converted to a platform-specific path
             filelist = glob(os.path.join(src_dir, convert_path(pattern)))
             # Files that match more than one pattern are only added once
-            files.extend([fn for fn in filelist if fn not in files
-                and os.path.isfile(fn)])
+            files.extend([fn for fn in filelist if fn not in files])
         return files
 
     def build_package_data(self):
