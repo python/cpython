@@ -155,9 +155,11 @@ class Event:
             self._loop = events.get_event_loop()
 
     def __repr__(self):
-        # TODO: add waiters:N if > 0.
         res = super().__repr__()
-        return '<{} [{}]>'.format(res[1:-1], 'set' if self._value else 'unset')
+        extra = 'set' if self._value else 'unset'
+        if self._waiters:
+            extra = '{},waiters:{}'.format(extra, len(self._waiters))
+        return '<{} [{}]>'.format(res[1:-1], extra)
 
     def is_set(self):
         """Return true if and only if the internal flag is true."""
@@ -201,20 +203,38 @@ class Event:
             self._waiters.remove(fut)
 
 
-# TODO: Why is this a Lock subclass?  threading.Condition *has* a lock.
-class Condition(Lock):
-    """A Condition implementation.
+class Condition:
+    """A Condition implementation, our equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
     allows one or more coroutines to wait until they are notified by another
     coroutine.
+
+    A new Lock object is created and used as the underlying lock.
     """
 
     def __init__(self, *, loop=None):
-        super().__init__(loop=loop)
-        self._condition_waiters = collections.deque()
+        if loop is not None:
+            self._loop = loop
+        else:
+            self._loop = events.get_event_loop()
 
-    # TODO: Add __repr__() with len(_condition_waiters).
+        # Lock as an attribute as in threading.Condition.
+        lock = Lock(loop=self._loop)
+        self._lock = lock
+        # Export the lock's locked(), acquire() and release() methods.
+        self.locked = lock.locked
+        self.acquire = lock.acquire
+        self.release = lock.release
+
+        self._waiters = collections.deque()
+
+    def __repr__(self):
+        res = super().__repr__()
+        extra = 'locked' if self.locked() else 'unlocked'
+        if self._waiters:
+            extra = '{},waiters:{}'.format(extra, len(self._waiters))
+        return '<{} [{}]>'.format(res[1:-1], extra)
 
     @tasks.coroutine
     def wait(self):
@@ -228,19 +248,19 @@ class Condition(Lock):
         the same condition variable in another coroutine.  Once
         awakened, it re-acquires the lock and returns True.
         """
-        if not self._locked:
+        if not self.locked():
             raise RuntimeError('cannot wait on un-acquired lock')
 
         keep_lock = True
         self.release()
         try:
             fut = futures.Future(loop=self._loop)
-            self._condition_waiters.append(fut)
+            self._waiters.append(fut)
             try:
                 yield from fut
                 return True
             finally:
-                self._condition_waiters.remove(fut)
+                self._waiters.remove(fut)
 
         except GeneratorExit:
             keep_lock = False  # Prevent yield in finally clause.
@@ -275,11 +295,11 @@ class Condition(Lock):
         wait() call until it can reacquire the lock. Since notify() does
         not release the lock, its caller should.
         """
-        if not self._locked:
+        if not self.locked():
             raise RuntimeError('cannot notify on un-acquired lock')
 
         idx = 0
-        for fut in self._condition_waiters:
+        for fut in self._waiters:
             if idx >= n:
                 break
 
@@ -293,7 +313,17 @@ class Condition(Lock):
         calling thread has not acquired the lock when this method is called,
         a RuntimeError is raised.
         """
-        self.notify(len(self._condition_waiters))
+        self.notify(len(self._waiters))
+
+    def __enter__(self):
+        return self._lock.__enter__()
+
+    def __exit__(self, *args):
+        return self._lock.__exit__(*args)
+
+    def __iter__(self):
+        yield from self.acquire()
+        return self
 
 
 class Semaphore:
@@ -310,10 +340,10 @@ class Semaphore:
     counter; it defaults to 1. If the value given is less than 0,
     ValueError is raised.
 
-    The second optional argument determins can semophore be released more than
-    initial internal counter value; it defaults to False. If the value given
-    is True and number of release() is more than number of successfull
-    acquire() calls ValueError is raised.
+    The second optional argument determines if the semaphore can be released
+    more than initial internal counter value; it defaults to False. If the
+    value given is True and number of release() is more than number of
+    successful acquire() calls ValueError is raised.
     """
 
     def __init__(self, value=1, bound=False, *, loop=None):
@@ -330,12 +360,12 @@ class Semaphore:
             self._loop = events.get_event_loop()
 
     def __repr__(self):
-        # TODO: add waiters:N if > 0.
         res = super().__repr__()
-        return '<{} [{}]>'.format(
-            res[1:-1],
-            'locked' if self._locked else 'unlocked,value:{}'.format(
-                self._value))
+        extra = 'locked' if self._locked else 'unlocked,value:{}'.format(
+            self._value)
+        if self._waiters:
+            extra = '{},waiters:{}'.format(extra, len(self._waiters))
+        return '<{} [{}]>'.format(res[1:-1], extra)
 
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
@@ -373,7 +403,7 @@ class Semaphore:
         When it was zero on entry and another coroutine is waiting for it to
         become larger than zero again, wake up that coroutine.
 
-        If Semaphore is create with "bound" paramter equals true, then
+        If Semaphore is created with "bound" parameter equals true, then
         release() method checks to make sure its current value doesn't exceed
         its initial value. If it does, ValueError is raised.
         """
