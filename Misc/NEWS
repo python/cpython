@@ -31,6 +31,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18678: Corrected spwd struct member names in spwd module:
+  sp_nam->sp_namp, and sp_pwd->sp_pwdp.  The old names are kept as extra
+  structseq members, for backward compatibility.
+
 - Issue #6157: Fixed tkinter.Text.debug().  tkinter.Text.bbox() now raises
   TypeError instead of TclError on wrong number of arguments.  Original patch
   by Guilherme Polo.
