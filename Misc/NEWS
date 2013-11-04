@@ -23,6 +23,9 @@ Library
 Tests
 -----
 
+- Issue #17883: Backported _is_gui_available() in test.test_support to
+  avoid hanging Windows buildbots on test_ttk_guionly.
+
 - Issue #18702: All skipped tests now reported as skipped.
 
 - Issue #19085: Added basic tests for all tkinter widget options.
