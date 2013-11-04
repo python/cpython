@@ -11,7 +11,7 @@
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'singledispatch']
+           'partialmethod', 'singledispatch']
 
 try:
     from _functools import reduce
