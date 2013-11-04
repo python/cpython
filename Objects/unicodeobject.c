@@ -10428,10 +10428,6 @@ unicode_compare(PyObject *str1, PyObject *str2)
     void *data1, *data2;
     Py_ssize_t len1, len2, len;
 
-    /* a string is equal to itself */
-    if (str1 == str2)
-        return 0;
-
     kind1 = PyUnicode_KIND(str1);
     kind2 = PyUnicode_KIND(str2);
     data1 = PyUnicode_DATA(str1);
@@ -10555,6 +10551,11 @@ PyUnicode_Compare(PyObject *left, PyObject *right)
         if (PyUnicode_READY(left) == -1 ||
             PyUnicode_READY(right) == -1)
             return -1;
+
+        /* a string is equal to itself */
+        if (left == right)
+            return 0;
+
         return unicode_compare(left, right);
     }
     PyErr_Format(PyExc_TypeError,
