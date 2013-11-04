@@ -23,6 +23,10 @@ Library
 Tests
 -----
 
+- Issue #17883: Tweak test_tcl testLoadWithUNC to skip the test in the
+  event of a permission error on Windows and to properly report other
+  skip conditions.
+
 - Issue #17883: Backported _is_gui_available() in test.test_support to
   avoid hanging Windows buildbots on test_ttk_guionly.
 
