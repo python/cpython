@@ -8,10 +8,22 @@ from tkinter.test.support import (tcl_version, requires_tcl, pixels_conv,
 
 noconv = str if tcl_version < (8, 5) else False
 
+pixels_round = round
+if tcl_version[:2] == (8, 5):
+    # Issue #19085: Workaround a bug in Tk
+    # http://core.tcl.tk/tk/info/3497848
+    root = setup_master()
+    patchlevel = root.call('info', 'patchlevel')
+    patchlevel = tuple(map(int, patchlevel.split('.')))
+    if patchlevel < (8, 5, 12):
+        pixels_round = int
+    del root
+
+
 _sentinel = object()
 
 class AbstractWidgetTest:
-    _conv_pixels = round
+    _conv_pixels = pixels_round
     _conv_pad_pixels = None
     wantobjects = True
 
