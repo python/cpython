@@ -1,10 +1,11 @@
 """Event loop and event loop policy."""
 
-__all__ = ['AbstractEventLoopPolicy', 'DefaultEventLoopPolicy',
+__all__ = ['AbstractEventLoopPolicy',
            'AbstractEventLoop', 'AbstractServer',
            'Handle', 'TimerHandle',
            'get_event_loop_policy', 'set_event_loop_policy',
            'get_event_loop', 'set_event_loop', 'new_event_loop',
+           'get_child_watcher', 'set_child_watcher',
            ]
 
 import subprocess
@@ -318,8 +319,18 @@ class AbstractEventLoopPolicy:
         """XXX"""
         raise NotImplementedError
 
+    # Child processes handling (Unix only).
 
-class DefaultEventLoopPolicy(threading.local, AbstractEventLoopPolicy):
+    def get_child_watcher(self):
+        """XXX"""
+        raise NotImplementedError
+
+    def set_child_watcher(self, watcher):
+        """XXX"""
+        raise NotImplementedError
+
+
+class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
     """Default policy implementation for accessing the event loop.
 
     In this policy, each thread has its own event loop.  However, we
@@ -332,28 +343,34 @@ class DefaultEventLoopPolicy(threading.local, AbstractEventLoopPolicy):
     associated).
     """
 
-    _loop = None
-    _set_called = False
+    _loop_factory = None
+
+    class _Local(threading.local):
+        _loop = None
+        _set_called = False
+
+    def __init__(self):
+        self._local = self._Local()
 
     def get_event_loop(self):
         """Get the event loop.
 
         This may be None or an instance of EventLoop.
         """
-        if (self._loop is None and
-            not self._set_called and
+        if (self._local._loop is None and
+            not self._local._set_called and
             isinstance(threading.current_thread(), threading._MainThread)):
-            self._loop = self.new_event_loop()
-        assert self._loop is not None, \
+            self._local._loop = self.new_event_loop()
+        assert self._local._loop is not None, \
                ('There is no current event loop in thread %r.' %
                 threading.current_thread().name)
-        return self._loop
+        return self._local._loop
 
     def set_event_loop(self, loop):
         """Set the event loop."""
-        self._set_called = True
+        self._local._set_called = True
         assert loop is None or isinstance(loop, AbstractEventLoop)
-        self._loop = loop
+        self._local._loop = loop
 
     def new_event_loop(self):
         """Create a new event loop.
@@ -361,12 +378,7 @@ class DefaultEventLoopPolicy(threading.local, AbstractEventLoopPolicy):
         You must call set_event_loop() to make this the current event
         loop.
         """
-        if sys.platform == 'win32':  # pragma: no cover
-            from . import windows_events
-            return windows_events.SelectorEventLoop()
-        else:  # pragma: no cover
-            from . import unix_events
-            return unix_events.SelectorEventLoop()
+        return self._loop_factory()
 
 
 # Event loop policy.  The policy itself is always global, even if the
@@ -375,12 +387,22 @@ class DefaultEventLoopPolicy(threading.local, AbstractEventLoopPolicy):
 # call to get_event_loop_policy().
 _event_loop_policy = None
 
+# Lock for protecting the on-the-fly creation of the event loop policy.
+_lock = threading.Lock()
+
+
+def _init_event_loop_policy():
+    global _event_loop_policy
+    with _lock:
+        if _event_loop_policy is None:  # pragma: no branch
+            from . import DefaultEventLoopPolicy
+            _event_loop_policy = DefaultEventLoopPolicy()
+
 
 def get_event_loop_policy():
     """XXX"""
-    global _event_loop_policy
     if _event_loop_policy is None:
-        _event_loop_policy = DefaultEventLoopPolicy()
+        _init_event_loop_policy()
     return _event_loop_policy
 
 
@@ -404,3 +426,13 @@ def set_event_loop(loop):
 def new_event_loop():
     """XXX"""
     return get_event_loop_policy().new_event_loop()
+
+
+def get_child_watcher():
+    """XXX"""
+    return get_event_loop_policy().get_child_watcher()
+
+
+def set_child_watcher(watcher):
+    """XXX"""
+    return get_event_loop_policy().set_child_watcher(watcher)
