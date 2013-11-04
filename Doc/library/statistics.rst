@@ -52,6 +52,9 @@ tends to deviate from the typical or average values.
 Function details
 ----------------
 
+Note: The functions do not require the data given to them to be sorted.
+However, for reading convenience, most of the examples show sorted sequences.
+
 .. function:: mean(data)
 
    Return the sample arithmetic mean of *data*, a sequence or iterator of
