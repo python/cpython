@@ -1048,7 +1048,8 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
 		lib2to3/tests/data lib2to3/tests/data/fixers \
 		lib2to3/tests/data/fixers/myfixes \
-		ctypes ctypes/test ctypes/macholib idlelib idlelib/Icons \
+		ctypes ctypes/test ctypes/macholib \
+		idlelib idlelib/Icons idlelib/idle_test \
 		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
 		importlib test/test_importlib test/test_importlib/builtin \
 		test/test_importlib/extension test/test_importlib/frozen \
