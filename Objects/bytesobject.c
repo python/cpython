@@ -842,12 +842,20 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     }
     else if (a == b) {
         switch (op) {
-        case Py_EQ:case Py_LE:case Py_GE:
+        case Py_EQ:
+        case Py_LE:
+        case Py_GE:
+            /* a string is equal to itself */
             result = Py_True;
             break;
-        case Py_NE:case Py_LT:case Py_GT:
+        case Py_NE:
+        case Py_LT:
+        case Py_GT:
             result = Py_False;
             break;
+        default:
+            PyErr_BadArgument();
+            return NULL;
         }
     }
     else if (op == Py_EQ || op == Py_NE) {
@@ -856,11 +864,12 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         result = eq ? Py_True : Py_False;
     }
     else {
-        len_a = Py_SIZE(a); len_b = Py_SIZE(b);
-        min_len = (len_a < len_b) ? len_a : len_b;
+        len_a = Py_SIZE(a);
+        len_b = Py_SIZE(b);
+        min_len = Py_MIN(len_a, len_b);
         if (min_len > 0) {
             c = Py_CHARMASK(*a->ob_sval) - Py_CHARMASK(*b->ob_sval);
-            if (c==0)
+            if (c == 0)
                 c = memcmp(a->ob_sval, b->ob_sval, min_len);
         }
         else
@@ -873,8 +882,8 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
         case Py_GT: c = c >  0; break;
         case Py_GE: c = c >= 0; break;
         default:
-            assert(op != Py_EQ && op != Py_NE);
-            Py_RETURN_NOTIMPLEMENTED;
+            PyErr_BadArgument();
+            return NULL;
         }
         result = c ? Py_True : Py_False;
     }

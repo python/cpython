@@ -10534,10 +10534,6 @@ unicode_compare_eq(PyObject *str1, PyObject *str2)
     Py_ssize_t len;
     int cmp;
 
-    /* a string is equal to itself */
-    if (str1 == str2)
-        return 1;
-
     len = PyUnicode_GET_LENGTH(str1);
     if (PyUnicode_GET_LENGTH(str2) != len)
         return 0;
@@ -10628,7 +10624,25 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
         PyUnicode_READY(right) == -1)
         return NULL;
 
-    if (op == Py_EQ || op == Py_NE) {
+    if (left == right) {
+        switch (op) {
+        case Py_EQ:
+        case Py_LE:
+        case Py_GE:
+            /* a string is equal to itself */
+            v = Py_True;
+            break;
+        case Py_NE:
+        case Py_LT:
+        case Py_GT:
+            v = Py_False;
+            break;
+        default:
+            PyErr_BadArgument();
+            return NULL;
+        }
+    }
+    else if (op == Py_EQ || op == Py_NE) {
         result = unicode_compare_eq(left, right);
         result ^= (op == Py_NE);
         v = TEST_COND(result);
