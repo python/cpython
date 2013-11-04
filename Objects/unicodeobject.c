@@ -10584,8 +10584,12 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
 
         len = Py_MIN(len1, len2);
         cmp = memcmp(data, str, len);
-        if (cmp != 0)
-            return cmp;
+        if (cmp != 0) {
+            if (cmp < 0)
+                return -1;
+            else
+                return 1;
+        }
         if (len1 > len2)
             return 1; /* uni is longer */
         if (len2 > len1)
