@@ -23,6 +23,10 @@ if use_resources and 'gui' in use_resources:
 # load_tests() if it finds it. (Unittest.main does the same.)
 load_tests = idletest.load_tests
 
+# pre-3.3 regrtest does not support the load_tests protocol. use test_main
+def test_main():
+    support.run_unittest(unittest.TestLoader().loadTestsFromModule(idletest))
+
 if __name__ == '__main__':
     # Until unittest supports resources, we emulate regrtest's -ugui
     # so loaded tests run the same as if textually present here.
