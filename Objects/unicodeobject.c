@@ -10526,7 +10526,7 @@ unicode_compare(PyObject *str1, PyObject *str2)
 #undef COMPARE
 }
 
-static int
+Py_LOCAL(int)
 unicode_compare_eq(PyObject *str1, PyObject *str2)
 {
     int kind;
@@ -10630,10 +10630,8 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
 
     if (op == Py_EQ || op == Py_NE) {
         result = unicode_compare_eq(left, right);
-        if (op == Py_EQ)
-            v = TEST_COND(result);
-        else
-            v = TEST_COND(!result);
+        result ^= (op == Py_NE);
+        v = TEST_COND(result);
     }
     else {
         result = unicode_compare(left, right);
