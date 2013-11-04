@@ -1,7 +1,7 @@
 Building Python using VC++ 9.0
 ------------------------------
 
-This directory is used to build Python for Win32 and x64 platforms, e.g. 
+This directory is used to build Python for Win32 and x64 platforms, e.g.
 Windows 2000, XP, Vista and Windows Server 2008.  In order to build 32-bit
 debug and release executables, Microsoft Visual C++ 2008 Express Edition is
 required at the very least.  In order to build 64-bit debug and release
@@ -27,7 +27,7 @@ won't stop you from building Python.
 
 The solution is configured to build the projects in the correct order. "Build
 Solution" or F7 takes care of dependencies except for x64 builds. To make
-cross compiling x64 builds on a 32bit OS possible the x64 builds require a 
+cross compiling x64 builds on a 32bit OS possible the x64 builds require a
 32bit version of Python.
 
 NOTE:
@@ -37,7 +37,7 @@ NOTE:
    running a Python core buildbot test slave; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python30_d.dll, python_d.exe, parser_d.pyd, and so on. Both
+their name:  python27_d.dll, python_d.exe, parser_d.pyd, and so on. Both
 the build and rt batch files accept a -d option for debug builds.
 
 The 32bit builds end up in the solution folder PCbuild while the x64 builds
@@ -47,7 +47,7 @@ optimization end up in their own folders, too.
 Legacy support
 --------------
 
-You can find build directories for older versions of Visual Studio and 
+You can find build directories for older versions of Visual Studio and
 Visual C++ in the PC directory. The legacy build directories are no longer
 actively maintained and may not work out of the box.
 
@@ -64,7 +64,7 @@ C RUNTIME
 
 Visual Studio 2008 uses version 9 of the C runtime (MSVCRT9).  The executables
 are linked to a CRT "side by side" assembly which must be present on the target
-machine.  This is avalible under the VC/Redist folder of your visual studio
+machine.  This is available under the VC/Redist folder of your visual studio
 distribution. On XP and later operating systems that support
 side-by-side assemblies it is not enough to have the msvcrt90.dll present,
 it has to be there as a whole assembly, that is, a folder with the .dll
@@ -105,16 +105,16 @@ winsound
 Python-controlled subprojects that wrap external projects:
 _bsddb
     Wraps Berkeley DB 4.7.25, which is currently built by _bsddb.vcproj.
-    project (see below).
+    project.
 _sqlite3
-    Wraps SQLite 3.6.21, which is currently built by sqlite3.vcproj (see below).
+    Wraps SQLite 3.6.21, which is currently built by sqlite3.vcproj.
 _tkinter
     Wraps the Tk windowing system.  Unlike _bsddb and _sqlite3, there's no
     corresponding tcltk.vcproj-type project that builds Tcl/Tk from vcproj's
     within our pcbuild.sln, which means this module expects to find a
     pre-built Tcl/Tk in either ..\..\tcltk for 32-bit or ..\..\tcltk64 for
     64-bit (relative to this directory).  See below for instructions to build
-    Tcl/Tk. 
+    Tcl/Tk.
 bz2
     Python wrapper for the libbz2 compression library.  Homepage
         http://sources.redhat.com/bzip2/
@@ -126,16 +126,6 @@ bz2
     ** NOTE: if you use the Tools\buildbot\external(-amd64).bat approach for
     obtaining external sources then you don't need to manually get the source
     above via subversion. **
-
-    A custom pre-link step in the bz2 project settings should manage to
-    build bzip2-1.0.6\libbz2.lib by magic before bz2.pyd (or bz2_d.pyd) is
-    linked in PCbuild\.
-    However, the bz2 project is not smart enough to remove anything under
-    bzip2-1.0.6\ when you do a clean, so if you want to rebuild bzip2.lib
-    you need to clean up bzip2-1.0.6\ by hand.
-
-    All of this managed to build libbz2.lib in 
-    bzip2-1.0.6\$platform-$configuration\, which the Python project links in.
 
 _ssl
     Python wrapper for the secure sockets library.
@@ -154,18 +144,16 @@ _ssl
 
     You must install the NASM assembler from
         http://nasm.sf.net
-    for x86 builds.  Put nasmw.exe anywhere in your PATH.
-    Note: recent releases of nasm only have nasm.exe. Just rename it to 
-    nasmw.exe.
+    for x86 builds.  Put nasm.exe anywhere in your PATH.
 
     You can also install ActivePerl from
         http://www.activestate.com/activeperl/
-    if you like to use the official sources instead of the files from 
+    if you like to use the official sources instead of the files from
     python's subversion repository. The svn version contains pre-build
     makefiles and assembly files.
 
     The build process makes sure that no patented algorithms are included.
-    For now RC5, MDC2 and IDEA are excluded from the build. You may have 
+    For now RC5, MDC2 and IDEA are excluded from the build. You may have
     to manually remove $(OBJ_D)\i_*.obj from ms\nt.mak if the build process
     complains about missing files or forbidden IDEA. Again the files provided
     in the subversion repository are already fixed.
@@ -186,16 +174,16 @@ _ssl
     this by hand.
 
 The subprojects above wrap external projects Python doesn't control, and as
-such, a little more work is required in order to download the relevant source 
+such, a little more work is required in order to download the relevant source
 files for each project before they can be built.  The buildbots do this each
-time they're built, so the easiest approach is to run either external.bat or 
+time they're built, so the easiest approach is to run either external.bat or
 external-amd64.bat in the ..\Tools\buildbot directory from ..\, i.e.:
 
     C:\..\svn.python.org\projects\python\trunk\PCbuild>cd ..
     C:\..\svn.python.org\projects\python\trunk>Tools\buildbot\external.bat
 
 This extracts all the external subprojects from http://svn.python.org/external
-via Subversion (so you'll need an svn.exe on your PATH) and places them in 
+via Subversion (so you'll need an svn.exe on your PATH) and places them in
 ..\.. (relative to this directory).  The external(-amd64).bat scripts will
 also build a debug build of Tcl/Tk; there aren't any equivalent batch files
 for building release versions of Tcl/Tk lying around in the Tools\buildbot
@@ -238,7 +226,7 @@ XXX trent.nelson 02-Apr-08:
     junction as follows (using the directory structure above as an example):
 
         C:\..\python\trunk\external <- already exists and has built versions
-                                       of the external subprojects 
+                                       of the external subprojects
 
         C:\..\python\branches\py3k>linkd.exe external ..\..\trunk\external
         Link created at: external
@@ -251,18 +239,8 @@ XXX trent.nelson 02-Apr-08:
 Building for Itanium
 --------------------
 
-NOTE:
 Official support for Itanium builds have been dropped from the build. Please
 contact us and provide patches if you are interested in Itanium builds.
-
-The project files support a ReleaseItanium configuration which creates
-Win64/Itanium binaries. For this to work, you need to install the Platform
-SDK, in particular the 64-bit support. This includes an Itanium compiler
-(future releases of the SDK likely include an AMD64 compiler as well).
-In addition, you need the Visual Studio plugin for external C compilers,
-from http://sf.net/projects/vsextcomp. The plugin will wrap cl.exe, to
-locate the proper target compiler, and convert compiler options
-accordingly. The project files require at least version 0.9.
 
 Building for AMD64
 ------------------
@@ -283,7 +261,7 @@ Profile Guided Optimization
 
 The solution has two configurations for PGO. The PGInstrument
 configuration must be build first. The PGInstrument binaries are
-lniked against a profiling library and contain extra debug
+linked against a profiling library and contain extra debug
 information. The PGUpdate configuration takes the profiling data and
 generates optimized binaries.
 
@@ -291,22 +269,22 @@ The build_pgo.bat script automates the creation of optimized binaries. It
 creates the PGI files, runs the unit test suite or PyBench with the PGI
 python and finally creates the optimized files.
 
-http://msdn2.microsoft.com/en-us/library/e7k32f4k(VS.90).aspx
+http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.90).aspx
 
 Static library
 --------------
 
 The solution has no configuration for static libraries. However it is easy
-it build a static library instead of a DLL. You simply have to set the 
+it build a static library instead of a DLL. You simply have to set the
 "Configuration Type" to "Static Library (.lib)" and alter the preprocessor
 macro "Py_ENABLE_SHARED" to "Py_NO_ENABLE_SHARED". You may also have to
-change the "Runtime Library" from "Multi-threaded DLL (/MD)" to 
+change the "Runtime Library" from "Multi-threaded DLL (/MD)" to
 "Multi-threaded (/MT)".
 
 Visual Studio properties
 ------------------------
 
-The PCbuild solution makes heavy use of Visual Studio property files 
+The PCbuild solution makes heavy use of Visual Studio property files
 (*.vsprops). The properties can be viewed and altered in the Property
 Manager (View -> Other Windows -> Property Manager).
 
