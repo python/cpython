@@ -11,10 +11,22 @@ noconv_meth = noconv and staticmethod(noconv)
 def int_round(x):
     return int(round(x))
 
+pixels_round = int_round
+if tcl_version[:2] == (8, 5):
+    # Issue #19085: Workaround a bug in Tk
+    # http://core.tcl.tk/tk/info/3497848
+    root = setup_master()
+    patchlevel = root.call('info', 'patchlevel')
+    patchlevel = tuple(map(int, patchlevel.split('.')))
+    if patchlevel < (8, 5, 12):
+        pixels_round = int
+    del root
+
+
 _sentinel = object()
 
 class AbstractWidgetTest(object):
-    _conv_pixels = staticmethod(int_round)
+    _conv_pixels = staticmethod(pixels_round)
     _conv_pad_pixels = None
     wantobjects = True
 
