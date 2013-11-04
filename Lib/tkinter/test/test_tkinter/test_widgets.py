@@ -4,7 +4,8 @@ import os
 from test.support import requires
 
 from tkinter.test.support import tcl_version, requires_tcl, widget_eq
-from tkinter.test.widget_tests import (add_standard_options, noconv,
+from tkinter.test.widget_tests import (
+    add_standard_options, noconv, pixels_round,
     AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
 
 requires('gui')
@@ -243,7 +244,7 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
         'takefocus', 'text', 'textvariable',
         'underline', 'width', 'wraplength',
     )
-    _conv_pixels = AbstractWidgetTest._conv_pixels
+    _conv_pixels = staticmethod(pixels_round)
 
     def _create(self, **kwargs):
         return tkinter.Menubutton(self.root, **kwargs)

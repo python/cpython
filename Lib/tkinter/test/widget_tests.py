@@ -12,18 +12,24 @@ pixels_round = round
 if tcl_version[:2] == (8, 5):
     # Issue #19085: Workaround a bug in Tk
     # http://core.tcl.tk/tk/info/3497848
-    root = setup_master()
-    patchlevel = root.call('info', 'patchlevel')
-    patchlevel = tuple(map(int, patchlevel.split('.')))
-    if patchlevel < (8, 5, 12):
-        pixels_round = int
-    del root
+    _pixels_round = None
+    def pixels_round(x):
+        global _pixels_round
+        if _pixels_round is None:
+            root = setup_master()
+            patchlevel = root.call('info', 'patchlevel')
+            patchlevel = tuple(map(int, patchlevel.split('.')))
+            if patchlevel < (8, 5, 12):
+                _pixels_round = int
+            else:
+                _pixels_round = int_round
+        return _pixels_round(x)
 
 
 _sentinel = object()
 
 class AbstractWidgetTest:
-    _conv_pixels = pixels_round
+    _conv_pixels = staticmethod(pixels_round)
     _conv_pad_pixels = None
     wantobjects = True
 
