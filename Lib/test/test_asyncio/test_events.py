@@ -1308,8 +1308,17 @@ else:
     from asyncio import selectors
     from asyncio import unix_events
 
+    class UnixEventLoopTestsMixin(EventLoopTestsMixin):
+        def setUp(self):
+            super().setUp()
+            events.set_child_watcher(unix_events.SafeChildWatcher(self.loop))
+
+        def tearDown(self):
+            events.set_child_watcher(None)
+            super().tearDown()
+
     if hasattr(selectors, 'KqueueSelector'):
-        class KqueueEventLoopTests(EventLoopTestsMixin,
+        class KqueueEventLoopTests(UnixEventLoopTestsMixin,
                                    SubprocessTestsMixin,
                                    unittest.TestCase):
 
@@ -1318,7 +1327,7 @@ else:
                     selectors.KqueueSelector())
 
     if hasattr(selectors, 'EpollSelector'):
-        class EPollEventLoopTests(EventLoopTestsMixin,
+        class EPollEventLoopTests(UnixEventLoopTestsMixin,
                                   SubprocessTestsMixin,
                                   unittest.TestCase):
 
@@ -1326,7 +1335,7 @@ else:
                 return unix_events.SelectorEventLoop(selectors.EpollSelector())
 
     if hasattr(selectors, 'PollSelector'):
-        class PollEventLoopTests(EventLoopTestsMixin,
+        class PollEventLoopTests(UnixEventLoopTestsMixin,
                                  SubprocessTestsMixin,
                                  unittest.TestCase):
 
@@ -1334,7 +1343,7 @@ else:
                 return unix_events.SelectorEventLoop(selectors.PollSelector())
 
     # Should always exist.
-    class SelectEventLoopTests(EventLoopTestsMixin,
+    class SelectEventLoopTests(UnixEventLoopTestsMixin,
                                SubprocessTestsMixin,
                                unittest.TestCase):
 
@@ -1557,25 +1566,36 @@ class ProtocolsAbsTests(unittest.TestCase):
 
 class PolicyTests(unittest.TestCase):
 
+    def create_policy(self):
+        if sys.platform == "win32":
+            from asyncio import windows_events
+            return windows_events.DefaultEventLoopPolicy()
+        else:
+            from asyncio import unix_events
+            return unix_events.DefaultEventLoopPolicy()
+
     def test_event_loop_policy(self):
         policy = events.AbstractEventLoopPolicy()
         self.assertRaises(NotImplementedError, policy.get_event_loop)
         self.assertRaises(NotImplementedError, policy.set_event_loop, object())
         self.assertRaises(NotImplementedError, policy.new_event_loop)
+        self.assertRaises(NotImplementedError, policy.get_child_watcher)
+        self.assertRaises(NotImplementedError, policy.set_child_watcher,
+                          object())
 
     def test_get_event_loop(self):
-        policy = events.DefaultEventLoopPolicy()
-        self.assertIsNone(policy._loop)
+        policy = self.create_policy()
+        self.assertIsNone(policy._local._loop)
 
         loop = policy.get_event_loop()
         self.assertIsInstance(loop, events.AbstractEventLoop)
 
-        self.assertIs(policy._loop, loop)
+        self.assertIs(policy._local._loop, loop)
         self.assertIs(loop, policy.get_event_loop())
         loop.close()
 
     def test_get_event_loop_after_set_none(self):
-        policy = events.DefaultEventLoopPolicy()
+        policy = self.create_policy()
         policy.set_event_loop(None)
         self.assertRaises(AssertionError, policy.get_event_loop)
 
@@ -1583,7 +1603,7 @@ class PolicyTests(unittest.TestCase):
     def test_get_event_loop_thread(self, m_current_thread):
 
         def f():
-            policy = events.DefaultEventLoopPolicy()
+            policy = self.create_policy()
             self.assertRaises(AssertionError, policy.get_event_loop)
 
         th = threading.Thread(target=f)
@@ -1591,14 +1611,14 @@ class PolicyTests(unittest.TestCase):
         th.join()
 
     def test_new_event_loop(self):
-        policy = events.DefaultEventLoopPolicy()
+        policy = self.create_policy()
 
         loop = policy.new_event_loop()
         self.assertIsInstance(loop, events.AbstractEventLoop)
         loop.close()
 
     def test_set_event_loop(self):
-        policy = events.DefaultEventLoopPolicy()
+        policy = self.create_policy()
         old_loop = policy.get_event_loop()
 
         self.assertRaises(AssertionError, policy.set_event_loop, object())
@@ -1621,7 +1641,7 @@ class PolicyTests(unittest.TestCase):
 
         old_policy = events.get_event_loop_policy()
 
-        policy = events.DefaultEventLoopPolicy()
+        policy = self.create_policy()
         events.set_event_loop_policy(policy)
         self.assertIs(policy, events.get_event_loop_policy())
         self.assertIsNot(policy, old_policy)
