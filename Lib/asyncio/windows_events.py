@@ -7,6 +7,7 @@ import weakref
 import struct
 import _winapi
 
+from . import events
 from . import base_subprocess
 from . import futures
 from . import proactor_events
@@ -17,7 +18,9 @@ from .log import logger
 from . import _overlapped
 
 
-__all__ = ['SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor']
+__all__ = ['SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
+           'DefaultEventLoopPolicy',
+           ]
 
 
 NULL = 0
@@ -108,7 +111,7 @@ class PipeServer(object):
     __del__ = close
 
 
-class SelectorEventLoop(selector_events.BaseSelectorEventLoop):
+class _WindowsSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Windows version of selector event loop."""
 
     def _socketpair(self):
@@ -453,3 +456,13 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
         f = self._loop._proactor.wait_for_handle(int(self._proc._handle))
         f.add_done_callback(callback)
+
+
+SelectorEventLoop = _WindowsSelectorEventLoop
+
+
+class _WindowsDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+    _loop_factory = SelectorEventLoop
+
+
+DefaultEventLoopPolicy = _WindowsDefaultEventLoopPolicy
