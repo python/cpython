@@ -1692,3 +1692,138 @@ When the above script is run, it prints::
 Note that the order of items might be different according to the version of
 Python used.
 
+.. currentmodule:: logging.config
+
+Customising handlers with :func:`dictConfig`
+--------------------------------------------
+
+There are times when you want to customise logging handlers in particular ways,
+and if you use :func:`dictConfig` you may be able to do this without
+subclassing. As an example, consider that you may want to set the ownership of a
+log file. On POSIX, this is easily done using :func:`shutil.chown`, but the file
+handlers in the stdlib don't offer built-in support. You can customise handler
+creation using a plain function such as::
+
+    def owned_file_handler(filename, mode='a', encoding=None, owner=None):
+        if owner:
+            if not os.path.exists(filename):
+                open(filename, 'a').close()
+            shutil.chown(filename, *owner)
+        return logging.FileHandler(filename, mode, encoding)
+
+You can then specify, in a logging configuration passed to :func:`dictConfig`,
+that a logging handler be created by calling this function::
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '%(asctime)s %(levelname)s %(name)s %(message)s'
+            },
+        },
+        'handlers': {
+            'file':{
+                # The values below are popped from this dictionary and
+                # used to create the handler, set the handler's level and
+                # its formatter.
+                '()': owned_file_handler,
+                'level':'DEBUG',
+                'formatter': 'default',
+                # The values below are passed to the handler creator callable
+                # as keyword arguments.
+                'owner': ['pulse', 'pulse'],
+                'filename': 'chowntest.log',
+                'mode': 'w',
+                'encoding': 'utf-8',
+            },
+        },
+        'root': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+
+In this example I am setting the ownership using the ``pulse`` user and group,
+just for the purposes of illustration. Putting it together into a working
+script, ``chowntest.py``::
+
+    import logging, logging.config, os, shutil
+
+    def owned_file_handler(filename, mode='a', encoding=None, owner=None):
+        if owner:
+            if not os.path.exists(filename):
+                open(filename, 'a').close()
+            shutil.chown(filename, *owner)
+        return logging.FileHandler(filename, mode, encoding)
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'default': {
+                'format': '%(asctime)s %(levelname)s %(name)s %(message)s'
+            },
+        },
+        'handlers': {
+            'file':{
+                # The values below are popped from this dictionary and
+                # used to create the handler, set the handler's level and
+                # its formatter.
+                '()': owned_file_handler,
+                'level':'DEBUG',
+                'formatter': 'default',
+                # The values below are passed to the handler creator callable
+                # as keyword arguments.
+                'owner': ['pulse', 'pulse'],
+                'filename': 'chowntest.log',
+                'mode': 'w',
+                'encoding': 'utf-8',
+            },
+        },
+        'root': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+        },
+    }
+
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger('mylogger')
+    logger.debug('A debug message')
+
+To run this, you will probably need to run as ``root``::
+
+    $ sudo python3.3 chowntest.py
+    $ cat chowntest.log
+    2013-11-05 09:34:51,128 DEBUG mylogger A debug message
+    $ ls -l chowntest.log
+    -rw-r--r-- 1 pulse pulse 55 2013-11-05 09:34 chowntest.log
+
+Note that this example uses Python 3.3 because that's where :func:`shutil.chown`
+makes an appearance. This approach should work with any Python version that
+supports :func:`dictConfig` - namely, Python 2.7, 3.2 or later. With pre-3.3
+versions, you would need to implement the actual ownership change using e.g.
+:func:`os.chown`.
+
+In practice, the handler-creating function may be in a utility module somewhere
+in your project. Instead of the line in the configuration::
+
+    '()': owned_file_handler,
+
+you could use e.g.::
+
+    '()': 'ext://project.util.owned_file_handler',
+
+where ``project.util`` can be replaced with the actual name of the package
+where the function resides. In the above working script, using
+``'ext://__main__.owned_file_handler'`` should work. Here, the actual callable
+is resolved by :func:`dictConfig` from the ``ext://`` specification.
+
+This example hopefully also points the way to how you could implement other
+types of file change - e.g. setting specific POSIX permission bits - in the
+same way, using :func:`os.chmod`.
+
+Of course, the approach could also be extended to types of handler other than a
+:class:`~logging.FileHandler` - for example, one of the rotating file handlers,
+or a different type of handler altogether.
+
