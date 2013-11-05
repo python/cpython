@@ -337,7 +337,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         if pixels_round(0.9) <= 0:
             self.checkParam(widget, 'insertwidth', 0.9, expected=2)
         else:
-            self.checkParam(widget, 'insertwidth', 0.9)
+            self.checkParam(widget, 'insertwidth', 0.9, expected=1)
 
     def test_invalidcommand(self):
         widget = self.create()
