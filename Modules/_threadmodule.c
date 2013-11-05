@@ -68,7 +68,7 @@ acquire_timed(PyThread_type_lock lock, PY_TIMEOUT_T microseconds)
             Py_BEGIN_ALLOW_THREADS
             r = PyThread_acquire_lock_timed(lock, microseconds, 1);
             Py_END_ALLOW_THREADS
-        } 
+        }
 
         if (r == PY_LOCK_INTR) {
             /* Run signal handlers if we were interrupted.  Propagate
@@ -255,14 +255,17 @@ typedef struct {
 static void
 rlock_dealloc(rlockobject *self)
 {
-    assert(self->rlock_lock);
     if (self->in_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
-    /* Unlock the lock so it's safe to free it */
-    if (self->rlock_count > 0)
-        PyThread_release_lock(self->rlock_lock);
+    /* self->rlock_lock can be NULL if PyThread_allocate_lock() failed
+       in rlock_new() */
+    if (self->rlock_lock != NULL) {
+        /* Unlock the lock so it's safe to free it */
+        if (self->rlock_count > 0)
+            PyThread_release_lock(self->rlock_lock);
 
-    PyThread_free_lock(self->rlock_lock);
+        PyThread_free_lock(self->rlock_lock);
+    }
     Py_TYPE(self)->tp_free(self);
 }
 
@@ -452,15 +455,16 @@ rlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self = (rlockobject *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->rlock_lock = PyThread_allocate_lock();
-        if (self->rlock_lock == NULL) {
-            type->tp_free(self);
-            PyErr_SetString(ThreadError, "can't allocate lock");
-            return NULL;
-        }
         self->in_weakreflist = NULL;
         self->rlock_owner = 0;
         self->rlock_count = 0;
+
+        self->rlock_lock = PyThread_allocate_lock();
+        if (self->rlock_lock == NULL) {
+            Py_DECREF(self);
+            PyErr_SetString(ThreadError, "can't allocate lock");
+            return NULL;
+        }
     }
 
     return (PyObject *) self;
