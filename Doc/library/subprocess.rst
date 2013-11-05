@@ -1058,9 +1058,9 @@ handling consistency are valid for these functions.
 
    Return ``(status, output)`` of executing *cmd* in a shell.
 
-   Execute the string *cmd* in a shell with :class:`Popen` and return a 2-tuple
-   ``(status, output)`` via :func:`Popen.communicate`. Universal newlines mode
-   is used; see the notes on :ref:`frequently-used-arguments` for more details.
+   Execute the string *cmd* in a shell with :meth:`Popen.check_output` and
+   return a 2-tuple ``(status, output)``. Universal newlines mode is used;
+   see the notes on :ref:`frequently-used-arguments` for more details.
 
    A trailing newline is stripped from the output.
    The exit status for the command can be interpreted

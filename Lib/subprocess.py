@@ -145,11 +145,13 @@ check_call(*popenargs, **kwargs):
 getstatusoutput(cmd):
     Return (status, output) of executing cmd in a shell.
 
-    Execute the string 'cmd' in a shell with os.popen() and return a 2-tuple
-    (status, output).  cmd is actually run as '{ cmd ; } 2>&1', so that the
-    returned output will contain output or error messages. A trailing newline
-    is stripped from the output. The exit status for the command can be
-    interpreted according to the rules for the C function wait().  Example:
+    Execute the string 'cmd' in a shell with 'check_output' and
+    return a 2-tuple (status, output). Universal newlines mode is used,
+    meaning that the result with be decoded to a string.
+
+    A trailing newline is stripped from the output.
+    The exit status for the command can be interpreted
+    according to the rules for the function 'wait'.  Example:
 
     >>> subprocess.getstatusoutput('ls /bin/ls')
     (0, '/bin/ls')
@@ -684,13 +686,15 @@ def list2cmdline(seq):
 # NB This only works (and is only relevant) for POSIX.
 
 def getstatusoutput(cmd):
-    """Return (status, output) of executing cmd in a shell.
+    """    Return (status, output) of executing cmd in a shell.
 
-    Execute the string 'cmd' in a shell with os.popen() and return a 2-tuple
-    (status, output).  cmd is actually run as '{ cmd ; } 2>&1', so that the
-    returned output will contain output or error messages.  A trailing newline
-    is stripped from the output.  The exit status for the command can be
-    interpreted according to the rules for the C function wait().  Example:
+    Execute the string 'cmd' in a shell with 'check_output' and
+    return a 2-tuple (status, output). Universal newlines mode is used,
+    meaning that the result with be decoded to a string.
+
+    A trailing newline is stripped from the output.
+    The exit status for the command can be interpreted
+    according to the rules for the function 'wait'. Example:
 
     >>> import subprocess
     >>> subprocess.getstatusoutput('ls /bin/ls')
