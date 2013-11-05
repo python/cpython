@@ -891,6 +891,12 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
 
         if (rc == SQLITE_ROW) {
             self->next_row = _pysqlite_fetch_one_row(self);
+            if (self->next_row == NULL) {
+                (void)pysqlite_statement_reset(self->statement);
+                Py_DECREF(next_row);
+                _pysqlite_seterror(self->connection->db, NULL);
+                return NULL;
+            }
         }
     }
 
