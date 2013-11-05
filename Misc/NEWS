@@ -33,6 +33,14 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
+Build
+-----
+
+- Issue #15663: Revert OS X installer built-in Tcl/Tk support for 3.3.3.
+  Some third-party projects, such as Matplotlib and PIL/Pillow,
+  depended on being able to build with Tcl and Tk frameworks in
+  /Library/Frameworks.
+
 
 What's New in Python 3.3.3 release candidate 1?
 ===============================================

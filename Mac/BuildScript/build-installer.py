@@ -193,7 +193,7 @@ def library_recipes():
 
     LT_10_5 = bool(DEPTARGET < '10.5')
 
-    if DEPTARGET > '10.5':
+    if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 4)):
         result.extend([
           dict(
               name="Tcl 8.5.15",
@@ -571,7 +571,7 @@ def checkEnvironment():
     #    - the traditional version (renamed to _tkinter_library.so) linked
     #       with /Library/Frameworks/{Tcl,Tk}.framework
     #    - the default version linked with our builtin copies of Tcl and Tk
-    if DEPTARGET > '10.5':
+    if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 4)):
         EXPECTED_SHARED_LIBS['_tkinter_library.so'] = \
             EXPECTED_SHARED_LIBS['_tkinter.so']
         EXPECTED_SHARED_LIBS['_tkinter.so'] = [
@@ -971,7 +971,7 @@ def buildPython():
     # out-of-date and has critical bugs.  Save the _tkinter.so that was
     # linked with /Library/Frameworks/{Tck,Tk}.framework and build
     # another _tkinter.so linked with our builtin Tcl and Tk libs.
-    if DEPTARGET > '10.5':
+    if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 4)):
         runCommand("find build -name '_tkinter.so' "
                         " -execdir mv '{}' _tkinter_library.so \;")
         print("Running make to build builtin _tkinter")
@@ -1012,7 +1012,7 @@ def buildPython():
     # users to select which to import by manipulating sys.path
     # directly or with PYTHONPATH.
 
-    if DEPTARGET > '10.5':
+    if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 4)):
         TKINTERS = ['builtin', 'library']
         tkinter_moves = [('_tkinter_' + tkn + '.so',
                              os.path.join(path_to_lib, 'lib-tkinter', tkn))
@@ -1059,7 +1059,7 @@ def buildPython():
             # The files are moved after the entire tree has been walked
             # since the shared library checking depends on the files
             # having unique names.
-            if DEPTARGET > '10.5':
+            if (DEPTARGET > '10.5') and (getVersionTuple() >= (3, 4)):
                 for tkm in tkinter_moves:
                     if fn == tkm[0]:
                         moves_list.append(
