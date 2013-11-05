@@ -871,10 +871,15 @@ PyObject* pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
 
     next_row_tuple = self->next_row;
+    assert(next_row_tuple != NULL);
     self->next_row = NULL;
 
     if (self->row_factory != Py_None) {
         next_row = PyObject_CallFunction(self->row_factory, "OO", self, next_row_tuple);
+        if (next_row == NULL) {
+            self->next_row = next_row_tuple;
+            return NULL;
+        }
         Py_DECREF(next_row_tuple);
     } else {
         next_row = next_row_tuple;
