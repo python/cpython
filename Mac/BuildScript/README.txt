@@ -57,40 +57,13 @@ for each release.
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
         * SQLite 3.7.13
-        * Tcl 8.5.15
-        * Tk 8.5.15
         * XZ 5.0.3
 
     - uses system-supplied versions of third-party libraries
 
         * readline module links with Apple BSD editline (libedit)
 
-    - requires ActiveState Tcl/Tk 8.5.14 (or later) to be installed for building
-
-        * Beginning with Python 3.3.3, this installer now includes its own
-          builtin copy of Tcl and Tk 8.5.15 libraries and thus is no longer
-          dependent on the buggy releases of Aqua Cocoa Tk 8.5 shipped with
-          OS X 10.6 or on installing a newer third-party version of Tcl/Tk
-          in /Library/Frameworks, such as from ActiveState.  If it is
-          necessary to fallback to using a third-party Tcl/Tk because of
-          a problem with the builtin Tcl/Tk, there is a backup version of
-          the _tkinter extension included which will dynamically link to
-          Tcl and Tk frameworks in /Library/Frameworks as in previous releases.
-          To enable (for all users of this Python 3.3)::
-
-              sudo bash
-              cd /Library/Frameworks/Python.framework/Versions/3.3
-              cd ./lib/python3.3
-              cp -p ./lib-tkinter/library/_tkinter.so ./lib-dynload
-              exit
-
-          To restore using Python's builtin versions of Tcl and Tk::
-
-              sudo bash
-              cd /Library/Frameworks/Python.framework/Versions/3.3
-              cd ./lib/python3.3
-              cp -p ./lib-tkinter/builtin/_tkinter.so ./lib-dynload
-              exit
+    - requires ActiveState Tcl/Tk 8.5.9 (or later) to be installed for building
 
     - recommended build environment:
 
