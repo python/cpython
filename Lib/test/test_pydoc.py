@@ -404,7 +404,7 @@ class PydocDocTest(unittest.TestCase):
     def test_namedtuple_public_underscore(self):
         NT = namedtuple('NT', ['abc', 'def'], rename=True)
         with captured_stdout() as help_io:
-            help(NT)
+            pydoc.help(NT)
         helptext = help_io.getvalue()
         self.assertIn('_1', helptext)
         self.assertIn('_replace', helptext)
