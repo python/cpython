@@ -1772,6 +1772,10 @@ compiler_class(struct compiler *c, stmt_ty s)
             }
             i = compiler_lookup_arg(c->u->u_cellvars, str);
             Py_DECREF(str);
+            if (i < 0) {
+                compiler_exit_scope(c);
+                return 0;
+            }
             assert(i == 0);
             /* Return the cell where to store __class__ */
             ADDOP_I(c, LOAD_CLOSURE, i);
