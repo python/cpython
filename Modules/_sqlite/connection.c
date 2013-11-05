@@ -1229,9 +1229,8 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
         return NULL;
     }
 
-    if (!PyArg_ParseTuple(args, "O", &sql)) {
+    if (!PyArg_ParseTuple(args, "O", &sql))
         return NULL;
-    }
 
     _pysqlite_drop_unused_statement_references(self);
 
@@ -1247,7 +1246,6 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
     statement->in_weakreflist = NULL;
 
     rc = pysqlite_statement_create(statement, self, sql);
-
     if (rc != SQLITE_OK) {
         if (rc == PYSQLITE_TOO_MUCH_SQL) {
             PyErr_SetString(pysqlite_Warning, "You can only execute one statement at a time.");
@@ -1257,25 +1255,23 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
             (void)pysqlite_statement_reset(statement);
             _pysqlite_seterror(self->db, NULL);
         }
-
-        Py_CLEAR(statement);
-    } else {
-        weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
-        if (!weakref) {
-            Py_CLEAR(statement);
-            goto error;
-        }
-
-        if (PyList_Append(self->statements, weakref) != 0) {
-            Py_CLEAR(weakref);
-            goto error;
-        }
-
-        Py_DECREF(weakref);
+        goto error;
     }
 
-error:
+    weakref = PyWeakref_NewRef((PyObject*)statement, NULL);
+    if (weakref == NULL)
+        goto error;
+    if (PyList_Append(self->statements, weakref) != 0) {
+        Py_DECREF(weakref);
+        goto error;
+    }
+    Py_DECREF(weakref);
+
     return (PyObject*)statement;
+
+error:
+    Py_DECREF(statement);
+    return NULL;
 }
 
 PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
