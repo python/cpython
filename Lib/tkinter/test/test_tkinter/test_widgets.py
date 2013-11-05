@@ -332,12 +332,12 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def test_insertwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'insertwidth', 1.3, 3.6, '10p')
-        if tcl_version[:2] == (8, 5):
-            self.checkParam(widget, 'insertwidth', 0.9, expected=2)
-        else:
-            self.checkParam(widget, 'insertwidth', 0.9, expected=1)
         self.checkParam(widget, 'insertwidth', 0.1, expected=2)
         self.checkParam(widget, 'insertwidth', -2, expected=2)
+        if pixels_round(0.9) <= 0:
+            self.checkParam(widget, 'insertwidth', 0.9, expected=2)
+        else:
+            self.checkParam(widget, 'insertwidth', 0.9)
 
     def test_invalidcommand(self):
         widget = self.create()
