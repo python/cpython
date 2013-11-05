@@ -22,7 +22,7 @@ if tcl_version[:2] == (8, 5):
             if patchlevel < (8, 5, 12):
                 _pixels_round = int
             else:
-                _pixels_round = int_round
+                _pixels_round = round
         return _pixels_round(x)
 
 
