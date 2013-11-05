@@ -17,26 +17,17 @@ instead of double-clicking, control-click or right click the "Python"
 installer package icon.  Then select "Open using ... Installer" from
 the contextual menu that appears.
 
-       **** IMPORTANT changes if you use IDLE and Tkinter ****
+               **** IMPORTANT ****
 
-Installing a third-party version of Tcl/Tk is no longer required
-================================================================
+Update your version of Tcl/Tk to use IDLE or other Tk applications
+==================================================================
 
-As of Python 3.3.3, the 10.6+ 64-bit installer now
-comes with its own private copy of Tcl and Tk 8.5 libraries.  For
-this version of Python, it is no longer necessary to install
-a third-party version of Tcl/Tk 8.5, such as those from ActiveState,
-to work around the problematic versions of Tcl/Tk 8.5 shipped by
-Apple in OS X 10.6 and later.  (This does not change the requirements
-for older versions of Python installed from python.org.)  By default,
-this version of Python will always use its own private version,
-regardless of whether a third-party Tcl/Tk is installed.
-The 10.5+ 32-bit-only installer continues to use Tcl/Tk 8.4,
-either a third-party or system-supplied version.
-
-Visit http://www.python.org/download/mac/tcltk/
+To use IDLE or other programs that use the Tkinter graphical user
+interface toolkit, you may need to install a newer third-party version
+of the Tcl/Tk frameworks.  Visit http://www.python.org/download/mac/tcltk/
 for current information about supported and recommended versions of
 Tcl/Tk for this version of Python and of Mac OS X.
+
 
 Using this version of Python on OS X
 ====================================
