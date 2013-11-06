@@ -1816,7 +1816,7 @@ _count_elements(PyObject *self, PyObject *args)
             Py_DECREF(key);
         }
     } else {
-        bound_get = PyObject_GetAttrString(mapping, "get");
+        bound_get = _PyObject_GetAttrId(mapping, &PyId_get);
         if (bound_get == NULL)
             goto done;
 
