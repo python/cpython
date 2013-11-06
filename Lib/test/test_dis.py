@@ -8,6 +8,7 @@ import sys
 import dis
 import io
 import types
+import contextlib
 
 class _C:
     def __init__(self, x):
@@ -176,30 +177,20 @@ dis_compound_stmt_str = """\
 class DisTests(unittest.TestCase):
 
     def get_disassembly(self, func, lasti=-1, wrapper=True):
-        s = io.StringIO()
-        save_stdout = sys.stdout
-        sys.stdout = s
-        try:
+        # We want to test the default printing behaviour, not the file arg
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
             if wrapper:
                 dis.dis(func)
             else:
                 dis.disassemble(func, lasti)
-        finally:
-            sys.stdout = save_stdout
-        # Trim trailing blanks (if any).
-        return [line.rstrip() for line in s.getvalue().splitlines()]
+        return output.getvalue()
 
     def get_disassemble_as_string(self, func, lasti=-1):
-        return '\n'.join(self.get_disassembly(func, lasti, False))
+        return self.get_disassembly(func, lasti, False)
 
     def do_disassembly_test(self, func, expected):
-        lines = self.get_disassembly(func)
-        expected = expected.splitlines()
-        if expected != lines:
-            self.fail(
-                "events did not match expectation:\n" +
-                "\n".join(difflib.ndiff(expected,
-                                        lines)))
+        self.assertEqual(self.get_disassembly(func), expected)
 
     def test_opmap(self):
         self.assertEqual(dis.opmap["NOP"], 9)
@@ -289,6 +280,20 @@ class DisTests(unittest.TestCase):
 
     def test_dis_object(self):
         self.assertRaises(TypeError, dis.dis, object())
+
+class DisWithFileTests(DisTests):
+
+    # Run the tests again, using the file arg instead of print
+    def get_disassembly(self, func, lasti=-1, wrapper=True):
+        # We want to test the default printing behaviour, not the file arg
+        output = io.StringIO()
+        if wrapper:
+            dis.dis(func, file=output)
+        else:
+            dis.disassemble(func, lasti, file=output)
+        return output.getvalue()
+
+
 
 code_info_code_info = """\
 Name:              code_info
@@ -482,26 +487,29 @@ def jumpy():
         print("OK, now we're done")
 
 # End fodder for opinfo generation tests
-expected_outer_offset = 1 - outer.__code__.co_firstlineno
-expected_jumpy_offset = 1 - jumpy.__code__.co_firstlineno
+expected_outer_line = 1
+_line_offset = outer.__code__.co_firstlineno - 1
 code_object_f = outer.__code__.co_consts[3]
+expected_f_line = code_object_f.co_firstlineno - _line_offset
 code_object_inner = code_object_f.co_consts[3]
+expected_inner_line = code_object_inner.co_firstlineno - _line_offset
+expected_jumpy_line = 1
 
 # The following lines are useful to regenerate the expected results after
 # either the fodder is modified or the bytecode generation changes
 # After regeneration, update the references to code_object_f and
 # code_object_inner before rerunning the tests
 
-#_instructions = dis.get_instructions(outer, line_offset=expected_outer_offset)
+#_instructions = dis.get_instructions(outer, first_line=expected_outer_line)
 #print('expected_opinfo_outer = [\n  ',
       #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
-#_instructions = dis.get_instructions(outer(), line_offset=expected_outer_offset)
+#_instructions = dis.get_instructions(outer(), first_line=expected_outer_line)
 #print('expected_opinfo_f = [\n  ',
       #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
-#_instructions = dis.get_instructions(outer()(), line_offset=expected_outer_offset)
+#_instructions = dis.get_instructions(outer()(), first_line=expected_outer_line)
 #print('expected_opinfo_inner = [\n  ',
       #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
-#_instructions = dis.get_instructions(jumpy, line_offset=expected_jumpy_offset)
+#_instructions = dis.get_instructions(jumpy, first_line=expected_jumpy_line)
 #print('expected_opinfo_jumpy = [\n  ',
       #',\n  '.join(map(str, _instructions)), ',\n]', sep='')
 
@@ -671,42 +679,75 @@ expected_opinfo_jumpy = [
   Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=243, starts_line=None, is_jump_target=False),
 ]
 
+# One last piece of inspect fodder to check the default line number handling
+def simple(): pass
+expected_opinfo_simple = [
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=0, starts_line=simple.__code__.co_firstlineno, is_jump_target=False),
+  Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=3, starts_line=None, is_jump_target=False)
+]
+
+
 class InstructionTests(BytecodeTestCase):
+
+    def test_default_first_line(self):
+        actual = dis.get_instructions(simple)
+        self.assertEqual(list(actual), expected_opinfo_simple)
+
+    def test_first_line_set_to_None(self):
+        actual = dis.get_instructions(simple, first_line=None)
+        self.assertEqual(list(actual), expected_opinfo_simple)
+
     def test_outer(self):
-        self.assertBytecodeExactlyMatches(outer, expected_opinfo_outer,
-                                          line_offset=expected_outer_offset)
+        actual = dis.get_instructions(outer, first_line=expected_outer_line)
+        self.assertEqual(list(actual), expected_opinfo_outer)
 
     def test_nested(self):
         with captured_stdout():
             f = outer()
-        self.assertBytecodeExactlyMatches(f, expected_opinfo_f,
-                                          line_offset=expected_outer_offset)
+        actual = dis.get_instructions(f, first_line=expected_f_line)
+        self.assertEqual(list(actual), expected_opinfo_f)
 
     def test_doubly_nested(self):
         with captured_stdout():
             inner = outer()()
-        self.assertBytecodeExactlyMatches(inner, expected_opinfo_inner,
-                                          line_offset=expected_outer_offset)
+        actual = dis.get_instructions(inner, first_line=expected_inner_line)
+        self.assertEqual(list(actual), expected_opinfo_inner)
 
     def test_jumpy(self):
-        self.assertBytecodeExactlyMatches(jumpy, expected_opinfo_jumpy,
-                                          line_offset=expected_jumpy_offset)
+        actual = dis.get_instructions(jumpy, first_line=expected_jumpy_line)
+        self.assertEqual(list(actual), expected_opinfo_jumpy)
 
+# get_instructions has its own tests above, so can rely on it to validate
+# the object oriented API
 class BytecodeTests(unittest.TestCase):
     def test_instantiation(self):
         # Test with function, method, code string and code object
         for obj in [_f, _C(1).__init__, "a=1", _f.__code__]:
-            b = dis.Bytecode(obj)
-            self.assertIsInstance(b.codeobj, types.CodeType)
+            with self.subTest(obj=obj):
+                b = dis.Bytecode(obj)
+                self.assertIsInstance(b.codeobj, types.CodeType)
 
         self.assertRaises(TypeError, dis.Bytecode, object())
 
     def test_iteration(self):
-        b = dis.Bytecode(_f)
-        for instr in b:
-            self.assertIsInstance(instr, dis.Instruction)
+        for obj in [_f, _C(1).__init__, "a=1", _f.__code__]:
+            with self.subTest(obj=obj):
+                via_object = list(dis.Bytecode(obj))
+                via_generator = list(dis.get_instructions(obj))
+                self.assertEqual(via_object, via_generator)
 
-        assert len(list(b)) > 0  # Iterating should yield at least 1 instruction
+    def test_explicit_first_line(self):
+        actual = dis.Bytecode(outer, first_line=expected_outer_line)
+        self.assertEqual(list(actual), expected_opinfo_outer)
+
+    def test_source_line_in_disassembly(self):
+        # Use the line in the source code
+        actual = dis.Bytecode(simple).dis()[:3]
+        expected = "{:>3}".format(simple.__code__.co_firstlineno)
+        self.assertEqual(actual, expected)
+        # Use an explicit first line number
+        actual = dis.Bytecode(simple, first_line=350).dis()[:3]
+        self.assertEqual(actual, "350")
 
     def test_info(self):
         self.maxDiff = 1000
@@ -714,16 +755,14 @@ class BytecodeTests(unittest.TestCase):
             b = dis.Bytecode(x)
             self.assertRegex(b.info(), expected)
 
-    def test_display_code(self):
-        b = dis.Bytecode(_f)
-        output = io.StringIO()
-        b.display_code(file=output)
-        result = [line.rstrip() for line in output.getvalue().splitlines()]
-        self.assertEqual(result, dis_f.splitlines())
+    def test_disassembled(self):
+        actual = dis.Bytecode(_f).dis()
+        self.assertEqual(actual, dis_f)
 
 
 def test_main():
-    run_unittest(DisTests, CodeInfoTests, InstructionTests, BytecodeTests)
+    run_unittest(DisTests, DisWithFileTests, CodeInfoTests,
+                 InstructionTests, BytecodeTests)
 
 if __name__ == "__main__":
     test_main()

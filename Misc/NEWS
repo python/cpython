@@ -31,6 +31,20 @@ Core and Builtins
 Library
 -------
 
+- Issue #19378: Fixed a number of cases in the dis module where the new
+  "file" parameter was not being honoured correctly
+
+- Issue #19378: Removed the "dis.Bytecode.show_info" method
+
+- Issue #19378: Renamed the "dis.Bytecode.display_code" method to
+  "dis.Bytecode.dis" and converted it to returning a string rather than
+  printing output.
+
+- Issue #19378: the "line_offset" parameter in the new "dis.get_instructions"
+  API has been renamed to "first_line" (and the default value and usage
+  changed accordingly). This should reduce confusion with the more common use
+  of "offset" in the dis docs to refer to bytecode offsets.
+
 - Issue #18678: Corrected spwd struct member names in spwd module:
   sp_nam->sp_namp, and sp_pwd->sp_pwdp.  The old names are kept as extra
   structseq members, for backward compatibility.
@@ -168,6 +182,12 @@ Library
 
 Tests
 -----
+
+- Issue #19378: the main dis module tests are now run with both stdout
+  redirection *and* passing an explicit file parameter
+
+- Issue #19378: removed the not-actually-helpful assertInstructionMatches
+  and assertBytecodeExactlyMatches helpers from bytecode_helper
 
 - Issue #18702: All skipped tests now reported as skipped.
 

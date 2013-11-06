@@ -3,6 +3,7 @@
 import sys
 import types
 import collections
+import io
 
 from opcode import *
 from opcode import __all__ as _opcodes_all
@@ -34,7 +35,7 @@ def dis(x=None, *, file=None):
 
     """
     if x is None:
-        distb()
+        distb(file=file)
         return
     if hasattr(x, '__func__'):  # Method
         x = x.__func__
@@ -46,7 +47,7 @@ def dis(x=None, *, file=None):
             if isinstance(x1, _have_code):
                 print("Disassembly of %s:" % name, file=file)
                 try:
-                    dis(x1)
+                    dis(x1, file=file)
                 except TypeError as msg:
                     print("Sorry:", msg, file=file)
                 print(file=file)
@@ -203,21 +204,27 @@ class Instruction(_Instruction):
             # Column: Opcode argument details
             if self.argrepr:
                 fields.append('(' + self.argrepr + ')')
-        return ' '.join(fields)
+        return ' '.join(fields).rstrip()
 
 
-def get_instructions(x, *, line_offset=0):
+def get_instructions(x, *, first_line=None):
     """Iterator for the opcodes in methods, functions or code
 
     Generates a series of Instruction named tuples giving the details of
     each operations in the supplied code.
 
-    The given line offset is added to the 'starts_line' attribute of any
-    instructions that start a new line.
+    If *first_line* is not None, it indicates the line number that should
+    be reported for the first source line in the disassembled code.
+    Otherwise, the source line information (if any) is taken directly from
+    the disassembled code object.
     """
     co = _get_code_object(x)
     cell_names = co.co_cellvars + co.co_freevars
     linestarts = dict(findlinestarts(co))
+    if first_line is not None:
+        line_offset = first_line - co.co_firstlineno
+    else:
+        line_offset = 0
     return _get_instructions_bytes(co.co_code, co.co_varnames, co.co_names,
                                    co.co_consts, cell_names, linestarts,
                                    line_offset)
@@ -320,13 +327,14 @@ def disassemble(co, lasti=-1, *, file=None):
 
 def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        constants=None, cells=None, linestarts=None,
-                       *, file=None):
+                       *, file=None, line_offset=0):
     # Omit the line number column entirely if we have no line number info
     show_lineno = linestarts is not None
     # TODO?: Adjust width upwards if max(linestarts.values()) >= 1000?
     lineno_width = 3 if show_lineno else 0
     for instr in _get_instructions_bytes(code, varnames, names,
-                                         constants, cells, linestarts):
+                                         constants, cells, linestarts,
+                                         line_offset=line_offset):
         new_source_line = (show_lineno and
                            instr.starts_line is not None and
                            instr.offset > 0)
@@ -398,40 +406,44 @@ class Bytecode:
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """
-    def __init__(self, x):
-        self.codeobj = _get_code_object(x)
-        self.cell_names = self.codeobj.co_cellvars + self.codeobj.co_freevars
-        self.linestarts = dict(findlinestarts(self.codeobj))
-        self.line_offset = 0
-        self.original_object = x
+    def __init__(self, x, *, first_line=None):
+        self.codeobj = co = _get_code_object(x)
+        if first_line is None:
+            self.first_line = co.co_firstlineno
+            self._line_offset = 0
+        else:
+            self.first_line = first_line
+            self._line_offset = first_line - co.co_firstlineno
+        self._cell_names = co.co_cellvars + co.co_freevars
+        self._linestarts = dict(findlinestarts(co))
+        self._original_object = x
 
     def __iter__(self):
         co = self.codeobj
         return _get_instructions_bytes(co.co_code, co.co_varnames, co.co_names,
-                                   co.co_consts, self.cell_names,
-                                   self.linestarts, self.line_offset)
+                                       co.co_consts, self._cell_names,
+                                       self._linestarts,
+                                       line_offset=self._line_offset)
 
     def __repr__(self):
-        return "{}({!r})".format(self.__class__.__name__, self.original_object)
+        return "{}({!r})".format(self.__class__.__name__,
+                                 self._original_object)
 
     def info(self):
         """Return formatted information about the code object."""
         return _format_code_info(self.codeobj)
 
-    def show_info(self, *, file=None):
-        """Print the information about the code object as returned by info()."""
-        print(self.info(), file=file)
-
-    def display_code(self, *, file=None):
-        """Print a formatted view of the bytecode operations.
-        """
+    def dis(self):
+        """Return a formatted view of the bytecode operations."""
         co = self.codeobj
-        return _disassemble_bytes(co.co_code, varnames=co.co_varnames,
-                                  names=co.co_names, constants=co.co_consts,
-                                  cells=self.cell_names,
-                                  linestarts=self.linestarts,
-                                  file=file
-                                 )
+        with io.StringIO() as output:
+            _disassemble_bytes(co.co_code, varnames=co.co_varnames,
+                               names=co.co_names, constants=co.co_consts,
+                               cells=self._cell_names,
+                               linestarts=self._linestarts,
+                               line_offset=self._line_offset,
+                               file=output)
+            return output.getvalue()
 
 
 def _test():
