@@ -73,7 +73,7 @@ static int initfsencoding(PyInterpreterState *interp);
 static void initsite(void);
 static int initstdio(void);
 static void flush_io(void);
-static PyObject *run_mod(mod_ty, const char *, PyObject *, PyObject *,
+static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
                           PyCompilerFlags *, PyArena *);
 static PyObject *run_pyc_file(FILE *, const char *, PyObject *, PyObject *,
                               PyCompilerFlags *);
@@ -1265,11 +1265,17 @@ PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
 }
 
 int
-PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
+PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *flags)
 {
-    PyObject *v;
-    int ret;
+    PyObject *filename, *v;
+    int ret, err;
     PyCompilerFlags local_flags;
+
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL) {
+        PyErr_Print();
+        return -1;
+    }
 
     if (flags == NULL) {
         flags = &local_flags;
@@ -1285,16 +1291,21 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
         PySys_SetObject("ps2", v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
+    err = -1;
     for (;;) {
-        ret = PyRun_InteractiveOneFlags(fp, filename, flags);
+        ret = PyRun_InteractiveOneObject(fp, filename, flags);
         PRINT_TOTAL_REFS();
-        if (ret == E_EOF)
-            return 0;
+        if (ret == E_EOF) {
+            err = 0;
+            break;
+        }
         /*
         if (ret == E_NOMEM)
-            return -1;
+            break;
         */
     }
+    Py_DECREF(filename);
+    return err;
 }
 
 /* compute parser flags based on compiler flags */
@@ -1322,14 +1333,21 @@ static int PARSER_FLAGS(PyCompilerFlags *flags)
 #endif
 
 int
-PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
+PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 {
-    PyObject *m, *d, *v, *w, *oenc = NULL;
+    PyObject *m, *d, *v, *w, *oenc = NULL, *mod_name;
     mod_ty mod;
     PyArena *arena;
     char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
     _Py_IDENTIFIER(encoding);
+    _Py_IDENTIFIER(__main__);
+
+    mod_name = _PyUnicode_FromId(&PyId___main__); /* borrowed */
+    if (mod_name == NULL) {
+        PyErr_Print();
+        return -1;
+    }
 
     if (fp == stdin) {
         /* Fetch encoding from sys.stdin if possible. */
@@ -1375,9 +1393,9 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
         Py_XDECREF(oenc);
         return -1;
     }
-    mod = PyParser_ASTFromFile(fp, filename, enc,
-                               Py_single_input, ps1, ps2,
-                               flags, &errcode, arena);
+    mod = PyParser_ASTFromFileObject(fp, filename, enc,
+                                     Py_single_input, ps1, ps2,
+                                     flags, &errcode, arena);
     Py_XDECREF(v);
     Py_XDECREF(w);
     Py_XDECREF(oenc);
@@ -1390,7 +1408,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
         PyErr_Print();
         return -1;
     }
-    m = PyImport_AddModule("__main__");
+    m = PyImport_AddModuleObject(mod_name);
     if (m == NULL) {
         PyArena_Free(arena);
         return -1;
@@ -1406,6 +1424,23 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags
     Py_DECREF(v);
     return 0;
 }
+
+int
+PyRun_InteractiveOneFlags(FILE *fp, const char *filename_str, PyCompilerFlags *flags)
+{
+    PyObject *filename;
+    int res;
+
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL) {
+        PyErr_Print();
+        return -1;
+    }
+    res = PyRun_InteractiveOneObject(fp, filename, flags);
+    Py_DECREF(filename);
+    return res;
+}
+
 
 /* Check whether a file maybe a pyc file: Look at the extension,
    the file type, and, if we may close it, at the first few bytes. */
@@ -2010,37 +2045,55 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
 {
     PyObject *ret = NULL;
     mod_ty mod;
-    PyArena *arena = PyArena_New();
+    PyArena *arena;
+    _Py_static_string(PyId_string, "<string>");
+    PyObject *filename;
+
+    filename = _PyUnicode_FromId(&PyId_string); /* borrowed */
+    if (filename == NULL)
+        return NULL;
+
+    arena = PyArena_New();
     if (arena == NULL)
         return NULL;
 
-    mod = PyParser_ASTFromString(str, "<string>", start, flags, arena);
+    mod = PyParser_ASTFromStringObject(str, filename, start, flags, arena);
     if (mod != NULL)
-        ret = run_mod(mod, "<string>", globals, locals, flags, arena);
+        ret = run_mod(mod, filename, globals, locals, flags, arena);
     PyArena_Free(arena);
     return ret;
 }
 
 PyObject *
-PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
+PyRun_FileExFlags(FILE *fp, const char *filename_str, int start, PyObject *globals,
                   PyObject *locals, int closeit, PyCompilerFlags *flags)
 {
-    PyObject *ret;
+    PyObject *ret = NULL;
     mod_ty mod;
-    PyArena *arena = PyArena_New();
-    if (arena == NULL)
-        return NULL;
+    PyArena *arena = NULL;
+    PyObject *filename;
 
-    mod = PyParser_ASTFromFile(fp, filename, NULL, start, 0, 0,
-                               flags, NULL, arena);
+    filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL)
+        goto exit;
+
+    arena = PyArena_New();
+    if (arena == NULL)
+        goto exit;
+
+    mod = PyParser_ASTFromFileObject(fp, filename, NULL, start, 0, 0,
+                                     flags, NULL, arena);
     if (closeit)
         fclose(fp);
     if (mod == NULL) {
-        PyArena_Free(arena);
-        return NULL;
+        goto exit;
     }
     ret = run_mod(mod, filename, globals, locals, flags, arena);
-    PyArena_Free(arena);
+
+exit:
+    Py_XDECREF(filename);
+    if (arena != NULL)
+        PyArena_Free(arena);
     return ret;
 }
 
@@ -2075,12 +2128,12 @@ flush_io(void)
 }
 
 static PyObject *
-run_mod(mod_ty mod, const char *filename, PyObject *globals, PyObject *locals,
-         PyCompilerFlags *flags, PyArena *arena)
+run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
+            PyCompilerFlags *flags, PyArena *arena)
 {
     PyCodeObject *co;
     PyObject *v;
-    co = PyAST_Compile(mod, filename, flags, arena);
+    co = PyAST_CompileObject(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
     v = PyEval_EvalCode((PyObject*)co, globals, locals);
