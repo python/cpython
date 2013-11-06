@@ -310,7 +310,7 @@ PyImport_Cleanup(void)
 
     /* XXX Perhaps these precautions are obsolete. Who knows? */
 
-    value = PyDict_GetItemString(modules, "builtins");
+    value = _PyDict_GetItemId(modules, &_PyId_builtins);
     if (value != NULL && PyModule_Check(value)) {
         dict = PyModule_GetDict(value);
         if (Py_VerboseFlag)

@@ -185,7 +185,7 @@ normalizeUserObj(PyObject *obj)
             }
         }
         if (modname != NULL) {
-            if (PyUnicode_CompareWithASCIIString(modname, "builtins") != 0) {
+            if (_PyUnicode_CompareWithId(modname, &_PyId_builtins) != 0) {
                 PyObject *result;
                 result = PyUnicode_FromFormat("<%U.%s>", modname,
                                               fn->m_ml->ml_name);
