@@ -34,6 +34,7 @@ int Py_HasFileSystemDefaultEncoding = 0;
 
 _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(flush);
+_Py_IDENTIFIER(__builtins__);
 
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
@@ -771,9 +772,9 @@ builtin_eval(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                 PyEval_GetBuiltins()) != 0)
+    if (_PyDict_GetItemId(globals, &PyId___builtins__) == NULL) {
+        if (_PyDict_SetItemId(globals, &PyId___builtins__,
+                              PyEval_GetBuiltins()) != 0)
             return NULL;
     }
 
@@ -846,9 +847,9 @@ builtin_exec(PyObject *self, PyObject *args)
             locals->ob_type->tp_name);
         return NULL;
     }
-    if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
-        if (PyDict_SetItemString(globals, "__builtins__",
-                                 PyEval_GetBuiltins()) != 0)
+    if (_PyDict_GetItemId(globals, &PyId___builtins__) == NULL) {
+        if (_PyDict_SetItemId(globals, &PyId___builtins__,
+                              PyEval_GetBuiltins()) != 0)
             return NULL;
     }
 
