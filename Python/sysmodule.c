@@ -137,10 +137,13 @@ sys_displayhook(PyObject *self, PyObject *o)
     PyObject *outf;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
-    PyObject *builtins = PyDict_GetItemString(modules, "builtins");
+    PyObject *builtins;
+    static PyObject *newline = NULL;
     int err;
     _Py_IDENTIFIER(_);
+    _Py_IDENTIFIER(builtins);
 
+    builtins = _PyDict_GetItemId(modules, &PyId_builtins);
     if (builtins == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "lost builtins module");
         return NULL;
@@ -173,7 +176,12 @@ sys_displayhook(PyObject *self, PyObject *o)
             return NULL;
         }
     }
-    if (PyFile_WriteString("\n", outf) != 0)
+    if (newline == NULL) {
+        newline = PyUnicode_FromString("\n");
+        if (newline == NULL)
+            return NULL;
+    }
+    if (PyFile_WriteObject(newline, outf, Py_PRINT_RAW) != 0)
         return NULL;
     if (_PyObject_SetAttrId(builtins, &PyId__, o) != 0)
         return NULL;
