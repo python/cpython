@@ -1996,6 +1996,11 @@ PyAPI_FUNC(int) PyUnicode_Compare(
     PyObject *right             /* Right string */
     );
 
+PyAPI_FUNC(int) _PyUnicode_CompareWithId(
+    PyObject *left,             /* Left string */
+    _Py_Identifier *right       /* Right identifier */
+    );
+
 PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,
     const char *right           /* ASCII-encoded string */

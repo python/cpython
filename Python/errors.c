@@ -878,7 +878,7 @@ PyErr_WriteUnraisable(PyObject *obj)
             goto done;
     }
     else {
-        if (PyUnicode_CompareWithASCIIString(moduleName, "builtins") != 0) {
+        if (_PyUnicode_CompareWithId(moduleName, &_PyId_builtins) != 0) {
             if (PyFile_WriteObject(moduleName, f, Py_PRINT_RAW) < 0)
                 goto done;
             if (PyFile_WriteString(".", f) < 0)
