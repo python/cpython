@@ -261,7 +261,7 @@ RunMainFromImporter(wchar_t *filename)
 
     /* argv0 is usable as an import source, so put it in sys.path[0]
        and import __main__ */
-    sys_path = PySys_GetObject("path");
+    sys_path = _PySys_GetObjectId(&_PyId_path);
     if (sys_path == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path");
         goto error;

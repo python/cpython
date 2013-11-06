@@ -844,7 +844,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 
     PyErr_Fetch(&t, &v, &tb);
 
-    f = PySys_GetObject("stderr");
+    f = _PySys_GetObjectId(&_PyId_stderr);
     if (f == NULL || f == Py_None)
         goto done;
 

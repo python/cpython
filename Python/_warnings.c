@@ -265,7 +265,7 @@ show_warning(PyObject *filename, int lineno, PyObject *text, PyObject
     if (name == NULL)  /* XXX Can an object lack a '__name__' attribute? */
         goto error;
 
-    f_stderr = PySys_GetObject("stderr");
+    f_stderr = _PySys_GetObjectId(&_PyId_stderr);
     if (f_stderr == NULL) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
@@ -562,7 +562,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     else {
         *filename = NULL;
         if (*module != Py_None && PyUnicode_CompareWithASCIIString(*module, "__main__") == 0) {
-            PyObject *argv = PySys_GetObject("argv");
+            PyObject *argv = _PySys_GetObjectId(&_PyId_argv);
             /* PyList_Check() is needed because sys.argv is set to None during
                Python finalization */
             if (argv != NULL && PyList_Check(argv) && PyList_Size(argv) > 0) {

@@ -35,6 +35,21 @@
 #define PATH_MAX MAXPATHLEN
 #endif
 
+/* Common identifiers */
+_Py_Identifier _PyId_argv = _Py_static_string_init("argv");
+_Py_Identifier _PyId_path = _Py_static_string_init("path");
+_Py_Identifier _PyId_stdin = _Py_static_string_init("stdin");
+_Py_Identifier _PyId_stdout = _Py_static_string_init("stdout");
+_Py_Identifier _PyId_stderr = _Py_static_string_init("stderr");
+
+/* local identifiers */
+_Py_IDENTIFIER(excepthook);
+_Py_IDENTIFIER(ps1);
+_Py_IDENTIFIER(ps2);
+_Py_IDENTIFIER(last_type);
+_Py_IDENTIFIER(last_value);
+_Py_IDENTIFIER(last_traceback);
+
 #ifdef Py_REF_DEBUG
 static
 void _print_total_refs(void) {
@@ -412,7 +427,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     pstderr = PyFile_NewStdPrinter(fileno(stderr));
     if (pstderr == NULL)
         Py_FatalError("Py_Initialize: can't set preliminary stderr");
-    PySys_SetObject("stderr", pstderr);
+    _PySys_SetObjectId(&_PyId_stderr, pstderr);
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
@@ -497,8 +512,8 @@ file_is_closed(PyObject *fobj)
 static void
 flush_std_files(void)
 {
-    PyObject *fout = PySys_GetObject("stdout");
-    PyObject *ferr = PySys_GetObject("stderr");
+    PyObject *fout = _PySys_GetObjectId(&_PyId_stdout);
+    PyObject *ferr = _PySys_GetObjectId(&_PyId_stderr);
     PyObject *tmp;
     _Py_IDENTIFIER(flush);
 
@@ -776,7 +791,7 @@ Py_NewInterpreter(void)
         pstderr = PyFile_NewStdPrinter(fileno(stderr));
         if (pstderr == NULL)
             Py_FatalError("Py_Initialize: can't set preliminary stderr");
-        PySys_SetObject("stderr", pstderr);
+        _PySys_SetObjectId(&_PyId_stderr, pstderr);
         PySys_SetObject("__stderr__", pstderr);
         Py_DECREF(pstderr);
 
@@ -1170,7 +1185,7 @@ initstdio(void)
             goto error;
     } /* if (fd < 0) */
     PySys_SetObject("__stdin__", std);
-    PySys_SetObject("stdin", std);
+    _PySys_SetObjectId(&_PyId_stdin, std);
     Py_DECREF(std);
 
     /* Set sys.stdout */
@@ -1185,7 +1200,7 @@ initstdio(void)
             goto error;
     } /* if (fd < 0) */
     PySys_SetObject("__stdout__", std);
-    PySys_SetObject("stdout", std);
+    _PySys_SetObjectId(&_PyId_stdout, std);
     Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
@@ -1219,7 +1234,7 @@ initstdio(void)
         Py_DECREF(std);
         goto error;
     }
-    if (PySys_SetObject("stderr", std) < 0) {
+    if (_PySys_SetObjectId(&_PyId_stderr, std) < 0) {
         Py_DECREF(std);
         goto error;
     }
@@ -1281,14 +1296,14 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         flags = &local_flags;
         local_flags.cf_flags = 0;
     }
-    v = PySys_GetObject("ps1");
+    v = _PySys_GetObjectId(&PyId_ps1);
     if (v == NULL) {
-        PySys_SetObject("ps1", v = PyUnicode_FromString(">>> "));
+        _PySys_SetObjectId(&PyId_ps1, v = PyUnicode_FromString(">>> "));
         Py_XDECREF(v);
     }
-    v = PySys_GetObject("ps2");
+    v = _PySys_GetObjectId(&PyId_ps2);
     if (v == NULL) {
-        PySys_SetObject("ps2", v = PyUnicode_FromString("... "));
+        _PySys_SetObjectId(&PyId_ps2, v = PyUnicode_FromString("... "));
         Py_XDECREF(v);
     }
     err = -1;
@@ -1351,7 +1366,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 
     if (fp == stdin) {
         /* Fetch encoding from sys.stdin if possible. */
-        v = PySys_GetObject("stdin");
+        v = _PySys_GetObjectId(&_PyId_stdin);
         if (v && v != Py_None) {
             oenc = _PyObject_GetAttrId(v, &PyId_encoding);
             if (oenc)
@@ -1360,7 +1375,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
                 PyErr_Clear();
         }
     }
-    v = PySys_GetObject("ps1");
+    v = _PySys_GetObjectId(&PyId_ps1);
     if (v != NULL) {
         v = PyObject_Str(v);
         if (v == NULL)
@@ -1373,7 +1388,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
             }
         }
     }
-    w = PySys_GetObject("ps2");
+    w = _PySys_GetObjectId(&PyId_ps2);
     if (w != NULL) {
         w = PyObject_Str(w);
         if (w == NULL)
@@ -1752,7 +1767,7 @@ handle_system_exit(void)
     if (PyLong_Check(value))
         exitcode = (int)PyLong_AsLong(value);
     else {
-        PyObject *sys_stderr = PySys_GetObject("stderr");
+        PyObject *sys_stderr = _PySys_GetObjectId(&_PyId_stderr);
         if (sys_stderr != NULL && sys_stderr != Py_None) {
             PyFile_WriteObject(value, sys_stderr, Py_PRINT_RAW);
         } else {
@@ -1795,11 +1810,11 @@ PyErr_PrintEx(int set_sys_last_vars)
         return;
     /* Now we know v != NULL too */
     if (set_sys_last_vars) {
-        PySys_SetObject("last_type", exception);
-        PySys_SetObject("last_value", v);
-        PySys_SetObject("last_traceback", tb);
+        _PySys_SetObjectId(&PyId_last_type, exception);
+        _PySys_SetObjectId(&PyId_last_value, v);
+        _PySys_SetObjectId(&PyId_last_traceback, tb);
     }
-    hook = PySys_GetObject("excepthook");
+    hook = _PySys_GetObjectId(&PyId_excepthook);
     if (hook) {
         PyObject *args = PyTuple_Pack(3, exception, v, tb);
         PyObject *result = PyEval_CallObject(hook, args);
@@ -2009,7 +2024,7 @@ void
 PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 {
     PyObject *seen;
-    PyObject *f = PySys_GetObject("stderr");
+    PyObject *f = _PySys_GetObjectId(&_PyId_stderr);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -2107,7 +2122,7 @@ flush_io(void)
     /* Save the current exception */
     PyErr_Fetch(&type, &value, &traceback);
 
-    f = PySys_GetObject("stderr");
+    f = _PySys_GetObjectId(&_PyId_stderr);
     if (f != NULL) {
         r = _PyObject_CallMethodId(f, &PyId_flush, "");
         if (r)
@@ -2115,7 +2130,7 @@ flush_io(void)
         else
             PyErr_Clear();
     }
-    f = PySys_GetObject("stdout");
+    f = _PySys_GetObjectId(&_PyId_stdout);
     if (f != NULL) {
         r = _PyObject_CallMethodId(f, &PyId_flush, "");
         if (r)
