@@ -143,8 +143,16 @@ typedef struct _Py_Identifier {
     PyObject *object;
 } _Py_Identifier;
 
-#define _Py_static_string(varname, value)  static _Py_Identifier varname = { 0, value, 0 }
+#define _Py_static_string_init(value) { 0, value, 0 }
+#define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
+
+/* Common identifiers */
+PyAPI_DATA(_Py_Identifier) _PyId_path;
+PyAPI_DATA(_Py_Identifier) _PyId_argv;
+PyAPI_DATA(_Py_Identifier) _PyId_stdin;
+PyAPI_DATA(_Py_Identifier) _PyId_stdout;
+PyAPI_DATA(_Py_Identifier) _PyId_stderr;
 
 /*
 Type objects contain a string containing the type name (to help somewhat
@@ -829,7 +837,7 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
         PyObject *_py_xincref_tmp = (PyObject *)(op); \
         if (_py_xincref_tmp != NULL)                  \
             Py_INCREF(_py_xincref_tmp);               \
-    } while (0)                                    
+    } while (0)
 
 #define Py_XDECREF(op)                                \
     do {                                              \

@@ -183,7 +183,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     }
     if (_PyObject_SetAttrId(builtins, &PyId__, Py_None) != 0)
         return NULL;
-    outf = PySys_GetObject("stdout");
+    outf = _PySys_GetObjectId(&_PyId_stdout);
     if (outf == NULL || outf == Py_None) {
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
         return NULL;
@@ -1825,7 +1825,7 @@ PySys_SetPath(const wchar_t *path)
     PyObject *v;
     if ((v = makepathobject(path, DELIM)) == NULL)
         Py_FatalError("can't create sys.path");
-    if (PySys_SetObject("path", v) != 0)
+    if (_PySys_SetObjectId(&_PyId_path, v) != 0)
         Py_FatalError("can't assign sys.path");
     Py_DECREF(v);
 }
@@ -1894,7 +1894,7 @@ sys_update_path(int argc, wchar_t **argv)
     wchar_t fullpath[MAX_PATH];
 #endif
 
-    path = PySys_GetObject("path");
+    path = _PySys_GetObjectId(&_PyId_path);
     if (path == NULL)
         return;
 
@@ -2081,7 +2081,7 @@ sys_pyfile_write(const char *text, PyObject *file)
  */
 
 static void
-sys_write(char *name, FILE *fp, const char *format, va_list va)
+sys_write(_Py_Identifier *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file;
     PyObject *error_type, *error_value, *error_traceback;
@@ -2089,7 +2089,7 @@ sys_write(char *name, FILE *fp, const char *format, va_list va)
     int written;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    file = PySys_GetObject(name);
+    file = _PySys_GetObjectId(key);
     written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
     if (sys_pyfile_write(buffer, file) != 0) {
         PyErr_Clear();
@@ -2109,7 +2109,7 @@ PySys_WriteStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_write("stdout", stdout, format, va);
+    sys_write(&_PyId_stdout, stdout, format, va);
     va_end(va);
 }
 
@@ -2119,19 +2119,19 @@ PySys_WriteStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_write("stderr", stderr, format, va);
+    sys_write(&_PyId_stderr, stderr, format, va);
     va_end(va);
 }
 
 static void
-sys_format(char *name, FILE *fp, const char *format, va_list va)
+sys_format(_Py_Identifier *key, FILE *fp, const char *format, va_list va)
 {
     PyObject *file, *message;
     PyObject *error_type, *error_value, *error_traceback;
     char *utf8;
 
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    file = PySys_GetObject(name);
+    file = _PySys_GetObjectId(key);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
         if (sys_pyfile_write_unicode(message, file) != 0) {
@@ -2151,7 +2151,7 @@ PySys_FormatStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format("stdout", stdout, format, va);
+    sys_format(&_PyId_stdout, stdout, format, va);
     va_end(va);
 }
 
@@ -2161,6 +2161,6 @@ PySys_FormatStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format("stderr", stderr, format, va);
+    sys_format(&_PyId_stderr, stderr, format, va);
     va_end(va);
 }
