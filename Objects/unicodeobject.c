@@ -10566,6 +10566,15 @@ PyUnicode_Compare(PyObject *left, PyObject *right)
 }
 
 int
+_PyUnicode_CompareWithId(PyObject *left, _Py_Identifier *right)
+{
+    PyObject *right_str = _PyUnicode_FromId(right);   /* borrowed */
+    if (right_str == NULL)
+        return -1;
+    return PyUnicode_Compare(left, right_str);
+}
+
+int
 PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
 {
     Py_ssize_t i;
