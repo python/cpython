@@ -1547,6 +1547,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
     static PyObject *dummy_args;
     PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
     int i, err;
+    _Py_IDENTIFIER(flush);
 
     if (dummy_args == NULL && !(dummy_args = PyTuple_New(0)))
         return NULL;
@@ -1613,7 +1614,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
         if (do_flush == -1)
             return NULL;
         else if (do_flush) {
-            tmp = PyObject_CallMethod(file, "flush", "");
+            tmp = _PyObject_CallMethodId(file, &PyId_flush, "");
             if (tmp == NULL)
                 return NULL;
             else
