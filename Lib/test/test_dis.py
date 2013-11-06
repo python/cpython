@@ -285,7 +285,6 @@ class DisWithFileTests(DisTests):
 
     # Run the tests again, using the file arg instead of print
     def get_disassembly(self, func, lasti=-1, wrapper=True):
-        # We want to test the default printing behaviour, not the file arg
         output = io.StringIO()
         if wrapper:
             dis.dis(func, file=output)
