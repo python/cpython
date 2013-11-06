@@ -51,7 +51,7 @@ compiled code.
 
    This is a convenience wrapper around many of the functions listed below,
    most notably :func:`get_instructions`, as iterating over a
-   :class:`ByteCode` instance yields the bytecode operations as
+   :class:`Bytecode` instance yields the bytecode operations as
    :class:`Instruction` instances.
 
    If *first_line* is not None, it indicates the line number that should
