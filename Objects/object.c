@@ -1122,8 +1122,12 @@ PyObject_SelfIter(PyObject *obj)
 PyObject *
 _PyObject_GetBuiltin(const char *name)
 {
-    PyObject *mod, *attr;
-    mod = PyImport_ImportModule("builtins");
+    PyObject *mod_name, *mod, *attr;
+
+    mod_name = _PyUnicode_FromId(&_PyId_builtins);   /* borrowed */
+    if (mod_name == NULL)
+        return NULL;
+    mod = PyImport_Import(mod_name);
     if (mod == NULL)
         return NULL;
     attr = PyObject_GetAttrString(mod, name);
