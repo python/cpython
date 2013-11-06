@@ -136,6 +136,8 @@ static PyObject *empty_tuple = NULL;
 /* For looking up name pairs in copyreg._extension_registry. */
 static PyObject *two_tuple = NULL;
 
+_Py_IDENTIFIER(modules);
+
 static int
 stack_underflow(void)
 {
@@ -1363,7 +1365,7 @@ whichmodule(PyObject *global, PyObject *global_name)
         return NULL;
 
   search:
-    modules_dict = PySys_GetObject("modules");
+    modules_dict = _PySys_GetObjectId(&PyId_modules);
     if (modules_dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
@@ -5548,7 +5550,7 @@ Unpickler_find_class(UnpicklerObject *self, PyObject *args)
         }
     }
 
-    modules_dict = PySys_GetObject("modules");
+    modules_dict = _PySys_GetObjectId(&PyId_modules);
     if (modules_dict == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
