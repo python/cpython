@@ -1590,7 +1590,6 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                                 "keywords must be strings");
                 return cleanreturn(0, &freelist);
             }
-            /* check that _PyUnicode_AsString() result is not NULL */
             for (i = 0; i < len; i++) {
                 if (!PyUnicode_CompareWithASCIIString(key, kwlist[i])) {
                     match = 1;
