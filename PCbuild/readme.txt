@@ -110,6 +110,9 @@ pylauncher
 pywlauncher
     pyw.exe, a variant of py.exe that doesn't open a Command Prompt
     window
+_testembed
+    _testembed.exe, a small program that embeds Python for testing
+    purposes, used by test_capi.py
 
 These are miscellaneous sub-projects that don't really fit the other
 categories.  By default, these projects do not build in Debug
