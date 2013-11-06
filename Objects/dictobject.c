@@ -2736,6 +2736,15 @@ PyDict_SetItemString(PyObject *v, const char *key, PyObject *item)
 }
 
 int
+_PyDict_DelItemId(PyObject *v, _Py_Identifier *key)
+{
+    PyObject *kv = _PyUnicode_FromId(key); /* borrowed */
+    if (kv == NULL)
+        return -1;
+    return PyDict_DelItem(v, kv);
+}
+
+int
 PyDict_DelItemString(PyObject *v, const char *key)
 {
     PyObject *kv;
