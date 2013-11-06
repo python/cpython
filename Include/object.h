@@ -147,9 +147,10 @@ typedef struct _Py_Identifier {
 #define _Py_static_string(varname, value)  static _Py_Identifier varname = _Py_static_string_init(value)
 #define _Py_IDENTIFIER(varname) _Py_static_string(PyId_##varname, #varname)
 
-/* Common identifiers */
-PyAPI_DATA(_Py_Identifier) _PyId_path;
+/* Common identifiers (ex: _PyId_path is the string "path") */
 PyAPI_DATA(_Py_Identifier) _PyId_argv;
+PyAPI_DATA(_Py_Identifier) _PyId_builtins;
+PyAPI_DATA(_Py_Identifier) _PyId_path;
 PyAPI_DATA(_Py_Identifier) _PyId_stdin;
 PyAPI_DATA(_Py_Identifier) _PyId_stdout;
 PyAPI_DATA(_Py_Identifier) _PyId_stderr;

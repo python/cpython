@@ -37,6 +37,7 @@
 
 /* Common identifiers */
 _Py_Identifier _PyId_argv = _Py_static_string_init("argv");
+_Py_Identifier _PyId_builtins = _Py_static_string_init("builtins");
 _Py_Identifier _PyId_path = _Py_static_string_init("path");
 _Py_Identifier _PyId_stdin = _Py_static_string_init("stdin");
 _Py_Identifier _PyId_stdout = _Py_static_string_init("stdout");
@@ -1928,7 +1929,7 @@ print_exception(PyObject *f, PyObject *value)
             err = PyFile_WriteString("<unknown>", f);
         }
         else {
-            if (PyUnicode_CompareWithASCIIString(moduleName, "builtins") != 0)
+            if (_PyUnicode_CompareWithId(moduleName, &_PyId_builtins) != 0)
             {
                 err = PyFile_WriteObject(moduleName, f, Py_PRINT_RAW);
                 err += PyFile_WriteString(".", f);

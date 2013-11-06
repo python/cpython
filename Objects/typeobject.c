@@ -345,11 +345,10 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 static PyObject *
 type_module(PyTypeObject *type, void *context)
 {
-    PyObject *mod;
     char *s;
 
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        mod = _PyDict_GetItemId(type->tp_dict, &PyId___module__);
+        PyObject *mod = _PyDict_GetItemId(type->tp_dict, &PyId___module__);
         if (!mod) {
             PyErr_Format(PyExc_AttributeError, "__module__");
             return 0;
@@ -358,11 +357,14 @@ type_module(PyTypeObject *type, void *context)
         return mod;
     }
     else {
+        PyObject *name;
         s = strrchr(type->tp_name, '.');
         if (s != NULL)
             return PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-        return PyUnicode_FromString("builtins");
+        name = _PyUnicode_FromId(&_PyId_builtins);
+        Py_XINCREF(name);
+        return name;
     }
 }
 
@@ -712,7 +714,7 @@ type_repr(PyTypeObject *type)
         return NULL;
     }
 
-    if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
+    if (mod != NULL && _PyUnicode_CompareWithId(mod, &_PyId_builtins))
         rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
     else
         rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
@@ -2143,7 +2145,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             if (!valid_identifier(tmp))
                 goto error;
             assert(PyUnicode_Check(tmp));
-            if (PyUnicode_CompareWithASCIIString(tmp, "__dict__") == 0) {
+            if (_PyUnicode_CompareWithId(tmp, &PyId___dict__) == 0) {
                 if (!may_add_dict || add_dict) {
                     PyErr_SetString(PyExc_TypeError,
                         "__dict__ slot disallowed: "
@@ -2174,7 +2176,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         for (i = j = 0; i < nslots; i++) {
             tmp = PyTuple_GET_ITEM(slots, i);
             if ((add_dict &&
-                 PyUnicode_CompareWithASCIIString(tmp, "__dict__") == 0) ||
+                 _PyUnicode_CompareWithId(tmp, &PyId___dict__) == 0) ||
                 (add_weak &&
                  PyUnicode_CompareWithASCIIString(tmp, "__weakref__") == 0))
                 continue;
@@ -3183,7 +3185,7 @@ object_repr(PyObject *self)
         Py_XDECREF(mod);
         return NULL;
     }
-    if (mod != NULL && PyUnicode_CompareWithASCIIString(mod, "builtins"))
+    if (mod != NULL && _PyUnicode_CompareWithId(mod, &_PyId_builtins))
         rtn = PyUnicode_FromFormat("<%U.%U object at %p>", mod, name, self);
     else
         rtn = PyUnicode_FromFormat("<%s object at %p>",
@@ -6336,8 +6338,8 @@ super_getattro(PyObject *self, PyObject *name)
         /* We want __class__ to return the class of the super object
            (i.e. super, or a subclass), not the class of su->obj. */
         skip = (PyUnicode_Check(name) &&
-            PyUnicode_GET_LENGTH(name) == 9 &&
-            PyUnicode_CompareWithASCIIString(name, "__class__") == 0);
+                PyUnicode_GET_LENGTH(name) == 9 &&
+                _PyUnicode_CompareWithId(name, &PyId___class__) == 0);
     }
 
     if (!skip) {
@@ -6543,8 +6545,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         for (i = 0; i < n; i++) {
             PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
             assert(PyUnicode_Check(name));
-            if (!PyUnicode_CompareWithASCIIString(name,
-                                                  "__class__")) {
+            if (!_PyUnicode_CompareWithId(name, &PyId___class__)) {
                 Py_ssize_t index = co->co_nlocals +
                     PyTuple_GET_SIZE(co->co_cellvars) + i;
                 PyObject *cell = f->f_localsplus[index];
