@@ -962,7 +962,7 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
 .. function:: pipe()
 
    Create a pipe.  Return a pair of file descriptors ``(r, w)`` usable for
-   reading and writing, respectively. The new file descriptor are
+   reading and writing, respectively. The new file descriptor is
    :ref:`non-inheritable <fd_inheritance>`.
 
    Availability: Unix, Windows.
