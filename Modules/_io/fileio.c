@@ -59,6 +59,8 @@ typedef struct {
 
 PyTypeObject PyFileIO_Type;
 
+_Py_IDENTIFIER(name);
+
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
 int
@@ -427,7 +429,7 @@ fileio_init(PyObject *oself, PyObject *args, PyObject *kwds)
     _setmode(self->fd, O_BINARY);
 #endif
 
-    if (PyObject_SetAttrString((PyObject *)self, "name", nameobj) < 0)
+    if (_PyObject_SetAttrId((PyObject *)self, &PyId_name, nameobj) < 0)
         goto error;
 
     if (self->appending) {
@@ -1036,7 +1038,6 @@ mode_string(fileio *self)
 static PyObject *
 fileio_repr(fileio *self)
 {
-    _Py_IDENTIFIER(name);
     PyObject *nameobj, *res;
 
     if (self->fd < 0)
