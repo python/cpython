@@ -44,6 +44,7 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     Py_ssize_t nargs;
     int isclass;
     _Py_IDENTIFIER(__prepare__);
+    _Py_IDENTIFIER(metaclass);
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
@@ -83,10 +84,10 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
             Py_DECREF(bases);
             return NULL;
         }
-        meta = PyDict_GetItemString(mkw, "metaclass");
+        meta = _PyDict_GetItemId(mkw, &PyId_metaclass);
         if (meta != NULL) {
             Py_INCREF(meta);
-            if (PyDict_DelItemString(mkw, "metaclass") < 0) {
+            if (_PyDict_DelItemId(mkw, &PyId_metaclass) < 0) {
                 Py_DECREF(meta);
                 Py_DECREF(mkw);
                 Py_DECREF(bases);
