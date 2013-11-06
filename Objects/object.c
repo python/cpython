@@ -1969,7 +1969,7 @@ _PyObject_DebugTypeStats(FILE *out)
    See dictobject.c and listobject.c for examples of use.
 */
 
-#define KEY "Py_Repr"
+_Py_IDENTIFIER(Py_Repr);
 
 int
 Py_ReprEnter(PyObject *obj)
@@ -1981,12 +1981,12 @@ Py_ReprEnter(PyObject *obj)
     dict = PyThreadState_GetDict();
     if (dict == NULL)
         return 0;
-    list = PyDict_GetItemString(dict, KEY);
+    list = _PyDict_GetItemId(dict, &PyId_Py_Repr);
     if (list == NULL) {
         list = PyList_New(0);
         if (list == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, KEY, list) < 0)
+        if (_PyDict_SetItemId(dict, &PyId_Py_Repr, list) < 0)
             return -1;
         Py_DECREF(list);
     }
@@ -2014,7 +2014,7 @@ Py_ReprLeave(PyObject *obj)
     if (dict == NULL)
         goto finally;
 
-    list = PyDict_GetItemString(dict, KEY);
+    list = _PyDict_GetItemId(dict, &PyId_Py_Repr);
     if (list == NULL || !PyList_Check(list))
         goto finally;
 
