@@ -63,6 +63,10 @@ PyAPI_FUNC(int) PyRun_InteractiveOneFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
     PyCompilerFlags *flags);
+PyAPI_FUNC(int) PyRun_InteractiveOneObject(
+    FILE *fp,
+    PyObject *filename,
+    PyCompilerFlags *flags);
 PyAPI_FUNC(int) PyRun_InteractiveLoopFlags(
     FILE *fp,
     const char *filename,       /* decoded from the filesystem encoding */
