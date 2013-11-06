@@ -48,6 +48,7 @@ _Py_IDENTIFIER(__hash__);
 _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
+_Py_IDENTIFIER(__abstractmethods__);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -383,9 +384,11 @@ type_abstractmethods(PyTypeObject *type, void *context)
     /* type itself has an __abstractmethods__ descriptor (this). Don't return
        that. */
     if (type != &PyType_Type)
-        mod = PyDict_GetItemString(type->tp_dict, "__abstractmethods__");
+        mod = _PyDict_GetItemId(type->tp_dict, &PyId___abstractmethods__);
     if (!mod) {
-        PyErr_SetString(PyExc_AttributeError, "__abstractmethods__");
+        PyObject *message = _PyUnicode_FromId(&PyId___abstractmethods__);
+        if (message)
+            PyErr_SetObject(PyExc_AttributeError, message);
         return NULL;
     }
     Py_XINCREF(mod);
@@ -404,13 +407,15 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
         abstract = PyObject_IsTrue(value);
         if (abstract < 0)
             return -1;
-        res = PyDict_SetItemString(type->tp_dict, "__abstractmethods__", value);
+        res = _PyDict_SetItemId(type->tp_dict, &PyId___abstractmethods__, value);
     }
     else {
         abstract = 0;
-        res = PyDict_DelItemString(type->tp_dict, "__abstractmethods__");
+        res = _PyDict_DelItemId(type->tp_dict, &PyId___abstractmethods__);
         if (res && PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_SetString(PyExc_AttributeError, "__abstractmethods__");
+            PyObject *message = _PyUnicode_FromId(&PyId___abstractmethods__);
+            if (message)
+                PyErr_SetObject(PyExc_AttributeError, message);
             return -1;
         }
     }
