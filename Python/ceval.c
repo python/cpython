@@ -1840,8 +1840,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
         TARGET(PRINT_EXPR) {
+            _Py_IDENTIFIER(displayhook);
             PyObject *value = POP();
-            PyObject *hook = PySys_GetObject("displayhook");
+            PyObject *hook = _PySys_GetObjectId(&PyId_displayhook);
             PyObject *res;
             if (hook == NULL) {
                 PyErr_SetString(PyExc_RuntimeError,
