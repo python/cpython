@@ -38,15 +38,13 @@
 #ifdef Py_REF_DEBUG
 static
 void _print_total_refs(void) {
-    PyObject *xoptions, *key, *value;
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showrefcount);
+
     xoptions = PySys_GetXOptions();
     if (xoptions == NULL)
         return;
-    key = PyUnicode_FromString("showrefcount");
-    if (key == NULL)
-        return;
-    value = PyDict_GetItem(xoptions, key);
-    Py_DECREF(key);
+    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
     if (value == Py_True)
         fprintf(stderr,
                 "[%" PY_FORMAT_SIZE_T "d refs, "
