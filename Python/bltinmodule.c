@@ -1553,7 +1553,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
                                      kwlist, &sep, &end, &file, &flush))
         return NULL;
     if (file == NULL || file == Py_None) {
-        file = PySys_GetObject("stdout");
+        file = _PySys_GetObjectId(&_PyId_stdout);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
             return NULL;
@@ -1638,9 +1638,9 @@ static PyObject *
 builtin_input(PyObject *self, PyObject *args)
 {
     PyObject *promptarg = NULL;
-    PyObject *fin = PySys_GetObject("stdin");
-    PyObject *fout = PySys_GetObject("stdout");
-    PyObject *ferr = PySys_GetObject("stderr");
+    PyObject *fin = _PySys_GetObjectId(&_PyId_stdin);
+    PyObject *fout = _PySys_GetObjectId(&_PyId_stdout);
+    PyObject *ferr = _PySys_GetObjectId(&_PyId_stderr);
     PyObject *tmp;
     long fd;
     int tty;

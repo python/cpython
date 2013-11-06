@@ -2578,7 +2578,7 @@ PyCurses_setupterm(PyObject* self, PyObject *args, PyObject* keywds)
     if (fd == -1) {
         PyObject* sys_stdout;
 
-        sys_stdout = PySys_GetObject("stdout");
+        sys_stdout = _PySys_GetObjectId(&_PyId_stdout);
 
         if (sys_stdout == NULL || sys_stdout == Py_None) {
             PyErr_SetString(
