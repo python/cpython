@@ -1928,10 +1928,9 @@ print_exception(PyObject *f, PyObject *value)
             err = PyFile_WriteString("<unknown>", f);
         }
         else {
-            char* modstr = _PyUnicode_AsString(moduleName);
-            if (modstr && strcmp(modstr, "builtins"))
+            if (PyUnicode_CompareWithASCIIString(moduleName, "builtins") != 0)
             {
-                err = PyFile_WriteString(modstr, f);
+                err = PyFile_WriteObject(moduleName, f, Py_PRINT_RAW);
                 err += PyFile_WriteString(".", f);
             }
             Py_DECREF(moduleName);
