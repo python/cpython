@@ -74,26 +74,35 @@ intrinsic to the Python language.
 
 .. _mapobjects:
 
-Mapping Objects
-===============
+Container Objects
+=================
 
 .. index:: object: mapping
 
 .. toctree::
 
    dict.rst
+   set.rst
 
 
 .. _otherobjects:
+
+Function Objects
+================
+
+.. toctree::
+
+   function.rst
+   method.rst
+   cell.rst
+   code.rst
+
 
 Other Objects
 =============
 
 .. toctree::
 
-   set.rst
-   function.rst
-   method.rst
    file.rst
    module.rst
    iterator.rst
@@ -102,7 +111,6 @@ Other Objects
    memoryview.rst
    weakref.rst
    capsule.rst
-   cell.rst
    gen.rst
    datetime.rst
-   code.rst
+
