@@ -206,8 +206,7 @@ text
         self._run_check("</$>", [('comment', '$')])
         self._run_check("</", [('data', '</')])
         self._run_check("</a", [('data', '</a')])
-        # XXX this might be wrong
-        self._run_check("<a<a>", [('data', '<a'), ('starttag', 'a', [])])
+        self._run_check("<a<a>", [('starttag', 'a<a', [])])
         self._run_check("</a<a>", [('endtag', 'a<a')])
         self._run_check("<!", [('data', '<!')])
         self._run_check("<a", [('data', '<a')])
@@ -215,6 +214,11 @@ text
         self._run_check("<a foo='bar", [('data', "<a foo='bar")])
         self._run_check("<a foo='>'", [('data', "<a foo='>'")])
         self._run_check("<a foo='>", [('data', "<a foo='>")])
+        self._run_check("<a$>", [('starttag', 'a$', [])])
+        self._run_check("<a$b>", [('starttag', 'a$b', [])])
+        self._run_check("<a$b/>", [('startendtag', 'a$b', [])])
+        self._run_check("<a$b  >", [('starttag', 'a$b', [])])
+        self._run_check("<a$b  />", [('startendtag', 'a$b', [])])
 
     def test_valid_doctypes(self):
         # from http://www.w3.org/QA/2002/04/valid-dtd-list.html

@@ -22,9 +22,12 @@ charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
-tagfind = re.compile('([a-zA-Z][-.a-zA-Z0-9:_]*)(?:\s|/(?!>))*')
+
 # see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
 # and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
+# note: if you change tagfind/attrfind remember to update locatestarttagend too
+tagfind = re.compile('([a-zA-Z][^\t\n\r\f />\x00]*)(?:\s|/(?!>))*')
+# this regex is currently unused, but left for backward compatibility
 tagfind_tolerant = re.compile('[a-zA-Z][^\t\n\r\f />\x00]*')
 
 attrfind = re.compile(
@@ -32,7 +35,7 @@ attrfind = re.compile(
     r'(\'[^\']*\'|"[^"]*"|(?![\'"])[^>\s]*))?(?:\s|/(?!>))*')
 
 locatestarttagend = re.compile(r"""
-  <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
+  <[a-zA-Z][^\t\n\r\f />\x00]*       # tag name
   (?:[\s/]*                          # optional whitespace before attribute name
     (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
       (?:\s*=+\s*                    # value indicator
@@ -373,14 +376,14 @@ class HTMLParser(markupbase.ParserBase):
                 self.handle_data(rawdata[i:gtpos])
                 return gtpos
             # find the name: w3.org/TR/html5/tokenization.html#tag-name-state
-            namematch = tagfind_tolerant.match(rawdata, i+2)
+            namematch = tagfind.match(rawdata, i+2)
             if not namematch:
                 # w3.org/TR/html5/tokenization.html#end-tag-open-state
                 if rawdata[i:i+3] == '</>':
                     return i+3
                 else:
                     return self.parse_bogus_comment(i)
-            tagname = namematch.group().lower()
+            tagname = namematch.group(1).lower()
             # consume and ignore other stuff between the name and the >
             # Note: this is not 100% correct, since we might have things like
             # </tag attr=">">, but looking for > after tha name should cover

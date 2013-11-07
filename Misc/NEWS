@@ -12,8 +12,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #19480: HTMLParser now accepts all valid start-tag names as defined
+  by the HTML5 standard.
+
 - Issue #17827: Add the missing documentation for ``codecs.encode`` and
-    ``codecs.decode``.
+  ``codecs.decode``.
 
 - Issue #6157: Fixed Tkinter.Text.debug().  Original patch by Guilherme Polo.
 
