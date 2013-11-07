@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19480: HTMLParser now accepts all valid start-tag names as defined
+  by the HTML5 standard.
+
 - Issue #6157: Fixed tkinter.Text.debug().  Original patch by Guilherme Polo.
 
 - Issue #6160: The bbox() method of tkinter.Spinbox now returns a tuple of
