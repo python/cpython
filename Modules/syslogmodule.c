@@ -71,7 +71,7 @@ syslog_get_argv(void)
     Py_ssize_t argv_len, scriptlen;
     PyObject *scriptobj;
     Py_ssize_t slash;
-    PyObject *argv = _PySys_GetObjectId(&_PyId_argv);
+    PyObject *argv = PySys_GetObject("argv");
 
     if (argv == NULL) {
         return(NULL);

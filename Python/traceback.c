@@ -21,6 +21,11 @@
 /* Function from Parser/tokenizer.c */
 extern char * PyTokenizer_FindEncodingFilename(int, PyObject *);
 
+_Py_IDENTIFIER(TextIOWrapper);
+_Py_IDENTIFIER(close);
+_Py_IDENTIFIER(open);
+_Py_IDENTIFIER(path);
+
 static PyObject *
 tb_dir(PyTracebackObject *self)
 {
@@ -152,7 +157,6 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     const char* filepath;
     Py_ssize_t len;
     PyObject* result;
-    _Py_IDENTIFIER(open);
 
     filebytes = PyUnicode_EncodeFSDefault(filename);
     if (filebytes == NULL) {
@@ -169,7 +173,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
         tail++;
     taillen = strlen(tail);
 
-    syspath = _PySys_GetObjectId(&_PyId_path);
+    syspath = _PySys_GetObjectId(&PyId_path);
     if (syspath == NULL || !PyList_Check(syspath))
         goto error;
     npath = PyList_Size(syspath);
@@ -232,9 +236,6 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
     char buf[MAXPATHLEN+1];
     int kind;
     void *data;
-    _Py_IDENTIFIER(close);
-    _Py_IDENTIFIER(open);
-    _Py_IDENTIFIER(TextIOWrapper);
 
     /* open the file */
     if (filename == NULL)

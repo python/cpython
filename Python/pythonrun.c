@@ -35,21 +35,16 @@
 #define PATH_MAX MAXPATHLEN
 #endif
 
-/* Common identifiers */
-_Py_Identifier _PyId_argv = _Py_static_string_init("argv");
-_Py_Identifier _PyId_builtins = _Py_static_string_init("builtins");
-_Py_Identifier _PyId_path = _Py_static_string_init("path");
-_Py_Identifier _PyId_stdin = _Py_static_string_init("stdin");
-_Py_Identifier _PyId_stdout = _Py_static_string_init("stdout");
-_Py_Identifier _PyId_stderr = _Py_static_string_init("stderr");
-
-/* local identifiers */
+_Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(excepthook);
-_Py_IDENTIFIER(ps1);
-_Py_IDENTIFIER(ps2);
+_Py_IDENTIFIER(last_traceback);
 _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
-_Py_IDENTIFIER(last_traceback);
+_Py_IDENTIFIER(ps1);
+_Py_IDENTIFIER(ps2);
+_Py_IDENTIFIER(stdin);
+_Py_IDENTIFIER(stdout);
+_Py_IDENTIFIER(stderr);
 _Py_static_string(PyId_string, "<string>");
 
 #ifdef Py_REF_DEBUG
@@ -429,7 +424,7 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     pstderr = PyFile_NewStdPrinter(fileno(stderr));
     if (pstderr == NULL)
         Py_FatalError("Py_Initialize: can't set preliminary stderr");
-    _PySys_SetObjectId(&_PyId_stderr, pstderr);
+    _PySys_SetObjectId(&PyId_stderr, pstderr);
     PySys_SetObject("__stderr__", pstderr);
     Py_DECREF(pstderr);
 
@@ -514,8 +509,8 @@ file_is_closed(PyObject *fobj)
 static void
 flush_std_files(void)
 {
-    PyObject *fout = _PySys_GetObjectId(&_PyId_stdout);
-    PyObject *ferr = _PySys_GetObjectId(&_PyId_stderr);
+    PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
+    PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
     PyObject *tmp;
     _Py_IDENTIFIER(flush);
 
@@ -793,7 +788,7 @@ Py_NewInterpreter(void)
         pstderr = PyFile_NewStdPrinter(fileno(stderr));
         if (pstderr == NULL)
             Py_FatalError("Py_Initialize: can't set preliminary stderr");
-        _PySys_SetObjectId(&_PyId_stderr, pstderr);
+        _PySys_SetObjectId(&PyId_stderr, pstderr);
         PySys_SetObject("__stderr__", pstderr);
         Py_DECREF(pstderr);
 
@@ -1187,7 +1182,7 @@ initstdio(void)
             goto error;
     } /* if (fd < 0) */
     PySys_SetObject("__stdin__", std);
-    _PySys_SetObjectId(&_PyId_stdin, std);
+    _PySys_SetObjectId(&PyId_stdin, std);
     Py_DECREF(std);
 
     /* Set sys.stdout */
@@ -1202,7 +1197,7 @@ initstdio(void)
             goto error;
     } /* if (fd < 0) */
     PySys_SetObject("__stdout__", std);
-    _PySys_SetObjectId(&_PyId_stdout, std);
+    _PySys_SetObjectId(&PyId_stdout, std);
     Py_DECREF(std);
 
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
@@ -1236,7 +1231,7 @@ initstdio(void)
         Py_DECREF(std);
         goto error;
     }
-    if (_PySys_SetObjectId(&_PyId_stderr, std) < 0) {
+    if (_PySys_SetObjectId(&PyId_stderr, std) < 0) {
         Py_DECREF(std);
         goto error;
     }
@@ -1368,7 +1363,7 @@ PyRun_InteractiveOneObject(FILE *fp, PyObject *filename, PyCompilerFlags *flags)
 
     if (fp == stdin) {
         /* Fetch encoding from sys.stdin if possible. */
-        v = _PySys_GetObjectId(&_PyId_stdin);
+        v = _PySys_GetObjectId(&PyId_stdin);
         if (v && v != Py_None) {
             oenc = _PyObject_GetAttrId(v, &PyId_encoding);
             if (oenc)
@@ -1774,7 +1769,7 @@ handle_system_exit(void)
     if (PyLong_Check(value))
         exitcode = (int)PyLong_AsLong(value);
     else {
-        PyObject *sys_stderr = _PySys_GetObjectId(&_PyId_stderr);
+        PyObject *sys_stderr = _PySys_GetObjectId(&PyId_stderr);
         if (sys_stderr != NULL && sys_stderr != Py_None) {
             PyFile_WriteObject(value, sys_stderr, Py_PRINT_RAW);
         } else {
@@ -1938,7 +1933,7 @@ print_exception(PyObject *f, PyObject *value)
             err = PyFile_WriteString("<unknown>", f);
         }
         else {
-            if (_PyUnicode_CompareWithId(moduleName, &_PyId_builtins) != 0)
+            if (_PyUnicode_CompareWithId(moduleName, &PyId_builtins) != 0)
             {
                 err = PyFile_WriteObject(moduleName, f, Py_PRINT_RAW);
                 err += PyFile_WriteString(".", f);
@@ -2033,7 +2028,7 @@ void
 PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 {
     PyObject *seen;
-    PyObject *f = _PySys_GetObjectId(&_PyId_stderr);
+    PyObject *f = _PySys_GetObjectId(&PyId_stderr);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
         /* Put the traceback on the exception, otherwise it won't get
@@ -2130,7 +2125,7 @@ flush_io(void)
     /* Save the current exception */
     PyErr_Fetch(&type, &value, &traceback);
 
-    f = _PySys_GetObjectId(&_PyId_stderr);
+    f = _PySys_GetObjectId(&PyId_stderr);
     if (f != NULL) {
         r = _PyObject_CallMethodId(f, &PyId_flush, "");
         if (r)
@@ -2138,7 +2133,7 @@ flush_io(void)
         else
             PyErr_Clear();
     }
-    f = _PySys_GetObjectId(&_PyId_stdout);
+    f = _PySys_GetObjectId(&PyId_stdout);
     if (f != NULL) {
         r = _PyObject_CallMethodId(f, &PyId_flush, "");
         if (r)
