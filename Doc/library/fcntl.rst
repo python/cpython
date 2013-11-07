@@ -30,11 +30,11 @@ The module defines the following functions:
 
 .. function:: fcntl(fd, op[, arg])
 
-   Perform the requested operation on file descriptor *fd* (file objects providing
-   a :meth:`~io.IOBase.fileno` method are accepted as well). The operation is
-   defined by *op*
-   and is operating system dependent.  These codes are also found in the
-   :mod:`fcntl` module. The argument *arg* is optional, and defaults to the integer
+   Perform the operation *op* on file descriptor *fd* (file objects providing
+   a :meth:`~io.IOBase.fileno` method are accepted as well).  The values used
+   for *op* are operating system dependent, and are available as constants
+   in the :mod:`fcntl` module, using the same names as used in the relevant C
+   header files.  The argument *arg* is optional, and defaults to the integer
    value ``0``.  When present, it can either be an integer value, or a string.
    With the argument missing or an integer value, the return value of this function
    is the integer return value of the C :c:func:`fcntl` call.  When the argument is
@@ -56,6 +56,9 @@ The module defines the following functions:
    that the argument handling is even more complicated.
 
    The op parameter is limited to values that can fit in 32-bits.
+   Additional constants of interest for use as the *op* argument can be
+   found in the :mod:`termios` module, under the same names as used in
+   the relevant C header files.
 
    The parameter *arg* can be one of an integer, absent (treated identically to the
    integer ``0``), an object supporting the read-only buffer interface (most likely
