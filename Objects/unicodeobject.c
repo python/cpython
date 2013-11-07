@@ -2983,6 +2983,8 @@ _Py_normalize_encoding(const char *encoding,
     char *l_end;
 
     if (encoding == NULL) {
+        if (lower_len < 6)
+            return 0;
         strcpy(lower, "utf-8");
         return 1;
     }
