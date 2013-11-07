@@ -8,6 +8,12 @@
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(Py_Repr);
+_Py_IDENTIFIER(__bytes__);
+_Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(__isabstractmethod__);
+_Py_IDENTIFIER(builtins);
+
 #ifdef Py_REF_DEBUG
 Py_ssize_t _Py_RefTotal;
 
@@ -560,7 +566,6 @@ PyObject *
 PyObject_Bytes(PyObject *v)
 {
     PyObject *result, *func;
-    _Py_IDENTIFIER(__bytes__);
 
     if (v == NULL)
         return PyBytes_FromString("<NULL>");
@@ -949,7 +954,6 @@ _PyObject_IsAbstract(PyObject *obj)
 {
     int res;
     PyObject* isabstract;
-    _Py_IDENTIFIER(__isabstractmethod__);
 
     if (obj == NULL)
         return 0;
@@ -1124,7 +1128,7 @@ _PyObject_GetBuiltin(const char *name)
 {
     PyObject *mod_name, *mod, *attr;
 
-    mod_name = _PyUnicode_FromId(&_PyId_builtins);   /* borrowed */
+    mod_name = _PyUnicode_FromId(&PyId_builtins);   /* borrowed */
     if (mod_name == NULL)
         return NULL;
     mod = PyImport_Import(mod_name);
@@ -1440,7 +1444,6 @@ static PyObject *
 _dir_object(PyObject *obj)
 {
     PyObject *result, *sorted;
-    _Py_IDENTIFIER(__dir__);
     PyObject *dirfunc = _PyObject_LookupSpecial(obj, &PyId___dir__);
 
     assert(obj);
@@ -1972,8 +1975,6 @@ _PyObject_DebugTypeStats(FILE *out)
 
    See dictobject.c and listobject.c for examples of use.
 */
-
-_Py_IDENTIFIER(Py_Repr);
 
 int
 Py_ReprEnter(PyObject *obj)

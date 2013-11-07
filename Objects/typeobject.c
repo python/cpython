@@ -53,6 +53,7 @@ _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
 _Py_IDENTIFIER(__setitem__);
+_Py_IDENTIFIER(builtins);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -366,7 +367,7 @@ type_module(PyTypeObject *type, void *context)
         if (s != NULL)
             return PyUnicode_FromStringAndSize(
                 type->tp_name, (Py_ssize_t)(s - type->tp_name));
-        name = _PyUnicode_FromId(&_PyId_builtins);
+        name = _PyUnicode_FromId(&PyId_builtins);
         Py_XINCREF(name);
         return name;
     }
@@ -718,7 +719,7 @@ type_repr(PyTypeObject *type)
         return NULL;
     }
 
-    if (mod != NULL && _PyUnicode_CompareWithId(mod, &_PyId_builtins))
+    if (mod != NULL && _PyUnicode_CompareWithId(mod, &PyId_builtins))
         rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
     else
         rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
@@ -3189,7 +3190,7 @@ object_repr(PyObject *self)
         Py_XDECREF(mod);
         return NULL;
     }
-    if (mod != NULL && _PyUnicode_CompareWithId(mod, &_PyId_builtins))
+    if (mod != NULL && _PyUnicode_CompareWithId(mod, &PyId_builtins))
         rtn = PyUnicode_FromFormat("<%U.%U object at %p>", mod, name, self);
     else
         rtn = PyUnicode_FromFormat("<%s object at %p>",
