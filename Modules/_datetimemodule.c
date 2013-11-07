@@ -4462,6 +4462,9 @@ datetime_subtract(PyObject *left, PyObject *right)
             delta_us = DATE_GET_MICROSECOND(left) -
                        DATE_GET_MICROSECOND(right);
             result = new_delta(delta_d, delta_s, delta_us, 1);
+            if (result == NULL)
+                return NULL;
+
             if (offdiff != NULL) {
                 PyObject *temp = result;
                 result = delta_subtract(result, offdiff);
