@@ -183,6 +183,22 @@ class SelectorEventLoopTests(unittest.TestCase):
         self.assertRaises(
             RuntimeError, self.loop.remove_signal_handler, signal.SIGHUP)
 
+    @unittest.mock.patch('asyncio.unix_events.signal')
+    def test_close(self, m_signal):
+        m_signal.NSIG = signal.NSIG
+
+        self.loop.add_signal_handler(signal.SIGHUP, lambda: True)
+        self.loop.add_signal_handler(signal.SIGCHLD, lambda: True)
+
+        self.assertEqual(len(self.loop._signal_handlers), 2)
+
+        m_signal.set_wakeup_fd.reset_mock()
+
+        self.loop.close()
+
+        self.assertEqual(len(self.loop._signal_handlers), 0)
+        m_signal.set_wakeup_fd.assert_called_once_with(-1)
+
 
 class UnixReadPipeTransportTests(unittest.TestCase):
 
