@@ -5,7 +5,6 @@ test_asyncio.test_locks
 test_asyncio.test_proactor_events
 test_asyncio.test_queues
 test_asyncio.test_selector_events
-test_asyncio.test_selectors
 test_asyncio.test_streams
 test_asyncio.test_tasks
 test_asyncio.test_transports
