@@ -6,6 +6,7 @@ import socket
 from test import support
 from time import sleep
 import unittest
+import unittest.mock
 try:
     from time import monotonic as time
 except ImportError:
@@ -123,6 +124,15 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         # modify unknown file obj
         self.assertRaises(KeyError, s.modify, 999999, selectors.EVENT_READ)
+
+        # modify use a shortcut
+        d3 = object()
+        s.register = unittest.mock.Mock()
+        s.unregister = unittest.mock.Mock()
+
+        s.modify(rd, selectors.EVENT_READ, d3)
+        self.assertFalse(s.register.called)
+        self.assertFalse(s.unregister.called)
 
     def test_close(self):
         s = self.SELECTOR()

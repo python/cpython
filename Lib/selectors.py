@@ -138,11 +138,14 @@ class BaseSelector(metaclass=ABCMeta):
             key = self._fd_to_key[_fileobj_to_fd(fileobj)]
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
-        if events != key.events or data != key.data:
-            # TODO: If only the data changed, use a shortcut that only
-            # updates the data.
+        if events != key.events:
             self.unregister(fileobj)
             return self.register(fileobj, events, data)
+        elif data != key.data:
+            # Use a shortcut to update the data.
+            key = key._replace(data=data)
+            self._fd_to_key[key.fd] = key
+            return key
         else:
             return key
 
