@@ -601,13 +601,13 @@ PyTypeObject PyFrame_Type = {
     0,                                          /* tp_dict */
 };
 
-static PyObject *builtin_object;
+_Py_IDENTIFIER(__builtins__);
 
 int _PyFrame_Init()
 {
-    builtin_object = PyUnicode_InternFromString("__builtins__");
-    if (builtin_object == NULL)
-        return 0;
+    /* Before, PyId___builtins__ was a string created explicitly in
+       this function. Now there is nothing to initialize anymore, but
+       the function is kept for backward compatibility. */
     return 1;
 }
 
@@ -628,7 +628,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
     }
 #endif
     if (back == NULL || back->f_globals != globals) {
-        builtins = PyDict_GetItem(globals, builtin_object);
+        builtins = _PyDict_GetItemId(globals, &PyId___builtins__);
         if (builtins) {
             if (PyModule_Check(builtins)) {
                 builtins = PyModule_GetDict(builtins);
@@ -994,8 +994,6 @@ void
 PyFrame_Fini(void)
 {
     (void)PyFrame_ClearFreeList();
-    Py_XDECREF(builtin_object);
-    builtin_object = NULL;
 }
 
 /* Print summary info about the state of the optimized allocator */
