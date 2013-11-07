@@ -6,6 +6,8 @@ Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+_Py_IDENTIFIER(insert);
+
 static Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
@@ -90,8 +92,6 @@ insort_right(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        _Py_IDENTIFIER(insert);
-
         result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
         if (result == NULL)
             return NULL;
@@ -195,7 +195,6 @@ insort_left(PyObject *self, PyObject *args, PyObject *kw)
         if (PyList_Insert(list, index, item) < 0)
             return NULL;
     } else {
-        _Py_IDENTIFIER(insert);
         result = _PyObject_CallMethodId(list, &PyId_insert, "nO", index, item);
         if (result == NULL)
             return NULL;

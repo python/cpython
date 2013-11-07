@@ -39,16 +39,20 @@ struct method_cache_entry {
 static struct method_cache_entry method_cache[1 << MCACHE_SIZE_EXP];
 static unsigned int next_version_tag = 0;
 
+/* alphabetical order */
+_Py_IDENTIFIER(__abstractmethods__);
 _Py_IDENTIFIER(__class__);
+_Py_IDENTIFIER(__delitem__);
 _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__doc__);
-_Py_IDENTIFIER(__getitem__);
 _Py_IDENTIFIER(__getattribute__);
+_Py_IDENTIFIER(__getitem__);
 _Py_IDENTIFIER(__hash__);
+_Py_IDENTIFIER(__len__);
 _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
-_Py_IDENTIFIER(__abstractmethods__);
+_Py_IDENTIFIER(__setitem__);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -5068,7 +5072,6 @@ FUNCNAME(PyObject *self, ARG1TYPE arg1, ARG2TYPE arg2) \
 static Py_ssize_t
 slot_sq_length(PyObject *self)
 {
-    _Py_IDENTIFIER(__len__);
     PyObject *res = call_method(self, &PyId___len__, "()");
     Py_ssize_t len;
 
@@ -5129,8 +5132,6 @@ static int
 slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 {
     PyObject *res;
-    _Py_IDENTIFIER(__delitem__);
-    _Py_IDENTIFIER(__setitem__);
 
     if (value == NULL)
         res = call_method(self, &PyId___delitem__, "(n)", index);
@@ -5180,8 +5181,6 @@ static int
 slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 {
     PyObject *res;
-    _Py_IDENTIFIER(__delitem__);
-    _Py_IDENTIFIER(__setitem__);
 
     if (value == NULL)
         res = call_method(self, &PyId___delitem__, "(O)", key);
@@ -5232,7 +5231,6 @@ slot_nb_bool(PyObject *self)
     PyObject *func, *args;
     int result = -1;
     int using_len = 0;
-    _Py_IDENTIFIER(__len__);
     _Py_IDENTIFIER(__bool__);
 
     func = lookup_maybe(self, &PyId___bool__);
