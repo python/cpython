@@ -186,11 +186,16 @@ iobase_close(PyObject *self, PyObject *args)
         Py_RETURN_NONE;
 
     res = PyObject_CallMethodObjArgs(self, _PyIO_str_flush, NULL);
-    _PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True);
-    if (res == NULL) {
+
+    if (_PyObject_SetAttrId(self, &PyId___IOBase_closed, Py_True) < 0) {
+        Py_XDECREF(res);
         return NULL;
     }
-    Py_XDECREF(res);
+
+    if (res == NULL)
+        return NULL;
+
+    Py_DECREF(res);
     Py_RETURN_NONE;
 }
 
