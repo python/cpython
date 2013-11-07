@@ -48,6 +48,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def _socketpair(self):
         return socket.socketpair()
 
+    def close(self):
+        for sig in list(self._signal_handlers):
+            self.remove_signal_handler(sig)
+        super().close()
+
     def add_signal_handler(self, sig, callback, *args):
         """Add a handler for a signal.  UNIX only.
 
