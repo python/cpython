@@ -64,6 +64,9 @@ Library
 - Issue #19286: Directories in ``package_data`` are no longer added to
   the filelist, preventing failure outlined in the ticket.
 
+- Issue #19480: HTMLParser now accepts all valid start-tag names as defined
+  by the HTML5 standard.
+
 - Issue #15114: The html.parser module now raises a DeprecationWarning when the
   strict argument of HTMLParser or the HTMLParser.error method are used.
 
