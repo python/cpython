@@ -50,6 +50,7 @@ _Py_IDENTIFIER(ps2);
 _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
+_Py_static_string(PyId_string, "<string>");
 
 #ifdef Py_REF_DEBUG
 static
@@ -1625,8 +1626,8 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
 }
 
 static int
-parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
-                   int *lineno, int *offset, const char **text)
+parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
+                   int *lineno, int *offset, PyObject **text)
 {
     long hold;
     PyObject *v;
@@ -1637,6 +1638,7 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
     _Py_IDENTIFIER(text);
 
     *message = NULL;
+    *filename = NULL;
 
     /* new style errors.  `err' is an instance */
     *message = _PyObject_GetAttrId(err, &PyId_msg);
@@ -1648,13 +1650,13 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
         goto finally;
     if (v == Py_None) {
         Py_DECREF(v);
-        *filename = NULL;
+        *filename = _PyUnicode_FromId(&PyId_string);
+        if (*filename == NULL)
+            goto finally;
+        Py_INCREF(*filename);
     }
     else {
-        *filename = _PyUnicode_AsString(v);
-        Py_DECREF(v);
-        if (!*filename)
-            goto finally;
+        *filename = v;
     }
 
     v = _PyObject_GetAttrId(err, &PyId_lineno);
@@ -1688,15 +1690,13 @@ parse_syntax_error(PyObject *err, PyObject **message, const char **filename,
         *text = NULL;
     }
     else {
-        *text = _PyUnicode_AsString(v);
-        Py_DECREF(v);
-        if (!*text)
-            goto finally;
+        *text = v;
     }
     return 1;
 
 finally:
     Py_XDECREF(*message);
+    Py_XDECREF(*filename);
     return 0;
 }
 
@@ -1707,9 +1707,15 @@ PyErr_Print(void)
 }
 
 static void
-print_error_text(PyObject *f, int offset, const char *text)
+print_error_text(PyObject *f, int offset, PyObject *text_obj)
 {
+    char *text;
     char *nl;
+
+    text = _PyUnicode_AsString(text_obj);
+    if (text == NULL)
+        return;
+
     if (offset >= 0) {
         if (offset > 0 && offset == strlen(text) && text[offset - 1] == '\n')
             offset--;
@@ -1880,27 +1886,30 @@ print_exception(PyObject *f, PyObject *value)
     if (err == 0 &&
         _PyObject_HasAttrId(value, &PyId_print_file_and_line))
     {
-        PyObject *message;
-        const char *filename, *text;
+        PyObject *message, *filename, *text;
         int lineno, offset;
         if (!parse_syntax_error(value, &message, &filename,
                                 &lineno, &offset, &text))
             PyErr_Clear();
         else {
-            char buf[10];
-            PyFile_WriteString("  File \"", f);
-            if (filename == NULL)
-                PyFile_WriteString("<string>", f);
-            else
-                PyFile_WriteString(filename, f);
-            PyFile_WriteString("\", line ", f);
-            PyOS_snprintf(buf, sizeof(buf), "%d", lineno);
-            PyFile_WriteString(buf, f);
-            PyFile_WriteString("\n", f);
-            if (text != NULL)
-                print_error_text(f, offset, text);
+            PyObject *line;
+
             Py_DECREF(value);
             value = message;
+
+            line = PyUnicode_FromFormat("  File \"%U\", line %d\n",
+                                          filename, lineno);
+            Py_DECREF(filename);
+            if (line != NULL) {
+                PyFile_WriteObject(line, f, Py_PRINT_RAW);
+                Py_DECREF(line);
+            }
+
+            if (text != NULL) {
+                print_error_text(f, offset, text);
+                Py_DECREF(text);
+            }
+
             /* Can't be bothered to check all those
                PyFile_WriteString() calls */
             if (PyErr_Occurred())
@@ -2061,7 +2070,6 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     PyObject *ret = NULL;
     mod_ty mod;
     PyArena *arena;
-    _Py_static_string(PyId_string, "<string>");
     PyObject *filename;
 
     filename = _PyUnicode_FromId(&PyId_string); /* borrowed */
