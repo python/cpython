@@ -144,8 +144,9 @@ PyFloat_FromString(PyObject *v)
         }
     }
     else if (PyObject_AsCharBuffer(v, &s, &len)) {
-        PyErr_SetString(PyExc_TypeError,
-            "float() argument must be a string or a number");
+        PyErr_Format(PyExc_TypeError,
+            "float() argument must be a string or a number, not '%.200s'",
+            Py_TYPE(v)->tp_name);
         return NULL;
     }
     last = s + len;
