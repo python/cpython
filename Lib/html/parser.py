@@ -23,16 +23,16 @@ charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 starttagopen = re.compile('<[a-zA-Z]')
 piclose = re.compile('>')
 commentclose = re.compile(r'--\s*>')
-tagfind = re.compile('([a-zA-Z][-.a-zA-Z0-9:_]*)(?:\s|/(?!>))*')
-# see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
-# and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
-tagfind_tolerant = re.compile('[a-zA-Z][^\t\n\r\f />\x00]*')
 # Note:
 #  1) the strict attrfind isn't really strict, but we can't make it
 #     correctly strict without breaking backward compatibility;
-#  2) if you change attrfind remember to update locatestarttagend too;
-#  3) if you change attrfind and/or locatestarttagend the parser will
+#  2) if you change tagfind/attrfind remember to update locatestarttagend too;
+#  3) if you change tagfind/attrfind and/or locatestarttagend the parser will
 #     explode, so don't do it.
+tagfind = re.compile('([a-zA-Z][-.a-zA-Z0-9:_]*)(?:\s|/(?!>))*')
+# see http://www.w3.org/TR/html5/tokenization.html#tag-open-state
+# and http://www.w3.org/TR/html5/tokenization.html#tag-name-state
+tagfind_tolerant = re.compile('([a-zA-Z][^\t\n\r\f />\x00]*)(?:\s|/(?!>))*')
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-.:a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[^\s"\'=<>`]*))?')
@@ -54,7 +54,7 @@ locatestarttagend = re.compile(r"""
   \s*                                # trailing whitespace
 """, re.VERBOSE)
 locatestarttagend_tolerant = re.compile(r"""
-  <[a-zA-Z][-.a-zA-Z0-9:_]*          # tag name
+  <[a-zA-Z][^\t\n\r\f />\x00]*       # tag name
   (?:[\s/]*                          # optional whitespace before attribute name
     (?:(?<=['"\s/])[^\s/>][^\s/=>]*  # attribute name
       (?:\s*=+\s*                    # value indicator
@@ -328,7 +328,10 @@ class HTMLParser(_markupbase.ParserBase):
 
         # Now parse the data between i+1 and j into a tag and attrs
         attrs = []
-        match = tagfind.match(rawdata, i+1)
+        if self.strict:
+            match = tagfind.match(rawdata, i+1)
+        else:
+            match = tagfind_tolerant.match(rawdata, i+1)
         assert match, 'unexpected call to parse_starttag()'
         k = match.end()
         self.lasttag = tag = match.group(1).lower()
@@ -440,7 +443,7 @@ class HTMLParser(_markupbase.ParserBase):
                     return i+3
                 else:
                     return self.parse_bogus_comment(i)
-            tagname = namematch.group().lower()
+            tagname = namematch.group(1).lower()
             # consume and ignore other stuff between the name and the >
             # Note: this is not 100% correct, since we might have things like
             # </tag attr=">">, but looking for > after tha name should cover

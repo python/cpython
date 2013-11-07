@@ -229,6 +229,11 @@ text
         self._parse_error("<a foo='bar")
         self._parse_error("<a foo='>'")
         self._parse_error("<a foo='>")
+        self._parse_error("<a$>")
+        self._parse_error("<a$b>")
+        self._parse_error("<a$b/>")
+        self._parse_error("<a$b  >")
+        self._parse_error("<a$b  />")
 
     def test_valid_doctypes(self):
         # from http://www.w3.org/QA/2002/04/valid-dtd-list.html
@@ -368,8 +373,8 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
                             ('starttag', 'html', [('<html', None)]),
                             ('data', 'te>>xt'),
                             ('entityref', 'a'),
-                            ('data', '<<bc'),
-                            ('endtag', 'a'),
+                            ('data', '<'),
+                            ('starttag', 'bc<', [('a', None)]),
                             ('endtag', 'html'),
                             ('data', '\n<img src="URL>'),
                             ('comment', '/img'),
@@ -380,8 +385,7 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check("</$>", [('comment', '$')])
         self._run_check("</", [('data', '</')])
         self._run_check("</a", [('data', '</a')])
-        # XXX this might be wrong
-        self._run_check("<a<a>", [('data', '<a'), ('starttag', 'a', [])])
+        self._run_check("<a<a>", [('starttag', 'a<a', [])])
         self._run_check("</a<a>", [('endtag', 'a<a')])
         self._run_check("<!", [('data', '<!')])
         self._run_check("<a", [('data', '<a')])
@@ -389,6 +393,11 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         self._run_check("<a foo='bar", [('data', "<a foo='bar")])
         self._run_check("<a foo='>'", [('data', "<a foo='>'")])
         self._run_check("<a foo='>", [('data', "<a foo='>")])
+        self._run_check("<a$>", [('starttag', 'a$', [])])
+        self._run_check("<a$b>", [('starttag', 'a$b', [])])
+        self._run_check("<a$b/>", [('startendtag', 'a$b', [])])
+        self._run_check("<a$b  >", [('starttag', 'a$b', [])])
+        self._run_check("<a$b  />", [('startendtag', 'a$b', [])])
 
     def test_slashes_in_starttag(self):
         self._run_check('<a foo="var"/>', [('startendtag', 'a', [('foo', 'var')])])
