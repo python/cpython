@@ -773,8 +773,9 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
             goto error;
     }
     else if (PyObject_AsCharBuffer(v, &s, &len)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "complex() argument must be a string or a number");
+        PyErr_Format(PyExc_TypeError,
+            "complex() argument must be a string or a number, not '%.200s'",
+            Py_TYPE(v)->tp_name);
         return NULL;
     }
 
@@ -953,8 +954,9 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         nbi = i->ob_type->tp_as_number;
     if (nbr == NULL || nbr->nb_float == NULL ||
         ((i != NULL) && (nbi == NULL || nbi->nb_float == NULL))) {
-        PyErr_SetString(PyExc_TypeError,
-                   "complex() argument must be a string or a number");
+        PyErr_Format(PyExc_TypeError,
+            "complex() argument must be a string or a number, not '%.200s'",
+            Py_TYPE(r)->tp_name);
         if (own_r) {
             Py_DECREF(r);
         }
