@@ -41,6 +41,8 @@
 #endif
 #endif
 
+_Py_IDENTIFIER(cursor);
+
 static int pysqlite_connection_set_isolation_level(pysqlite_Connection* self, PyObject* isolation_level);
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 
@@ -1279,7 +1281,6 @@ PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args,
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
-    _Py_IDENTIFIER(cursor);
 
     cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
@@ -1309,7 +1310,6 @@ PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* a
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
-    _Py_IDENTIFIER(cursor);
 
     cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
@@ -1339,7 +1339,6 @@ PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject*
     PyObject* cursor = 0;
     PyObject* result = 0;
     PyObject* method = 0;
-    _Py_IDENTIFIER(cursor);
 
     cursor = _PyObject_CallMethodId((PyObject*)self, &PyId_cursor, "");
     if (!cursor) {
