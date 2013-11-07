@@ -32,9 +32,19 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* set by initfsencoding() */
 int Py_HasFileSystemDefaultEncoding = 0;
 #endif
 
+_Py_IDENTIFIER(__builtins__);
+_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__prepare__);
+_Py_IDENTIFIER(__round__);
+_Py_IDENTIFIER(encoding);
+_Py_IDENTIFIER(errors);
 _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(flush);
-_Py_IDENTIFIER(__builtins__);
+_Py_IDENTIFIER(metaclass);
+_Py_IDENTIFIER(sort);
+_Py_IDENTIFIER(stdin);
+_Py_IDENTIFIER(stdout);
+_Py_IDENTIFIER(stderr);
 
 static PyObject *
 builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
@@ -43,8 +53,6 @@ builtin___build_class__(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *cls = NULL;
     Py_ssize_t nargs;
     int isclass;
-    _Py_IDENTIFIER(__prepare__);
-    _Py_IDENTIFIER(metaclass);
 
     assert(args != NULL);
     if (!PyTuple_Check(args)) {
@@ -1547,7 +1555,6 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
     static PyObject *dummy_args;
     PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
     int i, err;
-    _Py_IDENTIFIER(flush);
 
     if (dummy_args == NULL && !(dummy_args = PyTuple_New(0)))
         return NULL;
@@ -1555,7 +1562,7 @@ builtin_print(PyObject *self, PyObject *args, PyObject *kwds)
                                      kwlist, &sep, &end, &file, &flush))
         return NULL;
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetObjectId(&_PyId_stdout);
+        file = _PySys_GetObjectId(&PyId_stdout);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
             return NULL;
@@ -1640,9 +1647,9 @@ static PyObject *
 builtin_input(PyObject *self, PyObject *args)
 {
     PyObject *promptarg = NULL;
-    PyObject *fin = _PySys_GetObjectId(&_PyId_stdin);
-    PyObject *fout = _PySys_GetObjectId(&_PyId_stdout);
-    PyObject *ferr = _PySys_GetObjectId(&_PyId_stderr);
+    PyObject *fin = _PySys_GetObjectId(&PyId_stdin);
+    PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
+    PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
     PyObject *tmp;
     long fd;
     int tty;
@@ -1713,8 +1720,6 @@ builtin_input(PyObject *self, PyObject *args)
         char *stdin_encoding_str, *stdin_errors_str;
         PyObject *result;
         size_t len;
-        _Py_IDENTIFIER(encoding);
-        _Py_IDENTIFIER(errors);
 
         stdin_encoding = _PyObject_GetAttrId(fin, &PyId_encoding);
         stdin_errors = _PyObject_GetAttrId(fin, &PyId_errors);
@@ -1843,7 +1848,6 @@ builtin_round(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *ndigits = NULL;
     static char *kwlist[] = {"number", "ndigits", 0};
     PyObject *number, *round, *result;
-    _Py_IDENTIFIER(__round__);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:round",
                                      kwlist, &number, &ndigits))
@@ -1886,7 +1890,6 @@ builtin_sorted(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *callable;
     static char *kwlist[] = {"iterable", "key", "reverse", 0};
     int reverse;
-    _Py_IDENTIFIER(sort);
 
     /* args 1-3 should match listsort in Objects/listobject.c */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oi:sorted",
@@ -1939,7 +1942,6 @@ builtin_vars(PyObject *self, PyObject *args)
         Py_INCREF(d);
     }
     else {
-        _Py_IDENTIFIER(__dict__);
         d = _PyObject_GetAttrId(v, &PyId___dict__);
         if (d == NULL) {
             PyErr_SetString(PyExc_TypeError,

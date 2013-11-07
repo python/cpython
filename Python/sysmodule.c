@@ -41,6 +41,16 @@ extern const char *PyWin_DLLVersionString;
 #include <langinfo.h>
 #endif
 
+_Py_IDENTIFIER(_);
+_Py_IDENTIFIER(__sizeof__);
+_Py_IDENTIFIER(buffer);
+_Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(encoding);
+_Py_IDENTIFIER(path);
+_Py_IDENTIFIER(stdout);
+_Py_IDENTIFIER(stderr);
+_Py_IDENTIFIER(write);
+
 PyObject *
 _PySys_GetObjectId(_Py_Identifier *key)
 {
@@ -104,8 +114,6 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
     char *stdout_encoding_str;
     int ret;
-    _Py_IDENTIFIER(encoding);
-    _Py_IDENTIFIER(buffer);
 
     stdout_encoding = _PyObject_GetAttrId(outf, &PyId_encoding);
     if (stdout_encoding == NULL)
@@ -126,7 +134,6 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
 
     buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
     if (buffer) {
-        _Py_IDENTIFIER(write);
         result = _PyObject_CallMethodId(buffer, &PyId_write, "(O)", encoded);
         Py_DECREF(buffer);
         Py_DECREF(encoded);
@@ -165,8 +172,6 @@ sys_displayhook(PyObject *self, PyObject *o)
     PyObject *builtins;
     static PyObject *newline = NULL;
     int err;
-    _Py_IDENTIFIER(_);
-    _Py_IDENTIFIER(builtins);
 
     builtins = _PyDict_GetItemId(modules, &PyId_builtins);
     if (builtins == NULL) {
@@ -183,7 +188,7 @@ sys_displayhook(PyObject *self, PyObject *o)
     }
     if (_PyObject_SetAttrId(builtins, &PyId__, Py_None) != 0)
         return NULL;
-    outf = _PySys_GetObjectId(&_PyId_stdout);
+    outf = _PySys_GetObjectId(&PyId_stdout);
     if (outf == NULL || outf == Py_None) {
         PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
         return NULL;
@@ -854,7 +859,6 @@ sys_getsizeof(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"object", "default", 0};
     PyObject *o, *dflt = NULL;
     PyObject *method;
-    _Py_IDENTIFIER(__sizeof__);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:getsizeof",
                                      kwlist, &o, &dflt))
@@ -1825,7 +1829,7 @@ PySys_SetPath(const wchar_t *path)
     PyObject *v;
     if ((v = makepathobject(path, DELIM)) == NULL)
         Py_FatalError("can't create sys.path");
-    if (_PySys_SetObjectId(&_PyId_path, v) != 0)
+    if (_PySys_SetObjectId(&PyId_path, v) != 0)
         Py_FatalError("can't assign sys.path");
     Py_DECREF(v);
 }
@@ -1894,7 +1898,7 @@ sys_update_path(int argc, wchar_t **argv)
     wchar_t fullpath[MAX_PATH];
 #endif
 
-    path = _PySys_GetObjectId(&_PyId_path);
+    path = _PySys_GetObjectId(&PyId_path);
     if (path == NULL)
         return;
 
@@ -2004,7 +2008,6 @@ sys_pyfile_write_unicode(PyObject *unicode, PyObject *file)
 {
     PyObject *writer = NULL, *args = NULL, *result = NULL;
     int err;
-    _Py_IDENTIFIER(write);
 
     if (file == NULL)
         return -1;
@@ -2109,7 +2112,7 @@ PySys_WriteStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_write(&_PyId_stdout, stdout, format, va);
+    sys_write(&PyId_stdout, stdout, format, va);
     va_end(va);
 }
 
@@ -2119,7 +2122,7 @@ PySys_WriteStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_write(&_PyId_stderr, stderr, format, va);
+    sys_write(&PyId_stderr, stderr, format, va);
     va_end(va);
 }
 
@@ -2151,7 +2154,7 @@ PySys_FormatStdout(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format(&_PyId_stdout, stdout, format, va);
+    sys_format(&PyId_stdout, stdout, format, va);
     va_end(va);
 }
 
@@ -2161,6 +2164,6 @@ PySys_FormatStderr(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    sys_format(&_PyId_stderr, stderr, format, va);
+    sys_format(&PyId_stderr, stderr, format, va);
     va_end(va);
 }

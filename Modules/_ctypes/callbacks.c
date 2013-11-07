@@ -80,7 +80,7 @@ static void
 PrintError(char *msg, ...)
 {
     char buf[512];
-    PyObject *f = _PySys_GetObjectId(&_PyId_stderr);
+    PyObject *f = PySys_GetObject("stderr");
     va_list marker;
 
     va_start(marker, msg);

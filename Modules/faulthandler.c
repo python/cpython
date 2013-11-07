@@ -26,6 +26,11 @@
    (anyway, the length is smaller than 30 characters) */
 #define PUTS(fd, str) write(fd, str, (int)strlen(str))
 
+_Py_IDENTIFIER(enable);
+_Py_IDENTIFIER(fileno);
+_Py_IDENTIFIER(flush);
+_Py_IDENTIFIER(stderr);
+
 #ifdef HAVE_SIGACTION
 typedef struct sigaction _Py_sighandler_t;
 #else
@@ -130,13 +135,11 @@ static PyObject*
 faulthandler_get_fileno(PyObject *file, int *p_fd)
 {
     PyObject *result;
-    _Py_IDENTIFIER(fileno);
-    _Py_IDENTIFIER(flush);
     long fd_long;
     int fd;
 
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetObjectId(&_PyId_stderr);
+        file = _PySys_GetObjectId(&PyId_stderr);
         if (file == NULL) {
             PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return NULL;
@@ -1047,7 +1050,6 @@ static int
 faulthandler_env_options(void)
 {
     PyObject *xoptions, *key, *module, *res;
-    _Py_IDENTIFIER(enable);
     char *p;
 
     if (!((p = Py_GETENV("PYTHONFAULTHANDLER")) && *p != '\0')) {

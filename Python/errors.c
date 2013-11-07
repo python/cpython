@@ -20,6 +20,9 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(stderr);
+
 
 void
 PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
@@ -844,7 +847,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 
     PyErr_Fetch(&t, &v, &tb);
 
-    f = _PySys_GetObjectId(&_PyId_stderr);
+    f = _PySys_GetObjectId(&PyId_stderr);
     if (f == NULL || f == Py_None)
         goto done;
 
@@ -878,7 +881,7 @@ PyErr_WriteUnraisable(PyObject *obj)
             goto done;
     }
     else {
-        if (_PyUnicode_CompareWithId(moduleName, &_PyId_builtins) != 0) {
+        if (_PyUnicode_CompareWithId(moduleName, &PyId_builtins) != 0) {
             if (PyFile_WriteObject(moduleName, f, Py_PRINT_RAW) < 0)
                 goto done;
             if (PyFile_WriteString(".", f) < 0)
