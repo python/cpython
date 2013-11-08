@@ -1,6 +1,8 @@
+from .. import util
 from . import util as source_util
 
-from importlib import _bootstrap
+machinery = util.import_importlib('importlib.machinery')
+
 import codecs
 import re
 import sys
@@ -13,7 +15,7 @@ import unittest
 CODING_RE = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 
 
-class EncodingTest(unittest.TestCase):
+class EncodingTest:
 
     """PEP 3120 makes UTF-8 the default encoding for source code
     [default encoding].
@@ -35,7 +37,7 @@ class EncodingTest(unittest.TestCase):
         with source_util.create_modules(self.module_name) as mapping:
             with open(mapping[self.module_name], 'wb') as file:
                 file.write(source)
-            loader = _bootstrap.SourceFileLoader(self.module_name,
+            loader = self.machinery.SourceFileLoader(self.module_name,
                                                   mapping[self.module_name])
             return loader.load_module(self.module_name)
 
@@ -84,8 +86,10 @@ class EncodingTest(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             self.run_test(source)
 
+Frozen_EncodingTest, Source_EncodingTest = util.test_both(EncodingTest, machinery=machinery)
 
-class LineEndingTest(unittest.TestCase):
+
+class LineEndingTest:
 
     r"""Source written with the three types of line endings (\n, \r\n, \r)
     need to be readable [cr][crlf][lf]."""
@@ -97,7 +101,7 @@ class LineEndingTest(unittest.TestCase):
         with source_util.create_modules(module_name) as mapping:
             with open(mapping[module_name], 'wb') as file:
                 file.write(source)
-            loader = _bootstrap.SourceFileLoader(module_name,
+            loader = self.machinery.SourceFileLoader(module_name,
                                                  mapping[module_name])
             return loader.load_module(module_name)
 
@@ -113,11 +117,9 @@ class LineEndingTest(unittest.TestCase):
     def test_lf(self):
         self.run_test(b'\n')
 
+Frozen_LineEndings, Source_LineEndings = util.test_both(LineEndingTest, machinery=machinery)
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(EncodingTest, LineEndingTest)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

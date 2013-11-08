@@ -1,7 +1,9 @@
 from .. import abc
+from .. import util
 from . import util as source_util
 
-from importlib import machinery
+machinery = util.import_importlib('importlib.machinery')
+
 import errno
 import os
 import py_compile
@@ -13,7 +15,7 @@ import unittest
 import warnings
 
 
-class FinderTests(unittest.TestCase, abc.FinderTests):
+class FinderTests(abc.FinderTests):
 
     """For a top-level module, it should just be found directly in the
     directory being searched. This is true for a directory with source
@@ -38,11 +40,11 @@ class FinderTests(unittest.TestCase, abc.FinderTests):
     """
 
     def get_finder(self, root):
-        loader_details = [(machinery.SourceFileLoader,
-                            machinery.SOURCE_SUFFIXES),
-                          (machinery.SourcelessFileLoader,
-                            machinery.BYTECODE_SUFFIXES)]
-        return machinery.FileFinder(root, *loader_details)
+        loader_details = [(self.machinery.SourceFileLoader,
+                            self.machinery.SOURCE_SUFFIXES),
+                          (self.machinery.SourcelessFileLoader,
+                            self.machinery.BYTECODE_SUFFIXES)]
+        return self.machinery.FileFinder(root, *loader_details)
 
     def import_(self, root, module):
         return self.get_finder(root).find_module(module)
@@ -123,8 +125,8 @@ class FinderTests(unittest.TestCase, abc.FinderTests):
 
     def test_empty_string_for_dir(self):
         # The empty string from sys.path means to search in the cwd.
-        finder = machinery.FileFinder('', (machinery.SourceFileLoader,
-            machinery.SOURCE_SUFFIXES))
+        finder = self.machinery.FileFinder('', (self.machinery.SourceFileLoader,
+            self.machinery.SOURCE_SUFFIXES))
         with open('mod.py', 'w') as file:
             file.write("# test file for importlib")
         try:
@@ -135,8 +137,8 @@ class FinderTests(unittest.TestCase, abc.FinderTests):
 
     def test_invalidate_caches(self):
         # invalidate_caches() should reset the mtime.
-        finder = machinery.FileFinder('', (machinery.SourceFileLoader,
-            machinery.SOURCE_SUFFIXES))
+        finder = self.machinery.FileFinder('', (self.machinery.SourceFileLoader,
+            self.machinery.SOURCE_SUFFIXES))
         finder._path_mtime = 42
         finder.invalidate_caches()
         self.assertEqual(finder._path_mtime, -1)
@@ -180,11 +182,9 @@ class FinderTests(unittest.TestCase, abc.FinderTests):
             finder = self.get_finder(file_obj.name)
             self.assertEqual((None, []), finder.find_loader('doesnotexist'))
 
+Frozen_FinderTests, Source_FinderTests = util.test_both(FinderTests, machinery=machinery)
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(FinderTests)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
