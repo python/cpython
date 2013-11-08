@@ -3108,6 +3108,7 @@ dec_strdup(const char *src, Py_ssize_t size)
 {
     char *dest = PyMem_Malloc(size+1);
     if (dest == NULL) {
+        PyErr_NoMemory();
         return NULL;
     }
 
@@ -3186,7 +3187,6 @@ dec_format(PyObject *dec, PyObject *args)
             replace_fillchar = 1;
             fmt = dec_strdup(fmt, size);
             if (fmt == NULL) {
-                PyErr_NoMemory();
                 return NULL;
             }
             fmt[0] = '_';
