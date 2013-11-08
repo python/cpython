@@ -15,6 +15,4 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--builtin', action='store_true', default=False,
                         help='use builtins.__import__() instead of importlib')
     args = parser.parse_args()
-    if args.builtin:
-        util.using___import__ = True
     test_main()

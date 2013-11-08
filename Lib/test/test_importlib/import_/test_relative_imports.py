@@ -4,7 +4,7 @@ from . import util as import_util
 import sys
 import unittest
 
-class RelativeImports(unittest.TestCase):
+class RelativeImports:
 
     """PEP 328 introduced relative imports. This allows for imports to occur
     from within a package without having to specify the actual package name.
@@ -76,8 +76,8 @@ class RelativeImports(unittest.TestCase):
         create = 'pkg.__init__', 'pkg.mod2'
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.mod1'}
         def callback(global_):
-            import_util.import_('pkg')  # For __import__().
-            module = import_util.import_('', global_, fromlist=['mod2'], level=1)
+            self.__import__('pkg')  # For __import__().
+            module = self.__import__('', global_, fromlist=['mod2'], level=1)
             self.assertEqual(module.__name__, 'pkg')
             self.assertTrue(hasattr(module, 'mod2'))
             self.assertEqual(module.mod2.attr, 'pkg.mod2')
@@ -88,8 +88,8 @@ class RelativeImports(unittest.TestCase):
         create = 'pkg.__init__', 'pkg.mod2'
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.mod1'}
         def callback(global_):
-            import_util.import_('pkg')  # For __import__().
-            module = import_util.import_('mod2', global_, fromlist=['attr'],
+            self.__import__('pkg')  # For __import__().
+            module = self.__import__('mod2', global_, fromlist=['attr'],
                                             level=1)
             self.assertEqual(module.__name__, 'pkg.mod2')
             self.assertEqual(module.attr, 'pkg.mod2')
@@ -101,8 +101,8 @@ class RelativeImports(unittest.TestCase):
         globals_ = ({'__package__': 'pkg'},
                     {'__name__': 'pkg', '__path__': ['blah']})
         def callback(global_):
-            import_util.import_('pkg')  # For __import__().
-            module = import_util.import_('', global_, fromlist=['module'],
+            self.__import__('pkg')  # For __import__().
+            module = self.__import__('', global_, fromlist=['module'],
                              level=1)
             self.assertEqual(module.__name__, 'pkg')
             self.assertTrue(hasattr(module, 'module'))
@@ -114,8 +114,8 @@ class RelativeImports(unittest.TestCase):
         create = 'pkg.__init__', 'pkg.module'
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.module'}
         def callback(global_):
-            import_util.import_('pkg')  # For __import__().
-            module = import_util.import_('', global_, fromlist=['attr'], level=1)
+            self.__import__('pkg')  # For __import__().
+            module = self.__import__('', global_, fromlist=['attr'], level=1)
             self.assertEqual(module.__name__, 'pkg')
         self.relative_import_test(create, globals_, callback)
 
@@ -126,7 +126,7 @@ class RelativeImports(unittest.TestCase):
         globals_ =  ({'__package__': 'pkg.subpkg1'},
                      {'__name__': 'pkg.subpkg1', '__path__': ['blah']})
         def callback(global_):
-            module = import_util.import_('', global_, fromlist=['subpkg2'],
+            module = self.__import__('', global_, fromlist=['subpkg2'],
                                             level=2)
             self.assertEqual(module.__name__, 'pkg')
             self.assertTrue(hasattr(module, 'subpkg2'))
@@ -142,8 +142,8 @@ class RelativeImports(unittest.TestCase):
                     {'__name__': 'pkg.pkg1.pkg2.pkg3.pkg4.pkg5',
                         '__path__': ['blah']})
         def callback(global_):
-            import_util.import_(globals_[0]['__package__'])
-            module = import_util.import_('', global_, fromlist=['attr'], level=6)
+            self.__import__(globals_[0]['__package__'])
+            module = self.__import__('', global_, fromlist=['attr'], level=6)
             self.assertEqual(module.__name__, 'pkg')
         self.relative_import_test(create, globals_, callback)
 
@@ -153,9 +153,9 @@ class RelativeImports(unittest.TestCase):
         globals_ = ({'__package__': 'pkg'},
                     {'__name__': 'pkg', '__path__': ['blah']})
         def callback(global_):
-            import_util.import_('pkg')
+            self.__import__('pkg')
             with self.assertRaises(ValueError):
-                import_util.import_('', global_, fromlist=['top_level'],
+                self.__import__('', global_, fromlist=['top_level'],
                                     level=2)
         self.relative_import_test(create, globals_, callback)
 
@@ -164,16 +164,16 @@ class RelativeImports(unittest.TestCase):
         create = ['top_level', 'pkg.__init__', 'pkg.module']
         globals_ = {'__package__': 'pkg'}, {'__name__': 'pkg.module'}
         def callback(global_):
-            import_util.import_('pkg')
+            self.__import__('pkg')
             with self.assertRaises(ValueError):
-                import_util.import_('', global_, fromlist=['top_level'],
+                self.__import__('', global_, fromlist=['top_level'],
                                     level=2)
         self.relative_import_test(create, globals_, callback)
 
     def test_empty_name_w_level_0(self):
         # [empty name]
         with self.assertRaises(ValueError):
-            import_util.import_('')
+            self.__import__('')
 
     def test_import_from_different_package(self):
         # Test importing from a different package than the caller.
@@ -186,8 +186,8 @@ class RelativeImports(unittest.TestCase):
                     '__runpy_pkg__.uncle.cousin.nephew']
         globals_ = {'__package__': '__runpy_pkg__.__runpy_pkg__'}
         def callback(global_):
-            import_util.import_('__runpy_pkg__.__runpy_pkg__')
-            module = import_util.import_('uncle.cousin', globals_, {},
+            self.__import__('__runpy_pkg__.__runpy_pkg__')
+            module = self.__import__('uncle.cousin', globals_, {},
                                     fromlist=['nephew'],
                                 level=2)
             self.assertEqual(module.__name__, '__runpy_pkg__.uncle.cousin')
@@ -198,20 +198,19 @@ class RelativeImports(unittest.TestCase):
         create = ['crash.__init__', 'crash.mod']
         globals_ = [{'__package__': 'crash', '__name__': 'crash'}]
         def callback(global_):
-            import_util.import_('crash')
-            mod = import_util.import_('mod', global_, {}, [], 1)
+            self.__import__('crash')
+            mod = self.__import__('mod', global_, {}, [], 1)
             self.assertEqual(mod.__name__, 'crash.mod')
         self.relative_import_test(create, globals_, callback)
 
     def test_relative_import_no_globals(self):
         # No globals for a relative import is an error.
         with self.assertRaises(KeyError):
-            import_util.import_('sys', level=1)
+            self.__import__('sys', level=1)
 
+Frozen_RelativeImports, Source_RelativeImports = util.test_both(
+        RelativeImports, __import__=import_util.__import__)
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(RelativeImports)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

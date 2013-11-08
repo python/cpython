@@ -3,7 +3,8 @@ from .. import util
 from . import util as import_util
 import unittest
 
-class ReturnValue(unittest.TestCase):
+
+class ReturnValue:
 
     """The use of fromlist influences what import returns.
 
@@ -18,18 +19,21 @@ class ReturnValue(unittest.TestCase):
         # [import return]
         with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = import_util.import_('pkg.module')
+                module = self.__import__('pkg.module')
                 self.assertEqual(module.__name__, 'pkg')
 
     def test_return_from_from_import(self):
         # [from return]
         with util.mock_modules('pkg.__init__', 'pkg.module')as importer:
             with util.import_state(meta_path=[importer]):
-                module = import_util.import_('pkg.module', fromlist=['attr'])
+                module = self.__import__('pkg.module', fromlist=['attr'])
                 self.assertEqual(module.__name__, 'pkg.module')
 
+Frozen_ReturnValue, Source_ReturnValue = util.test_both(
+        ReturnValue, __import__=import_util.__import__)
 
-class HandlingFromlist(unittest.TestCase):
+
+class HandlingFromlist:
 
     """Using fromlist triggers different actions based on what is being asked
     of it.
@@ -48,14 +52,14 @@ class HandlingFromlist(unittest.TestCase):
         # [object case]
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = import_util.import_('module', fromlist=['attr'])
+                module = self.__import__('module', fromlist=['attr'])
                 self.assertEqual(module.__name__, 'module')
 
     def test_nonexistent_object(self):
         # [bad object]
         with util.mock_modules('module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = import_util.import_('module', fromlist=['non_existent'])
+                module = self.__import__('module', fromlist=['non_existent'])
                 self.assertEqual(module.__name__, 'module')
                 self.assertTrue(not hasattr(module, 'non_existent'))
 
@@ -63,7 +67,7 @@ class HandlingFromlist(unittest.TestCase):
         # [module]
         with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
-                module = import_util.import_('pkg', fromlist=['module'])
+                module = self.__import__('pkg', fromlist=['module'])
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
@@ -78,13 +82,13 @@ class HandlingFromlist(unittest.TestCase):
                                module_code={'pkg.mod': module_code}) as importer:
             with util.import_state(meta_path=[importer]):
                 with self.assertRaises(ImportError) as exc:
-                    import_util.import_('pkg', fromlist=['mod'])
+                    self.__import__('pkg', fromlist=['mod'])
                 self.assertEqual('i_do_not_exist', exc.exception.name)
 
     def test_empty_string(self):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as importer:
             with util.import_state(meta_path=[importer]):
-                module = import_util.import_('pkg.mod', fromlist=[''])
+                module = self.__import__('pkg.mod', fromlist=[''])
                 self.assertEqual(module.__name__, 'pkg.mod')
 
     def basic_star_test(self, fromlist=['*']):
@@ -92,7 +96,7 @@ class HandlingFromlist(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module']
-                module = import_util.import_('pkg', fromlist=fromlist)
+                module = self.__import__('pkg', fromlist=fromlist)
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')
@@ -110,17 +114,16 @@ class HandlingFromlist(unittest.TestCase):
         with context as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module1']
-                module = import_util.import_('pkg', fromlist=['module2', '*'])
+                module = self.__import__('pkg', fromlist=['module2', '*'])
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module1'))
                 self.assertTrue(hasattr(module, 'module2'))
                 self.assertEqual(module.module1.__name__, 'pkg.module1')
                 self.assertEqual(module.module2.__name__, 'pkg.module2')
 
+Frozen_FromList, Source_FromList = util.test_both(
+        HandlingFromlist, __import__=import_util.__import__)
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(ReturnValue, HandlingFromlist)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
