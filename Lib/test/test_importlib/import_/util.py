@@ -1,22 +1,14 @@
+from .. import util
+
+frozen_importlib, source_importlib = util.import_importlib('importlib')
+
+import builtins
 import functools
 import importlib
 import unittest
 
 
-using___import__ = False
-
-
-def import_(*args, **kwargs):
-    """Delegate to allow for injecting different implementations of import."""
-    if using___import__:
-        return __import__(*args, **kwargs)
-    else:
-        return importlib.__import__(*args, **kwargs)
-
-
-def importlib_only(fxn):
-    """Decorator to skip a test if using __builtins__.__import__."""
-    return unittest.skipIf(using___import__, "importlib-specific test")(fxn)
+__import__ = staticmethod(builtins.__import__), staticmethod(source_importlib.__import__)
 
 
 def mock_path_hook(*entries, importer):

@@ -6,21 +6,21 @@ import importlib
 from test import support
 
 
-class ParentModuleTests(unittest.TestCase):
+class ParentModuleTests:
 
     """Importing a submodule should import the parent modules."""
 
     def test_import_parent(self):
         with util.mock_modules('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
-                module = import_util.import_('pkg.module')
+                module = self.__import__('pkg.module')
                 self.assertIn('pkg', sys.modules)
 
     def test_bad_parent(self):
         with util.mock_modules('pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 with self.assertRaises(ImportError) as cm:
-                    import_util.import_('pkg.module')
+                    self.__import__('pkg.module')
                 self.assertEqual(cm.exception.name, 'pkg')
 
     def test_raising_parent_after_importing_child(self):
@@ -32,11 +32,11 @@ class ParentModuleTests(unittest.TestCase):
         with mock:
             with util.import_state(meta_path=[mock]):
                 with self.assertRaises(ZeroDivisionError):
-                    import_util.import_('pkg')
+                    self.__import__('pkg')
                 self.assertNotIn('pkg', sys.modules)
                 self.assertIn('pkg.module', sys.modules)
                 with self.assertRaises(ZeroDivisionError):
-                    import_util.import_('pkg.module')
+                    self.__import__('pkg.module')
                 self.assertNotIn('pkg', sys.modules)
                 self.assertIn('pkg.module', sys.modules)
 
@@ -51,10 +51,10 @@ class ParentModuleTests(unittest.TestCase):
                 with self.assertRaises((ZeroDivisionError, ImportError)):
                     # This raises ImportError on the "from . import module"
                     # line, not sure why.
-                    import_util.import_('pkg')
+                    self.__import__('pkg')
                 self.assertNotIn('pkg', sys.modules)
                 with self.assertRaises((ZeroDivisionError, ImportError)):
-                    import_util.import_('pkg.module')
+                    self.__import__('pkg.module')
                 self.assertNotIn('pkg', sys.modules)
                 # XXX False
                 #self.assertIn('pkg.module', sys.modules)
@@ -71,10 +71,10 @@ class ParentModuleTests(unittest.TestCase):
                 with self.assertRaises((ZeroDivisionError, ImportError)):
                     # This raises ImportError on the "from ..subpkg import module"
                     # line, not sure why.
-                    import_util.import_('pkg.subpkg')
+                    self.__import__('pkg.subpkg')
                 self.assertNotIn('pkg.subpkg', sys.modules)
                 with self.assertRaises((ZeroDivisionError, ImportError)):
-                    import_util.import_('pkg.subpkg.module')
+                    self.__import__('pkg.subpkg.module')
                 self.assertNotIn('pkg.subpkg', sys.modules)
                 # XXX False
                 #self.assertIn('pkg.subpkg.module', sys.modules)
@@ -83,7 +83,7 @@ class ParentModuleTests(unittest.TestCase):
         # Try to import a submodule from a non-package should raise ImportError.
         assert not hasattr(sys, '__path__')
         with self.assertRaises(ImportError) as cm:
-            import_util.import_('sys.no_submodules_here')
+            self.__import__('sys.no_submodules_here')
         self.assertEqual(cm.exception.name, 'sys.no_submodules_here')
 
     def test_module_not_package_but_side_effects(self):
@@ -98,15 +98,13 @@ class ParentModuleTests(unittest.TestCase):
         with mock_modules as mock:
             with util.import_state(meta_path=[mock]):
                 try:
-                    submodule = import_util.import_(subname)
+                    submodule = self.__import__(subname)
                 finally:
                     support.unload(subname)
 
-
-def test_main():
-    from test.support import run_unittest
-    run_unittest(ParentModuleTests)
+Frozen_ParentTests, Source_ParentTests = util.test_both(
+        ParentModuleTests, __import__=import_util.__import__)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

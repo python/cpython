@@ -16,7 +16,7 @@ class LoaderMock:
         return self.module
 
 
-class LoaderAttributeTests(unittest.TestCase):
+class LoaderAttributeTests:
 
     def test___loader___missing(self):
         module = types.ModuleType('blah')
@@ -27,7 +27,7 @@ class LoaderAttributeTests(unittest.TestCase):
         loader = LoaderMock()
         loader.module = module
         with util.uncache('blah'), util.import_state(meta_path=[loader]):
-            module = import_util.import_('blah')
+            module = self.__import__('blah')
         self.assertEqual(loader, module.__loader__)
 
     def test___loader___is_None(self):
@@ -36,8 +36,12 @@ class LoaderAttributeTests(unittest.TestCase):
         loader = LoaderMock()
         loader.module = module
         with util.uncache('blah'), util.import_state(meta_path=[loader]):
-            returned_module = import_util.import_('blah')
+            returned_module = self.__import__('blah')
         self.assertEqual(loader, module.__loader__)
+
+
+Frozen_Tests, Source_Tests = util.test_both(LoaderAttributeTests,
+                                            __import__=import_util.__import__)
 
 
 if __name__ == '__main__':
