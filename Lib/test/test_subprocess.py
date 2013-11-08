@@ -11,6 +11,7 @@ import errno
 import tempfile
 import time
 import re
+import selectors
 import sysconfig
 import warnings
 import select
@@ -2179,15 +2180,16 @@ class CommandTests(unittest.TestCase):
                 os.rmdir(dir)
 
 
-@unittest.skipUnless(getattr(subprocess, '_has_poll', False),
-                     "poll system call not supported")
+@unittest.skipUnless(hasattr(selectors, 'PollSelector'),
+                     "Test needs selectors.PollSelector")
 class ProcessTestCaseNoPoll(ProcessTestCase):
     def setUp(self):
-        subprocess._has_poll = False
+        self.orig_selector = subprocess._PopenSelector
+        subprocess._PopenSelector = selectors.SelectSelector
         ProcessTestCase.setUp(self)
 
     def tearDown(self):
-        subprocess._has_poll = True
+        subprocess._PopenSelector = self.orig_selector
         ProcessTestCase.tearDown(self)
 
 
