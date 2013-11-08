@@ -3010,12 +3010,11 @@ convert_op_cmp(PyObject **vcmp, PyObject **wcmp, PyObject *v, PyObject *w,
         }
     }
     else {
-        int is_instance = PyObject_IsInstance(w, Rational);
-        if (is_instance < 0) {
+        int is_rational = PyObject_IsInstance(w, Rational);
+        if (is_rational < 0) {
             *wcmp = NULL;
-            return 0;
         }
-        if (is_instance) {
+        else if (is_rational > 0) {
             *wcmp = numerator_as_decimal(w, context);
             if (*wcmp && !mpd_isspecial(MPD(v))) {
                 *vcmp = multiply_by_denominator(v, w, context);
