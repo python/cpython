@@ -2,8 +2,9 @@
 from .. import util
 from . import util as source_util
 
-from importlib import _bootstrap
-from importlib import machinery
+importlib = util.import_importlib('importlib')
+machinery = util.import_importlib('importlib.machinery')
+
 import os
 import sys
 from test import support as test_support
@@ -11,7 +12,7 @@ import unittest
 
 
 @util.case_insensitive_tests
-class CaseSensitivityTest(unittest.TestCase):
+class CaseSensitivityTest:
 
     """PEP 235 dictates that on case-preserving, case-insensitive file systems
     that imports are case-sensitive unless the PYTHONCASEOK environment
@@ -21,11 +22,11 @@ class CaseSensitivityTest(unittest.TestCase):
     assert name != name.lower()
 
     def find(self, path):
-        finder = machinery.FileFinder(path,
-                                      (machinery.SourceFileLoader,
-                                            machinery.SOURCE_SUFFIXES),
-                                        (machinery.SourcelessFileLoader,
-                                            machinery.BYTECODE_SUFFIXES))
+        finder = self.machinery.FileFinder(path,
+                                      (self.machinery.SourceFileLoader,
+                                            self.machinery.SOURCE_SUFFIXES),
+                                        (self.machinery.SourcelessFileLoader,
+                                            self.machinery.BYTECODE_SUFFIXES))
         return finder.find_module(self.name)
 
     def sensitivity_test(self):
@@ -41,7 +42,7 @@ class CaseSensitivityTest(unittest.TestCase):
     def test_sensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
-            if b'PYTHONCASEOK' in _bootstrap._os.environ:
+            if b'PYTHONCASEOK' in self.importlib._bootstrap._os.environ:
                 self.skipTest('os.environ changes not reflected in '
                               '_os.environ')
             sensitive, insensitive = self.sensitivity_test()
@@ -52,7 +53,7 @@ class CaseSensitivityTest(unittest.TestCase):
     def test_insensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
-            if b'PYTHONCASEOK' not in _bootstrap._os.environ:
+            if b'PYTHONCASEOK' not in self.importlib._bootstrap._os.environ:
                 self.skipTest('os.environ changes not reflected in '
                               '_os.environ')
             sensitive, insensitive = self.sensitivity_test()
@@ -61,10 +62,9 @@ class CaseSensitivityTest(unittest.TestCase):
             self.assertTrue(hasattr(insensitive, 'load_module'))
             self.assertIn(self.name, insensitive.get_filename(self.name))
 
-
-def test_main():
-    test_support.run_unittest(CaseSensitivityTest)
+Frozen_CaseSensitivityTest, Source_CaseSensitivityTest = util.test_both(
+    CaseSensitivityTest, importlib=importlib, machinery=machinery)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
