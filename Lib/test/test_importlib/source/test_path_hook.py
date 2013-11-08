@@ -1,16 +1,18 @@
+from .. import util
 from . import util as source_util
 
-from importlib import machinery
+machinery = util.import_importlib('importlib.machinery')
+
 import unittest
 
 
-class PathHookTest(unittest.TestCase):
+class PathHookTest:
 
     """Test the path hook for source."""
 
     def path_hook(self):
-        return machinery.FileFinder.path_hook((machinery.SourceFileLoader,
-            machinery.SOURCE_SUFFIXES))
+        return self.machinery.FileFinder.path_hook((self.machinery.SourceFileLoader,
+            self.machinery.SOURCE_SUFFIXES))
 
     def test_success(self):
         with source_util.create_modules('dummy') as mapping:
@@ -21,11 +23,8 @@ class PathHookTest(unittest.TestCase):
         # The empty string represents the cwd.
         self.assertTrue(hasattr(self.path_hook()(''), 'find_module'))
 
-
-def test_main():
-    from test.support import run_unittest
-    run_unittest(PathHookTest)
+Frozen_PathHookTest, Source_PathHooktest = util.test_both(PathHookTest, machinery=machinery)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
