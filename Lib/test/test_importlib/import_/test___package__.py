@@ -9,7 +9,7 @@ from .. import util
 from . import util as import_util
 
 
-class Using__package__(unittest.TestCase):
+class Using__package__:
 
     """Use of __package__ supercedes the use of __name__/__path__ to calculate
     what package a module belongs to. The basic algorithm is [__package__]::
@@ -38,8 +38,8 @@ class Using__package__(unittest.TestCase):
         # [__package__]
         with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
-                import_util.import_('pkg.fake')
-                module = import_util.import_('',
+                self.__import__('pkg.fake')
+                module = self.__import__('',
                                             globals={'__package__': 'pkg.fake'},
                                             fromlist=['attr'], level=2)
         self.assertEqual(module.__name__, 'pkg')
@@ -51,8 +51,8 @@ class Using__package__(unittest.TestCase):
             globals_['__package__'] = None
         with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
-                import_util.import_('pkg.fake')
-                module = import_util.import_('', globals= globals_,
+                self.__import__('pkg.fake')
+                module = self.__import__('', globals= globals_,
                                                 fromlist=['attr'], level=2)
             self.assertEqual(module.__name__, 'pkg')
 
@@ -63,15 +63,17 @@ class Using__package__(unittest.TestCase):
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
         with self.assertRaises(SystemError):
-            import_util.import_('', globals, {}, ['relimport'], 1)
+            self.__import__('', globals, {}, ['relimport'], 1)
 
     def test_bunk__package__(self):
         globals = {'__package__': 42}
         with self.assertRaises(TypeError):
-            import_util.import_('', globals, {}, ['relimport'], 1)
+            self.__import__('', globals, {}, ['relimport'], 1)
+
+Frozen_UsingPackage, Source_UsingPackage = util.test_both(
+        Using__package__, __import__=import_util.__import__)
 
 
-@import_util.importlib_only
 class Setting__package__(unittest.TestCase):
 
     """Because __package__ is a new feature, it is not always set by a loader.
@@ -84,12 +86,14 @@ class Setting__package__(unittest.TestCase):
 
     """
 
+    __import__ = import_util.__import__[1]
+
     # [top-level]
     def test_top_level(self):
         with util.mock_modules('top_level') as mock:
             with util.import_state(meta_path=[mock]):
                 del mock['top_level'].__package__
-                module = import_util.import_('top_level')
+                module = self.__import__('top_level')
                 self.assertEqual(module.__package__, '')
 
     # [package]
@@ -97,7 +101,7 @@ class Setting__package__(unittest.TestCase):
         with util.mock_modules('pkg.__init__') as mock:
             with util.import_state(meta_path=[mock]):
                 del mock['pkg'].__package__
-                module = import_util.import_('pkg')
+                module = self.__import__('pkg')
                 self.assertEqual(module.__package__, 'pkg')
 
     # [submodule]
@@ -105,15 +109,10 @@ class Setting__package__(unittest.TestCase):
         with util.mock_modules('pkg.__init__', 'pkg.mod') as mock:
             with util.import_state(meta_path=[mock]):
                 del mock['pkg.mod'].__package__
-                pkg = import_util.import_('pkg.mod')
+                pkg = self.__import__('pkg.mod')
                 module = getattr(pkg, 'mod')
                 self.assertEqual(module.__package__, 'pkg')
 
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(Using__package__, Setting__package__)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

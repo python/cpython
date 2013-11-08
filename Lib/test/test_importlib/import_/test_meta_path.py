@@ -7,7 +7,7 @@ import unittest
 import warnings
 
 
-class CallingOrder(unittest.TestCase):
+class CallingOrder:
 
     """Calls to the importers on sys.meta_path happen in order that they are
     specified in the sequence, starting with the first importer
@@ -24,7 +24,7 @@ class CallingOrder(unittest.TestCase):
             first.modules[mod] = 42
             second.modules[mod] = -13
             with util.import_state(meta_path=[first, second]):
-                self.assertEqual(import_util.import_(mod), 42)
+                self.assertEqual(self.__import__(mod), 42)
 
     def test_continuing(self):
         # [continuing]
@@ -34,7 +34,7 @@ class CallingOrder(unittest.TestCase):
             first.find_module = lambda self, fullname, path=None: None
             second.modules[mod_name] = 42
             with util.import_state(meta_path=[first, second]):
-                self.assertEqual(import_util.import_(mod_name), 42)
+                self.assertEqual(self.__import__(mod_name), 42)
 
     def test_empty(self):
         # Raise an ImportWarning if sys.meta_path is empty.
@@ -51,8 +51,11 @@ class CallingOrder(unittest.TestCase):
                 self.assertEqual(len(w), 1)
                 self.assertTrue(issubclass(w[-1].category, ImportWarning))
 
+Frozen_CallingOrder, Source_CallingOrder = util.test_both(
+        CallingOrder, __import__=import_util.__import__)
 
-class CallSignature(unittest.TestCase):
+
+class CallSignature:
 
     """If there is no __path__ entry on the parent module, then 'path' is None
     [no path]. Otherwise, the value for __path__ is passed in for the 'path'
@@ -74,7 +77,7 @@ class CallSignature(unittest.TestCase):
             log, wrapped_call = self.log(importer.find_module)
             importer.find_module = MethodType(wrapped_call, importer)
             with util.import_state(meta_path=[importer]):
-                import_util.import_(mod_name)
+                self.__import__(mod_name)
                 assert len(log) == 1
                 args = log[0][0]
                 kwargs = log[0][1]
@@ -95,7 +98,7 @@ class CallSignature(unittest.TestCase):
             log, wrapped_call = self.log(importer.find_module)
             importer.find_module = MethodType(wrapped_call, importer)
             with util.import_state(meta_path=[importer]):
-                import_util.import_(mod_name)
+                self.__import__(mod_name)
                 assert len(log) == 2
                 args = log[1][0]
                 kwargs = log[1][1]
@@ -104,12 +107,9 @@ class CallSignature(unittest.TestCase):
                 self.assertEqual(args[0], mod_name)
                 self.assertIs(args[1], path)
 
-
-
-def test_main():
-    from test.support import run_unittest
-    run_unittest(CallingOrder, CallSignature)
+Frozen_CallSignature, Source_CallSignature = util.test_both(
+        CallSignature, __import__=import_util.__import__)
 
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
