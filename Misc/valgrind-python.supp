@@ -456,6 +456,15 @@
    fun:PyUnicode_FSConverter
 }
 
+{
+   wcscmp_false_positive
+   Memcheck:Addr8
+   fun:wcscmp
+   fun:_PyOS_GetOpt
+   fun:Py_Main
+   fun:main
+}
+
 # Additional suppressions for the unified decimal tests:
 {
    test_decimal
