@@ -3,7 +3,6 @@ import importlib
 import importlib.util
 from importlib._bootstrap import _get_sourcefile
 import builtins
-from test.test_importlib.import_ import util as importlib_util
 import marshal
 import os
 import platform
