@@ -86,6 +86,21 @@ def requires_tcl(*version):
     return unittest.skipUnless(tcl_version >= version,
             'requires Tcl version >= ' + '.'.join(map(str, version)))
 
+_tk_patchlevel = None
+def get_tk_patchlevel():
+    global _tk_patchlevel
+    if _tk_patchlevel is None:
+        tcl = tkinter.Tcl()
+        patchlevel = []
+        for x in tcl.call('info', 'patchlevel').split('.'):
+            try:
+                x = int(x, 10)
+            except ValueError:
+                x = -1
+            patchlevel.append(x)
+        _tk_patchlevel = tuple(patchlevel)
+    return _tk_patchlevel
+
 units = {
     'c': 72 / 2.54,     # centimeters
     'i': 72,            # inches
