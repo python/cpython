@@ -49,9 +49,6 @@ class WavePCM16Test(audiotests.AudioWriteTests,
         frames = audiotests.byteswap2(frames)
 
 
-@unittest.skipIf(sys.byteorder == 'big',
-                 '24-bit wave files are supported only on little-endian '
-                 'platforms')
 class WavePCM24Test(audiotests.AudioWriteTests,
         audiotests.AudioTestsWithSourceFile,
         unittest.TestCase):
