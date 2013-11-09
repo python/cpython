@@ -82,14 +82,15 @@ WAVE_FORMAT_PCM = 0x0001
 
 _array_fmts = None, 'b', 'h', None, 'i'
 
-# Determine endian-ness
 import struct
-if struct.pack("h", 1) == b"\000\001":
-    big_endian = 1
-else:
-    big_endian = 0
-
+import sys
 from chunk import Chunk
+
+def _byteswap3(data):
+    ba = bytearray(data)
+    ba[::3] = data[2::3]
+    ba[2::3] = data[::3]
+    return bytes(ba)
 
 class Wave_read:
     """Variables used in this class:
@@ -231,7 +232,7 @@ class Wave_read:
             self._data_seek_needed = 0
         if nframes == 0:
             return b''
-        if self._sampwidth > 1 and big_endian:
+        if self._sampwidth in (2, 4) and sys.byteorder == 'big':
             # unfortunately the fromfile() method does not take
             # something that only looks like a file object, so
             # we have to reach into the innards of the chunk object
@@ -252,6 +253,8 @@ class Wave_read:
             data = data.tobytes()
         else:
             data = self._data_chunk.read(nframes * self._framesize)
+            if self._sampwidth == 3 and sys.byteorder == 'big':
+                data = _byteswap3(data)
         if self._convert and data:
             data = self._convert(data)
         self._soundpos = self._soundpos + len(data) // (self._nchannels * self._sampwidth)
@@ -419,7 +422,7 @@ class Wave_write:
         nframes = len(data) // (self._sampwidth * self._nchannels)
         if self._convert:
             data = self._convert(data)
-        if self._sampwidth > 1 and big_endian:
+        if self._sampwidth in (2, 4) and sys.byteorder == 'big':
             import array
             data = array.array(_array_fmts[self._sampwidth], data)
             assert data.itemsize == self._sampwidth
@@ -427,6 +430,8 @@ class Wave_write:
             data.tofile(self._file)
             self._datawritten = self._datawritten + len(data) * self._sampwidth
         else:
+            if self._sampwidth == 3 and sys.byteorder == 'big':
+                data = _byteswap3(data)
             self._file.write(data)
             self._datawritten = self._datawritten + len(data)
         self._nframeswritten = self._nframeswritten + nframes
