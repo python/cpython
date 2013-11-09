@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1575020: Fixed support of 24-bit wave files on big-endian platforms.
+
 - Issue #19480: HTMLParser now accepts all valid start-tag names as defined
   by the HTML5 standard.
 
