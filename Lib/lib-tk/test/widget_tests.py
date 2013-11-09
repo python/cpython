@@ -2,31 +2,23 @@
 
 import Tkinter
 from ttk import setup_master, Scale
-from test_ttk.support import tcl_version, requires_tcl, pixels_conv, tcl_obj_eq
+from test_ttk.support import (tcl_version, requires_tcl, get_tk_patchlevel,
+                              pixels_conv, tcl_obj_eq)
 
 
-noconv = str if tcl_version < (8, 5) else False
+noconv = noconv_meth = False
+if get_tk_patchlevel() < (8, 5, 11):
+    noconv = str
 noconv_meth = noconv and staticmethod(noconv)
 
 def int_round(x):
     return int(round(x))
 
 pixels_round = int_round
-if tcl_version[:2] == (8, 5):
+if get_tk_patchlevel()[:3] == (8, 5, 11):
     # Issue #19085: Workaround a bug in Tk
     # http://core.tcl.tk/tk/info/3497848
-    _pixels_round = None
-    def pixels_round(x):
-        global _pixels_round
-        if _pixels_round is None:
-            root = setup_master()
-            patchlevel = root.call('info', 'patchlevel')
-            patchlevel = tuple(map(int, patchlevel.split('.')))
-            if patchlevel < (8, 5, 12):
-                _pixels_round = int
-            else:
-                _pixels_round = int_round
-        return _pixels_round(x)
+    pixels_round = int
 
 
 _sentinel = object()
@@ -424,10 +416,7 @@ class StandardOptionsTests(object):
 
     def test_wraplength(self):
         widget = self.create()
-        if tcl_version < (8, 5):
-            self.checkPixelsParam(widget, 'wraplength', 100)
-        else:
-            self.checkParams(widget, 'wraplength', 100)
+        self.checkPixelsParam(widget, 'wraplength', 100)
 
     def test_xscrollcommand(self):
         widget = self.create()

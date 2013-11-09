@@ -3,7 +3,8 @@ import Tkinter
 import os
 from test.test_support import requires, run_unittest
 
-from test_ttk.support import tcl_version, requires_tcl, widget_eq
+from test_ttk.support import (tcl_version, requires_tcl, get_tk_patchlevel,
+                              widget_eq)
 from widget_tests import (
     add_standard_options, noconv, noconv_meth, int_round, pixels_round,
     AbstractWidgetTest, StandardOptionsTests,
@@ -536,7 +537,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
     def test_selectborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'selectborderwidth',
-                              1.3, 2.6, -2, '10p', conv=False,
+                              1.3, 2.6, -2, '10p', conv=noconv,
                               keep_orig=tcl_version >= (8, 5))
 
     def test_spacing1(self):
@@ -577,7 +578,11 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_tabs(self):
         widget = self.create()
-        self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'))
+        if get_tk_patchlevel() < (8, 5, 11):
+            self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'),
+                            expected=('10.2', '20.7', '1i', '2i'))
+        else:
+            self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'))
         self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
                         expected=('10.2', '20.7', '1i', '2i'))
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
