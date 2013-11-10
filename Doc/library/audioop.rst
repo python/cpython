@@ -7,11 +7,15 @@
 
 The :mod:`audioop` module contains some useful operations on sound fragments.
 It operates on sound fragments consisting of signed integer samples 8, 16, 24
-or 32 bits wide, stored in bytes objects.  All scalar items are integers,
-unless specified otherwise.
+or 32 bits wide, stored in :term:`bytes-like object`\ s.  All scalar items are
+integers, unless specified otherwise.
 
 .. versionchanged:: 3.4
    Support for 24-bit samples was added.
+
+.. versionchanged:: 3.4
+   Any :term:`bytes-like object`\ s are now accepted by all functions in this
+   module.  Strings no more supported.
 
 .. index::
    single: Intel/DVI ADPCM
