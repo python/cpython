@@ -39,6 +39,7 @@ class TestDistribution(Distribution):
 
 
 class DistributionTestCase(support.LoggingSilencer,
+                           support.TempdirManager,
                            support.EnvironGuard,
                            unittest.TestCase):
 
@@ -212,6 +213,34 @@ class DistributionTestCase(support.LoggingSilencer,
         kwargs = {'level': 'ok2'}
         self.assertRaises(ValueError, dist.announce, args, kwargs)
 
+
+    def test_find_config_files_disable(self):
+        # Ticket #1180: Allow user to disable their home config file.
+        temp_home = self.mkdtemp()
+        if os.name == 'posix':
+            user_filename = os.path.join(temp_home, ".pydistutils.cfg")
+        else:
+            user_filename = os.path.join(temp_home, "pydistutils.cfg")
+
+        with open(user_filename, 'w') as f:
+            f.write('[distutils]\n')
+
+        def _expander(path):
+            return temp_home
+
+        old_expander = os.path.expanduser
+        os.path.expanduser = _expander
+        try:
+            d = Distribution()
+            all_files = d.find_config_files()
+
+            d = Distribution(attrs={'script_args': ['--no-user-cfg']})
+            files = d.find_config_files()
+        finally:
+            os.path.expanduser = old_expander
+
+        # make sure --no-user-cfg disables the user cfg file
+        self.assertEquals(len(all_files)-1, len(files))
 
 class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                        unittest.TestCase):

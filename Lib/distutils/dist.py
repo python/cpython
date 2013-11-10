@@ -52,7 +52,9 @@ class Distribution:
                       ('quiet', 'q', "run quietly (turns verbosity off)"),
                       ('dry-run', 'n', "don't actually do anything"),
                       ('help', 'h', "show detailed help message"),
-                     ]
+                      ('no-user-cfg', None,
+                       'ignore pydistutils.cfg in your home directory'),
+    ]
 
     # 'common_usage' is a short (2-3 line) string describing the common
     # usage of the setup script.
@@ -259,6 +261,22 @@ Common commands: (see '--help-commands' for more)
                     else:
                         sys.stderr.write(msg + "\n")
 
+        # no-user-cfg is handled before other command line args
+        # because other args override the config files, and this
+        # one is needed before we can load the config files.
+        # If attrs['script_args'] wasn't passed, assume false.
+        #
+        # This also make sure we just look at the global options
+        self.want_user_cfg = True
+
+        if self.script_args is not None:
+            for arg in self.script_args:
+                if not arg.startswith('-'):
+                    break
+                if arg == '--no-user-cfg':
+                    self.want_user_cfg = False
+                    break
+
         self.finalize_options()
 
     def get_option_dict(self, command):
@@ -310,7 +328,10 @@ Common commands: (see '--help-commands' for more)
         Distutils installation directory (ie. where the top-level
         Distutils __inst__.py file lives), a file in the user's home
         directory named .pydistutils.cfg on Unix and pydistutils.cfg
-        on Windows/Mac, and setup.cfg in the current directory.
+        on Windows/Mac; and setup.cfg in the current directory.
+
+        The file in the user's home directory can be disabled with the
+        --no-user-cfg option.
         """
         files = []
         check_environ()
@@ -330,14 +351,18 @@ Common commands: (see '--help-commands' for more)
             user_filename = "pydistutils.cfg"
 
         # And look for the user config file
-        user_file = os.path.join(os.path.expanduser('~'), user_filename)
-        if os.path.isfile(user_file):
-            files.append(user_file)
+        if self.want_user_cfg:
+            user_file = os.path.join(os.path.expanduser('~'), user_filename)
+            if os.path.isfile(user_file):
+                files.append(user_file)
 
         # All platforms support local setup.cfg
         local_file = "setup.cfg"
         if os.path.isfile(local_file):
             files.append(local_file)
+
+        if DEBUG:
+            self.announce("using config files: %s" % ', '.join(files))
 
         return files
 
