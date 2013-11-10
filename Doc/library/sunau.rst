@@ -212,6 +212,9 @@ AU_write objects, as returned by :func:`.open` above, have the following methods
 
    Set the sample width (in bytes.)
 
+   .. versionchanged:: 3.4
+      Added support for 24-bit samples.
+
 
 .. method:: AU_write.setframerate(n)
 
