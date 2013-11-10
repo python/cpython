@@ -594,7 +594,7 @@ The module :mod:`socket` exports the following constants and functions:
    both the value of *address_family* and the underlying implementation of
    :c:func:`inet_pton`.
 
-   Availability: Unix (maybe not all platforms).
+   Availability: Unix (maybe not all platforms), Windows.
 
 
 .. function:: inet_ntop(address_family, packed_ip)
@@ -610,7 +610,7 @@ The module :mod:`socket` exports the following constants and functions:
    specified address family, :exc:`ValueError` will be raised.  A
    :exc:`OSError` is raised for errors from the call to :func:`inet_ntop`.
 
-   Availability: Unix (maybe not all platforms).
+   Availability: Unix (maybe not all platforms), Windows.
 
 
 ..
