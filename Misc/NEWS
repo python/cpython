@@ -34,6 +34,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19544 and Issue #6286: Restore use of urllib over http allowing use
+  of http_proxy for Distutils upload command, a feature accidentally lost
+  in the rollback of distutils2.
+
 - Issue #19544 and Issue #7457: Restore the read_pkg_file method to
   distutils.dist.DistributionMetadata accidentally removed in the undo of
   distutils2.
