@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16685: Added support for any bytes-like objects in the audioop module.
+  Removed support for strings.
+
 - Issue #7171: Add Windows implementation of ``inet_ntop`` and ``inet_pton``
   to socket module. Patch by Atsuo Ishimoto.
 
