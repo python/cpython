@@ -1,9 +1,9 @@
 """Tests for distutils.command.upload."""
 import os
 import unittest
-import http.client as httpclient
 from test.support import run_unittest
 
+from distutils.command import upload as upload_mod
 from distutils.command.upload import upload
 from distutils.core import Distribution
 
@@ -37,47 +37,36 @@ index-servers =
 [server1]
 username:me
 """
-class Response(object):
-    def __init__(self, status=200, reason='OK'):
-        self.status = status
-        self.reason = reason
 
-class FakeConnection(object):
+class FakeOpen(object):
 
-    def __init__(self):
-        self.requests = []
-        self.headers = []
-        self.body = ''
+    def __init__(self, url):
+        self.url = url
+        if not isinstance(url, str):
+            self.req = url
+        else:
+            self.req = None
+        self.msg = 'OK'
 
-    def __call__(self, netloc):
-        return self
+    def getcode(self):
+        return 200
 
-    def connect(self):
-        pass
-    endheaders = connect
-
-    def putrequest(self, method, url):
-        self.requests.append((method, url))
-
-    def putheader(self, name, value):
-        self.headers.append((name, value))
-
-    def send(self, body):
-        self.body = body
-
-    def getresponse(self):
-        return Response()
 
 class uploadTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
         super(uploadTestCase, self).setUp()
-        if hasattr(httpclient, 'HTTPSConnection'):
-            self.addCleanup(setattr, httpclient, 'HTTPSConnection',
-                            httpclient.HTTPSConnection)
-        else:
-            self.addCleanup(delattr, httpclient, 'HTTPSConnection')
-        self.conn = httpclient.HTTPSConnection = FakeConnection()
+        self.old_open = upload_mod.urlopen
+        upload_mod.urlopen = self._urlopen
+        self.last_open = None
+
+    def tearDown(self):
+        upload_mod.urlopen = self.old_open
+        super(uploadTestCase, self).tearDown()
+
+    def _urlopen(self, url):
+        self.last_open = FakeOpen(url)
+        return self.last_open
 
     def test_finalize_options(self):
 
@@ -122,14 +111,14 @@ class uploadTestCase(PyPIRCCommandTestCase):
         cmd.ensure_finalized()
         cmd.run()
 
-        # what did we send ?
-        headers = dict(self.conn.headers)
+         # what did we send ?
+        headers = dict(self.last_open.req.headers)
         self.assertEqual(headers['Content-length'], '2087')
-        self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
-        self.assertFalse('\n' in headers['Authorization'])
-
-        self.assertEqual(self.conn.requests, [('POST', '/pypi')])
-        self.assertTrue((b'xxx') in self.conn.body)
+        self.assert_(headers['Content-type'].startswith('multipart/form-data'))
+        self.assertEquals(self.last_open.req.get_method(), 'POST')
+        self.assertEquals(self.last_open.req.get_full_url(),
+                          'http://pypi.python.org/pypi')
+        self.assert_(b'xxx' in self.last_open.req.data)
 
 def test_suite():
     return unittest.makeSuite(uploadTestCase)
