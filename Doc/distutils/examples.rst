@@ -284,6 +284,48 @@ by using the :mod:`docutils` parser::
     warning: check: Title underline too short. (line 2)
     warning: check: Could not finish the parsing.
 
+Reading the metadata
+=====================
+
+The :func:`distutils.core.setup` function provides a command-line interface
+that allows you to query the metadata fields of a project through the
+`setup.py` script of a given project::
+
+    $ python setup.py --name
+    distribute
+
+This call reads the `name` metadata by running the
+:func:`distutils.core.setup`  function. Although, when a source or binary
+distribution is created with Distutils, the metadata fields are written
+in a static file called :file:`PKG-INFO`. When a Distutils-based project is
+installed in Python, the :file:`PKG-INFO` file is copied alongside the modules
+and packages of the distribution under :file:`NAME-VERSION-pyX.X.egg-info`,
+where `NAME` is the name of the project, `VERSION` its version as defined
+in the Metadata, and `pyX.X` the major and minor version of Python like
+`2.7` or `3.2`.
+
+You can read back this static file, by using the
+:class:`distutils.dist.DistributionMetadata` class and its
+:func:`read_pkg_file` method::
+
+    >>> from distutils.dist import DistributionMetadata
+    >>> metadata = DistributionMetadata()
+    >>> metadata.read_pkg_file(open('distribute-0.6.8-py2.7.egg-info'))
+    >>> metadata.name
+    'distribute'
+    >>> metadata.version
+    '0.6.8'
+    >>> metadata.description
+    'Easily download, build, install, upgrade, and uninstall Python packages'
+
+Notice that the class can also be instanciated with a metadata file path to
+loads its values::
+
+    >>> pkg_info_path = 'distribute-0.6.8-py2.7.egg-info'
+    >>> DistributionMetadata(pkg_info_path).name
+    'distribute'
+
+
 .. % \section{Multiple extension modules}
 .. % \label{multiple-ext}
 

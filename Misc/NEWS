@@ -34,6 +34,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19544 and Issue #7457: Restore the read_pkg_file method to
+  distutils.dist.DistributionMetadata accidentally removed in the undo of
+  distutils2.
+
 - Issue #16685: Added support for any bytes-like objects in the audioop module.
   Removed support for strings.
 
