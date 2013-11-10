@@ -5188,7 +5188,11 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     int len;
     struct sockaddr_in6 addr;
     DWORD addrlen, ret, retlen;
-    char ip[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+#ifdef ENABLE_IPV6
+    char ip[Py_MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + 1];
+#else
+    char ip[INET_ADDRSTRLEN + 1];
+#endif
 
     /* Guarantee NUL-termination for PyUnicode_FromString() below */
     memset((void *) &ip[0], '\0', sizeof(ip));
