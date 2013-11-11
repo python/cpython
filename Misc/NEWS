@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19406: implementation of the ensurepip module (part of PEP 453).
+  Patch by Donald Stufft and Nick Coghlan.
+
 - Issue #19544 and Issue #6286: Restore use of urllib over http allowing use
   of http_proxy for Distutils upload command, a feature accidentally lost
   in the rollback of distutils2.

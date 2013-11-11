@@ -23,4 +23,3 @@ The list of modules described in this chapter is:
    unittest.mock-examples.rst
    2to3.rst
    test.rst
-   venv.rst
