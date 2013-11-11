@@ -117,7 +117,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         self.assert_(headers['Content-type'].startswith('multipart/form-data'))
         self.assertEquals(self.last_open.req.get_method(), 'POST')
         self.assertEquals(self.last_open.req.get_full_url(),
-                          'http://pypi.python.org/pypi')
+                          'https://pypi.python.org/pypi')
         self.assert_(b'xxx' in self.last_open.req.data)
 
 def test_suite():
