@@ -290,27 +290,27 @@ import codecs
 
 class Codec(codecs.Codec):
 
-    def encode(self,input,errors='strict'):
-        return codecs.charmap_encode(input,errors,encoding_%s)
+    def encode(self, input, errors='strict'):
+        return codecs.charmap_encode(input, errors, encoding_%s)
 
-    def decode(self,input,errors='strict'):
-        return codecs.charmap_decode(input,errors,decoding_%s)
+    def decode(self, input, errors='strict'):
+        return codecs.charmap_decode(input, errors, decoding_%s)
 ''' % (encodingname, name, suffix, suffix)]
     l.append('''\
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        return codecs.charmap_encode(input,self.errors,encoding_%s)[0]
+        return codecs.charmap_encode(input, self.errors, encoding_%s)[0]
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        return codecs.charmap_decode(input,self.errors,decoding_%s)[0]''' %
+        return codecs.charmap_decode(input, self.errors, decoding_%s)[0]''' %
         (suffix, suffix))
 
     l.append('''
-class StreamWriter(Codec,codecs.StreamWriter):
+class StreamWriter(Codec, codecs.StreamWriter):
     pass
 
-class StreamReader(Codec,codecs.StreamReader):
+class StreamReader(Codec, codecs.StreamReader):
     pass
 
 ### encodings module API
@@ -343,7 +343,7 @@ def getregentry():
     if decoding_table_code:
         l.append('''
 ### Encoding table
-encoding_table=codecs.charmap_build(decoding_table)
+encoding_table = codecs.charmap_build(decoding_table)
 ''')
     else:
         l.append('''
