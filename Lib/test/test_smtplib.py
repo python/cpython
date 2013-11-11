@@ -819,6 +819,15 @@ class SMTPSimTests(unittest.TestCase):
             self.assertIn(sim_auth_credentials['cram-md5'], str(err))
         smtp.close()
 
+    def testAUTH_multiple(self):
+        # Test that multiple authentication methods are tried.
+        self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        try: smtp.login(sim_auth[0], sim_auth[1])
+        except smtplib.SMTPAuthenticationError as err:
+            self.assertIn(sim_auth_login_password, str(err))
+        smtp.close()
+
     def test_with_statement(self):
         with smtplib.SMTP(HOST, self.port) as smtp:
             code, message = smtp.noop()
