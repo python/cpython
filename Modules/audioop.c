@@ -287,9 +287,9 @@ static int stepsizeTable[89] = {
     15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767
 };
 
-#define GETINTX(T, cp, i)  (*(T *)((cp) + (i)))
-#define SETINTX(T, cp, i, val)  do {    \
-        *(T *)((cp) + (i)) = (T)(val);  \
+#define GETINTX(T, cp, i)  (*(T *)((unsigned char *)(cp) + (i)))
+#define SETINTX(T, cp, i, val)  do {                    \
+        *(T *)((unsigned char *)(cp) + (i)) = (T)(val); \
     } while (0)
 
 
