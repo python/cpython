@@ -92,6 +92,7 @@ New library modules:
 
 * :mod:`asyncio`: New provisonal API for asynchronous IO (:pep:`3156`).
 * :mod:`enum`: Support for enumeration types (:pep:`435`).
+* :mod:`ensurepip`: Bootstrapping the pip installer (:pep:`453`).
 * :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
   :mod:`select` module primitives.
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
@@ -122,6 +123,34 @@ CPython implementation improvements:
   (:pep:`436`)
 
 Please read on for a comprehensive list of user-facing changes.
+
+
+PEP 453: Explicit bootstrapping of pip in Python installations
+==============================================================
+
+The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
+cross-platform mechanism to boostrap the pip installer into Python
+installations and virtual environments.
+
+.. note::
+
+   Only the first phase of PEP 453 has been implemented at this point.
+   This section will be fleshed out with additional details once those
+   other changes are implemented.
+
+   Refer to :issue:`19347` for the progress on additional steps:
+
+   * ``make install`` and ``make altinstall`` integration
+   * Windows installer integration
+   * Mac OS X installer integration
+   * :mod:`venv` module and :command:`pyvenv` integration
+
+.. seealso::
+
+   :pep:`453` - Explicit bootstrapping of pip in Python installations
+      PEP written by Donald Stufft and Nick Coghlan, implemented by
+      Donald Stufft, Nick Coghlan (and ...).
+
 
 .. _pep-446:
 
