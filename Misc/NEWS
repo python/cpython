@@ -2829,9 +2829,6 @@ C-API
 
 - Issue #16881: Fix Py_ARRAY_LENGTH macro for GCC < 3.1.
 
-- Issue #15422: Get rid of PyCFunction_New macro. Use PyCFunction_NewEx
-  function (PyCFunction_New func is still present for backward compatibility).
-
 - Issue #16505: Remove unused Py_TPFLAGS_INT_SUBCLASS.
 
 - Issue #16086: PyTypeObject.tp_flags and PyType_Spec.flags are now unsigned
