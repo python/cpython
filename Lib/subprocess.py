@@ -691,7 +691,6 @@ def list2cmdline(seq):
 
 # Various tools for executing commands and looking at their output and status.
 #
-# NB This only works (and is only relevant) for POSIX.
 
 def getstatusoutput(cmd):
     """    Return (status, output) of executing cmd in a shell.
