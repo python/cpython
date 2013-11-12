@@ -14,6 +14,10 @@ struct st_zip_searchorder {
     int type;
 };
 
+#ifdef ALTSEP
+_Py_IDENTIFIER(replace);
+#endif
+
 /* zip_searchorder defines how we search for a module in the Zip
    archive: we first search for a package __init__, then for
    non-package .pyc, .pyo and .py entries. The .pyc and .pyo entries
@@ -66,9 +70,6 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
     PyObject *path, *files, *tmp;
     PyObject *filename = NULL;
     Py_ssize_t len, flen;
-#ifdef ALTSEP
-    _Py_IDENTIFIER(replace);
-#endif
 
     if (!_PyArg_NoKeywords("zipimporter()", kwds))
         return -1;
@@ -559,9 +560,6 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 {
     ZipImporter *self = (ZipImporter *)obj;
     PyObject *path, *key;
-#ifdef ALTSEP
-    _Py_IDENTIFIER(replace);
-#endif
     PyObject *toc_entry;
     Py_ssize_t path_start, path_len, len;
 
