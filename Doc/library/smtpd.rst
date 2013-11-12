@@ -4,7 +4,7 @@
 .. module:: smtpd
    :synopsis: A SMTP server implementation in Python.
 
-.. moduleauthor:: Barry Warsaw <barry@zope.com>
+.. moduleauthor:: Barry Warsaw <barry@python.org>
 .. sectionauthor:: Moshe Zadka <moshez@moshez.org>
 
 **Source code:** :source:`Lib/smtpd.py`
