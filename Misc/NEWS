@@ -42,6 +42,10 @@ Library
 Tests
 -----
 
+- Issue #19440: Clean up test_capi by removing an unnecessary __future__
+  import, converting from test_main to unittest.main, and running the
+  _testcapi module tests within a unittest TestCase.
+
 - Issue #18702: All skipped tests now reported as skipped.
 
 - Issue #19085: Added basic tests for all tkinter widget options.
