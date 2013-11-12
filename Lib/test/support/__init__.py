@@ -63,25 +63,43 @@ except ImportError:
     resource = None
 
 __all__ = [
-    "Error", "TestFailed", "ResourceDenied", "import_module", "verbose",
-    "use_resources", "max_memuse", "record_original_stdout",
-    "get_original_stdout", "unload", "unlink", "rmtree", "forget",
+    # globals
+    "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
+    # exceptions
+    "Error", "TestFailed", "ResourceDenied",
+    # imports
+    "import_module", "import_fresh_module", "CleanImport",
+    # modules
+    "unload", "forget",
+    # io
+    "record_original_stdout", "get_original_stdout", "captured_stdout",
+    "captured_stdin", "captured_stderr",
+    # filesystem
+    "TESTFN", "SAVEDCWD", "unlink", "rmtree", "temp_cwd", "findfile",
+    "create_empty_file", "can_symlink",
+    # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver", "find_unused_port",
-    "bind_port", "IPV6_ENABLED", "is_jython", "TESTFN", "HOST", "SAVEDCWD",
-    "temp_cwd", "findfile", "create_empty_file", "sortdict",
-    "check_syntax_error", "open_urlresource", "check_warnings", "CleanImport",
-    "EnvironmentVarGuard", "TransientResource", "captured_stdout",
-    "captured_stdin", "captured_stderr", "time_out", "socket_peer_reset",
-    "ioerror_peer_reset", "run_with_locale", 'temp_umask',
-    "transient_internet", "set_memlimit", "bigmemtest", "bigaddrspacetest",
-    "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
-    "threading_cleanup", "reap_children", "cpython_only", "check_impl_detail",
-    "get_attribute", "swap_item", "swap_attr", "requires_IEEE_754",
-    "TestHandler", "Matcher", "can_symlink", "skip_unless_symlink",
-    "skip_unless_xattr", "import_fresh_module", "requires_zlib",
-    "PIPE_MAX_SIZE", "failfast", "anticipate_failure", "run_with_tz",
-    "requires_gzip", "requires_bz2", "requires_lzma", "SuppressCrashReport"
+    "requires_linux_version", "requires_mac_ver", "check_syntax_error",
+    "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
+    "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
+    "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
+    "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
+    "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
+    "anticipate_failure",
+    # sys
+    "is_jython", "check_impl_detail",
+    # network
+    "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
+    # processes
+    'temp_umask', "reap_children",
+    # logging
+    "TestHandler",
+    # threads
+    "threading_setup", "threading_cleanup",
+    # miscellaneous
+    "check_warnings", "EnvironmentVarGuard", "run_with_locale", "swap_item",
+    "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
+    "run_with_tz",
     ]
 
 class Error(Exception):
