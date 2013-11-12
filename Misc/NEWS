@@ -10,6 +10,10 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #19466: Clear the frames of daemon threads earlier during the
+  Python shutdown to call objects destructors. So "unclosed file" resource
+  warnings are now corretly emitted for daemon threads.
+
 - Issue #19514: Deduplicate some _Py_IDENTIFIER declarations.
   Patch by Andrei Dorian Duma.
 
