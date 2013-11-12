@@ -1,7 +1,6 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-from __future__ import with_statement
 import os
 import pickle
 import random
@@ -416,18 +415,13 @@ class TestThreadState(unittest.TestCase):
         t.start()
         t.join()
 
-
-def test_main():
-    support.run_unittest(CAPITest, TestPendingCalls, Test6012,
-                         EmbeddingTests, SkipitemTest, TestThreadState,
-                         SubinterpreterTest)
-
-    for name in dir(_testcapi):
-        if name.startswith('test_'):
-            test = getattr(_testcapi, name)
-            if support.verbose:
-                print("internal", name)
-            test()
+class Test_testcapi(unittest.TestCase):
+    def test__testcapi(self):
+        for name in dir(_testcapi):
+            if name.startswith('test_'):
+                with self.subTest("internal", name=name):
+                    test = getattr(_testcapi, name)
+                    test()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
