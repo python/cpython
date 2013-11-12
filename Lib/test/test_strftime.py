@@ -200,8 +200,5 @@ class Y1900Tests(unittest.TestCase):
         self.assertEquals(
             time.strftime("%y", (2013, 1, 1, 0, 0, 0, 0, 0, 0)), "13")
 
-def test_main():
-    support.run_unittest(StrftimeTest, Y1900Tests)
-
 if __name__ == '__main__':
     unittest.main()
