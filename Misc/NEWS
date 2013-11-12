@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13674: Prevented time.strftime from crashing on Windows when given
+  a year before 1900 and a format of %y.
+
 - Issue #19544 and Issue #6286: Restore use of urllib over http allowing use
   of http_proxy for Distutils upload command, a feature accidentally lost
   in the rollback of distutils2.
