@@ -176,8 +176,32 @@ class StrftimeTest(unittest.TestCase):
                            (e[0], e[2]))
                     print("  Expected %s, but got %s" % (e[1], result))
 
+
+class Y1900Tests(unittest.TestCase):
+    """A limitation of the MS C runtime library is that it crashes if
+    a date before 1900 is passed with a format string containing "%y"
+    """
+
+    @unittest.skipUnless(sys.platform == "win32", "Only applies to Windows")
+    def test_y_before_1900_win(self):
+        with self.assertRaises(ValueError):
+            time.strftime("%y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
+
+    @unittest.skipIf(sys.platform == "win32", "Doesn't apply on Windows")
+    def test_y_before_1900_nonwin(self):
+        self.assertEquals(
+            time.strftime("%y", (1899, 1, 1, 0, 0, 0, 0, 0, 0)), "99")
+
+    def test_y_1900(self):
+        self.assertEquals(
+            time.strftime("%y", (1900, 1, 1, 0, 0, 0, 0, 0, 0)), "00")
+
+    def test_y_after_1900(self):
+        self.assertEquals(
+            time.strftime("%y", (2013, 1, 1, 0, 0, 0, 0, 0, 0)), "13")
+
 def test_main():
-    support.run_unittest(StrftimeTest)
+    support.run_unittest(StrftimeTest, Y1900Tests)
 
 if __name__ == '__main__':
     test_main()
