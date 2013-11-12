@@ -12,7 +12,7 @@
 .. module:: pickle
    :synopsis: Convert Python objects to streams of bytes and back.
 .. sectionauthor:: Jim Kerr <jbkerr@sr.hp.com>.
-.. sectionauthor:: Barry Warsaw <barry@zope.com>
+.. sectionauthor:: Barry Warsaw <barry@python.org>
 
 
 The :mod:`pickle` module implements a fundamental, but powerful algorithm for
