@@ -581,7 +581,7 @@ Py_Finalize(void)
        other threads to call objects destructor. Destructors will be called in
        the current Python thread. Since _Py_Finalizing has been set, no other
        Python threads can lock the GIL at this point (if they try, they will
-       exit immediatly). */
+       exit immediately). */
     _PyThreadState_DeleteExcept(tstate);
 
     /* Collect garbage.  This may call finalizers; it's nice to call these
