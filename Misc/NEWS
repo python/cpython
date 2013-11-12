@@ -213,6 +213,10 @@ Library
 Tests
 -----
 
+- Issue #19440: Clean up test_capi by removing an unnecessary __future__
+  import, converting from test_main to unittest.main, and running the
+  _testcapi module tests as subTests of a unittest TestCase method.
+
 - Issue #19378: the main dis module tests are now run with both stdout
   redirection *and* passing an explicit file parameter
 
