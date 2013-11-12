@@ -576,11 +576,13 @@ Py_Finalize(void)
     _Py_Finalizing = tstate;
     initialized = 0;
 
-    /* Flush stdout+stderr */
-    flush_std_files();
-
-    /* Disable signal handling */
-    PyOS_FiniInterrupts();
+    /* Destroy the state of all threads except of the current thread: in
+       practice, only daemon threads should still be alive. Clear frames of
+       other threads to call objects destructor. Destructors will be called in
+       the current Python thread. Since _Py_Finalizing has been set, no other
+       Python threads can lock the GIL at this point (if they try, they will
+       exit immediatly). */
+    _PyThreadState_DeleteExcept(tstate);
 
     /* Collect garbage.  This may call finalizers; it's nice to call these
      * before all modules are destroyed.
@@ -595,6 +597,7 @@ Py_Finalize(void)
      * XXX I haven't seen a real-life report of either of these.
      */
     PyGC_Collect();
+
 #ifdef COUNT_ALLOCS
     /* With COUNT_ALLOCS, it helps to run GC multiple times:
        each collection might release some types from the type
@@ -602,6 +605,13 @@ Py_Finalize(void)
     while (PyGC_Collect() > 0)
         /* nothing */;
 #endif
+
+    /* Flush stdout+stderr */
+    flush_std_files();
+
+    /* Disable signal handling */
+    PyOS_FiniInterrupts();
+
     /* Destroy all modules */
     PyImport_Cleanup();
 

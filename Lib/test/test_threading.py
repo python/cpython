@@ -617,6 +617,52 @@ class ThreadTests(BaseTestCase):
                 t.join()
             self.assertRaises(ValueError, bs.release)
 
+    def test_locals_at_exit(self):
+        # Issue #19466: thread locals must not be deleted before destructors
+        # are called
+        rc, out, err = assert_python_ok("-c", """if 1:
+            import threading
+
+            class Atexit:
+                def __del__(self):
+                    print("thread_dict.atexit = %r" % thread_dict.atexit)
+
+            thread_dict = threading.local()
+            thread_dict.atexit = "atexit"
+
+            atexit = Atexit()
+        """)
+        self.assertEqual(out.rstrip(), b"thread_dict.atexit = 'atexit'")
+
+    def test_warnings_at_exit(self):
+        # Issue #19466: try to call most destructors at Python shutdown before
+        # destroying Python thread states
+        filename = __file__
+        rc, out, err = assert_python_ok("-Wd", "-c", """if 1:
+            import time
+            import threading
+
+            def open_sleep():
+                # a warning will be emitted when the open file will be
+                # destroyed (without being explicitly closed) while the daemon
+                # thread is destroyed
+                fileobj = open(%a, 'rb')
+                start_event.set()
+                time.sleep(60.0)
+
+            start_event = threading.Event()
+
+            thread = threading.Thread(target=open_sleep)
+            thread.daemon = True
+            thread.start()
+
+            # wait until the thread started
+            start_event.wait()
+        """ % filename)
+        self.assertRegex(err.rstrip(),
+                         b"^sys:1: ResourceWarning: unclosed file ")
+
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
@@ -701,6 +747,10 @@ class ThreadJoinOnShutdown(BaseTestCase):
             import sys
             import time
             import threading
+            import warnings
+
+            # ignore "unclosed file ..." warnings
+            warnings.filterwarnings('ignore', '', ResourceWarning)
 
             thread_has_run = set()
 
