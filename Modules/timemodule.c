@@ -642,6 +642,13 @@ time_strftime(PyObject *self, PyObject *args)
             Py_DECREF(format);
             return NULL;
         }
+        if ((outbuf[1] == 'y') && buf.tm_year < 0)
+        {
+            PyErr_SetString(PyExc_ValueError,
+                        "format %y requires year >= 1900 on Windows");
+            Py_DECREF(format);
+            return NULL;
+        }
     }
 #endif
 
