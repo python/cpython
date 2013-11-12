@@ -5633,7 +5633,6 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *func;
     PyObject *newargs, *x;
     Py_ssize_t i, n;
-    _Py_IDENTIFIER(__new__);
 
     func = _PyObject_GetAttrId((PyObject *)type, &PyId___new__);
     if (func == NULL)

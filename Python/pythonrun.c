@@ -37,9 +37,11 @@
 
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(excepthook);
+_Py_IDENTIFIER(flush);
 _Py_IDENTIFIER(last_traceback);
 _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
+_Py_IDENTIFIER(name);
 _Py_IDENTIFIER(ps1);
 _Py_IDENTIFIER(ps2);
 _Py_IDENTIFIER(stdin);
@@ -215,7 +217,6 @@ get_codec_name(const char *encoding)
 {
     char *name_utf8, *name_str;
     PyObject *codec, *name = NULL;
-    _Py_IDENTIFIER(name);
 
     codec = _PyCodec_Lookup(encoding);
     if (!codec)
@@ -512,7 +513,6 @@ flush_std_files(void)
     PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
     PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
     PyObject *tmp;
-    _Py_IDENTIFIER(flush);
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
         tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
@@ -1009,7 +1009,6 @@ create_stdio(PyObject* io,
     _Py_IDENTIFIER(open);
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(TextIOWrapper);
-    _Py_IDENTIFIER(name);
     _Py_IDENTIFIER(mode);
 
     /* stdin is always opened in buffered mode, first because it shouldn't
@@ -2130,7 +2129,6 @@ flush_io(void)
 {
     PyObject *f, *r;
     PyObject *type, *value, *traceback;
-    _Py_IDENTIFIER(flush);
 
     /* Save the current exception */
     PyErr_Fetch(&type, &value, &traceback);

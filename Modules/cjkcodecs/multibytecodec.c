@@ -51,6 +51,8 @@ static PyObject *multibytecodec_encode(MultibyteCodec *,
 
 #define MBENC_RESET     MBENC_MAX<<1 /* reset after an encoding session */
 
+_Py_IDENTIFIER(write);
+
 static PyObject *
 make_tuple(PyObject *object, Py_ssize_t len)
 {
@@ -1569,7 +1571,6 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
                       PyObject *unistr)
 {
     PyObject *str, *wr;
-    _Py_IDENTIFIER(write);
 
     str = encoder_encode_stateful(STATEFUL_ECTX(self), unistr, 0);
     if (str == NULL)
@@ -1639,7 +1640,6 @@ mbstreamwriter_reset(MultibyteStreamWriterObject *self)
     assert(PyBytes_Check(pwrt));
     if (PyBytes_Size(pwrt) > 0) {
         PyObject *wr;
-        _Py_IDENTIFIER(write);
 
         wr = _PyObject_CallMethodId(self->stream, &PyId_write, "O", pwrt);
         if (wr == NULL) {
