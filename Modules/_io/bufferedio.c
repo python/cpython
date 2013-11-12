@@ -52,7 +52,6 @@ bufferediobase_readinto(PyObject *self, PyObject *args)
     Py_buffer buf;
     Py_ssize_t len;
     PyObject *data;
-    _Py_IDENTIFIER(read);
 
     if (!PyArg_ParseTuple(args, "w*:readinto", &buf)) {
         return NULL;

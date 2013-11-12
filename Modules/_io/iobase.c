@@ -63,6 +63,8 @@ _Py_IDENTIFIER(__IOBase_closed);
 #define IS_CLOSED(self) \
     _PyObject_HasAttrId(self, &PyId___IOBase_closed)
 
+_Py_IDENTIFIER(read);
+
 /* Internal methods */
 static PyObject *
 iobase_unsupported(const char *message)
@@ -180,7 +182,6 @@ static PyObject *
 iobase_close(PyObject *self, PyObject *args)
 {
     PyObject *res;
-    _Py_IDENTIFIER(__IOBase_closed);
 
     if (IS_CLOSED(self))
         Py_RETURN_NONE;
@@ -454,7 +455,6 @@ iobase_readline(PyObject *self, PyObject *args)
     int has_peek = 0;
     PyObject *buffer, *result;
     Py_ssize_t old_size = -1;
-    _Py_IDENTIFIER(read);
     _Py_IDENTIFIER(peek);
 
     if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit)) {
@@ -848,7 +848,6 @@ rawiobase_readall(PyObject *self, PyObject *args)
         return NULL;
 
     while (1) {
-        _Py_IDENTIFIER(read);
         PyObject *data = _PyObject_CallMethodId(self, &PyId_read,
                                                 "i", DEFAULT_BUFFER_SIZE);
         if (!data) {
