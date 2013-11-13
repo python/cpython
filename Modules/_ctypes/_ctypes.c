@@ -2344,7 +2344,11 @@ PyCData_GetContainer(CDataObject *self)
 static PyObject *
 GetKeepedObjects(CDataObject *target)
 {
-    return PyCData_GetContainer(target)->b_objects;
+    CDataObject *container;
+    container = PyCData_GetContainer(target);
+    if (container == NULL)
+        return NULL;
+    return container->b_objects;
 }
 
 static PyObject *
