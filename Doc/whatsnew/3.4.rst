@@ -102,6 +102,7 @@ New expected features for Python implementations:
 * :ref:`PEP 446: Make newly created file descriptors non-inheritable <pep-446>`.
 * command line option for :ref:`isolated mode <using-on-misc-options>`,
   (:issue:`16499`).
+* improvements to handling of non-Unicode codecs
 
 Significantly Improved Library Modules:
 
@@ -168,6 +169,70 @@ PEP 446: Make newly created file descriptors non-inheritable
 
    :pep:`446` - Make newly created file descriptors non-inheritable
       PEP written and implemented by Victor Stinner.
+
+
+Improvements to handling of non-Unicode codecs
+==============================================
+
+Since it was first introduced, the :mod:`codecs` module has always been
+intended to operate as a type-neutral dynamic encoding and decoding
+system. However, its close coupling with the Python text model, especially
+the type restricted convenience methods on the builtin :class:`str`,
+:class:`bytes` and :class:`bytearray` types, has historically obscured that
+fact.
+
+As a key step in clarifying the situation, the :meth:`codecs.encode` and
+:meth:`codecs.decode` convenience functions are now properly documented in
+Python 2.7, 3.3 and 3.4. These functions have existed in the :mod:`codecs`
+module and have been covered by the regression test suite since Python 2.4,
+but were previously only discoverable through runtime introspection.
+
+Unlike the convenience methods on :class:`str`, :class:`bytes` and
+:class:`bytearray`, these convenience functions support arbitrary codecs
+in both Python 2 and Python 3, rather than being limited to Unicode text
+encodings (in Python 3) or ``basestring`` <-> ``basestring`` conversions
+(in Python 2).
+
+In Python 3.4, the errors raised by the convenience methods when a codec
+produces the incorrect output type have also been updated to direct users
+towards these general purpose convenience functions::
+
+    >>> import codecs
+
+    >>> codecs.encode(b"hello", "bz2_codec").decode("bz2_codec")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: 'bz2_codec' decoder returned 'bytes' instead of 'str'; use codecs.decode() to decode to arbitrary types
+
+    >>> "hello".encode("rot_13")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: 'rot_13' encoder returned 'str' instead of 'bytes'; use codecs.encode() to encode to arbitrary types
+
+In a related change, whenever it is feasible without breaking backwards
+compatibility, exceptions raised during encoding and decoding operations
+will be wrapped in a chained exception of the same type that mentions the
+name of the codec responsible for producing the error::
+
+    >>> b"hello".decode("uu_codec")
+    ValueError: Missing "begin" line in input data
+
+    The above exception was the direct cause of the following exception:
+
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    ValueError: decoding with 'uu_codec' codec failed (ValueError: Missing "begin" line in input data)
+
+    >>> "hello".encode("bz2_codec")
+    TypeError: 'str' does not support the buffer interface
+
+    The above exception was the direct cause of the following exception:
+
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: encoding with 'bz2_codec' codec failed (TypeError: 'str' does not support the buffer interface)
+
+(Contributed by Nick Coghlan in :issue:`17827` and :issue:`17828`)
 
 
 Other Language Changes
@@ -260,19 +325,6 @@ audioop
 -------
 
 Added support for 24-bit samples (:issue:`12866`).
-
-
-codecs
-------
-
-The :meth:`codecs.encode` and :meth:`codecs.decode` convenience functions are
-now properly documented. These functions have existed in the :mod:`codecs`
-module since ~2004, but were previously only discoverable through runtime
-introspection.
-
-Unlike the convenience methods on :class:`str`, :class:`bytes` and
-:class:`bytearray`, these convenience functions support arbitrary codecs,
-rather than being limited to Unicode text encodings.
 
 
 colorsys
