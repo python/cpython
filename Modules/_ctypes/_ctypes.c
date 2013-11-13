@@ -2405,6 +2405,10 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
         return 0;
     }
     ob = PyCData_GetContainer(target);
+    if (ob == NULL) {
+        Py_DECREF(keep);
+        return -1;
+    }
     if (ob->b_objects == NULL || !PyDict_CheckExact(ob->b_objects)) {
         Py_XDECREF(ob->b_objects);
         ob->b_objects = keep; /* refcount consumed */
@@ -2791,6 +2795,9 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
             /* XXX */;
 
         value = GetKeepedObjects(src);
+        if (value == NULL)
+            return NULL;
+
         Py_INCREF(value);
         return value;
     }
@@ -2814,6 +2821,9 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
         *(void **)ptr = src->b_ptr;
 
         keep = GetKeepedObjects(src);
+        if (keep == NULL)
+            return NULL;
+
         /*
           We are assigning an array object to a field which represents
           a pointer. This has the same effect as converting an array
@@ -4810,6 +4820,9 @@ Pointer_set_contents(CDataObject *self, PyObject *value, void *closure)
         return -1;
 
     keep = GetKeepedObjects(dst);
+    if (keep == NULL)
+        return -1;
+
     Py_INCREF(keep);
     return KeepRef(self, 0, keep);
 }
@@ -5216,9 +5229,14 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
      */
     if (CDataObject_Check(src)) {
         CDataObject *obj = (CDataObject *)src;
+        CDataObject *container;
+
         /* PyCData_GetContainer will initialize src.b_objects, we need
            this so it can be shared */
-        PyCData_GetContainer(obj);
+        container = PyCData_GetContainer(obj);
+        if (container == NULL)
+            goto failed;
+
         /* But we need a dictionary! */
         if (obj->b_objects == Py_None) {
             Py_DECREF(Py_None);
