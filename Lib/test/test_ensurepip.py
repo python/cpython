@@ -2,6 +2,8 @@ import unittest
 import unittest.mock
 import ensurepip
 import test.support
+import os
+import os.path
 
 
 class TestEnsurePipVersion(unittest.TestCase):
@@ -17,9 +19,12 @@ class TestBootstrap(unittest.TestCase):
         self.run_pip = run_pip_patch.start()
         self.addCleanup(run_pip_patch.stop)
 
-        os_environ_patch = unittest.mock.patch("ensurepip.os.environ", {})
-        self.os_environ = os_environ_patch.start()
-        self.addCleanup(os_environ_patch.stop)
+        # Avoid side effects on the actual os module
+        os_patch = unittest.mock.patch("ensurepip.os")
+        patched_os = os_patch.start()
+        self.addCleanup(os_patch.stop)
+        patched_os.path = os.path
+        self.os_environ = patched_os.environ = os.environ.copy()
 
     def test_basic_bootstrapping(self):
         ensurepip.bootstrap()
