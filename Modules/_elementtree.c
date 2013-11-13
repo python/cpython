@@ -3461,7 +3461,7 @@ xmlparser_parse_whole(XMLParserObject* self, PyObject* args)
 
         if (PyUnicode_CheckExact(buffer)) {
             /* A unicode object is encoded into bytes using UTF-8 */
-            if (PyUnicode_GET_SIZE(buffer) == 0) {
+            if (PyUnicode_GET_LENGTH(buffer) == 0) {
                 Py_DECREF(buffer);
                 break;
             }
