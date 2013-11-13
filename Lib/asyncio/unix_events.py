@@ -593,11 +593,12 @@ class FastChildWatcher(BaseChildWatcher):
     (O(1) each time a child terminates).
     """
     def __init__(self, loop):
-        super().__init__(loop)
-
         self._lock = threading.Lock()
         self._zombies = {}
         self._forks = 0
+        # Call base class constructor last because it calls back into
+        # the subclass (set_loop() calls _do_waitpid()).
+        super().__init__(loop)
 
     def close(self):
         super().close()
