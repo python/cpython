@@ -10,6 +10,15 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #17828: Output type errors in str.encode(), bytes.decode() and
+  bytearray.decode() now direct users to codecs.encode() or codecs.decode()
+  as appropriate.
+
+- Issue #17828: The interpreter now attempts to chain errors that occur in
+  codec processing with a replacement exception of the same type that
+  includes the codec name in the error message. It ensures it only does this
+  when the creation of the replacement exception won't lose any information.
+
 - Issue #19466: Clear the frames of daemon threads earlier during the
   Python shutdown to call objects destructors. So "unclosed file" resource
   warnings are now corretly emitted for daemon threads.

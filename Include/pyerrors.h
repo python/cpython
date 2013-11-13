@@ -285,6 +285,28 @@ PyAPI_FUNC(PyObject *) PyErr_NewExceptionWithDoc(
     const char *name, const char *doc, PyObject *base, PyObject *dict);
 PyAPI_FUNC(void) PyErr_WriteUnraisable(PyObject *);
 
+/* In exceptions.c */
+#ifndef Py_LIMITED_API
+/* Helper that attempts to replace the current exception with one of the
+ * same type but with a prefix added to the exception text. The resulting
+ * exception description looks like:
+ *
+ *     prefix (exc_type: original_exc_str)
+ *
+ * Only some exceptions can be safely replaced. If the function determines
+ * it isn't safe to perform the replacement, it will leave the original
+ * unmodified exception in place.
+ *
+ * Returns a borrowed reference to the new exception (if any), NULL if the
+ * existing exception was left in place.
+ */
+PyAPI_FUNC(PyObject *) _PyErr_TrySetFromCause(
+    const char *prefix_format,   /* ASCII-encoded string  */
+    ...
+    );
+#endif
+
+
 /* In sigcheck.c or signalmodule.c */
 PyAPI_FUNC(int) PyErr_CheckSignals(void);
 PyAPI_FUNC(void) PyErr_SetInterrupt(void);
