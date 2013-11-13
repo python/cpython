@@ -101,7 +101,7 @@ namespace_repr(PyObject *ns)
         goto error;
 
     while ((key = PyIter_Next(keys_iter)) != NULL) {
-        if (PyUnicode_Check(key) && PyUnicode_GET_SIZE(key) > 0) {
+        if (PyUnicode_Check(key) && PyUnicode_GET_LENGTH(key) > 0) {
             PyObject *value, *item;
 
             value = PyDict_GetItem(d, key);
