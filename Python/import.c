@@ -1364,7 +1364,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 goto error;
             }
         }
+
         base = PyUnicode_Substring(package, 0, last_dot);
+        if (base == NULL)
+            goto error;
+
         if (PyUnicode_GET_LENGTH(name) > 0) {
             PyObject *borrowed_dot, *seq = NULL;
 
