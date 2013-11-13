@@ -687,7 +687,7 @@ class AbstractChildWatcherTests(unittest.TestCase):
         self.assertRaises(
             NotImplementedError, watcher.remove_child_handler, f)
         self.assertRaises(
-            NotImplementedError, watcher.set_loop, f)
+            NotImplementedError, watcher.attach_loop, f)
         self.assertRaises(
             NotImplementedError, watcher.close)
         self.assertRaises(
@@ -700,7 +700,7 @@ class BaseChildWatcherTests(unittest.TestCase):
 
     def test_not_implemented(self):
         f = unittest.mock.Mock()
-        watcher = unix_events.BaseChildWatcher(None)
+        watcher = unix_events.BaseChildWatcher()
         self.assertRaises(
             NotImplementedError, watcher._do_waitpid, f)
 
@@ -720,10 +720,13 @@ class ChildWatcherTestsMixin:
 
         with unittest.mock.patch.object(
                 self.loop, "add_signal_handler") as self.m_add_signal_handler:
-            self.watcher = self.create_watcher(self.loop)
+            self.watcher = self.create_watcher()
+            self.watcher.attach_loop(self.loop)
 
-    def tearDown(self):
-        ChildWatcherTestsMixin.instance = None
+        def cleanup():
+            ChildWatcherTestsMixin.instance = None
+
+        self.addCleanup(cleanup)
 
     def waitpid(pid, flags):
         self = ChildWatcherTestsMixin.instance
@@ -1334,7 +1337,7 @@ class ChildWatcherTestsMixin:
                 self.loop,
                 "add_signal_handler") as m_new_add_signal_handler:
 
-            self.watcher.set_loop(self.loop)
+            self.watcher.attach_loop(self.loop)
 
             m_old_remove_signal_handler.assert_called_once_with(
                 signal.SIGCHLD)
@@ -1375,7 +1378,7 @@ class ChildWatcherTestsMixin:
         with unittest.mock.patch.object(
                 old_loop, "remove_signal_handler") as m_remove_signal_handler:
 
-            self.watcher.set_loop(None)
+            self.watcher.attach_loop(None)
 
             m_remove_signal_handler.assert_called_once_with(
                 signal.SIGCHLD)
@@ -1395,7 +1398,7 @@ class ChildWatcherTestsMixin:
         with unittest.mock.patch.object(
                 self.loop, "add_signal_handler") as m_add_signal_handler:
 
-            self.watcher.set_loop(self.loop)
+            self.watcher.attach_loop(self.loop)
 
             m_add_signal_handler.assert_called_once_with(
                 signal.SIGCHLD, self.watcher._sig_chld)
@@ -1457,13 +1460,13 @@ class ChildWatcherTestsMixin:
 
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, unittest.TestCase):
-    def create_watcher(self, loop):
-        return unix_events.SafeChildWatcher(loop)
+    def create_watcher(self):
+        return unix_events.SafeChildWatcher()
 
 
 class FastChildWatcherTests (ChildWatcherTestsMixin, unittest.TestCase):
-    def create_watcher(self, loop):
-        return unix_events.FastChildWatcher(loop)
+    def create_watcher(self):
+        return unix_events.FastChildWatcher()
 
 
 class PolicyTests(unittest.TestCase):
@@ -1485,7 +1488,7 @@ class PolicyTests(unittest.TestCase):
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
-        watcher = unix_events.FastChildWatcher(None)
+        watcher = unix_events.FastChildWatcher()
 
         policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)

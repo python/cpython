@@ -1311,7 +1311,9 @@ else:
     class UnixEventLoopTestsMixin(EventLoopTestsMixin):
         def setUp(self):
             super().setUp()
-            events.set_child_watcher(unix_events.SafeChildWatcher(self.loop))
+            watcher = unix_events.SafeChildWatcher()
+            watcher.attach_loop(self.loop)
+            events.set_child_watcher(watcher)
 
         def tearDown(self):
             events.set_child_watcher(None)

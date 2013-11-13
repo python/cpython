@@ -440,10 +440,13 @@ class AbstractChildWatcher:
 
         raise NotImplementedError()
 
-    def set_loop(self, loop):
-        """Reattach the watcher to another event loop.
+    def attach_loop(self, loop):
+        """Attach the watcher to an event loop.
 
-        Note: loop may be None
+        If the watcher was previously attached to an event loop, then it is
+        first detached before attaching to the new loop.
+
+        Note: loop may be None.
         """
         raise NotImplementedError()
 
@@ -467,15 +470,11 @@ class AbstractChildWatcher:
 
 class BaseChildWatcher(AbstractChildWatcher):
 
-    def __init__(self, loop):
+    def __init__(self):
         self._loop = None
-        self._callbacks = {}
-
-        self.set_loop(loop)
 
     def close(self):
-        self.set_loop(None)
-        self._callbacks.clear()
+        self.attach_loop(None)
 
     def _do_waitpid(self, expected_pid):
         raise NotImplementedError()
@@ -483,7 +482,7 @@ class BaseChildWatcher(AbstractChildWatcher):
     def _do_waitpid_all(self):
         raise NotImplementedError()
 
-    def set_loop(self, loop):
+    def attach_loop(self, loop):
         assert loop is None or isinstance(loop, events.AbstractEventLoop)
 
         if self._loop is not None:
@@ -496,13 +495,6 @@ class BaseChildWatcher(AbstractChildWatcher):
             # Prevent a race condition in case a child terminated
             # during the switch.
             self._do_waitpid_all()
-
-    def remove_child_handler(self, pid):
-        try:
-            del self._callbacks[pid]
-            return True
-        except KeyError:
-            return False
 
     def _sig_chld(self):
         try:
@@ -535,6 +527,14 @@ class SafeChildWatcher(BaseChildWatcher):
     big number of children (O(n) each time SIGCHLD is raised)
     """
 
+    def __init__(self):
+        super().__init__()
+        self._callbacks = {}
+
+    def close(self):
+        self._callbacks.clear()
+        super().close()
+
     def __enter__(self):
         return self
 
@@ -546,6 +546,13 @@ class SafeChildWatcher(BaseChildWatcher):
 
         # Prevent a race condition in case the child is already terminated.
         self._do_waitpid(pid)
+
+    def remove_child_handler(self, pid):
+        try:
+            del self._callbacks[pid]
+            return True
+        except KeyError:
+            return False
 
     def _do_waitpid_all(self):
 
@@ -592,17 +599,17 @@ class FastChildWatcher(BaseChildWatcher):
     There is no noticeable overhead when handling a big number of children
     (O(1) each time a child terminates).
     """
-    def __init__(self, loop):
+    def __init__(self):
+        super().__init__()
+        self._callbacks = {}
         self._lock = threading.Lock()
         self._zombies = {}
         self._forks = 0
-        # Call base class constructor last because it calls back into
-        # the subclass (set_loop() calls _do_waitpid()).
-        super().__init__(loop)
 
     def close(self):
-        super().close()
+        self._callbacks.clear()
         self._zombies.clear()
+        super().close()
 
     def __enter__(self):
         with self._lock:
@@ -642,6 +649,13 @@ class FastChildWatcher(BaseChildWatcher):
             pass
         else:
             callback(pid, returncode, *args)
+
+    def remove_child_handler(self, pid):
+        try:
+            del self._callbacks[pid]
+            return True
+        except KeyError:
+            return False
 
     def _do_waitpid_all(self):
         # Because of signal coalescing, we must keep calling waitpid() as
@@ -687,25 +701,24 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     def _init_watcher(self):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
+                self._watcher = SafeChildWatcher()
                 if isinstance(threading.current_thread(),
                               threading._MainThread):
-                    self._watcher = SafeChildWatcher(self._local._loop)
-                else:
-                    self._watcher = SafeChildWatcher(None)
+                    self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
         """Set the event loop.
 
         As a side effect, if a child watcher was set before, then calling
-        .set_event_loop() from the main thread will call .set_loop(loop) on the
-        child watcher.
+        .set_event_loop() from the main thread will call .attach_loop(loop) on
+        the child watcher.
         """
 
         super().set_event_loop(loop)
 
         if self._watcher is not None and \
             isinstance(threading.current_thread(), threading._MainThread):
-            self._watcher.set_loop(loop)
+            self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):
         """Get the child watcher
