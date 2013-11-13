@@ -650,8 +650,8 @@ class GeneralModuleTests(unittest.TestCase):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         with s:
             self.assertIn('fd=%i' % s.fileno(), repr(s))
-            self.assertIn('family=%i' % socket.AF_INET, repr(s))
-            self.assertIn('type=%i' % socket.SOCK_STREAM, repr(s))
+            self.assertIn('family=%s' % socket.AF_INET, repr(s))
+            self.assertIn('type=%s' % socket.SOCK_STREAM, repr(s))
             self.assertIn('proto=0', repr(s))
             self.assertNotIn('raddr', repr(s))
             s.bind(('127.0.0.1', 0))
