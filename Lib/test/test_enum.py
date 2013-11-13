@@ -1030,6 +1030,15 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(list(Color), [Color.red, Color.green, Color.blue])
         self.assertEqual(list(map(int, Color)), [1, 2, 3])
 
+    def test_equality(self):
+        class AlwaysEqual:
+            def __eq__(self, other):
+                return True
+        class OrdinaryEnum(Enum):
+            a = 1
+        self.assertEqual(AlwaysEqual(), OrdinaryEnum.a)
+        self.assertEqual(OrdinaryEnum.a, AlwaysEqual())
+
     def test_ordered_mixin(self):
         class OrderedEnum(Enum):
             def __ge__(self, other):
@@ -1058,6 +1067,8 @@ class TestEnum(unittest.TestCase):
         self.assertLessEqual(Grade.F, Grade.C)
         self.assertLess(Grade.D, Grade.A)
         self.assertGreaterEqual(Grade.B, Grade.B)
+        self.assertEqual(Grade.B, Grade.B)
+        self.assertNotEqual(Grade.C, Grade.D)
 
     def test_extending2(self):
         class Shade(Enum):
