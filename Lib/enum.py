@@ -447,11 +447,6 @@ class Enum(metaclass=EnumMeta):
         return (['__class__', '__doc__', '__module__', 'name', 'value'] +
                 added_behavior)
 
-    def __eq__(self, other):
-        if type(other) is self.__class__:
-            return self is other
-        return NotImplemented
-
     def __format__(self, format_spec):
         # mixed-in Enums should use the mixed-in type's __format__, otherwise
         # we can get strange results with the Enum name showing up instead of
