@@ -829,15 +829,14 @@ path_converter(PyObject *o, void *p) {
     if (unicode) {
 #ifdef MS_WINDOWS
         wchar_t *wide;
-        length = PyUnicode_GET_SIZE(unicode);
-        if (length > 32767) {
-            FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
+
+        wide = PyUnicode_AsUnicodeAndSize(unicode, &length);
+        if (!wide) {
             Py_DECREF(unicode);
             return 0;
         }
-
-        wide = PyUnicode_AsUnicode(unicode);
-        if (!wide) {
+        if (length > 32767) {
+            FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
             Py_DECREF(unicode);
             return 0;
         }
