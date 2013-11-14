@@ -275,6 +275,7 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts, PyObject *v
     len_consts = PyList_GET_SIZE(consts);
     if (PyList_Append(consts, newconst)) {
         Py_DECREF(newconst);
+        PyErr_Clear();
         return 0;
     }
     Py_DECREF(newconst);
