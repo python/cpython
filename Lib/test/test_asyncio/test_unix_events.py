@@ -67,7 +67,7 @@ class SelectorEventLoopTests(unittest.TestCase):
         cb = lambda: True
         self.loop.add_signal_handler(signal.SIGHUP, cb)
         h = self.loop._signal_handlers.get(signal.SIGHUP)
-        self.assertTrue(isinstance(h, events.Handle))
+        self.assertIsInstance(h, events.Handle)
         self.assertEqual(h._callback, cb)
 
     @unittest.mock.patch('asyncio.unix_events.signal')

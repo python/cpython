@@ -472,8 +472,8 @@ class EventLoopTestsMixin:
             f = self.loop.create_connection(
                 lambda: MyProto(loop=self.loop), *httpd.address)
             tr, pr = self.loop.run_until_complete(f)
-            self.assertTrue(isinstance(tr, transports.Transport))
-            self.assertTrue(isinstance(pr, protocols.Protocol))
+            self.assertIsInstance(tr, transports.Transport)
+            self.assertIsInstance(pr, protocols.Protocol)
             self.loop.run_until_complete(pr.done)
             self.assertGreater(pr.nbytes, 0)
             tr.close()
@@ -500,8 +500,8 @@ class EventLoopTestsMixin:
             f = self.loop.create_connection(
                 lambda: MyProto(loop=self.loop), sock=sock)
             tr, pr = self.loop.run_until_complete(f)
-            self.assertTrue(isinstance(tr, transports.Transport))
-            self.assertTrue(isinstance(pr, protocols.Protocol))
+            self.assertIsInstance(tr, transports.Transport)
+            self.assertIsInstance(pr, protocols.Protocol)
             self.loop.run_until_complete(pr.done)
             self.assertGreater(pr.nbytes, 0)
             tr.close()
@@ -513,8 +513,8 @@ class EventLoopTestsMixin:
                 lambda: MyProto(loop=self.loop), *httpd.address,
                 ssl=test_utils.dummy_ssl_context())
             tr, pr = self.loop.run_until_complete(f)
-            self.assertTrue(isinstance(tr, transports.Transport))
-            self.assertTrue(isinstance(pr, protocols.Protocol))
+            self.assertIsInstance(tr, transports.Transport)
+            self.assertIsInstance(pr, protocols.Protocol)
             self.assertTrue('ssl' in tr.__class__.__name__.lower())
             self.assertIsNotNone(tr.get_extra_info('sockname'))
             self.loop.run_until_complete(pr.done)
@@ -926,7 +926,8 @@ class EventLoopTestsMixin:
         r.setblocking(False)
         f = self.loop.sock_recv(r, 1)
         ov = getattr(f, 'ov', None)
-        self.assertTrue(ov is None or ov.pending)
+        if ov is not None:
+            self.assertTrue(ov.pending)
 
         @tasks.coroutine
         def main():
@@ -949,7 +950,8 @@ class EventLoopTestsMixin:
         self.assertLess(elapsed, 0.1)
         self.assertEqual(t.result(), 'cancelled')
         self.assertRaises(futures.CancelledError, f.result)
-        self.assertTrue(ov is None or not ov.pending)
+        if ov is not None:
+            self.assertFalse(ov.pending)
         self.loop._stop_serving(r)
 
         r.close()
