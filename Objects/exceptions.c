@@ -845,7 +845,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
     /* Steals the reference to args */
     Py_CLEAR(self->args);
     self->args = args;
-    args = NULL;
+    *p_args = args = NULL;
 
     return 0;
 }
@@ -885,11 +885,12 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *winerror = NULL;
 #endif
 
+    Py_INCREF(args);
+
     if (!oserror_use_init(type)) {
         if (!_PyArg_NoKeywords(type->tp_name, kwds))
-            return NULL;
+            goto error;
 
-        Py_INCREF(args);
         if (oserror_parse_args(&args, &myerrno, &strerror, &filename
 #ifdef MS_WINDOWS
                                , &winerror
@@ -932,6 +933,7 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             goto error;
     }
 
+    Py_XDECREF(args);
     return (PyObject *) self;
 
 error:
