@@ -168,8 +168,8 @@ class TestParserIdempotency(support.TestCase):
         for filepath in support.all_project_files():
             with open(filepath, "rb") as fp:
                 encoding = tokenize.detect_encoding(fp.readline)[0]
-            self.assertTrue(encoding is not None,
-                            "can't detect encoding for %s" % filepath)
+            self.assertIsNotNone(encoding,
+                                 "can't detect encoding for %s" % filepath)
             with open(filepath, "r", encoding=encoding) as fp:
                 source = fp.read()
             try:
