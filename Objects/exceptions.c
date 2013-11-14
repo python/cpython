@@ -2632,12 +2632,6 @@ _PyErr_TrySetFromCause(const char *format, ...)
     PyObject *new_exc, *new_val, *new_tb;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
-    va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
-
     PyErr_Fetch(&exc, &val, &tb);
     caught_type = (PyTypeObject *) exc;
     /* Ensure type info indicates no extra state is stored at the C level */
@@ -2690,7 +2684,14 @@ _PyErr_TrySetFromCause(const char *format, ...)
      * types as well, but that's quite a bit trickier due to the extra
      * state potentially stored on OSError instances.
      */
+
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
     msg_prefix = PyUnicode_FromFormatV(format, vargs);
+    va_end(vargs);
     if (msg_prefix == NULL)
         return NULL;
 
