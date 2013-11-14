@@ -675,7 +675,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         request = FIONCLEX;
     else
         request = FIOCLEX;
-    err = ioctl(fd, request);
+    err = ioctl(fd, request, NULL);
     if (err) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
