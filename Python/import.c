@@ -948,8 +948,12 @@ static int
 init_builtin(PyObject *name)
 {
     struct _inittab *p;
+    PyObject *mod;
 
-    if (_PyImport_FindExtensionObject(name, name) != NULL)
+    mod = _PyImport_FindExtensionObject(name, name);
+    if (PyErr_Occurred())
+        return -1;
+    if (mod != NULL)
         return 1;
 
     for (p = PyImport_Inittab; p->name != NULL; p++) {
