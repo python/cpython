@@ -49,9 +49,9 @@ class TestRefactoringTool(unittest.TestCase):
 
     def test_print_function_option(self):
         rt = self.rt({"print_function" : True})
-        self.assertTrue(rt.grammar is pygram.python_grammar_no_print_statement)
-        self.assertTrue(rt.driver.grammar is
-                        pygram.python_grammar_no_print_statement)
+        self.assertIs(rt.grammar, pygram.python_grammar_no_print_statement)
+        self.assertIs(rt.driver.grammar,
+                      pygram.python_grammar_no_print_statement)
 
     def test_write_unchanged_files_option(self):
         rt = self.rt()
