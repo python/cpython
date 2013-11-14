@@ -136,6 +136,7 @@ static PyObject *empty_tuple = NULL;
 /* For looking up name pairs in copyreg._extension_registry. */
 static PyObject *two_tuple = NULL;
 
+_Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(modules);
 
 static int
@@ -2599,7 +2600,6 @@ save_dict(PicklerObject *self, PyObject *obj)
 static int
 save_global(PicklerObject *self, PyObject *obj, PyObject *name)
 {
-    static PyObject *name_str = NULL;
     PyObject *global_name = NULL;
     PyObject *module_name = NULL;
     PyObject *module = NULL;
@@ -2608,18 +2608,12 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
 
     const char global_op = GLOBAL;
 
-    if (name_str == NULL) {
-        name_str = PyUnicode_InternFromString("__name__");
-        if (name_str == NULL)
-            goto error;
-    }
-
     if (name) {
         global_name = name;
         Py_INCREF(global_name);
     }
     else {
-        global_name = PyObject_GetAttr(obj, name_str);
+        global_name = _PyObject_GetAttrId(obj, &PyId___name__);
         if (global_name == NULL)
             goto error;
     }
@@ -3016,17 +3010,16 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
     /* Protocol 2 special case: if callable's name is __newobj__, use
        NEWOBJ. */
     if (use_newobj) {
-        static PyObject *newobj_str = NULL, *name_str = NULL;
+        static PyObject *newobj_str = NULL;
         PyObject *name;
 
         if (newobj_str == NULL) {
             newobj_str = PyUnicode_InternFromString("__newobj__");
-            name_str = PyUnicode_InternFromString("__name__");
-            if (newobj_str == NULL || name_str == NULL)
+            if (newobj_str == NULL)
                 return -1;
         }
 
-        name = PyObject_GetAttr(callable, name_str);
+        name = _PyObject_GetAttrId(callable, &PyId___name__);
         if (name == NULL) {
             if (PyErr_ExceptionMatches(PyExc_AttributeError))
                 PyErr_Clear();

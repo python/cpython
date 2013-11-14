@@ -1133,13 +1133,25 @@ Insert a new item x into the array before position i.");
 static PyObject *
 array_buffer_info(arrayobject *self, PyObject *unused)
 {
-    PyObject* retval = NULL;
+    PyObject *retval = NULL, *v;
+
     retval = PyTuple_New(2);
     if (!retval)
         return NULL;
 
-    PyTuple_SET_ITEM(retval, 0, PyLong_FromVoidPtr(self->ob_item));
-    PyTuple_SET_ITEM(retval, 1, PyLong_FromLong((long)(Py_SIZE(self))));
+    v = PyLong_FromVoidPtr(self->ob_item);
+    if (v == NULL) {
+        Py_DECREF(retval);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(retval, 0, v);
+
+    v = PyLong_FromLong((long)(Py_SIZE(self)));
+    if (v == NULL) {
+        Py_DECREF(retval);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(retval, 1, v);
 
     return retval;
 }
