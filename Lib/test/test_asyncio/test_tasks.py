@@ -779,7 +779,7 @@ class TaskTests(unittest.TestCase):
         self.assertEqual(len(res), 2, res)
         self.assertEqual(res[0], (1, 'a'))
         self.assertEqual(res[1][0], 2)
-        self.assertTrue(isinstance(res[1][1], futures.TimeoutError))
+        self.assertIsInstance(res[1][1], futures.TimeoutError)
         self.assertAlmostEqual(0.12, loop.time())
 
         # move forward to close generator
