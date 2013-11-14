@@ -59,9 +59,9 @@ class TestMain(unittest.TestCase):
         ret = self.run_2to3_capture(["-"], input_stream, out_enc, err)
         self.assertEqual(ret, 0)
         output = out.getvalue()
-        self.assertTrue("-print 'nothing'" in output)
-        self.assertTrue("WARNING: couldn't encode <stdin>'s diff for "
-                        "your terminal" in err.getvalue())
+        self.assertIn("-print 'nothing'", output)
+        self.assertIn("WARNING: couldn't encode <stdin>'s diff for "
+                      "your terminal", err.getvalue())
 
     def setup_test_source_trees(self):
         """Setup a test source tree and output destination tree."""
