@@ -2683,6 +2683,9 @@ _PyErr_TrySetFromCause(const char *format, ...)
      * state potentially stored on OSError instances.
      */
 
+    Py_DECREF(exc);
+    Py_XDECREF(tb);
+
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
 #else
@@ -2690,13 +2693,14 @@ _PyErr_TrySetFromCause(const char *format, ...)
 #endif
     msg_prefix = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
-    if (msg_prefix == NULL)
+    if (msg_prefix == NULL) {
+        Py_DECREF(val);
         return NULL;
+    }
 
     PyErr_Format(exc, "%U (%s: %S)",
                  msg_prefix, Py_TYPE(val)->tp_name, val);
-    Py_DECREF(exc);
-    Py_XDECREF(tb);
+    Py_DECREF(msg_prefix);
     PyErr_Fetch(&new_exc, &new_val, &new_tb);
     PyErr_NormalizeException(&new_exc, &new_val, &new_tb);
     PyException_SetCause(new_val, val);
