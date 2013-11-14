@@ -546,7 +546,10 @@ parse_save_field(ReaderObj *self)
             return -1;
         field = tmp;
     }
-    PyList_Append(self->fields, field);
+    if (PyList_Append(self->fields, field) < 0) {
+        Py_DECREF(field);
+        return -1;
+    }
     Py_DECREF(field);
     return 0;
 }
