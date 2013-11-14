@@ -2633,13 +2633,12 @@ _PyErr_TrySetFromCause(const char *format, ...)
     va_list vargs;
 
     PyErr_Fetch(&exc, &val, &tb);
-    caught_type = (PyTypeObject *) exc;
+    caught_type = (PyTypeObject *)exc;
     /* Ensure type info indicates no extra state is stored at the C level */
-    if (caught_type->tp_init != (initproc) BaseException_init ||
+    if (caught_type->tp_init != (initproc)BaseException_init ||
         caught_type->tp_new != BaseException_new ||
         caught_type->tp_basicsize != _PyExc_BaseException.tp_basicsize ||
-        caught_type->tp_itemsize != _PyExc_BaseException.tp_itemsize
-       ) {
+        caught_type->tp_itemsize != _PyExc_BaseException.tp_itemsize) {
         /* We can't be sure we can wrap this safely, since it may contain
          * more state than just the exception type. Accordingly, we just
          * leave it alone.
@@ -2650,13 +2649,11 @@ _PyErr_TrySetFromCause(const char *format, ...)
 
     /* Check the args are empty or contain a single string */
     PyErr_NormalizeException(&exc, &val, &tb);
-    instance_args = ((PyBaseExceptionObject *) val)->args;
+    instance_args = ((PyBaseExceptionObject *)val)->args;
     num_args = PyTuple_GET_SIZE(instance_args);
-    if ((num_args > 1) ||
+    if (num_args > 1 ||
         (num_args == 1 &&
-         !PyUnicode_CheckExact(PyTuple_GET_ITEM(instance_args, 0))
-        )
-       ) {
+         !PyUnicode_CheckExact(PyTuple_GET_ITEM(instance_args, 0)))) {
         /* More than 1 arg, or the one arg we do have isn't a string
          */
         PyErr_Restore(exc, val, tb);
@@ -2665,9 +2662,8 @@ _PyErr_TrySetFromCause(const char *format, ...)
 
     /* Ensure the instance dict is also empty */
     dictptr = _PyObject_GetDictPtr(val);
-    if ((dictptr != NULL) && (*dictptr != NULL) &&
-        (PyObject_Length(*dictptr) > 0)
-       ) {
+    if (dictptr != NULL && *dictptr != NULL &&
+        PyObject_Length(*dictptr) > 0) {
         /* While we could potentially copy a non-empty instance dictionary
          * to the replacement exception, for now we take the more
          * conservative path of leaving exceptions with attributes set
