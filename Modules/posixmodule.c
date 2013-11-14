@@ -5083,8 +5083,10 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     }
     envc = 0;
     keys = PyMapping_Keys(env);
+    if (!keys)
+        goto error;
     vals = PyMapping_Values(env);
-    if (!keys || !vals)
+    if (!vals)
         goto error;
     if (!PyList_Check(keys) || !PyList_Check(vals)) {
         PyErr_Format(PyExc_TypeError,
