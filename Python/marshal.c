@@ -80,7 +80,7 @@ typedef struct {
 
 #define w_byte(c, p) if (((p)->fp)) putc((c), (p)->fp); \
                       else if ((p)->ptr != (p)->end) *(p)->ptr++ = (c); \
-                           else w_more(c, p)
+                           else w_more((c), p)
 
 static void
 w_more(char c, WFILE *p)
@@ -448,7 +448,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         n = PyTuple_Size(v);
         if (p->version >= 4 && n < 256) {
             W_TYPE(TYPE_SMALL_TUPLE, p);
-            w_byte(n, p);
+            w_byte((unsigned char)n, p);
         }
         else {
             W_TYPE(TYPE_TUPLE, p);
