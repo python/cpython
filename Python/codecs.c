@@ -370,8 +370,10 @@ PyObject *PyCodec_Encode(PyObject *object,
         goto onError;
 
     result = PyEval_CallObject(encoder, args);
-    if (result == NULL)
+    if (result == NULL) {
+        wrap_codec_error("encoding", encoding);
         goto onError;
+    }
 
     if (!PyTuple_Check(result) ||
         PyTuple_GET_SIZE(result) != 2) {
@@ -392,7 +394,6 @@ PyObject *PyCodec_Encode(PyObject *object,
     Py_XDECREF(result);
     Py_XDECREF(args);
     Py_XDECREF(encoder);
-    wrap_codec_error("encoding", encoding);
     return NULL;
 }
 
@@ -418,8 +419,10 @@ PyObject *PyCodec_Decode(PyObject *object,
         goto onError;
 
     result = PyEval_CallObject(decoder,args);
-    if (result == NULL)
+    if (result == NULL) {
+        wrap_codec_error("decoding", encoding);
         goto onError;
+    }
     if (!PyTuple_Check(result) ||
         PyTuple_GET_SIZE(result) != 2) {
         PyErr_SetString(PyExc_TypeError,
@@ -439,7 +442,6 @@ PyObject *PyCodec_Decode(PyObject *object,
     Py_XDECREF(args);
     Py_XDECREF(decoder);
     Py_XDECREF(result);
-    wrap_codec_error("decoding", encoding);
     return NULL;
 }
 
