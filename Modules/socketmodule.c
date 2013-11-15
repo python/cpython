@@ -840,7 +840,7 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
         return siz;
     }
     /* special-case broadcast - inet_addr() below can return INADDR_NONE for
-     * this */ 
+     * this */
     if (strcmp(name, "255.255.255.255") == 0 ||
         strcmp(name, "<broadcast>") == 0) {
         struct sockaddr_in *sin;
@@ -901,7 +901,7 @@ setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 #endif
             return 4;
         }
-    }   
+    }
 #endif /* HAVE_INET_PTON */
 
     /* perform a name resolution */
@@ -2833,7 +2833,7 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
     memset(&addrbuf, 0, addrlen);
     timeout = internal_select_ex(s, 0, interval);
     if (!timeout) {
-#ifndef MS_WINDOWS
+#ifdef MS_WINDOWS
         if (len > INT_MAX)
             len = INT_MAX;
         n = recvfrom(s->sock_fd, cbuf, (int)len, flags,
@@ -4702,7 +4702,7 @@ socket_dup(PyObject *self, PyObject *fdobj)
     /* On UNIX, dup can be used to duplicate the file descriptor of a socket */
     newfd = _Py_dup(fd);
     if (newfd == INVALID_SOCKET)
-        return NULL; 
+        return NULL;
 #endif
 
     newfdobj = PyLong_FromSocket_t(newfd);
@@ -5093,7 +5093,7 @@ socket_inet_pton(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    size = sizeof(addr); 
+    size = sizeof(addr);
     ret = WSAStringToAddressA(ip, af, NULL, (LPSOCKADDR)&addr, &size);
 
     if (ret) {
@@ -5101,10 +5101,10 @@ socket_inet_pton(PyObject *self, PyObject *args)
         return NULL;
     } else if(af == AF_INET) {
         struct sockaddr_in *addr4 = (struct sockaddr_in*)&addr;
-        return PyBytes_FromStringAndSize((const char *)&(addr4->sin_addr), 
+        return PyBytes_FromStringAndSize((const char *)&(addr4->sin_addr),
                                          sizeof(addr4->sin_addr));
     } else if (af == AF_INET6) {
-        return PyBytes_FromStringAndSize((const char *)&(addr.sin6_addr), 
+        return PyBytes_FromStringAndSize((const char *)&(addr.sin6_addr),
                                           sizeof(addr.sin6_addr));
     } else {
         PyErr_SetString(PyExc_OSError, "unknown address family");
@@ -5231,7 +5231,7 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     }
 
     retlen = sizeof(ip);
-    ret = WSAAddressToStringA((struct sockaddr*)&addr, addrlen, NULL, 
+    ret = WSAAddressToStringA((struct sockaddr*)&addr, addrlen, NULL,
                               ip, &retlen);
 
     if (ret) {
