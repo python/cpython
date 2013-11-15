@@ -2386,6 +2386,15 @@ class TransformCodecTest(unittest.TestCase):
 # currently *only* want this to happen for relatively stateless
 # exceptions, where the only significant information they contain is their
 # type and a single str argument.
+
+# Use a local codec registry to avoid appearing to leak objects when
+# registering multiple seach functions
+_TEST_CODECS = {}
+
+def _get_test_codec(codec_name):
+    return _TEST_CODECS.get(codec_name)
+codecs.register(_get_test_codec) # Returns None, not usable as a decorator
+
 class ExceptionChainingTest(unittest.TestCase):
 
     def setUp(self):
@@ -2395,19 +2404,16 @@ class ExceptionChainingTest(unittest.TestCase):
         # The codecs module normalizes codec names, although this doesn't
         # appear to be formally documented...
         self.codec_name = repr(self).lower().replace(" ", "-")
-        self.codec_info = None
-        codecs.register(self.get_codec)
 
-    def get_codec(self, codec_name):
-        if codec_name != self.codec_name:
-            return None
-        return self.codec_info
+    def tearDown(self):
+        _TEST_CODECS.pop(self.codec_name, None)
 
     def set_codec(self, obj_to_raise):
         def raise_obj(*args, **kwds):
             raise obj_to_raise
-        self.codec_info = codecs.CodecInfo(raise_obj, raise_obj,
-                                           name=self.codec_name)
+        codec_info = codecs.CodecInfo(raise_obj, raise_obj,
+                                      name=self.codec_name)
+        _TEST_CODECS[self.codec_name] = codec_info
 
     @contextlib.contextmanager
     def assertWrapped(self, operation, exc_type, msg):
