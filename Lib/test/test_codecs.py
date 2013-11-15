@@ -2435,22 +2435,22 @@ class ExceptionChainingTest(unittest.TestCase):
         self.check_wrapped(RuntimeError(msg), msg)
 
     @contextlib.contextmanager
-    def assertNotWrapped(self, operation, exc_type, msg):
+    def assertNotWrapped(self, operation, exc_type, msg_re, msg=None):
+        if msg is None:
+            msg = msg_re
         with self.assertRaisesRegex(exc_type, msg) as caught:
             yield caught
-        actual_msg = str(caught.exception)
-        self.assertNotIn(operation, actual_msg)
-        self.assertNotIn(self.codec_name, actual_msg)
+        self.assertEqual(str(caught.exception), msg)
 
-    def check_not_wrapped(self, obj_to_raise, msg):
+    def check_not_wrapped(self, obj_to_raise, msg_re, msg=None):
         self.set_codec(obj_to_raise)
-        with self.assertNotWrapped("encoding", RuntimeError, msg):
+        with self.assertNotWrapped("encoding", RuntimeError, msg_re, msg):
             "str input".encode(self.codec_name)
-        with self.assertNotWrapped("encoding", RuntimeError, msg):
+        with self.assertNotWrapped("encoding", RuntimeError, msg_re, msg):
             codecs.encode("str input", self.codec_name)
-        with self.assertNotWrapped("decoding", RuntimeError, msg):
+        with self.assertNotWrapped("decoding", RuntimeError, msg_re, msg):
             b"bytes input".decode(self.codec_name)
-        with self.assertNotWrapped("decoding", RuntimeError, msg):
+        with self.assertNotWrapped("decoding", RuntimeError, msg_re, msg):
             codecs.decode(b"bytes input", self.codec_name)
 
     def test_init_override_is_not_wrapped(self):
@@ -2475,8 +2475,23 @@ class ExceptionChainingTest(unittest.TestCase):
         self.check_not_wrapped(RuntimeError(1), "1")
 
     def test_multiple_args_is_not_wrapped(self):
-        msg = "\('a', 'b', 'c'\)"
-        self.check_not_wrapped(RuntimeError('a', 'b', 'c'), msg)
+        msg_re = "\('a', 'b', 'c'\)"
+        msg = "('a', 'b', 'c')"
+        self.check_not_wrapped(RuntimeError('a', 'b', 'c'), msg_re, msg)
+
+    # http://bugs.python.org/issue19609
+    def test_codec_lookup_failure_not_wrapped(self):
+        msg = "unknown encoding: %s" % self.codec_name
+        # The initial codec lookup should not be wrapped
+        with self.assertNotWrapped("encoding", LookupError, msg):
+            "str input".encode(self.codec_name)
+        with self.assertNotWrapped("encoding", LookupError, msg):
+            codecs.encode("str input", self.codec_name)
+        with self.assertNotWrapped("decoding", LookupError, msg):
+            b"bytes input".decode(self.codec_name)
+        with self.assertNotWrapped("decoding", LookupError, msg):
+            codecs.decode(b"bytes input", self.codec_name)
+
 
 
 @unittest.skipUnless(sys.platform == 'win32',
