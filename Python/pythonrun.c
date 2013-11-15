@@ -900,8 +900,9 @@ Py_GetPythonHome(void)
     if (home == NULL && !Py_IgnoreEnvironmentFlag) {
         char* chome = Py_GETENV("PYTHONHOME");
         if (chome) {
-            size_t r = mbstowcs(env_home, chome, PATH_MAX+1);
-            if (r != (size_t)-1 && r <= PATH_MAX)
+            size_t size = Py_ARRAY_LENGTH(env_home);
+            size_t r = mbstowcs(env_home, chome, size);
+            if (r != (size_t)-1 && r < size)
                 home = env_home;
         }
 
