@@ -670,7 +670,7 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
     key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
-    retval = PKCS5_PBKDF2_HMAC_fast((char*)password.buf, password.len,
+    retval = PKCS5_PBKDF2_HMAC_fast((char*)password.buf, (int)password.len,
                                     (unsigned char *)salt.buf, salt.len,
                                     iterations, digest, dklen,
                                     (unsigned char *)key);
