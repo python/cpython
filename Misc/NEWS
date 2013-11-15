@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19523: Closed FileHandler leak which occurred when delay was set.
+
 - Issue #13674: Prevented time.strftime from crashing on Windows when given
   a year before 1900 and a format of %y.
 
