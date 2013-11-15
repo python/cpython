@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19523: Closed FileHandler leak which occurred when delay was set.
+
 - Issue #19544 and #6516: Restore support for --user and --group parameters to
   sdist command accidentally rolled back as part of the distutils2 rollback.
 

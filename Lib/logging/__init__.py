@@ -990,8 +990,10 @@ class FileHandler(StreamHandler):
                 self.flush()
                 if hasattr(self.stream, "close"):
                     self.stream.close()
-                StreamHandler.close(self)
                 self.stream = None
+            # Issue #19523: call unconditionally to
+            # prevent a handler leak when delay is set
+            StreamHandler.close(self)
         finally:
             self.release()
 
