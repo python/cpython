@@ -269,7 +269,7 @@ data_stack_grow(SRE_STATE* state, Py_ssize_t size)
 /* factories and destructors */
 
 /* see sre.h for object declarations */
-static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, int);
+static PyObject*pattern_new_match(PatternObject*, SRE_STATE*, Py_ssize_t);
 static PyObject*pattern_scanner(PatternObject*, PyObject*, PyObject* kw);
 
 static PyObject *
@@ -468,7 +468,7 @@ state_getslice(SRE_STATE* state, Py_ssize_t index, PyObject* string, int empty)
 }
 
 static void
-pattern_error(int status)
+pattern_error(Py_ssize_t status)
 {
     switch (status) {
     case SRE_ERROR_RECURSION_LIMIT:
@@ -562,7 +562,7 @@ static PyObject*
 pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
 {
     SRE_STATE state;
-    int status;
+    Py_ssize_t status;
 
     PyObject* string;
     Py_ssize_t start = 0;
@@ -2322,7 +2322,7 @@ static PyTypeObject Match_Type = {
 };
 
 static PyObject*
-pattern_new_match(PatternObject* pattern, SRE_STATE* state, int status)
+pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
 {
     /* create match object (from state object) */
 
