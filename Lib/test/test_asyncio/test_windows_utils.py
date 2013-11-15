@@ -119,7 +119,8 @@ class PopenTests(unittest.TestCase):
         overr.ReadFile(p.stderr.handle, 100)
 
         events = [ovin.event, ovout.event, overr.event]
-        res = _winapi.WaitForMultipleObjects(events, True, 2000)
+        # Super-long timeout for slow buildbots.
+        res = _winapi.WaitForMultipleObjects(events, True, 10000)
         self.assertEqual(res, _winapi.WAIT_OBJECT_0)
         self.assertFalse(ovout.pending)
         self.assertFalse(overr.pending)
