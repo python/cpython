@@ -623,7 +623,7 @@ int
 _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
 {
     char *cpath;
-    char cbuf[PATH_MAX];
+    char cbuf[MAXPATHLEN];
     wchar_t *wbuf;
     int res;
     size_t r1;
@@ -633,11 +633,11 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         errno = EINVAL;
         return -1;
     }
-    res = (int)readlink(cpath, cbuf, PATH_MAX);
+    res = (int)readlink(cpath, cbuf, Py_ARRAY_LENGTH(cbuf));
     PyMem_Free(cpath);
     if (res == -1)
         return -1;
-    if (res == PATH_MAX) {
+    if (res == Py_ARRAY_LENGTH(cbuf)) {
         errno = EINVAL;
         return -1;
     }
@@ -669,7 +669,7 @@ _Py_wrealpath(const wchar_t *path,
               wchar_t *resolved_path, size_t resolved_path_size)
 {
     char *cpath;
-    char cresolved_path[PATH_MAX];
+    char cresolved_path[MAXPATHLEN];
     wchar_t *wresolved_path;
     char *res;
     size_t r;
@@ -709,11 +709,11 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
 #ifdef MS_WINDOWS
     return _wgetcwd(buf, size);
 #else
-    char fname[PATH_MAX];
+    char fname[MAXPATHLEN];
     wchar_t *wname;
     size_t len;
 
-    if (getcwd(fname, PATH_MAX) == NULL)
+    if (getcwd(fname, Py_ARRAY_LENGTH(fname)) == NULL)
         return NULL;
     wname = _Py_char2wchar(fname, &len);
     if (wname == NULL)
