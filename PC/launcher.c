@@ -807,10 +807,10 @@ parse_shebang(wchar_t * shebang_line, int nchars, wchar_t ** command,
             }
             if (*vpp == NULL) {
                 /*
-                 * Not found in builtins - look in customised commands.
+                 * Not found in builtins - look in customized commands.
                  *
                  * We can't permanently modify the shebang line in case
-                 * it's not a customised command, but we can temporarily
+                 * it's not a customized command, but we can temporarily
                  * stick a NUL after the command while searching for it,
                  * then put back the char we zapped.
                  */
