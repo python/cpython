@@ -16,6 +16,13 @@ from distutils.tests import support
 from test.support import check_warnings, run_unittest, patch
 
 try:
+    import grp
+    import pwd
+    UID_GID_SUPPORT = True
+except ImportError:
+    UID_GID_SUPPORT = False
+
+try:
     import zipfile
     ZIP_SUPPORT = True
 except ImportError:
@@ -77,7 +84,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
 
         tmpdir2 = self.mkdtemp()
         unittest.skipUnless(splitdrive(tmpdir)[0] == splitdrive(tmpdir2)[0],
-                            "Source and target should be on same drive")
+                            "source and target should be on same drive")
 
         base_name = os.path.join(tmpdir2, target_name)
 
@@ -274,6 +281,58 @@ class ArchiveUtilTestCase(support.TempdirManager,
             self.assertEqual(os.getcwd(), current_dir)
         finally:
             del ARCHIVE_FORMATS['xxx']
+
+    def test_make_archive_owner_group(self):
+        # testing make_archive with owner and group, with various combinations
+        # this works even if there's not gid/uid support
+        if UID_GID_SUPPORT:
+            group = grp.getgrgid(0)[0]
+            owner = pwd.getpwuid(0)[0]
+        else:
+            group = owner = 'root'
+
+        base_dir, root_dir, base_name =  self._create_files()
+        base_name = os.path.join(self.mkdtemp() , 'archive')
+        res = make_archive(base_name, 'zip', root_dir, base_dir, owner=owner,
+                           group=group)
+        self.assertTrue(os.path.exists(res))
+
+        res = make_archive(base_name, 'zip', root_dir, base_dir)
+        self.assertTrue(os.path.exists(res))
+
+        res = make_archive(base_name, 'tar', root_dir, base_dir,
+                           owner=owner, group=group)
+        self.assertTrue(os.path.exists(res))
+
+        res = make_archive(base_name, 'tar', root_dir, base_dir,
+                           owner='kjhkjhkjg', group='oihohoh')
+        self.assertTrue(os.path.exists(res))
+
+    @unittest.skipUnless(zlib, "Requires zlib")
+    @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
+    def test_tarfile_root_owner(self):
+        tmpdir, tmpdir2, base_name =  self._create_files()
+        old_dir = os.getcwd()
+        os.chdir(tmpdir)
+        group = grp.getgrgid(0)[0]
+        owner = pwd.getpwuid(0)[0]
+        try:
+            archive_name = make_tarball(base_name, 'dist', compress=None,
+                                        owner=owner, group=group)
+        finally:
+            os.chdir(old_dir)
+
+        # check if the compressed tarball was created
+        self.assertTrue(os.path.exists(archive_name))
+
+        # now checks the rights
+        archive = tarfile.open(archive_name)
+        try:
+            for member in archive.getmembers():
+                self.assertEquals(member.uid, 0)
+                self.assertEquals(member.gid, 0)
+        finally:
+            archive.close()
 
 def test_suite():
     return unittest.makeSuite(ArchiveUtilTestCase)

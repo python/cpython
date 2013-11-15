@@ -18,15 +18,55 @@ from distutils.spawn import spawn
 from distutils.dir_util import mkpath
 from distutils import log
 
-def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0):
+try:
+    from pwd import getpwnam
+except AttributeError:
+    getpwnam = None
+
+try:
+    from grp import getgrnam
+except AttributeError:
+    getgrnam = None
+
+def _get_gid(name):
+    """Returns a gid, given a group name."""
+    if getgrnam is None or name is None:
+        return None
+    try:
+        result = getgrnam(name)
+    except KeyError:
+        result = None
+    if result is not None:
+        return result[2]
+    return None
+
+def _get_uid(name):
+    """Returns an uid, given a user name."""
+    if getpwnam is None or name is None:
+        return None
+    try:
+        result = getpwnam(name)
+    except KeyError:
+        result = None
+    if result is not None:
+        return result[2]
+    return None
+
+def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
+                 owner=None, group=None):
     """Create a (possibly compressed) tar file from all the files under
     'base_dir'.
 
     'compress' must be "gzip" (the default), "compress", "bzip2", or None.
-    Both "tar" and the compression utility named by 'compress' must be on
-    the default program search path, so this is probably Unix-specific.
+    (compress will be deprecated in Python 3.2)
+
+    'owner' and 'group' can be used to define an owner and a group for the
+    archive that is being built. If not provided, the current owner and group
+    will be used.
+
     The output tar file will be named 'base_dir' +  ".tar", possibly plus
     the appropriate compression extension (".gz", ".bz2" or ".Z").
+
     Returns the output filename.
     """
     tar_compression = {'gzip': 'gz', 'bzip2': 'bz2', None: '', 'compress': ''}
@@ -48,10 +88,23 @@ def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0):
     import tarfile  # late import so Python build itself doesn't break
 
     log.info('Creating tar archive')
+
+    uid = _get_uid(owner)
+    gid = _get_gid(group)
+
+    def _set_uid_gid(tarinfo):
+        if gid is not None:
+            tarinfo.gid = gid
+            tarinfo.gname = group
+        if uid is not None:
+            tarinfo.uid = uid
+            tarinfo.uname = owner
+        return tarinfo
+
     if not dry_run:
         tar = tarfile.open(archive_name, 'w|%s' % tar_compression[compress])
         try:
-            tar.add(base_dir)
+            tar.add(base_dir, filter=_set_uid_gid)
         finally:
             tar.close()
 
@@ -140,7 +193,7 @@ def check_archive_formats(formats):
     return None
 
 def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
-                 dry_run=0):
+                 dry_run=0, owner=None, group=None):
     """Create an archive file (eg. zip or tar).
 
     'base_name' is the name of the file to create, minus any format-specific
@@ -153,6 +206,9 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     ie. 'base_dir' will be the common prefix of all files and
     directories in the archive.  'root_dir' and 'base_dir' both default
     to the current directory.  Returns the name of the archive file.
+
+    'owner' and 'group' are used when creating a tar archive. By default,
+    uses the current owner and group.
     """
     save_cwd = os.getcwd()
     if root_dir is not None:
@@ -174,6 +230,11 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     func = format_info[0]
     for arg, val in format_info[1]:
         kwargs[arg] = val
+
+    if format != 'zip':
+        kwargs['owner'] = owner
+        kwargs['group'] = group
+
     try:
         filename = func(base_name, base_dir, **kwargs)
     finally:
