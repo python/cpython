@@ -135,7 +135,6 @@ static wchar_t exec_prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
 static int module_search_path_malloced = 0;
-static wchar_t *lib_python = L"lib/python" VERSION;
 
 static void
 reduce(wchar_t *dir)
@@ -317,7 +316,8 @@ find_env_config_value(FILE * env_file, const wchar_t * key, wchar_t * value)
    bytes long.
 */
 static int
-search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix)
+search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix,
+                  wchar_t *lib_python)
 {
     size_t n;
     wchar_t *vpath;
@@ -383,7 +383,8 @@ search_for_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_prefix)
    MAXPATHLEN bytes long.
 */
 static int
-search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home, wchar_t *_exec_prefix)
+search_for_exec_prefix(wchar_t *argv0_path, wchar_t *home,
+                       wchar_t *_exec_prefix, wchar_t *lib_python)
 {
     size_t n;
 
@@ -493,12 +494,14 @@ calculate_path(void)
     char execpath[MAXPATHLEN+1];
 #endif
     wchar_t *_pythonpath, *_prefix, *_exec_prefix;
+    wchar_t *lib_python;
 
     _pythonpath = _Py_char2wchar(PYTHONPATH, NULL);
     _prefix = _Py_char2wchar(PREFIX, NULL);
     _exec_prefix = _Py_char2wchar(EXEC_PREFIX, NULL);
+    lib_python = _Py_char2wchar("lib/python" VERSION, NULL);
 
-    if (!_pythonpath || !_prefix || !_exec_prefix) {
+    if (!_pythonpath || !_prefix || !_exec_prefix || !lib_python) {
         Py_FatalError(
             "Unable to decode path variables in getpath.c: "
             "memory error");
@@ -666,7 +669,8 @@ calculate_path(void)
         }
     }
 
-    if (!(pfound = search_for_prefix(argv0_path, home, _prefix))) {
+    pfound = search_for_prefix(argv0_path, home, _prefix, lib_python);
+    if (!pfound) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
@@ -689,7 +693,9 @@ calculate_path(void)
     zip_path[bufsz - 6] = VERSION[0];
     zip_path[bufsz - 5] = VERSION[2];
 
-    if (!(efound = search_for_exec_prefix(argv0_path, home, _exec_prefix))) {
+    efound = search_for_exec_prefix(argv0_path, home,
+                                    _exec_prefix, lib_python);
+    if (!efound) {
         if (!Py_FrozenFlag)
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
@@ -818,6 +824,7 @@ calculate_path(void)
     PyMem_RawFree(_pythonpath);
     PyMem_RawFree(_prefix);
     PyMem_RawFree(_exec_prefix);
+    PyMem_RawFree(lib_python);
     PyMem_RawFree(rtpypath);
 }
 
