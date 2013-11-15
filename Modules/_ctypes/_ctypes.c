@@ -4054,8 +4054,8 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     }
     if (PyTuple_GET_SIZE(args)) {
-        int res = _init_pos_args(self, Py_TYPE(self),
-                                 args, kwds, 0);
+        Py_ssize_t res = _init_pos_args(self, Py_TYPE(self),
+                                        args, kwds, 0);
         if (res == -1)
             return -1;
         if (res < PyTuple_GET_SIZE(args)) {
