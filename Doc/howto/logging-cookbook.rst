@@ -1096,7 +1096,7 @@ Python 3.2 or later.
 
 .. _custom-logrecord:
 
-Customising ``LogRecord``
+Customizing ``LogRecord``
 -------------------------
 
 Every logging event is represented by a :class:`LogRecord` instance.
@@ -1313,7 +1313,7 @@ of the Django documentation.
 
 .. _cookbook-rotator-namer:
 
-Using a rotator and namer to customise log rotation processing
+Using a rotator and namer to customize log rotation processing
 --------------------------------------------------------------
 
 An example of how you can define a namer and rotator is given in the following
@@ -1694,14 +1694,14 @@ Python used.
 
 .. currentmodule:: logging.config
 
-Customising handlers with :func:`dictConfig`
+Customizing handlers with :func:`dictConfig`
 --------------------------------------------
 
-There are times when you want to customise logging handlers in particular ways,
+There are times when you want to customize logging handlers in particular ways,
 and if you use :func:`dictConfig` you may be able to do this without
 subclassing. As an example, consider that you may want to set the ownership of a
 log file. On POSIX, this is easily done using :func:`shutil.chown`, but the file
-handlers in the stdlib don't offer built-in support. You can customise handler
+handlers in the stdlib don't offer built-in support. You can customize handler
 creation using a plain function such as::
 
     def owned_file_handler(filename, mode='a', encoding=None, owner=None):

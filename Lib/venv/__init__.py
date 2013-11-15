@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 class EnvBuilder:
     """
     This class exists to allow virtual environment creation to be
-    customised. The constructor parameters determine the builder's
+    customized. The constructor parameters determine the builder's
     behaviour when called upon to create a virtual environment.
 
     By default, the builder makes the system (global) site-packages dir
