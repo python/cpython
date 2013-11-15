@@ -26,16 +26,16 @@ to create a gzipped tarball and a zip file.  The available formats are:
 +===========+=========================+=========+
 | ``zip``   | zip file (:file:`.zip`) | (1),(3) |
 +-----------+-------------------------+---------+
-| ``gztar`` | gzip'ed tar file        | (2),(4) |
+| ``gztar`` | gzip'ed tar file        | \(2)    |
 |           | (:file:`.tar.gz`)       |         |
 +-----------+-------------------------+---------+
-| ``bztar`` | bzip2'ed tar file       | \(4)    |
+| ``bztar`` | bzip2'ed tar file       |         |
 |           | (:file:`.tar.bz2`)      |         |
 +-----------+-------------------------+---------+
 | ``ztar``  | compressed tar file     | \(4)    |
 |           | (:file:`.tar.Z`)        |         |
 +-----------+-------------------------+---------+
-| ``tar``   | tar file (:file:`.tar`) | \(4)    |
+| ``tar``   | tar file (:file:`.tar`) |         |
 +-----------+-------------------------+---------+
 
 Notes:
@@ -51,8 +51,16 @@ Notes:
    of the standard Python library since Python 1.6)
 
 (4)
-   requires external utilities: :program:`tar` and possibly one of :program:`gzip`,
-   :program:`bzip2`, or :program:`compress`
+   requires the :program:`compress` program. Notice that this format is now
+   pending for deprecation and will be removed in the future versions of Python.
+
+When using any ``tar`` format (``gztar``, ``bztar``, ``ztar`` or
+``tar``), under Unix you can specify the ``owner`` and ``group`` names
+that will be set for each member of the archive.
+
+For example, if you want all files of the archive to be owned by root::
+
+    python setup.py sdist --owner=root --group=root
 
 
 .. _manifest:
