@@ -845,8 +845,8 @@ functions.
 
    Return either the standard :class:`Logger` class, or the last class passed to
    :func:`setLoggerClass`. This function may be called from within a new class
-   definition, to ensure that installing a customised :class:`Logger` class will
-   not undo customisations already applied by other code. For example::
+   definition, to ensure that installing a customized :class:`Logger` class will
+   not undo customizations already applied by other code. For example::
 
       class MyLogger(logging.getLoggerClass()):
           # ... override behaviour here

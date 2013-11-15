@@ -892,7 +892,7 @@ possible, while any potentially slow operations (such as sending an email via
 
       Enqueues the record on the queue using ``put_nowait()``; you may
       want to override this if you want to use blocking behaviour, or a
-      timeout, or a customised queue implementation.
+      timeout, or a customized queue implementation.
 
 
 
