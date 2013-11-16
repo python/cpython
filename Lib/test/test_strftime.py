@@ -189,15 +189,15 @@ class Y1900Tests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == "win32", "Doesn't apply on Windows")
     def test_y_before_1900_nonwin(self):
-        self.assertEquals(
+        self.assertEqual(
             time.strftime("%y", (1899, 1, 1, 0, 0, 0, 0, 0, 0)), "99")
 
     def test_y_1900(self):
-        self.assertEquals(
+        self.assertEqual(
             time.strftime("%y", (1900, 1, 1, 0, 0, 0, 0, 0, 0)), "00")
 
     def test_y_after_1900(self):
-        self.assertEquals(
+        self.assertEqual(
             time.strftime("%y", (2013, 1, 1, 0, 0, 0, 0, 0, 0)), "13")
 
 if __name__ == '__main__':
