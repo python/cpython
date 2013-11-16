@@ -26,7 +26,7 @@ class RefcountTestCase(unittest.TestCase):
         self.assertEqual(grc(callback), 2)
         cb = MyCallback(callback)
 
-        self.assertTrue(grc(callback) > 2)
+        self.assertGreater(grc(callback), 2)
         result = f(-10, cb)
         self.assertEqual(result, -18)
         cb = None
@@ -46,15 +46,15 @@ class RefcountTestCase(unittest.TestCase):
 
         # the CFuncPtr instance holds at least one refcount on func:
         f = OtherCallback(func)
-        self.assertTrue(grc(func) > 2)
+        self.assertGreater(grc(func), 2)
 
         # and may release it again
         del f
-        self.assertTrue(grc(func) >= 2)
+        self.assertGreaterEqual(grc(func), 2)
 
         # but now it must be gone
         gc.collect()
-        self.assertTrue(grc(func) == 2)
+        self.assertEqual(grc(func), 2)
 
         class X(ctypes.Structure):
             _fields_ = [("a", OtherCallback)]
@@ -62,11 +62,11 @@ class RefcountTestCase(unittest.TestCase):
         x.a = OtherCallback(func)
 
         # the CFuncPtr instance holds at least one refcount on func:
-        self.assertTrue(grc(func) > 2)
+        self.assertGreater(grc(func), 2)
 
         # and may release it again
         del x
-        self.assertTrue(grc(func) >= 2)
+        self.assertGreaterEqual(grc(func), 2)
 
         # and now it must be gone again
         gc.collect()
@@ -75,7 +75,7 @@ class RefcountTestCase(unittest.TestCase):
         f = OtherCallback(func)
 
         # the CFuncPtr instance holds at least one refcount on func:
-        self.assertTrue(grc(func) > 2)
+        self.assertGreater(grc(func), 2)
 
         # create a cycle
         f.cycle = f
