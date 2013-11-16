@@ -437,7 +437,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
 
         # check if tar and gzip are installed
         if (find_executable('tar') is None or
-            find_executable('gzip') is None):
+                find_executable('gzip') is None):
             return
 
         # now building a sdist
@@ -455,8 +455,8 @@ class SDistTestCase(PyPIRCCommandTestCase):
         archive = tarfile.open(archive_name)
         try:
             for member in archive.getmembers():
-                self.assertEquals(member.uid, 0)
-                self.assertEquals(member.gid, 0)
+                self.assertEqual(member.uid, 0)
+                self.assertEqual(member.gid, 0)
         finally:
             archive.close()
 
@@ -477,7 +477,7 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # rights (see #7408)
         try:
             for member in archive.getmembers():
-                self.assertEquals(member.uid, os.getuid())
+                self.assertEqual(member.uid, os.getuid())
         finally:
             archive.close()
 
