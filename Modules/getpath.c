@@ -134,7 +134,6 @@ static wchar_t prefix[MAXPATHLEN+1];
 static wchar_t exec_prefix[MAXPATHLEN+1];
 static wchar_t progpath[MAXPATHLEN+1];
 static wchar_t *module_search_path = NULL;
-static int module_search_path_malloced = 0;
 
 static void
 reduce(wchar_t *dir)
@@ -740,60 +739,55 @@ calculate_path(void)
     bufsz += wcslen(zip_path) + 1;
     bufsz += wcslen(exec_prefix) + 1;
 
-    buf = (wchar_t *)PyMem_Malloc(bufsz*sizeof(wchar_t));
-
+    buf = (wchar_t *)PyMem_Malloc(bufsz * sizeof(wchar_t));
     if (buf == NULL) {
-        /* We can't exit, so print a warning and limp along */
-        fprintf(stderr, "Not enough memory for dynamic PYTHONPATH.\n");
-        fprintf(stderr, "Using default static PYTHONPATH.\n");
-        module_search_path = L"" PYTHONPATH;
+        Py_FatalError(
+            "Not enough memory for dynamic PYTHONPATH");
     }
-    else {
-        /* Run-time value of $PYTHONPATH goes first */
-        if (rtpypath) {
-            wcscpy(buf, rtpypath);
-            wcscat(buf, delimiter);
-        }
-        else
-            buf[0] = '\0';
 
-        /* Next is the default zip path */
-        wcscat(buf, zip_path);
+    /* Run-time value of $PYTHONPATH goes first */
+    if (rtpypath) {
+        wcscpy(buf, rtpypath);
         wcscat(buf, delimiter);
-
-        /* Next goes merge of compile-time $PYTHONPATH with
-         * dynamically located prefix.
-         */
-        defpath = _pythonpath;
-        while (1) {
-            wchar_t *delim = wcschr(defpath, DELIM);
-
-            if (defpath[0] != SEP) {
-                wcscat(buf, prefix);
-                wcscat(buf, separator);
-            }
-
-            if (delim) {
-                size_t len = delim - defpath + 1;
-                size_t end = wcslen(buf) + len;
-                wcsncat(buf, defpath, len);
-                *(buf + end) = '\0';
-            }
-            else {
-                wcscat(buf, defpath);
-                break;
-            }
-            defpath = delim + 1;
-        }
-        wcscat(buf, delimiter);
-
-        /* Finally, on goes the directory for dynamic-load modules */
-        wcscat(buf, exec_prefix);
-
-        /* And publish the results */
-        module_search_path = buf;
-        module_search_path_malloced = 1;
     }
+    else
+        buf[0] = '\0';
+
+    /* Next is the default zip path */
+    wcscat(buf, zip_path);
+    wcscat(buf, delimiter);
+
+    /* Next goes merge of compile-time $PYTHONPATH with
+     * dynamically located prefix.
+     */
+    defpath = _pythonpath;
+    while (1) {
+        wchar_t *delim = wcschr(defpath, DELIM);
+
+        if (defpath[0] != SEP) {
+            wcscat(buf, prefix);
+            wcscat(buf, separator);
+        }
+
+        if (delim) {
+            size_t len = delim - defpath + 1;
+            size_t end = wcslen(buf) + len;
+            wcsncat(buf, defpath, len);
+            *(buf + end) = '\0';
+        }
+        else {
+            wcscat(buf, defpath);
+            break;
+        }
+        defpath = delim + 1;
+    }
+    wcscat(buf, delimiter);
+
+    /* Finally, on goes the directory for dynamic-load modules */
+    wcscat(buf, exec_prefix);
+
+    /* And publish the results */
+    module_search_path = buf;
 
     /* Reduce prefix and exec_prefix to their essence,
      * e.g. /usr/local/lib/python1.5 is reduced to /usr/local.
@@ -834,10 +828,8 @@ void
 Py_SetPath(const wchar_t *path)
 {
     if (module_search_path != NULL) {
-        if (module_search_path_malloced)
-            PyMem_RawFree(module_search_path);
+        PyMem_RawFree(module_search_path);
         module_search_path = NULL;
-        module_search_path_malloced = 0;
     }
     if (path != NULL) {
         extern wchar_t *Py_GetProgramName(void);
@@ -845,7 +837,6 @@ Py_SetPath(const wchar_t *path)
         wcsncpy(progpath, prog, MAXPATHLEN);
         exec_prefix[0] = prefix[0] = L'\0';
         module_search_path = PyMem_RawMalloc((wcslen(path) + 1) * sizeof(wchar_t));
-        module_search_path_malloced = 1;
         if (module_search_path != NULL)
             wcscpy(module_search_path, path);
     }
