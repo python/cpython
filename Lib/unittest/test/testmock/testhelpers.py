@@ -177,7 +177,7 @@ class CallTest(unittest.TestCase):
         args = _Call(((1, 2, 3), {}))
         self.assertEqual(args, call(1, 2, 3))
         self.assertEqual(call(1, 2, 3), args)
-        self.assertTrue(call(1, 2, 3) in [args])
+        self.assertIn(call(1, 2, 3), [args])
 
 
     def test_call_ne(self):
@@ -812,7 +812,7 @@ class SpecSignatureTest(unittest.TestCase):
         mock_property = foo.foo
 
         # no spec on properties
-        self.assertTrue(isinstance(mock_property, MagicMock))
+        self.assertIsInstance(mock_property, MagicMock)
         mock_property(1, 2, 3)
         mock_property.abc(4, 5, 6)
         mock_property.assert_called_once_with(1, 2, 3)
@@ -845,19 +845,19 @@ class TestCallList(unittest.TestCase):
         mock(b=6)
 
         for kall in call(1, 2), call(a=3), call(3, 4), call(b=6):
-            self.assertTrue(kall in mock.call_args_list)
+            self.assertIn(kall, mock.call_args_list)
 
         calls = [call(a=3), call(3, 4)]
-        self.assertTrue(calls in mock.call_args_list)
+        self.assertIn(calls, mock.call_args_list)
         calls = [call(1, 2), call(a=3)]
-        self.assertTrue(calls in mock.call_args_list)
+        self.assertIn(calls, mock.call_args_list)
         calls = [call(3, 4), call(b=6)]
-        self.assertTrue(calls in mock.call_args_list)
+        self.assertIn(calls, mock.call_args_list)
         calls = [call(3, 4)]
-        self.assertTrue(calls in mock.call_args_list)
+        self.assertIn(calls, mock.call_args_list)
 
-        self.assertFalse(call('fish') in mock.call_args_list)
-        self.assertFalse([call('fish')] in mock.call_args_list)
+        self.assertNotIn(call('fish'), mock.call_args_list)
+        self.assertNotIn([call('fish')], mock.call_args_list)
 
 
     def test_call_list_str(self):
