@@ -329,8 +329,8 @@ class ArchiveUtilTestCase(support.TempdirManager,
         archive = tarfile.open(archive_name)
         try:
             for member in archive.getmembers():
-                self.assertEquals(member.uid, 0)
-                self.assertEquals(member.gid, 0)
+                self.assertEqual(member.uid, 0)
+                self.assertEqual(member.gid, 0)
         finally:
             archive.close()
 
