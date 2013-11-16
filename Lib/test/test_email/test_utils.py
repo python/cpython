@@ -54,12 +54,12 @@ class LocaltimeTests(unittest.TestCase):
     def test_localtime_is_tz_aware_daylight_true(self):
         test.support.patch(self, time, 'daylight', True)
         t = utils.localtime()
-        self.assertIsNot(t.tzinfo, None)
+        self.assertIsNotNone(t.tzinfo)
 
     def test_localtime_is_tz_aware_daylight_false(self):
         test.support.patch(self, time, 'daylight', False)
         t = utils.localtime()
-        self.assertIsNot(t.tzinfo, None)
+        self.assertIsNotNone(t.tzinfo)
 
     def test_localtime_daylight_true_dst_false(self):
         test.support.patch(self, time, 'daylight', True)
