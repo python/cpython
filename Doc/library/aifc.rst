@@ -225,11 +225,17 @@ number of frames must be filled in.
    Write data to the output file.  This method can only be called after the audio
    file parameters have been set.
 
+   .. versionchanged:: 3.4
+      Any :term:`bytes-like object`\ s are now accepted.
+
 
 .. method:: aifc.writeframesraw(data)
 
    Like :meth:`writeframes`, except that the header of the audio file is not
    updated.
+
+   .. versionchanged:: 3.4
+      Any :term:`bytes-like object`\ s are now accepted.
 
 
 .. method:: aifc.close()

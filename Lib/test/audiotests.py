@@ -146,6 +146,30 @@ class AudioWriteTests(AudioTests):
 
         self.check_file(TESTFN, self.nframes, self.frames)
 
+    def test_write_bytearray(self):
+        f = self.create_file(TESTFN)
+        f.setnframes(self.nframes)
+        f.writeframes(bytearray(self.frames))
+        f.close()
+
+        self.check_file(TESTFN, self.nframes, self.frames)
+
+    def test_write_array(self):
+        f = self.create_file(TESTFN)
+        f.setnframes(self.nframes)
+        f.writeframes(array.array('h', self.frames))
+        f.close()
+
+        self.check_file(TESTFN, self.nframes, self.frames)
+
+    def test_write_memoryview(self):
+        f = self.create_file(TESTFN)
+        f.setnframes(self.nframes)
+        f.writeframes(memoryview(self.frames))
+        f.close()
+
+        self.check_file(TESTFN, self.nframes, self.frames)
+
     def test_incompleted_write(self):
         with open(TESTFN, 'wb') as testfile:
             testfile.write(b'ababagalamaga')

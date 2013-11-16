@@ -415,6 +415,8 @@ class Au_write:
         return self._nframeswritten
 
     def writeframesraw(self, data):
+        if not isinstance(data, (bytes, bytearray)):
+            data = memoryview(data).cast('B')
         self._ensure_header_written()
         if self._comptype == 'ULAW':
             import audioop
