@@ -274,7 +274,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         cbtn['command'] = ''
         res = cbtn.invoke()
         self.assertFalse(str(res))
-        self.assertFalse(len(success) > 1)
+        self.assertLessEqual(len(success), 1)
         self.assertEqual(cbtn['offvalue'],
             cbtn.tk.globalgetvar(cbtn['variable']))
 
@@ -455,7 +455,7 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
     def test_bbox(self):
         self.assertEqual(len(self.entry.bbox(0)), 4)
         for item in self.entry.bbox(0):
-            self.assertTrue(isinstance(item, int))
+            self.assertIsInstance(item, int)
 
         self.assertRaises(Tkinter.TclError, self.entry.bbox, 'noindex')
         self.assertRaises(Tkinter.TclError, self.entry.bbox, None)
@@ -653,7 +653,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
         child = ttk.Label()
         self.paned.add(child)
-        self.assertTrue(isinstance(self.paned.pane(0), dict))
+        self.assertIsInstance(self.paned.pane(0), dict)
         self.assertEqual(self.paned.pane(0, weight=None), 0)
         # newer form for querying a single option
         self.assertEqual(self.paned.pane(0, 'weight'), 0)
@@ -680,8 +680,8 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
 
         curr_pos = self.paned.sashpos(0)
         self.paned.sashpos(0, 1000)
-        self.assertTrue(curr_pos != self.paned.sashpos(0))
-        self.assertTrue(isinstance(self.paned.sashpos(0), int))
+        self.assertNotEqual(curr_pos, self.paned.sashpos(0))
+        self.assertIsInstance(self.paned.sashpos(0), int)
 
 
 @add_standard_options(StandardTtkOptionsTests)
@@ -721,7 +721,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
         cbtn2['command'] = ''
         res = cbtn2.invoke()
         self.assertEqual(str(res), '')
-        self.assertFalse(len(success) > 1)
+        self.assertLessEqual(len(success), 1)
         self.assertEqual(cbtn2['value'], myvar.get())
         self.assertEqual(myvar.get(),
             cbtn.tk.globalgetvar(cbtn['variable']))
@@ -983,7 +983,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.nb.add(self.child2)
         self.assertEqual(self.nb.tabs(), tabs)
         self.assertEqual(self.nb.index(self.child2), child2_index)
-        self.assertTrue(str(self.child2) == self.nb.tabs()[child2_index])
+        self.assertEqual(str(self.child2), self.nb.tabs()[child2_index])
         # but the tab next to it (not hidden) is the one selected now
         self.assertEqual(self.nb.index('current'), curr + 1)
 
@@ -996,19 +996,19 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         tabs = self.nb.tabs()
         child1_index = self.nb.index(self.child1)
         self.nb.forget(self.child1)
-        self.assertFalse(str(self.child1) in self.nb.tabs())
+        self.assertNotIn(str(self.child1), self.nb.tabs())
         self.assertEqual(len(tabs) - 1, len(self.nb.tabs()))
 
         self.nb.add(self.child1)
         self.assertEqual(self.nb.index(self.child1), 1)
-        self.assertFalse(child1_index == self.nb.index(self.child1))
+        self.assertNotEqual(child1_index, self.nb.index(self.child1))
 
 
     def test_index(self):
         self.assertRaises(Tkinter.TclError, self.nb.index, -1)
         self.assertRaises(Tkinter.TclError, self.nb.index, None)
 
-        self.assertTrue(isinstance(self.nb.index('end'), int))
+        self.assertIsInstance(self.nb.index('end'), int)
         self.assertEqual(self.nb.index(self.child1), 0)
         self.assertEqual(self.nb.index(self.child2), 1)
         self.assertEqual(self.nb.index('end'), 2)
@@ -1072,7 +1072,7 @@ class NotebookTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(Tkinter.TclError, self.nb.tab, 'notab')
         self.assertRaises(Tkinter.TclError, self.nb.tab, None)
 
-        self.assertTrue(isinstance(self.nb.tab(self.child1), dict))
+        self.assertIsInstance(self.nb.tab(self.child1), dict)
         self.assertEqual(self.nb.tab(self.child1, text=None), 'a')
         # newer form for querying a single option
         self.assertEqual(self.nb.tab(self.child1, 'text'), 'a')
@@ -1193,7 +1193,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
         bbox = self.tv.bbox(children[0])
         self.assertEqual(len(bbox), 4)
-        self.assertTrue(isinstance(bbox, tuple))
+        self.assertIsInstance(bbox, tuple)
         for item in bbox:
             if not isinstance(item, int):
                 self.fail("Invalid bounding box: %s" % bbox)
@@ -1216,7 +1216,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(self.tv.get_children(), ())
 
         item_id = self.tv.insert('', 'end')
-        self.assertTrue(isinstance(self.tv.get_children(), tuple))
+        self.assertIsInstance(self.tv.get_children(), tuple)
         self.assertEqual(self.tv.get_children()[0], item_id)
 
         # add item_id and child3 as children of child2
@@ -1241,9 +1241,9 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_column(self):
         # return a dict with all options/values
-        self.assertTrue(isinstance(self.tv.column('#0'), dict))
+        self.assertIsInstance(self.tv.column('#0'), dict)
         # return a single value of the given option
-        self.assertTrue(isinstance(self.tv.column('#0', width=None), int))
+        self.assertIsInstance(self.tv.column('#0', width=None), int)
         # set a new value for an option
         self.tv.column('#0', width=10)
         # testing new way to get option value
@@ -1356,7 +1356,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
 
     def test_heading(self):
         # check a dict is returned
-        self.assertTrue(isinstance(self.tv.heading('#0'), dict))
+        self.assertIsInstance(self.tv.heading('#0'), dict)
 
         # check a value is returned
         self.tv.heading('#0', text='hi')
@@ -1467,7 +1467,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.tv.item(item, values=list(self.tv.item(item, values=None)))
         self.assertEqual(self.tv.item(item, values=None), (value, ))
 
-        self.assertTrue(isinstance(self.tv.item(item), dict))
+        self.assertIsInstance(self.tv.item(item), dict)
 
         # erase item values
         self.tv.item(item, values='')
@@ -1568,7 +1568,7 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             'blue')
         self.assertEqual(str(self.tv.tag_configure('test', foreground=None)),
             'blue')
-        self.assertTrue(isinstance(self.tv.tag_configure('test'), dict))
+        self.assertIsInstance(self.tv.tag_configure('test'), dict)
 
 
 @add_standard_options(StandardTtkOptionsTests)
