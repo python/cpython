@@ -36,7 +36,7 @@ class cleanTestCase(support.TempdirManager,
 
         # make sure the files where removed
         for name, path in dirs:
-            self.assertTrue(not os.path.exists(path),
+            self.assertFalse(os.path.exists(path),
                          '%s was not removed' % path)
 
         # let's run the command again (should spit warnings but succeed)

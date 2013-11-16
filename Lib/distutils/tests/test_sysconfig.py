@@ -50,7 +50,7 @@ class SysconfigTestCase(support.EnvironGuard,
 
     def test_get_config_vars(self):
         cvars = sysconfig.get_config_vars()
-        self.assertTrue(isinstance(cvars, dict))
+        self.assertIsInstance(cvars, dict)
         self.assertTrue(cvars)
 
     def test_srcdir(self):
