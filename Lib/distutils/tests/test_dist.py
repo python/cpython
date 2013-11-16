@@ -240,7 +240,7 @@ class DistributionTestCase(support.LoggingSilencer,
             os.path.expanduser = old_expander
 
         # make sure --no-user-cfg disables the user cfg file
-        self.assertEquals(len(all_files)-1, len(files))
+        self.assertEqual(len(all_files)-1, len(files))
 
 class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
                        unittest.TestCase):
@@ -435,14 +435,14 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
         PKG_INFO.seek(0)
         metadata.read_pkg_file(PKG_INFO)
 
-        self.assertEquals(metadata.name, "package")
-        self.assertEquals(metadata.version, "1.0")
-        self.assertEquals(metadata.description, "xxx")
-        self.assertEquals(metadata.download_url, 'http://example.com')
-        self.assertEquals(metadata.keywords, ['one', 'two'])
-        self.assertEquals(metadata.platforms, ['UNKNOWN'])
-        self.assertEquals(metadata.obsoletes, None)
-        self.assertEquals(metadata.requires, ['foo'])
+        self.assertEqual(metadata.name, "package")
+        self.assertEqual(metadata.version, "1.0")
+        self.assertEqual(metadata.description, "xxx")
+        self.assertEqual(metadata.download_url, 'http://example.com')
+        self.assertEqual(metadata.keywords, ['one', 'two'])
+        self.assertEqual(metadata.platforms, ['UNKNOWN'])
+        self.assertEqual(metadata.obsoletes, None)
+        self.assertEqual(metadata.requires, ['foo'])
 
 def test_suite():
     suite = unittest.TestSuite()
