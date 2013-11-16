@@ -181,10 +181,10 @@ class NumberTestCase(unittest.TestCase):
             a = array(t._type_, [3.14])
             v = t.from_address(a.buffer_info()[0])
             self.assertEqual(v.value, a[0])
-            self.assertTrue(type(v) is t)
+            self.assertIs(type(v), t)
             a[0] = 2.3456e17
             self.assertEqual(v.value, a[0])
-            self.assertTrue(type(v) is t)
+            self.assertIs(type(v), t)
 
     def test_char_from_address(self):
         from ctypes import c_char
@@ -194,7 +194,7 @@ class NumberTestCase(unittest.TestCase):
         a[0] = ord('x')
         v = c_char.from_address(a.buffer_info()[0])
         self.assertEqual(v.value, b'x')
-        self.assertTrue(type(v) is c_char)
+        self.assertIs(type(v), c_char)
 
         a[0] = ord('?')
         self.assertEqual(v.value, b'?')
