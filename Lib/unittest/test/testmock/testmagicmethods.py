@@ -37,12 +37,12 @@ class TestMockingMagicMethods(unittest.TestCase):
             return self, 'fish'
 
         mock.__getitem__ = f
-        self.assertFalse(mock.__getitem__ is f)
+        self.assertIsNot(mock.__getitem__, f)
         self.assertEqual(mock['foo'], (mock, 'fish'))
         self.assertEqual(mock.__getitem__('foo'), (mock, 'fish'))
 
         mock.__getitem__ = mock
-        self.assertTrue(mock.__getitem__ is mock)
+        self.assertIs(mock.__getitem__, mock)
 
 
     def test_magic_methods_isolated_between_mocks(self):
@@ -212,8 +212,8 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(len(mock), 6)
 
         mock.__contains__ = lambda s, o: o == 3
-        self.assertTrue(3 in mock)
-        self.assertFalse(6 in mock)
+        self.assertIn(3, mock)
+        self.assertNotIn(6, mock)
 
         mock.__iter__ = lambda s: iter('foobarbaz')
         self.assertEqual(list(mock), list('foobarbaz'))
