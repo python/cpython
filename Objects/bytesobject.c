@@ -2389,7 +2389,7 @@ bytes_methods[] = {
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS | METH_KEYWORDS, decode__doc__},
     {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS,
      endswith__doc__},
-    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
+    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS | METH_KEYWORDS,
      expandtabs__doc__},
     {"find", (PyCFunction)bytes_find, METH_VARARGS, find__doc__},
     {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS,

@@ -2805,7 +2805,7 @@ bytearray_methods[] = {
     {"count", (PyCFunction)bytearray_count, METH_VARARGS, count__doc__},
     {"decode", (PyCFunction)bytearray_decode, METH_VARARGS | METH_KEYWORDS, decode_doc},
     {"endswith", (PyCFunction)bytearray_endswith, METH_VARARGS, endswith__doc__},
-    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS,
+    {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS | METH_KEYWORDS,
      expandtabs__doc__},
     {"extend", (PyCFunction)bytearray_extend, METH_O, extend__doc__},
     {"find", (PyCFunction)bytearray_find, METH_VARARGS, find__doc__},

@@ -11010,23 +11010,25 @@ unicode_encode(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(expandtabs__doc__,
-             "S.expandtabs([tabsize]) -> str\n\
+             "S.expandtabs(tabsize=8) -> str\n\
 \n\
 Return a copy of S where all tab characters are expanded using spaces.\n\
 If tabsize is not given, a tab size of 8 characters is assumed.");
 
 static PyObject*
-unicode_expandtabs(PyObject *self, PyObject *args)
+unicode_expandtabs(PyObject *self, PyObject *args, PyObject *kwds)
 {
     Py_ssize_t i, j, line_pos, src_len, incr;
     Py_UCS4 ch;
     PyObject *u;
     void *src_data, *dest_data;
+    static char *kwlist[] = {"tabsize", 0};
     int tabsize = 8;
     int kind;
     int found;
 
-    if (!PyArg_ParseTuple(args, "|i:expandtabs", &tabsize))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i:expandtabs",
+                                     kwlist, &tabsize))
         return NULL;
 
     if (PyUnicode_READY(self) == -1)
@@ -13394,7 +13396,8 @@ static PyMethodDef unicode_methods[] = {
     {"title", (PyCFunction) unicode_title, METH_NOARGS, title__doc__},
     {"center", (PyCFunction) unicode_center, METH_VARARGS, center__doc__},
     {"count", (PyCFunction) unicode_count, METH_VARARGS, count__doc__},
-    {"expandtabs", (PyCFunction) unicode_expandtabs, METH_VARARGS, expandtabs__doc__},
+    {"expandtabs", (PyCFunction) unicode_expandtabs,
+     METH_VARARGS | METH_KEYWORDS, expandtabs__doc__},
     {"find", (PyCFunction) unicode_find, METH_VARARGS, find__doc__},
     {"partition", (PyCFunction) unicode_partition, METH_O, partition__doc__},
     {"index", (PyCFunction) unicode_index, METH_VARARGS, index__doc__},
@@ -13406,7 +13409,8 @@ static PyMethodDef unicode_methods[] = {
     {"rjust", (PyCFunction) unicode_rjust, METH_VARARGS, rjust__doc__},
     {"rstrip", (PyCFunction) unicode_rstrip, METH_VARARGS, rstrip__doc__},
     {"rpartition", (PyCFunction) unicode_rpartition, METH_O, rpartition__doc__},
-    {"splitlines", (PyCFunction) unicode_splitlines, METH_VARARGS | METH_KEYWORDS, splitlines__doc__},
+    {"splitlines", (PyCFunction) unicode_splitlines,
+     METH_VARARGS | METH_KEYWORDS, splitlines__doc__},
     {"strip", (PyCFunction) unicode_strip, METH_VARARGS, strip__doc__},
     {"swapcase", (PyCFunction) unicode_swapcase, METH_NOARGS, swapcase__doc__},
     {"translate", (PyCFunction) unicode_translate, METH_O, translate__doc__},
