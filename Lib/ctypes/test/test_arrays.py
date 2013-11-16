@@ -84,8 +84,8 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual(values, [1, 2, 3, 4, 5])
 
     def test_classcache(self):
-        self.assertTrue(not ARRAY(c_int, 3) is ARRAY(c_int, 4))
-        self.assertTrue(ARRAY(c_int, 3) is ARRAY(c_int, 3))
+        self.assertIsNot(ARRAY(c_int, 3), ARRAY(c_int, 4))
+        self.assertIs(ARRAY(c_int, 3), ARRAY(c_int, 3))
 
     def test_from_address(self):
         # Failed with 0.9.8, reported by JUrner
@@ -125,7 +125,7 @@ class ArrayTestCase(unittest.TestCase):
         # Create a new array type based on it:
         t1 = my_int * 1
         t2 = my_int * 1
-        self.assertTrue(t1 is t2)
+        self.assertIs(t1, t2)
 
     def test_subclass(self):
         class T(Array):
