@@ -1279,7 +1279,7 @@ class Test_TestLoader(unittest.TestCase):
     # "The default value is the TestSuite class"
     def test_suiteClass__default_value(self):
         loader = unittest.TestLoader()
-        self.assertTrue(loader.suiteClass is unittest.TestSuite)
+        self.assertIs(loader.suiteClass, unittest.TestSuite)
 
     # Make sure the dotted name resolution works even if the actual
     # function doesn't have the same name as is used to find it.
