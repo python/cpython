@@ -17,8 +17,8 @@ class BuildScriptsTestCase(support.TempdirManager,
 
     def test_default_settings(self):
         cmd = self.get_build_scripts_cmd("/foo/bar", [])
-        self.assertTrue(not cmd.force)
-        self.assertTrue(cmd.build_dir is None)
+        self.assertFalse(cmd.force)
+        self.assertIsNone(cmd.build_dir)
 
         cmd.finalize_options()
 
@@ -38,7 +38,7 @@ class BuildScriptsTestCase(support.TempdirManager,
 
         built = os.listdir(target)
         for name in expected:
-            self.assertTrue(name in built)
+            self.assertIn(name, built)
 
     def get_build_scripts_cmd(self, target, scripts):
         import sys
@@ -103,7 +103,7 @@ class BuildScriptsTestCase(support.TempdirManager,
 
         built = os.listdir(target)
         for name in expected:
-            self.assertTrue(name in built)
+            self.assertIn(name, built)
 
 def test_suite():
     return unittest.makeSuite(BuildScriptsTestCase)
