@@ -250,10 +250,16 @@ AU_write objects, as returned by :func:`.open` above, have the following methods
 
    Write audio frames, without correcting *nframes*.
 
+   .. versionchanged:: 3.4
+      Any :term:`bytes-like object`\ s are now accepted.
+
 
 .. method:: AU_write.writeframes(data)
 
    Write audio frames and make sure *nframes* is correct.
+
+   .. versionchanged:: 3.4
+      Any :term:`bytes-like object`\ s are now accepted.
 
 
 .. method:: AU_write.close()
