@@ -374,9 +374,9 @@ class StructureTestCase(unittest.TestCase):
 ##        class X(Structure):
 ##            _fields_ = []
 
-        self.assertTrue("in_dll" in dir(type(Structure)))
-        self.assertTrue("from_address" in dir(type(Structure)))
-        self.assertTrue("in_dll" in dir(type(Structure)))
+        self.assertIn("in_dll", dir(type(Structure)))
+        self.assertIn("from_address", dir(type(Structure)))
+        self.assertIn("in_dll", dir(type(Structure)))
 
     def test_positional_args(self):
         # see also http://bugs.python.org/issue5042
@@ -446,8 +446,8 @@ class TestRecursiveStructure(unittest.TestCase):
         try:
             Recursive._fields_ = [("next", Recursive)]
         except AttributeError as details:
-            self.assertTrue("Structure or union cannot contain itself" in
-                            str(details))
+            self.assertIn("Structure or union cannot contain itself",
+                          str(details))
         else:
             self.fail("Structure or union cannot contain itself")
 
@@ -463,8 +463,7 @@ class TestRecursiveStructure(unittest.TestCase):
         try:
             Second._fields_ = [("first", First)]
         except AttributeError as details:
-            self.assertTrue("_fields_ is final" in
-                            str(details))
+            self.assertIn("_fields_ is final", str(details))
         else:
             self.fail("AttributeError not raised")
 

@@ -38,14 +38,14 @@ class Test(unittest.TestCase):
 
         p = cast(array, POINTER(c_char_p))
         # array and p share a common _objects attribute
-        self.assertTrue(p._objects is array._objects)
+        self.assertIs(p._objects, array._objects)
         self.assertEqual(array._objects, {'0': b"foo bar", id(array): array})
         p[0] = b"spam spam"
         self.assertEqual(p._objects, {'0': b"spam spam", id(array): array})
-        self.assertTrue(array._objects is p._objects)
+        self.assertIs(array._objects, p._objects)
         p[1] = b"foo bar"
         self.assertEqual(p._objects, {'1': b'foo bar', '0': b"spam spam", id(array): array})
-        self.assertTrue(array._objects is p._objects)
+        self.assertIs(array._objects, p._objects)
 
     def test_other(self):
         p = cast((c_int * 4)(1, 2, 3, 4), POINTER(c_int))
