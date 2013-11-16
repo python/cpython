@@ -1523,7 +1523,7 @@ expression support in the :mod:`re` module).
    at that position.
 
 
-.. method:: str.expandtabs([tabsize])
+.. method:: str.expandtabs(tabsize=8)
 
    Return a copy of the string where all tab characters are replaced by one or
    more spaces, depending on the current column and the given tab size.  Tab

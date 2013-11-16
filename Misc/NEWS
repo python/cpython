@@ -10,6 +10,9 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #17806: Added keyword-argument support for "tabsize" to
+  str/bytes.expandtabs().
+
 - Issue #17828: Output type errors in str.encode(), bytes.decode() and
   bytearray.decode() now direct users to codecs.encode() or codecs.decode()
   as appropriate.
