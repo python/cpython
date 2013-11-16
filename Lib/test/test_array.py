@@ -195,7 +195,7 @@ class BaseTest:
     def test_constructor(self):
         a = array.array(self.typecode)
         self.assertEqual(a.typecode, self.typecode)
-        self.assertTrue(a.itemsize>=self.minitemsize)
+        self.assertGreaterEqual(a.itemsize, self.minitemsize)
         self.assertRaises(TypeError, array.array, self.typecode, None)
 
     def test_len(self):
@@ -442,39 +442,39 @@ class BaseTest:
 
     def test_cmp(self):
         a = array.array(self.typecode, self.example)
-        self.assertTrue((a == 42) is False)
-        self.assertTrue((a != 42) is True)
+        self.assertIs(a == 42, False)
+        self.assertIs(a != 42, True)
 
-        self.assertTrue((a == a) is True)
-        self.assertTrue((a != a) is False)
-        self.assertTrue((a < a) is False)
-        self.assertTrue((a <= a) is True)
-        self.assertTrue((a > a) is False)
-        self.assertTrue((a >= a) is True)
+        self.assertIs(a == a, True)
+        self.assertIs(a != a, False)
+        self.assertIs(a < a, False)
+        self.assertIs(a <= a, True)
+        self.assertIs(a > a, False)
+        self.assertIs(a >= a, True)
 
         al = array.array(self.typecode, self.smallerexample)
         ab = array.array(self.typecode, self.biggerexample)
 
-        self.assertTrue((a == 2*a) is False)
-        self.assertTrue((a != 2*a) is True)
-        self.assertTrue((a < 2*a) is True)
-        self.assertTrue((a <= 2*a) is True)
-        self.assertTrue((a > 2*a) is False)
-        self.assertTrue((a >= 2*a) is False)
+        self.assertIs(a == 2*a, False)
+        self.assertIs(a != 2*a, True)
+        self.assertIs(a < 2*a, True)
+        self.assertIs(a <= 2*a, True)
+        self.assertIs(a > 2*a, False)
+        self.assertIs(a >= 2*a, False)
 
-        self.assertTrue((a == al) is False)
-        self.assertTrue((a != al) is True)
-        self.assertTrue((a < al) is False)
-        self.assertTrue((a <= al) is False)
-        self.assertTrue((a > al) is True)
-        self.assertTrue((a >= al) is True)
+        self.assertIs(a == al, False)
+        self.assertIs(a != al, True)
+        self.assertIs(a < al, False)
+        self.assertIs(a <= al, False)
+        self.assertIs(a > al, True)
+        self.assertIs(a >= al, True)
 
-        self.assertTrue((a == ab) is False)
-        self.assertTrue((a != ab) is True)
-        self.assertTrue((a < ab) is True)
-        self.assertTrue((a <= ab) is True)
-        self.assertTrue((a > ab) is False)
-        self.assertTrue((a >= ab) is False)
+        self.assertIs(a == ab, False)
+        self.assertIs(a != ab, True)
+        self.assertIs(a < ab, True)
+        self.assertIs(a <= ab, True)
+        self.assertIs(a > ab, False)
+        self.assertIs(a >= ab, False)
 
     def test_add(self):
         a = array.array(self.typecode, self.example) \
@@ -493,7 +493,7 @@ class BaseTest:
         a = array.array(self.typecode, self.example[::-1])
         b = a
         a += array.array(self.typecode, 2*self.example)
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
         self.assertEqual(
             a,
             array.array(self.typecode, self.example[::-1]+2*self.example)
@@ -548,22 +548,22 @@ class BaseTest:
         b = a
 
         a *= 5
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
         self.assertEqual(
             a,
             array.array(self.typecode, 5*self.example)
         )
 
         a *= 0
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
         self.assertEqual(a, array.array(self.typecode))
 
         a *= 1000
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
         self.assertEqual(a, array.array(self.typecode))
 
         a *= -1
-        self.assertTrue(a is b)
+        self.assertIs(a, b)
         self.assertEqual(a, array.array(self.typecode))
 
         a = array.array(self.typecode, self.example)
