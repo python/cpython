@@ -47,7 +47,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #16685: Added support for writing any bytes-like objects in the aifc,
+- Issue #8311: Added support for writing any bytes-like objects in the aifc,
   sunau, and wave modules.
 
 - Issue #5202: Added support for unseekable files in the wave module.
