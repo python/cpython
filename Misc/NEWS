@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #5202: Added support for unseekable files in the wave module.
+
 - Issue #19544 and Issue #1180: Restore global option to ignore
   ~/.pydistutils.cfg in Distutils, accidentally removed in backout of
   distutils2 changes.

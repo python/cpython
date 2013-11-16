@@ -491,14 +491,18 @@ class Wave_write:
         if not self._nframes:
             self._nframes = initlength // (self._nchannels * self._sampwidth)
         self._datalength = self._nframes * self._nchannels * self._sampwidth
-        self._form_length_pos = self._file.tell()
+        try:
+            self._form_length_pos = self._file.tell()
+        except (AttributeError, OSError):
+            self._form_length_pos = None
         self._file.write(struct.pack('<L4s4sLHHLLHH4s',
             36 + self._datalength, b'WAVE', b'fmt ', 16,
             WAVE_FORMAT_PCM, self._nchannels, self._framerate,
             self._nchannels * self._framerate * self._sampwidth,
             self._nchannels * self._sampwidth,
             self._sampwidth * 8, b'data'))
-        self._data_length_pos = self._file.tell()
+        if self._form_length_pos is not None:
+            self._data_length_pos = self._file.tell()
         self._file.write(struct.pack('<L', self._datalength))
         self._headerwritten = True
 
