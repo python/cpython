@@ -236,7 +236,7 @@ class InstallTestCase(support.TempdirManager,
                 self.test_record()
         finally:
             install_module.DEBUG = False
-        self.assertTrue(len(self.logs) > old_logs_len)
+        self.assertGreater(len(self.logs), old_logs_len)
 
 
 def test_suite():
