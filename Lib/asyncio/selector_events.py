@@ -771,6 +771,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
             data, addr = self._sock.recvfrom(self.max_size)
         except (BlockingIOError, InterruptedError):
             pass
+        except OSError as exc:
+            self._protocol.error_received(exc)
         except Exception as exc:
             self._fatal_error(exc)
         else:
@@ -800,9 +802,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
                 return
             except (BlockingIOError, InterruptedError):
                 self._loop.add_writer(self._sock_fd, self._sendto_ready)
-            except ConnectionRefusedError as exc:
-                if self._address:
-                    self._fatal_error(exc)
+            except OSError as exc:
+                self._protocol.error_received(exc)
                 return
             except Exception as exc:
                 self._fatal_error(exc)
@@ -822,9 +823,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
             except (BlockingIOError, InterruptedError):
                 self._buffer.appendleft((data, addr))  # Try again later.
                 break
-            except ConnectionRefusedError as exc:
-                if self._address:
-                    self._fatal_error(exc)
+            except OSError as exc:
+                self._protocol.error_received(exc)
                 return
             except Exception as exc:
                 self._fatal_error(exc)
@@ -835,8 +835,3 @@ class _SelectorDatagramTransport(_SelectorTransport):
             self._loop.remove_writer(self._sock_fd)
             if self._closing:
                 self._call_connection_lost(None)
-
-    def _force_close(self, exc):
-        if self._address and isinstance(exc, ConnectionRefusedError):
-            self._protocol.connection_refused(exc)
-        super()._force_close(exc)

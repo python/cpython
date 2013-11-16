@@ -1329,11 +1329,22 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         transport = _SelectorDatagramTransport(
             self.loop, self.sock, self.protocol)
 
-        err = self.sock.recvfrom.side_effect = OSError()
+        err = self.sock.recvfrom.side_effect = RuntimeError()
         transport._fatal_error = unittest.mock.Mock()
         transport._read_ready()
 
         transport._fatal_error.assert_called_with(err)
+
+    def test_read_ready_oserr(self):
+        transport = _SelectorDatagramTransport(
+            self.loop, self.sock, self.protocol)
+
+        err = self.sock.recvfrom.side_effect = OSError()
+        transport._fatal_error = unittest.mock.Mock()
+        transport._read_ready()
+
+        self.assertFalse(transport._fatal_error.called)
+        self.protocol.error_received.assert_called_with(err)
 
     def test_sendto(self):
         data = b'data'
@@ -1380,7 +1391,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
     @unittest.mock.patch('asyncio.selector_events.logger')
     def test_sendto_exception(self, m_log):
         data = b'data'
-        err = self.sock.sendto.side_effect = OSError()
+        err = self.sock.sendto.side_effect = RuntimeError()
 
         transport = _SelectorDatagramTransport(
             self.loop, self.sock, self.protocol)
@@ -1399,7 +1410,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         transport.sendto(data)
         m_log.warning.assert_called_with('socket.send() raised exception.')
 
-    def test_sendto_connection_refused(self):
+    def test_sendto_error_received(self):
         data = b'data'
 
         self.sock.sendto.side_effect = ConnectionRefusedError
@@ -1412,7 +1423,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         self.assertEqual(transport._conn_lost, 0)
         self.assertFalse(transport._fatal_error.called)
 
-    def test_sendto_connection_refused_connected(self):
+    def test_sendto_error_received_connected(self):
         data = b'data'
 
         self.sock.send.side_effect = ConnectionRefusedError
@@ -1422,7 +1433,8 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         transport._fatal_error = unittest.mock.Mock()
         transport.sendto(data)
 
-        self.assertTrue(transport._fatal_error.called)
+        self.assertFalse(transport._fatal_error.called)
+        self.assertTrue(self.protocol.error_received.called)
 
     def test_sendto_str(self):
         transport = _SelectorDatagramTransport(
@@ -1495,7 +1507,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
             list(transport._buffer))
 
     def test_sendto_ready_exception(self):
-        err = self.sock.sendto.side_effect = OSError()
+        err = self.sock.sendto.side_effect = RuntimeError()
 
         transport = _SelectorDatagramTransport(
             self.loop, self.sock, self.protocol)
@@ -1505,7 +1517,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
 
         transport._fatal_error.assert_called_with(err)
 
-    def test_sendto_ready_connection_refused(self):
+    def test_sendto_ready_error_received(self):
         self.sock.sendto.side_effect = ConnectionRefusedError
 
         transport = _SelectorDatagramTransport(
@@ -1516,7 +1528,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
 
         self.assertFalse(transport._fatal_error.called)
 
-    def test_sendto_ready_connection_refused_connection(self):
+    def test_sendto_ready_error_received_connection(self):
         self.sock.send.side_effect = ConnectionRefusedError
 
         transport = _SelectorDatagramTransport(
@@ -1525,7 +1537,8 @@ class SelectorDatagramTransportTests(unittest.TestCase):
         transport._buffer.append((b'data', ()))
         transport._sendto_ready()
 
-        self.assertTrue(transport._fatal_error.called)
+        self.assertFalse(transport._fatal_error.called)
+        self.assertTrue(self.protocol.error_received.called)
 
     @unittest.mock.patch('asyncio.log.logger.exception')
     def test_fatal_error_connected(self, m_exc):
@@ -1533,7 +1546,7 @@ class SelectorDatagramTransportTests(unittest.TestCase):
             self.loop, self.sock, self.protocol, ('0.0.0.0', 1))
         err = ConnectionRefusedError()
         transport._fatal_error(err)
-        self.protocol.connection_refused.assert_called_with(err)
+        self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with('Fatal error for %s', transport)
 
 

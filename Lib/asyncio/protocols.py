@@ -100,15 +100,18 @@ class DatagramProtocol(BaseProtocol):
     def datagram_received(self, data, addr):
         """Called when some datagram is received."""
 
-    def connection_refused(self, exc):
-        """Connection is refused."""
+    def error_received(self, exc):
+        """Called when a send or receive operation raises an OSError.
+
+        (Other than BlockingIOError or InterruptedError.)
+        """
 
 
 class SubprocessProtocol(BaseProtocol):
     """ABC representing a protocol for subprocess calls."""
 
     def pipe_data_received(self, fd, data):
-        """Called when subprocess write a data into stdout/stderr pipes.
+        """Called when the subprocess writes data into stdout/stderr pipe.
 
         fd is int file dascriptor.
         data is bytes object.
@@ -122,5 +125,4 @@ class SubprocessProtocol(BaseProtocol):
         """
 
     def process_exited(self):
-        """Called when subprocess has exited.
-        """
+        """Called when subprocess has exited."""
