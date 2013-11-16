@@ -78,7 +78,7 @@ class MyDatagramProto(protocols.DatagramProtocol):
         assert self.state == 'INITIALIZED', self.state
         self.nbytes += len(data)
 
-    def connection_refused(self, exc):
+    def error_received(self, exc):
         assert self.state == 'INITIALIZED', self.state
 
     def connection_lost(self, exc):
@@ -1557,7 +1557,7 @@ class ProtocolsAbsTests(unittest.TestCase):
         dp = protocols.DatagramProtocol()
         self.assertIsNone(dp.connection_made(f))
         self.assertIsNone(dp.connection_lost(f))
-        self.assertIsNone(dp.connection_refused(f))
+        self.assertIsNone(dp.error_received(f))
         self.assertIsNone(dp.datagram_received(f, f))
 
         sp = protocols.SubprocessProtocol()

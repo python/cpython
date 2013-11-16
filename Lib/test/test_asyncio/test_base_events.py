@@ -284,7 +284,7 @@ class MyDatagramProto(protocols.DatagramProtocol):
         assert self.state == 'INITIALIZED', self.state
         self.nbytes += len(data)
 
-    def connection_refused(self, exc):
+    def error_received(self, exc):
         assert self.state == 'INITIALIZED', self.state
 
     def connection_lost(self, exc):
