@@ -17,7 +17,7 @@ class SentinelTest(unittest.TestCase):
 
 
     def testDEFAULT(self):
-        self.assertTrue(DEFAULT is sentinel.DEFAULT)
+        self.assertIs(DEFAULT, sentinel.DEFAULT)
 
     def testBases(self):
         # If this doesn't raise an AttributeError then help(mock) is broken
