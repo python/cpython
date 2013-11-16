@@ -18,7 +18,7 @@ class TestCustomMessage(TestEmailBase):
         msg = email.message_from_string("Subject: bogus\n\nmsg\n",
                                         self.MyMessage,
                                         policy=self.MyPolicy)
-        self.assertTrue(isinstance(msg, self.MyMessage))
+        self.assertIsInstance(msg, self.MyMessage)
         self.assertIs(msg.check_policy, self.MyPolicy)
 
     def test_custom_message_gets_policy_if_possible_from_file(self):
@@ -26,7 +26,7 @@ class TestCustomMessage(TestEmailBase):
         msg = email.message_from_file(source_file,
                                       self.MyMessage,
                                       policy=self.MyPolicy)
-        self.assertTrue(isinstance(msg, self.MyMessage))
+        self.assertIsInstance(msg, self.MyMessage)
         self.assertIs(msg.check_policy, self.MyPolicy)
 
     # XXX add tests for other functions that take Message arg.

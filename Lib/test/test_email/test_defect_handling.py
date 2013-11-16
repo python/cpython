@@ -59,8 +59,8 @@ class TestDefectsBase:
         inner = msg.get_payload(0)
         self.assertTrue(hasattr(inner, 'defects'))
         self.assertEqual(len(self.get_defects(inner)), 1)
-        self.assertTrue(isinstance(self.get_defects(inner)[0],
-                                   errors.StartBoundaryNotFoundDefect))
+        self.assertIsInstance(self.get_defects(inner)[0],
+                              errors.StartBoundaryNotFoundDefect)
 
     def test_multipart_no_boundary(self):
         source = textwrap.dedent("""\
@@ -84,12 +84,12 @@ class TestDefectsBase:
         with self._raise_point(errors.NoBoundaryInMultipartDefect):
             msg = self._str_msg(source)
         if self.raise_expected: return
-        self.assertTrue(isinstance(msg.get_payload(), str))
+        self.assertIsInstance(msg.get_payload(), str)
         self.assertEqual(len(self.get_defects(msg)), 2)
-        self.assertTrue(isinstance(self.get_defects(msg)[0],
-                                   errors.NoBoundaryInMultipartDefect))
-        self.assertTrue(isinstance(self.get_defects(msg)[1],
-                                   errors.MultipartInvariantViolationDefect))
+        self.assertIsInstance(self.get_defects(msg)[0],
+                              errors.NoBoundaryInMultipartDefect)
+        self.assertIsInstance(self.get_defects(msg)[1],
+                              errors.MultipartInvariantViolationDefect)
 
     multipart_msg = textwrap.dedent("""\
         Date: Wed, 14 Nov 2007 12:56:23 GMT
@@ -153,10 +153,10 @@ class TestDefectsBase:
         if self.raise_expected: return
         self.assertTrue(hasattr(msg, 'defects'))
         self.assertEqual(len(self.get_defects(msg)), 2)
-        self.assertTrue(isinstance(self.get_defects(msg)[0],
-                                   errors.NoBoundaryInMultipartDefect))
-        self.assertTrue(isinstance(self.get_defects(msg)[1],
-                                   errors.MultipartInvariantViolationDefect))
+        self.assertIsInstance(self.get_defects(msg)[0],
+                              errors.NoBoundaryInMultipartDefect)
+        self.assertIsInstance(self.get_defects(msg)[1],
+                              errors.MultipartInvariantViolationDefect)
 
     def test_missing_start_boundary(self):
         source = textwrap.dedent("""\
@@ -193,8 +193,8 @@ class TestDefectsBase:
         if self.raise_expected: return
         bad = outer.get_payload(1).get_payload(0)
         self.assertEqual(len(self.get_defects(bad)), 1)
-        self.assertTrue(isinstance(self.get_defects(bad)[0],
-                                   errors.StartBoundaryNotFoundDefect))
+        self.assertIsInstance(self.get_defects(bad)[0],
+                              errors.StartBoundaryNotFoundDefect)
 
     def test_first_line_is_continuation_header(self):
         with self._raise_point(errors.FirstHeaderLineIsContinuationDefect):
