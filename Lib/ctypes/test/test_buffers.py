@@ -7,12 +7,12 @@ class StringBufferTestCase(unittest.TestCase):
         b = create_string_buffer(32)
         self.assertEqual(len(b), 32)
         self.assertEqual(sizeof(b), 32 * sizeof(c_char))
-        self.assertTrue(type(b[0]) is bytes)
+        self.assertIs(type(b[0]), bytes)
 
         b = create_string_buffer(b"abc")
         self.assertEqual(len(b), 4) # trailing nul char
         self.assertEqual(sizeof(b), 4 * sizeof(c_char))
-        self.assertTrue(type(b[0]) is bytes)
+        self.assertIs(type(b[0]), bytes)
         self.assertEqual(b[0], b"a")
         self.assertEqual(b[:], b"abc\0")
         self.assertEqual(b[::], b"abc\0")
@@ -33,12 +33,12 @@ class StringBufferTestCase(unittest.TestCase):
             b = create_unicode_buffer(32)
             self.assertEqual(len(b), 32)
             self.assertEqual(sizeof(b), 32 * sizeof(c_wchar))
-            self.assertTrue(type(b[0]) is str)
+            self.assertIs(type(b[0]), str)
 
             b = create_unicode_buffer("abc")
             self.assertEqual(len(b), 4) # trailing nul char
             self.assertEqual(sizeof(b), 4 * sizeof(c_wchar))
-            self.assertTrue(type(b[0]) is str)
+            self.assertIs(type(b[0]), str)
             self.assertEqual(b[0], "a")
             self.assertEqual(b[:], "abc\0")
             self.assertEqual(b[::], "abc\0")
@@ -50,7 +50,7 @@ class StringBufferTestCase(unittest.TestCase):
             b = create_unicode_buffer("abc")
             self.assertEqual(len(b), 4) # trailing nul char
             self.assertEqual(sizeof(b), 4 * sizeof(c_wchar))
-            self.assertTrue(type(b[0]) is str)
+            self.assertIs(type(b[0]), str)
             self.assertEqual(b[0], "a")
             self.assertEqual(b[:], "abc\0")
             self.assertEqual(b[::], "abc\0")

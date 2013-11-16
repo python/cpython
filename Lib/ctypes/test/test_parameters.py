@@ -54,7 +54,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         # c_char_p.from_param on a Python String packs the string
         # into a cparam object
         s = b"123"
-        self.assertTrue(c_char_p.from_param(s)._obj is s)
+        self.assertIs(c_char_p.from_param(s)._obj, s)
 
         # new in 0.9.1: convert (encode) unicode to ascii
         self.assertEqual(c_char_p.from_param(b"123")._obj, b"123")
@@ -64,7 +64,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         # calling c_char_p.from_param with a c_char_p instance
         # returns the argument itself:
         a = c_char_p(b"123")
-        self.assertTrue(c_char_p.from_param(a) is a)
+        self.assertIs(c_char_p.from_param(a), a)
 
     def test_cw_strings(self):
         from ctypes import byref

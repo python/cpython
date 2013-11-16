@@ -306,7 +306,7 @@ class FunctionTestCase(unittest.TestCase):
         f.argtypes = [c_longlong, MyCallback]
 
         def callback(value):
-            self.assertTrue(isinstance(value, int))
+            self.assertIsInstance(value, int)
             return value & 0x7FFFFFFF
 
         cb = MyCallback(callback)

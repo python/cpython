@@ -43,7 +43,7 @@ class LoaderTest(unittest.TestCase):
 
     if os.name in ("nt", "ce"):
         def test_load_library(self):
-            self.assertFalse(libc_name is None)
+            self.assertIsNotNone(libc_name)
             if is_resource_enabled("printing"):
                 print(find_library("kernel32"))
                 print(find_library("user32"))
