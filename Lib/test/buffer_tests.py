@@ -160,14 +160,20 @@ class MixinBytesBufferCommonTests(object):
                          self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(8))
         self.assertEqual(b'abc\rab  def\ng   hi',
                          self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(4))
+        self.assertEqual(b'abc\r\nab      def\ng       hi',
+                         self.marshal(b'abc\r\nab\tdef\ng\thi').expandtabs())
+        self.assertEqual(b'abc\r\nab      def\ng       hi',
+                         self.marshal(b'abc\r\nab\tdef\ng\thi').expandtabs(8))
         self.assertEqual(b'abc\r\nab  def\ng   hi',
                          self.marshal(b'abc\r\nab\tdef\ng\thi').expandtabs(4))
-        self.assertEqual(b'abc\rab      def\ng       hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs())
-        self.assertEqual(b'abc\rab      def\ng       hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(8))
         self.assertEqual(b'abc\r\nab\r\ndef\ng\r\nhi',
-            self.marshal(b'abc\r\nab\r\ndef\ng\r\nhi').expandtabs(4))
+                         self.marshal(b'abc\r\nab\r\ndef\ng\r\nhi').expandtabs(4))
+        # check keyword args
+        self.assertEqual(b'abc\rab      def\ng       hi',
+                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(tabsize=8))
+        self.assertEqual(b'abc\rab  def\ng   hi',
+                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(tabsize=4))
+
         self.assertEqual(b'  a\n b', self.marshal(b' \ta\n\tb').expandtabs(1))
 
         self.assertRaises(TypeError, self.marshal(b'hello').expandtabs, 42, 42)
