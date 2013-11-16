@@ -19,7 +19,7 @@ The :mod:`wave` module defines the following function and exception:
 .. function:: open(file, mode=None)
 
    If *file* is a string, open the file by that name, otherwise treat it as a
-   seekable file-like object.  *mode* can be:
+   file-like object.  *mode* can be:
 
    ``'rb'``
       Read only mode.
@@ -43,6 +43,8 @@ The :mod:`wave` module defines the following function and exception:
    <wave.Wave_read.close>` or :meth:`Wave_write.close()
    <wave.Wave_write.close()>` method is called.
 
+   .. versionchanged:: 3.4
+      Added support for unseekable files.
 
 .. function:: openfp(file, mode)
 
@@ -154,7 +156,8 @@ Wave_write objects, as returned by :func:`.open`, have the following methods:
 .. method:: Wave_write.close()
 
    Make sure *nframes* is correct, and close the file if it was opened by
-   :mod:`wave`.  This method is called upon object collection.
+   :mod:`wave`.  This method is called upon object collection. Can raise an
+   exception if *nframes* is not correct and a file is not seekable.
 
 
 .. method:: Wave_write.setnchannels(n)
@@ -208,7 +211,8 @@ Wave_write objects, as returned by :func:`.open`, have the following methods:
 
 .. method:: Wave_write.writeframes(data)
 
-   Write audio frames and make sure *nframes* is correct.
+   Write audio frames and make sure *nframes* is correct. Can raise an
+   exception if a file is not seekable.
 
 
 Note that it is invalid to set any parameters after calling :meth:`writeframes`
