@@ -24,10 +24,10 @@ class InstallScriptsTestCase(support.TempdirManager,
             skip_build=1,
             )
         cmd = install_scripts(dist)
-        self.assertTrue(not cmd.force)
-        self.assertTrue(not cmd.skip_build)
-        self.assertTrue(cmd.build_dir is None)
-        self.assertTrue(cmd.install_dir is None)
+        self.assertFalse(cmd.force)
+        self.assertFalse(cmd.skip_build)
+        self.assertIsNone(cmd.build_dir)
+        self.assertIsNone(cmd.install_dir)
 
         cmd.finalize_options()
 
@@ -72,7 +72,7 @@ class InstallScriptsTestCase(support.TempdirManager,
 
         installed = os.listdir(target)
         for name in expected:
-            self.assertTrue(name in installed)
+            self.assertIn(name, installed)
 
 
 def test_suite():

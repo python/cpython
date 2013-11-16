@@ -199,7 +199,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
                              dry_run=True)
         finally:
             os.chdir(old_dir)
-        self.assertTrue(not os.path.exists(tarball))
+        self.assertFalse(os.path.exists(tarball))
         self.assertEqual(len(w.warnings), 1)
 
     @unittest.skipUnless(zlib, "Requires zlib")

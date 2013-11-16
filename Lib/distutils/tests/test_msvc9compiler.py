@@ -128,7 +128,7 @@ class msvc9compilerTestCase(support.TempdirManager,
         # windows registeries versions.
         path = r'Control Panel\Desktop'
         v = Reg.get_value(path, u'dragfullwindows')
-        self.assertTrue(v in (u'0', u'1', u'2'))
+        self.assertIn(v, (u'0', u'1', u'2'))
 
         import _winreg
         HKCU = _winreg.HKEY_CURRENT_USER
@@ -136,7 +136,7 @@ class msvc9compilerTestCase(support.TempdirManager,
         self.assertEqual(keys, None)
 
         keys = Reg.read_keys(HKCU, r'Control Panel')
-        self.assertTrue('Desktop' in keys)
+        self.assertIn('Desktop', keys)
 
     def test_remove_visual_c_ref(self):
         from distutils.msvc9compiler import MSVCCompiler
@@ -174,7 +174,7 @@ class msvc9compilerTestCase(support.TempdirManager,
 
         compiler = MSVCCompiler()
         got = compiler._remove_visual_c_ref(manifest)
-        self.assertIs(got, None)
+        self.assertIsNone(got)
 
 
 def test_suite():

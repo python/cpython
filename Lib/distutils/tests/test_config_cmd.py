@@ -81,7 +81,7 @@ class ConfigTestCase(support.LoggingSilencer,
         cmd._clean(f1, f2)
 
         for f in (f1, f2):
-            self.assertTrue(not os.path.exists(f))
+            self.assertFalse(os.path.exists(f))
 
 def test_suite():
     return unittest.makeSuite(ConfigTestCase)

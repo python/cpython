@@ -65,7 +65,7 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.distribution.script_name = 'setup.py'
 
         # get_output should return 4 elements
-        self.assertTrue(len(cmd.get_outputs()) >= 2)
+        self.assertGreaterEqual(len(cmd.get_outputs()), 2)
 
     def test_get_inputs(self):
         pkg_dir, dist = self.create_dist()
@@ -98,7 +98,7 @@ class InstallLibTestCase(support.TempdirManager,
         finally:
             sys.dont_write_bytecode = old_dont_write_bytecode
 
-        self.assertTrue('byte-compiling is disabled' in self.logs[0][1])
+        self.assertIn('byte-compiling is disabled', self.logs[0][1])
 
 def test_suite():
     return unittest.makeSuite(InstallLibTestCase)
