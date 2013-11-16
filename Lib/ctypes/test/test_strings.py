@@ -115,24 +115,24 @@ class StringTestCase(unittest.TestCase):
 
         # New in releases later than 0.4.0:
         # c_string(number) returns an empty string of size number
-        self.assertTrue(len(c_string(32).raw) == 32)
+        self.assertEqual(len(c_string(32).raw), 32)
         self.assertRaises(ValueError, c_string, -1)
         self.assertRaises(ValueError, c_string, 0)
 
         # These tests fail, because it is no longer initialized
-##        self.assertTrue(c_string(2).value == "")
-##        self.assertTrue(c_string(2).raw == "\000\000")
-        self.assertTrue(c_string(2).raw[-1] == "\000")
-        self.assertTrue(len(c_string(2).raw) == 2)
+##        self.assertEqual(c_string(2).value, "")
+##        self.assertEqual(c_string(2).raw, "\000\000")
+        self.assertEqual(c_string(2).raw[-1], "\000")
+        self.assertEqual(len(c_string(2).raw), 2)
 
     def XX_test_initialized_strings(self):
 
-        self.assertTrue(c_string("ab", 4).raw[:2] == "ab")
-        self.assertTrue(c_string("ab", 4).raw[:2:] == "ab")
-        self.assertTrue(c_string("ab", 4).raw[:2:-1] == "ba")
-        self.assertTrue(c_string("ab", 4).raw[:2:2] == "a")
-        self.assertTrue(c_string("ab", 4).raw[-1] == "\000")
-        self.assertTrue(c_string("ab", 2).raw == "a\000")
+        self.assertEqual(c_string("ab", 4).raw[:2], "ab")
+        self.assertEqual(c_string("ab", 4).raw[:2:], "ab")
+        self.assertEqual(c_string("ab", 4).raw[:2:-1], "ba")
+        self.assertEqual(c_string("ab", 4).raw[:2:2], "a")
+        self.assertEqual(c_string("ab", 4).raw[-1], "\000")
+        self.assertEqual(c_string("ab", 2).raw, "a\000")
 
     def XX_test_toolong(self):
         cs = c_string("abcdef")
@@ -163,22 +163,22 @@ else:
             # XXX This behaviour is about to change:
             # len returns the size of the internal buffer in bytes.
             # This includes the terminating NUL character.
-            self.assertTrue(sizeof(cs) == 14)
+            self.assertEqual(sizeof(cs), 14)
 
             # The value property is the string up to the first terminating NUL.
-            self.assertTrue(cs.value == "abcdef")
-            self.assertTrue(c_wstring("abc\000def").value == "abc")
+            self.assertEqual(cs.value, "abcdef")
+            self.assertEqual(c_wstring("abc\000def").value, "abc")
 
-            self.assertTrue(c_wstring("abc\000def").value == "abc")
+            self.assertEqual(c_wstring("abc\000def").value, "abc")
 
             # The raw property is the total buffer contents:
-            self.assertTrue(cs.raw == "abcdef\000")
-            self.assertTrue(c_wstring("abc\000def").raw == "abc\000def\000")
+            self.assertEqual(cs.raw, "abcdef\000")
+            self.assertEqual(c_wstring("abc\000def").raw, "abc\000def\000")
 
             # We can change the value:
             cs.value = "ab"
-            self.assertTrue(cs.value == "ab")
-            self.assertTrue(cs.raw == "ab\000\000\000\000\000")
+            self.assertEqual(cs.value, "ab")
+            self.assertEqual(cs.raw, "ab\000\000\000\000\000")
 
             self.assertRaises(TypeError, c_wstring, "123")
             self.assertRaises(ValueError, c_wstring, 0)

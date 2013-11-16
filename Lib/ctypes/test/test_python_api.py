@@ -64,7 +64,7 @@ class PythonAPITestCase(unittest.TestCase):
         ref = grc(s)
         # id(python-object) is the address
         pyobj = PyObj_FromPtr(id(s))
-        self.assertTrue(s is pyobj)
+        self.assertIs(s, pyobj)
 
         self.assertEqual(grc(s), ref + 1)
         del pyobj
