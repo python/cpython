@@ -98,7 +98,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         cmd = self._get_cmd()
 
         # we shouldn't have a .pypirc file yet
-        self.assertTrue(not os.path.exists(self.rc))
+        self.assertFalse(os.path.exists(self.rc))
 
         # patching input and getpass.getpass
         # so register gets happy
@@ -145,7 +145,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
 
         self.assertEqual(req1['Content-length'], '1374')
         self.assertEqual(req2['Content-length'], '1374')
-        self.assertTrue((b'xxx') in self.conn.reqs[1].data)
+        self.assertIn(b'xxx', self.conn.reqs[1].data)
 
     def test_password_not_in_file(self):
 
@@ -175,7 +175,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         req = self.conn.reqs[0]
         headers = dict(req.headers)
         self.assertEqual(headers['Content-length'], '608')
-        self.assertTrue((b'tarek') in req.data)
+        self.assertIn(b'tarek', req.data)
 
     def test_password_reset(self):
         # this test runs choice 3
@@ -193,7 +193,7 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         req = self.conn.reqs[0]
         headers = dict(req.headers)
         self.assertEqual(headers['Content-length'], '290')
-        self.assertTrue((b'tarek') in req.data)
+        self.assertIn(b'tarek', req.data)
 
     @unittest.skipUnless(docutils is not None, 'needs docutils')
     def test_strict(self):

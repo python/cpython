@@ -103,7 +103,7 @@ class PyPIRCCommandTestCase(support.TempdirManager,
     def test_server_empty_registration(self):
         cmd = self._cmd(self.dist)
         rc = cmd._get_rc_file()
-        self.assertTrue(not os.path.exists(rc))
+        self.assertFalse(os.path.exists(rc))
         cmd._store_pypirc('tarek', 'xxx')
         self.assertTrue(os.path.exists(rc))
         f = open(rc)
