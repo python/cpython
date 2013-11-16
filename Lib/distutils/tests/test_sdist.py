@@ -471,10 +471,13 @@ class SDistTestCase(PyPIRCCommandTestCase):
         # making sure we have the good rights
         archive_name = join(self.tmp_dir, 'dist', 'fake-1.0.tar.gz')
         archive = tarfile.open(archive_name)
+
+        # note that we are not testing the group ownership here
+        # because, depending on the platforms and the container
+        # rights (see #7408)
         try:
             for member in archive.getmembers():
                 self.assertEquals(member.uid, os.getuid())
-                self.assertEquals(member.gid, os.getgid())
         finally:
             archive.close()
 
