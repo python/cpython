@@ -75,7 +75,7 @@ class CFuncPtrTestCase(unittest.TestCase):
         ##                  "lpfnWndProc", WNDPROC_2(wndproc))
         # instead:
 
-        self.assertTrue(WNDPROC is WNDPROC_2)
+        self.assertIs(WNDPROC, WNDPROC_2)
         # 'wndclass.lpfnWndProc' leaks 94 references.  Why?
         self.assertEqual(wndclass.lpfnWndProc(1, 2, 3, 4), 10)
 

@@ -78,7 +78,7 @@ class PointersTestCase(unittest.TestCase):
 
 ##        i = c_int(42)
 ##        callback(byref(i))
-##        self.assertTrue(i.value == 84)
+##        self.assertEqual(i.value, 84)
 
         doit(callback)
 ##        print self.result
@@ -91,11 +91,11 @@ class PointersTestCase(unittest.TestCase):
             i = ct(42)
             p = pointer(i)
 ##            print type(p.contents), ct
-            self.assertTrue(type(p.contents) is ct)
+            self.assertIs(type(p.contents), ct)
             # p.contents is the same as p[0]
 ##            print p.contents
-##            self.assertTrue(p.contents == 42)
-##            self.assertTrue(p[0] == 42)
+##            self.assertEqual(p.contents, 42)
+##            self.assertEqual(p[0], 42)
 
             self.assertRaises(TypeError, delitem, p, 0)
 

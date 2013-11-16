@@ -23,7 +23,7 @@ class Test(unittest.TestCase):
         a[0], a[-1] = 200, -200
         self.assertEqual(x[:], a.tolist())
 
-        self.assertTrue(a in x._objects.values())
+        self.assertIn(a, x._objects.values())
 
         self.assertRaises(ValueError,
                           c_int.from_buffer, a, -1)
