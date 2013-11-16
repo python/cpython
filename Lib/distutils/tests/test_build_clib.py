@@ -137,7 +137,7 @@ class BuildCLibTestCase(support.TempdirManager,
         cmd.run()
 
         # let's check the result
-        self.assertTrue('libfoo.a' in os.listdir(build_temp))
+        self.assertIn('libfoo.a', os.listdir(build_temp))
 
 def test_suite():
     return unittest.makeSuite(BuildCLibTestCase)
