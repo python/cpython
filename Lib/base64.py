@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""RFC 3548: Base16, Base32, Base64 Data Encodings"""
+"""Base16, Base32, Base64 (RFC 3548), Base85 and Ascii85 data encodings"""
 
 # Modified 04-Oct-1995 by Jack Jansen to use binascii module
 # Modified 30-Dec-2003 by Barry Warsaw to add full RFC 3548 support
@@ -9,6 +9,7 @@
 import re
 import struct
 import binascii
+import itertools
 
 
 __all__ = [
@@ -17,6 +18,8 @@ __all__ = [
     # Generalized interface for other encodings
     'b64encode', 'b64decode', 'b32encode', 'b32decode',
     'b16encode', 'b16decode',
+    # Base85 and Ascii85 encodings
+    'b85encode', 'b85decode', 'a85encode', 'a85decode',
     # Standard Base64 encoding
     'standard_b64encode', 'standard_b64decode',
     # Some common Base64 alternatives.  As referenced by RFC 3458, see thread
@@ -268,7 +271,193 @@ def b16decode(s, casefold=False):
         raise binascii.Error('Non-base16 digit found')
     return binascii.unhexlify(s)
 
+#
+# Ascii85 encoding/decoding
+#
 
+def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
+    # Helper function for a85encode and b85encode
+    if not isinstance(b, bytes_types):
+        b = memoryview(b).tobytes()
+
+    padding = (-len(b)) % 4
+    if padding:
+        b = b + b'\0' * padding
+    words = struct.Struct('!%dI' % (len(b) // 4)).unpack(b)
+
+    a85chars2 = _a85chars2
+    a85chars = _a85chars
+    chunks = [b'z' if foldnuls and not word else
+              b'y' if foldspaces and word == 0x20202020 else
+              (chars2[word // 614125] +
+               chars2[word // 85 % 7225] +
+               chars[word % 85])
+              for word in words]
+
+    if padding and not pad:
+        if chunks[-1] == b'z':
+            chunks[-1] = chars[0] * 5
+        chunks[-1] = chunks[-1][:-padding]
+
+    return b''.join(chunks)
+
+_A85START = b"<~"
+_A85END = b"~>"
+_a85chars = [bytes([i]) for i in range(33, 118)]
+_a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
+
+def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
+    """Encode a byte string using Ascii85.
+
+    b is the byte string to encode. The encoded byte string is returned.
+
+    foldspaces is an optional flag that uses the special short sequence 'y'
+    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
+    feature is not supported by the "standard" Adobe encoding.
+
+    wrapcol controls whether the output should have newline ('\n') characters
+    added to it. If this is non-zero, each output line will be at most this
+    many characters long.
+
+    pad controls whether the input string is padded to a multiple of 4 before
+    encoding. Note that the btoa implementation always pads.
+
+    adobe controls whether the encoded byte sequence is framed with <~ and ~>,
+    which is used by the Adobe implementation.
+    """
+    result = _85encode(b, _a85chars, _a85chars2, pad, True, foldspaces)
+
+    if adobe:
+        result = _A85START + result
+    if wrapcol:
+        wrapcol = max(2 if adobe else 1, wrapcol)
+        chunks = [result[i: i + wrapcol]
+                  for i in range(0, len(result), wrapcol)]
+        if adobe:
+            if len(chunks[-1]) + 2 > wrapcol:
+                chunks.append(b'')
+        result = b'\n'.join(chunks)
+    if adobe:
+        result += _A85END
+
+    return result
+
+def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
+    """Decode an Ascii85 encoded byte string.
+
+    s is the byte string to decode.
+
+    foldspaces is a flag that specifies whether the 'y' short sequence should be
+    accepted as shorthand for 4 consecutive spaces (ASCII 0x20). This feature is
+    not supported by the "standard" Adobe encoding.
+
+    adobe controls whether the input sequence is in Adobe Ascii85 format (i.e.
+    is framed with <~ and ~>).
+
+    ignorechars should be a byte string containing characters to ignore from the
+    input. This should only contain whitespace characters, and by default
+    contains all whitespace characters in ASCII.
+    """
+    b = _bytes_from_decode_data(b)
+    if adobe:
+        if not (b.startswith(_A85START) and b.endswith(_A85END)):
+            raise ValueError("Ascii85 encoded byte sequences must be bracketed "
+                             "by {} and {}".format(_A85START, _A85END))
+        b = b[2:-2] # Strip off start/end markers
+    #
+    # We have to go through this stepwise, so as to ignore spaces and handle
+    # special short sequences
+    #
+    packI = struct.Struct('!I').pack
+    decoded = []
+    decoded_append = decoded.append
+    curr = []
+    curr_append = curr.append
+    curr_clear = curr.clear
+    for x in b + b'u' * 4:
+        if b'!'[0] <= x <= b'u'[0]:
+            curr_append(x)
+            if len(curr) == 5:
+                acc = 0
+                for x in curr:
+                    acc = 85 * acc + (x - 33)
+                try:
+                    decoded_append(packI(acc))
+                except struct.error:
+                    raise ValueError('Ascii85 overflow') from None
+                curr_clear()
+        elif x == b'z'[0]:
+            if curr:
+                raise ValueError('z inside Ascii85 5-tuple')
+            decoded_append(b'\0\0\0\0')
+        elif foldspaces and x == b'y'[0]:
+            if curr:
+                raise ValueError('y inside Ascii85 5-tuple')
+            decoded_append(b'\x20\x20\x20\x20')
+        elif x in ignorechars:
+            # Skip whitespace
+            continue
+        else:
+            raise ValueError('Non-Ascii85 digit found: %c' % x)
+
+    result = b''.join(decoded)
+    padding = 4 - len(curr)
+    if padding:
+        # Throw away the extra padding
+        result = result[:-padding]
+    return result
+
+# The following code is originally taken (with permission) from Mercurial
+
+_b85chars = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+            b"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
+_b85chars = [bytes([i]) for i in _b85chars]
+_b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
+_b85dec = None
+
+def b85encode(b, pad=False):
+    """Encode an ASCII-encoded byte array in base85 format.
+
+    If pad is true, the input is padded with "\0" so its length is a multiple of
+    4 characters before encoding.
+    """
+    return _85encode(b, _b85chars, _b85chars2, pad)
+
+def b85decode(b):
+    """Decode base85-encoded byte array"""
+    b = _bytes_from_decode_data(b)
+    global _b85dec
+    if _b85dec is None:
+        _b85dec = [None] * 256
+        for i, c in enumerate(_b85chars):
+            _b85dec[c[0]] = i
+
+    padding = (-len(b)) % 5
+    b = b + b'~' * padding
+    out = []
+    packI = struct.Struct('!I').pack
+    for i in range(0, len(b), 5):
+        chunk = b[i:i + 5]
+        acc = 0
+        try:
+            for c in chunk:
+                acc = acc * 85 + _b85dec[c]
+        except TypeError:
+            for j, c in enumerate(chunk):
+                if _b85dec[c] is None:
+                    raise ValueError('bad base85 character at position %d'
+                                    % (i + j)) from None
+            raise
+        try:
+            out.append(packI(acc))
+        except struct.error:
+            raise ValueError('base85 overflow in hunk starting at byte %d'
+                             % i) from None
+
+    result = b''.join(out)
+    if padding:
+        result = result[:-padding]
+    return result
 
 # Legacy interface.  This code could be cleaned up since I don't believe
 # binascii has any line length limitations.  It just doesn't seem worth it
