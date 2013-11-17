@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19282: dbm.open now supports the context manager protocol. (Inital
+  patch by Claudiu Popa)
+
 - Issue #8311: Added support for writing any bytes-like objects in the aifc,
   sunau, and wave modules.
 
