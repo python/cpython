@@ -425,6 +425,20 @@ dbm_sync(dbmobject *dp, PyObject *unused)
     return Py_None;
 }
 
+static PyObject *
+dbm__enter__(PyObject *self, PyObject *args)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static PyObject *
+dbm__exit__(PyObject *self, PyObject *args)
+{
+    _Py_IDENTIFIER(close);
+    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+}
+
 static PyMethodDef dbm_methods[] = {
     {"close",     (PyCFunction)dbm_close,   METH_NOARGS, dbm_close__doc__},
     {"keys",      (PyCFunction)dbm_keys,    METH_NOARGS, dbm_keys__doc__},
@@ -434,6 +448,8 @@ static PyMethodDef dbm_methods[] = {
     {"sync",      (PyCFunction)dbm_sync,    METH_NOARGS, dbm_sync__doc__},
     {"get",       (PyCFunction)dbm_get,     METH_VARARGS, dbm_get__doc__},
     {"setdefault",(PyCFunction)dbm_setdefault,METH_VARARGS, dbm_setdefault__doc__},
+    {"__enter__", dbm__enter__, METH_NOARGS, NULL},
+    {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
     {NULL,              NULL}           /* sentinel */
 };
 
