@@ -267,7 +267,7 @@ class Process(object):
             else:
                 sys.stderr.write(str(e.args[0]) + '\n')
                 sys.stderr.flush()
-                exitcode = 0 if isinstance(e.args[0], str) else 1
+                exitcode = 1
         except:
             exitcode = 1
             import traceback

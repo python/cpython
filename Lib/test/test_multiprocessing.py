@@ -339,7 +339,7 @@ class _TestProcess(BaseTestCase):
         testfn = test_support.TESTFN
         self.addCleanup(test_support.unlink, testfn)
 
-        for reason, code in (([1, 2, 3], 1), ('ignore this', 0)):
+        for reason, code in (([1, 2, 3], 1), ('ignore this', 1)):
             p = self.Process(target=self._test_sys_exit, args=(reason, testfn))
             p.daemon = True
             p.start()
