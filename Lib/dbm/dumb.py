@@ -236,6 +236,12 @@ class _Database(collections.MutableMapping):
         if hasattr(self._os, 'chmod'):
             self._os.chmod(file, self._mode)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
 
 def open(file, flag=None, mode=0o666):
     """Open the database file, filename, and return corresponding object.

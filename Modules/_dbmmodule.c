@@ -313,6 +313,21 @@ dbm_setdefault(dbmobject *dp, PyObject *args)
     return defvalue;
 }
 
+static PyObject *
+dbm__enter__(PyObject *self, PyObject *args)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static PyObject *
+dbm__exit__(PyObject *self, PyObject *args)
+{
+    _Py_IDENTIFIER(close);
+    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+}
+
+
 static PyMethodDef dbm_methods[] = {
     {"close",           (PyCFunction)dbm__close,        METH_NOARGS,
      "close()\nClose the database."},
@@ -325,6 +340,8 @@ static PyMethodDef dbm_methods[] = {
      "setdefault(key[, default]) -> value\n"
      "Return the value for key if present, otherwise default.  If key\n"
      "is not in the database, it is inserted with default as the value."},
+    {"__enter__", dbm__enter__, METH_NOARGS, NULL},
+    {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
     {NULL,              NULL}           /* sentinel */
 };
 
