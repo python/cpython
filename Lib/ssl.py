@@ -91,7 +91,7 @@ import textwrap
 import re
 import sys
 import os
-import collections
+from collections import namedtuple
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -102,6 +102,7 @@ from _ssl import (
     SSLSyscallError, SSLEOFError,
     )
 from _ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
+from _ssl import txt2obj as _txt2obj, nid2obj as _nid2obj
 from _ssl import RAND_status, RAND_egd, RAND_add, RAND_bytes, RAND_pseudo_bytes
 
 def _import_symbols(prefix):
@@ -256,7 +257,7 @@ def match_hostname(cert, hostname):
             "subjectAltName fields were found")
 
 
-DefaultVerifyPaths = collections.namedtuple("DefaultVerifyPaths",
+DefaultVerifyPaths = namedtuple("DefaultVerifyPaths",
     "cafile capath openssl_cafile_env openssl_cafile openssl_capath_env "
     "openssl_capath")
 
@@ -272,6 +273,27 @@ def get_default_verify_paths():
     return DefaultVerifyPaths(cafile if os.path.isfile(cafile) else None,
                               capath if os.path.isdir(capath) else None,
                               *parts)
+
+
+class _ASN1Object(namedtuple("_ASN1Object", "nid shortname longname oid")):
+    """ASN.1 object identifier lookup
+    """
+    __slots__ = ()
+
+    def __new__(cls, oid):
+        return super().__new__(cls, *_txt2obj(oid, name=False))
+
+    @classmethod
+    def fromnid(cls, nid):
+        """Create _ASN1Object from OpenSSL numeric ID
+        """
+        return super().__new__(cls, *_nid2obj(nid))
+
+    @classmethod
+    def fromname(cls, name):
+        """Create _ASN1Object from short name, long name or OID
+        """
+        return super().__new__(cls, *_txt2obj(name, name=True))
 
 
 class SSLContext(_SSLContext):

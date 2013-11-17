@@ -2998,6 +2998,93 @@ PySSL_get_default_verify_paths(PyObject *self)
     return NULL;
 }
 
+static PyObject*
+asn1obj2py(ASN1_OBJECT *obj)
+{
+    int nid;
+    const char *ln, *sn;
+    char buf[100];
+    int buflen;
+
+    nid = OBJ_obj2nid(obj);
+    if (nid == NID_undef) {
+        PyErr_Format(PyExc_ValueError, "Unknown object");
+        return NULL;
+    }
+    sn = OBJ_nid2sn(nid);
+    ln = OBJ_nid2ln(nid);
+    buflen = OBJ_obj2txt(buf, sizeof(buf), obj, 1);
+    if (buflen < 0) {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    if (buflen) {
+        return Py_BuildValue("isss#", nid, sn, ln, buf, buflen);
+    } else {
+        return Py_BuildValue("issO", nid, sn, ln, Py_None);
+    }
+}
+
+PyDoc_STRVAR(PySSL_txt2obj_doc,
+"txt2obj(txt, name=False) -> (nid, shortname, longname, oid)\n\
+\n\
+Lookup NID, short name, long name and OID of an ASN1_OBJECT. By default\n\
+objects are looked up by OID. With name=True short and long name are also\n\
+matched.");
+
+static PyObject*
+PySSL_txt2obj(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    char *kwlist[] = {"txt", "name", NULL};
+    PyObject *result = NULL;
+    char *txt;
+    int name = 0;
+    ASN1_OBJECT *obj;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|p:txt2obj",
+                                     kwlist, &txt, &name)) {
+        return NULL;
+    }
+    obj = OBJ_txt2obj(txt, name ? 0 : 1);
+    if (obj == NULL) {
+        PyErr_Format(PyExc_ValueError, "Unknown object");
+        return NULL;
+    }
+    result = asn1obj2py(obj);
+    ASN1_OBJECT_free(obj);
+    return result;
+}
+
+PyDoc_STRVAR(PySSL_nid2obj_doc,
+"nid2obj(nid) -> (nid, shortname, longname, oid)\n\
+\n\
+Lookup NID, short name, long name and OID of an ASN1_OBJECT by NID.");
+
+static PyObject*
+PySSL_nid2obj(PyObject *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    int nid;
+    ASN1_OBJECT *obj;
+
+    if (!PyArg_ParseTuple(args, "i:nid2obj", &nid)) {
+        return NULL;
+    }
+    if (nid < NID_undef) {
+        PyErr_Format(PyExc_ValueError, "NID must be positive.");
+        return NULL;
+    }
+    obj = OBJ_nid2obj(nid);
+    if (obj == NULL) {
+        PyErr_Format(PyExc_ValueError, "Unknown NID");
+        return NULL;
+    }
+    result = asn1obj2py(obj);
+    ASN1_OBJECT_free(obj);
+    return result;
+}
+
+
 #ifdef _MSC_VER
 PyDoc_STRVAR(PySSL_enum_cert_store_doc,
 "enum_cert_store(store_name, cert_type='certificate') -> []\n\
@@ -3145,6 +3232,10 @@ static PyMethodDef PySSL_methods[] = {
     {"enum_cert_store", (PyCFunction)PySSL_enum_cert_store,
      METH_VARARGS | METH_KEYWORDS, PySSL_enum_cert_store_doc},
 #endif
+    {"txt2obj", (PyCFunction)PySSL_txt2obj,
+     METH_VARARGS | METH_KEYWORDS, PySSL_txt2obj_doc},
+    {"nid2obj", (PyCFunction)PySSL_nid2obj,
+     METH_VARARGS, PySSL_nid2obj_doc},
     {NULL,                  NULL}            /* Sentinel */
 };
 

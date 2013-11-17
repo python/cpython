@@ -539,6 +539,44 @@ class BasicSocketTests(unittest.TestCase):
         self.assertIsInstance(ca[0][0], bytes)
         self.assertIsInstance(ca[0][1], int)
 
+    def test_asn1object(self):
+        expected = (129, 'serverAuth', 'TLS Web Server Authentication',
+                    '1.3.6.1.5.5.7.3.1')
+
+        val = ssl._ASN1Object('1.3.6.1.5.5.7.3.1')
+        self.assertEqual(val, expected)
+        self.assertEqual(val.nid, 129)
+        self.assertEqual(val.shortname, 'serverAuth')
+        self.assertEqual(val.longname, 'TLS Web Server Authentication')
+        self.assertEqual(val.oid, '1.3.6.1.5.5.7.3.1')
+        self.assertIsInstance(val, ssl._ASN1Object)
+        self.assertRaises(ValueError, ssl._ASN1Object, 'serverAuth')
+
+        val = ssl._ASN1Object.fromnid(129)
+        self.assertEqual(val, expected)
+        self.assertIsInstance(val, ssl._ASN1Object)
+        self.assertRaises(ValueError, ssl._ASN1Object.fromnid, -1)
+        self.assertRaises(ValueError, ssl._ASN1Object.fromnid, 100000)
+        for i in range(1000):
+            try:
+                obj = ssl._ASN1Object.fromnid(i)
+            except ValueError:
+                pass
+            else:
+                self.assertIsInstance(obj.nid, int)
+                self.assertIsInstance(obj.shortname, str)
+                self.assertIsInstance(obj.longname, str)
+                self.assertIsInstance(obj.oid, (str, type(None)))
+
+        val = ssl._ASN1Object.fromname('TLS Web Server Authentication')
+        self.assertEqual(val, expected)
+        self.assertIsInstance(val, ssl._ASN1Object)
+        self.assertEqual(ssl._ASN1Object.fromname('serverAuth'), expected)
+        self.assertEqual(ssl._ASN1Object.fromname('1.3.6.1.5.5.7.3.1'),
+                         expected)
+        self.assertRaises(ValueError, ssl._ASN1Object.fromname, 'serverauth')
+
+
 class ContextTests(unittest.TestCase):
 
     @skip_if_broken_ubuntu_ssl

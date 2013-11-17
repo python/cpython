@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19448: Add private API to SSL module to lookup ASN.1 objects by OID,
+  NID, short name and long name.
+
 - Issue #19282: dbm.open now supports the context manager protocol. (Inital
   patch by Claudiu Popa)
 
