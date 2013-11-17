@@ -313,7 +313,8 @@ class BaseSelectorTestCase(unittest.TestCase):
         t0 = time()
         self.assertFalse(s.select(1))
         t1 = time()
-        self.assertTrue(0.5 < t1 - t0 < 1.5, t1 - t0)
+        dt = t1 - t0
+        self.assertTrue(0.8 <= dt <= 1.6, dt)
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
