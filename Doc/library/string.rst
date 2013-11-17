@@ -300,7 +300,7 @@ The general form of a *standard format specifier* is:
    precision: `integer`
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
-If a valid *align* value is specified, it can be preceeded by a *fill*
+If a valid *align* value is specified, it can be preceded by a *fill*
 character that can be any character and defaults to a space if omitted.
 Note that it is not possible to use ``{`` and ``}`` as *fill* char while
 using the :meth:`str.format` method; this limitation however doesn't
