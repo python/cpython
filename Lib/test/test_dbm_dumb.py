@@ -184,6 +184,19 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(expected, got)
             f.close()
 
+    def test_context_manager(self):
+        with dumbdbm.open(_fname, 'c') as db:
+            db["dumbdbm context manager"] = "context manager"
+
+        with dumbdbm.open(_fname, 'r') as db:
+            self.assertEqual(list(db.keys()), [b"dumbdbm context manager"])
+
+        # This currently just raises AttributeError rather than a specific
+        # exception like the GNU or NDBM based implementations. See
+        # http://bugs.python.org/issue19385 for details.
+        with self.assertRaises(Exception):
+            db.keys()
+
     def tearDown(self):
         _delete_files()
 
