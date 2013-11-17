@@ -285,6 +285,8 @@ Tests
 Build
 -----
 
+- Issue #19520: Fix compiler warning in the _sha3 module on 32bit Windows.
+
 - Issue #19356: Avoid using a C variabled named "_self", it's a reserved
   word in some C compilers.
 
