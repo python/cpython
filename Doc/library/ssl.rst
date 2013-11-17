@@ -30,12 +30,10 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    openssl version 1.0.1.
 
 .. warning::
+   Don't use this module without reading the :ref:`ssl-security`.  Doing so
+   may lead to a false sense of security, as the default settings of the
+   ssl module are not necessarily appropriate for your application.
 
-   OpenSSL's internal random number generator does not properly handle fork.
-   Applications must change the PRNG state of the parent process if they use
-   any SSL feature with :func:`os.fork`. Any successful call of
-   :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
-   :func:`~ssl.RAND_pseudo_bytes` is sufficient.
 
 This section documents the objects and functions in the ``ssl`` module; for more
 general information about TLS, SSL, and certificates, the reader is referred to
@@ -1479,6 +1477,17 @@ OpenSSL's documentation about the `cipher list
 format <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list,
 use the ``openssl ciphers`` command on your system.
+
+Multi-processing
+^^^^^^^^^^^^^^^^
+
+If using this module as part of a multi-processed application (using,
+for example the :mod:`multiprocessing` or :mod:`concurrent.futures` modules),
+be aware that OpenSSL's internal random number generator does not properly
+handle forked processes.  Applications must change the PRNG state of the
+parent process if they use any SSL feature with :func:`os.fork`.  Any
+successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
+:func:`~ssl.RAND_pseudo_bytes` is sufficient.
 
 
 .. seealso::
