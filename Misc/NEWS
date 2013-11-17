@@ -50,6 +50,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17618: Add Base85 and Ascii85 encoding/decoding to the base64 module.
+
 - Issue #19634: time.strftime("%y") now raises a ValueError on AIX when given a
   year before 1900.
 

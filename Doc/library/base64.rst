@@ -132,6 +132,76 @@ The modern interface provides:
    string.
 
 
+.. function:: a85encode(s, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
+
+   Encode a byte string using Ascii85.
+
+   *s* is the string to encode. The encoded byte string is returned.
+
+   *foldspaces* is an optional flag that uses the special short sequence 'y'
+   instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
+   feature is not supported by the "standard" Ascii85 encoding.
+
+   *wrapcol* controls whether the output should have newline ('\n')
+   characters added to it. If this is non-zero, each output line will be
+   at most this many characters long.
+
+   *pad* controls whether the input string is padded to a multiple of 4
+   before encoding. Note that the ``btoa`` implementation always pads.
+
+   *adobe* controls whether the encoded byte sequence is framed with ``<~``
+   and ``~>``, which is used by the Adobe implementation.
+
+   .. versionadded:: 3.4
+
+
+.. function:: a85decode(s, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
+
+   Decode an Ascii85 encoded byte string.
+
+   *s* is the byte string to decode.
+
+   *foldspaces* is a flag that specifies whether the 'y' short sequence
+   should be accepted as shorthand for 4 consecutive spaces (ASCII 0x20).
+   This feature is not supported by the "standard" Ascii85 encoding.
+
+   *adobe* controls whether the input sequence is in Adobe Ascii85 format
+   (i.e. is framed with <~ and ~>).
+
+   *ignorechars* should be a byte string containing characters to ignore
+   from the input. This should only contain whitespace characters, and by
+   default contains all whitespace characters in ASCII.
+
+   .. versionadded:: 3.4
+
+
+.. function:: b85encode(s, pad=False)
+
+   Encode a byte string using base85, as used in e.g. git-style binary
+   diffs.
+
+   If *pad* is true, the input is padded with "\\0" so its length is a
+   multiple of 4 characters before encoding.
+
+   .. versionadded:: 3.4
+
+
+.. function:: b85decode(b)
+
+   Decode base85-encoded byte string.  Padding is implicitly removed, if
+   necessary.
+
+   .. versionadded:: 3.4
+
+
+.. note::
+   Both Base85 and Ascii85 have an expansion factor of 5 to 4 (5 Base85 or
+   Ascii85 characters can encode 4 binary bytes), while the better-known
+   Base64 has an expansion factor of 6 to 4.  They are therefore more
+   efficient when space expensive.  They differ by details such as the
+   character map used for encoding.
+
+
 The legacy interface:
 
 .. function:: decode(input, output)
