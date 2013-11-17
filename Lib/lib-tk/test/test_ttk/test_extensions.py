@@ -45,11 +45,7 @@ class LabeledScaleTest(unittest.TestCase):
         # it tries calling instance attributes not yet defined.
         ttk.LabeledScale(variable=myvar)
         if hasattr(sys, 'last_type'):
-<<<<<<<
-            self.assertFalse(sys.last_type == Tkinter.TclError)
-=======
             self.assertNotEqual(sys.last_type, tkinter.TclError)
->>>>>>>
 
 
     def test_initialization(self):
