@@ -50,6 +50,10 @@ Core and Builtins
 Library
 -------
 
+- Fix test.support.bind_port() to not cause an error when Python was compiled
+  on a system with SO_REUSEPORT defined in the headers but run on a system
+  with an OS kernel that does not support that reasonably new socket option.
+
 - Fix compilation error under gcc of the ctypes module bundled libffi for arm.
 
 - Issue #19448: Add private API to SSL module to lookup ASN.1 objects by OID,
