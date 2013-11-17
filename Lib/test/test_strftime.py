@@ -182,15 +182,13 @@ class Y1900Tests(unittest.TestCase):
     a date before 1900 is passed with a format string containing "%y"
     """
 
-    @unittest.skipUnless(sys.platform == "win32", "Only applies to Windows")
-    def test_y_before_1900_win(self):
-        with self.assertRaises(ValueError):
-            time.strftime("%y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
-
-    @unittest.skipIf(sys.platform == "win32", "Doesn't apply on Windows")
-    def test_y_before_1900_nonwin(self):
-        self.assertEqual(
-            time.strftime("%y", (1899, 1, 1, 0, 0, 0, 0, 0, 0)), "99")
+    def test_y_before_1900(self):
+        t = (1899, 1, 1, 0, 0, 0, 0, 0, 0)
+        if sys.platform == "win32" or sys.platform.startswith("aix"):
+            with self.assertRaises(ValueError):
+                time.strftime("%y", t)
+        else:
+            self.assertEqual(time.strftime("%y", t), "99")
 
     def test_y_1900(self):
         self.assertEqual(
