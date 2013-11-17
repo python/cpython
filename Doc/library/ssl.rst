@@ -31,6 +31,10 @@ probably additional platforms, as long as OpenSSL is installed on that platform.
    cause variations in behavior.
 
 .. warning::
+   The ssl module won't validate certificates by default.  When used in
+   client mode, this means you are vulnerable to man-in-the-middle attacks.
+
+.. warning::
 
    OpenSSL's internal random number generator does not properly handle fork.
    Applications must change the PRNG state of the parent process if they use
