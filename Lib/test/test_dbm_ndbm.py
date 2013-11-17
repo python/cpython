@@ -37,5 +37,18 @@ class DbmTestCase(unittest.TestCase):
             except error:
                 self.fail()
 
+    def test_context_manager(self):
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            db["ndbm context manager"] = "context manager"
+
+        with dbm.ndbm.open(self.filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b"ndbm context manager"])
+
+        with self.assertRaises(dbm.ndbm.error) as cm:
+            db.keys()
+        self.assertEqual(str(cm.exception),
+                         "DBM object has already been closed")
+
+
 if __name__ == '__main__':
     unittest.main()
