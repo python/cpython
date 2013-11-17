@@ -81,6 +81,17 @@ class TestGdbm(unittest.TestCase):
         size2 = os.path.getsize(filename)
         self.assertTrue(size1 > size2 >= size0)
 
+    def test_context_manager(self):
+        with gdbm.open(filename, 'c') as db:
+            db["gdbm context manager"] = "context manager"
+
+        with gdbm.open(filename, 'r') as db:
+            self.assertEqual(list(db.keys()), [b"gdbm context manager"])
+
+        with self.assertRaises(gdbm.error) as cm:
+            db.keys()
+        self.assertEqual(str(cm.exception),
+                         "GDBM object has already been closed")
 
 if __name__ == '__main__':
     unittest.main()
