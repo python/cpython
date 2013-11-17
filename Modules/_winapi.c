@@ -107,17 +107,37 @@ overlapped_dealloc(OverlappedObject *self)
 {
     DWORD bytes;
     int err = GetLastError();
+
     if (self->pending) {
-        /* make it a programming error to deallocate while operation
-           is pending, even if we can safely cancel it */
         if (check_CancelIoEx() &&
-                Py_CancelIoEx(self->handle, &self->overlapped))
-            GetOverlappedResult(self->handle, &self->overlapped, &bytes, TRUE);
-        PyErr_SetString(PyExc_RuntimeError,
-                        "I/O operations still in flight while destroying "
-                        "Overlapped object, the process may crash");
-        PyErr_WriteUnraisable(NULL);
+            Py_CancelIoEx(self->handle, &self->overlapped) &&
+            GetOverlappedResult(self->handle, &self->overlapped, &bytes, TRUE))
+        {
+            /* The operation is no longer pending -- nothing to do. */
+        }
+        else if (_Py_Finalizing == NULL)
+        {
+            /* The operation is still pending -- give a warning.  This
+               will probably only happen on Windows XP. */
+            PyErr_SetString(PyExc_RuntimeError,
+                            "I/O operations still in flight while destroying "
+                            "Overlapped object, the process may crash");
+            PyErr_WriteUnraisable(NULL);
+        }
+        else
+        {
+            /* The operation is still pending, but the process is
+               probably about to exit, so we need not worry too much
+               about memory leaks.  Leaking self prevents a potential
+               crash.  This can happen when a daemon thread is cleaned
+               up at exit -- see #19565.  We only expect to get here
+               on Windows XP. */
+            CloseHandle(self->overlapped.hEvent);
+            SetLastError(err);
+            return;
+        }
     }
+
     CloseHandle(self->overlapped.hEvent);
     SetLastError(err);
     if (self->write_buffer.obj)
