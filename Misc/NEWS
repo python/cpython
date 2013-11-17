@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19634: time.strftime("%y") now raises a ValueError on AIX when given a
+  year before 1900.
+
 - Fix test.support.bind_port() to not cause an error when Python was compiled
   on a system with SO_REUSEPORT defined in the headers but run on a system
   with an OS kernel that does not support that reasonably new socket option.

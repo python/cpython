@@ -650,6 +650,20 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
+#elif defined(_AIX)
+    for(outbuf = wcschr(fmt, '%');
+        outbuf != NULL;
+        outbuf = wcschr(outbuf+2, '%'))
+    {
+        /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
+           returns "0/" instead of "99" */
+        if (outbuf[1] == L'y' && buf.tm_year < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "format %y requires year >= 1900 on AIX");
+            Py_DECREF(format);
+            return NULL;
+        }
+    }
 #endif
 
     fmtlen = time_strlen(fmt);
