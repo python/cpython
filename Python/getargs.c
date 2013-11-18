@@ -421,6 +421,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     int n = 0;
     const char *format = *p_format;
     int i;
+    Py_ssize_t len;
 
     for (;;) {
         int c = *format++;
@@ -450,12 +451,20 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         return msgbuf;
     }
 
-    if ((i = PySequence_Size(arg)) != n) {
+    len = PySequence_Size(arg);
+    if (len != n) {
         levels[0] = 0;
-        PyOS_snprintf(msgbuf, bufsize,
-                      toplevel ? "expected %d arguments, not %d" :
-                     "must be sequence of length %d, not %d",
-                  n, i);
+        if (toplevel) {
+            PyOS_snprintf(msgbuf, bufsize,
+                          "expected %d arguments, not %" PY_FORMAT_SIZE_T "d",
+                          n, len);
+        }
+        else {
+            PyOS_snprintf(msgbuf, bufsize,
+                          "must be sequence of length %d, "
+                          "not %" PY_FORMAT_SIZE_T "d",
+                          n, len);
+        }
         return msgbuf;
     }
 
@@ -1426,7 +1435,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     const char *fname, *msg, *custom_msg, *keyword;
     int min = INT_MAX;
     int max = INT_MAX;
-    int i, len, nargs, nkeywords;
+    int i, len;
+    Py_ssize_t nargs, nkeywords;
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
     freelist_t freelist = {static_entries, 0, 0};
@@ -1466,7 +1476,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     nkeywords = (keywords == NULL) ? 0 : PyDict_Size(keywords);
     if (nargs + nkeywords > len) {
         PyErr_Format(PyExc_TypeError,
-                     "%s%s takes at most %d argument%s (%d given)",
+                     "%s%s takes at most %d argument%s "
+                     "(%" PY_FORMAT_SIZE_T "d given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
