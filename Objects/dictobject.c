@@ -2161,7 +2161,7 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 /*[clinic]
-module dict
+class dict
 
 @coexist
 dict.__contains__

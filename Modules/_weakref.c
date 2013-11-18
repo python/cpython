@@ -25,14 +25,14 @@ PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
     {"getweakrefcount", (PyCFunction)_weakref_getweakrefcount, METH_O, _weakref_getweakrefcount__doc__},
 
 static Py_ssize_t
-_weakref_getweakrefcount_impl(PyObject *self, PyObject *object);
+_weakref_getweakrefcount_impl(PyObject *module, PyObject *object);
 
 static PyObject *
-_weakref_getweakrefcount(PyObject *self, PyObject *object)
+_weakref_getweakrefcount(PyObject *module, PyObject *object)
 {
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
-    _return_value = _weakref_getweakrefcount_impl(self, object);
+    _return_value = _weakref_getweakrefcount_impl(module, object);
     if ((_return_value == -1) && PyErr_Occurred())
         goto exit;
     return_value = PyLong_FromSsize_t(_return_value);
@@ -42,8 +42,8 @@ exit:
 }
 
 static Py_ssize_t
-_weakref_getweakrefcount_impl(PyObject *self, PyObject *object)
-/*[clinic checksum: 0b7e7ddd87d483719ebac0fba364fff0ed0182d9]*/
+_weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
+/*[clinic checksum: 05cffbc3a4b193a0b7e645da81be281748704f69]*/
 {
     PyWeakReference **list;
 
