@@ -254,7 +254,8 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
         }
 #endif
         if (a >= tok->line_start)
-            col_offset = a - tok->line_start;
+            col_offset = Py_SAFE_DOWNCAST(a - tok->line_start,
+                                          Py_intptr_t, int);
         else
             col_offset = -1;
 
