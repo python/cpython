@@ -454,7 +454,6 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
 
     Py_INCREF(obj);
     if (-1 == KeepRef((CDataObject *)result, -1, obj)) {
-        Py_DECREF(result);
         return NULL;
     }
     return result;
