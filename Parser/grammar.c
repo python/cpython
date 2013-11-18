@@ -63,7 +63,7 @@ addstate(dfa *d)
     s->s_upper = 0;
     s->s_accel = NULL;
     s->s_accept = 0;
-    return s - d->d_state;
+    return Py_SAFE_DOWNCAST(s - d->d_state, Py_intptr_t, int);
 }
 
 void
@@ -105,7 +105,7 @@ addlabel(labellist *ll, int type, const char *str)
     if (Py_DebugFlag)
         printf("Label @ %8p, %d: %s\n", ll, ll->ll_nlabels,
                PyGrammar_LabelRepr(lb));
-    return lb - ll->ll_label;
+    return Py_SAFE_DOWNCAST(lb - ll->ll_label, Py_intptr_t, int);
 }
 
 /* Same, but rather dies than adds */
