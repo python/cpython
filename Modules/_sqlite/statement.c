@@ -184,7 +184,7 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
     int i;
     int rc;
     int num_params_needed;
-    int num_params;
+    Py_ssize_t num_params;
 
     Py_BEGIN_ALLOW_THREADS
     num_params_needed = sqlite3_bind_parameter_count(self->st);
@@ -200,7 +200,9 @@ void pysqlite_statement_bind_parameters(pysqlite_Statement* self, PyObject* para
             num_params = PySequence_Size(parameters);
         }
         if (num_params != num_params_needed) {
-            PyErr_Format(pysqlite_ProgrammingError, "Incorrect number of bindings supplied. The current statement uses %d, and there are %d supplied.",
+            PyErr_Format(pysqlite_ProgrammingError,
+                         "Incorrect number of bindings supplied. The current "
+                         "statement uses %d, and there are %zd supplied.",
                          num_params_needed, num_params);
             return;
         }
