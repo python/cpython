@@ -499,7 +499,7 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->ssl = SSL_new(ctx);
     PySSL_END_ALLOW_THREADS
     SSL_set_app_data(self->ssl,self);
-    SSL_set_fd(self->ssl, sock->sock_fd);
+    SSL_set_fd(self->ssl, Py_SAFE_DOWNCAST(sock->sock_fd, SOCKET_T, int));
     mode = SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER;
 #ifdef SSL_MODE_AUTO_RETRY
     mode |= SSL_MODE_AUTO_RETRY;
@@ -1378,9 +1378,11 @@ check_socket_and_wait_for_timeout(PySocketSockObject *s, int writing)
     /* See if the socket is ready */
     PySSL_BEGIN_ALLOW_THREADS
     if (writing)
-        rc = select(s->sock_fd+1, NULL, &fds, NULL, &tv);
+        rc = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
+                    NULL, &fds, NULL, &tv);
     else
-        rc = select(s->sock_fd+1, &fds, NULL, NULL, &tv);
+        rc = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
+                    &fds, NULL, NULL, &tv);
     PySSL_END_ALLOW_THREADS
 
 #ifdef HAVE_POLL
