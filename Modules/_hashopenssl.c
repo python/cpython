@@ -504,10 +504,6 @@ PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
     HMAC_CTX_init(&hctx);
     p = out;
     tkeylen = keylen;
-    if (!pass)
-        passlen = 0;
-    else if(passlen == -1)
-        passlen = strlen(pass);
     if (!HMAC_Init_ex(&hctx_tpl, pass, passlen, digest, NULL)) {
         HMAC_CTX_cleanup(&hctx_tpl);
         return 0;
@@ -671,7 +667,7 @@ pbkdf2_hmac(PyObject *self, PyObject *args, PyObject *kwdict)
 
     Py_BEGIN_ALLOW_THREADS
     retval = PKCS5_PBKDF2_HMAC_fast((char*)password.buf, (int)password.len,
-                                    (unsigned char *)salt.buf, salt.len,
+                                    (unsigned char *)salt.buf, (int)salt.len,
                                     iterations, digest, dklen,
                                     (unsigned char *)key);
     Py_END_ALLOW_THREADS
