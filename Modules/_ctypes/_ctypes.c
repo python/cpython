@@ -1342,7 +1342,8 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict))
         goto error;
     Py_DECREF(result->tp_dict);
-    result->tp_dict = (PyObject *)stgdict;
+    result->tp_dict = (PyObject *)stgdict;  /* steal the reference */
+    stgdict = NULL;
 
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
