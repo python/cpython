@@ -1476,8 +1476,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     nkeywords = (keywords == NULL) ? 0 : PyDict_Size(keywords);
     if (nargs + nkeywords > len) {
         PyErr_Format(PyExc_TypeError,
-                     "%s%s takes at most %d argument%s "
-                     "(%" PY_FORMAT_SIZE_T "d given)",
+                     "%s%s takes at most %d argument%s (%zd given)",
                      (fname == NULL) ? "function" : fname,
                      (fname == NULL) ? "" : "()",
                      len,
