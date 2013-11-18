@@ -140,14 +140,12 @@ class BaseSelector(metaclass=ABCMeta):
             raise KeyError("{!r} is not registered".format(fileobj)) from None
         if events != key.events:
             self.unregister(fileobj)
-            return self.register(fileobj, events, data)
+            key = self.register(fileobj, events, data)
         elif data != key.data:
             # Use a shortcut to update the data.
             key = key._replace(data=data)
             self._fd_to_key[key.fd] = key
-            return key
-        else:
-            return key
+        return key
 
     @abstractmethod
     def select(self, timeout=None):
