@@ -359,14 +359,8 @@ list_repr(PyListObject *v)
 
     _PyUnicodeWriter_Init(&writer);
     writer.overallocate = 1;
-    if (Py_SIZE(v) > 1) {
-        /* "[" + "1" + ", 2" * (len - 1) + "]" */
-        writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
-    }
-    else {
-        /* "[1]" */
-        writer.min_length = 3;
-    }
+    /* "[" + "1" + ", 2" * (len - 1) + "]" */
+    writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
 
     if (_PyUnicodeWriter_WriteChar(&writer, '[') < 0)
         goto error;
