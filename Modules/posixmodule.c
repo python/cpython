@@ -4054,7 +4054,8 @@ posix__getvolumepathname(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
 
     Py_BEGIN_ALLOW_THREADS
-    ret = GetVolumePathNameW(path, mountpath, bufsize);
+    ret = GetVolumePathNameW(path, mountpath,
+                             Py_SAFE_DOWNCAST(bufsize, size_t, DWORD));
     Py_END_ALLOW_THREADS
 
     if (!ret) {
