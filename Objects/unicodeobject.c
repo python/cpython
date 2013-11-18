@@ -13106,6 +13106,13 @@ int
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar)
 {
+#ifdef MS_WINDOWS
+   /* On Windows, overallocate by 50% is the best factor */
+#  define OVERALLOCATE_FACTOR 2
+#else
+   /* On Linux, overallocate by 25% is the best factor */
+#  define OVERALLOCATE_FACTOR 4
+#endif
     Py_ssize_t newlen;
     PyObject *newbuffer;
 
@@ -13121,9 +13128,10 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
 
     if (writer->buffer == NULL) {
         assert(!writer->readonly);
-        if (writer->overallocate && newlen <= (PY_SSIZE_T_MAX - newlen / 4)) {
-            /* overallocate 25% to limit the number of resize */
-            newlen += newlen / 4;
+        if (writer->overallocate
+            && newlen <= (PY_SSIZE_T_MAX - newlen / OVERALLOCATE_FACTOR)) {
+            /* overallocate to limit the number of realloc() */
+            newlen += newlen / OVERALLOCATE_FACTOR;
         }
         if (newlen < writer->min_length)
             newlen = writer->min_length;
@@ -13133,9 +13141,10 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
             return -1;
     }
     else if (newlen > writer->size) {
-        if (writer->overallocate && newlen <= (PY_SSIZE_T_MAX - newlen / 4)) {
-            /* overallocate 25% to limit the number of resize */
-            newlen += newlen / 4;
+        if (writer->overallocate
+            && newlen <= (PY_SSIZE_T_MAX - newlen / OVERALLOCATE_FACTOR)) {
+            /* overallocate to limit the number of realloc() */
+            newlen += newlen / OVERALLOCATE_FACTOR;
         }
         if (newlen < writer->min_length)
             newlen = writer->min_length;
@@ -13169,6 +13178,8 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     }
     _PyUnicodeWriter_Update(writer);
     return 0;
+
+#undef OVERALLOCATE_FACTOR
 }
 
 Py_LOCAL_INLINE(int)
