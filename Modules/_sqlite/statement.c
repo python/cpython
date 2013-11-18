@@ -132,18 +132,26 @@ int pysqlite_statement_bind_parameter(pysqlite_Statement* self, int pos, PyObjec
             break;
         case TYPE_UNICODE:
             string = _PyUnicode_AsStringAndSize(parameter, &buflen);
-            if (string != NULL)
-                rc = sqlite3_bind_text(self->st, pos, string, buflen, SQLITE_TRANSIENT);
-            else
-                rc = -1;
+            if (string == NULL)
+                return -1;
+            if (buflen > INT_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "string longer than INT_MAX bytes");
+                return -1;
+            }
+            rc = sqlite3_bind_text(self->st, pos, string, (int)buflen, SQLITE_TRANSIENT);
             break;
         case TYPE_BUFFER:
-            if (PyObject_AsCharBuffer(parameter, &buffer, &buflen) == 0) {
-                rc = sqlite3_bind_blob(self->st, pos, buffer, buflen, SQLITE_TRANSIENT);
-            } else {
+            if (PyObject_AsCharBuffer(parameter, &buffer, &buflen) != 0) {
                 PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
-                rc = -1;
+                return -1;
             }
+            if (buflen > INT_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                                "BLOB longer than INT_MAX bytes");
+                return -1;
+            }
+            rc = sqlite3_bind_blob(self->st, pos, buffer, buflen, SQLITE_TRANSIENT);
             break;
         case TYPE_UNKNOWN:
             rc = -1;
