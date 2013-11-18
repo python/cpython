@@ -630,8 +630,9 @@ save_unconsumed_input(compobject *self, int err)
 /*[clinic]
 
 module zlib
+class zlib.Decompress
 
-zlib.decompress
+zlib.Decompress.decompress
 
     data: Py_buffer
         The binary data to decompress.
@@ -648,10 +649,10 @@ internal buffers for later processing.
 Call the flush() method to clear these buffers.
 [clinic]*/
 
-PyDoc_STRVAR(zlib_decompress__doc__,
+PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 "Return a string containing the decompressed version of the data.\n"
 "\n"
-"zlib.decompress(data, max_length=0)\n"
+"zlib.Decompress.decompress(data, max_length=0)\n"
 "  data\n"
 "    The binary data to decompress.\n"
 "  max_length\n"
@@ -663,14 +664,14 @@ PyDoc_STRVAR(zlib_decompress__doc__,
 "internal buffers for later processing.\n"
 "Call the flush() method to clear these buffers.");
 
-#define ZLIB_DECOMPRESS_METHODDEF    \
-    {"decompress", (PyCFunction)zlib_decompress, METH_VARARGS, zlib_decompress__doc__},
+#define ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF    \
+    {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_VARARGS, zlib_Decompress_decompress__doc__},
 
 static PyObject *
-zlib_decompress_impl(PyObject *self, Py_buffer *data, int max_length);
+zlib_Decompress_decompress_impl(PyObject *self, Py_buffer *data, int max_length);
 
 static PyObject *
-zlib_decompress(PyObject *self, PyObject *args)
+zlib_Decompress_decompress(PyObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_buffer data;
@@ -680,7 +681,7 @@ zlib_decompress(PyObject *self, PyObject *args)
         "y*|i:decompress",
         &data, &max_length))
         goto exit;
-    return_value = zlib_decompress_impl(self, &data, max_length);
+    return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -690,8 +691,8 @@ exit:
 }
 
 static PyObject *
-zlib_decompress_impl(PyObject *self, Py_buffer *data, int max_length)
-/*[clinic checksum: 168d093d400739dde947cca1f4fb0f9d51cdc2c9]*/
+zlib_Decompress_decompress_impl(PyObject *self, Py_buffer *data, int max_length)
+/*[clinic checksum: bfac7a0f07e891869d87c665a76dc2611014420f]*/
 {
     compobject *zself = (compobject *)self;
     int err;
@@ -907,22 +908,23 @@ PyZlib_flush(compobject *self, PyObject *args)
 
 /*[clinic]
 
-zlib.copy
+class zlib.Compress
+zlib.Compress.copy
 
 Return a copy of the compression object.
 [clinic]*/
 
-PyDoc_STRVAR(zlib_copy__doc__,
+PyDoc_STRVAR(zlib_Compress_copy__doc__,
 "Return a copy of the compression object.\n"
 "\n"
-"zlib.copy()");
+"zlib.Compress.copy()");
 
-#define ZLIB_COPY_METHODDEF    \
-    {"copy", (PyCFunction)zlib_copy, METH_NOARGS, zlib_copy__doc__},
+#define ZLIB_COMPRESS_COPY_METHODDEF    \
+    {"copy", (PyCFunction)zlib_Compress_copy, METH_NOARGS, zlib_Compress_copy__doc__},
 
 static PyObject *
-zlib_copy(PyObject *self)
-/*[clinic checksum: 7b648de2c1f933ba2b9fa17331ff1a44d9a4a740]*/
+zlib_Compress_copy(PyObject *self)
+/*[clinic checksum: 2551952e72329f0f2beb48a1dde3780e485a220b]*/
 {
     compobject *zself = (compobject *)self;
     compobject *retval = NULL;
@@ -1118,14 +1120,14 @@ static PyMethodDef comp_methods[] =
     {"flush", (binaryfunc)PyZlib_flush, METH_VARARGS,
               comp_flush__doc__},
 #ifdef HAVE_ZLIB_COPY
-    ZLIB_COPY_METHODDEF
+    ZLIB_COMPRESS_COPY_METHODDEF
 #endif
     {NULL, NULL}
 };
 
 static PyMethodDef Decomp_methods[] =
 {
-    ZLIB_DECOMPRESS_METHODDEF
+    ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
     {"flush", (binaryfunc)PyZlib_unflush, METH_VARARGS,
               decomp_flush__doc__},
 #ifdef HAVE_ZLIB_COPY

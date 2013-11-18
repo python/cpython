@@ -12722,7 +12722,7 @@ unicode_swapcase(PyObject *self)
 }
 
 /*[clinic]
-module str
+class str
 
 @staticmethod
 str.maketrans as unicode_maketrans

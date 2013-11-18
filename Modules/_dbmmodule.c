@@ -415,10 +415,10 @@ PyDoc_STRVAR(dbmopen__doc__,
     {"open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
 
 static PyObject *
-dbmopen_impl(PyObject *self, const char *filename, const char *flags, int mode);
+dbmopen_impl(PyObject *module, const char *filename, const char *flags, int mode);
 
 static PyObject *
-dbmopen(PyObject *self, PyObject *args)
+dbmopen(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     const char *filename;
@@ -429,15 +429,15 @@ dbmopen(PyObject *self, PyObject *args)
         "s|si:open",
         &filename, &flags, &mode))
         goto exit;
-    return_value = dbmopen_impl(self, filename, flags, mode);
+    return_value = dbmopen_impl(module, filename, flags, mode);
 
 exit:
     return return_value;
 }
 
 static PyObject *
-dbmopen_impl(PyObject *self, const char *filename, const char *flags, int mode)
-/*[clinic checksum: 61007c796d38af85c8035afa769fb4bb453429ee]*/
+dbmopen_impl(PyObject *module, const char *filename, const char *flags, int mode)
+/*[clinic checksum: 2b0ec9e3c6ecd19e06d16c9f0ba33848245cb1ab]*/
 {
     int iflags;
 
