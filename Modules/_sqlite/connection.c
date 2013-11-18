@@ -522,10 +522,16 @@ _pysqlite_set_result(sqlite3_context* context, PyObject* py_val)
         const char* buffer;
         Py_ssize_t buflen;
         if (PyObject_AsCharBuffer(py_val, &buffer, &buflen) != 0) {
-            PyErr_SetString(PyExc_ValueError, "could not convert BLOB to buffer");
+            PyErr_SetString(PyExc_ValueError,
+                            "could not convert BLOB to buffer");
             return -1;
         }
-        sqlite3_result_blob(context, buffer, buflen, SQLITE_TRANSIENT);
+        if (buflen > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "BLOB longer than INT_MAX bytes");
+            return -1;
+        }
+        sqlite3_result_blob(context, buffer, (int)buflen, SQLITE_TRANSIENT);
     } else {
         return -1;
     }
