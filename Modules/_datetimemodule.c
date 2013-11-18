@@ -4141,9 +4141,10 @@ datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
 
 /*[clinic]
 module datetime
+class datetime.datetime
 
 @classmethod
-datetime.now
+datetime.datetime.now
 
     tz: object = None
         Timezone object.
@@ -4153,23 +4154,23 @@ Returns new datetime object representing current time local to tz.
 If no tz is specified, uses local timezone.
 [clinic]*/
 
-PyDoc_STRVAR(datetime_now__doc__,
+PyDoc_STRVAR(datetime_datetime_now__doc__,
 "Returns new datetime object representing current time local to tz.\n"
 "\n"
-"datetime.now(tz=None)\n"
+"datetime.datetime.now(tz=None)\n"
 "  tz\n"
 "    Timezone object.\n"
 "\n"
 "If no tz is specified, uses local timezone.");
 
-#define DATETIME_NOW_METHODDEF    \
-    {"now", (PyCFunction)datetime_now, METH_VARARGS|METH_KEYWORDS|METH_CLASS, datetime_now__doc__},
+#define DATETIME_DATETIME_NOW_METHODDEF    \
+    {"now", (PyCFunction)datetime_datetime_now, METH_VARARGS|METH_KEYWORDS|METH_CLASS, datetime_datetime_now__doc__},
 
 static PyObject *
-datetime_now_impl(PyObject *cls, PyObject *tz);
+datetime_datetime_now_impl(PyObject *cls, PyObject *tz);
 
 static PyObject *
-datetime_now(PyObject *cls, PyObject *args, PyObject *kwargs)
+datetime_datetime_now(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"tz", NULL};
@@ -4179,15 +4180,15 @@ datetime_now(PyObject *cls, PyObject *args, PyObject *kwargs)
         "|O:now", _keywords,
         &tz))
         goto exit;
-    return_value = datetime_now_impl(cls, tz);
+    return_value = datetime_datetime_now_impl(cls, tz);
 
 exit:
     return return_value;
 }
 
 static PyObject *
-datetime_now_impl(PyObject *cls, PyObject *tz)
-/*[clinic checksum: 328b54387f4c2f8cb534997e1bd55f8cb38c4992]*/
+datetime_datetime_now_impl(PyObject *cls, PyObject *tz)
+/*[clinic checksum: cde1daca68c9b7dca6df51759db2de1d43a39774]*/
 {
     PyObject *self;
 
@@ -5037,7 +5038,7 @@ static PyMethodDef datetime_methods[] = {
 
     /* Class methods: */
 
-    DATETIME_NOW_METHODDEF
+    DATETIME_DATETIME_NOW_METHODDEF
 
     {"utcnow",         (PyCFunction)datetime_utcnow,
      METH_NOARGS | METH_CLASS,

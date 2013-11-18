@@ -551,7 +551,6 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
 
 /*[clinic]
 module curses
-
 class curses.window
 
 curses.window.addch

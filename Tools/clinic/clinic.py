@@ -127,13 +127,13 @@ is_legal_c_identifier = re.compile('^[A-Za-z_][A-Za-z0-9_]*$').match
 def is_legal_py_identifier(s):
     return all(is_legal_c_identifier(field) for field in s.split('.'))
 
-# added "self", "cls", and "null" just to be safe
+# added "module", "self", "cls", and "null" just to be safe
 # (clinic will generate variables with these names)
 c_keywords = set("""
 asm auto break case char cls const continue default do double
-else enum extern float for goto if inline int long null register
-return self short signed sizeof static struct switch typedef
-typeof union unsigned void volatile while
+else enum extern float for goto if inline int long module null
+register return self short signed sizeof static struct switch
+typedef typeof union unsigned void volatile while
 """.strip().split())
 
 def ensure_legal_c_identifier(s):
@@ -620,7 +620,7 @@ static {impl_return_type}
         else:
             if f.kind == CALLABLE:
                 meth_flags = ''
-                self_name = "self"
+                self_name = "self" if f.cls else "module"
             elif f.kind == CLASS_METHOD:
                 meth_flags = 'METH_CLASS'
                 self_name = "cls"
@@ -1028,6 +1028,7 @@ class Clinic:
         self.verify = verify
         self.filename = filename
         self.modules = collections.OrderedDict()
+        self.classes = collections.OrderedDict()
 
         global clinic
         clinic = self
@@ -1064,7 +1065,7 @@ class Clinic:
             if not in_classes:
                 child = parent.modules.get(field)
                 if child:
-                    module = child
+                    parent = module = child
                     continue
                 in_classes = True
             if not hasattr(parent, 'classes'):
@@ -1129,6 +1130,9 @@ class Module:
         self.classes = collections.OrderedDict()
         self.functions = []
 
+    def __repr__(self):
+        return "<clinic.Module " + repr(self.name) + " at " + str(id(self)) + ">"
+
 class Class:
     def __init__(self, name, module=None, cls=None):
         self.name = name
@@ -1138,6 +1142,10 @@ class Class:
 
         self.classes = collections.OrderedDict()
         self.functions = []
+
+    def __repr__(self):
+        return "<clinic.Class " + repr(self.name) + " at " + str(id(self)) + ">"
+
 
 DATA, CALLABLE, METHOD, STATIC_METHOD, CLASS_METHOD = range(5)
 
@@ -1808,13 +1816,11 @@ class DSLParser:
         so_far = []
         module, cls = self.clinic._module_and_class(fields)
 
-        if not module:
-            fail("You must explicitly specify the module for the class.")
-
         c = Class(name, module, cls)
-        module.classes[name] = c
         if cls:
             cls.classes[name] = c
+        else:
+            module.classes[name] = c
         self.block.signatures.append(c)
 
     def at_classmethod(self):

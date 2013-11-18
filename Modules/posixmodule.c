@@ -2460,10 +2460,10 @@ PyDoc_STRVAR(os_stat__doc__,
     {"stat", (PyCFunction)os_stat, METH_VARARGS|METH_KEYWORDS, os_stat__doc__},
 
 static PyObject *
-os_stat_impl(PyObject *self, path_t *path, int dir_fd, int follow_symlinks);
+os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks);
 
 static PyObject *
-os_stat(PyObject *self, PyObject *args, PyObject *kwargs)
+os_stat(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
@@ -2475,7 +2475,7 @@ os_stat(PyObject *self, PyObject *args, PyObject *kwargs)
         "O&|$O&p:stat", _keywords,
         path_converter, &path, OS_STAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks))
         goto exit;
-    return_value = os_stat_impl(self, &path, dir_fd, follow_symlinks);
+    return_value = os_stat_impl(module, &path, dir_fd, follow_symlinks);
 
 exit:
     /* Cleanup for path */
@@ -2485,8 +2485,8 @@ exit:
 }
 
 static PyObject *
-os_stat_impl(PyObject *self, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic checksum: 9d9af08e8cfafd12f94e73ea3065eb3056f99515]*/
+os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks)
+/*[clinic checksum: 89390f78327e3f045a81974d758d3996e2a71f68]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2600,10 +2600,10 @@ PyDoc_STRVAR(os_access__doc__,
     {"access", (PyCFunction)os_access, METH_VARARGS|METH_KEYWORDS, os_access__doc__},
 
 static PyObject *
-os_access_impl(PyObject *self, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
+os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
 
 static PyObject *
-os_access(PyObject *self, PyObject *args, PyObject *kwargs)
+os_access(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
@@ -2617,7 +2617,7 @@ os_access(PyObject *self, PyObject *args, PyObject *kwargs)
         "O&i|$O&pp:access", _keywords,
         path_converter, &path, &mode, OS_STAT_DIR_FD_CONVERTER, &dir_fd, &effective_ids, &follow_symlinks))
         goto exit;
-    return_value = os_access_impl(self, &path, mode, dir_fd, effective_ids, follow_symlinks);
+    return_value = os_access_impl(module, &path, mode, dir_fd, effective_ids, follow_symlinks);
 
 exit:
     /* Cleanup for path */
@@ -2627,8 +2627,8 @@ exit:
 }
 
 static PyObject *
-os_access_impl(PyObject *self, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic checksum: 0147557eb43243df57ba616cc7c35f232c69bc6a]*/
+os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
+/*[clinic checksum: aa3e145816a748172e62df8e44af74169c7e1247]*/
 {
     PyObject *return_value = NULL;
 
@@ -2734,10 +2734,10 @@ PyDoc_STRVAR(os_ttyname__doc__,
     {"ttyname", (PyCFunction)os_ttyname, METH_VARARGS, os_ttyname__doc__},
 
 static char *
-os_ttyname_impl(PyObject *self, int fd);
+os_ttyname_impl(PyObject *module, int fd);
 
 static PyObject *
-os_ttyname(PyObject *self, PyObject *args)
+os_ttyname(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -2747,7 +2747,7 @@ os_ttyname(PyObject *self, PyObject *args)
         "i:ttyname",
         &fd))
         goto exit;
-    _return_value = os_ttyname_impl(self, fd);
+    _return_value = os_ttyname_impl(module, fd);
     if (_return_value == NULL)
         goto exit;
     return_value = PyUnicode_DecodeFSDefault(_return_value);
@@ -2757,8 +2757,8 @@ exit:
 }
 
 static char *
-os_ttyname_impl(PyObject *self, int fd)
-/*[clinic checksum: ea680155d87bb733f542d67653eca732dd0981a8]*/
+os_ttyname_impl(PyObject *module, int fd)
+/*[clinic checksum: c742dd621ec98d0f81d37d264e1d3c89c7a5fb1a]*/
 {
     char *ret;
 
