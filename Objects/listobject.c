@@ -338,9 +338,9 @@ static PyObject *
 list_repr(PyListObject *v)
 {
     Py_ssize_t i;
-    PyObject *s = NULL;
-    _PyAccu acc;
+    PyObject *s;
     static PyObject *sep = NULL;
+    _PyUnicodeWriter writer;
 
     if (Py_SIZE(v) == 0) {
         return PyUnicode_FromString("[]");
@@ -357,38 +357,50 @@ list_repr(PyListObject *v)
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
     }
 
-    if (_PyAccu_Init(&acc))
-        goto error;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    if (Py_SIZE(v) > 1) {
+        /* "[" + "1" + ", 2" * (len - 1) + "]" */
+        writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
+    }
+    else {
+        /* "[1]" */
+        writer.min_length = 3;
+    }
 
-    s = PyUnicode_FromString("[");
-    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+    if (_PyUnicodeWriter_WriteChar(&writer, '[') < 0)
         goto error;
-    Py_CLEAR(s);
 
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (i = 0; i < Py_SIZE(v); ++i) {
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteStr(&writer, sep) < 0)
+                goto error;
+        }
+
         if (Py_EnterRecursiveCall(" while getting the repr of a list"))
             goto error;
         s = PyObject_Repr(v->ob_item[i]);
         Py_LeaveRecursiveCall();
-        if (i > 0 && _PyAccu_Accumulate(&acc, sep))
+        if (s == NULL)
             goto error;
-        if (s == NULL || _PyAccu_Accumulate(&acc, s))
+
+        if (_PyUnicodeWriter_WriteStr(&writer, s) < 0) {
+            Py_DECREF(s);
             goto error;
-        Py_CLEAR(s);
+        }
+        Py_DECREF(s);
     }
-    s = PyUnicode_FromString("]");
-    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+
+    if (_PyUnicodeWriter_WriteChar(&writer, ']') < 0)
         goto error;
-    Py_CLEAR(s);
 
     Py_ReprLeave((PyObject *)v);
-    return _PyAccu_Finish(&acc);
+    return _PyUnicodeWriter_Finish(&writer);
 
 error:
-    _PyAccu_Destroy(&acc);
-    Py_XDECREF(s);
+    _PyUnicodeWriter_Dealloc(&writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
