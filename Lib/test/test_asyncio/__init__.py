@@ -1,12 +1,12 @@
 import os
 import sys
 import unittest
-from test.support import run_unittest
+from test.support import run_unittest, import_module
 
-try:
-    import threading
-except ImportError:
-    raise unittest.SkipTest("No module named '_thread'")
+# Skip tests if we don't have threading.
+import_module('threading')
+# Skip tests if we don't have concurrent.futures.
+import_module('concurrent.futures')
 
 
 def suite():
