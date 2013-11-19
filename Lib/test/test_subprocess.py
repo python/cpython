@@ -1681,31 +1681,38 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_undecodable_env(self):
         for key, value in (('test', 'abc\uDCFF'), ('test\uDCFF', '42')):
+            encoded_value = value.encode("ascii", "surrogateescape")
+
             # test str with surrogates
             script = "import os; print(ascii(os.getenv(%s)))" % repr(key)
             env = os.environ.copy()
             env[key] = value
-            # Use C locale to get ascii for the locale encoding to force
+            # Use C locale to get ASCII for the locale encoding to force
             # surrogate-escaping of \xFF in the child process; otherwise it can
             # be decoded as-is if the default locale is latin-1.
             env['LC_ALL'] = 'C'
+            if sys.platform.startswith("aix"):
+                # On AIX, the C locale uses the Latin1 encoding
+                decoded_value = encoded_value.decode("latin1", "surrogateescape")
+            else:
+                # On other UNIXes, the C locale uses the ASCII encoding
+                decoded_value = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
             stdout = stdout.rstrip(b'\n\r')
-            self.assertEqual(stdout.decode('ascii'), ascii(value))
+            self.assertEqual(stdout.decode('ascii'), ascii(decoded_value))
 
             # test bytes
             key = key.encode("ascii", "surrogateescape")
-            value = value.encode("ascii", "surrogateescape")
             script = "import os; print(ascii(os.getenvb(%s)))" % repr(key)
             env = os.environ.copy()
-            env[key] = value
+            env[key] = encoded_value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
                 env=env)
             stdout = stdout.rstrip(b'\n\r')
-            self.assertEqual(stdout.decode('ascii'), ascii(value))
+            self.assertEqual(stdout.decode('ascii'), ascii(encoded_value))
 
     def test_bytes_program(self):
         abs_program = os.fsencode(sys.executable)
