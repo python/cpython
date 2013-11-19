@@ -255,19 +255,11 @@ static PyObject *
 tuplerepr(PyTupleObject *v)
 {
     Py_ssize_t i, n;
-    PyObject *s = NULL;
-    _PyAccu acc;
-    static PyObject *sep = NULL;
+    _PyUnicodeWriter writer;
 
     n = Py_SIZE(v);
     if (n == 0)
         return PyUnicode_FromString("()");
-
-    if (sep == NULL) {
-        sep = PyUnicode_FromString(", ");
-        if (sep == NULL)
-            return NULL;
-    }
 
     /* While not mutable, it is still possible to end up with a cycle in a
        tuple through an object that stores itself within a tuple (and thus
@@ -278,40 +270,58 @@ tuplerepr(PyTupleObject *v)
         return i > 0 ? PyUnicode_FromString("(...)") : NULL;
     }
 
-    if (_PyAccu_Init(&acc))
-        goto error;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    if (Py_SIZE(v) > 1) {
+        /* "(" + "1" + ", 2" * (len - 1) + ")" */
+        writer.min_length = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
+    }
+    else {
+        /* "(1,)" */
+        writer.min_length = 4;
+    }
 
-    s = PyUnicode_FromString("(");
-    if (s == NULL || _PyAccu_Accumulate(&acc, s))
+    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0)
         goto error;
-    Py_CLEAR(s);
 
     /* Do repr() on each element. */
     for (i = 0; i < n; ++i) {
+        PyObject *s;
+
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
+                goto error;
+        }
+
         if (Py_EnterRecursiveCall(" while getting the repr of a tuple"))
             goto error;
         s = PyObject_Repr(v->ob_item[i]);
         Py_LeaveRecursiveCall();
-        if (i > 0 && _PyAccu_Accumulate(&acc, sep))
+        if (s == NULL)
             goto error;
-        if (s == NULL || _PyAccu_Accumulate(&acc, s))
+
+        if (_PyUnicodeWriter_WriteStr(&writer, s) < 0) {
+            Py_DECREF(s);
             goto error;
-        Py_CLEAR(s);
+        }
+        Py_DECREF(s);
     }
-    if (n > 1)
-        s = PyUnicode_FromString(")");
-    else
-        s = PyUnicode_FromString(",)");
-    if (s == NULL || _PyAccu_Accumulate(&acc, s))
-        goto error;
-    Py_CLEAR(s);
+
+    writer.overallocate = 0;
+    if (n > 1) {
+        if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0)
+            goto error;
+    }
+    else {
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, ",)", 2) < 0)
+            goto error;
+    }
 
     Py_ReprLeave((PyObject *)v);
-    return _PyAccu_Finish(&acc);
+    return _PyUnicodeWriter_Finish(&writer);
 
 error:
-    _PyAccu_Destroy(&acc);
-    Py_XDECREF(s);
+    _PyUnicodeWriter_Dealloc(&writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
 }
