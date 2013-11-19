@@ -1183,7 +1183,7 @@ compiler_addop_i(struct compiler *c, Py_ssize_t opcode, Py_ssize_t oparg)
 
     /* Integer arguments are limit to 16-bit. There is an extension for 32-bit
        integer arguments. */
-    assert(-2147483648 <= opcode);
+    assert((-2147483647-1) <= opcode);
     assert(opcode <= 2147483647);
 
     off = compiler_next_instr(c, c->u->u_curblock);
