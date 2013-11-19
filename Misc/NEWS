@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19449: in csv's writerow, handle non-string keys when generating the
+  error message that certain keys are not in the 'fieldnames' list.
+
 - Issue #8402: Added the escape() function to the glob module.
 
 - Issue #17618: Add Base85 and Ascii85 encoding/decoding to the base64 module.
