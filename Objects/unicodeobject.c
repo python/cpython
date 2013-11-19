@@ -140,9 +140,9 @@ extern "C" {
    buffer where the result characters are written to. */
 #define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
     do {                                                \
-        to_type *_to = (to_type *) to;                  \
-        const from_type *_iter = (begin);               \
-        const from_type *_end = (end);                  \
+        to_type *_to = (to_type *)(to);                \
+        const from_type *_iter = (from_type *)(begin);  \
+        const from_type *_end = (from_type *)(end);     \
         Py_ssize_t n = (_end) - (_iter);                \
         const from_type *_unrolled_end =                \
             _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
@@ -2562,7 +2562,6 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             precision = len;
 
         arglen = Py_MAX(precision, width);
-        assert(ucs1lib_find_max_char((Py_UCS1*)buffer, (Py_UCS1*)buffer + len) <= 127);
         if (_PyUnicodeWriter_Prepare(writer, arglen, 127) == -1)
             return NULL;
 
@@ -2581,8 +2580,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             writer->pos += fill;
         }
 
-        unicode_write_cstr(writer->buffer, writer->pos, buffer, len);
-        writer->pos += len;
+        if (_PyUnicodeWriter_WriteASCIIString(writer, buffer, len) < 0)
+            return NULL;
         break;
     }
 
@@ -2604,11 +2603,8 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
             len += 2;
         }
 
-        assert(ucs1lib_find_max_char((Py_UCS1*)number, (Py_UCS1*)number + len) <= 127);
-        if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
+        if (_PyUnicodeWriter_WriteASCIIString(writer, number, len) < 0)
             return NULL;
-        unicode_write_cstr(writer->buffer, writer->pos, number, len);
-        writer->pos += len;
         break;
     }
 
@@ -2707,7 +2703,7 @@ unicode_fromformat_arg(_PyUnicodeWriter *writer,
            skip the code, since there's no way to know what's in the
            argument list) */
         len = strlen(p);
-        if (_PyUnicodeWriter_WriteCstr(writer, p, len) == -1)
+        if (_PyUnicodeWriter_WriteLatin1String(writer, p, len) == -1)
             return NULL;
         f = p+len;
         return f;
@@ -2759,10 +2755,9 @@ PyUnicode_FromFormatV(const char *format, va_list vargs)
 
             if (*p == '\0')
                 writer.overallocate = 0;
-            if (_PyUnicodeWriter_Prepare(&writer, len, 127) == -1)
+
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, f, len) < 0)
                 goto fail;
-            unicode_write_cstr(writer.buffer, writer.pos, f, len);
-            writer.pos += len;
 
             f = p;
         }
@@ -13461,7 +13456,68 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer, PyObject *str,
 }
 
 int
-_PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer, const char *str, Py_ssize_t len)
+_PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
+                                  const char *ascii, Py_ssize_t len)
+{
+    if (len == -1)
+        len = strlen(ascii);
+
+    assert(ucs1lib_find_max_char((Py_UCS1*)ascii, (Py_UCS1*)ascii + len) < 128);
+
+    if (writer->buffer == NULL && !writer->overallocate) {
+        PyObject *str;
+
+        str = _PyUnicode_FromASCII(ascii, len);
+        if (str == NULL)
+            return -1;
+
+        writer->readonly = 1;
+        writer->buffer = str;
+        _PyUnicodeWriter_Update(writer);
+        writer->pos += len;
+        return 0;
+    }
+
+    if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1)
+        return -1;
+
+    switch (writer->kind)
+    {
+    case PyUnicode_1BYTE_KIND:
+    {
+        const Py_UCS1 *str = (const Py_UCS1 *)ascii;
+        Py_UCS1 *data = writer->data;
+
+        Py_MEMCPY(data + writer->pos, str, len);
+        break;
+    }
+    case PyUnicode_2BYTE_KIND:
+    {
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS1, Py_UCS2,
+            ascii, ascii + len,
+            (Py_UCS2 *)writer->data + writer->pos);
+        break;
+    }
+    case PyUnicode_4BYTE_KIND:
+    {
+        _PyUnicode_CONVERT_BYTES(
+            Py_UCS1, Py_UCS4,
+            ascii, ascii + len,
+            (Py_UCS4 *)writer->data + writer->pos);
+        break;
+    }
+    default:
+        assert(0);
+    }
+
+    writer->pos += len;
+    return 0;
+}
+
+int
+_PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
+                                   const char *str, Py_ssize_t len)
 {
     Py_UCS4 maxchar;
 
@@ -13828,12 +13884,10 @@ formatfloat(PyObject *v, struct unicode_format_arg_t *arg,
         return -1;
     len = strlen(p);
     if (writer) {
-        if (_PyUnicodeWriter_Prepare(writer, len, 127) == -1) {
+        if (_PyUnicodeWriter_WriteASCIIString(writer, p, len) < 0) {
             PyMem_Free(p);
             return -1;
         }
-        unicode_write_cstr(writer->buffer, writer->pos, p, len);
-        writer->pos += len;
     }
     else
         *p_output = _PyUnicode_FromASCII(p, len);
