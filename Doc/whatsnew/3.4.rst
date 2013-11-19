@@ -253,6 +253,13 @@ Some smaller changes made to the core Python language are:
   ``__main__.__file__`` when a script has been executed directly using
   a relative path (Contributed by Brett Cannon in :issue:`18416`).
 
+* Now all the UTF-\* codecs (except UTF-7) reject surrogates during both
+  encoding and decoding unless the ``surrogatepass`` error handler is used,
+  with the exception of the UTF-16 decoder that accepts valid surrogate pairs,
+  and the UTF-16 encoder that produces them while encoding non-BMP characters.
+  Contributed by Victor Stinner, Kang-Hao (Kenny) Lu and Serhiy Storchaka in
+  :issue:`12892`.
+
 
 New Modules
 ===========
