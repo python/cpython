@@ -2630,16 +2630,27 @@ _PyErr_TrySetFromCause(const char *format, ...)
     PyTypeObject *caught_type;
     PyObject **dictptr;
     PyObject *instance_args;
-    Py_ssize_t num_args;
+    Py_ssize_t num_args, caught_type_size, base_exc_size;
     PyObject *new_exc, *new_val, *new_tb;
     va_list vargs;
+    int same_basic_size;
 
     PyErr_Fetch(&exc, &val, &tb);
     caught_type = (PyTypeObject *)exc;
-    /* Ensure type info indicates no extra state is stored at the C level */
+    /* Ensure type info indicates no extra state is stored at the C level
+     * and that the type can be reinstantiated using PyErr_Format
+     */
+    caught_type_size = caught_type->tp_basicsize;
+    base_exc_size = _PyExc_BaseException.tp_basicsize;
+    same_basic_size = (
+        caught_type_size == base_exc_size ||
+        (PyType_SUPPORTS_WEAKREFS(caught_type) &&
+            (caught_type_size == base_exc_size + sizeof(PyObject *))
+        )
+    );
     if (caught_type->tp_init != (initproc)BaseException_init ||
         caught_type->tp_new != BaseException_new ||
-        caught_type->tp_basicsize != _PyExc_BaseException.tp_basicsize ||
+        !same_basic_size ||
         caught_type->tp_itemsize != _PyExc_BaseException.tp_itemsize) {
         /* We can't be sure we can wrap this safely, since it may contain
          * more state than just the exception type. Accordingly, we just

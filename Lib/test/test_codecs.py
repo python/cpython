@@ -2402,6 +2402,25 @@ class TransformCodecTest(unittest.TestCase):
                 self.assertTrue(isinstance(failure.exception.__cause__,
                                            AttributeError))
 
+    def test_custom_zlib_error_is_wrapped(self):
+        # Check zlib codec gives a good error for malformed input
+        msg = "^decoding with 'zlib_codec' codec failed"
+        with self.assertRaisesRegex(Exception, msg) as failure:
+            b"hello".decode("zlib_codec")
+        self.assertTrue(isinstance(failure.exception.__cause__,
+                                   type(failure.exception)))
+
+    def test_custom_hex_error_is_wrapped(self):
+        # Check hex codec gives a good error for malformed input
+        msg = "^decoding with 'hex_codec' codec failed"
+        with self.assertRaisesRegex(Exception, msg) as failure:
+            b"hello".decode("hex_codec")
+        self.assertTrue(isinstance(failure.exception.__cause__,
+                                   type(failure.exception)))
+
+    # Unfortunately, the bz2 module throws OSError, which the codec
+    # machinery currently can't wrap :(
+
     def test_bad_decoding_output_type(self):
         # Check bytes.decode and bytearray.decode give a good error
         # message for binary -> binary codecs
@@ -2466,15 +2485,15 @@ class ExceptionChainingTest(unittest.TestCase):
         with self.assertRaisesRegex(exc_type, full_msg) as caught:
             yield caught
 
-    def check_wrapped(self, obj_to_raise, msg):
+    def check_wrapped(self, obj_to_raise, msg, exc_type=RuntimeError):
         self.set_codec(obj_to_raise)
-        with self.assertWrapped("encoding", RuntimeError, msg):
+        with self.assertWrapped("encoding", exc_type, msg):
             "str_input".encode(self.codec_name)
-        with self.assertWrapped("encoding", RuntimeError, msg):
+        with self.assertWrapped("encoding", exc_type, msg):
             codecs.encode("str_input", self.codec_name)
-        with self.assertWrapped("decoding", RuntimeError, msg):
+        with self.assertWrapped("decoding", exc_type, msg):
             b"bytes input".decode(self.codec_name)
-        with self.assertWrapped("decoding", RuntimeError, msg):
+        with self.assertWrapped("decoding", exc_type, msg):
             codecs.decode(b"bytes input", self.codec_name)
 
     def test_raise_by_type(self):
@@ -2483,6 +2502,18 @@ class ExceptionChainingTest(unittest.TestCase):
     def test_raise_by_value(self):
         msg = "This should be wrapped"
         self.check_wrapped(RuntimeError(msg), msg)
+
+    def test_raise_grandchild_subclass_exact_size(self):
+        msg = "This should be wrapped"
+        class MyRuntimeError(RuntimeError):
+            __slots__ = ()
+        self.check_wrapped(MyRuntimeError(msg), msg, MyRuntimeError)
+
+    def test_raise_subclass_with_weakref_support(self):
+        msg = "This should be wrapped"
+        class MyRuntimeError(RuntimeError):
+            pass
+        self.check_wrapped(MyRuntimeError(msg), msg, MyRuntimeError)
 
     @contextlib.contextmanager
     def assertNotWrapped(self, operation, exc_type, msg_re, msg=None):
