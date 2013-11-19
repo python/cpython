@@ -1,10 +1,8 @@
 #! /bin/sh
 # Configuration validation subroutine script.
-#   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-#   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
-#   2011, 2012, 2013 Free Software Foundation, Inc.
+#   Copyright 1992-2013 Free Software Foundation, Inc.
 
-timestamp='2012-12-29'
+timestamp='2013-08-10'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -70,9 +68,7 @@ Report bugs and patches to <config-patches@gnu.org>."
 version="\
 GNU config.sub ($timestamp)
 
-Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
-2012, 2013 Free Software Foundation, Inc.
+Copyright 1992-2013 Free Software Foundation, Inc.
 
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
@@ -256,12 +252,12 @@ case $basic_machine in
 	| alpha | alphaev[4-8] | alphaev56 | alphaev6[78] | alphapca5[67] \
 	| alpha64 | alpha64ev[4-8] | alpha64ev56 | alpha64ev6[78] | alpha64pca5[67] \
 	| am33_2.0 \
-	| arc \
+	| arc | arceb \
 	| arm | arm[bl]e | arme[lb] | armv[2-8] | armv[3-8][lb] | armv7[arm] \
 	| avr | avr32 \
 	| be32 | be64 \
 	| bfin \
-	| c4x | clipper \
+	| c4x | c8051 | clipper \
 	| d10v | d30v | dlx | dsp16xx \
 	| epiphany \
 	| fido | fr30 | frv \
@@ -290,16 +286,17 @@ case $basic_machine in
 	| mipsisa64r2 | mipsisa64r2el \
 	| mipsisa64sb1 | mipsisa64sb1el \
 	| mipsisa64sr71k | mipsisa64sr71kel \
+	| mipsr5900 | mipsr5900el \
 	| mipstx39 | mipstx39el \
 	| mn10200 | mn10300 \
 	| moxie \
 	| mt \
 	| msp430 \
 	| nds32 | nds32le | nds32be \
-	| nios | nios2 \
+	| nios | nios2 | nios2eb | nios2el \
 	| ns16k | ns32k \
 	| open8 \
-	| or32 \
+	| or1k | or32 \
 	| pdp10 | pdp11 | pj | pjl \
 	| powerpc | powerpc64 | powerpc64le | powerpcle \
 	| pyramid \
@@ -369,13 +366,13 @@ case $basic_machine in
 	| aarch64-* | aarch64_be-* \
 	| alpha-* | alphaev[4-8]-* | alphaev56-* | alphaev6[78]-* \
 	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
-	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* \
+	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* | arceb-* \
 	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
 	| avr-* | avr32-* \
 	| be32-* | be64-* \
 	| bfin-* | bs2000-* \
 	| c[123]* | c30-* | [cjt]90-* | c4x-* \
-	| clipper-* | craynv-* | cydra-* \
+	| c8051-* | clipper-* | craynv-* | cydra-* \
 	| d10v-* | d30v-* | dlx-* \
 	| elxsi-* \
 	| f30[01]-* | f700-* | fido-* | fr30-* | frv-* | fx80-* \
@@ -407,12 +404,13 @@ case $basic_machine in
 	| mipsisa64r2-* | mipsisa64r2el-* \
 	| mipsisa64sb1-* | mipsisa64sb1el-* \
 	| mipsisa64sr71k-* | mipsisa64sr71kel-* \
+	| mipsr5900-* | mipsr5900el-* \
 	| mipstx39-* | mipstx39el-* \
 	| mmix-* \
 	| mt-* \
 	| msp430-* \
 	| nds32-* | nds32le-* | nds32be-* \
-	| nios-* | nios2-* \
+	| nios-* | nios2-* | nios2eb-* | nios2el-* \
 	| none-* | np1-* | ns16k-* | ns32k-* \
 	| open8-* \
 	| orion-* \
@@ -796,7 +794,7 @@ case $basic_machine in
 		os=-mingw64
 		;;
 	mingw32)
-		basic_machine=i386-pc
+		basic_machine=i686-pc
 		os=-mingw32
 		;;
 	mingw32ce)
@@ -832,7 +830,7 @@ case $basic_machine in
 		basic_machine=`echo $basic_machine | sed -e 's/ms1-/mt-/'`
 		;;
 	msys)
-		basic_machine=i386-pc
+		basic_machine=i686-pc
 		os=-msys
 		;;
 	mvs)
@@ -1354,7 +1352,7 @@ case $os in
 	-gnu* | -bsd* | -mach* | -minix* | -genix* | -ultrix* | -irix* \
 	      | -*vms* | -sco* | -esix* | -isc* | -aix* | -cnk* | -sunos | -sunos[34]*\
 	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
-	      | -sym* | -kopensolaris* \
+	      | -sym* | -kopensolaris* | -plan9* \
 	      | -amigaos* | -amigados* | -msdos* | -newsos* | -unicos* | -aof* \
 	      | -aos* | -aros* \
 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
@@ -1500,9 +1498,6 @@ case $os in
 	-aros*)
 		os=-aros
 		;;
-	-kaos*)
-		os=-kaos
-		;;
 	-zvmoe)
 		os=-zvmoe
 		;;
@@ -1551,6 +1546,9 @@ case $basic_machine in
 	c4x-* | tic4x-*)
 		os=-coff
 		;;
+	c8051-*)
+		os=-elf
+		;;
 	hexagon-*)
 		os=-elf
 		;;
@@ -1592,6 +1590,9 @@ case $basic_machine in
 		os=-elf
 		;;
 	mips*-*)
+		os=-elf
+		;;
+	or1k-*)
 		os=-elf
 		;;
 	or32-*)
