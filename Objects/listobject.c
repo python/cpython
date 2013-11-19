@@ -387,6 +387,7 @@ list_repr(PyListObject *v)
         Py_DECREF(s);
     }
 
+    writer.overallocate = 0;
     if (_PyUnicodeWriter_WriteChar(&writer, ']') < 0)
         goto error;
 
