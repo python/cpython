@@ -987,9 +987,6 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer);
 /* Deallocate memory of a writer (clear its internal buffer). */
 PyAPI_FUNC(void)
 _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
-
-PyAPI_FUNC(int) _PyObject_ReprWriter(_PyUnicodeWriter *writer,
-    PyObject *v);
 #endif
 
 #ifndef Py_LIMITED_API
