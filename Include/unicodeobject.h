@@ -962,12 +962,20 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer,
     Py_ssize_t end
     );
 
+/* Append a ASCII-encoded byte string.
+   Return 0 on success, raise an exception and return -1 on error. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
+    const char *str,           /* ASCII-encoded byte string */
+    Py_ssize_t len             /* number of bytes, or -1 if unknown */
+    );
+
 /* Append a latin1-encoded byte string.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int)
-_PyUnicodeWriter_WriteCstr(_PyUnicodeWriter *writer,
-    const char *str,            /* latin1-encoded byte string */
-    Py_ssize_t len              /* length in bytes */
+_PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
+    const char *str,           /* latin1-encoded byte string */
+    Py_ssize_t len             /* length in bytes */
     );
 
 /* Get the value of the writer as an Unicode string. Clear the
@@ -979,6 +987,9 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer);
 /* Deallocate memory of a writer (clear its internal buffer). */
 PyAPI_FUNC(void)
 _PyUnicodeWriter_Dealloc(_PyUnicodeWriter *writer);
+
+PyAPI_FUNC(int) _PyObject_ReprWriter(_PyUnicodeWriter *writer,
+    PyObject *v);
 #endif
 
 #ifndef Py_LIMITED_API
