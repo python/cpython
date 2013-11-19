@@ -51,6 +51,9 @@ Library
 Tests
 -----
 
+- Issue #19596: Set untestable tests in test_importlib to None to avoid
+  reporting success on empty tests.
+
 - Issue #19440: Clean up test_capi by removing an unnecessary __future__
   import, converting from test_main to unittest.main, and running the
   _testcapi module tests within a unittest TestCase.
