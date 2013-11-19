@@ -120,8 +120,8 @@ struct compiler_unit {
 
     PyObject *u_private;        /* for private name mangling */
 
-    int u_argcount;        /* number of arguments for block */
-    int u_kwonlyargcount; /* number of keyword only arguments for block */
+    Py_ssize_t u_argcount;        /* number of arguments for block */
+    Py_ssize_t u_kwonlyargcount; /* number of keyword only arguments for block */
     /* Pointer to the most recently allocated block.  By following b_list
        members, you can reach all early allocated blocks. */
     basicblock *u_blocks;
@@ -170,7 +170,7 @@ static basicblock *compiler_new_block(struct compiler *);
 static int compiler_next_instr(struct compiler *, basicblock *);
 static int compiler_addop(struct compiler *, int);
 static int compiler_addop_o(struct compiler *, int, PyObject *, PyObject *);
-static int compiler_addop_i(struct compiler *, Py_ssize_t, Py_ssize_t);
+static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
 static basicblock *compiler_use_new_block(struct compiler *);
 static int compiler_error(struct compiler *, const char *);
@@ -1074,7 +1074,7 @@ compiler_addop(struct compiler *c, int opcode)
     return 1;
 }
 
-static int
+static Py_ssize_t
 compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
     PyObject *t, *v;
@@ -1176,22 +1176,22 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
 */
 
 static int
-compiler_addop_i(struct compiler *c, Py_ssize_t opcode, Py_ssize_t oparg)
+compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 {
     struct instr *i;
     int off;
 
     /* Integer arguments are limit to 16-bit. There is an extension for 32-bit
        integer arguments. */
-    assert((-2147483647-1) <= opcode);
-    assert(opcode <= 2147483647);
+    assert((-2147483647-1) <= oparg);
+    assert(oparg <= 2147483647);
 
     off = compiler_next_instr(c, c->u->u_curblock);
     if (off < 0)
         return 0;
     i = &c->u->u_curblock->b_instr[off];
-    i->i_opcode = Py_SAFE_DOWNCAST(opcode, Py_ssize_t, int);
-    i->i_oparg = oparg;
+    i->i_opcode = opcode;
+    i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
     i->i_hasarg = 1;
     compiler_set_lineno(c, off);
     return 1;
@@ -4213,6 +4213,7 @@ makecode(struct compiler *c, struct assembler *a)
     Py_ssize_t nlocals;
     int nlocals_int;
     int flags;
+    int argcount, kwonlyargcount;
 
     tmp = dict_keys_inorder(c->u->u_consts, 0);
     if (!tmp)
@@ -4250,7 +4251,9 @@ makecode(struct compiler *c, struct assembler *a)
     Py_DECREF(consts);
     consts = tmp;
 
-    co = PyCode_New(c->u->u_argcount, c->u->u_kwonlyargcount,
+    argcount = Py_SAFE_DOWNCAST(c->u->u_argcount, Py_ssize_t, int);
+    kwonlyargcount = Py_SAFE_DOWNCAST(c->u->u_kwonlyargcount, Py_ssize_t, int);
+    co = PyCode_New(argcount, kwonlyargcount,
                     nlocals_int, stackdepth(c), flags,
                     bytecode, consts, names, varnames,
                     freevars, cellvars,
