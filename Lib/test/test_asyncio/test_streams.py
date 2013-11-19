@@ -359,6 +359,72 @@ class StreamReaderTests(unittest.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIs(stream._waiter, None)
 
+    def test_start_server(self):
+
+        class MyServer:
+
+            def __init__(self, loop):
+                self.server = None
+                self.loop = loop
+
+            @tasks.coroutine
+            def handle_client(self, client_reader, client_writer):
+                data = yield from client_reader.readline()
+                client_writer.write(data)
+
+            def start(self):
+                self.server = self.loop.run_until_complete(
+                    streams.start_server(self.handle_client,
+                                         '127.0.0.1', 12345,
+                                         loop=self.loop))
+
+            def handle_client_callback(self, client_reader, client_writer):
+                task = tasks.Task(client_reader.readline(), loop=self.loop)
+
+                def done(task):
+                    client_writer.write(task.result())
+
+                task.add_done_callback(done)
+
+            def start_callback(self):
+                self.server = self.loop.run_until_complete(
+                    streams.start_server(self.handle_client_callback,
+                                         '127.0.0.1', 12345,
+                                         loop=self.loop))
+
+            def stop(self):
+                if self.server is not None:
+                    self.server.close()
+                    self.loop.run_until_complete(self.server.wait_closed())
+                    self.server = None
+
+        @tasks.coroutine
+        def client():
+            reader, writer = yield from streams.open_connection(
+                '127.0.0.1', 12345, loop=self.loop)
+            # send a line
+            writer.write(b"hello world!\n")
+            # read it back
+            msgback = yield from reader.readline()
+            writer.close()
+            return msgback
+
+        # test the server variant with a coroutine as client handler
+        server = MyServer(self.loop)
+        server.start()
+        msg = self.loop.run_until_complete(tasks.Task(client(),
+                                                      loop=self.loop))
+        server.stop()
+        self.assertEqual(msg, b"hello world!\n")
+
+        # test the server variant with a callback as client handler
+        server = MyServer(self.loop)
+        server.start_callback()
+        msg = self.loop.run_until_complete(tasks.Task(client(),
+                                                      loop=self.loop))
+        server.stop()
+        self.assertEqual(msg, b"hello world!\n")
+
 
 if __name__ == '__main__':
     unittest.main()
