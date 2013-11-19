@@ -25,13 +25,11 @@ class FinderTests(abc.FinderTests):
         loader = self.find('__phello__.spam', ['__phello__'])
         self.assertTrue(hasattr(loader, 'load_module'))
 
-    def test_package_in_package(self):
-        # No frozen package within another package to test with.
-        pass
+    # No frozen package within another package to test with.
+    test_package_in_package = None
 
-    def test_package_over_module(self):
-        # No easy way to test.
-        pass
+    # No easy way to test.
+    test_package_over_module = None
 
     def test_failure(self):
         loader = self.find('<not real>')

@@ -65,9 +65,8 @@ class LoaderTests(abc.LoaderTests):
             self.assertEqual(repr(module),
                              "<module '__hello__' (frozen)>")
 
-    def test_state_after_failure(self):
-        # No way to trigger an error in a frozen module.
-        pass
+    # No way to trigger an error in a frozen module.
+    test_state_after_failure = None
 
     def test_unloadable(self):
         assert machinery.FrozenImporter.find_module('_not_real') is None

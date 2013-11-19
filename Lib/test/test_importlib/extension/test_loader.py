@@ -38,13 +38,11 @@ class LoaderTests(abc.LoaderTests):
             self.assertIsInstance(module.__loader__,
                                   machinery.ExtensionFileLoader)
 
-    def test_package(self):
-        # No extension module as __init__ available for testing.
-        pass
+    # No extension module as __init__ available for testing.
+    test_package = None
 
-    def test_lacking_parent(self):
-        # No extension module in a package available for testing.
-        pass
+    # No extension module in a package available for testing.
+    test_lacking_parent = None
 
     def test_module_reuse(self):
         with util.uncache(ext_util.NAME):
@@ -52,9 +50,8 @@ class LoaderTests(abc.LoaderTests):
             module2 = self.load_module(ext_util.NAME)
             self.assertIs(module1, module2)
 
-    def test_state_after_failure(self):
-        # No easy way to trigger a failure after a successful import.
-        pass
+    # No easy way to trigger a failure after a successful import.
+    test_state_after_failure = None
 
     def test_unloadable(self):
         name = 'asdfjkl;'
