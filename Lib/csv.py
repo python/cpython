@@ -140,8 +140,8 @@ class DictWriter:
         if self.extrasaction == "raise":
             wrong_fields = [k for k in rowdict if k not in self.fieldnames]
             if wrong_fields:
-                raise ValueError("dict contains fields not in fieldnames: " +
-                                 ", ".join(wrong_fields))
+                raise ValueError("dict contains fields not in fieldnames: "
+                                 + ", ".join([repr(x) for x in wrong_fields]))
         return [rowdict.get(key, self.restval) for key in self.fieldnames]
 
     def writerow(self, rowdict):

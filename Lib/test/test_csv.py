@@ -630,6 +630,23 @@ class TestDictFields(unittest.TestCase):
         fileobj = StringIO()
         self.assertRaises(TypeError, csv.DictWriter, fileobj)
 
+    def test_write_fields_not_in_fieldnames(self):
+        fd, name = tempfile.mkstemp()
+        fileobj = os.fdopen(fd, "w+b")
+        try:
+            writer = csv.DictWriter(fileobj, fieldnames = ["f1", "f2", "f3"])
+            # Of special note is the non-string key (issue 19449)
+            with self.assertRaises(ValueError) as cx:
+                writer.writerow({"f4": 10, "f2": "spam", 1: "abc"})
+            exception = str(cx.exception)
+            self.assertIn("fieldnames", exception)
+            self.assertIn("'f4'", exception)
+            self.assertNotIn("'f2'", exception)
+            self.assertIn("1", exception)
+        finally:
+            fileobj.close()
+            os.unlink(name)
+
     def test_read_dict_fields(self):
         fd, name = tempfile.mkstemp()
         fileobj = os.fdopen(fd, "w+b")
