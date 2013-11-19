@@ -298,6 +298,9 @@ Tests
 Build
 -----
 
+- Add workaround for VS 2010 nmake clean issue. VS 2010 doesn't set up PATH
+  for nmake.exe correctly.
+
 - Issue #19550: Implement Windows installer changes of PEP 453 (ensurepip).
 
 - Issue #19520: Fix compiler warning in the _sha3 module on 32bit Windows.
