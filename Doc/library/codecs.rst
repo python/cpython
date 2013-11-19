@@ -365,17 +365,22 @@ and implemented by all standard Python codecs:
 |                         | in :pep:`383`.                                |
 +-------------------------+-----------------------------------------------+
 
-In addition, the following error handlers are specific to a single codec:
+In addition, the following error handlers are specific to Unicode encoding
+schemes:
 
-+-------------------+---------+-------------------------------------------+
-| Value             | Codec   | Meaning                                   |
-+===================+=========+===========================================+
-|``'surrogatepass'``| utf-8   | Allow encoding and decoding of surrogate  |
-|                   |         | codes in UTF-8.                           |
-+-------------------+---------+-------------------------------------------+
++-------------------+------------------------+-------------------------------------------+
+| Value             | Codec                  | Meaning                                   |
++===================+========================+===========================================+
+|``'surrogatepass'``| utf-8, utf-16, utf-32, | Allow encoding and decoding of surrogate  |
+|                   | utf-16-be, utf-16-le,  | codes in all the Unicode encoding schemes.|
+|                   | utf-32-be, utf-32-le   |                                           |
++-------------------+------------------------+-------------------------------------------+
 
 .. versionadded:: 3.1
    The ``'surrogateescape'`` and ``'surrogatepass'`` error handlers.
+
+.. versionchanged:: 3.4
+   The ``'surrogatepass'`` error handlers now works with utf-16\* and utf-32\* codecs.
 
 The set of allowed values can be extended via :meth:`register_error`.
 
@@ -1166,6 +1171,12 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | utf_8_sig       |                                | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
+
+.. versionchanged:: 3.4
+   The utf-16\* and utf-32\* encoders no longer allow surrogate code points
+   (U+D800--U+DFFF) to be encoded.  The utf-32\* decoders no longer decode
+   byte sequences that correspond to surrogate code points.
+
 
 Python Specific Encodings
 -------------------------

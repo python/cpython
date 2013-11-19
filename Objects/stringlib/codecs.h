@@ -596,26 +596,134 @@ IllegalSurrogate:
 #undef SWAB
 
 
-Py_LOCAL_INLINE(void)
-STRINGLIB(utf16_encode)(unsigned short *out,
-                        const STRINGLIB_CHAR *in,
+#if STRINGLIB_MAX_CHAR >= 0x80
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(utf16_encode_)(const STRINGLIB_CHAR *in,
                         Py_ssize_t len,
+                        unsigned short **outptr,
                         int native_ordering)
 {
+    unsigned short *out = *outptr;
     const STRINGLIB_CHAR *end = in + len;
 #if STRINGLIB_SIZEOF_CHAR == 1
 # define SWAB2(CH)  ((CH) << 8)
 #else
 # define SWAB2(CH)  (((CH) << 8) | ((CH) >> 8))
 #endif
-#if STRINGLIB_MAX_CHAR < 0x10000
     if (native_ordering) {
-# if STRINGLIB_SIZEOF_CHAR == 2
-        Py_MEMCPY(out, in, 2 * len);
-# else
-        _PyUnicode_CONVERT_BYTES(STRINGLIB_CHAR, unsigned short, in, end, out);
+#if STRINGLIB_MAX_CHAR < 0x10000
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+# if STRINGLIB_MAX_CHAR >= 0xd800
+            if (((in[0] ^ 0xd800) &
+                 (in[1] ^ 0xd800) &
+                 (in[2] ^ 0xd800) &
+                 (in[3] ^ 0xd800) & 0xf800) == 0)
+                break;
 # endif
+            out[0] = in[0];
+            out[1] = in[1];
+            out[2] = in[2];
+            out[3] = in[3];
+            in += 4; out += 4;
+        }
+#endif
+        while (in < end) {
+            Py_UCS4 ch;
+            ch = *in++;
+#if STRINGLIB_MAX_CHAR >= 0xd800
+            if (ch < 0xd800)
+                *out++ = ch;
+            else if (ch < 0xe000)
+                /* reject surrogate characters (U+DC800-U+DFFF) */
+                goto fail;
+# if STRINGLIB_MAX_CHAR >= 0x10000
+            else if (ch >= 0x10000) {
+                out[0] = Py_UNICODE_HIGH_SURROGATE(ch);
+                out[1] = Py_UNICODE_LOW_SURROGATE(ch);
+                out += 2;
+            }
+# endif
+            else
+#endif
+                *out++ = ch;
+        }
     } else {
+#if STRINGLIB_MAX_CHAR < 0x10000
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+# if STRINGLIB_MAX_CHAR >= 0xd800
+            if (((in[0] ^ 0xd800) &
+                 (in[1] ^ 0xd800) &
+                 (in[2] ^ 0xd800) &
+                 (in[3] ^ 0xd800) & 0xf800) == 0)
+                break;
+# endif
+            out[0] = SWAB2(in[0]);
+            out[1] = SWAB2(in[1]);
+            out[2] = SWAB2(in[2]);
+            out[3] = SWAB2(in[3]);
+            in += 4; out += 4;
+        }
+#endif
+        while (in < end) {
+            Py_UCS4 ch = *in++;
+#if STRINGLIB_MAX_CHAR >= 0xd800
+            if (ch < 0xd800)
+                *out++ = SWAB2((Py_UCS2)ch);
+            else if (ch < 0xe000)
+                /* reject surrogate characters (U+DC800-U+DFFF) */
+                goto fail;
+# if STRINGLIB_MAX_CHAR >= 0x10000
+            else if (ch >= 0x10000) {
+                Py_UCS2 ch1 = Py_UNICODE_HIGH_SURROGATE(ch);
+                Py_UCS2 ch2 = Py_UNICODE_LOW_SURROGATE(ch);
+                out[0] = SWAB2(ch1);
+                out[1] = SWAB2(ch2);
+                out += 2;
+            }
+# endif
+            else
+#endif
+                *out++ = SWAB2((Py_UCS2)ch);
+        }
+    }
+    *outptr = out;
+    return len;
+#if STRINGLIB_MAX_CHAR >= 0xd800
+  fail:
+#endif
+    *outptr = out;
+    return len - (end - in + 1);
+}
+#endif
+
+#undef SWAB2
+
+#if STRINGLIB_MAX_CHAR >= 0x80
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
+                        Py_ssize_t len,
+                        unsigned short **outptr,
+                        int native_ordering)
+{
+    unsigned short *out = *outptr;
+    const STRINGLIB_CHAR *end = in + len;
+#if STRINGLIB_SIZEOF_CHAR == 1
+    if (native_ordering) {
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+            out[0] = in[0];
+            out[1] = in[1];
+            out[2] = in[2];
+            out[3] = in[3];
+            in += 4; out += 4;
+        }
+        while (in < end) {
+            *out++ = *in++;
+        }
+    } else {
+# define SWAB2(CH)  ((CH) << 8) /* high byte is zero */
         const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
         while (in < unrolled_end) {
             out[0] = SWAB2(in[0]);
@@ -625,37 +733,95 @@ STRINGLIB(utf16_encode)(unsigned short *out,
             in += 4; out += 4;
         }
         while (in < end) {
-            *out++ = SWAB2(*in);
-            ++in;
+            Py_UCS4 ch = *in++;
+            *out++ = SWAB2((Py_UCS2)ch);
         }
+#undef SWAB2
     }
+    *outptr = out;
+    return len;
 #else
     if (native_ordering) {
+#if STRINGLIB_MAX_CHAR < 0x10000
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+            /* check if any character is a surrogate character */
+            if (((in[0] ^ 0xd800) &
+                 (in[1] ^ 0xd800) &
+                 (in[2] ^ 0xd800) &
+                 (in[3] ^ 0xd800) & 0xf800) == 0)
+                break;
+            out[0] = in[0];
+            out[1] = in[1];
+            out[2] = in[2];
+            out[3] = in[3];
+            in += 4; out += 4;
+        }
+#endif
         while (in < end) {
-            Py_UCS4 ch = *in++;
-            if (ch < 0x10000)
+            Py_UCS4 ch;
+            ch = *in++;
+            if (ch < 0xd800)
                 *out++ = ch;
-            else {
+            else if (ch < 0xe000)
+                /* reject surrogate characters (U+DC800-U+DFFF) */
+                goto fail;
+#if STRINGLIB_MAX_CHAR >= 0x10000
+            else if (ch >= 0x10000) {
                 out[0] = Py_UNICODE_HIGH_SURROGATE(ch);
                 out[1] = Py_UNICODE_LOW_SURROGATE(ch);
                 out += 2;
             }
+#endif
+            else
+                *out++ = ch;
         }
     } else {
+#define SWAB2(CH)  (((CH) << 8) | ((CH) >> 8))
+#if STRINGLIB_MAX_CHAR < 0x10000
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+            /* check if any character is a surrogate character */
+            if (((in[0] ^ 0xd800) &
+                 (in[1] ^ 0xd800) &
+                 (in[2] ^ 0xd800) &
+                 (in[3] ^ 0xd800) & 0xf800) == 0)
+                break;
+            out[0] = SWAB2(in[0]);
+            out[1] = SWAB2(in[1]);
+            out[2] = SWAB2(in[2]);
+            out[3] = SWAB2(in[3]);
+            in += 4; out += 4;
+        }
+#endif
         while (in < end) {
             Py_UCS4 ch = *in++;
-            if (ch < 0x10000)
+            if (ch < 0xd800)
                 *out++ = SWAB2((Py_UCS2)ch);
-            else {
+            else if (ch < 0xe000)
+                /* reject surrogate characters (U+DC800-U+DFFF) */
+                goto fail;
+#if STRINGLIB_MAX_CHAR >= 0x10000
+            else if (ch >= 0x10000) {
                 Py_UCS2 ch1 = Py_UNICODE_HIGH_SURROGATE(ch);
                 Py_UCS2 ch2 = Py_UNICODE_LOW_SURROGATE(ch);
                 out[0] = SWAB2(ch1);
                 out[1] = SWAB2(ch2);
                 out += 2;
             }
-        }
-    }
 #endif
+            else
+                *out++ = SWAB2((Py_UCS2)ch);
+        }
 #undef SWAB2
+    }
+    *outptr = out;
+    return len;
+  fail:
+    *outptr = out;
+    return len - (end - in + 1);
+#endif
 }
+#endif
+
 #endif /* STRINGLIB_IS_UNICODE */
