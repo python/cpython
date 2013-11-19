@@ -1053,23 +1053,23 @@ format_float_internal(PyObject *value,
         n_digits += 1;
     }
 
-    /* Since there is no unicode version of PyOS_double_to_string,
-       just use the 8 bit version and then convert to unicode. */
-    unicode_tmp = _PyUnicode_FromASCII(buf, n_digits);
-    PyMem_Free(buf);
-    if (unicode_tmp == NULL)
-        goto done;
-
     if (format->sign != '+' && format->sign != ' '
         && format->width == -1
         && format->type != 'n'
         && !format->thousands_separators)
     {
         /* Fast path */
-        result = _PyUnicodeWriter_WriteStr(writer, unicode_tmp);
-        Py_DECREF(unicode_tmp);
+        result = _PyUnicodeWriter_WriteASCIIString(writer, buf, n_digits);
+        PyMem_Free(buf);
         return result;
     }
+
+    /* Since there is no unicode version of PyOS_double_to_string,
+       just use the 8 bit version and then convert to unicode. */
+    unicode_tmp = _PyUnicode_FromASCII(buf, n_digits);
+    PyMem_Free(buf);
+    if (unicode_tmp == NULL)
+        goto done;
 
     /* Is a sign character present in the output?  If so, remember it
        and skip it */

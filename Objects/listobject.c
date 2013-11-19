@@ -339,17 +339,10 @@ list_repr(PyListObject *v)
 {
     Py_ssize_t i;
     PyObject *s;
-    static PyObject *sep = NULL;
     _PyUnicodeWriter writer;
 
     if (Py_SIZE(v) == 0) {
         return PyUnicode_FromString("[]");
-    }
-
-    if (sep == NULL) {
-        sep = PyUnicode_FromString(", ");
-        if (sep == NULL)
-            return NULL;
     }
 
     i = Py_ReprEnter((PyObject*)v);
@@ -369,7 +362,7 @@ list_repr(PyListObject *v)
        so must refetch the list size on each iteration. */
     for (i = 0; i < Py_SIZE(v); ++i) {
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteStr(&writer, sep) < 0)
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
                 goto error;
         }
 
