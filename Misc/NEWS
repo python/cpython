@@ -68,6 +68,9 @@ Tests
 Build
 -----
 
+- Add workaround for VS 2010 nmake clean issue. VS 2010 doesn't set up PATH
+  for nmake.exe correctly.
+
 
 What's New in Python 3.3.3?
 ===========================
