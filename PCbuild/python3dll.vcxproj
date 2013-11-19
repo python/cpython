@@ -99,7 +99,7 @@ nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\PC
 nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
+"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)python3.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -111,7 +111,7 @@ nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\PC
 nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
+"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)python3.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -123,7 +123,7 @@ nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">cd $(ProjectDir)\..\PC
 nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
+"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(OutDir)python3.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -135,7 +135,7 @@ nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">cd $(ProjectDir)\..\PC
 nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
+"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(OutDir)python3.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -147,7 +147,7 @@ nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">cd $(ProjectDir)\..\PC
 nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
+"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x86 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(OutDir)python3.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -159,7 +159,7 @@ nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir)</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">cd $(ProjectDir)\..\PC
 nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) rebuild</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">cd $(ProjectDir)\..\PC
-nmake /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
+"$(VSInstallDir)\VC\bin\nmake.exe" /f python3.mak MACHINE=x64 OutDir=$(OutDir) clean</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(OutDir)python3.dll</NMakeOutput>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
