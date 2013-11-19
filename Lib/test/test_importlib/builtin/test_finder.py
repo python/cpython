@@ -16,21 +16,11 @@ class FinderTests(abc.FinderTests):
             found = machinery.BuiltinImporter.find_module(builtin_util.NAME)
             self.assertTrue(found)
 
-    def test_package(self):
-        # Built-in modules cannot be a package.
-        pass
+    # Built-in modules cannot be a package.
+    test_package = test_package_in_package = test_package_over_module = None
 
-    def test_module_in_package(self):
-        # Built-in modules cannobt be in a package.
-        pass
-
-    def test_package_in_package(self):
-        # Built-in modules cannot be a package.
-        pass
-
-    def test_package_over_module(self):
-        # Built-in modules cannot be a package.
-        pass
+    # Built-in modules cannot be in a package.
+    test_module_in_package = None
 
     def test_failure(self):
         assert 'importlib' not in sys.builtin_module_names

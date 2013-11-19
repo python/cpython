@@ -17,21 +17,14 @@ class FinderTests(abc.FinderTests):
     def test_module(self):
         self.assertTrue(self.find_module(util.NAME))
 
-    def test_package(self):
-        # No extension module as an __init__ available for testing.
-        pass
+    # No extension module as an __init__ available for testing.
+    test_package = test_package_in_package = None
 
-    def test_module_in_package(self):
-        # No extension module in a package available for testing.
-        pass
+    # No extension module in a package available for testing.
+    test_module_in_package = None
 
-    def test_package_in_package(self):
-        # No extension module as an __init__ available for testing.
-        pass
-
-    def test_package_over_module(self):
-        # Extension modules cannot be an __init__ for a package.
-        pass
+    # Extension modules cannot be an __init__ for a package.
+    test_package_over_module = None
 
     def test_failure(self):
         self.assertIsNone(self.find_module('asdfjkl;'))

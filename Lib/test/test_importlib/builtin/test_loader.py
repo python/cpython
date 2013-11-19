@@ -32,17 +32,11 @@ class LoaderTests(abc.LoaderTests):
             module = self.load_module(builtin_util.NAME)
             self.verify(module)
 
-    def test_package(self):
-        # Built-in modules cannot be a package.
-        pass
+    # Built-in modules cannot be a package.
+    test_package = test_lacking_parent = None
 
-    def test_lacking_parent(self):
-        # Built-in modules cannot be a package.
-        pass
-
-    def test_state_after_failure(self):
-        # Not way to force an imoprt failure.
-        pass
+    # No way to force an import failure.
+    test_state_after_failure = None
 
     def test_module_reuse(self):
         # Test that the same module is used in a reload.
