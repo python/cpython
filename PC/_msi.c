@@ -63,7 +63,7 @@ static FNFCIOPEN(cb_open)
 
 static FNFCIREAD(cb_read)
 {
-    UINT result = (UINT)_read(hf, memory, cb);
+    UINT result = (UINT)_read((int)hf, memory, cb);
     if (result != cb)
         *err = errno;
     return result;
@@ -71,7 +71,7 @@ static FNFCIREAD(cb_read)
 
 static FNFCIWRITE(cb_write)
 {
-    UINT result = (UINT)_write(hf, memory, cb);
+    UINT result = (UINT)_write((int)hf, memory, cb);
     if (result != cb)
         *err = errno;
     return result;
@@ -79,7 +79,7 @@ static FNFCIWRITE(cb_write)
 
 static FNFCICLOSE(cb_close)
 {
-    int result = _close(hf);
+    int result = _close((int)hf);
     if (result != 0)
         *err = errno;
     return result;
@@ -87,7 +87,7 @@ static FNFCICLOSE(cb_close)
 
 static FNFCISEEK(cb_seek)
 {
-    long result = (long)_lseek(hf, dist, seektype);
+    long result = (long)_lseek((int)hf, dist, seektype);
     if (result == -1)
         *err = errno;
     return result;
