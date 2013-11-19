@@ -8,9 +8,12 @@
 # and CDATA (character data -- only end tags are special).
 
 
-import _markupbase
 import re
 import warnings
+import _markupbase
+
+from html import unescape
+
 
 __all__ = ['HTMLParser']
 
@@ -357,7 +360,7 @@ class HTMLParser(_markupbase.ParserBase):
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
             if attrvalue:
-                attrvalue = self.unescape(attrvalue)
+                attrvalue = unescape(attrvalue)
             attrs.append((attrname.lower(), attrvalue))
             k = m.end()
 
@@ -510,34 +513,3 @@ class HTMLParser(_markupbase.ParserBase):
     def unknown_decl(self, data):
         if self.strict:
             self.error("unknown declaration: %r" % (data,))
-
-    # Internal -- helper to remove special character quoting
-    def unescape(self, s):
-        if '&' not in s:
-            return s
-        def replaceEntities(s):
-            s = s.groups()[0]
-            try:
-                if s[0] == "#":
-                    s = s[1:]
-                    if s[0] in ['x','X']:
-                        c = int(s[1:].rstrip(';'), 16)
-                    else:
-                        c = int(s.rstrip(';'))
-                    return chr(c)
-            except ValueError:
-                return '&#' + s
-            else:
-                from html.entities import html5
-                if s in html5:
-                    return html5[s]
-                elif s.endswith(';'):
-                    return '&' + s
-                for x in range(2, len(s)):
-                    if s[:x] in html5:
-                        return html5[s[:x]] + s[x:]
-                else:
-                    return '&' + s
-
-        return re.sub(r"&(#?[xX]?(?:[0-9a-fA-F]+;|\w{1,32};?))",
-                      replaceEntities, s, flags=re.ASCII)

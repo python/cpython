@@ -569,18 +569,6 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
         for html, expected in data:
             self._run_check(html, expected)
 
-    def test_unescape_function(self):
-        p = self.get_collector()
-        self.assertEqual(p.unescape('&#bad;'),'&#bad;')
-        self.assertEqual(p.unescape('&#0038;'),'&')
-        # see #12888
-        self.assertEqual(p.unescape('&#123; ' * 1050), '{ ' * 1050)
-        # see #15156
-        self.assertEqual(p.unescape('&Eacuteric&Eacute;ric'
-                                    '&alphacentauri&alpha;centauri'),
-                                    'ÉricÉric&alphacentauriαcentauri')
-        self.assertEqual(p.unescape('&co;'), '&co;')
-
     def test_broken_comments(self):
         html = ('<! not really a comment >'
                 '<! not a comment either -->'
