@@ -10,6 +10,12 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #12892: The utf-16* and utf-32* encoders no longer allow surrogate code
+  points (U+D800-U+DFFF) to be encoded.  The utf-32* decoders no longer decode
+  byte sequences that correspond to surrogate code points.  The surrogatepass
+  error handler now works with the utf-16* and utf-32* codecs.  Based on
+  patches by Victor Stinner and Kang-Hao (Kenny) Lu.
+
 - Issue #17806: Added keyword-argument support for "tabsize" to
   str/bytes.expandtabs().
 
