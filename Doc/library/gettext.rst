@@ -94,9 +94,10 @@ class-based API instead.
 
    The Plural formula is taken from the catalog header. It is a C or Python
    expression that has a free variable *n*; the expression evaluates to the index
-   of the plural in the catalog. See the GNU gettext documentation for the precise
-   syntax to be used in :file:`.po` files and the formulas for a variety of
-   languages.
+   of the plural in the catalog. See
+   `the GNU gettext documentation <https://www.gnu.org/software/gettext/manual/gettext.html>`__
+   for the precise syntax to be used in :file:`.po` files and the
+   formulas for a variety of languages.
 
 
 .. function:: lngettext(singular, plural, n)
@@ -451,35 +452,42 @@ it in ``_('...')`` --- that is, a call to the function :func:`_`.  For example::
 In this example, the string ``'writing a log message'`` is marked as a candidate
 for translation, while the strings ``'mylog.txt'`` and ``'w'`` are not.
 
-The Python distribution comes with two tools which help you generate the message
-catalogs once you've prepared your source code.  These may or may not be
-available from a binary distribution, but they can be found in a source
-distribution, in the :file:`Tools/i18n` directory.
+There are a few tools to extract the strings meant for translation.
+The original GNU :program:`gettext` only supported C or C++ source
+code but its extended version :program:`xgettext` scans code written
+in a number of languages, including Python, to find strings marked as
+translatable.  `Babel <http://babel.pocoo.org/>`__ is a Python
+internationalization library that includes a :file:`pybabel` script to
+extract and compile message catalogs.  François Pinard's program
+called :program:`xpot` does a similar job and is available as part of
+his `po-utils package <http://po-utils.progiciels-bpi.ca/>`__.
 
-The :program:`pygettext` [#]_ program scans all your Python source code looking
-for the strings you previously marked as translatable.  It is similar to the GNU
-:program:`gettext` program except that it understands all the intricacies of
-Python source code, but knows nothing about C or C++ source code.  You don't
-need GNU ``gettext`` unless you're also going to be translating C code (such as
-C extension modules).
+(Python also includes pure-Python versions of these programs, called
+:program:`pygettext.py` and :program:`msgfmt.py`; some Python distributions
+will install them for you.  :program:`pygettext.py` is similar to
+:program:`xgettext`, but only understands Python source code and
+cannot handle other programming languages such as C or C++.
+:program:`pygettext.py` supports a command-line interface similar to
+:program:`xgettext`; for details on its use, run ``pygettext.py
+--help``.  :program:`msgfmt.py` is binary compatible with GNU
+:program:`msgfmt`.  With these two programs, you may not need the GNU
+:program:`gettext` package to internationalize your Python
+applications.)
 
-:program:`pygettext` generates textual Uniforum-style human readable message
-catalog :file:`.pot` files, essentially structured human readable files which
-contain every marked string in the source code, along with a placeholder for the
-translation strings. :program:`pygettext` is a command line script that supports
-a similar command line interface as :program:`xgettext`; for details on its use,
-run::
+:program:`xgettext`, :program:`pygettext`, and similar tools generate
+:file:`.po` files that are message catalogs.  They are structured
+:human-readable files that contain every marked string in the source
+:code, along with a placeholder for the translated versions of these
+:strings.
 
-   pygettext.py --help
-
-Copies of these :file:`.pot` files are then handed over to the individual human
-translators who write language-specific versions for every supported natural
-language.  They send you back the filled in language-specific versions as a
-:file:`.po` file.  Using the :program:`msgfmt.py` [#]_ program (in the
-:file:`Tools/i18n` directory), you take the :file:`.po` files from your
-translators and generate the machine-readable :file:`.mo` binary catalog files.
-The :file:`.mo` files are what the :mod:`gettext` module uses for the actual
-translation processing during run-time.
+Copies of these :file:`.po` files are then handed over to the
+individual human translators who write translations for every
+supported natural language.  They send back the completed
+language-specific versions as a :file:`<language-name>.po` file that's
+compiled into a machine-readable :file:`.mo` binary catalog file using
+the :program:`msgfmt` program.  The :file:`.mo` files are used by the
+:mod:`gettext` module for the actual translation processing at
+run-time.
 
 How you use the :mod:`gettext` module in your code depends on whether you are
 internationalizing a single module or your entire application. The next two
@@ -517,7 +525,7 @@ driver file of your application::
    import gettext
    gettext.install('myapplication')
 
-If you need to set the locale directory, you can pass these into the
+If you need to set the locale directory, you can pass it into the
 :func:`install` function::
 
    import gettext
@@ -590,7 +598,8 @@ care, though if you have a previous definition of :func:`_` in the local
 namespace.
 
 Note that the second use of :func:`_` will not identify "a" as being
-translatable to the :program:`pygettext` program, since it is not a string.
+translatable to the :program:`gettext` program, because the parameter
+is not a string literal.
 
 Another way to handle this is with the following example::
 
@@ -606,11 +615,14 @@ Another way to handle this is with the following example::
    for a in animals:
        print(_(a))
 
-In this case, you are marking translatable strings with the function :func:`N_`,
-[#]_ which won't conflict with any definition of :func:`_`.  However, you will
-need to teach your message extraction program to look for translatable strings
-marked with :func:`N_`. :program:`pygettext` and :program:`xpot` both support
-this through the use of command line switches.
+In this case, you are marking translatable strings with the function
+:func:`N_`, which won't conflict with any definition of :func:`_`.
+However, you will need to teach your message extraction program to
+look for translatable strings marked with :func:`N_`. :program:`xgettext`,
+:program:`pygettext`, ``pybabel extract``, and :program:`xpot` all
+support this through the use of the :option:`-k` command-line switch.
+The choice of :func:`N_` here is totally arbitrary; it could have just
+as easily been :func:`MarkThisStringForTranslation`.
 
 
 Acknowledgements
@@ -645,16 +657,3 @@ implementations, and valuable experience to the creation of this module:
    absolute path at the start of your application.
 
 .. [#] See the footnote for :func:`bindtextdomain` above.
-
-.. [#] François Pinard has written a program called :program:`xpot` which does a
-   similar job.  It is available as part of his `po-utils package
-   <http://po-utils.progiciels-bpi.ca/>`_.
-
-.. [#] :program:`msgfmt.py` is binary compatible with GNU :program:`msgfmt` except that
-   it provides a simpler, all-Python implementation.  With this and
-   :program:`pygettext.py`, you generally won't need to install the GNU
-   :program:`gettext` package to internationalize your Python applications.
-
-.. [#] The choice of :func:`N_` here is totally arbitrary; it could have just as easily
-   been :func:`MarkThisStringForTranslation`.
-
