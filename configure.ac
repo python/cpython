@@ -693,7 +693,7 @@ then
 fi
 if test "$preset_cxx" != "$CXX"
 then
-        AC_MSG_WARN([
+        AC_MSG_NOTICE([
 
   By default, distutils will build C++ extension modules with "$CXX".
   If this is not intended, then set CXX on the configure command line.
