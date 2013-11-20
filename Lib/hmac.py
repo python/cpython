@@ -70,6 +70,10 @@ class HMAC:
                            RuntimeWarning, 2)
             blocksize = self.blocksize
 
+        # self.blocksize is the default blocksize. self.block_size is
+        # effective block size as well as the public API attribute.
+        self.block_size = blocksize
+
         if len(key) > blocksize:
             key = self.digest_cons(key).digest()
 
@@ -78,6 +82,10 @@ class HMAC:
         self.inner.update(key.translate(trans_36))
         if msg is not None:
             self.update(msg)
+
+    @property
+    def name(self):
+        return "hmac-" + self.inner.name
 
     def update(self, msg):
         """Update this hashing object with the string msg.
