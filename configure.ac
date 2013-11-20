@@ -4666,19 +4666,19 @@ AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
-echo "creating Modules/Setup"
+echo "creating Modules/Setup" >&AS_MESSAGE_FD
 if test ! -f Modules/Setup
 then
 	cp $srcdir/Modules/Setup.dist Modules/Setup
 fi
 
-echo "creating Modules/Setup.local"
+echo "creating Modules/Setup.local" >&AS_MESSAGE_FD
 if test ! -f Modules/Setup.local
 then
 	echo "# Edit this file for local setup changes" >Modules/Setup.local
 fi
 
-echo "creating Makefile"
+echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules Modules/Setup.config \
 			Modules/Setup.local Modules/Setup
