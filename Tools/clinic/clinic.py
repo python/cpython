@@ -1281,16 +1281,28 @@ class CConverter(metaclass=CConverterAutoRegister):
     # Or "unspecified" if there is no default.
     default = unspecified
 
-    # "default" converted into a str for rendering into Python code.
-    py_default = None
-
     # "default" as it should appear in the documentation, as a string.
     # Or None if there is no default.
     doc_default = None
 
+    # "default" converted into a str for rendering into Python code.
+    py_default = None
+
     # "default" converted into a C value, as a string.
     # Or None if there is no default.
     c_default = None
+
+    # The default value used to initialize the C variable when
+    # there is no default, but not specifying a default may
+    # result in an "uninitialized variable" warning.  This can
+    # easily happen when using option groups--although
+    # properly-written code won't actually use the variable,
+    # the variable does get passed in to the _impl.  (Ah, if
+    # only dataflow analysis could inline the static function!)
+    #
+    # This value is specified as a string.
+    # Every non-abstract subclass should supply a valid value.
+    c_ignored_default = 'NULL'
 
     # The C converter *function* to be used, if any.
     # (If this is not None, format_unit must be 'O&'.)
@@ -1327,6 +1339,7 @@ class CConverter(metaclass=CConverterAutoRegister):
         parameter is a clinic.Parameter instance.
         data is a CRenderData instance.
         """
+        self.parameter = parameter
         name = ensure_legal_c_identifier(self.name)
 
         # declarations
@@ -1401,9 +1414,12 @@ class CConverter(metaclass=CConverterAutoRegister):
         The C statement to declare this variable.
         """
         declaration = [self.simple_declaration()]
-        if self.c_default:
+        default = self.c_default
+        if not default and self.parameter.group:
+            default = self.c_ignored_default
+        if default:
             declaration.append(" = ")
-            declaration.append(self.c_default)
+            declaration.append(default)
         declaration.append(";")
         return "".join(declaration)
 
@@ -1427,6 +1443,7 @@ class CConverter(metaclass=CConverterAutoRegister):
 class bool_converter(CConverter):
     type = 'int'
     format_unit = 'p'
+    c_ignored_default = '0'
 
     def converter_init(self):
         self.default = bool(self.default)
@@ -1435,11 +1452,13 @@ class bool_converter(CConverter):
 class char_converter(CConverter):
     type = 'char'
     format_unit = 'c'
+    c_ignored_default = "'\0'"
 
 @add_legacy_c_converter('B', bitwise=True)
 class byte_converter(CConverter):
     type = 'byte'
     format_unit = 'b'
+    c_ignored_default = "'\0'"
 
     def converter_init(self, *, bitwise=False):
         if bitwise:
@@ -1448,10 +1467,12 @@ class byte_converter(CConverter):
 class short_converter(CConverter):
     type = 'short'
     format_unit = 'h'
+    c_ignored_default = "0"
 
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
     format_unit = 'H'
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
         if not bitwise:
@@ -1461,6 +1482,7 @@ class unsigned_short_converter(CConverter):
 class int_converter(CConverter):
     type = 'int'
     format_unit = 'i'
+    c_ignored_default = "0"
 
     def converter_init(self, *, from_str=False):
         if from_str:
@@ -1469,6 +1491,7 @@ class int_converter(CConverter):
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
     format_unit = 'I'
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
         if not bitwise:
@@ -1477,10 +1500,12 @@ class unsigned_int_converter(CConverter):
 class long_converter(CConverter):
     type = 'long'
     format_unit = 'l'
+    c_ignored_default = "0"
 
 class unsigned_long_converter(CConverter):
     type = 'unsigned long'
     format_unit = 'k'
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
         if not bitwise:
@@ -1489,10 +1514,12 @@ class unsigned_long_converter(CConverter):
 class PY_LONG_LONG_converter(CConverter):
     type = 'PY_LONG_LONG'
     format_unit = 'L'
+    c_ignored_default = "0"
 
 class unsigned_PY_LONG_LONG_converter(CConverter):
     type = 'unsigned PY_LONG_LONG'
     format_unit = 'K'
+    c_ignored_default = "0"
 
     def converter_init(self, *, bitwise=False):
         if not bitwise:
@@ -1501,20 +1528,24 @@ class unsigned_PY_LONG_LONG_converter(CConverter):
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
     format_unit = 'n'
+    c_ignored_default = "0"
 
 
 class float_converter(CConverter):
     type = 'float'
     format_unit = 'f'
+    c_ignored_default = "0.0"
 
 class double_converter(CConverter):
     type = 'double'
     format_unit = 'd'
+    c_ignored_default = "0.0"
 
 
 class Py_complex_converter(CConverter):
     type = 'Py_complex'
     format_unit = 'D'
+    c_ignored_default = "{0.0, 0.0}"
 
 
 class object_converter(CConverter):
@@ -1579,6 +1610,7 @@ class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
     format_unit = 'y*'
     impl_by_reference = True
+    c_ignored_default = "{NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL}"
 
     def converter_init(self, *, str=False, zeroes=False, nullable=False, read_write=False):
         if not str:
