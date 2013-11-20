@@ -12,8 +12,16 @@ class TestVectorsTestCase(unittest.TestCase):
         def md5test(key, data, digest):
             h = hmac.HMAC(key, data, digestmod=hashlib.md5)
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.name, "hmac-md5")
+            self.assertEqual(h.digest_size, 16)
+            self.assertEqual(h.block_size, 64)
+
             h = hmac.HMAC(key, data, digestmod='md5')
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.name, "hmac-md5")
+            self.assertEqual(h.digest_size, 16)
+            self.assertEqual(h.block_size, 64)
+
 
         md5test(b"\x0b" * 16,
                 b"Hi There",
@@ -48,8 +56,15 @@ class TestVectorsTestCase(unittest.TestCase):
         def shatest(key, data, digest):
             h = hmac.HMAC(key, data, digestmod=hashlib.sha1)
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.name, "hmac-sha1")
+            self.assertEqual(h.digest_size, 20)
+            self.assertEqual(h.block_size, 64)
+
             h = hmac.HMAC(key, data, digestmod='sha1')
             self.assertEqual(h.hexdigest().upper(), digest.upper())
+            self.assertEqual(h.name, "hmac-sha1")
+            self.assertEqual(h.digest_size, 20)
+            self.assertEqual(h.block_size, 64)
 
 
         shatest(b"\x0b" * 20,
@@ -81,12 +96,20 @@ class TestVectorsTestCase(unittest.TestCase):
                  b"and Larger Than One Block-Size Data"),
                 "e8e99d0f45237d786d6bbaa7965c7808bbff1a91")
 
-    def _rfc4231_test_cases(self, hashfunc, hashname):
+    def _rfc4231_test_cases(self, hashfunc, hash_name, digest_size, block_size):
         def hmactest(key, data, hexdigests):
+            hmac_name = "hmac-" + hash_name
             h = hmac.HMAC(key, data, digestmod=hashfunc)
             self.assertEqual(h.hexdigest().lower(), hexdigests[hashfunc])
-            h = hmac.HMAC(key, data, digestmod=hashname)
+            self.assertEqual(h.name, hmac_name)
+            self.assertEqual(h.digest_size, digest_size)
+            self.assertEqual(h.block_size, block_size)
+
+            h = hmac.HMAC(key, data, digestmod=hash_name)
             self.assertEqual(h.hexdigest().lower(), hexdigests[hashfunc])
+            self.assertEqual(h.name, hmac_name)
+            self.assertEqual(h.digest_size, digest_size)
+            self.assertEqual(h.block_size, block_size)
 
 
         # 4.2.  Test Case 1
@@ -197,16 +220,16 @@ class TestVectorsTestCase(unittest.TestCase):
                  })
 
     def test_sha224_rfc4231(self):
-        self._rfc4231_test_cases(hashlib.sha224, 'sha224')
+        self._rfc4231_test_cases(hashlib.sha224, 'sha224', 28, 64)
 
     def test_sha256_rfc4231(self):
-        self._rfc4231_test_cases(hashlib.sha256, 'sha256')
+        self._rfc4231_test_cases(hashlib.sha256, 'sha256', 32, 64)
 
     def test_sha384_rfc4231(self):
-        self._rfc4231_test_cases(hashlib.sha384, 'sha384')
+        self._rfc4231_test_cases(hashlib.sha384, 'sha384', 48, 128)
 
     def test_sha512_rfc4231(self):
-        self._rfc4231_test_cases(hashlib.sha512, 'sha512')
+        self._rfc4231_test_cases(hashlib.sha512, 'sha512', 64, 128)
 
     def test_legacy_block_size_warnings(self):
         class MockCrazyHash(object):

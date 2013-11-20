@@ -79,6 +79,25 @@ An HMAC object has the following methods:
    compute the digests of strings that share a common initial substring.
 
 
+A hash object has the following attributes:
+
+.. attribute:: HMAC.digest_size
+
+   The size of the resulting HMAC digest in bytes.
+
+.. attribute:: HMAC.block_size
+
+   The internal block size of the hash algorithm in bytes.
+
+   .. versionadded:: 3.4
+
+.. attribute:: HMAC.name
+
+   The canonical name of this HMAC, always lowercase, e.g. ``hmac-md5``.
+
+   .. versionadded:: 3.4
+
+
 This module also provides the following helper function:
 
 .. function:: compare_digest(a, b)

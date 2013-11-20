@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18775: Add name and block_size attribute to HMAC object. They now
+  provide the same API elements as non-keyed cryptographic hash functions.
+
 - Issue #17276: MD5 as default digestmod for HMAC is deprecated. The HMAC
   module supports digestmod names, e.g. hmac.HMAC('sha1').
 
