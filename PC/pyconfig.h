@@ -74,8 +74,6 @@ WIN32 is still required for the locale module.
 #define DONT_HAVE_SIG_PAUSE
 #define LONG_BIT	32
 #define WORD_BIT 32
-#define PREFIX ""
-#define EXEC_PREFIX ""
 
 #define MS_WIN32 /* only support win32 and greater. */
 #define MS_WINDOWS
