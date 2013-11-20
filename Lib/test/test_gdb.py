@@ -248,8 +248,7 @@ class PrettyPrintTests(DebuggerTests):
         'Verify the pretty-printing of dictionaries'
         self.assertGdbRepr({})
         self.assertGdbRepr({'foo': 'bar'})
-        self.assertGdbRepr({'foo': 'bar', 'douglas': 42},
-                           "{'foo': 'bar', 'douglas': 42}")
+        self.assertGdbRepr({'foo': 'bar', 'douglas': 42}),
 
     def test_lists(self):
         'Verify the pretty-printing of lists'
