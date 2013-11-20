@@ -282,6 +282,12 @@ class BigmemTclTest(unittest.TestCase):
         self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
 
 
+def setUpModule():
+    if test_support.verbose:
+        tcl = Tcl()
+        print 'patchlevel =', tcl.call('info', 'patchlevel')
+
+
 def test_main():
     test_support.run_unittest(TclTest, TkinterTest, BigmemTclTest)
 
