@@ -594,8 +594,19 @@ always available.
    | :const:`imag`       | multiplier used for the imaginary part of a      |
    |                     | complex number                                   |
    +---------------------+--------------------------------------------------+
+   | :const:`algorithm`  | name of the algorithm for hashing of str, bytes, |
+   |                     | and memoryview                                   |
+   +---------------------+--------------------------------------------------+
+   | :const:`hash_bits`  | internal output size of the hash algorithm       |
+   +---------------------+--------------------------------------------------+
+   | :const:`seed_bits`  | size of the seed key of the hash algorithm       |
+   +---------------------+--------------------------------------------------+
+
 
    .. versionadded:: 3.2
+
+   .. versionchanged: 3.4
+      Added *algorithm*, *hash_bits* and *seed_bits*
 
 
 .. data:: hexversion

@@ -421,6 +421,9 @@
     <ClInclude Include="..\Python\ceval_gil.h">
       <Filter>Python</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pyhash.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_bisectmodule.c">
@@ -930,6 +933,9 @@
     <ClCompile Include="..\Objects\namespaceobject.c" />
     <ClCompile Include="..\Modules\_stat.c">
       <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\pyhash.c">
+      <Filter>Python</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

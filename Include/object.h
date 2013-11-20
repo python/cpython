@@ -562,23 +562,6 @@ PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject *);
 
-/* Helpers for hash functions */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
-PyAPI_FUNC(Py_hash_t) _Py_HashBytes(unsigned char*, Py_ssize_t);
-#endif
-
-typedef struct {
-    Py_hash_t prefix;
-    Py_hash_t suffix;
-} _Py_HashSecret_t;
-PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
-
-#ifdef Py_DEBUG
-PyAPI_DATA(int) _Py_HashSecret_Initialized;
-#endif
-
 /* Helper for passing objects to printf and the like */
 #define PyObject_REPR(obj) _PyUnicode_AsString(PyObject_Repr(obj))
 

@@ -11386,39 +11386,8 @@ unicode_hash(PyObject *self)
         _PyUnicode_HASH(self) = 0;
         return 0;
     }
-
-    /* The hash function as a macro, gets expanded three times below. */
-#define HASH(P)                                            \
-    x ^= (Py_uhash_t) *P << 7;                             \
-    while (--len >= 0)                                     \
-        x = (_PyHASH_MULTIPLIER * x) ^ (Py_uhash_t) *P++;  \
-
-    x = (Py_uhash_t) _Py_HashSecret.prefix;
-    switch (PyUnicode_KIND(self)) {
-    case PyUnicode_1BYTE_KIND: {
-        const unsigned char *c = PyUnicode_1BYTE_DATA(self);
-        HASH(c);
-        break;
-    }
-    case PyUnicode_2BYTE_KIND: {
-        const Py_UCS2 *s = PyUnicode_2BYTE_DATA(self);
-        HASH(s);
-        break;
-    }
-    default: {
-        Py_UCS4 *l;
-        assert(PyUnicode_KIND(self) == PyUnicode_4BYTE_KIND &&
-               "Impossible switch case in unicode_hash");
-        l = PyUnicode_4BYTE_DATA(self);
-        HASH(l);
-        break;
-    }
-    }
-    x ^= (Py_uhash_t) PyUnicode_GET_LENGTH(self);
-    x ^= (Py_uhash_t) _Py_HashSecret.suffix;
-
-    if (x == -1)
-        x = -2;
+    x = _Py_HashBytes(PyUnicode_DATA(self),
+                      PyUnicode_GET_LENGTH(self) * PyUnicode_KIND(self));
     _PyUnicode_HASH(self) = x;
     return x;
 }
