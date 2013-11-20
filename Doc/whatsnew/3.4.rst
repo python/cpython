@@ -842,6 +842,9 @@ Deprecated Python modules, functions and methods
 * The :mod:`formatter` module is pending deprecation and is slated for removal
   in Python 3.6.
 
+* MD5 as default digestmod for :mod:`hmac` is deprecated. Python 3.6 will
+  require an explicit digest name or constructor as *digestmod* argument.
+
 
 Deprecated functions and types of the C API
 -------------------------------------------
