@@ -307,6 +307,8 @@ Tests
 Build
 -----
 
+- Issue #16632: Enable DEP and ASLR on Windows.
+
 - Issue #17791: Drop PREFIX and EXEC_PREFIX definitions from PC/pyconfig.h
 
 - Add workaround for VS 2010 nmake clean issue. VS 2010 doesn't set up PATH
