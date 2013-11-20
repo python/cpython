@@ -104,6 +104,7 @@ extern int _PyLong_Init(void);
 extern void PyLong_Fini(void);
 extern int _PyFaulthandler_Init(void);
 extern void _PyFaulthandler_Fini(void);
+extern void _PyHash_Fini(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -650,6 +651,8 @@ Py_Finalize(void)
 #ifdef COUNT_ALLOCS
     dump_counts(stdout);
 #endif
+    /* dump hash stats */
+    _PyHash_Fini();
 
     PRINT_TOTAL_REFS();
 

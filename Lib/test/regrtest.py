@@ -601,6 +601,8 @@ def main(tests=None, **kwargs):
         print("==", platform.python_implementation(), *sys.version.split())
         print("==  ", platform.platform(aliased=True),
                       "%s-endian" % sys.byteorder)
+        print("==  ", "hash algorithm:", sys.hash_info.algorithm,
+              "64bit" if sys.maxsize > 2**32 else "32bit")
         print("==  ", os.getcwd())
         print("Testing with flags:", sys.flags)
 

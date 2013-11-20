@@ -1218,7 +1218,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
      * has a backport of this feature where we also define XML_HAS_SET_HASH_SALT
      * to indicate that we can still use it. */
     XML_SetHashSalt(self->itself,
-                    (unsigned long)_Py_HashSecret.prefix);
+                    (unsigned long)_Py_HashSecret.expat.hashsalt);
 #endif
     XML_SetUserData(self->itself, (void *)self);
     XML_SetUnknownEncodingHandler(self->itself,

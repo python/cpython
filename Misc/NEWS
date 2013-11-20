@@ -10,6 +10,9 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #19183: Implement PEP 456 'secure and interchangeable hash algorithm'.
+  Python now uses SipHash24 on all major platforms.
+
 - Issue #12892: The utf-16* and utf-32* encoders no longer allow surrogate code
   points (U+D800-U+DFFF) to be encoded.  The utf-32* decoders no longer decode
   byte sequences that correspond to surrogate code points.  The surrogatepass

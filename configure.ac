@@ -1543,7 +1543,8 @@ sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h)
+bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h endian.h \
+sys/endian.h)
 CPPFLAGS=$ac_save_cppflags
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -1612,6 +1613,22 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 AC_MSG_RESULT($ac_cv_has_makedev)
 if test "$ac_cv_has_makedev" = "yes"; then
     AC_DEFINE(HAVE_MAKEDEV, 1, [Define this if you have the makedev macro.])
+fi
+
+# byte swapping
+AC_MSG_CHECKING(for le64toh)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#elif defined(HAVE_SYS_ENDIAN_H)
+#include <sys/endian.h>
+#endif
+]], [[
+   le64toh(1) ]])
+],[ac_cv_has_le64toh=yes],[ac_cv_has_le64toh=no])
+AC_MSG_RESULT($ac_cv_has_le64toh)
+if test "$ac_cv_has_le64toh" = "yes"; then
+    AC_DEFINE(HAVE_HTOLE64, 1, [Define this if you have le64toh()])
 fi
 
 # Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
@@ -2228,6 +2245,59 @@ case "$ac_sys_system" in
 		]);;
 	*) ;;
 esac
+
+# check for systems that require aligned memory access
+AC_MSG_CHECKING(aligned memory access is required)
+AC_TRY_RUN([
+int main()
+{
+    char s[16];
+    int i, *p1, *p2;
+    for (i=0; i < 16; i++)
+        s[i] = i;
+    p1 = (int*)(s+1);
+    p2 = (int*)(s+2);
+    if (*p1 == *p2)
+        return 1;
+    return 0;
+}
+              ],
+     [aligned_required=no],
+     [aligned_required=yes],
+     [aligned_required=yes])
+
+if test "$aligned_required" = yes ; then
+  AC_DEFINE([HAVE_ALIGNED_REQUIRED], [1],
+    [Define if aligned memory access is required])
+fi
+AC_MSG_RESULT($aligned_required)
+
+
+# str, bytes and memoryview hash algorithm
+AH_TEMPLATE(Py_HASH_ALGORITHM,
+  [Define hash algorithm for str, bytes and memoryview.
+   SipHash24: 1, FNV: 2, externally defined: 0])
+
+AC_MSG_CHECKING(for --with-hash-algorithm)
+dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
+AC_ARG_WITH(hash_algorithm,
+            AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash24@:>@],
+                           [select hash algorithm]),
+[
+AC_MSG_RESULT($withval)
+case "$withval" in
+    siphash24)
+        AC_DEFINE(Py_HASH_ALGORITHM, 1)
+        ;;
+    fnv)
+        AC_DEFINE(Py_HASH_ALGORITHM, 2)
+        ;;
+    *)
+        AC_MSG_ERROR([unknown hash algorithm '$withval'])
+        ;;
+esac
+],
+[AC_MSG_RESULT(default)])
 
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4

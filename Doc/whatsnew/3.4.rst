@@ -116,6 +116,7 @@ CPython implementation improvements:
 
 * :ref:`PEP 442: Safe object finalization <pep-442>`
 * :ref:`PEP 445: Configurable memory allocators <pep-445>`
+* :pep:`456` Secure and interchangeable hash algorithm
 * Improve finalization of Python modules to avoid setting their globals
   to None, in most cases (:issue:`18214`).
 * A more efficient :mod:`marshal` format (:issue:`16475`).
