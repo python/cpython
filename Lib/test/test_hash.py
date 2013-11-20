@@ -12,6 +12,40 @@ from collections import Hashable
 
 IS_64BIT = sys.maxsize > 2**32
 
+def lcg(x, length=16):
+    """Linear congruential generator"""
+    if x == 0:
+        return bytes(length)
+    out = bytearray(length)
+    for i in range(length):
+        x = (214013 * x + 2531011) & 0x7fffffff
+        out[i] = (x >> 16) & 0xff
+    return bytes(out)
+
+def pysiphash(uint64):
+    """Convert SipHash24 output to Py_hash_t
+    """
+    assert 0 <= uint64 < (1 << 64)
+    # simple unsigned to signed int64
+    if uint64 > (1 << 63) - 1:
+        int64 = uint64 - (1 << 64)
+    else:
+        int64 = uint64
+    # mangle uint64 to uint32
+    uint32 = (uint64 ^ uint64 >> 32) & 0xffffffff
+    # simple unsigned to signed int32
+    if uint32 > (1 << 31) - 1:
+        int32 = uint32 - (1 << 32)
+    else:
+        int32 = uint32
+    return int32, int64
+
+def skip_unless_internalhash(test):
+    """Skip decorator for tests that depend on SipHash24 or FNV"""
+    ok = sys.hash_info.algorithm in {"fnv", "siphash24"}
+    msg = "Requires SipHash24 or FNV"
+    return test if ok else unittest.skip(msg)(test)
+
 
 class HashEqualityTestCase(unittest.TestCase):
 
@@ -138,7 +172,7 @@ class HashRandomizationTests:
     # an object to be tested
 
     def get_hash_command(self, repr_):
-        return 'print(hash(%s))' % repr_
+        return 'print(hash(eval(%s.decode("utf-8"))))' % repr_.encode("utf-8")
 
     def get_hash(self, repr_, seed=None):
         env = os.environ.copy()
@@ -161,12 +195,67 @@ class HashRandomizationTests:
         self.assertNotEqual(run1, run2)
 
 class StringlikeHashRandomizationTests(HashRandomizationTests):
+    repr_ = None
+    repr_long = None
+
+    # 32bit little, 64bit little, 32bit big, 64bit big
+    known_hashes = {
+        'djba33x': [ # only used for small strings
+            # seed 0, 'abc'
+            [193485960, 193485960,  193485960, 193485960],
+            # seed 42, 'abc'
+            [-678966196, 573763426263223372, -820489388, -4282905804826039665],
+            ],
+        'siphash24': [
+            # seed 0, 'abc'
+            [2025351752, 4596069200710135518, 1433332804,
+             -3481057401533226760],
+            # seed 42, 'abc'
+            [-774632014, -4501618152524544106, 1054608210,
+             -1493500025205289231],
+            # seed 42, 'abcdefghijk'
+            [-1436007334, 4436719588892876975, -1436007334,
+             4436719588892876975],
+            # seed 0, 'äú∑ℇ', PyUCS2 layout depends on endianess
+            [1386693832, 5749986484189612790, 1776982909,
+             -5915111450199468540],
+            # seed 42, 'äú∑ℇ'
+            [1260387190, -2947981342227738144, 1430287772,
+             -4296699217652516017],
+        ],
+        'fnv': [
+            # seed 0, 'abc'
+            [-1600925533, 1453079729188098211, -1600925533,
+             1453079729188098211],
+            # seed 42, 'abc'
+            [-206076799, -4410911502303878509, -1024014457,
+             -3570150969479994130],
+            # seed 42, 'abcdefghijk'
+            [811136751, -5046230049376118746, -77208053 ,
+             -4779029615281019666],
+            # seed 0, 'äú∑ℇ'
+            [44402817, 8998297579845987431, -1956240331,
+             -782697888614047887],
+            # seed 42, 'äú∑ℇ'
+            [-283066365, -4576729883824601543, -271871407, None],
+        ]
+    }
+
+    def get_expected_hash(self, position, length):
+        if length < sys.hash_info.cutoff:
+            algorithm = "djba33x"
+        else:
+            algorithm = sys.hash_info.algorithm
+        if sys.byteorder == 'little':
+            platform = 1 if IS_64BIT else 0
+        else:
+            assert(sys.byteorder == 'big')
+            platform = 3 if IS_64BIT else 2
+        return self.known_hashes[algorithm][position][platform]
+
     def test_null_hash(self):
         # PYTHONHASHSEED=0 disables the randomized hash
-        if IS_64BIT:
-            known_hash_of_obj = 1453079729188098211
-        else:
-            known_hash_of_obj = -1600925533
+        known_hash_of_obj = self.get_expected_hash(0, 3)
 
         # Randomization is enabled by default:
         self.assertNotEqual(self.get_hash(self.repr_), known_hash_of_obj)
@@ -174,39 +263,53 @@ class StringlikeHashRandomizationTests(HashRandomizationTests):
         # It can also be disabled by setting the seed to 0:
         self.assertEqual(self.get_hash(self.repr_, seed=0), known_hash_of_obj)
 
+    @skip_unless_internalhash
     def test_fixed_hash(self):
         # test a fixed seed for the randomized hash
         # Note that all types share the same values:
-        if IS_64BIT:
-            if sys.byteorder == 'little':
-                h = -4410911502303878509
-            else:
-                h = -3570150969479994130
-        else:
-            if sys.byteorder == 'little':
-                h = -206076799
-            else:
-                h = -1024014457
+        h = self.get_expected_hash(1, 3)
         self.assertEqual(self.get_hash(self.repr_, seed=42), h)
+
+    @skip_unless_internalhash
+    def test_long_fixed_hash(self):
+        if self.repr_long is None:
+            return
+        h = self.get_expected_hash(2, 11)
+        self.assertEqual(self.get_hash(self.repr_long, seed=42), h)
+
 
 class StrHashRandomizationTests(StringlikeHashRandomizationTests,
                                 unittest.TestCase):
     repr_ = repr('abc')
+    repr_long = repr('abcdefghijk')
+    repr_ucs2 = repr('äú∑ℇ')
 
+    @skip_unless_internalhash
     def test_empty_string(self):
         self.assertEqual(hash(""), 0)
+
+    @skip_unless_internalhash
+    def test_ucs2_string(self):
+        h = self.get_expected_hash(3, 6)
+        self.assertEqual(self.get_hash(self.repr_ucs2, seed=0), h)
+        h = self.get_expected_hash(4, 6)
+        self.assertEqual(self.get_hash(self.repr_ucs2, seed=42), h)
 
 class BytesHashRandomizationTests(StringlikeHashRandomizationTests,
                                   unittest.TestCase):
     repr_ = repr(b'abc')
+    repr_long = repr(b'abcdefghijk')
 
+    @skip_unless_internalhash
     def test_empty_string(self):
         self.assertEqual(hash(b""), 0)
 
 class MemoryviewHashRandomizationTests(StringlikeHashRandomizationTests,
                                        unittest.TestCase):
     repr_ = "memoryview(b'abc')"
+    repr_long = "memoryview(b'abcdefghijk')"
 
+    @skip_unless_internalhash
     def test_empty_string(self):
         self.assertEqual(hash(memoryview(b"")), 0)
 
@@ -223,6 +326,23 @@ class DatetimeDatetimeTests(DatetimeTests, unittest.TestCase):
 class DatetimeTimeTests(DatetimeTests, unittest.TestCase):
     repr_ = repr(datetime.time(0))
 
+
+class HashDistributionTestCase(unittest.TestCase):
+
+    def test_hash_distribution(self):
+        # check for hash collision
+        base = "abcdefghabcdefg"
+        for i in range(1, len(base)):
+            prefix = base[:i]
+            s15 = set()
+            s255 = set()
+            for c in range(256):
+                h = hash(prefix + chr(c))
+                s15.add(h & 0xf)
+                s255.add(h & 0xff)
+            # SipHash24 distribution depends on key, usually > 60%
+            self.assertGreater(len(s15), 8, prefix)
+            self.assertGreater(len(s255), 128, prefix)
 
 if __name__ == "__main__":
     unittest.main()

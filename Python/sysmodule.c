@@ -658,7 +658,7 @@ PyDoc_STRVAR(hash_info_doc,
 "hash_info\n\
 \n\
 A struct sequence providing parameters used for computing\n\
-numeric hashes.  The attributes are read only.");
+hashes. The attributes are read only.");
 
 static PyStructSequence_Field hash_info_fields[] = {
     {"width", "width of the type used for hashing, in bits"},
@@ -667,6 +667,11 @@ static PyStructSequence_Field hash_info_fields[] = {
     {"inf", "value to be used for hash of a positive infinity"},
     {"nan", "value to be used for hash of a nan"},
     {"imag", "multiplier used for the imaginary part of a complex number"},
+    {"algorithm", "name of the algorithm for hashing of str, bytes and "
+                  "memoryviews"},
+    {"hash_bits", "internal output size of hash algorithm"},
+    {"seed_bits", "seed size of hash algorithm"},
+    {"cutoff", "small string optimization cutoff"},
     {NULL, NULL}
 };
 
@@ -674,7 +679,7 @@ static PyStructSequence_Desc hash_info_desc = {
     "sys.hash_info",
     hash_info_doc,
     hash_info_fields,
-    5,
+    9,
 };
 
 static PyObject *
@@ -682,9 +687,11 @@ get_hash_info(void)
 {
     PyObject *hash_info;
     int field = 0;
+    PyHash_FuncDef *hashfunc;
     hash_info = PyStructSequence_New(&Hash_InfoType);
     if (hash_info == NULL)
         return NULL;
+    hashfunc = PyHash_GetFuncDef();
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(8*sizeof(Py_hash_t)));
     PyStructSequence_SET_ITEM(hash_info, field++,
@@ -695,6 +702,14 @@ get_hash_info(void)
                               PyLong_FromLong(_PyHASH_NAN));
     PyStructSequence_SET_ITEM(hash_info, field++,
                               PyLong_FromLong(_PyHASH_IMAG));
+    PyStructSequence_SET_ITEM(hash_info, field++,
+                              PyUnicode_FromString(hashfunc->name));
+    PyStructSequence_SET_ITEM(hash_info, field++,
+                              PyLong_FromLong(hashfunc->hash_bits));
+    PyStructSequence_SET_ITEM(hash_info, field++,
+                              PyLong_FromLong(hashfunc->seed_bits));
+    PyStructSequence_SET_ITEM(hash_info, field++,
+                              PyLong_FromLong(Py_HASH_CUTOFF));
     if (PyErr_Occurred()) {
         Py_CLEAR(hash_info);
         return NULL;
@@ -1338,6 +1353,7 @@ exec_prefix -- prefix used to find the machine-specific Python library\n\
 executable -- absolute path of the executable binary of the Python interpreter\n\
 float_info -- a struct sequence with information about the float implementation.\n\
 float_repr_style -- string indicating the style of repr() output for floats\n\
+hash_info -- a struct sequence with information about the hash algorithm.\n\
 hexversion -- version information encoded as a single integer\n\
 implementation -- Python implementation information.\n\
 int_info -- a struct sequence with information about the int implementation.\n\

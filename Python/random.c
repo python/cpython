@@ -95,7 +95,7 @@ static int urandom_fd = -1;
 /* Read size bytes from /dev/urandom into buffer.
    Call Py_FatalError() on error. */
 static void
-dev_urandom_noraise(char *buffer, Py_ssize_t size)
+dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
 {
     int fd;
     Py_ssize_t n;
@@ -249,8 +249,9 @@ void
 _PyRandom_Init(void)
 {
     char *env;
-    void *secret = &_Py_HashSecret;
+    unsigned char *secret = (unsigned char *)&_Py_HashSecret.uc;
     Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
+    assert(secret_size == sizeof(_Py_HashSecret.uc));
 
     if (_Py_HashSecret_Initialized)
         return;
@@ -278,17 +279,17 @@ _PyRandom_Init(void)
             memset(secret, 0, secret_size);
         }
         else {
-            lcg_urandom(seed, (unsigned char*)secret, secret_size);
+            lcg_urandom(seed, secret, secret_size);
         }
     }
     else {
 #ifdef MS_WINDOWS
-        (void)win32_urandom((unsigned char *)secret, secret_size, 0);
+        (void)win32_urandom(secret, secret_size, 0);
 #else /* #ifdef MS_WINDOWS */
 # ifdef __VMS
-        vms_urandom((unsigned char *)secret, secret_size, 0);
+        vms_urandom(secret, secret_size, 0);
 # else
-        dev_urandom_noraise((char*)secret, secret_size);
+        dev_urandom_noraise(secret, secret_size);
 # endif
 #endif
     }

@@ -49,6 +49,9 @@
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
+/* Define if aligned memory access is required */
+#undef HAVE_ALIGNED_REQUIRED
+
 /* Define to 1 if you have the <alloca.h> header file. */
 #undef HAVE_ALLOCA_H
 
@@ -198,6 +201,9 @@
 
 /* Defined when any dynamic module loading is enabled. */
 #undef HAVE_DYNAMIC_LOADING
+
+/* Define to 1 if you have the <endian.h> header file. */
+#undef HAVE_ENDIAN_H
 
 /* Define if you have the 'epoll' functions. */
 #undef HAVE_EPOLL
@@ -407,6 +413,9 @@
 
 /* Define if you have the 'hstrerror' function. */
 #undef HAVE_HSTRERROR
+
+/* Define this if you have le64toh() */
+#undef HAVE_HTOLE64
 
 /* Define to 1 if you have the `hypot' function. */
 #undef HAVE_HYPOT
@@ -927,6 +936,9 @@
    */
 #undef HAVE_SYS_DIR_H
 
+/* Define to 1 if you have the <sys/endian.h> header file. */
+#undef HAVE_SYS_ENDIAN_H
+
 /* Define to 1 if you have the <sys/epoll.h> header file. */
 #undef HAVE_SYS_EPOLL_H
 
@@ -1192,6 +1204,10 @@
 
 /* Defined if Python is built as a shared library. */
 #undef Py_ENABLE_SHARED
+
+/* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
+   externally defined: 0 */
+#undef Py_HASH_ALGORITHM
 
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE

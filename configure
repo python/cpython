@@ -792,6 +792,7 @@ with_suffix
 enable_shared
 enable_profiling
 with_pydebug
+with_hash_algorithm
 with_libs
 with_system_expat
 with_system_ffi
@@ -1465,6 +1466,8 @@ Optional Packages:
                           compiler
   --with-suffix=.exe      set executable suffix
   --with-pydebug          build with Py_DEBUG defined
+  --with-hash-algorithm=[fnv|siphash24]
+                          select hash algorithm
   --with-libs='lib1 ...'  link against additional libs
   --with-system-expat     build pyexpat module using an installed expat
                           library
@@ -6956,7 +6959,8 @@ sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h
+bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h endian.h \
+sys/endian.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -7327,6 +7331,43 @@ $as_echo "$ac_cv_has_makedev" >&6; }
 if test "$ac_cv_has_makedev" = "yes"; then
 
 $as_echo "#define HAVE_MAKEDEV 1" >>confdefs.h
+
+fi
+
+# byte swapping
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for le64toh" >&5
+$as_echo_n "checking for le64toh... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#elif defined(HAVE_SYS_ENDIAN_H)
+#include <sys/endian.h>
+#endif
+
+int
+main ()
+{
+
+   le64toh(1)
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_has_le64toh=yes
+else
+  ac_cv_has_le64toh=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_has_le64toh" >&5
+$as_echo "$ac_cv_has_le64toh" >&6; }
+if test "$ac_cv_has_le64toh" = "yes"; then
+
+$as_echo "#define HAVE_HTOLE64 1" >>confdefs.h
 
 fi
 
@@ -8986,6 +9027,79 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext;;
 	*) ;;
 esac
+
+# check for systems that require aligned memory access
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking aligned memory access is required" >&5
+$as_echo_n "checking aligned memory access is required... " >&6; }
+if test "$cross_compiling" = yes; then :
+  aligned_required=yes
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main()
+{
+    char s[16];
+    int i, *p1, *p2;
+    for (i=0; i < 16; i++)
+        s[i] = i;
+    p1 = (int*)(s+1);
+    p2 = (int*)(s+2);
+    if (*p1 == *p2)
+        return 1;
+    return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  aligned_required=no
+else
+  aligned_required=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+if test "$aligned_required" = yes ; then
+
+$as_echo "#define HAVE_ALIGNED_REQUIRED 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $aligned_required" >&5
+$as_echo "$aligned_required" >&6; }
+
+
+# str, bytes and memoryview hash algorithm
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-hash-algorithm" >&5
+$as_echo_n "checking for --with-hash-algorithm... " >&6; }
+
+# Check whether --with-hash_algorithm was given.
+if test "${with_hash_algorithm+set}" = set; then :
+  withval=$with_hash_algorithm;
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+$as_echo "$withval" >&6; }
+case "$withval" in
+    siphash24)
+        $as_echo "#define Py_HASH_ALGORITHM 1" >>confdefs.h
+
+        ;;
+    fnv)
+        $as_echo "#define Py_HASH_ALGORITHM 2" >>confdefs.h
+
+        ;;
+    *)
+        as_fn_error $? "unknown hash algorithm '$withval'" "$LINENO" 5
+        ;;
+esac
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: default" >&5
+$as_echo "default" >&6; }
+fi
+
 
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for t_open in -lnsl" >&5
