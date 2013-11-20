@@ -415,9 +415,6 @@ siphash24(const void *src, Py_ssize_t src_sz) {
 
     /* modified */
     t = (v0 ^ v1) ^ (v2 ^ v3);
-#if SIZEOF_VOID_P == 4
-    t ^= (t >> 32);
-#endif
     return (Py_hash_t)t;
 }
 
