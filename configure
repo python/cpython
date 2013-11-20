@@ -4803,16 +4803,16 @@ fi
 fi
 if test "$preset_cxx" != "$CXX"
 then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING:
+        { $as_echo "$as_me:${as_lineno-$LINENO}:
 
   By default, distutils will build C++ extension modules with \"$CXX\".
   If this is not intended, then set CXX on the configure command line.
   " >&5
-$as_echo "$as_me: WARNING:
+$as_echo "$as_me:
 
   By default, distutils will build C++ extension modules with \"$CXX\".
   If this is not intended, then set CXX on the configure command line.
-  " >&2;}
+  " >&6;}
 fi
 
 
