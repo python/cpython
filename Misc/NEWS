@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17276: MD5 as default digestmod for HMAC is deprecated. The HMAC
+  module supports digestmod names, e.g. hmac.HMAC('sha1').
+
 - Issue #19449: in csv's writerow, handle non-string keys when generating the
   error message that certain keys are not in the 'fieldnames' list.
 

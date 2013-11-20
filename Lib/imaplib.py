@@ -554,7 +554,7 @@ class IMAP4:
         import hmac
         pwd = (self.password.encode('ASCII') if isinstance(self.password, str)
                                              else self.password)
-        return self.user + " " + hmac.HMAC(pwd, challenge).hexdigest()
+        return self.user + " " + hmac.HMAC(pwd, challenge, 'md5').hexdigest()
 
 
     def logout(self):
