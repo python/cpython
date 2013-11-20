@@ -15,12 +15,14 @@ class Pep247Test(unittest.TestCase):
         self.assertTrue(module.digest_size is None or module.digest_size > 0)
         self.check_object(module.new, module.digest_size, key)
 
-    def check_object(self, cls, digest_size, key):
+    def check_object(self, cls, digest_size, key, digestmod=None):
         if key is not None:
-            obj1 = cls(key)
-            obj2 = cls(key, b'string')
-            h1 = cls(key, b'string').digest()
-            obj3 = cls(key)
+            if digestmod is None:
+                digestmod = md5
+            obj1 = cls(key, digestmod=digestmod)
+            obj2 = cls(key, b'string', digestmod=digestmod)
+            h1 = cls(key, b'string', digestmod=digestmod).digest()
+            obj3 = cls(key, digestmod=digestmod)
             obj3.update(b'string')
             h2 = obj3.digest()
         else:
