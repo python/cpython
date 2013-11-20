@@ -42,6 +42,8 @@ if not sysconfig.is_python_build():
 checkout_hook_path = os.path.join(os.path.dirname(sys.executable),
                                   'python-gdb.py')
 
+PYTHONHASHSEED = '123'
+
 def run_gdb(*args, **env_vars):
     """Runs gdb in --batch mode with the additional arguments given by *args.
 
@@ -146,7 +148,7 @@ class DebuggerTests(unittest.TestCase):
         # print ' '.join(args)
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
-        out, err = run_gdb(*args, PYTHONHASHSEED='0')
+        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
 
         errlines = err.splitlines()
         unexpected_errlines = []
@@ -219,41 +221,48 @@ class PrettyPrintTests(DebuggerTests):
         gdb_output = self.get_stack_trace('id(42)')
         self.assertTrue(BREAKPOINT_FN in gdb_output)
 
+    def get_python_repr(self, val):
+        args = [sys.executable, '-c', 'print(repr(%a))' % (val,)]
+        env = os.environ.copy()
+        env['PYTHONHASHSEED'] = PYTHONHASHSEED
+        output = subprocess.check_output(args, env=env, universal_newlines=True)
+        return output.rstrip()
+
     def assertGdbRepr(self, val, exp_repr=None, cmds_after_breakpoint=None):
         # Ensure that gdb's rendering of the value in a debugged process
         # matches repr(value) in this process:
         gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')',
                                                  cmds_after_breakpoint)
         if not exp_repr:
-            exp_repr = repr(val)
+            exp_repr = self.get_python_repr(val)
         self.assertEqual(gdb_repr, exp_repr,
                          ('%r did not equal expected %r; full output was:\n%s'
                           % (gdb_repr, exp_repr, gdb_output)))
 
     def test_int(self):
         'Verify the pretty-printing of various int values'
-        self.assertGdbRepr(42)
-        self.assertGdbRepr(0)
-        self.assertGdbRepr(-7)
-        self.assertGdbRepr(1000000000000)
-        self.assertGdbRepr(-1000000000000000)
+        self.assertGdbRepr(42, '42')
+        self.assertGdbRepr(0, '0')
+        self.assertGdbRepr(-7, '-7')
+        self.assertGdbRepr(1000000000000, '1000000000000')
+        self.assertGdbRepr(-1000000000000000, '-1000000000000000')
 
     def test_singletons(self):
         'Verify the pretty-printing of True, False and None'
-        self.assertGdbRepr(True)
-        self.assertGdbRepr(False)
-        self.assertGdbRepr(None)
+        self.assertGdbRepr(True, 'True')
+        self.assertGdbRepr(False, 'False')
+        self.assertGdbRepr(None, 'None')
 
     def test_dicts(self):
         'Verify the pretty-printing of dictionaries'
-        self.assertGdbRepr({})
+        self.assertGdbRepr({}, '{}')
         self.assertGdbRepr({'foo': 'bar'})
-        self.assertGdbRepr({'foo': 'bar', 'douglas': 42}),
+        self.assertGdbRepr({'foo': 'bar', 'douglas': 42})
 
     def test_lists(self):
         'Verify the pretty-printing of lists'
-        self.assertGdbRepr([])
-        self.assertGdbRepr(list(range(5)))
+        self.assertGdbRepr([], '[]')
+        self.assertGdbRepr(list(range(5)), '[0, 1, 2, 3, 4]')
 
     def test_bytes(self):
         'Verify the pretty-printing of bytes'
@@ -303,7 +312,7 @@ class PrettyPrintTests(DebuggerTests):
 
     def test_tuples(self):
         'Verify the pretty-printing of tuples'
-        self.assertGdbRepr(tuple())
+        self.assertGdbRepr(tuple(), '()')
         self.assertGdbRepr((1,), '(1,)')
         self.assertGdbRepr(('foo', 'bar', 'baz'))
 
@@ -312,13 +321,13 @@ class PrettyPrintTests(DebuggerTests):
         if (gdb_major_version, gdb_minor_version) < (7, 3):
             self.skipTest("pretty-printing of sets needs gdb 7.3 or later")
         self.assertGdbRepr(set())
-        self.assertGdbRepr(set(['a', 'b']), "{'a', 'b'}")
-        self.assertGdbRepr(set([4, 5, 6]), "{4, 5, 6}")
+        self.assertGdbRepr(set(['a', 'b']))
+        self.assertGdbRepr(set([4, 5, 6]))
 
         # Ensure that we handle sets containing the "dummy" key value,
         # which happens on deletion:
         gdb_repr, gdb_output = self.get_gdb_repr('''s = set(['a','b'])
-s.pop()
+s.remove('a')
 id(s)''')
         self.assertEqual(gdb_repr, "{'b'}")
 
@@ -327,8 +336,8 @@ id(s)''')
         if (gdb_major_version, gdb_minor_version) < (7, 3):
             self.skipTest("pretty-printing of frozensets needs gdb 7.3 or later")
         self.assertGdbRepr(frozenset())
-        self.assertGdbRepr(frozenset(['a', 'b']), "frozenset({'a', 'b'})")
-        self.assertGdbRepr(frozenset([4, 5, 6]), "frozenset({4, 5, 6})")
+        self.assertGdbRepr(frozenset(['a', 'b']))
+        self.assertGdbRepr(frozenset([4, 5, 6]))
 
     def test_exceptions(self):
         # Test a RuntimeError
