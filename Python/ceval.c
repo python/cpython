@@ -1904,6 +1904,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             Py_DECREF(v);
             if (retval == NULL) {
                 PyObject *val;
+                if (tstate->c_tracefunc != NULL
+                        && PyErr_ExceptionMatches(PyExc_StopIteration))
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, f);
                 err = _PyGen_FetchStopIterationValue(&val);
                 if (err < 0)
                     goto error;
@@ -2654,6 +2657,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if (PyErr_Occurred()) {
                 if (!PyErr_ExceptionMatches(PyExc_StopIteration))
                     goto error;
+                else if (tstate->c_tracefunc != NULL)
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, f);
                 PyErr_Clear();
             }
             /* iterator ended normally */

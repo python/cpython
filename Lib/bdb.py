@@ -3,6 +3,7 @@
 import fnmatch
 import sys
 import os
+from inspect import CO_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
 
@@ -75,24 +76,48 @@ class Bdb:
         if not (self.stop_here(frame) or self.break_anywhere(frame)):
             # No need to trace this function
             return # None
+        # Ignore call events in generator except when stepping.
+        if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
+            return self.trace_dispatch
         self.user_call(frame, arg)
         if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
     def dispatch_return(self, frame, arg):
         if self.stop_here(frame) or frame == self.returnframe:
+            # Ignore return events in generator except when stepping.
+            if self.stopframe and frame.f_code.co_flags & CO_GENERATOR:
+                return self.trace_dispatch
             try:
                 self.frame_returning = frame
                 self.user_return(frame, arg)
             finally:
                 self.frame_returning = None
             if self.quitting: raise BdbQuit
+            # The user issued a 'next' or 'until' command.
+            if self.stopframe is frame and self.stoplineno != -1:
+                self._set_stopinfo(None, None)
         return self.trace_dispatch
 
     def dispatch_exception(self, frame, arg):
         if self.stop_here(frame):
+            # When stepping with next/until/return in a generator frame, skip
+            # the internal StopIteration exception (with no traceback)
+            # triggered by a subiterator run with the 'yield from' statement.
+            if not (frame.f_code.co_flags & CO_GENERATOR
+                    and arg[0] is StopIteration and arg[2] is None):
+                self.user_exception(frame, arg)
+                if self.quitting: raise BdbQuit
+        # Stop at the StopIteration or GeneratorExit exception when the user
+        # has set stopframe in a generator by issuing a return command, or a
+        # next/until command at the last statement in the generator before the
+        # exception.
+        elif (self.stopframe and frame is not self.stopframe
+                and self.stopframe.f_code.co_flags & CO_GENERATOR
+                and arg[0] in (StopIteration, GeneratorExit)):
             self.user_exception(frame, arg)
             if self.quitting: raise BdbQuit
+
         return self.trace_dispatch
 
     # Normally derived classes don't override the following
@@ -115,10 +140,8 @@ class Bdb:
             if self.stoplineno == -1:
                 return False
             return frame.f_lineno >= self.stoplineno
-        while frame is not None and frame is not self.stopframe:
-            if frame is self.botframe:
-                return True
-            frame = frame.f_back
+        if not self.stopframe:
+            return True
         return False
 
     def break_here(self, frame):
@@ -207,7 +230,10 @@ class Bdb:
 
     def set_return(self, frame):
         """Stop when returning from the given frame."""
-        self._set_stopinfo(frame.f_back, frame)
+        if frame.f_code.co_flags & CO_GENERATOR:
+            self._set_stopinfo(frame, None, -1)
+        else:
+            self._set_stopinfo(frame.f_back, frame)
 
     def set_trace(self, frame=None):
         """Start debugging from `frame`.
