@@ -684,6 +684,10 @@ class SemaphoreTests(unittest.TestCase):
         finally:
             events.set_event_loop(None)
 
+    def test_initial_value_zero(self):
+        sem = locks.Semaphore(0, loop=self.loop)
+        self.assertTrue(sem.locked())
+
     def test_repr(self):
         sem = locks.Semaphore(loop=self.loop)
         self.assertTrue(repr(sem).endswith('[unlocked,value:1]>'))
