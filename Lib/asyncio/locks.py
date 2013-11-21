@@ -348,12 +348,12 @@ class Semaphore:
 
     def __init__(self, value=1, bound=False, *, loop=None):
         if value < 0:
-            raise ValueError("Semaphore initial value must be > 0")
+            raise ValueError("Semaphore initial value must be >= 0")
         self._value = value
         self._bound = bound
         self._bound_value = value
         self._waiters = collections.deque()
-        self._locked = False
+        self._locked = (value == 0)
         if loop is not None:
             self._loop = loop
         else:
