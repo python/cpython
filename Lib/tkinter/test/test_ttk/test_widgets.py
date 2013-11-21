@@ -8,7 +8,8 @@ import tkinter.test.support as support
 from tkinter.test.test_ttk.test_functions import MockTclObj
 from tkinter.test.support import tcl_version
 from tkinter.test.widget_tests import (add_standard_options, noconv,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
+    setUpModule)
 
 requires('gui')
 
