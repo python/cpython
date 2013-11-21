@@ -48,6 +48,9 @@ CAFILE_NEURONIO = data_file("capath", "4e1295a3.0")
 CAFILE_CACERT = data_file("capath", "5ed36f99.0")
 
 
+# empty CRL
+CRLFILE = data_file("revocation.crl")
+
 # Two keys and certs signed by the same CA (for SNI tests)
 SIGNED_CERTFILE = data_file("keycert3.pem")
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
@@ -631,7 +634,7 @@ class ContextTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 ctx.options = 0
 
-    def test_verify(self):
+    def test_verify_mode(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         # Default value
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
@@ -645,6 +648,23 @@ class ContextTests(unittest.TestCase):
             ctx.verify_mode = None
         with self.assertRaises(ValueError):
             ctx.verify_mode = 42
+
+    def test_verify_flags(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        # default value by OpenSSL
+        self.assertEqual(ctx.verify_flags, ssl.VERIFY_DEFAULT)
+        ctx.verify_flags = ssl.VERIFY_CRL_CHECK_LEAF
+        self.assertEqual(ctx.verify_flags, ssl.VERIFY_CRL_CHECK_LEAF)
+        ctx.verify_flags = ssl.VERIFY_CRL_CHECK_CHAIN
+        self.assertEqual(ctx.verify_flags, ssl.VERIFY_CRL_CHECK_CHAIN)
+        ctx.verify_flags = ssl.VERIFY_DEFAULT
+        self.assertEqual(ctx.verify_flags, ssl.VERIFY_DEFAULT)
+        # supports any value
+        ctx.verify_flags = ssl.VERIFY_CRL_CHECK_LEAF | ssl.VERIFY_X509_STRICT
+        self.assertEqual(ctx.verify_flags,
+                         ssl.VERIFY_CRL_CHECK_LEAF | ssl.VERIFY_X509_STRICT)
+        with self.assertRaises(TypeError):
+            ctx.verify_flags = None
 
     def test_load_cert_chain(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
@@ -1770,6 +1790,47 @@ else:
                 after = ssl.cert_time_to_seconds(cert['notAfter'])
                 self.assertLess(before, after)
                 s.close()
+
+        def test_crl_check(self):
+            if support.verbose:
+                sys.stdout.write("\n")
+
+            server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            server_context.load_cert_chain(SIGNED_CERTFILE)
+
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.load_verify_locations(SIGNING_CA)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.verify_flags = ssl.VERIFY_DEFAULT
+
+            # VERIFY_DEFAULT should pass
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket()) as s:
+                    s.connect((HOST, server.port))
+                    cert = s.getpeercert()
+                    self.assertTrue(cert, "Can't get peer certificate.")
+
+            # VERIFY_CRL_CHECK_LEAF without a loaded CRL file fails
+            context.verify_flags = ssl.VERIFY_CRL_CHECK_LEAF
+
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket()) as s:
+                    with self.assertRaisesRegex(ssl.SSLError,
+                                                "certificate verify failed"):
+                        s.connect((HOST, server.port))
+
+            # now load a CRL file. The CRL file is signed by the CA.
+            context.load_verify_locations(CRLFILE)
+
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket()) as s:
+                    s.connect((HOST, server.port))
+                    cert = s.getpeercert()
+                    self.assertTrue(cert, "Can't get peer certificate.")
 
         def test_empty_cert(self):
             """Connecting with an empty cert file"""

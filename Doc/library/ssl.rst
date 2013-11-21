@@ -423,6 +423,38 @@ Constants
    be passed, either to :meth:`SSLContext.load_verify_locations` or as a
    value of the ``ca_certs`` parameter to :func:`wrap_socket`.
 
+.. data:: VERIFY_DEFAULT
+
+   Possible value for :attr:`SSLContext.verify_flags`. In this mode,
+   certificate revocation lists (CRLs) are not checked. By default OpenSSL
+   does neither require nor verify CRLs.
+
+   .. versionadded:: 3.4
+
+.. data:: VERIFY_CRL_CHECK_LEAF
+
+   Possible value for :attr:`SSLContext.verify_flags`. In this mode, only the
+   peer cert is check but non of the intermediate CA certificates. The mode
+   requires a valid CRL that is signed by the peer cert's issuer (its direct
+   ancestor CA). If no proper has been loaded
+   :attr:`SSLContext.load_verify_locations`, validation will fail.
+
+   .. versionadded:: 3.4
+
+.. data:: VERIFY_CRL_CHECK_CHAIN
+
+   Possible value for :attr:`SSLContext.verify_flags`. In this mode, CRLs of
+   all certificates in the peer cert chain are checked.
+
+   .. versionadded:: 3.4
+
+.. data:: VERIFY_X509_STRICT
+
+   Possible value for :attr:`SSLContext.verify_flags` to disable workarounds
+   for broken X.509 certificates.
+
+   .. versionadded:: 3.4
+
 .. data:: PROTOCOL_SSLv2
 
    Selects SSL version 2 as the channel encryption protocol.
@@ -862,6 +894,10 @@ to speed up repeated connections from the same clients.
    other peers' certificates when :data:`verify_mode` is other than
    :data:`CERT_NONE`.  At least one of *cafile* or *capath* must be specified.
 
+   This method can also load certification revocation lists (CRLs) in PEM or
+   or DER format. In order to make use of CRLs, :attr:`SSLContext.verify_flags`
+   must be configured properly.
+
    The *cafile* string, if present, is the path to a file of concatenated
    CA certificates in PEM format. See the discussion of
    :ref:`ssl-certificates` for more information about how to arrange the
@@ -879,6 +915,7 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.4
       New optional argument *cadata*
+
 
 .. method:: SSLContext.get_ca_certs(binary_form=False)
 
@@ -1056,6 +1093,14 @@ to speed up repeated connections from the same clients.
 
    The protocol version chosen when constructing the context.  This attribute
    is read-only.
+
+.. attribute:: SSLContext.verify_flags
+
+   The flags for certificate verification operations. You can set flags like
+   :data:`VERIFY_CRL_CHECK_LEAF` by ORing them together. By default OpenSSL
+   does neither require nor verify certificate revocation lists (CRLs).
+
+   .. versionadded:: 3.4
 
 .. attribute:: SSLContext.verify_mode
 

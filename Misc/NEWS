@@ -59,6 +59,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #8813: Add SSLContext.verify_flags to change the verification flags
+  of the context in order to enable certification revocation list (CRL)
+  checks or strict X509 rules.
+
 - Issue #18294: Fix the zlib module to make it 64-bit safe.
 
 - Issue #19682: Fix compatibility issue with old version of OpenSSL that

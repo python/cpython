@@ -28,8 +28,10 @@ req_template = """
     [ CA_default ]
     dir = cadir
     database  = $dir/index.txt
+    crlnumber = $dir/crl.txt
     default_md = sha1
     default_days = 3600
+    default_crl_days = 3600
     certificate = pycacert.pem
     private_key = pycakey.pem
     serial    = $dir/serial
@@ -112,6 +114,8 @@ def make_ca():
     os.mkdir(TMP_CADIR)
     with open(os.path.join('cadir','index.txt'),'a+') as f:
         pass # empty file
+    with open(os.path.join('cadir','crl.txt'),'a+') as f:
+        r.write("00")
     with open(os.path.join('cadir','index.txt.attr'),'w+') as f:
         f.write('unique_subject = no')
 
@@ -128,6 +132,8 @@ def make_ca():
                     '-out', 'pycacert.pem', '-batch', '-outdir', TMP_CADIR,
                     '-keyfile', 'pycakey.pem', '-days', '3650',
                     '-selfsign', '-extensions', 'v3_ca', '-infiles', f.name ]
+            check_call(['openssl'] + args)
+            args = ['ca', '-config', t.name, '-gencrl', '-out', 'revocation.crl']
             check_call(['openssl'] + args)
 
 if __name__ == '__main__':
