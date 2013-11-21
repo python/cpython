@@ -369,6 +369,25 @@ class TestSysConfig(unittest.TestCase):
             os.chdir(cwd)
         self.assertEqual(srcdir, srcdir2)
 
+    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
+                     'EXT_SUFFIX required for this test')
+    def test_SO_deprecation(self):
+        self.assertWarns(DeprecationWarning,
+                         sysconfig.get_config_var, 'SO')
+
+    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
+                     'EXT_SUFFIX required for this test')
+    def test_SO_value(self):
+        self.assertEqual(sysconfig.get_config_var('SO'),
+                         sysconfig.get_config_var('EXT_SUFFIX'))
+
+    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
+                     'EXT_SUFFIX required for this test')
+    def test_SO_in_vars(self):
+        vars = sysconfig.get_config_vars()
+        self.assertIsNotNone(vars['SO'])
+        self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
+
 
 class MakefileTests(unittest.TestCase):
 
