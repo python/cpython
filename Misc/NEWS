@@ -59,6 +59,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #18138: Implement cadata argument of SSLContext.load_verify_location()
+  to load CA certificates and CRL from memory. It supports PEM and DER
+  encoded strings.
+
 - Issue #18775: Add name and block_size attribute to HMAC object. They now
   provide the same API elements as non-keyed cryptographic hash functions.
 

@@ -2304,60 +2304,200 @@ error:
     return NULL;
 }
 
+/* internal helper function, returns -1 on error
+ */
+static int
+_add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
+              int filetype)
+{
+    BIO *biobuf = NULL;
+    X509_STORE *store;
+    int retval = 0, err, loaded = 0;
+
+    assert(filetype == SSL_FILETYPE_ASN1 || filetype == SSL_FILETYPE_PEM);
+
+    if (len <= 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Empty certificate data");
+        return -1;
+    } else if (len > INT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Certificate data is too long.");
+        return -1;
+    }
+
+    biobuf = BIO_new_mem_buf(data, len);
+    if (biobuf == NULL) {
+        _setSSLError("Can't allocate buffer", 0, __FILE__, __LINE__);
+        return -1;
+    }
+
+    store = SSL_CTX_get_cert_store(self->ctx);
+    assert(store != NULL);
+
+    while (1) {
+        X509 *cert = NULL;
+        int r;
+
+        if (filetype == SSL_FILETYPE_ASN1) {
+            cert = d2i_X509_bio(biobuf, NULL);
+        } else {
+            cert = PEM_read_bio_X509(biobuf, NULL,
+                                     self->ctx->default_passwd_callback,
+                                     self->ctx->default_passwd_callback_userdata);
+        }
+        if (cert == NULL) {
+            break;
+        }
+        r = X509_STORE_add_cert(store, cert);
+        X509_free(cert);
+        if (!r) {
+            err = ERR_peek_last_error();
+            if ((ERR_GET_LIB(err) == ERR_LIB_X509) &&
+                (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE)) {
+                /* cert already in hash table, not an error */
+                ERR_clear_error();
+            } else {
+                break;
+            }
+        }
+        loaded++;
+    }
+
+    err = ERR_peek_last_error();
+    if ((filetype == SSL_FILETYPE_ASN1) &&
+            (loaded > 0) &&
+            (ERR_GET_LIB(err) == ERR_LIB_ASN1) &&
+            (ERR_GET_REASON(err) == ASN1_R_HEADER_TOO_LONG)) {
+        /* EOF ASN1 file, not an error */
+        ERR_clear_error();
+        retval = 0;
+    } else if ((filetype == SSL_FILETYPE_PEM) &&
+                   (loaded > 0) &&
+                   (ERR_GET_LIB(err) == ERR_LIB_PEM) &&
+                   (ERR_GET_REASON(err) == PEM_R_NO_START_LINE)) {
+        /* EOF PEM file, not an error */
+        ERR_clear_error();
+        retval = 0;
+    } else {
+        _setSSLError(NULL, 0, __FILE__, __LINE__);
+        retval = -1;
+    }
+
+    BIO_free(biobuf);
+    return retval;
+}
+
+
 static PyObject *
 load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
 {
-    char *kwlist[] = {"cafile", "capath", NULL};
-    PyObject *cafile = NULL, *capath = NULL;
+    char *kwlist[] = {"cafile", "capath", "cadata", NULL};
+    PyObject *cafile = NULL, *capath = NULL, *cadata = NULL;
     PyObject *cafile_bytes = NULL, *capath_bytes = NULL;
     const char *cafile_buf = NULL, *capath_buf = NULL;
-    int r;
+    int r = 0, ok = 1;
 
     errno = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-        "|OO:load_verify_locations", kwlist,
-        &cafile, &capath))
+        "|OOO:load_verify_locations", kwlist,
+        &cafile, &capath, &cadata))
         return NULL;
+
     if (cafile == Py_None)
         cafile = NULL;
     if (capath == Py_None)
         capath = NULL;
-    if (cafile == NULL && capath == NULL) {
+    if (cadata == Py_None)
+        cadata = NULL;
+
+    if (cafile == NULL && capath == NULL && cadata == NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "cafile and capath cannot be both omitted");
-        return NULL;
+                        "cafile, capath and cadata cannot be all omitted");
+        goto error;
     }
     if (cafile && !PyUnicode_FSConverter(cafile, &cafile_bytes)) {
         PyErr_SetString(PyExc_TypeError,
                         "cafile should be a valid filesystem path");
-        return NULL;
+        goto error;
     }
     if (capath && !PyUnicode_FSConverter(capath, &capath_bytes)) {
-        Py_XDECREF(cafile_bytes);
         PyErr_SetString(PyExc_TypeError,
                         "capath should be a valid filesystem path");
-        return NULL;
+        goto error;
     }
-    if (cafile)
-        cafile_buf = PyBytes_AS_STRING(cafile_bytes);
-    if (capath)
-        capath_buf = PyBytes_AS_STRING(capath_bytes);
-    PySSL_BEGIN_ALLOW_THREADS
-    r = SSL_CTX_load_verify_locations(self->ctx, cafile_buf, capath_buf);
-    PySSL_END_ALLOW_THREADS
+
+    /* validata cadata type and load cadata */
+    if (cadata) {
+        Py_buffer buf;
+        PyObject *cadata_ascii = NULL;
+
+        if (PyObject_GetBuffer(cadata, &buf, PyBUF_SIMPLE) == 0) {
+            if (!PyBuffer_IsContiguous(&buf, 'C') || buf.ndim > 1) {
+                PyBuffer_Release(&buf);
+                PyErr_SetString(PyExc_TypeError,
+                                "cadata should be a contiguous buffer with "
+                                "a single dimension");
+                goto error;
+            }
+            r = _add_ca_certs(self, buf.buf, buf.len, SSL_FILETYPE_ASN1);
+            PyBuffer_Release(&buf);
+            if (r == -1) {
+                goto error;
+            }
+        } else {
+            PyErr_Clear();
+            cadata_ascii = PyUnicode_AsASCIIString(cadata);
+            if (cadata_ascii == NULL) {
+                PyErr_SetString(PyExc_TypeError,
+                                "cadata should be a ASCII string or a "
+                                "bytes-like object");
+                goto error;
+            }
+            r = _add_ca_certs(self,
+                              PyBytes_AS_STRING(cadata_ascii),
+                              PyBytes_GET_SIZE(cadata_ascii),
+                              SSL_FILETYPE_PEM);
+            Py_DECREF(cadata_ascii);
+            if (r == -1) {
+                goto error;
+            }
+        }
+    }
+
+    /* load cafile or capath */
+    if (cafile || capath) {
+        if (cafile)
+            cafile_buf = PyBytes_AS_STRING(cafile_bytes);
+        if (capath)
+            capath_buf = PyBytes_AS_STRING(capath_bytes);
+        PySSL_BEGIN_ALLOW_THREADS
+        r = SSL_CTX_load_verify_locations(self->ctx, cafile_buf, capath_buf);
+        PySSL_END_ALLOW_THREADS
+        if (r != 1) {
+            ok = 0;
+            if (errno != 0) {
+                ERR_clear_error();
+                PyErr_SetFromErrno(PyExc_IOError);
+            }
+            else {
+                _setSSLError(NULL, 0, __FILE__, __LINE__);
+            }
+            goto error;
+        }
+    }
+    goto end;
+
+  error:
+    ok = 0;
+  end:
     Py_XDECREF(cafile_bytes);
     Py_XDECREF(capath_bytes);
-    if (r != 1) {
-        if (errno != 0) {
-            ERR_clear_error();
-            PyErr_SetFromErrno(PyExc_IOError);
-        }
-        else {
-            _setSSLError(NULL, 0, __FILE__, __LINE__);
-        }
+    if (ok) {
+        Py_RETURN_NONE;
+    } else {
         return NULL;
     }
-    Py_RETURN_NONE;
 }
 
 static PyObject *
