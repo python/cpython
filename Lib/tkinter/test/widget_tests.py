@@ -491,3 +491,9 @@ def add_standard_options(*source_classes):
                     setattr(cls, methodname, test)
         return cls
     return decorator
+
+def setUpModule():
+    import test.support
+    if test.support.verbose:
+        tcl = tkinter.Tcl()
+        print('patchlevel =', tcl.call('info', 'patchlevel'))
