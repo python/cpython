@@ -8,7 +8,8 @@ from test_ttk.support import (tcl_version, requires_tcl, get_tk_patchlevel,
 from widget_tests import (
     add_standard_options, noconv, noconv_meth, int_round, pixels_round,
     AbstractWidgetTest, StandardOptionsTests,
-    IntegerSizeTests, PixelSizeTests)
+    IntegerSizeTests, PixelSizeTests,
+    setUpModule)
 
 requires('gui')
 

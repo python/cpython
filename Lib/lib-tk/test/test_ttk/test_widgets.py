@@ -9,7 +9,8 @@ from test_functions import MockTclObj, MockStateSpec
 from support import tcl_version
 from widget_tests import (add_standard_options, noconv, noconv_meth,
     AbstractWidgetTest, StandardOptionsTests,
-    IntegerSizeTests, PixelSizeTests)
+    IntegerSizeTests, PixelSizeTests,
+    setUpModule)
 
 requires('gui')
 
