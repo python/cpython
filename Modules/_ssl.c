@@ -2231,6 +2231,44 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
 }
 
 static PyObject *
+get_verify_flags(PySSLContext *self, void *c)
+{
+    X509_STORE *store;
+    unsigned long flags;
+
+    store = SSL_CTX_get_cert_store(self->ctx);
+    flags = X509_VERIFY_PARAM_get_flags(store->param);
+    return PyLong_FromUnsignedLong(flags);
+}
+
+static int
+set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
+{
+    X509_STORE *store;
+    unsigned long new_flags, flags, set, clear;
+
+    if (!PyArg_Parse(arg, "k", &new_flags))
+        return -1;
+    store = SSL_CTX_get_cert_store(self->ctx);
+    flags = X509_VERIFY_PARAM_get_flags(store->param);
+    clear = flags & ~new_flags;
+    set = ~flags & new_flags;
+    if (clear) {
+        if (!X509_VERIFY_PARAM_clear_flags(store->param, clear)) {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+            return -1;
+        }
+    }
+    if (set) {
+        if (!X509_VERIFY_PARAM_set_flags(store->param, set)) {
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static PyObject *
 get_options(PySSLContext *self, void *c)
 {
     return PyLong_FromLong(SSL_CTX_get_options(self->ctx));
@@ -3048,6 +3086,8 @@ get_ca_certs(PySSLContext *self, PyObject *args)
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
+    {"verify_flags", (getter) get_verify_flags,
+                     (setter) set_verify_flags, NULL},
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
     {NULL},            /* sentinel */
@@ -3761,6 +3801,15 @@ PyInit__ssl(void)
                             PY_SSL_CERT_OPTIONAL);
     PyModule_AddIntConstant(m, "CERT_REQUIRED",
                             PY_SSL_CERT_REQUIRED);
+    /* CRL verification for verification_flags */
+    PyModule_AddIntConstant(m, "VERIFY_DEFAULT",
+                            0);
+    PyModule_AddIntConstant(m, "VERIFY_CRL_CHECK_LEAF",
+                            X509_V_FLAG_CRL_CHECK);
+    PyModule_AddIntConstant(m, "VERIFY_CRL_CHECK_CHAIN",
+                            X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+    PyModule_AddIntConstant(m, "VERIFY_X509_STRICT",
+                            X509_V_FLAG_X509_STRICT);
 
 #ifdef _MSC_VER
     /* Windows dwCertEncodingType */
