@@ -10,7 +10,8 @@ def fromhex(s):
     return base64.b16decode(s.replace(' ', ''))
 
 def byteswap2(data):
-    a = array.array('h', data)
+    a = array.array('h')
+    a.fromstring(data)
     a.byteswap()
     return a.tostring()
 
@@ -21,7 +22,8 @@ def byteswap3(data):
     return bytes(ba)
 
 def byteswap4(data):
-    a = array.array('i', data)
+    a = array.array('i')
+    a.fromstring(data)
     a.byteswap()
     return a.tostring()
 
