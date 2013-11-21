@@ -453,54 +453,80 @@ bytearray_setslice_linear(PyByteArrayObject *self,
     Py_ssize_t avail = hi - lo;
     char *buf = PyByteArray_AS_STRING(self);
     Py_ssize_t growth = bytes_len - avail;
+    int res = 0;
     assert(avail >= 0);
 
-    if (growth != 0) {
-        if (growth < 0) {
-            if (!_canresize(self))
-                return -1;
-            if (lo == 0) {
-                /* Shrink the buffer by advancing its logical start */
-                self->ob_start -= growth;
-                /*
-                  0   lo               hi             old_size
-                  |   |<----avail----->|<-----tail------>|
-                  |      |<-bytes_len->|<-----tail------>|
-                  0    new_lo         new_hi          new_size
-                */
-            }
-            else {
-                /*
-                  0   lo               hi               old_size
-                  |   |<----avail----->|<-----tomove------>|
-                  |   |<-bytes_len->|<-----tomove------>|
-                  0   lo         new_hi              new_size
-                */
-                memmove(buf + lo + bytes_len, buf + hi,
-                        Py_SIZE(self) - hi);
-            }
-        }
-        /* XXX(nnorwitz): need to verify this can't overflow! */
-        if (PyByteArray_Resize(
-                (PyObject *)self, Py_SIZE(self) + growth) < 0)
+    if (growth < 0) {
+        if (!_canresize(self))
             return -1;
-        buf = PyByteArray_AS_STRING(self);
-        if (growth > 0) {
-            /* Make the place for the additional bytes */
+
+        if (lo == 0) {
+            /* Shrink the buffer by advancing its logical start */
+            self->ob_start -= growth;
             /*
-              0   lo        hi               old_size
-              |   |<-avail->|<-----tomove------>|
-              |   |<---bytes_len-->|<-----tomove------>|
-              0   lo            new_hi              new_size
-             */
-            memmove(buf + lo + bytes_len, buf + hi,
-                    Py_SIZE(self) - lo - bytes_len);
+              0   lo               hi             old_size
+              |   |<----avail----->|<-----tail------>|
+              |      |<-bytes_len->|<-----tail------>|
+              0    new_lo         new_hi          new_size
+            */
         }
+        else {
+            /*
+              0   lo               hi               old_size
+              |   |<----avail----->|<-----tomove------>|
+              |   |<-bytes_len->|<-----tomove------>|
+              0   lo         new_hi              new_size
+            */
+            memmove(buf + lo + bytes_len, buf + hi,
+                    Py_SIZE(self) - hi);
+        }
+        if (PyByteArray_Resize((PyObject *)self,
+                               Py_SIZE(self) + growth) < 0) {
+            /* Issue #19578: Handling the memory allocation failure here is
+               tricky here because the bytearray object has already been
+               modified. Depending on growth and lo, the behaviour is
+               different.
+
+               If growth < 0 and lo != 0, the operation is completed, but a
+               MemoryError is still raised and the memory block is not
+               shrinked. Otherwise, the bytearray is restored in its previous
+               state and a MemoryError is raised. */
+            if (lo == 0) {
+                self->ob_start += growth;
+                return -1;
+            }
+            /* memmove() removed bytes, the bytearray object cannot be
+               restored in its previous state. */
+            Py_SIZE(self) += growth;
+            res = -1;
+        }
+        buf = PyByteArray_AS_STRING(self);
+    }
+    else if (growth > 0) {
+        if (Py_SIZE(self) > (Py_ssize_t)PY_SSIZE_T_MAX - growth) {
+            PyErr_NoMemory();
+            return -1;
+        }
+
+        if (PyByteArray_Resize((PyObject *)self,
+                               Py_SIZE(self) + growth) < 0) {
+            return -1;
+        }
+        buf = PyByteArray_AS_STRING(self);
+        /* Make the place for the additional bytes */
+        /*
+          0   lo        hi               old_size
+          |   |<-avail->|<-----tomove------>|
+          |   |<---bytes_len-->|<-----tomove------>|
+          0   lo            new_hi              new_size
+         */
+        memmove(buf + lo + bytes_len, buf + hi,
+                Py_SIZE(self) - lo - bytes_len);
     }
 
     if (bytes_len > 0)
         memcpy(buf + lo, bytes, bytes_len);
-    return 0;
+    return res;
 }
 
 static int
