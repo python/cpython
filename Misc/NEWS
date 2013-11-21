@@ -62,6 +62,8 @@ Library
 - Issue #19682: Fix compatibility issue with old version of OpenSSL that
   was introduced by Issue #18379.
 
+- Issue #14455: plistlib now supports binary plists and has an updated API.
+
 - Issue #19633: Fixed writing not compressed 16- and 32-bit wave files on
   big-endian platforms.
 

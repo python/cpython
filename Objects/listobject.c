@@ -2483,6 +2483,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             PyObject **garbage;
             size_t cur;
             Py_ssize_t i;
+            int res;
 
             if (slicelength <= 0)
                 return 0;
@@ -2533,14 +2534,14 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             }
 
             Py_SIZE(self) -= slicelength;
-            list_resize(self, Py_SIZE(self));
+            res = list_resize(self, Py_SIZE(self));
 
             for (i = 0; i < slicelength; i++) {
                 Py_DECREF(garbage[i]);
             }
             PyMem_FREE(garbage);
 
-            return 0;
+            return res;
         }
         else {
             /* assign slice */
