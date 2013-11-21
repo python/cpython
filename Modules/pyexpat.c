@@ -835,7 +835,8 @@ xmlparse_Parse(xmlparseobject *self, PyObject *args)
         s += MAX_CHUNK_SIZE;
         slen -= MAX_CHUNK_SIZE;
     }
-    rc = XML_Parse(self->itself, s, slen, isFinal);
+    assert(MAX_CHUNK_SIZE < INT_MAX && slen < INT_MAX);
+    rc = XML_Parse(self->itself, s, (int)slen, isFinal);
 
 done:
     if (view.buf != NULL)
