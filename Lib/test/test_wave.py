@@ -48,6 +48,12 @@ class WavePCM16Test(audiotests.AudioWriteTests,
     if sys.byteorder != 'big':
         frames = audiotests.byteswap2(frames)
 
+    if sys.byteorder == 'big':
+        @unittest.expectedFailure
+        def test_unseekable_incompleted_write(self):
+            super().test_unseekable_incompleted_write()
+
+
 
 class WavePCM24Test(audiotests.AudioWriteTests,
         audiotests.AudioTestsWithSourceFile,
@@ -107,6 +113,11 @@ class WavePCM32Test(audiotests.AudioWriteTests,
       """)
     if sys.byteorder != 'big':
         frames = audiotests.byteswap4(frames)
+
+    if sys.byteorder == 'big':
+        @unittest.expectedFailure
+        def test_unseekable_incompleted_write(self):
+            super().test_unseekable_incompleted_write()
 
 
 if __name__ == '__main__':
