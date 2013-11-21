@@ -1176,20 +1176,12 @@ class _TestPool(BaseTestCase):
         p.join()
 
     def test_terminate(self):
-        if self.TYPE == 'manager':
-            # On Unix a forked process increfs each shared object to
-            # which its parent process held a reference.  If the
-            # forked process gets terminated then there is likely to
-            # be a reference leak.  So to prevent
-            # _TestZZZNumberOfObjects from failing we skip this test
-            # when using a manager.
-            return
-
-        result = self.pool.map_async(
+        p = self.Pool(4)
+        result = p.map_async(
             time.sleep, [0.1 for i in range(10000)], chunksize=1
             )
-        self.pool.terminate()
-        join = TimingWrapper(self.pool.join)
+        p.terminate()
+        join = TimingWrapper(p.join)
         join()
         self.assertTrue(join.elapsed < 0.2)
 
