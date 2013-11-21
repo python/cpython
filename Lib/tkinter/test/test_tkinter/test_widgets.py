@@ -7,7 +7,8 @@ from tkinter.test.support import (tcl_version, requires_tcl,
                                   get_tk_patchlevel, widget_eq)
 from tkinter.test.widget_tests import (
     add_standard_options, noconv, pixels_round,
-    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests)
+    AbstractWidgetTest, StandardOptionsTests, IntegerSizeTests, PixelSizeTests,
+    setUpModule)
 
 requires('gui')
 
