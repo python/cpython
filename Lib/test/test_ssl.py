@@ -1801,7 +1801,6 @@ else:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_verify_locations(SIGNING_CA)
-            context.verify_mode = ssl.CERT_REQUIRED
             context.verify_flags = ssl.VERIFY_DEFAULT
 
             # VERIFY_DEFAULT should pass
