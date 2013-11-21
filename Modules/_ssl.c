@@ -1014,7 +1014,7 @@ _get_aia_uri(X509 *certificate, int nid) {
 
   fail:
     AUTHORITY_INFO_ACCESS_free(info);
-    Py_DECREF(lst);
+    Py_XDECREF(lst);
     return NULL;
 }
 
