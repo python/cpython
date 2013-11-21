@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19633: Fixed writing not compressed 16- and 32-bit wave files on
+  big-endian platforms.
+
 - Issue #19449: in csv's writerow, handle non-string keys when generating the
   error message that certain keys are not in the 'fieldnames' list.
 
