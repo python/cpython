@@ -6,7 +6,8 @@ import pickle
 import sys
 
 def byteswap2(data):
-    a = array.array('h', data)
+    a = array.array('h')
+    a.frombytes(data)
     a.byteswap()
     return a.tobytes()
 
@@ -17,7 +18,8 @@ def byteswap3(data):
     return bytes(ba)
 
 def byteswap4(data):
-    a = array.array('i', data)
+    a = array.array('i')
+    a.frombytes(data)
     a.byteswap()
     return a.tobytes()
 

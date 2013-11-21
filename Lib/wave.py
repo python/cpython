@@ -443,7 +443,9 @@ class Wave_write:
             data = self._convert(data)
         if self._sampwidth in (2, 4) and sys.byteorder == 'big':
             import array
-            data = array.array(_array_fmts[self._sampwidth], data)
+            a = array.array(_array_fmts[self._sampwidth])
+            a.frombytes(data)
+            data = a
             assert data.itemsize == self._sampwidth
             data.byteswap()
             data.tofile(self._file)
