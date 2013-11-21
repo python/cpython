@@ -733,6 +733,10 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.4
       :exc:`ValueError` is raised when the handshake isn't done.
 
+   .. versionchanged:: 3.4
+      The returned dictionary includes additional X509v3 extension items
+      such as ``crlDistributionPoints``, ``caIssuers`` and ``OCSP`` URIs.
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the
