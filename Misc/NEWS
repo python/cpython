@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19633: Fixed writing not compressed 16- and 32-bit wave files on
+  big-endian platforms.
+
 - Issue #18379: SSLSocket.getpeercert() returns CA issuer AIA fields, OCSP
   and CRL distribution points.
 
