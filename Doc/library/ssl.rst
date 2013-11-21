@@ -821,6 +821,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.4
 
+
 .. method:: SSLContext.load_cert_chain(certfile, keyfile=None, password=None)
 
    Load a private key and the corresponding certificate.  The *certfile*
@@ -851,7 +852,7 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.3
       New optional argument *password*.
 
-.. method:: SSLContext.load_verify_locations(cafile=None, capath=None)
+.. method:: SSLContext.load_verify_locations(cafile=None, capath=None, cadata=None)
 
    Load a set of "certification authority" (CA) certificates used to validate
    other peers' certificates when :data:`verify_mode` is other than
@@ -866,6 +867,14 @@ to speed up repeated connections from the same clients.
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
    <http://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
+
+   The *cadata* object, if present, is either an ASCII string of one or more
+   PEM-encoded certificates or a bytes-like object of DER-encoded
+   certificates. Like with *capath* extra lines around PEM-encoded
+   certificates are ignored but at least one certificate must be present.
+
+   .. versionchanged:: 3.4
+      New optional argument *cadata*
 
 .. method:: SSLContext.get_ca_certs(binary_form=False)
 
