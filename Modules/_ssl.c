@@ -965,6 +965,120 @@ _get_peer_alt_names (X509 *certificate) {
 }
 
 static PyObject *
+_get_aia_uri(X509 *certificate, int nid) {
+    PyObject *lst = NULL, *ostr = NULL;
+    int i, result;
+    AUTHORITY_INFO_ACCESS *info;
+
+    info = X509_get_ext_d2i(certificate, NID_info_access, NULL, NULL);
+    if ((info == NULL) || (sk_ACCESS_DESCRIPTION_num(info) == 0)) {
+        return Py_None;
+    }
+
+    if ((lst = PyList_New(0)) == NULL) {
+        goto fail;
+    }
+
+    for (i = 0; i < sk_ACCESS_DESCRIPTION_num(info); i++) {
+        ACCESS_DESCRIPTION *ad = sk_ACCESS_DESCRIPTION_value(info, i);
+        ASN1_IA5STRING *uri;
+
+        if ((OBJ_obj2nid(ad->method) != nid) ||
+                (ad->location->type != GEN_URI)) {
+            continue;
+        }
+        uri = ad->location->d.uniformResourceIdentifier;
+        ostr = PyUnicode_FromStringAndSize((char *)uri->data,
+                                           uri->length);
+        if (ostr == NULL) {
+            goto fail;
+        }
+        result = PyList_Append(lst, ostr);
+        Py_DECREF(ostr);
+        if (result < 0) {
+            goto fail;
+        }
+    }
+    AUTHORITY_INFO_ACCESS_free(info);
+
+    /* convert to tuple or None */
+    if (PyList_Size(lst) == 0) {
+        Py_DECREF(lst);
+        return Py_None;
+    } else {
+        PyObject *tup;
+        tup = PyList_AsTuple(lst);
+        Py_DECREF(lst);
+        return tup;
+    }
+
+  fail:
+    AUTHORITY_INFO_ACCESS_free(info);
+    Py_DECREF(lst);
+    return NULL;
+}
+
+static PyObject *
+_get_crl_dp(X509 *certificate) {
+    STACK_OF(DIST_POINT) *dps;
+    int i, j, result;
+    PyObject *lst;
+
+    /* Calls x509v3_cache_extensions and sets up crldp */
+    X509_check_ca(certificate);
+    dps = certificate->crldp;
+    if (dps == NULL) {
+        return Py_None;
+    }
+
+    if ((lst = PyList_New(0)) == NULL) {
+        return NULL;
+    }
+
+    for (i=0; i < sk_DIST_POINT_num(dps); i++) {
+        DIST_POINT *dp;
+        STACK_OF(GENERAL_NAME) *gns;
+
+        dp = sk_DIST_POINT_value(dps, i);
+        gns = dp->distpoint->name.fullname;
+
+        for (j=0; j < sk_GENERAL_NAME_num(gns); j++) {
+            GENERAL_NAME *gn;
+            ASN1_IA5STRING *uri;
+            PyObject *ouri;
+
+            gn = sk_GENERAL_NAME_value(gns, j);
+            if (gn->type != GEN_URI) {
+                continue;
+            }
+            uri = gn->d.uniformResourceIdentifier;
+            ouri = PyUnicode_FromStringAndSize((char *)uri->data,
+                                               uri->length);
+            if (ouri == NULL) {
+                Py_DECREF(lst);
+                return NULL;
+            }
+            result = PyList_Append(lst, ouri);
+            Py_DECREF(ouri);
+            if (result < 0) {
+                Py_DECREF(lst);
+                return NULL;
+            }
+        }
+    }
+    /* convert to tuple or None */
+    if (PyList_Size(lst) == 0) {
+        Py_DECREF(lst);
+        return Py_None;
+    } else {
+        PyObject *tup;
+        tup = PyList_AsTuple(lst);
+        Py_DECREF(lst);
+        return tup;
+    }
+}
+
+static PyObject *
 _decode_certificate(X509 *certificate) {
 
     PyObject *retval = NULL;
@@ -974,9 +1088,10 @@ _decode_certificate(X509 *certificate) {
     PyObject *issuer;
     PyObject *version;
     PyObject *sn_obj;
+    PyObject *obj;
     ASN1_INTEGER *serialNumber;
     char buf[2048];
-    int len;
+    int len, result;
     ASN1_TIME *notBefore, *notAfter;
     PyObject *pnotBefore, *pnotAfter;
 
@@ -1080,6 +1195,41 @@ _decode_certificate(X509 *certificate) {
             goto fail1;
         }
         Py_DECREF(peer_alt_names);
+    }
+
+    /* Authority Information Access: OCSP URIs */
+    obj = _get_aia_uri(certificate, NID_ad_OCSP);
+    if (obj == NULL) {
+        goto fail1;
+    } else if (obj != Py_None) {
+        result = PyDict_SetItemString(retval, "OCSP", obj);
+        Py_DECREF(obj);
+        if (result < 0) {
+            goto fail1;
+        }
+    }
+
+    obj = _get_aia_uri(certificate, NID_ad_ca_issuers);
+    if (obj == NULL) {
+        goto fail1;
+    } else if (obj != Py_None) {
+        result = PyDict_SetItemString(retval, "caIssuers", obj);
+        Py_DECREF(obj);
+        if (result < 0) {
+            goto fail1;
+        }
+    }
+
+    /* CDP (CRL distribution points) */
+    obj = _get_crl_dp(certificate);
+    if (obj == NULL) {
+        goto fail1;
+    } else if (obj != Py_None) {
+        result = PyDict_SetItemString(retval, "crlDistributionPoints", obj);
+        Py_DECREF(obj);
+        if (result < 0) {
+            goto fail1;
+        }
     }
 
     BIO_free(biobuf);

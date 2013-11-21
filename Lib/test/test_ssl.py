@@ -212,6 +212,12 @@ class BasicSocketTests(unittest.TestCase):
                          (('DNS', 'projects.developer.nokia.com'),
                           ('DNS', 'projects.forum.nokia.com'))
                         )
+        # extra OCSP and AIA fields
+        self.assertEqual(p['OCSP'], ('http://ocsp.verisign.com',))
+        self.assertEqual(p['caIssuers'],
+                         ('http://SVRIntl-G3-aia.verisign.com/SVRIntlG3.cer',))
+        self.assertEqual(p['crlDistributionPoints'],
+                         ('http://SVRIntl-G3-crl.verisign.com/SVRIntlG3.crl',))
 
     def test_parse_cert_CVE_2013_4238(self):
         p = ssl._ssl._test_decode_cert(NULLBYTECERT)
@@ -905,6 +911,7 @@ class ContextTests(unittest.TestCase):
               'notAfter': asn1time('Mar 29 12:29:49 2033 GMT'),
               'notBefore': asn1time('Mar 30 12:29:49 2003 GMT'),
               'serialNumber': '00',
+              'crlDistributionPoints': ('https://www.cacert.org/revoke.crl',),
               'subject': ((('organizationName', 'Root CA'),),
                           (('organizationalUnitName', 'http://www.cacert.org'),),
                           (('commonName', 'CA Cert Signing Authority'),),
@@ -1268,7 +1275,6 @@ class NetworkedTests(unittest.TestCase):
             finally:
                 s.close()
             self.assertEqual(len(ctx.get_ca_certs()), 1)
-
 
 try:
     import threading
