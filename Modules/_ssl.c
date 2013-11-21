@@ -1024,9 +1024,15 @@ _get_crl_dp(X509 *certificate) {
     int i, j, result;
     PyObject *lst;
 
+#if OPENSSL_VERSION_NUMBER < 0x10001000L
+    dps = X509_get_ext_d2i(certificate, NID_crl_distribution_points,
+                           NULL, NULL);
+#else
     /* Calls x509v3_cache_extensions and sets up crldp */
     X509_check_ca(certificate);
     dps = certificate->crldp;
+#endif
+
     if (dps == NULL) {
         return Py_None;
     }
