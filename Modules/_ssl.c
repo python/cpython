@@ -2520,7 +2520,7 @@ _add_ca_certs(PySSLContext *self, void *data, Py_ssize_t len,
         return -1;
     }
 
-    biobuf = BIO_new_mem_buf(data, len);
+    biobuf = BIO_new_mem_buf(data, (int)len);
     if (biobuf == NULL) {
         _setSSLError("Can't allocate buffer", 0, __FILE__, __LINE__);
         return -1;
