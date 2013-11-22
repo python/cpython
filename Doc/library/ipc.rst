@@ -18,6 +18,9 @@ The list of modules described in this chapter is:
 
    socket.rst
    ssl.rst
+   select.rst
+   selectors.rst
+   asyncio.rst
    asyncore.rst
    asynchat.rst
    signal.rst
