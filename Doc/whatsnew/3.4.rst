@@ -194,37 +194,37 @@ in both Python 2 and Python 3, rather than being limited to Unicode text
 encodings (in Python 3) or ``basestring`` <-> ``basestring`` conversions
 (in Python 2).
 
-In Python 3.4, the errors raised by the convenience methods when a codec
-produces the incorrect output type have also been updated to direct users
-towards these general purpose convenience functions::
+In Python 3.4, the interpreter is able to identify the known non-text
+encodings provided in the standard library and direct users towards these
+general purpose convenience functions when appropriate::
 
     >>> import codecs
 
-    >>> codecs.encode(b"hello", "bz2_codec").decode("bz2_codec")
+    >>> b"abcdef".decode("hex_codec")
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: 'bz2_codec' decoder returned 'bytes' instead of 'str'; use codecs.decode() to decode to arbitrary types
+    LookupError: 'hex_codec' is not a text encoding; use codecs.decode() to handle arbitrary codecs
 
     >>> "hello".encode("rot_13")
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: 'rot_13' encoder returned 'str' instead of 'bytes'; use codecs.encode() to encode to arbitrary types
+    LookupError: 'rot_13' is not a text encoding; use codecs.encode() to handle arbitrary codecs
 
 In a related change, whenever it is feasible without breaking backwards
 compatibility, exceptions raised during encoding and decoding operations
 will be wrapped in a chained exception of the same type that mentions the
 name of the codec responsible for producing the error::
 
-    >>> b"hello".decode("uu_codec")
-    ValueError: Missing "begin" line in input data
+    >>> codecs.decode(b"abcdefgh", "hex_codec")
+    binascii.Error: Non-hexadecimal digit found
 
     The above exception was the direct cause of the following exception:
 
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    ValueError: decoding with 'uu_codec' codec failed (ValueError: Missing "begin" line in input data)
+    binascii.Error: decoding with 'hex_codec' codec failed (Error: Non-hexadecimal digit found)
 
-    >>> "hello".encode("bz2_codec")
+    >>> codecs.encode("hello", "bz2_codec")
     TypeError: 'str' does not support the buffer interface
 
     The above exception was the direct cause of the following exception:
@@ -233,7 +233,8 @@ name of the codec responsible for producing the error::
       File "<stdin>", line 1, in <module>
     TypeError: encoding with 'bz2_codec' codec failed (TypeError: 'str' does not support the buffer interface)
 
-(Contributed by Nick Coghlan in :issue:`17827` and :issue:`17828`)
+(Contributed by Nick Coghlan in :issue:`17827`, :issue:`17828` and
+:issue:`19619`)
 
 
 Other Language Changes
