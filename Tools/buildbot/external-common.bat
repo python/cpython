@@ -43,6 +43,7 @@ if not exist sqlite-3.8.1 (
 )
 
 @rem lzma
-if not exist xz-5.0.3 (
-  svn export http://svn.python.org/projects/external/xz-5.0.3
+if not exist xz-5.0.5 (
+  rd /s/q xz-5.0.3
+  svn export http://svn.python.org/projects/external/xz-5.0.5
 )
