@@ -4767,6 +4767,21 @@ if test "$have_gcc_asm_for_x87" = yes; then
     esac
 fi
 
+# ensurepip option
+AC_MSG_CHECKING(for ensurepip)
+AC_ARG_WITH(ensurepip,
+    [AS_HELP_STRING([--with(out)-ensurepip=@<:@=upgrade@:>@],
+        ["install" or "upgrade" using bundled pip])],
+    [],
+    [with_ensurepip=upgrade])
+AS_CASE($with_ensurepip,
+    [yes|upgrade],[ENSUREPIP=upgrade],
+    [install],[ENSUREPIP=install],
+    [no],[ENSUREPIP=no],
+    [AC_MSG_ERROR([--with-ensurepip=upgrade|install|no])])
+AC_MSG_RESULT($ENSUREPIP)
+AC_SUBST(ENSUREPIP)
+
 # generate output files
 AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])

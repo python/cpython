@@ -623,6 +623,7 @@ ac_includes_default="\
 #endif"
 
 ac_subst_vars='LTLIBOBJS
+ENSUREPIP
 SRCDIRS
 THREADHEADERS
 LIBPL
@@ -815,6 +816,7 @@ with_libm
 with_libc
 enable_big_digits
 with_computed_gotos
+with_ensurepip
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1498,6 +1500,8 @@ Optional Packages:
   --with(out)-computed-gotos
                           Use computed gotos in evaluation loop (enabled by
                           default on supported compilers)
+  --with(out)-ensurepip=[=upgrade]
+                          "install" or "upgrade" using bundled pip
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -15343,6 +15347,31 @@ $as_echo "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
         ;;
     esac
 fi
+
+# ensurepip option
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ensurepip" >&5
+$as_echo_n "checking for ensurepip... " >&6; }
+
+# Check whether --with-ensurepip was given.
+if test "${with_ensurepip+set}" = set; then :
+  withval=$with_ensurepip;
+else
+  with_ensurepip=upgrade
+fi
+
+case $with_ensurepip in #(
+  yes|upgrade) :
+    ENSUREPIP=upgrade ;; #(
+  install) :
+    ENSUREPIP=install ;; #(
+  no) :
+    ENSUREPIP=no ;; #(
+  *) :
+    as_fn_error $? "--with-ensurepip=upgrade|install|no" "$LINENO" 5 ;;
+esac
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENSUREPIP" >&5
+$as_echo "$ENSUREPIP" >&6; }
+
 
 # generate output files
 ac_config_files="$ac_config_files Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh"
