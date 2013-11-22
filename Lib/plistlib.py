@@ -137,7 +137,7 @@ class Plist(_InternalDict):
     @classmethod
     def fromFile(cls, pathOrFile):
         """Deprecated. Use the load() function instead."""
-        with maybe_open(pathOrFile, 'rb') as fp:
+        with _maybe_open(pathOrFile, 'rb') as fp:
             value = load(fp)
         plist = cls()
         plist.update(value)
