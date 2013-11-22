@@ -826,8 +826,6 @@ class ModuleSpec:
 
 def spec_from_loader(name, loader, *, origin=None, is_package=None):
     """Return a module spec based on various loader methods."""
-
-#    if hasattr(loader, 'get_data'):
     if hasattr(loader, 'get_filename'):
         if is_package is None:
             return spec_from_file_location(name, loader=loader)
