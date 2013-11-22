@@ -241,6 +241,24 @@ class FutureTests(unittest.TestCase):
         f2 = futures.wrap_future(f1)
         self.assertIs(m_events.get_event_loop.return_value, f2._loop)
 
+    def test_wrap_future_cancel(self):
+        f1 = concurrent.futures.Future()
+        f2 = futures.wrap_future(f1, loop=self.loop)
+        f2.cancel()
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(f1.cancelled())
+        self.assertTrue(f2.cancelled())
+
+    def test_wrap_future_cancel2(self):
+        f1 = concurrent.futures.Future()
+        f2 = futures.wrap_future(f1, loop=self.loop)
+        f1.set_result(42)
+        f2.cancel()
+        test_utils.run_briefly(self.loop)
+        self.assertFalse(f1.cancelled())
+        self.assertEqual(f1.result(), 42)
+        self.assertTrue(f2.cancelled())
+
 
 class FutureDoneCallbackTests(unittest.TestCase):
 

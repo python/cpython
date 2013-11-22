@@ -301,6 +301,8 @@ class Future:
         The other Future may be a concurrent.futures.Future.
         """
         assert other.done()
+        if self.cancelled():
+            return
         assert not self.done()
         if other.cancelled():
             self.cancel()
@@ -324,14 +326,17 @@ def wrap_future(fut, *, loop=None):
     """Wrap concurrent.futures.Future object."""
     if isinstance(fut, Future):
         return fut
-
     assert isinstance(fut, concurrent.futures.Future), \
         'concurrent.futures.Future is expected, got {!r}'.format(fut)
-
     if loop is None:
         loop = events.get_event_loop()
-
     new_future = Future(loop=loop)
+
+    def _check_cancel_other(f):
+        if f.cancelled():
+            fut.cancel()
+
+    new_future.add_done_callback(_check_cancel_other)
     fut.add_done_callback(
         lambda future: loop.call_soon_threadsafe(
             new_future._copy_state, fut))
