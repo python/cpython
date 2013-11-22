@@ -41,7 +41,7 @@ Glossary
 
    argument
       A value passed to a :term:`function` (or :term:`method`) when calling the
-      function.  There are two types of arguments:
+      function.  There are two kinds of argument:
 
       * :dfn:`keyword argument`: an argument preceded by an identifier (e.g.
         ``name=``) in a function call or passed as a value in a dictionary
@@ -592,7 +592,7 @@ Glossary
    parameter
       A named entity in a :term:`function` (or method) definition that
       specifies an :term:`argument` (or in some cases, arguments) that the
-      function can accept.  There are five types of parameters:
+      function can accept.  There are five kinds of parameter:
 
       * :dfn:`positional-or-keyword`: specifies an argument that can be passed
         either :term:`positionally <argument>` or as a :term:`keyword argument
@@ -605,6 +605,8 @@ Glossary
         by position.  Python has no syntax for defining positional-only
         parameters.  However, some built-in functions have positional-only
         parameters (e.g. :func:`abs`).
+
+      .. _keyword-only_parameter:
 
       * :dfn:`keyword-only`: specifies an argument that can be supplied only
         by keyword.  Keyword-only parameters can be defined by including a
