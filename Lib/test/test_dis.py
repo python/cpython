@@ -10,6 +10,21 @@ import io
 import types
 import contextlib
 
+def get_tb():
+    def _error():
+        try:
+            1 / 0
+        except Exception as e:
+            tb = e.__traceback__
+        return tb
+
+    tb = _error()
+    while tb.tb_next:
+        tb = tb.tb_next
+    return tb
+
+TRACEBACK_CODE = get_tb().tb_frame.f_code
+
 class _C:
     def __init__(self, x):
         self.x = x == 1
@@ -173,6 +188,46 @@ dis_compound_stmt_str = """\
         >>   22 LOAD_CONST               2 (None)
              25 RETURN_VALUE
 """
+
+dis_traceback = """\
+ %-4d         0 SETUP_EXCEPT            12 (to 15)
+
+ %-4d         3 LOAD_CONST               1 (1)
+              6 LOAD_CONST               2 (0)
+    -->       9 BINARY_TRUE_DIVIDE
+             10 POP_TOP
+             11 POP_BLOCK
+             12 JUMP_FORWARD            46 (to 61)
+
+ %-4d   >>   15 DUP_TOP
+             16 LOAD_GLOBAL              0 (Exception)
+             19 COMPARE_OP              10 (exception match)
+             22 POP_JUMP_IF_FALSE       60
+             25 POP_TOP
+             26 STORE_FAST               0 (e)
+             29 POP_TOP
+             30 SETUP_FINALLY           14 (to 47)
+
+ %-4d        33 LOAD_FAST                0 (e)
+             36 LOAD_ATTR                1 (__traceback__)
+             39 STORE_FAST               1 (tb)
+             42 POP_BLOCK
+             43 POP_EXCEPT
+             44 LOAD_CONST               0 (None)
+        >>   47 LOAD_CONST               0 (None)
+             50 STORE_FAST               0 (e)
+             53 DELETE_FAST              0 (e)
+             56 END_FINALLY
+             57 JUMP_FORWARD             1 (to 61)
+        >>   60 END_FINALLY
+
+ %-4d   >>   61 LOAD_FAST                1 (tb)
+             64 RETURN_VALUE
+""" % (TRACEBACK_CODE.co_firstlineno + 1,
+       TRACEBACK_CODE.co_firstlineno + 2,
+       TRACEBACK_CODE.co_firstlineno + 3,
+       TRACEBACK_CODE.co_firstlineno + 4,
+       TRACEBACK_CODE.co_firstlineno + 5)
 
 class DisTests(unittest.TestCase):
 
@@ -758,6 +813,17 @@ class BytecodeTests(unittest.TestCase):
         actual = dis.Bytecode(_f).dis()
         self.assertEqual(actual, dis_f)
 
+    def test_from_traceback(self):
+        tb = get_tb()
+        b = dis.Bytecode.from_traceback(tb)
+        while tb.tb_next: tb = tb.tb_next
+
+        self.assertEqual(b.current_offset, tb.tb_lasti)
+
+    def test_from_traceback_dis(self):
+        tb = get_tb()
+        b = dis.Bytecode.from_traceback(tb)
+        self.assertEqual(b.dis(), dis_traceback)
 
 def test_main():
     run_unittest(DisTests, DisWithFileTests, CodeInfoTests,
