@@ -16,6 +16,10 @@ from test.support import (captured_stdout, captured_stderr, run_unittest,
 import unittest
 import venv
 
+skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
+                             'Test not appropriate in a venv')
+
+
 class BaseTest(unittest.TestCase):
     """Base class for venv tests."""
 
@@ -83,8 +87,7 @@ class BasicTest(BaseTest):
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
-    @unittest.skipIf(sys.prefix != sys.base_prefix, 'Test not appropriate '
-                     'in a venv')
+    @skipInVenv
     def test_prefixes(self):
         """
         Test that the prefix values are as expected.
@@ -217,8 +220,7 @@ class BasicTest(BaseTest):
     # run the test, the pyvenv.cfg in the venv created in the test will
     # point to the venv being used to run the test, and we lose the link
     # to the source build - so Python can't initialise properly.
-    @unittest.skipIf(sys.prefix != sys.base_prefix, 'Test not appropriate '
-                     'in a venv')
+    @skipInVenv
     def test_executable(self):
         """
         Test that the sys.executable value is as expected.
@@ -247,8 +249,50 @@ class BasicTest(BaseTest):
         out, err = p.communicate()
         self.assertEqual(out.strip(), envpy.encode())
 
+
+@skipInVenv
+class EnsurePipTest(BaseTest):
+    """Test venv module installation of pip."""
+
+    def test_no_pip_by_default(self):
+        shutil.rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir)
+        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
+        try_import = 'try:\n import pip\nexcept ImportError:\n print("OK")'
+        cmd = [envpy, '-c', try_import]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"OK")
+
+    def test_explicit_no_pip(self):
+        shutil.rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, with_pip=False)
+        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
+        try_import = 'try:\n import pip\nexcept ImportError:\n print("OK")'
+        cmd = [envpy, '-c', try_import]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"OK")
+
+    def test_with_pip(self):
+        shutil.rmtree(self.env_dir)
+        self.run_with_capture(venv.create, self.env_dir, with_pip=True)
+        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
+        cmd = [envpy, '-m', 'pip', '--version']
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        self.assertEqual(err, b"")
+        self.assertTrue(out.startswith(b"pip"))
+        self.assertIn(self.env_dir.encode(), out)
+
+
 def test_main():
-    run_unittest(BasicTest)
+    run_unittest(BasicTest, EnsurePipTest)
 
 if __name__ == "__main__":
     test_main()
