@@ -3023,7 +3023,7 @@ cert_store_stats(PySSLContext *self)
 }
 
 PyDoc_STRVAR(PySSL_get_ca_certs_doc,
-"get_ca_certs([der=False]) -> list of loaded certificate\n\
+"get_ca_certs(binary_form=False) -> list of loaded certificate\n\
 \n\
 Returns a list of dicts with information of loaded CA certs. If the\n\
 optional argument is True, returns a DER-encoded copy of the CA certificate.\n\
@@ -3031,14 +3031,16 @@ NOTE: Certificates in a capath directory aren't loaded unless they have\n\
 been used at least once.");
 
 static PyObject *
-get_ca_certs(PySSLContext *self, PyObject *args)
+get_ca_certs(PySSLContext *self, PyObject *args, PyObject *kwds)
 {
+    char *kwlist[] = {"binary_form", NULL};
     X509_STORE *store;
     PyObject *ci = NULL, *rlist = NULL;
     int i;
     int binary_mode = 0;
 
-    if (!PyArg_ParseTuple(args, "|p:get_ca_certs", &binary_mode)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|p:get_ca_certs",
+                                     kwlist, &binary_mode)) {
         return NULL;
     }
 
@@ -3119,7 +3121,7 @@ static struct PyMethodDef context_methods[] = {
     {"cert_store_stats", (PyCFunction) cert_store_stats,
                     METH_NOARGS, PySSL_get_stats_doc},
     {"get_ca_certs", (PyCFunction) get_ca_certs,
-                    METH_VARARGS, PySSL_get_ca_certs_doc},
+                    METH_VARARGS | METH_KEYWORDS, PySSL_get_ca_certs_doc},
     {NULL, NULL}        /* sentinel */
 };
 
