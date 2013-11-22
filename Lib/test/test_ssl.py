@@ -1816,7 +1816,7 @@ else:
             context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             context.verify_mode = ssl.CERT_REQUIRED
             context.load_verify_locations(SIGNING_CA)
-            context.verify_flags = ssl.VERIFY_DEFAULT
+            self.assertEqual(context.verify_flags, ssl.VERIFY_DEFAULT)
 
             # VERIFY_DEFAULT should pass
             server = ThreadedEchoServer(context=server_context, chatty=True)
@@ -1827,7 +1827,7 @@ else:
                     self.assertTrue(cert, "Can't get peer certificate.")
 
             # VERIFY_CRL_CHECK_LEAF without a loaded CRL file fails
-            context.verify_flags = ssl.VERIFY_CRL_CHECK_LEAF
+            context.verify_flags |= ssl.VERIFY_CRL_CHECK_LEAF
 
             server = ThreadedEchoServer(context=server_context, chatty=True)
             with server:
