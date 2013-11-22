@@ -154,7 +154,8 @@ class TestPartialC(TestPartial, unittest.TestCase):
     def test_repr(self):
         args = (object(), object())
         args_repr = ', '.join(repr(a) for a in args)
-        kwargs = {'a': object(), 'b': object()}
+        #kwargs = {'a': object(), 'b': object()}
+        kwargs = {'a': object()}
         kwargs_repr = ', '.join("%s=%r" % (k, v) for k, v in kwargs.items())
         if self.partial is c_functools.partial:
             name = 'functools.partial'
