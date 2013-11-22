@@ -90,9 +90,9 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         self.assertNotEqual(m2a, m2)
 
         # Test keys, items, values
-        self.assertEqual(u2.keys(), d2.keys())
-        self.assertEqual(u2.items(), d2.items())
-        self.assertEqual(list(u2.values()), list(d2.values()))
+        self.assertEqual(sorted(u2.keys()), sorted(d2.keys()))
+        self.assertEqual(sorted(u2.items()), sorted(d2.items()))
+        self.assertEqual(sorted(u2.values()), sorted(d2.values()))
 
         # Test "in".
         for i in u2.keys():
