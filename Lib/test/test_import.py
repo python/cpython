@@ -1036,11 +1036,14 @@ class ImportTracebackTests(unittest.TestCase):
         # away from the traceback.
         self.create_module("foo", "")
         importlib = sys.modules['_frozen_importlib']
-        old_load_module = importlib.SourceLoader.load_module
+        if 'load_module' in vars(importlib.SourceLoader):
+            old_exec_module = importlib.SourceLoader.exec_module
+        else:
+            old_exec_module = None
         try:
-            def load_module(*args):
+            def exec_module(*args):
                 1/0
-            importlib.SourceLoader.load_module = load_module
+            importlib.SourceLoader.exec_module = exec_module
             try:
                 import foo
             except ZeroDivisionError as e:
@@ -1049,7 +1052,10 @@ class ImportTracebackTests(unittest.TestCase):
                 self.fail("ZeroDivisionError should have been raised")
             self.assert_traceback(tb, [__file__, '<frozen importlib', __file__])
         finally:
-            importlib.SourceLoader.load_module = old_load_module
+            if old_exec_module is None:
+                del importlib.SourceLoader.exec_module
+            else:
+                importlib.SourceLoader.exec_module = old_exec_module
 
     @unittest.skipUnless(TESTFN_UNENCODABLE, 'need TESTFN_UNENCODABLE')
     def test_unencodable_filename(self):

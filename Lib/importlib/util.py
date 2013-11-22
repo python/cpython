@@ -3,13 +3,14 @@
 from ._bootstrap import MAGIC_NUMBER
 from ._bootstrap import cache_from_source
 from ._bootstrap import decode_source
-from ._bootstrap import module_to_load
-from ._bootstrap import set_loader
-from ._bootstrap import set_package
 from ._bootstrap import source_from_cache
+from ._bootstrap import spec_from_loader
+from ._bootstrap import spec_from_file_location
 from ._bootstrap import _resolve_name
 
+from contextlib import contextmanager
 import functools
+import sys
 import warnings
 
 
@@ -26,6 +27,58 @@ def resolve_name(name, package):
             break
         level += 1
     return _resolve_name(name[level:], package, level)
+
+
+@contextmanager
+def _module_to_load(name):
+    is_reload = name in sys.modules
+
+    module = sys.modules.get(name)
+    if not is_reload:
+        # This must be done before open() is called as the 'io' module
+        # implicitly imports 'locale' and would otherwise trigger an
+        # infinite loop.
+        module = type(sys)(name)
+        # This must be done before putting the module in sys.modules
+        # (otherwise an optimization shortcut in import.c becomes wrong)
+        module.__initializing__ = True
+        sys.modules[name] = module
+    try:
+        yield module
+    except Exception:
+        if not is_reload:
+            try:
+                del sys.modules[name]
+            except KeyError:
+                pass
+    finally:
+        module.__initializing__ = False
+
+
+# XXX deprecate
+def set_package(fxn):
+    """Set __package__ on the returned module."""
+    @functools.wraps(fxn)
+    def set_package_wrapper(*args, **kwargs):
+        module = fxn(*args, **kwargs)
+        if getattr(module, '__package__', None) is None:
+            module.__package__ = module.__name__
+            if not hasattr(module, '__path__'):
+                module.__package__ = module.__package__.rpartition('.')[0]
+        return module
+    return set_package_wrapper
+
+
+# XXX deprecate
+def set_loader(fxn):
+    """Set __loader__ on the returned module."""
+    @functools.wraps(fxn)
+    def set_loader_wrapper(self, *args, **kwargs):
+        module = fxn(self, *args, **kwargs)
+        if getattr(module, '__loader__', None) is None:
+            module.__loader__ = self
+        return module
+    return set_loader_wrapper
 
 
 def module_for_loader(fxn):
@@ -46,13 +99,11 @@ def module_for_loader(fxn):
     the second argument.
 
     """
-    warnings.warn('To make it easier for subclasses, please use '
-                  'importlib.util.module_to_load() and '
-                  'importlib.abc.Loader.init_module_attrs()',
+    warnings.warn('The import system now takes care of this automatically.',
                   PendingDeprecationWarning, stacklevel=2)
     @functools.wraps(fxn)
     def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        with module_to_load(fullname) as module:
+        with _module_to_load(fullname) as module:
             module.__loader__ = self
             try:
                 is_package = self.is_package(fullname)

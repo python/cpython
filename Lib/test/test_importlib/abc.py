@@ -81,11 +81,6 @@ class LoaderTests(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def test_module_reuse(self):
-        """If a module is already in sys.modules, it should be reused."""
-        pass
-
-    @abc.abstractmethod
     def test_state_after_failure(self):
         """If a module is already in sys.modules and a reload fails
         (e.g. a SyntaxError), the module should be in the state it was before

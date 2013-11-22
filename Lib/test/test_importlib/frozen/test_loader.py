@@ -3,9 +3,81 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import unittest
+
+import sys
 from test.support import captured_stdout
 import types
+import unittest
+
+
+class ExecModuleTests(abc.LoaderTests):
+
+    def exec_module(self, name):
+        with util.uncache(name), captured_stdout() as stdout:
+            spec = self.machinery.ModuleSpec(
+                    name, self.machinery.FrozenImporter, origin='frozen',
+                    is_package=self.machinery.FrozenImporter.is_package(name))
+            module = types.ModuleType(name)
+            module.__spec__ = spec
+            assert not hasattr(module, 'initialized')
+            self.machinery.FrozenImporter.exec_module(module)
+            self.assertTrue(module.initialized)
+            self.assertTrue(hasattr(module, '__spec__'))
+            self.assertEqual(module.__spec__.origin, 'frozen')
+            return module, stdout.getvalue()
+
+    def test_module(self):
+        name = '__hello__'
+        module, output = self.exec_module(name)
+        check = {'__name__': name}
+        for attr, value in check.items():
+            self.assertEqual(getattr(module, attr), value)
+        self.assertEqual(output, 'Hello world!\n')
+        self.assertTrue(hasattr(module, '__spec__'))
+
+    def test_package(self):
+        name = '__phello__'
+        module, output = self.exec_module(name)
+        check = {'__name__': name}
+        for attr, value in check.items():
+            attr_value = getattr(module, attr)
+            self.assertEqual(attr_value, value,
+                        'for {name}.{attr}, {given!r} != {expected!r}'.format(
+                                 name=name, attr=attr, given=attr_value,
+                                 expected=value))
+        self.assertEqual(output, 'Hello world!\n')
+
+    def test_lacking_parent(self):
+        name = '__phello__.spam'
+        with util.uncache('__phello__'):
+            module, output = self.exec_module(name)
+            check = {'__name__': name}
+            for attr, value in check.items():
+                attr_value = getattr(module, attr)
+                self.assertEqual(attr_value, value,
+                        'for {name}.{attr}, {given} != {expected!r}'.format(
+                                 name=name, attr=attr, given=attr_value,
+                                 expected=value))
+            self.assertEqual(output, 'Hello world!\n')
+
+
+    def test_module_repr(self):
+        name = '__hello__'
+        module, output = self.exec_module(name)
+        self.assertEqual(repr(module),
+                         "<module '__hello__' (frozen)>")
+
+    # No way to trigger an error in a frozen module.
+    test_state_after_failure = None
+
+    def test_unloadable(self):
+        assert self.machinery.FrozenImporter.find_module('_not_real') is None
+        with self.assertRaises(ImportError) as cm:
+            self.exec_module('_not_real')
+        self.assertEqual(cm.exception.name, '_not_real')
+
+Frozen_ExecModuleTests, Source_ExecModuleTests = util.test_both(ExecModuleTests,
+                                                        machinery=machinery)
 
 
 class LoaderTests(abc.LoaderTests):
@@ -68,9 +140,8 @@ class LoaderTests(abc.LoaderTests):
             self.assertEqual(repr(module),
                              "<module '__hello__' (frozen)>")
 
-    def test_state_after_failure(self):
-        # No way to trigger an error in a frozen module.
-        pass
+    # No way to trigger an error in a frozen module.
+    test_state_after_failure = None
 
     def test_unloadable(self):
         assert self.machinery.FrozenImporter.find_module('_not_real') is None

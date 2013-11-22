@@ -165,6 +165,96 @@ class Source_FindLoaderTests(FindLoaderTests, unittest.TestCase):
     init = source_init
 
 
+class FindSpecTests:
+
+    class FakeMetaFinder:
+        @staticmethod
+        def find_spec(name, path=None, target=None): return name, path, target
+
+    def test_sys_modules(self):
+        name = 'some_mod'
+        with util.uncache(name):
+            module = types.ModuleType(name)
+            loader = 'a loader!'
+            spec = self.machinery.ModuleSpec(name, loader)
+            module.__loader__ = loader
+            module.__spec__ = spec
+            sys.modules[name] = module
+            found = self.init.find_spec(name)
+            self.assertEqual(found, spec)
+
+    def test_sys_modules_without___loader__(self):
+        name = 'some_mod'
+        with util.uncache(name):
+            module = types.ModuleType(name)
+            del module.__loader__
+            loader = 'a loader!'
+            spec = self.machinery.ModuleSpec(name, loader)
+            module.__spec__ = spec
+            sys.modules[name] = module
+            found = self.init.find_spec(name)
+            self.assertEqual(found, spec)
+
+    def test_sys_modules_spec_is_None(self):
+        name = 'some_mod'
+        with util.uncache(name):
+            module = types.ModuleType(name)
+            module.__spec__ = None
+            sys.modules[name] = module
+            with self.assertRaises(ValueError):
+                self.init.find_spec(name)
+
+    def test_sys_modules_loader_is_None(self):
+        name = 'some_mod'
+        with util.uncache(name):
+            module = types.ModuleType(name)
+            spec = self.machinery.ModuleSpec(name, None)
+            module.__spec__ = spec
+            sys.modules[name] = module
+            found = self.init.find_spec(name)
+            self.assertEqual(found, spec)
+
+    def test_sys_modules_spec_is_not_set(self):
+        name = 'some_mod'
+        with util.uncache(name):
+            module = types.ModuleType(name)
+            try:
+                del module.__spec__
+            except AttributeError:
+                pass
+            sys.modules[name] = module
+            with self.assertRaises(ValueError):
+                self.init.find_spec(name)
+
+    def test_success(self):
+        name = 'some_mod'
+        with util.uncache(name):
+            with util.import_state(meta_path=[self.FakeMetaFinder]):
+                self.assertEqual((name, None, None),
+                                 self.init.find_spec(name))
+
+    def test_success_path(self):
+        # Searching on a path should work.
+        name = 'some_mod'
+        path = 'path to some place'
+        with util.uncache(name):
+            with util.import_state(meta_path=[self.FakeMetaFinder]):
+                self.assertEqual((name, path, None),
+                                 self.init.find_spec(name, path))
+
+    def test_nothing(self):
+        # None is returned upon failure to find a loader.
+        self.assertIsNone(self.init.find_spec('nevergoingtofindthismodule'))
+
+class Frozen_FindSpecTests(FindSpecTests, unittest.TestCase):
+    init = frozen_init
+    machinery = frozen_machinery
+
+class Source_FindSpecTests(FindSpecTests, unittest.TestCase):
+    init = source_init
+    machinery = source_machinery
+
+
 class ReloadTests:
 
     """Test module reloading for builtin and extension modules."""
@@ -219,6 +309,7 @@ class ReloadTests:
         with support.temp_cwd(None) as cwd:
             with util.uncache('spam'):
                 with support.DirsOnSysPath(cwd):
+                    # Start as a plain module.
                     self.init.invalidate_caches()
                     path = os.path.join(cwd, name + '.py')
                     cached = self.util.cache_from_source(path)
@@ -232,11 +323,14 @@ class ReloadTests:
                     support.create_empty_file(path)
                     module = self.init.import_module(name)
                     ns = vars(module)
-                    del ns['__initializing__']
                     loader = ns.pop('__loader__')
+                    spec = ns.pop('__spec__')
+                    self.assertEqual(spec.name, name)
+                    self.assertEqual(spec.loader, loader)
                     self.assertEqual(loader.path, path)
                     self.assertEqual(ns, expected)
 
+                    # Change to a package.
                     self.init.invalidate_caches()
                     init_path = os.path.join(cwd, name, '__init__.py')
                     cached = self.util.cache_from_source(init_path)
@@ -252,18 +346,21 @@ class ReloadTests:
                     os.rename(path, init_path)
                     reloaded = self.init.reload(module)
                     ns = vars(reloaded)
-                    del ns['__initializing__']
                     loader = ns.pop('__loader__')
+                    spec = ns.pop('__spec__')
+                    self.assertEqual(spec.name, name)
+                    self.assertEqual(spec.loader, loader)
                     self.assertIs(reloaded, module)
                     self.assertEqual(loader.path, init_path)
+                    self.maxDiff = None
                     self.assertEqual(ns, expected)
 
     def test_reload_namespace_changed(self):
-        self.maxDiff = None
         name = 'spam'
         with support.temp_cwd(None) as cwd:
             with util.uncache('spam'):
                 with support.DirsOnSysPath(cwd):
+                    # Start as a namespace package.
                     self.init.invalidate_caches()
                     bad_path = os.path.join(cwd, name, '__init.py')
                     cached = self.util.cache_from_source(bad_path)
@@ -276,9 +373,12 @@ class ReloadTests:
                         init_file.write('eggs = None')
                     module = self.init.import_module(name)
                     ns = vars(module)
-                    del ns['__initializing__']
                     loader = ns.pop('__loader__')
                     path = ns.pop('__path__')
+                    spec = ns.pop('__spec__')
+                    self.assertEqual(spec.name, name)
+                    self.assertIs(spec.loader, None)
+                    self.assertIsNot(loader, None)
                     self.assertEqual(set(path),
                                      set([os.path.dirname(bad_path)]))
                     with self.assertRaises(AttributeError):
@@ -286,6 +386,7 @@ class ReloadTests:
                         loader.path
                     self.assertEqual(ns, expected)
 
+                    # Change to a regular package.
                     self.init.invalidate_caches()
                     init_path = os.path.join(cwd, name, '__init__.py')
                     cached = self.util.cache_from_source(init_path)
@@ -301,8 +402,10 @@ class ReloadTests:
                     os.rename(bad_path, init_path)
                     reloaded = self.init.reload(module)
                     ns = vars(reloaded)
-                    del ns['__initializing__']
                     loader = ns.pop('__loader__')
+                    spec = ns.pop('__spec__')
+                    self.assertEqual(spec.name, name)
+                    self.assertEqual(spec.loader, loader)
                     self.assertIs(reloaded, module)
                     self.assertEqual(loader.path, init_path)
                     self.assertEqual(ns, expected)
@@ -371,12 +474,23 @@ class StartupTests:
         # Issue #17098: all modules should have __loader__ defined.
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
-                self.assertTrue(hasattr(module, '__loader__'),
-                                '{!r} lacks a __loader__ attribute'.format(name))
-                if self.machinery.BuiltinImporter.find_module(name):
-                    self.assertIsNot(module.__loader__, None)
-                elif self.machinery.FrozenImporter.find_module(name):
-                    self.assertIsNot(module.__loader__, None)
+                with self.subTest(name=name):
+                    self.assertTrue(hasattr(module, '__loader__'),
+                                    '{!r} lacks a __loader__ attribute'.format(name))
+                    if self.machinery.BuiltinImporter.find_module(name):
+                        self.assertIsNot(module.__loader__, None)
+                    elif self.machinery.FrozenImporter.find_module(name):
+                        self.assertIsNot(module.__loader__, None)
+
+    def test_everyone_has___spec__(self):
+        for name, module in sys.modules.items():
+            if isinstance(module, types.ModuleType):
+                with self.subTest(name=name):
+                    self.assertTrue(hasattr(module, '__spec__'))
+                    if self.machinery.BuiltinImporter.find_module(name):
+                        self.assertIsNot(module.__spec__, None)
+                    elif self.machinery.FrozenImporter.find_module(name):
+                        self.assertIsNot(module.__spec__, None)
 
 class Frozen_StartupTests(StartupTests, unittest.TestCase):
     machinery = frozen_machinery

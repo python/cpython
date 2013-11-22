@@ -46,19 +46,42 @@ def invalidate_caches():
             finder.invalidate_caches()
 
 
-def find_loader(name, path=None):
-    """Find the loader for the specified module.
+def find_spec(name, path=None):
+    """Return the spec for the specified module.
 
     First, sys.modules is checked to see if the module was already imported. If
-    so, then sys.modules[name].__loader__ is returned. If that happens to be
+    so, then sys.modules[name].__spec__ is returned. If that happens to be
     set to None, then ValueError is raised. If the module is not in
-    sys.modules, then sys.meta_path is searched for a suitable loader with the
-    value of 'path' given to the finders. None is returned if no loader could
+    sys.modules, then sys.meta_path is searched for a suitable spec with the
+    value of 'path' given to the finders. None is returned if no spec could
     be found.
 
     Dotted names do not have their parent packages implicitly imported. You will
     most likely need to explicitly import all parent packages in the proper
-    order for a submodule to get the correct loader.
+    order for a submodule to get the correct spec.
+
+    """
+    if name not in sys.modules:
+        return _bootstrap._find_spec(name, path)
+    else:
+        module = sys.modules[name]
+        if module is None:
+            return None
+        try:
+            spec = module.__spec__
+        except AttributeError:
+            raise ValueError('{}.__spec__ is not set'.format(name))
+        else:
+            if spec is None:
+                raise ValueError('{}.__spec__ is None'.format(name))
+            return spec
+
+
+# XXX Deprecate...
+def find_loader(name, path=None):
+    """Return the loader for the specified module.
+
+    This is a backward-compatible wrapper around find_spec().
 
     """
     try:
@@ -71,7 +94,18 @@ def find_loader(name, path=None):
         pass
     except AttributeError:
         raise ValueError('{}.__loader__ is not set'.format(name))
-    return _bootstrap._find_module(name, path)
+
+    spec = _bootstrap._find_spec(name, path)
+    # We won't worry about malformed specs (missing attributes).
+    if spec is None:
+        return None
+    if spec.loader is None:
+        if spec.submodule_search_locations is None:
+            raise ImportError('spec for {} missing loader'.format(name),
+                              name=name)
+        raise ImportError('namespace packages do not have loaders',
+                          name=name)
+    return spec.loader
 
 
 def import_module(name, package=None):
@@ -106,7 +140,11 @@ def reload(module):
     """
     if not module or not isinstance(module, types.ModuleType):
         raise TypeError("reload() argument must be module")
-    name = module.__name__
+    try:
+        name = module.__spec__.name
+    except AttributeError:
+        name = module.__name__
+
     if sys.modules.get(name) is not module:
         msg = "module {} not in sys.modules"
         raise ImportError(msg.format(name), name=name)
@@ -118,13 +156,11 @@ def reload(module):
         if parent_name and parent_name not in sys.modules:
             msg = "parent {!r} not in sys.modules"
             raise ImportError(msg.format(parent_name), name=parent_name)
-        loader = _bootstrap._find_module(name, None)
-        if loader is None:
-            raise ImportError(_bootstrap._ERR_MSG.format(name), name=name)
-        module.__loader__ = loader
-        loader.load_module(name)
+        spec = module.__spec__ = _bootstrap._find_spec(name, None, module)
+        methods = _bootstrap._SpecMethods(spec)
+        methods.exec(module)
         # The module may have replaced itself in sys.modules!
-        return sys.modules[module.__name__]
+        return sys.modules[name]
     finally:
         try:
             del _RELOADING[name]

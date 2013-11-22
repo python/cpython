@@ -40,12 +40,18 @@ class MetaPathFinder(Finder):
 
     """Abstract base class for import finders on sys.meta_path."""
 
-    @abc.abstractmethod
+    # We don't define find_spec() here since that would break
+    # hasattr checks we do to support backward compatibility.
+
+    # XXX Deprecate
     def find_module(self, fullname, path):
-        """Abstract method which, when implemented, should find a module.
-        The fullname is a str and the path is a list of strings or None.
-        Returns a Loader object or None.
+        """Return a loader for the module.
+
+        If no module is found, return None.  The fullname is a str and
+        the path is a list of strings or None.
+
         """
+        return None
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
@@ -60,17 +66,25 @@ class PathEntryFinder(Finder):
 
     """Abstract base class for path entry finders used by PathFinder."""
 
-    @abc.abstractmethod
+    # We don't define find_spec() here since that would break
+    # hasattr checks we do to support backward compatibility.
+
+    # XXX Deprecate.
     def find_loader(self, fullname):
-        """Abstract method which, when implemented, returns a module loader or
-        a possible part of a namespace.
-        The fullname is a str.  Returns a 2-tuple of (Loader, portion) where
-        portion is a sequence of file system locations contributing to part of
-        a namespace package. The sequence may be empty and the loader may be
-        None.
+        """Return (loader, namespace portion) for the path entry.
+
+        The fullname is a str.  The namespace portion is a sequence of
+        path entries contributing to part of a namespace package. The
+        sequence may be empty.  If loader is not None, the portion will
+        be ignored.
+
+        The portion will be discarded if another path entry finder
+        locates the module as a normal module or package.
+
         """
         return None, []
 
+    # XXX Deprecate.
     find_module = _bootstrap._find_module_shim
 
     def invalidate_caches(self):
@@ -83,34 +97,46 @@ _register(PathEntryFinder, machinery.FileFinder)
 
 class Loader(metaclass=abc.ABCMeta):
 
-    """Abstract base class for import loaders.
+    """Abstract base class for import loaders."""
 
-    The optional method module_repr(module) may be defined to provide a
-    repr for a module when appropriate (see PEP 420). The __repr__() method on
-    the module type will use the method as appropriate.
+    def create_module(self, spec):
+        """Return a module to initialize and into which to load.
 
-    """
+        This method should raise ImportError if anything prevents it
+        from creating a new module.  It may return None to indicate
+        that the spec should create the new module.
 
-    @abc.abstractmethod
+        create_module() is optional.
+
+        """
+        # By default, defer to _SpecMethods.create() for the new module.
+        return None
+
+    # We don't define exec_module() here since that would break
+    # hasattr checks we do to support backward compatibility.
+
+    # XXX Deprecate.
     def load_module(self, fullname):
-        """Abstract method which when implemented should load a module.
-        The fullname is a str.
+        """Return the loaded module.
+
+        The module must be added to sys.modules and have import-related
+        attributes set properly.  The fullname is a str.
 
         ImportError is raised on failure.
+
         """
         raise ImportError
 
+    # XXX Deprecate.
     def module_repr(self, module):
         """Return a module's repr.
 
         Used by the module type when the method does not raise
         NotImplementedError.
-        """
-        raise NotImplementedError
 
-    def init_module_attrs(self, module):
-        """Set the module's __loader__ attribute."""
-        module.__loader__ = self
+        """
+        # The exception will cause ModuleType.__repr__ to ignore this method.
+        raise NotImplementedError
 
 
 class ResourceLoader(Loader):
@@ -138,12 +164,11 @@ class InspectLoader(Loader):
 
     """
 
-    @abc.abstractmethod
     def is_package(self, fullname):
-        """Abstract method which when implemented should return whether the
+        """Optional method which when implemented should return whether the
         module is a package.  The fullname is a str.  Returns a bool.
 
-        Raises ImportError is the module cannot be found.
+        Raises ImportError if the module cannot be found.
         """
         raise ImportError
 
@@ -176,19 +201,10 @@ class InspectLoader(Loader):
         argument should be where the data was retrieved (when applicable)."""
         return compile(data, path, 'exec', dont_inherit=True)
 
-    def init_module_attrs(self, module):
-        """Initialize the __loader__ and __package__ attributes of the module.
-
-        The name of the module is gleaned from module.__name__. The __package__
-        attribute is set based on self.is_package().
-        """
-        super().init_module_attrs(module)
-        _bootstrap._init_package_attrs(self, module)
-
+    exec_module = _bootstrap._LoaderBasics.exec_module
     load_module = _bootstrap._LoaderBasics.load_module
 
-_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter,
-          _bootstrap.NamespaceLoader)
+_register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter)
 
 
 class ExecutionLoader(InspectLoader):
@@ -224,18 +240,6 @@ class ExecutionLoader(InspectLoader):
             return self.source_to_code(source)
         else:
             return self.source_to_code(source, path)
-
-    def init_module_attrs(self, module):
-        """Initialize the module's attributes.
-
-        It is assumed that the module's name has been set on module.__name__.
-        It is also assumed that any path returned by self.get_filename() uses
-        (one of) the operating system's path separator(s) to separate filenames
-        from directories in order to set __path__ intelligently.
-        InspectLoader.init_module_attrs() sets __loader__ and __package__.
-        """
-        super().init_module_attrs(module)
-        _bootstrap._init_file_attrs(self, module)
 
 _register(ExecutionLoader, machinery.ExtensionFileLoader)
 

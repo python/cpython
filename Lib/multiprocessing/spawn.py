@@ -245,14 +245,13 @@ def import_main_path(main_path):
         # We should not try to load __main__
         # since that would execute 'if __name__ == "__main__"'
         # clauses, potentially causing a psuedo fork bomb.
-        loader = importlib.find_loader(main_name, path=dirs)
         main_module = types.ModuleType(main_name)
-        try:
-            loader.init_module_attrs(main_module)
-        except AttributeError:  # init_module_attrs is optional
-            pass
+        # XXX Use a target of main_module?
+        spec = importlib.find_spec(main_name, path=dirs)
+        methods = importlib._bootstrap._SpecMethods(spec)
+        methods.init_module_attrs(main_module)
         main_module.__name__ = '__mp_main__'
-        code = loader.get_code(main_name)
+        code = spec.loader.get_code(main_name)
         exec(code, main_module.__dict__)
 
         old_main_modules.append(sys.modules['__main__'])

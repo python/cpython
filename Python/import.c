@@ -1232,7 +1232,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                                  int level)
 {
     _Py_IDENTIFIER(__import__);
-    _Py_IDENTIFIER(__initializing__);
+    _Py_IDENTIFIER(__spec__);
+    _Py_IDENTIFIER(_initializing);
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__path__);
     _Py_IDENTIFIER(__name__);
@@ -1426,16 +1427,21 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         goto error_with_unlock;
     }
     else if (mod != NULL) {
-        PyObject *value;
+        PyObject *value = NULL;
+        PyObject *spec;
         int initializing = 0;
 
         Py_INCREF(mod);
         /* Optimization: only call _bootstrap._lock_unlock_module() if
-           __initializing__ is true.
-           NOTE: because of this, __initializing__ must be set *before*
+           __spec__._initializing is true.
+           NOTE: because of this, initializing must be set *before*
            stuffing the new module in sys.modules.
          */
-        value = _PyObject_GetAttrId(mod, &PyId___initializing__);
+        spec = _PyObject_GetAttrId(mod, &PyId___spec__);
+        if (spec != NULL) {
+            value = _PyObject_GetAttrId(spec, &PyId__initializing);
+            Py_DECREF(spec);
+        }
         if (value == NULL)
             PyErr_Clear();
         else {

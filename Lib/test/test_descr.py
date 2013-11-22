@@ -2259,7 +2259,7 @@ order (MRO) for bases """
         minstance.b = 2
         minstance.a = 1
         default_attributes = ['__name__', '__doc__', '__package__',
-                              '__loader__']
+                              '__loader__', '__spec__']
         names = [x for x in dir(minstance) if x not in default_attributes]
         self.assertEqual(names, ['a', 'b'])
 

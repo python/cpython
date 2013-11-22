@@ -430,6 +430,7 @@ def iter_importers(fullname=""):
     for item in path:
         yield get_importer(item)
 
+
 def get_loader(module_or_name):
     """Get a PEP 302 "loader" object for module_or_name
 
@@ -570,6 +571,7 @@ def extend_path(path, name):
 
     return path
 
+
 def get_data(package, resource):
     """Get a resource from a package.
 
@@ -592,10 +594,15 @@ def get_data(package, resource):
     which does not support get_data(), then None is returned.
     """
 
-    loader = get_loader(package)
+    spec = importlib.find_spec(package)
+    if spec is None:
+        return None
+    loader = spec.loader
     if loader is None or not hasattr(loader, 'get_data'):
         return None
-    mod = sys.modules.get(package) or loader.load_module(package)
+    # XXX needs test
+    mod = (sys.modules.get(package) or
+           importlib._bootstrap._SpecMethods(spec).load())
     if mod is None or not hasattr(mod, '__file__'):
         return None
 
