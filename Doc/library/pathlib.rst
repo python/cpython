@@ -20,7 +20,7 @@ The main point of entry is the :class:`Path` class, which will instantiate
 a :ref:`concrete path <concrete-paths>` for the current platform.
 
 .. note::
-   This module module has been included in the standard library on a
+   This module has been included in the standard library on a
    :term:`provisional basis <provisional package>`. Backwards incompatible
    changes (up to and including removal of the package) may occur if deemed
    necessary by the core developers.
@@ -250,7 +250,7 @@ property:
 Methods and properties
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Pure paths provide the following methods an properties:
+Pure paths provide the following methods and properties:
 
 .. data:: PurePath.drive
 
@@ -454,7 +454,7 @@ Pure paths provide the following methods an properties:
 
 .. method:: PurePath.joinpath(*other)
 
-   Calling this method is equivalent to indexing the path with each of
+   Calling this method is equivalent to combining the path with each of
    the *other* arguments in turn::
 
       >>> PurePosixPath('/etc').joinpath('passwd')
@@ -871,4 +871,3 @@ call fails (for example because the path doesn't exist):
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
-

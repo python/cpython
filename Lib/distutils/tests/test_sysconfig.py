@@ -1,7 +1,6 @@
 """Tests for distutils.sysconfig."""
 import os
 import shutil
-import test
 import unittest
 
 from distutils import sysconfig
@@ -9,8 +8,7 @@ from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
 from test.support import TESTFN, run_unittest
 
-class SysconfigTestCase(support.EnvironGuard,
-                        unittest.TestCase):
+class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
         super(SysconfigTestCase, self).setUp()
         self.makefile = None
@@ -32,7 +30,6 @@ class SysconfigTestCase(support.EnvironGuard,
         self.assertTrue(os.path.isfile(config_h), config_h)
 
     def test_get_python_lib(self):
-        lib_dir = sysconfig.get_python_lib()
         # XXX doesn't work on Linux when Python was never installed before
         #self.assertTrue(os.path.isdir(lib_dir), lib_dir)
         # test for pythonxx.lib?
@@ -67,8 +64,9 @@ class SysconfigTestCase(support.EnvironGuard,
             self.assertTrue(os.path.exists(Python_h), Python_h)
             self.assertTrue(sysconfig._is_python_source_dir(srcdir))
         elif os.name == 'posix':
-            self.assertEqual(os.path.dirname(sysconfig.get_makefile_filename()),
-                                 srcdir)
+            self.assertEqual(
+                os.path.dirname(sysconfig.get_makefile_filename()),
+                srcdir)
 
     def test_srcdir_independent_of_cwd(self):
         # srcdir should be independent of the current working directory
@@ -129,10 +127,13 @@ class SysconfigTestCase(support.EnvironGuard,
 
     def test_sysconfig_module(self):
         import sysconfig as global_sysconfig
-        self.assertEqual(global_sysconfig.get_config_var('CFLAGS'), sysconfig.get_config_var('CFLAGS'))
-        self.assertEqual(global_sysconfig.get_config_var('LDFLAGS'), sysconfig.get_config_var('LDFLAGS'))
+        self.assertEqual(global_sysconfig.get_config_var('CFLAGS'),
+                         sysconfig.get_config_var('CFLAGS'))
+        self.assertEqual(global_sysconfig.get_config_var('LDFLAGS'),
+                         sysconfig.get_config_var('LDFLAGS'))
 
-    @unittest.skipIf(sysconfig.get_config_var('CUSTOMIZED_OSX_COMPILER'),'compiler flags customized')
+    @unittest.skipIf(sysconfig.get_config_var('CUSTOMIZED_OSX_COMPILER'),
+                     'compiler flags customized')
     def test_sysconfig_compiler_vars(self):
         # On OS X, binary installers support extension module building on
         # various levels of the operating system with differing Xcode
@@ -151,9 +152,29 @@ class SysconfigTestCase(support.EnvironGuard,
         import sysconfig as global_sysconfig
         if sysconfig.get_config_var('CUSTOMIZED_OSX_COMPILER'):
             return
-        self.assertEqual(global_sysconfig.get_config_var('LDSHARED'), sysconfig.get_config_var('LDSHARED'))
-        self.assertEqual(global_sysconfig.get_config_var('CC'), sysconfig.get_config_var('CC'))
+        self.assertEqual(global_sysconfig.get_config_var('LDSHARED'),
+                         sysconfig.get_config_var('LDSHARED'))
+        self.assertEqual(global_sysconfig.get_config_var('CC'),
+                         sysconfig.get_config_var('CC'))
 
+    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
+                     'EXT_SUFFIX required for this test')
+    def test_SO_deprecation(self):
+        self.assertWarns(DeprecationWarning,
+                         sysconfig.get_config_var, 'SO')
+
+    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
+                     'EXT_SUFFIX required for this test')
+    def test_SO_value(self):
+        self.assertEqual(sysconfig.get_config_var('SO'),
+                         sysconfig.get_config_var('EXT_SUFFIX'))
+
+    @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
+                     'EXT_SUFFIX required for this test')
+    def test_SO_in_vars(self):
+        vars = sysconfig.get_config_vars()
+        self.assertIsNotNone(vars['SO'])
+        self.assertEqual(vars['SO'], vars['EXT_SUFFIX'])
 
 
 def test_suite():

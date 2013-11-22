@@ -518,6 +518,11 @@ def get_config_vars(*args):
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
 
+        # For backward compatibility, see issue19555
+        SO = _config_vars.get('EXT_SUFFIX')
+        if SO is not None:
+            _config_vars['SO'] = SO
+
         # Always convert srcdir to an absolute path
         srcdir = _config_vars.get('srcdir', project_base)
         if os.name == 'posix':
@@ -568,4 +573,7 @@ def get_config_var(name):
     returned by 'get_config_vars()'.  Equivalent to
     get_config_vars().get(name)
     """
+    if name == 'SO':
+        import warnings
+        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning)
     return get_config_vars().get(name)
