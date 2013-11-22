@@ -63,10 +63,18 @@ class ExecModTests(abc.LoaderTests):
     def test_already_imported(self):
         # Using the name of a module already imported but not a built-in should
         # still fail.
-        assert hasattr(unittest, '__file__')  # Not a built-in.
+        module_name = 'builtin_reload_test'
+        assert module_name not in sys.builtin_module_names
+        with util.uncache(module_name):
+            module = types.ModuleType(module_name)
+            spec = self.machinery.ModuleSpec(module_name,
+                                             self.machinery.BuiltinImporter,
+                                             origin='built-in')
+            module.__spec__ = spec
+            sys.modules[module_name] = module
         with self.assertRaises(ImportError) as cm:
-            self.load_spec('unittest')
-        self.assertEqual(cm.exception.name, 'unittest')
+            self.machinery.BuiltinImporter.exec_module(module)
+        self.assertEqual(cm.exception.name, module_name)
 
 
 Frozen_ExecModTests, Source_ExecModTests = util.test_both(ExecModTests,
@@ -120,10 +128,14 @@ class LoaderTests(abc.LoaderTests):
     def test_already_imported(self):
         # Using the name of a module already imported but not a built-in should
         # still fail.
-        assert hasattr(unittest, '__file__')  # Not a built-in.
+        module_name = 'builtin_reload_test'
+        assert module_name not in sys.builtin_module_names
+        with util.uncache(module_name):
+            module = types.ModuleType(module_name)
+            sys.modules[module_name] = module
         with self.assertRaises(ImportError) as cm:
-            self.load_module('unittest')
-        self.assertEqual(cm.exception.name, 'unittest')
+            self.load_module(module_name)
+        self.assertEqual(cm.exception.name, module_name)
 
 
 Frozen_LoaderTests, Source_LoaderTests = util.test_both(LoaderTests,
