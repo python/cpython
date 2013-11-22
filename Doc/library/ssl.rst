@@ -1093,6 +1093,18 @@ to speed up repeated connections from the same clients.
       >>> stats['hits'], stats['misses']
       (0, 0)
 
+.. method:: SSLContext.get_ca_certs(binary_form=False)
+
+   Returns a list of dicts with information of loaded CA certs. If the
+   optional argument is True, returns a DER-encoded copy of the CA
+   certificate.
+
+   .. note::
+      Certificates in a capath directory aren't loaded unless they have
+      been used at least once.
+
+   .. versionadded:: 3.4
+
 .. attribute:: SSLContext.options
 
    An integer representing the set of SSL options enabled on this context.
