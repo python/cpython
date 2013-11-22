@@ -65,6 +65,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17916: Added dis.Bytecode.from_traceback() and
+  dis.Bytecode.current_offset to easily display "current instruction"
+  markers in the new disassembly API (Patch by Claudiu Popa).
+
 - Issue #19552: venv now supports bootstrapping pip into virtual environments
 
 - Issue #17134: Finalize interface to Windows' certificate store. Cert and

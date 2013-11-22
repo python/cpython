@@ -406,7 +406,7 @@ class Bytecode:
 
     Iterating over this yields the bytecode operations as Instruction instances.
     """
-    def __init__(self, x, *, first_line=None):
+    def __init__(self, x, *, first_line=None, current_offset=None):
         self.codeobj = co = _get_code_object(x)
         if first_line is None:
             self.first_line = co.co_firstlineno
@@ -417,6 +417,7 @@ class Bytecode:
         self._cell_names = co.co_cellvars + co.co_freevars
         self._linestarts = dict(findlinestarts(co))
         self._original_object = x
+        self.current_offset = current_offset
 
     def __iter__(self):
         co = self.codeobj
@@ -429,6 +430,13 @@ class Bytecode:
         return "{}({!r})".format(self.__class__.__name__,
                                  self._original_object)
 
+    @classmethod
+    def from_traceback(cls, tb):
+        """ Construct a Bytecode from the given traceback """
+        while tb.tb_next:
+            tb = tb.tb_next
+        return cls(tb.tb_frame.f_code, current_offset=tb.tb_lasti)
+
     def info(self):
         """Return formatted information about the code object."""
         return _format_code_info(self.codeobj)
@@ -436,13 +444,18 @@ class Bytecode:
     def dis(self):
         """Return a formatted view of the bytecode operations."""
         co = self.codeobj
+        if self.current_offset is not None:
+            offset = self.current_offset
+        else:
+            offset = -1
         with io.StringIO() as output:
             _disassemble_bytes(co.co_code, varnames=co.co_varnames,
                                names=co.co_names, constants=co.co_consts,
                                cells=self._cell_names,
                                linestarts=self._linestarts,
                                line_offset=self._line_offset,
-                               file=output)
+                               file=output,
+                               lasti=offset)
             return output.getvalue()
 
 

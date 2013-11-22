@@ -536,21 +536,22 @@ class BasicSocketTests(unittest.TestCase):
         self.assertRaises(TypeError, ssl.enum_certificates)
         self.assertRaises(WindowsError, ssl.enum_certificates, "")
 
-        names = set()
-        ca = ssl.enum_certificates("CA")
-        self.assertIsInstance(ca, list)
-        for element in ca:
-            self.assertIsInstance(element, tuple)
-            self.assertEqual(len(element), 3)
-            cert, enc, trust = element
-            self.assertIsInstance(cert, bytes)
-            self.assertIn(enc, {"x509_asn", "pkcs_7_asn"})
-            self.assertIsInstance(trust, (set, bool))
-            if isinstance(trust, set):
-                names.update(trust)
+        trust_oids = set()
+        for storename in ("CA", "ROOT"):
+            store = ssl.enum_certificates(storename)
+            self.assertIsInstance(store, list)
+            for element in store:
+                self.assertIsInstance(element, tuple)
+                self.assertEqual(len(element), 3)
+                cert, enc, trust = element
+                self.assertIsInstance(cert, bytes)
+                self.assertIn(enc, {"x509_asn", "pkcs_7_asn"})
+                self.assertIsInstance(trust, (set, bool))
+                if isinstance(trust, set):
+                    trust_oids.update(trust)
 
         serverAuth = "1.3.6.1.5.5.7.3.1"
-        self.assertIn(serverAuth, names)
+        self.assertIn(serverAuth, trust_oids)
 
     @unittest.skipUnless(sys.platform == "win32", "Windows specific")
     def test_enum_crls(self):
@@ -584,7 +585,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(val, expected)
         self.assertIsInstance(val, ssl._ASN1Object)
         self.assertRaises(ValueError, ssl._ASN1Object.fromnid, -1)
-        self.assertRaises(ValueError, ssl._ASN1Object.fromnid, 100000)
+        with self.assertRaisesRegex(ValueError, "unknown NID 100000"):
+            ssl._ASN1Object.fromnid(100000)
         for i in range(1000):
             try:
                 obj = ssl._ASN1Object.fromnid(i)
@@ -602,7 +604,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(ssl._ASN1Object.fromname('serverAuth'), expected)
         self.assertEqual(ssl._ASN1Object.fromname('1.3.6.1.5.5.7.3.1'),
                          expected)
-        self.assertRaises(ValueError, ssl._ASN1Object.fromname, 'serverauth')
+        with self.assertRaisesRegex(ValueError, "unknown object 'serverauth'"):
+            ssl._ASN1Object.fromname('serverauth')
 
 
 class ContextTests(unittest.TestCase):
