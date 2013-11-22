@@ -357,6 +357,12 @@ Build
 - Issue #19373: Apply upstream change to Tk 8.5.15 fixing OS X 10.9
   screen refresh problem for OS X installer build.
 
+- Issue #19649: On OS X, the same set of file names are now installed
+  in bin directories for all configurations: non-framework vs framework,
+  and single arch vs universal builds.  pythonx.y-32 is now always
+  installed for 64-bit/32-bit universal builds.  The obsolete and
+  undocumented pythonw* symlinks are no longer installed anywhere.
+
 Tools/Demos
 -----------
 
