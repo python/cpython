@@ -78,12 +78,12 @@ below:
 
    .. attribute:: events
 
-      Events that must be waited for this file object.
+      Events that must be waited for on this file object.
 
    .. attribute:: data
 
       Optional opaque data associated to this file object: for example, this
-      could be used to store per-client session.
+      could be used to store a per-client session ID.
 
 
 .. class:: BaseSelector
@@ -122,7 +122,7 @@ below:
 
    .. method:: modify(fileobj, events, data=None)
 
-      Change a registered file object monitored events or attached data.
+      Change a registered file object's monitored events or attached data.
 
       This is equivalent to :meth:`BaseSelector.unregister(fileobj)` followed
       by :meth:`BaseSelector.register(fileobj, events, data)`, except that it
@@ -143,7 +143,7 @@ below:
       If *timeout* is ``None``, the call will block until a monitored file object
       becomes ready.
 
-      This returns a list of ``(key, events)`` tuple, one for each ready file
+      This returns a list of ``(key, events)`` tuples, one for each ready file
       object.
 
       *key* is the :class:`SelectorKey` instance corresponding to a ready file
@@ -159,7 +159,7 @@ below:
 
    .. method:: get_key(fileobj)
 
-      Return the key associated to a registered file object.
+      Return the key associated with a registered file object.
 
       This returns the :class:`SelectorKey` instance associated to this file
       object, or raises :exc:`KeyError` if the file object is not registered.
