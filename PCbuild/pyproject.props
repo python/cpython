@@ -17,7 +17,7 @@
     <PythonExe>$(OutDir)python$(PyDebugExt).exe</PythonExe>
     <KillPythonExe>$(OutDir)kill_python$(PyDebugExt).exe</KillPythonExe>
     <externalsDir>..\..</externalsDir>
-    <sqlite3Dir>$(externalsDir)\sqlite-3.7.12</sqlite3Dir>
+    <sqlite3Dir>$(externalsDir)\sqlite-3.8.1</sqlite3Dir>
     <bz2Dir>$(externalsDir)\bzip2-1.0.6</bz2Dir>
     <lzmaDir>$(externalsDir)\xz-5.0.3</lzmaDir>
     <opensslDir>$(externalsDir)\openssl-1.0.1e</opensslDir>

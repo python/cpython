@@ -207,7 +207,7 @@ _ssl
     The ssl sub-project does not have the ability to clean the OpenSSL
     build; if you need to rebuild, you'll have to clean it by hand.
 _sqlite3
-    Wraps SQLite 3.7.12, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.8.1, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter
