@@ -385,7 +385,8 @@ The new :class:`dis.Bytecode` class provides an object-oriented API for
 inspecting bytecode, both in human-readable form and for iterating over
 instructions.
 
-(Contributed by Nick Coghlan, Ryan Kelly and Thomas Kluyver in :issue:`11816`)
+(Contributed by Nick Coghlan, Ryan Kelly and Thomas Kluyver in :issue:`11816`
+and Claudiu Popa in :issue:`17916`)
 
 
 doctest
