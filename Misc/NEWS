@@ -352,6 +352,8 @@ Tests
 Build
 -----
 
+- Update SQLite to 3.8.1 on Windows.
+
 - Issue #16632: Enable DEP and ASLR on Windows.
 
 - Issue #17791: Drop PREFIX and EXEC_PREFIX definitions from PC/pyconfig.h
