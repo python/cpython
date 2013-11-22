@@ -5,6 +5,7 @@
 VERSION=@VERSION@
 ABIFLAGS=@ABIFLAGS@
 LDVERSION=@LDVERSION@
+ENSUREPIP=@ENSUREPIP@
 builddir = ..
 srcdir=@srcdir@
 prefix=@prefix@
@@ -92,6 +93,16 @@ installunixtools:
 			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
 		done ;\
 	fi
+	-if test "x$(ENSUREPIP)" != "xno"  ; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				pip3 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 
 #
 # Like installunixtools, but only install links to the versioned binaries.
@@ -127,6 +138,17 @@ altinstallunixtools:
 		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
 		for fn in \
 				python$(VERSION)-32 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
+	-if test "x$(ENSUREPIP)" != "xno"  ; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				easy_install-$(VERSION) \
+				pip$(VERSION) \
 				; \
 		do \
 			rm -f $${fn} ;\

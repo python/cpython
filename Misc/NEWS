@@ -363,6 +363,12 @@ Build
   installed for 64-bit/32-bit universal builds.  The obsolete and
   undocumented pythonw* symlinks are no longer installed anywhere.
 
+- Issue #19553: PEP 453 - "make install" and "make altinstall" now install or
+  upgrade pip by default, using the bundled pip provided by the new ensurepip
+  module.  A new configure option, --with-ensurepip[=upgrade|install|no], is
+  available to override the default ensurepip "--upgrade" option.  The option
+  can also be set with "make [alt]install ENSUREPIP=[upgrade|install\no]".
+
 Tools/Demos
 -----------
 
