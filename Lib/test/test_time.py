@@ -367,6 +367,14 @@ class TimeTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(time, 'monotonic'),
                          'need time.monotonic')
     def test_monotonic(self):
+        # monotonic() should not go backward
+        times = [time.monotonic() for n in range(100)]
+        t1 = times[0]
+        for t2 in times[1:]:
+            self.assertGreaterEqual(t2, t1, "times=%s" % times)
+            t1 = t2
+
+        # monotonic() includes time elapsed during a sleep
         t1 = time.monotonic()
         time.sleep(0.5)
         t2 = time.monotonic()
@@ -374,6 +382,7 @@ class TimeTestCase(unittest.TestCase):
         self.assertGreater(t2, t1)
         self.assertAlmostEqual(dt, 0.5, delta=0.2)
 
+        # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
         self.assertTrue(info.monotonic)
         self.assertFalse(info.adjustable)
