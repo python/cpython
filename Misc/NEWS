@@ -59,6 +59,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17134: Finalize interface to Windows' certificate store. Cert and
+  CRL enumeration are now two functions. enum_certificates() also returns
+  purpose flags as set of OIDs.
+
 - Issue #19555: Restore sysconfig.get_config_var('SO'), with a
   DeprecationWarning pointing people at $EXT_SUFFIX.
 
