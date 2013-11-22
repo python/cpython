@@ -526,7 +526,7 @@ def _requires_builtin(fxn):
     """Decorator to verify the named module is built-in."""
     def _requires_builtin_wrapper(self, fullname):
         if fullname not in sys.builtin_module_names:
-            raise ImportError('{} is not a built-in module'.format(fullname),
+            raise ImportError('{!r} is not a built-in module'.format(fullname),
                               name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_builtin_wrapper, fxn)
@@ -537,7 +537,7 @@ def _requires_frozen(fxn):
     """Decorator to verify the named module is frozen."""
     def _requires_frozen_wrapper(self, fullname):
         if not _imp.is_frozen(fullname):
-            raise ImportError('{} is not a frozen module'.format(fullname),
+            raise ImportError('{!r} is not a frozen module'.format(fullname),
                               name=fullname)
         return fxn(self, fullname)
     _wrap(_requires_frozen_wrapper, fxn)
@@ -1117,7 +1117,7 @@ class _SpecMethods:
         _imp.acquire_lock()
         with _ModuleLockManager(name):
             if sys.modules.get(name) is not module:
-                msg = 'module {} not in sys.modules'.format(name)
+                msg = 'module {!r} not in sys.modules'.format(name)
                 raise ImportError(msg, name=name)
             if self.spec.loader is None:
                 if self.spec.submodule_search_locations is None:
@@ -1247,7 +1247,7 @@ class BuiltinImporter:
         spec = module.__spec__
         name = spec.name
         if not _imp.is_builtin(name):
-            raise ImportError('{} is not a built-in module'.format(name),
+            raise ImportError('{!r} is not a built-in module'.format(name),
                               name=name)
         _call_with_frames_removed(_imp.init_builtin, name)
         # Have to manually initialize attributes since init_builtin() is not
@@ -1310,7 +1310,7 @@ class FrozenImporter:
     def exec_module(module):
         name = module.__spec__.name
         if not _imp.is_frozen(name):
-            raise ImportError('{} is not a frozen module'.format(name),
+            raise ImportError('{!r} is not a frozen module'.format(name),
                               name=name)
         code = _call_with_frames_removed(_imp.get_frozen_object, name)
         exec(code, module.__dict__)
@@ -2127,7 +2127,7 @@ def _find_and_load_unlocked(name, import_):
         try:
             path = parent_module.__path__
         except AttributeError:
-            msg = (_ERR_MSG + '; {} is not a package').format(name, parent)
+            msg = (_ERR_MSG + '; {!r} is not a package').format(name, parent)
             raise ImportError(msg, name=name)
     spec = _find_spec(name, path)
     if spec is None:
