@@ -85,7 +85,8 @@ The high-level method described above makes use of a simple API which provides
 mechanisms for third-party virtual environment creators to customize environment
 creation according to their needs, the :class:`EnvBuilder` class.
 
-.. class:: EnvBuilder(system_site_packages=False, clear=False, symlinks=False, upgrade=False)
+.. class:: EnvBuilder(system_site_packages=False, clear=False, \
+                      symlinks=False, upgrade=False, with_pip=False)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -104,6 +105,12 @@ creation according to their needs, the :class:`EnvBuilder` class.
     * ``upgrade`` -- a Boolean value which, if True, will upgrade an existing
       environment with the running Python - for use when that Python has been
       upgraded in-place (defaults to ``False``).
+
+    * ``with_pip`` -- a Boolean value which, if True, ensures pip is
+      installed in the virtual environment
+
+    .. versionchanged:: 3.4
+       Added the ``with_pip`` parameter
 
 
     Creators of third-party virtual environment tools will be free to use the
@@ -201,10 +208,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
 There is also a module-level convenience function:
 
-.. function:: create(env_dir, system_site_packages=False, clear=False, symlinks=False)
+.. function:: create(env_dir, system_site_packages=False, clear=False, \
+                     symlinks=False, with_pip=False)
 
     Create an :class:`EnvBuilder` with the given keyword arguments, and call its
     :meth:`~EnvBuilder.create` method with the *env_dir* argument.
+
+    .. versionchanged:: 3.4
+       Added the ``with_pip`` parameter
 
 An example of extending ``EnvBuilder``
 --------------------------------------
