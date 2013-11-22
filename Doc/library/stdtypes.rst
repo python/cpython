@@ -1149,6 +1149,9 @@ application).
       fail, the entire sort operation will fail (and the list will likely be left
       in a partially modified state).
 
+      :meth:`sort` accepts two arguments that can only be passed by keyword
+      (:ref:`keyword-only arguments <keyword-only_parameter>`):
+
       *key* specifies a function of one argument that is used to extract a
       comparison key from each list element (for example, ``key=str.lower``).
       The key corresponding to each item in the list is calculated once and
