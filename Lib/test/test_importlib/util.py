@@ -20,6 +20,7 @@ def test_both(test_class, **kwargs):
                                    (test_class, unittest.TestCase))
     source_tests = types.new_class('Source_'+test_class.__name__,
                                    (test_class, unittest.TestCase))
+    frozen_tests.__module__ = source_tests.__module__ = test_class.__module__
     for attr, (frozen_value, source_value) in kwargs.items():
         setattr(frozen_tests, attr, frozen_value)
         setattr(source_tests, attr, source_value)
