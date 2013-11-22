@@ -409,6 +409,10 @@ def _init_posix(vars):
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
     from _sysconfigdata import build_time_vars
     vars.update(build_time_vars)
+    # For backward compatibility, see issue19555
+    SO = build_time_vars.get('EXT_SUFFIX')
+    if SO is not None:
+        vars['SO'] = SO
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -579,6 +583,9 @@ def get_config_var(name):
 
     Equivalent to get_config_vars().get(name)
     """
+    if name == 'SO':
+        import warnings
+        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning)
     return get_config_vars().get(name)
 
 
