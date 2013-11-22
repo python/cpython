@@ -93,6 +93,7 @@ New library modules:
 * :mod:`asyncio`: New provisonal API for asynchronous IO (:pep:`3156`).
 * :mod:`enum`: Support for enumeration types (:pep:`435`).
 * :mod:`ensurepip`: Bootstrapping the pip installer (:pep:`453`).
+* :mod:`pathlib`: Object-oriented filesystem paths (:pep:`428`).
 * :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
   :mod:`select` module primitives.
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
@@ -316,6 +317,23 @@ compatible enumeration values.
    :pep:`435` - Adding an Enum type to the Python standard library
       PEP written by Barry Warsaw, Eli Bendersky and Ethan Furman,
       implemented by Ethan Furman.
+
+
+pathlib
+-------
+
+The new :mod:`pathlib` module offers classes representing filesystem paths
+with semantics appropriate for different operating systems.  Path classes are
+divided between *pure paths*, which provide purely computational operations
+without I/O, and *concrete paths*, which inherit from pure paths but also
+provide I/O operations.
+
+For Python 3.4, this module is considered a :term:`provisional API`.
+
+.. seealso::
+
+   :pep:`428` - The pathlib module -- object-oriented filesystem paths
+      PEP written and implemented by Antoine Pitrou.
 
 
 selectors

@@ -25,6 +25,10 @@ For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
 
 
+.. seealso::
+   The :mod:`pathlib` module offers high-level path objects.
+
+
 .. function:: glob(pathname)
 
    Return a possibly-empty list of path names that match *pathname*, which must be
