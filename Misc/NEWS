@@ -65,6 +65,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19552: venv now supports bootstrapping pip into virtual environments
+
 - Issue #17134: Finalize interface to Windows' certificate store. Cert and
   CRL enumeration are now two functions. enum_certificates() also returns
   purpose flags as set of OIDs.
@@ -377,6 +379,9 @@ Build
 
 Tools/Demos
 -----------
+
+- Issue #19552: pyvenv now bootstraps pip into virtual environments by
+  default (pass --without-pip to request the old behaviour)
 
 - Issue #19390: Argument Clinic no longer accepts malformed Python
   and C ids.

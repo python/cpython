@@ -24,10 +24,13 @@ optional arguments:
                         raised.
   --upgrade             Upgrade the environment directory to use this version
                         of Python, assuming Python has been upgraded in-place.
+  --without-pip         Skips installing or upgrading pip in the virtual
+                        environment (pip is bootstrapped by default)
 """
 import logging
 import os
 import shutil
+import subprocess
 import sys
 import sysconfig
 import types
@@ -56,14 +59,17 @@ class EnvBuilder:
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
     :param upgrade: If True, upgrade an existing virtual environment.
+    :param with_pip: If True, ensure pip is installed in the virtual
+                     environment
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False):
+                 symlinks=False, upgrade=False, with_pip=False):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
         self.upgrade = upgrade
+        self.with_pip = with_pip
 
     def create(self, env_dir):
         """
@@ -76,6 +82,8 @@ class EnvBuilder:
         context = self.ensure_directories(env_dir)
         self.create_configuration(context)
         self.setup_python(context)
+        if self.with_pip:
+            self._setup_pip(context)
         if not self.upgrade:
             self.setup_scripts(context)
             self.post_setup(context)
@@ -224,6 +232,12 @@ class EnvBuilder:
                     shutil.copyfile(src, dst)
                     break
 
+    def _setup_pip(self, context):
+        """Installs or upgrades pip in a virtual environment"""
+        cmd = [context.env_exe, '-m', 'ensurepip', '--upgrade',
+                                                   '--default-pip']
+        subprocess.check_output(cmd)
+
     def setup_scripts(self, context):
         """
         Set up scripts into the created environment from a directory.
@@ -317,7 +331,8 @@ class EnvBuilder:
                     shutil.copymode(srcfile, dstfile)
 
 
-def create(env_dir, system_site_packages=False, clear=False, symlinks=False):
+def create(env_dir, system_site_packages=False, clear=False,
+                    symlinks=False, with_pip=False):
     """
     Create a virtual environment in a directory.
 
@@ -333,9 +348,11 @@ def create(env_dir, system_site_packages=False, clear=False, symlinks=False):
                   raised.
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
+    :param with_pip: If True, ensure pip is installed in the virtual
+                     environment
     """
     builder = EnvBuilder(system_site_packages=system_site_packages,
-                                   clear=clear, symlinks=symlinks)
+                         clear=clear, symlinks=symlinks, with_pip=with_pip)
     builder.create(env_dir)
 
 def main(args=None):
@@ -390,12 +407,19 @@ def main(args=None):
                                                'directory to use this version '
                                                'of Python, assuming Python '
                                                'has been upgraded in-place.')
+        parser.add_argument('--without-pip', dest='with_pip',
+                            default=True, action='store_false',
+                            help='Skips installing or upgrading pip in the '
+                                 'virtual environment (pip is bootstrapped '
+                                 'by default)')
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
         builder = EnvBuilder(system_site_packages=options.system_site,
-                             clear=options.clear, symlinks=options.symlinks,
-                             upgrade=options.upgrade)
+                             clear=options.clear,
+                             symlinks=options.symlinks,
+                             upgrade=options.upgrade,
+                             with_pip=options.with_pip)
         for d in options.dirs:
             builder.create(d)
 
