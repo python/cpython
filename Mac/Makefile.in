@@ -3,9 +3,12 @@
 # commandline in that case.
 
 VERSION=@VERSION@
+ABIFLAGS=@ABIFLAGS@
+LDVERSION=@LDVERSION@
 builddir = ..
 srcdir=@srcdir@
 prefix=@prefix@
+exec_prefix=@exec_prefix@
 LIBDEST=$(prefix)/lib/python$(VERSION)
 RUNSHARED=@RUNSHARED@
 BUILDEXE=@BUILDEXEEXT@
@@ -23,7 +26,7 @@ export MACOSX_DEPLOYMENT_TARGET
 
 
 # These are normally glimpsed from the previous set
-bindir=$(prefix)/bin
+BINDIR=		@bindir@
 PYTHONAPPSDIR=@FRAMEWORKINSTALLAPPSPREFIX@/$(PYTHONFRAMEWORK) $(VERSION)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
 
@@ -46,19 +49,7 @@ APPTEMPLATE=$(srcdir)/Resources/app
 APPSUBDIRS=MacOS Resources
 compileall=$(srcdir)/../Lib/compileall.py
 
-installapps: install_Python install_pythonw install_PythonLauncher install_IDLE
-
-install_pythonw: pythonw
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/pythonw$(VERSION)"
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonw "$(DESTDIR)$(prefix)/bin/python$(VERSION)"
-	ln -sf python$(VERSION) "$(DESTDIR)$(prefix)/bin/python3"
-	ln -sf pythonw$(VERSION) "$(DESTDIR)$(prefix)/bin/pythonw3"
-ifneq ($(LIPO_32BIT_FLAGS),)
-	lipo $(LIPO_32BIT_FLAGS) -output $(DESTDIR)$(prefix)/bin/python$(VERSION)-32 pythonw
-	lipo $(LIPO_32BIT_FLAGS) -output $(DESTDIR)$(prefix)/bin/pythonw$(VERSION)-32 pythonw
-	ln -sf pythonw$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/pythonw3-32"
-	ln -sf python$(VERSION)-32	"$(DESTDIR)$(prefix)/bin/python3-32"
-endif
+installapps: install_Python install_PythonLauncher install_IDLE
 
 #
 # Install unix tools in /usr/local/bin. These are just aliases for the 
@@ -68,21 +59,39 @@ installunixtools:
 	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
-	for fn in python3 pythonw3 idle3 pydoc3 python3-config \
-		  python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config 2to3 \
-		  2to3-$(VERSION) pyvenv pyvenv-$(VERSION) ;\
+	cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+	for fn in \
+			2to3 \
+			idle3 \
+			pydoc3 \
+			python3 \
+			python3-config \
+			pyvenv \
+			; \
 	do \
-		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+		rm -f $${fn} ; \
+		$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
 	done
-ifneq ($(LIPO_32BIT_FLAGS),)
-	for fn in python3-32 pythonw3-32 \
-		  python$(VERSION)-32 pythonw$(VERSION)-32 ;\
-	do \
-		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
-	done
-endif
-
+	-if test "x$(VERSION)" != "x$(LDVERSION)"; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				python$(VERSION)-config \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
+	-if test "x$(LIPO_32BIT_FLAGS)" != "x"; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				python3-32 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 
 #
 # Like installunixtools, but only install links to the versioned binaries.
@@ -91,20 +100,44 @@ altinstallunixtools:
 	if [ ! -d "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ]; then  \
 		$(INSTALL) -d -m $(DIRMODE) "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" ;\
 	fi
-	for fn in python$(VERSION) pythonw$(VERSION) idle$(VERSION) \
-		  pydoc$(VERSION) python$(VERSION)-config 2to3-$(VERSION) pyvenv-$(VERSION) ;\
+	cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+	for fn in \
+			2to3-$(VERSION) \
+			idle$(VERSION) \
+			pydoc$(VERSION) \
+			python$(VERSION) \
+			python$(LDVERSION)-config \
+			pyvenv-$(VERSION) \
+			; \
 	do \
-		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
+		rm -f $${fn} ;\
+		$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
 	done
-ifneq ($(LIPO_32BIT_FLAGS),)
-	for fn in python$(VERSION)-32 pythonw$(VERSION)-32 ;\
-	do \
-		ln -fs "$(prefix)/bin/$${fn}" "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin/$${fn}" ;\
-	done
-endif
+	-if test "x$(VERSION)" != "x$(LDVERSION)"; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				python$(LDVERSION) \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
+	-if test "x$(LIPO_32BIT_FLAGS)" != "x"; then \
+		cd "$(DESTDIR)$(FRAMEWORKUNIXTOOLSPREFIX)/bin" && \
+		for fn in \
+				python$(VERSION)-32 \
+				; \
+		do \
+			rm -f $${fn} ;\
+			$(LN) -s $(BINDIR)/$${fn} $${fn} ;\
+		done ;\
+	fi
 
 pythonw: $(srcdir)/Tools/pythonw.c Makefile
-	$(CC) $(LDFLAGS) -DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ $(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include ../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
+	$(CC) $(LDFLAGS) -DPYTHONFRAMEWORK='"$(PYTHONFRAMEWORK)"' -o $@ \
+		$(srcdir)/Tools/pythonw.c -I.. -I$(srcdir)/../Include \
+		../$(PYTHONFRAMEWORK).framework/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
 
 install_PythonLauncher:
 	cd PythonLauncher && make install DESTDIR=$(DESTDIR)

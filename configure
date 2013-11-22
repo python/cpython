@@ -712,6 +712,7 @@ _PYTHON_HOST_PLATFORM
 MACHDEP
 FRAMEWORKINSTALLAPPSPREFIX
 FRAMEWORKUNIXTOOLSPREFIX
+FRAMEWORKPYTHONW
 FRAMEWORKALTINSTALLLAST
 FRAMEWORKALTINSTALLFIRST
 FRAMEWORKINSTALLLAST
@@ -3152,6 +3153,7 @@ if test "${enable_framework+set}" = set; then :
 		FRAMEWORKINSTALLLAST=
 		FRAMEWORKALTINSTALLFIRST=
 		FRAMEWORKALTINSTALLLAST=
+		FRAMEWORKPYTHONW=
 		if test "x${prefix}" = "xNONE"; then
 			FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
 		else
@@ -3166,6 +3168,7 @@ if test "${enable_framework+set}" = set; then :
 		FRAMEWORKALTINSTALLFIRST="frameworkinstallstructure "
 		FRAMEWORKINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools"
 		FRAMEWORKALTINSTALLLAST="frameworkinstallmaclib frameworkinstallapps frameworkaltinstallunixtools"
+		FRAMEWORKPYTHONW="frameworkpythonw"
 		FRAMEWORKINSTALLAPPSPREFIX="/Applications"
 
 		if test "x${prefix}" = "xNONE" ; then
@@ -3233,6 +3236,7 @@ else
 	FRAMEWORKINSTALLLAST=
 	FRAMEWORKALTINSTALLFIRST=
 	FRAMEWORKALTINSTALLLAST=
+	FRAMEWORKPYTHONW=
 	if test "x${prefix}" = "xNONE" ; then
 		FRAMEWORKUNIXTOOLSPREFIX="${ac_default_prefix}"
 	else
@@ -3242,6 +3246,7 @@ else
 
 
 fi
+
 
 
 
