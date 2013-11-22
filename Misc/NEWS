@@ -306,6 +306,9 @@ Library
 Tests
 -----
 
+- Issue #19664: test_userdict's repr test no longer depends on the order
+  of dict elements.
+
 - Issue #19440: Clean up test_capi by removing an unnecessary __future__
   import, converting from test_main to unittest.main, and running the
   _testcapi module tests as subTests of a unittest TestCase method.
