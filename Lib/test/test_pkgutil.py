@@ -200,6 +200,8 @@ class ExtendPathTests(unittest.TestCase):
         dirname = self.create_init(pkgname)
         pathitem = os.path.join(dirname, pkgname)
         fullname = '{}.{}'.format(pkgname, modname)
+        sys.modules.pop(fullname, None)
+        sys.modules.pop(pkgname, None)
         try:
             self.create_submodule(dirname, pkgname, modname, 0)
 
