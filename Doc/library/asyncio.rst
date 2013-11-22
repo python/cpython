@@ -33,6 +33,10 @@ Here is a more detailed list of the package contents:
 * :ref:`synchronization primitives <sync>` for use between coroutines in
   a single thread, mimicking those in the :mod:`threading` module;
 
+* an interface for passing work off to a threadpool, for times when
+  you absolutely, positively have to use a library that makes blocking
+  I/O calls.
+
 
 Disclaimer
 ----------
