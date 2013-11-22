@@ -586,11 +586,18 @@ class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertNotEqual(P('/a'), P('//a'))
 
     def test_as_uri(self):
-        from urllib.parse import quote_from_bytes
         P = self.cls
         self.assertEqual(P('/').as_uri(), 'file:///')
         self.assertEqual(P('/a/b.c').as_uri(), 'file:///a/b.c')
         self.assertEqual(P('/a/b%#c').as_uri(), 'file:///a/b%25%23c')
+
+    def test_as_uri_non_ascii(self):
+        from urllib.parse import quote_from_bytes
+        P = self.cls
+        try:
+            os.fsencode('\xe9')
+        except UnicodeEncodeError:
+            self.skipTest("\\xe9 cannot be encoded to the filesystem encoding")
         self.assertEqual(P('/a/b\xe9').as_uri(),
                          'file:///a/b' + quote_from_bytes(os.fsencode('\xe9')))
 
