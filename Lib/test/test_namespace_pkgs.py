@@ -1,5 +1,4 @@
 import contextlib
-from importlib._bootstrap import NamespaceLoader
 import importlib.abc
 import importlib.machinery
 import os
@@ -288,25 +287,6 @@ class ModuleAndNamespacePackageInSameDir(NamespacePackageTest):
         #  namespace package.
         import a_test
         self.assertEqual(a_test.attr, 'in module')
-
-
-class ABCTests(unittest.TestCase):
-
-    def setUp(self):
-        self.loader = NamespaceLoader('foo', ['pkg'],
-                                      importlib.machinery.PathFinder)
-
-    def test_is_package(self):
-        self.assertTrue(self.loader.is_package('foo'))
-
-    def test_get_code(self):
-        self.assertTrue(isinstance(self.loader.get_code('foo'), types.CodeType))
-
-    def test_get_source(self):
-        self.assertEqual(self.loader.get_source('foo'), '')
-
-    def test_abc_isinstance(self):
-        self.assertTrue(isinstance(self.loader, importlib.abc.InspectLoader))
 
 
 if __name__ == "__main__":

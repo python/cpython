@@ -208,9 +208,16 @@ class ExtendPathTests(unittest.TestCase):
             importers = list(iter_importers(fullname))
             expected_importer = get_importer(pathitem)
             for finder in importers:
+                loader = finder.find_module(fullname)
+                try:
+                    loader = loader.loader
+                except AttributeError:
+                    # For now we still allow raw loaders from
+                    # find_module().
+                    pass
                 self.assertIsInstance(finder, importlib.machinery.FileFinder)
                 self.assertEqual(finder, expected_importer)
-                self.assertIsInstance(finder.find_module(fullname),
+                self.assertIsInstance(loader,
                                       importlib.machinery.SourceFileLoader)
                 self.assertIsNone(finder.find_module(pkgname))
 
@@ -222,8 +229,11 @@ class ExtendPathTests(unittest.TestCase):
         finally:
             shutil.rmtree(dirname)
             del sys.path[0]
-            del sys.modules['spam']
-            del sys.modules['spam.eggs']
+            try:
+                del sys.modules['spam']
+                del sys.modules['spam.eggs']
+            except KeyError:
+                pass
 
 
     def test_mixed_namespace(self):

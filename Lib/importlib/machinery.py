@@ -5,6 +5,7 @@ import _imp
 from ._bootstrap import (SOURCE_SUFFIXES, DEBUG_BYTECODE_SUFFIXES,
                          OPTIMIZED_BYTECODE_SUFFIXES, BYTECODE_SUFFIXES,
                          EXTENSION_SUFFIXES)
+from ._bootstrap import ModuleSpec
 from ._bootstrap import BuiltinImporter
 from ._bootstrap import FrozenImporter
 from ._bootstrap import WindowsRegistryFinder

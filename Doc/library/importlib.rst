@@ -310,11 +310,11 @@ ABC hierarchy::
         from the import. If the loader inserted a module and the load fails, it
         must be removed by the loader from :data:`sys.modules`; modules already
         in :data:`sys.modules` before the loader began execution should be left
-        alone (see :func:`importlib.util.module_to_load`).
+        alone (see :func:`importlib.util.module_for_loader`).
 
         The loader should set several attributes on the module.
         (Note that some of these attributes can change when a module is
-        reloaded; see :meth:`init_module_attrs`):
+        reloaded):
 
         - :attr:`__name__`
             The name of the module.
@@ -356,17 +356,6 @@ ABC hierarchy::
 
         .. versionchanged:: 3.4
            Made optional instead of an abstractmethod.
-
-    .. method:: init_module_attrs(module)
-
-        Set the :attr:`__loader__` attribute on the module.
-
-        Subclasses overriding this method should set whatever appropriate
-        attributes it can, getting the module's name from :attr:`__name__` when
-        needed. All values should also be overridden so that reloading works as
-        expected.
-
-        .. versionadded:: 3.4
 
 
 .. class:: ResourceLoader
@@ -442,14 +431,6 @@ ABC hierarchy::
 
         .. versionadded:: 3.4
 
-    .. method:: init_module_attrs(module)
-
-        Set the :attr:`__package__` attribute and :attr:`__path__` attribute to
-        the empty list if appropriate along with what
-        :meth:`importlib.abc.Loader.init_module_attrs` sets.
-
-        .. versionadded:: 3.4
-
     .. method:: load_module(fullname)
 
         Implementation of :meth:`Loader.load_module`.
@@ -473,15 +454,6 @@ ABC hierarchy::
 
         .. versionchanged:: 3.4
            Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
-
-    .. method:: init_module_attrs(module)
-
-        Set :attr:`__file__` and if initializing a package then set
-        :attr:`__path__` to ``[os.path.dirname(__file__)]`` along with
-        all attributes set by
-        :meth:`importlib.abc.InspectLoader.init_module_attrs`.
-
-        .. versionadded:: 3.4
 
 
 .. class:: FileLoader(fullname, path)
@@ -598,14 +570,6 @@ ABC hierarchy::
         :meth:`ExecutionLoader.get_filename`) is a file named
         ``__init__`` when the file extension is removed **and** the module name
         itself does not end in ``__init__``.
-
-    .. method:: init_module_attr(module)
-
-        Set :attr:`__cached__` using :func:`imp.cache_from_source`. Other
-        attributes set by
-        :meth:`importlib.abc.ExecutionLoader.init_module_attrs`.
-
-        .. versionadded:: 3.4
 
 
 :mod:`importlib.machinery` -- Importers and path hooks
@@ -882,6 +846,64 @@ find and load modules.
       .. versionadded:: 3.4
 
 
+.. class:: ModuleSpec(name, loader, *, origin=None, loader_state=None, is_package=None)
+
+   A specification for a module's import-system-related state.
+
+   .. versionadded:: 3.4
+
+   .. attribute:: name
+
+   (``__name__``)
+
+   A string for the fully-qualified name of the module.
+
+   .. attribute:: loader
+
+   (``__loader__``)
+
+   The loader to use for loading.  For namespace packages this should be
+   set to None.
+
+   .. attribute:: origin
+
+   (``__file__``)
+
+   Name of the place from which the module is loaded, e.g. "builtin" for
+   built-in modules and the filename for modules loaded from source.
+   Normally "origin" should be set, but it may be None (the default)
+   which indicates it is unspecified.
+
+   .. attribute:: submodule_search_locations
+
+   (``__path__``)
+
+   List of strings for where to find submodules, if a package (None
+   otherwise).
+
+   .. attribute:: loader_state
+
+   Container of extra module-specific data for use during loading (or
+   None).
+
+   .. attribute:: cached
+
+   (``__cached__``)
+
+   String for where the compiled module should be stored (or None).
+
+   .. attribute:: parent
+
+   (``__package__``)
+
+   (Read-only) Fully-qualified name of the package to which the module
+   belongs as a submodule (or None).
+
+   .. attribute:: has_location
+
+   (Read-only) Boolean indicating whether or not the module's "origin"
+   attribute refers to a loadable location.
+
 :mod:`importlib.util` -- Utility code for importers
 ---------------------------------------------------
 
@@ -952,20 +974,6 @@ an :term:`importer`.
 
    .. versionadded:: 3.3
 
-.. function:: module_to_load(name, *, reset_name=True)
-
-    Returns a :term:`context manager` which provides the module to load. The
-    module will either come from :attr:`sys.modules` in the case of reloading or
-    a fresh module if loading a new module. Proper cleanup of
-    :attr:`sys.modules` occurs if the module was new and an exception was
-    raised.
-
-    If **reset_name** is true and the module requested is being reloaded then
-    the module's :attr:`__name__` attribute will
-    be reset to **name**, else it will be left untouched.
-
-    .. versionadded:: 3.4
-
 .. decorator:: module_for_loader
 
     A :term:`decorator` for :meth:`importlib.abc.Loader.load_module`
@@ -999,9 +1007,8 @@ an :term:`importer`.
        unconditionally to support reloading.
 
     .. deprecated:: 3.4
-        For the benefit of :term:`loader` subclasses, please use
-        :func:`module_to_load` and
-        :meth:`importlib.abc.Loader.init_module_attrs` instead.
+       The import machinery now directly performs all the functionality
+       provided by this function.
 
 .. decorator:: set_loader
 
@@ -1012,11 +1019,6 @@ an :term:`importer`.
    the wrapped method (i.e. ``self``) is what :attr:`__loader__` should be set
    to.
 
-   .. note::
-      As this decorator sets :attr:`__loader__` after loading the module, it is
-      recommended to use :meth:`importlib.abc.Loader.init_module_attrs` instead
-      when appropriate.
-
    .. versionchanged:: 3.4
       Set ``__loader__`` if set to ``None``, as if the attribute does not
       exist.
@@ -1026,7 +1028,21 @@ an :term:`importer`.
    A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the :attr:`__package__` attribute on the returned module. If :attr:`__package__`
    is set and has a value other than ``None`` it will not be changed.
 
-   .. note::
-      As this decorator sets :attr:`__package__` after loading the module, it is
-      recommended to use :meth:`importlib.abc.Loader.init_module_attrs` instead
-      when appropriate.
+.. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
+
+   A factory function for creating a :class:`ModuleSpec` instance based
+   on a loader.  The parameters have the same meaning as they do for
+   ModuleSpec.  The function uses available :term:`loader` APIs, such as
+   :meth:`InspectLoader.is_package`, to fill in any missing
+   information on the spec.
+
+   .. versionadded:: 3.4
+
+.. function:: spec_from_file_location(name, location, *, loader=None, submodule_search_locations=None)
+
+   A factory function for creating a :class:`ModuleSpec` instance based
+   on the path to a file.  Missing information will be filled in on the
+   spec by making use of loader APIs and by the implication that the
+   module will be file-based.
+
+   .. versionadded:: 3.4

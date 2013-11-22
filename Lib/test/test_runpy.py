@@ -47,6 +47,7 @@ implicit_namespace = {
     "__cached__": None,
     "__package__": None,
     "__doc__": None,
+#    "__spec__": None,  # XXX Uncomment.
 }
 example_namespace =  {
     "sys": sys,
@@ -56,7 +57,7 @@ example_namespace =  {
     "run_name_in_sys_modules": False,
     "module_in_sys_modules": False,
     "nested": dict(implicit_namespace,
-                   x=1, __name__="<run>", __loader__=None),
+                   x=1, __name__="<run>", __loader__=None, __spec__=None),
 }
 example_namespace.update(implicit_namespace)
 
@@ -243,6 +244,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             "__name__": mod_name,
             "__file__": mod_fname,
             "__package__": mod_name.rpartition(".")[0],
+#            "__spec__": None,  # XXX Needs to be set.
         })
         if alter_sys:
             expected_ns.update({
@@ -279,6 +281,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             "__name__": mod_name,
             "__file__": mod_fname,
             "__package__": pkg_name,
+#            "__spec__": None,  # XXX Needs to be set.
         })
         if alter_sys:
             expected_ns.update({

@@ -16,7 +16,7 @@ except ImportError:
     # Platform doesn't support dynamic loading.
     load_dynamic = None
 
-from importlib._bootstrap import SourcelessFileLoader, _ERR_MSG
+from importlib._bootstrap import SourcelessFileLoader, _ERR_MSG, _SpecMethods
 
 from importlib import machinery
 from importlib import util
@@ -162,11 +162,17 @@ class _LoadSourceCompatibility(_HackedGetData, machinery.SourceFileLoader):
 
 
 def load_source(name, pathname, file=None):
-    _LoadSourceCompatibility(name, pathname, file).load_module(name)
-    module = sys.modules[name]
+    loader = _LoadSourceCompatibility(name, pathname, file)
+    spec = util.spec_from_file_location(name, pathname, loader=loader)
+    methods = _SpecMethods(spec)
+    if name in sys.modules:
+        module = methods.exec(sys.modules[name])
+    else:
+        module = methods.load()
     # To allow reloading to potentially work, use a non-hacked loader which
     # won't rely on a now-closed file object.
     module.__loader__ = machinery.SourceFileLoader(name, pathname)
+    module.__spec__.loader = module.__loader__
     return module
 
 
@@ -177,11 +183,17 @@ class _LoadCompiledCompatibility(_HackedGetData, SourcelessFileLoader):
 
 def load_compiled(name, pathname, file=None):
     """**DEPRECATED**"""
-    _LoadCompiledCompatibility(name, pathname, file).load_module(name)
-    module = sys.modules[name]
+    loader = _LoadCompiledCompatibility(name, pathname, file)
+    spec = util.spec_from_file_location(name, pathname, loader=loader)
+    methods = _SpecMethods(spec)
+    if name in sys.modules:
+        module = methods.exec(sys.modules[name])
+    else:
+        module = methods.load()
     # To allow reloading to potentially work, use a non-hacked loader which
     # won't rely on a now-closed file object.
     module.__loader__ = SourcelessFileLoader(name, pathname)
+    module.__spec__.loader = module.__loader__
     return module
 
 
@@ -196,7 +208,13 @@ def load_package(name, path):
                 break
         else:
             raise ValueError('{!r} is not a package'.format(path))
-    return machinery.SourceFileLoader(name, path).load_module(name)
+    spec = util.spec_from_file_location(name, path,
+                                        submodule_search_locations=[])
+    methods = _SpecMethods(spec)
+    if name in sys.modules:
+        return methods.exec(sys.modules[name])
+    else:
+        return methods.load()
 
 
 def load_module(name, file, filename, details):
