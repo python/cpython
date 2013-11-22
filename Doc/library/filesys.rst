@@ -12,6 +12,7 @@ in this chapter is:
 
 .. toctree::
 
+   pathlib.rst
    os.path.rst
    fileinput.rst
    stat.rst

@@ -22,6 +22,11 @@ Functions such as :func:`expanduser` and :func:`expandvars` can be invoked
 explicitly when an application desires shell-like path expansion.  (See also
 the :mod:`glob` module.)
 
+
+.. seealso::
+   The :mod:`pathlib` module offers high-level path objects.
+
+
 .. note::
 
    All of these functions accept either only bytes or only string objects as
