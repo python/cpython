@@ -94,6 +94,33 @@ PyAPI_FUNC(PyObject *) PyCodec_Decode(
        const char *errors
        );
 
+#ifndef PY_LIMITED_API
+/* Text codec specific encoding and decoding API.
+
+   Checks the encoding against a list of codecs which do not
+   implement a str<->bytes encoding before attempting the
+   operation.
+
+   Please note that these APIs are internal and should not
+   be used in Python C extensions.
+
+ */
+
+PyAPI_FUNC(PyObject *) _PyCodec_EncodeText(
+       PyObject *object,
+       const char *encoding,
+       const char *errors
+       );
+
+PyAPI_FUNC(PyObject *) _PyCodec_DecodeText(
+       PyObject *object,
+       const char *encoding,
+       const char *errors
+       );
+#endif
+
+
+
 /* --- Codec Lookup APIs -------------------------------------------------- 
 
    All APIs return a codec object with incremented refcount and are

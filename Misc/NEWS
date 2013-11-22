@@ -10,6 +10,12 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
+- Issue #19619: str.encode, bytes.decode and bytearray.decode now use an
+  internal API to throw LookupError for known non-text encodings, rather
+  than attempting the encoding or decoding operation and then throwing a
+  TypeError for an unexpected output type. (The latter mechanism remains
+  in place for third party non-text encodings)
+
 - Issue #19183: Implement PEP 456 'secure and interchangeable hash algorithm'.
   Python now uses SipHash24 on all major platforms.
 
