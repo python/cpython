@@ -2268,6 +2268,8 @@ def __import__(name, globals=None, locals=None, fromlist=(), level=0):
 
 def _builtin_from_name(name):
     spec = BuiltinImporter.find_spec(name)
+    if spec is None:
+        raise ImportError('no built-in module named ' + name)
     methods = _SpecMethods(spec)
     return methods._load_unlocked()
 
