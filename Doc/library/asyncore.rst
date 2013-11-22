@@ -13,8 +13,10 @@
 
 --------------
 
-Note: This module exists for backwards compatibility only.  For new code we
-recommend using :module:`asyncio`.
+.. note::
+
+   This module exists for backwards compatibility only.  For new code we
+   recommend using :mod:`asyncio`.
 
 This module provides the basic infrastructure for writing asynchronous  socket
 service clients and servers.
