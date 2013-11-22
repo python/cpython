@@ -1626,6 +1626,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         given = set(p.glob("FILEa"))
         expect = set() if not support.fs_is_case_insensitive(BASE) else given
         self.assertEqual(given, expect)
+        self.assertEqual(set(p.glob("FILEa*")), set())
 
     def test_rglob(self):
         P = self.cls
@@ -1633,6 +1634,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         given = set(p.rglob("FILEd"))
         expect = set() if not support.fs_is_case_insensitive(BASE) else given
         self.assertEqual(given, expect)
+        self.assertEqual(set(p.rglob("FILEd*")), set())
 
 
 @only_nt
