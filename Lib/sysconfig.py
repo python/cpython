@@ -409,10 +409,6 @@ def _init_posix(vars):
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
     from _sysconfigdata import build_time_vars
     vars.update(build_time_vars)
-    # For backward compatibility, see issue19555
-    SO = build_time_vars.get('EXT_SUFFIX')
-    if SO is not None:
-        vars['SO'] = SO
 
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
@@ -540,6 +536,10 @@ def get_config_vars(*args):
             _init_non_posix(_CONFIG_VARS)
         if os.name == 'posix':
             _init_posix(_CONFIG_VARS)
+        # For backward compatibility, see issue19555
+        SO = _CONFIG_VARS.get('EXT_SUFFIX')
+        if SO is not None:
+            _CONFIG_VARS['SO'] = SO
         # Setting 'userbase' is done below the call to the
         # init function to enable using 'get_config_var' in
         # the init-function.
