@@ -68,6 +68,13 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
+Documentation
+-------------
+
+- Issue #18326: Clarify that list.sort's arguments are keyword-only.  Also,
+  attempt to reduce confusion in the glossary by not saying there are
+  different "types" of arguments and parameters.
+
 Build
 -----
 
