@@ -58,7 +58,7 @@
 	/>
 	<UserMacro
 		Name="lzmaDir"
-		Value="$(externalsDir)\xz-5.0.3"
+		Value="$(externalsDir)\xz-5.0.5"
 	/>
 	<UserMacro
 		Name="opensslDir"

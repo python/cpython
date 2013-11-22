@@ -162,7 +162,7 @@ _bz2
         http://www.bzip.org/
 _lzma
     Python wrapper for the liblzma compression library, using pre-built
-    binaries of XZ Utils version 5.0.3
+    binaries of XZ Utils version 5.0.5
     Homepage:
         http://tukaani.org/xz/
 _ssl
@@ -243,8 +243,8 @@ in ..\.. (relative to this directory).
 
 It is also possible to download sources from each project's homepage,
 though you may have to change the names of some folders in order to make
-things work.  For instance, if you were to download a version 5.0.5 of
-XZ Utils, you would need to extract the archive into ..\..\xz-5.0.3
+things work.  For instance, if you were to download a version 5.0.7 of
+XZ Utils, you would need to extract the archive into ..\..\xz-5.0.5
 anyway, since that is where the solution is set to look for xz.  The
 same is true for all other external projects.
 
