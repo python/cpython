@@ -148,6 +148,12 @@ PYTHONFRAMEWORKINSTALLDIR= @PYTHONFRAMEWORKINSTALLDIR@
 MACOSX_DEPLOYMENT_TARGET=@CONFIGURE_MACOSX_DEPLOYMENT_TARGET@
 @EXPORT_MACOSX_DEPLOYMENT_TARGET@export MACOSX_DEPLOYMENT_TARGET
 
+# Option to install to strip binaries
+STRIPFLAG=-s
+
+# Flags to lipo to produce a 32-bit-only universal executable
+LIPO_32BIT_FLAGS=@LIPO_32BIT_FLAGS@
+
 # Options to enable prebinding (for fast startup prior to Mac OS X 10.3)
 OTHER_LIBTOOL_OPT=@OTHER_LIBTOOL_OPT@
 
@@ -955,7 +961,7 @@ quicktest:	all platform
 		$(TESTRUNNER) $(QUICKTESTOPTS)
 
 
-install: altinstall bininstall maninstall
+install: @FRAMEWORKINSTALLFIRST@ altinstall bininstall maninstall @FRAMEWORKINSTALLLAST@
 
 altinstall:	@FRAMEWORKALTINSTALLFIRST@ altbininstall libinstall inclinstall libainstall \
                 sharedinstall oldsharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
@@ -983,7 +989,7 @@ $(DESTSHARED):
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
-altbininstall: $(BUILDPYTHON)
+altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	@for i in $(BINDIR) $(LIBDIR); \
 	do \
 		if test ! -d $(DESTDIR)$$i; then \
@@ -992,7 +998,11 @@ altbininstall: $(BUILDPYTHON)
 		else	true; \
 		fi; \
 	done
-	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE)
+	if test "$(PYTHONFRAMEWORKDIR)" = "no-framework" ; then \
+		$(INSTALL_PROGRAM) $(BUILDPYTHON) $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+	else \
+		$(INSTALL_PROGRAM) $(STRIPFLAG) Mac/pythonw $(DESTDIR)$(BINDIR)/python$(LDVERSION)$(EXE); \
+	fi
 	-if test "$(VERSION)" != "$(LDVERSION)"; then \
 		if test -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE) -o -h $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 		then rm -f $(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
@@ -1012,6 +1022,12 @@ altbininstall: $(BUILDPYTHON)
 			$(INSTALL_SHARED) $(PY3LIBRARY) $(DESTDIR)$(LIBDIR)/$(PY3LIBRARY); \
 		fi; \
 	else	true; \
+	fi
+	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
+		rm -f $(DESTDIR)$(BINDIR)python$(VERSION)-32$(EXE); \
+		lipo $(LIPO_32BIT_FLAGS) \
+			-output $(DESTDIR)$(BINDIR)/python$(VERSION)-32$(EXE) \
+			$(DESTDIR)$(BINDIR)/python$(VERSION)$(EXE); \
 	fi
 
 bininstall: altbininstall
@@ -1038,6 +1054,10 @@ bininstall: altbininstall
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s 2to3-$(VERSION) 2to3)
 	-rm -f $(DESTDIR)$(BINDIR)/pyvenv
 	(cd $(DESTDIR)$(BINDIR); $(LN) -s pyvenv-$(VERSION) pyvenv)
+	if test "x$(LIPO_32BIT_FLAGS)" != "x" ; then \
+		rm -f $(DESTDIR)$(BINDIR)/python3-32$(EXE); \
+		(cd $(DESTDIR)$(BINDIR); $(LN) -s python$(VERSION)-32$(EXE) python3-32$(EXE)) \
+	fi
 
 # Install the versioned manual page
 altmaninstall:
@@ -1364,7 +1384,14 @@ frameworkinstallmaclib:
 frameworkinstallapps:
 	cd Mac && $(MAKE) installapps DESTDIR="$(DESTDIR)"
 
-# This install the unix python and pythonw tools in /usr/local/bin
+# Build the bootstrap executable that will spawn the interpreter inside
+# an app bundle within the framework.  This allows the interpreter to
+# run OS X GUI APIs.
+frameworkpythonw:
+	cd Mac && $(MAKE) pythonw
+
+# This installs the python* and other bin symlinks in $prefix/bin or in
+# a bin directory relative to the framework root
 frameworkinstallunixtools:
 	cd Mac && $(MAKE) installunixtools DESTDIR="$(DESTDIR)"
 
