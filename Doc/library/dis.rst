@@ -44,7 +44,7 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 :class:`Bytecode` object that provides easy access to details of the
 compiled code.
 
-.. class:: Bytecode(x, *, first_line=None)
+.. class:: Bytecode(x, *, first_line=None, current_offset=None)
 
    Analyse the bytecode corresponding to a function, method, string of
    source code, or a code object (as returned by :func:`compile`).
@@ -58,6 +58,16 @@ compiled code.
    be reported for the first source line in the disassembled code.
    Otherwise, the source line information (if any) is taken directly from
    the disassembled code object.
+
+   If *current_offset* is not None, it refers to an instruction offset
+   in the disassembled code. Setting this means :meth:`dis` will display
+   a "current instruction" marker against the specified opcode.
+
+   .. classmethod:: from_traceback(tb)
+
+      Construct a :class:`Bytecode` instance from the given traceback,
+      setting *current_offset* to the instruction responsible for the
+      exception.
 
    .. data:: codeobj
 
