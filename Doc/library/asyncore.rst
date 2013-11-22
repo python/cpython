@@ -13,6 +13,9 @@
 
 --------------
 
+Note: This module exists for backwards compatibility only.  For new code we
+recommend using :module:`asyncio`.
+
 This module provides the basic infrastructure for writing asynchronous  socket
 service clients and servers.
 
