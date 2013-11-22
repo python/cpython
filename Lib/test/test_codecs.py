@@ -6,6 +6,7 @@ import locale
 import sys
 import unittest
 import warnings
+import encodings
 
 from test import support
 
@@ -2381,67 +2382,68 @@ class TransformCodecTest(unittest.TestCase):
                 view_decoded = codecs.decode(view, encoding)
                 self.assertEqual(view_decoded, data)
 
-    def test_type_error_for_text_input(self):
+    def test_text_to_binary_blacklists_binary_transforms(self):
         # Check binary -> binary codecs give a good error for str input
         bad_input = "bad input type"
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
-                msg = "^encoding with '{}' codec failed".format(encoding)
-                with self.assertRaisesRegex(TypeError, msg) as failure:
+                fmt = ( "{!r} is not a text encoding; "
+                        "use codecs.encode\(\) to handle arbitrary codecs")
+                msg = fmt.format(encoding)
+                with self.assertRaisesRegex(LookupError, msg) as failure:
                     bad_input.encode(encoding)
-                self.assertTrue(isinstance(failure.exception.__cause__,
-                                           TypeError))
+                self.assertIsNone(failure.exception.__cause__)
 
-    def test_type_error_for_binary_input(self):
-        # Check str -> str codec gives a good error for binary input
-        for bad_input in (b"immutable", bytearray(b"mutable")):
-            with self.subTest(bad_input=bad_input):
-                msg = "^decoding with 'rot_13' codec failed"
-                with self.assertRaisesRegex(AttributeError, msg) as failure:
-                    bad_input.decode("rot_13")
-                self.assertTrue(isinstance(failure.exception.__cause__,
-                                           AttributeError))
+    def test_text_to_binary_blacklists_text_transforms(self):
+        # Check str.encode gives a good error message for str -> str codecs
+        msg = (r"^'rot_13' is not a text encoding; "
+                "use codecs.encode\(\) to handle arbitrary codecs")
+        with self.assertRaisesRegex(LookupError, msg):
+            "just an example message".encode("rot_13")
 
-    def test_custom_zlib_error_is_wrapped(self):
-        # Check zlib codec gives a good error for malformed input
-        msg = "^decoding with 'zlib_codec' codec failed"
-        with self.assertRaisesRegex(Exception, msg) as failure:
-            b"hello".decode("zlib_codec")
-        self.assertTrue(isinstance(failure.exception.__cause__,
-                                   type(failure.exception)))
-
-    def test_custom_hex_error_is_wrapped(self):
-        # Check hex codec gives a good error for malformed input
-        msg = "^decoding with 'hex_codec' codec failed"
-        with self.assertRaisesRegex(Exception, msg) as failure:
-            b"hello".decode("hex_codec")
-        self.assertTrue(isinstance(failure.exception.__cause__,
-                                   type(failure.exception)))
-
-    # Unfortunately, the bz2 module throws OSError, which the codec
-    # machinery currently can't wrap :(
-
-    def test_bad_decoding_output_type(self):
+    def test_binary_to_text_blacklists_binary_transforms(self):
         # Check bytes.decode and bytearray.decode give a good error
         # message for binary -> binary codecs
         data = b"encode first to ensure we meet any format restrictions"
         for encoding in bytes_transform_encodings:
             with self.subTest(encoding=encoding):
                 encoded_data = codecs.encode(data, encoding)
-                fmt = ("'{}' decoder returned 'bytes' instead of 'str'; "
-                       "use codecs.decode\(\) to decode to arbitrary types")
+                fmt = (r"{!r} is not a text encoding; "
+                        "use codecs.decode\(\) to handle arbitrary codecs")
                 msg = fmt.format(encoding)
-                with self.assertRaisesRegex(TypeError, msg):
+                with self.assertRaisesRegex(LookupError, msg):
                     encoded_data.decode(encoding)
-                with self.assertRaisesRegex(TypeError, msg):
+                with self.assertRaisesRegex(LookupError, msg):
                     bytearray(encoded_data).decode(encoding)
 
-    def test_bad_encoding_output_type(self):
-        # Check str.encode gives a good error message for str -> str codecs
-        msg = ("'rot_13' encoder returned 'str' instead of 'bytes'; "
-               "use codecs.encode\(\) to encode to arbitrary types")
-        with self.assertRaisesRegex(TypeError, msg):
-            "just an example message".encode("rot_13")
+    def test_binary_to_text_blacklists_text_transforms(self):
+        # Check str -> str codec gives a good error for binary input
+        for bad_input in (b"immutable", bytearray(b"mutable")):
+            with self.subTest(bad_input=bad_input):
+                msg = (r"^'rot_13' is not a text encoding; "
+                        "use codecs.decode\(\) to handle arbitrary codecs")
+                with self.assertRaisesRegex(LookupError, msg) as failure:
+                    bad_input.decode("rot_13")
+                self.assertIsNone(failure.exception.__cause__)
+
+    def test_custom_zlib_error_is_wrapped(self):
+        # Check zlib codec gives a good error for malformed input
+        msg = "^decoding with 'zlib_codec' codec failed"
+        with self.assertRaisesRegex(Exception, msg) as failure:
+            codecs.decode(b"hello", "zlib_codec")
+        self.assertIsInstance(failure.exception.__cause__,
+                                                type(failure.exception))
+
+    def test_custom_hex_error_is_wrapped(self):
+        # Check hex codec gives a good error for malformed input
+        msg = "^decoding with 'hex_codec' codec failed"
+        with self.assertRaisesRegex(Exception, msg) as failure:
+            codecs.decode(b"hello", "hex_codec")
+        self.assertIsInstance(failure.exception.__cause__,
+                                                type(failure.exception))
+
+    # Unfortunately, the bz2 module throws OSError, which the codec
+    # machinery currently can't wrap :(
 
 
 # The codec system tries to wrap exceptions in order to ensure the error
@@ -2466,27 +2468,44 @@ class ExceptionChainingTest(unittest.TestCase):
         # case finishes by using the test case repr as the codec name
         # The codecs module normalizes codec names, although this doesn't
         # appear to be formally documented...
-        self.codec_name = repr(self).lower().replace(" ", "-")
+        # We also make sure we use a truly unique id for the custom codec
+        # to avoid issues with the codec cache when running these tests
+        # multiple times (e.g. when hunting for refleaks)
+        unique_id = repr(self) + str(id(self))
+        self.codec_name = encodings.normalize_encoding(unique_id).lower()
+
+        # We store the object to raise on the instance because of a bad
+        # interaction between the codec caching (which means we can't
+        # recreate the codec entry) and regrtest refleak hunting (which
+        # runs the same test instance multiple times). This means we
+        # need to ensure the codecs call back in to the instance to find
+        # out which exception to raise rather than binding them in a
+        # closure to an object that may change on the next run
+        self.obj_to_raise = RuntimeError
 
     def tearDown(self):
         _TEST_CODECS.pop(self.codec_name, None)
 
-    def set_codec(self, obj_to_raise):
-        def raise_obj(*args, **kwds):
-            raise obj_to_raise
-        codec_info = codecs.CodecInfo(raise_obj, raise_obj,
+    def set_codec(self, encode, decode):
+        codec_info = codecs.CodecInfo(encode, decode,
                                       name=self.codec_name)
         _TEST_CODECS[self.codec_name] = codec_info
 
     @contextlib.contextmanager
     def assertWrapped(self, operation, exc_type, msg):
-        full_msg = "{} with '{}' codec failed \({}: {}\)".format(
+        full_msg = r"{} with {!r} codec failed \({}: {}\)".format(
                   operation, self.codec_name, exc_type.__name__, msg)
         with self.assertRaisesRegex(exc_type, full_msg) as caught:
             yield caught
+        self.assertIsInstance(caught.exception.__cause__, exc_type)
+
+    def raise_obj(self, *args, **kwds):
+        # Helper to dynamically change the object raised by a test codec
+        raise self.obj_to_raise
 
     def check_wrapped(self, obj_to_raise, msg, exc_type=RuntimeError):
-        self.set_codec(obj_to_raise)
+        self.obj_to_raise = obj_to_raise
+        self.set_codec(self.raise_obj, self.raise_obj)
         with self.assertWrapped("encoding", exc_type, msg):
             "str_input".encode(self.codec_name)
         with self.assertWrapped("encoding", exc_type, msg):
@@ -2515,23 +2534,17 @@ class ExceptionChainingTest(unittest.TestCase):
             pass
         self.check_wrapped(MyRuntimeError(msg), msg, MyRuntimeError)
 
-    @contextlib.contextmanager
-    def assertNotWrapped(self, operation, exc_type, msg_re, msg=None):
-        if msg is None:
-            msg = msg_re
-        with self.assertRaisesRegex(exc_type, msg) as caught:
-            yield caught
-        self.assertEqual(str(caught.exception), msg)
-
-    def check_not_wrapped(self, obj_to_raise, msg_re, msg=None):
-        self.set_codec(obj_to_raise)
-        with self.assertNotWrapped("encoding", RuntimeError, msg_re, msg):
+    def check_not_wrapped(self, obj_to_raise, msg):
+        def raise_obj(*args, **kwds):
+            raise obj_to_raise
+        self.set_codec(raise_obj, raise_obj)
+        with self.assertRaisesRegex(RuntimeError, msg):
             "str input".encode(self.codec_name)
-        with self.assertNotWrapped("encoding", RuntimeError, msg_re, msg):
+        with self.assertRaisesRegex(RuntimeError, msg):
             codecs.encode("str input", self.codec_name)
-        with self.assertNotWrapped("decoding", RuntimeError, msg_re, msg):
+        with self.assertRaisesRegex(RuntimeError, msg):
             b"bytes input".decode(self.codec_name)
-        with self.assertNotWrapped("decoding", RuntimeError, msg_re, msg):
+        with self.assertRaisesRegex(RuntimeError, msg):
             codecs.decode(b"bytes input", self.codec_name)
 
     def test_init_override_is_not_wrapped(self):
@@ -2550,28 +2563,55 @@ class ExceptionChainingTest(unittest.TestCase):
         msg = "This should NOT be wrapped"
         exc = RuntimeError(msg)
         exc.attr = 1
-        self.check_not_wrapped(exc, msg)
+        self.check_not_wrapped(exc, "^{}$".format(msg))
 
     def test_non_str_arg_is_not_wrapped(self):
         self.check_not_wrapped(RuntimeError(1), "1")
 
     def test_multiple_args_is_not_wrapped(self):
-        msg_re = "\('a', 'b', 'c'\)"
-        msg = "('a', 'b', 'c')"
-        self.check_not_wrapped(RuntimeError('a', 'b', 'c'), msg_re, msg)
+        msg_re = r"^\('a', 'b', 'c'\)$"
+        self.check_not_wrapped(RuntimeError('a', 'b', 'c'), msg_re)
 
     # http://bugs.python.org/issue19609
     def test_codec_lookup_failure_not_wrapped(self):
-        msg = "unknown encoding: %s" % self.codec_name
+        msg = "^unknown encoding: {}$".format(self.codec_name)
         # The initial codec lookup should not be wrapped
-        with self.assertNotWrapped("encoding", LookupError, msg):
+        with self.assertRaisesRegex(LookupError, msg):
             "str input".encode(self.codec_name)
-        with self.assertNotWrapped("encoding", LookupError, msg):
+        with self.assertRaisesRegex(LookupError, msg):
             codecs.encode("str input", self.codec_name)
-        with self.assertNotWrapped("decoding", LookupError, msg):
+        with self.assertRaisesRegex(LookupError, msg):
             b"bytes input".decode(self.codec_name)
-        with self.assertNotWrapped("decoding", LookupError, msg):
+        with self.assertRaisesRegex(LookupError, msg):
             codecs.decode(b"bytes input", self.codec_name)
+
+    def test_unflagged_non_text_codec_handling(self):
+        # The stdlib non-text codecs are now marked so they're
+        # pre-emptively skipped by the text model related methods
+        # However, third party codecs won't be flagged, so we still make
+        # sure the case where an inappropriate output type is produced is
+        # handled appropriately
+        def encode_to_str(*args, **kwds):
+            return "not bytes!", 0
+        def decode_to_bytes(*args, **kwds):
+            return b"not str!", 0
+        self.set_codec(encode_to_str, decode_to_bytes)
+        # No input or output type checks on the codecs module functions
+        encoded = codecs.encode(None, self.codec_name)
+        self.assertEqual(encoded, "not bytes!")
+        decoded = codecs.decode(None, self.codec_name)
+        self.assertEqual(decoded, b"not str!")
+        # Text model methods should complain
+        fmt = (r"^{!r} encoder returned 'str' instead of 'bytes'; "
+                "use codecs.encode\(\) to encode to arbitrary types$")
+        msg = fmt.format(self.codec_name)
+        with self.assertRaisesRegex(TypeError, msg):
+            "str_input".encode(self.codec_name)
+        fmt = (r"^{!r} decoder returned 'bytes' instead of 'str'; "
+                "use codecs.decode\(\) to decode to arbitrary types$")
+        msg = fmt.format(self.codec_name)
+        with self.assertRaisesRegex(TypeError, msg):
+            b"bytes input".decode(self.codec_name)
 
 
 

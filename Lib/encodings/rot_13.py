@@ -43,6 +43,7 @@ def getregentry():
         incrementaldecoder=IncrementalDecoder,
         streamwriter=StreamWriter,
         streamreader=StreamReader,
+        _is_text_encoding=False,
     )
 
 ### Map
