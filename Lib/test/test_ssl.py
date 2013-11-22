@@ -585,7 +585,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(val, expected)
         self.assertIsInstance(val, ssl._ASN1Object)
         self.assertRaises(ValueError, ssl._ASN1Object.fromnid, -1)
-        self.assertRaises(ValueError, ssl._ASN1Object.fromnid, 100000)
+        with self.assertRaisesRegex(ValueError, "unknown NID 100000"):
+            ssl._ASN1Object.fromnid(100000)
         for i in range(1000):
             try:
                 obj = ssl._ASN1Object.fromnid(i)
@@ -603,7 +604,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(ssl._ASN1Object.fromname('serverAuth'), expected)
         self.assertEqual(ssl._ASN1Object.fromname('1.3.6.1.5.5.7.3.1'),
                          expected)
-        self.assertRaises(ValueError, ssl._ASN1Object.fromname, 'serverauth')
+        with self.assertRaisesRegex(ValueError, "unknown object 'serverauth'"):
+            ssl._ASN1Object.fromname('serverauth')
 
 
 class ContextTests(unittest.TestCase):
