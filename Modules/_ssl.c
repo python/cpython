@@ -3387,7 +3387,7 @@ PySSL_txt2obj(PyObject *self, PyObject *args, PyObject *kwds)
     }
     obj = OBJ_txt2obj(txt, name ? 0 : 1);
     if (obj == NULL) {
-        PyErr_Format(PyExc_ValueError, "Unknown object");
+        PyErr_Format(PyExc_ValueError, "unknown object '%.100s'", txt);
         return NULL;
     }
     result = asn1obj2py(obj);
@@ -3411,12 +3411,12 @@ PySSL_nid2obj(PyObject *self, PyObject *args)
         return NULL;
     }
     if (nid < NID_undef) {
-        PyErr_Format(PyExc_ValueError, "NID must be positive.");
+        PyErr_SetString(PyExc_ValueError, "NID must be positive.");
         return NULL;
     }
     obj = OBJ_nid2obj(nid);
     if (obj == NULL) {
-        PyErr_Format(PyExc_ValueError, "Unknown NID");
+        PyErr_Format(PyExc_ValueError, "unknown NID %i", nid);
         return NULL;
     }
     result = asn1obj2py(obj);
