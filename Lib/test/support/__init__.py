@@ -76,7 +76,7 @@ __all__ = [
     "captured_stdin", "captured_stderr",
     # filesystem
     "TESTFN", "SAVEDCWD", "unlink", "rmtree", "temp_cwd", "findfile",
-    "create_empty_file", "can_symlink",
+    "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver", "check_syntax_error",
@@ -2043,6 +2043,20 @@ def skip_unless_xattr(test):
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
     return test if ok else unittest.skip(msg)(test)
+
+
+def fs_is_case_insensitive(directory):
+    """Detects if the file system for the specified directory is case-insensitive."""
+    base_fp, base_path = tempfile.mkstemp(dir=directory)
+    case_path = base_path.upper()
+    if case_path == base_path:
+        case_path = base_path.lower()
+    try:
+        return os.path.samefile(base_path, case_path)
+    except FileNotFoundError:
+        return False
+    finally:
+        os.unlink(base_path)
 
 
 class SuppressCrashReport:
