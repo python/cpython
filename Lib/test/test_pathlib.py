@@ -1499,9 +1499,13 @@ class _BasePathTest(object):
     @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
     def test_is_socket_true(self):
         P = self.cls(BASE, 'mysock')
-        sock = socket.socket(socket.SOCK_STREAM, socket.AF_UNIX)
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
-        sock.bind(str(P))
+        try:
+            sock.bind(str(P))
+        except OSError as e:
+            if "AF_UNIX path too long" in str(e):
+                self.skipTest("cannot bind Unix socket: " + str(e))
         self.assertTrue(P.is_socket())
         self.assertFalse(P.is_fifo())
         self.assertFalse(P.is_file())
