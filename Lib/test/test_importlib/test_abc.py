@@ -284,22 +284,6 @@ class ExecutionLoaderDefaultsTests:
 tests = make_return_value_tests(ExecutionLoader, InspectLoaderDefaultsTests)
 Frozen_ELDefaultTests, Source_ELDefaultsTests = tests
 
-##### Loader concrete methods ##################################################
-class LoaderConcreteMethodTests:
-
-    def test_init_module_attrs(self):
-        loader = self.LoaderSubclass()
-        module = types.ModuleType('blah')
-        loader.init_module_attrs(module)
-        self.assertEqual(module.__loader__, loader)
-
-
-class Frozen_LoaderConcreateMethodTests(LoaderConcreteMethodTests, unittest.TestCase):
-    LoaderSubclass = Frozen_L
-
-class Source_LoaderConcreateMethodTests(LoaderConcreteMethodTests, unittest.TestCase):
-    LoaderSubclass = Source_L
-
 
 ##### InspectLoader concrete methods ###########################################
 class InspectLoaderSourceToCodeTests:
@@ -382,60 +366,6 @@ class Frozen_ILGetCodeTests(InspectLoaderGetCodeTests, unittest.TestCase):
     InspectLoaderSubclass = Frozen_IL
 
 class Source_ILGetCodeTests(InspectLoaderGetCodeTests, unittest.TestCase):
-    InspectLoaderSubclass = Source_IL
-
-
-class InspectLoaderInitModuleTests:
-
-    def mock_is_package(self, return_value):
-        return mock.patch.object(self.InspectLoaderSubclass, 'is_package',
-                                 return_value=return_value)
-
-    def init_module_attrs(self, name):
-        loader = self.InspectLoaderSubclass()
-        module = types.ModuleType(name)
-        loader.init_module_attrs(module)
-        self.assertEqual(module.__loader__, loader)
-        return module
-
-    def test_package(self):
-        # If a package, then __package__ == __name__, __path__ == []
-        with self.mock_is_package(True):
-            name = 'blah'
-            module = self.init_module_attrs(name)
-            self.assertEqual(module.__package__, name)
-            self.assertEqual(module.__path__, [])
-
-    def test_toplevel(self):
-        # If a module is top-level, __package__ == ''
-        with self.mock_is_package(False):
-            name = 'blah'
-            module = self.init_module_attrs(name)
-            self.assertEqual(module.__package__, '')
-
-    def test_submodule(self):
-        # If a module is contained within a package then set __package__ to the
-        # package name.
-        with self.mock_is_package(False):
-            name = 'pkg.mod'
-            module = self.init_module_attrs(name)
-            self.assertEqual(module.__package__, 'pkg')
-
-    def test_is_package_ImportError(self):
-        # If is_package() raises ImportError, __package__ should be None and
-        # __path__ should not be set.
-        with self.mock_is_package(False) as mocked_method:
-            mocked_method.side_effect = ImportError
-            name = 'mod'
-            module = self.init_module_attrs(name)
-            self.assertIsNone(module.__package__)
-            self.assertFalse(hasattr(module, '__path__'))
-
-
-class Frozen_ILInitModuleTests(InspectLoaderInitModuleTests, unittest.TestCase):
-    InspectLoaderSubclass = Frozen_IL
-
-class Source_ILInitModuleTests(InspectLoaderInitModuleTests, unittest.TestCase):
     InspectLoaderSubclass = Source_IL
 
 
@@ -547,80 +477,6 @@ class Frozen_ELGetCodeTests(ExecutionLoaderGetCodeTests, unittest.TestCase):
     ExecutionLoaderSubclass = Frozen_EL
 
 class Source_ELGetCodeTests(ExecutionLoaderGetCodeTests, unittest.TestCase):
-    ExecutionLoaderSubclass = Source_EL
-
-
-class ExecutionLoaderInitModuleTests:
-
-    def mock_is_package(self, return_value):
-        return mock.patch.object(self.ExecutionLoaderSubclass, 'is_package',
-                                 return_value=return_value)
-
-    @contextlib.contextmanager
-    def mock_methods(self, is_package, filename):
-        is_package_manager = self.mock_is_package(is_package)
-        get_filename_manager = mock.patch.object(self.ExecutionLoaderSubclass,
-                'get_filename', return_value=filename)
-        with is_package_manager as mock_is_package:
-            with get_filename_manager as mock_get_filename:
-                yield {'is_package': mock_is_package,
-                       'get_filename': mock_get_filename}
-
-    def test_toplevel(self):
-        # Verify __loader__, __file__, and __package__; no __path__.
-        name = 'blah'
-        path = os.path.join('some', 'path', '{}.py'.format(name))
-        with self.mock_methods(False, path):
-            loader = self.ExecutionLoaderSubclass()
-            module = types.ModuleType(name)
-            loader.init_module_attrs(module)
-        self.assertIs(module.__loader__, loader)
-        self.assertEqual(module.__file__, path)
-        self.assertEqual(module.__package__, '')
-        self.assertFalse(hasattr(module, '__path__'))
-
-    def test_package(self):
-        # Verify __loader__, __file__, __package__, and __path__.
-        name = 'pkg'
-        path = os.path.join('some', 'pkg', '__init__.py')
-        with self.mock_methods(True, path):
-            loader = self.ExecutionLoaderSubclass()
-            module = types.ModuleType(name)
-            loader.init_module_attrs(module)
-        self.assertIs(module.__loader__, loader)
-        self.assertEqual(module.__file__, path)
-        self.assertEqual(module.__package__, 'pkg')
-        self.assertEqual(module.__path__, [os.path.dirname(path)])
-
-    def test_submodule(self):
-        # Verify __package__ and not __path__; test_toplevel() takes care of
-        # other attributes.
-        name = 'pkg.submodule'
-        path = os.path.join('some', 'pkg', 'submodule.py')
-        with self.mock_methods(False, path):
-            loader = self.ExecutionLoaderSubclass()
-            module = types.ModuleType(name)
-            loader.init_module_attrs(module)
-        self.assertEqual(module.__package__, 'pkg')
-        self.assertEqual(module.__file__, path)
-        self.assertFalse(hasattr(module, '__path__'))
-
-    def test_get_filename_ImportError(self):
-        # If get_filename() raises ImportError, don't set __file__.
-        name = 'blah'
-        path = 'blah.py'
-        with self.mock_methods(False, path) as mocked_methods:
-            mocked_methods['get_filename'].side_effect = ImportError
-            loader = self.ExecutionLoaderSubclass()
-            module = types.ModuleType(name)
-            loader.init_module_attrs(module)
-        self.assertFalse(hasattr(module, '__file__'))
-
-
-class Frozen_ELInitModuleTests(ExecutionLoaderInitModuleTests, unittest.TestCase):
-    ExecutionLoaderSubclass = Frozen_EL
-
-class Source_ELInitModuleTests(ExecutionLoaderInitModuleTests, unittest.TestCase):
     ExecutionLoaderSubclass = Source_EL
 
 
@@ -950,59 +806,6 @@ class Frozen_SourceOnlyLGetSourceTests(SourceLoaderGetSourceTests, unittest.Test
 
 class Source_SourceOnlyLGetSourceTests(SourceLoaderGetSourceTests, unittest.TestCase):
     SourceOnlyLoaderMock = Source_SourceOnlyL
-
-
-class SourceLoaderInitModuleAttrTests:
-
-    """Tests for importlib.abc.SourceLoader.init_module_attrs()."""
-
-    def test_init_module_attrs(self):
-        # If __file__ set, __cached__ == importlib.util.cached_from_source(__file__).
-        name = 'blah'
-        path = 'blah.py'
-        loader = self.SourceOnlyLoaderMock(path)
-        module = types.ModuleType(name)
-        loader.init_module_attrs(module)
-        self.assertEqual(module.__loader__, loader)
-        self.assertEqual(module.__package__, '')
-        self.assertEqual(module.__file__, path)
-        self.assertEqual(module.__cached__, self.util.cache_from_source(path))
-
-    def test_no_get_filename(self):
-        # No __file__, no __cached__.
-        with mock.patch.object(self.SourceOnlyLoaderMock, 'get_filename') as mocked:
-            mocked.side_effect = ImportError
-            name = 'blah'
-            loader = self.SourceOnlyLoaderMock('blah.py')
-            module = types.ModuleType(name)
-            loader.init_module_attrs(module)
-        self.assertFalse(hasattr(module, '__file__'))
-        self.assertFalse(hasattr(module, '__cached__'))
-
-
-class Frozen_SLInitModuleAttrTests(SourceLoaderInitModuleAttrTests, unittest.TestCase):
-    SourceOnlyLoaderMock = Frozen_SourceOnlyL
-    util = frozen_util
-
-    # Difficult to test under source thanks to cross-module mocking needs.
-    @mock.patch('importlib._bootstrap.cache_from_source')
-    def test_cache_from_source_NotImplementedError(self, mock_cache_from_source):
-        # If importlib.util.cache_from_source() raises NotImplementedError don't set
-        # __cached__.
-        mock_cache_from_source.side_effect = NotImplementedError
-        name = 'blah'
-        path = 'blah.py'
-        loader = self.SourceOnlyLoaderMock(path)
-        module = types.ModuleType(name)
-        loader.init_module_attrs(module)
-        self.assertEqual(module.__file__, path)
-        self.assertFalse(hasattr(module, '__cached__'))
-
-
-class Source_SLInitModuleAttrTests(SourceLoaderInitModuleAttrTests, unittest.TestCase):
-    SourceOnlyLoaderMock = Source_SourceOnlyL
-    util = source_util
-
 
 
 if __name__ == '__main__':

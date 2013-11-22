@@ -253,6 +253,7 @@ class LongReprTest(unittest.TestCase):
             print("cached_path_len =", cached_path_len)
 
     def test_module(self):
+        self.maxDiff = None
         self._check_path_limitations(self.pkgname)
         create_empty_file(os.path.join(self.subpkgname, self.pkgname + '.py'))
         importlib.invalidate_caches()

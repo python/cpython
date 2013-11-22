@@ -45,6 +45,8 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
         return -1;
     if (PyDict_SetItemString(md_dict, "__loader__", Py_None) != 0)
         return -1;
+    if (PyDict_SetItemString(md_dict, "__spec__", Py_None) != 0)
+        return -1;
     if (PyUnicode_CheckExact(name)) {
         Py_INCREF(name);
         Py_XDECREF(mod->md_name);
@@ -398,55 +400,10 @@ module_dealloc(PyModuleObject *m)
 static PyObject *
 module_repr(PyModuleObject *m)
 {
-    PyObject *name, *filename, *repr, *loader = NULL;
+    PyThreadState *tstate = PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
 
-    /* See if the module has an __loader__.  If it does, give the loader the
-     * first shot at producing a repr for the module.
-     */
-    if (m->md_dict != NULL) {
-        loader = PyDict_GetItemString(m->md_dict, "__loader__");
-    }
-    if (loader != NULL && loader != Py_None) {
-        repr = PyObject_CallMethod(loader, "module_repr", "(O)",
-                                   (PyObject *)m, NULL);
-        if (repr == NULL) {
-            PyErr_Clear();
-        }
-        else {
-            return repr;
-        }
-    }
-    /* __loader__.module_repr(m) did not provide us with a repr.  Next, see if
-     * the module has an __file__.  If it doesn't then use repr(__loader__) if
-     * it exists, otherwise, just use module.__name__.
-     */
-    name = PyModule_GetNameObject((PyObject *)m);
-    if (name == NULL) {
-        PyErr_Clear();
-        name = PyUnicode_FromStringAndSize("?", 1);
-        if (name == NULL)
-            return NULL;
-    }
-    filename = PyModule_GetFilenameObject((PyObject *)m);
-    if (filename == NULL) {
-        PyErr_Clear();
-        /* There's no m.__file__, so if there was a __loader__, use that in
-         * the repr, otherwise, the only thing you can use is m.__name__
-         */
-        if (loader == NULL || loader == Py_None) {
-            repr = PyUnicode_FromFormat("<module %R>", name);
-        }
-        else {
-            repr = PyUnicode_FromFormat("<module %R (%R)>", name, loader);
-        }
-    }
-    /* Finally, use m.__file__ */
-    else {
-        repr = PyUnicode_FromFormat("<module %R from %R>", name, filename);
-        Py_DECREF(filename);
-    }
-    Py_DECREF(name);
-    return repr;
+    return PyObject_CallMethod(interp->importlib, "_module_repr", "O", m);
 }
 
 static int

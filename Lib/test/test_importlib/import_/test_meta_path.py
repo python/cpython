@@ -46,8 +46,8 @@ class CallingOrder:
         with util.import_state(meta_path=[]):
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter('always')
-                self.assertIsNone(importlib._bootstrap._find_module('nothing',
-                                                                    None))
+                self.assertIsNone(importlib._bootstrap._find_spec('nothing',
+                                                                  None))
                 self.assertEqual(len(w), 1)
                 self.assertTrue(issubclass(w[-1].category, ImportWarning))
 
