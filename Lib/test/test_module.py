@@ -191,8 +191,12 @@ a = A(destroyed)"""
 
     def test_module_repr_source(self):
         r = repr(unittest)
-        self.assertEqual(r[:25], "<module 'unittest' from '")
-        self.assertEqual(r[-13:], "__init__.py'>")
+        starts_with = "<module 'unittest' from '"
+        ends_with = "__init__.py'>"
+        self.assertEqual(r[:len(starts_with)], starts_with,
+                         '{!r} does not start with {!r}'.format(r, starts_with))
+        self.assertEqual(r[-len(ends_with):], ends_with,
+                         '{!r} does not end with {!r}'.format(r, ends_with))
 
     def test_module_finalization_at_shutdown(self):
         # Module globals and builtins should still be available during shutdown
