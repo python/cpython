@@ -10,7 +10,8 @@ Projected release date: 2013-11-24
 Core and Builtins
 -----------------
 
-- Use the repr of a module name in more places in import, especially exceptions.
+- Use the repr of a module name in more places in import, especially
+  exceptions.
 
 - Issue #19619: str.encode, bytes.decode and bytearray.decode now use an
   internal API to throw LookupError for known non-text encodings, rather
@@ -79,8 +80,8 @@ Library
   CRL enumeration are now two functions. enum_certificates() also returns
   purpose flags as set of OIDs.
 
-- Issue #19555: Restore sysconfig.get_config_var('SO'), with a
-  DeprecationWarning pointing people at $EXT_SUFFIX.
+- Issue #19555: Restore sysconfig.get_config_var('SO'), (and the distutils
+  equivalent) with a DeprecationWarning pointing people at $EXT_SUFFIX.
 
 - Issue #8813: Add SSLContext.verify_flags to change the verification flags
   of the context in order to enable certification revocation list (CRL)
