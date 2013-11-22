@@ -372,20 +372,44 @@ Certificate handling
 
    .. versionadded:: 3.4
 
-.. function:: enum_cert_store(store_name, cert_type='certificate')
+.. function:: enum_certificates(store_name)
 
    Retrieve certificates from Windows' system cert store. *store_name* may be
    one of ``CA``, ``ROOT`` or ``MY``. Windows may provide additional cert
-   stores, too. *cert_type* is either ``certificate`` for X.509 certificates
-   or ``crl`` for X.509 certificate revocation lists.
+   stores, too.
 
-   The function returns a list of (bytes, encoding_type) tuples. The
-   encoding_type flag can be interpreted with :const:`X509_ASN_ENCODING` or
-   :const:`PKCS_7_ASN_ENCODING`.
+   The function returns a list of (cert_bytes, encoding_type, trust) tuples.
+   The encoding_type specifies the encoding of cert_bytes. It is either
+   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   PKCS#7 ASN.1 data. Trust specifies the purpose of the certificate as a set
+   of OIDS or exactly ``True`` if the certificate is trustworthy for all
+   purposes.
+
+   Example::
+
+      >>> ssl.enum_certificates("CA")
+      [(b'data...', 'x509_asn', {'1.3.6.1.5.5.7.3.1', '1.3.6.1.5.5.7.3.2'}),
+       (b'data...', 'x509_asn', True)]
 
    Availability: Windows.
 
    .. versionadded:: 3.4
+
+.. function:: enum_crls(store_name)
+
+   Retrieve CRLs from Windows' system cert store. *store_name* may be
+   one of ``CA``, ``ROOT`` or ``MY``. Windows may provide additional cert
+   stores, too.
+
+   The function returns a list of (cert_bytes, encoding_type, trust) tuples.
+   The encoding_type specifies the encoding of cert_bytes. It is either
+   :const:`x509_asn` for X.509 ASN.1 data or :const:`pkcs_7_asn` for
+   PKCS#7 ASN.1 data.
+
+   Availability: Windows.
+
+   .. versionadded:: 3.4
+
 
 Constants
 ^^^^^^^^^
@@ -654,15 +678,6 @@ Constants
 
    Used as the return value of the callback function in
    :meth:`SSLContext.set_servername_callback`.
-
-   .. versionadded:: 3.4
-
-.. data:: X509_ASN_ENCODING
-          PKCS_7_ASN_ENCODING
-
-   Encoding flags for :func:`enum_cert_store`.
-
-   Availability: Windows.
 
    .. versionadded:: 3.4
 

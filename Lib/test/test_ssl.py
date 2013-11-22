@@ -528,29 +528,44 @@ class BasicSocketTests(unittest.TestCase):
             self.assertEqual(paths.cafile, CERTFILE)
             self.assertEqual(paths.capath, CAPATH)
 
+    @unittest.skipUnless(sys.platform == "win32", "Windows specific")
+    def test_enum_certificates(self):
+        self.assertTrue(ssl.enum_certificates("CA"))
+        self.assertTrue(ssl.enum_certificates("ROOT"))
+
+        self.assertRaises(TypeError, ssl.enum_certificates)
+        self.assertRaises(WindowsError, ssl.enum_certificates, "")
+
+        names = set()
+        ca = ssl.enum_certificates("CA")
+        self.assertIsInstance(ca, list)
+        for element in ca:
+            self.assertIsInstance(element, tuple)
+            self.assertEqual(len(element), 3)
+            cert, enc, trust = element
+            self.assertIsInstance(cert, bytes)
+            self.assertIn(enc, {"x509_asn", "pkcs_7_asn"})
+            self.assertIsInstance(trust, (set, bool))
+            if isinstance(trust, set):
+                names.update(trust)
+
+        serverAuth = "1.3.6.1.5.5.7.3.1"
+        self.assertIn(serverAuth, names)
 
     @unittest.skipUnless(sys.platform == "win32", "Windows specific")
-    def test_enum_cert_store(self):
-        self.assertEqual(ssl.X509_ASN_ENCODING, 1)
-        self.assertEqual(ssl.PKCS_7_ASN_ENCODING, 0x00010000)
+    def test_enum_crls(self):
+        self.assertTrue(ssl.enum_crls("CA"))
+        self.assertRaises(TypeError, ssl.enum_crls)
+        self.assertRaises(WindowsError, ssl.enum_crls, "")
 
-        self.assertEqual(ssl.enum_cert_store("CA"),
-            ssl.enum_cert_store("CA", "certificate"))
-        ssl.enum_cert_store("CA", "crl")
-        self.assertEqual(ssl.enum_cert_store("ROOT"),
-            ssl.enum_cert_store("ROOT", "certificate"))
-        ssl.enum_cert_store("ROOT", "crl")
+        crls = ssl.enum_crls("CA")
+        self.assertIsInstance(crls, list)
+        for element in crls:
+            self.assertIsInstance(element, tuple)
+            self.assertEqual(len(element), 2)
+            self.assertIsInstance(element[0], bytes)
+            self.assertIn(element[1], {"x509_asn", "pkcs_7_asn"})
 
-        self.assertRaises(TypeError, ssl.enum_cert_store)
-        self.assertRaises(WindowsError, ssl.enum_cert_store, "")
-        self.assertRaises(ValueError, ssl.enum_cert_store, "CA", "wrong")
-
-        ca = ssl.enum_cert_store("CA")
-        self.assertIsInstance(ca, list)
-        self.assertIsInstance(ca[0], tuple)
-        self.assertEqual(len(ca[0]), 2)
-        self.assertIsInstance(ca[0][0], bytes)
-        self.assertIsInstance(ca[0][1], int)
 
     def test_asn1object(self):
         expected = (129, 'serverAuth', 'TLS Web Server Authentication',

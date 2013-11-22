@@ -3422,130 +3422,258 @@ PySSL_nid2obj(PyObject *self, PyObject *args)
     return result;
 }
 
-
 #ifdef _MSC_VER
-PyDoc_STRVAR(PySSL_enum_cert_store_doc,
-"enum_cert_store(store_name, cert_type='certificate') -> []\n\
+
+static PyObject*
+certEncodingType(DWORD encodingType)
+{
+    static PyObject *x509_asn = NULL;
+    static PyObject *pkcs_7_asn = NULL;
+
+    if (x509_asn == NULL) {
+        x509_asn = PyUnicode_InternFromString("x509_asn");
+        if (x509_asn == NULL)
+            return NULL;
+    }
+    if (pkcs_7_asn == NULL) {
+        pkcs_7_asn = PyUnicode_InternFromString("pkcs_7_asn");
+        if (pkcs_7_asn == NULL)
+            return NULL;
+    }
+    switch(encodingType) {
+    case X509_ASN_ENCODING:
+        Py_INCREF(x509_asn);
+        return x509_asn;
+    case PKCS_7_ASN_ENCODING:
+        Py_INCREF(pkcs_7_asn);
+        return pkcs_7_asn;
+    default:
+        return PyLong_FromLong(encodingType);
+    }
+}
+
+static PyObject*
+parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
+{
+    CERT_ENHKEY_USAGE *usage;
+    DWORD size, error, i;
+    PyObject *retval;
+
+    if (!CertGetEnhancedKeyUsage(pCertCtx, flags, NULL, &size)) {
+        error = GetLastError();
+        if (error == CRYPT_E_NOT_FOUND) {
+            Py_RETURN_TRUE;
+        }
+        return PyErr_SetFromWindowsErr(error);
+    }
+
+    usage = (CERT_ENHKEY_USAGE*)PyMem_Malloc(size);
+    if (usage == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    /* Now get the actual enhanced usage property */
+    if (!CertGetEnhancedKeyUsage(pCertCtx, flags, usage, &size)) {
+        PyMem_Free(usage);
+        error = GetLastError();
+        if (error == CRYPT_E_NOT_FOUND) {
+            Py_RETURN_TRUE;
+        }
+        return PyErr_SetFromWindowsErr(error);
+    }
+    retval = PySet_New(NULL);
+    if (retval == NULL) {
+        goto error;
+    }
+    for (i = 0; i < usage->cUsageIdentifier; ++i) {
+        if (usage->rgpszUsageIdentifier[i]) {
+            PyObject *oid;
+            int err;
+            oid = PyUnicode_FromString(usage->rgpszUsageIdentifier[i]);
+            if (oid == NULL) {
+                Py_CLEAR(retval);
+                goto error;
+            }
+            err = PySet_Add(retval, oid);
+            Py_DECREF(oid);
+            if (err == -1) {
+                Py_CLEAR(retval);
+                goto error;
+            }
+        }
+    }
+  error:
+    PyMem_Free(usage);
+    return retval;
+}
+
+PyDoc_STRVAR(PySSL_enum_certificates_doc,
+"enum_certificates(store_name) -> []\n\
 \n\
 Retrieve certificates from Windows' cert store. store_name may be one of\n\
 'CA', 'ROOT' or 'MY'. The system may provide more cert storages, too.\n\
-cert_type must be either 'certificate' or 'crl'.\n\
-The function returns a list of (bytes, encoding_type) tuples. The\n\
+The function returns a list of (bytes, encoding_type, trust) tuples. The\n\
 encoding_type flag can be interpreted with X509_ASN_ENCODING or\n\
-PKCS_7_ASN_ENCODING.");
+PKCS_7_ASN_ENCODING. The trust setting is either a set of OIDs or the\n\
+boolean True.");
 
 static PyObject *
-PySSL_enum_cert_store(PyObject *self, PyObject *args, PyObject *kwds)
+PySSL_enum_certificates(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    char *kwlist[] = {"store_name", "cert_type", NULL};
+    char *kwlist[] = {"store_name", NULL};
     char *store_name;
-    char *cert_type = "certificate";
     HCERTSTORE hStore = NULL;
+    PCCERT_CONTEXT pCertCtx = NULL;
+    PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
-    PyObject *tup = NULL, *cert = NULL, *enc = NULL;
-    int ok = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s:enum_cert_store",
-                                     kwlist, &store_name, &cert_type)) {
-            return NULL;
-    }
-
-    if ((strcmp(cert_type, "certificate") != 0) &&
-        (strcmp(cert_type, "crl") != 0)) {
-        return PyErr_Format(PyExc_ValueError,
-                            "cert_type must be 'certificate' or 'crl', "
-                            "not %.100s", cert_type);
-    }
-
-    if ((result = PyList_New(0)) == NULL) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s:enum_certificates",
+                                     kwlist, &store_name)) {
         return NULL;
     }
-
-    if ((hStore = CertOpenSystemStore((HCRYPTPROV)NULL, store_name)) == NULL) {
+    result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+    hStore = CertOpenSystemStore((HCRYPTPROV)NULL, store_name);
+    if (hStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    if (strcmp(cert_type, "certificate") == 0) {
-        PCCERT_CONTEXT pCertCtx = NULL;
-        while (pCertCtx = CertEnumCertificatesInStore(hStore, pCertCtx)) {
-            cert = PyBytes_FromStringAndSize((const char*)pCertCtx->pbCertEncoded,
-                                             pCertCtx->cbCertEncoded);
-            if (!cert) {
-                ok = 0;
-                break;
-            }
-            if ((enc = PyLong_FromLong(pCertCtx->dwCertEncodingType)) == NULL) {
-                ok = 0;
-                break;
-            }
-            if ((tup = PyTuple_New(2)) == NULL) {
-                ok = 0;
-                break;
-            }
-            PyTuple_SET_ITEM(tup, 0, cert); cert = NULL;
-            PyTuple_SET_ITEM(tup, 1, enc); enc = NULL;
-
-            if (PyList_Append(result, tup) < 0) {
-                ok = 0;
-                break;
-            }
-            Py_CLEAR(tup);
+    while (pCertCtx = CertEnumCertificatesInStore(hStore, pCertCtx)) {
+        cert = PyBytes_FromStringAndSize((const char*)pCertCtx->pbCertEncoded,
+                                            pCertCtx->cbCertEncoded);
+        if (!cert) {
+            Py_CLEAR(result);
+            break;
         }
-        if (pCertCtx) {
-            /* loop ended with an error, need to clean up context manually */
-            CertFreeCertificateContext(pCertCtx);
+        if ((enc = certEncodingType(pCertCtx->dwCertEncodingType)) == NULL) {
+            Py_CLEAR(result);
+            break;
         }
-    } else {
-        PCCRL_CONTEXT pCrlCtx = NULL;
-        while (pCrlCtx = CertEnumCRLsInStore(hStore, pCrlCtx)) {
-            cert = PyBytes_FromStringAndSize((const char*)pCrlCtx->pbCrlEncoded,
-                                             pCrlCtx->cbCrlEncoded);
-            if (!cert) {
-                ok = 0;
-                break;
-            }
-            if ((enc = PyLong_FromLong(pCrlCtx->dwCertEncodingType)) == NULL) {
-                ok = 0;
-                break;
-            }
-            if ((tup = PyTuple_New(2)) == NULL) {
-                ok = 0;
-                break;
-            }
-            PyTuple_SET_ITEM(tup, 0, cert); cert = NULL;
-            PyTuple_SET_ITEM(tup, 1, enc); enc = NULL;
-
-            if (PyList_Append(result, tup) < 0) {
-                ok = 0;
-                break;
-            }
-            Py_CLEAR(tup);
+        keyusage = parseKeyUsage(pCertCtx, CERT_FIND_PROP_ONLY_ENHKEY_USAGE_FLAG);
+        if (keyusage == Py_True) {
+            Py_DECREF(keyusage);
+            keyusage = parseKeyUsage(pCertCtx, CERT_FIND_EXT_ONLY_ENHKEY_USAGE_FLAG);
         }
-        if (pCrlCtx) {
-            /* loop ended with an error, need to clean up context manually */
-            CertFreeCRLContext(pCrlCtx);
+        if (keyusage == NULL) {
+            Py_CLEAR(result);
+            break;
         }
+        if ((tup = PyTuple_New(3)) == NULL) {
+            Py_CLEAR(result);
+            break;
+        }
+        PyTuple_SET_ITEM(tup, 0, cert);
+        cert = NULL;
+        PyTuple_SET_ITEM(tup, 1, enc);
+        enc = NULL;
+        PyTuple_SET_ITEM(tup, 2, keyusage);
+        keyusage = NULL;
+        if (PyList_Append(result, tup) < 0) {
+            Py_CLEAR(result);
+            break;
+        }
+        Py_CLEAR(tup);
+    }
+    if (pCertCtx) {
+        /* loop ended with an error, need to clean up context manually */
+        CertFreeCertificateContext(pCertCtx);
     }
 
     /* In error cases cert, enc and tup may not be NULL */
     Py_XDECREF(cert);
     Py_XDECREF(enc);
+    Py_XDECREF(keyusage);
     Py_XDECREF(tup);
 
     if (!CertCloseStore(hStore, 0)) {
         /* This error case might shadow another exception.*/
+        Py_XDECREF(result);
+        return PyErr_SetFromWindowsErr(GetLastError());
+    }
+    return result;
+}
+
+PyDoc_STRVAR(PySSL_enum_crls_doc,
+"enum_crls(store_name) -> []\n\
+\n\
+Retrieve CRLs from Windows' cert store. store_name may be one of\n\
+'CA', 'ROOT' or 'MY'. The system may provide more cert storages, too.\n\
+The function returns a list of (bytes, encoding_type) tuples. The\n\
+encoding_type flag can be interpreted with X509_ASN_ENCODING or\n\
+PKCS_7_ASN_ENCODING.");
+
+static PyObject *
+PySSL_enum_crls(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    char *kwlist[] = {"store_name", NULL};
+    char *store_name;
+    HCERTSTORE hStore = NULL;
+    PCCRL_CONTEXT pCrlCtx = NULL;
+    PyObject *crl = NULL, *enc = NULL, *tup = NULL;
+    PyObject *result = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s:enum_crls",
+                                     kwlist, &store_name)) {
+        return NULL;
+    }
+    result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+    hStore = CertOpenSystemStore((HCRYPTPROV)NULL, store_name);
+    if (hStore == NULL) {
         Py_DECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
-    if (ok) {
-        return result;
-    } else {
-        Py_DECREF(result);
-        return NULL;
+
+    while (pCrlCtx = CertEnumCRLsInStore(hStore, pCrlCtx)) {
+        crl = PyBytes_FromStringAndSize((const char*)pCrlCtx->pbCrlEncoded,
+                                            pCrlCtx->cbCrlEncoded);
+        if (!crl) {
+            Py_CLEAR(result);
+            break;
+        }
+        if ((enc = certEncodingType(pCrlCtx->dwCertEncodingType)) == NULL) {
+            Py_CLEAR(result);
+            break;
+        }
+        if ((tup = PyTuple_New(2)) == NULL) {
+            Py_CLEAR(result);
+            break;
+        }
+        PyTuple_SET_ITEM(tup, 0, crl);
+        crl = NULL;
+        PyTuple_SET_ITEM(tup, 1, enc);
+        enc = NULL;
+
+        if (PyList_Append(result, tup) < 0) {
+            Py_CLEAR(result);
+            break;
+        }
+        Py_CLEAR(tup);
     }
+    if (pCrlCtx) {
+        /* loop ended with an error, need to clean up context manually */
+        CertFreeCRLContext(pCrlCtx);
+    }
+
+    /* In error cases cert, enc and tup may not be NULL */
+    Py_XDECREF(crl);
+    Py_XDECREF(enc);
+    Py_XDECREF(tup);
+
+    if (!CertCloseStore(hStore, 0)) {
+        /* This error case might shadow another exception.*/
+        Py_XDECREF(result);
+        return PyErr_SetFromWindowsErr(GetLastError());
+    }
+    return result;
 }
-#endif
+
+#endif /* _MSC_VER */
 
 /* List of functions exported by this module. */
 
@@ -3567,8 +3695,10 @@ static PyMethodDef PySSL_methods[] = {
     {"get_default_verify_paths", (PyCFunction)PySSL_get_default_verify_paths,
      METH_NOARGS, PySSL_get_default_verify_paths_doc},
 #ifdef _MSC_VER
-    {"enum_cert_store", (PyCFunction)PySSL_enum_cert_store,
-     METH_VARARGS | METH_KEYWORDS, PySSL_enum_cert_store_doc},
+    {"enum_certificates", (PyCFunction)PySSL_enum_certificates,
+     METH_VARARGS | METH_KEYWORDS, PySSL_enum_certificates_doc},
+    {"enum_crls", (PyCFunction)PySSL_enum_crls,
+     METH_VARARGS | METH_KEYWORDS, PySSL_enum_crls_doc},
 #endif
     {"txt2obj", (PyCFunction)PySSL_txt2obj,
      METH_VARARGS | METH_KEYWORDS, PySSL_txt2obj_doc},
@@ -3810,12 +3940,6 @@ PyInit__ssl(void)
                             X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
     PyModule_AddIntConstant(m, "VERIFY_X509_STRICT",
                             X509_V_FLAG_X509_STRICT);
-
-#ifdef _MSC_VER
-    /* Windows dwCertEncodingType */
-    PyModule_AddIntMacro(m, X509_ASN_ENCODING);
-    PyModule_AddIntMacro(m, PKCS_7_ASN_ENCODING);
-#endif
 
     /* Alert Descriptions from ssl.h */
     /* note RESERVED constants no longer intended for use have been removed */
