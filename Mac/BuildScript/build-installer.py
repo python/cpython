@@ -237,9 +237,9 @@ def library_recipes():
     if getVersionTuple() >= (3, 3):
         result.extend([
           dict(
-              name="XZ 5.0.3",
-              url="http://tukaani.org/xz/xz-5.0.3.tar.gz",
-              checksum='fefe52f9ecd521de2a8ce38c21a27574',
+              name="XZ 5.0.5",
+              url="http://tukaani.org/xz/xz-5.0.5.tar.gz",
+              checksum='19d924e066b6fff0bc9d1981b4e53196',
               configure_pre=[
                     '--disable-dependency-tracking',
               ]
@@ -282,9 +282,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.7.13",
-              url="http://www.sqlite.org/sqlite-autoconf-3071300.tar.gz",
-              checksum='c97df403e8a3d5b67bb408fcd6aabd8e',
+              name="SQLite 3.8.1",
+              url="http://www.sqlite.org/2013/sqlite-autoconf-3080100.tar.gz",
+              checksum='8b5a0a02dfcb0c7daf90856a5cfd485a',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS4 '
                             '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
