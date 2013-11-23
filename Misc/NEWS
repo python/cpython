@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19727: os.utime(..., None) is now potentially more precise
+  under Windows.
+
 - Issue #17201: ZIP64 extensions now are enabled by default.  Patch by
   William Mallard.
 
