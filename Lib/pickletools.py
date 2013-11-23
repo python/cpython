@@ -562,15 +562,16 @@ bytes4 = ArgumentDescriptor(
 
 def read_bytes8(f):
     r"""
-    >>> import io
+    >>> import io, struct, sys
     >>> read_bytes8(io.BytesIO(b"\x00\x00\x00\x00\x00\x00\x00\x00abc"))
     b''
     >>> read_bytes8(io.BytesIO(b"\x03\x00\x00\x00\x00\x00\x00\x00abcdef"))
     b'abc'
-    >>> read_bytes8(io.BytesIO(b"\x00\x00\x00\x00\x00\x00\x03\x00abcdef"))
+    >>> bigsize8 = struct.pack("<Q", sys.maxsize//3)
+    >>> read_bytes8(io.BytesIO(bigsize8 + b"abcdef"))  #doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
-    ValueError: expected 844424930131968 bytes in a bytes8, but only 6 remain
+    ValueError: expected ... bytes in a bytes8, but only 6 remain
     """
 
     n = read_uint8(f)
