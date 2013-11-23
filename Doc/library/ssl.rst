@@ -227,6 +227,45 @@ instead.
    .. versionchanged:: 3.2
       New optional argument *ciphers*.
 
+
+Context creation
+^^^^^^^^^^^^^^^^
+
+A convenience function helps create :class:`SSLContext` objects for common
+purposes.
+
+.. function:: create_default_context(purpose=Purpose.SERVER_AUTH, cafile=None, capath=None, cadata=None)
+
+   Return a new :class:`SSLContext` object with default settings for
+   the given *purpose*.  The settings are chosen by the :mod:`ssl` module,
+   and usually represent a higher security level than when calling the
+   :class:`SSLContext` constructor directly.
+
+   *cafile*, *capath*, *cadata* represent optional CA certificates to
+   trust for certificate verification, as in
+   :meth:`SSLContext.load_verify_locations`.  If all three are
+   :const:`None`, this function can choose to trust the system's default
+   CA certificates instead.
+
+   The settings in Python 3.4 are: :data:`PROTOCOL_TLSv1` with high encryption
+   cipher suites without RC4 and without unauthenticated cipher suites.
+   Passing :data:`~Purpose.SERVER_AUTH` as *purpose* sets
+   :data:`~SSLContext.verify_mode` to :data:`CERT_REQUIRED` and either
+   loads CA certificates (when at least one of *cafile*, *capath* or *cadata*
+   is given) or uses :meth:`SSLContext.load_default_certs` to load default
+   CA certificates.
+
+   .. note::
+      The protocol, options, cipher and other settings may change to more
+      restrictive values anytime without prior deprecation.  The values
+      represent a fair balance between compatibility and security.
+
+      If your application needs specific settings, you should create a
+      :class:`SSLContext` and apply the settings yourself.
+
+   .. versionadded:: 3.4
+
+
 Random generation
 ^^^^^^^^^^^^^^^^^
 
@@ -345,24 +384,6 @@ Certificate handling
 
    .. versionchanged:: 3.3
       This function is now IPv6-compatible.
-
-.. function:: create_default_context(purpose=Purpose.SERVER_AUTH, cafile=None, capath=None, cadata=None)
-
-   Create a :class:`SSLContext` with default settings.
-
-   The current settings are: :data:`PROTOCOL_TLSv1` with high encryption
-   cipher suites without RC4 and without unauthenticated cipher suites. The
-   *purpose* :data:`Purpose.SERVER_AUTH` sets verify_mode to
-   :data:`CERT_REQUIRED` and either loads CA certs (when at least one of
-   *cafile*, *capath* or *cadata* is given) or uses
-   :meth:`SSLContext.load_default_certs` to load default CA certs.
-
-   .. note::
-      The protocol, options, cipher and other settings may change to more
-      restrictive values anytime without prior deprecation. The values
-      represent a fair balance between maximum compatibility and security.
-
-   .. versionadded:: 3.4
 
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 
@@ -701,15 +722,19 @@ Constants
 
 .. data:: Purpose.SERVER_AUTH
 
-   Option for :meth:`SSLContext.load_default_certs` to load CA certificates
-   for TLS web server authentication (client side socket).
+   Option for :func:`create_default_context` and
+   :meth:`SSLContext.load_default_certs`.  This value indicates that the
+   context may be used to authenticate Web servers (therefore, it will
+   be used to create client-side sockets).
 
    .. versionadded:: 3.4
 
 .. data:: Purpose.CLIENT_AUTH
 
-   Option for :meth:`SSLContext.load_default_certs` to load CA certificates
-   for TLS web client authentication (server side socket).
+   Option for :func:`create_default_context` and
+   :meth:`SSLContext.load_default_certs`.  This value indicates that the
+   context may be used to authenticate Web clients (therefore, it will
+   be used to create server-side sockets).
 
    .. versionadded:: 3.4
 
@@ -886,7 +911,12 @@ to speed up repeated connections from the same clients.
 
    Create a new SSL context.  You must pass *protocol* which must be one
    of the ``PROTOCOL_*`` constants defined in this module.
-   :data:`PROTOCOL_SSLv23` is recommended for maximum interoperability.
+   :data:`PROTOCOL_SSLv23` is currently recommended for maximum
+   interoperability.
+
+   .. seealso::
+      :func:`create_default_context` lets the :mod:`ssl` module choose
+      security settings for a given purpose.
 
 
 :class:`SSLContext` objects have the following methods and attributes:
