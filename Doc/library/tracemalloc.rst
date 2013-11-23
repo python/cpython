@@ -21,8 +21,7 @@ start tracing Python memory allocations.
 By default, a trace of an allocated memory block only stores the most recent
 frame (1 frame). To store 25 frames at startup: set the
 :envvar:`PYTHONTRACEMALLOC` environment variable to ``25``, or use the
-:option:`-X` ``tracemalloc=25`` command line option. The
-:func:`set_traceback_limit` function can be used at runtime to set the limit.
+:option:`-X` ``tracemalloc=25`` command line option.
 
 .. versionadded:: 3.4
 
@@ -120,8 +119,8 @@ Code to display the traceback of the biggest memory block::
     import linecache
     import tracemalloc
 
-    tracemalloc.set_traceback_limit(25)
-    tracemalloc.start()
+    # Store 25 frames
+    tracemalloc.start(25)
 
     # ... run your application ...
 
@@ -267,10 +266,10 @@ Functions
 
    Get the maximum number of frames stored in the traceback of a trace.
 
-   By default, a trace of a memory block only stores the most recent
-   frame: the limit is ``1``.
+   The :mod:`tracemalloc` module must be tracing memory allocations to
+   get the limit, otherwise an exception is raised.
 
-   Use the :func:`set_traceback_limit` function to change the limit.
+   The limit is set by the :func:`start` function.
 
 
 .. function:: get_traced_memory()
@@ -294,10 +293,12 @@ Functions
     See also :func:`start` and :func:`stop` functions.
 
 
-.. function:: set_traceback_limit(nframe: int)
+.. function:: start(nframe: int=1)
 
-   Set the maximum number of frames stored in the traceback of a trace.
-   *nframe* must be greater or equal to ``1``.
+   Start tracing Python memory allocations: install hooks on Python memory
+   allocators. Collected tracebacks of traces will be limited to *nframe*
+   frames. By default, a trace of a memory block only stores the most recent
+   frame: the limit is ``1``. *nframe* must be greater or equal to ``1``.
 
    Storing more than ``1`` frame is only useful to compute statistics grouped
    by ``'traceback'`` or to compute cumulative statistics: see the
@@ -309,17 +310,10 @@ Functions
 
    The :envvar:`PYTHONTRACEMALLOC` environment variable
    (``PYTHONTRACEMALLOC=NFRAME``) and the :option:`-X` ``tracemalloc=NFRAME``
-   command line option can be used to set the limit at startup.
+   command line option can be used to start tracing at startup.
 
-   Use the :func:`get_traceback_limit` function to get the current limit.
-
-
-.. function:: start()
-
-   Start tracing Python memory allocations: install hooks on Python memory
-   allocators.
-
-   See also :func:`stop` and :func:`is_tracing` functions.
+   See also :func:`stop`, :func:`is_tracing` and :func:`get_traceback_limit`
+   functions.
 
 
 .. function:: stop()
@@ -342,7 +336,7 @@ Functions
    :mod:`tracemalloc` module started to trace memory allocations.
 
    Tracebacks of traces are limited to :func:`get_traceback_limit` frames. Use
-   :func:`set_traceback_limit` to store more frames.
+   the *nframe* parameter of the :func:`start` function to store more frames.
 
    The :mod:`tracemalloc` module must be tracing memory allocations to take a
    snapshot, see the the :func:`start` function.
