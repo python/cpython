@@ -16,14 +16,21 @@
 This module defines a class :class:`HTMLParser` which serves as the basis for
 parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
 
-.. class:: HTMLParser(strict=False)
+.. class:: HTMLParser(strict=False, *, convert_charrefs=False)
 
-   Create a parser instance.  If *strict* is ``False`` (the default), the parser
-   will accept and parse invalid markup.  If *strict* is ``True`` the parser
-   will raise an :exc:`~html.parser.HTMLParseError` exception instead [#]_ when
-   it's not able to parse the markup.
-   The use of ``strict=True`` is discouraged and the *strict* argument is
-   deprecated.
+   Create a parser instance.
+
+   If *convert_charrefs* is ``True`` (default: ``False``), all character
+   references (except the ones in ``script``/``style`` elements) are
+   automatically converted to the corresponding Unicode characters.
+   The use of ``convert_charrefs=True`` is encouraged and will become
+   the default in Python 3.5.
+
+   If *strict* is ``False`` (the default), the parser will accept and parse
+   invalid markup.  If *strict* is ``True`` the parser will raise an
+   :exc:`~html.parser.HTMLParseError` exception instead [#]_ when it's not
+   able to parse the markup.  The use of ``strict=True`` is discouraged and
+   the *strict* argument is deprecated.
 
    An :class:`.HTMLParser` instance is fed HTML data and calls handler methods
    when start tags, end tags, text, comments, and other markup elements are
@@ -34,11 +41,14 @@ parsing text files formatted in HTML (HyperText Mark-up Language) and XHTML.
    handler for elements which are closed implicitly by closing an outer element.
 
    .. versionchanged:: 3.2
-      *strict* keyword added.
+      *strict* argument added.
 
    .. deprecated-removed:: 3.3 3.5
       The *strict* argument and the strict mode have been deprecated.
       The parser is now able to accept and parse invalid markup too.
+
+   .. versionchanged:: 3.4
+      *convert_charrefs* keyword argument added.
 
 An exception is defined as well:
 
@@ -181,7 +191,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
    This method is called to process a named character reference of the form
    ``&name;`` (e.g. ``&gt;``), where *name* is a general entity reference
-   (e.g. ``'gt'``).
+   (e.g. ``'gt'``).  This method is never called if *convert_charrefs* is
+   ``True``.
 
 
 .. method:: HTMLParser.handle_charref(name)
@@ -189,7 +200,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    This method is called to process decimal and hexadecimal numeric character
    references of the form ``&#NNN;`` and ``&#xNNN;``.  For example, the decimal
    equivalent for ``&gt;`` is ``&#62;``, whereas the hexadecimal is ``&#x3E;``;
-   in this case the method will receive ``'62'`` or ``'x3E'``.
+   in this case the method will receive ``'62'`` or ``'x3E'``.  This method
+   is never called if *convert_charrefs* is ``True``.
 
 
 .. method:: HTMLParser.handle_comment(data)
@@ -324,7 +336,8 @@ correct char (note: these 3 references are all equivalent to ``'>'``)::
    Num ent  : >
 
 Feeding incomplete chunks to :meth:`~HTMLParser.feed` works, but
-:meth:`~HTMLParser.handle_data` might be called more than once::
+:meth:`~HTMLParser.handle_data` might be called more than once
+(unless *convert_charrefs* is set to ``True``)::
 
    >>> for chunk in ['<sp', 'an>buff', 'ered ', 'text</s', 'pan>']:
    ...     parser.feed(chunk)

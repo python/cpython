@@ -97,7 +97,7 @@ class HTMLParseError(Exception):
         return result
 
 
-_strict_sentinel = object()
+_default_sentinel = object()
 
 class HTMLParser(_markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
@@ -112,28 +112,39 @@ class HTMLParser(_markupbase.ParserBase):
     self.handle_startendtag(); end tags by self.handle_endtag().  The
     data between tags is passed from the parser to the derived class
     by calling self.handle_data() with the data as argument (the data
-    may be split up in arbitrary chunks).  Entity references are
-    passed by calling self.handle_entityref() with the entity
-    reference as the argument.  Numeric character references are
-    passed to self.handle_charref() with the string containing the
-    reference as the argument.
+    may be split up in arbitrary chunks).  If convert_charrefs is
+    True the character references are converted automatically to the
+    corresponding Unicode character (and self.handle_data() is no
+    longer split in chunks), otherwise they are passed by calling
+    self.handle_entityref() or self.handle_charref() with the string
+    containing respectively the named or numeric reference as the
+    argument.
     """
 
     CDATA_CONTENT_ELEMENTS = ("script", "style")
 
-    def __init__(self, strict=_strict_sentinel):
+    def __init__(self, strict=_default_sentinel, *,
+                 convert_charrefs=_default_sentinel):
         """Initialize and reset this instance.
 
+        If convert_charrefs is True (default: False), all character references
+        are automatically converted to the corresponding Unicode characters.
         If strict is set to False (the default) the parser will parse invalid
         markup, otherwise it will raise an error.  Note that the strict mode
         and argument are deprecated.
         """
-        if strict is not _strict_sentinel:
+        if strict is not _default_sentinel:
             warnings.warn("The strict argument and mode are deprecated.",
                           DeprecationWarning, stacklevel=2)
         else:
             strict = False  # default
         self.strict = strict
+        if convert_charrefs is _default_sentinel:
+            convert_charrefs = False  # default
+            warnings.warn("The value of convert_charrefs will become True in "
+                          "3.5. You are encouraged to set the value explicitly.",
+                          DeprecationWarning, stacklevel=2)
+        self.convert_charrefs = convert_charrefs
         self.reset()
 
     def reset(self):
@@ -184,14 +195,25 @@ class HTMLParser(_markupbase.ParserBase):
         i = 0
         n = len(rawdata)
         while i < n:
-            match = self.interesting.search(rawdata, i) # < or &
-            if match:
-                j = match.start()
+            if self.convert_charrefs and not self.cdata_elem:
+                j = rawdata.find('<', i)
+                if j < 0:
+                    if not end:
+                        break  # wait till we get all the text
+                    j = n
             else:
-                if self.cdata_elem:
-                    break
-                j = n
-            if i < j: self.handle_data(rawdata[i:j])
+                match = self.interesting.search(rawdata, i)  # < or &
+                if match:
+                    j = match.start()
+                else:
+                    if self.cdata_elem:
+                        break
+                    j = n
+            if i < j:
+                if self.convert_charrefs and not self.cdata_elem:
+                    self.handle_data(unescape(rawdata[i:j]))
+                else:
+                    self.handle_data(rawdata[i:j])
             i = self.updatepos(i, j)
             if i == n: break
             startswith = rawdata.startswith
@@ -226,7 +248,10 @@ class HTMLParser(_markupbase.ParserBase):
                             k = i + 1
                     else:
                         k += 1
-                    self.handle_data(rawdata[i:k])
+                    if self.convert_charrefs and not self.cdata_elem:
+                        self.handle_data(unescape(rawdata[i:k]))
+                    else:
+                        self.handle_data(rawdata[i:k])
                 i = self.updatepos(i, k)
             elif startswith("&#", i):
                 match = charref.match(rawdata, i)
@@ -277,7 +302,10 @@ class HTMLParser(_markupbase.ParserBase):
                 assert 0, "interesting.search() lied"
         # end while
         if end and i < n and not self.cdata_elem:
-            self.handle_data(rawdata[i:n])
+            if self.convert_charrefs and not self.cdata_elem:
+                self.handle_data(unescape(rawdata[i:n]))
+            else:
+                self.handle_data(rawdata[i:n])
             i = self.updatepos(i, n)
         self.rawdata = rawdata[i:]
 
