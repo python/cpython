@@ -1602,6 +1602,7 @@ all_unicode_encodings = [
     "cp037",
     "cp1006",
     "cp1026",
+    "cp1125",
     "cp1140",
     "cp1250",
     "cp1251",
