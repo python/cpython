@@ -61,6 +61,136 @@ Event loops
 Protocols
 ---------
 
+:mod:`asyncio` provides base classes that you can subclass to implement
+your network protocols.  Those classes are used in conjunction with
+:ref:`transports <transport>` (see below): the protocol parses incoming
+data and asks for the writing of outgoing data, while the transport is
+responsible for the actual I/O and buffering.
+
+When subclassing a protocol class, it is recommended you override certain
+methods.  Those methods are callbacks: they will be called by the transport
+on certain events (for example when some data is received); you shouldn't
+call them yourself, unless you are implementing a transport.
+
+
+Protocol classes
+^^^^^^^^^^^^^^^^
+
+.. class:: Protocol
+
+   The base class for implementing streaming protocols (for use with
+   e.g. TCP and SSL transports).
+
+.. class:: DatagramProtocol
+
+   The base class for implementing datagram protocols (for use with
+   e.g. UDP transports).
+
+.. class:: SubprocessProtocol
+
+   The base class for implementing protocols representing communication
+   channels with subprocesses (i.e., the set of pipes allowing bidirectional
+   data exchange between this process and the child process).
+
+
+Connection callbacks
+^^^^^^^^^^^^^^^^^^^^
+
+These callbacks may be called on :class:`Protocol` and
+:class:`SubprocessProtocol` instances.  The default implementations are
+empty.
+
+.. method:: connection_made(transport)
+
+   Called when a connection is made.
+
+   The *transport* argument is the transport representing the
+   connection.  You are responsible for storing it somewhere
+   (e.g. as an attribute) if you need to.
+
+.. method:: connection_lost(exc)
+
+   Called when the connection is lost or closed.
+
+   The argument is either an exception object or :const:`None`.
+   The latter means a regular EOF is received, or the connection was
+   aborted or closed by this side of the connection.
+
+:meth:`connection_made` and :meth:`connection_lost` are called exactly once
+per successful connection.  All other callbacks will be called between those
+two methods, which allows for easier resource management in your protocol
+implementation.
+
+
+Data reception callbacks
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following callbacks are called on :class:`Protocol` instances.
+The default implementations are empty.
+
+.. method:: data_received(data)
+
+   Called when some data is received.  *data* is a non-empty bytes object
+   containing the incoming data.
+
+   .. note::
+      Whether the data is buffered, chunked or reassembled depends on
+      the transport.  In general, you shouldn't rely on specific semantics
+      and instead make your parsing generic and flexible enough.
+
+      However, data always comes in the correct order.
+
+.. method:: eof_received()
+
+   Calls when the other end signals it won't send any more data
+   (for example by calling :meth:`write_eof`, if the other end also uses
+   asyncio).
+
+   This method may return a false value (including None), in which case
+   the transport will close itself.  Conversely, if this method returns a
+   true value, closing the transport is up to the protocol.  Since the
+   default implementation returns None, it implicitly closes the connection.
+
+   .. note::
+      Some transports such as SSL don't support half-closed connections,
+      in which case returning true from this method will not prevent closing
+      the connection.
+
+
+:meth:`data_received` can be called an arbitrary number of times during
+a connection.  However, :meth:`eof_received` is called at most once
+and, if called, :meth:`data_received` won't be called after it.
+
+
+Flow control callbacks
+^^^^^^^^^^^^^^^^^^^^^^
+
+These callbacks may be called on :class:`Protocol` and
+:class:`SubprocessProtocol`.  The default implementations are empty.
+
+.. method:: pause_writing()
+
+   Called when the transport's buffer goes over the high-water mark.
+
+.. method:: resume_writing()
+
+   Called when the transport's buffer drains below the low-water mark.
+
+
+:meth:`pause_writing` and :meth:`resume_writing` calls are paired --
+:meth:`pause_writing` is called once when the buffer goes strictly over
+the high-water mark (even if subsequent writes increases the buffer size
+even more), and eventually :meth:`resume_writing` is called once when the
+buffer size reaches the low-water mark.
+
+.. note::
+   If the buffer size equals the high-water mark,
+   :meth:`pause_writing` is not called -- it must go strictly over.
+   Conversely, :meth:`resume_writing` is called when the buffer size is
+   equal or lower than the low-water mark.  These end conditions
+   are important to ensure that things go as expected when either
+   mark is zero.
+
 
 .. _transport:
 
