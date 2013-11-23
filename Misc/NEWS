@@ -68,6 +68,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #16203: Add re.fullmatch() function and regex.fullmatch() method,
+  which anchor the pattern at both ends of the string to match.
+  Original patch by Matthew Barnett.
+
 - Issue #13592: Improved the repr for regular expression pattern objects.
   Based on patch by Hugo Lopes Tavares.
 

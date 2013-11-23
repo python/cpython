@@ -647,6 +647,13 @@ behaviours has been improved substantially by the underlying changes in
 the :mod:`inspect` module.
 
 
+re
+--
+
+Added :func:`re.fullmatch` function and :meth:`regex.fullmatch` method,
+which anchor the pattern at both ends of the string to match.
+(Contributed by Matthew Barnett in :issue:`16203`.)
+
 resource
 --------
 
