@@ -115,6 +115,71 @@ a different clock than :func:`time.time`.
 
    This method's behavior is the same as :meth:`call_later`.
 
+Creating connections
+^^^^^^^^^^^^^^^^^^^^
+
+.. method:: create_connection(protocol_factory, host=None, port=None, **options)
+
+   Create a streaming transport connection to a given Internet *host* and
+   *port*.  *protocol_factory* must be a callable returning a
+   :ref:`protocol <protocol>` instance.
+
+   This method returns a :ref:`coroutine <coroutine>` which will try to
+   establish the connection in the background.  When successful, the
+   coroutine returns a ``(transport, protocol)`` pair.
+
+   The chronological synopsis of the underlying operation is as follows:
+
+   #. The connection is established, and a :ref:`transport <transport>`
+      is created to represent it.
+
+   #. *protocol_factory* is called without arguments and must return a
+      :ref:`protocol <protocol>` instance.
+
+   #. The protocol instance is tied to the transport, and its
+      :meth:`connection_made` method is called.
+
+   #. The coroutine returns successfully with the ``(transport, protocol)``
+      pair.
+
+   The created transport is an implementation-dependent bidirectional stream.
+
+   .. note::
+      *protocol_factory* can be any kind of callable, not necessarily
+      a class.  For example, if you want to use a pre-created
+      protocol instance, you can pass ``lambda: my_protocol``.
+
+   *options* are optional named arguments allowing to change how the
+   connection is created:
+
+   * *ssl*: if given and not false, a SSL/TLS transport is created
+     (by default a plain TCP transport is created).  If *ssl* is
+     a :class:`ssl.SSLContext` object, this context is used to create
+     the transport; if *ssl* is :const:`True`, a context with some
+     unspecified default settings is used.
+
+   * *server_hostname*, is only for use together with *ssl*,
+     and sets or overrides the hostname that the target server's certificate
+     will be matched against.  By default the value of the *host* argument
+     is used.  If *host* is empty, there is no default and you must pass a
+     value for *server_hostname*.  If *server_hostname* is an empty
+     string, hostname matching is disabled (which is a serious security
+     risk, allowing for man-in-the-middle-attacks).
+
+   * *family*, *proto*, *flags* are the optional address family, protocol
+     and flags to be passed through to getaddrinfo() for *host* resolution.
+     If given, these should all be integers from the corresponding
+     :mod:`socket` module constants.
+
+   * *sock*, if given, should be an existing, already connected
+     :class:`socket.socket` object to be used by the transport.
+     If *sock* is given, none of *host*, *port*, *family*, *proto*, *flags*
+     and *local_addr* should be specified.
+
+   * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
+     to bind the socket to locally.  The *local_host* and *local_port*
+     are looked up using getaddrinfo(), similarly to *host* and *port*.
+
 
 .. _protocol:
 
@@ -468,6 +533,12 @@ Methods of subprocess transports
 
    On POSIX systems, the function sends SIGKILL to the subprocess.
    On Windows, this method is an alias for :meth:`terminate`.
+
+
+.. _coroutine:
+
+Coroutines
+----------
 
 
 .. _sync:
