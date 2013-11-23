@@ -198,6 +198,11 @@ static unsigned int _ssl_locks_count = 0;
 # define OPENSSL_NO_COMP
 #endif
 
+/* X509_VERIFY_PARAM got added to OpenSSL in 0.9.8 */
+#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+# define HAVE_OPENSSL_VERIFY_PARAM
+#endif
+
 
 typedef struct {
     PyObject_HEAD
@@ -2230,6 +2235,7 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
     return 0;
 }
 
+#ifdef HAVE_OPENSSL_VERIFY_PARAM
 static PyObject *
 get_verify_flags(PySSLContext *self, void *c)
 {
@@ -2267,6 +2273,7 @@ set_verify_flags(PySSLContext *self, PyObject *arg, void *c)
     }
     return 0;
 }
+#endif
 
 static PyObject *
 get_options(PySSLContext *self, void *c)
@@ -3088,8 +3095,10 @@ get_ca_certs(PySSLContext *self, PyObject *args, PyObject *kwds)
 static PyGetSetDef context_getsetlist[] = {
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
+#ifdef HAVE_OPENSSL_VERIFY_PARAM
     {"verify_flags", (getter) get_verify_flags,
                      (setter) set_verify_flags, NULL},
+#endif
     {"verify_mode", (getter) get_verify_mode,
                     (setter) set_verify_mode, NULL},
     {NULL},            /* sentinel */

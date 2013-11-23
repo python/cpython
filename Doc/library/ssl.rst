@@ -1126,6 +1126,7 @@ to speed up repeated connections from the same clients.
    The flags for certificate verification operations. You can set flags like
    :data:`VERIFY_CRL_CHECK_LEAF` by ORing them together. By default OpenSSL
    does neither require nor verify certificate revocation lists (CRLs).
+   Available only with openssl version 0.9.8+.
 
    .. versionadded:: 3.4
 
