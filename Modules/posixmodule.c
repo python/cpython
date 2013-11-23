@@ -4953,13 +4953,8 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     if (utime.now) {
-        SYSTEMTIME now;
-        GetSystemTime(&now);
-        if (!SystemTimeToFileTime(&now, &mtime) ||
-            !SystemTimeToFileTime(&now, &atime)) {
-            PyErr_SetFromWindowsErr(0);
-            goto exit;
-        }
+        GetSystemTimeAsFileTime(&mtime);
+        atime = mtime;
     }
     else {
         time_t_to_FILE_TIME(utime.atime_s, utime.atime_ns, &atime);
