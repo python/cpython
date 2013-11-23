@@ -6,6 +6,9 @@
 
 .. versionadded:: 3.4
 
+**Source code:** :source:`Lib/asyncio/`
+
+--------------
 
 This module provides infrastructure for writing single-threaded concurrent
 code using coroutines, multiplexing I/O access over sockets and other
