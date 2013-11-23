@@ -526,6 +526,12 @@ coverage-report:
 	: # build lcov report
 	$(MAKE) coverage-lcov
 
+# Run "Argument Clinic" over all source files
+# (depends on python having already been built)
+.PHONY=clinic
+clinic: $(BUILDPYTHON)
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) ./Tools/clinic/clinic.py --make
+
 # Build the interpreter
 $(BUILDPYTHON):	Modules/python.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
 	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -o $@ Modules/python.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
