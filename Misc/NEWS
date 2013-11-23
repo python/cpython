@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17201: ZIP64 extensions now are enabled by default.  Patch by
+  William Mallard.
+
 - Issue #19292: Add SSLContext.load_default_certs() to load default root CA
   certificates from default stores or system stores. By default the method
   loads CA certs for authentication of server certs.

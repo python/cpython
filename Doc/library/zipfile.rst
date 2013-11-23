@@ -130,7 +130,7 @@ ZipFile Objects
 ---------------
 
 
-.. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=False)
+.. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True)
 
    Open a ZIP file, where *file* can be either a path to a file (a string) or a
    file-like object.  The *mode* parameter should be ``'r'`` to read an existing
@@ -147,12 +147,9 @@ ZipFile Objects
    :const:`ZIP_BZIP2` or :const:`ZIP_LZMA` is specified but the corresponding module
    (:mod:`zlib`, :mod:`bz2` or :mod:`lzma`) is not available, :exc:`RuntimeError`
    is also raised. The default is :const:`ZIP_STORED`.  If *allowZip64* is
-   ``True`` zipfile will create ZIP files that use the ZIP64 extensions when
-   the zipfile is larger than 2 GiB. If it is  false (the default) :mod:`zipfile`
+   ``True`` (the default) zipfile will create ZIP files that use the ZIP64
+   extensions when the zipfile is larger than 2 GiB. If it is  false :mod:`zipfile`
    will raise an exception when the ZIP file would require ZIP64 extensions.
-   ZIP64 extensions are disabled by default because the default :program:`zip`
-   and :program:`unzip` commands on Unix (the InfoZIP utilities) don't support
-   these extensions.
 
    If the file is created with mode ``'a'`` or ``'w'`` and then
    :meth:`closed <close>` without adding any files to the archive, the appropriate
@@ -170,6 +167,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.3
       Added support for :mod:`bzip2 <bz2>` and :mod:`lzma` compression.
+
+   .. versionchanged:: 3.4
+      ZIP64 extensions are enabled by default.
 
 
 .. method:: ZipFile.close()
@@ -374,11 +374,14 @@ PyZipFile Objects
 The :class:`PyZipFile` constructor takes the same parameters as the
 :class:`ZipFile` constructor, and one additional parameter, *optimize*.
 
-.. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=False, \
+.. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                      optimize=-1)
 
    .. versionadded:: 3.2
       The *optimize* parameter.
+
+   .. versionchanged:: 3.4
+      ZIP64 extensions are enabled by default.
 
    Instances have one method in addition to those of :class:`ZipFile` objects:
 
