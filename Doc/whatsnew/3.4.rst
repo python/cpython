@@ -109,6 +109,7 @@ New expected features for Python implementations:
 Significantly Improved Library Modules:
 
 * Single-dispatch generic functions in :mod:`functoools` (:pep:`443`)
+* New :mod:`pickle` protocol 4 (:pep:`3154`)
 * SHA-3 (Keccak) support for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 * :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
@@ -283,6 +284,20 @@ authors.  Key finder and loader methods have been deprecated, but they
 will continue working.  New importers should use the new methods
 described in the PEP.  Existing importers should be updated to implement
 the new methods.
+
+
+Pickle protocol 4
+=================
+
+The new :mod:`pickle` protocol addresses a number of issues that were present
+in previous protocols, such as the serialization of nested classes, very
+large strings and containers, or classes whose :meth:`__new__` method takes
+keyword-only arguments.  It also brings a couple efficiency improvements.
+
+.. seealso::
+
+   :pep:`3154` - Pickle protocol 4
+      PEP written by Antoine Pitrou and implemented by Alexandre Vassalotti.
 
 
 Other Language Changes

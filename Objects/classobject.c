@@ -69,6 +69,30 @@ PyMethod_New(PyObject *func, PyObject *self)
     return (PyObject *)im;
 }
 
+static PyObject *
+method_reduce(PyMethodObject *im)
+{
+    PyObject *self = PyMethod_GET_SELF(im);
+    PyObject *func = PyMethod_GET_FUNCTION(im);
+    PyObject *builtins;
+    PyObject *getattr;
+    PyObject *funcname;
+    _Py_IDENTIFIER(getattr);
+
+    funcname = _PyObject_GetAttrId(func, &PyId___name__);
+    if (funcname == NULL) {
+        return NULL;
+    }
+    builtins = PyEval_GetBuiltins();
+    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
+    return Py_BuildValue("O(ON)", getattr, self, funcname);
+}
+
+static PyMethodDef method_methods[] = {
+    {"__reduce__", (PyCFunction)method_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
 /* Descriptors for PyMethod attributes */
 
 /* im_func and im_self are stored in the PyMethod object */
@@ -367,7 +391,7 @@ PyTypeObject PyMethod_Type = {
     offsetof(PyMethodObject, im_weakreflist), /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    method_methods,                             /* tp_methods */
     method_memberlist,                          /* tp_members */
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
