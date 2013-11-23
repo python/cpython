@@ -381,10 +381,11 @@ Miscellaneous options
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
    * ``-X showrefcount`` to enable the output of the total reference count
      and memory blocks (only works on debug builds);
-   * ``-X tracemalloc`` to enable :mod:`tracemalloc`.
-   * ``-X tracemalloc=NFRAME`` to enable :mod:`tracemalloc`, *NFRAME* is the
-     maximum number of frames stored in a trace: see the
-     :func:`tracemalloc.set_traceback_limit` function.
+   * ``-X tracemalloc`` to start tracing Python memory allocations using the
+     :mod:`tracemalloc` module. By default, only the most recent frame is
+     stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
+     tracing with a traceback limit of *NFRAME* frames. See the
+     :func:`tracemalloc.start` for more information.
 
    It also allows to pass arbitrary values and retrieve them through the
    :data:`sys._xoptions` dictionary.
@@ -600,10 +601,11 @@ conflict.
 
 .. envvar:: PYTHONTRACEMALLOC
 
-   If this environment variable is set to a non-empty string, all memory
-   allocations made by Python are traced by the :mod:`tracemalloc` module.
-   The value of the variable is the maximum number of frames stored in a trace:
-   see the :func:`tracemalloc.set_traceback_limit` function.
+   If this environment variable is set to a non-empty string, start tracing
+   Python memory allocations using the :mod:`tracemalloc` module. The value of
+   the variable is the maximum number of frames stored in a traceback of a
+   trace. For example, ``PYTHONTRACEMALLOC=1`` stores only the most recent
+   frame. See the :func:`tracemalloc.start` for more information.
 
    .. versionadded:: 3.4
 

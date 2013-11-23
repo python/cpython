@@ -1151,13 +1151,27 @@ done:
 }
 
 PyDoc_STRVAR(tracemalloc_start_doc,
-    "start()\n"
+    "start(nframe: int=1)\n"
     "\n"
-    "Start tracing Python memory allocations.");
+    "Start tracing Python memory allocations. Set also the maximum number \n"
+    "of frames stored in the traceback of a trace to nframe.");
 
 static PyObject*
-py_tracemalloc_start(PyObject *self)
+py_tracemalloc_start(PyObject *self, PyObject *args)
 {
+    Py_ssize_t nframe = 1;
+
+    if (!PyArg_ParseTuple(args, "|n:start", &nframe))
+        return NULL;
+
+    if (nframe < 1 || nframe > MAX_NFRAME) {
+        PyErr_Format(PyExc_ValueError,
+                     "the number of frames must be in range [1; %i]",
+                     MAX_NFRAME);
+        return NULL;
+    }
+    tracemalloc_config.max_nframe = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
+
     if (tracemalloc_start() < 0)
         return NULL;
 
@@ -1190,31 +1204,6 @@ static PyObject*
 py_tracemalloc_get_traceback_limit(PyObject *self)
 {
     return PyLong_FromLong(tracemalloc_config.max_nframe);
-}
-
-PyDoc_STRVAR(tracemalloc_set_traceback_limit_doc,
-    "set_traceback_limit(nframe: int)\n"
-    "\n"
-    "Set the maximum number of frames stored in the traceback of a trace.");
-
-static PyObject*
-tracemalloc_set_traceback_limit(PyObject *self, PyObject *args)
-{
-    Py_ssize_t nframe;
-
-    if (!PyArg_ParseTuple(args, "n:set_traceback_limit",
-                          &nframe))
-        return NULL;
-
-    if (nframe < 1 || nframe > MAX_NFRAME) {
-        PyErr_Format(PyExc_ValueError,
-                     "the number of frames must be in range [1; %i]",
-                     MAX_NFRAME);
-        return NULL;
-    }
-    tracemalloc_config.max_nframe = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
-
-    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(tracemalloc_get_tracemalloc_memory_doc,
@@ -1275,13 +1264,11 @@ static PyMethodDef module_methods[] = {
     {"_get_object_traceback", (PyCFunction)py_tracemalloc_get_object_traceback,
      METH_O, tracemalloc_get_object_traceback_doc},
     {"start", (PyCFunction)py_tracemalloc_start,
-      METH_NOARGS, tracemalloc_start_doc},
+      METH_VARARGS, tracemalloc_start_doc},
     {"stop", (PyCFunction)py_tracemalloc_stop,
       METH_NOARGS, tracemalloc_stop_doc},
     {"get_traceback_limit", (PyCFunction)py_tracemalloc_get_traceback_limit,
      METH_NOARGS, tracemalloc_get_traceback_limit_doc},
-    {"set_traceback_limit", (PyCFunction)tracemalloc_set_traceback_limit,
-     METH_VARARGS, tracemalloc_set_traceback_limit_doc},
     {"get_tracemalloc_memory", (PyCFunction)tracemalloc_get_tracemalloc_memory,
      METH_NOARGS, tracemalloc_get_tracemalloc_memory_doc},
     {"get_traced_memory", (PyCFunction)tracemalloc_get_traced_memory,
