@@ -481,7 +481,7 @@ form.
    .. note::
 
       The compiled versions of the most recent patterns passed to
-      :func:`re.match`, :func:`re.search` or :func:`re.compile` are cached, so
+      :func:`re.compile` and the module-level matching functions are cached, so
       programs that use only a few regular expressions at a time needn't worry
       about compiling regular expressions.
 
@@ -582,6 +582,16 @@ form.
 
    If you want to locate a match anywhere in *string*, use :func:`search`
    instead (see also :ref:`search-vs-match`).
+
+
+.. function:: fullmatch(pattern, string, flags=0)
+
+   If the whole *string* matches the regular expression *pattern*, return a
+   corresponding :ref:`match object <match-objects>`.  Return ``None`` if the
+   string does not match the pattern; note that this is different from a
+   zero-length match.
+
+   .. versionadded:: 3.4
 
 
 .. function:: split(pattern, string, maxsplit=0, flags=0)
@@ -776,6 +786,24 @@ attributes:
 
    If you want to locate a match anywhere in *string*, use
    :meth:`~regex.search` instead (see also :ref:`search-vs-match`).
+
+
+.. method:: regex.fullmatch(string[, pos[, endpos]])
+
+   If the whole *string* matches this regular expression, return a corresponding
+   :ref:`match object <match-objects>`.  Return ``None`` if the string does not
+   match the pattern; note that this is different from a zero-length match.
+
+   The optional *pos* and *endpos* parameters have the same meaning as for the
+   :meth:`~regex.search` method.
+
+   >>> pattern = re.compile("o[gh]")
+   >>> pattern.fullmatch("dog")      # No match as "o" is not at the start of "dog".
+   >>> pattern.fullmatch("ogre")     # No match as not the full string matches.
+   >>> pattern.fullmatch("doggie", 1, 3)   # Matches within given limits.
+   <_sre.SRE_Match object at ...>
+
+   .. versionadded:: 3.4
 
 
 .. method:: regex.split(string, maxsplit=0)

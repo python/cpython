@@ -454,16 +454,23 @@ do { \
 #define JUMP_ASSERT          12
 #define JUMP_ASSERT_NOT      13
 
-#define DO_JUMP(jumpvalue, jumplabel, nextpattern) \
+#define DO_JUMPX(jumpvalue, jumplabel, nextpattern, matchall) \
     DATA_ALLOC(SRE(match_context), nextctx); \
     nextctx->last_ctx_pos = ctx_pos; \
     nextctx->jump = jumpvalue; \
     nextctx->pattern = nextpattern; \
+    nextctx->match_all = matchall; \
     ctx_pos = alloc_pos; \
     ctx = nextctx; \
     goto entrance; \
     jumplabel: \
     while (0) /* gcc doesn't like labels at end of scopes */ \
+
+#define DO_JUMP(jumpvalue, jumplabel, nextpattern) \
+    DO_JUMPX(jumpvalue, jumplabel, nextpattern, ctx->match_all)
+
+#define DO_JUMP0(jumpvalue, jumplabel, nextpattern) \
+    DO_JUMPX(jumpvalue, jumplabel, nextpattern, 0)
 
 typedef struct {
     Py_ssize_t last_ctx_pos;
@@ -477,6 +484,7 @@ typedef struct {
         SRE_CODE chr;
         SRE_REPEAT* rep;
     } u;
+    int match_all;
 } SRE(match_context);
 
 /* check if string matches the given pattern.  returns <0 for
@@ -499,6 +507,7 @@ SRE(match)(SRE_STATE* state, SRE_CODE* pattern)
     ctx->last_ctx_pos = -1;
     ctx->jump = JUMP_NONE;
     ctx->pattern = pattern;
+    ctx->match_all = state->match_all;
     ctx_pos = alloc_pos;
 
 entrance:
@@ -571,8 +580,11 @@ entrance:
         case SRE_OP_SUCCESS:
             /* end of pattern */
             TRACE(("|%p|%p|SUCCESS\n", ctx->pattern, ctx->ptr));
-            state->ptr = ctx->ptr;
-            RETURN_SUCCESS;
+            if (!ctx->match_all || ctx->ptr == state->end) {
+                state->ptr = ctx->ptr;
+                RETURN_SUCCESS;
+            }
+            RETURN_FAILURE;
 
         case SRE_OP_AT:
             /* match at given position */
@@ -726,7 +738,8 @@ entrance:
             if (ctx->count < (Py_ssize_t) ctx->pattern[1])
                 RETURN_FAILURE;
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS) {
+            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
+                (!ctx->match_all || ctx->ptr == state->end)) {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -810,7 +823,8 @@ entrance:
                 ctx->ptr += ctx->count;
             }
 
-            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS) {
+            if (ctx->pattern[ctx->pattern[0]] == SRE_OP_SUCCESS &&
+                (!ctx->match_all || ctx->ptr == state->end)) {
                 /* tail is empty.  we're finished */
                 state->ptr = ctx->ptr;
                 RETURN_SUCCESS;
@@ -1082,7 +1096,7 @@ entrance:
             state->ptr = ctx->ptr - ctx->pattern[1];
             if (state->ptr < state->beginning)
                 RETURN_FAILURE;
-            DO_JUMP(JUMP_ASSERT, jump_assert, ctx->pattern+2);
+            DO_JUMP0(JUMP_ASSERT, jump_assert, ctx->pattern+2);
             RETURN_ON_FAILURE(ret);
             ctx->pattern += ctx->pattern[0];
             break;
@@ -1094,7 +1108,7 @@ entrance:
                    ctx->ptr, ctx->pattern[1]));
             state->ptr = ctx->ptr - ctx->pattern[1];
             if (state->ptr >= state->beginning) {
-                DO_JUMP(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
+                DO_JUMP0(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_FAILURE;

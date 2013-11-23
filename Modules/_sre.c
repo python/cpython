@@ -4,24 +4,25 @@
  * regular expression matching engine
  *
  * partial history:
- * 1999-10-24 fl  created (based on existing template matcher code)
- * 2000-03-06 fl  first alpha, sort of
- * 2000-08-01 fl  fixes for 1.6b1
- * 2000-08-07 fl  use PyOS_CheckStack() if available
- * 2000-09-20 fl  added expand method
- * 2001-03-20 fl  lots of fixes for 2.1b2
- * 2001-04-15 fl  export copyright as Python attribute, not global
- * 2001-04-28 fl  added __copy__ methods (work in progress)
- * 2001-05-14 fl  fixes for 1.5.2 compatibility
- * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
- * 2001-10-18 fl  fixed group reset issue (from Matthew Mueller)
- * 2001-10-20 fl  added split primitive; reenable unicode for 1.6/2.0/2.1
- * 2001-10-21 fl  added sub/subn primitive
- * 2001-10-24 fl  added finditer primitive (for 2.2 only)
- * 2001-12-07 fl  fixed memory leak in sub/subn (Guido van Rossum)
- * 2002-11-09 fl  fixed empty sub/subn return type
- * 2003-04-18 mvl fully support 4-byte codes
- * 2003-10-17 gn  implemented non recursive scheme
+ * 1999-10-24 fl   created (based on existing template matcher code)
+ * 2000-03-06 fl   first alpha, sort of
+ * 2000-08-01 fl   fixes for 1.6b1
+ * 2000-08-07 fl   use PyOS_CheckStack() if available
+ * 2000-09-20 fl   added expand method
+ * 2001-03-20 fl   lots of fixes for 2.1b2
+ * 2001-04-15 fl   export copyright as Python attribute, not global
+ * 2001-04-28 fl   added __copy__ methods (work in progress)
+ * 2001-05-14 fl   fixes for 1.5.2 compatibility
+ * 2001-07-01 fl   added BIGCHARSET support (from Martin von Loewis)
+ * 2001-10-18 fl   fixed group reset issue (from Matthew Mueller)
+ * 2001-10-20 fl   added split primitive; reenable unicode for 1.6/2.0/2.1
+ * 2001-10-21 fl   added sub/subn primitive
+ * 2001-10-24 fl   added finditer primitive (for 2.2 only)
+ * 2001-12-07 fl   fixed memory leak in sub/subn (Guido van Rossum)
+ * 2002-11-09 fl   fixed empty sub/subn return type
+ * 2003-04-18 mvl  fully support 4-byte codes
+ * 2003-10-17 gn   implemented non recursive scheme
+ * 2013-02-04 mrab added fullmatch primitive
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -546,6 +547,40 @@ pattern_match(PatternObject* self, PyObject* args, PyObject* kw)
     state.ptr = state.start;
 
     TRACE(("|%p|%p|MATCH\n", PatternObject_GetCode(self), state.ptr));
+
+    status = sre_match(&state, PatternObject_GetCode(self));
+
+    TRACE(("|%p|%p|END\n", PatternObject_GetCode(self), state.ptr));
+    if (PyErr_Occurred())
+        return NULL;
+
+    state_fini(&state);
+
+    return pattern_new_match(self, &state, status);
+}
+
+static PyObject*
+pattern_fullmatch(PatternObject* self, PyObject* args, PyObject* kw)
+{
+    SRE_STATE state;
+    Py_ssize_t status;
+
+    PyObject* string;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    static char* kwlist[] = { "pattern", "pos", "endpos", NULL };
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O|nn:fullmatch", kwlist,
+                                     &string, &start, &end))
+        return NULL;
+
+    string = state_init(&state, self, string, start, end);
+    if (!string)
+        return NULL;
+
+    state.match_all = 1;
+    state.ptr = state.start;
+
+    TRACE(("|%p|%p|FULLMATCH\n", PatternObject_GetCode(self), state.ptr));
 
     status = sre_match(&state, PatternObject_GetCode(self));
 
@@ -1223,6 +1258,10 @@ PyDoc_STRVAR(pattern_match_doc,
 "match(string[, pos[, endpos]]) -> match object or None.\n\
     Matches zero or more characters at the beginning of the string");
 
+PyDoc_STRVAR(pattern_fullmatch_doc,
+"fullmatch(string[, pos[, endpos]]) -> match object or None.\n\
+    Matches against all of the string");
+
 PyDoc_STRVAR(pattern_search_doc,
 "search(string[, pos[, endpos]]) -> match object or None.\n\
     Scan through string looking for a match, and return a corresponding\n\
@@ -1258,6 +1297,8 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
 static PyMethodDef pattern_methods[] = {
     {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS,
         pattern_match_doc},
+    {"fullmatch", (PyCFunction) pattern_fullmatch, METH_VARARGS|METH_KEYWORDS,
+        pattern_fullmatch_doc},
     {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS,
         pattern_search_doc},
     {"sub", (PyCFunction) pattern_sub, METH_VARARGS|METH_KEYWORDS,
