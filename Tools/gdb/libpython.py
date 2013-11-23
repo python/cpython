@@ -116,7 +116,7 @@ else:
 
 try:
     os_fsencode = os.fsencode
-except ImportError:
+except AttributeError:
     def os_fsencode(filename):
         if not isinstance(filename, unicode):
             return filename
