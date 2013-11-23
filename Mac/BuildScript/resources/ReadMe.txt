@@ -17,6 +17,17 @@ instead of double-clicking, control-click or right click the "Python"
 installer package icon.  Then select "Open using ... Installer" from
 the contextual menu that appears.
 
+               **** IMPORTANT ****
+
+Update your version of Tcl/Tk to use IDLE or other Tk applications
+==================================================================
+
+To use IDLE or other programs that use the Tkinter graphical user
+interface toolkit, you may need to install a newer third-party version
+of the Tcl/Tk frameworks.  Visit http://www.python.org/download/mac/tcltk/
+for current information about supported and recommended versions of
+Tcl/Tk for this version of Python and of Mac OS X.
+
               **NEW* As of Python 3.4.0b1:
 
 New Installation Options and Defaults
@@ -46,32 +57,6 @@ python2.7 or python), idle2 (or idle2.7 or idle), etc. If you want to
 use pip with Python 2.7.x, you will need to download and install a
 separate copy of it from the Python Package Index
 (https://pypi.python.org/pypi).
-
-
-       **** IMPORTANT changes if you use IDLE and Tkinter ****
-
-Installing a third-party version of Tcl/Tk is no longer required
-================================================================
-
-Beginning with Python 3.4 alpha2, the 10.6+ 64-bit installer now
-comes with its own private copy of Tcl and Tk 8.5 libraries.  For
-this version of Python, it is no longer necessary to install
-a third-party version of Tcl/Tk 8.5, such as those from ActiveState,
-to work around the problematic versions of Tcl/Tk 8.5 shipped by
-Apple in OS X 10.6 and later.  (This does not change the requirements
-for older versions of Python installed from python.org.)  By default,
-this version of Python will always use its own private version,
-regardless of whether a third-party Tcl/Tk is installed.
-The 10.5+ 32-bit-only installer continues to use Tcl/Tk 8.4,
-either a third-party or system-supplied version.
-Since this is a new feature, it should be considered somewhat
-experimental and subject to change prior to the final release of
-Python 3.4.  Please report any problems found to the Python bug
-tracker at http://bugs.python.org.
-
-Visit http://www.python.org/download/mac/tcltk/
-for current information about supported and recommended versions of
-Tcl/Tk for this version of Python and of Mac OS X.
 
 Using this version of Python on OS X
 ====================================
