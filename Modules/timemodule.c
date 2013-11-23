@@ -650,7 +650,7 @@ time_strftime(PyObject *self, PyObject *args)
             return NULL;
         }
     }
-#elif defined(_AIX) && defined(HAVE_WCSFTIME)
+#elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
     for(outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
