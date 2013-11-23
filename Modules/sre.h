@@ -86,6 +86,7 @@ typedef struct {
     SRE_REPEAT *repeat;
     /* hooks */
     SRE_TOLOWER_HOOK lower;
+    int match_all;
 } SRE_STATE;
 
 typedef struct {
