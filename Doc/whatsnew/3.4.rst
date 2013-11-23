@@ -146,15 +146,14 @@ For CPython source builds on POSIX systems, the ``make install`` and
 can be controlled through configure options, and overridden through
 Makefile options.
 
-On Windows, the CPython installer now offers the option to install ``pip``
-along with CPython itself.
+On Windows and Mac OS X, the CPython installers now offer the option to
+install ``pip`` along with CPython itself.
 
 .. note::
 
    The implementation of PEP 453 is still a work in progress. Refer to
    :issue:`19347` for the progress on additional steps:
 
-   * Mac OS X installer integration
    * Having the binary installers install ``pip`` by default
    * Recommending the use of ``pip`` in the "Installing Python Module"
      documentation.
