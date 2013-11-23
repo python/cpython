@@ -6,6 +6,7 @@ import os
 import posixpath
 import re
 import sys
+import time
 import weakref
 try:
     import threading
@@ -1075,8 +1076,9 @@ class Path(PurePath):
             # First try to bump modification time
             # Implementation note: GNU touch uses the UTIME_NOW option of
             # the utimensat() / futimens() functions.
+            t = time.time()
             try:
-                self._accessor.utime(self, None)
+                self._accessor.utime(self, (t, t))
             except OSError:
                 # Avoid exception chaining
                 pass
