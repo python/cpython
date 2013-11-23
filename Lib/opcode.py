@@ -8,6 +8,19 @@ __all__ = ["cmp_op", "hasconst", "hasname", "hasjrel", "hasjabs",
            "haslocal", "hascompare", "hasfree", "opname", "opmap",
            "HAVE_ARGUMENT", "EXTENDED_ARG", "hasnargs"]
 
+# It's a chicken-and-egg I'm afraid:
+# We're imported before _opcode's made.
+# With exception unheeded
+# (stack_effect is not needed)
+# Both our chickens and eggs are allayed.
+#     --Larry Hastings, 2013/11/23
+
+try:
+    from _opcode import stack_effect
+    __all__.append('stack_effect')
+except ImportError:
+    pass
+
 cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is',
         'is not', 'exception match', 'BAD')
 

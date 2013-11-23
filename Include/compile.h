@@ -54,6 +54,9 @@ PyAPI_FUNC(PyFutureFeatures *) PyFuture_FromASTObject(
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(PyObject*) _Py_Mangle(PyObject *p, PyObject *name);
 
+#define PY_INVALID_STACK_EFFECT INT_MAX
+PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
+
 #ifdef __cplusplus
 }
 #endif

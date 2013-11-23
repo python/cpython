@@ -853,8 +853,8 @@ compiler_set_lineno(struct compiler *c, int off)
     b->b_instr[off].i_lineno = c->u->u_lineno;
 }
 
-static int
-opcode_stack_effect(int opcode, int oparg)
+int
+PyCompile_OpcodeStackEffect(int opcode, int oparg)
 {
     switch (opcode) {
         case POP_TOP:
@@ -1044,11 +1044,9 @@ opcode_stack_effect(int opcode, int oparg)
         case DELETE_DEREF:
             return 0;
         default:
-            fprintf(stderr, "opcode = %d\n", opcode);
-            Py_FatalError("opcode_stack_effect()");
-
+            return PY_INVALID_STACK_EFFECT;
     }
-    return 0; /* not reachable */
+    return PY_INVALID_STACK_EFFECT; /* not reachable */
 }
 
 /* Add an opcode with no argument.
@@ -3829,7 +3827,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a)
 static int
 stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
 {
-    int i, target_depth;
+    int i, target_depth, effect;
     struct instr *instr;
     if (b->b_seen || b->b_startdepth >= depth)
         return maxdepth;
@@ -3837,7 +3835,13 @@ stackdepth_walk(struct compiler *c, basicblock *b, int depth, int maxdepth)
     b->b_startdepth = depth;
     for (i = 0; i < b->b_iused; i++) {
         instr = &b->b_instr[i];
-        depth += opcode_stack_effect(instr->i_opcode, instr->i_oparg);
+        effect = PyCompile_OpcodeStackEffect(instr->i_opcode, instr->i_oparg);
+        if (effect == PY_INVALID_STACK_EFFECT) {
+            fprintf(stderr, "opcode = %d\n", instr->i_opcode);
+            Py_FatalError("PyCompile_OpcodeStackEffect()");
+        }
+        depth += effect;
+
         if (depth > maxdepth)
             maxdepth = depth;
         assert(depth >= 0); /* invalid code or bug in stackdepth() */
