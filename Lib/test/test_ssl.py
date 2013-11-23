@@ -999,6 +999,26 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.load_default_certs, None)
         self.assertRaises(TypeError, ctx.load_default_certs, 'SERVER_AUTH')
 
+    def test_create_default_context(self):
+        ctx = ssl.create_default_context()
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+        with open(SIGNING_CA) as f:
+            cadata = f.read()
+        ctx = ssl.create_default_context(cafile=SIGNING_CA, capath=CAPATH,
+                                         cadata=cadata)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+        ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+
 
 class SSLErrorTests(unittest.TestCase):
 
