@@ -59,7 +59,7 @@ def run_gdb(*args, **env_vars):
     return out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace')
 
 # Verify that "gdb" was built with the embedded python support enabled:
-gdbpy_version, _ = run_gdb("--eval-command=python import sys; print sys.version_info")
+gdbpy_version, _ = run_gdb("--eval-command=python import sys; print(sys.version_info)")
 if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
