@@ -60,7 +60,7 @@ def fail(msg):
 # couldn't be opened
 def fopen(fname):
     try:
-        return open(fname, 'U')
+        return open(fname)
     except IOError as detail:
         return fail("couldn't open " + fname + ": " + str(detail))
 
