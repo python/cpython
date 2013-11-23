@@ -700,17 +700,27 @@ _Pickler_ClearBuffer(PicklerObject *self)
 }
 
 static void
+_write_size64(char *out, size_t value)
+{
+    out[0] = (unsigned char)(value & 0xff);
+    out[1] = (unsigned char)((value >> 8) & 0xff);
+    out[2] = (unsigned char)((value >> 16) & 0xff);
+    out[3] = (unsigned char)((value >> 24) & 0xff);
+#if SIZEOF_SIZE_T >= 8
+    out[4] = (unsigned char)((value >> 32) & 0xff);
+    out[5] = (unsigned char)((value >> 40) & 0xff);
+    out[6] = (unsigned char)((value >> 48) & 0xff);
+    out[7] = (unsigned char)((value >> 56) & 0xff);
+#else
+    out[4] = out[5] = out[6] = out[7] = 0;
+#endif
+}
+
+static void
 _Pickler_WriteFrameHeader(PicklerObject *self, char *qdata, size_t frame_len)
 {
-    qdata[0] = (unsigned char)FRAME;
-    qdata[1] = (unsigned char)(frame_len & 0xff);
-    qdata[2] = (unsigned char)((frame_len >> 8) & 0xff);
-    qdata[3] = (unsigned char)((frame_len >> 16) & 0xff);
-    qdata[4] = (unsigned char)((frame_len >> 24) & 0xff);
-    qdata[5] = (unsigned char)((frame_len >> 32) & 0xff);
-    qdata[6] = (unsigned char)((frame_len >> 40) & 0xff);
-    qdata[7] = (unsigned char)((frame_len >> 48) & 0xff);
-    qdata[8] = (unsigned char)((frame_len >> 56) & 0xff);
+    qdata[0] = FRAME;
+    _write_size64(qdata + 1, frame_len);
 }
 
 static int
@@ -2017,7 +2027,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
             int i;
             header[0] = BINBYTES8;
             for (i = 0; i < 8; i++) {
-                header[i+1] = (unsigned char)((size >> (8 * i)) & 0xff);
+                _write_size64(header + 1, size);
             }
             len = 8;
         }
@@ -2131,7 +2141,7 @@ write_utf8(PicklerObject *self, char *data, Py_ssize_t size)
 
         header[0] = BINUNICODE8;
         for (i = 0; i < 8; i++) {
-            header[i+1] = (unsigned char)((size >> (8 * i)) & 0xff);
+            _write_size64(header + 1, size);
         }
         len = 9;
     }
@@ -2940,6 +2950,9 @@ save_frozenset(PicklerObject *self, PyObject *obj)
         return -1;
 
     iter = PyObject_GetIter(obj);
+    if (iter == NULL) {
+        return -1;
+    }
     for (;;) {
         PyObject *item;
 
