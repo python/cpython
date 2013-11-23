@@ -395,6 +395,8 @@ Build
   available to override the default ensurepip "--upgrade" option.  The option
   can also be set with "make [alt]install ENSUREPIP=[upgrade|install\no]".
 
+- Issue #19551: PEP 453 - the OS X installer now installs pip by default.
+
 Tools/Demos
 -----------
 
