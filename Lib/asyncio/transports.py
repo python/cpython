@@ -105,7 +105,7 @@ class WriteTransport(BaseTransport):
         raise NotImplementedError
 
     def abort(self):
-        """Closs the transport immediately.
+        """Close the transport immediately.
 
         Buffered data will be lost.  No more data will be received.
         The protocol's connection_lost() method will (eventually) be
