@@ -85,6 +85,10 @@ Library
 
 - Issue #19673: Add pathlib to the stdlib as a provisional module (PEP 428).
 
+- Issue #16596: pdb in a generator now properly skips over yield and
+  yield from rather than stepping out of the generator into its
+  caller.  (This is essential for stepping through asyncio coroutines.)
+
 - Issue #17916: Added dis.Bytecode.from_traceback() and
   dis.Bytecode.current_offset to easily display "current instruction"
   markers in the new disassembly API (Patch by Claudiu Popa).
