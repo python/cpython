@@ -23,10 +23,10 @@
     <opensslDir>$(externalsDir)\openssl-1.0.1e</opensslDir>
     <tcltkDir>$(externalsDir)\tcltk</tcltkDir>
     <tcltk64Dir>$(externalsDir)\tcltk64</tcltk64Dir>
-    <tcltkLib>$(tcltkDir)\lib\tcl85.lib;$(tcltkDir)\lib\tk85.lib</tcltkLib>
-    <tcltkLibDebug>$(tcltkDir)\lib\tcl85g.lib;$(tcltkDir)\lib\tk85g.lib</tcltkLibDebug>
-    <tcltk64Lib>$(tcltk64Dir)\lib\tcl85.lib;$(tcltk64Dir)\lib\tk85.lib</tcltk64Lib>
-    <tcltk64LibDebug>$(tcltk64Dir)\lib\tcl85g.lib;$(tcltk64Dir)\lib\tk85g.lib</tcltk64LibDebug>
+    <tcltkLib>$(tcltkDir)\lib\tcl86t.lib;$(tcltkDir)\lib\tk86t.lib</tcltkLib>
+    <tcltkLibDebug>$(tcltkDir)\lib\tcl86tg.lib;$(tcltkDir)\lib\tk86tg.lib</tcltkLibDebug>
+    <tcltk64Lib>$(tcltk64Dir)\lib\tcl86t.lib;$(tcltk64Dir)\lib\tk86t.lib</tcltk64Lib>
+    <tcltk64LibDebug>$(tcltk64Dir)\lib\tcl86tg.lib;$(tcltk64Dir)\lib\tk86tg.lib</tcltk64LibDebug>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

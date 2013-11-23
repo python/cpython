@@ -402,7 +402,7 @@ Documentation
 Build
 -----
 
-- Update SQLite to 3.8.1 and xz to 5.0.5 on Windows.
+- Update SQLite to 3.8.1, xz to 5.0.5, and Tcl/Tk to 8.6.1 on Windows.
 
 - Issue #16632: Enable DEP and ASLR on Windows.
 

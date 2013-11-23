@@ -11,9 +11,9 @@ import sys
 here = os.path.abspath(os.path.dirname(__file__))
 par = os.path.pardir
 
-TCL = "tcl8.5.11"
-TK = "tk8.5.11"
-TIX = "tix-8.4.3.x"
+TCL = "tcl8.6.1"
+TK = "tk8.6.1"
+TIX = "tix-8.4.3.3"
 
 ROOT = os.path.abspath(os.path.join(here, par, par))
 NMAKE = ('nmake /nologo /f %s %s %s')

@@ -211,7 +211,7 @@ _sqlite3
     Homepage:
         http://www.sqlite.org/
 _tkinter
-    Wraps version 8.5.11 of the Tk windowing system.
+    Wraps version 8.6.1 of the Tk windowing system.
     Homepage:
         http://www.tcl.tk/
 
@@ -261,7 +261,7 @@ The external-amd64.bat file contains this for tcl:
 So for a release build, you'd call it as:
     nmake -f makefile.vc MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
 
-Note that the above command is called from within ..\..\tcl-8.5.11.0\win
+Note that the above command is called from within ..\..\tcl-8.6.1.0\win
 (relative to this directory); don't forget to build Tk as well as Tcl!
 
 This will be cleaned up in the future; http://bugs.python.org/issue15968
