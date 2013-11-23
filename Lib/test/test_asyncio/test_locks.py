@@ -805,7 +805,7 @@ class SemaphoreTests(unittest.TestCase):
         self.assertFalse(sem._waiters)
 
     def test_release_not_acquired(self):
-        sem = locks.Semaphore(bound=True, loop=self.loop)
+        sem = locks.BoundedSemaphore(loop=self.loop)
 
         self.assertRaises(ValueError, sem.release)
 
