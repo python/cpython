@@ -49,7 +49,7 @@ def run_gdb(*args, **env_vars):
     return out, err
 
 # Verify that "gdb" was built with the embedded python support enabled:
-gdbpy_version, _ = run_gdb("--eval-command=python import sys; print sys.version_info")
+gdbpy_version, _ = run_gdb("--eval-command=python import sys; print(sys.version_info)")
 if not gdbpy_version:
     raise unittest.SkipTest("gdb not built with embedded python support")
 
@@ -214,7 +214,7 @@ class PrettyPrintTests(DebuggerTests):
         # matches repr(value) in this process:
         gdb_repr, gdb_output = self.get_gdb_repr('print ' + repr(val),
                                                  cmds_after_breakpoint)
-        self.assertEqual(gdb_repr, repr(val), gdb_output)
+        self.assertEqual(gdb_repr, repr(val))
 
     def test_int(self):
         'Verify the pretty-printing of various "int" values'

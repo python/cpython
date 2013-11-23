@@ -39,9 +39,19 @@ the type names are known to the debugger
 
 The module also extends gdb with some python-specific commands.
 '''
-from __future__ import with_statement
+
+# NOTE: some gdbs are linked with Python 3, so this file should be dual-syntax
+# compatible (2.6+ and 3.0+).  See #19308.
+
+from __future__ import print_function, with_statement
 import gdb
+import os
 import sys
+
+if sys.version_info[0] >= 3:
+    unichr = chr
+    xrange = range
+    long = int
 
 # Look up the gdb.Type for some standard types:
 _type_char_ptr = gdb.lookup_type('char').pointer() # char*
@@ -51,17 +61,17 @@ _type_void_ptr = gdb.lookup_type('void').pointer() # void*
 SIZEOF_VOID_P = _type_void_ptr.sizeof
 
 
-Py_TPFLAGS_HEAPTYPE = (1L << 9)
+Py_TPFLAGS_HEAPTYPE = (1 << 9)
 
-Py_TPFLAGS_INT_SUBCLASS      = (1L << 23)
-Py_TPFLAGS_LONG_SUBCLASS     = (1L << 24)
-Py_TPFLAGS_LIST_SUBCLASS     = (1L << 25)
-Py_TPFLAGS_TUPLE_SUBCLASS    = (1L << 26)
-Py_TPFLAGS_STRING_SUBCLASS   = (1L << 27)
-Py_TPFLAGS_UNICODE_SUBCLASS  = (1L << 28)
-Py_TPFLAGS_DICT_SUBCLASS     = (1L << 29)
-Py_TPFLAGS_BASE_EXC_SUBCLASS = (1L << 30)
-Py_TPFLAGS_TYPE_SUBCLASS     = (1L << 31)
+Py_TPFLAGS_INT_SUBCLASS      = (1 << 23)
+Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
+Py_TPFLAGS_LIST_SUBCLASS     = (1 << 25)
+Py_TPFLAGS_TUPLE_SUBCLASS    = (1 << 26)
+Py_TPFLAGS_STRING_SUBCLASS   = (1 << 27)
+Py_TPFLAGS_UNICODE_SUBCLASS  = (1 << 28)
+Py_TPFLAGS_DICT_SUBCLASS     = (1 << 29)
+Py_TPFLAGS_BASE_EXC_SUBCLASS = (1 << 30)
+Py_TPFLAGS_TYPE_SUBCLASS     = (1 << 31)
 
 
 MAX_OUTPUT_LEN=1024
@@ -80,7 +90,7 @@ def safety_limit(val):
 def safe_range(val):
     # As per range, but don't trust the value too much: cap it to a safety
     # threshold in case the data was corrupted
-    return xrange(safety_limit(val))
+    return xrange(safety_limit(int(val)))
 
 
 class StringTruncated(RuntimeError):
@@ -292,8 +302,8 @@ class PyObjectPtr(object):
             # class
             return cls
 
-        #print 'tp_flags = 0x%08x' % tp_flags
-        #print 'tp_name = %r' % tp_name
+        #print('tp_flags = 0x%08x' % tp_flags)
+        #print('tp_name = %r' % tp_name)
 
         name_map = {'bool': PyBoolObjectPtr,
                     'classobj': PyClassObjectPtr,
@@ -758,14 +768,14 @@ class PyLongObjectPtr(PyObjectPtr):
         '''
         ob_size = long(self.field('ob_size'))
         if ob_size == 0:
-            return 0L
+            return 0
 
         ob_digit = self.field('ob_digit')
 
         if gdb.lookup_type('digit').sizeof == 2:
-            SHIFT = 15L
+            SHIFT = 15
         else:
-            SHIFT = 30L
+            SHIFT = 30
 
         digits = [long(ob_digit[i]) * 2**(SHIFT*i)
                   for i in safe_range(abs(ob_size))]
@@ -773,6 +783,12 @@ class PyLongObjectPtr(PyObjectPtr):
         if ob_size < 0:
             result = -result
         return result
+
+    def write_repr(self, out, visited):
+        # This ensures the trailing 'L' is printed when gdb is linked
+        # with a Python 3 interpreter.
+        out.write(repr(self.proxyval(visited)).rstrip('L'))
+        out.write('L')
 
 
 class PyNoneStructPtr(PyObjectPtr):
@@ -969,10 +985,18 @@ class PyStringObjectPtr(PyObjectPtr):
         field_ob_size = self.field('ob_size')
         field_ob_sval = self.field('ob_sval')
         char_ptr = field_ob_sval.address.cast(_type_unsigned_char_ptr)
+        # When gdb is linked with a Python 3 interpreter, this is really
+        # a latin-1 mojibake decoding of the original string...
         return ''.join([chr(char_ptr[i]) for i in safe_range(field_ob_size)])
 
     def proxyval(self, visited):
         return str(self)
+
+    def write_repr(self, out, visited):
+        val = repr(self.proxyval(visited))
+        if sys.version_info[0] >= 3:
+            val = val.encode('ascii', 'backslashreplace').decode('ascii')
+        out.write(val)
 
 class PyTupleObjectPtr(PyObjectPtr):
     _typename = 'PyTupleObject'
@@ -1071,6 +1095,15 @@ class PyUnicodeObjectPtr(PyObjectPtr):
         # This splits surrogate pairs if sizeof(Py_UNICODE) is 2 here (in gdb).
         result = u''.join([_unichr(ucs) for ucs in Py_UNICODEs])
         return result
+
+    def write_repr(self, out, visited):
+        val = repr(self.proxyval(visited))
+        if sys.version_info[0] >= 3:
+            val = val.encode('ascii', 'backslashreplace').decode('ascii')
+        # This ensures the 'u' prefix is printed when gdb is linked
+        # with a Python 3 interpreter.
+        out.write('u')
+        out.write(val.lstrip('u'))
 
 
 def int_from_int(gdbval):
@@ -1295,12 +1328,12 @@ class PyList(gdb.Command):
 
         frame = Frame.get_selected_python_frame()
         if not frame:
-            print 'Unable to locate python frame'
+            print('Unable to locate python frame')
             return
 
         pyop = frame.get_pyop()
         if not pyop or pyop.is_optimized_out():
-            print 'Unable to read information on python frame'
+            print('Unable to read information on python frame')
             return
 
         filename = pyop.filename()
@@ -1350,9 +1383,9 @@ def move_in_stack(move_up):
         frame = iter_frame
 
     if move_up:
-        print 'Unable to find an older python frame'
+        print('Unable to find an older python frame')
     else:
-        print 'Unable to find a newer python frame'
+        print('Unable to find a newer python frame')
 
 class PyUp(gdb.Command):
     'Select and print the python stack frame that called this one (if any)'
@@ -1415,23 +1448,23 @@ class PyPrint(gdb.Command):
 
         frame = Frame.get_selected_python_frame()
         if not frame:
-            print 'Unable to locate python frame'
+            print('Unable to locate python frame')
             return
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print 'Unable to read information on python frame'
+            print('Unable to read information on python frame')
             return
 
         pyop_var, scope = pyop_frame.get_var_by_name(name)
 
         if pyop_var:
-            print ('%s %r = %s'
+            print('%s %r = %s'
                    % (scope,
                       name,
                       pyop_var.get_truncated_repr(MAX_OUTPUT_LEN)))
         else:
-            print '%r not found' % name
+            print('%r not found' % name)
 
 PyPrint()
 
@@ -1449,16 +1482,16 @@ class PyLocals(gdb.Command):
 
         frame = Frame.get_selected_python_frame()
         if not frame:
-            print 'Unable to locate python frame'
+            print('Unable to locate python frame')
             return
 
         pyop_frame = frame.get_pyop()
         if not pyop_frame:
-            print 'Unable to read information on python frame'
+            print('Unable to read information on python frame')
             return
 
         for pyop_name, pyop_value in pyop_frame.iter_locals():
-            print ('%s = %s'
+            print('%s = %s'
                    % (pyop_name.proxyval(set()),
                       pyop_value.get_truncated_repr(MAX_OUTPUT_LEN)))
 
