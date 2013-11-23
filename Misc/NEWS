@@ -71,6 +71,12 @@ Library
 - Issue #19689: Add ssl.create_default_context() factory function. It creates
   a new SSLContext object with secure default settings.
 
+- Issue #19727: os.utime(..., None) is now potentially more precise
+  under Windows.
+
+- Issue #17201: ZIP64 extensions now are enabled by default.  Patch by
+  William Mallard.
+
 - Issue #19292: Add SSLContext.load_default_certs() to load default root CA
   certificates from default stores or system stores. By default the method
   loads CA certs for authentication of server certs.
@@ -481,6 +487,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #17457: unittest test discovery now works with namespace packages.
+  Patch by Claudiu Popa.
 
 - Issue #18235: Fix the sysconfig variables LDSHARED and BLDSHARED under AIX.
   Patch by David Edelsohn.
