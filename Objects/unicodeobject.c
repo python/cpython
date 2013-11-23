@@ -47,6 +47,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+/*[clinic]
+class str
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 /* --- Globals ------------------------------------------------------------
 
 NOTE: In the interpreter's initialization phase, some globals are currently
@@ -12883,7 +12888,6 @@ unicode_swapcase(PyObject *self)
 }
 
 /*[clinic]
-class str
 
 @staticmethod
 str.maketrans as unicode_maketrans
@@ -12908,9 +12912,8 @@ must be a string, whose characters will be mapped to None in the result.
 [clinic]*/
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
+"maketrans(x, y=None, z=None)\n"
 "Return a translation table usable for str.translate().\n"
-"\n"
-"str.maketrans(x, y=None, z=None)\n"
 "\n"
 "If there is only one argument, it must be a dictionary mapping Unicode\n"
 "ordinals (integers) or characters to Unicode ordinals, strings or None.\n"
@@ -12946,7 +12949,7 @@ exit:
 
 static PyObject *
 unicode_maketrans_impl(void *null, PyObject *x, PyObject *y, PyObject *z)
-/*[clinic checksum: 6d522e3aea2f2e123da3c5d367132a99d803f9b9]*/
+/*[clinic checksum: 7f76f414a0dfd0c614e0d4717872eeb520516da7]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;

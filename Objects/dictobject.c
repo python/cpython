@@ -69,6 +69,11 @@ to the combined-table form.
 #include "Python.h"
 #include "stringlib/eq.h"
 
+/*[clinic]
+class dict
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 typedef struct {
     /* Cached hash code of me_key. */
     Py_hash_t me_hash;
@@ -2160,7 +2165,6 @@ dict_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 /*[clinic]
-class dict
 
 @coexist
 dict.__contains__
@@ -2172,16 +2176,15 @@ True if D has a key k, else False"
 [clinic]*/
 
 PyDoc_STRVAR(dict___contains____doc__,
-"True if D has a key k, else False\"\n"
-"\n"
-"dict.__contains__(key)");
+"__contains__(key)\n"
+"True if D has a key k, else False\"");
 
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
 
 static PyObject *
 dict___contains__(PyObject *self, PyObject *key)
-/*[clinic checksum: 61c5c802ea1d35699a1a754f1f3538ea9b259cf4]*/
+/*[clinic checksum: 3bbac5ce898ae630d9668fa1c8b3afb645ff22e8]*/
 {
     register PyDictObject *mp = (PyDictObject *)self;
     Py_hash_t hash;

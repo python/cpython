@@ -17,6 +17,12 @@
 #include "ucnhash.h"
 #include "structmember.h"
 
+/*[clinic]
+module unicodedata
+class unicodedata.UCD
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 /* character properties */
 
 typedef struct {
@@ -108,8 +114,7 @@ static Py_UCS4 getuchar(PyUnicodeObject *obj)
 /* --- Module API --------------------------------------------------------- */
 
 /*[clinic]
-module unicodedata
-class unicodedata.UCD
+
 unicodedata.UCD.decimal
 
     unichr: object(type='str')
@@ -124,9 +129,8 @@ not given, ValueError is raised.
 [clinic]*/
 
 PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
+"decimal(unichr, default=None)\n"
 "Converts a Unicode character into its equivalent decimal value.\n"
-"\n"
-"unicodedata.UCD.decimal(unichr, default=None)\n"
 "\n"
 "Returns the decimal value assigned to the Unicode character unichr\n"
 "as integer. If no such value is defined, default is returned, or, if\n"
@@ -157,7 +161,7 @@ exit:
 
 static PyObject *
 unicodedata_UCD_decimal_impl(PyObject *self, PyObject *unichr, PyObject *default_value)
-/*[clinic checksum: a0980c387387287e2ac230c37d95b26f6903e0d2]*/
+/*[clinic checksum: 9576fa55f4ea0be82968af39dc9d0283e634beeb]*/
 {
     PyUnicodeObject *v = (PyUnicodeObject *)unichr;
     int have_old = 0;

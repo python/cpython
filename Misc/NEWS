@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19674: inspect.signature() now produces a correct signature
+  for some builtins.
+
 - Issue #19722: Added opcode.stack_effect(), which
   computes the stack effect of bytecode instructions.
 

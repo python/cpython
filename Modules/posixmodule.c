@@ -190,7 +190,10 @@ corresponding Unix manual entries for more information on calls.");
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
 
-
+/*[clinic]
+module os
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 #ifndef _MSC_VER
 
@@ -2404,7 +2407,6 @@ class dir_fd_converter(CConverter):
 /*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /*[clinic]
-module os
 
 os.stat -> object(doc_default='stat_result')
 
@@ -2435,9 +2437,9 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 [clinic]*/
 
 PyDoc_STRVAR(os_stat__doc__,
+"stat(path, *, dir_fd=None, follow_symlinks=True)\n"
 "Perform a stat system call on the given path.\n"
 "\n"
-"os.stat(path, *, dir_fd=None, follow_symlinks=True) -> stat_result\n"
 "  path\n"
 "    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
 "  dir_fd\n"
@@ -2486,7 +2488,7 @@ exit:
 
 static PyObject *
 os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic checksum: b08112eff0ceab3ec2c72352da95ce73f245d104]*/
+/*[clinic checksum: 85a71ad602e89f8e280118da976f70cd2f9abdf1]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2567,9 +2569,9 @@ Note that most operations will use the effective uid/gid, therefore this
 [clinic]*/
 
 PyDoc_STRVAR(os_access__doc__,
+"access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True)\n"
 "Use the real uid/gid to test for access to a path.\n"
 "\n"
-"os.access(path, mode, *, dir_fd=None, effective_ids=False, follow_symlinks=True) -> True if granted, False otherwise\n"
 "  path\n"
 "    Path to be tested; can be string, bytes, or open-file-descriptor int.\n"
 "  mode\n"
@@ -2587,7 +2589,6 @@ PyDoc_STRVAR(os_access__doc__,
 "    access will examine the symbolic link itself instead of the file\n"
 "    the link points to.\n"
 "\n"
-"{parameters}\n"
 "dir_fd, effective_ids, and follow_symlinks may not be implemented\n"
 "  on your platform.  If they are unavailable, using them will raise a\n"
 "  NotImplementedError.\n"
@@ -2628,7 +2629,7 @@ exit:
 
 static PyObject *
 os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic checksum: b9f8ececb061d31b64220c29526bfee642d1b602]*/
+/*[clinic checksum: 636e835c36562a2fc11acab75314634127fdf769]*/
 {
     PyObject *return_value = NULL;
 
@@ -2724,9 +2725,9 @@ Return the name of the terminal device connected to 'fd'.
 [clinic]*/
 
 PyDoc_STRVAR(os_ttyname__doc__,
+"ttyname(fd)\n"
 "Return the name of the terminal device connected to \'fd\'.\n"
 "\n"
-"os.ttyname(fd)\n"
 "  fd\n"
 "    Integer file descriptor handle.");
 
@@ -2758,7 +2759,7 @@ exit:
 
 static char *
 os_ttyname_impl(PyModuleDef *module, int fd)
-/*[clinic checksum: 61e4e525984cb293f949ccae6ae393c0011dfe8e]*/
+/*[clinic checksum: 0f368134dc0a7f21f25185e2e6bacf7675fb473a]*/
 {
     char *ret;
 

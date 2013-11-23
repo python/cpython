@@ -2842,6 +2842,33 @@ test_pyobject_setallocators(PyObject *self)
     return test_setallocators(PYMEM_DOMAIN_OBJ);
 }
 
+PyDoc_STRVAR(docstring_empty,
+""
+);
+
+PyDoc_STRVAR(docstring_no_signature,
+"This docstring has no signature."
+);
+
+PyDoc_STRVAR(docstring_with_invalid_signature,
+"docstring_with_invalid_signature (boo)\n"
+"\n"
+"This docstring has an invalid signature."
+);
+
+PyDoc_STRVAR(docstring_with_signature,
+"docstring_with_signature(sig)\n"
+"This docstring has a valid signature."
+);
+
+PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
+"docstring_with_signature_and_extra_newlines(parameter)\n"
+"\n"
+"\n"
+"\n"
+"This docstring has a valid signature and some extra newlines."
+);
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",   (PyCFunction)raise_memoryerror,  METH_NOARGS},
@@ -2953,6 +2980,23 @@ static PyMethodDef TestMethods[] = {
      (PyCFunction)test_pymem_setallocators, METH_NOARGS},
     {"test_pyobject_setallocators",
      (PyCFunction)test_pyobject_setallocators, METH_NOARGS},
+    {"no_docstring",
+        (PyCFunction)test_with_docstring, METH_NOARGS},
+    {"docstring_empty",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_empty},
+    {"docstring_no_signature",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_no_signature},
+    {"docstring_with_invalid_signature",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_with_invalid_signature},
+    {"docstring_with_signature",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_with_signature},
+    {"docstring_with_signature_and_extra_newlines",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_with_signature_and_extra_newlines},
     {NULL, NULL} /* sentinel */
 };
 

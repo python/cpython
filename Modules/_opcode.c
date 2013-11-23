@@ -1,10 +1,12 @@
 #include "Python.h"
 #include "opcode.h"
 
+/*[clinic]
+module _opcode
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /*[clinic]
-
-module _opcode
 
 _opcode.stack_effect -> int
 
@@ -19,18 +21,17 @@ Compute the stack effect of the opcode.
 [clinic]*/
 
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
-"Compute the stack effect of the opcode.\n"
-"\n"
-"_opcode.stack_effect(opcode, [oparg])");
+"stack_effect(opcode, [oparg])\n"
+"Compute the stack effect of the opcode.");
 
 #define _OPCODE_STACK_EFFECT_METHODDEF    \
     {"stack_effect", (PyCFunction)_opcode_stack_effect, METH_VARARGS, _opcode_stack_effect__doc__},
 
 static int
-_opcode_stack_effect_impl(PyObject *module, int opcode, int group_right_1, int oparg);
+_opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg);
 
 static PyObject *
-_opcode_stack_effect(PyObject *module, PyObject *args)
+_opcode_stack_effect(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int opcode;
@@ -62,8 +63,8 @@ exit:
 }
 
 static int
-_opcode_stack_effect_impl(PyObject *module, int opcode, int group_right_1, int oparg)
-/*[clinic checksum: 2312ded40abc9bcbce718942de21f53e61a2dfd3]*/
+_opcode_stack_effect_impl(PyModuleDef *module, int opcode, int group_right_1, int oparg)
+/*[clinic checksum: e880e62dc7b0de73403026eaf4f8074aa106358b]*/
 {
     int effect;
     if (HAS_ARG(opcode)) {        
