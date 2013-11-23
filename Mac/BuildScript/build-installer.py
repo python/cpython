@@ -364,6 +364,7 @@ def library_recipes():
 # Instructions for building packages inside the .mpkg.
 def pkg_recipes():
     unselected_for_python3 = ('selected', 'unselected')[PYTHON_3]
+    unselected_for_lt_python34 = ('selected', 'unselected')[getVersionTuple() < (3, 4)]
     result = [
         dict(
             name="PythonFramework",
@@ -432,9 +433,26 @@ def pkg_recipes():
             topdir="/Library/Frameworks/Python.framework",
             source="/empty-dir",
             required=False,
-            selected=unselected_for_python3,
+            selected=unselected_for_lt_python34,
         ),
     ]
+
+    if getVersionTuple() >= (3, 4):
+        result.append(
+            dict(
+                name="PythonInstallPip",
+                long_name="Install or upgrade pip",
+                readme="""\
+                    This package installs (or upgrades from an earlier version)
+                    pip, a tool for installing and managing Python packages.
+                    """,
+                postflight="scripts/postflight.ensurepip",
+                topdir="/Library/Frameworks/Python.framework",
+                source="/empty-dir",
+                required=False,
+                selected='selected',
+            )
+        )
 
     if DEPTARGET < '10.4' and not PYTHON_3:
         result.append(
@@ -453,6 +471,7 @@ def pkg_recipes():
                 selected=unselected_for_python3,
             )
         )
+
     return result
 
 def fatal(msg):
@@ -955,11 +974,13 @@ def buildPython():
     runCommand("%s -C --enable-framework --enable-universalsdk=%s "
                "--with-universal-archs=%s "
                "%s "
+               "%s "
                "LDFLAGS='-g -L%s/libraries/usr/local/lib' "
                "CFLAGS='-g -I%s/libraries/usr/local/include' 2>&1"%(
         shellQuote(os.path.join(SRCDIR, 'configure')), shellQuote(SDKPATH),
         UNIVERSALARCHS,
         (' ', '--with-computed-gotos ')[PYTHON_3],
+        (' ', '--without-ensurepip ')[getVersionTuple() >= (3, 4)],
         shellQuote(WORKDIR)[1:-1],
         shellQuote(WORKDIR)[1:-1]))
 
