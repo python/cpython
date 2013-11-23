@@ -397,6 +397,10 @@ Build
 
 - Issue #19551: PEP 453 - the OS X installer now installs pip by default.
 
+- Update third-party libraries for OS X installers:
+    xz 5.0.3 -> 5.0.5
+    SQLite 3.7.13 -> 3.8.1
+
 Tools/Demos
 -----------
 
