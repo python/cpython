@@ -38,7 +38,7 @@ class TestsWithSourceFile(unittest.TestCase):
 
     def zipTest(self, f, compression):
         # Create the ZIP archive.
-        zipfp = zipfile.ZipFile(f, "w", compression, allowZip64=True)
+        zipfp = zipfile.ZipFile(f, "w", compression)
 
         # It will contain enough copies of self.data to reach about 6GB of
         # raw data to store.
@@ -92,7 +92,7 @@ class OtherTests(unittest.TestCase):
     def testMoreThan64kFiles(self):
         # This test checks that more than 64k files can be added to an archive,
         # and that the resulting archive can be read properly by ZipFile
-        zipf = zipfile.ZipFile(TESTFN, mode="w")
+        zipf = zipfile.ZipFile(TESTFN, mode="w", allowZip64=False)
         zipf.debug = 100
         numfiles = (1 << 16) * 3//2
         for i in range(numfiles):

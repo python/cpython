@@ -1302,20 +1302,6 @@ class MockTest(unittest.TestCase):
             self.assertEqual(m.method_calls, [])
 
 
-    def test_attribute_deletion(self):
-        # this behaviour isn't *useful*, but at least it's now tested...
-        for Klass in Mock, MagicMock, NonCallableMagicMock, NonCallableMock:
-            m = Klass()
-            original = m.foo
-            m.foo = 3
-            del m.foo
-            self.assertEqual(m.foo, original)
-
-            new = m.foo = Mock()
-            del m.foo
-            self.assertEqual(m.foo, new)
-
-
     def test_mock_parents(self):
         for Klass in Mock, MagicMock:
             m = Klass()
@@ -1379,7 +1365,8 @@ class MockTest(unittest.TestCase):
 
 
     def test_attribute_deletion(self):
-        for mock in Mock(), MagicMock():
+        for mock in (Mock(), MagicMock(), NonCallableMagicMock(),
+                     NonCallableMock()):
             self.assertTrue(hasattr(mock, 'm'))
 
             del mock.m

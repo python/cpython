@@ -1391,17 +1391,21 @@ class _BasePathTest(object):
         # The file mtime should be refreshed by calling touch() again
         p.touch()
         st = p.stat()
-        # Issue #19715: there can be an inconsistency under Windows between
-        # the timestamp rounding when creating a file, and the timestamp
-        # rounding done when calling utime().  `delta` makes up for this.
-        delta = 1e-6 if os.name == 'nt' else 0
-        self.assertGreaterEqual(st.st_mtime, old_mtime - delta)
+        self.assertGreaterEqual(st.st_mtime_ns, old_mtime_ns)
+        self.assertGreaterEqual(st.st_mtime, old_mtime)
         # Now with exist_ok=False
         p = P / 'newfileB'
         self.assertFalse(p.exists())
         p.touch(mode=0o700, exist_ok=False)
         self.assertTrue(p.exists())
         self.assertRaises(OSError, p.touch, exist_ok=False)
+
+    def test_touch_nochange(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        p.touch()
+        with p.open('rb') as f:
+            self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_mkdir(self):
         P = self.cls(BASE)

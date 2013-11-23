@@ -876,7 +876,7 @@ class ZipExtFile(io.BufferedIOBase):
 class ZipFile:
     """ Class with methods to open, read, write, close, list zip files.
 
-    z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=False)
+    z = ZipFile(file, mode="r", compression=ZIP_STORED, allowZip64=True)
 
     file: Either the path to the file, or a file-like object.
           If it is a path, the file will be opened and closed by ZipFile.
@@ -892,7 +892,7 @@ class ZipFile:
     fp = None                   # Set here since __del__ checks it
     _windows_illegal_name_trans_table = None
 
-    def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=False):
+    def __init__(self, file, mode="r", compression=ZIP_STORED, allowZip64=True):
         """Open the ZIP file with mode read "r", write "w" or append "a"."""
         if mode not in ("r", "w", "a"):
             raise RuntimeError('ZipFile() requires mode "r", "w", or "a"')
@@ -1561,7 +1561,7 @@ class PyZipFile(ZipFile):
     """Class to create ZIP archives with Python library files and packages."""
 
     def __init__(self, file, mode="r", compression=ZIP_STORED,
-                 allowZip64=False, optimize=-1):
+                 allowZip64=True, optimize=-1):
         ZipFile.__init__(self, file, mode=mode, compression=compression,
                          allowZip64=allowZip64)
         self._optimize = optimize
@@ -1783,7 +1783,7 @@ def main(args = None):
                              os.path.join(path, nm), os.path.join(zippath, nm))
             # else: ignore
 
-        with ZipFile(args[1], 'w', allowZip64=True) as zf:
+        with ZipFile(args[1], 'w') as zf:
             for src in args[2:]:
                 addToZip(zf, src, os.path.basename(src))
 

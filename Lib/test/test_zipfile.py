@@ -506,12 +506,12 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
     compression = zipfile.ZIP_STORED
 
     def large_file_exception_test(self, f, compression):
-        with zipfile.ZipFile(f, "w", compression) as zipfp:
+        with zipfile.ZipFile(f, "w", compression, allowZip64=False) as zipfp:
             self.assertRaises(zipfile.LargeZipFile,
                               zipfp.write, TESTFN, "another.name")
 
     def large_file_exception_test2(self, f, compression):
-        with zipfile.ZipFile(f, "w", compression) as zipfp:
+        with zipfile.ZipFile(f, "w", compression, allowZip64=False) as zipfp:
             self.assertRaises(zipfile.LargeZipFile,
                               zipfp.writestr, "another.name", self.data)
 
