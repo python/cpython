@@ -23,7 +23,6 @@ import sys
 import tempfile
 import textwrap
 
-
 # TODO:
 # converters for
 #
@@ -51,6 +50,8 @@ import textwrap
 # * Add "version" directive, so we can complain if the file
 #   is too new for us.
 #
+
+version = '1'
 
 _empty = inspect._empty
 _void = inspect._void
@@ -194,6 +195,46 @@ def linear_format(s, **kwargs):
         add('\n')
 
     return output()[:-1]
+
+def version_splitter(s):
+    """Splits a version string into a tuple of integers.
+
+    The following ASCII characters are allowed, and employ
+    the following conversions:
+        a -> -3
+        b -> -2
+        c -> -1
+    (This permits Python-style version strings such as "1.4b3".)
+    """
+    version = []
+    accumulator = []
+    def flush():
+        if not accumulator:
+            raise ValueError('Malformed version string: ' + repr(s))
+        version.append(int(''.join(accumulator)))
+        accumulator.clear()
+
+    for c in s:
+        if c.isdigit():
+            accumulator.append(c)
+        elif c == '.':
+            flush()
+        elif c in 'abc':
+            flush()
+            version.append('abc'.index(c) - 3)
+        else:
+            raise ValueError('Illegal character ' + repr(c) + ' in version string ' + repr(s))
+    flush()
+    return tuple(version)
+
+def version_comparitor(version1, version2):
+    iterator = itertools.zip_longest(version_splitter(version1), version_splitter(version2), fillvalue=0)
+    for i, (a, b) in enumerate(iterator):
+        if a < b:
+            return -1
+        if a > b:
+            return 1
+    return 0
 
 
 class CRenderData:
@@ -373,22 +414,22 @@ PyDoc_STRVAR({c_basename}__doc__,
 {docstring});
 
 #define {methoddef_name}    \\
-    {{"{name}", (PyCFunction){c_basename}, {meth_flags}, {c_basename}__doc__}},
-""".replace('{meth_flags}', flags)
+    {{"{name}", (PyCFunction){c_basename}, {methoddef_flags}, {c_basename}__doc__}},
+""".replace('{methoddef_flags}', flags)
 
-    def meth_noargs_pyobject_template(self, meth_flags=""):
-        return self.template_base("METH_NOARGS", meth_flags) + """
+    def meth_noargs_pyobject_template(self, methoddef_flags=""):
+        return self.template_base("METH_NOARGS", methoddef_flags) + """
 static PyObject *
-{c_basename}(PyObject *{self_name})
+{c_basename}({self_type}{self_name})
 """
 
-    def meth_noargs_template(self, meth_flags=""):
-        return self.template_base("METH_NOARGS", meth_flags) + """
+    def meth_noargs_template(self, methoddef_flags=""):
+        return self.template_base("METH_NOARGS", methoddef_flags) + """
 static {impl_return_type}
 {impl_prototype};
 
 static PyObject *
-{c_basename}(PyObject *{self_name})
+{c_basename}({self_type}{self_name})
 {{
     PyObject *return_value = NULL;
     {declarations}
@@ -406,14 +447,14 @@ static {impl_return_type}
 {impl_prototype}
 """
 
-    def meth_o_template(self, meth_flags=""):
-        return self.template_base("METH_O", meth_flags) + """
+    def meth_o_template(self, methoddef_flags=""):
+        return self.template_base("METH_O", methoddef_flags) + """
 static PyObject *
 {c_basename}({impl_parameters})
 """
 
-    def meth_o_return_converter_template(self, meth_flags=""):
-        return self.template_base("METH_O", meth_flags) + """
+    def meth_o_return_converter_template(self, methoddef_flags=""):
+        return self.template_base("METH_O", methoddef_flags) + """
 static {impl_return_type}
 {impl_prototype};
 
@@ -435,13 +476,13 @@ static {impl_return_type}
 {impl_prototype}
 """
 
-    def option_group_template(self, meth_flags=""):
-        return self.template_base("METH_VARARGS", meth_flags) + """
+    def option_group_template(self, methoddef_flags=""):
+        return self.template_base("METH_VARARGS", methoddef_flags) + """
 static {impl_return_type}
 {impl_prototype};
 
 static PyObject *
-{c_basename}(PyObject *{self_name}, PyObject *args)
+{c_basename}({self_type}{self_name}, PyObject *args)
 {{
     PyObject *return_value = NULL;
     {declarations}
@@ -460,13 +501,13 @@ static {impl_return_type}
 {impl_prototype}
 """
 
-    def keywords_template(self, meth_flags=""):
-        return self.template_base("METH_VARARGS|METH_KEYWORDS", meth_flags) + """
+    def keywords_template(self, methoddef_flags=""):
+        return self.template_base("METH_VARARGS|METH_KEYWORDS", methoddef_flags) + """
 static {impl_return_type}
 {impl_prototype};
 
 static PyObject *
-{c_basename}(PyObject *{self_name}, PyObject *args, PyObject *kwargs)
+{c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
 {{
     PyObject *return_value = NULL;
     static char *_keywords[] = {{{keywords}, NULL}};
@@ -489,13 +530,13 @@ static {impl_return_type}
 {impl_prototype}
 """
 
-    def positional_only_template(self, meth_flags=""):
-        return self.template_base("METH_VARARGS", meth_flags) + """
+    def positional_only_template(self, methoddef_flags=""):
+        return self.template_base("METH_VARARGS", methoddef_flags) + """
 static {impl_return_type}
 {impl_prototype};
 
 static PyObject *
-{c_basename}(PyObject *{self_name}, PyObject *args)
+{c_basename}({self_type}{self_name}, PyObject *args)
 {{
     PyObject *return_value = NULL;
     {declarations}
@@ -614,27 +655,6 @@ static {impl_return_type}
         add, output = text_accumulator()
         data = CRenderData()
 
-        if f.kind == STATIC_METHOD:
-            meth_flags = 'METH_STATIC'
-            self_name = "null"
-        else:
-            if f.kind == CALLABLE:
-                meth_flags = ''
-                self_name = "self" if f.cls else "module"
-            elif f.kind == CLASS_METHOD:
-                meth_flags = 'METH_CLASS'
-                self_name = "cls"
-            else:
-                fail("Unrecognized 'kind' " + repr(f.kind) + " for function " + f.name)
-
-            data.impl_parameters.append("PyObject *" + self_name)
-            data.impl_arguments.append(self_name)
-
-        if f.coexist:
-            if meth_flags:
-                meth_flags += '|'
-            meth_flags += 'METH_COEXIST'
-
         parameters = list(f.parameters.values())
         converters = [p.converter for p in parameters]
 
@@ -653,8 +673,6 @@ static {impl_return_type}
         template_dict['methoddef_name'] = methoddef_name
 
         template_dict['docstring'] = self.docstring_for_c_string(f)
-
-        template_dict['self_name'] = self_name
 
         positional = has_option_groups =  False
 
@@ -680,6 +698,18 @@ static {impl_return_type}
             if has_option_groups:
                 assert positional
 
+        # now insert our "self" (or whatever) parameters
+        # (we deliberately don't call render on self converters)
+        stock_self = self_converter('self', f)
+        template_dict['self_name'] = stock_self.name
+        template_dict['self_type'] = stock_self.type
+        data.impl_parameters.insert(0, f.self_converter.type + ("" if f.self_converter.type.endswith('*') else " ") + f.self_converter.name)
+        if f.self_converter.type != stock_self.type:
+            self_cast = '(' + f.self_converter.type + ')'
+        else:
+            self_cast = ''
+        data.impl_arguments.insert(0, self_cast + stock_self.name)
+
         f.return_converter.render(f, data)
         template_dict['impl_return_type'] = f.return_converter.type
 
@@ -701,25 +731,26 @@ static {impl_return_type}
 
         if not parameters:
             if default_return_converter:
-                template = self.meth_noargs_pyobject_template(meth_flags)
+                template = self.meth_noargs_pyobject_template(f.methoddef_flags)
             else:
-                template = self.meth_noargs_template(meth_flags)
+                template = self.meth_noargs_template(f.methoddef_flags)
         elif (len(parameters) == 1 and
               parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
               not converters[0].is_optional() and
               isinstance(converters[0], object_converter) and
               converters[0].format_unit == 'O'):
             if default_return_converter:
-                template = self.meth_o_template(meth_flags)
+                template = self.meth_o_template(f.methoddef_flags)
             else:
                 # HACK
                 # we're using "impl_parameters" for the
                 # non-impl function, because that works
                 # better for METH_O.  but that means we
-                # must surpress actually declaring the
+                # must supress actually declaring the
                 # impl's parameters as variables in the
                 # non-impl.  but since it's METH_O, we
-                # only have one anyway, and it's the first one.
+                # only have one anyway, so
+                # we don't have any problem finding it.
                 declarations_copy = list(data.declarations)
                 before, pyobject, after = declarations_copy[0].partition('PyObject *')
                 assert not before, "hack failed, see comment"
@@ -727,16 +758,16 @@ static {impl_return_type}
                 assert after and after[0].isalpha(), "hack failed, see comment"
                 del declarations_copy[0]
                 template_dict['declarations'] = "\n".join(declarations_copy)
-                template = self.meth_o_return_converter_template(meth_flags)
+                template = self.meth_o_return_converter_template(f.methoddef_flags)
         elif has_option_groups:
             self.render_option_group_parsing(f, template_dict)
-            template = self.option_group_template(meth_flags)
+            template = self.option_group_template(f.methoddef_flags)
             template = linear_format(template,
                 option_group_parsing=template_dict['option_group_parsing'])
         elif positional:
-            template = self.positional_only_template(meth_flags)
+            template = self.positional_only_template(f.methoddef_flags)
         else:
-            template = self.keywords_template(meth_flags)
+            template = self.keywords_template(f.methoddef_flags)
 
         template = linear_format(template,
             declarations=template_dict['declarations'],
@@ -1178,6 +1209,20 @@ class Function:
         self.docstring = docstring or ''
         self.kind = kind
         self.coexist = coexist
+        self.self_converter = None
+
+    @property
+    def methoddef_flags(self):
+        flags = []
+        if self.kind == CLASS_METHOD:
+            flags.append('METH_CLASS')
+        elif self.kind == STATIC_METHOD:
+            flags.append('METH_STATIC')
+        else:
+            assert self.kind == CALLABLE, "unknown kind: " + repr(self.kind)
+        if self.coexist:
+            flags.append('METH_COEXIST')
+        return '|'.join(flags)
 
     def __repr__(self):
         return '<clinic.Function ' + self.name + '>'
@@ -1307,6 +1352,7 @@ class CConverter(metaclass=CConverterAutoRegister):
     # The C converter *function* to be used, if any.
     # (If this is not None, format_unit must be 'O&'.)
     converter = None
+
     encoding = None
     impl_by_reference = False
     parse_by_reference = True
@@ -1354,6 +1400,8 @@ class CConverter(metaclass=CConverterAutoRegister):
         # impl_arguments
         s = ("&" if self.impl_by_reference else "") + name
         data.impl_arguments.append(s)
+        if self.length:
+            data.impl_arguments.append(self.length_name())
 
         # keywords
         data.keywords.append(name)
@@ -1370,11 +1418,19 @@ class CConverter(metaclass=CConverterAutoRegister):
 
         # impl_parameters
         data.impl_parameters.append(self.simple_declaration(by_reference=self.impl_by_reference))
+        if self.length:
+            data.impl_parameters.append("Py_ssize_clean_t " + self.length_name())
 
         # cleanup
         cleanup = self.cleanup()
         if cleanup:
             data.cleanup.append('/* Cleanup for ' + name + ' */\n' + cleanup.rstrip() + "\n")
+
+    def length_name(self):
+        """Computes the name of the associated "length" variable."""
+        if not self.length:
+            return None
+        return ensure_legal_c_identifier(self.name) + "_length"
 
     # Why is this one broken out separately?
     # For "positional-only" function parsing,
@@ -1388,8 +1444,12 @@ class CConverter(metaclass=CConverterAutoRegister):
         if self.encoding:
             list.append(self.encoding)
 
-        s = ("&" if self.parse_by_reference else "") + ensure_legal_c_identifier(self.name)
+        legal_name = ensure_legal_c_identifier(self.name)
+        s = ("&" if self.parse_by_reference else "") + legal_name
         list.append(s)
+
+        if self.length:
+            list.append("&" + self.length_name())
 
     #
     # All the functions after here are intended as extension points.
@@ -1421,6 +1481,10 @@ class CConverter(metaclass=CConverterAutoRegister):
             declaration.append(" = ")
             declaration.append(default)
         declaration.append(";")
+        if self.length:
+            declaration.append('\nPy_ssize_clean_t ')
+            declaration.append(self.length_name())
+            declaration.append(';')
         return "".join(declaration)
 
     def initialize(self):
@@ -1462,7 +1526,7 @@ class byte_converter(CConverter):
 
     def converter_init(self, *, bitwise=False):
         if bitwise:
-            format_unit = 'B'
+            self.format_unit = 'B'
 
 class short_converter(CConverter):
     type = 'short'
@@ -1478,15 +1542,17 @@ class unsigned_short_converter(CConverter):
         if not bitwise:
             fail("Unsigned shorts must be bitwise (for now).")
 
-@add_legacy_c_converter('C', from_str=True)
+@add_legacy_c_converter('C', types='str')
 class int_converter(CConverter):
     type = 'int'
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, from_str=False):
-        if from_str:
-            format_unit = 'C'
+    def converter_init(self, *, types='int'):
+        if types == 'str':
+            self.format_unit = 'C'
+        elif types != 'int':
+            fail("int_converter: illegal 'types' argument")
 
 class unsigned_int_converter(CConverter):
     type = 'unsigned int'
@@ -1568,18 +1634,66 @@ class object_converter(CConverter):
             self.encoding = type
 
 
-@add_legacy_c_converter('y', from_bytes=True)
+@add_legacy_c_converter('s#', length=True)
+@add_legacy_c_converter('y', type="bytes")
+@add_legacy_c_converter('y#', type="bytes", length=True)
 @add_legacy_c_converter('z', nullable=True)
+@add_legacy_c_converter('z#', nullable=True, length=True)
 class str_converter(CConverter):
     type = 'const char *'
     format_unit = 's'
 
-    def converter_init(self, *, nullable=False, from_bytes=False):
-        if from_bytes:
-            assert not nullable
-            format_unit = 'y'
-        if nullable:
-            format_unit = 'z'
+    def converter_init(self, *, encoding=None, types="str",
+        length=False, nullable=False, zeroes=False):
+
+        types = set(types.strip().split())
+        bytes_type = set(("bytes",))
+        str_type = set(("str",))
+        all_3_type = set(("bytearray",)) | bytes_type | str_type
+        is_bytes = types == bytes_type
+        is_str = types == str_type
+        is_all_3 = types == all_3_type
+
+        self.length = bool(length)
+        format_unit = None
+
+        if encoding:
+            self.encoding = encoding
+
+            if is_str and not (length or zeroes or nullable):
+                format_unit = 'es'
+            elif is_all_3 and not (length or zeroes or nullable):
+                format_unit = 'et'
+            elif is_str and length and zeroes and not nullable:
+                format_unit = 'es#'
+            elif is_all_3 and length and not (nullable or zeroes):
+                format_unit = 'et#'
+
+            if format_unit.endswith('#'):
+                # TODO set pointer to NULL
+                # TODO add cleanup for buffer
+                pass
+
+        else:
+            if zeroes:
+                fail("str_converter: illegal combination of arguments (zeroes is only legal with an encoding)")
+
+            if is_bytes and not (nullable or length):
+                format_unit = 'y'
+            elif is_bytes and length and not nullable:
+                format_unit = 'y#'
+            elif is_str and not (nullable or length):
+                format_unit = 's'
+            elif is_str and length and not nullable:
+                format_unit = 's#'
+            elif is_str and nullable  and not length:
+                format_unit = 'z'
+            elif is_str and nullable and length:
+                format_unit = 'z#'
+
+        if not format_unit:
+            fail("str_converter: illegal combination of arguments")
+        self.format_unit = format_unit
 
 
 class PyBytesObject_converter(CConverter):
@@ -1594,36 +1708,89 @@ class unicode_converter(CConverter):
     type = 'PyObject *'
     format_unit = 'U'
 
+@add_legacy_c_converter('u#', length=True)
 @add_legacy_c_converter('Z', nullable=True)
+@add_legacy_c_converter('Z#', nullable=True, length=True)
 class Py_UNICODE_converter(CConverter):
     type = 'Py_UNICODE *'
     format_unit = 'u'
 
-    def converter_init(self, *, nullable=False):
-        if nullable:
-            format_unit = 'Z'
+    def converter_init(self, *, nullable=False, length=False):
+        format_unit = 'Z' if nullable else 'u'
+        if length:
+            format_unit += '#'
+            self.length = True
+        self.format_unit = format_unit
 
-@add_legacy_c_converter('s*', zeroes=True)
-@add_legacy_c_converter('w*', read_write=True)
-@add_legacy_c_converter('z*', zeroes=True, nullable=True)
+#
+# We define three string conventions for buffer types in the 'types' argument:
+#  'buffer' : any object supporting the buffer interface
+#  'rwbuffer': any object supporting the buffer interface, but must be writeable
+#  'robuffer': any object supporting the buffer interface, but must not be writeable
+#
+@add_legacy_c_converter('s*', types='str bytes bytearray buffer')
+@add_legacy_c_converter('z*', types='str bytes bytearray buffer', nullable=True)
+@add_legacy_c_converter('w*', types='bytearray rwbuffer')
 class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
     format_unit = 'y*'
     impl_by_reference = True
     c_ignored_default = "{NULL, NULL, 0, 0, 0, 0, NULL, NULL, NULL, NULL, NULL}"
 
-    def converter_init(self, *, str=False, zeroes=False, nullable=False, read_write=False):
-        if not str:
-            assert not (zeroes or nullable or read_write)
-        elif read_write:
-            assert not (zeroes or nullable)
-            self.format_unit = 'w*'
+    def converter_init(self, *, types='bytes bytearray buffer', nullable=False):
+        types = set(types.strip().split())
+        bytes_type = set(('bytes',))
+        bytearray_type = set(('bytearray',))
+        buffer_type = set(('buffer',))
+        rwbuffer_type = set(('rwbuffer',))
+        robuffer_type = set(('robuffer',))
+        str_type = set(('str',))
+        bytes_bytearray_buffer_type = bytes_type | bytearray_type | buffer_type
+
+        format_unit = None
+        if types == (str_type | bytes_bytearray_buffer_type):
+            format_unit = 's*' if not nullable else 'z*'
         else:
-            assert zeroes
-            self.format_unit = 'z*' if nullable else 's*'
+            if nullable:
+                fail('Py_buffer_converter: illegal combination of arguments (nullable=True)')
+            elif types == (bytes_bytearray_buffer_type):
+                format_unit = 'y*'
+            elif types == (bytearray_type | rwuffer_type):
+                format_unit = 'w*'
+        if not format_unit:
+            fail("Py_buffer_converter: illegal combination of arguments")
+
+        self.format_unit = format_unit
 
     def cleanup(self):
-        return "PyBuffer_Release(&" + ensure_legal_c_identifier(self.name) + ");\n"
+        name = ensure_legal_c_identifier(self.name)
+        return "".join(["if (", name, ".buf)\n   PyBuffer_Release(&", name, ");\n"])
+
+
+class self_converter(CConverter):
+    """
+    A special-case converter:
+    this is the default converter used for "self".
+    """
+    type = "PyObject *"
+    def converter_init(self):
+        f = self.function
+        if f.kind == CALLABLE:
+            if f.cls:
+                self.name = "self"
+            else:
+                self.name = "module"
+                self.type = "PyModuleDef *"
+        elif f.kind == STATIC_METHOD:
+            self.name = "null"
+            self.type = "void *"
+        elif f.kind == CLASS_METHOD:
+            self.name = "cls"
+            self.type = "PyTypeObject *"
+
+    def render(self, parameter, data):
+        fail("render() should never be called on self_converter instances")
+
 
 
 def add_c_return_converter(f, name=None):
@@ -1830,6 +1997,11 @@ class DSLParser:
         self.kind = CALLABLE
         self.coexist = False
 
+    def directive_version(self, required):
+        global version
+        if version_comparitor(version, required) < 0:
+            fail("Insufficient Clinic version!\n  Version: " + version + "\n  Required: " + required)
+
     def directive_module(self, name):
         fields = name.split('.')
         new = fields.pop()
@@ -1866,6 +2038,7 @@ class DSLParser:
     def at_coexist(self):
         assert self.coexist == False
         self.coexist = True
+
 
     def parse(self, block):
         self.reset()
@@ -2128,6 +2301,17 @@ class DSLParser:
             fail('{} is not a valid {}converter'.format(name, legacy_str))
         converter = dict[name](parameter_name, self.function, value, **kwargs)
 
+        # special case: if it's the self converter,
+        # don't actually add it to the parameter list
+        if isinstance(converter, self_converter):
+            if self.function.parameters or (self.parameter_state != self.ps_required):
+                fail("The 'self' parameter, if specified, must be the very first thing in the parameter block.")
+            if self.function.self_converter:
+                fail("You can't specify the 'self' parameter more than once.")
+            self.function.self_converter = converter
+            self.parameter_state = self.ps_start
+            return
+
         kind = inspect.Parameter.KEYWORD_ONLY if self.keyword_only else inspect.Parameter.POSITIONAL_OR_KEYWORD
         p = Parameter(parameter_name, kind, function=self.function, converter=converter, default=value, group=self.group)
         self.function.parameters[parameter_name] = p
@@ -2224,6 +2408,9 @@ class DSLParser:
 
     # the final stanza of the DSL is the docstring.
     def state_function_docstring(self, line):
+        if not self.function.self_converter:
+            self.function.self_converter = self_converter("self", self.function)
+
         if self.group:
             fail("Function " + self.function.name + " has a ] without a matching [.")
 

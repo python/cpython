@@ -12924,10 +12924,10 @@ PyDoc_STRVAR(unicode_maketrans__doc__,
     {"maketrans", (PyCFunction)unicode_maketrans, METH_VARARGS|METH_STATIC, unicode_maketrans__doc__},
 
 static PyObject *
-unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
+unicode_maketrans_impl(void *null, PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(PyObject *null, PyObject *args)
+unicode_maketrans(void *null, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -12938,15 +12938,15 @@ unicode_maketrans(PyObject *null, PyObject *args)
         "O|UU:maketrans",
         &x, &y, &z))
         goto exit;
-    return_value = unicode_maketrans_impl(x, y, z);
+    return_value = unicode_maketrans_impl(null, x, y, z);
 
 exit:
     return return_value;
 }
 
 static PyObject *
-unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
-/*[clinic checksum: 137db9c3199e7906b7967009f511c24fa3235b5f]*/
+unicode_maketrans_impl(void *null, PyObject *x, PyObject *y, PyObject *z)
+/*[clinic checksum: 6d522e3aea2f2e123da3c5d367132a99d803f9b9]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;
