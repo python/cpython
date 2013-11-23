@@ -2320,18 +2320,29 @@ bytes_transform_encodings = [
     "quopri_codec",
     "hex_codec",
 ]
+
+transform_aliases = {
+    "base64_codec": ["base64", "base_64"],
+    "uu_codec": ["uu"],
+    "quopri_codec": ["quopri", "quoted_printable", "quotedprintable"],
+    "hex_codec": ["hex"],
+    "rot_13": ["rot13"],
+}
+
 try:
     import zlib
 except ImportError:
     pass
 else:
     bytes_transform_encodings.append("zlib_codec")
+    transform_aliases["zlib_codec"] = ["zip", "zlib"]
 try:
     import bz2
 except ImportError:
     pass
 else:
     bytes_transform_encodings.append("bz2_codec")
+    transform_aliases["bz2_codec"] = ["bz2"]
 
 class TransformCodecTest(unittest.TestCase):
 
@@ -2444,6 +2455,15 @@ class TransformCodecTest(unittest.TestCase):
 
     # Unfortunately, the bz2 module throws OSError, which the codec
     # machinery currently can't wrap :(
+
+    # Ensure codec aliases from http://bugs.python.org/issue7475 work
+    def test_aliases(self):
+        for codec_name, aliases in transform_aliases.items():
+            expected_name = codecs.lookup(codec_name).name
+            for alias in aliases:
+                with self.subTest(alias=alias):
+                    info = codecs.lookup(alias)
+                    self.assertEqual(info.name, expected_name)
 
 
 # The codec system tries to wrap exceptions in order to ensure the error
