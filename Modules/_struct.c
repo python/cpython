@@ -1626,7 +1626,7 @@ unpackiter_iternext(unpackiterobject *self)
     return result;
 }
 
-PyTypeObject unpackiter_type = {
+static PyTypeObject unpackiter_type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "unpack_iterator",                          /* tp_name */
     sizeof(unpackiterobject),                   /* tp_basicsize */
