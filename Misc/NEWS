@@ -479,6 +479,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17457: unittest test discovery now works with namespace packages.
+  Patch by Claudiu Popa.
+
 - Issue #18235: Fix the sysconfig variables LDSHARED and BLDSHARED under AIX.
   Patch by David Edelsohn.
 
