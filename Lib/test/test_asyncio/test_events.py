@@ -896,7 +896,7 @@ class EventLoopTestsMixin:
             proto = MyWritePipeProto(loop=self.loop)
             return proto
 
-        rsock, wsock = self.loop._socketpair()
+        rsock, wsock = test_utils.socketpair()
         pipeobj = io.open(wsock.detach(), 'wb', 1024)
 
         @tasks.coroutine
