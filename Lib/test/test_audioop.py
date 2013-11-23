@@ -448,6 +448,23 @@ class TestAudioop(unittest.TestCase):
             self.assertEqual(audioop.getsample(data, w, 3), maxvalues[w])
             self.assertEqual(audioop.getsample(data, w, 4), minvalues[w])
 
+    def test_byteswap(self):
+        swapped_datas = {
+            1: datas[1],
+            2: packs[2](0, 0x3412, 0x6745, -0x6646, -0x81, 0x80, -1),
+            3: packs[3](0, 0x563412, -0x7698bb, 0x7798ba, -0x81, 0x80, -1),
+            4: packs[4](0, 0x78563412, -0x547698bb, 0x557698ba,
+                        -0x81, 0x80, -1),
+        }
+        for w in 1, 2, 3, 4:
+            self.assertEqual(audioop.byteswap(b'', w), b'')
+            self.assertEqual(audioop.byteswap(datas[w], w), swapped_datas[w])
+            self.assertEqual(audioop.byteswap(swapped_datas[w], w), datas[w])
+            self.assertEqual(audioop.byteswap(bytearray(datas[w]), w),
+                             swapped_datas[w])
+            self.assertEqual(audioop.byteswap(memoryview(datas[w]), w),
+                             swapped_datas[w])
+
     def test_negativelen(self):
         # from issue 3306, previously it segfaulted
         self.assertRaises(audioop.error,

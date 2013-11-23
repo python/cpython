@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19641: Added the audioop.byteswap() function to convert big-endian
+  samples to little-endian and vice versa.
+
 - Issue #15204: Deprecated the 'U' mode in file-like objects.
 
 - Issue #17810: Implement PEP 3154, pickle protocol 4.
