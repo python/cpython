@@ -158,7 +158,7 @@ class SubinterpreterTest(unittest.TestCase):
             atexit.register(f)
             del atexit
             """
-        ret = _testcapi.run_in_subinterp(code)
+        ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
 
@@ -173,7 +173,7 @@ class SubinterpreterTest(unittest.TestCase):
             atexit.register(f)
             atexit.__atexit = atexit
             """
-        ret = _testcapi.run_in_subinterp(code)
+        ret = support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         self.assertEqual(atexit._ncallbacks(), n)
 

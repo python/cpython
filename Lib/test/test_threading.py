@@ -853,7 +853,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 os.write(%d, b"x")
             threading.Thread(target=f).start()
             """ % (w,)
-        ret = _testcapi.run_in_subinterp(code)
+        ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
@@ -885,7 +885,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 os.write(%d, b"x")
             threading.Thread(target=f).start()
             """ % (w,)
-        ret = _testcapi.run_in_subinterp(code)
+        ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")

@@ -2154,3 +2154,22 @@ def patch(test_instance, object_to_patch, attr_name, new_value):
 
     # actually override the attribute
     setattr(object_to_patch, attr_name, new_value)
+
+
+def run_in_subinterp(code):
+    """
+    Run code in a subinterpreter. Raise unittest.SkipTest if the tracemalloc
+    module is enabled.
+    """
+    # Issue #10915, #15751: PyGILState_*() functions don't work with
+    # sub-interpreters, the tracemalloc module uses these functions internally
+    try:
+        import tracemalloc
+    except ImportError:
+        pass
+    else:
+        if tracemalloc.is_tracing():
+            raise unittest.SkipTest("run_in_subinterp() cannot be used "
+                                     "if tracemalloc module is tracing "
+                                     "memory allocations")
+    return _testcapi.run_in_subinterp(code)

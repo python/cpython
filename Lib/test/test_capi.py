@@ -205,7 +205,7 @@ class SubinterpreterTest(unittest.TestCase):
                 pickle.dump(id(builtins), f)
             """.format(w)
         with open(r, "rb") as f:
-            ret = _testcapi.run_in_subinterp(code)
+            ret = support.run_in_subinterp(code)
             self.assertEqual(ret, 0)
             self.assertNotEqual(pickle.load(f), id(sys.modules))
             self.assertNotEqual(pickle.load(f), id(builtins))

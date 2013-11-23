@@ -15,3 +15,4 @@ allowing you to identify bottlenecks in your programs.
    profile.rst
    timeit.rst
    trace.rst
+   tracemalloc.rst
