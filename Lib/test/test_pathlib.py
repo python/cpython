@@ -1388,11 +1388,15 @@ class _BasePathTest(object):
         # Rewind the mtime sufficiently far in the past to work around
         # filesystem-specific timestamp granularity.
         os.utime(str(p), (old_mtime - 10, old_mtime - 10))
-        # The file mtime is refreshed by calling touch() again
+        # The file mtime should be refreshed by calling touch() again
         p.touch()
         st = p.stat()
-        self.assertGreaterEqual(st.st_mtime_ns, old_mtime_ns)
-        self.assertGreaterEqual(st.st_mtime, old_mtime)
+        # Issue #19715: there can be an inconsistency under Windows between
+        # the timestamp rounding when creating a file, and the timestamp
+        # rounding done when calling utime().  `delta` makes up for this.
+        delta = 1e-6 if os.name == 'nt' else 0
+        self.assertGreaterEqual(st.st_mtime, old_mtime - delta)
+        # Now with exist_ok=False
         p = P / 'newfileB'
         self.assertFalse(p.exists())
         p.touch(mode=0o700, exist_ok=False)
