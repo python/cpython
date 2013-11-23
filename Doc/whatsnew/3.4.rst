@@ -136,24 +136,34 @@ The new :mod:`ensurepip` module (defined in :pep:`453`) provides a standard
 cross-platform mechanism to boostrap the pip installer into Python
 installations and virtual environments.
 
+The :mod:`venv` module and the :command:`pyvenv` utility make use of this
+module to make ``pip`` readily available in virtual environments. When
+using the command line interface, ``pip`` is installed by default, while
+for the module API installation of ``pip`` must be requested explicitly.
+
+For CPython source builds on POSIX systems, the ``make install`` and
+``make altinstall`` commands bootstrap ``pip`` by default. This behaviour
+can be controlled through configure options, and overridden through
+Makefile options.
+
+On Windows, the CPython installer now offers the option to install ``pip``
+along with CPython itself.
+
 .. note::
 
-   Only the first phase of PEP 453 has been implemented at this point.
-   This section will be fleshed out with additional details once those
-   other changes are implemented.
+   The implementation of PEP 453 is still a work in progress. Refer to
+   :issue:`19347` for the progress on additional steps:
 
-   Refer to :issue:`19347` for the progress on additional steps:
-
-   * ``make install`` and ``make altinstall`` integration
-   * Windows installer integration
    * Mac OS X installer integration
-   * :mod:`venv` module and :command:`pyvenv` integration
+   * Having the binary installers install ``pip`` by default
+   * Recommending the use of ``pip`` in the "Installing Python Module"
+     documentation.
 
 .. seealso::
 
    :pep:`453` - Explicit bootstrapping of pip in Python installations
       PEP written by Donald Stufft and Nick Coghlan, implemented by
-      Donald Stufft, Nick Coghlan (and ...).
+      Donald Stufft, Nick Coghlan, Martin von Löwis and Ned Deily.
 
 
 .. _pep-446:
