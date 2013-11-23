@@ -87,6 +87,12 @@ def _reduce_ex(self, proto):
 def __newobj__(cls, *args):
     return cls.__new__(cls, *args)
 
+def __newobj_ex__(cls, args, kwargs):
+    """Used by pickle protocol 4, instead of __newobj__ to allow classes with
+    keyword-only arguments to be pickled correctly.
+    """
+    return cls.__new__(cls, *args, **kwargs)
+
 def _slotnames(cls):
     """Return a list of slot names for a given class.
 
