@@ -288,9 +288,7 @@ if _have_ssl:
         """
         # Generate a default SSL context if none was passed.
         if context is None:
-            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            # SSLv2 considered harmful.
-            context.options |= ssl.OP_NO_SSLv2
+            context = ssl._create_stdlib_context()
         return context.wrap_socket(sock)
 
 

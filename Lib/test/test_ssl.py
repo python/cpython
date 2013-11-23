@@ -1018,6 +1018,27 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
 
+    def test__create_stdlib_context(self):
+        ctx = ssl._create_stdlib_context()
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+        ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+        ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1,
+                                         cert_reqs=ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+        ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
+        self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
+        self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+        self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
 
 
 class SSLErrorTests(unittest.TestCase):

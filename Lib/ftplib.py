@@ -727,6 +727,10 @@ else:
                                  "exclusive")
             self.keyfile = keyfile
             self.certfile = certfile
+            if context is None:
+                context = ssl._create_stdlib_context(self.ssl_version,
+                                                     certfile=certfile,
+                                                     keyfile=keyfile)
             self.context = context
             self._prot_p = False
             FTP.__init__(self, host, user, passwd, acct, timeout, source_address)
@@ -744,12 +748,7 @@ else:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
-            if self.context is not None:
-                self.sock = self.context.wrap_socket(self.sock)
-            else:
-                self.sock = ssl.wrap_socket(self.sock, self.keyfile,
-                                            self.certfile,
-                                            ssl_version=self.ssl_version)
+            self.sock = self.context.wrap_socket(self.sock)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
             return resp
 
@@ -788,11 +787,7 @@ else:
         def ntransfercmd(self, cmd, rest=None):
             conn, size = FTP.ntransfercmd(self, cmd, rest)
             if self._prot_p:
-                if self.context is not None:
-                    conn = self.context.wrap_socket(conn)
-                else:
-                    conn = ssl.wrap_socket(conn, self.keyfile, self.certfile,
-                                           ssl_version=self.ssl_version)
+                conn = self.context.wrap_socket(conn)
             return conn, size
 
         def abort(self):

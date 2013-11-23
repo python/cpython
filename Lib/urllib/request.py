@@ -141,13 +141,9 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     if cafile or capath or cadefault:
         if not _have_ssl:
             raise ValueError('SSL support not available')
-        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-        context.options |= ssl.OP_NO_SSLv2
-        context.verify_mode = ssl.CERT_REQUIRED
-        if cafile or capath:
-            context.load_verify_locations(cafile, capath)
-        else:
-            context.set_default_verify_paths()
+        context = ssl._create_stdlib_context(cert_reqs=ssl.CERT_REQUIRED,
+                                             cafile=cafile,
+                                             capath=capath)
         https_handler = HTTPSHandler(context=context, check_hostname=True)
         opener = build_opener(https_handler)
     elif _opener is None:

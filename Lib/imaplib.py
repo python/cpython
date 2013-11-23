@@ -742,9 +742,7 @@ class IMAP4:
             raise self.abort('TLS not supported by server')
         # Generate a default SSL context if none was passed.
         if ssl_context is None:
-            ssl_context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            # SSLv2 considered harmful.
-            ssl_context.options |= ssl.OP_NO_SSLv2
+            ssl_context = ssl._create_stdlib_context()
         typ, dat = self._simple_command(name)
         if typ == 'OK':
             self.sock = ssl_context.wrap_socket(self.sock)
@@ -1210,15 +1208,15 @@ if HAVE_SSL:
 
             self.keyfile = keyfile
             self.certfile = certfile
+            if ssl_context is None:
+                ssl_context = ssl._create_stdlib_context(certfile=certfile,
+                                                         keyfile=keyfile)
             self.ssl_context = ssl_context
             IMAP4.__init__(self, host, port)
 
         def _create_socket(self):
             sock = IMAP4._create_socket(self)
-            if self.ssl_context:
-                return self.ssl_context.wrap_socket(sock)
-            else:
-                return ssl.wrap_socket(sock, self.keyfile, self.certfile)
+            return self.ssl_context.wrap_socket(sock)
 
         def open(self, host='', port=IMAP4_SSL_PORT):
             """Setup connection to remote server on "host:port".
