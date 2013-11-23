@@ -67,6 +67,8 @@ Core and Builtins
 
 Library
 -------
+- Issue #19722: Added opcode.stack_effect(), which
+  computes the stack effect of bytecode instructions.
 
 - Issue #19735: Implement private function ssl._create_stdlib_context() to
   create SSLContext objects in Python's stdlib module. It provides a single
