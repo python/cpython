@@ -234,8 +234,11 @@ class EnvBuilder:
 
     def _setup_pip(self, context):
         """Installs or upgrades pip in a virtual environment"""
-        cmd = [context.env_exe, '-m', 'ensurepip', '--upgrade',
-                                                   '--default-pip']
+        # We run ensurepip in isolated mode to avoid side effects from
+        # environment vars, the current directory and anything else
+        # intended for the global Python environment
+        cmd = [context.env_exe, '-Im', 'ensurepip', '--upgrade',
+                                                    '--default-pip']
         subprocess.check_output(cmd)
 
     def setup_scripts(self, context):

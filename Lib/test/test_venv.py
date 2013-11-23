@@ -12,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, run_unittest,
-                          can_symlink)
+                          can_symlink, EnvironmentVarGuard)
 import unittest
 import venv
 
@@ -280,7 +280,12 @@ class EnsurePipTest(BaseTest):
 
     def test_with_pip(self):
         shutil.rmtree(self.env_dir)
-        self.run_with_capture(venv.create, self.env_dir, with_pip=True)
+        with EnvironmentVarGuard() as envvars:
+            # pip's cross-version compatibility may trigger deprecation
+            # warnings in current versions of Python. Ensure related
+            # environment settings don't cause venv to fail.
+            envvars["PYTHONWARNINGS"] = "e"
+            self.run_with_capture(venv.create, self.env_dir, with_pip=True)
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         cmd = [envpy, '-m', 'pip', '--version']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
