@@ -1403,6 +1403,13 @@ class _BasePathTest(object):
         self.assertTrue(p.exists())
         self.assertRaises(OSError, p.touch, exist_ok=False)
 
+    def test_touch_nochange(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        p.touch()
+        with p.open('rb') as f:
+            self.assertEqual(f.read().strip(), b"this is file A")
+
     def test_mkdir(self):
         P = self.cls(BASE)
         p = P / 'newdirA'
