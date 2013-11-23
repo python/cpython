@@ -72,6 +72,11 @@ methods.  Those methods are callbacks: they will be called by the transport
 on certain events (for example when some data is received); you shouldn't
 call them yourself, unless you are implementing a transport.
 
+.. note::
+   All callbacks have default implementations, which are empty.  Therefore,
+   you only need to implement the callbacks for the events in which you
+   are interested.
+
 
 Protocol classes
 ^^^^^^^^^^^^^^^^
@@ -88,17 +93,15 @@ Protocol classes
 
 .. class:: SubprocessProtocol
 
-   The base class for implementing protocols representing communication
-   channels with subprocesses (i.e., the set of pipes allowing bidirectional
-   data exchange between this process and the child process).
+   The base class for implementing protocols communicating with child
+   processes (through a set of unidirectional pipes).
 
 
 Connection callbacks
 ^^^^^^^^^^^^^^^^^^^^
 
 These callbacks may be called on :class:`Protocol` and
-:class:`SubprocessProtocol` instances.  The default implementations are
-empty.
+:class:`SubprocessProtocol` instances:
 
 .. method:: connection_made(transport)
 
@@ -121,12 +124,32 @@ per successful connection.  All other callbacks will be called between those
 two methods, which allows for easier resource management in your protocol
 implementation.
 
+The following callbacks may be called only on :class:`SubprocessProtocol`
+instances:
+
+.. method:: pipe_data_received(fd, data)
+
+   Called when the child process writes data into its stdout or stderr pipe.
+   *fd* is the integer file descriptor of the pipe.  *data* is a non-empty
+   bytes object containing the data.
+
+.. method:: pipe_connection_lost(fd, exc)
+
+   Called when one of the pipes communicating with the child process
+   is closed.  *fd* is the integer file descriptor that was closed.
+
+.. method:: process_exited()
+
+   Called when the child process has exited.
+
 
 Data reception callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following callbacks are called on :class:`Protocol` instances.
-The default implementations are empty.
+Streaming protocols
+"""""""""""""""""""
+
+The following callbacks are called on :class:`Protocol` instances:
 
 .. method:: data_received(data)
 
@@ -136,9 +159,8 @@ The default implementations are empty.
    .. note::
       Whether the data is buffered, chunked or reassembled depends on
       the transport.  In general, you shouldn't rely on specific semantics
-      and instead make your parsing generic and flexible enough.
-
-      However, data always comes in the correct order.
+      and instead make your parsing generic and flexible enough.  However,
+      data is always received in the correct order.
 
 .. method:: eof_received()
 
@@ -156,17 +178,37 @@ The default implementations are empty.
       in which case returning true from this method will not prevent closing
       the connection.
 
-
 :meth:`data_received` can be called an arbitrary number of times during
 a connection.  However, :meth:`eof_received` is called at most once
 and, if called, :meth:`data_received` won't be called after it.
+
+Datagram protocols
+""""""""""""""""""
+
+The following callbacks are called on :class:`DatagramProtocol` instances.
+
+.. method:: datagram_received(data, addr)
+
+   Called when a datagram is received.  *data* is a bytes object containing
+   the incoming data.  *addr* is the address of the peer sending the data;
+   the exact format depends on the transport.
+
+.. method:: error_received(exc)
+
+   Called when a previous send or receive operation raises an
+   :class:`OSError`.  *exc* is the :class:`OSError` instance.
+
+   This method is called in rare conditions, when the transport (e.g. UDP)
+   detects that a datagram couldn't be delivered to its recipient.
+   In many conditions though, undeliverable datagrams will be silently
+   dropped.
 
 
 Flow control callbacks
 ^^^^^^^^^^^^^^^^^^^^^^
 
 These callbacks may be called on :class:`Protocol` and
-:class:`SubprocessProtocol`.  The default implementations are empty.
+:class:`SubprocessProtocol` instances:
 
 .. method:: pause_writing()
 
