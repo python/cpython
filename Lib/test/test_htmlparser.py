@@ -70,6 +70,18 @@ class EventCollectorExtra(EventCollector):
         self.append(("starttag_text", self.get_starttag_text()))
 
 
+class EventCollectorCharrefs(EventCollector):
+
+    def get_events(self):
+        return self.events
+
+    def handle_charref(self, data):
+        self.fail('This should never be called with convert_charrefs=True')
+
+    def handle_entityref(self, data):
+        self.fail('This should never be called with convert_charrefs=True')
+
+
 class TestCaseBase(unittest.TestCase):
 
     def get_collector(self):
@@ -84,12 +96,14 @@ class TestCaseBase(unittest.TestCase):
         parser.close()
         events = parser.get_events()
         if events != expected_events:
-            self.fail("received events did not match expected events\n"
-                      "Expected:\n" + pprint.pformat(expected_events) +
+            self.fail("received events did not match expected events" +
+                      "\nSource:\n" + repr(source) +
+                      "\nExpected:\n" + pprint.pformat(expected_events) +
                       "\nReceived:\n" + pprint.pformat(events))
 
     def _run_check_extra(self, source, events):
-        self._run_check(source, events, EventCollectorExtra())
+        self._run_check(source, events,
+                        EventCollectorExtra(convert_charrefs=False))
 
     def _parse_error(self, source):
         def parse(source=source):
@@ -105,7 +119,7 @@ class HTMLParserStrictTestCase(TestCaseBase):
 
     def get_collector(self):
         with support.check_warnings(("", DeprecationWarning), quite=False):
-            return EventCollector(strict=True)
+            return EventCollector(strict=True, convert_charrefs=False)
 
     def test_processing_instruction_only(self):
         self._run_check("<?processing instruction>", [
@@ -335,7 +349,7 @@ text
             self._run_check(s, [("starttag", element_lower, []),
                                 ("data", content),
                                 ("endtag", element_lower)],
-                            collector=Collector())
+                            collector=Collector(convert_charrefs=False))
 
     def test_comments(self):
         html = ("<!-- I'm a valid comment -->"
@@ -363,13 +377,53 @@ text
                     ('comment', '[if lte IE 7]>pretty?<![endif]')]
         self._run_check(html, expected)
 
+    def test_convert_charrefs(self):
+        collector = lambda: EventCollectorCharrefs(convert_charrefs=True)
+        self.assertTrue(collector().convert_charrefs)
+        charrefs = ['&quot;', '&#34;', '&#x22;', '&quot', '&#34', '&#x22']
+        # check charrefs in the middle of the text/attributes
+        expected = [('starttag', 'a', [('href', 'foo"zar')]),
+                    ('data', 'a"z'), ('endtag', 'a')]
+        for charref in charrefs:
+            self._run_check('<a href="foo{0}zar">a{0}z</a>'.format(charref),
+                            expected, collector=collector())
+        # check charrefs at the beginning/end of the text/attributes
+        expected = [('data', '"'),
+                    ('starttag', 'a', [('x', '"'), ('y', '"X'), ('z', 'X"')]),
+                    ('data', '"'), ('endtag', 'a'), ('data', '"')]
+        for charref in charrefs:
+            self._run_check('{0}<a x="{0}" y="{0}X" z="X{0}">'
+                            '{0}</a>{0}'.format(charref),
+                            expected, collector=collector())
+        # check charrefs in <script>/<style> elements
+        for charref in charrefs:
+            text = 'X'.join([charref]*3)
+            expected = [('data', '"'),
+                        ('starttag', 'script', []), ('data', text),
+                        ('endtag', 'script'), ('data', '"'),
+                        ('starttag', 'style', []), ('data', text),
+                        ('endtag', 'style'), ('data', '"')]
+            self._run_check('{1}<script>{0}</script>{1}'
+                            '<style>{0}</style>{1}'.format(text, charref),
+                            expected, collector=collector())
+        # check truncated charrefs at the end of the file
+        html = '&quo &# &#x'
+        for x in range(1, len(html)):
+            self._run_check(html[:x], [('data', html[:x])],
+                            collector=collector())
+        # check a string with no charrefs
+        self._run_check('no charrefs here', [('data', 'no charrefs here')],
+                        collector=collector())
+
 
 class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
 
     def get_collector(self):
-        return EventCollector()
+        return EventCollector(convert_charrefs=False)
 
     def test_deprecation_warnings(self):
+        with self.assertWarns(DeprecationWarning):
+            EventCollector()  # convert_charrefs not passed explicitly
         with self.assertWarns(DeprecationWarning):
             EventCollector(strict=True)
         with self.assertWarns(DeprecationWarning):
@@ -630,7 +684,7 @@ class AttributesStrictTestCase(TestCaseBase):
 
     def get_collector(self):
         with support.check_warnings(("", DeprecationWarning), quite=False):
-            return EventCollector(strict=True)
+            return EventCollector(strict=True, convert_charrefs=False)
 
     def test_attr_syntax(self):
         output = [
@@ -691,7 +745,7 @@ class AttributesStrictTestCase(TestCaseBase):
 class AttributesTolerantTestCase(AttributesStrictTestCase):
 
     def get_collector(self):
-        return EventCollector()
+        return EventCollector(convert_charrefs=False)
 
     def test_attr_funky_names2(self):
         self._run_check(
