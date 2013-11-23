@@ -165,6 +165,13 @@ else:
 # (OpenSSL's default setting is 'DEFAULT:!aNULL:!eNULL')
 _DEFAULT_CIPHERS = 'DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2'
 
+# restricted and more secure ciphers
+# HIGH: high encryption cipher suites with key length >= 128 bits (no MD5)
+# !aNULL: only authenticated cipher suites (no anonymous DH)
+# !RC4: no RC4 streaming cipher, RC4 is broken
+# !DSS: RSA is preferred over DSA
+_RESTRICTED_CIPHERS = 'HIGH:!aNULL:!RC4:!DSS'
+
 
 class CertificateError(ValueError):
     pass
@@ -361,6 +368,34 @@ class SSLContext(_SSLContext):
                 self._load_windows_store_certs(storename, purpose)
         else:
             self.set_default_verify_paths()
+
+
+def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
+                           capath=None, cadata=None):
+    """Create a SSLContext object with default settings.
+
+    NOTE: The protocol and settings may change anytime without prior
+          deprecation. The values represent a fair balance between maximum
+          compatibility and security.
+    """
+    if not isinstance(purpose, _ASN1Object):
+        raise TypeError(purpose)
+    context = SSLContext(PROTOCOL_TLSv1)
+    # SSLv2 considered harmful.
+    context.options |= OP_NO_SSLv2
+    # disallow ciphers with known vulnerabilities
+    context.set_ciphers(_RESTRICTED_CIPHERS)
+    # verify certs in client mode
+    if purpose == Purpose.SERVER_AUTH:
+        context.verify_mode = CERT_REQUIRED
+    if cafile or capath or cadata:
+        context.load_verify_locations(cafile, capath, cadata)
+    elif context.verify_mode != CERT_NONE:
+        # no explicit cafile, capath or cadata but the verify mode is
+        # CERT_OPTIONAL or CERT_REQUIRED. Let's try to load default system
+        # root CA certificates for the given purpose. This may fail silently.
+        context.load_default_certs(purpose)
+    return context
 
 
 class SSLSocket(socket):

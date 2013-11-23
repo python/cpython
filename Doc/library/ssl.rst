@@ -346,6 +346,24 @@ Certificate handling
    .. versionchanged:: 3.3
       This function is now IPv6-compatible.
 
+.. function:: create_default_context(purpose=Purpose.SERVER_AUTH, cafile=None, capath=None, cadata=None)
+
+   Create a :class:`SSLContext` with default settings.
+
+   The current settings are: :data:`PROTOCOL_TLSv1` with high encryption
+   cipher suites without RC4 and without unauthenticated cipher suites. The
+   *purpose* :data:`Purpose.SERVER_AUTH` sets verify_mode to
+   :data:`CERT_REQUIRED` and either loads CA certs (when at least one of
+   *cafile*, *capath* or *cadata* is given) or uses
+   :meth:`SSLContext.load_default_certs` to load default CA certs.
+
+   .. note::
+      The protocol, options, cipher and other settings may change to more
+      restrictive values anytime without prior deprecation. The values
+      represent a fair balance between maximum compatibility and security.
+
+   .. versionadded:: 3.4
+
 .. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
 
    Given a certificate as a DER-encoded blob of bytes, returns a PEM-encoded
