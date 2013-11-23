@@ -43,6 +43,20 @@ static PyTypeObject Dbmtype;
 
 static PyObject *DbmError;
 
+/*[clinic]
+module dbm
+class dbm.dbm
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
+/*[python]
+class dbmobject_converter(self_converter):
+    type = "dbmobject *"
+    def converter_init(self):
+        self.name = 'dp'
+[python]*/
+/*[python checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 static PyObject *
 newdbmobject(const char *file, int flags, int mode)
 {
@@ -248,27 +262,77 @@ static PySequenceMethods dbm_as_sequence = {
     0,                          /* sq_inplace_repeat */
 };
 
-static PyObject *
-dbm_get(dbmobject *dp, PyObject *args)
-{
-    datum key, val;
-    PyObject *defvalue = Py_None;
-    char *tmp_ptr;
-    Py_ssize_t tmp_size;
+/*[clinic]
 
-    if (!PyArg_ParseTuple(args, "s#|O:get",
-                          &tmp_ptr, &tmp_size, &defvalue))
-        return NULL;
-    key.dptr = tmp_ptr;
-    key.dsize = tmp_size;
+dbm.dbm.get
+
+    self: dbmobject
+
+    key: str(length=True)
+    [
+    default: object
+    ]
+    /
+
+Return the value for key if present, otherwise default.
+[clinic]*/
+
+PyDoc_STRVAR(dbm_dbm_get__doc__,
+"Return the value for key if present, otherwise default.\n"
+"\n"
+"dbm.dbm.get(key, [default])");
+
+#define DBM_DBM_GET_METHODDEF    \
+    {"get", (PyCFunction)dbm_dbm_get, METH_VARARGS, dbm_dbm_get__doc__},
+
+static PyObject *
+dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value);
+
+static PyObject *
+dbm_dbm_get(PyObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    const char *key;
+    Py_ssize_clean_t key_length;
+    int group_right_1 = 0;
+    PyObject *default_value = NULL;
+
+    switch (PyTuple_Size(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "s#:get", &key, &key_length))
+                return NULL;
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "s#O:get", &key, &key_length, &default_value))
+                return NULL;
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "dbm.dbm.get requires 1 to 2 arguments");
+            return NULL;
+    }
+    return_value = dbm_dbm_get_impl((dbmobject *)self, key, key_length, group_right_1, default_value);
+
+    return return_value;
+}
+
+static PyObject *
+dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
+/*[clinic checksum: 5b4265e66568f163ef0fc7efec09410eaf793508]*/
+{
+    datum dbm_key, val;
+
+    if (!group_right_1)
+        default_value = Py_None;
+    dbm_key.dptr = (char *)key;
+    dbm_key.dsize = key_length;
     check_dbmobject_open(dp);
-    val = dbm_fetch(dp->di_dbm, key);
+    val = dbm_fetch(dp->di_dbm, dbm_key);
     if (val.dptr != NULL)
         return PyBytes_FromStringAndSize(val.dptr, val.dsize);
-    else {
-        Py_INCREF(defvalue);
-        return defvalue;
-    }
+
+    Py_INCREF(default_value);
+    return default_value;
 }
 
 static PyObject *
@@ -333,9 +397,7 @@ static PyMethodDef dbm_methods[] = {
      "close()\nClose the database."},
     {"keys",            (PyCFunction)dbm_keys,          METH_NOARGS,
      "keys() -> list\nReturn a list of all keys in the database."},
-    {"get",             (PyCFunction)dbm_get,           METH_VARARGS,
-     "get(key[, default]) -> value\n"
-     "Return the value for key if present, otherwise default."},
+    DBM_DBM_GET_METHODDEF
     {"setdefault",      (PyCFunction)dbm_setdefault,    METH_VARARGS,
      "setdefault(key[, default]) -> value\n"
      "Return the value for key if present, otherwise default.  If key\n"
@@ -379,7 +441,6 @@ static PyTypeObject Dbmtype = {
 /* ----------------------------------------------------------------- */
 
 /*[clinic]
-module dbm
 
 dbm.open as dbmopen
 
@@ -415,10 +476,10 @@ PyDoc_STRVAR(dbmopen__doc__,
     {"open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *filename, const char *flags, int mode);
+dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode);
 
 static PyObject *
-dbmopen(PyObject *module, PyObject *args)
+dbmopen(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     const char *filename;
@@ -436,8 +497,8 @@ exit:
 }
 
 static PyObject *
-dbmopen_impl(PyObject *module, const char *filename, const char *flags, int mode)
-/*[clinic checksum: 2b0ec9e3c6ecd19e06d16c9f0ba33848245cb1ab]*/
+dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
+/*[clinic checksum: c1f2036017ec36a43ac6f59893732751e67c19d5]*/
 {
     int iflags;
 

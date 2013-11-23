@@ -9,7 +9,6 @@ Projected release date: 2013-11-24
 
 Core and Builtins
 -----------------
-
 - Use the repr of a module name in more places in import, especially
   exceptions.
 
@@ -450,6 +449,9 @@ Build
 
 Tools/Demos
 -----------
+- Issue #19730: Argument Clinic now supports all the existing PyArg
+  "format units" as legacy converters, as well as two new features:
+  "self converters" and the "version" directive.
 
 - Issue #19552: pyvenv now bootstraps pip into virtual environments by
   default (pass --without-pip to request the old behaviour)
