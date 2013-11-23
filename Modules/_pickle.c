@@ -1165,7 +1165,7 @@ _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
             PyErr_Format(UnpicklingError, "Invalid frame length");
             return -1;
         }
-        if (frame_len < n) {
+        if ((Py_ssize_t) frame_len < n) {
             PyErr_Format(UnpicklingError, "Bad framing");
             return -1;
         }
