@@ -38,9 +38,9 @@ def main():
 
     fromdate = file_mtime(fromfile)
     todate = file_mtime(tofile)
-    with open(fromfile, 'U') as ff:
+    with open(fromfile) as ff:
         fromlines = ff.readlines()
-    with open(tofile, 'U') as tf:
+    with open(tofile) as tf:
         tolines = tf.readlines()
 
     if options.u:

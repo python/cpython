@@ -103,7 +103,7 @@ def source_from_cache(path):
 def get_suffixes():
     """**DEPRECATED**"""
     extensions = [(s, 'rb', C_EXTENSION) for s in machinery.EXTENSION_SUFFIXES]
-    source = [(s, 'U', PY_SOURCE) for s in machinery.SOURCE_SUFFIXES]
+    source = [(s, 'r', PY_SOURCE) for s in machinery.SOURCE_SUFFIXES]
     bytecode = [(s, 'rb', PY_COMPILED) for s in machinery.BYTECODE_SUFFIXES]
 
     return extensions + source + bytecode
@@ -297,7 +297,7 @@ def find_module(name, path=None):
         raise ImportError(_ERR_MSG.format(name), name=name)
 
     encoding = None
-    if mode == 'U':
+    if 'b' not in mode:
         with open(file_path, 'rb') as file:
             encoding = tokenize.detect_encoding(file.readline)[0]
     file = open(file_path, mode, encoding=encoding)

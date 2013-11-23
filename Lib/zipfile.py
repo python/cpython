@@ -1117,6 +1117,10 @@ class ZipFile:
         """Return file-like object for 'name'."""
         if mode not in ("r", "U", "rU"):
             raise RuntimeError('open() requires mode "r", "U", or "rU"')
+        if 'U' in mode:
+            import warnings
+            warnings.warn("'U' mode is deprecated",
+                          DeprecationWarning, 2)
         if pwd and not isinstance(pwd, bytes):
             raise TypeError("pwd: expected bytes, got %s" % type(pwd))
         if not self.fp:

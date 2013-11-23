@@ -165,7 +165,7 @@ class ImportTests(unittest.TestCase):
                 self.assertIsNotNone(file)
                 self.assertTrue(filename[:-3].endswith(temp_mod_name))
                 self.assertEqual(info[0], '.py')
-                self.assertEqual(info[1], 'U')
+                self.assertEqual(info[1], 'r')
                 self.assertEqual(info[2], imp.PY_SOURCE)
 
                 mod = imp.load_module(temp_mod_name, file, filename, info)

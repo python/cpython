@@ -234,6 +234,9 @@ ZipFile Objects
       or a :class:`ZipInfo` object.  You will appreciate this when trying to read a
       ZIP file that contains members with duplicate names.
 
+   .. deprecated-removed:: 3.4 3.6
+      The ``'U'`` or  ``'rU'`` mode.  Use :class:`io.TextIOWrapper` for reading
+      compressed text files in :term:`universal newlines` mode.
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 

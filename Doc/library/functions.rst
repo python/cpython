@@ -872,8 +872,7 @@ are always available.  They are listed here in alphabetical order.
    ``'b'``   binary mode
    ``'t'``   text mode (default)
    ``'+'``   open a disk file for updating (reading and writing)
-   ``'U'``   universal newlines mode (for backwards compatibility; should
-             not be used in new code)
+   ``'U'``   :term:`universal newlines` mode (deprecated)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
@@ -1028,6 +1027,9 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.4
       The file is now non-inheritable.
+
+   .. deprecated-removed:: 3.4 4.0
+      The ``'U'`` mode.
 
 
 .. XXX works for bytes too, but should it?

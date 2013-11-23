@@ -62,8 +62,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     'b'       binary mode
     't'       text mode (default)
     '+'       open a disk file for updating (reading and writing)
-    'U'       universal newline mode (for backwards compatibility; unneeded
-              for new code)
+    'U'       universal newline mode (deprecated)
     ========= ===============================================================
 
     The default mode is 'rt' (open for reading text). For binary random
@@ -78,6 +77,10 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     't' is appended to the mode argument), the contents of the file are
     returned as strings, the bytes having been first decoded using a
     platform-dependent encoding or using the specified encoding if given.
+
+    'U' mode is deprecated and will raise an exception in future versions
+    of Python.  It has no effect in Python 3.  Use newline to control
+    universal newlines mode.
 
     buffering is an optional integer used to set the buffering policy.
     Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
@@ -174,6 +177,9 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if "U" in modes:
         if creating or writing or appending:
             raise ValueError("can't use U and writing mode at once")
+        import warnings
+        warnings.warn("'U' mode is deprecated",
+                      DeprecationWarning, 2)
         reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
