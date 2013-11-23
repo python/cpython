@@ -3193,8 +3193,10 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         if (self->proto >= 4) {
             const char stack_global_op = STACK_GLOBAL;
 
-            save(self, module_name, 0);
-            save(self, global_name, 0);
+            if (save(self, module_name, 0) < 0)
+                goto error;
+            if (save(self, global_name, 0) < 0)
+                goto error;
 
             if (_Pickler_Write(self, &stack_global_op, 1) < 0)
                 goto error;
