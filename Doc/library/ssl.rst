@@ -688,7 +688,7 @@ Constants
 
    .. versionadded:: 3.4
 
-.. data:: Purpose.clientAuth
+.. data:: Purpose.CLIENT_AUTH
 
    Option for :meth:`SSLContext.load_default_certs` to load CA certificates
    for TLS web client authentication (server side socket).
@@ -928,7 +928,7 @@ to speed up repeated connections from the same clients.
    The *purpose* flag specifies what kind of CA certificates are loaded. The
    default settings :data:`Purpose.SERVER_AUTH` loads certificates, that are
    flagged and trusted for TLS web server authentication (client side
-   sockets). :data:`Purpose.clientAuth` loads CA certificates for client
+   sockets). :data:`Purpose.CLIENT_AUTH` loads CA certificates for client
    certificate verification on the server side.
 
    .. versionadded:: 3.4
