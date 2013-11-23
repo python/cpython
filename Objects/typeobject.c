@@ -3693,7 +3693,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
     }
     else {
         *listitems = PyObject_GetIter(obj);
-        if (listitems == NULL)
+        if (*listitems == NULL)
             return -1;
     }
 
