@@ -459,12 +459,29 @@ implementation of this behaviour::
 Classes can alter the default behaviour by providing one or several special
 methods:
 
+.. method:: object.__getnewargs_ex__()
+
+   In protocols 4 and newer, classes that implements the
+   :meth:`__getnewargs_ex__` method can dictate the values passed to the
+   :meth:`__new__` method upon unpickling.  The method must return a pair
+   ``(args, kwargs)`` where *args* is a tuple of positional arguments
+   and *kwargs* a dictionary of named arguments for constructing the
+   object.  Those will be passed to the :meth:`__new__` method upon
+   unpickling.
+
+   You should implement this method if the :meth:`__new__` method of your
+   class requires keyword-only arguments.  Otherwise, it is recommended for
+   compatibility to implement :meth:`__getnewargs__`.
+
+
 .. method:: object.__getnewargs__()
 
-   In protocol 2 and newer, classes that implements the :meth:`__getnewargs__`
-   method can dictate the values passed to the :meth:`__new__` method upon
-   unpickling.  This is often needed for classes whose :meth:`__new__` method
-   requires arguments.
+   This method serve a similar purpose as :meth:`__getnewargs_ex__` but
+   for protocols 2 and newer.  It must return a tuple of arguments `args`
+   which will be passed to the :meth:`__new__` method upon unpickling.
+
+   In protocols 4 and newer, :meth:`__getnewargs__` will not be called if
+   :meth:`__getnewargs_ex__` is defined.
 
 
 .. method:: object.__getstate__()
@@ -496,10 +513,10 @@ the methods :meth:`__getstate__` and :meth:`__setstate__`.
 
    At unpickling time, some methods like :meth:`__getattr__`,
    :meth:`__getattribute__`, or :meth:`__setattr__` may be called upon the
-   instance.  In case those methods rely on some internal invariant being true,
-   the type should implement :meth:`__getnewargs__` to establish such an
-   invariant; otherwise, neither :meth:`__new__` nor :meth:`__init__` will be
-   called.
+   instance.  In case those methods rely on some internal invariant being
+   true, the type should implement :meth:`__getnewargs__` or
+   :meth:`__getnewargs_ex__` to establish such an invariant; otherwise,
+   neither :meth:`__new__` nor :meth:`__init__` will be called.
 
 .. index:: pair: copy; protocol
 
@@ -511,7 +528,7 @@ objects. [#]_
 
 Although powerful, implementing :meth:`__reduce__` directly in your classes is
 error prone.  For this reason, class designers should use the high-level
-interface (i.e., :meth:`__getnewargs__`, :meth:`__getstate__` and
+interface (i.e., :meth:`__getnewargs_ex__`, :meth:`__getstate__` and
 :meth:`__setstate__`) whenever possible.  We will show, however, cases where
 using :meth:`__reduce__` is the only option or leads to more efficient pickling
 or both.

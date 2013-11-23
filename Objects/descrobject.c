@@ -398,6 +398,24 @@ descr_get_qualname(PyDescrObject *descr)
     return descr->d_qualname;
 }
 
+static PyObject *
+descr_reduce(PyDescrObject *descr)
+{
+    PyObject *builtins;
+    PyObject *getattr;
+    _Py_IDENTIFIER(getattr);
+
+    builtins = PyEval_GetBuiltins();
+    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
+    return Py_BuildValue("O(OO)", getattr, PyDescr_TYPE(descr),
+                         PyDescr_NAME(descr));
+}
+
+static PyMethodDef descr_methods[] = {
+    {"__reduce__", (PyCFunction)descr_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
 static PyMemberDef descr_members[] = {
     {"__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY},
     {"__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY},
@@ -494,7 +512,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    descr_methods,                              /* tp_methods */
     descr_members,                              /* tp_members */
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -532,7 +550,7 @@ PyTypeObject PyClassMethodDescr_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    descr_methods,                              /* tp_methods */
     descr_members,                              /* tp_members */
     method_getset,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -569,7 +587,7 @@ PyTypeObject PyMemberDescr_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    descr_methods,                              /* tp_methods */
     descr_members,                              /* tp_members */
     member_getset,                              /* tp_getset */
     0,                                          /* tp_base */
@@ -643,7 +661,7 @@ PyTypeObject PyWrapperDescr_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    descr_methods,                              /* tp_methods */
     descr_members,                              /* tp_members */
     wrapperdescr_getset,                        /* tp_getset */
     0,                                          /* tp_base */
@@ -1085,6 +1103,23 @@ wrapper_repr(wrapperobject *wp)
                                wp->self);
 }
 
+static PyObject *
+wrapper_reduce(wrapperobject *wp)
+{
+    PyObject *builtins;
+    PyObject *getattr;
+    _Py_IDENTIFIER(getattr);
+
+    builtins = PyEval_GetBuiltins();
+    getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
+    return Py_BuildValue("O(OO)", getattr, wp->self, PyDescr_NAME(wp->descr));
+}
+
+static PyMethodDef wrapper_methods[] = {
+    {"__reduce__", (PyCFunction)wrapper_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
 static PyMemberDef wrapper_members[] = {
     {"__self__", T_OBJECT, offsetof(wrapperobject, self), READONLY},
     {0}
@@ -1193,7 +1228,7 @@ PyTypeObject _PyMethodWrapper_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    wrapper_methods,                            /* tp_methods */
     wrapper_members,                            /* tp_members */
     wrapper_getsets,                            /* tp_getset */
     0,                                          /* tp_base */
