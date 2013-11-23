@@ -8,7 +8,7 @@ $DESTROOT, massages that installation to remove .pyc files and such, creates
 an Installer package from the installation plus other files in ``resources`` 
 and ``scripts`` and placed that on a ``.dmg`` disk image.
 
-As of Python 3.3.0, PSF practice is to build two installer variants
+For Python 3.4.0, PSF practice is to build two installer variants
 for each release.
 
 1.  32-bit-only, i386 and PPC universal, capable on running on all machines
@@ -22,8 +22,8 @@ for each release.
     - builds the following third-party libraries
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
-        * SQLite 3.7.13
-        * XZ 5.0.3
+        * SQLite 3.8.1
+        * XZ 5.0.5
 
     - uses system-supplied versions of third-party libraries
 
@@ -56,10 +56,10 @@ for each release.
     - builds the following third-party libraries
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
-        * SQLite 3.7.13
+        * SQLite 3.8.1
         * Tcl 8.5.15
         * Tk 8.5.15
-        * XZ 5.0.3
+        * XZ 5.0.5
 
     - uses system-supplied versions of third-party libraries
 
