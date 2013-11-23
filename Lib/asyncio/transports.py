@@ -16,7 +16,7 @@ class BaseTransport:
         return self._extra.get(name, default)
 
     def close(self):
-        """Closes the transport.
+        """Close the transport.
 
         Buffered data will be flushed asynchronously.  No more data
         will be received.  After all buffered data is flushed, the
@@ -92,7 +92,7 @@ class WriteTransport(BaseTransport):
             self.write(data)
 
     def write_eof(self):
-        """Closes the write end after flushing buffered data.
+        """Close the write end after flushing buffered data.
 
         (This is like typing ^D into a UNIX program reading from stdin.)
 
@@ -101,11 +101,11 @@ class WriteTransport(BaseTransport):
         raise NotImplementedError
 
     def can_write_eof(self):
-        """Return True if this protocol supports write_eof(), False if not."""
+        """Return True if this transport supports write_eof(), False if not."""
         raise NotImplementedError
 
     def abort(self):
-        """Closes the transport immediately.
+        """Closs the transport immediately.
 
         Buffered data will be lost.  No more data will be received.
         The protocol's connection_lost() method will (eventually) be
@@ -150,7 +150,7 @@ class DatagramTransport(BaseTransport):
         raise NotImplementedError
 
     def abort(self):
-        """Closes the transport immediately.
+        """Close the transport immediately.
 
         Buffered data will be lost.  No more data will be received.
         The protocol's connection_lost() method will (eventually) be
