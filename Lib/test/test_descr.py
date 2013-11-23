@@ -4525,7 +4525,7 @@ class MiscTests(unittest.TestCase):
 
 class PicklingTests(unittest.TestCase):
 
-    def _check_reduce(self, proto, obj, args=(), kwargs={}, state=None, 
+    def _check_reduce(self, proto, obj, args=(), kwargs={}, state=None,
                       listitems=None, dictitems=None):
         if proto >= 4:
             reduce_value = obj.__reduce_ex__(proto)
@@ -4559,7 +4559,7 @@ class PicklingTests(unittest.TestCase):
             base_type = type(obj).__base__
             reduce_value = (copyreg._reconstructor,
                             (type(obj),
-                             base_type, 
+                             base_type,
                              None if base_type is object else base_type(obj)))
             if state is not None:
                 reduce_value += (state,)
@@ -4774,7 +4774,7 @@ class PicklingTests(unittest.TestCase):
             def __getstate__(self):
                 state = getattr(self, '__dict__', {}).copy()
                 for cls in type(self).__mro__:
-                     for slot in cls.__dict__.get('__slots__', ()):
+                    for slot in cls.__dict__.get('__slots__', ()):
                         try:
                             state[slot] = getattr(self, slot)
                         except AttributeError:
