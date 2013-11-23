@@ -142,6 +142,39 @@ and off individually.  They are described here in more detail.
    Removes usage of :func:`apply`.  For example ``apply(function, *args,
    **kwargs)`` is converted to ``function(*args, **kwargs)``.
 
+.. 2to3fixer:: asserts
+
+   Replaces deprecated :mod:`unittest` method names with the correct ones.
+
+   ================================  ==========================================
+   From                              To
+   ================================  ==========================================
+   ``failUnlessEqual(a, b)``         :meth:`assertEqual(a, b)
+                                     <unittest.TestCase.assertEqual>`
+   ``assertEquals(a, b)``            :meth:`assertEqual(a, b)
+                                     <unittest.TestCase.assertEqual>`
+   ``failIfEqual(a, b)``             :meth:`assertNotEqual(a, b)
+                                     <unittest.TestCase.assertNotEqual>`
+   ``assertNotEquals(a, b)``         :meth:`assertNotEqual(a, b)
+                                     <unittest.TestCase.assertNotEqual>`
+   ``failUnless(a)``                 :meth:`assertTrue(a)
+                                     <unittest.TestCase.assertTrue>`
+   ``assert_(a)``                    :meth:`assertTrue(a)
+                                     <unittest.TestCase.assertTrue>`
+   ``failIf(a)``                     :meth:`assertFalse(a)
+                                     <unittest.TestCase.assertFalse>`
+   ``failUnlessRaises(exc, cal)``    :meth:`assertRaises(exc, cal)
+                                     <unittest.TestCase.assertRaises>`
+   ``failUnlessAlmostEqual(a, b)``   :meth:`assertAlmostEqual(a, b)
+                                     <unittest.TestCase.assertAlmostEqual>`
+   ``assertAlmostEquals(a, b)``      :meth:`assertAlmostEqual(a, b)
+                                     <unittest.TestCase.assertAlmostEqual>`
+   ``failIfAlmostEqual(a, b)``       :meth:`assertNotAlmostEqual(a, b)
+                                     <unittest.TestCase.assertNotAlmostEqual>`
+   ``assertNotAlmostEquals(a, b)``   :meth:`assertNotAlmostEqual(a, b)
+                                     <unittest.TestCase.assertNotAlmostEqual>`
+   ================================  ==========================================
+
 .. 2to3fixer:: basestring
 
    Converts :class:`basestring` to :class:`str`.

@@ -575,6 +575,9 @@ Library
 
 - Issue #18716: Deprecate the formatter module.
 
+- Issue #10712: 2to3 has a new "asserts" fixer that replaces deprecated names
+  of unittest methods (e.g. failUnlessEqual -> assertEqual).
+
 - Issue #18037: 2to3 now escapes '\u' and '\U' in native strings.
 
 - Issue #17839: base64.decodebytes and base64.encodebytes now accept any
