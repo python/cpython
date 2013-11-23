@@ -83,8 +83,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         if tracemalloc.is_tracing():
             self.skipTest("tracemalloc must be stopped before the test")
 
-        tracemalloc.set_traceback_limit(1)
-        tracemalloc.start()
+        tracemalloc.start(1)
 
     def tearDown(self):
         tracemalloc.stop()
@@ -109,20 +108,18 @@ class TestTracemallocEnabled(unittest.TestCase):
     def test_set_traceback_limit(self):
         obj_size = 10
 
-        nframe = tracemalloc.get_traceback_limit()
-        self.addCleanup(tracemalloc.set_traceback_limit, nframe)
+        tracemalloc.stop()
+        self.assertRaises(ValueError, tracemalloc.start, -1)
 
-        self.assertRaises(ValueError, tracemalloc.set_traceback_limit, -1)
-
-        tracemalloc.clear_traces()
-        tracemalloc.set_traceback_limit(10)
+        tracemalloc.stop()
+        tracemalloc.start(10)
         obj2, obj2_traceback = allocate_bytes(obj_size)
         traceback = tracemalloc.get_object_traceback(obj2)
         self.assertEqual(len(traceback), 10)
         self.assertEqual(traceback, obj2_traceback)
 
-        tracemalloc.clear_traces()
-        tracemalloc.set_traceback_limit(1)
+        tracemalloc.stop()
+        tracemalloc.start(1)
         obj, obj_traceback = allocate_bytes(obj_size)
         traceback = tracemalloc.get_object_traceback(obj)
         self.assertEqual(len(traceback), 1)
@@ -163,8 +160,8 @@ class TestTracemallocEnabled(unittest.TestCase):
             return allocate_bytes3(size)
 
         # Ensure that two identical tracebacks are not duplicated
-        tracemalloc.clear_traces()
-        tracemalloc.set_traceback_limit(4)
+        tracemalloc.stop()
+        tracemalloc.start(4)
         obj_size = 123
         obj1, obj1_traceback = allocate_bytes4(obj_size)
         obj2, obj2_traceback = allocate_bytes4(obj_size)
