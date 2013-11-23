@@ -77,6 +77,14 @@ The module defines the following variables and functions:
    sample.  Samples wrap around in case of overflow.
 
 
+.. function:: byteswap(fragment, width)
+
+   "Byteswap" all samples in a fragment and returns the modified fragment.
+   Converts big-endian samples to little-endian and vice versa.
+
+   .. versionadded: 3.4
+
+
 .. function:: cross(fragment, width)
 
    Return the number of zero crossings in the fragment passed as an argument.

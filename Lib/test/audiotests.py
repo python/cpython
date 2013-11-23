@@ -5,24 +5,6 @@ import io
 import pickle
 import sys
 
-def byteswap2(data):
-    a = array.array('h')
-    a.frombytes(data)
-    a.byteswap()
-    return a.tobytes()
-
-def byteswap3(data):
-    ba = bytearray(data)
-    ba[::3] = data[2::3]
-    ba[2::3] = data[::3]
-    return bytes(ba)
-
-def byteswap4(data):
-    a = array.array('i')
-    a.frombytes(data)
-    a.byteswap()
-    return a.tobytes()
-
 class UnseekableIO(io.FileIO):
     def tell(self):
         raise io.UnsupportedOperation
