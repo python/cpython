@@ -401,6 +401,11 @@ Build
     xz 5.0.3 -> 5.0.5
     SQLite 3.7.13 -> 3.8.1
 
+- Issue #15663: Revert OS X installer built-in Tcl/Tk support for 3.4.0b1.
+  Some third-party projects, such as Matplotlib and PIL/Pillow,
+  depended on being able to build with Tcl and Tk frameworks in
+  /Library/Frameworks.
+
 Tools/Demos
 -----------
 
