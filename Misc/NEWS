@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #13477: Added command line interface to the tarfile module.
+  Original patch by Berker Peksag.
+
 - Issue #19674: inspect.signature() now produces a correct signature
   for some builtins.
 
