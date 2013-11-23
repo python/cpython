@@ -86,7 +86,7 @@ patterns.
       '.*\\.txt$'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foobar.txt')
-      <_sre.SRE_Match object at 0x...>
+      <_sre.SRE_Match object; span=(0, 10), match='foobar.txt'>
 
 
 .. seealso::
