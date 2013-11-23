@@ -385,8 +385,7 @@ class POP3:
         if not 'STLS' in caps:
             raise error_proto('-ERR STLS not supported by server')
         if context is None:
-            context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            context.options |= ssl.OP_NO_SSLv2
+            context = ssl._create_stdlib_context()
         resp = self._shortcmd('STLS')
         self.sock = context.wrap_socket(self.sock)
         self.file = self.sock.makefile('rb')
@@ -421,15 +420,15 @@ if HAVE_SSL:
                                  "exclusive")
             self.keyfile = keyfile
             self.certfile = certfile
+            if context is None:
+                context = ssl._create_stdlib_context(certfile=certfile,
+                                                     keyfile=keyfile)
             self.context = context
             POP3.__init__(self, host, port, timeout)
 
         def _create_socket(self, timeout):
             sock = POP3._create_socket(self, timeout)
-            if self.context is not None:
-                sock = self.context.wrap_socket(sock)
-            else:
-                sock = ssl.wrap_socket(sock, self.keyfile, self.certfile)
+            sock = self.context.wrap_socket(sock)
             return sock
 
         def stls(self, keyfile=None, certfile=None, context=None):

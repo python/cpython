@@ -571,10 +571,8 @@ class _SelectorSslTransport(_SelectorTransport):
                 # context; in that case the sslcontext passed is None.
                 # The default is the same as used by urllib with
                 # cadefault=True.
-                sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                sslcontext.options |= ssl.OP_NO_SSLv2
-                sslcontext.set_default_verify_paths()
-                sslcontext.verify_mode = ssl.CERT_REQUIRED
+                sslcontext = ssl._create_stdlib_context(
+                    cert_reqs=ssl.CERT_REQUIRED)
 
         wrap_kwargs = {
             'server_side': server_side,
