@@ -102,6 +102,7 @@ extensions = [
     '_testbuffer.pyd',
     '_sha3.pyd',
     '_testimportmultiple.pyd',
+    '_overlapped.pyd',
 ]
 
 # Well-known component UUIDs
