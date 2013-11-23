@@ -1139,6 +1139,86 @@ pattern_deepcopy(PatternObject* self, PyObject* memo)
 #endif
 }
 
+static PyObject *
+pattern_repr(PatternObject *obj)
+{
+    static const struct {
+        const char *name;
+        int value;
+    } flag_names[] = {
+        {"re.TEMPLATE", SRE_FLAG_TEMPLATE},
+        {"re.IGNORECASE", SRE_FLAG_IGNORECASE},
+        {"re.LOCALE", SRE_FLAG_LOCALE},
+        {"re.MULTILINE", SRE_FLAG_MULTILINE},
+        {"re.DOTALL", SRE_FLAG_DOTALL},
+        {"re.UNICODE", SRE_FLAG_UNICODE},
+        {"re.VERBOSE", SRE_FLAG_VERBOSE},
+        {"re.DEBUG", SRE_FLAG_DEBUG},
+        {"re.ASCII", SRE_FLAG_ASCII},
+    };
+    PyObject *result = NULL;
+    PyObject *flag_items;
+    int i;
+    int flags = obj->flags;
+
+    /* Omit re.UNICODE for valid string patterns. */
+    if (obj->isbytes == 0 &&
+        (flags & (SRE_FLAG_LOCALE|SRE_FLAG_UNICODE|SRE_FLAG_ASCII)) ==
+         SRE_FLAG_UNICODE)
+        flags &= ~SRE_FLAG_UNICODE;
+
+    flag_items = PyList_New(0);
+    if (!flag_items)
+        return NULL;
+
+    for (i = 0; i < Py_ARRAY_LENGTH(flag_names); i++) {
+        if (flags & flag_names[i].value) {
+            PyObject *item = PyUnicode_FromString(flag_names[i].name);
+            if (!item)
+                goto done;
+
+            if (PyList_Append(flag_items, item) < 0) {
+                Py_DECREF(item);
+                goto done;
+            }
+            Py_DECREF(item);
+            flags &= ~flag_names[i].value;
+        }
+    }
+    if (flags) {
+        PyObject *item = PyUnicode_FromFormat("0x%x", flags);
+        if (!item)
+            goto done;
+
+        if (PyList_Append(flag_items, item) < 0) {
+            Py_DECREF(item);
+            goto done;
+        }
+        Py_DECREF(item);
+    }
+
+    if (PyList_Size(flag_items) > 0) {
+        PyObject *flags_result;
+        PyObject *sep = PyUnicode_FromString("|");
+        if (!sep)
+            goto done;
+        flags_result = PyUnicode_Join(sep, flag_items);
+        Py_DECREF(sep);
+        if (!flags_result)
+            goto done;
+        result = PyUnicode_FromFormat("re.compile(%.200R, %S)",
+                                      obj->pattern, flags_result);
+        Py_DECREF(flags_result);
+    }
+    else {
+        result = PyUnicode_FromFormat("re.compile(%.200R)", obj->pattern);
+    }
+
+done:
+    Py_DECREF(flag_items);
+    return result;
+}
+
 PyDoc_STRVAR(pattern_match_doc,
 "match(string[, pos[, endpos]]) -> match object or None.\n\
     Matches zero or more characters at the beginning of the string");
@@ -1214,7 +1294,7 @@ static PyTypeObject Pattern_Type = {
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
     0,                                  /* tp_reserved */
-    0,                                  /* tp_repr */
+    (reprfunc)pattern_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
     0,                                  /* tp_as_mapping */

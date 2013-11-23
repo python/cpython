@@ -1164,6 +1164,68 @@ class ReTests(unittest.TestCase):
                 self.assertEqual(m.group(2), "y")
 
 
+class PatternReprTests(unittest.TestCase):
+    def check(self, pattern, expected):
+        self.assertEqual(repr(re.compile(pattern)), expected)
+
+    def check_flags(self, pattern, flags, expected):
+        self.assertEqual(repr(re.compile(pattern, flags)), expected)
+
+    def test_without_flags(self):
+        self.check('random pattern',
+                   "re.compile('random pattern')")
+
+    def test_single_flag(self):
+        self.check_flags('random pattern', re.IGNORECASE,
+            "re.compile('random pattern', re.IGNORECASE)")
+
+    def test_multiple_flags(self):
+        self.check_flags('random pattern', re.I|re.S|re.X,
+            "re.compile('random pattern', "
+            "re.IGNORECASE|re.DOTALL|re.VERBOSE)")
+
+    def test_unicode_flag(self):
+        self.check_flags('random pattern', re.U,
+                         "re.compile('random pattern')")
+        self.check_flags('random pattern', re.I|re.S|re.U,
+                         "re.compile('random pattern', "
+                         "re.IGNORECASE|re.DOTALL)")
+
+    def test_inline_flags(self):
+        self.check('(?i)pattern',
+                   "re.compile('(?i)pattern', re.IGNORECASE)")
+
+    def test_unknown_flags(self):
+        self.check_flags('random pattern', 0x123000,
+                         "re.compile('random pattern', 0x123000)")
+        self.check_flags('random pattern', 0x123000|re.I,
+            "re.compile('random pattern', re.IGNORECASE|0x123000)")
+
+    def test_bytes(self):
+        self.check(b'bytes pattern',
+                   "re.compile(b'bytes pattern')")
+        self.check_flags(b'bytes pattern', re.A,
+                         "re.compile(b'bytes pattern', re.ASCII)")
+
+    def test_quotes(self):
+        self.check('random "double quoted" pattern',
+            '''re.compile('random "double quoted" pattern')''')
+        self.check("random 'single quoted' pattern",
+            '''re.compile("random 'single quoted' pattern")''')
+        self.check('''both 'single' and "double" quotes''',
+            '''re.compile('both \\'single\\' and "double" quotes')''')
+
+    def test_long_pattern(self):
+        pattern = 'Very %spattern' % ('long ' * 1000)
+        r = repr(re.compile(pattern))
+        self.assertLess(len(r), 300)
+        self.assertEqual(r[:30], "re.compile('Very long long lon")
+        r = repr(re.compile(pattern, re.I))
+        self.assertLess(len(r), 300)
+        self.assertEqual(r[:30], "re.compile('Very long long lon")
+        self.assertEqual(r[-16:], ", re.IGNORECASE)")
+
+
 class ImplementationTest(unittest.TestCase):
     """
     Test implementation details of the re module.
