@@ -449,6 +449,7 @@
     <ClInclude Include="..\Include\unicodeobject.h" />
     <ClInclude Include="..\Include\weakrefobject.h" />
     <ClInclude Include="..\Modules\_math.h" />
+    <ClInclude Include="..\Modules\hashtable.h" />
     <ClInclude Include="..\Modules\rotatingtree.h" />
     <ClInclude Include="..\Modules\sre.h" />
     <ClInclude Include="..\Modules\sre_constants.h" />
@@ -517,6 +518,7 @@
     <ClCompile Include="..\Modules\errnomodule.c" />
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
+    <ClCompile Include="..\Modules\hashtable.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
@@ -532,6 +534,7 @@
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
+    <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
     <ClCompile Include="..\Modules\zipimport.c" />

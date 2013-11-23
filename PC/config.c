@@ -13,6 +13,7 @@ extern PyObject* PyInit_binascii(void);
 extern PyObject* PyInit_cmath(void);
 extern PyObject* PyInit_errno(void);
 extern PyObject* PyInit_faulthandler(void);
+extern PyObject* PyInit__tracemalloc(void);
 extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit_math(void);
 extern PyObject* PyInit__md5(void);
@@ -102,6 +103,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
 #endif
+    {"_tracemalloc", PyInit__tracemalloc},
     /* XXX Should _winapi go in a WIN32 block?  not WIN64? */
     {"_winapi", PyInit__winapi},
 
