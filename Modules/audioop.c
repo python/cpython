@@ -1108,6 +1108,37 @@ audioop_reverse(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+audioop_byteswap(PyObject *self, PyObject *args)
+{
+    Py_buffer view;
+    unsigned char *ncp;
+    Py_ssize_t i;
+    int size;
+    PyObject *rv = NULL;
+
+    if (!PyArg_ParseTuple(args, "y*i:swapbytes",
+                          &view, &size))
+        return NULL;
+
+    if (!audioop_check_parameters(view.len, size))
+        goto exit;
+
+    rv = PyBytes_FromStringAndSize(NULL, view.len);
+    if (rv == NULL)
+        goto exit;
+    ncp = (unsigned char *)PyBytes_AsString(rv);
+
+    for (i = 0; i < view.len; i += size) {
+        int j;
+        for (j = 0; j < size; j++)
+            ncp[i + size - 1 - j] = ((unsigned char *)view.buf)[i + j];
+    }
+  exit:
+    PyBuffer_Release(&view);
+    return rv;
+}
+
+static PyObject *
 audioop_lin2lin(PyObject *self, PyObject *args)
 {
     Py_buffer view;
@@ -1698,6 +1729,7 @@ static PyMethodDef audioop_methods[] = {
     { "tostereo", audioop_tostereo, METH_VARARGS },
     { "getsample", audioop_getsample, METH_VARARGS },
     { "reverse", audioop_reverse, METH_VARARGS },
+    { "byteswap", audioop_byteswap, METH_VARARGS },
     { "ratecv", audioop_ratecv, METH_VARARGS },
     { 0,          0 }
 };
