@@ -68,6 +68,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15204: Deprecated the 'U' mode in file-like objects.
+
 - Issue #17810: Implement PEP 3154, pickle protocol 4.
 
 - Issue #19668: Added support for the cp1125 encoding.

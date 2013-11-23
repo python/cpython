@@ -24,6 +24,8 @@ def text_open(fn, mode, encoding=None):
     try:
         return open(fn, mode, encoding=encoding or TEXT_ENCODING)
     except TypeError:
+        if 'r' in mode:
+            mode += 'U' # 'U' mode is needed only in Python 2.x
         return open(fn, mode)
 
 def get_file_sizes():
@@ -380,7 +382,7 @@ def prepare_files():
             f.write(os.urandom(size))
     # Text files
     chunk = []
-    with text_open(__file__, "rU", encoding='utf8') as f:
+    with text_open(__file__, "r", encoding='utf8') as f:
         for line in f:
             if line.startswith("# <iobench text chunk marker>"):
                 break
