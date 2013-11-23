@@ -988,7 +988,6 @@ class BlockPrinter:
         dsl_name = block.dsl_name
         write = self.f.write
 
-        assert (not input) or (input.endswith('\n'))
         assert not ((dsl_name == None) ^ (output == None)), "you must specify dsl_name and output together, dsl_name " + repr(dsl_name)
 
         if not dsl_name:
@@ -1122,12 +1121,16 @@ def parse_file(filename, *, verify=True, output=None, encoding='utf-8'):
     clinic = Clinic(language, verify=verify, filename=filename)
 
     with open(filename, 'r', encoding=encoding) as f:
-        text = clinic.parse(f.read())
+        raw = f.read()
+
+    cooked = clinic.parse(raw)
+    if cooked == raw:
+        return
 
     directory = os.path.dirname(filename) or '.'
 
     with tempfile.TemporaryDirectory(prefix="clinic", dir=directory) as tmpdir:
-        bytes = text.encode(encoding)
+        bytes = cooked.encode(encoding)
         tmpfilename = os.path.join(tmpdir, os.path.basename(filename))
         with open(tmpfilename, "wb") as f:
             f.write(bytes)
@@ -2619,6 +2622,7 @@ def main(argv):
     cmdline.add_argument("-f", "--force", action='store_true')
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("--converters", action='store_true')
+    cmdline.add_argument("--make", action='store_true')
     cmdline.add_argument("filename", type=str, nargs="*")
     ns = cmdline.parse_args(argv)
 
@@ -2696,6 +2700,23 @@ def main(argv):
         print("All converters also accept (doc_default=None, required=False).")
         print("All return converters also accept (doc_default=None).")
         sys.exit(0)
+
+    if ns.make:
+        if ns.output or ns.filename:
+            print("Usage error: can't use -o or filenames with --make.")
+            print()
+            cmdline.print_usage()
+            sys.exit(-1)
+        for root, dirs, files in os.walk('.'):
+            for rcs_dir in ('.svn', '.git', '.hg'):
+                if rcs_dir in dirs:
+                    dirs.remove(rcs_dir)
+            for filename in files:
+                if not filename.endswith('.c'):
+                    continue
+                path = os.path.join(root, filename)
+                parse_file(path, verify=not ns.force)
+        return
 
     if not ns.filename:
         cmdline.print_usage()
