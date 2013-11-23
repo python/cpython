@@ -7,7 +7,7 @@ from hashlib import md5
 import unittest
 import tarfile
 
-from test import support
+from test import support, script_helper
 
 # Check for our compression modules.
 try:
@@ -27,11 +27,13 @@ def md5sum(data):
     return md5(data).hexdigest()
 
 TEMPDIR = os.path.abspath(support.TESTFN) + "-tardir"
+tarextdir = TEMPDIR + '-extract-test'
 tarname = support.findfile("testtar.tar")
 gzipname = os.path.join(TEMPDIR, "testtar.tar.gz")
 bz2name = os.path.join(TEMPDIR, "testtar.tar.bz2")
 xzname = os.path.join(TEMPDIR, "testtar.tar.xz")
 tmpname = os.path.join(TEMPDIR, "tmp.tar")
+dotlessname = os.path.join(TEMPDIR, "testtar")
 
 md5_regtype = "65f477c818ad9e15f7feab0c6d37742f"
 md5_sparse = "a54fbc4ca4f4399a90e1b27164012fc6"
@@ -1722,6 +1724,168 @@ class MiscTest(unittest.TestCase):
             tarfile.itn(-0x10000000001, 6, tarfile.GNU_FORMAT)
         with self.assertRaises(ValueError):
             tarfile.itn(0x10000000000, 6, tarfile.GNU_FORMAT)
+
+
+class CommandLineTest(unittest.TestCase):
+
+    def tarfilecmd(self, *args):
+        rc, out, err = script_helper.assert_python_ok('-m', 'tarfile', *args)
+        return out
+
+    def tarfilecmd_failure(self, *args):
+        return script_helper.assert_python_failure('-m', 'tarfile', *args)
+
+    def make_simple_tarfile(self, tar_name):
+        files = [support.findfile('tokenize_tests.txt'),
+                 support.findfile('tokenize_tests-no-coding-cookie-'
+                                  'and-utf8-bom-sig-only.txt')]
+        self.addCleanup(support.unlink, tar_name)
+        with tarfile.open(tar_name, 'w') as tf:
+            for tardata in files:
+                tf.add(tardata, arcname=os.path.basename(tardata))
+
+    def test_test_command(self):
+        for tar_name in (tarname, gzipname, bz2name, xzname):
+            for opt in '-t', '--test':
+                out = self.tarfilecmd(opt, tar_name)
+                self.assertEqual(out, b'')
+
+    def test_test_command_verbose(self):
+        for tar_name in (tarname, gzipname, bz2name, xzname):
+            for opt in '-v', '--verbose':
+                out = self.tarfilecmd(opt, '-t', tar_name)
+                self.assertIn(b'is a tar archive.\n', out)
+
+    def test_test_command_invalid_file(self):
+        zipname = support.findfile('zipdir.zip')
+        rc, out, err = self.tarfilecmd_failure('-t', zipname)
+        self.assertIn(b' is not a tar archive.', err)
+        self.assertEqual(out, b'')
+        self.assertEqual(rc, 1)
+
+        for tar_name in (tarname, gzipname, bz2name, xzname):
+            with self.subTest(tar_name=tar_name):
+                with open(tar_name, 'rb') as f:
+                    data = f.read()
+                try:
+                    with open(tmpname, 'wb') as f:
+                        f.write(data[:511])
+                    rc, out, err = self.tarfilecmd_failure('-t', tmpname)
+                    self.assertEqual(out, b'')
+                    self.assertEqual(rc, 1)
+                finally:
+                    support.unlink(tmpname)
+
+    def test_list_command(self):
+        self.make_simple_tarfile(tmpname)
+        with support.captured_stdout() as t:
+            with tarfile.open(tmpname, 'r') as tf:
+                tf.list(verbose=False)
+        expected = t.getvalue().encode(sys.getfilesystemencoding())
+        for opt in '-l', '--list':
+            out = self.tarfilecmd(opt, tmpname)
+            self.assertEqual(out, expected)
+
+    def test_list_command_verbose(self):
+        self.make_simple_tarfile(tmpname)
+        with support.captured_stdout() as t:
+            with tarfile.open(tmpname, 'r') as tf:
+                tf.list(verbose=True)
+        expected = t.getvalue().encode(sys.getfilesystemencoding())
+        for opt in '-v', '--verbose':
+            out = self.tarfilecmd(opt, '-l', tmpname)
+            self.assertEqual(out, expected)
+
+    def test_list_command_invalid_file(self):
+        zipname = support.findfile('zipdir.zip')
+        rc, out, err = self.tarfilecmd_failure('-l', zipname)
+        self.assertIn(b' is not a tar archive.', err)
+        self.assertEqual(out, b'')
+        self.assertEqual(rc, 1)
+
+    def test_create_command(self):
+        files = [support.findfile('tokenize_tests.txt'),
+                 support.findfile('tokenize_tests-no-coding-cookie-'
+                                  'and-utf8-bom-sig-only.txt')]
+        for opt in '-c', '--create':
+            try:
+                out = self.tarfilecmd(opt, tmpname, *files)
+                self.assertEqual(out, b'')
+                with tarfile.open(tmpname) as tar:
+                    tar.getmembers()
+            finally:
+                support.unlink(tmpname)
+
+    def test_create_command_verbose(self):
+        files = [support.findfile('tokenize_tests.txt'),
+                 support.findfile('tokenize_tests-no-coding-cookie-'
+                                  'and-utf8-bom-sig-only.txt')]
+        for opt in '-v', '--verbose':
+            try:
+                out = self.tarfilecmd(opt, '-c', tmpname, *files)
+                self.assertIn(b' file created.', out)
+                with tarfile.open(tmpname) as tar:
+                    tar.getmembers()
+            finally:
+                support.unlink(tmpname)
+
+    def test_create_command_dotless_filename(self):
+        files = [support.findfile('tokenize_tests.txt')]
+        try:
+            out = self.tarfilecmd('-c', dotlessname, *files)
+            self.assertEqual(out, b'')
+            with tarfile.open(dotlessname) as tar:
+                tar.getmembers()
+        finally:
+            support.unlink(dotlessname)
+
+    def test_create_command_dot_started_filename(self):
+        tar_name = os.path.join(TEMPDIR, ".testtar")
+        files = [support.findfile('tokenize_tests.txt')]
+        try:
+            out = self.tarfilecmd('-c', tar_name, *files)
+            self.assertEqual(out, b'')
+            with tarfile.open(tar_name) as tar:
+                tar.getmembers()
+        finally:
+            support.unlink(tar_name)
+
+    def test_extract_command(self):
+        self.make_simple_tarfile(tmpname)
+        for opt in '-e', '--extract':
+            try:
+                with support.temp_cwd(tarextdir):
+                    out = self.tarfilecmd(opt, tmpname)
+                self.assertEqual(out, b'')
+            finally:
+                support.rmtree(tarextdir)
+
+    def test_extract_command_verbose(self):
+        self.make_simple_tarfile(tmpname)
+        for opt in '-v', '--verbose':
+            try:
+                with support.temp_cwd(tarextdir):
+                    out = self.tarfilecmd(opt, '-e', tmpname)
+                self.assertIn(b' file is extracted.', out)
+            finally:
+                support.rmtree(tarextdir)
+
+    def test_extract_command_different_directory(self):
+        self.make_simple_tarfile(tmpname)
+        try:
+            with support.temp_cwd(tarextdir):
+                out = self.tarfilecmd('-e', tmpname, 'spamdir')
+            self.assertEqual(out, b'')
+        finally:
+            support.rmtree(tarextdir)
+
+    def test_extract_command_invalid_file(self):
+        zipname = support.findfile('zipdir.zip')
+        with support.temp_cwd(tarextdir):
+            rc, out, err = self.tarfilecmd_failure('-e', zipname)
+        self.assertIn(b' is not a tar archive.', err)
+        self.assertEqual(out, b'')
+        self.assertEqual(rc, 1)
 
 
 class ContextManagerTest(unittest.TestCase):
