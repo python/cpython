@@ -82,6 +82,10 @@ def no_sslv2_implies_sslv3_hello():
     # 0.9.7h or higher
     return ssl.OPENSSL_VERSION_INFO >= (0, 9, 7, 8, 15)
 
+def have_verify_flags():
+    # 0.9.8 or higher
+    return ssl.OPENSSL_VERSION_INFO >= (0, 9, 8, 0, 15)
+
 def asn1time(cert_time):
     # Some versions of OpenSSL ignore seconds, see #18207
     # 0.9.8.i
@@ -667,6 +671,8 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ctx.verify_mode = 42
 
+    @unittest.skipUnless(have_verify_flags(),
+                         "verify_flags need OpenSSL > 0.9.8")
     def test_verify_flags(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         # default value by OpenSSL
@@ -1809,6 +1815,8 @@ else:
                 self.assertLess(before, after)
                 s.close()
 
+        @unittest.skipUnless(have_verify_flags(),
+                            "verify_flags need OpenSSL > 0.9.8")
         def test_crl_check(self):
             if support.verbose:
                 sys.stdout.write("\n")
