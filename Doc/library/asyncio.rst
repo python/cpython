@@ -242,6 +242,176 @@ buffer size reaches the low-water mark.
 Transports
 ----------
 
+Transports are classed provided by :mod:`asyncio` in order to abstract
+various kinds of communication channels.  You generally won't instantiate
+a transport yourself; instead, you will call a :class:`EventLoop` method
+which will create the transport and try to initiate the underlying
+communication channel, calling you back when it succeeds.
+
+Once the communication channel is established, a transport is always
+paired with a :ref:`protocol <protocol>` instance.  The protocol can
+then call the transport's methods for various purposes.
+
+:mod:`asyncio` currently implements transports for TCP, UDP, SSL, and
+subprocess pipes.  The methods available on a transport depend on
+the transport's kind.
+
+Methods common to all transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: close(self)
+
+   Close the transport.  If the transport has a buffer for outgoing
+   data, buffered data will be flushed asynchronously.  No more data
+   will be received.  After all buffered data is flushed, the
+   protocol's :meth:`connection_lost` method will be called with
+   :const:`None` as its argument.
+
+
+.. method:: get_extra_info(name, default=None)
+
+   Return optional transport information.  *name* is a string representing
+   the piece of transport-specific information to get, *default* is the
+   value to return if the information doesn't exist.
+
+   This method allows transport implementations to easily expose
+   channel-specific information.
+
+Methods of readable streaming transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: pause_reading()
+
+   Pause the receiving end of the transport.  No data will be passed to
+   the protocol's :meth:`data_received` method until meth:`resume_reading`
+   is called.
+
+.. method:: resume_reading()
+
+   Resume the receiving end.  The protocol's :meth:`data_received` method
+   will be called once again if some data is available for reading.
+
+Methods of writable streaming transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: write(data)
+
+   Write some *data* bytes to the transport.
+
+   This method does not block; it buffers the data and arranges for it
+   to be sent out asynchronously.
+
+.. method:: writelines(list_of_data)
+
+   Write a list (or any iterable) of data bytes to the transport.
+   This is functionally equivalent to calling :meth:`write` on each
+   element yielded by the iterable, but may be implemented more efficiently.
+
+.. method:: write_eof()
+
+   Close the write end of the transport after flushing buffered data.
+   Data may still be received.
+
+   This method can raise :exc:`NotImplementedError` if the transport
+   (e.g. SSL) doesn't support half-closes.
+
+.. method:: can_write_eof()
+
+   Return :const:`True` if the transport supports :meth:`write_eof`,
+   :const:`False` if not.
+
+.. method:: abort()
+
+   Close the transport immediately, without waiting for pending operations
+   to complete.  Buffered data will be lost.  No more data will be received.
+   The protocol's :meth:`connection_lost` method will eventually be
+   called with :const:`None` as its argument.
+
+.. method:: set_write_buffer_limits(high=None, low=None)
+
+   Set the *high*- and *low*-water limits for write flow control.
+
+   These two values control when call the protocol's
+   :meth:`pause_writing` and :meth:`resume_writing` methods are called.
+   If specified, the low-water limit must be less than or equal to the
+   high-water limit.  Neither *high* nor *low* can be negative.
+
+   The defaults are implementation-specific.  If only the
+   high-water limit is given, the low-water limit defaults to a
+   implementation-specific value less than or equal to the
+   high-water limit.  Setting *high* to zero forces *low* to zero as
+   well, and causes :meth:`pause_writing` to be called whenever the
+   buffer becomes non-empty.  Setting *low* to zero causes
+   :meth:`resume_writing` to be called only once the buffer is empty.
+   Use of zero for either limit is generally sub-optimal as it
+   reduces opportunities for doing I/O and computation
+   concurrently.
+
+.. method:: get_write_buffer_size()
+
+   Return the current size of the output buffer used by the transport.
+
+Methods of datagram transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: sendto(data, addr=None)
+
+   Send the *data* bytes to the remote peer given by *addr* (a
+   transport-dependent target address).  If *addr* is :const:`None`, the
+   data is sent to the target address given on transport creation.
+
+   This method does not block; it buffers the data and arranges for it
+   to be sent out asynchronously.
+
+.. method:: abort()
+
+   Close the transport immediately, without waiting for pending operations
+   to complete.  Buffered data will be lost.  No more data will be received.
+   The protocol's :meth:`connection_lost` method will eventually be
+   called with :const:`None` as its argument.
+
+Methods of subprocess transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: get_pid()
+
+   Return the subprocess process id as an integer.
+
+.. method:: get_returncode()
+
+   Return the subprocess returncode as an integer or :const:`None`
+   if it hasn't returned, similarly to the
+   :attr:`subprocess.Popen.returncode` attribute.
+
+.. method:: get_pipe_transport(fd)
+
+   Return the transport for the communication pipe correspondong to the
+   integer file descriptor *fd*.  The return value can be a readable or
+   writable streaming transport, depending on the *fd*.  If *fd* doesn't
+   correspond to a pipe belonging to this transport, :const:`None` is
+   returned.
+
+.. method:: send_signal(signal)
+
+   Send the *signal* number to the subprocess, as in
+   :meth:`subprocess.Popen.send_signal`.
+
+.. method:: terminate()
+
+   Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
+   This method is an alias for the :meth:`close` method.
+
+   On POSIX systems, this method sends SIGTERM to the subprocess.
+   On Windows, the Windows API function TerminateProcess() is called to
+   stop the subprocess.
+
+.. method:: kill(self)
+
+   Kill the subprocess, as in :meth:`subprocess.Popen.kill`
+
+   On POSIX systems, the function sends SIGKILL to the subprocess.
+   On Windows, this method is an alias for :meth:`terminate`.
+
 
 .. _sync:
 
