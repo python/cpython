@@ -1132,7 +1132,7 @@ _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
         (self->frame_end_idx == -1 ||
          self->frame_end_idx <= self->next_read_idx)) {
         /* Need to read new frame */
-        char *dummy;
+        char *dummy = NULL;
         unsigned char *frame_start;
         size_t frame_len;
         if (_Unpickler_ReadUnframed(self, &dummy, FRAME_HEADER_SIZE) < 0)
