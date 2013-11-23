@@ -92,6 +92,7 @@ import re
 import sys
 import os
 from collections import namedtuple
+from enum import Enum as _Enum
 
 import _ssl             # if we can't import it, let the error propagate
 
@@ -298,11 +299,19 @@ class _ASN1Object(namedtuple("_ASN1Object", "nid shortname longname oid")):
         return super().__new__(cls, *_txt2obj(name, name=True))
 
 
+class Purpose(_ASN1Object, _Enum):
+    """SSLContext purpose flags with X509v3 Extended Key Usage objects
+    """
+    SERVER_AUTH = '1.3.6.1.5.5.7.3.1'
+    CLIENT_AUTH = '1.3.6.1.5.5.7.3.2'
+
+
 class SSLContext(_SSLContext):
     """An SSLContext holds various SSL-related configuration options and
     data, such as certificates and possibly a private key."""
 
     __slots__ = ('protocol', '__weakref__')
+    _windows_cert_stores = ("CA", "ROOT")
 
     def __new__(cls, protocol, *args, **kwargs):
         self = _SSLContext.__new__(cls, protocol)
@@ -333,6 +342,25 @@ class SSLContext(_SSLContext):
             protos.extend(b)
 
         self._set_npn_protocols(protos)
+
+    def _load_windows_store_certs(self, storename, purpose):
+        certs = bytearray()
+        for cert, encoding, trust in enum_certificates(storename):
+            # CA certs are never PKCS#7 encoded
+            if encoding == "x509_asn":
+                if trust is True or purpose.oid in trust:
+                    certs.extend(cert)
+        self.load_verify_locations(cadata=certs)
+        return certs
+
+    def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
+        if not isinstance(purpose, _ASN1Object):
+            raise TypeError(purpose)
+        if sys.platform == "win32":
+            for storename in self._windows_cert_stores:
+                self._load_windows_store_certs(storename, purpose)
+        else:
+            self.set_default_verify_paths()
 
 
 class SSLSocket(socket):
