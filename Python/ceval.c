@@ -3850,20 +3850,16 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyErr_Fetch(&type, &value, &orig_traceback);
     if (value == NULL) {
         value = Py_None;
         Py_INCREF(value);
     }
-    PyErr_NormalizeException(&type, &value, &traceback);
-    orig_traceback = traceback;
-    if (traceback == NULL) {
-        Py_INCREF(Py_None);
-        traceback = Py_None;
-    }
+    PyErr_NormalizeException(&type, &value, &orig_traceback);
+    traceback = (orig_traceback != NULL) ? orig_traceback : Py_None;
     arg = PyTuple_Pack(3, type, value, traceback);
     if (arg == NULL) {
-        PyErr_Restore(type, value, traceback);
+        PyErr_Restore(type, value, orig_traceback);
         return;
     }
     err = call_trace(func, self, f, PyTrace_EXCEPTION, arg);
