@@ -159,15 +159,75 @@ meth_dealloc(PyCFunctionObject *m)
     }
 }
 
+/*
+ * finds the docstring's introspection signature.
+ * if present, returns a pointer pointing to the first '('.
+ * otherwise returns NULL.
+ */
+static const char *find_signature(PyCFunctionObject *m)
+{
+    const char *trace = m->m_ml->ml_doc;
+    const char *name = m->m_ml->ml_name;
+    size_t length;
+    if (!trace || !name)
+        return NULL;
+    length = strlen(name);
+    if (strncmp(trace, name, length))
+        return NULL;
+    trace += length;
+    if (*trace != '(')
+        return NULL;
+    return trace;
+}
+
+/*
+ * skips to the end of the docstring's instrospection signature.
+ */
+static const char *skip_signature(const char *trace)
+{
+    while (*trace && *trace != '\n')
+        trace++;
+    return trace;
+}
+
+static const char *skip_eols(const char *trace)
+{
+    while (*trace == '\n')
+        trace++;
+    return trace;
+}
+
+static PyObject *
+meth_get__text_signature__(PyCFunctionObject *m, void *closure)
+{
+    const char *start = find_signature(m);
+    const char *trace;
+
+    if (!start) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    trace = skip_signature(start);
+    return PyUnicode_FromStringAndSize(start, trace - start);
+}
+
 static PyObject *
 meth_get__doc__(PyCFunctionObject *m, void *closure)
 {
-    const char *doc = m->m_ml->ml_doc;
+    const char *doc = find_signature(m);
 
-    if (doc != NULL)
-        return PyUnicode_FromString(doc);
-    Py_INCREF(Py_None);
-    return Py_None;
+    if (doc)
+        doc = skip_eols(skip_signature(doc));
+    else
+        doc = m->m_ml->ml_doc;
+    
+    if (!doc) {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
+    return PyUnicode_FromString(doc);
 }
 
 static PyObject *
@@ -236,6 +296,7 @@ static PyGetSetDef meth_getsets [] = {
     {"__name__", (getter)meth_get__name__, NULL, NULL},
     {"__qualname__", (getter)meth_get__qualname__, NULL, NULL},
     {"__self__", (getter)meth_get__self__, NULL, NULL},
+    {"__text_signature__", (getter)meth_get__text_signature__, NULL, NULL},
     {0}
 };
 
