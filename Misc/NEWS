@@ -68,6 +68,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19735: Implement private function ssl._create_stdlib_context() to
+  create SSLContext objects in Python's stdlib module. It provides a single
+  configuration point and makes use of SSLContext.load_default_certs().
+
 - Issue #16203: Add re.fullmatch() function and regex.fullmatch() method,
   which anchor the pattern at both ends of the string to match.
   Original patch by Matthew Barnett.

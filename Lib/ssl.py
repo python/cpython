@@ -398,6 +398,43 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     return context
 
 
+def _create_stdlib_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
+                           purpose=Purpose.SERVER_AUTH,
+                           certfile=None, keyfile=None,
+                           cafile=None, capath=None, cadata=None):
+    """Create a SSLContext object for Python stdlib modules
+
+    All Python stdlib modules shall use this function to create SSLContext
+    objects in order to keep common settings in one place. The configuration
+    is less restrict than create_default_context()'s to increase backward
+    compatibility.
+    """
+    if not isinstance(purpose, _ASN1Object):
+        raise TypeError(purpose)
+
+    context = SSLContext(protocol)
+    # SSLv2 considered harmful.
+    context.options |= OP_NO_SSLv2
+
+    if cert_reqs is not None:
+        context.verify_mode = cert_reqs
+
+    if keyfile and not certfile:
+        raise ValueError("certfile must be specified")
+    if certfile or keyfile:
+        context.load_cert_chain(certfile, keyfile)
+
+    # load CA root certs
+    if cafile or capath or cadata:
+        context.load_verify_locations(cafile, capath, cadata)
+    elif context.verify_mode != CERT_NONE:
+        # no explicit cafile, capath or cadata but the verify mode is
+        # CERT_OPTIONAL or CERT_REQUIRED. Let's try to load default system
+        # root CA certificates for the given purpose. This may fail silently.
+        context.load_default_certs(purpose)
+
+    return context
+
 class SSLSocket(socket):
     """This class implements a subtype of socket.socket that wraps
     the underlying OS socket in an SSL context when necessary, and
@@ -829,15 +866,16 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_SSLv3, ca_certs=None):
     If 'ssl_version' is specified, use it in the connection attempt."""
 
     host, port = addr
-    if (ca_certs is not None):
+    if ca_certs is not None:
         cert_reqs = CERT_REQUIRED
     else:
         cert_reqs = CERT_NONE
-    s = create_connection(addr)
-    s = wrap_socket(s, ssl_version=ssl_version,
-                    cert_reqs=cert_reqs, ca_certs=ca_certs)
-    dercert = s.getpeercert(True)
-    s.close()
+    context = _create_stdlib_context(ssl_version,
+                                     cert_reqs=cert_reqs,
+                                     cafile=ca_certs)
+    with  create_connection(addr) as sock:
+        with context.wrap_socket(sock) as sslsock:
+            dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)
 
 def get_protocol_name(protocol_code):

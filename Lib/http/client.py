@@ -1179,9 +1179,7 @@ else:
             self.key_file = key_file
             self.cert_file = cert_file
             if context is None:
-                # Some reasonable defaults
-                context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-                context.options |= ssl.OP_NO_SSLv2
+                context = ssl._create_stdlib_context()
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
                 check_hostname = will_verify
