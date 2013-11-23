@@ -58,6 +58,63 @@ see :PEP:`3153`.
 Event loops
 -----------
 
+The event loop is the central execution device provided by :mod:`asyncio`.
+It provides multiple facilities, amongst which:
+
+* Registering, executing and cancelling delayed calls (timeouts)
+
+* Creating client and server :ref:`transports <transport>` for various
+  kinds of communication
+
+* Launching subprocesses and the associated :ref:`transports <transport>`
+  for communication with an external program
+
+* Delegating costly function calls to a pool of threads
+
+Getting an event loop
+^^^^^^^^^^^^^^^^^^^^^
+
+The easiest way to get an event loop is to call the :func:`get_event_loop`
+function.
+
+.. XXX more docs
+
+Delayed calls
+^^^^^^^^^^^^^
+
+The event loop has its own internal clock for computing timeouts.
+Which clock is used depends on the (platform-specific) event loop
+implementation; ideally it is a monotonic clock.  This will generally be
+a different clock than :func:`time.time`.
+
+.. method:: time()
+
+   Return the current time, as a :class:`float` value, according to the
+   event loop's internal clock.
+
+.. method:: call_later(delay, callback, *args)
+
+   Arrange for the *callback* to be called after the given *delay*
+   seconds (either an int or float).
+
+   A "handle" is returned: an opaque object with a :meth:`cancel` method
+   that can be used to cancel the call.
+
+   *callback* will be called exactly once per call to :meth:`call_later`.
+   If two callbacks are scheduled for exactly the same time, it is
+   undefined which will be called first.
+
+   The optional positional *args* will be passed to the callback when it
+   is called. If you want the callback to be called with some named
+   arguments, use a closure or :func:`functools.partial`.
+
+.. method:: call_at(when, callback, *args)
+
+   Arrange for the *callback* to be called at the given absolute timestamp
+   *when* (an int or float), using the same time reference as :meth:`time`.
+
+   This method's behavior is the same as :meth:`call_later`.
+
 
 .. _protocol:
 
