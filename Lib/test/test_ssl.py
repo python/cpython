@@ -611,6 +611,23 @@ class BasicSocketTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown object 'serverauth'"):
             ssl._ASN1Object.fromname('serverauth')
 
+    def test_purpose_enum(self):
+        val = ssl._ASN1Object('1.3.6.1.5.5.7.3.1')
+        self.assertIsInstance(ssl.Purpose.SERVER_AUTH, ssl._ASN1Object)
+        self.assertEqual(ssl.Purpose.SERVER_AUTH, val)
+        self.assertEqual(ssl.Purpose.SERVER_AUTH.nid, 129)
+        self.assertEqual(ssl.Purpose.SERVER_AUTH.shortname, 'serverAuth')
+        self.assertEqual(ssl.Purpose.SERVER_AUTH.oid,
+                              '1.3.6.1.5.5.7.3.1')
+
+        val = ssl._ASN1Object('1.3.6.1.5.5.7.3.2')
+        self.assertIsInstance(ssl.Purpose.CLIENT_AUTH, ssl._ASN1Object)
+        self.assertEqual(ssl.Purpose.CLIENT_AUTH, val)
+        self.assertEqual(ssl.Purpose.CLIENT_AUTH.nid, 130)
+        self.assertEqual(ssl.Purpose.CLIENT_AUTH.shortname, 'clientAuth')
+        self.assertEqual(ssl.Purpose.CLIENT_AUTH.oid,
+                              '1.3.6.1.5.5.7.3.2')
+
 
 class ContextTests(unittest.TestCase):
 
@@ -966,6 +983,21 @@ class ContextTests(unittest.TestCase):
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
         self.assertEqual(ctx.get_ca_certs(True), [der])
+
+    def test_load_default_certs(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.load_default_certs()
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.load_default_certs(ssl.Purpose.SERVER_AUTH)
+        ctx.load_default_certs()
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.load_default_certs(ssl.Purpose.CLIENT_AUTH)
+
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.assertRaises(TypeError, ctx.load_default_certs, None)
+        self.assertRaises(TypeError, ctx.load_default_certs, 'SERVER_AUTH')
 
 
 class SSLErrorTests(unittest.TestCase):

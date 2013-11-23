@@ -68,6 +68,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19292: Add SSLContext.load_default_certs() to load default root CA
+  certificates from default stores or system stores. By default the method
+  loads CA certs for authentication of server certs.
+
 - Issue #19673: Add pathlib to the stdlib as a provisional module (PEP 428).
 
 - Issue #17916: Added dis.Bytecode.from_traceback() and

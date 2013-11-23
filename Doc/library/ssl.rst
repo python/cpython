@@ -681,6 +681,20 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: Purpose.SERVER_AUTH
+
+   Option for :meth:`SSLContext.load_default_certs` to load CA certificates
+   for TLS web server authentication (client side socket).
+
+   .. versionadded:: 3.4
+
+.. data:: Purpose.clientAuth
+
+   Option for :meth:`SSLContext.load_default_certs` to load CA certificates
+   for TLS web client authentication (server side socket).
+
+   .. versionadded:: 3.4
+
 
 SSL Sockets
 -----------
@@ -903,6 +917,22 @@ to speed up repeated connections from the same clients.
    .. versionchanged:: 3.3
       New optional argument *password*.
 
+.. method:: SSLContext.load_default_certs(purpose=Purpose.SERVER_AUTH)
+
+   Load a set of default "certification authority" (CA) certificates from
+   default locations. On Windows it loads CA certs from the ``CA`` and
+   ``ROOT`` system stores. On other systems it calls
+   :meth:`SSLContext.set_default_verify_paths`. In the future the method may
+   load CA certificates from other locations, too.
+
+   The *purpose* flag specifies what kind of CA certificates are loaded. The
+   default settings :data:`Purpose.SERVER_AUTH` loads certificates, that are
+   flagged and trusted for TLS web server authentication (client side
+   sockets). :data:`Purpose.clientAuth` loads CA certificates for client
+   certificate verification on the server side.
+
+   .. versionadded:: 3.4
+
 .. method:: SSLContext.load_verify_locations(cafile=None, capath=None, cadata=None)
 
    Load a set of "certification authority" (CA) certificates used to validate
@@ -930,7 +960,6 @@ to speed up repeated connections from the same clients.
 
    .. versionchanged:: 3.4
       New optional argument *cadata*
-
 
 .. method:: SSLContext.get_ca_certs(binary_form=False)
 
