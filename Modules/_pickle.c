@@ -2940,6 +2940,9 @@ save_frozenset(PicklerObject *self, PyObject *obj)
         return -1;
 
     iter = PyObject_GetIter(obj);
+    if (iter == NULL) {
+        return NULL;
+    }
     for (;;) {
         PyObject *item;
 
