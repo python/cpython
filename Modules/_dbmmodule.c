@@ -28,6 +28,12 @@ static char *which_dbm = "Berkeley DB";
 #error "No ndbm.h available!"
 #endif
 
+/*[clinic]
+module dbm
+class dbm.dbm
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 typedef struct {
     PyObject_HEAD
     int di_size;        /* -1 means recompute */
@@ -42,12 +48,6 @@ static PyTypeObject Dbmtype;
                  return NULL; }
 
 static PyObject *DbmError;
-
-/*[clinic]
-module dbm
-class dbm.dbm
-[clinic]*/
-/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
 
 /*[python]
 class dbmobject_converter(self_converter):
@@ -278,9 +278,8 @@ Return the value for key if present, otherwise default.
 [clinic]*/
 
 PyDoc_STRVAR(dbm_dbm_get__doc__,
-"Return the value for key if present, otherwise default.\n"
-"\n"
-"dbm.dbm.get(key, [default])");
+"get(key, [default])\n"
+"Return the value for key if present, otherwise default.");
 
 #define DBM_DBM_GET_METHODDEF    \
     {"get", (PyCFunction)dbm_dbm_get, METH_VARARGS, dbm_dbm_get__doc__},
@@ -318,7 +317,7 @@ dbm_dbm_get(PyObject *self, PyObject *args)
 
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, int group_right_1, PyObject *default_value)
-/*[clinic checksum: 5b4265e66568f163ef0fc7efec09410eaf793508]*/
+/*[clinic checksum: 28cf8928811bde51e535d67ae98ea039d79df717]*/
 {
     datum dbm_key, val;
 
@@ -461,9 +460,9 @@ Return a database object.
 [clinic]*/
 
 PyDoc_STRVAR(dbmopen__doc__,
+"open(filename, flags=\'r\', mode=0o666)\n"
 "Return a database object.\n"
 "\n"
-"dbm.open(filename, flags=\'r\', mode=0o666)\n"
 "  filename\n"
 "    The filename to open.\n"
 "  flags\n"
@@ -498,7 +497,7 @@ exit:
 
 static PyObject *
 dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
-/*[clinic checksum: c1f2036017ec36a43ac6f59893732751e67c19d5]*/
+/*[clinic checksum: fb265f75641553ccd963f84c143b35c11f9121fc]*/
 {
     int iflags;
 

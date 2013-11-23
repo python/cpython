@@ -31,6 +31,7 @@ Here are some of the useful functions provided by this module:
 __author__ = ('Ka-Ping Yee <ping@lfw.org>',
               'Yury Selivanov <yselivanov@sprymix.com>')
 
+import ast
 import importlib.machinery
 import itertools
 import linecache
@@ -1461,6 +1462,9 @@ def signature(obj):
     if isinstance(obj, types.FunctionType):
         return Signature.from_function(obj)
 
+    if isinstance(obj, types.BuiltinFunctionType):
+        return Signature.from_builtin(obj)
+
     if isinstance(obj, functools.partial):
         sig = signature(obj.func)
 
@@ -1941,6 +1945,64 @@ class Signature:
         return cls(parameters,
                    return_annotation=annotations.get('return', _empty),
                    __validate_parameters__=False)
+
+    @classmethod
+    def from_builtin(cls, func):
+        s = getattr(func, "__text_signature__", None)
+        if not s:
+            return None
+
+        if s.endswith("/)"):
+            kind = Parameter.POSITIONAL_ONLY
+            s = s[:-2] + ')'
+        else:
+            kind = Parameter.POSITIONAL_OR_KEYWORD
+
+        s = "def foo" + s + ": pass"
+
+        try:
+            module = ast.parse(s)
+        except SyntaxError:
+            return None
+        if not isinstance(module, ast.Module):
+            return None
+
+        # ast.FunctionDef
+        f = module.body[0]
+
+        parameters = []
+        empty = Parameter.empty
+
+        def p(name_node, default_node, default=empty):
+            name = name_node.arg
+
+            if isinstance(default_node, ast.Num):
+                default = default.n
+            elif isinstance(default_node, ast.NameConstant):
+                default = default_node.value
+            parameters.append(Parameter(name, kind, default=default, annotation=empty))
+
+        # non-keyword-only parameters
+        for name, default in reversed(list(itertools.zip_longest(reversed(f.args.args), reversed(f.args.defaults), fillvalue=None))):
+            p(name, default)
+
+        # *args
+        if f.args.vararg:
+            kind = Parameter.VAR_POSITIONAL
+            p(f.args.vararg, empty)
+
+        # keyword-only arguments
+        kind = Parameter.KEYWORD_ONLY
+        for name, default in zip(f.args.kwonlyargs, f.args.kw_defaults):
+            p(name, default)
+
+        # **kwargs
+        if f.args.kwarg:
+            kind = Parameter.VAR_KEYWORD
+            p(f.args.kwarg, empty)
+
+        return cls(parameters, return_annotation=cls.empty)
+
 
     @property
     def parameters(self):

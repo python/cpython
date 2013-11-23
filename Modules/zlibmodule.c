@@ -165,6 +165,7 @@ PyZlib_Free(voidpf ctx, void *ptr)
 }
 
 /*[clinic]
+
 zlib.compress
     bytes: Py_buffer
         Binary data to be compressed.
@@ -179,9 +180,9 @@ Returns compressed string.
 [clinic]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
+"compress(bytes, [level])\n"
 "Returns compressed string.\n"
 "\n"
-"zlib.compress(bytes, [level])\n"
 "  bytes\n"
 "    Binary data to be compressed.\n"
 "  level\n"
@@ -226,7 +227,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
-/*[clinic checksum: 03e857836db25448d4d572da537eb7faf7695d71]*/
+/*[clinic checksum: f490708eff84be652b5ebe7fe622ab73ac12c888]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
@@ -742,6 +743,7 @@ save_unconsumed_input(compobject *self, int err)
 }
 
 /*[clinic]
+
 zlib.Decompress.decompress
 
     data: Py_buffer
@@ -760,9 +762,9 @@ Call the flush() method to clear these buffers.
 [clinic]*/
 
 PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
+"decompress(data, max_length=0)\n"
 "Return a string containing the decompressed version of the data.\n"
 "\n"
-"zlib.Decompress.decompress(data, max_length=0)\n"
 "  data\n"
 "    The binary data to decompress.\n"
 "  max_length\n"
@@ -803,7 +805,7 @@ exit:
 
 static PyObject *
 zlib_Decompress_decompress_impl(PyObject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic checksum: f83e91728d327462d7ccbee95299514f26b92253]*/
+/*[clinic checksum: 4683928665a1fa6987f5c57cada4a22807a78fbb]*/
 {
     compobject *zself = (compobject *)self;
     int err;
@@ -1029,16 +1031,15 @@ Return a copy of the compression object.
 [clinic]*/
 
 PyDoc_STRVAR(zlib_Compress_copy__doc__,
-"Return a copy of the compression object.\n"
-"\n"
-"zlib.Compress.copy()");
+"copy()\n"
+"Return a copy of the compression object.");
 
 #define ZLIB_COMPRESS_COPY_METHODDEF    \
     {"copy", (PyCFunction)zlib_Compress_copy, METH_NOARGS, zlib_Compress_copy__doc__},
 
 static PyObject *
 zlib_Compress_copy(PyObject *self)
-/*[clinic checksum: 2551952e72329f0f2beb48a1dde3780e485a220b]*/
+/*[clinic checksum: 8d30351f05defbc2b335c2a78d18f07aa367bb1d]*/
 {
     compobject *zself = (compobject *)self;
     compobject *retval = NULL;

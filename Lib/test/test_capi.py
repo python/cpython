@@ -109,6 +109,35 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
                           Z(),[b'1'],3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
 
+    def test_docstring_signature_parsing(self):
+
+        self.assertEqual(_testcapi.no_docstring.__doc__, None)
+        self.assertEqual(_testcapi.no_docstring.__text_signature__, None)
+
+        self.assertEqual(_testcapi.docstring_empty.__doc__, "")
+        self.assertEqual(_testcapi.docstring_empty.__text_signature__, None)
+
+        self.assertEqual(_testcapi.docstring_no_signature.__doc__,
+            "This docstring has no signature.")
+        self.assertEqual(_testcapi.docstring_no_signature.__text_signature__, None)
+
+        self.assertEqual(_testcapi.docstring_with_invalid_signature.__doc__,
+            "docstring_with_invalid_signature (boo)\n"
+            "\n"
+            "This docstring has an invalid signature."
+            )
+        self.assertEqual(_testcapi.docstring_with_invalid_signature.__text_signature__, None)
+
+        self.assertEqual(_testcapi.docstring_with_signature.__doc__,
+            "This docstring has a valid signature.")
+        self.assertEqual(_testcapi.docstring_with_signature.__text_signature__, "(sig)")
+
+        self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__doc__,
+            "This docstring has a valid signature and some extra newlines.")
+        self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__text_signature__,
+            "(parameter)")
+
+
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
 

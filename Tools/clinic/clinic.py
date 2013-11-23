@@ -24,17 +24,6 @@ import tempfile
 import textwrap
 
 # TODO:
-# converters for
-#
-#       es
-#       es#
-#       et
-#       et#
-#       s#
-#       u#
-#       y#
-#       z#
-#       Z#
 #
 # soon:
 #
@@ -43,12 +32,6 @@ import textwrap
 #       * dict constructor uses positional-only and keyword-only
 #       * max and min use positional only with an optional group
 #         and keyword-only
-#
-# * Generate forward slash for docstring first line
-#   (if I get positional-only syntax pep accepted)
-#
-# * Add "version" directive, so we can complain if the file
-#   is too new for us.
 #
 
 version = '1'
@@ -2441,7 +2424,7 @@ class DSLParser:
         ## docstring first line
         ##
 
-        add(f.full_name)
+        add(f.name)
         add('(')
 
         # populate "right_bracket_count" field for every parameter
@@ -2498,29 +2481,32 @@ class DSLParser:
         add(fix_right_bracket_count(0))
         add(')')
 
-        if f.return_converter.doc_default:
-            add(' -> ')
-            add(f.return_converter.doc_default)
+        # if f.return_converter.doc_default:
+        #     add(' -> ')
+        #     add(f.return_converter.doc_default)
 
         docstring_first_line = output()
 
         # now fix up the places where the brackets look wrong
         docstring_first_line = docstring_first_line.replace(', ]', ',] ')
 
-        # okay.  now we're officially building the
-        # "prototype" section.
-        add(docstring_first_line)
-
+        # okay.  now we're officially building the "parameters" section.
         # create substitution text for {parameters}
+        spacer_line = False
         for p in parameters:
             if not p.docstring.strip():
                 continue
-            add('\n')
+            if spacer_line:
+                add('\n')
+            else:
+                spacer_line = True
             add("  ")
             add(p.name)
             add('\n')
             add(textwrap.indent(rstrip_lines(p.docstring.rstrip()), "    "))
-        prototype = output()
+        parameters = output()
+        if parameters:
+            parameters += '\n'
 
         ##
         ## docstring body
@@ -2549,21 +2535,26 @@ class DSLParser:
         elif len(lines) == 1:
             # the docstring is only one line right now--the summary line.
             # add an empty line after the summary line so we have space
-            # between it and the {prototype} we're about to add.
+            # between it and the {parameters} we're about to add.
             lines.append('')
 
-        prototype_marker_count = len(docstring.split('{prototype}')) - 1
-        if prototype_marker_count:
-            fail('You may not specify {prototype} in a docstring!')
-        # insert *after* the summary line
-        lines.insert(2, '{prototype}\n')
+        parameters_marker_count = len(docstring.split('{parameters}')) - 1
+        if parameters_marker_count > 1:
+            fail('You may not specify {parameters} more than once in a docstring!')
+
+        if not parameters_marker_count:
+            # insert after summary line
+            lines.insert(2, '{parameters}')
+
+        # insert at front of docstring
+        lines.insert(0, docstring_first_line)
 
         docstring = "\n".join(lines)
 
         add(docstring)
         docstring = output()
 
-        docstring = linear_format(docstring, prototype=prototype)
+        docstring = linear_format(docstring, parameters=parameters)
         docstring = docstring.rstrip()
 
         return docstring
