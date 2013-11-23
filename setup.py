@@ -596,6 +596,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_lsprof', ['_lsprof.c', 'rotatingtree.c']) )
         # static Unicode character database
         exts.append( Extension('unicodedata', ['unicodedata.c']) )
+        # _opcode module
+        exts.append( Extension('_opcode', ['_opcode.c']) )
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be

@@ -217,6 +217,13 @@ object isn't useful:
    Detect all offsets in the code object *code* which are jump targets, and
    return a list of these offsets.
 
+
+.. function:: stack_effect(opcode, [oparg])
+
+   Compute the stack effect of *opcode* with argument *oparg*.
+
+   .. versionadded:: 3.4
+
 .. _bytecodes:
 
 Python Bytecode Instructions
