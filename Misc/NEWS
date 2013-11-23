@@ -9,6 +9,7 @@ Projected release date: 2013-11-24
 
 Core and Builtins
 -----------------
+
 - Use the repr of a module name in more places in import, especially
   exceptions.
 
@@ -66,6 +67,7 @@ Core and Builtins
 
 Library
 -------
+
 - Issue #19722: Added opcode.stack_effect(), which
   computes the stack effect of bytecode instructions.
 
@@ -403,6 +405,9 @@ Documentation
 Build
 -----
 
+- Issue #19358: "make clinic" now runs the Argument Clinic preprocessor
+  over all CPython source files.
+
 - Update SQLite to 3.8.1, xz to 5.0.5, and Tcl/Tk to 8.6.1 on Windows.
 
 - Issue #16632: Enable DEP and ASLR on Windows.
@@ -449,6 +454,7 @@ Build
 
 Tools/Demos
 -----------
+
 - Issue #19730: Argument Clinic now supports all the existing PyArg
   "format units" as legacy converters, as well as two new features:
   "self converters" and the "version" directive.
