@@ -126,8 +126,7 @@ PyDoc_STRVAR(open_doc,
 "'b'       binary mode\n"
 "'t'       text mode (default)\n"
 "'+'       open a disk file for updating (reading and writing)\n"
-"'U'       universal newline mode (for backwards compatibility; unneeded\n"
-"          for new code)\n"
+"'U'       universal newline mode (deprecated)\n"
 "========= ===============================================================\n"
 "\n"
 "The default mode is 'rt' (open for reading text). For binary random\n"
@@ -142,6 +141,10 @@ PyDoc_STRVAR(open_doc,
 "'t' is appended to the mode argument), the contents of the file are\n"
 "returned as strings, the bytes having been first decoded using a\n"
 "platform-dependent encoding or using the specified encoding if given.\n"
+"\n"
+"'U' mode is deprecated and will raise an exception in future versions\n"
+"of Python.  It has no effect in Python 3.  Use newline to control\n"
+"universal newlines mode.\n"
 "\n"
 "buffering is an optional integer used to set the buffering policy.\n"
 "Pass 0 to switch buffering off (only allowed in binary mode), 1 to select\n"
@@ -310,6 +313,9 @@ io_open(PyObject *self, PyObject *args, PyObject *kwds)
                             "can't use U and writing mode at once");
             return NULL;
         }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'U' mode is deprecated", 1) < 0)
+            return NULL;
         reading = 1;
     }
 

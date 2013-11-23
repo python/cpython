@@ -222,6 +222,10 @@ class FileInput:
         if mode not in ('r', 'rU', 'U', 'rb'):
             raise ValueError("FileInput opening mode must be one of "
                              "'r', 'rU', 'U' and 'rb'")
+        if 'U' in mode:
+            import warnings
+            warnings.warn("Use of 'U' mode is deprecated",
+                          DeprecationWarning, 2)
         self._mode = mode
         if openhook:
             if inplace:
