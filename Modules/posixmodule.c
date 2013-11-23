@@ -2460,10 +2460,10 @@ PyDoc_STRVAR(os_stat__doc__,
     {"stat", (PyCFunction)os_stat, METH_VARARGS|METH_KEYWORDS, os_stat__doc__},
 
 static PyObject *
-os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks);
+os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks);
 
 static PyObject *
-os_stat(PyObject *module, PyObject *args, PyObject *kwargs)
+os_stat(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
@@ -2485,8 +2485,8 @@ exit:
 }
 
 static PyObject *
-os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic checksum: 89390f78327e3f045a81974d758d3996e2a71f68]*/
+os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
+/*[clinic checksum: b08112eff0ceab3ec2c72352da95ce73f245d104]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2600,10 +2600,10 @@ PyDoc_STRVAR(os_access__doc__,
     {"access", (PyCFunction)os_access, METH_VARARGS|METH_KEYWORDS, os_access__doc__},
 
 static PyObject *
-os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
+os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
 
 static PyObject *
-os_access(PyObject *module, PyObject *args, PyObject *kwargs)
+os_access(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
@@ -2627,8 +2627,8 @@ exit:
 }
 
 static PyObject *
-os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic checksum: aa3e145816a748172e62df8e44af74169c7e1247]*/
+os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
+/*[clinic checksum: b9f8ececb061d31b64220c29526bfee642d1b602]*/
 {
     PyObject *return_value = NULL;
 
@@ -2734,10 +2734,10 @@ PyDoc_STRVAR(os_ttyname__doc__,
     {"ttyname", (PyCFunction)os_ttyname, METH_VARARGS, os_ttyname__doc__},
 
 static char *
-os_ttyname_impl(PyObject *module, int fd);
+os_ttyname_impl(PyModuleDef *module, int fd);
 
 static PyObject *
-os_ttyname(PyObject *module, PyObject *args)
+os_ttyname(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -2757,8 +2757,8 @@ exit:
 }
 
 static char *
-os_ttyname_impl(PyObject *module, int fd)
-/*[clinic checksum: c742dd621ec98d0f81d37d264e1d3c89c7a5fb1a]*/
+os_ttyname_impl(PyModuleDef *module, int fd)
+/*[clinic checksum: 61e4e525984cb293f949ccae6ae393c0011dfe8e]*/
 {
     char *ret;
 

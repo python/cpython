@@ -4167,10 +4167,10 @@ PyDoc_STRVAR(datetime_datetime_now__doc__,
     {"now", (PyCFunction)datetime_datetime_now, METH_VARARGS|METH_KEYWORDS|METH_CLASS, datetime_datetime_now__doc__},
 
 static PyObject *
-datetime_datetime_now_impl(PyObject *cls, PyObject *tz);
+datetime_datetime_now_impl(PyTypeObject *cls, PyObject *tz);
 
 static PyObject *
-datetime_datetime_now(PyObject *cls, PyObject *args, PyObject *kwargs)
+datetime_datetime_now(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"tz", NULL};
@@ -4187,8 +4187,8 @@ exit:
 }
 
 static PyObject *
-datetime_datetime_now_impl(PyObject *cls, PyObject *tz)
-/*[clinic checksum: cde1daca68c9b7dca6df51759db2de1d43a39774]*/
+datetime_datetime_now_impl(PyTypeObject *cls, PyObject *tz)
+/*[clinic checksum: 5e61647d5d1feaf1ab096c5406ccea17bb7b061c]*/
 {
     PyObject *self;
 
@@ -4198,7 +4198,7 @@ datetime_datetime_now_impl(PyObject *cls, PyObject *tz)
     if (check_tzinfo_subclass(tz) < 0)
         return NULL;
 
-    self = datetime_best_possible(cls,
+    self = datetime_best_possible((PyObject *)cls,
                                   tz == Py_None ? localtime : gmtime,
                                   tz);
     if (self != NULL && tz != Py_None) {

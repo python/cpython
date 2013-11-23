@@ -81,6 +81,13 @@ zlib_error(z_stream zst, int err, char *msg)
         PyErr_Format(ZlibError, "Error %d %s: %.200s", err, msg, zmsg);
 }
 
+/*[clinic]
+module zlib
+class zlib.Compress
+class zlib.Decompress
+[clinic]*/
+/*[clinic checksum: da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+
 PyDoc_STRVAR(compressobj__doc__,
 "compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8,\n"
 "            strategy=Z_DEFAULT_STRATEGY[, zdict])\n"
@@ -157,32 +164,86 @@ PyZlib_Free(voidpf ctx, void *ptr)
     PyMem_RawFree(ptr);
 }
 
-PyDoc_STRVAR(compress__doc__,
-"compress(string[, level]) -- Returned compressed string.\n"
+/*[clinic]
+zlib.compress
+    bytes: Py_buffer
+        Binary data to be compressed.
+    [
+    level: int
+        Compression level, in 0-9.
+    ]
+    /
+
+Returns compressed string.
+
+[clinic]*/
+
+PyDoc_STRVAR(zlib_compress__doc__,
+"Returns compressed string.\n"
 "\n"
-"Optional arg level is the compression level, in 0-9.");
+"zlib.compress(bytes, [level])\n"
+"  bytes\n"
+"    Binary data to be compressed.\n"
+"  level\n"
+"    Compression level, in 0-9.");
+
+#define ZLIB_COMPRESS_METHODDEF    \
+    {"compress", (PyCFunction)zlib_compress, METH_VARARGS, zlib_compress__doc__},
 
 static PyObject *
-PyZlib_compress(PyObject *self, PyObject *args)
+zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level);
+
+static PyObject *
+zlib_compress(PyModuleDef *module, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    Py_buffer bytes;
+    int group_right_1 = 0;
+    int level = 0;
+
+    switch (PyTuple_Size(args)) {
+        case 1:
+            if (!PyArg_ParseTuple(args, "y*:compress", &bytes))
+                return NULL;
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "y*i:compress", &bytes, &level))
+                return NULL;
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "zlib.compress requires 1 to 2 arguments");
+            return NULL;
+    }
+    return_value = zlib_compress_impl(module, &bytes, group_right_1, level);
+
+    /* Cleanup for bytes */
+    if (bytes.buf)
+       PyBuffer_Release(&bytes);
+
+    return return_value;
+}
+
+static PyObject *
+zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int group_right_1, int level)
+/*[clinic checksum: 03e857836db25448d4d572da537eb7faf7695d71]*/
 {
     PyObject *ReturnVal = NULL;
-    Py_buffer pinput;
     Byte *input, *output = NULL;
     unsigned int length;
-    int level=Z_DEFAULT_COMPRESSION, err;
+    int err;
     z_stream zst;
 
-    /* require Python string object, optional 'level' arg */
-    if (!PyArg_ParseTuple(args, "y*|i:compress", &pinput, &level))
-        return NULL;
+    if (!group_right_1)
+        level = Z_DEFAULT_COMPRESSION;
 
-    if ((size_t)pinput.len > UINT_MAX) {
+    if ((size_t)bytes->len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "Size does not fit in an unsigned int");
         goto error;
     }
-    input = pinput.buf;
-    length = (unsigned int)pinput.len;
+    input = bytes->buf;
+    length = (unsigned int)bytes->len;
 
     zst.avail_out = length + length/1000 + 12 + 1;
 
@@ -239,7 +300,6 @@ PyZlib_compress(PyObject *self, PyObject *args)
         zlib_error(zst, err, "while finishing compression");
 
  error:
-    PyBuffer_Release(&pinput);
     PyMem_Free(output);
 
     return ReturnVal;
@@ -682,10 +742,6 @@ save_unconsumed_input(compobject *self, int err)
 }
 
 /*[clinic]
-
-module zlib
-class zlib.Decompress
-
 zlib.Decompress.decompress
 
     data: Py_buffer
@@ -739,14 +795,15 @@ zlib_Decompress_decompress(PyObject *self, PyObject *args)
 
 exit:
     /* Cleanup for data */
-    PyBuffer_Release(&data);
+    if (data.buf)
+       PyBuffer_Release(&data);
 
     return return_value;
 }
 
 static PyObject *
 zlib_Decompress_decompress_impl(PyObject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic checksum: 76ca9259e3f5ca86bae9da3d0e75637b5d492234]*/
+/*[clinic checksum: f83e91728d327462d7ccbee95299514f26b92253]*/
 {
     compobject *zself = (compobject *)self;
     int err;
@@ -966,8 +1023,6 @@ PyZlib_flush(compobject *self, PyObject *args)
 #ifdef HAVE_ZLIB_COPY
 
 /*[clinic]
-
-class zlib.Compress
 zlib.Compress.copy
 
 Return a copy of the compression object.
@@ -1295,8 +1350,7 @@ static PyMethodDef zlib_methods[] =
 {
     {"adler32", (PyCFunction)PyZlib_adler32, METH_VARARGS,
                 adler32__doc__},
-    {"compress", (PyCFunction)PyZlib_compress,  METH_VARARGS,
-                 compress__doc__},
+    ZLIB_COMPRESS_METHODDEF
     {"compressobj", (PyCFunction)PyZlib_compressobj, METH_VARARGS|METH_KEYWORDS,
                     compressobj__doc__},
     {"crc32", (PyCFunction)PyZlib_crc32, METH_VARARGS,
