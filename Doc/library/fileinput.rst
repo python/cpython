@@ -160,6 +160,9 @@ available for subclassing as well:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
+   .. deprecated:: 3.4
+        The ``'rU'`` and ``'U'`` modes.
+
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is
 passed to :func:`fileinput.input` or to the :class:`FileInput` constructor, the
