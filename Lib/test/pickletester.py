@@ -722,7 +722,11 @@ class AbstractPickleTests(unittest.TestCase):
         for n in nbase, -nbase:
             p = self.dumps(n, 2)
             got = self.loads(p)
-            self.assert_is_copy(n, got)
+            # assert_is_copy is very expensive here as it precomputes
+            # a failure message by computing the repr() of n and got,
+            # we just do the check ourselves.
+            self.assertIs(type(got), int)
+            self.assertEqual(n, got)
 
     def test_float(self):
         test_values = [0.0, 4.94e-324, 1e-310, 7e-308, 6.626e-34, 0.1, 0.5,
