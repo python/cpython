@@ -563,19 +563,26 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size, int gil_held)
     ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
 
     if (ptr2 != NULL) {
-        if (ptr != NULL)
+        if (ptr != NULL) {
+            /* resize */
             tracemalloc_log_free(ptr);
 
-        if (tracemalloc_log_alloc(ptr2, new_size) < 0) {
-            if (ptr == NULL) {
+            if (tracemalloc_log_alloc(ptr2, new_size) < 0) {
+                /* Memory allocation failed. The error cannot be reported to
+                   the caller, because realloc() may already have shrinked the
+                   memory block and so removed bytes.
+
+                   This case is very unlikely since we just released an hash
+                   entry, so we have enough free bytes to allocate the new
+                   entry. */
+            }
+        }
+        else {
+            /* new allocation */
+            if (tracemalloc_log_alloc(ptr2, new_size) < 0) {
                 /* Memory allocation failed */
                 alloc->free(alloc->ctx, ptr2);
                 ptr2 = NULL;
-            }
-            else {
-                /* Memory allocation failed. The error cannot be reported to
-                   the caller, because realloc() may already have shrinked the
-                   memory block and so removed bytes. */
             }
         }
     }
