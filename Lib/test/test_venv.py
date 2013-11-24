@@ -15,6 +15,10 @@ from test.support import (captured_stdout, captured_stderr, run_unittest,
                           can_symlink, EnvironmentVarGuard)
 import unittest
 import venv
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
                              'Test not appropriate in a venv')
@@ -278,6 +282,8 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(err, b"")
         self.assertEqual(out.strip(), b"OK")
 
+    # Temporary skip for http://bugs.python.org/issue19744
+    @unittest.skipIf(ssl is None, 'pip needs SSL support')
     def test_with_pip(self):
         shutil.rmtree(self.env_dir)
         with EnvironmentVarGuard() as envvars:
