@@ -644,6 +644,35 @@ DocTestFinder finds the line number of each example:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> [e.lineno for e in test.examples]
     [1, 9, 12]
+
+Finding Doctests in Modules Not Written in Python
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DocTestFinder can also find doctests in most modules not written in Python.
+We'll use builtins as an example, since it almost certainly isn't written in
+plain ol' Python and is guaranteed to be available.
+
+    >>> import builtins
+    >>> tests = doctest.DocTestFinder().find(builtins)
+    >>> len(tests) # how many objects checked for doctests
+    794
+    >>> real_tests = [t for t in tests if len(t.examples) > 0]
+    >>> len(real_tests) # how many objects actually have doctests
+    8
+    >>> for t in real_tests:
+    ...     print('{}  {}'.format(len(t.examples), t.name))
+    ...
+    1  builtins.bin
+    3  builtins.float.as_integer_ratio
+    2  builtins.float.fromhex
+    2  builtins.float.hex
+    1  builtins.hex
+    1  builtins.int
+    2  builtins.int.bit_length
+    1  builtins.oct
+
+Note here that 'bin', 'oct', and 'hex' are functions; 'float.as_integer_ratio',
+'float.hex', and 'int.bit_length' are methods; 'float.fromhex' is a classmethod,
+and 'int' is a type.
 """
 
 def test_DocTestParser(): r"""
