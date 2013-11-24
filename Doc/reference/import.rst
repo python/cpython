@@ -231,7 +231,7 @@ The import machinery is extensible, so new finders can be added to extend the
 range and scope of module searching.
 
 Finders do not actually load modules.  If they can find the named module, they
-return a :term:`module spec`, an encapsulation of the module's import-related
+return a :dfn:`module spec`, an encapsulation of the module's import-related
 information, which the import machinery then uses when loading the module.
 
 The following sections describe the protocol for finders and loaders in more
@@ -381,7 +381,7 @@ Note the following details:
 
  * After the module is created but before execution, the import machinery
    sets the import-related module attributes ("init_module_attrs"), as
-   summarized in a `later section <Import-related module attributes>`_.
+   summarized in a :ref:`later section <import-mod-attrs>`.
 
  * Module execution is the key moment of loading in which the module's
    namespace gets populated.  Execution is entirely delegated to the
@@ -473,6 +473,8 @@ See :class:`~importlib.machinery.ModuleSpec` for more specifics on what
 information a module's spec may hold.
 
 .. versionadded:: 3.4
+
+.. _import-mod-attrs:
 
 Import-related module attributes
 --------------------------------
