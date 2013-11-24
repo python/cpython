@@ -6,6 +6,8 @@ from test.pickletester import AbstractPickleModuleTests
 
 class OptimizedPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
+    optimized = True
+
     def dumps(self, arg, proto=None):
         return pickletools.optimize(pickle.dumps(arg, proto))
 
