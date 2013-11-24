@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19545: Avoid chained exceptions while passing stray % to
+  time.strptime().  Initial patch by Claudiu Popa.
+
 - Issue #3158: doctest can now find doctests in functions and methods
   written in C.
 

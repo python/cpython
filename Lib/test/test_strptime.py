@@ -223,6 +223,10 @@ class StrptimeTests(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             _strptime._strptime_time('', '%D')
         self.assertIs(e.exception.__suppress_context__, True)
+        # additional check for IndexError branch (issue #19545)
+        with self.assertRaises(ValueError) as e:
+            _strptime._strptime_time('19', '%Y %')
+        self.assertIs(e.exception.__suppress_context__, True)
 
     def test_unconverteddata(self):
         # Check ValueError is raised when there is unconverted data
