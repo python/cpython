@@ -9,6 +9,7 @@ import sys
 import time
 import unittest
 from test import support
+from test.support import MISSING_C_DOCSTRINGS
 try:
     import _posixsubprocess
 except ImportError:
@@ -109,6 +110,8 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
                           Z(),[b'1'],3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_docstring_signature_parsing(self):
 
         self.assertEqual(_testcapi.no_docstring.__doc__, None)
