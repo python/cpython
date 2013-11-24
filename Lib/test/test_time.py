@@ -198,6 +198,10 @@ class TimeTestCase(unittest.TestCase):
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
         self.assertIs(e.exception.__suppress_context__, True)
+        # additional check for IndexError branch (issue #19545)
+        with self.assertRaises(ValueError) as e:
+            time.strptime('19', '%Y %')
+        self.assertIs(e.exception.__suppress_context__, True)
 
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
