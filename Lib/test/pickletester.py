@@ -438,6 +438,8 @@ def create_data():
 class AbstractPickleTests(unittest.TestCase):
     # Subclass must define self.dumps, self.loads.
 
+    optimized = False
+
     _testdata = create_data()
 
     def setUp(self):
@@ -1334,13 +1336,16 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(obj, unpickled)
                 # Test the framing heuristic is sane,
                 # assuming a given frame size target.
-                # XXX Assumptions here are wrong when the pickle are optimized
-                # bytes_per_frame = (len(pickled) /
-                #                    count_opcode(pickle.FRAME, pickled))
-                # self.assertGreater(bytes_per_frame,
-                #                    self.FRAME_SIZE_TARGET / 2)
-                # self.assertLessEqual(bytes_per_frame,
-                #                      self.FRAME_SIZE_TARGET * 1)
+                if self.optimized:
+                    # These assumptions are currently invalid for optimized
+                    # pickles (see e.g. issue19754).
+                    continue
+                bytes_per_frame = (len(pickled) /
+                                   count_opcode(pickle.FRAME, pickled))
+                self.assertGreater(bytes_per_frame,
+                                   self.FRAME_SIZE_TARGET / 2)
+                self.assertLessEqual(bytes_per_frame,
+                                     self.FRAME_SIZE_TARGET * 1)
 
     def test_framing_large_objects(self):
         N = 1024 * 1024
@@ -1350,10 +1355,13 @@ class AbstractPickleTests(unittest.TestCase):
                 pickled = self.dumps(obj, proto)
                 unpickled = self.loads(pickled)
                 self.assertEqual(obj, unpickled)
-                # At least one frame was emitted per large bytes object.
-                # XXX Assumptions here are wrong when the pickle are optimized
-                # n_frames = count_opcode(pickle.FRAME, pickled)
-                # self.assertGreaterEqual(n_frames, len(obj))
+                n_frames = count_opcode(pickle.FRAME, pickled)
+                if self.optimized:
+                    # At least one frame was emitted (see issue19754).
+                    self.assertGreaterEqual(n_frames, 1)
+                else:
+                    # At least one frame was emitted per large bytes object.
+                    self.assertGreaterEqual(n_frames, len(obj))
 
     def test_optional_frames(self):
         if pickle.HIGHEST_PROTOCOL < 4:
