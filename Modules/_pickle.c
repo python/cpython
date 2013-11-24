@@ -3584,13 +3584,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     }
     else if (type == &PyFunction_Type) {
         status = save_global(self, obj, NULL);
-        if (status < 0 && PyErr_ExceptionMatches(PickleError)) {
-            /* fall back to reduce */
-            PyErr_Clear();
-        }
-        else {
-            goto done;
-        }
+        goto done;
     }
 
     /* XXX: This part needs some unit tests. */
