@@ -567,8 +567,9 @@ subelement(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject* attrib = NULL;
     if (!PyArg_ParseTuple(args, "O!O|O!:SubElement",
                           &Element_Type, &parent, &tag,
-                          &PyDict_Type, &attrib))
+                          &PyDict_Type, &attrib)) {
         return NULL;
+    }
 
     if (attrib) {
         /* attrib passed as positional arg */
@@ -652,7 +653,6 @@ element_dealloc(ElementObject* self)
 }
 
 /* -------------------------------------------------------------------- */
-/* methods (in alphabetical order) */
 
 static PyObject*
 element_append(ElementObject* self, PyObject* args)
@@ -696,8 +696,7 @@ element_copy(ElementObject* self, PyObject* args)
         return NULL;
 
     element = (ElementObject*) create_new_element(
-        self->tag, (self->extra) ? self->extra->attrib : Py_None
-        );
+        self->tag, (self->extra) ? self->extra->attrib : Py_None);
     if (!element)
         return NULL;
 
@@ -710,7 +709,6 @@ element_copy(ElementObject* self, PyObject* args)
     Py_INCREF(JOIN_OBJ(element->tail));
 
     if (self->extra) {
-
         if (element_resize(element, self->extra->length) < 0) {
             Py_DECREF(element);
             return NULL;
@@ -722,7 +720,6 @@ element_copy(ElementObject* self, PyObject* args)
         }
 
         element->extra->length = self->extra->length;
-
     }
 
     return (PyObject*) element;
@@ -779,7 +776,6 @@ element_deepcopy(ElementObject* self, PyObject* args)
     element->tail = JOIN_SET(tail, JOIN_GET(self->tail));
 
     if (self->extra) {
-
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
@@ -793,7 +789,6 @@ element_deepcopy(ElementObject* self, PyObject* args)
         }
 
         element->extra->length = self->extra->length;
-
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
@@ -1141,8 +1136,8 @@ element_findtext(ElementObject *self, PyObject *args, PyObject *kwds)
 
     for (i = 0; i < self->extra->length; i++) {
         ElementObject* item = (ElementObject*) self->extra->children[i];
-        if (Element_CheckExact(item) && (PyObject_RichCompareBool(item->tag, tag, Py_EQ) == 1)) {
-
+        if (Element_CheckExact(item) &&
+            (PyObject_RichCompareBool(item->tag, tag, Py_EQ) == 1)) {
             PyObject* text = element_get_text(item);
             if (text == Py_None)
                 return PyUnicode_New(0, 0);
@@ -1207,12 +1202,12 @@ element_iterfind(ElementObject *self, PyObject *args, PyObject *kwds)
     elementtreestate *st = ET_STATE_GLOBAL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O:iterfind", kwlist,
-                                     &tag, &namespaces))
+                                     &tag, &namespaces)) {
         return NULL;
+    }
 
     return _PyObject_CallMethodId(
-        st->elementpath_obj, &PyId_iterfind, "OOO", self, tag, namespaces
-        );
+        st->elementpath_obj, &PyId_iterfind, "OOO", self, tag, namespaces);
 }
 
 static PyObject*

@@ -424,7 +424,7 @@ base64
 
 The encoding and decoding functions in :mod:`base64` now accept any
 :term:`bytes-like object` in cases where it previously required a
-:class:`bytes` or :class:`bytearray` instance (:issue`17839`)
+:class:`bytes` or :class:`bytearray` instance (:issue:`17839`).
 
 
 colorsys

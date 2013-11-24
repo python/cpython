@@ -35,7 +35,7 @@ Here are the methods of the :class:`Message` class:
 
    If *policy* is specified (it must be an instance of a :mod:`~email.policy`
    class) use the rules it specifies to udpate and serialize the representation
-   of the message.  If *policy* is not set, use the :class`compat32
+   of the message.  If *policy* is not set, use the :class:`compat32
    <email.policy.Compat32>` policy, which maintains backward compatibility with
    the Python 3.2 version of the email package.  For more information see the
    :mod:`~email.policy` documentation.
