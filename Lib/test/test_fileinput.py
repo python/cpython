@@ -22,7 +22,7 @@ except ImportError:
 from io import StringIO
 from fileinput import FileInput, hook_encoded
 
-from test.support import verbose, TESTFN, run_unittest
+from test.support import verbose, TESTFN, run_unittest, check_warnings
 from test.support import unlink as safe_unlink
 
 
@@ -224,8 +224,10 @@ class FileInputTests(unittest.TestCase):
         try:
             # try opening in universal newline mode
             t1 = writeTmp(1, [b"A\nB\r\nC\rD"], mode="wb")
-            fi = FileInput(files=t1, mode="U")
-            lines = list(fi)
+            with check_warnings(('', DeprecationWarning)):
+                fi = FileInput(files=t1, mode="U")
+            with check_warnings(('', DeprecationWarning)):
+                lines = list(fi)
             self.assertEqual(lines, ["A\n", "B\n", "C\n", "D"])
         finally:
             remove_tempfiles(t1)
