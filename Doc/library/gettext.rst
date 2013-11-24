@@ -476,9 +476,9 @@ applications.)
 
 :program:`xgettext`, :program:`pygettext`, and similar tools generate
 :file:`.po` files that are message catalogs.  They are structured
-:human-readable files that contain every marked string in the source
-:code, along with a placeholder for the translated versions of these
-:strings.
+human-readable files that contain every marked string in the source
+code, along with a placeholder for the translated versions of these
+strings.
 
 Copies of these :file:`.po` files are then handed over to the
 individual human translators who write translations for every

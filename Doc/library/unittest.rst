@@ -901,8 +901,8 @@ Test cases
    | :meth:`assertWarnsRegex(warn, r, fun, *args, **kwds)    | ``fun(*args, **kwds)`` raises *warn* | 3.2        |
    | <TestCase.assertWarnsRegex>`                            | and the message matches regex *r*    |            |
    +---------------------------------------------------------+--------------------------------------+------------+
-   | :meth:`assertLogs(logger, level)`                       | The ``with`` block logs on *logger*  | 3.4        |
-   | <TestCase.assertWarns>`                                 | with minimum *level*                 |            |
+   | :meth:`assertLogs(logger, level)                        | The ``with`` block logs on *logger*  | 3.4        |
+   | <TestCase.assertLogs>`                                  | with minimum *level*                 |            |
    +---------------------------------------------------------+--------------------------------------+------------+
 
    .. method:: assertRaises(exception, callable, *args, **kwds)

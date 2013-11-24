@@ -224,7 +224,7 @@ class FileInput:
                              "'r', 'rU', 'U' and 'rb'")
         if 'U' in mode:
             import warnings
-            warnings.warn("Use of 'U' mode is deprecated",
+            warnings.warn("'U' mode is deprecated",
                           DeprecationWarning, 2)
         self._mode = mode
         if openhook:

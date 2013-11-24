@@ -2777,7 +2777,8 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(f.mode, "wb")
         f.close()
 
-        f = self.open(support.TESTFN, "U")
+        with support.check_warnings(('', DeprecationWarning)):
+            f = self.open(support.TESTFN, "U")
         self.assertEqual(f.name,            support.TESTFN)
         self.assertEqual(f.buffer.name,     support.TESTFN)
         self.assertEqual(f.buffer.raw.name, support.TESTFN)

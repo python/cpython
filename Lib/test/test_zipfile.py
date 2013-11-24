@@ -14,7 +14,7 @@ from random import randint, random, getrandbits
 
 from test.support import (TESTFN, findfile, unlink,
                           requires_zlib, requires_bz2, requires_lzma,
-                          captured_stdout)
+                          captured_stdout, check_warnings)
 
 TESTFN2 = TESTFN + "2"
 TESTFNDIR = TESTFN + "d"
@@ -34,6 +34,10 @@ def get_files(test):
     with io.BytesIO() as f:
         yield f
         test.assertFalse(f.closed)
+
+def openU(zipfp, fn):
+    with check_warnings(('', DeprecationWarning)):
+        return zipfp.open(fn, 'rU')
 
 class AbstractTestsWithSourceFile:
     @classmethod
@@ -875,6 +879,17 @@ class OtherTests(unittest.TestCase):
                 data += zipfp.read(info)
             self.assertIn(data, {b"foobar", b"barfoo"})
 
+    def test_universal_deprecation(self):
+        f = io.BytesIO()
+        with zipfile.ZipFile(f, "w") as zipfp:
+            zipfp.writestr('spam.txt', b'ababagalamaga')
+
+        with zipfile.ZipFile(f, "r") as zipfp:
+            for mode in 'U', 'rU':
+                with self.assertWarns(DeprecationWarning):
+                    zipopen = zipfp.open('spam.txt', mode)
+                zipopen.close()
+
     def test_universal_readaheads(self):
         f = io.BytesIO()
 
@@ -884,7 +899,7 @@ class OtherTests(unittest.TestCase):
 
         data2 = b''
         with zipfile.ZipFile(f, 'r') as zipfp, \
-             zipfp.open(TESTFN, 'rU') as zipopen:
+             openU(zipfp, TESTFN) as zipopen:
             for line in zipopen:
                 data2 += line
 
@@ -1613,7 +1628,7 @@ class AbstractUniversalNewlineTests:
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r") as zipfp:
             for sep, fn in self.arcfiles.items():
-                with zipfp.open(fn, "rU") as fp:
+                with openU(zipfp, fn) as fp:
                     zipdata = fp.read()
                 self.assertEqual(self.arcdata[sep], zipdata)
 
@@ -1627,7 +1642,7 @@ class AbstractUniversalNewlineTests:
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r") as zipfp:
             for sep, fn in self.arcfiles.items():
-                with zipfp.open(fn, "rU") as zipopen:
+                with openU(zipfp, fn) as zipopen:
                     data = b''
                     while True:
                         read = zipopen.readline()
@@ -1652,7 +1667,7 @@ class AbstractUniversalNewlineTests:
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r") as zipfp:
             for sep, fn in self.arcfiles.items():
-                with zipfp.open(fn, "rU") as zipopen:
+                with openU(zipfp, fn) as zipopen:
                     for line in self.line_gen:
                         linedata = zipopen.readline()
                         self.assertEqual(linedata, line + b'\n')
@@ -1667,7 +1682,7 @@ class AbstractUniversalNewlineTests:
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r") as zipfp:
             for sep, fn in self.arcfiles.items():
-                with zipfp.open(fn, "rU") as fp:
+                with openU(zipfp, fn) as fp:
                     ziplines = fp.readlines()
                 for line, zipline in zip(self.line_gen, ziplines):
                     self.assertEqual(zipline, line + b'\n')
@@ -1682,7 +1697,7 @@ class AbstractUniversalNewlineTests:
         # Read the ZIP archive
         with zipfile.ZipFile(f, "r") as zipfp:
             for sep, fn in self.arcfiles.items():
-                with zipfp.open(fn, "rU") as fp:
+                with openU(zipfp, fn) as fp:
                     for line, zipline in zip(self.line_gen, fp):
                         self.assertEqual(zipline, line + b'\n')
 
