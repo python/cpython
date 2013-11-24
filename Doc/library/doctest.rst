@@ -278,6 +278,10 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
+.. impl-detail::
+   Prior to version 3.4, extension modules written in C were not fully
+   searched by doctest.
+
 
 .. _doctest-finding-examples:
 
@@ -1285,9 +1289,8 @@ DocTestFinder objects
 
    A processing class used to extract the :class:`DocTest`\ s that are relevant to
    a given object, from its docstring and the docstrings of its contained objects.
-   :class:`DocTest`\ s can currently be extracted from the following object types:
-   modules, functions, classes, methods, staticmethods, classmethods, and
-   properties.
+   :class:`DocTest`\ s can be extracted from modules, classes, functions,
+   methods, staticmethods, classmethods, and properties.
 
    The optional argument *verbose* can be used to display the objects searched by
    the finder.  It defaults to ``False`` (no output).

@@ -350,7 +350,11 @@ builtin_bin(PyObject *self, PyObject *v)
 PyDoc_STRVAR(bin_doc,
 "bin(number) -> string\n\
 \n\
-Return the binary representation of an integer.");
+Return the binary representation of an integer.\n\
+\n\
+   >>> bin(2796202)\n\
+   '0b1010101010101010101010'\n\
+");
 
 
 static PyObject *
@@ -1276,7 +1280,11 @@ builtin_hex(PyObject *self, PyObject *v)
 PyDoc_STRVAR(hex_doc,
 "hex(number) -> string\n\
 \n\
-Return the hexadecimal representation of an integer.");
+Return the hexadecimal representation of an integer.\n\
+\n\
+   >>> hex(3735928559)\n\
+   '0xdeadbeef'\n\
+");
 
 
 static PyObject *
@@ -1476,7 +1484,11 @@ builtin_oct(PyObject *self, PyObject *v)
 PyDoc_STRVAR(oct_doc,
 "oct(number) -> string\n\
 \n\
-Return the octal representation of an integer.");
+Return the octal representation of an integer.\n\
+\n\
+   >>> oct(342391)\n\
+   '0o1234567'\n\
+");
 
 
 static PyObject *
