@@ -524,6 +524,7 @@
     <ClCompile Include="..\Modules\mathmodule.c" />
     <ClCompile Include="..\Modules\md5module.c" />
     <ClCompile Include="..\Modules\mmapmodule.c" />
+    <ClCompile Include="..\Modules\_opcode.c" />
     <ClCompile Include="..\Modules\_operator.c" />
     <ClCompile Include="..\Modules\parsermodule.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
