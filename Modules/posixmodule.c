@@ -899,7 +899,7 @@ path_converter(PyObject *o, void *p) {
 
     length = PyBytes_GET_SIZE(bytes);
 #ifdef MS_WINDOWS
-    if (length > MAX_PATH) {
+    if (length > MAX_PATH-1) {
         FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
         Py_DECREF(bytes);
         return 0;
@@ -1378,18 +1378,18 @@ posix_1str(const char *func_name, PyObject *args, char *format,
 static BOOL __stdcall
 win32_chdir(LPCSTR path)
 {
-    char new_path[MAX_PATH+1];
+    char new_path[MAX_PATH];
     int result;
     char env[4] = "=x:";
 
     if(!SetCurrentDirectoryA(path))
         return FALSE;
-    result = GetCurrentDirectoryA(MAX_PATH+1, new_path);
+    result = GetCurrentDirectoryA(Py_ARRAY_LENGTH(new_path), new_path);
     if (!result)
         return FALSE;
     /* In the ANSI API, there should not be any paths longer
-       than MAX_PATH. */
-    assert(result <= MAX_PATH+1);
+       than MAX_PATH-1 (not including the final null character). */
+    assert(result < Py_ARRAY_LENGTH(new_path));
     if (strncmp(new_path, "\\\\", 2) == 0 ||
         strncmp(new_path, "//", 2) == 0)
         /* UNC path, nothing to do. */
@@ -1403,16 +1403,16 @@ win32_chdir(LPCSTR path)
 static BOOL __stdcall
 win32_wchdir(LPCWSTR path)
 {
-    wchar_t _new_path[MAX_PATH+1], *new_path = _new_path;
+    wchar_t _new_path[MAX_PATH], *new_path = _new_path;
     int result;
     wchar_t env[4] = L"=x:";
 
     if(!SetCurrentDirectoryW(path))
         return FALSE;
-    result = GetCurrentDirectoryW(MAX_PATH+1, new_path);
+    result = GetCurrentDirectoryW(Py_ARRAY_LENGTH(new_path), new_path);
     if (!result)
         return FALSE;
-    if (result > MAX_PATH+1) {
+    if (result > Py_ARRAY_LENGTH(new_path)) {
         new_path = PyMem_RawMalloc(result * sizeof(wchar_t));
         if (!new_path) {
             SetLastError(ERROR_OUTOFMEMORY);
@@ -3398,11 +3398,11 @@ posix_getcwd(int use_bytes)
         PyObject *resobj;
         DWORD len;
         Py_BEGIN_ALLOW_THREADS
-        len = GetCurrentDirectoryW(sizeof wbuf/ sizeof wbuf[0], wbuf);
+        len = GetCurrentDirectoryW(Py_ARRAY_LENGTH(wbuf), wbuf);
         /* If the buffer is large enough, len does not include the
            terminating \0. If the buffer is too small, len includes
            the space needed for the terminator. */
-        if (len >= sizeof wbuf/ sizeof wbuf[0]) {
+        if (len >= Py_ARRAY_LENGTH(wbuf)) {
             wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
             if (wbuf2)
                 len = GetCurrentDirectoryW(len, wbuf2);
@@ -3583,10 +3583,10 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     BOOL result;
     WIN32_FIND_DATA FileData;
-    char namebuf[MAX_PATH+5]; /* Overallocate for \\*.*\0 */
+    char namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
     char *bufptr = namebuf;
     /* only claim to have space for MAX_PATH */
-    Py_ssize_t len = sizeof(namebuf)-5;
+    Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
     PyObject *po = NULL;
     wchar_t *wnamebuf = NULL;
 
@@ -3875,14 +3875,14 @@ static PyObject *
 posix__getfullpathname(PyObject *self, PyObject *args)
 {
     const char *path;
-    char outbuf[MAX_PATH*2];
+    char outbuf[MAX_PATH];
     char *temp;
     PyObject *po;
 
     if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po))
     {
         wchar_t *wpath;
-        wchar_t woutbuf[MAX_PATH*2], *woutbufp = woutbuf;
+        wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
         wchar_t *wtemp;
         DWORD result;
         PyObject *v;
