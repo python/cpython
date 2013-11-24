@@ -97,6 +97,8 @@ static void _settriple(mpd_t *result, uint8_t sign, mpd_uint_t a,
                        mpd_ssize_t exp);
 static inline mpd_ssize_t _mpd_real_size(mpd_uint_t *data, mpd_ssize_t size);
 
+static int _mpd_cmp_abs(const mpd_t *a, const mpd_t *b);
+
 static void _mpd_qadd(mpd_t *result, const mpd_t *a, const mpd_t *b,
                       const mpd_context_t *ctx, uint32_t *status);
 static inline void _mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
@@ -108,6 +110,17 @@ static inline void _mpd_qpow_uint(mpd_t *result, const mpd_t *base,
                                   const mpd_context_t *ctx, uint32_t *status);
 
 static mpd_uint_t mpd_qsshiftr(mpd_t *result, const mpd_t *a, mpd_ssize_t n);
+
+
+/******************************************************************************/
+/*                                  Version                                   */
+/******************************************************************************/
+
+const char *
+mpd_version(void)
+{
+    return MPD_VERSION;
+}
 
 
 /******************************************************************************/
@@ -1345,6 +1358,91 @@ mpd_qget_ssize(const mpd_t *a, uint32_t *status)
     return MPD_SSIZE_MAX;
 }
 
+#if defined(CONFIG_32) && !defined(LEGACY_COMPILER)
+/*
+ * Quietly get a uint64_t from a decimal. If the operation is impossible,
+ * MPD_Invalid_operation is set.
+ */
+static uint64_t
+_c32_qget_u64(int use_sign, const mpd_t *a, uint32_t *status)
+{
+    MPD_NEW_STATIC(tmp,0,0,20,3);
+    mpd_context_t maxcontext;
+    uint64_t ret;
+
+    tmp_data[0] = 709551615;
+    tmp_data[1] = 446744073;
+    tmp_data[2] = 18;
+
+    if (mpd_isspecial(a)) {
+        *status |= MPD_Invalid_operation;
+        return UINT64_MAX;
+    }
+    if (mpd_iszero(a)) {
+        return 0;
+    }
+    if (use_sign && mpd_isnegative(a)) {
+        *status |= MPD_Invalid_operation;
+        return UINT64_MAX;
+    }
+    if (!_mpd_isint(a)) {
+        *status |= MPD_Invalid_operation;
+        return UINT64_MAX;
+    }
+
+    if (_mpd_cmp_abs(a, &tmp) > 0) {
+        *status |= MPD_Invalid_operation;
+        return UINT64_MAX;
+    }
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qrescale(&tmp, a, 0, &maxcontext, &maxcontext.status);
+    maxcontext.status &= ~MPD_Rounded;
+    if (maxcontext.status != 0) {
+        *status |= (maxcontext.status|MPD_Invalid_operation); /* GCOV_NOT_REACHED */
+        return UINT64_MAX; /* GCOV_NOT_REACHED */
+    }
+
+    ret = 0;
+    switch (tmp.len) {
+    case 3:
+        ret += (uint64_t)tmp_data[2] * 1000000000000000000ULL;
+    case 2:
+        ret += (uint64_t)tmp_data[1] * 1000000000ULL;
+    case 1:
+        ret += tmp_data[0];
+        break;
+    default:
+        abort(); /* GCOV_NOT_REACHED */
+    }
+
+    return ret;
+}
+
+static int64_t
+_c32_qget_i64(const mpd_t *a, uint32_t *status)
+{
+    uint64_t u;
+    int isneg;
+
+    u = _c32_qget_u64(0, a, status);
+    if (*status&MPD_Invalid_operation) {
+        return INT64_MAX;
+    }
+
+    isneg = mpd_isnegative(a);
+    if (u <= INT64_MAX) {
+        return isneg ? -((int64_t)u) : (int64_t)u;
+    }
+    else if (isneg && u+(INT64_MIN+INT64_MAX) == INT64_MAX) {
+        return INT64_MIN;
+    }
+
+    *status |= MPD_Invalid_operation;
+    return INT64_MAX;
+}
+#endif /* CONFIG_32 && !LEGACY_COMPILER */
+
 #ifdef CONFIG_64
 /* quietly get a uint64_t from a decimal */
 uint64_t
@@ -1359,7 +1457,57 @@ mpd_qget_i64(const mpd_t *a, uint32_t *status)
 {
     return mpd_qget_ssize(a, status);
 }
+
+/* quietly get a uint32_t from a decimal */
+uint32_t
+mpd_qget_u32(const mpd_t *a, uint32_t *status)
+{
+    uint64_t x = mpd_qget_uint(a, status);
+
+    if (*status&MPD_Invalid_operation) {
+        return UINT32_MAX;
+    }
+    if (x > UINT32_MAX) {
+        *status |= MPD_Invalid_operation;
+        return UINT32_MAX;
+    }
+
+    return (uint32_t)x;
+}
+
+/* quietly get an int32_t from a decimal */
+int32_t
+mpd_qget_i32(const mpd_t *a, uint32_t *status)
+{
+    int64_t x = mpd_qget_ssize(a, status);
+
+    if (*status&MPD_Invalid_operation) {
+        return INT32_MAX;
+    }
+    if (x < INT32_MIN || x > INT32_MAX) {
+        *status |= MPD_Invalid_operation;
+        return INT32_MAX;
+    }
+
+    return (int32_t)x;
+}
 #else
+#ifndef LEGACY_COMPILER
+/* quietly get a uint64_t from a decimal */
+uint64_t
+mpd_qget_u64(const mpd_t *a, uint32_t *status)
+{
+    return _c32_qget_u64(1, a, status);
+}
+
+/* quietly get an int64_t from a decimal */
+int64_t
+mpd_qget_i64(const mpd_t *a, uint32_t *status)
+{
+    return _c32_qget_i64(a, status);
+}
+#endif
+
 /* quietly get a uint32_t from a decimal */
 uint32_t
 mpd_qget_u32(const mpd_t *a, uint32_t *status)
@@ -3386,6 +3534,34 @@ mpd_qadd_u64(mpd_t *result, const mpd_t *a, uint64_t b,
 {
     mpd_qadd_uint(result, a, b, ctx, status);
 }
+#elif !defined(LEGACY_COMPILER)
+/* Add decimal and int64_t. */
+void
+mpd_qadd_i64(mpd_t *result, const mpd_t *a, int64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_i64(&bb, b, &maxcontext, status);
+    mpd_qadd(result, a, &bb, ctx, status);
+    mpd_del(&bb);
+}
+
+/* Add decimal and uint64_t. */
+void
+mpd_qadd_u64(mpd_t *result, const mpd_t *a, uint64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_u64(&bb, b, &maxcontext, status);
+    mpd_qadd(result, a, &bb, ctx, status);
+    mpd_del(&bb);
+}
 #endif
 
 /* Subtract int32_t from decimal. */
@@ -3419,6 +3595,34 @@ mpd_qsub_u64(mpd_t *result, const mpd_t *a, uint64_t b,
              const mpd_context_t *ctx, uint32_t *status)
 {
     mpd_qsub_uint(result, a, b, ctx, status);
+}
+#elif !defined(LEGACY_COMPILER)
+/* Subtract int64_t from decimal. */
+void
+mpd_qsub_i64(mpd_t *result, const mpd_t *a, int64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_i64(&bb, b, &maxcontext, status);
+    mpd_qsub(result, a, &bb, ctx, status);
+    mpd_del(&bb);
+}
+
+/* Subtract uint64_t from decimal. */
+void
+mpd_qsub_u64(mpd_t *result, const mpd_t *a, uint64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_u64(&bb, b, &maxcontext, status);
+    mpd_qsub(result, a, &bb, ctx, status);
+    mpd_del(&bb);
 }
 #endif
 
@@ -3870,6 +4074,34 @@ mpd_qdiv_u64(mpd_t *result, const mpd_t *a, uint64_t b,
              const mpd_context_t *ctx, uint32_t *status)
 {
     mpd_qdiv_uint(result, a, b, ctx, status);
+}
+#elif !defined(LEGACY_COMPILER)
+/* Divide decimal by int64_t. */
+void
+mpd_qdiv_i64(mpd_t *result, const mpd_t *a, int64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_i64(&bb, b, &maxcontext, status);
+    mpd_qdiv(result, a, &bb, ctx, status);
+    mpd_del(&bb);
+}
+
+/* Divide decimal by uint64_t. */
+void
+mpd_qdiv_u64(mpd_t *result, const mpd_t *a, uint64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_u64(&bb, b, &maxcontext, status);
+    mpd_qdiv(result, a, &bb, ctx, status);
+    mpd_del(&bb);
 }
 #endif
 
@@ -5663,6 +5895,34 @@ mpd_qmul_u64(mpd_t *result, const mpd_t *a, uint64_t b,
              const mpd_context_t *ctx, uint32_t *status)
 {
     mpd_qmul_uint(result, a, b, ctx, status);
+}
+#elif !defined(LEGACY_COMPILER)
+/* Multiply decimal and int64_t. */
+void
+mpd_qmul_i64(mpd_t *result, const mpd_t *a, int64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_i64(&bb, b, &maxcontext, status);
+    mpd_qmul(result, a, &bb, ctx, status);
+    mpd_del(&bb);
+}
+
+/* Multiply decimal and uint64_t. */
+void
+mpd_qmul_u64(mpd_t *result, const mpd_t *a, uint64_t b,
+             const mpd_context_t *ctx, uint32_t *status)
+{
+    mpd_context_t maxcontext;
+    MPD_NEW_STATIC(bb,0,0,0,0);
+
+    mpd_maxcontext(&maxcontext);
+    mpd_qset_u64(&bb, b, &maxcontext, status);
+    mpd_qmul(result, a, &bb, ctx, status);
+    mpd_del(&bb);
 }
 #endif
 
