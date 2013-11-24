@@ -1,8 +1,20 @@
+import functools
 import hmac
 import hashlib
 import unittest
 import warnings
 from test import support
+
+
+def ignore_warning(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",
+                                    category=PendingDeprecationWarning)
+            return func(*args, **kwargs)
+    return wrapper
+
 
 class TestVectorsTestCase(unittest.TestCase):
 
@@ -264,56 +276,63 @@ class TestVectorsTestCase(unittest.TestCase):
 
 class ConstructorTestCase(unittest.TestCase):
 
+    @ignore_warning
     def test_normal(self):
         # Standard constructor call.
         failed = 0
         try:
             h = hmac.HMAC(b"key")
-        except:
+        except Exception:
             self.fail("Standard constructor call raised exception.")
 
+    @ignore_warning
     def test_with_str_key(self):
         # Pass a key of type str, which is an error, because it expects a key
         # of type bytes
         with self.assertRaises(TypeError):
             h = hmac.HMAC("key")
 
+    @ignore_warning
     def test_dot_new_with_str_key(self):
         # Pass a key of type str, which is an error, because it expects a key
         # of type bytes
         with self.assertRaises(TypeError):
             h = hmac.new("key")
 
+    @ignore_warning
     def test_withtext(self):
         # Constructor call with text.
         try:
             h = hmac.HMAC(b"key", b"hash this!")
-        except:
+        except Exception:
             self.fail("Constructor call with text argument raised exception.")
+        self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
 
     def test_with_bytearray(self):
         try:
-            h = hmac.HMAC(bytearray(b"key"), bytearray(b"hash this!"))
-            self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
-        except:
+            h = hmac.HMAC(bytearray(b"key"), bytearray(b"hash this!"),
+                          digestmod="md5")
+        except Exception:
             self.fail("Constructor call with bytearray arguments raised exception.")
+        self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
 
     def test_with_memoryview_msg(self):
         try:
-            h = hmac.HMAC(b"key", memoryview(b"hash this!"))
-            self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
-        except:
+            h = hmac.HMAC(b"key", memoryview(b"hash this!"), digestmod="md5")
+        except Exception:
             self.fail("Constructor call with memoryview msg raised exception.")
+        self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
 
     def test_withmodule(self):
         # Constructor call with text and digest module.
         try:
             h = hmac.HMAC(b"key", b"", hashlib.sha1)
-        except:
+        except Exception:
             self.fail("Constructor call with hashlib.sha1 raised exception.")
 
 class SanityTestCase(unittest.TestCase):
 
+    @ignore_warning
     def test_default_is_md5(self):
         # Testing if HMAC defaults to MD5 algorithm.
         # NOTE: this whitebox test depends on the hmac class internals
@@ -324,19 +343,19 @@ class SanityTestCase(unittest.TestCase):
         # Exercising all methods once.
         # This must not raise any exceptions
         try:
-            h = hmac.HMAC(b"my secret key")
+            h = hmac.HMAC(b"my secret key", digestmod="md5")
             h.update(b"compute the hash of this text!")
             dig = h.digest()
             dig = h.hexdigest()
             h2 = h.copy()
-        except:
+        except Exception:
             self.fail("Exception raised during normal usage of HMAC class.")
 
 class CopyTestCase(unittest.TestCase):
 
     def test_attributes(self):
         # Testing if attributes are of same type.
-        h1 = hmac.HMAC(b"key")
+        h1 = hmac.HMAC(b"key", digestmod="md5")
         h2 = h1.copy()
         self.assertTrue(h1.digest_cons == h2.digest_cons,
             "digest constructors don't match.")
@@ -347,7 +366,7 @@ class CopyTestCase(unittest.TestCase):
 
     def test_realcopy(self):
         # Testing if the copy method created a real copy.
-        h1 = hmac.HMAC(b"key")
+        h1 = hmac.HMAC(b"key", digestmod="md5")
         h2 = h1.copy()
         # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertTrue(id(h1) != id(h2), "No real copy of the HMAC instance.")
@@ -358,7 +377,7 @@ class CopyTestCase(unittest.TestCase):
 
     def test_equality(self):
         # Testing if the copy has the same digests.
-        h1 = hmac.HMAC(b"key")
+        h1 = hmac.HMAC(b"key", digestmod="md5")
         h1.update(b"some random text")
         h2 = h1.copy()
         self.assertEqual(h1.digest(), h2.digest(),
