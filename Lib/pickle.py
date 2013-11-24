@@ -188,87 +188,72 @@ class _Framer:
         self.file_write = file_write
         self.current_frame = None
 
-    def _commit_frame(self):
-        f = self.current_frame
-        with f.getbuffer() as data:
-            n = len(data)
-            write = self.file_write
-            write(FRAME)
-            write(pack("<Q", n))
-            write(data)
-        f.seek(0)
-        f.truncate()
-
     def start_framing(self):
         self.current_frame = io.BytesIO()
 
     def end_framing(self):
-        if self.current_frame is not None:
-            self._commit_frame()
+        if self.current_frame and self.current_frame.tell() > 0:
+            self.commit_frame(force=True)
             self.current_frame = None
 
+    def commit_frame(self, force=False):
+        if self.current_frame:
+            f = self.current_frame
+            if f.tell() >= self._FRAME_SIZE_TARGET or force:
+                with f.getbuffer() as data:
+                    n = len(data)
+                    write = self.file_write
+                    write(FRAME)
+                    write(pack("<Q", n))
+                    write(data)
+                f.seek(0)
+                f.truncate()
+
     def write(self, data):
-        f = self.current_frame
-        if f is None:
-            return self.file_write(data)
+        if self.current_frame:
+            return self.current_frame.write(data)
         else:
-            n = len(data)
-            if f.tell() >= self._FRAME_SIZE_TARGET:
-                self._commit_frame()
-            return f.write(data)
+            return self.file_write(data)
+
 
 class _Unframer:
 
     def __init__(self, file_read, file_readline, file_tell=None):
         self.file_read = file_read
         self.file_readline = file_readline
-        self.file_tell = file_tell
-        self.framing_enabled = False
         self.current_frame = None
-        self.frame_start = None
 
     def read(self, n):
-        if n == 0:
-            return b''
-        _file_read = self.file_read
-        if not self.framing_enabled:
-            return _file_read(n)
-        f = self.current_frame
-        if f is not None:
-            data = f.read(n)
-            if data:
-                if len(data) < n:
-                    raise UnpicklingError(
-                        "pickle exhausted before end of frame")
-                return data
-        frame_opcode = _file_read(1)
-        if frame_opcode != FRAME:
-            raise UnpicklingError(
-                "expected a FRAME opcode, got {} instead".format(frame_opcode))
-        frame_size, = unpack("<Q", _file_read(8))
-        if frame_size > sys.maxsize:
-            raise ValueError("frame size > sys.maxsize: %d" % frame_size)
-        if self.file_tell is not None:
-            self.frame_start = self.file_tell()
-        f = self.current_frame = io.BytesIO(_file_read(frame_size))
-        self.readline = f.readline
-        data = f.read(n)
-        assert len(data) == n, (len(data), n)
-        return data
+        if self.current_frame:
+            data = self.current_frame.read(n)
+            if not data and n != 0:
+                self.current_frame = None
+                return self.file_read(n)
+            if len(data) < n:
+                raise UnpicklingError(
+                    "pickle exhausted before end of frame")
+            return data
+        else:
+            return self.file_read(n)
 
     def readline(self):
-        if not self.framing_enabled:
+        if self.current_frame:
+            data = self.current_frame.readline()
+            if not data:
+                self.current_frame = None
+                return self.file_readline()
+            if data[-1] != b'\n':
+                raise UnpicklingError(
+                    "pickle exhausted before end of frame")
+            return data
+        else:
             return self.file_readline()
-        else:
-            return self.current_frame.readline()
 
-    def tell(self):
-        if self.file_tell is None:
-            return None
-        elif self.current_frame is None:
-            return self.file_tell()
-        else:
-            return self.frame_start + self.current_frame.tell()
+    def load_frame(self, frame_size):
+        if self.current_frame and self.current_frame.read() != b'':
+            raise UnpicklingError(
+                "beginning of a new frame before end of current frame")
+        self.current_frame = io.BytesIO(self.file_read(frame_size))
 
 
 # Tools used for pickling.
@@ -392,6 +377,8 @@ class _Pickler:
             self._file_write = file.write
         except AttributeError:
             raise TypeError("file must have a 'write' attribute")
+        self.framer = _Framer(self._file_write)
+        self.write = self.framer.write
         self.memo = {}
         self.proto = int(protocol)
         self.bin = protocol >= 1
@@ -417,18 +404,12 @@ class _Pickler:
             raise PicklingError("Pickler.__init__() was not called by "
                                 "%s.__init__()" % (self.__class__.__name__,))
         if self.proto >= 2:
-            self._file_write(PROTO + pack("<B", self.proto))
+            self.write(PROTO + pack("<B", self.proto))
         if self.proto >= 4:
-            framer = _Framer(self._file_write)
-            framer.start_framing()
-            self.write = framer.write
-        else:
-            framer = None
-            self.write = self._file_write
+            self.framer.start_framing()
         self.save(obj)
         self.write(STOP)
-        if framer is not None:
-            framer.end_framing()
+        self.framer.end_framing()
 
     def memoize(self, obj):
         """Store an object in the memo."""
@@ -475,6 +456,8 @@ class _Pickler:
         return GET + repr(i).encode("ascii") + b'\n'
 
     def save(self, obj, save_persistent_id=True):
+        self.framer.commit_frame()
+
         # Check for persistent id (defined by a subclass)
         pid = self.persistent_id(obj)
         if pid is not None and save_persistent_id:
@@ -1078,9 +1061,14 @@ class _Unpickler:
         if not 0 <= proto <= HIGHEST_PROTOCOL:
             raise ValueError("unsupported pickle protocol: %d" % proto)
         self.proto = proto
-        if proto >= 4:
-            self._unframer.framing_enabled = True
     dispatch[PROTO[0]] = load_proto
+
+    def load_frame(self):
+        frame_size, = unpack('<Q', self.read(8))
+        if frame_size > sys.maxsize:
+            raise ValueError("frame size > sys.maxsize: %d" % frame_size)
+        self._unframer.load_frame(frame_size)
+    dispatch[FRAME[0]] = load_frame
 
     def load_persid(self):
         pid = self.readline()[:-1].decode("ascii")
