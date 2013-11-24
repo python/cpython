@@ -1592,21 +1592,10 @@ class TestSorted(unittest.TestCase):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
         self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
 
-def test_main(verbose=None):
-    test_classes = (BuiltinTest, TestSorted)
-
-    run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
+def load_tests(loader, tests, pattern):
+    from doctest import DocTestSuite
+    tests.addTest(DocTestSuite(builtins))
+    return tests
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()
