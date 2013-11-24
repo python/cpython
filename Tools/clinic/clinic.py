@@ -1656,6 +1656,7 @@ class str_converter(CConverter):
                 format_unit = 'et#'
 
             if format_unit.endswith('#'):
+                print("Warning: code using format unit ", repr(format_unit), "probably doesn't work properly.")
                 # TODO set pointer to NULL
                 # TODO add cleanup for buffer
                 pass
