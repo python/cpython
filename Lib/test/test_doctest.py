@@ -409,7 +409,8 @@ Compare `DocTestCase`:
 
 """
 
-def test_DocTestFinder(): r"""
+class test_DocTestFinder:
+    def basics(): r"""
 Unit tests for the `DocTestFinder` class.
 
 DocTestFinder is used to extract DocTests from an object's docstring
@@ -644,6 +645,10 @@ DocTestFinder finds the line number of each example:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> [e.lineno for e in test.examples]
     [1, 9, 12]
+"""
+
+    if int.__doc__: # simple check for --without-doc-strings, skip if lacking
+        def non_Python_modules(): r"""
 
 Finding Doctests in Modules Not Written in Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -653,10 +658,10 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> len(tests) # how many objects checked for doctests
-    794
+    >>> 790 < len(tests) < 800 # approximate number of objects with docstrings
+    True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
-    >>> len(real_tests) # how many objects actually have doctests
+    >>> len(real_tests) # objects that actually have doctests
     8
     >>> for t in real_tests:
     ...     print('{}  {}'.format(len(t.examples), t.name))
