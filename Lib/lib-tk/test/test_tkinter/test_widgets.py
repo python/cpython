@@ -260,13 +260,8 @@ class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
 
     test_highlightthickness = StandardOptionsTests.test_highlightthickness.im_func
 
-<<<<<<<
-=======
-    test_highlightthickness = StandardOptionsTests.test_highlightthickness
-
     @unittest.skipIf(sys.platform == 'darwin',
                      'crashes with Cocoa Tk (issue19733)')
->>>>>>>
     def test_image(self):
         widget = self.create()
         image = Tkinter.PhotoImage('image1')
