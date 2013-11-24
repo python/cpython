@@ -96,7 +96,7 @@ this module.
       only it when looking for candidate matches.  Otherwise consider only the
       first (default root) part of the ``multipart/related``.
 
-      If a part has a :mailheader:``Content-Disposition`` header, only consider
+      If a part has a :mailheader:`Content-Disposition` header, only consider
       the part a candidate match if the value of the header is ``inline``.
 
       If none of the candidates matches any of the preferences in
@@ -134,7 +134,7 @@ this module.
 
       Return an iterator over all of the immediate sub-parts of the message,
       which will be empty for a non-``multipart``.  (See also
-      :meth:``~email.message.walk``.)
+      :meth:`~email.message.walk`.)
 
 
    .. method:: get_content(*args, content_manager=None, **kw)

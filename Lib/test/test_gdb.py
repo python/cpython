@@ -170,6 +170,7 @@ class DebuggerTests(unittest.TestCase):
             'Do you need "set solib-search-path" or '
             '"set sysroot"?',
             'warning: Source file is more recent than executable.',
+            'Missing separate debuginfo for ',
             )
         for line in errlines:
             if not line.startswith(ignore_patterns):
