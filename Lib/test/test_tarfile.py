@@ -1745,13 +1745,13 @@ class CommandLineTest(unittest.TestCase):
                 tf.add(tardata, arcname=os.path.basename(tardata))
 
     def test_test_command(self):
-        for tar_name in (tarname, gzipname, bz2name, xzname):
+        for tar_name in testtarnames:
             for opt in '-t', '--test':
                 out = self.tarfilecmd(opt, tar_name)
                 self.assertEqual(out, b'')
 
     def test_test_command_verbose(self):
-        for tar_name in (tarname, gzipname, bz2name, xzname):
+        for tar_name in testtarnames:
             for opt in '-v', '--verbose':
                 out = self.tarfilecmd(opt, '-t', tar_name)
                 self.assertIn(b'is a tar archive.\n', out)
@@ -1763,7 +1763,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(rc, 1)
 
-        for tar_name in (tarname, gzipname, bz2name, xzname):
+        for tar_name in testtarnames:
             with self.subTest(tar_name=tar_name):
                 with open(tar_name, 'rb') as f:
                     data = f.read()
@@ -2015,6 +2015,8 @@ def setUpModule():
     support.unlink(TEMPDIR)
     os.makedirs(TEMPDIR)
 
+    global testtarnames
+    testtarnames = [tarname]
     with open(tarname, "rb") as fobj:
         data = fobj.read()
 
@@ -2022,6 +2024,7 @@ def setUpModule():
     for c in GzipTest, Bz2Test, LzmaTest:
         if c.open:
             support.unlink(c.tarname)
+            testtarnames.append(c.tarname)
             with c.open(c.tarname, "wb") as tar:
                 tar.write(data)
 
