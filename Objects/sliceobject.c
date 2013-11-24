@@ -33,6 +33,17 @@ ellipsis_repr(PyObject *op)
     return PyUnicode_FromString("Ellipsis");
 }
 
+static PyObject *
+ellipsis_reduce(PyObject *op)
+{
+    return PyUnicode_FromString("Ellipsis");
+}
+
+static PyMethodDef ellipsis_methods[] = {
+    {"__reduce__", (PyCFunction)ellipsis_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
 PyTypeObject PyEllipsis_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "ellipsis",                         /* tp_name */
@@ -61,7 +72,7 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_weaklistoffset */
     0,                                  /* tp_iter */
     0,                                  /* tp_iternext */
-    0,                                  /* tp_methods */
+    ellipsis_methods,                   /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
