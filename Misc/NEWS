@@ -2518,7 +2518,7 @@ Library
 - Issue #14398: Fix size truncation and overflow bugs in the bz2 module.
 
 - Issue #12692: Fix resource leak in urllib.request when talking to an HTTP
-  server that does not include a "Connection: close" header in its responses.
+  server that does not include a ``Connection: close`` header in its responses.
 
 - Issue #12034: Fix bogus caching of result in check_GetFinalPathNameByHandle.
   Patch by Atsuo Ishimoto.
@@ -6091,7 +6091,7 @@ Library
   given as a low fd, it gets overwritten.
 
 - Issue #12576: Fix urlopen behavior on sites which do not send (or obfuscates)
-  Connection:close header.
+  ``Connection: close`` header.
 
 - Issue #12560: Build libpython.so on OpenBSD. Patch by Stefan Sperling.
 
@@ -6686,7 +6686,7 @@ Library
 
 - Issue #11127: Raise a TypeError when trying to pickle a socket object.
 
-- Issue #11563: Connection:close header is sent by requests using URLOpener
+- Issue #11563: ``Connection: close`` header is sent by requests using URLOpener
   class which helps in closing of sockets after connection is over. Patch
   contributions by Jeff McNeil and Nadeem Vawda.
 
@@ -7262,7 +7262,7 @@ Tests
 - Issue #11505: improves test coverage of string.py. Patch by Alicia
   Arlen
 
-- Issue #11490: test_subprocess:test_leaking_fds_on_error no longer gives a
+- Issue #11490: test_subprocess.test_leaking_fds_on_error no longer gives a
   false positive if the last directory in the path is inaccessible.
 
 - Issue #11223: Fix test_threadsignals to fail, not hang, when the
