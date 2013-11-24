@@ -403,7 +403,7 @@ PyDoc_STRVAR({c_basename}__doc__,
     def meth_noargs_pyobject_template(self, methoddef_flags=""):
         return self.template_base("METH_NOARGS", methoddef_flags) + """
 static PyObject *
-{c_basename}({self_type}{self_name})
+{c_basename}({impl_parameters})
 """
 
     def meth_noargs_template(self, methoddef_flags=""):
