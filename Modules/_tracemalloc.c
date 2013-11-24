@@ -447,19 +447,28 @@ tracemalloc_log_alloc(void *ptr, size_t size)
 #endif
 
     traceback = traceback_new();
-    if (traceback == NULL)
+    if (traceback == NULL) {
+        /* Memory allocation failed. The error cannot be reported to the
+           caller, because realloc() may already have shrink the memory block
+           and so removed bytes. */
         return;
+    }
 
     trace.size = size;
     trace.traceback = traceback;
 
     TABLES_LOCK();
-    assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
-    tracemalloc_traced_memory += size;
-    if (tracemalloc_traced_memory > tracemalloc_max_traced_memory)
-        tracemalloc_max_traced_memory = tracemalloc_traced_memory;
-
-    _Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace);
+    if (_Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace) == 0) {
+        assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
+        tracemalloc_traced_memory += size;
+        if (tracemalloc_traced_memory > tracemalloc_max_traced_memory)
+            tracemalloc_max_traced_memory = tracemalloc_traced_memory;
+    }
+    else {
+        /* Hashtabled failed to add a new entry because of a memory allocation
+           failure. Same than above, the error cannot be reported to the
+           caller. */
+    }
     TABLES_UNLOCK();
 }
 
