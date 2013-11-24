@@ -1465,6 +1465,17 @@ NotImplemented_repr(PyObject *op)
 }
 
 static PyObject *
+NotImplemented_reduce(PyObject *op)
+{
+    return PyUnicode_FromString("NotImplemented");
+}
+
+static PyMethodDef notimplemented_methods[] = {
+    {"__reduce__", (PyCFunction)NotImplemented_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
+static PyObject *
 notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_Size(kwargs))) {
@@ -1511,7 +1522,7 @@ static PyTypeObject PyNotImplemented_Type = {
     0,                  /*tp_weaklistoffset */
     0,                  /*tp_iter */
     0,                  /*tp_iternext */
-    0,                  /*tp_methods */
+    notimplemented_methods, /*tp_methods */
     0,                  /*tp_members */
     0,                  /*tp_getset */
     0,                  /*tp_base */
