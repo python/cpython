@@ -1730,7 +1730,7 @@ class CommandLineTest(unittest.TestCase):
 
     def tarfilecmd(self, *args):
         rc, out, err = script_helper.assert_python_ok('-m', 'tarfile', *args)
-        return out
+        return out.replace(os.linesep.encode(), b'\n')
 
     def tarfilecmd_failure(self, *args):
         return script_helper.assert_python_failure('-m', 'tarfile', *args)
