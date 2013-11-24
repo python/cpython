@@ -23,7 +23,7 @@ Misc variables:
 
 """
 
-from types import FunctionType, BuiltinFunctionType, ModuleType
+from types import FunctionType, ModuleType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import islice
@@ -962,14 +962,7 @@ class _Pickler:
 
         self.memoize(obj)
 
-    def save_method(self, obj):
-        if obj.__self__ is None or type(obj.__self__) is ModuleType:
-            self.save_global(obj)
-        else:
-            self.save_reduce(getattr, (obj.__self__, obj.__name__), obj=obj)
-
     dispatch[FunctionType] = save_global
-    dispatch[BuiltinFunctionType] = save_method
     dispatch[type] = save_global
 
 

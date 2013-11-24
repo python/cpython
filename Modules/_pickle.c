@@ -3514,34 +3514,6 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
 }
 
 static int
-save_method(PicklerObject *self, PyObject *obj)
-{
-    PyObject *method_self = PyCFunction_GET_SELF(obj);
-
-    if (method_self == NULL || PyModule_Check(method_self)) {
-        return save_global(self, obj, NULL);
-    }
-    else {
-        PyObject *builtins;
-        PyObject *getattr;
-        PyObject *reduce_value;
-        int status = -1;
-        _Py_IDENTIFIER(getattr);
-
-        builtins = PyEval_GetBuiltins();
-        getattr = _PyDict_GetItemId(builtins, &PyId_getattr);
-        reduce_value = \
-            Py_BuildValue("O(Os)", getattr, method_self,
-                          ((PyCFunctionObject *)obj)->m_ml->ml_name);
-        if (reduce_value != NULL) {
-            status = save_reduce(self, reduce_value, obj);
-            Py_DECREF(reduce_value);
-        }
-        return status;
-    }
-}
-
-static int
 save(PicklerObject *self, PyObject *obj, int pers_save)
 {
     PyTypeObject *type;
@@ -3651,10 +3623,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         else {
             goto done;
         }
-    }
-    else if (type == &PyCFunction_Type) {
-        status = save_method(self, obj);
-        goto done;
     }
 
     /* XXX: This part needs some unit tests. */
