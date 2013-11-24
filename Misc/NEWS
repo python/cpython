@@ -68,6 +68,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #3158: doctest can now find doctests in functions and methods
+  written in C.
+
 - Issue #13477: Added command line interface to the tarfile module.
   Original patch by Berker Peksag.
 
