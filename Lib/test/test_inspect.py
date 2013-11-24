@@ -17,6 +17,7 @@ except ImportError:
     ThreadPoolExecutor = None
 
 from test.support import run_unittest, TESTFN, DirsOnSysPath
+from test.support import MISSING_C_DOCSTRINGS
 from test.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
@@ -1579,7 +1580,7 @@ class TestSignatureObject(unittest.TestCase):
                            ('kwargs', ..., int, "var_keyword")),
                           ...))
 
-    def test_signature_on_builtin_function(self):
+    def test_signature_on_unsupported_builtins(self):
         with self.assertRaisesRegex(ValueError, 'not supported by signature'):
             inspect.signature(type)
         with self.assertRaisesRegex(ValueError, 'not supported by signature'):
@@ -1588,6 +1589,10 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'not supported by signature'):
             # support for 'method-wrapper'
             inspect.signature(min.__call__)
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_signature_on_builtins(self):
         self.assertEqual(inspect.signature(min), None)
         signature = inspect.signature(os.stat)
         self.assertTrue(isinstance(signature, inspect.Signature))
