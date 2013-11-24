@@ -132,8 +132,10 @@ elif os.name == "posix":
             cmd = 'if ! type objdump >/dev/null 2>&1; then exit 10; fi;' \
                   "objdump -p -j .dynamic 2>/dev/null " + f
             f = os.popen(cmd)
-            dump = f.read()
-            rv = f.close()
+            try:
+                dump = f.read()
+            finally:
+                rv = f.close()
             if rv == 10:
                 raise OSError('objdump command not found')
             res = re.search(r'\sSONAME\s+([^\s]+)', dump)
@@ -176,10 +178,11 @@ elif os.name == "posix":
             else:
                 cmd = 'env LC_ALL=C /usr/bin/crle 2>/dev/null'
 
-            for line in os.popen(cmd).readlines():
-                line = line.strip()
-                if line.startswith('Default Library Path (ELF):'):
-                    paths = line.split()[4]
+            with contextlib.closing(os.popen(cmd)) as f:
+                for line in f.readlines():
+                    line = line.strip()
+                    if line.startswith('Default Library Path (ELF):'):
+                        paths = line.split()[4]
 
             if not paths:
                 return None
