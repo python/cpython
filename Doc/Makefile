@@ -170,6 +170,7 @@ serve:
 autobuild-dev:
 	make update
 	make dist SPHINXOPTS='-A daily=1 -A versionswitcher=1'
+	-make suspicious
 
 # for quick rebuilds (HTML only)
 autobuild-html:
