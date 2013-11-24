@@ -436,40 +436,35 @@ traceback_new(void)
     return traceback;
 }
 
-static void
+static int
 tracemalloc_log_alloc(void *ptr, size_t size)
 {
     traceback_t *traceback;
     trace_t trace;
+    int res;
 
 #ifdef WITH_THREAD
     assert(PyGILState_Check());
 #endif
 
     traceback = traceback_new();
-    if (traceback == NULL) {
-        /* Memory allocation failed. The error cannot be reported to the
-           caller, because realloc() may already have shrink the memory block
-           and so removed bytes. */
-        return;
-    }
+    if (traceback == NULL)
+        return -1;
 
     trace.size = size;
     trace.traceback = traceback;
 
     TABLES_LOCK();
-    if (_Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace) == 0) {
+    res = _Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace);
+    if (res == 0) {
         assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
         tracemalloc_traced_memory += size;
         if (tracemalloc_traced_memory > tracemalloc_max_traced_memory)
             tracemalloc_max_traced_memory = tracemalloc_traced_memory;
     }
-    else {
-        /* Hashtabled failed to add a new entry because of a memory allocation
-           failure. Same than above, the error cannot be reported to the
-           caller. */
-    }
     TABLES_UNLOCK();
+
+    return res;
 }
 
 static void
@@ -512,10 +507,15 @@ tracemalloc_malloc(void *ctx, size_t size, int gil_held)
 #endif
 #endif
     ptr = alloc->malloc(alloc->ctx, size);
-    set_reentrant(0);
 
-    if (ptr != NULL)
-        tracemalloc_log_alloc(ptr, size);
+    if (ptr != NULL) {
+        if (tracemalloc_log_alloc(ptr, size) < 0) {
+            /* Memory allocation failed */
+            alloc->free(alloc->ctx, ptr);
+            ptr = NULL;
+        }
+    }
+    set_reentrant(0);
 
 #if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
     if (!gil_held)
@@ -561,14 +561,25 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size, int gil_held)
 #endif
 #endif
     ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-    set_reentrant(0);
 
     if (ptr2 != NULL) {
         if (ptr != NULL)
             tracemalloc_log_free(ptr);
 
-        tracemalloc_log_alloc(ptr2, new_size);
+        if (tracemalloc_log_alloc(ptr2, new_size) < 0) {
+            if (ptr == NULL) {
+                /* Memory allocation failed */
+                alloc->free(alloc->ctx, ptr2);
+                ptr2 = NULL;
+            }
+            else {
+                /* Memory allocation failed. The error cannot be reported to
+                   the caller, because realloc() may already have shrinked the
+                   memory block and so removed bytes. */
+            }
+        }
     }
+    set_reentrant(0);
 
 #if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
     if (!gil_held)
