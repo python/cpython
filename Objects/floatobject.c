@@ -1417,7 +1417,7 @@ Create a floating-point number from a hexadecimal string.\n\
 >>> float.fromhex('0x1.ffffp10')\n\
 2047.984375\n\
 >>> float.fromhex('-0x1p-1074')\n\
--4.9406564584124654e-324");
+-5e-324");
 
 
 static PyObject *
