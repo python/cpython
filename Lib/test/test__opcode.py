@@ -1,7 +1,8 @@
 import dis
-import _opcode
-from test.support import run_unittest
+from test.support import run_unittest, import_module
 import unittest
+
+_opcode = import_module("_opcode")
 
 class OpcodeTests(unittest.TestCase):
 
