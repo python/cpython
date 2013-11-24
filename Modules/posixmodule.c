@@ -385,6 +385,8 @@ static int win32_can_symlink = 0;
 #endif
 #endif
 
+#define DWORD_MAX 4294967295U
+
 
 #ifdef MS_WINDOWS
 static int
@@ -4039,24 +4041,31 @@ posix__getvolumepathname(PyObject *self, PyObject *args)
 {
     PyObject *po, *result;
     wchar_t *path, *mountpath=NULL;
-    size_t bufsize;
+    size_t buflen;
     BOOL ret;
 
     if (!PyArg_ParseTuple(args, "U|:_getvolumepathname", &po))
         return NULL;
-    path = PyUnicode_AsUnicode(po);
+    path = PyUnicode_AsUnicodeAndSize(po, &buflen);
     if (path == NULL)
         return NULL;
+    buflen += 1;
 
     /* Volume path should be shorter than entire path */
-    bufsize = max(MAX_PATH, wcslen(path) * 2 * sizeof(wchar_t)+1);
-    mountpath = (wchar_t *)PyMem_Malloc(bufsize);
+    buflen = Py_MAX(buflen, MAX_PATH);
+
+    if (buflen > DWORD_MAX) {
+        PyErr_SetString(PyExc_OverflowError, "path too long");
+        return NULL;
+    }
+
+    mountpath = (wchar_t *)PyMem_Malloc(buflen * sizeof(wchar_t));
     if (mountpath == NULL)
         return PyErr_NoMemory();
 
     Py_BEGIN_ALLOW_THREADS
     ret = GetVolumePathNameW(path, mountpath,
-                             Py_SAFE_DOWNCAST(bufsize, size_t, DWORD));
+                             Py_SAFE_DOWNCAST(buflen, size_t, DWORD));
     Py_END_ALLOW_THREADS
 
     if (!ret) {
