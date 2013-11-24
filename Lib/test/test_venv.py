@@ -304,9 +304,9 @@ class EnsurePipTest(BaseTest):
                 msg = "{}\n\n**Subprocess Output**\n{}".format(exc, details)
                 self.fail(msg)
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        cmd = [envpy, '-m', 'pip', '--version']
+        cmd = [envpy, '-Im', 'pip', '--version']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                                  stderr=subprocess.PIPE)
         out, err = p.communicate()
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
