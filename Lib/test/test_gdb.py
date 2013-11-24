@@ -141,7 +141,7 @@ class DebuggerTests(unittest.TestCase):
             args += [script]
 
         # print args
-        # print ' '.join(args)
+        # print (' '.join(args))
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
         out, err = run_gdb(*args, PYTHONHASHSEED='0')
@@ -186,6 +186,11 @@ class DebuggerTests(unittest.TestCase):
         #
         # For a nested structure, the first time we hit the breakpoint will
         # give us the top-level structure
+
+        # NOTE: avoid decoding too much of the traceback as some
+        # undecodable characters may lurk there in optimized mode
+        # (issue #19743).
+        cmds_after_breakpoint = cmds_after_breakpoint or ["backtrace 1"]
         gdb_output = self.get_stack_trace(source, breakpoint=BREAKPOINT_FN,
                                           cmds_after_breakpoint=cmds_after_breakpoint,
                                           import_site=import_site)
@@ -216,11 +221,10 @@ class PrettyPrintTests(DebuggerTests):
         gdb_output = self.get_stack_trace('id(42)')
         self.assertTrue(BREAKPOINT_FN in gdb_output)
 
-    def assertGdbRepr(self, val, exp_repr=None, cmds_after_breakpoint=None):
+    def assertGdbRepr(self, val, exp_repr=None):
         # Ensure that gdb's rendering of the value in a debugged process
         # matches repr(value) in this process:
-        gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')',
-                                                 cmds_after_breakpoint)
+        gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')')
         if not exp_repr:
             exp_repr = repr(val)
         self.assertEqual(gdb_repr, exp_repr,
