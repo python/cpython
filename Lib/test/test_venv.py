@@ -291,6 +291,10 @@ class EnsurePipTest(BaseTest):
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.
             envvars["PYTHONWARNINGS"] = "e"
+            # pip doesn't ignore environment variables when running in
+            # isolated mode, and we don't have an active virtualenv here
+            # See http://bugs.python.org/issue19734 for details
+            del envvars["PIP_REQUIRE_VIRTUALENV"]
             try:
                 self.run_with_capture(venv.create, self.env_dir, with_pip=True)
             except subprocess.CalledProcessError as exc:
