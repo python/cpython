@@ -327,14 +327,21 @@ class IocpProactor:
             handle, self._iocp, ov.address, ms)
         f = _WaitHandleFuture(wh, loop=self._loop)
 
-        def finish(timed_out, _, ov):
+        def finish(trans, key, ov):
             if not f.cancelled():
                 try:
                     _overlapped.UnregisterWait(wh)
                 except OSError as e:
                     if e.winerror != _overlapped.ERROR_IO_PENDING:
                         raise
-            return not timed_out
+            # Note that this second wait means that we should only use
+            # this with handles types where a successful wait has no
+            # effect.  So events or processes are all right, but locks
+            # or semaphores are not.  Also note if the handle is
+            # signalled and then quickly reset, then we may return
+            # False even though we have not timed out.
+            return (_winapi.WaitForSingleObject(handle, 0) ==
+                    _winapi.WAIT_OBJECT_0)
 
         self._cache[ov.address] = (f, ov, None, finish)
         return f
