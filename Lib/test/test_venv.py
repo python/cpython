@@ -285,15 +285,27 @@ class EnsurePipTest(BaseTest):
             # warnings in current versions of Python. Ensure related
             # environment settings don't cause venv to fail.
             envvars["PYTHONWARNINGS"] = "e"
-            self.run_with_capture(venv.create, self.env_dir, with_pip=True)
+            try:
+                self.run_with_capture(venv.create, self.env_dir, with_pip=True)
+            except subprocess.CalledProcessError as exc:
+                # The output this produces can be a little hard to read, but
+                # least it has all the details
+                details = exc.output.decode(errors="replace")
+                msg = "{}\n\n**Subprocess Output**\n{}".format(exc, details)
+                self.fail(msg)
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         cmd = [envpy, '-m', 'pip', '--version']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         out, err = p.communicate()
-        self.assertEqual(err, b"")
-        self.assertTrue(out.startswith(b"pip"))
-        self.assertIn(self.env_dir.encode(), out)
+        # We force everything to text, so unittest gives the detailed diff
+        # if we get unexpected results
+        err = err.decode("latin-1") # Force to text, prevent decoding errors
+        self.assertEqual(err, "")
+        out = out.decode("latin-1") # Force to text, prevent decoding errors
+        env_dir = os.fsencode(self.env_dir).decode("latin-1")
+        self.assertTrue(out.startswith("pip"))
+        self.assertIn(env_dir, out)
 
 
 def test_main():
