@@ -141,15 +141,8 @@ library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
-library/multiprocessing,,`,# A test file for the `multiprocessing` package
-library/multiprocessing,,`,# A test of `multiprocessing.Pool` class
-library/multiprocessing,,`,# `BaseManager`.
-library/multiprocessing,,`,# in the original order then consider using `Pool.map()` or
 library/multiprocessing,,`,">>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`"
 library/multiprocessing,,`,">>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`"
-library/multiprocessing,,`,# Not sure if we should synchronize access to `socket.accept()` method by
-library/multiprocessing,,`,# object.  (We import `multiprocessing.reduction` to enable this pickling.)
-library/multiprocessing,,`,# `Pool.imap()` (which will save on the amount of code needed anyway).
 library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
 library/multiprocessing,,`,# register the Foo class; make `f()` and `g()` accessible via proxy
 library/multiprocessing,,`,# register the Foo class; make `g()` and `_h()` accessible via proxy
@@ -158,6 +151,10 @@ library/nntplib,,:bytes,:bytes
 library/nntplib,,:lines,:lines
 library/optparse,,:len,"del parser.rargs[:len(value)]"
 library/os.path,,:foo,c:foo
+library/pathlib,,:bar,">>> PureWindowsPath('c:/Windows', 'd:bar')"
+library/pathlib,,:bar,PureWindowsPath('d:bar')
+library/pathlib,,:Program,>>> PureWindowsPath('c:Program Files/').root
+library/pathlib,,:Program,>>> PureWindowsPath('c:Program Files/').anchor
 library/pdb,,:lineno,filename:lineno
 library/pickle,,:memory,"conn = sqlite3.connect("":memory:"")"
 library/posix,,`,"CFLAGS=""`getconf LFS_CFLAGS`"" OPT=""-g -O2 $CFLAGS"""
@@ -200,7 +197,12 @@ library/tarfile,,:xz,'r:xz'
 library/tarfile,,:xz,'w:xz'
 library/time,,:mm,
 library/time,,:ss,
+library/tracemalloc,,:limit,"for index, stat in enumerate(top_stats[:limit], 1):"
 library/turtle,,::,Example::
+library/unittest,1412,:foo,"self.assertEqual(cm.output, ['INFO:foo:first message',"
+library/unittest,1412,:first,"self.assertEqual(cm.output, ['INFO:foo:first message',"
+library/unittest,1412,:foo,'ERROR:foo.bar:second message'])
+library/unittest,1412,:second,'ERROR:foo.bar:second message'])
 library/urllib.request,,:close,Connection:close
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
