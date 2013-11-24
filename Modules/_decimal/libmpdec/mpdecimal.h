@@ -32,7 +32,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#define __STDC_LIMIT_MACROS
 #endif
 
 
@@ -56,11 +55,17 @@ extern "C" {
   #define MPD_HIDE_SYMBOLS_END
   #define EXTINLINE extern inline
 #else
-  #ifdef HAVE_STDINT_H
-    #include <stdint.h>
-  #endif
   #ifdef HAVE_INTTYPES_H
     #include <inttypes.h>
+  #endif
+  #ifdef HAVE_STDINT_H
+    #if defined(__cplusplus) && !defined(__STDC_LIMIT_MACROS)
+      #define __STDC_LIMIT_MACROS
+      #include <stdint.h>
+      #undef __STDC_LIMIT_MACROS
+    #else
+      #include <stdint.h>
+    #endif
   #endif
   #ifndef __GNUC_STDC_INLINE__
     #define __GNUC_STDC_INLINE__ 1
@@ -97,6 +102,19 @@ MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
     #define LEGACY_COMPILER
   #endif
 #endif
+
+
+/******************************************************************************/
+/*                                  Version                                   */
+/******************************************************************************/
+
+#define MPD_MAJOR_VERSION 2
+#define MPD_MINOR_VERSION 4
+#define MPD_MICRO_VERSION 0
+
+#define MPD_VERSION "2.4.0"
+
+const char *mpd_version(void);
 
 
 /******************************************************************************/
@@ -241,7 +259,7 @@ extern const char *mpd_round_string[MPD_ROUND_GUARD];
 extern const char *mpd_clamp_string[MPD_CLAMP_GUARD];
 
 
-typedef struct {
+typedef struct mpd_context_t {
     mpd_ssize_t prec;   /* precision */
     mpd_ssize_t emax;   /* max positive exp */
     mpd_ssize_t emin;   /* min negative exp */
@@ -353,7 +371,7 @@ void mpd_addstatus_raise(mpd_context_t *ctx, uint32_t flags);
 #define MPD_DATAFLAGS (MPD_STATIC_DATA|MPD_SHARED_DATA|MPD_CONST_DATA)
 
 /* mpd_t */
-typedef struct {
+typedef struct mpd_t {
     uint8_t flags;
     mpd_ssize_t exp;
     mpd_ssize_t digits;
@@ -371,7 +389,7 @@ typedef unsigned char uchar;
 /******************************************************************************/
 
 /* format specification */
-typedef struct {
+typedef struct mpd_spec_t {
     mpd_ssize_t min_width; /* minimum field width */
     mpd_ssize_t prec;      /* fraction digits or significant digits */
     char type;             /* conversion specifier */
@@ -437,6 +455,12 @@ mpd_ssize_t mpd_qget_ssize(const mpd_t *dec, uint32_t *status);
 mpd_uint_t mpd_qget_uint(const mpd_t *dec, uint32_t *status);
 mpd_uint_t mpd_qabs_uint(const mpd_t *dec, uint32_t *status);
 
+int32_t mpd_qget_i32(const mpd_t *dec, uint32_t *status);
+uint32_t mpd_qget_u32(const mpd_t *dec, uint32_t *status);
+#ifndef LEGACY_COMPILER
+int64_t mpd_qget_i64(const mpd_t *dec, uint32_t *status);
+uint64_t mpd_qget_u64(const mpd_t *dec, uint32_t *status);
+#endif
 
 /* quiet functions */
 int mpd_qcheck_nan(mpd_t *nanresult, const mpd_t *a, const mpd_context_t *ctx, uint32_t *status);
@@ -528,6 +552,17 @@ void mpd_qlog10(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx, uint32_
 void mpd_qsqrt(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx, uint32_t *status);
 void mpd_qinvroot(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx, uint32_t *status);
 
+#ifndef LEGACY_COMPILER
+void mpd_qadd_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qadd_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qsub_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qsub_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qmul_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qmul_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qdiv_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qdiv_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
+#endif
+
 
 size_t mpd_sizeinbase(const mpd_t *a, uint32_t base);
 void mpd_qimport_u16(mpd_t *result, const uint16_t *srcdata, size_t srclen,
@@ -571,6 +606,12 @@ void mpd_set_u64(mpd_t *result, uint64_t a, mpd_context_t *ctx);
 mpd_ssize_t mpd_get_ssize(const mpd_t *a, mpd_context_t *ctx);
 mpd_uint_t mpd_get_uint(const mpd_t *a, mpd_context_t *ctx);
 mpd_uint_t mpd_abs_uint(const mpd_t *a, mpd_context_t *ctx);
+int32_t mpd_get_i32(const mpd_t *a, mpd_context_t *ctx);
+uint32_t mpd_get_u32(const mpd_t *a, mpd_context_t *ctx);
+#ifndef LEGACY_COMPILER
+int64_t mpd_get_i64(const mpd_t *a, mpd_context_t *ctx);
+uint64_t mpd_get_u64(const mpd_t *a, mpd_context_t *ctx);
+#endif
 void mpd_and(mpd_t *result, const mpd_t *a, const mpd_t *b, mpd_context_t *ctx);
 void mpd_copy(mpd_t *result, const mpd_t *a, mpd_context_t *ctx);
 void mpd_canonical(mpd_t *result, const mpd_t *a, mpd_context_t *ctx);
@@ -641,31 +682,7 @@ void mpd_ceil(mpd_t *result, const mpd_t *a, mpd_context_t *ctx);
 void mpd_sqrt(mpd_t *result, const mpd_t *a, mpd_context_t *ctx);
 void mpd_invroot(mpd_t *result, const mpd_t *a, mpd_context_t *ctx);
 
-
-/******************************************************************************/
-/*                          Configuration specific                            */
-/******************************************************************************/
-
-#ifdef CONFIG_64
-void mpd_qsset_i64(mpd_t *result, int64_t a, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qsset_u64(mpd_t *result, uint64_t a, const mpd_context_t *ctx, uint32_t *status);
-int64_t mpd_qget_i64(const mpd_t *dec, uint32_t *status);
-uint64_t mpd_qget_u64(const mpd_t *dec, uint32_t *status);
-
-void mpd_qadd_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qadd_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qsub_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qsub_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qmul_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qmul_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qdiv_i64(mpd_t *result, const mpd_t *a, int64_t b, const mpd_context_t *ctx, uint32_t *status);
-void mpd_qdiv_u64(mpd_t *result, const mpd_t *a, uint64_t b, const mpd_context_t *ctx, uint32_t *status);
-
-void mpd_sset_i64(mpd_t *result, int64_t a, mpd_context_t *ctx);
-void mpd_sset_u64(mpd_t *result, uint64_t a, mpd_context_t *ctx);
-int64_t mpd_get_i64(const mpd_t *a, mpd_context_t *ctx);
-uint64_t mpd_get_u64(const mpd_t *a, mpd_context_t *ctx);
-
+#ifndef LEGACY_COMPILER
 void mpd_add_i64(mpd_t *result, const mpd_t *a, int64_t b, mpd_context_t *ctx);
 void mpd_add_u64(mpd_t *result, const mpd_t *a, uint64_t b, mpd_context_t *ctx);
 void mpd_sub_i64(mpd_t *result, const mpd_t *a, int64_t b, mpd_context_t *ctx);
@@ -674,11 +691,18 @@ void mpd_div_i64(mpd_t *result, const mpd_t *a, int64_t b, mpd_context_t *ctx);
 void mpd_div_u64(mpd_t *result, const mpd_t *a, uint64_t b, mpd_context_t *ctx);
 void mpd_mul_i64(mpd_t *result, const mpd_t *a, int64_t b, mpd_context_t *ctx);
 void mpd_mul_u64(mpd_t *result, const mpd_t *a, uint64_t b, mpd_context_t *ctx);
-#else
-int32_t mpd_qget_i32(const mpd_t *dec, uint32_t *status);
-uint32_t mpd_qget_u32(const mpd_t *dec, uint32_t *status);
-int32_t mpd_get_i32(const mpd_t *a, mpd_context_t *ctx);
-uint32_t mpd_get_u32(const mpd_t *a, mpd_context_t *ctx);
+#endif
+
+
+/******************************************************************************/
+/*                          Configuration specific                            */
+/******************************************************************************/
+
+#ifdef CONFIG_64
+void mpd_qsset_i64(mpd_t *result, int64_t a, const mpd_context_t *ctx, uint32_t *status);
+void mpd_qsset_u64(mpd_t *result, uint64_t a, const mpd_context_t *ctx, uint32_t *status);
+void mpd_sset_i64(mpd_t *result, int64_t a, mpd_context_t *ctx);
+void mpd_sset_u64(mpd_t *result, uint64_t a, mpd_context_t *ctx);
 #endif
 
 

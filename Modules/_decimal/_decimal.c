@@ -39,6 +39,11 @@
 #include "memory.h"
 
 
+#if MPD_MAJOR_VERSION != 2
+  #error "libmpdec major version 2 required"
+#endif
+
+
 /*
  * Type sizes with assertions in mpdecimal.h and pyport.h:
  *    sizeof(size_t) == sizeof(Py_ssize_t)
@@ -5730,7 +5735,8 @@ PyInit__decimal(void)
     }
 
     /* Add specification version number */
-    CHECK_INT(PyModule_AddStringConstant(m, "__version__", " 1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "__version__", "1.70"));
+    CHECK_INT(PyModule_AddStringConstant(m, "__libmpdec_version__", mpd_version()));
 
 
     return m;
