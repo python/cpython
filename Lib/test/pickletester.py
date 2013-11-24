@@ -1353,6 +1353,45 @@ class AbstractPickleTests(unittest.TestCase):
                 n_frames = pickled.count(b'\x00\x00\x00\x00\x00')
                 self.assertGreaterEqual(n_frames, len(obj))
 
+    def test_optional_frames(self):
+        if pickle.HIGHEST_PROTOCOL < 4:
+            return
+
+        def remove_frames(pickled, keep_frame=None):
+            """Remove frame opcodes from the given pickle."""
+            frame_starts = []
+            # 1 byte for the opcode and 8 for the argument
+            frame_opcode_size = 9
+            for opcode, _, pos in pickletools.genops(pickled):
+                if opcode.name == 'FRAME':
+                    frame_starts.append(pos)
+
+            newpickle = bytearray()
+            last_frame_end = 0
+            for i, pos in enumerate(frame_starts):
+                if keep_frame and keep_frame(i):
+                    continue
+                newpickle += pickled[last_frame_end:pos]
+                last_frame_end = pos + frame_opcode_size
+            newpickle += pickled[last_frame_end:]
+            return newpickle
+
+        target_frame_size = 64 * 1024
+        num_frames = 20
+        obj = [bytes([i]) * target_frame_size for i in range(num_frames)]
+
+        for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
+            pickled = self.dumps(obj, proto)
+
+            frameless_pickle = remove_frames(pickled)
+            self.assertEqual(count_opcode(pickle.FRAME, frameless_pickle), 0)
+            self.assertEqual(obj, self.loads(frameless_pickle))
+
+            some_frames_pickle = remove_frames(pickled, lambda i: i % 2 == 0)
+            self.assertLess(count_opcode(pickle.FRAME, some_frames_pickle),
+                            count_opcode(pickle.FRAME, pickled))
+            self.assertEqual(obj, self.loads(some_frames_pickle))
+
     def test_nested_names(self):
         global Nested
         class Nested:

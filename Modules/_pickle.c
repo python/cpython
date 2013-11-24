@@ -110,10 +110,6 @@ enum {
     /* Initial size of the write buffer of Pickler. */
     WRITE_BUF_SIZE = 4096,
 
-    /* Maximum size of the write buffer of Pickler when pickling to a
-       stream.  This is ignored for in-memory pickling. */
-    MAX_WRITE_BUF_SIZE = 64 * 1024,
-
     /* Prefetch size when unpickling (disabled on unpeekable streams) */
     PREFETCH = 8192 * 16,
 
@@ -381,7 +377,6 @@ typedef struct UnpicklerObject {
     char *input_line;
     Py_ssize_t input_len;
     Py_ssize_t next_read_idx;
-    Py_ssize_t frame_end_idx;
     Py_ssize_t prefetched_idx;  /* index of first prefetched byte */
 
     PyObject *read;             /* read() method of the input stream. */
@@ -401,7 +396,6 @@ typedef struct UnpicklerObject {
     int proto;                  /* Protocol of the pickle loaded. */
     int fix_imports;            /* Indicate whether Unpickler should fix
                                    the name of globals pickled by Python 2.x. */
-    int framing;                /* True when framing is enabled, proto >= 4 */
 } UnpicklerObject;
 
 /* Forward declarations */
@@ -802,46 +796,6 @@ _Pickler_Write(PicklerObject *self, const char *s, Py_ssize_t data_len)
         n = data_len;
 
     required = self->output_len + n;
-    if (self->write != NULL && required > MAX_WRITE_BUF_SIZE) {
-        /* XXX This reallocates a new buffer every time, which is a bit
-           wasteful. */
-        if (_Pickler_FlushToFile(self) < 0)
-            return -1;
-        if (_Pickler_ClearBuffer(self) < 0)
-            return -1;
-        /* The previous frame was just committed by _Pickler_FlushToFile */
-        need_new_frame = self->framing;
-        if (need_new_frame)
-            n = data_len + FRAME_HEADER_SIZE;
-        else
-            n = data_len;
-        required = self->output_len + n;
-    }
-    if (self->write != NULL && n > MAX_WRITE_BUF_SIZE) {
-        /* For large pickle chunks, we write directly to the output
-           file instead of buffering. Note the buffer is empty at this
-           point (it was flushed above, since required >= n). */
-        PyObject *output, *result;
-        if (need_new_frame) {
-            char frame_header[FRAME_HEADER_SIZE];
-            _Pickler_WriteFrameHeader(self, frame_header, (size_t) data_len);
-            output = PyBytes_FromStringAndSize(frame_header, FRAME_HEADER_SIZE);
-            if (output == NULL)
-                return -1;
-            result = _Pickler_FastCall(self, self->write, output);
-            Py_XDECREF(result);
-            if (result == NULL)
-                return -1;
-        }
-        /* XXX we could spare an intermediate copy and pass
-           a memoryview instead */
-        output = PyBytes_FromStringAndSize(s, data_len);
-        if (output == NULL)
-            return -1;
-        result = _Pickler_FastCall(self, self->write, output);
-        Py_XDECREF(result);
-        return (result == NULL) ? -1 : 0;
-    }
     if (required > self->max_output_len) {
         /* Make place in buffer for the pickle chunk */
         if (self->output_len >= PY_SSIZE_T_MAX / 2 - n) {
@@ -987,7 +941,6 @@ _Unpickler_SetStringInput(UnpicklerObject *self, PyObject *input)
     self->input_buffer = self->buffer.buf;
     self->input_len = self->buffer.len;
     self->next_read_idx = 0;
-    self->frame_end_idx = -1;
     self->prefetched_idx = self->input_len;
     return self->input_len;
 }
@@ -1052,7 +1005,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     /* Prefetch some data without advancing the file pointer, if possible */
-    if (self->peek && !self->framing) {
+    if (self->peek) {
         PyObject *len, *prefetched;
         len = PyLong_FromSsize_t(PREFETCH);
         if (len == NULL) {
@@ -1100,7 +1053,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
    Returns -1 (with an exception set) on failure. On success, return the
    number of chars read. */
 static Py_ssize_t
-_Unpickler_ReadUnframed(UnpicklerObject *self, char **s, Py_ssize_t n)
+_Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
 {
     Py_ssize_t num_read;
 
@@ -1123,67 +1076,6 @@ _Unpickler_ReadUnframed(UnpicklerObject *self, char **s, Py_ssize_t n)
     *s = self->input_buffer;
     self->next_read_idx = n;
     return n;
-}
-
-static Py_ssize_t
-_Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
-{
-    if (self->framing &&
-        (self->frame_end_idx == -1 ||
-         self->frame_end_idx <= self->next_read_idx)) {
-        /* Need to read new frame */
-        char *dummy = NULL;
-        unsigned char *frame_start;
-        size_t frame_len;
-        if (_Unpickler_ReadUnframed(self, &dummy, FRAME_HEADER_SIZE) < 0)
-            return -1;
-        frame_start = (unsigned char *) dummy;
-        if (frame_start[0] != (unsigned char)FRAME) {
-            PyErr_Format(UnpicklingError,
-                         "expected FRAME opcode, got 0x%x instead",
-                         frame_start[0]);
-            return -1;
-        }
-        frame_len =  (size_t) frame_start[1];
-        frame_len |= (size_t) frame_start[2] << 8;
-        frame_len |= (size_t) frame_start[3] << 16;
-        frame_len |= (size_t) frame_start[4] << 24;
-#if SIZEOF_SIZE_T >= 8
-        frame_len |= (size_t) frame_start[5] << 32;
-        frame_len |= (size_t) frame_start[6] << 40;
-        frame_len |= (size_t) frame_start[7] << 48;
-        frame_len |= (size_t) frame_start[8] << 56;
-#else
-        if (frame_start[5] || frame_start[6] ||
-            frame_start[7] || frame_start[8]) {
-            PyErr_Format(PyExc_OverflowError,
-                         "Frame size too large for 32-bit build");
-            return -1;
-        }
-#endif
-        if (frame_len > PY_SSIZE_T_MAX) {
-            PyErr_Format(UnpicklingError, "Invalid frame length");
-            return -1;
-        }
-        if ((Py_ssize_t) frame_len < n) {
-            PyErr_Format(UnpicklingError, "Bad framing");
-            return -1;
-        }
-        if (_Unpickler_ReadUnframed(self, &dummy /* unused */,
-                                    frame_len) < 0)
-            return -1;
-        /* Rewind to start of frame */
-        self->frame_end_idx = self->next_read_idx;
-        self->next_read_idx -= frame_len;
-    }
-    if (self->framing) {
-        /* Check for bad input */
-        if (n + self->next_read_idx > self->frame_end_idx) {
-            PyErr_Format(UnpicklingError, "Bad framing");
-            return -1;
-        }
-    }
-    return _Unpickler_ReadUnframed(self, s, n);
 }
 
 static Py_ssize_t
@@ -1336,7 +1228,6 @@ _Unpickler_New(void)
     self->input_line = NULL;
     self->input_len = 0;
     self->next_read_idx = 0;
-    self->frame_end_idx = -1;
     self->prefetched_idx = 0;
     self->read = NULL;
     self->readline = NULL;
@@ -1347,7 +1238,6 @@ _Unpickler_New(void)
     self->num_marks = 0;
     self->marks_size = 0;
     self->proto = 0;
-    self->framing = 0;
     self->fix_imports = 0;
     memset(&self->buffer, 0, sizeof(Py_buffer));
     self->memo_size = 32;
@@ -1474,8 +1364,6 @@ memo_put(PicklerObject *self, PyObject *obj)
 
     if (self->fast)
         return 0;
-    if (_Pickler_OpcodeBoundary(self))
-        return -1;
 
     idx = PyMemoTable_Size(self->memo);
     if (PyMemoTable_Set(self->memo, obj, idx) < 0)
@@ -3661,6 +3549,9 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     PyObject *reduce_value = NULL;
     int status = 0;
 
+    if (_Pickler_OpcodeBoundary(self) < 0)
+        return -1;
+
     if (Py_EnterRecursiveCall(" while pickling an object"))
         return -1;
 
@@ -3855,8 +3746,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         status = -1;
     }
   done:
-    if (status == 0)
-        status = _Pickler_OpcodeBoundary(self);
+
     Py_LeaveRecursiveCall();
     Py_XDECREF(reduce_func);
     Py_XDECREF(reduce_value);
@@ -4514,7 +4404,7 @@ calc_binsize(char *bytes, int nbytes)
     int i;
     size_t x = 0;
 
-    for (i = 0; i < nbytes; i++) {
+    for (i = 0; i < nbytes && i < sizeof(size_t); i++) {
         x |= (size_t) s[i] << (8 * i);
     }
 
@@ -5972,7 +5862,6 @@ load_proto(UnpicklerObject *self)
     i = (unsigned char)s[0];
     if (i <= HIGHEST_PROTOCOL) {
         self->proto = i;
-        self->framing = (self->proto >= 4);
         return 0;
     }
 
@@ -5980,16 +5869,39 @@ load_proto(UnpicklerObject *self)
     return -1;
 }
 
+static int
+load_frame(UnpicklerObject *self)
+{
+    char *s;
+    Py_ssize_t frame_len;
+
+    if (_Unpickler_Read(self, &s, 8) < 0)
+        return -1;
+
+    frame_len = calc_binsize(s, 8);
+    if (frame_len < 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "FRAME length exceeds system's maximum of %zd bytes",
+                     PY_SSIZE_T_MAX);
+        return -1;
+    }
+
+    if (_Unpickler_Read(self, &s, frame_len) < 0)
+        return -1;
+
+    /* Rewind to start of frame */
+    self->next_read_idx -= frame_len;
+    return 0;
+}
+
 static PyObject *
 load(UnpicklerObject *self)
 {
-    PyObject *err;
     PyObject *value = NULL;
     char *s;
 
     self->num_marks = 0;
     self->proto = 0;
-    self->framing = 0;
     if (Py_SIZE(self->stack))
         Pdata_clear(self->stack, 0);
 
@@ -6063,6 +5975,7 @@ load(UnpicklerObject *self)
         OP(BINPERSID, load_binpersid)
         OP(REDUCE, load_reduce)
         OP(PROTO, load_proto)
+        OP(FRAME, load_frame)
         OP_ARG(EXT1, load_extension, 1)
         OP_ARG(EXT2, load_extension, 2)
         OP_ARG(EXT4, load_extension, 4)
@@ -6084,11 +5997,7 @@ load(UnpicklerObject *self)
         break;                  /* and we are done! */
     }
 
-    /* XXX: It is not clear what this is actually for. */
-    if ((err = PyErr_Occurred())) {
-        if (err == PyExc_EOFError) {
-            PyErr_SetNone(PyExc_EOFError);
-        }
+    if (PyErr_Occurred()) {
         return NULL;
     }
 
@@ -6383,7 +6292,6 @@ Unpickler_init(UnpicklerObject *self, PyObject *args, PyObject *kwds)
 
     self->arg = NULL;
     self->proto = 0;
-    self->framing = 0;
 
     return 0;
 }
