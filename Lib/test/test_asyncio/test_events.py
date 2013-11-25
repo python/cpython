@@ -560,6 +560,7 @@ class EventLoopTestsMixin:
         client.connect(('127.0.0.1', port))
         client.sendall(b'xxx')
         test_utils.run_briefly(self.loop)
+        test_utils.run_until(self.loop, lambda: proto is not None, 10)
         self.assertIsInstance(proto, MyProto)
         self.assertEqual('INITIAL', proto.state)
         test_utils.run_briefly(self.loop)
