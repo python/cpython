@@ -451,13 +451,13 @@ functions.
    approximately that size.  A negative bufsize (the default) means
    the system default of io.DEFAULT_BUFFER_SIZE will be used.
 
-   .. versionchanged:: 3.2.4, 3.3.1
+   .. versionchanged:: 3.3.1
 
       *bufsize* now defaults to -1 to enable buffering by default to match the
-      behavior that most code expects.  In 3.2.0 through 3.2.3 and 3.3.0 it
-      incorrectly defaulted to :const:`0` which was unbuffered and allowed
-      short reads.  This was unintentional and did not match the behavior of
-      Python 2 as most code expected.
+      behavior that most code expects.  In versions prior to Python 3.2.4 and
+      3.3.1 it incorrectly defaulted to :const:`0` which was unbuffered
+      and allowed short reads.  This was unintentional and did not match the
+      behavior of Python 2 as most code expected.
 
    The *executable* argument specifies a replacement program to execute.   It
    is very seldom needed.  When ``shell=False``, *executable* replaces the
