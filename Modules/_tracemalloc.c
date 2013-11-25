@@ -1041,6 +1041,8 @@ py_tracemalloc_get_traces(PyObject *self, PyObject *obj)
     if (!tracemalloc_config.tracing)
         return get_traces.list;
 
+    /* the traceback hash table is used temporarily to intern traceback tuple
+       of (filename, lineno) tuples */
     get_traces.tracebacks = hashtable_new(sizeof(PyObject *),
                                           _Py_hashtable_hash_ptr,
                                           _Py_hashtable_compare_direct);
