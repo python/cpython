@@ -170,7 +170,9 @@ class DebuggerTests(unittest.TestCase):
             'Do you need "set solib-search-path" or '
             '"set sysroot"?',
             'warning: Source file is more recent than executable.',
+            # Issue #19753: missing symbols on System Z
             'Missing separate debuginfo for ',
+            'Try: zypper install -C ',
             )
         for line in errlines:
             if not line.startswith(ignore_patterns):
