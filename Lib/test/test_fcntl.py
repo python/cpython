@@ -113,7 +113,10 @@ class TestFcntl(unittest.TestCase):
             self.skipTest("F_NOTIFY or DN_MULTISHOT unavailable")
         fd = os.open(os.path.dirname(os.path.abspath(TESTFN)), os.O_RDONLY)
         try:
+            # This will raise OverflowError if issue1309352 is present.
             fcntl.fcntl(fd, cmd, flags)
+        except IOError:
+            pass  # Running on a system that doesn't support these flags.
         finally:
             os.close(fd)
 
