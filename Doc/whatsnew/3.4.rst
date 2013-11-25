@@ -97,6 +97,7 @@ New library modules:
 * :mod:`selectors`: High-level and efficient I/O multiplexing, built upon the
   :mod:`select` module primitives.
 * :mod:`statistics`: A basic numerically stable statistics library (:pep:`450`).
+* :mod:`tracemalloc`: Trace Python memory allocations (:pep:`454`).
 
 New expected features for Python implementations:
 
@@ -398,6 +399,23 @@ deviation of a data series.
 
    :pep:`450` - Adding A Statistics Module To The Standard Library
       PEP written and implemented by Steven D'Aprano
+
+
+tracemalloc
+-----------
+
+The new :mod:`tracemalloc` module (defined in :pep:`454`) is a debug tool to
+trace memory blocks allocated by Python. It provides the following information:
+
+* Traceback where an object was allocated
+* Statistics on allocated memory blocks per filename and per line number:
+  total size, number and average size of allocated memory blocks
+* Compute the differences between two snapshots to detect memory leaks
+
+.. seealso::
+
+   :pep:`454` - Add a new tracemalloc module to trace Python memory allocations
+      PEP written and implemented by Victor Stinner
 
 
 Improved Modules
