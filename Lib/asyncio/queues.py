@@ -184,7 +184,7 @@ class Queue:
     def get_nowait(self):
         """Remove and return an item from the queue.
 
-        Return an item if one is immediately available, else raise Full.
+        Return an item if one is immediately available, else raise Empty.
         """
         self._consume_done_putters()
         if self._putters:
