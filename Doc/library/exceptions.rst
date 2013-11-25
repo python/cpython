@@ -287,8 +287,7 @@ The following exceptions are the exceptions that are usually raised.
 
    Raised when an error is detected that doesn't fall in any of the other
    categories.  The associated value is a string indicating what precisely went
-   wrong.  (This exception is mostly a relic from a previous version of the
-   interpreter; it is not used very much any more.)
+   wrong.
 
 
 .. exception:: StopIteration
