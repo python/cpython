@@ -1,6 +1,6 @@
 """Stream-related things."""
 
-__all__ = ['StreamReader', 'StreamReaderProtocol',
+__all__ = ['StreamReader', 'StreamWriter', 'StreamReaderProtocol',
            'open_connection', 'start_server',
            ]
 
