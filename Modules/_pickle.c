@@ -710,17 +710,15 @@ _Pickler_ClearBuffer(PicklerObject *self)
 static void
 _write_size64(char *out, size_t value)
 {
-    out[0] = (unsigned char)(value & 0xff);
-    out[1] = (unsigned char)((value >> 8) & 0xff);
-    out[2] = (unsigned char)((value >> 16) & 0xff);
-    out[3] = (unsigned char)((value >> 24) & 0xff);
-    if (sizeof(size_t) >= 8) {
-        out[4] = (unsigned char)((value >> 32) & 0xff);
-        out[5] = (unsigned char)((value >> 40) & 0xff);
-        out[6] = (unsigned char)((value >> 48) & 0xff);
-        out[7] = (unsigned char)((value >> 56) & 0xff);
-    } else {
-        out[4] = out[5] = out[6] = out[7] = 0;
+    int i;
+
+    assert(sizeof(size_t) <= 8);
+
+    for (i = 0; i < sizeof(size_t); i++) {
+        out[i] = (unsigned char)((value >> (8 * i)) & 0xff);
+    }
+    for (i = sizeof(size_t); i < 8; i++) {
+        out[i] = 0;
     }
 }
 
@@ -1644,8 +1642,16 @@ save_long(PicklerObject *self, PyObject *obj)
     }
     else if (self->bin &&
              (sizeof(long) <= 4 ||
-              (val <= 0x7fffffffL && val >= -0x80000000L))) {
-        /* result fits in a signed 4-byte integer */
+              (val <= 0x7fffffffL && val >= (-0x7fffffffL - 1)))) {
+        /* result fits in a signed 4-byte integer. 
+
+           Note: we can't use -0x80000000L in the above condition because some
+           compilers (e.g., MSVC) will promote 0x80000000L to an unsigned type
+           before applying the unary minus when sizeof(long) <= 4. The
+           resulting value stays unsigned which is commonly not what we want,
+           so MSVC happily warns us about it.  However, that result would have
+           been fine because we guard for sizeof(long) <= 4 which turns the
+           condition true in that particular case. */
         char pdata[32];
         Py_ssize_t len = 0;
 
@@ -1904,11 +1910,8 @@ save_bytes(PicklerObject *self, PyObject *obj)
             len = 5;
         }
         else if (self->proto >= 4) {
-            int i;
             header[0] = BINBYTES8;
-            for (i = 0; i < 8; i++) {
-                _write_size64(header + 1, size);
-            }
+            _write_size64(header + 1, size);
             len = 8;
         }
         else {
@@ -2017,12 +2020,8 @@ write_utf8(PicklerObject *self, char *data, Py_ssize_t size)
         len = 5;
     }
     else if (self->proto >= 4) {
-        int i;
-
         header[0] = BINUNICODE8;
-        for (i = 0; i < 8; i++) {
-            _write_size64(header + 1, size);
-        }
+        _write_size64(header + 1, size);
         len = 9;
     }
     else {
