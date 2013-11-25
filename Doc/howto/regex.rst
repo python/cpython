@@ -271,8 +271,8 @@ performing string substitutions. ::
 
    >>> import re
    >>> p = re.compile('ab*')
-   >>> p  #doctest: +ELLIPSIS
-   <_sre.SRE_Pattern object at 0x...>
+   >>> p
+   re.compile('ab*')
 
 :func:`re.compile` also accepts an optional *flags* argument, used to enable
 various special features and syntax variations.  We'll go over the available
@@ -383,8 +383,8 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
 
    >>> import re
    >>> p = re.compile('[a-z]+')
-   >>> p  #doctest: +ELLIPSIS
-   <_sre.SRE_Pattern object at 0x...>
+   >>> p
+   re.compile('[a-z]+')
 
 Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
 string shouldn't match at all, since ``+`` means 'one or more repetitions'.
