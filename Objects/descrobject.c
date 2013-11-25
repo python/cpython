@@ -1558,7 +1558,7 @@ PyDoc_STRVAR(property_doc,
 "class C(object):\n"
 "    @property\n"
 "    def x(self):\n"
-"        \"\I am the 'x' property.\"\n"
+"        \"I am the 'x' property.\"\n"
 "        return self._x\n"
 "    @x.setter\n"
 "    def x(self, value):\n"
