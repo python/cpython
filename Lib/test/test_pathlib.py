@@ -1322,14 +1322,22 @@ class _BasePathTest(object):
     def test_owner(self):
         p = self.cls(BASE) / 'fileA'
         uid = p.stat().st_uid
-        name = pwd.getpwuid(uid).pw_name
+        try:
+            name = pwd.getpwuid(uid).pw_name
+        except KeyError:
+            self.skipTest(
+                "user %d doesn't have an entry in the system database" % uid)
         self.assertEqual(name, p.owner())
 
     @unittest.skipUnless(grp, "the grp module is needed for this test")
     def test_group(self):
         p = self.cls(BASE) / 'fileA'
         gid = p.stat().st_gid
-        name = grp.getgrgid(gid).gr_name
+        try:
+            name = grp.getgrgid(gid).gr_name
+        except KeyError:
+            self.skipTest(
+                "group %d doesn't have an entry in the system database" % gid)
         self.assertEqual(name, p.group())
 
     def test_unlink(self):
