@@ -252,7 +252,7 @@ def _get_normal_name(orig_enc):
 def detect_encoding(readline):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file. It requires one argment, readline,
+    be used to decode a Python source file. It requires one argument, readline,
     in the same way as the tokenize() generator.
 
     It will call readline a maximum of twice, and return the encoding used
@@ -343,7 +343,7 @@ def untokenize(iterable):
 
 def generate_tokens(readline):
     """
-    The generate_tokens() generator requires one argment, readline, which
+    The generate_tokens() generator requires one argument, readline, which
     must be a callable object which provides the same interface as the
     readline() method of built-in file objects. Each call to the function
     should return one line of input as a string.  Alternately, readline
