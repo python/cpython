@@ -1,6 +1,4 @@
-import _tracemalloc
 import contextlib
-import datetime
 import os
 import sys
 import tracemalloc
@@ -207,7 +205,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         size, max_size = tracemalloc.get_traced_memory()
         self.assertGreater(size, 0)
 
-        # stop() rests also traced memory counters
+        # stop() also resets traced memory counters
         tracemalloc.stop()
         self.assertEqual(tracemalloc.get_traced_memory(), (0, 0))
 
@@ -729,7 +727,7 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.rstrip()
         self.assertEqual(stdout, b'False')
 
-        # PYTHON* environment varibles must be ignored when -E option is
+        # PYTHON* environment variables must be ignored when -E option is
         # present
         code = 'import tracemalloc; print(tracemalloc.is_tracing())'
         ok, stdout, stderr = assert_python_ok('-E', '-c', code, PYTHONTRACEMALLOC='1')
