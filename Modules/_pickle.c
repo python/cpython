@@ -110,16 +110,6 @@ enum opcode {
     FRAME            = '\x95'
 };
 
-/* These aren't opcodes -- they're ways to pickle bools before protocol 2
- * so that unpicklers written before bools were introduced unpickle them
- * as ints, but unpicklers after can recognize that bools were intended.
- * Note that protocol 2 added direct ways to pickle bools.
- */
-#undef TRUE
-#define TRUE  "I01\n"
-#undef FALSE
-#define FALSE "I00\n"
-
 enum {
    /* Keep in synch with pickle.Pickler._BATCHSIZE.  This is how many elements
       batch_list/dict() pumps out before doing APPENDS/SETITEMS.  Nothing will
@@ -1619,18 +1609,21 @@ save_none(PicklerObject *self, PyObject *obj)
 static int
 save_bool(PicklerObject *self, PyObject *obj)
 {
-    static const char *buf[2] = { FALSE, TRUE };
-    const char len[2] = {sizeof(FALSE) - 1, sizeof(TRUE) - 1};
-    int p = (obj == Py_True);
-
     if (self->proto >= 2) {
-        const char bool_op = p ? NEWTRUE : NEWFALSE;
+        const char bool_op = (obj == Py_True) ? NEWTRUE : NEWFALSE;
         if (_Pickler_Write(self, &bool_op, 1) < 0)
             return -1;
     }
-    else if (_Pickler_Write(self, buf[p], len[p]) < 0)
-        return -1;
-
+    else {
+        /* These aren't opcodes -- they're ways to pickle bools before protocol 2
+         * so that unpicklers written before bools were introduced unpickle them
+         * as ints, but unpicklers after can recognize that bools were intended.
+         * Note that protocol 2 added direct ways to pickle bools.
+         */
+        const char *bool_str = (obj == Py_True) ? "I01\n" : "I00\n";
+        if (_Pickler_Write(self, bool_str, strlen(bool_str)) < 0)
+            return -1;
+    }
     return 0;
 }
 
