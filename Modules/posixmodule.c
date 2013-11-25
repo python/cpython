@@ -6014,7 +6014,7 @@ posix_openpty(PyObject *self, PyObject *noargs)
         goto posix_error;
 
 #else
-    master_fd = _Py_open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
+    master_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
     if (master_fd < 0)
         goto posix_error;
 
@@ -6041,6 +6041,10 @@ posix_openpty(PyObject *self, PyObject *noargs)
     slave_fd = _Py_open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
     if (slave_fd < 0)
         goto posix_error;
+
+    if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
+        goto posix_error;
+
 #if !defined(__CYGWIN__) && !defined(HAVE_DEV_PTC)
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
