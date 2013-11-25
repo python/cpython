@@ -102,9 +102,11 @@ Example of output before/after running some tests of the Python test suite::
     /usr/lib/python3.4/urllib/parse.py:476: size=71.8 KiB (+71.8 KiB), count=969 (+969), average=76 B
     /usr/lib/python3.4/contextlib.py:38: size=67.2 KiB (+67.2 KiB), count=126 (+126), average=546 B
 
-We can see that Python loaded ``4.4 MiB`` of new data (bytecode and constants)
-from modules (on of total of ``8.2 MiB``) and that the :mod:`linecache` module
-cached ``940 KiB`` of Python source code to format tracebacks.
+We can see that Python has loaded ``8.2 MiB`` of module data (bytecode and
+constants), and that this is ``4.4 MiB`` more than had been loaded before the
+tests, when the previous snapshot was taken. Similarly, the :mod:`linecache`
+module has cached ``940 KiB`` of Python source code to format tracebacks, all
+of it since the previous snapshot.
 
 If the system has little free memory, snapshots can be written on disk using
 the :meth:`Snapshot.dump` method to analyze the snapshot offline. Then use the
@@ -174,11 +176,11 @@ Example of output of the Python test suite (traceback limited to 25 frames)::
       File "/usr/lib/python3.4/runpy.py", line 160
         "__main__", fname, loader, pkg_name)
 
-We can see that most memory was allocated in the :mod:`importlib` module to
+We can see that the most memory was allocated in the :mod:`importlib` module to
 load data (bytecode and constants) from modules: ``870 KiB``. The traceback is
-where the :mod:`importlib` loaded data for the the last time: on the ``import
-pdb`` line of the :mod:`doctest` module. The traceback may change if a new
-module is loaded.
+where the :mod:`importlib` loaded data most recently: on the ``import pdb``
+line of the :mod:`doctest` module. The traceback may change if a new module is
+loaded.
 
 
 Pretty top
@@ -319,12 +321,14 @@ Functions
 .. function:: stop()
 
    Stop tracing Python memory allocations: uninstall hooks on Python memory
-   allocators. Clear also traces of memory blocks allocated by Python
+   allocators. Also clears all previously collected traces of memory blocks
+   allocated by Python.
 
    Call :func:`take_snapshot` function to take a snapshot of traces before
    clearing them.
 
-   See also :func:`start` and :func:`is_tracing` functions.
+   See also :func:`start`, :func:`is_tracing` and :func:`clear_traces`
+   functions.
 
 
 .. function:: take_snapshot()
