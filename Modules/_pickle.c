@@ -346,7 +346,6 @@ typedef struct PicklerObject {
                                    pickling. */
     PyObject *pers_func;        /* persistent_id() method, can be NULL */
     PyObject *dispatch_table;   /* private dispatch_table, can be NULL */
-    PyObject *arg;
 
     PyObject *write;            /* write() method of the output stream. */
     PyObject *output_buffer;    /* Write into a local bytearray buffer before
@@ -383,7 +382,6 @@ typedef struct UnpicklerObject {
     Py_ssize_t memo_size;       /* Capacity of the memo array */
     Py_ssize_t memo_len;        /* Number of objects in the memo */
 
-    PyObject *arg;
     PyObject *pers_func;        /* persistent_load() method, can be NULL. */
 
     Py_buffer buffer;
@@ -639,58 +637,29 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
 
 /*************************************************************************/
 
-/* Helpers for creating the argument tuple passed to functions. This has the
-   performance advantage of calling PyTuple_New() only once.
+/* Helper for calling a function with a single argument quickly.
 
-   XXX(avassalotti): Inline directly in _Pickler_FastCall() and
-   _Unpickler_FastCall(). */
-#define ARG_TUP(self, obj) do {                             \
-        if ((self)->arg || ((self)->arg=PyTuple_New(1))) {  \
-            Py_XDECREF(PyTuple_GET_ITEM((self)->arg, 0));   \
-            PyTuple_SET_ITEM((self)->arg, 0, (obj));        \
-        }                                                   \
-        else {                                              \
-            Py_DECREF((obj));                               \
-        }                                                   \
-    } while (0)
+   This has the performance advantage of reusing the argument tuple. This
+   provides a nice performance boost with older pickle protocols where many
+   unbuffered reads occurs.
 
-#define FREE_ARG_TUP(self) do {                 \
-        if ((self)->arg->ob_refcnt > 1)         \
-            Py_CLEAR((self)->arg);              \
-    } while (0)
-
-/* A temporary cleaner API for fast single argument function call.
-
-   XXX: Does caching the argument tuple provides any real performance benefits?
-
-   A quick benchmark, on a 2.0GHz Athlon64 3200+ running Linux 2.6.24 with
-   glibc 2.7, tells me that it takes roughly 20,000,000 PyTuple_New(1) calls
-   when the tuple is retrieved from the freelist (i.e, call PyTuple_New() then
-   immediately DECREF it) and 1,200,000 calls when allocating brand new tuples
-   (i.e, call PyTuple_New() and store the returned value in an array), to save
-   one second (wall clock time). Either ways, the loading time a pickle stream
-   large enough to generate this number of calls would be massively
-   overwhelmed by other factors, like I/O throughput, the GC traversal and
-   object allocation overhead. So, I really doubt these functions provide any
-   real benefits.
-
-   On the other hand, oprofile reports that pickle spends a lot of time in
-   these functions. But, that is probably more related to the function call
-   overhead, than the argument tuple allocation.
-
-   XXX: And, what is the reference behavior of these? Steal, borrow? At first
-   glance, it seems to steal the reference of 'arg' and borrow the reference
-   of 'func'. */
+   This function steals the reference of the given argument. */
 static PyObject *
-_Pickler_FastCall(PicklerObject *self, PyObject *func, PyObject *arg)
+_Pickle_FastCall(PyObject *func, PyObject *arg)
 {
-    PyObject *result = NULL;
+    static PyObject *arg_tuple = NULL;
+    PyObject *result;
 
-    ARG_TUP(self, arg);
-    if (self->arg) {
-        result = PyObject_Call(func, self->arg, NULL);
-        FREE_ARG_TUP(self);
+    if (arg_tuple == NULL) {
+        arg_tuple = PyTuple_New(1);
+        if (arg_tuple == NULL) {
+            Py_DECREF(arg);
+            return NULL;
+        }
     }
+    PyTuple_SET_ITEM(arg_tuple, 0, arg);
+    result = PyObject_Call(func, arg_tuple, NULL);
+    Py_DECREF(arg);
     return result;
 }
 
@@ -787,7 +756,7 @@ _Pickler_FlushToFile(PicklerObject *self)
     if (output == NULL)
         return -1;
 
-    result = _Pickler_FastCall(self, self->write, output);
+    result = _Pickle_FastCall(self->write, output);
     Py_XDECREF(result);
     return (result == NULL) ? -1 : 0;
 }
@@ -853,7 +822,6 @@ _Pickler_New(void)
 
     self->pers_func = NULL;
     self->dispatch_table = NULL;
-    self->arg = NULL;
     self->write = NULL;
     self->proto = 0;
     self->bin = 0;
@@ -920,20 +888,6 @@ _Pickler_SetOutputStream(PicklerObject *self, PyObject *file)
     }
 
     return 0;
-}
-
-/* See documentation for _Pickler_FastCall(). */
-static PyObject *
-_Unpickler_FastCall(UnpicklerObject *self, PyObject *func, PyObject *arg)
-{
-    PyObject *result = NULL;
-
-    ARG_TUP(self, arg);
-    if (self->arg) {
-        result = PyObject_Call(func, self->arg, NULL);
-        FREE_ARG_TUP(self);
-    }
-    return result;
 }
 
 /* Returns the size of the input on success, -1 on failure. This takes its
@@ -1006,7 +960,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         PyObject *len = PyLong_FromSsize_t(n);
         if (len == NULL)
             return -1;
-        data = _Unpickler_FastCall(self, self->read, len);
+        data = _Pickle_FastCall(self->read, len);
     }
     if (data == NULL)
         return -1;
@@ -1019,7 +973,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
             Py_DECREF(data);
             return -1;
         }
-        prefetched = _Unpickler_FastCall(self, self->peek, len);
+        prefetched = _Pickle_FastCall(self->peek, len);
         if (prefetched == NULL) {
             if (PyErr_ExceptionMatches(PyExc_NotImplementedError)) {
                 /* peek() is probably not supported by the given file object */
@@ -1229,7 +1183,6 @@ _Unpickler_New(void)
     if (self == NULL)
         return NULL;
 
-    self->arg = NULL;
     self->pers_func = NULL;
     self->input_buffer = NULL;
     self->input_line = NULL;
@@ -3172,7 +3125,7 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
     const char binpersid_op = BINPERSID;
 
     Py_INCREF(obj);
-    pid = _Pickler_FastCall(self, func, obj);
+    pid = _Pickle_FastCall(func, obj);
     if (pid == NULL)
         return -1;
 
@@ -3600,7 +3553,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
     }
     if (reduce_func != NULL) {
         Py_INCREF(obj);
-        reduce_value = _Pickler_FastCall(self, reduce_func, obj);
+        reduce_value = _Pickle_FastCall(reduce_func, obj);
     }
     else if (PyType_IsSubtype(type, &PyType_Type)) {
         status = save_global(self, obj, NULL);
@@ -3625,7 +3578,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             PyObject *proto;
             proto = PyLong_FromLong(self->proto);
             if (proto != NULL) {
-                reduce_value = _Pickler_FastCall(self, reduce_func, proto);
+                reduce_value = _Pickle_FastCall(reduce_func, proto);
             }
         }
         else {
@@ -3794,7 +3747,6 @@ Pickler_dealloc(PicklerObject *self)
     Py_XDECREF(self->write);
     Py_XDECREF(self->pers_func);
     Py_XDECREF(self->dispatch_table);
-    Py_XDECREF(self->arg);
     Py_XDECREF(self->fast_memo);
 
     PyMemoTable_Del(self->memo);
@@ -3808,7 +3760,6 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->write);
     Py_VISIT(self->pers_func);
     Py_VISIT(self->dispatch_table);
-    Py_VISIT(self->arg);
     Py_VISIT(self->fast_memo);
     return 0;
 }
@@ -3820,7 +3771,6 @@ Pickler_clear(PicklerObject *self)
     Py_CLEAR(self->write);
     Py_CLEAR(self->pers_func);
     Py_CLEAR(self->dispatch_table);
-    Py_CLEAR(self->arg);
     Py_CLEAR(self->fast_memo);
 
     if (self->memo != NULL) {
@@ -3943,7 +3893,6 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *pro
             return NULL;
     }
 
-    self->arg = NULL;
     self->fast = 0;
     self->fast_nesting = 0;
     self->fast_memo = NULL;
@@ -5208,9 +5157,9 @@ load_persid(UnpicklerObject *self)
         if (pid == NULL)
             return -1;
 
-        /* Ugh... this does not leak since _Unpickler_FastCall() steals the
-           reference to pid first. */
-        pid = _Unpickler_FastCall(self, self->pers_func, pid);
+        /* This does not leak since _Pickle_FastCall() steals the reference
+           to pid first. */
+        pid = _Pickle_FastCall(self->pers_func, pid);
         if (pid == NULL)
             return -1;
 
@@ -5235,9 +5184,9 @@ load_binpersid(UnpicklerObject *self)
         if (pid == NULL)
             return -1;
 
-        /* Ugh... this does not leak since _Unpickler_FastCall() steals the
+        /* This does not leak since _Pickle_FastCall() steals the
            reference to pid first. */
-        pid = _Unpickler_FastCall(self, self->pers_func, pid);
+        pid = _Pickle_FastCall(self->pers_func, pid);
         if (pid == NULL)
             return -1;
 
@@ -5585,7 +5534,7 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             PyObject *result;
 
             value = self->stack->data[i];
-            result = _Unpickler_FastCall(self, append_func, value);
+            result = _Pickle_FastCall(append_func, value);
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SIZE(self->stack) = x;
@@ -5700,7 +5649,7 @@ load_additems(UnpicklerObject *self)
             PyObject *item;
 
             item = self->stack->data[i];
-            result = _Unpickler_FastCall(self, add_func, item);
+            result = _Pickle_FastCall(add_func, item);
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
                 Py_SIZE(self->stack) = mark;
@@ -5747,9 +5696,7 @@ load_build(UnpicklerObject *self)
         PyObject *result;
 
         /* The explicit __setstate__ is responsible for everything. */
-        /* Ugh... this does not leak since _Unpickler_FastCall() steals the
-           reference to state first. */
-        result = _Unpickler_FastCall(self, setstate, state);
+        result = _Pickle_FastCall(setstate, state);
         Py_DECREF(setstate);
         if (result == NULL)
             return -1;
@@ -6249,7 +6196,6 @@ Unpickler_dealloc(UnpicklerObject *self)
     Py_XDECREF(self->peek);
     Py_XDECREF(self->stack);
     Py_XDECREF(self->pers_func);
-    Py_XDECREF(self->arg);
     if (self->buffer.buf != NULL) {
         PyBuffer_Release(&self->buffer);
         self->buffer.buf = NULL;
@@ -6272,7 +6218,6 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->peek);
     Py_VISIT(self->stack);
     Py_VISIT(self->pers_func);
-    Py_VISIT(self->arg);
     return 0;
 }
 
@@ -6284,7 +6229,6 @@ Unpickler_clear(UnpicklerObject *self)
     Py_CLEAR(self->peek);
     Py_CLEAR(self->stack);
     Py_CLEAR(self->pers_func);
-    Py_CLEAR(self->arg);
     if (self->buffer.buf != NULL) {
         PyBuffer_Release(&self->buffer);
         self->buffer.buf = NULL;
@@ -6423,7 +6367,6 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_i
     if (self->memo == NULL)
         return NULL;
 
-    self->arg = NULL;
     self->proto = 0;
 
     return Py_None;
