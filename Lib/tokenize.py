@@ -333,7 +333,7 @@ def _get_normal_name(orig_enc):
 def detect_encoding(readline):
     """
     The detect_encoding() function is used to detect the encoding that should
-    be used to decode a Python source file.  It requires one argment, readline,
+    be used to decode a Python source file.  It requires one argument, readline,
     in the same way as the tokenize() generator.
 
     It will call readline a maximum of twice, and return the encoding used
