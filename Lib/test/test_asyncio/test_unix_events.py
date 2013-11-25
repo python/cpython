@@ -379,7 +379,7 @@ class UnixWritePipeTransportTests(unittest.TestCase):
         fstat_patcher = unittest.mock.patch('os.fstat')
         m_fstat = fstat_patcher.start()
         st = unittest.mock.Mock()
-        st.st_mode = stat.S_IFIFO
+        st.st_mode = stat.S_IFSOCK
         m_fstat.return_value = st
         self.addCleanup(fstat_patcher.stop)
 
