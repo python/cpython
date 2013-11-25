@@ -553,6 +553,27 @@ New :func:`hashlib.pbkdf2_hmac` function.
 (Contributed by Christian Heimes in :issue:`18582`)
 
 
+html
+----
+
+Added a new :func:`html.unescape` function that converts HTML5 character
+references to the corresponding Unicode characters.
+
+(Contributed by Ezio Melotti in :issue:`2927`)
+
+Added a new *convert_charrefs* keyword argument to
+:class:`~html.parser.HTMLParser` that, when ``True``, automatically converts
+all character references.  For backward-compatibility, its value defaults
+to ``False``, but it will change to ``True`` in future versions, so you
+are invited to set it explicitly and update your code to use this new feature.
+
+(Contributed by Ezio Melotti in :issue:`13633`)
+
+The *strict* argument of :class:`~html.parser.HTMLParser` is now deprecated.
+
+(Contributed by Ezio Melotti in :issue:`15114`)
+
+
 inspect
 -------
 
