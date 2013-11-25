@@ -714,14 +714,14 @@ _write_size64(char *out, size_t value)
     out[1] = (unsigned char)((value >> 8) & 0xff);
     out[2] = (unsigned char)((value >> 16) & 0xff);
     out[3] = (unsigned char)((value >> 24) & 0xff);
-#if SIZEOF_SIZE_T >= 8
-    out[4] = (unsigned char)((value >> 32) & 0xff);
-    out[5] = (unsigned char)((value >> 40) & 0xff);
-    out[6] = (unsigned char)((value >> 48) & 0xff);
-    out[7] = (unsigned char)((value >> 56) & 0xff);
-#else
-    out[4] = out[5] = out[6] = out[7] = 0;
-#endif
+    if (sizeof(size_t) >= 8) {
+        out[4] = (unsigned char)((value >> 32) & 0xff);
+        out[5] = (unsigned char)((value >> 40) & 0xff);
+        out[6] = (unsigned char)((value >> 48) & 0xff);
+        out[7] = (unsigned char)((value >> 56) & 0xff);
+    } else {
+        out[4] = out[5] = out[6] = out[7] = 0;
+    }
 }
 
 static void
@@ -1628,30 +1628,31 @@ save_bool(PicklerObject *self, PyObject *obj)
 }
 
 static int
-save_int(PicklerObject *self, long x)
+save_long(PicklerObject *self, PyObject *obj)
 {
-    char pdata[32];
-    Py_ssize_t len = 0;
+    PyObject *repr = NULL;
+    Py_ssize_t size;
+    long val;
+    int status = 0;
 
-    if (!self->bin
-#if SIZEOF_LONG > 4
-        || x > 0x7fffffffL || x < -0x80000000L
-#endif
-        ) {
-        /* Text-mode pickle, or long too big to fit in the 4-byte
-         * signed BININT format:  store as a string.
-         */
-        pdata[0] = LONG;        /* use LONG for consistency with pickle.py */
-        PyOS_snprintf(pdata + 1, sizeof(pdata) - 1, "%ldL\n", x);
-        if (_Pickler_Write(self, pdata, strlen(pdata)) < 0)
-            return -1;
+    const char long_op = LONG;
+
+    val= PyLong_AsLong(obj);
+    if (val == -1 && PyErr_Occurred()) {
+        /* out of range for int pickling */
+        PyErr_Clear();
     }
-    else {
-        /* Binary pickle and x fits in a signed 4-byte int. */
-        pdata[1] = (unsigned char)(x & 0xff);
-        pdata[2] = (unsigned char)((x >> 8) & 0xff);
-        pdata[3] = (unsigned char)((x >> 16) & 0xff);
-        pdata[4] = (unsigned char)((x >> 24) & 0xff);
+    else if (self->bin &&
+             (sizeof(long) <= 4 ||
+              (val <= 0x7fffffffL && val >= -0x80000000L))) {
+        /* result fits in a signed 4-byte integer */
+        char pdata[32];
+        Py_ssize_t len = 0;
+
+        pdata[1] = (unsigned char)(val & 0xff);
+        pdata[2] = (unsigned char)((val >> 8) & 0xff);
+        pdata[3] = (unsigned char)((val >> 16) & 0xff);
+        pdata[4] = (unsigned char)((val >> 24) & 0xff);
 
         if ((pdata[4] == 0) && (pdata[3] == 0)) {
             if (pdata[2] == 0) {
@@ -1670,30 +1671,9 @@ save_int(PicklerObject *self, long x)
 
         if (_Pickler_Write(self, pdata, len) < 0)
             return -1;
+
+        return 0;
     }
-
-    return 0;
-}
-
-static int
-save_long(PicklerObject *self, PyObject *obj)
-{
-    PyObject *repr = NULL;
-    Py_ssize_t size;
-    long val = PyLong_AsLong(obj);
-    int status = 0;
-
-    const char long_op = LONG;
-
-    if (val == -1 && PyErr_Occurred()) {
-        /* out of range for int pickling */
-        PyErr_Clear();
-    }
-    else
-#if SIZEOF_LONG > 4
-        if (val <= 0x7fffffffL && val >= -0x80000000L)
-#endif
-            return save_int(self, val);
 
     if (self->proto >= 2) {
         /* Linear-time pickling. */
