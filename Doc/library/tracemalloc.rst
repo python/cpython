@@ -479,8 +479,7 @@ Snapshot
       If *cumulative* is ``True``, cumulate size and count of memory blocks of
       all frames of the traceback of a trace, not only the most recent frame.
       The cumulative mode can only be used with *group_by* equals to
-      ``'filename'`` and ``'lineno'`` and :attr:`traceback_limit` greater than
-      ``1``.
+      ``'filename'`` and ``'lineno'``.
 
       The result is sorted from the biggest to the smallest by:
       :attr:`Statistic.size`, :attr:`Statistic.count` and then by
