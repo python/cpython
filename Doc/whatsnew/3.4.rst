@@ -693,6 +693,13 @@ Added :func:`re.fullmatch` function and :meth:`regex.fullmatch` method,
 which anchor the pattern at both ends of the string to match.
 (Contributed by Matthew Barnett in :issue:`16203`.)
 
+The repr of :ref:`regex objects <re-objects>` now includes the pattern
+and the flags; the repr of :ref:`match objects <match-objects>` now
+includes the start, end, and the part of the string that matched.
+
+(Contributed by Serhiy Storchaka in :issue:`13592` and :issue:`17087`.)
+
+
 resource
 --------
 
