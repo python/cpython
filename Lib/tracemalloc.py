@@ -380,10 +380,6 @@ class Snapshot:
         if cumulative and key_type not in ('lineno', 'filename'):
             raise ValueError("cumulative mode cannot by used "
                              "with key type %r" % key_type)
-        if cumulative and self.traceback_limit < 2:
-            raise ValueError("cumulative mode needs tracebacks with at least "
-                             "2 frames, traceback limit is %s"
-                             % self.traceback_limit)
 
         stats = {}
         tracebacks = {}
