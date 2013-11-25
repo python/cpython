@@ -1018,7 +1018,7 @@ tracemalloc_pyobject_decref_cb(_Py_hashtable_entry_t *entry, void *user_data)
 }
 
 PyDoc_STRVAR(tracemalloc_get_traces_doc,
-    "get_traces() -> list\n"
+    "_get_traces() -> list\n"
     "\n"
     "Get traces of all memory blocks allocated by Python.\n"
     "Return a list of (size: int, traceback: tuple) tuples.\n"
@@ -1083,7 +1083,7 @@ finally:
 }
 
 PyDoc_STRVAR(tracemalloc_get_object_traceback_doc,
-    "get_object_traceback(obj)\n"
+    "_get_object_traceback(obj)\n"
     "\n"
     "Get the traceback where the Python object obj was allocated.\n"
     "Return a tuple of (filename: str, lineno: int) tuples.\n"
