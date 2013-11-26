@@ -58,6 +58,16 @@ BACKSLASH = {
     'b': '\b', 'f': '\f', 'n': '\n', 'r': '\r', 't': '\t',
 }
 
+def _decode_uXXXX(s, pos):
+    esc = s[pos + 1:pos + 5]
+    if len(esc) == 4 and esc[1] not in 'xX':
+        try:
+            return int(esc, 16)
+        except ValueError:
+            pass
+    msg = "Invalid \\uXXXX escape"
+    raise ValueError(errmsg(msg, s, pos))
+
 def py_scanstring(s, end, strict=True,
         _b=BACKSLASH, _m=STRINGCHUNK.match):
     """Scan the string s for a JSON string. End is the index of the
@@ -107,25 +117,14 @@ def py_scanstring(s, end, strict=True,
                 raise ValueError(errmsg(msg, s, end))
             end += 1
         else:
-            esc = s[end + 1:end + 5]
-            next_end = end + 5
-            if len(esc) != 4:
-                msg = "Invalid \\uXXXX escape"
-                raise ValueError(errmsg(msg, s, end))
-            uni = int(esc, 16)
-            if 0xd800 <= uni <= 0xdbff:
-                msg = "Invalid \\uXXXX\\uXXXX surrogate pair"
-                if not s[end + 5:end + 7] == '\\u':
-                    raise ValueError(errmsg(msg, s, end))
-                esc2 = s[end + 7:end + 11]
-                if len(esc2) != 4:
-                    raise ValueError(errmsg(msg, s, end))
-                uni2 = int(esc2, 16)
-                uni = 0x10000 + (((uni - 0xd800) << 10) | (uni2 - 0xdc00))
-                next_end += 6
+            uni = _decode_uXXXX(s, end)
+            end += 5
+            if 0xd800 <= uni <= 0xdbff and s[end:end + 2] == '\\u':
+                uni2 = _decode_uXXXX(s, end + 1)
+                if 0xdc00 <= uni2 <= 0xdfff:
+                    uni = 0x10000 + (((uni - 0xd800) << 10) | (uni2 - 0xdc00))
+                    end += 6
             char = chr(uni)
-
-            end = next_end
         _append(char)
     return ''.join(chunks), end
 

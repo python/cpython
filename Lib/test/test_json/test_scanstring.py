@@ -6,10 +6,6 @@ class TestScanstring:
     def test_scanstring(self):
         scanstring = self.json.decoder.scanstring
         self.assertEqual(
-            scanstring('"z\\ud834\\udd20x"', 1, True),
-            ('z\U0001d120x', 16))
-
-        self.assertEqual(
             scanstring('"z\U0001d120x"', 1, True),
             ('z\U0001d120x', 5))
 
@@ -88,6 +84,53 @@ class TestScanstring:
         self.assertEqual(
             scanstring('["Bad value", truth]', 2, True),
             ('Bad value', 12))
+
+    def test_surrogates(self):
+        scanstring = self.json.decoder.scanstring
+        def assertScan(given, expect):
+            self.assertEqual(scanstring(given, 1, True),
+                             (expect, len(given)))
+
+        assertScan('"z\\ud834\\u0079x"', 'z\ud834yx')
+        assertScan('"z\\ud834\\udd20x"', 'z\U0001d120x')
+        assertScan('"z\\ud834\\ud834\\udd20x"', 'z\ud834\U0001d120x')
+        assertScan('"z\\ud834x"', 'z\ud834x')
+        assertScan('"z\\ud834\udd20x12345"', 'z\ud834\udd20x12345')
+        assertScan('"z\\udd20x"', 'z\udd20x')
+        assertScan('"z\ud834\udd20x"', 'z\ud834\udd20x')
+        assertScan('"z\ud834\\udd20x"', 'z\ud834\udd20x')
+        assertScan('"z\ud834x"', 'z\ud834x')
+
+    def test_bad_escapes(self):
+        scanstring = self.json.decoder.scanstring
+        bad_escapes = [
+            '"\\"',
+            '"\\x"',
+            '"\\u"',
+            '"\\u0"',
+            '"\\u01"',
+            '"\\u012"',
+            '"\\uz012"',
+            '"\\u0z12"',
+            '"\\u01z2"',
+            '"\\u012z"',
+            '"\\u0x12"',
+            '"\\u0X12"',
+            '"\\ud834\\"',
+            '"\\ud834\\u"',
+            '"\\ud834\\ud"',
+            '"\\ud834\\udd"',
+            '"\\ud834\\udd2"',
+            '"\\ud834\\uzdd2"',
+            '"\\ud834\\udzd2"',
+            '"\\ud834\\uddz2"',
+            '"\\ud834\\udd2z"',
+            '"\\ud834\\u0x20"',
+            '"\\ud834\\u0X20"',
+        ]
+        for s in bad_escapes:
+            with self.assertRaises(ValueError, msg=s):
+                scanstring(s, 1, True)
 
     def test_overflow(self):
         with self.assertRaises(OverflowError):
