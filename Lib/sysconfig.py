@@ -585,7 +585,7 @@ def get_config_var(name):
     """
     if name == 'SO':
         import warnings
-        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning)
+        warnings.warn('SO is deprecated, use EXT_SUFFIX', DeprecationWarning, 2)
     return get_config_vars().get(name)
 
 
