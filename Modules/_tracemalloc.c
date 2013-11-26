@@ -1264,7 +1264,7 @@ tracemalloc_get_tracemalloc_memory(PyObject *self)
 }
 
 PyDoc_STRVAR(tracemalloc_get_traced_memory_doc,
-    "get_traced_memory() -> int\n"
+    "get_traced_memory() -> (int, int)\n"
     "\n"
     "Get the current size and maximum size of memory blocks traced\n"
     "by the tracemalloc module as a tuple: (size: int, max_size: int).");
