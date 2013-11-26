@@ -452,7 +452,6 @@ functions.
    the system default of io.DEFAULT_BUFFER_SIZE will be used.
 
    .. versionchanged:: 3.3.1
-
       *bufsize* now defaults to -1 to enable buffering by default to match the
       behavior that most code expects.  In versions prior to Python 3.2.4 and
       3.3.1 it incorrectly defaulted to :const:`0` which was unbuffered
