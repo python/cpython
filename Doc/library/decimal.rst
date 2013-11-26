@@ -1183,52 +1183,52 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: is_canonical(x)
 
-      Returns True if *x* is canonical; otherwise returns False.
+      Returns ``True`` if *x* is canonical; otherwise returns ``False``.
 
 
    .. method:: is_finite(x)
 
-      Returns True if *x* is finite; otherwise returns False.
+      Returns ``True`` if *x* is finite; otherwise returns ``False``.
 
 
    .. method:: is_infinite(x)
 
-      Returns True if *x* is infinite; otherwise returns False.
+      Returns ``True`` if *x* is infinite; otherwise returns ``False``.
 
 
    .. method:: is_nan(x)
 
-      Returns True if *x* is a qNaN or sNaN; otherwise returns False.
+      Returns ``True`` if *x* is a qNaN or sNaN; otherwise returns ``False``.
 
 
    .. method:: is_normal(x)
 
-      Returns True if *x* is a normal number; otherwise returns False.
+      Returns ``True`` if *x* is a normal number; otherwise returns ``False``.
 
 
    .. method:: is_qnan(x)
 
-      Returns True if *x* is a quiet NaN; otherwise returns False.
+      Returns ``True`` if *x* is a quiet NaN; otherwise returns ``False``.
 
 
    .. method:: is_signed(x)
 
-      Returns True if *x* is negative; otherwise returns False.
+      Returns ``True`` if *x* is negative; otherwise returns ``False``.
 
 
    .. method:: is_snan(x)
 
-      Returns True if *x* is a signaling NaN; otherwise returns False.
+      Returns ``True`` if *x* is a signaling NaN; otherwise returns ``False``.
 
 
    .. method:: is_subnormal(x)
 
-      Returns True if *x* is subnormal; otherwise returns False.
+      Returns ``True`` if *x* is subnormal; otherwise returns ``False``.
 
 
    .. method:: is_zero(x)
 
-      Returns True if *x* is a zero; otherwise returns False.
+      Returns ``True`` if *x* is a zero; otherwise returns ``False``.
 
 
    .. method:: ln(x)
@@ -1390,7 +1390,7 @@ In addition to the three supplied contexts, new contexts can be created with the
 
    .. method:: same_quantum(x, y)
 
-      Returns True if the two operands have the same exponent.
+      Returns ``True`` if the two operands have the same exponent.
 
 
    .. method:: scaleb (x, y)
@@ -1452,9 +1452,9 @@ are also included in the pure Python version for compatibility.
 
 .. data:: HAVE_THREADS
 
-   The default value is True. If Python is compiled without threads, the
+   The default value is ``True``. If Python is compiled without threads, the
    C version automatically disables the expensive thread local context
-   machinery. In this case, the value is False.
+   machinery. In this case, the value is ``False``.
 
 Rounding modes
 --------------
