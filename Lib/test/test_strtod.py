@@ -248,15 +248,15 @@ class StrtodTests(unittest.TestCase):
                     else:
                         assert False, "expected ValueError"
 
-    @test.support.bigmemtest(size=5 * test.support._1G, memuse=1, dry_run=False)
+    @test.support.bigmemtest(size=test.support._2G+10, memuse=3, dry_run=False)
     def test_oversized_digit_strings(self, maxsize):
         # Input string whose length doesn't fit in an INT.
-        s = "1." + "1" * int(2.2e9)
+        s = "1." + "1" * maxsize
         with self.assertRaises(ValueError):
             float(s)
         del s
 
-        s = "0." + "0" * int(2.2e9) + "1"
+        s = "0." + "0" * maxsize + "1"
         with self.assertRaises(ValueError):
             float(s)
         del s
