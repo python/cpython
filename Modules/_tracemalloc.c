@@ -284,7 +284,7 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
     code = pyframe->f_code;
     if (code == NULL) {
 #ifdef TRACE_DEBUG
-        tracemalloc_error("failed to get the code object of the a frame");
+        tracemalloc_error("failed to get the code object of the frame");
 #endif
         return;
     }
