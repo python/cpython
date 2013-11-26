@@ -5,10 +5,6 @@ from json.tests import PyTest, CTest
 class TestScanstring(object):
     def test_scanstring(self):
         scanstring = self.json.decoder.scanstring
-        self.assertEqual(
-            scanstring('"z\\ud834\\udd20x"', 1, None, True),
-            (u'z\U0001d120x', 16))
-
         if sys.maxunicode == 65535:
             self.assertEqual(
                 scanstring(u'"z\U0001d120x"', 1, None, True),
@@ -93,6 +89,57 @@ class TestScanstring(object):
         self.assertEqual(
             scanstring('["Bad value", truth]', 2, None, True),
             (u'Bad value', 12))
+
+    def test_surrogates(self):
+        scanstring = self.json.decoder.scanstring
+        def assertScan(given, expect):
+            self.assertEqual(scanstring(given, 1, None, True),
+                             (expect, len(given)))
+            if not isinstance(given, unicode):
+                given = unicode(given)
+                self.assertEqual(scanstring(given, 1, None, True),
+                                 (expect, len(given)))
+
+        assertScan('"z\\ud834\\u0079x"', u'z\ud834yx')
+        assertScan('"z\\ud834\\udd20x"', u'z\U0001d120x')
+        assertScan('"z\\ud834\\ud834\\udd20x"', u'z\ud834\U0001d120x')
+        assertScan('"z\\ud834x"', u'z\ud834x')
+        assertScan(u'"z\\ud834\udd20x12345"', u'z\ud834\udd20x12345')
+        assertScan('"z\\udd20x"', u'z\udd20x')
+        assertScan(u'"z\ud834\udd20x"', u'z\ud834\udd20x')
+        assertScan(u'"z\ud834\\udd20x"', u'z\ud834\udd20x')
+        assertScan(u'"z\ud834x"', u'z\ud834x')
+
+    def test_bad_escapes(self):
+        scanstring = self.json.decoder.scanstring
+        bad_escapes = [
+            '"\\"',
+            '"\\x"',
+            '"\\u"',
+            '"\\u0"',
+            '"\\u01"',
+            '"\\u012"',
+            '"\\uz012"',
+            '"\\u0z12"',
+            '"\\u01z2"',
+            '"\\u012z"',
+            '"\\u0x12"',
+            '"\\u0X12"',
+            '"\\ud834\\"',
+            '"\\ud834\\u"',
+            '"\\ud834\\ud"',
+            '"\\ud834\\udd"',
+            '"\\ud834\\udd2"',
+            '"\\ud834\\uzdd2"',
+            '"\\ud834\\udzd2"',
+            '"\\ud834\\uddz2"',
+            '"\\ud834\\udd2z"',
+            '"\\ud834\\u0x20"',
+            '"\\ud834\\u0X20"',
+        ]
+        for s in bad_escapes:
+            with self.assertRaises(ValueError):
+                scanstring(s, 1, None, True)
 
     def test_issue3623(self):
         self.assertRaises(ValueError, self.json.decoder.scanstring, b"xxx", 1,
