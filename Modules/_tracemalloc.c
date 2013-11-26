@@ -93,8 +93,12 @@ typedef struct {
 static PyObject *unknown_filename = NULL;
 static traceback_t tracemalloc_empty_traceback;
 
+/* Trace of a memory block */
 typedef struct {
+    /* Size of the memory block in bytes */
     size_t size;
+
+    /* Traceback where the memory block was allocated */
     traceback_t *traceback;
 } trace_t;
 
