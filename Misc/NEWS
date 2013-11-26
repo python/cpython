@@ -65,6 +65,9 @@ Library
 Tests
 -----
 
+- Issue #19588: Fixed tests in test_random that were silently skipped most
+  of the time.  Patch by Julian Gindi.
+
 - Issue #19596: Set untestable tests in test_importlib to None to avoid
   reporting success on empty tests.
 
