@@ -10,6 +10,9 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
+  billion characters) input strings in _Py_dg_strtod.
+
 Library
 -------
 
