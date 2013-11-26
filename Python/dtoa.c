@@ -204,7 +204,24 @@ typedef union { double d; ULong L[2]; } U;
    MAX_ABS_EXP in absolute value get truncated to +-MAX_ABS_EXP.  MAX_ABS_EXP
    should fit into an int. */
 #ifndef MAX_ABS_EXP
-#define MAX_ABS_EXP 19999U
+#define MAX_ABS_EXP 1100000000U
+#endif
+/* Bound on length of pieces of input strings in _Py_dg_strtod; specifically,
+   this is used to bound the total number of digits ignoring leading zeros and
+   the number of digits that follow the decimal point.  Ideally, MAX_DIGITS
+   should satisfy MAX_DIGITS + 400 < MAX_ABS_EXP; that ensures that the
+   exponent clipping in _Py_dg_strtod can't affect the value of the output. */
+#ifndef MAX_DIGITS
+#define MAX_DIGITS 1000000000U
+#endif
+
+/* Guard against trying to use the above values on unusual platforms with ints
+ * of width less than 32 bits. */
+#if MAX_ABS_EXP > INT_MAX
+#error "MAX_ABS_EXP should fit in an int"
+#endif
+#if MAX_DIGITS > INT_MAX
+#error "MAX_DIGITS should fit in an int"
 #endif
 
 /* The following definition of Storeinc is appropriate for MIPS processors.
@@ -1538,6 +1555,7 @@ _Py_dg_strtod(const char *s00, char **se)
     Long L;
     BCinfo bc;
     Bigint *bb, *bb1, *bd, *bd0, *bs, *delta;
+    size_t ndigits, fraclen;
 
     dval(&rv) = 0.;
 
@@ -1560,39 +1578,52 @@ _Py_dg_strtod(const char *s00, char **se)
         c = *++s;
     lz = s != s1;
 
-    /* Point s0 at the first nonzero digit (if any).  nd0 will be the position
-       of the point relative to s0.  nd will be the total number of digits
-       ignoring leading zeros. */
+    /* Point s0 at the first nonzero digit (if any).  fraclen will be the
+       number of digits between the decimal point and the end of the
+       digit string.  ndigits will be the total number of digits ignoring
+       leading zeros. */
     s0 = s1 = s;
     while ('0' <= c && c <= '9')
         c = *++s;
-    nd0 = nd = s - s1;
+    ndigits = s - s1;
+    fraclen = 0;
 
     /* Parse decimal point and following digits. */
     if (c == '.') {
         c = *++s;
-        if (!nd) {
+        if (!ndigits) {
             s1 = s;
             while (c == '0')
                 c = *++s;
             lz = lz || s != s1;
-            nd0 -= s - s1;
+            fraclen += (s - s1);
             s0 = s;
         }
         s1 = s;
         while ('0' <= c && c <= '9')
             c = *++s;
-        nd += s - s1;
+        ndigits += s - s1;
+        fraclen += s - s1;
     }
 
-    /* Now lz is true if and only if there were leading zero digits, and nd
-       gives the total number of digits ignoring leading zeros.  A valid input
-       must have at least one digit. */
-    if (!nd && !lz) {
+    /* Now lz is true if and only if there were leading zero digits, and
+       ndigits gives the total number of digits ignoring leading zeros.  A
+       valid input must have at least one digit. */
+    if (!ndigits && !lz) {
         if (se)
             *se = (char *)s00;
         goto parse_error;
     }
+
+    /* Range check ndigits and fraclen to make sure that they, and values
+       computed with them, can safely fit in an int. */
+    if (ndigits > MAX_DIGITS || fraclen > MAX_DIGITS) {
+        if (se)
+            *se = (char *)s00;
+        goto parse_error;
+    }
+    nd = (int)ndigits;
+    nd0 = (int)ndigits - (int)fraclen;
 
     /* Parse exponent. */
     e = 0;
