@@ -39,7 +39,7 @@ class Statistic:
         self.count = count
 
     def __hash__(self):
-        return (self.traceback, self.size, self.count)
+        return hash((self.traceback, self.size, self.count))
 
     def __eq__(self, other):
         return (self.traceback == other.traceback
@@ -79,8 +79,8 @@ class StatisticDiff:
         self.count_diff = count_diff
 
     def __hash__(self):
-        return (self.traceback, self.size, self.size_diff,
-                self.count, self.count_diff)
+        return hash((self.traceback, self.size, self.size_diff,
+                     self.count, self.count_diff))
 
     def __eq__(self, other):
         return (self.traceback == other.traceback
@@ -104,7 +104,6 @@ class StatisticDiff:
     def __repr__(self):
         return ('<StatisticDiff traceback=%r size=%i (%+i) count=%i (%+i)>'
                 % (self.traceback, self.size, self.size_diff,
-
                    self.count, self.count_diff))
 
     def _sort_key(self):
