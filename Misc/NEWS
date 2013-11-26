@@ -21,6 +21,12 @@ Library
 - Issue #19545: Avoid chained exceptions while passing stray % to
   time.strptime().  Initial patch by Claudiu Popa.
 
+Tests
+-----
+
+- Issue #19588: Fixed tests in test_random that were silently skipped most
+  of the time.  Patch by Julian Gindi.
+
 
 What's New in Python 3.4.0 Beta 1?
 ==================================
