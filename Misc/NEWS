@@ -92,6 +92,10 @@ Documentation
 Build
 -----
 
+- Issue #19788: kill_python(_d).exe is now run as a PreBuildEvent on the
+  pythoncore sub-project.  This should prevent build errors due a previous
+  build's python(_d).exe still running.
+
 - Add workaround for VS 2010 nmake clean issue. VS 2010 doesn't set up PATH
   for nmake.exe correctly.
 
