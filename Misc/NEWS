@@ -50,6 +50,9 @@ Library
 Tests
 -----
 
+- Issue #19588: Fixed tests in test_random that were silently skipped most
+  of the time.  Patch by Julian Gindi.
+
 - Issue #17883: Tweak test_tcl testLoadWithUNC to skip the test in the
   event of a permission error on Windows and to properly report other
   skip conditions.
