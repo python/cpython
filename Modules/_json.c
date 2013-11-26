@@ -433,17 +433,10 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                 }
             }
             /* Surrogate pair */
-            if ((c & 0xfc00) == 0xd800) {
+            if (Py_UNICODE_IS_HIGH_SURROGATE(c) && end + 6 < len &&
+                PyUnicode_READ(kind, buf, next++) == '\\' &&
+                PyUnicode_READ(kind, buf, next++) == 'u') {
                 Py_UCS4 c2 = 0;
-                if (end + 6 >= len) {
-                    raise_errmsg("Unpaired high surrogate", pystr, end - 5);
-                    goto bail;
-                }
-                if (PyUnicode_READ(kind, buf, next++) != '\\' ||
-                    PyUnicode_READ(kind, buf, next++) != 'u') {
-                    raise_errmsg("Unpaired high surrogate", pystr, end - 5);
-                    goto bail;
-                }
                 end += 6;
                 /* Decode 4 hex digits */
                 for (; next < end; next++) {
@@ -464,15 +457,10 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                             goto bail;
                     }
                 }
-                if ((c2 & 0xfc00) != 0xdc00) {
-                    raise_errmsg("Unpaired high surrogate", pystr, end - 5);
-                    goto bail;
-                }
-                c = 0x10000 + (((c - 0xd800) << 10) | (c2 - 0xdc00));
-            }
-            else if ((c & 0xfc00) == 0xdc00) {
-                raise_errmsg("Unpaired low surrogate", pystr, end - 5);
-                goto bail;
+                if (Py_UNICODE_IS_LOW_SURROGATE(c2))
+                    c = Py_UNICODE_JOIN_SURROGATES(c, c2);
+                else
+                    end -= 6;
             }
         }
         APPEND_OLD_CHUNK
