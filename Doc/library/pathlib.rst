@@ -439,9 +439,9 @@ Pure paths provide the following methods and properties:
 
 .. method:: PurePath.is_reserved()
 
-   With :class:`PureWindowsPath`, return True if the path is considered
-   reserved under Windows, False otherwise.  With :class:`PurePosixPath`,
-   False is always returned.
+   With :class:`PureWindowsPath`, return ``True`` if the path is considered
+   reserved under Windows, ``False`` otherwise.  With :class:`PurePosixPath`,
+   ``False`` is always returned.
 
       >>> PureWindowsPath('nul').is_reserved()
       True
@@ -469,8 +469,8 @@ Pure paths provide the following methods and properties:
 
 .. method:: PurePath.match(pattern)
 
-   Match this path against the provided glob-style pattern.  Return True
-   if matching is successful, False otherwise.
+   Match this path against the provided glob-style pattern.  Return ``True``
+   if matching is successful, ``False`` otherwise.
 
    If *pattern* is relative, the path can be either relative or absolute,
    and matching is done from the right::
@@ -661,63 +661,63 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.is_dir()
 
-   Return True if the path points to a directory (or a symbolic link
-   pointing to a directory), False if it points to another kind of file.
+   Return ``True`` if the path points to a directory (or a symbolic link
+   pointing to a directory), ``False`` if it points to another kind of file.
 
-   False is also returned if the path doesn't exist or is a broken symlink;
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
 
 .. method:: Path.is_file()
 
-   Return True if the path points to a regular file (or a symbolic link
-   pointing to a regular file), False if it points to another kind of file.
+   Return ``True`` if the path points to a regular file (or a symbolic link
+   pointing to a regular file), ``False`` if it points to another kind of file.
 
-   False is also returned if the path doesn't exist or is a broken symlink;
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
 
 .. method:: Path.is_symlink()
 
-   Return True if the path points to a symbolic link, False otherwise.
+   Return ``True`` if the path points to a symbolic link, ``False`` otherwise.
 
-   False is also returned if the path doesn't exist; other errors (such
+   ``False`` is also returned if the path doesn't exist; other errors (such
    as permission errors) are propagated.
 
 
 .. method:: Path.is_socket()
 
-   Return True if the path points to a Unix socket (or a symbolic link
-   pointing to a Unix socket), False if it points to another kind of file.
+   Return ``True`` if the path points to a Unix socket (or a symbolic link
+   pointing to a Unix socket), ``False`` if it points to another kind of file.
 
-   False is also returned if the path doesn't exist or is a broken symlink;
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
 
 .. method:: Path.is_fifo()
 
-   Return True if the path points to a FIFO (or a symbolic link
-   pointing to a FIFO), False if it points to another kind of file.
+   Return ``True`` if the path points to a FIFO (or a symbolic link
+   pointing to a FIFO), ``False`` if it points to another kind of file.
 
-   False is also returned if the path doesn't exist or is a broken symlink;
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
 
 .. method:: Path.is_block_device()
 
-   Return True if the path points to a block device (or a symbolic link
-   pointing to a block device), False if it points to another kind of file.
+   Return ``True`` if the path points to a block device (or a symbolic link
+   pointing to a block device), ``False`` if it points to another kind of file.
 
-   False is also returned if the path doesn't exist or is a broken symlink;
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
 
 .. method:: Path.is_char_device()
 
-   Return True if the path points to a character device (or a symbolic link
-   pointing to a character device), False if it points to another kind of file.
+   Return ``True`` if the path points to a character device (or a symbolic link
+   pointing to a character device), ``False`` if it points to another kind of file.
 
-   False is also returned if the path doesn't exist or is a broken symlink;
+   ``False`` is also returned if the path doesn't exist or is a broken symlink;
    other errors (such as permission errors) are propagated.
 
 
@@ -755,8 +755,8 @@ call fails (for example because the path doesn't exist):
    combined with the process' ``umask`` value to determine the file mode
    and access flags.  If the path already exists, :exc:`OSError` is raised.
 
-   If *parents* is True, any missing parents of this path are created
-   as needed.  If *parents* is False (the default), a missing parent raises
+   If *parents* is true, any missing parents of this path are created
+   as needed.  If *parents* is false (the default), a missing parent raises
    :exc:`OSError`.
 
 
@@ -841,7 +841,7 @@ call fails (for example because the path doesn't exist):
 .. method:: Path.symlink_to(target, target_is_directory=False)
 
    Make this path a symbolic link to *target*.  Under Windows,
-   *target_is_directory* must be True (default False) if the link's target
+   *target_is_directory* must be true (default ``False``) if the link's target
    is a directory.  Under POSIX, *target_is_directory*'s value is ignored.
 
       >>> p = Path('mylink')
