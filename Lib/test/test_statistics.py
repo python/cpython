@@ -271,9 +271,9 @@ class ApproxEqualSymmetryTest(unittest.TestCase):
         # Test that approx_equal(a, b) == approx_equal(b, a)
         args = [-23, -2, 5, 107, 93568]
         delta = 2
-        for x in args:
+        for a in args:
             for type_ in (int, float, Decimal, Fraction):
-                x = type_(x)*100
+                x = type_(a)*100
                 y = x + delta
                 r = abs(delta/max(x, y))
                 # There are five cases to check:
