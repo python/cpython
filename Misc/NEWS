@@ -30,6 +30,12 @@ Tests
 - Issue #19588: Fixed tests in test_random that were silently skipped most
   of the time.  Patch by Julian Gindi.
 
+Build
+-----
+
+- Issue #19788: kill_python(_d).exe is now run as a PreBuildEvent on the
+  pythoncore sub-project.  This should prevent build errors due a previous
+  build's python(_d).exe still running.
 
 What's New in Python 3.4.0 Beta 1?
 ==================================
