@@ -168,6 +168,7 @@ get_reentrant(void)
 static void
 set_reentrant(int reentrant)
 {
+    assert(reentrant == 0 || reentrant == 1);
     if (reentrant) {
         assert(PyThread_get_key_value(tracemalloc_reentrant_key) == NULL);
         PyThread_set_key_value(tracemalloc_reentrant_key,
