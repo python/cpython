@@ -327,8 +327,16 @@ def _find_mac(command, args, hw_identifiers, get_index):
                     words = line.lower().split()
                     for i in range(len(words)):
                         if words[i] in hw_identifiers:
-                            return int(
-                                words[get_index(i)].replace(':', ''), 16)
+                            try:
+                                return int(
+                                    words[get_index(i)].replace(':', ''), 16)
+                            except (ValueError, IndexError):
+                                # Virtual interfaces, such as those provided by
+                                # VPNs, do not have a colon-delimited MAC address
+                                # as expected, but a 16-byte HWAddr separated by
+                                # dashes. These should be ignored in favor of a
+                                # real MAC address
+                                pass
         except IOError:
             continue
     return None
