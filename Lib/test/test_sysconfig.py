@@ -5,7 +5,7 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (run_unittest, TESTFN, unlink,
+from test.support import (run_unittest, TESTFN, unlink, check_warnings,
                           captured_stdout, skip_unless_symlink)
 
 import sysconfig
@@ -378,8 +378,9 @@ class TestSysConfig(unittest.TestCase):
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
     def test_SO_value(self):
-        self.assertEqual(sysconfig.get_config_var('SO'),
-                         sysconfig.get_config_var('EXT_SUFFIX'))
+        with check_warnings(('', DeprecationWarning)):
+            self.assertEqual(sysconfig.get_config_var('SO'),
+                             sysconfig.get_config_var('EXT_SUFFIX'))
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')

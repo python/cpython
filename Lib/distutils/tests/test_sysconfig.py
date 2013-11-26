@@ -6,7 +6,7 @@ import unittest
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
 from distutils.tests import support
-from test.support import TESTFN, run_unittest
+from test.support import TESTFN, run_unittest, check_warnings
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     def setUp(self):
@@ -166,8 +166,9 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
     def test_SO_value(self):
-        self.assertEqual(sysconfig.get_config_var('SO'),
-                         sysconfig.get_config_var('EXT_SUFFIX'))
+        with check_warnings(('', DeprecationWarning)):
+            self.assertEqual(sysconfig.get_config_var('SO'),
+                             sysconfig.get_config_var('EXT_SUFFIX'))
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
