@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
+  virtual interface.  Original patch by Kent Frazier.
+
 - Issue #11489: JSON decoder now accepts lone surrogates.
 
 - Issue #19545: Avoid chained exceptions while passing stray % to
