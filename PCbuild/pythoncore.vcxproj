@@ -181,6 +181,12 @@
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -206,6 +212,12 @@
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -231,6 +243,12 @@
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -259,6 +277,12 @@
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|Win32'">
     <ClCompile>
@@ -282,6 +306,12 @@
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGInstrument|x64'">
     <Midl>
@@ -308,6 +338,12 @@
       <BaseAddress>0x1e000000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|Win32'">
     <ClCompile>
@@ -331,6 +367,12 @@
       <IgnoreSpecificDefaultLibraries>libc;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <BaseAddress>0x1e000000</BaseAddress>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='PGUpdate|x64'">
     <Midl>
@@ -357,6 +399,12 @@
       <BaseAddress>0x1e000000</BaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PreBuildEvent>
+      <Command>$(KillPythonExe)</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Killing any running $(PythonExe) instances...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Include\abstract.h" />
