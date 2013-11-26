@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #11489: JSON decoder now accepts lone surrogates.
+
 - Issue #19545: Avoid chained exceptions while passing stray % to
   time.strptime().  Initial patch by Claudiu Popa.
 
