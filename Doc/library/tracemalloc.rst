@@ -276,8 +276,8 @@ Functions
 
 .. function:: get_traced_memory()
 
-   Get the current size and maximum size of memory blocks traced by the
-   :mod:`tracemalloc` module as a tuple: ``(size: int, max_size: int)``.
+   Get the current size and peak size of memory blocks traced by the
+   :mod:`tracemalloc` module as a tuple: ``(current: int, peak: int)``.
 
 
 .. function:: get_tracemalloc_memory()
