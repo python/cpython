@@ -27,11 +27,6 @@ static struct {
     PyMemAllocator obj;
 } allocators;
 
-/* Arbitrary limit of the number of frames in a traceback. The value was chosen
-   to not allocate too much memory on the stack (see TRACEBACK_STACK_SIZE
-   below). */
-#define MAX_NFRAME 100
-
 static struct {
     /* Module initialized?
        Variable protected by the GIL */
@@ -88,7 +83,9 @@ typedef struct {
 
 #define TRACEBACK_SIZE(NFRAME) \
         (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
-#define TRACEBACK_STACK_SIZE TRACEBACK_SIZE(MAX_NFRAME)
+
+#define MAX_NFRAME \
+        ((INT_MAX - sizeof(traceback_t)) / sizeof(frame_t) + 1)
 
 static PyObject *unknown_filename = NULL;
 static traceback_t tracemalloc_empty_traceback;
@@ -114,6 +111,10 @@ static size_t tracemalloc_peak_traced_memory = 0;
    PyObject* => PyObject*.
    Protected by the GIL */
 static _Py_hashtable_t *tracemalloc_filenames = NULL;
+
+/* Buffer to store a new traceback in traceback_new().
+   Protected by the GIL. */
+static traceback_t *tracemalloc_traceback = NULL;
 
 /* Hash table used as a set to intern tracebacks:
    traceback_t* => traceback_t*
@@ -394,8 +395,7 @@ traceback_get_frames(traceback_t *traceback)
 static traceback_t *
 traceback_new(void)
 {
-    char stack_buffer[TRACEBACK_STACK_SIZE];
-    traceback_t *traceback = (traceback_t *)stack_buffer;
+    traceback_t *traceback;
     _Py_hashtable_entry_t *entry;
 
 #ifdef WITH_THREAD
@@ -403,6 +403,7 @@ traceback_new(void)
 #endif
 
     /* get frames */
+    traceback = tracemalloc_traceback;
     traceback->nframe = 0;
     traceback_get_frames(traceback);
     if (traceback->nframe == 0)
@@ -788,9 +789,10 @@ tracemalloc_deinit(void)
 }
 
 static int
-tracemalloc_start(void)
+tracemalloc_start(int max_nframe)
 {
     PyMemAllocator alloc;
+    size_t size;
 
     if (tracemalloc_init() < 0)
         return -1;
@@ -802,6 +804,18 @@ tracemalloc_start(void)
 
     if (tracemalloc_atexit_register() < 0)
         return -1;
+
+    assert(1 <= max_nframe && max_nframe <= MAX_NFRAME);
+    tracemalloc_config.max_nframe = max_nframe;
+
+    /* allocate a buffer to store a new traceback */
+    size = TRACEBACK_SIZE(max_nframe);
+    assert(tracemalloc_traceback == NULL);
+    tracemalloc_traceback = raw_malloc(size);
+    if (tracemalloc_traceback == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
 
 #ifdef TRACE_RAW_MALLOC
     alloc.malloc = tracemalloc_raw_malloc;
@@ -854,8 +868,9 @@ tracemalloc_stop(void)
 
     /* release memory */
     tracemalloc_clear_traces();
+    raw_free(tracemalloc_traceback);
+    tracemalloc_traceback = NULL;
 }
-
 
 static PyObject*
 lineno_as_obj(int lineno)
@@ -1194,6 +1209,7 @@ static PyObject*
 py_tracemalloc_start(PyObject *self, PyObject *args)
 {
     Py_ssize_t nframe = 1;
+    int nframe_int;
 
     if (!PyArg_ParseTuple(args, "|n:start", &nframe))
         return NULL;
@@ -1201,12 +1217,12 @@ py_tracemalloc_start(PyObject *self, PyObject *args)
     if (nframe < 1 || nframe > MAX_NFRAME) {
         PyErr_Format(PyExc_ValueError,
                      "the number of frames must be in range [1; %i]",
-                     MAX_NFRAME);
+                     (int)MAX_NFRAME);
         return NULL;
     }
-    tracemalloc_config.max_nframe = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
+    nframe_int = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
 
-    if (tracemalloc_start() < 0)
+    if (tracemalloc_start(nframe_int) < 0)
         return NULL;
 
     Py_RETURN_NONE;
@@ -1378,16 +1394,15 @@ _PyTraceMalloc_Init(void)
 
     if ((p = Py_GETENV("PYTHONTRACEMALLOC")) && *p != '\0') {
         char *endptr = p;
-        unsigned long value;
+        long value;
 
-        value = strtoul(p, &endptr, 10);
+        value = strtol(p, &endptr, 10);
         if (*endptr != '\0'
             || value < 1
             || value > MAX_NFRAME
             || (errno == ERANGE && value == ULONG_MAX))
         {
-            Py_FatalError("PYTHONTRACEMALLOC must be an integer "
-                          "in range [1; " STR(MAX_NFRAME) "]");
+            Py_FatalError("PYTHONTRACEMALLOC: invalid number of frames");
             return -1;
         }
 
@@ -1417,12 +1432,10 @@ _PyTraceMalloc_Init(void)
         nframe = parse_sys_xoptions(value);
         Py_DECREF(value);
         if (nframe < 0) {
-            Py_FatalError("-X tracemalloc=NFRAME: number of frame must be "
-                          "an integer in range [1; " STR(MAX_NFRAME) "]");
+            Py_FatalError("-X tracemalloc=NFRAME: invalid number of frames");
         }
     }
 
-    tracemalloc_config.max_nframe = nframe;
-    return tracemalloc_start();
+    return tracemalloc_start(nframe);
 }
 
