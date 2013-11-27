@@ -391,9 +391,9 @@ Filter
       If *all_frames* is ``True``, all frames of the traceback are checked. If
       *all_frames* is ``False``, only the most recent frame is checked.
 
-      This attribute is ignored if the traceback limit is less than ``2``.  See
-      the :func:`get_traceback_limit` function and
-      :attr:`Snapshot.traceback_limit` attribute.
+      This attribute has no effect if the traceback limit is ``1``.  See the
+      :func:`get_traceback_limit` function and :attr:`Snapshot.traceback_limit`
+      attribute.
 
 
 Frame
