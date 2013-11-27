@@ -747,14 +747,14 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(stdout, b'10')
 
     def test_env_var_invalid(self):
-        for nframe in (-1, 0, 5000):
+        for nframe in (-1, 0, 2**30):
             with self.subTest(nframe=nframe):
                 with support.SuppressCrashReport():
                     ok, stdout, stderr = assert_python_failure(
                         '-c', 'pass',
                         PYTHONTRACEMALLOC=str(nframe))
-                    self.assertIn(b'PYTHONTRACEMALLOC must be an integer '
-                                  b'in range [1; 100]',
+                    self.assertIn(b'PYTHONTRACEMALLOC: invalid '
+                                  b'number of frames',
                                   stderr)
 
     def test_sys_xoptions(self):
@@ -770,13 +770,13 @@ class TestCommandLine(unittest.TestCase):
                 self.assertEqual(stdout, str(nframe).encode('ascii'))
 
     def test_sys_xoptions_invalid(self):
-        for nframe in (-1, 0, 5000):
+        for nframe in (-1, 0, 2**30):
             with self.subTest(nframe=nframe):
                 with support.SuppressCrashReport():
                     args = ('-X', 'tracemalloc=%s' % nframe, '-c', 'pass')
                     ok, stdout, stderr = assert_python_failure(*args)
-                    self.assertIn(b'-X tracemalloc=NFRAME: number of frame must '
-                                  b'be an integer in range [1; 100]',
+                    self.assertIn(b'-X tracemalloc=NFRAME: invalid '
+                                  b'number of frames',
                                   stderr)
 
 
