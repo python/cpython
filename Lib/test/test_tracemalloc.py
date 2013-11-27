@@ -182,19 +182,19 @@ class TestTracemallocEnabled(unittest.TestCase):
         obj_size = 1024 * 1024
         tracemalloc.clear_traces()
         obj, obj_traceback = allocate_bytes(obj_size)
-        size, max_size = tracemalloc.get_traced_memory()
+        size, peak_size = tracemalloc.get_traced_memory()
         self.assertGreaterEqual(size, obj_size)
-        self.assertGreaterEqual(max_size, size)
+        self.assertGreaterEqual(peak_size, size)
 
         self.assertLessEqual(size - obj_size, max_error)
-        self.assertLessEqual(max_size - size, max_error)
+        self.assertLessEqual(peak_size - size, max_error)
 
         # destroy the object
         obj = None
-        size2, max_size2 = tracemalloc.get_traced_memory()
+        size2, peak_size2 = tracemalloc.get_traced_memory()
         self.assertLess(size2, size)
         self.assertGreaterEqual(size - size2, obj_size - max_error)
-        self.assertGreaterEqual(max_size2, max_size)
+        self.assertGreaterEqual(peak_size2, peak_size)
 
         # clear_traces() must reset traced memory counters
         tracemalloc.clear_traces()
@@ -202,8 +202,8 @@ class TestTracemallocEnabled(unittest.TestCase):
 
         # allocate another object
         obj, obj_traceback = allocate_bytes(obj_size)
-        size, max_size = tracemalloc.get_traced_memory()
-        self.assertGreater(size, 0)
+        size, peak_size = tracemalloc.get_traced_memory()
+        self.assertGreaterEqual(size, obj_size)
 
         # stop() also resets traced memory counters
         tracemalloc.stop()
