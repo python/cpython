@@ -1599,6 +1599,22 @@ class PolicyTests(unittest.TestCase):
         self.assertIs(loop, policy.get_event_loop())
         loop.close()
 
+    def test_get_event_loop_calls_set_event_loop(self):
+        policy = self.create_policy()
+
+        with unittest.mock.patch.object(
+                policy, "set_event_loop",
+                wraps=policy.set_event_loop) as m_set_event_loop:
+
+            loop = policy.get_event_loop()
+
+            # policy._local._loop must be set through .set_event_loop()
+            # (the unix DefaultEventLoopPolicy needs this call to attach
+            # the child watcher correctly)
+            m_set_event_loop.assert_called_with(loop)
+
+        loop.close()
+
     def test_get_event_loop_after_set_none(self):
         policy = self.create_policy()
         policy.set_event_loop(None)
