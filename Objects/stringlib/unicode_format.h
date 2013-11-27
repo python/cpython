@@ -727,8 +727,10 @@ MarkupIterator_next(MarkupIterator *self, SubString *literal,
     while (self->str.start < self->str.end) {
         switch (c = PyUnicode_READ_CHAR(self->str.str, self->str.start++)) {
         case ':':
-            hit_format_spec = 1;
-            count = 1;
+            if (!hit_format_spec) {
+                count = 1;
+                hit_format_spec = 1;
+            }
             break;
         case '{':
             /* the format spec needs to be recursively expanded.
