@@ -347,6 +347,7 @@ class TestUUID(unittest.TestCase):
 
         self.assertEqual(node1, node2)
 
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_find_mac(self):
         data = '''\
 
