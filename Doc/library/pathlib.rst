@@ -655,7 +655,7 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.group()
 
-   Return the name of the group owning the file.  :exc:`KeyError` is thrown
+   Return the name of the group owning the file.  :exc:`KeyError` is raised
    if the file's gid isn't found in the system database.
 
 
@@ -774,7 +774,7 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.owner()
 
-   Return the name of the user owning the file.  :exc:`KeyError` is thrown
+   Return the name of the user owning the file.  :exc:`KeyError` is raised
    if the file's uid isn't found in the system database.
 
 
