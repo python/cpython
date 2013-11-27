@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19802: Add socket.SO_PRIORITY.
+
 - Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
   virtual interface.  Original patch by Kent Frazier.
 

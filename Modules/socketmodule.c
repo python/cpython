@@ -6241,6 +6241,9 @@ PyInit__socket(void)
 #ifdef  SO_BINDTODEVICE
     PyModule_AddIntMacro(m, SO_BINDTODEVICE);
 #endif
+#ifdef  SO_PRIORITY
+    PyModule_AddIntMacro(m, SO_PRIORITY);
+#endif
 
     /* Maximum number of connections for "listen" */
 #ifdef  SOMAXCONN
