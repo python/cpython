@@ -955,6 +955,7 @@ class UnicodeTest(string_tests.CommonTest,
                          '')
 
         self.assertEqual("{[{}]}".format({"{}": 5}), "5")
+        self.assertEqual("0x{:0{:d}X}".format(0x0,16), "0x0000000000000000")
 
     def test_format_map(self):
         self.assertEqual(''.format_map({}), '')
