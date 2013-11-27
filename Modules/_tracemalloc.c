@@ -106,9 +106,9 @@ typedef struct {
    Protected by TABLES_LOCK(). */
 static size_t tracemalloc_traced_memory = 0;
 
-/* Maximum size in bytes of traced memory.
+/* Peak size in bytes of traced memory.
    Protected by TABLES_LOCK(). */
-static size_t tracemalloc_max_traced_memory = 0;
+static size_t tracemalloc_peak_traced_memory = 0;
 
 /* Hash table used as a set to to intern filenames:
    PyObject* => PyObject*.
@@ -464,8 +464,8 @@ tracemalloc_log_alloc(void *ptr, size_t size)
     if (res == 0) {
         assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
         tracemalloc_traced_memory += size;
-        if (tracemalloc_traced_memory > tracemalloc_max_traced_memory)
-            tracemalloc_max_traced_memory = tracemalloc_traced_memory;
+        if (tracemalloc_traced_memory > tracemalloc_peak_traced_memory)
+            tracemalloc_peak_traced_memory = tracemalloc_traced_memory;
     }
     TABLES_UNLOCK();
 
@@ -674,7 +674,7 @@ tracemalloc_clear_traces(void)
     TABLES_LOCK();
     _Py_hashtable_clear(tracemalloc_traces);
     tracemalloc_traced_memory = 0;
-    tracemalloc_max_traced_memory = 0;
+    tracemalloc_peak_traced_memory = 0;
     TABLES_UNLOCK();
 
     _Py_hashtable_foreach(tracemalloc_tracebacks, traceback_free_traceback, NULL);
@@ -1266,26 +1266,26 @@ tracemalloc_get_tracemalloc_memory(PyObject *self)
 PyDoc_STRVAR(tracemalloc_get_traced_memory_doc,
     "get_traced_memory() -> (int, int)\n"
     "\n"
-    "Get the current size and maximum size of memory blocks traced\n"
-    "by the tracemalloc module as a tuple: (size: int, max_size: int).");
+    "Get the current size and peak size of memory blocks traced\n"
+    "by the tracemalloc module as a tuple: (current: int, peak: int).");
 
 static PyObject*
 tracemalloc_get_traced_memory(PyObject *self)
 {
-    Py_ssize_t size, max_size;
-    PyObject *size_obj, *max_size_obj;
+    Py_ssize_t size, peak_size;
+    PyObject *size_obj, *peak_size_obj;
 
     if (!tracemalloc_config.tracing)
         return Py_BuildValue("ii", 0, 0);
 
     TABLES_LOCK();
     size = tracemalloc_traced_memory;
-    max_size = tracemalloc_max_traced_memory;
+    peak_size = tracemalloc_peak_traced_memory;
     TABLES_UNLOCK();
 
     size_obj = PyLong_FromSize_t(size);
-    max_size_obj = PyLong_FromSize_t(max_size);
-    return Py_BuildValue("NN", size_obj, max_size_obj);
+    peak_size_obj = PyLong_FromSize_t(peak_size);
+    return Py_BuildValue("NN", size_obj, peak_size_obj);
 }
 
 static PyMethodDef module_methods[] = {
