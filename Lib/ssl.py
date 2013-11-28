@@ -383,6 +383,8 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
     context = SSLContext(PROTOCOL_TLSv1)
     # SSLv2 considered harmful.
     context.options |= OP_NO_SSLv2
+    # disable compression to prevent CRIME attacks (OpenSSL 1.0+)
+    context.options |= getattr(_ssl, "OP_NO_COMPRESSION", 0)
     # disallow ciphers with known vulnerabilities
     context.set_ciphers(_RESTRICTED_CIPHERS)
     # verify certs in client mode

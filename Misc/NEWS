@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- ssl.create_default_context() sets OP_NO_COMPRESSION to prevent CRIME.
+
 - Issue #19802: Add socket.SO_PRIORITY.
 
 - Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
