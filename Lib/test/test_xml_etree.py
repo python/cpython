@@ -535,6 +535,11 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', None),
             ])
 
+        events = ('start-ns', 'end-ns')
+        context = iterparse(io.StringIO(r"<root xmlns=''/>"), events)
+        res = [action for action, elem in context]
+        self.assertEqual(res, ['start-ns', 'end-ns'])
+
         events = ("start", "end", "bogus")
         with self.assertRaises(ValueError) as cm:
             with open(SIMPLE_XMLFILE, "rb") as f:
