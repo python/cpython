@@ -97,7 +97,7 @@ struct py_ssl_library_code {
 # define HAVE_TLSv1_2 0
 #endif
 
-/* SNI support (client- and server-side) appeared in OpenSSL 1.0.0.
+/* SNI support (client- and server-side) appeared in OpenSSL 1.0.0 and 0.9.8f
  * This includes the SSL_set_SSL_CTX() function.
  */
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
