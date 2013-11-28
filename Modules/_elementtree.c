@@ -2339,9 +2339,9 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
     PyObject* suri = NULL;
 
     if (uri)
-      suri = makestring(uri, strlen(uri));
+        suri = makestring(uri, strlen(uri));
     else
-      suri = PyString_FromStringAndSize("", 0);
+        suri = PyString_FromStringAndSize("", 0);
     if (!suri)
         return;
 
