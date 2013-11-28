@@ -2998,9 +2998,9 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
     PyObject* suri = NULL;
 
     if (uri)
-      suri = PyUnicode_DecodeUTF8(uri, strlen(uri), "strict");
+        suri = PyUnicode_DecodeUTF8(uri, strlen(uri), "strict");
     else
-      suri = PyUnicode_FromString("");
+        suri = PyUnicode_FromString("");
     if (!suri)
         return;
 
