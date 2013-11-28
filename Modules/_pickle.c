@@ -166,9 +166,6 @@ typedef struct {
 
     /* codecs.encode, used for saving bytes in older protocols */
     PyObject *codecs_encode;
-
-    /* As the name says, an empty tuple. */
-    PyObject *empty_tuple;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -205,7 +202,6 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->name_mapping_3to2);
     Py_CLEAR(st->import_mapping_3to2);
     Py_CLEAR(st->codecs_encode);
-    Py_CLEAR(st->empty_tuple);
 }
 
 /* Initialize the given pickle module state. */
@@ -320,10 +316,6 @@ _Pickle_InitState(PickleState *st)
         goto error;
     }
     Py_CLEAR(codecs);
-
-    st->empty_tuple = PyTuple_New(0);
-    if (st->empty_tuple == NULL)
-        goto error;
 
     return 0;
 
@@ -1137,8 +1129,9 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     if (n == READ_WHOLE_LINE) {
-        PickleState *st = _Pickle_GetGlobalState();
-        data = PyObject_Call(self->readline, st->empty_tuple, NULL);
+        PyObject *empty_tuple = PyTuple_New(0);
+        data = PyObject_Call(self->readline, empty_tuple, NULL);
+        Py_DECREF(empty_tuple);
     }
     else {
         PyObject *len = PyLong_FromSsize_t(n);
@@ -3774,8 +3767,10 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             /* Check for a __reduce__ method. */
             reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
             if (reduce_func != NULL) {
-                reduce_value = PyObject_Call(reduce_func, st->empty_tuple,
+                PyObject *empty_tuple = PyTuple_New(0);
+                reduce_value = PyObject_Call(reduce_func, empty_tuple,
                                              NULL);
+                Py_DECREF(empty_tuple);
             }
             else {
                 PyErr_Format(st->PicklingError,
@@ -7412,7 +7407,6 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->name_mapping_3to2);
     Py_VISIT(st->import_mapping_3to2);
     Py_VISIT(st->codecs_encode);
-    Py_VISIT(st->empty_tuple);
     return 0;
 }
 
