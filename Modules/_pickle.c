@@ -169,8 +169,6 @@ typedef struct {
 
     /* As the name says, an empty tuple. */
     PyObject *empty_tuple;
-    /* Single argument tuple used by _Pickle_FastCall */
-    PyObject *arg_tuple;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -208,7 +206,6 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->import_mapping_3to2);
     Py_CLEAR(st->codecs_encode);
     Py_CLEAR(st->empty_tuple);
-    Py_CLEAR(st->arg_tuple);
 }
 
 /* Initialize the given pickle module state. */
@@ -328,8 +325,6 @@ _Pickle_InitState(PickleState *st)
     if (st->empty_tuple == NULL)
         goto error;
 
-    st->arg_tuple = NULL;
-
     return 0;
 
   error:
@@ -342,40 +337,31 @@ _Pickle_InitState(PickleState *st)
 
 /* Helper for calling a function with a single argument quickly.
 
-   This has the performance advantage of reusing the argument tuple. This
-   provides a nice performance boost with older pickle protocols where many
-   unbuffered reads occurs.
-
    This function steals the reference of the given argument. */
 static PyObject *
 _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
-    PickleState *st = _Pickle_GetGlobalState();
-    PyObject *arg_tuple;
     PyObject *result;
+    PyObject *arg_tuple = PyTuple_New(1);
 
-    arg_tuple = st->arg_tuple;
+    /* Note: this function used to reuse the argument tuple. This used to give
+       a slight performance boost with older pickle implementations where many
+       unbuffered reads occurred (thus needing many function calls).
+
+       However, this optimization was removed because it was too complicated
+       to get right. It abused the C API for tuples to mutate them which led
+       to subtle reference counting and concurrency bugs. Furthermore, the
+       introduction of protocol 4 and the prefetching optimization via peek()
+       significantly reduced the number of function calls we do. Thus, the
+       benefits became marginal at best. */
+
     if (arg_tuple == NULL) {
-        arg_tuple = PyTuple_New(1);
-        if (arg_tuple == NULL) {
-            Py_DECREF(obj);
-            return NULL;
-        }
+        Py_DECREF(obj);
+        return NULL;
     }
-    assert(arg_tuple->ob_refcnt == 1);
-    assert(PyTuple_GET_ITEM(arg_tuple, 0) == NULL);
-
     PyTuple_SET_ITEM(arg_tuple, 0, obj);
     result = PyObject_Call(func, arg_tuple, NULL);
-
-    Py_CLEAR(PyTuple_GET_ITEM(arg_tuple, 0));
-    if (arg_tuple->ob_refcnt > 1) {
-        /* The function called saved a reference to our argument tuple.
-           This means we cannot reuse it anymore. */
-        Py_CLEAR(arg_tuple);
-    }
-    st->arg_tuple = arg_tuple;
-
+    Py_CLEAR(arg_tuple);
     return result;
 }
 
@@ -7427,7 +7413,6 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->import_mapping_3to2);
     Py_VISIT(st->codecs_encode);
     Py_VISIT(st->empty_tuple);
-    Py_VISIT(st->arg_tuple);
     return 0;
 }
 
