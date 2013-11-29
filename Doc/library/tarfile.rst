@@ -359,7 +359,7 @@ be finalized; only the internally used file object will be closed. See the
    full name. Its file information is extracted as accurately as possible. *member*
    may be a filename or a :class:`TarInfo` object. You can specify a different
    directory using *path*. File attributes (owner, mtime, mode) are set unless
-   *set_attrs* is False.
+   *set_attrs* is false.
 
    .. note::
 

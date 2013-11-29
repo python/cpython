@@ -93,7 +93,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
     * ``system_site_packages`` -- a Boolean value indicating that the system Python
       site-packages should be available to the environment (defaults to ``False``).
 
-    * ``clear`` -- a Boolean value which, if True, will delete any existing target
+    * ``clear`` -- a Boolean value which, if true, will delete any existing target
       directory instead of raising an exception (defaults to ``False``).
 
     * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
@@ -101,7 +101,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
       e.g. ``pythonw.exe``), rather than copying. Defaults to ``True`` on Linux and
       Unix systems, but ``False`` on Windows.
 
-    * ``upgrade`` -- a Boolean value which, if True, will upgrade an existing
+    * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
       upgraded in-place (defaults to ``False``).
 

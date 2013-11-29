@@ -162,7 +162,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
    .. attribute:: closed
 
-      True if the file is closed.
+      ``True`` if the file is closed.
 
       .. versionadded:: 3.2
 

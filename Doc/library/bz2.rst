@@ -162,7 +162,7 @@ Incremental (de)compression
 
    .. attribute:: eof
 
-      True if the end-of-stream marker has been reached.
+      ``True`` if the end-of-stream marker has been reached.
 
       .. versionadded:: 3.3
 

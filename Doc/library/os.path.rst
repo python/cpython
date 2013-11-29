@@ -133,7 +133,7 @@ the :mod:`glob` module.)
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
 
-   If :func:`os.stat_float_times` returns True, the result is a floating point
+   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
    number.
 
 
@@ -143,7 +143,7 @@ the :mod:`glob` module.)
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
 
-   If :func:`os.stat_float_times` returns True, the result is a floating point
+   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
    number.
 
 
@@ -334,5 +334,5 @@ the :mod:`glob` module.)
 
 .. data:: supports_unicode_filenames
 
-   True if arbitrary Unicode strings can be used as file names (within limitations
+   ``True`` if arbitrary Unicode strings can be used as file names (within limitations
    imposed by the file system).
