@@ -166,7 +166,7 @@ Functions, Constants, and Exceptions
 
 .. function:: RAND_status()
 
-   Returns True if the SSL pseudo-random number generator has been seeded with
+   Returns ``True`` if the SSL pseudo-random number generator has been seeded with
    'enough' randomness, and False otherwise.  You can use :func:`ssl.RAND_egd`
    and :func:`ssl.RAND_add` to increase the randomness of the pseudo-random
    number generator.

@@ -67,6 +67,11 @@ Tests
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
+Documentation
+-------------
+
+- Issue #19795: Improved markup of True/False constants.
+
 
 Whats' New in Python 2.7.6?
 ===========================

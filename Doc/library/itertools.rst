@@ -52,8 +52,8 @@ Iterator                Arguments                       Results                 
 :func:`compress`        data, selectors                 (d[0] if s[0]), (d[1] if s[1]), ...                 ``compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F``
 :func:`dropwhile`       pred, seq                       seq[n], seq[n+1], starting when pred fails          ``dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1``
 :func:`groupby`         iterable[, keyfunc]             sub-iterators grouped by value of keyfunc(v)
-:func:`ifilter`         pred, seq                       elements of seq where pred(elem) is True            ``ifilter(lambda x: x%2, range(10)) --> 1 3 5 7 9``
-:func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is False           ``ifilterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
+:func:`ifilter`         pred, seq                       elements of seq where pred(elem) is true            ``ifilter(lambda x: x%2, range(10)) --> 1 3 5 7 9``
+:func:`ifilterfalse`    pred, seq                       elements of seq where pred(elem) is false           ``ifilterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8``
 :func:`islice`          seq, [start,] stop [, step]     elements from seq[start:stop:step]                  ``islice('ABCDEFG', 2, None) --> C D E F G``
 :func:`imap`            func, p, q, ...                 func(p0, q0), func(p1, q1), ...                     ``imap(pow, (2,3,10), (5,2,3)) --> 32 9 1000``
 :func:`starmap`         func, seq                       func(\*seq[0]), func(\*seq[1]), ...                 ``starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000``
