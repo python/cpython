@@ -210,33 +210,40 @@ below:
       :func:`select.kqueue` object.
 
 
-Examples of selector usage::
+Examples
+--------
 
-   >>> import selectors
-   >>> import socket
-   >>>
-   >>> s = selectors.DefaultSelector()
-   >>> r, w = socket.socketpair()
-   >>>
-   >>> r.setblocking(False)
-   >>> w.setblocking(False)
-   >>>
-   >>> s.register(r, selectors.EVENT_READ)
-   SelectorKey(fileobj=<socket.socket fd=4, family=AddressFamily.AF_UNIX, type=2049, proto=0>, fd=4, events=1, data=None)
-   >>> s.register(w, selectors.EVENT_WRITE)
-   SelectorKey(fileobj=<socket.socket fd=5, family=AddressFamily.AF_UNIX, type=2049, proto=0>, fd=5, events=2, data=None)
-   >>>
-   >>> print(s.select())
-   [(SelectorKey(fileobj=<socket.socket fd=5, family=AddressFamily.AF_UNIX, type=2049, proto=0>, fd=5, events=2, data=None), 2)]
-   >>>
-   >>> for key, events in s.select():
-   ...     if events & selectors.EVENT_WRITE:
-   ...         key.fileobj.send(b'spam')
-   ...
-   4
-   >>> for key, events in s.select():
-   ...     if events & selectors.EVENT_READ:
-   ...         print(key.fileobj.recv(1024))
-   ...
-   b'spam'
-   >>> s.close()
+Here is a simple echo server implementation::
+
+   import selectors
+   import socket
+
+   sel = selectors.DefaultSelector()
+
+   def accept(sock, mask):
+       conn, addr = sock.accept()  # Should be ready
+       print('accepted', conn, 'from', addr)
+       conn.setblocking(False)
+       sel.register(conn, selectors.EVENT_READ, read)
+
+   def read(conn, mask):
+       data = conn.recv(1000)  # Should be ready
+       if data:
+           print('echoing', repr(data), 'to', conn)
+           conn.send(data)  # Hope it won't block
+       else:
+           print('closing', conn)
+           sel.unregister(conn)
+           conn.close()
+
+   sock = socket.socket()
+   sock.bind(('localhost', 1234))
+   sock.listen(100)
+   sock.setblocking(False)
+   sel.register(sock, selectors.EVENT_READ, accept)
+
+   while True:
+       events = sel.select()
+       for key, mask in events:
+           callback = key.data
+           callback(key.fileobj, mask)
