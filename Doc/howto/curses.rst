@@ -422,7 +422,7 @@ RGB value.  This lets you change color 1, which is usually red, to purple or
 blue or any other color you like.  Unfortunately, the Linux console doesn't
 support this, so I'm unable to try it out, and can't provide any examples.  You
 can check if your terminal can do this by calling
-:func:`~curses.can_change_color`, which returns True if the capability is
+:func:`~curses.can_change_color`, which returns ``True`` if the capability is
 there.  If you're lucky enough to have such a talented terminal, consult your
 system's man pages for more information.
 

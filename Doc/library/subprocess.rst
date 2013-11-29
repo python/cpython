@@ -512,7 +512,7 @@ functions.
    *executable* (or for the first item in *args*) relative to *cwd* if the
    executable path is a relative path.
 
-   If *restore_signals* is True (the default) all signals that Python has set to
+   If *restore_signals* is true (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
    Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.
    (Unix only)
@@ -520,7 +520,7 @@ functions.
    .. versionchanged:: 3.2
       *restore_signals* was added.
 
-   If *start_new_session* is True the setsid() system call will be made in the
+   If *start_new_session* is true the setsid() system call will be made in the
    child process prior to the execution of the subprocess.  (Unix only)
 
    .. versionchanged:: 3.2

@@ -111,7 +111,7 @@ zipimporter Objects
 
    .. method:: is_package(fullname)
 
-      Return True if the module specified by *fullname* is a package. Raise
+      Return ``True`` if the module specified by *fullname* is a package. Raise
       :exc:`ZipImportError` if the module couldn't be found.
 
 

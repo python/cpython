@@ -130,8 +130,8 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: is_tracked(obj)
 
-   Returns True if the object is currently tracked by the garbage collector,
-   False otherwise.  As a general rule, instances of atomic types aren't
+   Returns ``True`` if the object is currently tracked by the garbage collector,
+   ``False`` otherwise.  As a general rule, instances of atomic types aren't
    tracked and instances of non-atomic types (containers, user-defined
    objects...) are.  However, some type-specific optimizations can be present
    in order to suppress the garbage collector footprint of simple instances

@@ -280,7 +280,7 @@ I/O Base Classes
 
    .. method:: readable()
 
-      Return ``True`` if the stream can be read from.  If False, :meth:`read`
+      Return ``True`` if the stream can be read from.  If ``False``, :meth:`read`
       will raise :exc:`OSError`.
 
    .. method:: readline(limit=-1)

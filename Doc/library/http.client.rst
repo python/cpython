@@ -573,7 +573,7 @@ statement.
 
 .. attribute:: HTTPResponse.closed
 
-   Is True if the stream is closed.
+   Is ``True`` if the stream is closed.
 
 Examples
 --------
