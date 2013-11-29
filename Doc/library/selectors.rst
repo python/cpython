@@ -214,26 +214,29 @@ Examples of selector usage::
 
    >>> import selectors
    >>> import socket
-   >>>
+   >>> 
    >>> s = selectors.DefaultSelector()
    >>> r, w = socket.socketpair()
-   >>>
+   >>> 
+   >>> r.setblocking(False)
+   >>> w.setblocking(False)
+   >>> 
    >>> s.register(r, selectors.EVENT_READ)
-   SelectorKey(fileobj=<socket.socket fd=4, family=1, type=1, proto=0>, fd=4, events=1, data=None)
+   SelectorKey(fileobj=<socket.socket fd=4, family=AddressFamily.AF_UNIX, type=2049, proto=0>, fd=4, events=1, data=None)
    >>> s.register(w, selectors.EVENT_WRITE)
-   SelectorKey(fileobj=<socket.socket fd=5, family=1, type=1, proto=0>, fd=5, events=2, data=None)
-   >>>
+   SelectorKey(fileobj=<socket.socket fd=5, family=AddressFamily.AF_UNIX, type=2049, proto=0>, fd=5, events=2, data=None)
+   >>> 
    >>> print(s.select())
-   [(SelectorKey(fileobj=<socket.socket fd=5, family=1, type=1, proto=0>, fd=5, events=2, data=None), 2)]
-   >>>
+   [(SelectorKey(fileobj=<socket.socket fd=5, family=AddressFamily.AF_UNIX, type=2049, proto=0>, fd=5, events=2, data=None), 2)]
+   >>> 
    >>> for key, events in s.select():
    ...     if events & selectors.EVENT_WRITE:
    ...         key.fileobj.send(b'spam')
-   ...
+   ... 
    4
    >>> for key, events in s.select():
    ...     if events & selectors.EVENT_READ:
    ...         print(key.fileobj.recv(1024))
-   ...
+   ... 
    b'spam'
    >>> s.close()
