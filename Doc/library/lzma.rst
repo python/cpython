@@ -232,7 +232,7 @@ Compressing and decompressing data in memory
 
    .. attribute:: eof
 
-      True if the end-of-stream marker has been reached.
+      ``True`` if the end-of-stream marker has been reached.
 
    .. attribute:: unused_data
 

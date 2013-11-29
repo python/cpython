@@ -272,8 +272,8 @@ methods :meth:`tkinter.Widget.cget` and :meth:`tkinter.Widget.configure`.
 
    .. method:: instate(statespec, callback=None, *args, **kw)
 
-      Test the widget's state. If a callback is not specified, returns True
-      if the widget state matches *statespec* and False otherwise. If callback
+      Test the widget's state. If a callback is not specified, returns ``True``
+      if the widget state matches *statespec* and ``False`` otherwise. If callback
       is specified then it is called with args if widget state matches
       *statespec*.
 
@@ -938,7 +938,7 @@ ttk.Treeview
 
    .. method:: exists(item)
 
-      Returns True if the specified *item* is present in the tree.
+      Returns ``True`` if the specified *item* is present in the tree.
 
 
    .. method:: focus(item=None)
@@ -1084,7 +1084,7 @@ ttk.Treeview
 
       Ensure that *item* is visible.
 
-      Sets all of *item*'s ancestors open option to True, and scrolls the
+      Sets all of *item*'s ancestors open option to ``True``, and scrolls the
       widget if necessary so that *item* is within the visible portion of
       the tree.
 

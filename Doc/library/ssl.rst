@@ -287,7 +287,7 @@ Random generation
 .. function:: RAND_pseudo_bytes(num)
 
    Returns (bytes, is_cryptographic): bytes are *num* pseudo-random bytes,
-   is_cryptographic is True if the bytes generated are cryptographically
+   is_cryptographic is ``True`` if the bytes generated are cryptographically
    strong. Raises an :class:`SSLError` if the operation is not supported by the
    current RAND method.
 
@@ -300,8 +300,8 @@ Random generation
 
 .. function:: RAND_status()
 
-   Returns True if the SSL pseudo-random number generator has been seeded with
-   'enough' randomness, and False otherwise.  You can use :func:`ssl.RAND_egd`
+   Returns ``True`` if the SSL pseudo-random number generator has been seeded with
+   'enough' randomness, and ``False`` otherwise.  You can use :func:`ssl.RAND_egd`
    and :func:`ssl.RAND_add` to increase the randomness of the pseudo-random
    number generator.
 
@@ -1173,7 +1173,7 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.get_ca_certs(binary_form=False)
 
    Returns a list of dicts with information of loaded CA certs. If the
-   optional argument is True, returns a DER-encoded copy of the CA
+   optional argument is true, returns a DER-encoded copy of the CA
    certificate.
 
    .. note::

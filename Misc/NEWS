@@ -45,6 +45,12 @@ Build
   pythoncore sub-project.  This should prevent build errors due a previous
   build's python(_d).exe still running.
 
+Documentation
+-------------
+
+- Issue #19795: Improved markup of True/False constants.
+
+
 What's New in Python 3.4.0 Beta 1?
 ==================================
 

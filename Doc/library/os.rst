@@ -551,7 +551,7 @@ process and user.
 
 .. data:: supports_bytes_environ
 
-   True if the native OS type of the environment is bytes (eg. False on
+   ``True`` if the native OS type of the environment is bytes (eg. ``False`` on
    Windows).
 
    .. versionadded:: 3.2

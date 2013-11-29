@@ -1067,7 +1067,7 @@ always available.
    :func:`open` function.  Their parameters are chosen as follows:
 
    * The character encoding is platform-dependent.  Under Windows, if the stream
-     is interactive (that is, if its :meth:`isatty` method returns True), the
+     is interactive (that is, if its :meth:`isatty` method returns ``True``), the
      console codepage is used, otherwise the ANSI code page.  Under other
      platforms, the locale encoding is used (see :meth:`locale.getpreferredencoding`).
 

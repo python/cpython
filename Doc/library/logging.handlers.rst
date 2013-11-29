@@ -843,7 +843,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
    Returns a new instance of the :class:`HTTPHandler` class. The *host* can be
    of the form ``host:port``, should you need to use a specific port number.
-   If no *method* is specified, ``GET`` is used. If *secure* is True, an HTTPS
+   If no *method* is specified, ``GET`` is used. If *secure* is true, an HTTPS
    connection will be used. If *credentials* is specified, it should be a
    2-tuple consisting of userid and password, which will be placed in an HTTP
    'Authorization' header using Basic authentication. If you specify
