@@ -75,7 +75,7 @@ Here are the methods of the :class:`Message` class:
 
       Return ``True`` if the message's payload is a list of sub-\
       :class:`Message` objects, otherwise return ``False``.  When
-      :meth:`is_multipart` returns False, the payload should be a string object.
+      :meth:`is_multipart` returns ``False``, the payload should be a string object.
 
 
    .. method:: set_unixfrom(unixfrom)

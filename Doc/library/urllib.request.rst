@@ -59,7 +59,7 @@ The :mod:`urllib.request` module defines the following functions:
    some non-Windows platforms.
 
    .. warning::
-      If neither *cafile* nor *capath* is specified, and *cadefault* is False,
+      If neither *cafile* nor *capath* is specified, and *cadefault* is ``False``,
       an HTTPS request will not do any verification of the server's
       certificate.
 
@@ -211,7 +211,7 @@ The following classes are provided:
    containing the image.
 
    *unverifiable* should indicate whether the request is unverifiable,
-   as defined by RFC 2965.  It defaults to False.  An unverifiable
+   as defined by RFC 2965.  It defaults to ``False``.  An unverifiable
    request is one whose URL the user did not have the option to
    approve.  For example, if the request is for an image in an HTML
    document, and the user had no option to approve the automatic

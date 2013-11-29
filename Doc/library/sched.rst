@@ -113,7 +113,7 @@ Scheduler Objects
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
 
-   If *blocking* is False executes the scheduled events due to expire soonest
+   If *blocking* is false executes the scheduled events due to expire soonest
    (if any) and then return the deadline of the next scheduled call in the
    scheduler (if any).
 

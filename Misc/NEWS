@@ -87,6 +87,8 @@ Tests
 Documentation
 -------------
 
+- Issue #19795: Improved markup of True/False constants.
+
 - Issue #18326: Clarify that list.sort's arguments are keyword-only.  Also,
   attempt to reduce confusion in the glossary by not saying there are
   different "types" of arguments and parameters.

@@ -194,17 +194,17 @@ The :mod:`bdb` module also defines two classes:
    .. method:: user_line(frame)
 
       This method is called from :meth:`dispatch_line` when either
-      :meth:`stop_here` or :meth:`break_here` yields True.
+      :meth:`stop_here` or :meth:`break_here` yields ``True``.
 
    .. method:: user_return(frame, return_value)
 
       This method is called from :meth:`dispatch_return` when :meth:`stop_here`
-      yields True.
+      yields ``True``.
 
    .. method:: user_exception(frame, exc_info)
 
       This method is called from :meth:`dispatch_exception` when
-      :meth:`stop_here` yields True.
+      :meth:`stop_here` yields ``True``.
 
    .. method:: do_clear(arg)
 
@@ -245,7 +245,7 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: set_quit()
 
-      Set the :attr:`quitting` attribute to True.  This raises :exc:`BdbQuit` in
+      Set the :attr:`quitting` attribute to ``True``.  This raises :exc:`BdbQuit` in
       the next call to one of the :meth:`dispatch_\*` methods.
 
 
