@@ -133,6 +133,24 @@ def _new_module(name):
 _code_type = type(_wrap.__code__)
 
 
+
+class _ManageReload:
+
+    """Manages the possible clean-up of sys.modules for load_module()."""
+
+    def __init__(self, name):
+        self._name = name
+
+    def __enter__(self):
+        self._is_reload = self._name in sys.modules
+
+    def __exit__(self, *args):
+        if any(arg is not None for arg in args) and not self._is_reload:
+            try:
+                del sys.modules[self._name]
+            except KeyError:
+                pass
+
 # Module-level locking ########################################################
 
 # A dict mapping module names to weakrefs of _ModuleLock instances
@@ -1242,23 +1260,15 @@ class BuiltinImporter:
         spec = cls.find_spec(fullname, path)
         return spec.loader if spec is not None else None
 
-    @staticmethod
-    def exec_module(module):
-        spec = module.__spec__
-        name = spec.name
-        if not _imp.is_builtin(name):
-            raise ImportError('{!r} is not a built-in module'.format(name),
-                              name=name)
-        _call_with_frames_removed(_imp.init_builtin, name)
-        # Have to manually initialize attributes since init_builtin() is not
-        # going to do it for us.
-        # XXX: Create _imp.exec_builtin(module)
-        _SpecMethods(spec).init_module_attrs(sys.modules[name])
-
     @classmethod
+    @_requires_builtin
     def load_module(cls, fullname):
         """Load a built-in module."""
-        return _load_module_shim(cls, fullname)
+        with _ManageReload(fullname):
+            module = _call_with_frames_removed(_imp.init_builtin, fullname)
+        module.__loader__ = cls
+        module.__package__ = ''
+        return module
 
     @classmethod
     @_requires_builtin
@@ -1639,22 +1649,21 @@ class ExtensionFileLoader:
         self.name = name
         self.path = path
 
-    def exec_module(self, module):
-        # XXX create _imp.exec_dynamic()
-        spec = module.__spec__
-        fullname = spec.name
-        module = _call_with_frames_removed(_imp.load_dynamic,
-                                               fullname, self.path)
-        _verbose_message('extension module loaded from {!r}', self.path)
-        if self.is_package(fullname) and not hasattr(module, '__path__'):
-            module.__path__ = [_path_split(self.path)[0]]
-        _SpecMethods(spec).init_module_attrs(module)
-
-    # XXX deprecate
     @_check_name
     def load_module(self, fullname):
         """Load an extension module."""
-        return _load_module_shim(self, fullname)
+        with _ManageReload(fullname):
+            module = _call_with_frames_removed(_imp.load_dynamic,
+                                               fullname, self.path)
+        _verbose_message('extension module loaded from {!r}', self.path)
+        is_package = self.is_package(fullname)
+        if is_package and not hasattr(module, '__path__'):
+            module.__path__ = [_path_split(self.path)[0]]
+        module.__loader__ = self
+        module.__package__ = module.__name__
+        if not is_package:
+            module.__package__ = module.__package__.rpartition('.')[0]
+        return module
 
     def is_package(self, fullname):
         """Return True if the extension module is a package."""

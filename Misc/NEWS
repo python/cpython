@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19698: Removed exec_module() methods from
+  importlib.machinery.BuiltinImporter and ExtensionFileLoader.
+
 - ssl.create_default_context() sets OP_NO_COMPRESSION to prevent CRIME.
 
 - Issue #19802: Add socket.SO_PRIORITY.
