@@ -918,18 +918,8 @@ an :term:`importer`.
     Reliance on this decorator is discouraged when it is possible to set
     :attr:`__package__` before importing. By
     setting it beforehand the code for the module is executed with the
-<<<<<<<
     attribute set and thus can be used by global level code during
     initialization.
-=======
-   The ``cpython-32`` string comes from the current magic tag (see
-   :func:`get_tag`; if :attr:`sys.implementation.cache_tag` is not defined then
-   :exc:`NotImplementedError` will be raised).  The returned path will end in
-   ``.pyc`` when ``__debug__`` is ``True`` or ``.pyo`` for an optimized Python
-   (i.e. ``__debug__`` is ``False``).  By passing in ``True`` or ``False`` for
-   *debug_override* you can override the system's value for ``__debug__`` for
-   extension selection.
->>>>>>>
 
    .. note::
 
