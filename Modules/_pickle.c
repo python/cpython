@@ -1691,13 +1691,16 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
         key = PyLong_FromVoidPtr(obj);
         if (key == NULL)
             return 0;
-        if (PyDict_GetItem(self->fast_memo, key)) {
+        if (PyDict_GetItemWithError(self->fast_memo, key)) {
             Py_DECREF(key);
             PyErr_Format(PyExc_ValueError,
                          "fast mode: can't pickle cyclic objects "
                          "including object type %.200s at %p",
                          obj->ob_type->tp_name, obj);
             self->fast_nesting = -1;
+            return 0;
+        }
+        if (PyErr_Occurred()) {
             return 0;
         }
         if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
@@ -3142,12 +3145,17 @@ save_global(PicklerObject *self, PyObject *obj, PyObject *name)
         if (extension_key == NULL) {
             goto error;
         }
-        code_obj = PyDict_GetItem(st->extension_registry, extension_key);
+        code_obj = PyDict_GetItemWithError(st->extension_registry,
+                                           extension_key);
         Py_DECREF(extension_key);
         /* The object is not registered in the extension registry.
            This is the most likely code path. */
-        if (code_obj == NULL)
+        if (code_obj == NULL) {
+            if (PyErr_Occurred()) {
+                goto error;
+            }
             goto gen_global;
+        }
 
         /* XXX: pickle.py doesn't check neither the type, nor the range
            of the value returned by the extension_registry. It should for
@@ -3712,12 +3720,21 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
      */
     if (self->dispatch_table == NULL) {
         PickleState *st = _Pickle_GetGlobalState();
-        reduce_func = PyDict_GetItem(st->dispatch_table, (PyObject *)type);
-        /* PyDict_GetItem() unlike PyObject_GetItem() and
-           PyObject_GetAttr() returns a borrowed ref */
-        Py_XINCREF(reduce_func);
+        reduce_func = PyDict_GetItemWithError(st->dispatch_table,
+                                              (PyObject *)type);
+        if (reduce_func == NULL) {
+            if (PyErr_Occurred()) {
+                goto error;
+            }
+        } else {
+            /* PyDict_GetItemWithError() returns a borrowed reference.
+               Increase the reference count to be consistent with
+               PyObject_GetItem and _PyObject_GetAttrId used below. */
+            Py_INCREF(reduce_func);
+        }
     } else {
-        reduce_func = PyObject_GetItem(self->dispatch_table, (PyObject *)type);
+        reduce_func = PyObject_GetItem(self->dispatch_table,
+                                       (PyObject *)type);
         if (reduce_func == NULL) {
             if (PyErr_ExceptionMatches(PyExc_KeyError))
                 PyErr_Clear();
@@ -5564,20 +5581,26 @@ load_extension(UnpicklerObject *self, int nbytes)
     py_code = PyLong_FromLong(code);
     if (py_code == NULL)
         return -1;
-    obj = PyDict_GetItem(st->extension_cache, py_code);
+    obj = PyDict_GetItemWithError(st->extension_cache, py_code);
     if (obj != NULL) {
         /* Bingo. */
         Py_DECREF(py_code);
         PDATA_APPEND(self->stack, obj, -1);
         return 0;
     }
+    if (PyErr_Occurred()) {
+        Py_DECREF(py_code);
+        return -1;
+    }
 
     /* Look up the (module_name, class_name) pair. */
-    pair = PyDict_GetItem(st->inverted_registry, py_code);
+    pair = PyDict_GetItemWithError(st->inverted_registry, py_code);
     if (pair == NULL) {
         Py_DECREF(py_code);
-        PyErr_Format(PyExc_ValueError, "unregistered extension "
-                     "code %ld", code);
+        if (!PyErr_Occurred()) {
+            PyErr_Format(PyExc_ValueError, "unregistered extension "
+                         "code %ld", code);
+        }
         return -1;
     }
     /* Since the extension registry is manipulable via Python code,
