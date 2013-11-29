@@ -17,7 +17,7 @@ class FinderTests:
     """Tests for PathFinder."""
 
     def test_failure(self):
-        # Test None returned upon not finding a suitable finder.
+        # Test None returned upon not finding a suitable loader.
         module = '<test module>'
         with util.import_state():
             self.assertIsNone(self.machinery.PathFinder.find_module(module))

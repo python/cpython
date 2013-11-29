@@ -1,19 +1,37 @@
 from .. import util
 from . import util as import_util
+
+from importlib import machinery
 import sys
 import types
 import unittest
 
+PKG_NAME = 'fine'
+SUBMOD_NAME = 'fine.bogus'
+
+
+class BadSpecFinderLoader:
+    @classmethod
+    def find_spec(cls, fullname, path=None, target=None):
+        if fullname == SUBMOD_NAME:
+            spec = machinery.ModuleSpec(fullname, cls)
+            return spec
+
+    @staticmethod
+    def exec_module(module):
+        if module.__name__ == SUBMOD_NAME:
+            raise ImportError('I cannot be loaded!')
+
 
 class BadLoaderFinder:
-    bad = 'fine.bogus'
     @classmethod
     def find_module(cls, fullname, path):
-        if fullname == cls.bad:
+        if fullname == SUBMOD_NAME:
             return cls
+
     @classmethod
     def load_module(cls, fullname):
-        if fullname == cls.bad:
+        if fullname == SUBMOD_NAME:
             raise ImportError('I cannot be loaded!')
 
 
@@ -37,27 +55,39 @@ class APITest:
     def test_nonexistent_fromlist_entry(self):
         # If something in fromlist doesn't exist, that's okay.
         # issue15715
-        mod = types.ModuleType('fine')
+        mod = types.ModuleType(PKG_NAME)
         mod.__path__ = ['XXX']
-        with util.import_state(meta_path=[BadLoaderFinder]):
-            with util.uncache('fine'):
-                sys.modules['fine'] = mod
-                self.__import__('fine', fromlist=['not here'])
+        with util.import_state(meta_path=[self.bad_finder_loader]):
+            with util.uncache(PKG_NAME):
+                sys.modules[PKG_NAME] = mod
+                self.__import__(PKG_NAME, fromlist=['not here'])
 
     def test_fromlist_load_error_propagates(self):
         # If something in fromlist triggers an exception not related to not
         # existing, let that exception propagate.
         # issue15316
-        mod = types.ModuleType('fine')
+        mod = types.ModuleType(PKG_NAME)
         mod.__path__ = ['XXX']
-        with util.import_state(meta_path=[BadLoaderFinder]):
-            with util.uncache('fine'):
-                sys.modules['fine'] = mod
+        with util.import_state(meta_path=[self.bad_finder_loader]):
+            with util.uncache(PKG_NAME):
+                sys.modules[PKG_NAME] = mod
                 with self.assertRaises(ImportError):
-                    self.__import__('fine', fromlist=['bogus'])
+                    self.__import__(PKG_NAME,
+                                    fromlist=[SUBMOD_NAME.rpartition('.')[-1]])
 
-Frozen_APITests, Source_APITests = util.test_both(
-        APITest, __import__=import_util.__import__)
+
+class OldAPITests(APITest):
+    bad_finder_loader = BadLoaderFinder
+
+Frozen_OldAPITests, Source_OldAPITests = util.test_both(
+        OldAPITests, __import__=import_util.__import__)
+
+
+class SpecAPITests(APITest):
+    bad_finder_loader = BadSpecFinderLoader
+
+Frozen_SpecAPITests, Source_SpecAPITests = util.test_both(
+        SpecAPITests, __import__=import_util.__import__)
 
 
 if __name__ == '__main__':
