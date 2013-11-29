@@ -298,11 +298,11 @@ the `new_callable` argument to `patch`.
         assert the mock has been called with the specified calls.
         The `mock_calls` list is checked for the calls.
 
-        If `any_order` is False (the default) then the calls must be
+        If `any_order` is false (the default) then the calls must be
         sequential. There can be extra calls before or after the
         specified calls.
 
-        If `any_order` is True then the calls can be in any order, but
+        If `any_order` is true then the calls can be in any order, but
         they must all appear in :attr:`mock_calls`.
 
             >>> mock = Mock(return_value=None)
@@ -1200,7 +1200,7 @@ patch.dict
     `values` can be a dictionary of values to set in the dictionary. `values`
     can also be an iterable of `(key, value)` pairs.
 
-    If `clear` is True then the dictionary will be cleared before the new
+    If `clear` is true then the dictionary will be cleared before the new
     values are set.
 
     `patch.dict` can also be called with arbitrary keyword arguments to set

@@ -161,7 +161,7 @@ process more convenient:
    :class:`io.BytesIO` instance, or any other custom object that meets this
    interface.
 
-   If *fix_imports* is True and *protocol* is less than 3, pickle will try to
+   If *fix_imports* is true and *protocol* is less than 3, pickle will try to
    map the new Python 3.x names to the old module names used in Python 2.x,
    so that the pickle data stream is readable with Python 2.x.
 
@@ -178,7 +178,7 @@ process more convenient:
    supported.  The higher the protocol used, the more recent the version of
    Python needed to read the pickle produced.
 
-   If *fix_imports* is True and *protocol* is less than 3, pickle will try to
+   If *fix_imports* is true and *protocol* is less than 3, pickle will try to
    map the new Python 3.x names to the old module names used in Python 2.x,
    so that the pickle data stream is readable with Python 2.x.
 
@@ -200,7 +200,7 @@ process more convenient:
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatibility support for pickle stream generated
-   by Python 2.x.  If *fix_imports* is True, pickle will try to map the old
+   by Python 2.x.  If *fix_imports* is true, pickle will try to map the old
    Python 2.x names to the new names used in Python 3.x.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2.x; these default to 'ASCII' and 'strict', respectively.
@@ -216,7 +216,7 @@ process more convenient:
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatibility support for pickle stream generated
-   by Python 2.x.  If *fix_imports* is True, pickle will try to map the old
+   by Python 2.x.  If *fix_imports* is true, pickle will try to map the old
    Python 2.x names to the new names used in Python 3.x.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2.x; these default to 'ASCII' and 'strict', respectively.
@@ -266,7 +266,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
    argument.  It can thus be an on-disk file opened for binary writing, a
    :class:`io.BytesIO` instance, or any other custom object that meets this interface.
 
-   If *fix_imports* is True and *protocol* is less than 3, pickle will try to
+   If *fix_imports* is true and *protocol* is less than 3, pickle will try to
    map the new Python 3.x names to the old module names used in Python 2.x,
    so that the pickle data stream is readable with Python 2.x.
 
@@ -336,7 +336,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatibility support for pickle stream generated
-   by Python 2.x.  If *fix_imports* is True, pickle will try to map the old
+   by Python 2.x.  If *fix_imports* is true, pickle will try to map the old
    Python 2.x names to the new names used in Python 3.x.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
    2.x; these default to 'ASCII' and 'strict', respectively.

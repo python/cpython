@@ -274,7 +274,7 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: is_jump_target
 
-      True if other code jumps to here, otherwise False
+      ``True`` if other code jumps to here, otherwise ``False``
 
    .. versionadded:: 3.4
 

@@ -1125,7 +1125,7 @@ Features
 
 * If Python is compiled without threads, the C version automatically
   disables the expensive thread local context machinery. In this case,
-  the variable :data:`~decimal.HAVE_THREADS` is set to False.
+  the variable :data:`~decimal.HAVE_THREADS` is set to ``False``.
 
 API changes
 ~~~~~~~~~~~

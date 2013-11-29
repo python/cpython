@@ -54,7 +54,7 @@ This module defines the following functions:
 
    * :data:`FMT_BINARY`: Binary plist format
 
-   If *use_builtin_types* is True (the default) binary data will be returned
+   If *use_builtin_types* is true (the default) binary data will be returned
    as instances of :class:`bytes`, otherwise it is returned as instances of
    :class:`Data`.
 
