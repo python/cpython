@@ -3,7 +3,7 @@
 __all__ = ['coroutine', 'Task',
            'FIRST_COMPLETED', 'FIRST_EXCEPTION', 'ALL_COMPLETED',
            'wait', 'wait_for', 'as_completed', 'sleep', 'async',
-           'gather',
+           'gather', 'shield',
            ]
 
 import collections
