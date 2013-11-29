@@ -689,8 +689,8 @@ constructed list's :meth:`~list.sort` method. ::
 
 
 The :func:`any(iter) <any>` and :func:`all(iter) <all>` built-ins look at the
-truth values of an iterable's contents.  :func:`any` returns True if any element
-in the iterable is a true value, and :func:`all` returns True if all of the
+truth values of an iterable's contents.  :func:`any` returns ``True`` if any element
+in the iterable is a true value, and :func:`all` returns ``True`` if all of the
 elements are true values:
 
     >>> any([0,1,0])

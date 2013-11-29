@@ -411,7 +411,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       name as a file path, and if any subdirectories are package directories,
       all of these are added recursively.  *basename* is intended for internal
       use only.  When *filterfunc(pathname)* is given, it will be called for every
-      invocation. When it returns a False value, that path and its subpaths will
+      invocation. When it returns a false value, that path and its subpaths will
       be ignored.
       The :meth:`writepy` method makes archives with file names like
       this::

@@ -82,7 +82,7 @@ The module itself defines the following classes:
 
 
    .. versionchanged:: 3.2
-      *usenetrc* is now False by default.
+      *usenetrc* is now ``False`` by default.
 
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
@@ -216,7 +216,7 @@ tuples or objects that the method normally returns will be empty.
 .. method:: NNTP.login(user=None, password=None, usenetrc=True)
 
    Send ``AUTHINFO`` commands with the user name and password.  If *user*
-   and *password* are None and *usenetrc* is True, credentials from
+   and *password* are None and *usenetrc* is true, credentials from
    ``~/.netrc`` will be used if possible.
 
    Unless intentionally delayed, login is normally performed during the
