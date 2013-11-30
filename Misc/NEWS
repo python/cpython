@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #3693: Make the error message more helpful when the array.array()
+  constructor is given a str. Move the array module typecode documentation to
+  the docstring of the constructor.
+
 - Issue #19698: Removed exec_module() methods from
   importlib.machinery.BuiltinImporter and ExtensionFileLoader.
 

@@ -2518,6 +2518,20 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "C|O:array", &c, &initial))
         return NULL;
 
+    if (initial && c != 'u') {
+        if (PyUnicode_Check(initial)) {
+            PyErr_Format(PyExc_TypeError, "cannot use a str to initialize "
+                         "an array with typecode '%c'", c);
+            return NULL;
+        }
+        else if (array_Check(initial) &&
+                 ((arrayobject*)initial)->ob_descr->typecode == 'u') {
+            PyErr_Format(PyExc_TypeError, "cannot use a unicode array to "
+                         "initialize an array with typecode '%c'", c);
+            return NULL;
+        }
+    }
+
     if (!(initial == NULL || PyList_Check(initial)
           || PyByteArray_Check(initial)
           || PyBytes_Check(initial)
@@ -2644,9 +2658,19 @@ PyDoc_STRVAR(module_doc,
 "This module defines an object type which can efficiently represent\n\
 an array of basic values: characters, integers, floating point\n\
 numbers.  Arrays are sequence types and behave very much like lists,\n\
-except that the type of objects stored in them is constrained.  The\n\
-type is specified at object creation time by using a type code, which\n\
-is a single character.  The following type codes are defined:\n\
+except that the type of objects stored in them is constrained.\n");
+
+PyDoc_STRVAR(arraytype_doc,
+"array(typecode [, initializer]) -> array\n\
+\n\
+Return a new array whose items are restricted by typecode, and\n\
+initialized from the optional initializer value, which must be a list,\n\
+string or iterable over elements of the appropriate type.\n\
+\n\
+Arrays represent basic values and behave very much like lists, except\n\
+the type of objects stored in them is constrained. The type is specified\n\
+at object creation time by using a type code, which is a single character.\n\
+The following type codes are defined:\n\
 \n\
     Type code   C Type             Minimum size in bytes \n\
     'b'         signed integer     1 \n\
@@ -2669,21 +2693,6 @@ narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
 NOTE: The 'q' and 'Q' type codes are only available if the platform \n\
 C compiler used to build Python supports 'long long', or, on Windows, \n\
 '__int64'.\n\
-\n\
-The constructor is:\n\
-\n\
-array(typecode [, initializer]) -- create a new array\n\
-");
-
-PyDoc_STRVAR(arraytype_doc,
-"array(typecode [, initializer]) -> array\n\
-\n\
-Return a new array whose items are restricted by typecode, and\n\
-initialized from the optional initializer value, which must be a list,\n\
-string or iterable over elements of the appropriate type.\n\
-\n\
-Arrays represent basic values and behave very much like lists, except\n\
-the type of objects stored in them is constrained.\n\
 \n\
 Methods:\n\
 \n\
