@@ -5,6 +5,7 @@ Copyright (C) 2011-2012 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 """
 
+import ensurepip
 import os
 import os.path
 import shutil
@@ -313,8 +314,9 @@ class EnsurePipTest(BaseTest):
         err = err.decode("latin-1") # Force to text, prevent decoding errors
         self.assertEqual(err, "")
         out = out.decode("latin-1") # Force to text, prevent decoding errors
+        expected_version = "pip {}".format(ensurepip.version())
+        self.assertEqual(out[:len(expected_version)], expected_version)
         env_dir = os.fsencode(self.env_dir).decode("latin-1")
-        self.assertTrue(out.startswith("pip"))
         self.assertIn(env_dir, out)
 
 
