@@ -21,6 +21,9 @@ Library
 - Issue #19088: Fixed incorrect caching of the copyreg module in
   object.__reduce__() and object.__reduce_ex__().
 
+- Fixed _pickle.Unpickler to not fail when loading empty strings as
+  persistent IDs.
+
 - Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
   virtual interface.  Original patch by Kent Frazier.
 
