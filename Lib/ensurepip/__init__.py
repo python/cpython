@@ -20,9 +20,10 @@ _PROJECTS = [
 ]
 
 
-def _run_pip(args, additional_paths):
+def _run_pip(args, additional_paths=None):
     # Add our bundled software to the sys.path so we can import it
-    sys.path = additional_paths + sys.path
+    if additional_paths is not None:
+        sys.path = additional_paths + sys.path
 
     # Install the bundled software
     import pip
@@ -90,3 +91,24 @@ def bootstrap(*, root=None, upgrade=False, user=False,
             args += ["-" + "v" * verbosity]
 
         _run_pip(args + [p[0] for p in _PROJECTS], additional_paths)
+
+def _uninstall(*, verbosity=0):
+    """Helper to support a clean default uninstall process on Windows"""
+    # Nothing to do if pip was never installed, or has been removed
+    try:
+        import pip
+    except ImportError:
+        return
+
+    # If the pip version doesn't match the bundled one, leave it alone
+    if pip.__version__ != _PIP_VERSION:
+        msg = ("ensurepip will only uninstall a matching pip "
+               "({!r} installed, {!r} bundled)")
+        raise RuntimeError(msg.format(pip.__version__, _PIP_VERSION))
+
+    # Construct the arguments to be passed to the pip command
+    args = ["uninstall", "-y"]
+    if verbosity:
+        args += ["-" + "v" * verbosity]
+
+    _run_pip(args + [p[0] for p in reversed(_PROJECTS)])
