@@ -269,7 +269,7 @@ class Pickler:
     def save(self, obj):
         # Check for persistent id (defined by a subclass)
         pid = self.persistent_id(obj)
-        if pid:
+        if pid is not None:
             self.save_pers(pid)
             return
 

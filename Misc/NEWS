@@ -15,6 +15,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #16231: Fixed pickle.Pickler to only fallback to its default pickling
+  behaviour when Pickler.persistent_id returns None, but not for any other
+  false values.  This allows false values other values other than None to be
+  used as persistent IDs.  This behaviour is consistent with cPickle.
+
 - Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
   virtual interface.  Original patch by Kent Frazier.
 
