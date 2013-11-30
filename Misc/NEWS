@@ -63,6 +63,8 @@ Build
 Documentation
 -------------
 
+- Issue #19845: Updated the Compiling Python on Windows section.
+
 - Issue #19795: Improved markup of True/False constants.
 
 

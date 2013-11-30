@@ -556,27 +556,23 @@ If you want to compile CPython yourself, first thing you should do is get the
 latest release's source or just grab a fresh `checkout
 <http://docs.python.org/devguide/setup#checking-out-the-code>`_.
 
-For Microsoft Visual C++, which is the compiler with which official Python
-releases are built, the source tree contains solutions/project files.  View the
-:file:`readme.txt` in their respective directories:
+The source tree contains a build solution and project files for Microsoft
+Visual C++, which is the compiler used to build the official Python releases.
+View the :file:`readme.txt` in their respective directories:
 
 +--------------------+--------------+-----------------------+
 | Directory          | MSVC version | Visual Studio version |
 +====================+==============+=======================+
-| :file:`PC/VC6/`    | 6.0          | 97                    |
+| :file:`PC/VS9.0/`  | 9.0          | 2008                  |
 +--------------------+--------------+-----------------------+
-| :file:`PC/VS7.1/`  | 7.1          | 2003                  |
-+--------------------+--------------+-----------------------+
-| :file:`PC/VS8.0/`  | 8.0          | 2005                  |
-+--------------------+--------------+-----------------------+
-| :file:`PCbuild/`   | 9.0          | 2008                  |
+| :file:`PCbuild/`   | 10.0         | 2010                  |
 +--------------------+--------------+-----------------------+
 
-Note that not all of these build directories are fully supported.  Read the
-release notes to see which compiler version the official releases for your
-version are built with.
+Note that any build directories within the :file:`PC` directory are not
+necessarily fully supported.  The :file:`PCbuild` directory contains the files
+for the compiler used to build the official release.
 
-Check :file:`PC/readme.txt` for general information on the build process.
+Check :file:`PCbuild/readme.txt` for general information on the build process.
 
 
 For extension modules, consult :ref:`building-on-windows`.
