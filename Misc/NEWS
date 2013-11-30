@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17897: Optimized unpickle prefetching.
+
 - Issue #3693: Make the error message more helpful when the array.array()
   constructor is given a str. Move the array module typecode documentation to
   the docstring of the constructor.
