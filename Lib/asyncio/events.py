@@ -234,7 +234,7 @@ class AbstractEventLoop:
         protocol_factory should instantiate object with Protocol interface.
         pipe is file-like object already switched to nonblocking.
         Return pair (transport, protocol), where transport support
-        ReadTransport ABC"""
+        ReadTransport interface."""
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
@@ -247,7 +247,7 @@ class AbstractEventLoop:
         protocol_factory should instantiate object with BaseProtocol interface.
         Pipe is file-like object already switched to nonblocking.
         Return pair (transport, protocol), where transport support
-        WriteTransport ABC"""
+        WriteTransport interface."""
         # The reason to accept file-like object instead of just file descriptor
         # is: we need to own pipe and close it at transport finishing
         # Can got complicated errors if pass f.fileno(),
