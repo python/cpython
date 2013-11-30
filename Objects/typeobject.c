@@ -7,10 +7,6 @@
 #include <ctype.h>
 
 
-/* Cached lookup of the copyreg module, for faster __reduce__ calls */
-
-static PyObject *cached_copyreg_module = NULL;
-
 /* Support type attribute cache */
 
 /* The cache can keep references to the names alive for longer than
@@ -73,9 +69,6 @@ void
 _PyType_Fini(void)
 {
     PyType_ClearCache();
-    /* Need to forget our obsolete instance of the copyreg module at
-     * interpreter shutdown (issue #17408). */
-    Py_CLEAR(cached_copyreg_module);
 }
 
 void
@@ -3348,19 +3341,29 @@ static PyGetSetDef object_getsets[] = {
 static PyObject *
 import_copyreg(void)
 {
-    static PyObject *copyreg_str;
+    PyObject *copyreg_str;
+    PyObject *copyreg_module;
+    PyInterpreterState *interp = PyThreadState_GET()->interp;
+    _Py_IDENTIFIER(copyreg);
 
-    if (!copyreg_str) {
-        copyreg_str = PyUnicode_InternFromString("copyreg");
-        if (copyreg_str == NULL)
-            return NULL;
+    copyreg_str = _PyUnicode_FromId(&PyId_copyreg);
+    if (copyreg_str == NULL) {
+        return NULL;
     }
-    if (!cached_copyreg_module) {
-        cached_copyreg_module = PyImport_Import(copyreg_str);
+    /* Try to fetch cached copy of copyreg from sys.modules first in an
+       attempt to avoid the import overhead. Previously this was implemented
+       by storing a reference to the cached module in a static variable, but
+       this broke when multiple embeded interpreters were in use (see issue
+       #17408 and #19088). */
+    copyreg_module = PyDict_GetItemWithError(interp->modules, copyreg_str);
+    if (copyreg_module != NULL) {
+        Py_INCREF(copyreg_module);
+        return copyreg_module;
     }
-
-    Py_XINCREF(cached_copyreg_module);
-    return cached_copyreg_module;
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyImport_Import(copyreg_str);
 }
 
 static PyObject *

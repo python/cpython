@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19088: Fixed incorrect caching of the copyreg module in
+  object.__reduce__() and object.__reduce_ex__().
+
 - Issue #11508: Fixed uuid.getnode() and uuid.uuid1() on environment with
   virtual interface.  Original patch by Kent Frazier.
 
