@@ -5355,7 +5355,7 @@ load_persid(UnpicklerObject *self)
     if (self->pers_func) {
         if ((len = _Unpickler_Readline(self, &s)) < 0)
             return -1;
-        if (len < 2)
+        if (len < 1)
             return bad_readline();
 
         pid = PyBytes_FromStringAndSize(s, len - 1);
