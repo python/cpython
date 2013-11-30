@@ -30,6 +30,9 @@ Library
 - Issue #19698: Removed exec_module() methods from
   importlib.machinery.BuiltinImporter and ExtensionFileLoader.
 
+- Fixed _pickle.Unpickler to not fail when loading empty strings as
+  persistent IDs.
+
 - ssl.create_default_context() sets OP_NO_COMPRESSION to prevent CRIME.
 
 - Issue #19802: Add socket.SO_PRIORITY.
