@@ -4,6 +4,8 @@ import ensurepip
 import test.support
 import os
 import os.path
+import contextlib
+import sys
 
 
 class TestEnsurePipVersion(unittest.TestCase):
@@ -122,6 +124,79 @@ class TestBootstrap(unittest.TestCase):
     def test_altinstall_default_pip_conflict(self):
         with self.assertRaises(ValueError):
             ensurepip.bootstrap(altinstall=True, default_pip=True)
+        self.run_pip.assert_not_called()
+
+@contextlib.contextmanager
+def fake_pip(version=ensurepip._PIP_VERSION):
+    if version is None:
+        pip = None
+    else:
+        class FakePip():
+            __version__ = version
+        pip = FakePip()
+    sentinel = object()
+    orig_pip = sys.modules.get("pip", sentinel)
+    sys.modules["pip"] = pip
+    try:
+        yield pip
+    finally:
+        if orig_pip is sentinel:
+            del sys.modules["pip"]
+        else:
+            sys.modules["pip"] = orig_pip
+
+class TestUninstall(unittest.TestCase):
+
+    def setUp(self):
+        run_pip_patch = unittest.mock.patch("ensurepip._run_pip")
+        self.run_pip = run_pip_patch.start()
+        self.addCleanup(run_pip_patch.stop)
+
+    def test_uninstall_skipped_when_not_installed(self):
+        with fake_pip(None):
+            ensurepip._uninstall()
+        self.run_pip.assert_not_called()
+
+    def test_uninstall_fails_with_wrong_version(self):
+        with fake_pip("not a valid version"):
+            with self.assertRaises(RuntimeError):
+                ensurepip._uninstall()
+        self.run_pip.assert_not_called()
+
+
+    def test_uninstall(self):
+        with fake_pip():
+            ensurepip._uninstall()
+
+        self.run_pip.assert_called_once_with(
+            ["uninstall", "-y", "pip", "setuptools"]
+        )
+
+    def test_uninstall_with_verbosity_1(self):
+        with fake_pip():
+            ensurepip._uninstall(verbosity=1)
+
+        self.run_pip.assert_called_once_with(
+            ["uninstall", "-y", "-v", "pip", "setuptools"]
+        )
+
+    def test_uninstall_with_verbosity_2(self):
+        with fake_pip():
+            ensurepip._uninstall(verbosity=2)
+
+        self.run_pip.assert_called_once_with(
+            ["uninstall", "-y", "-vv", "pip", "setuptools"]
+        )
+
+    def test_uninstall_with_verbosity_3(self):
+        with fake_pip():
+            ensurepip._uninstall(verbosity=3)
+
+        self.run_pip.assert_called_once_with(
+            ["uninstall", "-y", "-vvv", "pip", "setuptools"]
+        )
+
+
 
 
 if __name__ == "__main__":

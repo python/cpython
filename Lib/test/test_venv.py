@@ -14,6 +14,7 @@ import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr, run_unittest,
                           can_symlink, EnvironmentVarGuard)
+import textwrap
 import unittest
 import venv
 try:
@@ -258,30 +259,31 @@ class BasicTest(BaseTest):
 @skipInVenv
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
+    def assert_pip_not_installed(self):
+        envpy = os.path.join(os.path.realpath(self.env_dir),
+                             self.bindir, self.exe)
+        try_import = 'try:\n import pip\nexcept ImportError:\n print("OK")'
+        cmd = [envpy, '-c', try_import]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        # We force everything to text, so unittest gives the detailed diff
+        # if we get unexpected results
+        err = err.decode("latin-1") # Force to text, prevent decoding errors
+        self.assertEqual(err, "")
+        out = out.decode("latin-1") # Force to text, prevent decoding errors
+        self.assertEqual(out.strip(), "OK")
+
 
     def test_no_pip_by_default(self):
         shutil.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
-        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        try_import = 'try:\n import pip\nexcept ImportError:\n print("OK")'
-        cmd = [envpy, '-c', try_import]
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        self.assertEqual(err, b"")
-        self.assertEqual(out.strip(), b"OK")
+        self.assert_pip_not_installed()
 
     def test_explicit_no_pip(self):
         shutil.rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
-        envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
-        try_import = 'try:\n import pip\nexcept ImportError:\n print("OK")'
-        cmd = [envpy, '-c', try_import]
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        self.assertEqual(err, b"")
-        self.assertEqual(out.strip(), b"OK")
+        self.assert_pip_not_installed()
 
     # Temporary skip for http://bugs.python.org/issue19744
     @unittest.skipIf(ssl is None, 'pip needs SSL support')
@@ -293,7 +295,8 @@ class EnsurePipTest(BaseTest):
             # environment settings don't cause venv to fail.
             envvars["PYTHONWARNINGS"] = "e"
             # pip doesn't ignore environment variables when running in
-            # isolated mode, and we don't have an active virtualenv here
+            # isolated mode, and we don't have an active virtualenv here,
+            # we're relying on the native venv support in 3.3+
             # See http://bugs.python.org/issue19734 for details
             del envvars["PIP_REQUIRE_VIRTUALENV"]
             try:
@@ -304,6 +307,7 @@ class EnsurePipTest(BaseTest):
                 details = exc.output.decode(errors="replace")
                 msg = "{}\n\n**Subprocess Output**\n{}".format(exc, details)
                 self.fail(msg)
+        # Ensure pip is available in the virtual environment
         envpy = os.path.join(os.path.realpath(self.env_dir), self.bindir, self.exe)
         cmd = [envpy, '-Im', 'pip', '--version']
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -318,6 +322,36 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(out[:len(expected_version)], expected_version)
         env_dir = os.fsencode(self.env_dir).decode("latin-1")
         self.assertIn(env_dir, out)
+
+        # http://bugs.python.org/issue19728
+        # Check the private uninstall command provided for the Windows
+        # installers works (at least in a virtual environment)
+        cmd = [envpy, '-Im', 'ensurepip._uninstall']
+        with EnvironmentVarGuard() as envvars:
+            # pip doesn't ignore environment variables when running in
+            # isolated mode, and we don't have an active virtualenv here,
+            # we're relying on the native venv support in 3.3+
+            # See http://bugs.python.org/issue19734 for details
+            del envvars["PIP_REQUIRE_VIRTUALENV"]
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+            out, err = p.communicate()
+        # We force everything to text, so unittest gives the detailed diff
+        # if we get unexpected results
+        err = err.decode("latin-1") # Force to text, prevent decoding errors
+        self.assertEqual(err, "")
+        # Being really specific regarding the expected behaviour for the
+        # initial bundling phase in Python 3.4. If the output changes in
+        # future pip versions, this test can be relaxed a bit.
+        out = out.decode("latin-1") # Force to text, prevent decoding errors
+        expected_output = textwrap.dedent("""\
+                            Uninstalling pip:
+                              Successfully uninstalled pip
+                            Uninstalling setuptools:
+                              Successfully uninstalled setuptools
+                            """)
+        self.assertEqual(out, expected_output)
+        self.assert_pip_not_installed()
 
 
 def test_main():
