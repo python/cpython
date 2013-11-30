@@ -22,6 +22,9 @@ Library
   constructor is given a str. Move the array module typecode documentation to
   the docstring of the constructor.
 
+- Issue #19088: Fixed incorrect caching of the copyreg module in
+  object.__reduce__() and object.__reduce_ex__().
+
 - Issue #19698: Removed exec_module() methods from
   importlib.machinery.BuiltinImporter and ExtensionFileLoader.
 
