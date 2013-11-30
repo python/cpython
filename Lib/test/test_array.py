@@ -1027,6 +1027,18 @@ class BaseTest:
         basesize = support.calcvobjsize('Pn2Pi')
         support.check_sizeof(self, a, basesize)
 
+    def test_initialize_with_unicode(self):
+        if self.typecode != 'u':
+            with self.assertRaises(TypeError) as cm:
+                a = array.array(self.typecode, 'foo')
+            self.assertIn("cannot use a str", str(cm.exception))
+            with self.assertRaises(TypeError) as cm:
+                a = array.array(self.typecode, array.array('u', 'foo'))
+            self.assertIn("cannot use a unicode array", str(cm.exception))
+        else:
+            a = array.array(self.typecode, "foo")
+            a = array.array(self.typecode, array.array('u', 'foo'))
+
 
 class StringTest(BaseTest):
 
