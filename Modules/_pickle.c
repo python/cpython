@@ -1121,7 +1121,7 @@ static Py_ssize_t
 _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
 {
     PyObject *data;
-    Py_ssize_t read_size, prefetched_size = 0;
+    Py_ssize_t read_size;
 
     assert(self->read != NULL);
 
@@ -1134,7 +1134,29 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         Py_DECREF(empty_tuple);
     }
     else {
-        PyObject *len = PyLong_FromSsize_t(n);
+        PyObject *len;
+        /* Prefetch some data without advancing the file pointer, if possible */
+        if (self->peek && n < PREFETCH) {
+            len = PyLong_FromSsize_t(PREFETCH);
+            if (len == NULL)
+                return -1;
+            data = _Pickle_FastCall(self->peek, len);
+            if (data == NULL) {
+                if (!PyErr_ExceptionMatches(PyExc_NotImplementedError))
+                    return -1;
+                /* peek() is probably not supported by the given file object */
+                PyErr_Clear();
+                Py_CLEAR(self->peek);
+            }
+            else {
+                read_size = _Unpickler_SetStringInput(self, data);
+                Py_DECREF(data);
+                self->prefetched_idx = 0;
+                if (n <= read_size)
+                    return n;
+            }
+        }
+        len = PyLong_FromSsize_t(n);
         if (len == NULL)
             return -1;
         data = _Pickle_FastCall(self->read, len);
@@ -1142,38 +1164,8 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
     if (data == NULL)
         return -1;
 
-    /* Prefetch some data without advancing the file pointer, if possible */
-    if (self->peek) {
-        PyObject *len, *prefetched;
-        len = PyLong_FromSsize_t(PREFETCH);
-        if (len == NULL) {
-            Py_DECREF(data);
-            return -1;
-        }
-        prefetched = _Pickle_FastCall(self->peek, len);
-        if (prefetched == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_NotImplementedError)) {
-                /* peek() is probably not supported by the given file object */
-                PyErr_Clear();
-                Py_CLEAR(self->peek);
-            }
-            else {
-                Py_DECREF(data);
-                return -1;
-            }
-        }
-        else {
-            assert(PyBytes_Check(prefetched));
-            prefetched_size = PyBytes_GET_SIZE(prefetched);
-            PyBytes_ConcatAndDel(&data, prefetched);
-            if (data == NULL)
-                return -1;
-        }
-    }
-
-    read_size = _Unpickler_SetStringInput(self, data) - prefetched_size;
+    read_size = _Unpickler_SetStringInput(self, data);
     Py_DECREF(data);
-    self->prefetched_idx = read_size;
     return read_size;
 }
 
