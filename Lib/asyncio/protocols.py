@@ -4,7 +4,7 @@ __all__ = ['Protocol', 'DatagramProtocol']
 
 
 class BaseProtocol:
-    """ABC for base protocol class.
+    """Common base class for protocol interfaces.
 
     Usually user implements protocols that derived from BaseProtocol
     like Protocol or ProcessProtocol.
@@ -59,7 +59,7 @@ class BaseProtocol:
 
 
 class Protocol(BaseProtocol):
-    """ABC representing a protocol.
+    """Interface for stream protocol.
 
     The user should implement this interface.  They can inherit from
     this class but don't need to.  The implementations here do
@@ -95,7 +95,7 @@ class Protocol(BaseProtocol):
 
 
 class DatagramProtocol(BaseProtocol):
-    """ABC representing a datagram protocol."""
+    """Interface for datagram protocol."""
 
     def datagram_received(self, data, addr):
         """Called when some datagram is received."""
@@ -108,7 +108,7 @@ class DatagramProtocol(BaseProtocol):
 
 
 class SubprocessProtocol(BaseProtocol):
-    """ABC representing a protocol for subprocess calls."""
+    """Interface for protocol for subprocess calls."""
 
     def pipe_data_received(self, fd, data):
         """Called when the subprocess writes data into stdout/stderr pipe.

@@ -4,7 +4,7 @@ __all__ = ['ReadTransport', 'WriteTransport', 'Transport']
 
 
 class BaseTransport:
-    """Base ABC for transports."""
+    """Base class for transports."""
 
     def __init__(self, extra=None):
         if extra is None:
@@ -27,7 +27,7 @@ class BaseTransport:
 
 
 class ReadTransport(BaseTransport):
-    """ABC for read-only transports."""
+    """Interface for read-only transports."""
 
     def pause_reading(self):
         """Pause the receiving end.
@@ -47,7 +47,7 @@ class ReadTransport(BaseTransport):
 
 
 class WriteTransport(BaseTransport):
-    """ABC for write-only transports."""
+    """Interface for write-only transports."""
 
     def set_write_buffer_limits(self, high=None, low=None):
         """Set the high- and low-water limits for write flow control.
@@ -115,7 +115,7 @@ class WriteTransport(BaseTransport):
 
 
 class Transport(ReadTransport, WriteTransport):
-    """ABC representing a bidirectional transport.
+    """Interface representing a bidirectional transport.
 
     There may be several implementations, but typically, the user does
     not implement new transports; rather, the platform provides some
@@ -137,7 +137,7 @@ class Transport(ReadTransport, WriteTransport):
 
 
 class DatagramTransport(BaseTransport):
-    """ABC for datagram (UDP) transports."""
+    """Interface for datagram (UDP) transports."""
 
     def sendto(self, data, addr=None):
         """Send data to the transport.
