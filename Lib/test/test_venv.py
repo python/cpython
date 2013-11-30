@@ -340,17 +340,13 @@ class EnsurePipTest(BaseTest):
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors
         self.assertEqual(err, "")
-        # Being really specific regarding the expected behaviour for the
+        # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in
-        # future pip versions, this test can be relaxed a bit.
+        # future pip versions, this test can likely be relaxed further.
         out = out.decode("latin-1") # Force to text, prevent decoding errors
-        expected_output = textwrap.dedent("""\
-                            Uninstalling pip:
-                              Successfully uninstalled pip
-                            Uninstalling setuptools:
-                              Successfully uninstalled setuptools
-                            """)
-        self.assertEqual(out, expected_output)
+        self.assertIn("Successfully uninstalled pip", out)
+        self.assertIn("Successfully uninstalled setuptools", out)
+        # Check pip is now gone from the virtual environment
         self.assert_pip_not_installed()
 
 
