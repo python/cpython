@@ -804,6 +804,15 @@ class AbstractPickleTests(unittest.TestCase):
             u = self.loads(s)
             self.assertIs(NotImplemented, u)
 
+    def test_singleton_types(self):
+        # Issue #6477: Test that types of built-in singletons can be pickled.
+        singletons = [None, ..., NotImplemented]
+        for singleton in singletons:
+            for proto in protocols:
+                s = self.dumps(type(singleton), proto)
+                u = self.loads(s)
+                self.assertIs(type(singleton), u)
+
     # Tests for protocol 2
 
     def test_proto(self):
