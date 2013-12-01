@@ -628,6 +628,8 @@ PyInit_fcntl(void)
         return NULL;
 
     /* Add some symbolic constants to the module */
-    all_ins(m);
+    if (all_ins(m) < 0)
+        return NULL;
+
     return m;
 }
