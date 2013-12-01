@@ -15,9 +15,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #6477: Added pickling support for built-in singletons (i.e., None,
-  Ellipsis and NotImplemented) and their respective types.
-
 - Issue #16231: Fixed pickle.Pickler to only fallback to its default pickling
   behaviour when Pickler.persistent_id returns None, but not for any other
   false values.  This allows false values other than None to be used as

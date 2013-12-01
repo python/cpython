@@ -427,14 +427,6 @@ class Pickler:
         self.write(NONE)
     dispatch[NoneType] = save_none
 
-    def save_ellipsis(self, obj):
-        self.save_global(Ellipsis, 'Ellipsis')
-    dispatch[type(Ellipsis)] = save_ellipsis
-
-    def save_notimplemented(self, obj):
-        self.save_global(NotImplemented, 'NotImplemented')
-    dispatch[type(NotImplemented)] = save_notimplemented
-
     def save_bool(self, obj):
         if self.proto >= 2:
             self.write(obj and NEWTRUE or NEWFALSE)
@@ -778,18 +770,7 @@ class Pickler:
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
     dispatch[BuiltinFunctionType] = save_global
-
-    def save_type(self, obj):
-        if obj is type(None):
-            return self.save_reduce(type, (None,), obj=obj)
-        elif obj is type(NotImplemented):
-            return self.save_reduce(type, (NotImplemented,), obj=obj)
-        elif obj is type(Ellipsis):
-            return self.save_reduce(type, (Ellipsis,), obj=obj)
-        return self.save_global(obj)
-
-    dispatch[TypeType] = save_type
-
+    dispatch[TypeType] = save_global
 
 # Pickling helpers
 
