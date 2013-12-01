@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15798: Fixed subprocess.Popen() to no longer fail if file
+  descriptor 0, 1 or 2 is closed.
+
 - Issue #17897: Optimized unpickle prefetching.
 
 - Issue #3693: Make the error message more helpful when the array.array()
