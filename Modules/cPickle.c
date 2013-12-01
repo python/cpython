@@ -2559,6 +2559,60 @@ save_reduce(Picklerobject *self, PyObject *args, PyObject *fn, PyObject *ob)
 }
 
 static int
+save_ellipsis(Picklerobject *self, PyObject *obj)
+{
+    PyObject *str = PyString_FromString("Ellipsis");
+    int res;
+    if (str == NULL)
+        return -1;
+    res = save_global(self, Py_Ellipsis, str);
+    Py_DECREF(str);
+    return res;
+}
+
+static int
+save_notimplemented(Picklerobject *self, PyObject *obj)
+{
+    PyObject *str = PyString_FromString("NotImplemented");
+    int res;
+    if (str == NULL)
+        return -1;
+    res = save_global(self, Py_NotImplemented, str);
+    Py_DECREF(str);
+    return res;
+}
+
+static int
+save_singleton_type(Picklerobject *self, PyObject *obj, PyObject *singleton)
+{
+    PyObject *reduce_value;
+    int status;
+
+    reduce_value = Py_BuildValue("O(O)", &PyType_Type, singleton);
+    if (reduce_value == NULL) {
+        return -1;
+    }
+    status = save_reduce(self, reduce_value, (PyObject *)self, obj);
+    Py_DECREF(reduce_value);
+    return status;
+}
+
+static int
+save_type(Picklerobject *self, PyObject *obj)
+{
+    if (obj == (PyObject *)&PyNone_Type) {
+        return save_singleton_type(self, obj, Py_None);
+    }
+    else if (obj == (PyObject *)&PyEllipsis_Type) {
+        return save_singleton_type(self, obj, Py_Ellipsis);
+    }
+    else if (obj == (PyObject *)&PyNotImplemented_Type) {
+        return save_singleton_type(self, obj, Py_NotImplemented);
+    }
+    return save_global(self, obj, NULL);
+}
+
+static int
 save(Picklerobject *self, PyObject *args, int pers_save)
 {
     PyTypeObject *type;
@@ -2578,6 +2632,14 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 
     if (args == Py_None) {
         res = save_none(self, args);
+        goto finally;
+    }
+    else if (args == Py_Ellipsis) {
+        res = save_ellipsis(self, args);
+        goto finally;
+    }
+    else if (args == Py_NotImplemented) {
+        res = save_notimplemented(self, args);
         goto finally;
     }
 
@@ -2671,7 +2733,7 @@ save(Picklerobject *self, PyObject *args, int pers_save)
             goto finally;
         }
         if (type == &PyType_Type) {
-            res = save_global(self, args, NULL);
+            res = save_type(self, args);
             goto finally;
         }
         break;
