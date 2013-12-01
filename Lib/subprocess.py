@@ -1361,7 +1361,10 @@ class Popen(object):
                         executable_list = tuple(
                             os.path.join(os.fsencode(dir), executable)
                             for dir in os.get_exec_path(env))
-                    fds_to_keep = set(pass_fds)
+                    # Never close stdin, stdout and stderr for the child.
+                    fds_to_keep = {0,1,2}
+                    fds_to_keep.update(pass_fds)
+                    # Our child uses this one to signal error before exec().
                     fds_to_keep.add(errpipe_write)
                     self.pid = _posixsubprocess.fork_exec(
                             args, executable_list,
