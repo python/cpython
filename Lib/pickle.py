@@ -954,8 +954,17 @@ class _Pickler:
 
         self.memoize(obj)
 
+    def save_type(self, obj):
+        if obj is type(None):
+            return self.save_reduce(type, (None,), obj=obj)
+        elif obj is type(NotImplemented):
+            return self.save_reduce(type, (NotImplemented,), obj=obj)
+        elif obj is type(...):
+            return self.save_reduce(type, (...,), obj=obj)
+        return self.save_global(obj)
+
     dispatch[FunctionType] = save_global
-    dispatch[type] = save_global
+    dispatch[type] = save_type
 
 
 # Unpickling machinery

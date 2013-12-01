@@ -1409,7 +1409,7 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_index */
 };
 
-static PyTypeObject PyNone_Type = {
+PyTypeObject PyNone_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NoneType",
     0,
@@ -1494,7 +1494,7 @@ notimplemented_dealloc(PyObject* ignore)
     Py_FatalError("deallocating NotImplemented");
 }
 
-static PyTypeObject PyNotImplemented_Type = {
+PyTypeObject PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
     0,
