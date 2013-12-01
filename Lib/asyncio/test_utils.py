@@ -142,8 +142,22 @@ def make_test_protocol(base):
 
 class TestSelector(selectors.BaseSelector):
 
+    def __init__(self):
+        self.keys = {}
+
+    def register(self, fileobj, events, data=None):
+        key = selectors.SelectorKey(fileobj, 0, events, data)
+        self.keys[fileobj] = key
+        return key
+
+    def unregister(self, fileobj):
+        return self.keys.pop(fileobj)
+
     def select(self, timeout):
         return []
+
+    def get_map(self):
+        return self.keys
 
 
 class TestLoop(base_events.BaseEventLoop):

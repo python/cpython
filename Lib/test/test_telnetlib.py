@@ -114,7 +114,6 @@ class TelnetAlike(telnetlib.Telnet):
 class MockSelector(selectors.BaseSelector):
 
     def __init__(self):
-        super().__init__()
         self.keys = {}
 
     def register(self, fileobj, events, data=None):
@@ -123,8 +122,7 @@ class MockSelector(selectors.BaseSelector):
         return key
 
     def unregister(self, fileobj):
-        key = self.keys.pop(fileobj)
-        return key
+        return self.keys.pop(fileobj)
 
     def select(self, timeout=None):
         block = False
@@ -136,6 +134,9 @@ class MockSelector(selectors.BaseSelector):
             return []
         else:
             return [(key, key.events) for key in self.keys.values()]
+
+    def get_map(self):
+        return self.keys
 
 
 @contextlib.contextmanager

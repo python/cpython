@@ -64,7 +64,7 @@ class _SelectorMapping(Mapping):
 
 
 class BaseSelector(metaclass=ABCMeta):
-    """Base selector class.
+    """Selector abstract base class.
 
     A selector supports registering file objects to be monitored for specific
     I/O events.
@@ -78,12 +78,7 @@ class BaseSelector(metaclass=ABCMeta):
     performant implementation on the current platform.
     """
 
-    def __init__(self):
-        # this maps file descriptors to keys
-        self._fd_to_key = {}
-        # read-only mapping returned by get_map()
-        self._map = _SelectorMapping(self)
-
+    @abstractmethod
     def register(self, fileobj, events, data=None):
         """Register a file object.
 
@@ -95,18 +90,9 @@ class BaseSelector(metaclass=ABCMeta):
         Returns:
         SelectorKey instance
         """
-        if (not events) or (events & ~(EVENT_READ | EVENT_WRITE)):
-            raise ValueError("Invalid events: {!r}".format(events))
+        raise NotImplementedError
 
-        key = SelectorKey(fileobj, _fileobj_to_fd(fileobj), events, data)
-
-        if key.fd in self._fd_to_key:
-            raise KeyError("{!r} (FD {}) is already "
-                           "registered".format(fileobj, key.fd))
-
-        self._fd_to_key[key.fd] = key
-        return key
-
+    @abstractmethod
     def unregister(self, fileobj):
         """Unregister a file object.
 
@@ -116,11 +102,7 @@ class BaseSelector(metaclass=ABCMeta):
         Returns:
         SelectorKey instance
         """
-        try:
-            key = self._fd_to_key.pop(_fileobj_to_fd(fileobj))
-        except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
-        return key
+        raise NotImplementedError
 
     def modify(self, fileobj, events, data=None):
         """Change a registered file object monitored events or attached data.
@@ -133,19 +115,8 @@ class BaseSelector(metaclass=ABCMeta):
         Returns:
         SelectorKey instance
         """
-        # TODO: Subclasses can probably optimize this even further.
-        try:
-            key = self._fd_to_key[_fileobj_to_fd(fileobj)]
-        except KeyError:
-            raise KeyError("{!r} is not registered".format(fileobj)) from None
-        if events != key.events:
-            self.unregister(fileobj)
-            key = self.register(fileobj, events, data)
-        elif data != key.data:
-            # Use a shortcut to update the data.
-            key = key._replace(data=data)
-            self._fd_to_key[key.fd] = key
-        return key
+        self.unregister(fileobj)
+        return self.register(fileobj, events, data)
 
     @abstractmethod
     def select(self, timeout=None):
@@ -164,14 +135,14 @@ class BaseSelector(metaclass=ABCMeta):
         list of (key, events) for ready file objects
         `events` is a bitwise mask of EVENT_READ|EVENT_WRITE
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def close(self):
         """Close the selector.
 
         This must be called to make sure that any underlying resource is freed.
         """
-        self._fd_to_key.clear()
+        pass
 
     def get_key(self, fileobj):
         """Return the key associated to a registered file object.
@@ -179,20 +150,73 @@ class BaseSelector(metaclass=ABCMeta):
         Returns:
         SelectorKey for this file object
         """
+        mapping = self.get_map()
         try:
-            return self._fd_to_key[_fileobj_to_fd(fileobj)]
+            return mapping[fileobj]
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
 
+    @abstractmethod
     def get_map(self):
         """Return a mapping of file objects to selector keys."""
-        return self._map
+        raise NotImplementedError
 
     def __enter__(self):
         return self
 
     def __exit__(self, *args):
         self.close()
+
+
+class _BaseSelectorImpl(BaseSelector):
+    """Base selector implementation."""
+
+    def __init__(self):
+        # this maps file descriptors to keys
+        self._fd_to_key = {}
+        # read-only mapping returned by get_map()
+        self._map = _SelectorMapping(self)
+
+    def register(self, fileobj, events, data=None):
+        if (not events) or (events & ~(EVENT_READ | EVENT_WRITE)):
+            raise ValueError("Invalid events: {!r}".format(events))
+
+        key = SelectorKey(fileobj, _fileobj_to_fd(fileobj), events, data)
+
+        if key.fd in self._fd_to_key:
+            raise KeyError("{!r} (FD {}) is already "
+                           "registered".format(fileobj, key.fd))
+
+        self._fd_to_key[key.fd] = key
+        return key
+
+    def unregister(self, fileobj):
+        try:
+            key = self._fd_to_key.pop(_fileobj_to_fd(fileobj))
+        except KeyError:
+            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        return key
+
+    def modify(self, fileobj, events, data=None):
+        # TODO: Subclasses can probably optimize this even further.
+        try:
+            key = self._fd_to_key[_fileobj_to_fd(fileobj)]
+        except KeyError:
+            raise KeyError("{!r} is not registered".format(fileobj)) from None
+        if events != key.events:
+            self.unregister(fileobj)
+            key = self.register(fileobj, events, data)
+        elif data != key.data:
+            # Use a shortcut to update the data.
+            key = key._replace(data=data)
+            self._fd_to_key[key.fd] = key
+        return key
+
+    def close(self):
+        self._fd_to_key.clear()
+
+    def get_map(self):
+        return self._map
 
     def _key_from_fd(self, fd):
         """Return the key associated to a given file descriptor.
@@ -209,7 +233,7 @@ class BaseSelector(metaclass=ABCMeta):
             return None
 
 
-class SelectSelector(BaseSelector):
+class SelectSelector(_BaseSelectorImpl):
     """Select-based selector."""
 
     def __init__(self):
@@ -262,7 +286,7 @@ class SelectSelector(BaseSelector):
 
 if hasattr(select, 'poll'):
 
-    class PollSelector(BaseSelector):
+    class PollSelector(_BaseSelectorImpl):
         """Poll-based selector."""
 
         def __init__(self):
@@ -306,7 +330,7 @@ if hasattr(select, 'poll'):
 
 if hasattr(select, 'epoll'):
 
-    class EpollSelector(BaseSelector):
+    class EpollSelector(_BaseSelectorImpl):
         """Epoll-based selector."""
 
         def __init__(self):
@@ -358,7 +382,7 @@ if hasattr(select, 'epoll'):
 
 if hasattr(select, 'kqueue'):
 
-    class KqueueSelector(BaseSelector):
+    class KqueueSelector(_BaseSelectorImpl):
         """Kqueue-based selector."""
 
         def __init__(self):
