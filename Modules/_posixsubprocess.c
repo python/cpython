@@ -449,7 +449,7 @@ child_exec(char *const exec_array[],
             local_max_fd = max_fd;
 #endif
         /* TODO HP-UX could use pstat_getproc() if anyone cares about it. */
-        _close_open_fd_range(0, local_max_fd, py_fds_to_keep);
+        _close_open_fd_range(3, local_max_fd, py_fds_to_keep);
     }
 
     /* This loop matches the Lib/os.py _execvpe()'s PATH search when */
@@ -526,6 +526,10 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
             &restore_signals, &call_setsid, &preexec_fn))
         return NULL;
 
+    if (close_fds && errpipe_write < 3) {  /* precondition */
+        PyErr_SetString(PyExc_ValueError, "errpipe_write must be >= 3");
+        return NULL;
+    }
     if (PySequence_Length(py_fds_to_keep) < 0) {
         PyErr_SetString(PyExc_ValueError, "cannot get length of fds_to_keep");
         return NULL;
