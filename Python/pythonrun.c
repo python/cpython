@@ -106,6 +106,7 @@ extern int _PyFaulthandler_Init(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern int _PyTraceMalloc_Init(void);
+extern int _PyTraceMalloc_Fini(void);
 
 #ifdef WITH_THREAD
 extern void _PyGILState_Init(PyInterpreterState *, PyThreadState *);
@@ -641,6 +642,10 @@ Py_Finalize(void)
 #if 0
     PyGC_Collect();
 #endif
+
+    /* Disable tracemalloc after all Python objects have been destroyed,
+       so it is possible to use tracemalloc in objects destructor. */
+    _PyTraceMalloc_Fini();
 
     /* Destroy the database used by _PyImport_{Fixup,Find}Extension */
     _PyImport_Fini();
