@@ -100,14 +100,15 @@ class TestScanstring(object):
                 self.assertEqual(scanstring(given, 1, None, True),
                                  (expect, len(given)))
 
+        surrogates = unichr(0xd834) + unichr(0xdd20)
         assertScan('"z\\ud834\\u0079x"', u'z\ud834yx')
         assertScan('"z\\ud834\\udd20x"', u'z\U0001d120x')
         assertScan('"z\\ud834\\ud834\\udd20x"', u'z\ud834\U0001d120x')
         assertScan('"z\\ud834x"', u'z\ud834x')
-        assertScan(u'"z\\ud834\udd20x12345"', u'z\ud834\udd20x12345')
+        assertScan(u'"z\\ud834\udd20x12345"', u'z%sx12345' % surrogates)
         assertScan('"z\\udd20x"', u'z\udd20x')
         assertScan(u'"z\ud834\udd20x"', u'z\ud834\udd20x')
-        assertScan(u'"z\ud834\\udd20x"', u'z\ud834\udd20x')
+        assertScan(u'"z\ud834\\udd20x"', u'z%sx' % surrogates)
         assertScan(u'"z\ud834x"', u'z\ud834x')
 
     def test_bad_escapes(self):
