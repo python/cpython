@@ -76,6 +76,14 @@ def copy(x):
     if copier:
         return copier(x)
 
+    try:
+        issc = issubclass(cls, type)
+    except TypeError: # cls is not a class
+        issc = False
+    if issc:
+        # treat it as a regular class:
+        return _copy_immutable(x)
+
     copier = getattr(cls, "__copy__", None)
     if copier:
         return copier(x)
