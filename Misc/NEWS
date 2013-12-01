@@ -24,6 +24,9 @@ Library
 - Fixed _pickle.Unpickler to not fail when loading empty strings as
   persistent IDs.
 
+- Issue #11480: Fixed copy.copy to work with classes with custom metaclasses.
+  Patch by Daniel Urban.
+
 - Issue #6477: Added support for pickling the types of built-in singletons
   (i.e., Ellipsis, NotImplemented, None).
 
