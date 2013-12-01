@@ -3305,13 +3305,13 @@ save_singleton_type(PicklerObject *self, PyObject *obj, PyObject *singleton)
 static int
 save_type(PicklerObject *self, PyObject *obj)
 {
-    if (obj == (PyObject *)&PyNone_Type) {
+    if (obj == (PyObject *)&_PyNone_Type) {
         return save_singleton_type(self, obj, Py_None);
     }
     else if (obj == (PyObject *)&PyEllipsis_Type) {
         return save_singleton_type(self, obj, Py_Ellipsis);
     }
-    else if (obj == (PyObject *)&PyNotImplemented_Type) {
+    else if (obj == (PyObject *)&_PyNotImplemented_Type) {
         return save_singleton_type(self, obj, Py_NotImplemented);
     }
     return save_global(self, obj, NULL);
