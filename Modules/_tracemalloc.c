@@ -9,7 +9,6 @@
 
 /* Forward declaration */
 static void tracemalloc_stop(void);
-static int tracemalloc_atexit_register(void);
 static void* raw_malloc(size_t size);
 static void raw_free(void *ptr);
 
@@ -36,9 +35,6 @@ static struct {
         TRACEMALLOC_FINALIZED
     } initialized;
 
-    /* atexit handler registered? */
-    int atexit_registered;
-
     /* Is tracemalloc tracing memory allocations?
        Variable protected by the GIL */
     int tracing;
@@ -46,7 +42,7 @@ static struct {
     /* limit of the number of frames in a traceback, 1 by default.
        Variable protected by the GIL. */
     int max_nframe;
-} tracemalloc_config = {TRACEMALLOC_NOT_INITIALIZED, 0, 0, 1};
+} tracemalloc_config = {TRACEMALLOC_NOT_INITIALIZED, 0, 1};
 
 #if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
 /* This lock is needed because tracemalloc_free() is called without
@@ -802,9 +798,6 @@ tracemalloc_start(int max_nframe)
         return 0;
     }
 
-    if (tracemalloc_atexit_register() < 0)
-        return -1;
-
     assert(1 <= max_nframe && max_nframe <= MAX_NFRAME);
     tracemalloc_config.max_nframe = max_nframe;
 
@@ -1140,65 +1133,6 @@ py_tracemalloc_get_object_traceback(PyObject *self, PyObject *obj)
     return traceback_to_pyobject(trace.traceback, NULL);
 }
 
-static PyObject*
-tracemalloc_atexit(PyObject *self)
-{
-#ifdef WITH_THREAD
-    assert(PyGILState_Check());
-#endif
-    tracemalloc_deinit();
-    Py_RETURN_NONE;
-}
-
-static PyMethodDef atexit_method = {
-    "_atexit", (PyCFunction)tracemalloc_atexit, METH_NOARGS, NULL};
-
-static int
-tracemalloc_atexit_register(void)
-{
-    PyObject *method = NULL, *atexit = NULL, *func = NULL;
-    PyObject *result;
-    int ret = -1;
-
-    if (tracemalloc_config.atexit_registered)
-        return 0;
-    tracemalloc_config.atexit_registered = 1;
-
-    /* private functions */
-    method = PyCFunction_New(&atexit_method, NULL);
-    if (method == NULL)
-        goto done;
-
-    atexit = PyImport_ImportModule("atexit");
-    if (atexit == NULL) {
-        if (!PyErr_Warn(PyExc_ImportWarning,
-                       "atexit module is missing: "
-                       "cannot automatically disable tracemalloc at exit"))
-        {
-            PyErr_Clear();
-            return 0;
-        }
-        goto done;
-    }
-
-    func = PyObject_GetAttrString(atexit, "register");
-    if (func == NULL)
-        goto done;
-
-    result = PyObject_CallFunction(func, "O", method);
-    if (result == NULL)
-        goto done;
-    Py_DECREF(result);
-
-    ret = 0;
-
-done:
-    Py_XDECREF(method);
-    Py_XDECREF(func);
-    Py_XDECREF(atexit);
-    return ret;
-}
-
 PyDoc_STRVAR(tracemalloc_start_doc,
     "start(nframe: int=1)\n"
     "\n"
@@ -1437,5 +1371,14 @@ _PyTraceMalloc_Init(void)
     }
 
     return tracemalloc_start(nframe);
+}
+
+void
+_PyTraceMalloc_Fini(void)
+{
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+    tracemalloc_deinit();
 }
 
