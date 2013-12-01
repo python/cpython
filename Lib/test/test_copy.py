@@ -3,6 +3,7 @@
 import copy
 import copyreg
 import weakref
+import abc
 from operator import le, lt, ge, gt, eq, ne
 
 import unittest
@@ -93,9 +94,11 @@ class TestCopy(unittest.TestCase):
             pass
         def f():
             pass
+        class WithMetaclass(metaclass=abc.ABCMeta):
+            pass
         tests = [None, 42, 2**100, 3.14, True, False, 1j,
                  "hello", "hello\u1234", f.__code__,
-                 NewStyle, range(10), Classic, max]
+                 NewStyle, range(10), Classic, max, WithMetaclass]
         for x in tests:
             self.assertIs(copy.copy(x), x)
 
