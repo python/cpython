@@ -1409,7 +1409,7 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_index */
 };
 
-PyTypeObject PyNone_Type = {
+PyTypeObject _PyNone_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NoneType",
     0,
@@ -1452,7 +1452,7 @@ PyTypeObject PyNone_Type = {
 
 PyObject _Py_NoneStruct = {
   _PyObject_EXTRA_INIT
-  1, &PyNone_Type
+  1, &_PyNone_Type
 };
 
 /* NotImplemented is an object that can be used to signal that an
@@ -1494,7 +1494,7 @@ notimplemented_dealloc(PyObject* ignore)
     Py_FatalError("deallocating NotImplemented");
 }
 
-PyTypeObject PyNotImplemented_Type = {
+PyTypeObject _PyNotImplemented_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "NotImplementedType",
     0,
@@ -1537,7 +1537,7 @@ PyTypeObject PyNotImplemented_Type = {
 
 PyObject _Py_NotImplementedStruct = {
     _PyObject_EXTRA_INIT
-    1, &PyNotImplemented_Type
+    1, &_PyNotImplemented_Type
 };
 
 void
@@ -1567,10 +1567,10 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PyList_Type) < 0)
         Py_FatalError("Can't initialize list type");
 
-    if (PyType_Ready(&PyNone_Type) < 0)
+    if (PyType_Ready(&_PyNone_Type) < 0)
         Py_FatalError("Can't initialize None type");
 
-    if (PyType_Ready(&PyNotImplemented_Type) < 0)
+    if (PyType_Ready(&_PyNotImplemented_Type) < 0)
         Py_FatalError("Can't initialize NotImplemented type");
 
     if (PyType_Ready(&PyTraceBack_Type) < 0)
