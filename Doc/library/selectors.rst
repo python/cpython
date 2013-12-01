@@ -150,6 +150,11 @@ below:
       object.
       *events* is a bitmask of events ready on this file object.
 
+      .. note::
+          This method can return before any file object becomes ready or the
+          timeout has elapsed if the current process receives a signal: in this
+          case, an empty list will be returned.
+
    .. method:: close()
 
       Close the selector.
