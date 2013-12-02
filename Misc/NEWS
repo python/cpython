@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19785: smtplib now supports SSLContext.check_hostname and server name
+  indication for TLS/SSL connections.
+
 - Issue #19784: poplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 
