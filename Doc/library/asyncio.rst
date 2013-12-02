@@ -367,7 +367,7 @@ Running subprocesses
 
 Run subprocesses asynchronously using the :mod:`subprocess` module.
 
-.. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=True, bufsize=0, \*\*kwargs)
+.. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=False, bufsize=0, \*\*kwargs)
 
    XXX
 
@@ -375,7 +375,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
-.. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=False, bufsize=0, \*\*kwargs)
+.. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=True, bufsize=0, \*\*kwargs)
 
    XXX
 
@@ -978,29 +978,9 @@ Stream reader and writer
 
       Transport.
 
-   .. method:: write(data)
-
-      XXX
-
-   .. method:: writelines(data)
-
-      XXX
-
-   .. method:: write_eof()
-
-      XXX
-
-   .. method:: can_write_eof()
-
-      XXX
-
    .. method:: close()
 
-      XXX
-
-   .. method:: get_extra_info(name, default=None)
-
-      XXX
+      Close the transport: see :meth:`BaseTransport.close`.
 
    .. method:: drain()
 
@@ -1018,20 +998,37 @@ Stream reader and writer
       that Future is completed, which will happen when the buffer is
       (partially) drained and the protocol is resumed.
 
+   .. method:: get_extra_info(name, default=None)
+
+      Return optional transport information: see
+      :meth:`BaseTransport.get_extra_info`.
+
+   .. method:: write(data)
+
+      Write some *data* bytes to the transport: see
+      :meth:`WriteTransport.write`.
+
+   .. method:: writelines(data)
+
+      Write a list (or any iterable) of data bytes to the transport:
+      see :meth:`WriteTransport.writelines`.
+
+   .. method:: can_write_eof()
+
+      Return :const:`True` if the transport supports :meth:`write_eof`,
+      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
+
+   .. method:: write_eof()
+
+      Close the write end of the transport after flushing buffered data:
+      see :meth:`WriteTransport.write_eof`.
+
 
 .. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
 
    .. method:: exception()
 
       Get the exception.
-
-   .. method:: set_exception(exc)
-
-      Set the exception.
-
-   .. method:: set_transport(transport)
-
-      Set the transport.
 
    .. method:: feed_eof()
 
@@ -1041,19 +1038,27 @@ Stream reader and writer
 
       XXX
 
+   .. method:: set_exception(exc)
+
+      Set the exception.
+
+   .. method:: set_transport(transport)
+
+      Set the transport.
+
    .. method:: read(n=-1)
 
       XXX
 
       This method returns a :ref:`coroutine <coroutine>`.
 
-   .. method:: readexactly(n)
+   .. method:: readline()
 
       XXX
 
       This method returns a :ref:`coroutine <coroutine>`.
 
-   .. method:: readline()
+   .. method:: readexactly(n)
 
       XXX
 
@@ -1222,6 +1227,12 @@ Synchronization primitives
    method.  The :meth:`wait` method blocks until the flag is true. The flag is
    initially false.
 
+   .. method:: clear()
+
+      Reset the internal flag to false. Subsequently, coroutines calling
+      :meth:`wait` will block until :meth:`set` is called to set the internal
+      flag to true again.
+
    .. method:: is_set()
 
       Return ``True`` if and only if the internal flag is true.
@@ -1231,12 +1242,6 @@ Synchronization primitives
       Set the internal flag to true. All coroutines waiting for it to become
       true are awakened. Coroutine that call :meth:`wait` once the flag is true
       will not block at all.
-
-   .. method:: clear()
-
-      Reset the internal flag to false. Subsequently, coroutines calling
-      :meth:`wait` will block until :meth:`set` is called to set the internal
-      flag to true again.
 
    .. method:: wait()
 
@@ -1259,6 +1264,28 @@ Synchronization primitives
    coroutine.
 
    A new :class:`Lock` object is created and used as the underlying lock.
+
+   .. method:: notify(n=1)
+
+      By default, wake up one coroutine waiting on this condition, if any.
+      If the calling coroutine has not acquired the lock when this method is
+      called, a :exc:`RuntimeError` is raised.
+
+      This method wakes up at most *n* of the coroutines waiting for the
+      condition variable; it is a no-op if no coroutines are waiting.
+
+      .. note::
+
+         An awakened coroutine does not actually return from its :meth:`wait`
+         call until it can reacquire the lock. Since :meth:`notify` does not
+         release the lock, its caller should.
+
+   .. method:: notify_all()
+
+      Wake up all threads waiting on this condition. This method acts like
+      :meth:`notify`, but wakes up all waiting threads instead of one. If the
+      calling thread has not acquired the lock when this method is called, a
+      :exc:`RuntimeError` is raised.
 
    .. method:: wait()
 
@@ -1283,28 +1310,6 @@ Synchronization primitives
 
       This method returns a :ref:`coroutine <coroutine>`.
 
-   .. method:: notify(n=1)
-
-      By default, wake up one coroutine waiting on this condition, if any.
-      If the calling coroutine has not acquired the lock when this method is
-      called, a :exc:`RuntimeError` is raised.
-
-      This method wakes up at most *n* of the coroutines waiting for the
-      condition variable; it is a no-op if no coroutines are waiting.
-
-      .. note::
-
-         An awakened coroutine does not actually return from its :meth:`wait`
-         call until it can reacquire the lock. Since :meth:`notify` does not
-         release the lock, its caller should.
-
-   .. method:: notify_all()
-
-      Wake up all threads waiting on this condition. This method acts like
-      :meth:`notify`, but wakes up all waiting threads instead of one. If the
-      calling thread has not acquired the lock when this method is called, a
-      :exc:`RuntimeError` is raised.
-
 
 .. class:: Semaphore(value=1, \*, loop=None)
 
@@ -1321,10 +1326,6 @@ Synchronization primitives
    defaults to ``1``. If the value given is less than ``0``, :exc:`ValueError`
    is raised.
 
-   .. method:: locked()
-
-      Returns ``True`` if semaphore can not be acquired immediately.
-
    .. method:: acquire()
 
       Acquire a semaphore.
@@ -1335,6 +1336,10 @@ Synchronization primitives
       than ``0``, and then return ``True``.
 
       This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: locked()
+
+      Returns ``True`` if semaphore can not be acquired immediately.
 
    .. method:: release()
 
@@ -1415,6 +1420,7 @@ Synchronization primitives
 
       Number of items allowed in the queue.
 
+
 .. class:: PriorityQueue
 
    A subclass of :class:`Queue`; retrieves entries in priority order (lowest
@@ -1422,15 +1428,29 @@ Synchronization primitives
 
    Entries are typically tuples of the form: (priority number, data).
 
+
 .. class:: LifoQueue
 
     A subclass of :class:`Queue` that retrieves most recently added entries
     first.
 
+
 .. class:: JoinableQueue
 
    A subclass of :class:`Queue` with :meth:`task_done` and :meth:`join`
    methods.
+
+   .. method:: join()
+
+      Block until all items in the queue have been gotten and processed.
+
+      The count of unfinished tasks goes up whenever an item is added to the
+      queue. The count goes down whenever a consumer thread calls
+      :meth:`task_done` to indicate that the item was retrieved and all work on
+      it is complete.  When the count of unfinished tasks drops to zero,
+      :meth:`join` unblocks.
+
+      This method returns a :ref:`coroutine <coroutine>`.
 
    .. method:: task_done()
 
@@ -1446,18 +1466,6 @@ Synchronization primitives
 
       Raises :exc:`ValueError` if called more times than there were items
       placed in the queue.
-
-   .. method:: join()
-
-      Block until all items in the queue have been gotten and processed.
-
-      The count of unfinished tasks goes up whenever an item is added to the
-      queue. The count goes down whenever a consumer thread calls
-      :meth:`task_done` to indicate that the item was retrieved and all work on
-      it is complete.  When the count of unfinished tasks drops to zero,
-      :meth:`join` unblocks.
-
-      This method returns a :ref:`coroutine <coroutine>`.
 
 
 Examples
