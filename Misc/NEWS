@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19834: Support unpickling of exceptions pickled by Python 2.
+
 - Issue #19781: ftplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 
