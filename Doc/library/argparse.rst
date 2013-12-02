@@ -1371,12 +1371,14 @@ argument::
    >>> parser.parse_args(['--', '-f'])
    Namespace(foo='-f', one=None)
 
+.. _prefix-matching:
 
-Argument abbreviations
-^^^^^^^^^^^^^^^^^^^^^^
+Argument abbreviations (prefix matching)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`~ArgumentParser.parse_args` method allows long options to be
-abbreviated if the abbreviation is unambiguous::
+abbreviated to a prefix, if the abbreviation is unambiguous (the prefix matches
+a unique option)::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('-bacon')
@@ -1851,6 +1853,12 @@ the populated namespace and the list of remaining argument strings.
    >>> parser.add_argument('bar')
    >>> parser.parse_known_args(['--foo', '--badger', 'BAR', 'spam'])
    (Namespace(bar='BAR', foo=True), ['--badger', 'spam'])
+
+.. warning::
+   :ref:`Prefix matching <prefix-matching>` rules apply to
+   :meth:`parse_known_args`. The parser may consume an option even if it's just
+   a prefix of one of its known options, instead of leaving it in the remaining
+   arguments list.
 
 
 Customizing file parsing
