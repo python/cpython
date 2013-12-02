@@ -204,7 +204,7 @@ class Event:
 
 
 class Condition:
-    """A Condition implementation, our equivalent to threading.Condition.
+    """A Condition implementation, asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
     allows one or more coroutines to wait until they are notified by another
