@@ -939,6 +939,15 @@ class Path(PurePath):
         # A stub for the opener argument to built-in open()
         return self._accessor.open(self, flags, mode)
 
+    def _raw_open(self, flags, mode=0o777):
+        """
+        Open the file pointed by this path and return a file descriptor,
+        as os.open() does.
+        """
+        if self._closed:
+            self._raise_closed()
+        return self._accessor.open(self, flags, mode)
+
     # Public API
 
     @classmethod
@@ -1044,15 +1053,6 @@ class Path(PurePath):
         """
         import grp
         return grp.getgrgid(self.stat().st_gid).gr_name
-
-    def _raw_open(self, flags, mode=0o777):
-        """
-        Open the file pointed by this path and return a file descriptor,
-        as os.open() does.
-        """
-        if self._closed:
-            self._raise_closed()
-        return self._accessor.open(self, flags, mode)
 
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
