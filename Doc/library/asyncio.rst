@@ -94,7 +94,7 @@ Run an event loop
 
 .. method:: BaseEventLoop.run_until_complete(future)
 
-   Run until the :class:`Future` is done.
+   Run until the :class:`~concurrent.futures.Future` is done.
 
    If the argument is a coroutine, it is wrapped in a :class:`Task`.
 
@@ -334,6 +334,58 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
    This method returns a :ref:`coroutine <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
+
+
+Network functions
+-----------------
+
+.. function:: open_connection(host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+
+   A wrapper for create_connection() returning a (reader, writer) pair.
+
+   The reader returned is a StreamReader instance; the writer is a
+   :class:`Transport`.
+
+   The arguments are all the usual arguments to
+   :meth:`BaseEventLoop.create_connection` except *protocol_factory*; most
+   common are positional host and port, with various optional keyword arguments
+   following.
+
+   Additional optional keyword arguments are *loop* (to set the event loop
+   instance to use) and *limit* (to set the buffer limit passed to the
+   StreamReader).
+
+   (If you want to customize the :class:`StreamReader` and/or
+   :class:`StreamReaderProtocol` classes, just copy the code -- there's really
+   nothing special here except some convenience.)
+
+   This function returns a :ref:`coroutine <coroutine>`.
+
+.. function:: start_server(client_connected_cb, host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+
+   Start a socket server, call back for each client connected.
+
+   The first parameter, *client_connected_cb*, takes two parameters:
+   *client_reader*, *client_writer*.  *client_reader* is a
+   :class:`StreamReader` object, while *client_writer* is a
+   :class:`StreamWriter` object.  This parameter can either be a plain callback
+   function or a :ref:`coroutine <coroutine>`; if it is a coroutine, it will be
+   automatically converted into a :class:`Task`.
+
+   The rest of the arguments are all the usual arguments to
+   :meth:`~BaseEventLoop.create_server()` except *protocol_factory*; most
+   common are positional host and port, with various optional keyword arguments
+   following.  The return value is the same as
+   :meth:`~BaseEventLoop.create_server()`.
+
+   Additional optional keyword arguments are *loop* (to set the event loop
+   instance to use) and *limit* (to set the buffer limit passed to the
+   :class:`StreamReader`).
+
+   The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
+   a Server object which can be used to stop the service.
+
+   This function returns a :ref:`coroutine <coroutine>`.
 
 
 .. _protocol:
@@ -841,6 +893,105 @@ call them yourself, unless you are implementing a transport.
    All callbacks have default implementations, which are empty.  Therefore,
    you only need to implement the callbacks for the events in which you
    are interested.
+
+
+Stream reader and writer
+------------------------
+
+.. class:: StreamWriter(transport, protocol, reader, loop)
+
+   Wraps a Transport.
+
+   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`, :meth:`write_eof`, :meth:`get_extra_info` and
+   :meth:`close`.  It adds :meth:`drain` which returns an optional :class:`~concurrent.futures.Future` on which you can
+   wait for flow control.  It also adds a transport attribute which references
+   the :class:`Transport` directly.
+
+   .. attribute:: transport
+
+      Transport.
+
+   .. method:: write(data)
+
+      XXX
+
+   .. method:: writelines(data)
+
+      XXX
+
+   .. method:: write_eof()
+
+      XXX
+
+   .. method:: can_write_eof()
+
+      XXX
+
+   .. method:: close()
+
+      XXX
+
+   .. method:: get_extra_info(name, default=None)
+
+      XXX
+
+   .. method:: drain()
+
+      This method has an unusual return value.
+
+      The intended use is to write::
+
+          w.write(data)
+          yield from w.drain()
+
+      When there's nothing to wait for, :meth:`drain()` returns ``()``, and the
+      yield-from continues immediately.  When the transport buffer is full (the
+      protocol is paused), :meth:`drain` creates and returns a
+      :class:`~concurrent.futures.Future` and the yield-from will block until
+      that Future is completed, which will happen when the buffer is
+      (partially) drained and the protocol is resumed.
+
+
+.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
+
+   .. method:: exception()
+
+      Get the exception.
+
+   .. method:: set_exception(exc)
+
+      Set the exception.
+
+   .. method:: set_transport(transport)
+
+      Set the transport.
+
+   .. method:: feed_eof()
+
+      XXX
+
+   .. method:: feed_data(data)
+
+      XXX
+
+   .. method:: read(n=-1)
+
+      XXX
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: readexactly(n)
+
+      XXX
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: readline()
+
+      XXX
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
 
 
 .. _coroutine:
