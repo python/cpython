@@ -2313,7 +2313,7 @@ def optimize(p):
         buf.start_framing()
     for start, stop, putid in opcodes:
         if putid in gets:
-            #buf.commit_frame()
+            buf.commit_frame()
             buf.write(p[start:stop])
     if proto >= 4:
         buf.end_framing()
