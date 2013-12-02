@@ -301,7 +301,8 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
 
 if ssl is not None:
 
-    CERTFILE = os.path.join(os.path.dirname(__file__), "keycert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__), "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__), "pycacert.pem")
 
     class SSLConnection(asyncore.dispatcher):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
@@ -922,6 +923,36 @@ class TestTLS_FTPClass(TestCase):
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
+
+    def test_check_hostname(self):
+        self.client.quit()
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        ctx.check_hostname = True
+        ctx.load_verify_locations(CAFILE)
+        self.client = ftplib.FTP_TLS(context=ctx, timeout=TIMEOUT)
+
+        # 127.0.0.1 doesn't match SAN
+        self.client.connect(self.server.host, self.server.port)
+        with self.assertRaises(ssl.CertificateError):
+            self.client.auth()
+        # exception quits connection
+
+        self.client.connect(self.server.host, self.server.port)
+        self.client.prot_p()
+        with self.assertRaises(ssl.CertificateError):
+            with self.client.transfercmd("list") as sock:
+                pass
+        self.client.quit()
+
+        self.client.connect("localhost", self.server.port)
+        self.client.auth()
+        self.client.quit()
+
+        self.client.connect("localhost", self.server.port)
+        self.client.prot_p()
+        with self.client.transfercmd("list") as sock:
+            pass
 
 
 class TestTimeouts(TestCase):

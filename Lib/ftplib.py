@@ -748,7 +748,9 @@ else:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
-            self.sock = self.context.wrap_socket(self.sock)
+            server_hostname = self.host if ssl.HAS_SNI else None
+            self.sock = self.context.wrap_socket(self.sock,
+                                                 server_hostname=server_hostname)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
             return resp
 
@@ -787,7 +789,9 @@ else:
         def ntransfercmd(self, cmd, rest=None):
             conn, size = FTP.ntransfercmd(self, cmd, rest)
             if self._prot_p:
-                conn = self.context.wrap_socket(conn)
+                server_hostname = self.host if ssl.HAS_SNI else None
+                conn = self.context.wrap_socket(conn,
+                                                server_hostname=server_hostname)
             return conn, size
 
         def abort(self):
