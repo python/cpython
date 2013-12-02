@@ -690,10 +690,210 @@ Methods of subprocess transports
    On Windows, this method is an alias for :meth:`terminate`.
 
 
+Task functions
+--------------
+
+.. function:: as_completed(fs, *, loop=None, timeout=None)
+
+   Return an iterator whose values, when waited for, are
+   :class:`~concurrent.futures.Future` instances.
+
+   Raises :exc:`TimeoutError` if the timeout occurs before all Futures are done.
+
+   Example::
+
+       for f in as_completed(fs):
+           result = yield from f  # The 'yield from' may raise
+           # Use result
+
+   .. note::
+
+      The futures ``f`` are not necessarily members of fs.
+
+.. function:: async(coro_or_future, *, loop=None)
+
+   Wrap a :ref:`coroutine <coroutine>` in a future.
+
+   If the argument is a :class:`~concurrent.futures.Future`, it is returned
+   directly.
+
+.. function:: gather(*coros_or_futures, loop=None, return_exceptions=False)
+
+   Return a future aggregating results from the given coroutines or futures.
+
+   All futures must share the same event loop.  If all the tasks are done
+   successfully, the returned future's result is the list of results (in the
+   order of the original sequence, not necessarily the order of results
+   arrival).  If *result_exception* is True, exceptions in the tasks are
+   treated the same as successful results, and gathered in the result list;
+   otherwise, the first raised exception will be immediately propagated to the
+   returned future.
+
+   Cancellation: if the outer Future is cancelled, all children (that have not
+   completed yet) are also cancelled.  If any child is cancelled, this is
+   treated as if it raised :exc:`~concurrent.futures.CancelledError` -- the
+   outer Future is *not* cancelled in this case.  (This is to prevent the
+   cancellation of one child to cause other children to be cancelled.)
+
+.. function:: iscoroutinefunction(func)
+
+   Return ``True`` if *func* is a decorated coroutine function.
+
+.. function:: iscoroutine(obj)
+
+   Return ``True`` if *obj* is a coroutine object.
+
+.. function:: sleep(delay, result=None, *, loop=None)
+
+   Create a :ref:`coroutine <coroutine>` that completes after a given time
+   (in seconds).
+
+.. function:: shield(arg, *, loop=None)
+
+   Wait for a future, shielding it from cancellation.
+
+   The statement::
+
+       res = yield from shield(something())
+
+   is exactly equivalent to the statement::
+
+       res = yield from something()
+
+   *except* that if the coroutine containing it is cancelled, the task running
+   in ``something()`` is not cancelled.  From the point of view of
+   ``something()``, the cancellation did not happen.  But its caller is still
+   cancelled, so the yield-from expression still raises
+   :exc:`~concurrent.futures.CancelledError`.  Note: If ``something()`` is
+   cancelled by other means this will still cancel ``shield()``.
+
+   If you want to completely ignore cancellation (not recommended) you can
+   combine ``shield()`` with a try/except clause, as follows::
+
+       try:
+           res = yield from shield(something())
+       except CancelledError:
+           res = None
+
+
+Task
+----
+
+.. class:: Task(coro, *, loop=None)
+
+   A coroutine wrapped in a :class:`~concurrent.futures.Future`.
+
+   .. classmethod:: all_tasks(loop=None)
+
+      Return a set of all tasks for an event loop.
+
+      By default all tasks for the current event loop are returned.
+
+   .. method:: cancel()
+
+      Cancel the task.
+
+   .. method:: get_stack(self, *, limit=None)
+
+      Return the list of stack frames for this task's coroutine.
+
+      If the coroutine is active, this returns the stack where it is suspended.
+      If the coroutine has completed successfully or was cancelled, this
+      returns an empty list.  If the coroutine was terminated by an exception,
+      this returns the list of traceback frames.
+
+      The frames are always ordered from oldest to newest.
+
+      The optional limit gives the maximum nummber of frames to return; by
+      default all available frames are returned.  Its meaning differs depending
+      on whether a stack or a traceback is returned: the newest frames of a
+      stack are returned, but the oldest frames of a traceback are returned.
+      (This matches the behavior of the traceback module.)
+
+      For reasons beyond our control, only one stack frame is returned for a
+      suspended coroutine.
+
+   .. method:: print_stack(*, limit=None, file=None)
+
+      Print the stack or traceback for this task's coroutine.
+
+      This produces output similar to that of the traceback module, for the
+      frames retrieved by get_stack().  The limit argument is passed to
+      get_stack().  The file argument is an I/O stream to which the output
+      goes; by default it goes to sys.stderr.
+
+
+Protocols
+---------
+
+:mod:`asyncio` provides base classes that you can subclass to implement
+your network protocols.  Those classes are used in conjunction with
+:ref:`transports <transport>` (see below): the protocol parses incoming
+data and asks for the writing of outgoing data, while the transport is
+responsible for the actual I/O and buffering.
+
+When subclassing a protocol class, it is recommended you override certain
+methods.  Those methods are callbacks: they will be called by the transport
+on certain events (for example when some data is received); you shouldn't
+call them yourself, unless you are implementing a transport.
+
+.. note::
+   All callbacks have default implementations, which are empty.  Therefore,
+   you only need to implement the callbacks for the events in which you
+   are interested.
+
+
 .. _coroutine:
 
 Coroutines
 ----------
+
+A coroutine is a generator that follows certain conventions.  For
+documentation purposes, all coroutines should be decorated with
+``@asyncio.coroutine``, but this cannot be strictly enforced.
+
+Coroutines use the ``yield from`` syntax introduced in :pep:`380`,
+instead of the original ``yield`` syntax.
+
+The word "coroutine", like the word "generator", is used for two
+different (though related) concepts:
+
+- The function that defines a coroutine (a function definition
+  decorated with ``asyncio.coroutine``).  If disambiguation is needed
+  we will call this a *coroutine function*.
+
+- The object obtained by calling a coroutine function.  This object
+  represents a computation or an I/O operation (usually a combination)
+  that will complete eventually.  If disambiguation is needed we will
+  call it a *coroutine object*.
+
+Things a coroutine can do:
+
+- ``result = yield from future`` -- suspends the coroutine until the
+  future is done, then returns the future's result, or raises an
+  exception, which will be propagated.  (If the future is cancelled,
+  it will raise a ``CancelledError`` exception.)  Note that tasks are
+  futures, and everything said about futures also applies to tasks.
+
+- ``result = yield from coroutine`` -- wait for another coroutine to
+  produce a result (or raise an exception, which will be propagated).
+  The ``coroutine`` expression must be a *call* to another coroutine.
+
+- ``return expression`` -- produce a result to the coroutine that is
+  waiting for this one using ``yield from``.
+
+- ``raise exception`` -- raise an exception in the coroutine that is
+  waiting for this one using ``yield from``.
+
+Calling a coroutine does not start its code running -- it is just a
+generator, and the coroutine object returned by the call is really a
+generator object, which doesn't do anything until you iterate over it.
+In the case of a coroutine object, there are two basic ways to start
+it running: call ``yield from coroutine`` from another coroutine
+(assuming the other coroutine is already running!), or convert it to a
+:class:`Task`.
+
+Coroutines (and tasks) can only run when the event loop is running.
 
 
 .. _sync:
