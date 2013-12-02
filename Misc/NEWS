@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19509: Add SSLContext.check_hostname to match the peer's certificate
+  with server_hostname on handshake.
+
 - Issue #15798: Fixed subprocess.Popen() to no longer fail if file
   descriptor 0, 1 or 2 is closed.
 

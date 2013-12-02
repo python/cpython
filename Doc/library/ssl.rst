@@ -773,6 +773,11 @@ SSL sockets also have the following additional methods and attributes:
 
    Perform the SSL setup handshake.
 
+   .. versionchanged:: 3.4
+      The handshake method also performce :func:`match_hostname` when the
+      :attr:`~SSLContext.check_hostname` attribute of the socket's
+      :attr:`~SSLSocket.context` is true.
+
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
    If there is no certificate for the peer on the other end of the connection,
@@ -1181,6 +1186,33 @@ to speed up repeated connections from the same clients.
       been used at least once.
 
    .. versionadded:: 3.4
+
+.. attribute:: SSLContext.check_hostname
+
+   Wether to match the peer cert's hostname with :func:`match_hostname` in
+   :meth:`SSLSocket.do_handshake`. The context's
+   :attr:`~SSLContext.verify_mode` must be set to :data:`CERT_OPTIONAL` or
+   :data:`CERT_REQUIRED`, and you must pass *server_hostname* to
+   :meth:`~SSLContext.wrap_socket` in order to match the hostname.
+
+   Example::
+
+      import socket, ssl
+
+      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+      context.verify_mode = ssl.CERT_REQUIRED
+      context.check_hostname = True
+      context.load_default_certs()
+
+      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      ssl_sock = context.wrap_socket(s, server_hostname='www.verisign.com'):
+         ssl_sock.connect(('www.verisign.com', 443))
+
+   .. versionadded:: 3.4
+
+   .. note::
+
+     This features requires OpenSSL 0.9.8f or newer.
 
 .. attribute:: SSLContext.options
 
@@ -1596,7 +1628,9 @@ Therefore, when in client mode, it is highly recommended to use
 have to check that the server certificate, which can be obtained by calling
 :meth:`SSLSocket.getpeercert`, matches the desired service.  For many
 protocols and applications, the service can be identified by the hostname;
-in this case, the :func:`match_hostname` function can be used.
+in this case, the :func:`match_hostname` function can be used.  This common
+check is automatically performed when :attr:`SSLContext.check_hostname` is
+enabled.
 
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
