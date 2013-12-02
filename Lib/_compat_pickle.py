@@ -76,6 +76,62 @@ NAME_MAPPING = {
     ('itertools', 'ifilterfalse'): ('itertools', 'filterfalse'),
 }
 
+PYTHON2_EXCEPTIONS = (
+    "ArithmeticError",
+    "AssertionError",
+    "AttributeError",
+    "BaseException",
+    "BufferError",
+    "BytesWarning",
+    "DeprecationWarning",
+    "EOFError",
+    "EnvironmentError",
+    "Exception",
+    "FloatingPointError",
+    "FutureWarning",
+    "GeneratorExit",
+    "IOError",
+    "ImportError",
+    "ImportWarning",
+    "IndentationError",
+    "IndexError",
+    "KeyError",
+    "KeyboardInterrupt",
+    "LookupError",
+    "MemoryError",
+    "NameError",
+    "NotImplementedError",
+    "OSError",
+    "OverflowError",
+    "PendingDeprecationWarning",
+    "ReferenceError",
+    "RuntimeError",
+    "RuntimeWarning",
+    # StandardError is gone in Python 3, so we map it to Exception
+    "StopIteration",
+    "SyntaxError",
+    "SyntaxWarning",
+    "SystemError",
+    "SystemExit",
+    "TabError",
+    "TypeError",
+    "UnboundLocalError",
+    "UnicodeDecodeError",
+    "UnicodeEncodeError",
+    "UnicodeError",
+    "UnicodeTranslateError",
+    "UnicodeWarning",
+    "UserWarning",
+    "ValueError",
+    "Warning",
+    "ZeroDivisionError",
+)
+
+for excname in PYTHON2_EXCEPTIONS:
+    NAME_MAPPING[("exceptions", excname)] = ("builtins", excname)
+
+NAME_MAPPING[("exceptions", "StandardError")] = ("builtins", "Exception")
+
 # Same, but for 3.x to 2.x
 REVERSE_IMPORT_MAPPING = dict((v, k) for (k, v) in IMPORT_MAPPING.items())
 REVERSE_NAME_MAPPING = dict((v, k) for (k, v) in NAME_MAPPING.items())
