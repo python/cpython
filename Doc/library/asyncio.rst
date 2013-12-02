@@ -326,28 +326,6 @@ Creating connections
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
-.. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
-
-   Register read pipe in eventloop.
-
-   *protocol_factory* should instantiate object with :class:`Protocol`
-   interface.  pipe is file-like object already switched to nonblocking.
-   Return pair (transport, protocol), where transport support
-   :class:`ReadTransport` interface.
-
-   This method returns a :ref:`coroutine <coroutine>`.
-
-.. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
-
-   Register write pipe in eventloop.
-
-   *protocol_factory* should instantiate object with :class:`BaseProtocol`
-   interface.  Pipe is file-like object already switched to nonblocking.
-   Return pair (transport, protocol), where transport support
-   :class:`WriteTransport` interface.
-
-   This method returns a :ref:`coroutine <coroutine>`.
-
 
 Resolve name
 ^^^^^^^^^^^^
@@ -382,57 +360,583 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
+.. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
-Network functions
------------------
+   Register read pipe in eventloop.
 
-.. function:: open_connection(host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+   *protocol_factory* should instantiate object with :class:`Protocol`
+   interface.  pipe is file-like object already switched to nonblocking.
+   Return pair (transport, protocol), where transport support
+   :class:`ReadTransport` interface.
 
-   A wrapper for create_connection() returning a (reader, writer) pair.
+   This method returns a :ref:`coroutine <coroutine>`.
 
-   The reader returned is a StreamReader instance; the writer is a
-   :class:`Transport`.
+.. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
 
-   The arguments are all the usual arguments to
-   :meth:`BaseEventLoop.create_connection` except *protocol_factory*; most
-   common are positional host and port, with various optional keyword arguments
-   following.
+   Register write pipe in eventloop.
 
-   Additional optional keyword arguments are *loop* (to set the event loop
-   instance to use) and *limit* (to set the buffer limit passed to the
-   StreamReader).
+   *protocol_factory* should instantiate object with :class:`BaseProtocol`
+   interface.  Pipe is file-like object already switched to nonblocking.
+   Return pair (transport, protocol), where transport support
+   :class:`WriteTransport` interface.
 
-   (If you want to customize the :class:`StreamReader` and/or
-   :class:`StreamReaderProtocol` classes, just copy the code -- there's really
-   nothing special here except some convenience.)
+   This method returns a :ref:`coroutine <coroutine>`.
+
+
+.. _coroutine:
+
+Coroutines
+----------
+
+A coroutine is a generator that follows certain conventions.  For
+documentation purposes, all coroutines should be decorated with
+``@asyncio.coroutine``, but this cannot be strictly enforced.
+
+Coroutines use the ``yield from`` syntax introduced in :pep:`380`,
+instead of the original ``yield`` syntax.
+
+The word "coroutine", like the word "generator", is used for two
+different (though related) concepts:
+
+- The function that defines a coroutine (a function definition
+  decorated with ``asyncio.coroutine``).  If disambiguation is needed
+  we will call this a *coroutine function*.
+
+- The object obtained by calling a coroutine function.  This object
+  represents a computation or an I/O operation (usually a combination)
+  that will complete eventually.  If disambiguation is needed we will
+  call it a *coroutine object*.
+
+Things a coroutine can do:
+
+- ``result = yield from future`` -- suspends the coroutine until the
+  future is done, then returns the future's result, or raises an
+  exception, which will be propagated.  (If the future is cancelled,
+  it will raise a ``CancelledError`` exception.)  Note that tasks are
+  futures, and everything said about futures also applies to tasks.
+
+- ``result = yield from coroutine`` -- wait for another coroutine to
+  produce a result (or raise an exception, which will be propagated).
+  The ``coroutine`` expression must be a *call* to another coroutine.
+
+- ``return expression`` -- produce a result to the coroutine that is
+  waiting for this one using ``yield from``.
+
+- ``raise exception`` -- raise an exception in the coroutine that is
+  waiting for this one using ``yield from``.
+
+Calling a coroutine does not start its code running -- it is just a
+generator, and the coroutine object returned by the call is really a
+generator object, which doesn't do anything until you iterate over it.
+In the case of a coroutine object, there are two basic ways to start
+it running: call ``yield from coroutine`` from another coroutine
+(assuming the other coroutine is already running!), or convert it to a
+:class:`Task`.
+
+Coroutines (and tasks) can only run when the event loop is running.
+
+
+Task
+----
+
+.. class:: Task(coro, \*, loop=None)
+
+   A coroutine wrapped in a :class:`~concurrent.futures.Future`.
+
+   .. classmethod:: all_tasks(loop=None)
+
+      Return a set of all tasks for an event loop.
+
+      By default all tasks for the current event loop are returned.
+
+   .. method:: cancel()
+
+      Cancel the task.
+
+   .. method:: get_stack(self, \*, limit=None)
+
+      Return the list of stack frames for this task's coroutine.
+
+      If the coroutine is active, this returns the stack where it is suspended.
+      If the coroutine has completed successfully or was cancelled, this
+      returns an empty list.  If the coroutine was terminated by an exception,
+      this returns the list of traceback frames.
+
+      The frames are always ordered from oldest to newest.
+
+      The optional limit gives the maximum nummber of frames to return; by
+      default all available frames are returned.  Its meaning differs depending
+      on whether a stack or a traceback is returned: the newest frames of a
+      stack are returned, but the oldest frames of a traceback are returned.
+      (This matches the behavior of the traceback module.)
+
+      For reasons beyond our control, only one stack frame is returned for a
+      suspended coroutine.
+
+   .. method:: print_stack(\*, limit=None, file=None)
+
+      Print the stack or traceback for this task's coroutine.
+
+      This produces output similar to that of the traceback module, for the
+      frames retrieved by get_stack().  The limit argument is passed to
+      get_stack().  The file argument is an I/O stream to which the output
+      goes; by default it goes to sys.stderr.
+
+
+Task functions
+--------------
+
+.. function:: as_completed(fs, *, loop=None, timeout=None)
+
+   Return an iterator whose values, when waited for, are
+   :class:`~concurrent.futures.Future` instances.
+
+   Raises :exc:`TimeoutError` if the timeout occurs before all Futures are done.
+
+   Example::
+
+       for f in as_completed(fs):
+           result = yield from f  # The 'yield from' may raise
+           # Use result
+
+   .. note::
+
+      The futures ``f`` are not necessarily members of fs.
+
+.. function:: async(coro_or_future, *, loop=None)
+
+   Wrap a :ref:`coroutine <coroutine>` in a future.
+
+   If the argument is a :class:`~concurrent.futures.Future`, it is returned
+   directly.
+
+.. function:: gather(*coros_or_futures, loop=None, return_exceptions=False)
+
+   Return a future aggregating results from the given coroutines or futures.
+
+   All futures must share the same event loop.  If all the tasks are done
+   successfully, the returned future's result is the list of results (in the
+   order of the original sequence, not necessarily the order of results
+   arrival).  If *result_exception* is True, exceptions in the tasks are
+   treated the same as successful results, and gathered in the result list;
+   otherwise, the first raised exception will be immediately propagated to the
+   returned future.
+
+   Cancellation: if the outer Future is cancelled, all children (that have not
+   completed yet) are also cancelled.  If any child is cancelled, this is
+   treated as if it raised :exc:`~concurrent.futures.CancelledError` -- the
+   outer Future is *not* cancelled in this case.  (This is to prevent the
+   cancellation of one child to cause other children to be cancelled.)
+
+.. function:: tasks.iscoroutinefunction(func)
+
+   Return ``True`` if *func* is a decorated coroutine function.
+
+.. function:: tasks.iscoroutine(obj)
+
+   Return ``True`` if *obj* is a coroutine object.
+
+.. function:: sleep(delay, result=None, \*, loop=None)
+
+   Create a :ref:`coroutine <coroutine>` that completes after a given time
+   (in seconds).
+
+.. function:: shield(arg, \*, loop=None)
+
+   Wait for a future, shielding it from cancellation.
+
+   The statement::
+
+       res = yield from shield(something())
+
+   is exactly equivalent to the statement::
+
+       res = yield from something()
+
+   *except* that if the coroutine containing it is cancelled, the task running
+   in ``something()`` is not cancelled.  From the point of view of
+   ``something()``, the cancellation did not happen.  But its caller is still
+   cancelled, so the yield-from expression still raises
+   :exc:`~concurrent.futures.CancelledError`.  Note: If ``something()`` is
+   cancelled by other means this will still cancel ``shield()``.
+
+   If you want to completely ignore cancellation (not recommended) you can
+   combine ``shield()`` with a try/except clause, as follows::
+
+       try:
+           res = yield from shield(something())
+       except CancelledError:
+           res = None
+
+.. function:: wait(fs, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
+
+   Wait for the Futures and coroutines given by fs to complete. Coroutines will
+   be wrapped in Tasks.  Returns two sets of
+   :class:`~concurrent.futures.Future`: (done, pending).
+
+   *timeout* can be used to control the maximum number of seconds to wait before
+   returning.  *timeout* can be an int or float.  If *timeout* is not specified
+   or ``None``, there is no limit to the wait time.
+
+   *return_when* indicates when this function should return.  It must be one of
+   the following constants of the :mod`concurrent.futures` module:
+
+   .. tabularcolumns:: |l|L|
+
+   +-----------------------------+----------------------------------------+
+   | Constant                    | Description                            |
+   +=============================+========================================+
+   | :const:`FIRST_COMPLETED`    | The function will return when any      |
+   |                             | future finishes or is cancelled.       |
+   +-----------------------------+----------------------------------------+
+   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
+   |                             | future finishes by raising an          |
+   |                             | exception.  If no future raises an     |
+   |                             | exception then it is equivalent to     |
+   |                             | :const:`ALL_COMPLETED`.                |
+   +-----------------------------+----------------------------------------+
+   | :const:`ALL_COMPLETED`      | The function will return when all      |
+   |                             | futures finish or are cancelled.       |
+   +-----------------------------+----------------------------------------+
 
    This function returns a :ref:`coroutine <coroutine>`.
 
-.. function:: start_server(client_connected_cb, host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+   Usage::
 
-   Start a socket server, call back for each client connected.
+        done, pending = yield from asyncio.wait(fs)
 
-   The first parameter, *client_connected_cb*, takes two parameters:
-   *client_reader*, *client_writer*.  *client_reader* is a
-   :class:`StreamReader` object, while *client_writer* is a
-   :class:`StreamWriter` object.  This parameter can either be a plain callback
-   function or a :ref:`coroutine <coroutine>`; if it is a coroutine, it will be
-   automatically converted into a :class:`Task`.
+   .. note::
 
-   The rest of the arguments are all the usual arguments to
-   :meth:`~BaseEventLoop.create_server()` except *protocol_factory*; most
-   common are positional host and port, with various optional keyword arguments
-   following.  The return value is the same as
-   :meth:`~BaseEventLoop.create_server()`.
+      This does not raise :exc:`TimeoutError`! Futures that aren't done when
+      the timeout occurs are returned in the second set.
 
-   Additional optional keyword arguments are *loop* (to set the event loop
-   instance to use) and *limit* (to set the buffer limit passed to the
-   :class:`StreamReader`).
 
-   The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
-   a :class:`AbstractServer` object which can be used to stop the service.
+.. _transport:
 
-   This function returns a :ref:`coroutine <coroutine>`.
+Transports
+----------
+
+Transports are classed provided by :mod:`asyncio` in order to abstract
+various kinds of communication channels.  You generally won't instantiate
+a transport yourself; instead, you will call a :class:`BaseEventLoop` method
+which will create the transport and try to initiate the underlying
+communication channel, calling you back when it succeeds.
+
+Once the communication channel is established, a transport is always
+paired with a :ref:`protocol <protocol>` instance.  The protocol can
+then call the transport's methods for various purposes.
+
+:mod:`asyncio` currently implements transports for TCP, UDP, SSL, and
+subprocess pipes.  The methods available on a transport depend on
+the transport's kind.
+
+
+Methods common to all transports: BaseTransport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: BaseTransport
+
+   Base class for transports.
+
+   .. method:: close(self)
+
+      Close the transport.  If the transport has a buffer for outgoing
+      data, buffered data will be flushed asynchronously.  No more data
+      will be received.  After all buffered data is flushed, the
+      protocol's :meth:`connection_lost` method will be called with
+      :const:`None` as its argument.
+
+
+   .. method:: get_extra_info(name, default=None)
+
+      Return optional transport information.  *name* is a string representing
+      the piece of transport-specific information to get, *default* is the
+      value to return if the information doesn't exist.
+
+      This method allows transport implementations to easily expose
+      channel-specific information.
+
+      * socket:
+
+        - ``'peername'``: the remote address to which the socket is connected,
+          result of :meth:`socket.socket.getpeername` (``None`` on error)
+        - ``'socket'``: :class:`socket.socket` instance
+        - ``'sockname'``: the socket's own address,
+          result of :meth:`socket.socket.getsockname`
+
+      * SSL socket:
+
+        - ``'compression'``: the compression algorithm being used as a string,
+          or ``None`` if the connection isn't compressed; result of
+          :meth:`ssl.SSLSocket.compression`
+        - ``'cipher'``: a three-value tuple containing the name of the cipher
+          being used, the version of the SSL protocol that defines its use, and
+          the number of secret bits being used; result of
+          :meth:`ssl.SSLSocket.cipher`
+        - ``'peercert'``: peer certificate; result of
+          :meth:`ssl.SSLSocket.getpeercert`
+        - ``'sslcontext'``: :class:`ssl.SSLContext` instance
+
+      * pipe:
+
+        - ``'pipe'``: pipe object
+
+      * subprocess:
+
+        - ``'subprocess'``: :class:`subprocess.Popen` instance
+
+
+Methods of readable streaming transports: ReadTransport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: ReadTransport
+
+   Interface for read-only transports.
+
+   .. method:: pause_reading()
+
+      Pause the receiving end of the transport.  No data will be passed to
+      the protocol's :meth:`data_received` method until meth:`resume_reading`
+      is called.
+
+   .. method:: resume_reading()
+
+      Resume the receiving end.  The protocol's :meth:`data_received` method
+      will be called once again if some data is available for reading.
+
+
+Methods of writable streaming transports: WriteTransport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: WriteTransport
+
+   Interface for write-only transports.
+
+   .. method:: abort()
+
+      Close the transport immediately, without waiting for pending operations
+      to complete.  Buffered data will be lost.  No more data will be received.
+      The protocol's :meth:`connection_lost` method will eventually be
+      called with :const:`None` as its argument.
+
+   .. method:: can_write_eof()
+
+      Return :const:`True` if the transport supports :meth:`write_eof`,
+      :const:`False` if not.
+
+   .. method:: get_write_buffer_size()
+
+      Return the current size of the output buffer used by the transport.
+
+   .. method:: set_write_buffer_limits(high=None, low=None)
+
+      Set the *high*- and *low*-water limits for write flow control.
+
+      These two values control when call the protocol's
+      :meth:`pause_writing` and :meth:`resume_writing` methods are called.
+      If specified, the low-water limit must be less than or equal to the
+      high-water limit.  Neither *high* nor *low* can be negative.
+
+      The defaults are implementation-specific.  If only the
+      high-water limit is given, the low-water limit defaults to a
+      implementation-specific value less than or equal to the
+      high-water limit.  Setting *high* to zero forces *low* to zero as
+      well, and causes :meth:`pause_writing` to be called whenever the
+      buffer becomes non-empty.  Setting *low* to zero causes
+      :meth:`resume_writing` to be called only once the buffer is empty.
+      Use of zero for either limit is generally sub-optimal as it
+      reduces opportunities for doing I/O and computation
+      concurrently.
+
+   .. method:: write(data)
+
+      Write some *data* bytes to the transport.
+
+      This method does not block; it buffers the data and arranges for it
+      to be sent out asynchronously.
+
+   .. method:: writelines(list_of_data)
+
+      Write a list (or any iterable) of data bytes to the transport.
+      This is functionally equivalent to calling :meth:`write` on each
+      element yielded by the iterable, but may be implemented more efficiently.
+
+   .. method:: write_eof()
+
+      Close the write end of the transport after flushing buffered data.
+      Data may still be received.
+
+      This method can raise :exc:`NotImplementedError` if the transport
+      (e.g. SSL) doesn't support half-closes.
+
+
+Methods of datagram transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: DatagramTransport.sendto(data, addr=None)
+
+   Send the *data* bytes to the remote peer given by *addr* (a
+   transport-dependent target address).  If *addr* is :const:`None`, the
+   data is sent to the target address given on transport creation.
+
+   This method does not block; it buffers the data and arranges for it
+   to be sent out asynchronously.
+
+.. method:: DatagramTransport.abort()
+
+   Close the transport immediately, without waiting for pending operations
+   to complete.  Buffered data will be lost.  No more data will be received.
+   The protocol's :meth:`connection_lost` method will eventually be
+   called with :const:`None` as its argument.
+
+
+Methods of subprocess transports
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. class:: BaseSubprocessTransport
+
+   .. method:: get_pid()
+
+      Return the subprocess process id as an integer.
+
+   .. method:: get_returncode()
+
+      Return the subprocess returncode as an integer or :const:`None`
+      if it hasn't returned, similarly to the
+      :attr:`subprocess.Popen.returncode` attribute.
+
+   .. method:: get_pipe_transport(fd)
+
+      Return the transport for the communication pipe correspondong to the
+      integer file descriptor *fd*.  The return value can be a readable or
+      writable streaming transport, depending on the *fd*.  If *fd* doesn't
+      correspond to a pipe belonging to this transport, :const:`None` is
+      returned.
+
+   .. method:: send_signal(signal)
+
+      Send the *signal* number to the subprocess, as in
+      :meth:`subprocess.Popen.send_signal`.
+
+   .. method:: terminate()
+
+      Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
+      This method is an alias for the :meth:`close` method.
+
+      On POSIX systems, this method sends SIGTERM to the subprocess.
+      On Windows, the Windows API function TerminateProcess() is called to
+      stop the subprocess.
+
+   .. method:: kill(self)
+
+      Kill the subprocess, as in :meth:`subprocess.Popen.kill`
+
+      On POSIX systems, the function sends SIGKILL to the subprocess.
+      On Windows, this method is an alias for :meth:`terminate`.
+
+
+Stream reader and writer
+------------------------
+
+.. class:: StreamWriter(transport, protocol, reader, loop)
+
+   Wraps a Transport.
+
+   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`, :meth:`write_eof`, :meth:`get_extra_info` and
+   :meth:`close`.  It adds :meth:`drain` which returns an optional :class:`~concurrent.futures.Future` on which you can
+   wait for flow control.  It also adds a transport attribute which references
+   the :class:`Transport` directly.
+
+   .. attribute:: transport
+
+      Transport.
+
+   .. method:: close()
+
+      Close the transport: see :meth:`BaseTransport.close`.
+
+   .. method:: drain()
+
+      This method has an unusual return value.
+
+      The intended use is to write::
+
+          w.write(data)
+          yield from w.drain()
+
+      When there's nothing to wait for, :meth:`drain()` returns ``()``, and the
+      yield-from continues immediately.  When the transport buffer is full (the
+      protocol is paused), :meth:`drain` creates and returns a
+      :class:`~concurrent.futures.Future` and the yield-from will block until
+      that Future is completed, which will happen when the buffer is
+      (partially) drained and the protocol is resumed.
+
+   .. method:: get_extra_info(name, default=None)
+
+      Return optional transport information: see
+      :meth:`BaseTransport.get_extra_info`.
+
+   .. method:: write(data)
+
+      Write some *data* bytes to the transport: see
+      :meth:`WriteTransport.write`.
+
+   .. method:: writelines(data)
+
+      Write a list (or any iterable) of data bytes to the transport:
+      see :meth:`WriteTransport.writelines`.
+
+   .. method:: can_write_eof()
+
+      Return :const:`True` if the transport supports :meth:`write_eof`,
+      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
+
+   .. method:: write_eof()
+
+      Close the write end of the transport after flushing buffered data:
+      see :meth:`WriteTransport.write_eof`.
+
+
+.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
+
+   .. method:: exception()
+
+      Get the exception.
+
+   .. method:: feed_eof()
+
+      XXX
+
+   .. method:: feed_data(data)
+
+      XXX
+
+   .. method:: set_exception(exc)
+
+      Set the exception.
+
+   .. method:: set_transport(transport)
+
+      Set the transport.
+
+   .. method:: read(n=-1)
+
+      XXX
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: readline()
+
+      XXX
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: readexactly(n)
+
+      XXX
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
 
 
 .. _protocol:
@@ -613,405 +1117,6 @@ buffer size reaches the low-water mark.
    mark is zero.
 
 
-.. _transport:
-
-Transports
-----------
-
-Transports are classed provided by :mod:`asyncio` in order to abstract
-various kinds of communication channels.  You generally won't instantiate
-a transport yourself; instead, you will call a :class:`BaseEventLoop` method
-which will create the transport and try to initiate the underlying
-communication channel, calling you back when it succeeds.
-
-Once the communication channel is established, a transport is always
-paired with a :ref:`protocol <protocol>` instance.  The protocol can
-then call the transport's methods for various purposes.
-
-:mod:`asyncio` currently implements transports for TCP, UDP, SSL, and
-subprocess pipes.  The methods available on a transport depend on
-the transport's kind.
-
-
-Methods common to all transports: BaseTransport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. class:: BaseTransport
-
-   Base class for transports.
-
-   .. method:: close(self)
-
-      Close the transport.  If the transport has a buffer for outgoing
-      data, buffered data will be flushed asynchronously.  No more data
-      will be received.  After all buffered data is flushed, the
-      protocol's :meth:`connection_lost` method will be called with
-      :const:`None` as its argument.
-
-
-   .. method:: get_extra_info(name, default=None)
-
-      Return optional transport information.  *name* is a string representing
-      the piece of transport-specific information to get, *default* is the
-      value to return if the information doesn't exist.
-
-      This method allows transport implementations to easily expose
-      channel-specific information.
-
-      * socket:
-
-        - ``'peername'``: the remote address to which the socket is connected,
-          result of :meth:`socket.socket.getpeername` (``None`` on error)
-        - ``'socket'``: :class:`socket.socket` instance
-        - ``'sockname'``: the socket's own address,
-          result of :meth:`socket.socket.getsockname`
-
-      * SSL socket:
-
-        - ``'compression'``: the compression algorithm being used as a string,
-          or ``None`` if the connection isn't compressed; result of
-          :meth:`ssl.SSLSocket.compression`
-        - ``'cipher'``: a three-value tuple containing the name of the cipher
-          being used, the version of the SSL protocol that defines its use, and
-          the number of secret bits being used; result of
-          :meth:`ssl.SSLSocket.cipher`
-        - ``'peercert'``: peer certificate; result of
-          :meth:`ssl.SSLSocket.getpeercert`
-        - ``'sslcontext'``: :class:`ssl.SSLContext` instance
-
-      * pipe:
-
-        - ``'pipe'``: pipe object
-
-      * subprocess:
-
-        - ``'subprocess'``: :class:`subprocess.Popen` instance
-
-
-Methods of readable streaming transports: ReadTransport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. class:: ReadTransport
-
-   Interface for read-only transports.
-
-   .. method:: pause_reading()
-
-      Pause the receiving end of the transport.  No data will be passed to
-      the protocol's :meth:`data_received` method until meth:`resume_reading`
-      is called.
-
-   .. method:: resume_reading()
-
-      Resume the receiving end.  The protocol's :meth:`data_received` method
-      will be called once again if some data is available for reading.
-
-
-Methods of writable streaming transports: WriteTransport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. class:: WriteTransport
-
-   Interface for write-only transports.
-
-   .. method:: write(data)
-
-      Write some *data* bytes to the transport.
-
-      This method does not block; it buffers the data and arranges for it
-      to be sent out asynchronously.
-
-   .. method:: writelines(list_of_data)
-
-      Write a list (or any iterable) of data bytes to the transport.
-      This is functionally equivalent to calling :meth:`write` on each
-      element yielded by the iterable, but may be implemented more efficiently.
-
-   .. method:: write_eof()
-
-      Close the write end of the transport after flushing buffered data.
-      Data may still be received.
-
-      This method can raise :exc:`NotImplementedError` if the transport
-      (e.g. SSL) doesn't support half-closes.
-
-   .. method:: can_write_eof()
-
-      Return :const:`True` if the transport supports :meth:`write_eof`,
-      :const:`False` if not.
-
-   .. method:: abort()
-
-      Close the transport immediately, without waiting for pending operations
-      to complete.  Buffered data will be lost.  No more data will be received.
-      The protocol's :meth:`connection_lost` method will eventually be
-      called with :const:`None` as its argument.
-
-   .. method:: set_write_buffer_limits(high=None, low=None)
-
-      Set the *high*- and *low*-water limits for write flow control.
-
-      These two values control when call the protocol's
-      :meth:`pause_writing` and :meth:`resume_writing` methods are called.
-      If specified, the low-water limit must be less than or equal to the
-      high-water limit.  Neither *high* nor *low* can be negative.
-
-      The defaults are implementation-specific.  If only the
-      high-water limit is given, the low-water limit defaults to a
-      implementation-specific value less than or equal to the
-      high-water limit.  Setting *high* to zero forces *low* to zero as
-      well, and causes :meth:`pause_writing` to be called whenever the
-      buffer becomes non-empty.  Setting *low* to zero causes
-      :meth:`resume_writing` to be called only once the buffer is empty.
-      Use of zero for either limit is generally sub-optimal as it
-      reduces opportunities for doing I/O and computation
-      concurrently.
-
-   .. method:: get_write_buffer_size()
-
-      Return the current size of the output buffer used by the transport.
-
-
-Methods of datagram transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. method:: DatagramTransport.sendto(data, addr=None)
-
-   Send the *data* bytes to the remote peer given by *addr* (a
-   transport-dependent target address).  If *addr* is :const:`None`, the
-   data is sent to the target address given on transport creation.
-
-   This method does not block; it buffers the data and arranges for it
-   to be sent out asynchronously.
-
-.. method:: DatagramTransport.abort()
-
-   Close the transport immediately, without waiting for pending operations
-   to complete.  Buffered data will be lost.  No more data will be received.
-   The protocol's :meth:`connection_lost` method will eventually be
-   called with :const:`None` as its argument.
-
-
-Methods of subprocess transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. class:: BaseSubprocessTransport
-
-   .. method:: get_pid()
-
-      Return the subprocess process id as an integer.
-
-   .. method:: get_returncode()
-
-      Return the subprocess returncode as an integer or :const:`None`
-      if it hasn't returned, similarly to the
-      :attr:`subprocess.Popen.returncode` attribute.
-
-   .. method:: get_pipe_transport(fd)
-
-      Return the transport for the communication pipe correspondong to the
-      integer file descriptor *fd*.  The return value can be a readable or
-      writable streaming transport, depending on the *fd*.  If *fd* doesn't
-      correspond to a pipe belonging to this transport, :const:`None` is
-      returned.
-
-   .. method:: send_signal(signal)
-
-      Send the *signal* number to the subprocess, as in
-      :meth:`subprocess.Popen.send_signal`.
-
-   .. method:: terminate()
-
-      Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
-      This method is an alias for the :meth:`close` method.
-
-      On POSIX systems, this method sends SIGTERM to the subprocess.
-      On Windows, the Windows API function TerminateProcess() is called to
-      stop the subprocess.
-
-   .. method:: kill(self)
-
-      Kill the subprocess, as in :meth:`subprocess.Popen.kill`
-
-      On POSIX systems, the function sends SIGKILL to the subprocess.
-      On Windows, this method is an alias for :meth:`terminate`.
-
-
-Task functions
---------------
-
-.. function:: as_completed(fs, *, loop=None, timeout=None)
-
-   Return an iterator whose values, when waited for, are
-   :class:`~concurrent.futures.Future` instances.
-
-   Raises :exc:`TimeoutError` if the timeout occurs before all Futures are done.
-
-   Example::
-
-       for f in as_completed(fs):
-           result = yield from f  # The 'yield from' may raise
-           # Use result
-
-   .. note::
-
-      The futures ``f`` are not necessarily members of fs.
-
-.. function:: async(coro_or_future, *, loop=None)
-
-   Wrap a :ref:`coroutine <coroutine>` in a future.
-
-   If the argument is a :class:`~concurrent.futures.Future`, it is returned
-   directly.
-
-.. function:: gather(*coros_or_futures, loop=None, return_exceptions=False)
-
-   Return a future aggregating results from the given coroutines or futures.
-
-   All futures must share the same event loop.  If all the tasks are done
-   successfully, the returned future's result is the list of results (in the
-   order of the original sequence, not necessarily the order of results
-   arrival).  If *result_exception* is True, exceptions in the tasks are
-   treated the same as successful results, and gathered in the result list;
-   otherwise, the first raised exception will be immediately propagated to the
-   returned future.
-
-   Cancellation: if the outer Future is cancelled, all children (that have not
-   completed yet) are also cancelled.  If any child is cancelled, this is
-   treated as if it raised :exc:`~concurrent.futures.CancelledError` -- the
-   outer Future is *not* cancelled in this case.  (This is to prevent the
-   cancellation of one child to cause other children to be cancelled.)
-
-.. function:: tasks.iscoroutinefunction(func)
-
-   Return ``True`` if *func* is a decorated coroutine function.
-
-.. function:: tasks.iscoroutine(obj)
-
-   Return ``True`` if *obj* is a coroutine object.
-
-.. function:: sleep(delay, result=None, \*, loop=None)
-
-   Create a :ref:`coroutine <coroutine>` that completes after a given time
-   (in seconds).
-
-.. function:: shield(arg, \*, loop=None)
-
-   Wait for a future, shielding it from cancellation.
-
-   The statement::
-
-       res = yield from shield(something())
-
-   is exactly equivalent to the statement::
-
-       res = yield from something()
-
-   *except* that if the coroutine containing it is cancelled, the task running
-   in ``something()`` is not cancelled.  From the point of view of
-   ``something()``, the cancellation did not happen.  But its caller is still
-   cancelled, so the yield-from expression still raises
-   :exc:`~concurrent.futures.CancelledError`.  Note: If ``something()`` is
-   cancelled by other means this will still cancel ``shield()``.
-
-   If you want to completely ignore cancellation (not recommended) you can
-   combine ``shield()`` with a try/except clause, as follows::
-
-       try:
-           res = yield from shield(something())
-       except CancelledError:
-           res = None
-
-.. function:: wait(fs, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
-
-   Wait for the Futures and coroutines given by fs to complete. Coroutines will
-   be wrapped in Tasks.  Returns two sets of
-   :class:`~concurrent.futures.Future`: (done, pending).
-
-   *timeout* can be used to control the maximum number of seconds to wait before
-   returning.  *timeout* can be an int or float.  If *timeout* is not specified
-   or ``None``, there is no limit to the wait time.
-
-   *return_when* indicates when this function should return.  It must be one of
-   the following constants of the :mod`concurrent.futures` module:
-
-   .. tabularcolumns:: |l|L|
-
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
-
-   This function returns a :ref:`coroutine <coroutine>`.
-
-   Usage::
-
-        done, pending = yield from asyncio.wait(fs)
-
-   .. note::
-
-      This does not raise :exc:`TimeoutError`! Futures that aren't done when
-      the timeout occurs are returned in the second set.
-
-
-Task
-----
-
-.. class:: Task(coro, \*, loop=None)
-
-   A coroutine wrapped in a :class:`~concurrent.futures.Future`.
-
-   .. classmethod:: all_tasks(loop=None)
-
-      Return a set of all tasks for an event loop.
-
-      By default all tasks for the current event loop are returned.
-
-   .. method:: cancel()
-
-      Cancel the task.
-
-   .. method:: get_stack(self, \*, limit=None)
-
-      Return the list of stack frames for this task's coroutine.
-
-      If the coroutine is active, this returns the stack where it is suspended.
-      If the coroutine has completed successfully or was cancelled, this
-      returns an empty list.  If the coroutine was terminated by an exception,
-      this returns the list of traceback frames.
-
-      The frames are always ordered from oldest to newest.
-
-      The optional limit gives the maximum nummber of frames to return; by
-      default all available frames are returned.  Its meaning differs depending
-      on whether a stack or a traceback is returned: the newest frames of a
-      stack are returned, but the oldest frames of a traceback are returned.
-      (This matches the behavior of the traceback module.)
-
-      For reasons beyond our control, only one stack frame is returned for a
-      suspended coroutine.
-
-   .. method:: print_stack(\*, limit=None, file=None)
-
-      Print the stack or traceback for this task's coroutine.
-
-      This produces output similar to that of the traceback module, for the
-      frames retrieved by get_stack().  The limit argument is passed to
-      get_stack().  The file argument is an I/O stream to which the output
-      goes; by default it goes to sys.stderr.
-
-
 Protocols
 ---------
 
@@ -1032,163 +1137,6 @@ call them yourself, unless you are implementing a transport.
    are interested.
 
 
-Stream reader and writer
-------------------------
-
-.. class:: StreamWriter(transport, protocol, reader, loop)
-
-   Wraps a Transport.
-
-   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`, :meth:`write_eof`, :meth:`get_extra_info` and
-   :meth:`close`.  It adds :meth:`drain` which returns an optional :class:`~concurrent.futures.Future` on which you can
-   wait for flow control.  It also adds a transport attribute which references
-   the :class:`Transport` directly.
-
-   .. attribute:: transport
-
-      Transport.
-
-   .. method:: close()
-
-      Close the transport: see :meth:`BaseTransport.close`.
-
-   .. method:: drain()
-
-      This method has an unusual return value.
-
-      The intended use is to write::
-
-          w.write(data)
-          yield from w.drain()
-
-      When there's nothing to wait for, :meth:`drain()` returns ``()``, and the
-      yield-from continues immediately.  When the transport buffer is full (the
-      protocol is paused), :meth:`drain` creates and returns a
-      :class:`~concurrent.futures.Future` and the yield-from will block until
-      that Future is completed, which will happen when the buffer is
-      (partially) drained and the protocol is resumed.
-
-   .. method:: get_extra_info(name, default=None)
-
-      Return optional transport information: see
-      :meth:`BaseTransport.get_extra_info`.
-
-   .. method:: write(data)
-
-      Write some *data* bytes to the transport: see
-      :meth:`WriteTransport.write`.
-
-   .. method:: writelines(data)
-
-      Write a list (or any iterable) of data bytes to the transport:
-      see :meth:`WriteTransport.writelines`.
-
-   .. method:: can_write_eof()
-
-      Return :const:`True` if the transport supports :meth:`write_eof`,
-      :const:`False` if not. See :meth:`WriteTransport.can_write_eof`.
-
-   .. method:: write_eof()
-
-      Close the write end of the transport after flushing buffered data:
-      see :meth:`WriteTransport.write_eof`.
-
-
-.. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
-
-   .. method:: exception()
-
-      Get the exception.
-
-   .. method:: feed_eof()
-
-      XXX
-
-   .. method:: feed_data(data)
-
-      XXX
-
-   .. method:: set_exception(exc)
-
-      Set the exception.
-
-   .. method:: set_transport(transport)
-
-      Set the transport.
-
-   .. method:: read(n=-1)
-
-      XXX
-
-      This method returns a :ref:`coroutine <coroutine>`.
-
-   .. method:: readline()
-
-      XXX
-
-      This method returns a :ref:`coroutine <coroutine>`.
-
-   .. method:: readexactly(n)
-
-      XXX
-
-      This method returns a :ref:`coroutine <coroutine>`.
-
-
-
-.. _coroutine:
-
-Coroutines
-----------
-
-A coroutine is a generator that follows certain conventions.  For
-documentation purposes, all coroutines should be decorated with
-``@asyncio.coroutine``, but this cannot be strictly enforced.
-
-Coroutines use the ``yield from`` syntax introduced in :pep:`380`,
-instead of the original ``yield`` syntax.
-
-The word "coroutine", like the word "generator", is used for two
-different (though related) concepts:
-
-- The function that defines a coroutine (a function definition
-  decorated with ``asyncio.coroutine``).  If disambiguation is needed
-  we will call this a *coroutine function*.
-
-- The object obtained by calling a coroutine function.  This object
-  represents a computation or an I/O operation (usually a combination)
-  that will complete eventually.  If disambiguation is needed we will
-  call it a *coroutine object*.
-
-Things a coroutine can do:
-
-- ``result = yield from future`` -- suspends the coroutine until the
-  future is done, then returns the future's result, or raises an
-  exception, which will be propagated.  (If the future is cancelled,
-  it will raise a ``CancelledError`` exception.)  Note that tasks are
-  futures, and everything said about futures also applies to tasks.
-
-- ``result = yield from coroutine`` -- wait for another coroutine to
-  produce a result (or raise an exception, which will be propagated).
-  The ``coroutine`` expression must be a *call* to another coroutine.
-
-- ``return expression`` -- produce a result to the coroutine that is
-  waiting for this one using ``yield from``.
-
-- ``raise exception`` -- raise an exception in the coroutine that is
-  waiting for this one using ``yield from``.
-
-Calling a coroutine does not start its code running -- it is just a
-generator, and the coroutine object returned by the call is really a
-generator object, which doesn't do anything until you iterate over it.
-In the case of a coroutine object, there are two basic ways to start
-it running: call ``yield from coroutine`` from another coroutine
-(assuming the other coroutine is already running!), or convert it to a
-:class:`Task`.
-
-Coroutines (and tasks) can only run when the event loop is running.
-
-
 Server
 ------
 
@@ -1203,6 +1151,58 @@ Server
    .. method:: wait_closed()
 
       Coroutine to wait until service is closed.
+
+
+Network functions
+-----------------
+
+.. function:: open_connection(host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+
+   A wrapper for create_connection() returning a (reader, writer) pair.
+
+   The reader returned is a StreamReader instance; the writer is a
+   :class:`Transport`.
+
+   The arguments are all the usual arguments to
+   :meth:`BaseEventLoop.create_connection` except *protocol_factory*; most
+   common are positional host and port, with various optional keyword arguments
+   following.
+
+   Additional optional keyword arguments are *loop* (to set the event loop
+   instance to use) and *limit* (to set the buffer limit passed to the
+   StreamReader).
+
+   (If you want to customize the :class:`StreamReader` and/or
+   :class:`StreamReaderProtocol` classes, just copy the code -- there's really
+   nothing special here except some convenience.)
+
+   This function returns a :ref:`coroutine <coroutine>`.
+
+.. function:: start_server(client_connected_cb, host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
+
+   Start a socket server, call back for each client connected.
+
+   The first parameter, *client_connected_cb*, takes two parameters:
+   *client_reader*, *client_writer*.  *client_reader* is a
+   :class:`StreamReader` object, while *client_writer* is a
+   :class:`StreamWriter` object.  This parameter can either be a plain callback
+   function or a :ref:`coroutine <coroutine>`; if it is a coroutine, it will be
+   automatically converted into a :class:`Task`.
+
+   The rest of the arguments are all the usual arguments to
+   :meth:`~BaseEventLoop.create_server()` except *protocol_factory*; most
+   common are positional host and port, with various optional keyword arguments
+   following.  The return value is the same as
+   :meth:`~BaseEventLoop.create_server()`.
+
+   Additional optional keyword arguments are *loop* (to set the event loop
+   instance to use) and *limit* (to set the buffer limit passed to the
+   :class:`StreamReader`).
+
+   The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
+   a :class:`AbstractServer` object which can be used to stop the service.
+
+   This function returns a :ref:`coroutine <coroutine>`.
 
 
 .. _sync:
