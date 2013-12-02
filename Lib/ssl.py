@@ -405,7 +405,7 @@ def create_default_context(purpose=Purpose.SERVER_AUTH, *, cafile=None,
 
 
 def _create_stdlib_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
-                           purpose=Purpose.SERVER_AUTH,
+                           check_hostname=False, purpose=Purpose.SERVER_AUTH,
                            certfile=None, keyfile=None,
                            cafile=None, capath=None, cadata=None):
     """Create a SSLContext object for Python stdlib modules
@@ -424,6 +424,7 @@ def _create_stdlib_context(protocol=PROTOCOL_SSLv23, *, cert_reqs=None,
 
     if cert_reqs is not None:
         context.verify_mode = cert_reqs
+    context.check_hostname = check_hostname
 
     if keyfile and not certfile:
         raise ValueError("certfile must be specified")

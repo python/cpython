@@ -1032,9 +1032,11 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
 
         ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1,
-                                         cert_reqs=ssl.CERT_REQUIRED)
+                                         cert_reqs=ssl.CERT_REQUIRED,
+                                         check_hostname=True)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
 
         ctx = ssl._create_stdlib_context(purpose=ssl.Purpose.CLIENT_AUTH)
