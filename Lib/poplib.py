@@ -387,7 +387,9 @@ class POP3:
         if context is None:
             context = ssl._create_stdlib_context()
         resp = self._shortcmd('STLS')
-        self.sock = context.wrap_socket(self.sock)
+        server_hostname = self.host if ssl.HAS_SNI else None
+        self.sock = context.wrap_socket(self.sock,
+                                        server_hostname=server_hostname)
         self.file = self.sock.makefile('rb')
         self._tls_established = True
         return resp
@@ -428,7 +430,9 @@ if HAVE_SSL:
 
         def _create_socket(self, timeout):
             sock = POP3._create_socket(self, timeout)
-            sock = self.context.wrap_socket(sock)
+            server_hostname = self.host if ssl.HAS_SNI else None
+            sock = self.context.wrap_socket(sock,
+                                            server_hostname=server_hostname)
             return sock
 
         def stls(self, keyfile=None, certfile=None, context=None):

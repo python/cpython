@@ -53,6 +53,10 @@ The :mod:`poplib` module provides two classes:
    .. versionchanged:: 3.2
       *context* parameter added.
 
+   .. versionchanged:: 3.4
+      The class now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 One exception is defined as an attribute of the :mod:`poplib` module:
 
@@ -197,6 +201,11 @@ An :class:`POP3` instance has the following methods:
    a single (potentially long-lived) structure.
 
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.4
+      The method now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 
 Instances of :class:`POP3_SSL` have no additional methods. The interface of this
