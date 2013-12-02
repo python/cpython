@@ -901,6 +901,114 @@ Coroutines (and tasks) can only run when the event loop is running.
 Synchronization primitives
 --------------------------
 
+.. class:: Queue(maxsize=0, \*, loop=None)
+
+   A queue, useful for coordinating producer and consumer coroutines.
+
+   If *maxsize* is less than or equal to zero, the queue size is infinite. If
+   it is an integer greater than ``0``, then ``yield from put()`` will block
+   when the queue reaches *maxsize*, until an item is removed by :meth:`get`.
+
+   Unlike the standard library :mod:`queue`, you can reliably know this Queue's
+   size with :meth:`qsize`, since your single-threaded Tulip application won't
+   be interrupted between calling :meth:`qsize` and doing an operation on the
+   Queue.
+
+   .. method:: empty()
+
+      Return ``True`` if the queue is empty, ``False`` otherwise.
+
+   .. method:: full()
+
+      Return ``True`` if there are maxsize items in the queue.
+
+      .. note::
+
+         If the Queue was initialized with ``maxsize=0`` (the default), then
+         :meth:`full()` is never ``True``.
+
+   .. method:: get()
+
+      Remove and return an item from the queue.
+
+      If you yield from :meth:`get()`, wait until a item is available.
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: get_nowait()
+
+      Remove and return an item from the queue.
+
+      Return an item if one is immediately available, else raise
+      :exc:`~queue.Empty`.
+
+   .. method:: put(item)
+
+      Put an item into the queue.
+
+      If you yield from ``put()``, wait until a free slot is available before
+      adding item.
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
+   .. method:: put_nowait(item)
+
+      Put an item into the queue without blocking.
+
+      If no free slot is immediately available, raise :exc:`~queue.Full`.
+
+   .. method:: qsize()
+
+      Number of items in the queue.
+
+   .. attribute:: maxsize
+
+      Number of items allowed in the queue.
+
+.. class:: PriorityQueue
+
+   A subclass of :class:`Queue`; retrieves entries in priority order (lowest
+   first).
+
+   Entries are typically tuples of the form: (priority number, data).
+
+.. class:: LifoQueue
+
+    A subclass of :class:`Queue` that retrieves most recently added entries
+    first.
+
+.. class:: JoinableQueue
+
+   A subclass of :class:`Queue` with :meth:`task_done` and :meth:`join`
+   methods.
+
+   .. method:: task_done()
+
+      Indicate that a formerly enqueued task is complete.
+
+      Used by queue consumers. For each :meth:`~Queue.get` used to fetch a task, a
+      subsequent call to :meth:`task_done` tells the queue that the processing
+      on the task is complete.
+
+      If a :meth:`join` is currently blocking, it will resume when all items
+      have been processed (meaning that a :meth:`task_done` call was received
+      for every item that had been :meth:`~Queue.put` into the queue).
+
+      Raises :exc:`ValueError` if called more times than there were items
+      placed in the queue.
+
+   .. method:: join()
+
+      Block until all items in the queue have been gotten and processed.
+
+      The count of unfinished tasks goes up whenever an item is added to the
+      queue. The count goes down whenever a consumer thread calls
+      :meth:`task_done` to indicate that the item was retrieved and all work on
+      it is complete.  When the count of unfinished tasks drops to zero,
+      :meth:`join` unblocks.
+
+      This method returns a :ref:`coroutine <coroutine>`.
+
 
 Examples
 --------
