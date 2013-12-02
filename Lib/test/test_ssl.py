@@ -1003,6 +1003,7 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.create_default_context()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLSv1)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
 
         with open(SIGNING_CA) as f:
@@ -1022,6 +1023,7 @@ class ContextTests(unittest.TestCase):
         ctx = ssl._create_stdlib_context()
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
+        self.assertFalse(ctx.check_hostname)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
 
         ctx = ssl._create_stdlib_context(ssl.PROTOCOL_TLSv1)
@@ -1039,6 +1041,28 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+    def test_check_hostname(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        self.assertFalse(ctx.check_hostname)
+
+        # Requires CERT_REQUIRED or CERT_OPTIONAL
+        with self.assertRaises(ValueError):
+            ctx.check_hostname = True
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        self.assertFalse(ctx.check_hostname)
+        ctx.check_hostname = True
+        self.assertTrue(ctx.check_hostname)
+
+        ctx.verify_mode = ssl.CERT_OPTIONAL
+        ctx.check_hostname = True
+        self.assertTrue(ctx.check_hostname)
+
+        # Cannot set CERT_NONE with check_hostname enabled
+        with self.assertRaises(ValueError):
+            ctx.verify_mode = ssl.CERT_NONE
+        ctx.check_hostname = False
+        self.assertFalse(ctx.check_hostname)
 
 
 class SSLErrorTests(unittest.TestCase):
@@ -1929,6 +1953,44 @@ else:
                     s.connect((HOST, server.port))
                     cert = s.getpeercert()
                     self.assertTrue(cert, "Can't get peer certificate.")
+
+        def test_check_hostname(self):
+            if support.verbose:
+                sys.stdout.write("\n")
+
+            server_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            server_context.load_cert_chain(SIGNED_CERTFILE)
+
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            context.verify_mode = ssl.CERT_REQUIRED
+            context.check_hostname = True
+            context.load_verify_locations(SIGNING_CA)
+
+            # correct hostname should verify
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname="localhost") as s:
+                    s.connect((HOST, server.port))
+                    cert = s.getpeercert()
+                    self.assertTrue(cert, "Can't get peer certificate.")
+
+            # incorrect hostname should raise an exception
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with context.wrap_socket(socket.socket(),
+                                         server_hostname="invalid") as s:
+                    with self.assertRaisesRegex(ssl.CertificateError,
+                                                "hostname 'invalid' doesn't match 'localhost'"):
+                        s.connect((HOST, server.port))
+
+            # missing server_hostname arg should cause an exception, too
+            server = ThreadedEchoServer(context=server_context, chatty=True)
+            with server:
+                with socket.socket() as s:
+                    with self.assertRaisesRegex(ValueError,
+                                                "check_hostname requires server_hostname"):
+                        context.wrap_socket(s)
 
         def test_empty_cert(self):
             """Connecting with an empty cert file"""
