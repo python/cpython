@@ -87,12 +87,12 @@ Which clock is used depends on the (platform-specific) event loop
 implementation; ideally it is a monotonic clock.  This will generally be
 a different clock than :func:`time.time`.
 
-.. method:: time()
+.. method:: BaseEventLoop.time()
 
    Return the current time, as a :class:`float` value, according to the
    event loop's internal clock.
 
-.. method:: call_later(delay, callback, *args)
+.. method:: BaseEventLoop.call_later(delay, callback, *args)
 
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
@@ -108,7 +108,7 @@ a different clock than :func:`time.time`.
    is called. If you want the callback to be called with some named
    arguments, use a closure or :func:`functools.partial`.
 
-.. method:: call_at(when, callback, *args)
+.. method:: BaseEventLoop.call_at(when, callback, *args)
 
    Arrange for the *callback* to be called at the given absolute timestamp
    *when* (an int or float), using the same time reference as :meth:`time`.
@@ -118,7 +118,7 @@ a different clock than :func:`time.time`.
 Creating connections
 ^^^^^^^^^^^^^^^^^^^^
 
-.. method:: create_connection(protocol_factory, host=None, port=None, **options)
+.. method:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, **options)
 
    Create a streaming transport connection to a given Internet *host* and
    *port*.  *protocol_factory* must be a callable returning a
@@ -228,7 +228,7 @@ Connection callbacks
 These callbacks may be called on :class:`Protocol` and
 :class:`SubprocessProtocol` instances:
 
-.. method:: connection_made(transport)
+.. method:: BaseProtocol.connection_made(transport)
 
    Called when a connection is made.
 
@@ -236,7 +236,7 @@ These callbacks may be called on :class:`Protocol` and
    connection.  You are responsible for storing it somewhere
    (e.g. as an attribute) if you need to.
 
-.. method:: connection_lost(exc)
+.. method:: BaseProtocol.connection_lost(exc)
 
    Called when the connection is lost or closed.
 
@@ -252,18 +252,18 @@ implementation.
 The following callbacks may be called only on :class:`SubprocessProtocol`
 instances:
 
-.. method:: pipe_data_received(fd, data)
+.. method:: SubprocessProtocol.pipe_data_received(fd, data)
 
    Called when the child process writes data into its stdout or stderr pipe.
    *fd* is the integer file descriptor of the pipe.  *data* is a non-empty
    bytes object containing the data.
 
-.. method:: pipe_connection_lost(fd, exc)
+.. method:: SubprocessProtocol.pipe_connection_lost(fd, exc)
 
    Called when one of the pipes communicating with the child process
    is closed.  *fd* is the integer file descriptor that was closed.
 
-.. method:: process_exited()
+.. method:: SubprocessProtocol.process_exited()
 
    Called when the child process has exited.
 
@@ -276,7 +276,7 @@ Streaming protocols
 
 The following callbacks are called on :class:`Protocol` instances:
 
-.. method:: data_received(data)
+.. method:: Protocol.data_received(data)
 
    Called when some data is received.  *data* is a non-empty bytes object
    containing the incoming data.
@@ -287,7 +287,7 @@ The following callbacks are called on :class:`Protocol` instances:
       and instead make your parsing generic and flexible enough.  However,
       data is always received in the correct order.
 
-.. method:: eof_received()
+.. method:: Protocol.eof_received()
 
    Calls when the other end signals it won't send any more data
    (for example by calling :meth:`write_eof`, if the other end also uses
@@ -312,13 +312,13 @@ Datagram protocols
 
 The following callbacks are called on :class:`DatagramProtocol` instances.
 
-.. method:: datagram_received(data, addr)
+.. method:: DatagramProtocol.datagram_received(data, addr)
 
    Called when a datagram is received.  *data* is a bytes object containing
    the incoming data.  *addr* is the address of the peer sending the data;
    the exact format depends on the transport.
 
-.. method:: error_received(exc)
+.. method:: DatagramProtocol.error_received(exc)
 
    Called when a previous send or receive operation raises an
    :class:`OSError`.  *exc* is the :class:`OSError` instance.
@@ -335,11 +335,11 @@ Flow control callbacks
 These callbacks may be called on :class:`Protocol` and
 :class:`SubprocessProtocol` instances:
 
-.. method:: pause_writing()
+.. method:: BaseProtocol.pause_writing()
 
    Called when the transport's buffer goes over the high-water mark.
 
-.. method:: resume_writing()
+.. method:: BaseProtocol.resume_writing()
 
    Called when the transport's buffer drains below the low-water mark.
 
@@ -381,7 +381,7 @@ the transport's kind.
 Methods common to all transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: close(self)
+.. method:: BaseTransport.close(self)
 
    Close the transport.  If the transport has a buffer for outgoing
    data, buffered data will be flushed asynchronously.  No more data
@@ -390,7 +390,7 @@ Methods common to all transports
    :const:`None` as its argument.
 
 
-.. method:: get_extra_info(name, default=None)
+.. method:: BaseTransport.get_extra_info(name, default=None)
 
    Return optional transport information.  *name* is a string representing
    the piece of transport-specific information to get, *default* is the
@@ -402,13 +402,13 @@ Methods common to all transports
 Methods of readable streaming transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: pause_reading()
+.. method:: ReadTransport.pause_reading()
 
    Pause the receiving end of the transport.  No data will be passed to
    the protocol's :meth:`data_received` method until meth:`resume_reading`
    is called.
 
-.. method:: resume_reading()
+.. method:: ReadTransport.resume_reading()
 
    Resume the receiving end.  The protocol's :meth:`data_received` method
    will be called once again if some data is available for reading.
@@ -416,20 +416,20 @@ Methods of readable streaming transports
 Methods of writable streaming transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: write(data)
+.. method:: WriteTransport.write(data)
 
    Write some *data* bytes to the transport.
 
    This method does not block; it buffers the data and arranges for it
    to be sent out asynchronously.
 
-.. method:: writelines(list_of_data)
+.. method:: WriteTransport.writelines(list_of_data)
 
    Write a list (or any iterable) of data bytes to the transport.
    This is functionally equivalent to calling :meth:`write` on each
    element yielded by the iterable, but may be implemented more efficiently.
 
-.. method:: write_eof()
+.. method:: WriteTransport.write_eof()
 
    Close the write end of the transport after flushing buffered data.
    Data may still be received.
@@ -437,19 +437,19 @@ Methods of writable streaming transports
    This method can raise :exc:`NotImplementedError` if the transport
    (e.g. SSL) doesn't support half-closes.
 
-.. method:: can_write_eof()
+.. method:: WriteTransport.can_write_eof()
 
    Return :const:`True` if the transport supports :meth:`write_eof`,
    :const:`False` if not.
 
-.. method:: abort()
+.. method:: WriteTransport.abort()
 
    Close the transport immediately, without waiting for pending operations
    to complete.  Buffered data will be lost.  No more data will be received.
    The protocol's :meth:`connection_lost` method will eventually be
    called with :const:`None` as its argument.
 
-.. method:: set_write_buffer_limits(high=None, low=None)
+.. method:: WriteTransport.set_write_buffer_limits(high=None, low=None)
 
    Set the *high*- and *low*-water limits for write flow control.
 
@@ -469,14 +469,14 @@ Methods of writable streaming transports
    reduces opportunities for doing I/O and computation
    concurrently.
 
-.. method:: get_write_buffer_size()
+.. method:: WriteTransport.get_write_buffer_size()
 
    Return the current size of the output buffer used by the transport.
 
 Methods of datagram transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: sendto(data, addr=None)
+.. method:: DatagramTransport.sendto(data, addr=None)
 
    Send the *data* bytes to the remote peer given by *addr* (a
    transport-dependent target address).  If *addr* is :const:`None`, the
@@ -485,7 +485,7 @@ Methods of datagram transports
    This method does not block; it buffers the data and arranges for it
    to be sent out asynchronously.
 
-.. method:: abort()
+.. method:: DatagramTransport.abort()
 
    Close the transport immediately, without waiting for pending operations
    to complete.  Buffered data will be lost.  No more data will be received.
@@ -495,17 +495,17 @@ Methods of datagram transports
 Methods of subprocess transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: get_pid()
+.. method:: BaseSubprocessTransport.get_pid()
 
    Return the subprocess process id as an integer.
 
-.. method:: get_returncode()
+.. method:: BaseSubprocessTransport.get_returncode()
 
    Return the subprocess returncode as an integer or :const:`None`
    if it hasn't returned, similarly to the
    :attr:`subprocess.Popen.returncode` attribute.
 
-.. method:: get_pipe_transport(fd)
+.. method:: BaseSubprocessTransport.get_pipe_transport(fd)
 
    Return the transport for the communication pipe correspondong to the
    integer file descriptor *fd*.  The return value can be a readable or
@@ -513,12 +513,12 @@ Methods of subprocess transports
    correspond to a pipe belonging to this transport, :const:`None` is
    returned.
 
-.. method:: send_signal(signal)
+.. method:: BaseSubprocessTransport.send_signal(signal)
 
    Send the *signal* number to the subprocess, as in
    :meth:`subprocess.Popen.send_signal`.
 
-.. method:: terminate()
+.. method:: BaseSubprocessTransport.terminate()
 
    Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
    This method is an alias for the :meth:`close` method.
@@ -527,7 +527,7 @@ Methods of subprocess transports
    On Windows, the Windows API function TerminateProcess() is called to
    stop the subprocess.
 
-.. method:: kill(self)
+.. method:: BaseSubprocessTransport.kill(self)
 
    Kill the subprocess, as in :meth:`subprocess.Popen.kill`
 
