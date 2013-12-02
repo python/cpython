@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19781: ftplib now supports SSLContext.check_hostname and server name
+  indication for TLS/SSL connections.
+
 - Issue #19509: Add SSLContext.check_hostname to match the peer's certificate
   with server_hostname on handshake.
 

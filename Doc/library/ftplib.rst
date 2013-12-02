@@ -94,6 +94,11 @@ The module defines the following items:
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
+   .. versionchanged:: 3.4
+      The class now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
+
    Here's a sample session using the :class:`FTP_TLS` class:
 
    >>> from ftplib import FTP_TLS
@@ -426,6 +431,11 @@ FTP_TLS Objects
 
    Set up secure control connection by using TLS or SSL, depending on what
    specified in :meth:`ssl_version` attribute.
+
+   .. versionchanged:: 3.4
+      The method now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 .. method:: FTP_TLS.ccc()
 
