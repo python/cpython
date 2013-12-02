@@ -214,6 +214,7 @@ typedef struct {
 #ifndef OPENSSL_NO_TLSEXT
     PyObject *set_hostname;
 #endif
+    int check_hostname;
 } PySSLContext;
 
 typedef struct {
@@ -2050,6 +2051,8 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifndef OPENSSL_NO_TLSEXT
     self->set_hostname = NULL;
 #endif
+    /* Don't check host name by default */
+    self->check_hostname = 0;
     /* Defaults */
     SSL_CTX_set_verify(self->ctx, SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_options(self->ctx,
@@ -2231,6 +2234,12 @@ set_verify_mode(PySSLContext *self, PyObject *arg, void *c)
                         "invalid value for verify_mode");
         return -1;
     }
+    if (mode == SSL_VERIFY_NONE && self->check_hostname) {
+        PyErr_SetString(PyExc_ValueError,
+                        "Cannot set verify_mode to CERT_NONE when "
+                        "check_hostname is enabled.");
+        return -1;
+    }
     SSL_CTX_set_verify(self->ctx, mode, NULL);
     return 0;
 }
@@ -2303,6 +2312,30 @@ set_options(PySSLContext *self, PyObject *arg, void *c)
         SSL_CTX_set_options(self->ctx, set);
     return 0;
 }
+
+static PyObject *
+get_check_hostname(PySSLContext *self, void *c)
+{
+    return PyBool_FromLong(self->check_hostname);
+}
+
+static int
+set_check_hostname(PySSLContext *self, PyObject *arg, void *c)
+{
+    int check_hostname;
+    if (!PyArg_Parse(arg, "p", &check_hostname))
+        return -1;
+    if (check_hostname &&
+            SSL_CTX_get_verify_mode(self->ctx) == SSL_VERIFY_NONE) {
+        PyErr_SetString(PyExc_ValueError,
+                        "check_hostname needs a SSL context with either "
+                        "CERT_OPTIONAL or CERT_REQUIRED");
+        return -1;
+    }
+    self->check_hostname = check_hostname;
+    return 0;
+}
+
 
 typedef struct {
     PyThreadState *thread_state;
@@ -3093,6 +3126,8 @@ get_ca_certs(PySSLContext *self, PyObject *args, PyObject *kwds)
 
 
 static PyGetSetDef context_getsetlist[] = {
+    {"check_hostname", (getter) get_check_hostname,
+                       (setter) set_check_hostname, NULL},
     {"options", (getter) get_options,
                 (setter) set_options, NULL},
 #ifdef HAVE_OPENSSL_VERIFY_PARAM
