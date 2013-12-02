@@ -102,6 +102,10 @@ The module itself defines the following classes:
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.4
+      The class now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 .. exception:: NNTPError
 
@@ -241,6 +245,10 @@ tuples or objects that the method normally returns will be empty.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.4
+      The method now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 .. method:: NNTP.newgroups(date, *, file=None)
 
