@@ -1341,6 +1341,13 @@ class Popen(object):
             # Data format: "exception name:hex errno:description"
             # Pickle is not used; it is complex and involves memory allocation.
             errpipe_read, errpipe_write = os.pipe()
+            # errpipe_write must not be in the standard io 0, 1, or 2 fd range.
+            low_fds_to_close = []
+            while errpipe_write < 3:
+                low_fds_to_close.append(errpipe_write)
+                errpipe_write = os.dup(errpipe_write)
+            for low_fd in low_fds_to_close:
+                os.close(low_fd)
             try:
                 try:
                     # We must avoid complex work that could involve
