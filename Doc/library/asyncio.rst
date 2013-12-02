@@ -71,8 +71,8 @@ It provides multiple facilities, amongst which:
 
 * Delegating costly function calls to a pool of threads
 
-Getting an event loop
-^^^^^^^^^^^^^^^^^^^^^
+Event loop functions
+^^^^^^^^^^^^^^^^^^^^
 
 The easiest way to get an event loop is to call the :func:`get_event_loop`
 function.
@@ -83,6 +83,26 @@ function.
    implementing :class:`BaseEventLoop` interface, or raises an exception in case no
    event loop has been set for the current context and the current policy does
    not specify to create one. It should never return ``None``.
+
+.. function:: set_event_loop(loop)
+
+   XXX
+
+.. function:: new_event_loop()
+
+   XXX
+
+
+Event loop policy
+^^^^^^^^^^^^^^^^^
+
+.. function:: get_event_loop_policy()
+
+   XXX
+
+.. function:: set_event_loop_policy(policy)
+
+   XXX
 
 
 Run an event loop
@@ -114,10 +134,13 @@ Run an event loop
 
 .. method:: BaseEventLoop.close()
 
-   Close the event loop.
+   Close the event loop. The loop should not be running.
 
    This clears the queues and shuts down the executor, but does not wait for
    the executor to finish.
+
+   This is idempotent and irreversible. No other methods should be called after
+   this one.
 
 
 Calls
@@ -199,26 +222,41 @@ Creating listening connections
 
 .. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
 
-   XXX
+   A :ref:`coroutine <coroutine>` which creates a TCP server bound to host and
+   port.
 
-   * *protocol_factory*
-   * *host*, *port*
-   * *family*
-   * *flags*
-   * *sock*
-   * *backlog* : the maximum number of queued connections and should be at
-     least ``0``; the maximum value is system-dependent (usually ``5``),
-     the minimum value is forced to ``0``.
-   * *ssl*: ``True`` or :class:`ssl.SSLContext`
-   * *reuse_address*: if ``True``, set :data:`socket.SO_REUSEADDR` option
-     on the listening socket. Default value: ``True`` on POSIX systems,
-     ``False`` on Windows.
+   The return value is a Server object which can be used to stop
+   the service.
+
+   If *host* is an empty string or None all interfaces are assumed
+   and a list of multiple sockets will be returned (most likely
+   one for IPv4 and another one for IPv6).
+
+   *family* can be set to either :data:`~socket.AF_INET` or
+   :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
+   it will be determined from host (defaults to :data:`~socket.AF_UNSPEC`).
+
+   *flags* is a bitmask for :meth:`getaddrinfo`.
+
+   *sock* can optionally be specified in order to use a preexisting
+   socket object.
+
+   *backlog* is the maximum number of queued connections passed to
+   :meth:`~socket.socket.listen` (defaults to 100).
+
+   ssl can be set to an :class:`~ssl.SSLContext` to enable SSL over the
+   accepted connections.
+
+   *reuse_address* tells the kernel to reuse a local socket in
+   TIME_WAIT state, without waiting for its natural timeout to
+   expire. If not specified will automatically be set to True on
+   UNIX.
 
    This method returns a :ref:`coroutine <coroutine>`.
 
 .. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
 
-   XXX
+   Create datagram connection.
 
    This method returns a :ref:`coroutine <coroutine>`.
 
@@ -291,13 +329,23 @@ Creating connections
 
 .. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
 
-   XXX
+   Register read pipe in eventloop.
+
+   *protocol_factory* should instantiate object with :class:`Protocol`
+   interface.  pipe is file-like object already switched to nonblocking.
+   Return pair (transport, protocol), where transport support
+   :class:`ReadTransport` interface.
 
    This method returns a :ref:`coroutine <coroutine>`.
 
 .. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
 
-   XXX
+   Register write pipe in eventloop.
+
+   *protocol_factory* should instantiate object with :class:`BaseProtocol`
+   interface.  Pipe is file-like object already switched to nonblocking.
+   Return pair (transport, protocol), where transport support
+   :class:`WriteTransport` interface.
 
    This method returns a :ref:`coroutine <coroutine>`.
 
@@ -1045,6 +1093,22 @@ it running: call ``yield from coroutine`` from another coroutine
 :class:`Task`.
 
 Coroutines (and tasks) can only run when the event loop is running.
+
+
+Server
+------
+
+.. class:: AbstractServer
+
+   Abstract server returned by create_service().
+
+   .. method:: close()
+
+      Stop serving.  This leaves existing connections open.
+
+   .. method:: wait_closed()
+
+      Coroutine to wait until service is closed.
 
 
 .. _sync:
