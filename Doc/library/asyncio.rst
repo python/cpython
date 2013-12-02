@@ -633,100 +633,116 @@ then call the transport's methods for various purposes.
 subprocess pipes.  The methods available on a transport depend on
 the transport's kind.
 
-Methods common to all transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: BaseTransport.close(self)
+Methods common to all transports: BaseTransport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Close the transport.  If the transport has a buffer for outgoing
-   data, buffered data will be flushed asynchronously.  No more data
-   will be received.  After all buffered data is flushed, the
-   protocol's :meth:`connection_lost` method will be called with
-   :const:`None` as its argument.
+.. class:: BaseTransport
+
+   Base class for transports.
+
+   .. method:: close(self)
+
+      Close the transport.  If the transport has a buffer for outgoing
+      data, buffered data will be flushed asynchronously.  No more data
+      will be received.  After all buffered data is flushed, the
+      protocol's :meth:`connection_lost` method will be called with
+      :const:`None` as its argument.
 
 
-.. method:: BaseTransport.get_extra_info(name, default=None)
+   .. method:: get_extra_info(name, default=None)
 
-   Return optional transport information.  *name* is a string representing
-   the piece of transport-specific information to get, *default* is the
-   value to return if the information doesn't exist.
+      Return optional transport information.  *name* is a string representing
+      the piece of transport-specific information to get, *default* is the
+      value to return if the information doesn't exist.
 
-   This method allows transport implementations to easily expose
-   channel-specific information.
+      This method allows transport implementations to easily expose
+      channel-specific information.
 
-Methods of readable streaming transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: ReadTransport.pause_reading()
+Methods of readable streaming transports: ReadTransport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Pause the receiving end of the transport.  No data will be passed to
-   the protocol's :meth:`data_received` method until meth:`resume_reading`
-   is called.
+.. class:: ReadTransport
 
-.. method:: ReadTransport.resume_reading()
+   Interface for read-only transports.
 
-   Resume the receiving end.  The protocol's :meth:`data_received` method
-   will be called once again if some data is available for reading.
+   .. method:: pause_reading()
 
-Methods of writable streaming transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      Pause the receiving end of the transport.  No data will be passed to
+      the protocol's :meth:`data_received` method until meth:`resume_reading`
+      is called.
 
-.. method:: WriteTransport.write(data)
+   .. method:: resume_reading()
 
-   Write some *data* bytes to the transport.
+      Resume the receiving end.  The protocol's :meth:`data_received` method
+      will be called once again if some data is available for reading.
 
-   This method does not block; it buffers the data and arranges for it
-   to be sent out asynchronously.
 
-.. method:: WriteTransport.writelines(list_of_data)
+Methods of writable streaming transports: WriteTransport
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   Write a list (or any iterable) of data bytes to the transport.
-   This is functionally equivalent to calling :meth:`write` on each
-   element yielded by the iterable, but may be implemented more efficiently.
+.. class:: WriteTransport
 
-.. method:: WriteTransport.write_eof()
+   Interface for write-only transports.
 
-   Close the write end of the transport after flushing buffered data.
-   Data may still be received.
+   .. method:: write(data)
 
-   This method can raise :exc:`NotImplementedError` if the transport
-   (e.g. SSL) doesn't support half-closes.
+      Write some *data* bytes to the transport.
 
-.. method:: WriteTransport.can_write_eof()
+      This method does not block; it buffers the data and arranges for it
+      to be sent out asynchronously.
 
-   Return :const:`True` if the transport supports :meth:`write_eof`,
-   :const:`False` if not.
+   .. method:: writelines(list_of_data)
 
-.. method:: WriteTransport.abort()
+      Write a list (or any iterable) of data bytes to the transport.
+      This is functionally equivalent to calling :meth:`write` on each
+      element yielded by the iterable, but may be implemented more efficiently.
 
-   Close the transport immediately, without waiting for pending operations
-   to complete.  Buffered data will be lost.  No more data will be received.
-   The protocol's :meth:`connection_lost` method will eventually be
-   called with :const:`None` as its argument.
+   .. method:: write_eof()
 
-.. method:: WriteTransport.set_write_buffer_limits(high=None, low=None)
+      Close the write end of the transport after flushing buffered data.
+      Data may still be received.
 
-   Set the *high*- and *low*-water limits for write flow control.
+      This method can raise :exc:`NotImplementedError` if the transport
+      (e.g. SSL) doesn't support half-closes.
 
-   These two values control when call the protocol's
-   :meth:`pause_writing` and :meth:`resume_writing` methods are called.
-   If specified, the low-water limit must be less than or equal to the
-   high-water limit.  Neither *high* nor *low* can be negative.
+   .. method:: can_write_eof()
 
-   The defaults are implementation-specific.  If only the
-   high-water limit is given, the low-water limit defaults to a
-   implementation-specific value less than or equal to the
-   high-water limit.  Setting *high* to zero forces *low* to zero as
-   well, and causes :meth:`pause_writing` to be called whenever the
-   buffer becomes non-empty.  Setting *low* to zero causes
-   :meth:`resume_writing` to be called only once the buffer is empty.
-   Use of zero for either limit is generally sub-optimal as it
-   reduces opportunities for doing I/O and computation
-   concurrently.
+      Return :const:`True` if the transport supports :meth:`write_eof`,
+      :const:`False` if not.
 
-.. method:: WriteTransport.get_write_buffer_size()
+   .. method:: abort()
 
-   Return the current size of the output buffer used by the transport.
+      Close the transport immediately, without waiting for pending operations
+      to complete.  Buffered data will be lost.  No more data will be received.
+      The protocol's :meth:`connection_lost` method will eventually be
+      called with :const:`None` as its argument.
+
+   .. method:: set_write_buffer_limits(high=None, low=None)
+
+      Set the *high*- and *low*-water limits for write flow control.
+
+      These two values control when call the protocol's
+      :meth:`pause_writing` and :meth:`resume_writing` methods are called.
+      If specified, the low-water limit must be less than or equal to the
+      high-water limit.  Neither *high* nor *low* can be negative.
+
+      The defaults are implementation-specific.  If only the
+      high-water limit is given, the low-water limit defaults to a
+      implementation-specific value less than or equal to the
+      high-water limit.  Setting *high* to zero forces *low* to zero as
+      well, and causes :meth:`pause_writing` to be called whenever the
+      buffer becomes non-empty.  Setting *low* to zero causes
+      :meth:`resume_writing` to be called only once the buffer is empty.
+      Use of zero for either limit is generally sub-optimal as it
+      reduces opportunities for doing I/O and computation
+      concurrently.
+
+   .. method:: get_write_buffer_size()
+
+      Return the current size of the output buffer used by the transport.
+
 
 Methods of datagram transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -747,47 +763,50 @@ Methods of datagram transports
    The protocol's :meth:`connection_lost` method will eventually be
    called with :const:`None` as its argument.
 
+
 Methods of subprocess transports
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: BaseSubprocessTransport.get_pid()
+.. class:: BaseSubprocessTransport
 
-   Return the subprocess process id as an integer.
+   .. method:: get_pid()
 
-.. method:: BaseSubprocessTransport.get_returncode()
+      Return the subprocess process id as an integer.
 
-   Return the subprocess returncode as an integer or :const:`None`
-   if it hasn't returned, similarly to the
-   :attr:`subprocess.Popen.returncode` attribute.
+   .. method:: get_returncode()
 
-.. method:: BaseSubprocessTransport.get_pipe_transport(fd)
+      Return the subprocess returncode as an integer or :const:`None`
+      if it hasn't returned, similarly to the
+      :attr:`subprocess.Popen.returncode` attribute.
 
-   Return the transport for the communication pipe correspondong to the
-   integer file descriptor *fd*.  The return value can be a readable or
-   writable streaming transport, depending on the *fd*.  If *fd* doesn't
-   correspond to a pipe belonging to this transport, :const:`None` is
-   returned.
+   .. method:: get_pipe_transport(fd)
 
-.. method:: BaseSubprocessTransport.send_signal(signal)
+      Return the transport for the communication pipe correspondong to the
+      integer file descriptor *fd*.  The return value can be a readable or
+      writable streaming transport, depending on the *fd*.  If *fd* doesn't
+      correspond to a pipe belonging to this transport, :const:`None` is
+      returned.
 
-   Send the *signal* number to the subprocess, as in
-   :meth:`subprocess.Popen.send_signal`.
+   .. method:: send_signal(signal)
 
-.. method:: BaseSubprocessTransport.terminate()
+      Send the *signal* number to the subprocess, as in
+      :meth:`subprocess.Popen.send_signal`.
 
-   Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
-   This method is an alias for the :meth:`close` method.
+   .. method:: terminate()
 
-   On POSIX systems, this method sends SIGTERM to the subprocess.
-   On Windows, the Windows API function TerminateProcess() is called to
-   stop the subprocess.
+      Ask the subprocess to stop, as in :meth:`subprocess.Popen.terminate`.
+      This method is an alias for the :meth:`close` method.
 
-.. method:: BaseSubprocessTransport.kill(self)
+      On POSIX systems, this method sends SIGTERM to the subprocess.
+      On Windows, the Windows API function TerminateProcess() is called to
+      stop the subprocess.
 
-   Kill the subprocess, as in :meth:`subprocess.Popen.kill`
+   .. method:: kill(self)
 
-   On POSIX systems, the function sends SIGKILL to the subprocess.
-   On Windows, this method is an alias for :meth:`terminate`.
+      Kill the subprocess, as in :meth:`subprocess.Popen.kill`
+
+      On POSIX systems, the function sends SIGKILL to the subprocess.
+      On Windows, this method is an alias for :meth:`terminate`.
 
 
 Task functions
@@ -843,12 +862,12 @@ Task functions
 
    Return ``True`` if *obj* is a coroutine object.
 
-.. function:: sleep(delay, result=None, *, loop=None)
+.. function:: sleep(delay, result=None, \*, loop=None)
 
    Create a :ref:`coroutine <coroutine>` that completes after a given time
    (in seconds).
 
-.. function:: shield(arg, *, loop=None)
+.. function:: shield(arg, \*, loop=None)
 
    Wait for a future, shielding it from cancellation.
 
@@ -879,7 +898,7 @@ Task functions
 Task
 ----
 
-.. class:: Task(coro, *, loop=None)
+.. class:: Task(coro, \*, loop=None)
 
    A coroutine wrapped in a :class:`~concurrent.futures.Future`.
 
@@ -893,7 +912,7 @@ Task
 
       Cancel the task.
 
-   .. method:: get_stack(self, *, limit=None)
+   .. method:: get_stack(self, \*, limit=None)
 
       Return the list of stack frames for this task's coroutine.
 
@@ -913,7 +932,7 @@ Task
       For reasons beyond our control, only one stack frame is returned for a
       suspended coroutine.
 
-   .. method:: print_stack(*, limit=None, file=None)
+   .. method:: print_stack(\*, limit=None, file=None)
 
       Print the stack or traceback for this task's coroutine.
 
