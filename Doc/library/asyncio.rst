@@ -225,7 +225,7 @@ Creating listening connections
    A :ref:`coroutine <coroutine>` which creates a TCP server bound to host and
    port.
 
-   The return value is a Server object which can be used to stop
+   The return value is a :class:`AbstractServer` object which can be used to stop
    the service.
 
    If *host* is an empty string or None all interfaces are assumed
@@ -265,7 +265,7 @@ Creating listening connections
 Creating connections
 ^^^^^^^^^^^^^^^^^^^^
 
-.. method:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, **options)
+.. method:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
 
    Create a streaming transport connection to a given Internet *host* and
    *port*.  *protocol_factory* must be a callable returning a
@@ -296,8 +296,7 @@ Creating connections
       a class.  For example, if you want to use a pre-created
       protocol instance, you can pass ``lambda: my_protocol``.
 
-   *options* are optional named arguments allowing to change how the
-   connection is created:
+   Options allowing to change how the connection is created:
 
    * *ssl*: if given and not false, a SSL/TLS transport is created
      (by default a plain TCP transport is created).  If *ssl* is
@@ -431,7 +430,7 @@ Network functions
    :class:`StreamReader`).
 
    The return value is the same as :meth:`~BaseEventLoop.create_server()`, i.e.
-   a Server object which can be used to stop the service.
+   a :class:`AbstractServer` object which can be used to stop the service.
 
    This function returns a :ref:`coroutine <coroutine>`.
 
@@ -659,6 +658,35 @@ Methods common to all transports: BaseTransport
       This method allows transport implementations to easily expose
       channel-specific information.
 
+      * socket:
+
+        - ``'peername'``: the remote address to which the socket is connected,
+          result of :meth:`socket.socket.getpeername` (``None`` on error)
+        - ``'socket'``: :class:`socket.socket` instance
+        - ``'sockname'``: the socket's own address,
+          result of :meth:`socket.socket.getsockname`
+
+      * SSL socket:
+
+        - ``'compression'``: the compression algorithm being used as a string,
+          or ``None`` if the connection isn't compressed; result of
+          :meth:`ssl.SSLSocket.compression`
+        - ``'cipher'``: a three-value tuple containing the name of the cipher
+          being used, the version of the SSL protocol that defines its use, and
+          the number of secret bits being used; result of
+          :meth:`ssl.SSLSocket.cipher`
+        - ``'peercert'``: peer certificate; result of
+          :meth:`ssl.SSLSocket.getpeercert`
+        - ``'sslcontext'``: :class:`ssl.SSLContext` instance
+
+      * pipe:
+
+        - ``'pipe'``: pipe object
+
+      * subprocess:
+
+        - ``'subprocess'``: :class:`subprocess.Popen` instance
+
 
 Methods of readable streaming transports: ReadTransport
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -854,11 +882,11 @@ Task functions
    outer Future is *not* cancelled in this case.  (This is to prevent the
    cancellation of one child to cause other children to be cancelled.)
 
-.. function:: iscoroutinefunction(func)
+.. function:: tasks.iscoroutinefunction(func)
 
    Return ``True`` if *func* is a decorated coroutine function.
 
-.. function:: iscoroutine(obj)
+.. function:: tasks.iscoroutine(obj)
 
    Return ``True`` if *obj* is a coroutine object.
 
