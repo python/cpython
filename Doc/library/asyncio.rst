@@ -550,6 +550,42 @@ Synchronization primitives
 Examples
 --------
 
+Hello World (callback)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Print ``Hello World`` every two seconds, using a callback::
+
+    import asyncio
+
+    def print_and_repeat(loop):
+        print('Hello World')
+        loop.call_later(2, print_and_repeat, loop)
+
+    loop = asyncio.get_event_loop()
+    print_and_repeat(loop)
+    loop.run_forever()
+
+
+Hello World (callback)
+^^^^^^^^^^^^^^^^^^^^^^
+
+Print ``Hello World`` every two seconds, using a coroutine::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def greet_every_two_seconds():
+        while True:
+            print('Hello World')
+            yield from asyncio.sleep(2)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(greet_every_two_seconds())
+
+
+Echo server
+^^^^^^^^^^^
+
 A :class:`Protocol` implementing an echo server::
 
    class EchoServer(asyncio.Protocol):
