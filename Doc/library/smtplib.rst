@@ -90,6 +90,10 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionchanged:: 3.3
       source_address argument was added.
 
+   .. versionchanged:: 3.4
+      The class now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
 
@@ -315,6 +319,11 @@ An :class:`SMTP` instance has the following methods:
 
    .. versionchanged:: 3.3
       *context* was added.
+
+   .. versionchanged:: 3.4
+      The method now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 
 .. method:: SMTP.sendmail(from_addr, to_addrs, msg, mail_options=[], rcpt_options=[])
