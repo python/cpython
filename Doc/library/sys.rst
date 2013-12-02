@@ -409,7 +409,7 @@ always available.
    * On Mac OS X, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the user's preference according to the result of
-     nl_langinfo(CODESET), or ``'utf-8'`` if ``nl_langinfo(CODESET)`` failed.
+     nl_langinfo(CODESET).
 
    * On Windows NT+, file names are Unicode natively, so no conversion is
      performed. :func:`getfilesystemencoding` still returns ``'mbcs'``, as
@@ -420,8 +420,7 @@ always available.
    * On Windows 9x, the encoding is ``'mbcs'``.
 
    .. versionchanged:: 3.2
-      On Unix, use ``'utf-8'`` instead of ``None`` if ``nl_langinfo(CODESET)``
-      failed. :func:`getfilesystemencoding` result cannot be ``None``.
+      :func:`getfilesystemencoding` result cannot be ``None`` anymore.
 
 
 .. function:: getrefcount(object)
