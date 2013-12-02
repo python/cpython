@@ -742,7 +742,7 @@ TLSv1.1 and TLSv1.2 support.
   cert store.
 
 (Contributed by Christian Heimes in :issue:`18143`, :issue:`18147` and
- :issue:`17134`.)
+:issue:`17134`.)
 
 Support for server-side SNI using the new
 :meth:`ssl.SSLContext.set_servername_callback` method.

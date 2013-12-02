@@ -801,7 +801,7 @@ attributes:
    >>> pattern.fullmatch("dog")      # No match as "o" is not at the start of "dog".
    >>> pattern.fullmatch("ogre")     # No match as not the full string matches.
    >>> pattern.fullmatch("doggie", 1, 3)   # Matches within given limits.
-   <_sre.SRE_Match object at ...>
+   <_sre.SRE_Match object; span=(1, 3), match='og'>
 
    .. versionadded:: 3.4
 
