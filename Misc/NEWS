@@ -21,6 +21,9 @@ Library
 - Issue #19784: poplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 
+- Issue #19783: nntplib now supports SSLContext.check_hostname and server name
+  indication for TLS/SSL connections.
+
 - Issue #19782: imaplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 
