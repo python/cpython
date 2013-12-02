@@ -77,7 +77,76 @@ Getting an event loop
 The easiest way to get an event loop is to call the :func:`get_event_loop`
 function.
 
-.. XXX more docs
+.. function:: get_event_loop()
+
+   Get the event loop for current context. Returns an event loop object
+   implementing :class:`BaseEventLoop` interface, or raises an exception in case no
+   event loop has been set for the current context and the current policy does
+   not specify to create one. It should never return ``None``.
+
+
+Run an event loop
+^^^^^^^^^^^^^^^^^
+
+.. method:: BaseEventLoop.run_forever()
+
+   Run until :meth:`stop` is called.
+
+.. method:: BaseEventLoop.run_in_executor(executor, callback, \*args)
+
+   XXX
+
+.. method:: BaseEventLoop.run_until_complete(future)
+
+   Run until the :class:`Future` is done.
+
+   If the argument is a coroutine, it is wrapped in a :class:`Task`.
+
+   Return the Future's result, or raise its exception.
+
+.. method:: stop()
+
+   Stop running the event loop.
+
+   Every callback scheduled before :meth:`stop` is called will run.
+   Callback scheduled after :meth:`stop` is called won't.  However, those
+   callbacks will run if :meth:`run_forever` is called again later.
+
+.. method:: BaseEventLoop.close()
+
+   Close the event loop.
+
+   This clears the queues and shuts down the executor, but does not wait for
+   the executor to finish.
+
+.. method:: BaseEventLoop.is_running()
+
+   Returns running status of event loop.
+
+
+Calls
+^^^^^
+
+.. method:: BaseEventLoop.call_soon(callback, \*args)
+
+   Arrange for a callback to be called as soon as possible.
+
+   This operates as a FIFO queue, callbacks are called in the order in
+   which they are registered.  Each callback will be called exactly once.
+
+   Any positional arguments after the callback will be passed to the
+   callback when it is called.
+
+.. method: BaseEventLoop.call_soon_threadsafe(callback, \*args)
+
+   Like :meth:`call_soon`, but thread safe.
+
+.. method:: BaseEventLoop.set_default_executor(executor)
+
+   XXX
+
+
+
 
 Delayed calls
 ^^^^^^^^^^^^^
@@ -114,6 +183,38 @@ a different clock than :func:`time.time`.
    *when* (an int or float), using the same time reference as :meth:`time`.
 
    This method's behavior is the same as :meth:`call_later`.
+
+.. method:: BaseEventLoop.time()
+
+   Return the time according to the event loop's clock.
+
+   The clock :func:`time.monotonic` is used by default.
+
+
+Creating listening connections
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
+
+   XXX
+
+   * *protocol_factory*
+   * *host*, *port*
+   * *family*
+   * *flags*
+   * *sock*
+   * *backlog* : the maximum number of queued connections and should be at
+     least ``0``; the maximum value is system-dependent (usually ``5``),
+     the minimum value is forced to ``0``.
+   * *ssl*: ``True`` or :class:`ssl.SSLContext`
+   * *reuse_address*: if ``True``, set :data:`socket.SO_REUSEADDR` option
+     on the listening socket. Default value: ``True`` on POSIX systems,
+     ``False`` on Windows.
+
+.. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
+
+   XXX
+
 
 Creating connections
 ^^^^^^^^^^^^^^^^^^^^
@@ -179,6 +280,46 @@ Creating connections
    * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
+
+.. method:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
+
+   XXX
+
+.. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
+
+   XXX
+
+
+Resolve name
+^^^^^^^^^^^^
+
+.. method:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
+
+   XXX
+
+.. method:: BaseEventLoop.getnameinfo(sockaddr, flags=0)
+
+   XXX
+
+
+Running subprocesses
+^^^^^^^^^^^^^^^^^^^^
+
+.. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=True, bufsize=0, \*\*kwargs)
+
+   XXX
+
+   See the constructor of the :class:`subprocess.Popen` class for parameters.
+
+.. method:: BaseEventLoop.subprocess_exec(protocol_factory, \*args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=False, bufsize=0, \*\*kwargs)
+
+   XXX
+
+   See the constructor of the :class:`subprocess.Popen` class for parameters.
+
+.. seealso::
+
+   The :mod:`subprocess` module.
 
 
 .. _protocol:
@@ -366,7 +507,7 @@ Transports
 
 Transports are classed provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.  You generally won't instantiate
-a transport yourself; instead, you will call a :class:`EventLoop` method
+a transport yourself; instead, you will call a :class:`BaseEventLoop` method
 which will create the transport and try to initiate the underlying
 communication channel, calling you back when it succeeds.
 
