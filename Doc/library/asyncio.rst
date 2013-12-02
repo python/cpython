@@ -922,6 +922,48 @@ Task functions
        except CancelledError:
            res = None
 
+.. function:: wait(fs, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
+
+   Wait for the Futures and coroutines given by fs to complete. Coroutines will
+   be wrapped in Tasks.  Returns two sets of
+   :class:`~concurrent.futures.Future`: (done, pending).
+
+   *timeout* can be used to control the maximum number of seconds to wait before
+   returning.  *timeout* can be an int or float.  If *timeout* is not specified
+   or ``None``, there is no limit to the wait time.
+
+   *return_when* indicates when this function should return.  It must be one of
+   the following constants of the :mod`concurrent.futures` module:
+
+   .. tabularcolumns:: |l|L|
+
+   +-----------------------------+----------------------------------------+
+   | Constant                    | Description                            |
+   +=============================+========================================+
+   | :const:`FIRST_COMPLETED`    | The function will return when any      |
+   |                             | future finishes or is cancelled.       |
+   +-----------------------------+----------------------------------------+
+   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
+   |                             | future finishes by raising an          |
+   |                             | exception.  If no future raises an     |
+   |                             | exception then it is equivalent to     |
+   |                             | :const:`ALL_COMPLETED`.                |
+   +-----------------------------+----------------------------------------+
+   | :const:`ALL_COMPLETED`      | The function will return when all      |
+   |                             | futures finish or are cancelled.       |
+   +-----------------------------+----------------------------------------+
+
+   This function returns a :ref:`coroutine <coroutine>`.
+
+   Usage::
+
+        done, pending = yield from asyncio.wait(fs)
+
+   .. note::
+
+      This does not raise :exc:`TimeoutError`! Futures that aren't done when
+      the timeout occurs are returned in the second set.
+
 
 Task
 ----
