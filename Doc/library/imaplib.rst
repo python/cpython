@@ -80,6 +80,10 @@ There's also a subclass for secure connections:
    .. versionchanged:: 3.3
       *ssl_context* parameter added.
 
+   .. versionchanged:: 3.4
+      The class now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 The second subclass allows for connections created by a child process:
 
@@ -437,6 +441,10 @@ An :class:`IMAP4` instance has the following methods:
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.4
+      The method now supports hostname check with
+      :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
+      :data:`~ssl.HAS_SNI`).
 
 .. method:: IMAP4.status(mailbox, names)
 
