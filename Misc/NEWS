@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19834: Support unpickling of exceptions pickled by Python 2.
+
 - Issue #15798: Fixed subprocess.Popen() to no longer fail if file
   descriptor 0, 1 or 2 is closed.
 
