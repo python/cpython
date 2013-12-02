@@ -23,7 +23,8 @@ if hasattr(poplib, 'POP3_SSL'):
     import ssl
 
     SUPPORTS_SSL = True
-    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
 requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 
 # the dummy data returned by server when LIST and RETR commands are issued
@@ -332,6 +333,12 @@ class TestPOP3Class(TestCase):
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+        ctx.load_verify_locations(CAFILE)
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        ctx.check_hostname = True
+        with self.assertRaises(ssl.CertificateError):
+            resp = self.client.stls(context=ctx)
+        self.client = poplib.POP3("localhost", self.server.port, timeout=3)
         resp = self.client.stls(context=ctx)
         self.assertEqual(resp, expected)
 
