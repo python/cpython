@@ -413,6 +413,71 @@ DATA5 = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
 # set([3]) pickled from 2.x with protocol 2
 DATA6 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
 
+python2_exceptions_without_args = (
+    ArithmeticError,
+    AssertionError,
+    AttributeError,
+    BaseException,
+    BufferError,
+    BytesWarning,
+    DeprecationWarning,
+    EOFError,
+    EnvironmentError,
+    Exception,
+    FloatingPointError,
+    FutureWarning,
+    GeneratorExit,
+    IOError,
+    ImportError,
+    ImportWarning,
+    IndentationError,
+    IndexError,
+    KeyError,
+    KeyboardInterrupt,
+    LookupError,
+    MemoryError,
+    NameError,
+    NotImplementedError,
+    OSError,
+    OverflowError,
+    PendingDeprecationWarning,
+    ReferenceError,
+    RuntimeError,
+    RuntimeWarning,
+    # StandardError is gone in Python 3, we map it to Exception
+    StopIteration,
+    SyntaxError,
+    SyntaxWarning,
+    SystemError,
+    SystemExit,
+    TabError,
+    TypeError,
+    UnboundLocalError,
+    UnicodeError,
+    UnicodeWarning,
+    UserWarning,
+    ValueError,
+    Warning,
+    ZeroDivisionError,
+)
+
+exception_pickle = b'\x80\x02cexceptions\n?\nq\x00)Rq\x01.'
+
+# Exception objects without arguments pickled from 2.x with protocol 2
+DATA7 = {
+    exception :
+    exception_pickle.replace(b'?', exception.__name__.encode("ascii"))
+    for exception in python2_exceptions_without_args
+}
+
+# StandardError is mapped to Exception, test that separately
+DATA8 = exception_pickle.replace(b'?', b'StandardError')
+
+# UnicodeEncodeError object pickled from 2.x with protocol 2
+DATA9 = (b'\x80\x02cexceptions\nUnicodeEncodeError\n'
+         b'q\x00(U\x05asciiq\x01X\x03\x00\x00\x00fooq\x02K\x00K\x01'
+         b'U\x03badq\x03tq\x04Rq\x05.')
+
 
 def create_data():
     c = C()
@@ -1213,6 +1278,21 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertEqual(type(loaded), SimpleCookie)
         self.assertEqual(list(loaded.keys()), ["key"])
         self.assertEqual(loaded["key"].value, "Set-Cookie: key=value")
+
+        for (exc, data) in DATA7.items():
+            loaded = self.loads(data)
+            self.assertIs(type(loaded), exc)
+
+        loaded = self.loads(DATA8)
+        self.assertIs(type(loaded), Exception)
+
+        loaded = self.loads(DATA9)
+        self.assertIs(type(loaded), UnicodeEncodeError)
+        self.assertEqual(loaded.object, "foo")
+        self.assertEqual(loaded.encoding, "ascii")
+        self.assertEqual(loaded.start, 0)
+        self.assertEqual(loaded.end, 1)
+        self.assertEqual(loaded.reason, "bad")
 
     def test_pickle_to_2x(self):
         # Pickle non-trivial data with protocol 2, expecting that it yields
