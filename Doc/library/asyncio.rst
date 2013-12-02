@@ -42,7 +42,7 @@ Here is a more detailed list of the package contents:
 
 
 Disclaimer
-----------
+==========
 
 Full documentation is not yet ready; we hope to have it written
 before Python 3.4 leaves beta.  Until then, the best reference is
@@ -52,11 +52,10 @@ see :PEP:`3153`.
 
 .. XXX should the asyncio documentation come in several pages, as for logging?
 
-
 .. _event-loop:
 
 Event loops
------------
+===========
 
 The event loop is the central execution device provided by :mod:`asyncio`.
 It provides multiple facilities, amongst which:
@@ -72,7 +71,7 @@ It provides multiple facilities, amongst which:
 * Delegating costly function calls to a pool of threads
 
 Event loop functions
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 The easiest way to get an event loop is to call the :func:`get_event_loop`
 function.
@@ -94,7 +93,7 @@ function.
 
 
 Event loop policy
-^^^^^^^^^^^^^^^^^
+-----------------
 
 .. function:: get_event_loop_policy()
 
@@ -106,7 +105,7 @@ Event loop policy
 
 
 Run an event loop
-^^^^^^^^^^^^^^^^^
+-----------------
 
 .. method:: BaseEventLoop.run_forever()
 
@@ -144,7 +143,7 @@ Run an event loop
 
 
 Calls
-^^^^^
+-----
 
 .. method:: BaseEventLoop.call_soon(callback, \*args)
 
@@ -162,7 +161,7 @@ Calls
 
 
 Delayed calls
-^^^^^^^^^^^^^
+-------------
 
 The event loop has its own internal clock for computing timeouts.
 Which clock is used depends on the (platform-specific) event loop
@@ -196,70 +195,6 @@ a different clock than :func:`time.time`.
 
    Return the current time, as a :class:`float` value, according to the
    event loop's internal clock.
-
-
-Executor
-^^^^^^^^
-
-Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
-pool of processes). By default, an event loop uses a thread pool executor
-(:class:`~concurrent.futures.ThreadPoolExecutor`).
-
-.. method:: BaseEventLoop.run_in_executor(executor, callback, \*args)
-
-   Arrange for a callback to be called in the specified executor.
-
-   *executor* is a :class:`~concurrent.futures.Executor` instance,
-   the default executor is used if *executor* is ``None``.
-
-.. method:: BaseEventLoop.set_default_executor(executor)
-
-   Set the default executor used by :meth:`run_in_executor`.
-
-
-Creating listening connections
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
-
-   A :ref:`coroutine <coroutine>` which creates a TCP server bound to host and
-   port.
-
-   The return value is a :class:`AbstractServer` object which can be used to stop
-   the service.
-
-   If *host* is an empty string or None all interfaces are assumed
-   and a list of multiple sockets will be returned (most likely
-   one for IPv4 and another one for IPv6).
-
-   *family* can be set to either :data:`~socket.AF_INET` or
-   :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
-   it will be determined from host (defaults to :data:`~socket.AF_UNSPEC`).
-
-   *flags* is a bitmask for :meth:`getaddrinfo`.
-
-   *sock* can optionally be specified in order to use a preexisting
-   socket object.
-
-   *backlog* is the maximum number of queued connections passed to
-   :meth:`~socket.socket.listen` (defaults to 100).
-
-   ssl can be set to an :class:`~ssl.SSLContext` to enable SSL over the
-   accepted connections.
-
-   *reuse_address* tells the kernel to reuse a local socket in
-   TIME_WAIT state, without waiting for its natural timeout to
-   expire. If not specified will automatically be set to True on
-   UNIX.
-
-   This method returns a :ref:`coroutine <coroutine>`.
-
-.. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
-
-   Create datagram connection.
-
-   This method returns a :ref:`coroutine <coroutine>`.
-
 
 
 Creating connections
@@ -327,8 +262,53 @@ Creating connections
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
 
+Creating listening connections
+------------------------------
+
+.. method:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
+
+   A :ref:`coroutine <coroutine>` which creates a TCP server bound to host and
+   port.
+
+   The return value is a :class:`AbstractServer` object which can be used to stop
+   the service.
+
+   If *host* is an empty string or None all interfaces are assumed
+   and a list of multiple sockets will be returned (most likely
+   one for IPv4 and another one for IPv6).
+
+   *family* can be set to either :data:`~socket.AF_INET` or
+   :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
+   it will be determined from host (defaults to :data:`~socket.AF_UNSPEC`).
+
+   *flags* is a bitmask for :meth:`getaddrinfo`.
+
+   *sock* can optionally be specified in order to use a preexisting
+   socket object.
+
+   *backlog* is the maximum number of queued connections passed to
+   :meth:`~socket.socket.listen` (defaults to 100).
+
+   ssl can be set to an :class:`~ssl.SSLContext` to enable SSL over the
+   accepted connections.
+
+   *reuse_address* tells the kernel to reuse a local socket in
+   TIME_WAIT state, without waiting for its natural timeout to
+   expire. If not specified will automatically be set to True on
+   UNIX.
+
+   This method returns a :ref:`coroutine <coroutine>`.
+
+.. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
+
+   Create datagram connection.
+
+   This method returns a :ref:`coroutine <coroutine>`.
+
+
+
 Resolve name
-^^^^^^^^^^^^
+------------
 
 .. method:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
 
@@ -340,7 +320,7 @@ Resolve name
 
 
 Running subprocesses
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 Run subprocesses asynchronously using the :mod:`subprocess` module.
 
@@ -382,6 +362,28 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    This method returns a :ref:`coroutine <coroutine>`.
 
+
+Executor
+--------
+
+Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
+pool of processes). By default, an event loop uses a thread pool executor
+(:class:`~concurrent.futures.ThreadPoolExecutor`).
+
+.. method:: BaseEventLoop.run_in_executor(executor, callback, \*args)
+
+   Arrange for a callback to be called in the specified executor.
+
+   *executor* is a :class:`~concurrent.futures.Executor` instance,
+   the default executor is used if *executor* is ``None``.
+
+.. method:: BaseEventLoop.set_default_executor(executor)
+
+   Set the default executor used by :meth:`run_in_executor`.
+
+
+Tasks and coroutines
+====================
 
 .. _coroutine:
 
@@ -614,7 +616,7 @@ Task functions
 .. _transport:
 
 Transports
-----------
+==========
 
 Transports are classed provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.  You generally won't instantiate
@@ -631,8 +633,8 @@ subprocess pipes.  The methods available on a transport depend on
 the transport's kind.
 
 
-Methods common to all transports: BaseTransport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+BaseTransport: Methods common to all transports
+-----------------------------------------------
 
 .. class:: BaseTransport
 
@@ -686,8 +688,8 @@ Methods common to all transports: BaseTransport
         - ``'subprocess'``: :class:`subprocess.Popen` instance
 
 
-Methods of readable streaming transports: ReadTransport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ReadTransport: Methods of readable streaming transports
+-------------------------------------------------------
 
 .. class:: ReadTransport
 
@@ -705,8 +707,8 @@ Methods of readable streaming transports: ReadTransport
       will be called once again if some data is available for reading.
 
 
-Methods of writable streaming transports: WriteTransport
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+WriteTransport: Methods of writable streaming transports
+--------------------------------------------------------
 
 .. class:: WriteTransport
 
@@ -770,8 +772,8 @@ Methods of writable streaming transports: WriteTransport
       (e.g. SSL) doesn't support half-closes.
 
 
-Methods of datagram transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+DatagramTransport: Methods of datagram transports
+-------------------------------------------------
 
 .. method:: DatagramTransport.sendto(data, addr=None)
 
@@ -791,7 +793,7 @@ Methods of datagram transports
 
 
 Methods of subprocess transports
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------
 
 .. class:: BaseSubprocessTransport
 
@@ -835,8 +837,8 @@ Methods of subprocess transports
       On Windows, this method is an alias for :meth:`terminate`.
 
 
-Stream reader and writer
-------------------------
+Stream reader
+-------------
 
 .. class:: StreamWriter(transport, protocol, reader, loop)
 
@@ -897,6 +899,9 @@ Stream reader and writer
       see :meth:`WriteTransport.write_eof`.
 
 
+Stream writer
+-------------
+
 .. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
 
    .. method:: exception()
@@ -942,7 +947,7 @@ Stream reader and writer
 .. _protocol:
 
 Protocols
----------
+=========
 
 :mod:`asyncio` provides base classes that you can subclass to implement
 your network protocols.  Those classes are used in conjunction with
@@ -962,7 +967,7 @@ call them yourself, unless you are implementing a transport.
 
 
 Protocol classes
-^^^^^^^^^^^^^^^^
+----------------
 
 .. class:: Protocol
 
@@ -981,7 +986,7 @@ Protocol classes
 
 
 Connection callbacks
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 These callbacks may be called on :class:`Protocol` and
 :class:`SubprocessProtocol` instances:
@@ -1027,10 +1032,10 @@ instances:
 
 
 Data reception callbacks
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 
 Streaming protocols
-"""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^
 
 The following callbacks are called on :class:`Protocol` instances:
 
@@ -1066,7 +1071,7 @@ a connection.  However, :meth:`eof_received` is called at most once
 and, if called, :meth:`data_received` won't be called after it.
 
 Datagram protocols
-""""""""""""""""""
+^^^^^^^^^^^^^^^^^^
 
 The following callbacks are called on :class:`DatagramProtocol` instances.
 
@@ -1088,7 +1093,7 @@ The following callbacks are called on :class:`DatagramProtocol` instances.
 
 
 Flow control callbacks
-^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 
 These callbacks may be called on :class:`Protocol` and
 :class:`SubprocessProtocol` instances:
@@ -1117,26 +1122,6 @@ buffer size reaches the low-water mark.
    mark is zero.
 
 
-Protocols
----------
-
-:mod:`asyncio` provides base classes that you can subclass to implement
-your network protocols.  Those classes are used in conjunction with
-:ref:`transports <transport>` (see below): the protocol parses incoming
-data and asks for the writing of outgoing data, while the transport is
-responsible for the actual I/O and buffering.
-
-When subclassing a protocol class, it is recommended you override certain
-methods.  Those methods are callbacks: they will be called by the transport
-on certain events (for example when some data is received); you shouldn't
-call them yourself, unless you are implementing a transport.
-
-.. note::
-   All callbacks have default implementations, which are empty.  Therefore,
-   you only need to implement the callbacks for the events in which you
-   are interested.
-
-
 Server
 ------
 
@@ -1154,7 +1139,7 @@ Server
 
 
 Network functions
------------------
+=================
 
 .. function:: open_connection(host=None, port=None, *, loop=None, limit=_DEFAULT_LIMIT, **kwds)
 
@@ -1208,7 +1193,10 @@ Network functions
 .. _sync:
 
 Synchronization primitives
---------------------------
+==========================
+
+Locks
+-----
 
 .. class:: Lock(\*, loop=None)
 
@@ -1381,6 +1369,9 @@ Synchronization primitives
       This method returns a :ref:`coroutine <coroutine>`.
 
 
+Semaphores
+----------
+
 .. class:: Semaphore(value=1, \*, loop=None)
 
    A Semaphore implementation.
@@ -1425,6 +1416,9 @@ Synchronization primitives
     This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
     increase the value above the initial value.
 
+
+Queues
+------
 
 .. class:: Queue(maxsize=0, \*, loop=None)
 
