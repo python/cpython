@@ -92,10 +92,6 @@ Run an event loop
 
    Run until :meth:`stop` is called.
 
-.. method:: BaseEventLoop.run_in_executor(executor, callback, \*args)
-
-   XXX
-
 .. method:: BaseEventLoop.run_until_complete(future)
 
    Run until the :class:`Future` is done.
@@ -103,6 +99,10 @@ Run an event loop
    If the argument is a coroutine, it is wrapped in a :class:`Task`.
 
    Return the Future's result, or raise its exception.
+
+.. method:: BaseEventLoop.is_running()
+
+   Returns running status of event loop.
 
 .. method:: stop()
 
@@ -119,10 +119,6 @@ Run an event loop
    This clears the queues and shuts down the executor, but does not wait for
    the executor to finish.
 
-.. method:: BaseEventLoop.is_running()
-
-   Returns running status of event loop.
-
 
 Calls
 ^^^^^
@@ -137,15 +133,9 @@ Calls
    Any positional arguments after the callback will be passed to the
    callback when it is called.
 
-.. method: BaseEventLoop.call_soon_threadsafe(callback, \*args)
+.. method:: BaseEventLoop.call_soon_threadsafe(callback, \*args)
 
    Like :meth:`call_soon`, but thread safe.
-
-.. method:: BaseEventLoop.set_default_executor(executor)
-
-   XXX
-
-
 
 
 Delayed calls
@@ -155,11 +145,6 @@ The event loop has its own internal clock for computing timeouts.
 Which clock is used depends on the (platform-specific) event loop
 implementation; ideally it is a monotonic clock.  This will generally be
 a different clock than :func:`time.time`.
-
-.. method:: BaseEventLoop.time()
-
-   Return the current time, as a :class:`float` value, according to the
-   event loop's internal clock.
 
 .. method:: BaseEventLoop.call_later(delay, callback, *args)
 
@@ -186,9 +171,27 @@ a different clock than :func:`time.time`.
 
 .. method:: BaseEventLoop.time()
 
-   Return the time according to the event loop's clock.
+   Return the current time, as a :class:`float` value, according to the
+   event loop's internal clock.
 
-   The clock :func:`time.monotonic` is used by default.
+
+Executor
+^^^^^^^^
+
+Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
+pool of processes). By default, an event loop uses a thread pool executor
+(:class:`~concurrent.futures.ThreadPoolExecutor`).
+
+.. method:: BaseEventLoop.run_in_executor(executor, callback, \*args)
+
+   Arrange for a callback to be called in the specified executor.
+
+   *executor* is a :class:`~concurrent.futures.Executor` instance,
+   the default executor is used if *executor* is ``None``.
+
+.. method:: BaseEventLoop.set_default_executor(executor)
+
+   Set the default executor used by :meth:`run_in_executor`.
 
 
 Creating listening connections
@@ -211,9 +214,14 @@ Creating listening connections
      on the listening socket. Default value: ``True`` on POSIX systems,
      ``False`` on Windows.
 
+   This method returns a :ref:`coroutine <coroutine>`.
+
 .. method:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
 
    XXX
+
+   This method returns a :ref:`coroutine <coroutine>`.
+
 
 
 Creating connections
@@ -285,9 +293,13 @@ Creating connections
 
    XXX
 
+   This method returns a :ref:`coroutine <coroutine>`.
+
 .. method:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
 
    XXX
+
+   This method returns a :ref:`coroutine <coroutine>`.
 
 
 Resolve name
@@ -305,9 +317,13 @@ Resolve name
 Running subprocesses
 ^^^^^^^^^^^^^^^^^^^^
 
+Run subprocesses asynchronously using the :mod:`subprocess` module.
+
 .. method:: BaseEventLoop.subprocess_shell(protocol_factory, cmd, \*, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=False, shell=True, bufsize=0, \*\*kwargs)
 
    XXX
+
+   This method returns a :ref:`coroutine <coroutine>`.
 
    See the constructor of the :class:`subprocess.Popen` class for parameters.
 
@@ -315,11 +331,9 @@ Running subprocesses
 
    XXX
 
+   This method returns a :ref:`coroutine <coroutine>`.
+
    See the constructor of the :class:`subprocess.Popen` class for parameters.
-
-.. seealso::
-
-   The :mod:`subprocess` module.
 
 
 .. _protocol:
