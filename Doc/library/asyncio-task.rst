@@ -199,7 +199,7 @@ Task functions
    or ``None``, there is no limit to the wait time.
 
    *return_when* indicates when this function should return.  It must be one of
-   the following constants of the :mod`concurrent.futures` module:
+   the following constants of the :mod:`concurrent.futures` module:
 
    .. tabularcolumns:: |l|L|
 
