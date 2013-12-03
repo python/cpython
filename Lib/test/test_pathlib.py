@@ -1275,8 +1275,8 @@ class _BasePathTest(object):
         # See https://bitbucket.org/pitrou/pathlib/issue/9/pathresolve-fails-on-complex-symlinks
         p = self.cls(BASE)
         self.dirlink('.', join('0'))
-        self.dirlink('0/0', join('1'))
-        self.dirlink('1/1', join('2'))
+        self.dirlink(os.path.join('0', '0'), join('1'))
+        self.dirlink(os.path.join('1', '1'), join('2'))
         q = p / '2'
         self.assertEqual(q.resolve(), p)
 
