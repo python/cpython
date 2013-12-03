@@ -959,19 +959,21 @@ if threading:
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPHandlerTest(BaseTest):
+    TIMEOUT = 8.0
     def test_basic(self):
         sockmap = {}
         server = TestSMTPServer(('localhost', 0), self.process_message, 0.001,
                                 sockmap)
         server.start()
         addr = ('localhost', server.port)
-        h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log', timeout=5.0)
+        h = logging.handlers.SMTPHandler(addr, 'me', 'you', 'Log',
+                                         timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
         self.messages = []
         r = logging.makeLogRecord({'msg': 'Hello'})
         self.handled = threading.Event()
         h.handle(r)
-        self.handled.wait(5.0)  # 14314: don't wait forever
+        self.handled.wait(self.TIMEOUT)  # 14314: don't wait forever
         server.stop()
         self.assertTrue(self.handled.is_set())
         self.assertEqual(len(self.messages), 1)
