@@ -752,12 +752,12 @@ EXTINLINE uint8_t mpd_sign(const mpd_t *dec);
 /* 1 if dec is positive, -1 if dec is negative */
 EXTINLINE int mpd_arith_sign(const mpd_t *dec);
 EXTINLINE long mpd_radix(void);
-EXTINLINE int mpd_isdynamic(mpd_t *dec);
-EXTINLINE int mpd_isstatic(mpd_t *dec);
-EXTINLINE int mpd_isdynamic_data(mpd_t *dec);
-EXTINLINE int mpd_isstatic_data(mpd_t *dec);
-EXTINLINE int mpd_isshared_data(mpd_t *dec);
-EXTINLINE int mpd_isconst_data(mpd_t *dec);
+EXTINLINE int mpd_isdynamic(const mpd_t *dec);
+EXTINLINE int mpd_isstatic(const mpd_t *dec);
+EXTINLINE int mpd_isdynamic_data(const mpd_t *dec);
+EXTINLINE int mpd_isstatic_data(const mpd_t *dec);
+EXTINLINE int mpd_isshared_data(const mpd_t *dec);
+EXTINLINE int mpd_isconst_data(const mpd_t *dec);
 EXTINLINE mpd_ssize_t mpd_trail_zeros(const mpd_t *dec);
 
 
@@ -769,7 +769,7 @@ EXTINLINE mpd_ssize_t mpd_trail_zeros(const mpd_t *dec);
 EXTINLINE void mpd_setdigits(mpd_t *result);
 EXTINLINE void mpd_set_sign(mpd_t *result, uint8_t sign);
 /* copy sign from another decimal */
-EXTINLINE void mpd_signcpy(mpd_t *result, mpd_t *a);
+EXTINLINE void mpd_signcpy(mpd_t *result, const mpd_t *a);
 EXTINLINE void mpd_set_infinity(mpd_t *result);
 EXTINLINE void mpd_set_qnan(mpd_t *result);
 EXTINLINE void mpd_set_snan(mpd_t *result);
