@@ -192,12 +192,6 @@ BaseSubprocessTransport
 
       Return the subprocess process id as an integer.
 
-   .. method:: get_returncode()
-
-      Return the subprocess returncode as an integer or :const:`None`
-      if it hasn't returned, similarly to the
-      :attr:`subprocess.Popen.returncode` attribute.
-
    .. method:: get_pipe_transport(fd)
 
       Return the transport for the communication pipe correspondong to the
@@ -205,6 +199,19 @@ BaseSubprocessTransport
       writable streaming transport, depending on the *fd*.  If *fd* doesn't
       correspond to a pipe belonging to this transport, :const:`None` is
       returned.
+
+   .. method:: get_returncode()
+
+      Return the subprocess returncode as an integer or :const:`None`
+      if it hasn't returned, similarly to the
+      :attr:`subprocess.Popen.returncode` attribute.
+
+   .. method:: kill(self)
+
+      Kill the subprocess, as in :meth:`subprocess.Popen.kill`
+
+      On POSIX systems, the function sends SIGKILL to the subprocess.
+      On Windows, this method is an alias for :meth:`terminate`.
 
    .. method:: send_signal(signal)
 
@@ -219,13 +226,6 @@ BaseSubprocessTransport
       On POSIX systems, this method sends SIGTERM to the subprocess.
       On Windows, the Windows API function TerminateProcess() is called to
       stop the subprocess.
-
-   .. method:: kill(self)
-
-      Kill the subprocess, as in :meth:`subprocess.Popen.kill`
-
-      On POSIX systems, the function sends SIGKILL to the subprocess.
-      On Windows, this method is an alias for :meth:`terminate`.
 
 
 StreamWriter
