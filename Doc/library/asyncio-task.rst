@@ -231,10 +231,14 @@ Task functions
       the timeout occurs are returned in the second set.
 
 
+Examples
+--------
+
+
 .. _asyncio-hello-world-coroutine:
 
 Example: Hello World (coroutine)
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Print ``Hello World`` every two seconds, using a coroutine::
 
@@ -253,3 +257,63 @@ Print ``Hello World`` every two seconds, using a coroutine::
 .. seealso::
 
    :ref:`Hello World example using a callback <asyncio-hello-world-callback>`.
+
+Example: Chains coroutines and parallel execution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example chaining coroutines and executing multiple coroutines in parallel::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def compute(x, y):
+        print("Start computing %s + %s" % (x, y))
+        yield from asyncio.sleep(3.0)
+        return x + y
+
+    @asyncio.coroutine
+    def print_sum(x, y):
+        result = yield from compute(x, y)
+        print("%s + %s = %s" % (x, y, result))
+
+    @asyncio.coroutine
+    def wait_task(task):
+        while 1:
+            done, pending = yield from asyncio.wait([task], timeout=1.0)
+            if done:
+                break
+            print("Compute in progress...")
+        asyncio.get_event_loop().stop()
+
+    print("Schedule tasks")
+    task = asyncio.async(print_sum(1, 2))
+    asyncio.async(wait_task(task))
+
+    print("Execute tasks")
+    loop = asyncio.get_event_loop()
+    loop.run_forever()
+    loop.close()
+
+
+
+Output::
+
+    Schedule tasks
+    Execute tasks
+    Start computing 1 + 2
+    Compute in progress...
+    Compute in progress...
+    1 + 2 = 3
+
+Details:
+
+* ``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
+  until ``compute()`` is complete. Coroutines are executed in parallel:
+  ``wait_task()`` is executed while ``compute()`` is blocked in
+  ``asyncio.sleep(3.0)``.
+
+* Coroutines are not executed before the loop is running: ``"Execute tasks"``
+  is written before ``"Start computing 1 + 2"``.
+
+* ``wait_task()`` stops the event loop when ``print_sum()`` is done.
+
