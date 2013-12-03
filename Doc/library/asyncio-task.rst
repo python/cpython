@@ -230,3 +230,26 @@ Task functions
       This does not raise :exc:`TimeoutError`! Futures that aren't done when
       the timeout occurs are returned in the second set.
 
+
+.. _asyncio-hello-world-coroutine:
+
+Example: Hello World (coroutine)
+--------------------------------
+
+Print ``Hello World`` every two seconds, using a coroutine::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def greet_every_two_seconds():
+        while True:
+            print('Hello World')
+            yield from asyncio.sleep(2)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(greet_every_two_seconds())
+
+
+.. seealso::
+
+   :ref:`Hello World example using a callback <asyncio-hello-world-callback>`.
