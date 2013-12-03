@@ -20,8 +20,8 @@ subprocess pipes.  The methods available on a transport depend on
 the transport's kind.
 
 
-BaseTransport: Methods common to all transports
------------------------------------------------
+BaseTransport
+-------------
 
 .. class:: BaseTransport
 
@@ -75,8 +75,8 @@ BaseTransport: Methods common to all transports
         - ``'subprocess'``: :class:`subprocess.Popen` instance
 
 
-ReadTransport: Methods of readable streaming transports
--------------------------------------------------------
+ReadTransport
+-------------
 
 .. class:: ReadTransport
 
@@ -94,8 +94,8 @@ ReadTransport: Methods of readable streaming transports
       will be called once again if some data is available for reading.
 
 
-WriteTransport: Methods of writable streaming transports
---------------------------------------------------------
+WriteTransport
+--------------
 
 .. class:: WriteTransport
 
@@ -159,8 +159,8 @@ WriteTransport: Methods of writable streaming transports
       (e.g. SSL) doesn't support half-closes.
 
 
-DatagramTransport: Methods of datagram transports
--------------------------------------------------
+DatagramTransport
+-----------------
 
 .. method:: DatagramTransport.sendto(data, addr=None)
 
@@ -179,8 +179,8 @@ DatagramTransport: Methods of datagram transports
    called with :const:`None` as its argument.
 
 
-Methods of subprocess transports
---------------------------------
+BaseSubprocessTransport
+-----------------------
 
 .. class:: BaseSubprocessTransport
 
@@ -224,8 +224,8 @@ Methods of subprocess transports
       On Windows, this method is an alias for :meth:`terminate`.
 
 
-Stream reader
--------------
+StreamWriter
+------------
 
 .. class:: StreamWriter(transport, protocol, reader, loop)
 
@@ -286,8 +286,8 @@ Stream reader
       see :meth:`WriteTransport.write_eof`.
 
 
-Stream writer
--------------
+StreamReader
+------------
 
 .. class:: StreamReader(limit=_DEFAULT_LIMIT, loop=None)
 
@@ -418,11 +418,8 @@ instances:
    Called when the child process has exited.
 
 
-Data reception callbacks
-------------------------
-
 Streaming protocols
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 The following callbacks are called on :class:`Protocol` instances:
 
@@ -458,7 +455,7 @@ a connection.  However, :meth:`eof_received` is called at most once
 and, if called, :meth:`data_received` won't be called after it.
 
 Datagram protocols
-^^^^^^^^^^^^^^^^^^
+------------------
 
 The following callbacks are called on :class:`DatagramProtocol` instances.
 
@@ -576,40 +573,69 @@ Network functions
 
    This function returns a :ref:`coroutine <coroutine>`.
 
-Example: Echo server
---------------------
 
-A :class:`Protocol` implementing an echo server::
+Protocol example: TCP echo client and server
+============================================
 
-   class EchoServer(asyncio.Protocol):
+Echo server
+-----------
 
-       TIMEOUT = 5.0
+TCP echo server example::
 
-       def timeout(self):
-           print('connection timeout, closing.')
-           self.transport.close()
+    import asyncio
 
-       def connection_made(self, transport):
-           print('connection made')
-           self.transport = transport
+    class EchoServer(asyncio.Protocol):
+        def timeout(self):
+            print('connection timeout, closing.')
+            self.transport.close()
 
-           # start 5 seconds timeout timer
-           self.h_timeout = asyncio.get_event_loop().call_later(
-               self.TIMEOUT, self.timeout)
+        def connection_made(self, transport):
+            print('connection made')
+            self.transport = transport
 
-       def data_received(self, data):
-           print('data received: ', data.decode())
-           self.transport.write(b'Re: ' + data)
+            # close the client connection after 2 seconds
+            asyncio.get_event_loop().call_later(2.0, self.timeout)
 
-           # restart timeout timer
-           self.h_timeout.cancel()
-           self.h_timeout = asyncio.get_event_loop().call_later(
-               self.TIMEOUT, self.timeout)
+        def data_received(self, data):
+            print('data received:', data.decode())
+            self.transport.write(data)
 
-       def eof_received(self):
-           pass
+        def connection_lost(self, exc):
+            print('connection lost')
 
-       def connection_lost(self, exc):
-           print('connection lost:', exc)
-           self.h_timeout.cancel()
+
+    loop = asyncio.get_event_loop()
+    f = loop.create_server(EchoServer, '127.0.0.1', 8888)
+    s = loop.run_until_complete(f)
+    print('serving on', s.sockets[0].getsockname())
+    loop.run_forever()
+
+
+Echo client
+-----------
+
+TCP echo client example::
+
+    import asyncio
+
+    class EchoClient(asyncio.Protocol):
+        message = 'This is the message. It will be echoed.'
+
+        def connection_made(self, transport):
+            self.transport = transport
+            self.transport.write(self.message.encode())
+            print('data sent:', self.message)
+
+        def data_received(self, data):
+            print('data received:', data.decode())
+
+        def connection_lost(self, exc):
+            print('connection lost')
+            asyncio.get_event_loop().stop()
+
+    loop = asyncio.get_event_loop()
+    task = loop.create_connection(EchoClient, '127.0.0.1', 8888)
+    loop.run_until_complete(task)
+    loop.run_forever()
+    loop.close()
 

@@ -150,7 +150,7 @@ a different clock than :func:`time.time`.
 
 
 Creating connections
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 .. method:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
 
