@@ -71,7 +71,7 @@ Run an event loop
 
    Returns running status of event loop.
 
-.. method:: stop()
+.. method:: BaseEventLoop.stop()
 
    Stop running the event loop.
 
