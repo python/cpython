@@ -144,6 +144,10 @@ a different clock than :func:`time.time`.
    Return the current time, as a :class:`float` value, according to the
    event loop's internal clock.
 
+.. seealso::
+
+   The :func:`asyncio.sleep` function.
+
 
 Creating connections
 ^^^^^^^^^^^^^^^^^^^^
@@ -330,11 +334,10 @@ pool of processes). By default, an event loop uses a thread pool executor
    Set the default executor used by :meth:`run_in_executor`.
 
 
-Examples
---------
+.. _asyncio-hello-world-callback:
 
-Hello World (callback)
-^^^^^^^^^^^^^^^^^^^^^^
+Example: Hello World (callback)
+-------------------------------
 
 Print ``Hello World`` every two seconds, using a callback::
 
@@ -348,20 +351,7 @@ Print ``Hello World`` every two seconds, using a callback::
     print_and_repeat(loop)
     loop.run_forever()
 
+.. seealso::
 
-Hello World (coroutine)
-^^^^^^^^^^^^^^^^^^^^^^^
-
-Print ``Hello World`` every two seconds, using a coroutine::
-
-    import asyncio
-
-    @asyncio.coroutine
-    def greet_every_two_seconds():
-        while True:
-            print('Hello World')
-            yield from asyncio.sleep(2)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(greet_every_two_seconds())
+   :ref:`Hello World example using a coroutine <asyncio-hello-world-coroutine>`.
 
