@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19827: On UNIX, setblocking() and settimeout() methods of
+  socket.socket can now avoid a second syscall if the ioctl() function can be
+  used, or if the non-blocking flag of the socket is unchanged.
+
 - Issue #19785: smtplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 

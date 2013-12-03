@@ -585,8 +585,9 @@ sendsegmented(int sock_fd, char *buf, int len, int flags)
 static int
 internal_setblocking(PySocketSockObject *s, int block)
 {
-#ifndef MS_WINDOWS
-    int delay_flag;
+#if !defined(MS_WINDOWS) \
+    && !((defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)) || defined(__VMS))
+    int delay_flag, new_delay_flag;
 #endif
 #ifdef SOCK_NONBLOCK
     if (block)
@@ -597,17 +598,18 @@ internal_setblocking(PySocketSockObject *s, int block)
 
     Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
-#if defined(__VMS)
+#if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)) || defined(__VMS)
     block = !block;
     ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block);
-#else  /* !__VMS */
+#else
     delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
     if (block)
-        delay_flag &= (~O_NONBLOCK);
+        new_delay_flag = delay_flag & (~O_NONBLOCK);
     else
-        delay_flag |= O_NONBLOCK;
-    fcntl(s->sock_fd, F_SETFL, delay_flag);
-#endif /* !__VMS */
+        new_delay_flag = delay_flag | O_NONBLOCK;
+    if (new_delay_flag != delay_flag)
+        fcntl(s->sock_fd, F_SETFL, new_delay_flag);
+#endif
 #else /* MS_WINDOWS */
     block = !block;
     ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
