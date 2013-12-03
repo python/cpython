@@ -1093,20 +1093,21 @@ class _BasePathTest(object):
         with open(join('dirC', 'dirD', 'fileD'), 'wb') as f:
             f.write(b"this is file D\n")
         if not symlink_skip_reason:
-            if os.name == 'nt':
-                # Workaround for http://bugs.python.org/issue13772
-                def dirlink(src, dest):
-                    os.symlink(src, dest, target_is_directory=True)
-            else:
-                def dirlink(src, dest):
-                    os.symlink(src, dest)
             # Relative symlinks
             os.symlink('fileA', join('linkA'))
             os.symlink('non-existing', join('brokenLink'))
-            dirlink('dirB', join('linkB'))
-            dirlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'))
+            self.dirlink('dirB', join('linkB'))
+            self.dirlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'))
             # This one goes upwards but doesn't create a loop
-            dirlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'))
+            self.dirlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'))
+
+    if os.name == 'nt':
+        # Workaround for http://bugs.python.org/issue13772
+        def dirlink(self, src, dest):
+            os.symlink(src, dest, target_is_directory=True)
+    else:
+        def dirlink(self, src, dest):
+            os.symlink(src, dest)
 
     def assertSame(self, path_a, path_b):
         self.assertTrue(os.path.samefile(str(path_a), str(path_b)),
@@ -1268,6 +1269,16 @@ class _BasePathTest(object):
         os.symlink(join('dirB'), os.path.join(d, 'linkY'))
         p = P(BASE, 'dirA', 'linkX', 'linkY', 'fileB')
         self._check_resolve_absolute(p, P(BASE, 'dirB', 'fileB'))
+
+    @with_symlinks
+    def test_resolve_dot(self):
+        # See https://bitbucket.org/pitrou/pathlib/issue/9/pathresolve-fails-on-complex-symlinks
+        p = self.cls(BASE)
+        self.dirlink('.', join('0'))
+        self.dirlink('0/0', join('1'))
+        self.dirlink('1/1', join('2'))
+        q = p / '2'
+        self.assertEqual(q.resolve(), p)
 
     def test_with(self):
         p = self.cls(BASE)
