@@ -515,7 +515,7 @@ Server
 
 .. class:: AbstractServer
 
-   Abstract server returned by create_service().
+   Abstract server returned by :func:`BaseEventLoop.create_server`.
 
    .. method:: close()
 
