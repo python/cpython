@@ -589,24 +589,20 @@ TCP echo server example::
     import asyncio
 
     class EchoServer(asyncio.Protocol):
-        def timeout(self):
-            print('connection timeout, closing.')
-            self.transport.close()
-
         def connection_made(self, transport):
             print('connection made')
             self.transport = transport
 
-            # close the client connection after 2 seconds
-            asyncio.get_event_loop().call_later(2.0, self.timeout)
 
         def data_received(self, data):
             print('data received:', data.decode())
             self.transport.write(data)
 
+            # close the socket
+            self.transport.close()
+
         def connection_lost(self, exc):
             print('connection lost')
-
 
     loop = asyncio.get_event_loop()
     f = loop.create_server(EchoServer, '127.0.0.1', 8888)
