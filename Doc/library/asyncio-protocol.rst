@@ -235,8 +235,9 @@ StreamWriter
 
    Wraps a Transport.
 
-   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`, :meth:`write_eof`, :meth:`get_extra_info` and
-   :meth:`close`.  It adds :meth:`drain` which returns an optional :class:`~concurrent.futures.Future` on which you can
+   This exposes :meth:`write`, :meth:`writelines`, :meth:`can_write_eof()`,
+   :meth:`write_eof`, :meth:`get_extra_info` and :meth:`close`.  It adds
+   :meth:`drain` which returns an optional :class:`Future` on which you can
    wait for flow control.  It also adds a transport attribute which references
    the :class:`Transport` directly.
 
@@ -260,7 +261,7 @@ StreamWriter
       When there's nothing to wait for, :meth:`drain()` returns ``()``, and the
       yield-from continues immediately.  When the transport buffer is full (the
       protocol is paused), :meth:`drain` creates and returns a
-      :class:`~concurrent.futures.Future` and the yield-from will block until
+      :class:`Future` and the yield-from will block until
       that Future is completed, which will happen when the buffer is
       (partially) drained and the protocol is resumed.
 
