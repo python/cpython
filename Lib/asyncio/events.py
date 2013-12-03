@@ -99,7 +99,7 @@ class TimerHandle(Handle):
 
 
 class AbstractServer:
-    """Abstract server returned by create_service()."""
+    """Abstract server returned by create_server()."""
 
     def close(self):
         """Stop serving.  This leaves existing connections open."""
