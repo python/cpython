@@ -56,12 +56,104 @@ it running: call ``yield from coroutine`` from another coroutine
 Coroutines (and tasks) can only run when the event loop is running.
 
 
+InvalidStateError
+-----------------
+
+.. exception:: InvalidStateError
+
+   The operation is not allowed in this state.
+
+
+Future
+------
+
+.. class:: Future(\*, loop=None)
+
+   This class is *almost* compatible with :class:`concurrent.futures.Future`.
+
+   Differences:
+
+   - :meth:`result` and :meth:`exception` do not take a timeout argument and
+     raise an exception when the future isn't done yet.
+
+   - Callbacks registered with :meth:`add_done_callback` are always called
+     via the event loop's :meth:`~BaseEventLoop.call_soon_threadsafe`.
+
+   - This class is not compatible with the :func:`~concurrent.futures.wait` and
+     :func:`~concurrent.futures.as_completed` functions in the
+     :mod:`concurrent.futures` package.
+
+   .. method:: cancel()
+
+      Cancel the future and schedule callbacks.
+
+      If the future is already done or cancelled, return ``False``. Otherwise,
+      change the future's state to cancelled, schedule the callbacks and return
+      ``True``.
+
+   .. method:: cancelled()
+
+      Return ``True`` if the future was cancelled.
+
+   .. method:: done()
+
+      Return True if the future is done.
+
+      Done means either that a result / exception are available, or that the
+      future was cancelled.
+
+   .. method:: result()
+
+      Return the result this future represents.
+
+      If the future has been cancelled, raises :exc:`CancelledError`. If the
+      future's result isn't yet available, raises :exc:`InvalidStateError`. If
+      the future is done and has an exception set, this exception is raised.
+
+   .. method:: exception()
+
+      Return the exception that was set on this future.
+
+      The exception (or ``None`` if no exception was set) is returned only if
+      the future is done. If the future has been cancelled, raises
+      :exc:`CancelledError`. If the future isn't done yet, raises
+      :exc:`InvalidStateError`.
+
+   .. method:: add_done_callback(fn)
+
+      Add a callback to be run when the future becomes done.
+
+      The callback is called with a single argument - the future object. If the
+      future is already done when this is called, the callback is scheduled
+      with :meth:`~BaseEventLoop.call_soon`.
+
+   .. method:: remove_done_callback(fn)
+
+      Remove all instances of a callback from the "call when done" list.
+
+      Returns the number of callbacks removed.
+
+   .. method:: set_result(result)
+
+      Mark the future done and set its result.
+
+      If the future is already done when this method is called, raises
+      :exc:`InvalidStateError`.
+
+   .. method:: set_exception(exception)
+
+      Mark the future done and set an exception.
+
+      If the future is already done when this method is called, raises
+      :exc:`InvalidStateError`.
+
+
 Task
 ----
 
 .. class:: Task(coro, \*, loop=None)
 
-   A coroutine wrapped in a :class:`~concurrent.futures.Future`.
+   A coroutine wrapped in a :class:`Future`. Subclass of :class:`Future`.
 
    .. classmethod:: all_tasks(loop=None)
 
@@ -106,10 +198,10 @@ Task
 Task functions
 --------------
 
-.. function:: as_completed(fs, *, loop=None, timeout=None)
+.. function:: as_completed(fs, \*, loop=None, timeout=None)
 
-   Return an iterator whose values, when waited for, are
-   :class:`~concurrent.futures.Future` instances.
+   Return an iterator whose values, when waited for, are :class:`Future`
+   instances.
 
    Raises :exc:`TimeoutError` if the timeout occurs before all Futures are done.
 
@@ -123,14 +215,13 @@ Task functions
 
       The futures ``f`` are not necessarily members of fs.
 
-.. function:: async(coro_or_future, *, loop=None)
+.. function:: async(coro_or_future, \*, loop=None)
 
    Wrap a :ref:`coroutine <coroutine>` in a future.
 
-   If the argument is a :class:`~concurrent.futures.Future`, it is returned
-   directly.
+   If the argument is a :class:`Future`, it is returned directly.
 
-.. function:: gather(*coros_or_futures, loop=None, return_exceptions=False)
+.. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
    Return a future aggregating results from the given coroutines or futures.
 
@@ -188,11 +279,11 @@ Task functions
        except CancelledError:
            res = None
 
-.. function:: wait(fs, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(futures, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
 
-   Wait for the Futures and coroutines given by fs to complete. Coroutines will
-   be wrapped in Tasks.  Returns two sets of
-   :class:`~concurrent.futures.Future`: (done, pending).
+   Wait for the Futures and coroutines given by the sequence *futures* to
+   complete.  Coroutines will be wrapped in Tasks. Returns two sets of
+   :class:`Future`: (done, pending).
 
    *timeout* can be used to control the maximum number of seconds to wait before
    returning.  *timeout* can be an int or float.  If *timeout* is not specified

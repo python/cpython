@@ -61,7 +61,7 @@ Run an event loop
 
 .. method:: BaseEventLoop.run_until_complete(future)
 
-   Run until the :class:`~concurrent.futures.Future` is done.
+   Run until the :class:`Future` is done.
 
    If the argument is a coroutine, it is wrapped in a :class:`Task`.
 
