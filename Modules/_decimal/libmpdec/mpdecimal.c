@@ -392,42 +392,42 @@ mpd_radix(void)
 
 /* Dynamic decimal */
 ALWAYS_INLINE int
-mpd_isdynamic(mpd_t *dec)
+mpd_isdynamic(const mpd_t *dec)
 {
     return !(dec->flags & MPD_STATIC);
 }
 
 /* Static decimal */
 ALWAYS_INLINE int
-mpd_isstatic(mpd_t *dec)
+mpd_isstatic(const mpd_t *dec)
 {
     return dec->flags & MPD_STATIC;
 }
 
 /* Data of decimal is dynamic */
 ALWAYS_INLINE int
-mpd_isdynamic_data(mpd_t *dec)
+mpd_isdynamic_data(const mpd_t *dec)
 {
     return !(dec->flags & MPD_DATAFLAGS);
 }
 
 /* Data of decimal is static */
 ALWAYS_INLINE int
-mpd_isstatic_data(mpd_t *dec)
+mpd_isstatic_data(const mpd_t *dec)
 {
     return dec->flags & MPD_STATIC_DATA;
 }
 
 /* Data of decimal is shared */
 ALWAYS_INLINE int
-mpd_isshared_data(mpd_t *dec)
+mpd_isshared_data(const mpd_t *dec)
 {
     return dec->flags & MPD_SHARED_DATA;
 }
 
 /* Data of decimal is const */
 ALWAYS_INLINE int
-mpd_isconst_data(mpd_t *dec)
+mpd_isconst_data(const mpd_t *dec)
 {
     return dec->flags & MPD_CONST_DATA;
 }
@@ -597,7 +597,7 @@ mpd_set_sign(mpd_t *result, uint8_t sign)
 
 /* Copy sign from another decimal */
 ALWAYS_INLINE void
-mpd_signcpy(mpd_t *result, mpd_t *a)
+mpd_signcpy(mpd_t *result, const mpd_t *a)
 {
     uint8_t sign = a->flags&MPD_NEG;
 
