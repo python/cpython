@@ -13,7 +13,6 @@
 This module provides infrastructure for writing single-threaded concurrent
 code using coroutines, multiplexing I/O access over sockets and other
 resources, running network clients and servers, and other related primitives.
-
 Here is a more detailed list of the package contents:
 
 * a pluggable :ref:`event loop <event-loop>` with various system-specific
@@ -40,14 +39,7 @@ Here is a more detailed list of the package contents:
   you absolutely, positively have to use a library that makes blocking
   I/O calls.
 
-
-Disclaimer
-==========
-
-Full documentation is not yet ready; we hope to have it written
-before Python 3.4 leaves beta.  Until then, the best reference is
-:PEP:`3156`.  For a motivational primer on transports and protocols,
-see :PEP:`3153`.
+Table of content:
 
 .. toctree::
    :maxdepth: 3
@@ -57,4 +49,9 @@ see :PEP:`3153`.
    asyncio-task.rst
    asyncio-protocol.rst
    asyncio-sync.rst
+
+.. seealso::
+
+   The :mod:`asyncio` module was designed in the :PEP:`3156`. For a
+   motivational primer on transports and protocols, see :PEP:`3153`.
 
