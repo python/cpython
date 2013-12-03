@@ -590,12 +590,16 @@ class HandlerTest(BaseTest):
             for _ in range(tries):
                 try:
                     os.unlink(fname)
+                    self.deletion_time = time.time()
                 except OSError:
                     pass
                 time.sleep(0.004 * random.randint(0, 4))
 
         del_count = 500
         log_count = 500
+
+        self.handle_time = None
+        self.deletion_time = None
 
         for delay in (False, True):
             fd, fn = tempfile.mkstemp('.log', 'test_logging-3-')
@@ -610,7 +614,14 @@ class HandlerTest(BaseTest):
                 for _ in range(log_count):
                     time.sleep(0.005)
                     r = logging.makeLogRecord({'msg': 'testing' })
-                    h.handle(r)
+                    try:
+                        self.handle_time = time.time()
+                        h.handle(r)
+                    except Exception:
+                        print('Deleted at %s, '
+                              'opened at %s' % (self.deletion_time,
+                                                self.handle_time))
+                        raise
             finally:
                 remover.join()
                 h.close()
