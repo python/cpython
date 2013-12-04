@@ -1342,7 +1342,8 @@ PyCursesWindow_InsCh(PyCursesWindowObject *self, PyObject *args)
 static PyObject *
 PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
 {
-    int x, y, rtn;
+    int x, y;
+    unsigned long rtn;
 
     switch (PyTuple_Size(args)) {
     case 0:
@@ -1357,7 +1358,7 @@ PyCursesWindow_InCh(PyCursesWindowObject *self, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "inch requires 0 or 2 arguments");
         return NULL;
     }
-    return PyLong_FromLong((long) rtn);
+    return PyLong_FromUnsignedLong(rtn);
 }
 
 static PyObject *
