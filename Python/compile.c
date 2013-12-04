@@ -3899,7 +3899,7 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     a->a_lnotab = PyBytes_FromStringAndSize(NULL, DEFAULT_LNOTAB_SIZE);
     if (!a->a_lnotab)
         return 0;
-    if (nblocks > PY_SIZE_MAX / sizeof(basicblock *)) {
+    if ((size_t)nblocks > PY_SIZE_MAX / sizeof(basicblock *)) {
         PyErr_NoMemory();
         return 0;
     }
