@@ -18,6 +18,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19138: doctest's IGNORE_EXCEPTION_DETAIL now allows a match when
+  no exception detail exists (no colon following the exception's name, or
+  a colon does follow but no text follows the colon).
+
 - Issue #19834: Support unpickling of exceptions pickled by Python 2.
 
 - Issue #15798: Fixed subprocess.Popen() to no longer fail if file
