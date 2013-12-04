@@ -5089,7 +5089,7 @@ _PyLong_Init(void)
             assert(v->ob_digit[0] == abs(ival));
         }
         else {
-            PyObject_INIT(v, &PyLong_Type);
+            (void)PyObject_INIT(v, &PyLong_Type);
         }
         Py_SIZE(v) = size;
         v->ob_digit[0] = abs(ival);

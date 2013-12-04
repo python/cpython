@@ -52,7 +52,7 @@ PyMethod_New(PyObject *func, PyObject *self)
     im = free_list;
     if (im != NULL) {
         free_list = (PyMethodObject *)(im->im_self);
-        PyObject_INIT(im, &PyMethod_Type);
+        (void)PyObject_INIT(im, &PyMethod_Type);
         numfree--;
     }
     else {

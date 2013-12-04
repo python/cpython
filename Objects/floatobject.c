@@ -119,7 +119,7 @@ PyFloat_FromDouble(double fval)
             return PyErr_NoMemory();
     }
     /* Inline PyObject_New */
-    PyObject_INIT(op, &PyFloat_Type);
+    (void)PyObject_INIT(op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }
