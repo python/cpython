@@ -787,7 +787,7 @@ PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
         Py_INCREF(type);
 
     if (type->tp_itemsize == 0)
-        PyObject_INIT(obj, type);
+        (void)PyObject_INIT(obj, type);
     else
         (void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
 
