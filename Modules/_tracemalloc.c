@@ -439,7 +439,7 @@ traceback_new(void)
 }
 
 static int
-tracemalloc_log_alloc(void *ptr, size_t size)
+tracemalloc_add_trace(void *ptr, size_t size)
 {
     traceback_t *traceback;
     trace_t trace;
@@ -470,7 +470,7 @@ tracemalloc_log_alloc(void *ptr, size_t size)
 }
 
 static void
-tracemalloc_log_free(void *ptr)
+tracemalloc_remove_trace(void *ptr)
 {
     trace_t trace;
 
@@ -483,118 +483,57 @@ tracemalloc_log_free(void *ptr)
 }
 
 static void*
-tracemalloc_malloc(void *ctx, size_t size, int gil_held)
+tracemalloc_malloc(void *ctx, size_t size)
 {
     PyMemAllocator *alloc = (PyMemAllocator *)ctx;
-#if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
-    PyGILState_STATE gil_state;
-#endif
     void *ptr;
 
-    if (get_reentrant()) {
-        return alloc->malloc(alloc->ctx, size);
-    }
-
-    /* Ignore reentrant call. PyObjet_Malloc() calls PyMem_Malloc()
-       for allocations larger than 512 bytes. PyGILState_Ensure() may call
-       PyMem_RawMalloc() indirectly which would call PyGILState_Ensure() if
-       reentrant are not disabled. */
-    set_reentrant(1);
-#ifdef WITH_THREAD
-#ifdef TRACE_RAW_MALLOC
-    if (!gil_held)
-        gil_state = PyGILState_Ensure();
-#else
-    assert(gil_held);
-#endif
-#endif
     ptr = alloc->malloc(alloc->ctx, size);
+    if (ptr == NULL)
+        return NULL;
 
-    if (ptr != NULL) {
-        if (tracemalloc_log_alloc(ptr, size) < 0) {
-            /* Memory allocation failed */
-            alloc->free(alloc->ctx, ptr);
-            ptr = NULL;
-        }
+    if (tracemalloc_add_trace(ptr, size) < 0) {
+        /* Failed to allocate a trace for the new memory block */
+        alloc->free(alloc->ctx, ptr);
+        return NULL;
     }
-    set_reentrant(0);
-
-#if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
-    if (!gil_held)
-        PyGILState_Release(gil_state);
-#endif
-
     return ptr;
 }
 
 static void*
-tracemalloc_realloc(void *ctx, void *ptr, size_t new_size, int gil_held)
+tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
 {
     PyMemAllocator *alloc = (PyMemAllocator *)ctx;
-#if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
-    PyGILState_STATE gil_state;
-#endif
     void *ptr2;
 
-    if (get_reentrant()) {
-        /* Reentrant call to PyMem_Realloc() and PyMem_RawRealloc().
-           Example: PyMem_RawRealloc() is called internally by pymalloc
-           (_PyObject_Malloc() and  _PyObject_Realloc()) to allocate a new
-           arena (new_arena()). */
-        ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-
-        if (ptr2 != NULL && ptr != NULL)
-            tracemalloc_log_free(ptr);
-
-        return ptr2;
-    }
-
-    /* Ignore reentrant call. PyObjet_Realloc() calls PyMem_Realloc() for
-       allocations larger than 512 bytes. PyGILState_Ensure() may call
-       PyMem_RawMalloc() indirectly which would call PyGILState_Ensure() if
-       reentrant are not disabled. */
-    set_reentrant(1);
-#ifdef WITH_THREAD
-#ifdef TRACE_RAW_MALLOC
-    if (!gil_held)
-        gil_state = PyGILState_Ensure();
-#else
-    assert(gil_held);
-#endif
-#endif
     ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
+    if (ptr2 == NULL)
+        return NULL;
 
-    if (ptr2 != NULL) {
-        if (ptr != NULL) {
-            /* resize */
-            tracemalloc_log_free(ptr);
+    if (ptr != NULL) {
+        /* an existing memory block has been resized */
 
-            if (tracemalloc_log_alloc(ptr2, new_size) < 0) {
-                /* Memory allocation failed. The error cannot be reported to
-                   the caller, because realloc() may already have shrinked the
-                   memory block and so removed bytes.
+        tracemalloc_remove_trace(ptr);
 
-                   This case is very unlikely since we just released an hash
-                   entry, so we have enough free bytes to allocate the new
-                   entry. */
-            }
-        }
-        else {
-            /* new allocation */
-            if (tracemalloc_log_alloc(ptr2, new_size) < 0) {
-                /* Memory allocation failed */
-                alloc->free(alloc->ctx, ptr2);
-                ptr2 = NULL;
-            }
+        if (tracemalloc_add_trace(ptr2, new_size) < 0) {
+            /* Memory allocation failed. The error cannot be reported to
+               the caller, because realloc() may already have shrinked the
+               memory block and so removed bytes.
+
+               This case is very unlikely since we just released an hash
+               entry, so we have enough free bytes to allocate the new
+               entry. */
         }
     }
-    set_reentrant(0);
+    else {
+        /* new allocation */
 
-#if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
-    if (!gil_held)
-        PyGILState_Release(gil_state);
-#endif
-
+        if (tracemalloc_add_trace(ptr2, new_size) < 0) {
+            /* Failed to allocate a trace for the new memory block */
+            alloc->free(alloc->ctx, ptr2);
+            return NULL;
+        }
+    }
     return ptr2;
 }
 
@@ -610,34 +549,126 @@ tracemalloc_free(void *ctx, void *ptr)
         a deadlock in PyThreadState_DeleteCurrent(). */
 
     alloc->free(alloc->ctx, ptr);
-    tracemalloc_log_free(ptr);
+    tracemalloc_remove_trace(ptr);
 }
 
 static void*
 tracemalloc_malloc_gil(void *ctx, size_t size)
 {
-    return tracemalloc_malloc(ctx, size, 1);
+    void *ptr;
+
+    if (get_reentrant()) {
+        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+        return alloc->malloc(alloc->ctx, size);
+    }
+
+    /* Ignore reentrant call. PyObjet_Malloc() calls PyMem_Malloc() for
+       allocations larger than 512 bytes, don't trace the same memory
+       allocation twice. */
+    set_reentrant(1);
+
+    ptr = tracemalloc_malloc(ctx, size);
+
+    set_reentrant(0);
+    return ptr;
 }
 
 static void*
 tracemalloc_realloc_gil(void *ctx, void *ptr, size_t new_size)
 {
-    return tracemalloc_realloc(ctx, ptr, new_size, 1);
+    void *ptr2;
+
+    if (get_reentrant()) {
+        /* Reentrant call to PyMem_Realloc() and PyMem_RawRealloc().
+           Example: PyMem_RawRealloc() is called internally by pymalloc
+           (_PyObject_Malloc() and  _PyObject_Realloc()) to allocate a new
+           arena (new_arena()). */
+        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+
+        ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
+        if (ptr2 != NULL && ptr != NULL)
+            tracemalloc_remove_trace(ptr);
+        return ptr2;
+    }
+
+    /* Ignore reentrant call. PyObjet_Realloc() calls PyMem_Realloc() for
+       allocations larger than 512 bytes. Don't trace the same memory
+       allocation twice. */
+    set_reentrant(1);
+
+    ptr2 = tracemalloc_realloc(ctx, ptr, new_size);
+
+    set_reentrant(0);
+    return ptr2;
 }
 
 #ifdef TRACE_RAW_MALLOC
 static void*
 tracemalloc_raw_malloc(void *ctx, size_t size)
 {
-    return tracemalloc_malloc(ctx, size, 0);
+#ifdef WITH_THREAD
+    PyGILState_STATE gil_state;
+#endif
+    void *ptr;
+
+    if (get_reentrant()) {
+        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+        return alloc->malloc(alloc->ctx, size);
+    }
+
+    /* Ignore reentrant call. PyGILState_Ensure() may call PyMem_RawMalloc()
+       indirectly which would call PyGILState_Ensure() if reentrant are not
+       disabled. */
+    set_reentrant(1);
+
+#ifdef WITH_THREAD
+    gil_state = PyGILState_Ensure();
+    ptr = tracemalloc_malloc(ctx, size);
+    PyGILState_Release(gil_state);
+#else
+    ptr = tracemalloc_malloc(ctx, size);
+#endif
+
+    set_reentrant(0);
+    return ptr;
 }
 
 static void*
 tracemalloc_raw_realloc(void *ctx, void *ptr, size_t new_size)
 {
-    return tracemalloc_realloc(ctx, ptr, new_size, 0);
-}
+#ifdef WITH_THREAD
+    PyGILState_STATE gil_state;
 #endif
+    void *ptr2;
+
+    if (get_reentrant()) {
+        /* Reentrant call to PyMem_RawRealloc(). */
+        PyMemAllocator *alloc = (PyMemAllocator *)ctx;
+
+        ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
+        if (ptr2 != NULL && ptr != NULL)
+            tracemalloc_remove_trace(ptr);
+
+        return ptr2;
+    }
+
+    /* Ignore reentrant call. PyGILState_Ensure() may call PyMem_RawMalloc()
+       indirectly which would call PyGILState_Ensure() if reentrant calls are
+       not disabled. */
+    set_reentrant(1);
+
+#ifdef WITH_THREAD
+    gil_state = PyGILState_Ensure();
+    ptr2 = tracemalloc_realloc(ctx, ptr, new_size);
+    PyGILState_Release(gil_state);
+#else
+    ptr2 = tracemalloc_realloc(ctx, ptr, new_size);
+#endif
+
+    set_reentrant(0);
+    return ptr2;
+}
+#endif   /* TRACE_RAW_MALLOC */
 
 static int
 tracemalloc_clear_filename(_Py_hashtable_entry_t *entry, void *user_data)
