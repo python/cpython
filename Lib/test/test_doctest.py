@@ -1020,6 +1020,33 @@ But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
         ValueError: message
     TestResults(failed=1, attempted=1)
 
+If the exception does not have a message, you can still use
+IGNORE_EXCEPTION_DETAIL to normalize the modules between Python 2 and 3:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> from http.client import HTTPException
+    ...     >>> raise HTTPException() #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     Traceback (most recent call last):
+    ...     foo.bar.HTTPException
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=2)
+
+Note that a trailing colon doesn't matter either:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> from http.client import HTTPException
+    ...     >>> raise HTTPException() #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     Traceback (most recent call last):
+    ...     foo.bar.HTTPException:
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=2)
+
 If an exception is raised but not expected, then it is reported as an
 unexpected exception:
 
