@@ -701,8 +701,9 @@ The module :mod:`socket` exports the following constants and functions:
 Socket Objects
 --------------
 
-Socket objects have the following methods.  Except for :meth:`makefile` these
-correspond to Unix system calls applicable to sockets.
+Socket objects have the following methods.  Except for
+:meth:`~socket.makefile`, these correspond to Unix system calls applicable
+to sockets.
 
 
 .. method:: socket.accept()
@@ -721,9 +722,15 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.close()
 
-   Close the socket.  All future operations on the socket object will fail. The
-   remote end will receive no more data (after queued data is flushed). Sockets are
-   automatically closed when they are garbage-collected.
+   Mark the socket closed.  The underlying system resource (e.g. a file
+   descriptor) is also closed when all file objects from :meth:`makefile()`
+   are closed.  Once that happens, all future operations on the socket
+   object will fail. The remote end will receive no more data (after
+   queued data is flushed).
+
+   Sockets are automatically closed when they are garbage-collected, but
+   it is recommended to :meth:`close` them explicitly, or to use a
+   :keyword:`with` statement around them.
 
    .. note::
       :meth:`close()` releases the resource associated with a connection but
@@ -829,10 +836,13 @@ correspond to Unix system calls applicable to sockets.
    type depends on the arguments given to :meth:`makefile`.  These arguments are
    interpreted the same way as by the built-in :func:`open` function.
 
-   Closing the file object won't close the socket unless there are no remaining
-   references to the socket.  The socket must be in blocking mode; it can have
-   a timeout, but the file object's internal buffer may end up in a inconsistent
-   state if a timeout occurs.
+   The socket must be in blocking mode; it can have a timeout, but the file
+   object's internal buffer may end up in a inconsistent state if a timeout
+   occurs.
+
+   Closing the file object returned by :meth:`makefile` won't close the
+   original socket unless all other file objects have been closed and
+   :meth:`socket.close` has been called on the socket object.
 
    .. note::
 
