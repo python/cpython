@@ -456,7 +456,6 @@ tracemalloc_add_trace(void *ptr, size_t size)
     trace.size = size;
     trace.traceback = traceback;
 
-    TABLES_LOCK();
     res = _Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace);
     if (res == 0) {
         assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
@@ -464,7 +463,6 @@ tracemalloc_add_trace(void *ptr, size_t size)
         if (tracemalloc_traced_memory > tracemalloc_peak_traced_memory)
             tracemalloc_peak_traced_memory = tracemalloc_traced_memory;
     }
-    TABLES_UNLOCK();
 
     return res;
 }
@@ -474,12 +472,10 @@ tracemalloc_remove_trace(void *ptr)
 {
     trace_t trace;
 
-    TABLES_LOCK();
     if (_Py_hashtable_pop(tracemalloc_traces, ptr, &trace, sizeof(trace))) {
         assert(tracemalloc_traced_memory >= trace.size);
         tracemalloc_traced_memory -= trace.size;
     }
-    TABLES_UNLOCK();
 }
 
 static void*
@@ -492,11 +488,14 @@ tracemalloc_malloc(void *ctx, size_t size)
     if (ptr == NULL)
         return NULL;
 
+    TABLES_LOCK();
     if (tracemalloc_add_trace(ptr, size) < 0) {
         /* Failed to allocate a trace for the new memory block */
+        TABLES_UNLOCK();
         alloc->free(alloc->ctx, ptr);
         return NULL;
     }
+    TABLES_UNLOCK();
     return ptr;
 }
 
@@ -513,6 +512,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
     if (ptr != NULL) {
         /* an existing memory block has been resized */
 
+        TABLES_LOCK();
         tracemalloc_remove_trace(ptr);
 
         if (tracemalloc_add_trace(ptr2, new_size) < 0) {
@@ -520,19 +520,26 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
                the caller, because realloc() may already have shrinked the
                memory block and so removed bytes.
 
-               This case is very unlikely since we just released an hash
-               entry, so we have enough free bytes to allocate the new
-               entry. */
+               This case is very unlikely: an hash entry has just been
+               released, so the hash table should have at least one free entry.
+
+               The GIL and the table lock ensures that only one thread is
+               allocating memory. */
+            assert(0 && "should never happen");
         }
+        TABLES_UNLOCK();
     }
     else {
         /* new allocation */
 
+        TABLES_LOCK();
         if (tracemalloc_add_trace(ptr2, new_size) < 0) {
             /* Failed to allocate a trace for the new memory block */
+            TABLES_UNLOCK();
             alloc->free(alloc->ctx, ptr2);
             return NULL;
         }
+        TABLES_UNLOCK();
     }
     return ptr2;
 }
@@ -549,7 +556,10 @@ tracemalloc_free(void *ctx, void *ptr)
         a deadlock in PyThreadState_DeleteCurrent(). */
 
     alloc->free(alloc->ctx, ptr);
+
+    TABLES_LOCK();
     tracemalloc_remove_trace(ptr);
+    TABLES_UNLOCK();
 }
 
 static void*
@@ -586,8 +596,11 @@ tracemalloc_realloc_gil(void *ctx, void *ptr, size_t new_size)
         PyMemAllocator *alloc = (PyMemAllocator *)ctx;
 
         ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-        if (ptr2 != NULL && ptr != NULL)
+        if (ptr2 != NULL && ptr != NULL) {
+            TABLES_LOCK();
             tracemalloc_remove_trace(ptr);
+            TABLES_UNLOCK();
+        }
         return ptr2;
     }
 
@@ -646,9 +659,12 @@ tracemalloc_raw_realloc(void *ctx, void *ptr, size_t new_size)
         PyMemAllocator *alloc = (PyMemAllocator *)ctx;
 
         ptr2 = alloc->realloc(alloc->ctx, ptr, new_size);
-        if (ptr2 != NULL && ptr != NULL)
-            tracemalloc_remove_trace(ptr);
 
+        if (ptr2 != NULL && ptr != NULL) {
+            TABLES_LOCK();
+            tracemalloc_remove_trace(ptr);
+            TABLES_UNLOCK();
+        }
         return ptr2;
     }
 
