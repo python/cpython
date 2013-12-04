@@ -764,15 +764,10 @@ class SSLSocket(socket):
             self.settimeout(timeout)
 
         if self.context.check_hostname:
-            try:
-                if not self.server_hostname:
-                    raise ValueError("check_hostname needs server_hostname "
-                                     "argument")
-                match_hostname(self.getpeercert(), self.server_hostname)
-            except Exception:
-                self.shutdown(_SHUT_RDWR)
-                self.close()
-                raise
+            if not self.server_hostname:
+                raise ValueError("check_hostname needs server_hostname "
+                                 "argument")
+            match_hostname(self.getpeercert(), self.server_hostname)
 
     def _real_connect(self, addr, connect_ex):
         if self.server_side:
