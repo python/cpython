@@ -50,6 +50,7 @@ class BaseTest(unittest.TestCase):
     TEXT = b''.join(TEXT_LINES)
     DATA = b'BZh91AY&SY.\xc8N\x18\x00\x01>_\x80\x00\x10@\x02\xff\xf0\x01\x07n\x00?\xe7\xff\xe00\x01\x99\xaa\x00\xc0\x03F\x86\x8c#&\x83F\x9a\x03\x06\xa6\xd0\xa6\x93M\x0fQ\xa7\xa8\x06\x804hh\x12$\x11\xa4i4\xf14S\xd2<Q\xb5\x0fH\xd3\xd4\xdd\xd5\x87\xbb\xf8\x94\r\x8f\xafI\x12\xe1\xc9\xf8/E\x00pu\x89\x12]\xc9\xbbDL\nQ\x0e\t1\x12\xdf\xa0\xc0\x97\xac2O9\x89\x13\x94\x0e\x1c7\x0ed\x95I\x0c\xaaJ\xa4\x18L\x10\x05#\x9c\xaf\xba\xbc/\x97\x8a#C\xc8\xe1\x8cW\xf9\xe2\xd0\xd6M\xa7\x8bXa<e\x84t\xcbL\xb3\xa7\xd9\xcd\xd1\xcb\x84.\xaf\xb3\xab\xab\xad`n}\xa0lh\tE,\x8eZ\x15\x17VH>\x88\xe5\xcd9gd6\x0b\n\xe9\x9b\xd5\x8a\x99\xf7\x08.K\x8ev\xfb\xf7xw\xbb\xdf\xa1\x92\xf1\xdd|/";\xa2\xba\x9f\xd5\xb1#A\xb6\xf6\xb3o\xc9\xc5y\\\xebO\xe7\x85\x9a\xbc\xb6f8\x952\xd5\xd7"%\x89>V,\xf7\xa6z\xe2\x9f\xa3\xdf\x11\x11"\xd6E)I\xa9\x13^\xca\xf3r\xd0\x03U\x922\xf26\xec\xb6\xed\x8b\xc3U\x13\x9d\xc5\x170\xa4\xfa^\x92\xacDF\x8a\x97\xd6\x19\xfe\xdd\xb8\xbd\x1a\x9a\x19\xa3\x80ankR\x8b\xe5\xd83]\xa9\xc6\x08\x82f\xf6\xb9"6l$\xb8j@\xc0\x8a\xb0l1..\xbak\x83ls\x15\xbc\xf4\xc1\x13\xbe\xf8E\xb8\x9d\r\xa8\x9dk\x84\xd3n\xfa\xacQ\x07\xb1%y\xaav\xb4\x08\xe0z\x1b\x16\xf5\x04\xe9\xcc\xb9\x08z\x1en7.G\xfc]\xc9\x14\xe1B@\xbb!8`'
     EMPTY_DATA = b'BZh9\x17rE8P\x90\x00\x00\x00\x00'
+    BAD_DATA = b'this is not a valid bzip2 file'
 
     def setUp(self):
         self.filename = support.TESTFN
@@ -80,9 +81,10 @@ class BaseTest(unittest.TestCase):
 class BZ2FileTest(BaseTest):
     "Test the BZ2File class."
 
-    def createTempFile(self, streams=1):
+    def createTempFile(self, streams=1, suffix=b""):
         with open(self.filename, "wb") as f:
             f.write(self.DATA * streams)
+            f.write(suffix)
 
     def testBadArgs(self):
         self.assertRaises(TypeError, BZ2File, 123.456)
@@ -97,6 +99,11 @@ class BZ2FileTest(BaseTest):
         with BZ2File(self.filename) as bz2f:
             self.assertRaises(TypeError, bz2f.read, None)
             self.assertEqual(bz2f.read(), self.TEXT)
+
+    def testReadBadFile(self):
+        self.createTempFile(streams=0, suffix=self.BAD_DATA)
+        with BZ2File(self.filename) as bz2f:
+            self.assertRaises(OSError, bz2f.read)
 
     def testReadMultiStream(self):
         self.createTempFile(streams=5)
@@ -116,6 +123,16 @@ class BZ2FileTest(BaseTest):
                 self.assertEqual(bz2f.read(), self.TEXT * 5)
         finally:
             bz2._BUFFER_SIZE = buffer_size
+
+    def testReadTrailingJunk(self):
+        self.createTempFile(suffix=self.BAD_DATA)
+        with BZ2File(self.filename) as bz2f:
+            self.assertEqual(bz2f.read(), self.TEXT)
+
+    def testReadMultiStreamTrailingJunk(self):
+        self.createTempFile(streams=5, suffix=self.BAD_DATA)
+        with BZ2File(self.filename) as bz2f:
+            self.assertEqual(bz2f.read(), self.TEXT * 5)
 
     def testRead0(self):
         self.createTempFile()
@@ -714,8 +731,19 @@ class CompressDecompressTest(BaseTest):
     def testDecompressIncomplete(self):
         self.assertRaises(ValueError, bz2.decompress, self.DATA[:-10])
 
+    def testDecompressBadData(self):
+        self.assertRaises(OSError, bz2.decompress, self.BAD_DATA)
+
     def testDecompressMultiStream(self):
         text = bz2.decompress(self.DATA * 5)
+        self.assertEqual(text, self.TEXT * 5)
+
+    def testDecompressTrailingJunk(self):
+        text = bz2.decompress(self.DATA + self.BAD_DATA)
+        self.assertEqual(text, self.TEXT)
+
+    def testDecompressMultiStreamTrailingJunk(self):
+        text = bz2.decompress(self.DATA * 5 + self.BAD_DATA)
         self.assertEqual(text, self.TEXT * 5)
 
 

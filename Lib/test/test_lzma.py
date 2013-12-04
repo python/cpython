@@ -314,6 +314,8 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
 
     def test_decompress_bad_input(self):
         with self.assertRaises(LZMAError):
+            lzma.decompress(COMPRESSED_BOGUS)
+        with self.assertRaises(LZMAError):
             lzma.decompress(COMPRESSED_RAW_1)
         with self.assertRaises(LZMAError):
             lzma.decompress(COMPRESSED_ALONE, format=lzma.FORMAT_XZ)
@@ -347,6 +349,16 @@ class CompressDecompressFunctionTestCase(unittest.TestCase):
     def test_decompress_multistream(self):
         ddata = lzma.decompress(COMPRESSED_XZ + COMPRESSED_ALONE)
         self.assertEqual(ddata, INPUT * 2)
+
+    # Test robust handling of non-LZMA data following the compressed stream(s).
+
+    def test_decompress_trailing_junk(self):
+        ddata = lzma.decompress(COMPRESSED_XZ + COMPRESSED_BOGUS)
+        self.assertEqual(ddata, INPUT)
+
+    def test_decompress_multistream_trailing_junk(self):
+        ddata = lzma.decompress(COMPRESSED_XZ * 3 + COMPRESSED_BOGUS)
+        self.assertEqual(ddata, INPUT * 3)
 
 
 class TempFile:
@@ -676,6 +688,14 @@ class FileTestCase(unittest.TestCase):
         finally:
             lzma._BUFFER_SIZE = saved_buffer_size
 
+    def test_read_trailing_junk(self):
+        with LZMAFile(BytesIO(COMPRESSED_XZ + COMPRESSED_BOGUS)) as f:
+            self.assertEqual(f.read(), INPUT)
+
+    def test_read_multistream_trailing_junk(self):
+        with LZMAFile(BytesIO(COMPRESSED_XZ * 5 + COMPRESSED_BOGUS)) as f:
+            self.assertEqual(f.read(), INPUT * 5)
+
     def test_read_from_file(self):
         with TempFile(TESTFN, COMPRESSED_XZ):
             with LZMAFile(TESTFN) as f:
@@ -718,6 +738,10 @@ class FileTestCase(unittest.TestCase):
             self.assertRaises(ValueError, f.read)
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             self.assertRaises(TypeError, f.read, None)
+
+    def test_read_bad_data(self):
+        with LZMAFile(BytesIO(COMPRESSED_BOGUS)) as f:
+            self.assertRaises(LZMAError, f.read)
 
     def test_read1(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
@@ -1231,6 +1255,8 @@ LAERTES
 
        Farewell.
 """
+
+COMPRESSED_BOGUS = b"this is not a valid lzma stream"
 
 COMPRESSED_XZ = (
     b"\xfd7zXZ\x00\x00\x04\xe6\xd6\xb4F\x02\x00!\x01\x16\x00\x00\x00t/\xe5\xa3"
