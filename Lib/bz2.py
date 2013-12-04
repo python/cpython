@@ -199,8 +199,15 @@ class BZ2File(io.BufferedIOBase):
             # Continue to next stream.
             if self._decompressor.eof:
                 self._decompressor = BZ2Decompressor()
-
-            self._buffer = self._decompressor.decompress(rawblock)
+                try:
+                    self._buffer = self._decompressor.decompress(rawblock)
+                except OSError:
+                    # Trailing data isn't a valid bzip2 stream. We're done here.
+                    self._mode = _MODE_READ_EOF
+                    self._size = self._pos
+                    return False
+            else:
+                self._buffer = self._decompressor.decompress(rawblock)
             self._buffer_offset = 0
         return True
 
@@ -488,17 +495,19 @@ def decompress(data):
 
     For incremental decompression, use a BZ2Decompressor object instead.
     """
-    if len(data) == 0:
-        return b""
-
     results = []
-    while True:
+    while data:
         decomp = BZ2Decompressor()
-        results.append(decomp.decompress(data))
+        try:
+            res = decomp.decompress(data)
+        except OSError:
+            if results:
+                break  # Leftover data is not a valid bzip2 stream; ignore it.
+            else:
+                raise  # Error on the first iteration; bail out.
+        results.append(res)
         if not decomp.eof:
             raise ValueError("Compressed data ended before the "
                              "end-of-stream marker was reached")
-        if not decomp.unused_data:
-            return b"".join(results)
-        # There is unused data left over. Proceed to next stream.
         data = decomp.unused_data
+    return b"".join(results)
