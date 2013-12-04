@@ -1118,7 +1118,7 @@ onintr(int sig)
 
 
 static char *
-readline_until_enter_or_signal(char *prompt, int *signal)
+readline_until_enter_or_signal(const char *prompt, int *signal)
 {
     PyOS_sighandler_t old_inthandler;
     char *p;
