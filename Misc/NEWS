@@ -19,7 +19,7 @@ Library
 -------
 
 - Issue #19839: Fix regression in bz2 module's handling of non-bzip2 data at
-  EOF.
+  EOF, and analogous bug in lzma module.
 
 - Issue #19138: doctest's IGNORE_EXCEPTION_DETAIL now allows a match when
   no exception detail exists (no colon following the exception's name, or

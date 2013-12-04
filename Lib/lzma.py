@@ -224,11 +224,18 @@ class LZMAFile(io.BufferedIOBase):
                     raise EOFError("Compressed file ended before the "
                                    "end-of-stream marker was reached")
 
-            # Continue to next stream.
             if self._decompressor.eof:
+                # Continue to next stream.
                 self._decompressor = LZMADecompressor(**self._init_args)
-
-            self._buffer = self._decompressor.decompress(rawblock)
+                try:
+                    self._buffer = self._decompressor.decompress(rawblock)
+                except LZMAError:
+                    # Trailing data isn't a valid compressed stream; ignore it.
+                    self._mode = _MODE_READ_EOF
+                    self._size = self._pos
+                    return False
+            else:
+                self._buffer = self._decompressor.decompress(rawblock)
 
     # Read data until EOF.
     # If return_data is false, consume the data without returning it.
@@ -444,11 +451,18 @@ def decompress(data, format=FORMAT_AUTO, memlimit=None, filters=None):
     results = []
     while True:
         decomp = LZMADecompressor(format, memlimit, filters)
-        results.append(decomp.decompress(data))
+        try:
+            res = decomp.decompress(data)
+        except LZMAError:
+            if results:
+                break  # Leftover data is not a valid LZMA/XZ stream; ignore it.
+            else:
+                raise  # Error on the first iteration; bail out.
+        results.append(res)
         if not decomp.eof:
             raise LZMAError("Compressed data ended before the "
                             "end-of-stream marker was reached")
-        if not decomp.unused_data:
-            return b"".join(results)
-        # There is unused data left over. Proceed to next stream.
         data = decomp.unused_data
+        if not data:
+            break
+    return b"".join(results)
