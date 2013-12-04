@@ -91,7 +91,7 @@ PyNode_AddChild(node *n1, int type, char *str, int lineno, int col_offset)
     if (current_capacity < 0 || required_capacity < 0)
         return E_OVERFLOW;
     if (current_capacity < required_capacity) {
-        if (required_capacity > PY_SIZE_MAX / sizeof(node)) {
+        if ((size_t)required_capacity > PY_SIZE_MAX / sizeof(node)) {
             return E_NOMEM;
         }
         n = n1->n_child;
