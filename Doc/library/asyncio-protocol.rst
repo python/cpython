@@ -579,43 +579,52 @@ Network functions
    This function returns a :ref:`coroutine <coroutine>`.
 
 
-Protocol example: TCP echo client and server
+Protocol example: TCP echo server and client
 ============================================
 
 Echo server
 -----------
 
-TCP echo server example::
+TCP echo server example, send back received data and close the connection::
 
     import asyncio
 
     class EchoServer(asyncio.Protocol):
         def connection_made(self, transport):
-            print('connection made')
+            peername = transport.get_extra_info('peername')
+            print('connection from {}'.format(peername))
             self.transport = transport
 
-
         def data_received(self, data):
-            print('data received:', data.decode())
+            print('data received: {}'.format(data.decode()))
             self.transport.write(data)
 
             # close the socket
             self.transport.close()
 
-        def connection_lost(self, exc):
-            print('connection lost')
-
     loop = asyncio.get_event_loop()
-    f = loop.create_server(EchoServer, '127.0.0.1', 8888)
-    s = loop.run_until_complete(f)
-    print('serving on', s.sockets[0].getsockname())
-    loop.run_forever()
+    task = loop.create_server(EchoServer, '127.0.0.1', 8888)
+    server = loop.run_until_complete(task)
+    print('serving on {}'.format(server.sockets[0].getsockname()))
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("exit")
+    finally:
+        server.close()
+        loop.close()
+
+:meth:`Transport.close` can be called immediatly after
+:meth:`WriteTransport.write` even if data are not sent yet on the socket: both
+methods are asynchronous. ``yield from`` is not needed because these transport
+methods don't return coroutines.
 
 
 Echo client
 -----------
 
-TCP echo client example::
+TCP echo client example, send data and wait until the connection is closed::
 
     import asyncio
 
@@ -623,15 +632,14 @@ TCP echo client example::
         message = 'This is the message. It will be echoed.'
 
         def connection_made(self, transport):
-            self.transport = transport
-            self.transport.write(self.message.encode())
-            print('data sent:', self.message)
+            transport.write(self.message.encode())
+            print('data sent: {}'.format(self.message))
 
         def data_received(self, data):
-            print('data received:', data.decode())
+            print('data received: {}'.format(data.decode()))
 
         def connection_lost(self, exc):
-            print('connection lost')
+            print('server closed the connection')
             asyncio.get_event_loop().stop()
 
     loop = asyncio.get_event_loop()
