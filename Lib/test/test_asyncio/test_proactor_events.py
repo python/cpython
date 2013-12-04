@@ -111,8 +111,8 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
         tr._loop_writing = unittest.mock.Mock()
         tr.write(b'data')
-        self.assertEqual(tr._buffer, [b'data'])
-        self.assertTrue(tr._loop_writing.called)
+        self.assertEqual(tr._buffer, None)
+        tr._loop_writing.assert_called_with(data=b'data')
 
     def test_write_no_data(self):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
@@ -124,12 +124,12 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr._write_fut = unittest.mock.Mock()
         tr._loop_writing = unittest.mock.Mock()
         tr.write(b'data')
-        self.assertEqual(tr._buffer, [b'data'])
+        self.assertEqual(tr._buffer, b'data')
         self.assertFalse(tr._loop_writing.called)
 
     def test_loop_writing(self):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         tr._loop_writing()
         self.loop._proactor.send.assert_called_with(self.sock, b'data')
         self.loop._proactor.send.return_value.add_done_callback.\
@@ -150,7 +150,7 @@ class ProactorSocketTransportTests(unittest.TestCase):
         tr.write(b'data')
         tr.write(b'data')
         tr.write(b'data')
-        self.assertEqual(tr._buffer, [])
+        self.assertEqual(tr._buffer, None)
         m_log.warning.assert_called_with('socket.send() raised exception.')
 
     def test_loop_writing_stop(self):
@@ -226,7 +226,7 @@ class ProactorSocketTransportTests(unittest.TestCase):
         write_fut.cancel.assert_called_with()
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(None, tr._buffer)
         self.assertEqual(tr._conn_lost, 1)
 
     def test_force_close_idempotent(self):
@@ -243,7 +243,7 @@ class ProactorSocketTransportTests(unittest.TestCase):
 
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(None, tr._buffer)
 
     def test_call_connection_lost(self):
         tr = _ProactorSocketTransport(self.loop, self.sock, self.protocol)
