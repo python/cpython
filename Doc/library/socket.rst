@@ -138,8 +138,11 @@ generalization of this based on timeouts is supported through
 Module contents
 ---------------
 
-The module :mod:`socket` exports the following constants and functions:
+The module :mod:`socket` exports the following elements.
 
+
+Exceptions
+^^^^^^^^^^
 
 .. exception:: error
 
@@ -185,6 +188,10 @@ The module :mod:`socket` exports the following constants and functions:
 
    .. versionchanged:: 3.3
       This class was made a subclass of :exc:`OSError`.
+
+
+Constants
+^^^^^^^^^
 
 .. data:: AF_UNIX
           AF_INET
@@ -305,6 +312,57 @@ The module :mod:`socket` exports the following constants and functions:
    this platform.
 
 
+Functions
+^^^^^^^^^
+
+Creating sockets
+''''''''''''''''
+
+The following functions all create :ref:`socket objects <socket-objects>`.
+
+
+.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
+
+   Create a new socket using the given address family, socket type and protocol
+   number.  The address family should be :const:`AF_INET` (the default),
+   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
+   socket type should be :const:`SOCK_STREAM` (the default),
+   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
+   constants. The protocol number is usually zero and may be omitted or in the
+   case where the address family is :const:`AF_CAN` the protocol should be one
+   of :const:`CAN_RAW` or :const:`CAN_BCM`.
+
+   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. versionchanged:: 3.3
+      The AF_CAN family was added.
+      The AF_RDS family was added.
+
+   .. versionchanged:: 3.4
+       The CAN_BCM protocol was added.
+
+   .. versionchanged:: 3.4
+      The returned socket is now non-inheritable.
+
+
+.. function:: socketpair([family[, type[, proto]]])
+
+   Build a pair of connected socket objects using the given address family, socket
+   type, and protocol number.  Address family, socket type, and protocol number are
+   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
+   if defined on the platform; otherwise, the default is :const:`AF_INET`.
+   Availability: Unix.
+
+   The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
+
+   .. versionchanged:: 3.2
+      The returned socket objects now support the whole socket API, rather
+      than a subset.
+
+   .. versionchanged:: 3.4
+      The returned sockets are now non-inheritable.
+
+
 .. function:: create_connection(address[, timeout[, source_address]])
 
    Connect to a TCP service listening on the Internet *address* (a 2-tuple
@@ -329,6 +387,45 @@ The module :mod:`socket` exports the following constants and functions:
 
    .. versionchanged:: 3.2
       support for the :keyword:`with` statement was added.
+
+
+.. function:: fromfd(fd, family, type, proto=0)
+
+   Duplicate the file descriptor *fd* (an integer as returned by a file object's
+   :meth:`fileno` method) and build a socket object from the result.  Address
+   family, socket type and protocol number are as for the :func:`.socket` function
+   above. The file descriptor should refer to a socket, but this is not checked ---
+   subsequent operations on the object may fail if the file descriptor is invalid.
+   This function is rarely needed, but can be used to get or set socket options on
+   a socket passed to a program as standard input or output (such as a server
+   started by the Unix inet daemon).  The socket is assumed to be in blocking mode.
+
+   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
+
+   .. versionchanged:: 3.4
+      The returned socket is now non-inheritable.
+
+
+.. function:: fromshare(data)
+
+   Instantiate a socket from data obtained from the :meth:`socket.share`
+   method.  The socket is assumed to be in blocking mode.
+
+   Availability: Windows.
+
+   .. versionadded:: 3.3
+
+
+.. data:: SocketType
+
+   This is a Python type object that represents the socket object type. It is the
+   same as ``type(socket(...))``.
+
+
+Other functions
+'''''''''''''''
+
+The :mod:`socket` module also offers various network-related services:
 
 
 .. function:: getaddrinfo(host, port, family=0, type=0, proto=0, flags=0)
@@ -458,65 +555,6 @@ The module :mod:`socket` exports the following constants and functions:
    Translate an Internet port number and protocol name to a service name for that
    service.  The optional protocol name, if given, should be ``'tcp'`` or
    ``'udp'``, otherwise any protocol will match.
-
-
-.. function:: socket(family=AF_INET, type=SOCK_STREAM, proto=0, fileno=None)
-
-   Create a new socket using the given address family, socket type and protocol
-   number.  The address family should be :const:`AF_INET` (the default),
-   :const:`AF_INET6`, :const:`AF_UNIX`, :const:`AF_CAN` or :const:`AF_RDS`. The
-   socket type should be :const:`SOCK_STREAM` (the default),
-   :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
-   constants. The protocol number is usually zero and may be omitted or in the
-   case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.
-
-   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
-
-   .. versionchanged:: 3.3
-      The AF_CAN family was added.
-      The AF_RDS family was added.
-
-   .. versionchanged:: 3.4
-       The CAN_BCM protocol was added.
-
-   .. versionchanged:: 3.4
-      The socket is now non-inheritable.
-
-
-.. function:: socketpair([family[, type[, proto]]])
-
-   Build a pair of connected socket objects using the given address family, socket
-   type, and protocol number.  Address family, socket type, and protocol number are
-   as for the :func:`.socket` function above. The default family is :const:`AF_UNIX`
-   if defined on the platform; otherwise, the default is :const:`AF_INET`.
-   Availability: Unix.
-
-   The newly created sockets are :ref:`non-inheritable <fd_inheritance>`.
-
-   .. versionchanged:: 3.2
-      The returned socket objects now support the whole socket API, rather
-      than a subset.
-
-   .. versionchanged:: 3.4
-      The sockets are now non-inheritable.
-
-
-.. function:: fromfd(fd, family, type, proto=0)
-
-   Duplicate the file descriptor *fd* (an integer as returned by a file object's
-   :meth:`fileno` method) and build a socket object from the result.  Address
-   family, socket type and protocol number are as for the :func:`.socket` function
-   above. The file descriptor should refer to a socket, but this is not checked ---
-   subsequent operations on the object may fail if the file descriptor is invalid.
-   This function is rarely needed, but can be used to get or set socket options on
-   a socket passed to a program as standard input or output (such as a server
-   started by the Unix inet daemon).  The socket is assumed to be in blocking mode.
-
-   The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
-
-   .. versionchanged:: 3.4
-      The socket is now non-inheritable.
 
 
 .. function:: ntohl(x)
@@ -714,29 +752,14 @@ The module :mod:`socket` exports the following constants and functions:
    .. versionadded:: 3.3
 
 
-.. function:: fromshare(data)
-
-   Instantiate a socket from data obtained from :meth:`~socket.share`.
-   The socket is assumed to be in blocking mode.
-
-   Availability: Windows.
-
-   .. versionadded:: 3.3
-
-
-.. data:: SocketType
-
-   This is a Python type object that represents the socket object type. It is the
-   same as ``type(socket(...))``.
-
-
 .. _socket-objects:
 
 Socket Objects
 --------------
 
-Socket objects have the following methods.  Except for :meth:`makefile` these
-correspond to Unix system calls applicable to sockets.
+Socket objects have the following methods.  Except for
+:meth:`~socket.makefile`, these correspond to Unix system calls applicable
+to sockets.
 
 
 .. method:: socket.accept()
@@ -760,9 +783,15 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.close()
 
-   Close the socket.  All future operations on the socket object will fail. The
-   remote end will receive no more data (after queued data is flushed). Sockets are
-   automatically closed when they are garbage-collected.
+   Mark the socket closed.  The underlying system resource (e.g. a file
+   descriptor) is also closed when all file objects from :meth:`makefile()`
+   are closed.  Once that happens, all future operations on the socket
+   object will fail. The remote end will receive no more data (after
+   queued data is flushed).
+
+   Sockets are automatically closed when they are garbage-collected, but
+   it is recommended to :meth:`close` them explicitly, or to use a
+   :keyword:`with` statement around them.
 
    .. note::
       :meth:`close()` releases the resource associated with a connection but
@@ -887,10 +916,13 @@ correspond to Unix system calls applicable to sockets.
    type depends on the arguments given to :meth:`makefile`.  These arguments are
    interpreted the same way as by the built-in :func:`open` function.
 
-   Closing the file object won't close the socket unless there are no remaining
-   references to the socket.  The socket must be in blocking mode; it can have
-   a timeout, but the file object's internal buffer may end up in a inconsistent
-   state if a timeout occurs.
+   The socket must be in blocking mode; it can have a timeout, but the file
+   object's internal buffer may end up in a inconsistent state if a timeout
+   occurs.
+
+   Closing the file object returned by :meth:`makefile` won't close the
+   original socket unless all other file objects have been closed and
+   :meth:`socket.close` has been called on the socket object.
 
    .. note::
 
@@ -1162,14 +1194,14 @@ correspond to Unix system calls applicable to sockets.
 
 .. method:: socket.share(process_id)
 
-    :platform: Windows
+   Duplicate a socket and prepare it for sharing with a target process.  The
+   target process must be provided with *process_id*.  The resulting bytes object
+   can then be passed to the target process using some form of interprocess
+   communication and the socket can be recreated there using :func:`fromshare`.
+   Once this method has been called, it is safe to close the socket since
+   the operating system has already duplicated it for the target process.
 
-    Duplacet a socket and prepare it for sharing with a target process.  The
-    target process must be provided with *process_id*.  The resulting bytes object
-    can then be passed to the target process using some form of interprocess
-    communication and the socket can be recreated there using :func:`fromshare`.
-    Once this method has been called, it is safe to close the socket since
-    the operating system has already duplicated it for the target process.
+   Availability: Windows.
 
    .. versionadded:: 3.3
 
