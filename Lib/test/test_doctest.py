@@ -1024,10 +1024,10 @@ IGNORE_EXCEPTION_DETAIL to normalize the modules between Python 2 and 3:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> from http.client import HTTPException
-    ...     >>> raise HTTPException() #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     >>> from Queue import Empty
+    ...     >>> raise Empty() #doctest: +IGNORE_EXCEPTION_DETAIL
     ...     Traceback (most recent call last):
-    ...     foo.bar.HTTPException
+    ...     foo.bar.Empty
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
@@ -1037,10 +1037,10 @@ Note that a trailing colon doesn't matter either:
 
     >>> def f(x):
     ...     r'''
-    ...     >>> from http.client import HTTPException
-    ...     >>> raise HTTPException() #doctest: +IGNORE_EXCEPTION_DETAIL
+    ...     >>> from Queue import Empty
+    ...     >>> raise Empty() #doctest: +IGNORE_EXCEPTION_DETAIL
     ...     Traceback (most recent call last):
-    ...     foo.bar.HTTPException:
+    ...     foo.bar.Empty:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
