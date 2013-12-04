@@ -2322,8 +2322,8 @@ sock_detach(PySocketSockObject *s)
 PyDoc_STRVAR(detach_doc,
 "detach()\n\
 \n\
-Close the socket object without closing the underlying file descriptor.\
-The object cannot be used after this call, but the file descriptor\
+Close the socket object without closing the underlying file descriptor.\n\
+The object cannot be used after this call, but the file descriptor\n\
 can be reused for other purposes.  The file descriptor is returned.");
 
 static int
