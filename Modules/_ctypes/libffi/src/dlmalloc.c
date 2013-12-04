@@ -3393,7 +3393,7 @@ static void add_segment(mstate m, char* tbase, size_t tsize, flag_t mmapped) {
   *ss = m->seg; /* Push current record */
   m->seg.base = tbase;
   m->seg.size = tsize;
-  set_segment_flags(&m->seg, mmapped);
+  (void)set_segment_flags(&m->seg, mmapped);
   m->seg.next = ss;
 
   /* Insert trailing fenceposts */
@@ -3553,7 +3553,7 @@ static void* sys_alloc(mstate m, size_t nb) {
     if (!is_initialized(m)) { /* first-time initialization */
       m->seg.base = m->least_addr = tbase;
       m->seg.size = tsize;
-      set_segment_flags(&m->seg, mmap_flag);
+      (void)set_segment_flags(&m->seg, mmap_flag);
       m->magic = mparams.magic;
       init_bins(m);
       if (is_global(m)) 
@@ -4502,7 +4502,7 @@ mspace create_mspace(size_t capacity, int locked) {
     char* tbase = (char*)(CALL_MMAP(tsize));
     if (tbase != CMFAIL) {
       m = init_user_mstate(tbase, tsize);
-      set_segment_flags(&m->seg, IS_MMAPPED_BIT);
+      (void)set_segment_flags(&m->seg, IS_MMAPPED_BIT);
       set_lock(m, locked);
     }
   }
@@ -4517,7 +4517,7 @@ mspace create_mspace_with_base(void* base, size_t capacity, int locked) {
   if (capacity > msize + TOP_FOOT_SIZE &&
       capacity < (size_t) -(msize + TOP_FOOT_SIZE + mparams.page_size)) {
     m = init_user_mstate((char*)base, capacity);
-    set_segment_flags(&m->seg, EXTERN_BIT);
+    (void)set_segment_flags(&m->seg, EXTERN_BIT);
     set_lock(m, locked);
   }
   return (mspace)m;
