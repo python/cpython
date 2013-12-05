@@ -115,6 +115,21 @@ class TestFcntl(unittest.TestCase):
         finally:
             os.close(fd)
 
+    def test_flock(self):
+        self.f = open(TESTFN, 'wb')
+        fileno = self.f.fileno()
+        fcntl.flock(fileno, fcntl.LOCK_SH)
+        fcntl.flock(fileno, fcntl.LOCK_UN)
+        fcntl.flock(self.f, fcntl.LOCK_SH | fcntl.LOCK_NB)
+        fcntl.flock(self.f, fcntl.LOCK_UN)
+        fcntl.flock(fileno, fcntl.LOCK_EX)
+        fcntl.flock(fileno, fcntl.LOCK_UN)
+
+        self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
+        self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
+        self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
+                          fcntl.LOCK_SH)
+
 
 def test_main():
     run_unittest(TestFcntl)
