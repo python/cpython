@@ -66,7 +66,8 @@ newdbmobject(const char *file, int flags, int mode)
     if (dp == NULL)
         return NULL;
     dp->di_size = -1;
-    if ( (dp->di_dbm = dbm_open(file, flags, mode)) == 0 ) {
+    /* See issue #19296 */
+    if ( (dp->di_dbm = dbm_open((char *)file, flags, mode)) == 0 ) {
         PyErr_SetFromErrno(DbmError);
         Py_DECREF(dp);
         return NULL;

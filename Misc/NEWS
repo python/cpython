@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19296: Silence compiler warning in dbm_open
+
 - Issue #19839: Fix regression in bz2 module's handling of non-bzip2 data at
   EOF, and analogous bug in lzma module.
 
