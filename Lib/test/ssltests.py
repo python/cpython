@@ -5,7 +5,7 @@ import sys
 import subprocess
 
 TESTS = ['test_asyncio', 'test_ftplib', 'test_hashlib', 'test_httplib',
-         'test_imaplib', 'test_nntplib', 'test_poplib', 'test_smtplib', 
+         'test_imaplib', 'test_nntplib', 'test_poplib', 'test_smtplib',
          'test_smtpnet', 'test_urllib2_localnet', 'test_venv']
 
 def run_regrtests(*extra_args):
