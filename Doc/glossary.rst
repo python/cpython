@@ -78,6 +78,13 @@ Glossary
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
       <http://www.python.org/~guido/>`_, Python's creator.
 
+   binary file
+      A :term:`file object` able to read and write
+      :term:`bytes-like objects <bytes-like object>`.
+
+      .. seealso::
+         A :term:`text file` reads and writes :class:`str` objects.
+
    bytes-like object
       An object that supports the :ref:`bufferobjects`, like :class:`bytes`,
       :class:`bytearray` or :class:`memoryview`.  Bytes-like objects can
@@ -225,10 +232,11 @@ Glossary
       etc.).  File objects are also called :dfn:`file-like objects` or
       :dfn:`streams`.
 
-      There are actually three categories of file objects: raw binary files,
-      buffered binary files and text files.  Their interfaces are defined in the
-      :mod:`io` module.  The canonical way to create a file object is by using
-      the :func:`open` function.
+      There are actually three categories of file objects: raw
+      :term:`binary files <binary file>`, buffered
+      :term:`binary files <binary file>` and :term:`text files <text file>`.
+      Their interfaces are defined in the :mod:`io` module.  The canonical
+      way to create a file object is by using the :func:`open` function.
 
    file-like object
       A synonym for :term:`file object`.
@@ -799,6 +807,14 @@ Glossary
       methods like :meth:`~collections.somenamedtuple._make` or
       :meth:`~collections.somenamedtuple._asdict`. Examples of struct sequences
       include :data:`sys.float_info` and the return value of :func:`os.stat`.
+
+   text file
+      A :term:`file object` able to read and write :class:`str` objects.
+      Often, a text file actually accesses a byte-oriented datastream
+      and handles the text encoding automatically.
+
+      .. seealso::
+         A :term:`binary file` reads and write :class:`bytes` objects.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark
