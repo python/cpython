@@ -29,6 +29,7 @@ class CProfileTest(ProfileTest):
                     obj.enable()
                     obj = _lsprof.Profiler(1)
                     obj.disable()
+                    obj.clear()
                 finally:
                     sys.stderr = orig_stderr
         finally:
