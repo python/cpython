@@ -557,6 +557,7 @@ PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
     return 1;
 }
 
+/* LCOV_EXCL_START */
 static PyObject *
 _setException(PyObject *exc)
 {
@@ -585,6 +586,7 @@ _setException(PyObject *exc)
     }
     return NULL;
 }
+/* LCOV_EXCL_STOP */
 
 PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "pbkdf2_hmac(hash_name, password, salt, iterations, dklen=None) -> key\n\
