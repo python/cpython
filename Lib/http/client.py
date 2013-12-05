@@ -1204,13 +1204,13 @@ else:
             server_hostname = self.host if ssl.HAS_SNI else None
             self.sock = self._context.wrap_socket(sock,
                                                   server_hostname=server_hostname)
-            try:
-                if self._check_hostname:
+            if not self._context.check_hostname and self._check_hostname:
+                try:
                     ssl.match_hostname(self.sock.getpeercert(), self.host)
-            except Exception:
-                self.sock.shutdown(socket.SHUT_RDWR)
-                self.sock.close()
-                raise
+                except Exception:
+                    self.sock.shutdown(socket.SHUT_RDWR)
+                    self.sock.close()
+                    raise
 
     __all__.append("HTTPSConnection")
 
