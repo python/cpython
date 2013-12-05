@@ -1419,6 +1419,20 @@ class NetworkedTests(unittest.TestCase):
                 s.close()
             self.assertEqual(len(ctx.get_ca_certs()), 1)
 
+    def test_context_setget(self):
+        # Check that the context of a connected socket can be replaced.
+        with support.transient_internet("svn.python.org"):
+            ctx1 = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+            ctx2 = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+            s = socket.socket(socket.AF_INET)
+            with ctx1.wrap_socket(s) as ss:
+                ss.connect(("svn.python.org", 443))
+                self.assertIs(ss.context, ctx1)
+                self.assertIs(ss._sslobj.context, ctx1)
+                ss.context = ctx2
+                self.assertIs(ss.context, ctx2)
+                self.assertIs(ss._sslobj.context, ctx2)
+
 try:
     import threading
 except ImportError:
