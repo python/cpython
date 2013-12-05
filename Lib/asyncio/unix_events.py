@@ -74,6 +74,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         try:
             signal.signal(sig, self._handle_signal)
+            # Set SA_RESTART to limit EINTR occurrences.
+            signal.siginterrupt(sig, False)
         except OSError as exc:
             del self._signal_handlers[sig]
             if not self._signal_handlers:
