@@ -583,7 +583,8 @@ class _SelectorSslTransport(_SelectorTransport):
                 # cadefault=True.
                 if hasattr(ssl, '_create_stdlib_context'):
                     sslcontext = ssl._create_stdlib_context(
-                        cert_reqs=ssl.CERT_REQUIRED)
+                        cert_reqs=ssl.CERT_REQUIRED,
+                        check_hostname=bool(server_hostname))
                 else:
                     # Fallback for Python 3.3.
                     sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
@@ -639,17 +640,19 @@ class _SelectorSslTransport(_SelectorTransport):
         self._loop.remove_reader(self._sock_fd)
         self._loop.remove_writer(self._sock_fd)
 
-        # Verify hostname if requested.
         peercert = self._sock.getpeercert()
-        if (self._server_hostname and
-            self._sslcontext.verify_mode != ssl.CERT_NONE):
-            try:
-                ssl.match_hostname(peercert, self._server_hostname)
-            except Exception as exc:
-                self._sock.close()
-                if self._waiter is not None:
-                    self._waiter.set_exception(exc)
-                return
+        if not hasattr(self._sslcontext, 'check_hostname'):
+            # Verify hostname if requested, Python 3.4+ uses check_hostname
+            # and checks the hostname in do_handshake()
+            if (self._server_hostname and
+                self._sslcontext.verify_mode != ssl.CERT_NONE):
+                try:
+                    ssl.match_hostname(peercert, self._server_hostname)
+                except Exception as exc:
+                    self._sock.close()
+                    if self._waiter is not None:
+                        self._waiter.set_exception(exc)
+                    return
 
         # Add extra info that becomes available after handshake.
         self._extra.update(peercert=peercert,
