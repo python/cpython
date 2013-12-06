@@ -27,7 +27,7 @@ class FinderTests:
         # Implicitly tests that sys.path_importer_cache is used.
         module = '<test module>'
         path = '<test path>'
-        importer = util.mock_modules(module)
+        importer = util.mock_spec(module)
         with util.import_state(path_importer_cache={path: importer},
                                path=[path]):
             loader = self.machinery.PathFinder.find_module(module)
@@ -38,7 +38,7 @@ class FinderTests:
         # Implicitly tests that sys.path_importer_cache is used.
         module = '<test module>'
         path = '<test path>'
-        importer = util.mock_modules(module)
+        importer = util.mock_spec(module)
         with util.import_state(path_importer_cache={path: importer}):
             loader = self.machinery.PathFinder.find_module(module, [path])
             self.assertIs(loader, importer)
@@ -47,7 +47,7 @@ class FinderTests:
         # An empty list should not count as asking for sys.path.
         module = 'module'
         path = '<test path>'
-        importer = util.mock_modules(module)
+        importer = util.mock_spec(module)
         with util.import_state(path_importer_cache={path: importer},
                                path=[path]):
             self.assertIsNone(self.machinery.PathFinder.find_module('module', []))
@@ -57,7 +57,7 @@ class FinderTests:
         # Test that sys.path_importer_cache is set.
         module = '<test module>'
         path = '<test path>'
-        importer = util.mock_modules(module)
+        importer = util.mock_spec(module)
         hook = import_util.mock_path_hook(path, importer=importer)
         with util.import_state(path_hooks=[hook]):
             loader = self.machinery.PathFinder.find_module(module, [path])
@@ -82,7 +82,7 @@ class FinderTests:
         # The empty string should create a finder using the cwd.
         path = ''
         module = '<test module>'
-        importer = util.mock_modules(module)
+        importer = util.mock_spec(module)
         hook = import_util.mock_path_hook(os.getcwd(), importer=importer)
         with util.import_state(path=[path], path_hooks=[hook]):
             loader = self.machinery.PathFinder.find_module(module)

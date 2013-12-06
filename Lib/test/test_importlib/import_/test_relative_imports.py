@@ -64,7 +64,7 @@ class RelativeImports:
                 uncache_names.append(name)
             else:
                 uncache_names.append(name[:-len('.__init__')])
-        with util.mock_modules(*create) as importer:
+        with util.mock_spec(*create) as importer:
             with util.import_state(meta_path=[importer]):
                 for global_ in globals_:
                     with util.uncache(*uncache_names):

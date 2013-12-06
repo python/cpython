@@ -17,7 +17,7 @@ class ReturnValue:
 
     def test_return_from_import(self):
         # [import return]
-        with util.mock_modules('pkg.__init__', 'pkg.module') as importer:
+        with util.mock_spec('pkg.__init__', 'pkg.module') as importer:
             with util.import_state(meta_path=[importer]):
                 module = self.__import__('pkg.module')
                 self.assertEqual(module.__name__, 'pkg')
