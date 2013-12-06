@@ -122,6 +122,22 @@ class Task(futures.Future):
     # Weak set containing all tasks alive.
     _all_tasks = weakref.WeakSet()
 
+    # Dictionary containing tasks that are currently active in
+    # all running event loops.  {EventLoop: Task}
+    _current_tasks = {}
+
+    @classmethod
+    def current_task(cls, loop=None):
+        """Return the currently running task in an event loop or None.
+
+        By default the current task for the current event loop is returned.
+
+        None is returned when called not in the context of a Task.
+        """
+        if loop is None:
+            loop = events.get_event_loop()
+        return cls._current_tasks.get(loop)
+
     @classmethod
     def all_tasks(cls, loop=None):
         """Return a set of all tasks for an event loop.
@@ -252,6 +268,8 @@ class Task(futures.Future):
             self._must_cancel = False
         coro = self._coro
         self._fut_waiter = None
+
+        self.__class__._current_tasks[self._loop] = self
         # Call either coro.throw(exc) or coro.send(value).
         try:
             if exc is not None:
@@ -302,6 +320,8 @@ class Task(futures.Future):
                     self._step, None,
                     RuntimeError(
                         'Task got bad yield: {!r}'.format(result)))
+        finally:
+            self.__class__._current_tasks.pop(self._loop)
         self = None
 
     def _wakeup(self, future):

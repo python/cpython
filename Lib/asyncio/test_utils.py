@@ -88,7 +88,7 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
     class SSLWSGIServer(SilentWSGIServer):
         def finish_request(self, request, client_address):
             # The relative location of our test directory (which
-            # contains the sample key and certificate files) differs
+            # contains the ssl key and certificate files) differs
             # between the stdlib and stand-alone Tulip/asyncio.
             # Prefer our own if we can find it.
             here = os.path.join(os.path.dirname(__file__), '..', 'tests')
