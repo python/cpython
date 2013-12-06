@@ -1393,19 +1393,19 @@ if sys.platform == 'win32':
             return windows_events.ProactorEventLoop()
 
         def test_create_ssl_connection(self):
-            raise unittest.SkipTest("IocpEventLoop imcompatible with SSL")
+            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
 
         def test_create_server_ssl(self):
-            raise unittest.SkipTest("IocpEventLoop imcompatible with SSL")
+            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
 
         def test_create_server_ssl_verify_failed(self):
-            raise unittest.SkipTest("IocpEventLoop imcompatible with SSL")
+            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
 
         def test_create_server_ssl_match_failed(self):
-            raise unittest.SkipTest("IocpEventLoop imcompatible with SSL")
+            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
 
         def test_create_server_ssl_verified(self):
-            raise unittest.SkipTest("IocpEventLoop imcompatible with SSL")
+            raise unittest.SkipTest("IocpEventLoop incompatible with SSL")
 
         def test_reader_callback(self):
             raise unittest.SkipTest("IocpEventLoop does not have add_reader()")
