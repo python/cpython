@@ -2027,7 +2027,7 @@ save_bytes(PicklerObject *self, PyObject *obj)
         else if (self->proto >= 4) {
             header[0] = BINBYTES8;
             _write_size64(header + 1, size);
-            len = 8;
+            len = 9;
         }
         else {
             PyErr_SetString(PyExc_OverflowError,
