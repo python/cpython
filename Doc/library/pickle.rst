@@ -15,13 +15,14 @@
 .. sectionauthor:: Barry Warsaw <barry@python.org>
 
 
-The :mod:`pickle` module implements a fundamental, but powerful algorithm for
-serializing and de-serializing a Python object structure.  "Pickling" is the
-process whereby a Python object hierarchy is converted into a byte stream, and
-"unpickling" is the inverse operation, whereby a byte stream is converted back
-into an object hierarchy.  Pickling (and unpickling) is alternatively known as
-"serialization", "marshalling," [#]_ or "flattening", however, to avoid
-confusion, the terms used here are "pickling" and "unpickling"..
+The :mod:`pickle` module implements binary protocols for serializing and
+de-serializing a Python object structure.  *"Pickling"* is the process
+whereby a Python object hierarchy is converted into a byte stream, and
+*"unpickling"* is the inverse operation, whereby a byte stream
+(from a :term:`binary file` or :term:`bytes-like object`) is converted
+back into an object hierarchy.  Pickling (and unpickling) is alternatively
+known as "serialization", "marshalling," [#]_ or "flattening"; however, to
+avoid confusion, the terms used here are "pickling" and "unpickling".
 
 .. warning::
 
@@ -33,9 +34,8 @@ confusion, the terms used here are "pickling" and "unpickling"..
 Relationship to other Python modules
 ------------------------------------
 
-The :mod:`pickle` module has an transparent optimizer (:mod:`_pickle`) written
-in C.  It is used whenever available.  Otherwise the pure Python implementation is
-used.
+Comparison with ``marshal``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Python has a more primitive serialization module called :mod:`marshal`, but in
 general :mod:`pickle` should always be the preferred way to serialize Python
@@ -69,17 +69,30 @@ The :mod:`pickle` module differs from :mod:`marshal` in several significant ways
   The :mod:`pickle` serialization format is guaranteed to be backwards compatible
   across Python releases.
 
-Note that serialization is a more primitive notion than persistence; although
-:mod:`pickle` reads and writes file objects, it does not handle the issue of
-naming persistent objects, nor the (even more complicated) issue of concurrent
-access to persistent objects.  The :mod:`pickle` module can transform a complex
-object into a byte stream and it can transform the byte stream into an object
-with the same internal structure.  Perhaps the most obvious thing to do with
-these byte streams is to write them onto a file, but it is also conceivable to
-send them across a network or store them in a database.  The module
-:mod:`shelve` provides a simple interface to pickle and unpickle objects on
-DBM-style database files.
+Comparison with ``json``
+^^^^^^^^^^^^^^^^^^^^^^^^
 
+There are fundamental differences between the pickle protocols and
+`JSON (JavaScript Object Notation) <http://json.org>`_:
+
+* JSON is a text serialization format (it outputs unicode text, although
+  most of the time it is then encoded to ``utf-8``), while pickle is
+  a binary serialization format;
+
+* JSON is human-readable, while pickle is not;
+
+* JSON is interoperable and widely used outside of the Python ecosystem,
+  while pickle is Python-specific;
+
+* JSON, by default, can only represent a subset of the Python built-in
+  types, and no custom classes; pickle can represent an extremely large
+  number of Python types (many of them automatically, by clever usage
+  of Python's introspection facilities; complex cases can be tackled by
+  implementing :ref:`specific object APIs <pickle-inst>`).
+
+.. seealso::
+   The :mod:`json` module: a standard library module allowing JSON
+   serialization and deserialization.
 
 Data stream format
 ------------------
@@ -116,6 +129,18 @@ There are currently 4 different protocols which can be used for pickling.
   :class:`bytes` objects and cannot be unpickled by Python 2.x.  This is
   the default as well as the current recommended protocol; use it whenever
   possible.
+
+.. note::
+   Serialization is a more primitive notion than persistence; although
+   :mod:`pickle` reads and writes file objects, it does not handle the issue of
+   naming persistent objects, nor the (even more complicated) issue of concurrent
+   access to persistent objects.  The :mod:`pickle` module can transform a complex
+   object into a byte stream and it can transform the byte stream into an object
+   with the same internal structure.  Perhaps the most obvious thing to do with
+   these byte streams is to write them onto a file, but it is also conceivable to
+   send them across a network or store them in a database.  The :mod:`shelve`
+   module provides a simple interface to pickle and unpickle objects on
+   DBM-style database files.
 
 
 Module Interface
@@ -809,6 +834,14 @@ As our examples shows, you have to be careful with what you allow to be
 unpickled.  Therefore if security is a concern, you may want to consider
 alternatives such as the marshalling API in :mod:`xmlrpc.client` or
 third-party solutions.
+
+
+Performance
+-----------
+
+Recent versions of the pickle protocol (from protocol 2 and upwards) feature
+efficient binary encodings for several common features and built-in types.
+Also, the :mod:`pickle` module has a transparent optimizer written in C.
 
 
 .. _pickle-example:
