@@ -36,7 +36,7 @@ class Using__package__:
 
     def test_using___package__(self):
         # [__package__]
-        with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
+        with self.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
                 self.__import__('pkg.fake')
                 module = self.__import__('',
@@ -49,7 +49,7 @@ class Using__package__:
         globals_ = {'__name__': 'pkg.fake', '__path__': []}
         if package_as_None:
             globals_['__package__'] = None
-        with util.mock_modules('pkg.__init__', 'pkg.fake') as importer:
+        with self.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
                 self.__import__('pkg.fake')
                 module = self.__import__('', globals= globals_,
@@ -70,11 +70,20 @@ class Using__package__:
         with self.assertRaises(TypeError):
             self.__import__('', globals, {}, ['relimport'], 1)
 
-Frozen_UsingPackage, Source_UsingPackage = util.test_both(
-        Using__package__, __import__=import_util.__import__)
+class Using__package__PEP302(Using__package__):
+    mock_modules = util.mock_modules
+
+Frozen_UsingPackagePEP302, Source_UsingPackagePEP302 = util.test_both(
+        Using__package__PEP302, __import__=import_util.__import__)
+
+class Using__package__PEP302(Using__package__):
+    mock_modules = util.mock_spec
+
+Frozen_UsingPackagePEP451, Source_UsingPackagePEP451 = util.test_both(
+        Using__package__PEP302, __import__=import_util.__import__)
 
 
-class Setting__package__(unittest.TestCase):
+class Setting__package__:
 
     """Because __package__ is a new feature, it is not always set by a loader.
     Import will set it as needed to help with the transition to relying on
@@ -90,7 +99,7 @@ class Setting__package__(unittest.TestCase):
 
     # [top-level]
     def test_top_level(self):
-        with util.mock_modules('top_level') as mock:
+        with self.mock_modules('top_level') as mock:
             with util.import_state(meta_path=[mock]):
                 del mock['top_level'].__package__
                 module = self.__import__('top_level')
@@ -98,7 +107,7 @@ class Setting__package__(unittest.TestCase):
 
     # [package]
     def test_package(self):
-        with util.mock_modules('pkg.__init__') as mock:
+        with self.mock_modules('pkg.__init__') as mock:
             with util.import_state(meta_path=[mock]):
                 del mock['pkg'].__package__
                 module = self.__import__('pkg')
@@ -106,12 +115,18 @@ class Setting__package__(unittest.TestCase):
 
     # [submodule]
     def test_submodule(self):
-        with util.mock_modules('pkg.__init__', 'pkg.mod') as mock:
+        with self.mock_modules('pkg.__init__', 'pkg.mod') as mock:
             with util.import_state(meta_path=[mock]):
                 del mock['pkg.mod'].__package__
                 pkg = self.__import__('pkg.mod')
                 module = getattr(pkg, 'mod')
                 self.assertEqual(module.__package__, 'pkg')
+
+class Setting__package__PEP302(Setting__package__, unittest.TestCase):
+    mock_modules = util.mock_modules
+
+class Setting__package__PEP451(Setting__package__, unittest.TestCase):
+    mock_modules = util.mock_spec
 
 
 if __name__ == '__main__':
