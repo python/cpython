@@ -89,12 +89,16 @@ class _Flavour(object):
         (drive, root, parts) tuples.  Return a new (drive, root, parts) tuple.
         """
         if root2:
-            parts = parts2
-            root = root2
+            if not drv2 and drv:
+                return drv, root2, [drv + root2] + parts2[1:]
+        elif drv2:
+            if drv2 == drv or self.casefold(drv2) == self.casefold(drv):
+                # Same drive => second path is relative to the first
+                return drv, root, parts + parts2[1:]
         else:
-            parts = parts + parts2
-        # XXX raise error if drv and drv2 are different?
-        return drv2 or drv, root, parts
+            # Second path is non-anchored (common case)
+            return drv, root, parts + parts2
+        return drv2, root2, parts2
 
 
 class _WindowsFlavour(_Flavour):
