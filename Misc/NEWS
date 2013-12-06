@@ -18,10 +18,14 @@ Core and Builtins
 Library
 -------
 
+
 - Issue #19296: Silence compiler warning in dbm_open
 
 - Issue #19839: Fix regression in bz2 module's handling of non-bzip2 data at
   EOF, and analogous bug in lzma module.
+
+- Issue #19881: Fix pickling bug where cpickle would emit bad pickle data for
+  large bytes string (i.e., with size greater than 2**32-1).
 
 - Issue #19138: doctest's IGNORE_EXCEPTION_DETAIL now allows a match when
   no exception detail exists (no colon following the exception's name, or
