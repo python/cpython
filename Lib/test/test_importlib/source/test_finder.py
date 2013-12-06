@@ -46,9 +46,6 @@ class FinderTests(abc.FinderTests):
                             self.machinery.BYTECODE_SUFFIXES)]
         return self.machinery.FileFinder(root, *loader_details)
 
-    def import_(self, root, module):
-        return self.get_finder(root).find_module(module)
-
     def run_test(self, test, create=None, *, compile_=None, unlink=None):
         """Test the finding of 'test' with the creation of modules listed in
         'create'.
@@ -182,7 +179,23 @@ class FinderTests(abc.FinderTests):
             finder = self.get_finder(file_obj.name)
             self.assertEqual((None, []), finder.find_loader('doesnotexist'))
 
-Frozen_FinderTests, Source_FinderTests = util.test_both(FinderTests, machinery=machinery)
+class FinderTestsPEP451(FinderTests):
+
+    def import_(self, root, module):
+        found = self.get_finder(root).find_spec(module)
+        return found.loader if found is not None else found
+
+Frozen_FinderTestsPEP451, Source_FinderTestsPEP451 = util.test_both(
+        FinderTestsPEP451, machinery=machinery)
+
+
+class FinderTestsPEP302(FinderTests):
+
+    def import_(self, root, module):
+        return self.get_finder(root).find_module(module)
+
+Frozen_FinderTestsPEP302, Source_FinderTestsPEP302 = util.test_both(
+        FinderTestsPEP302, machinery=machinery)
 
 
 
