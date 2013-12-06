@@ -18,6 +18,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19908: pathlib now joins relative Windows paths correctly when a drive
+  is present.  Original patch by Antoine Pitrou.
 
 - Issue #19296: Silence compiler warning in dbm_open
 
