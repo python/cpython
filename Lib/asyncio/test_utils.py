@@ -95,8 +95,8 @@ def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
             if not os.path.isdir(here):
                 here = os.path.join(os.path.dirname(os.__file__),
                                     'test', 'test_asyncio')
-            keyfile = os.path.join(here, 'sample.key')
-            certfile = os.path.join(here, 'sample.crt')
+            keyfile = os.path.join(here, 'ssl_key.pem')
+            certfile = os.path.join(here, 'ssl_cert.pem')
             ssock = ssl.wrap_socket(request,
                                     keyfile=keyfile,
                                     certfile=certfile,
