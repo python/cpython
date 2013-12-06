@@ -975,6 +975,48 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertTrue(P('//a/b/c').is_absolute())
         self.assertTrue(P('//a/b/c/d').is_absolute())
 
+    def test_join(self):
+        P = self.cls
+        p = P('C:/a/b')
+        pp = p.joinpath('x/y')
+        self.assertEqual(pp, P('C:/a/b/x/y'))
+        pp = p.joinpath('/x/y')
+        self.assertEqual(pp, P('C:/x/y'))
+        # Joining with a different drive => the first path is ignored, even
+        # if the second path is relative.
+        pp = p.joinpath('D:x/y')
+        self.assertEqual(pp, P('D:x/y'))
+        pp = p.joinpath('D:/x/y')
+        self.assertEqual(pp, P('D:/x/y'))
+        pp = p.joinpath('//host/share/x/y')
+        self.assertEqual(pp, P('//host/share/x/y'))
+        # Joining with the same drive => the first path is appended to if
+        # the second path is relative.
+        pp = p.joinpath('c:x/y')
+        self.assertEqual(pp, P('C:/a/b/x/y'))
+        pp = p.joinpath('c:/x/y')
+        self.assertEqual(pp, P('C:/x/y'))
+
+    def test_div(self):
+        # Basically the same as joinpath()
+        P = self.cls
+        p = P('C:/a/b')
+        self.assertEqual(p / 'x/y', P('C:/a/b/x/y'))
+        self.assertEqual(p / 'x' / 'y', P('C:/a/b/x/y'))
+        self.assertEqual(p / '/x/y', P('C:/x/y'))
+        self.assertEqual(p / '/x' / 'y', P('C:/x/y'))
+        # Joining with a different drive => the first path is ignored, even
+        # if the second path is relative.
+        self.assertEqual(p / 'D:x/y', P('D:x/y'))
+        self.assertEqual(p / 'D:' / 'x/y', P('D:x/y'))
+        self.assertEqual(p / 'D:/x/y', P('D:/x/y'))
+        self.assertEqual(p / 'D:' / '/x/y', P('D:/x/y'))
+        self.assertEqual(p / '//host/share/x/y', P('//host/share/x/y'))
+        # Joining with the same drive => the first path is appended to if
+        # the second path is relative.
+        self.assertEqual(p / 'C:x/y', P('C:/a/b/x/y'))
+        self.assertEqual(p / 'C:/x/y', P('C:/x/y'))
+
     def test_is_reserved(self):
         P = self.cls
         self.assertIs(False, P('').is_reserved())
