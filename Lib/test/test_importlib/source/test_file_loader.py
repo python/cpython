@@ -121,6 +121,10 @@ class SimpleTest(abc.LoaderTests):
                 file.write('+++ bad syntax +++')
             loader = self.machinery.SourceFileLoader('_temp', mapping['_temp'])
             with self.assertRaises(SyntaxError):
+                loader.exec_module(orig_module)
+            for attr in attributes:
+                self.assertEqual(getattr(orig_module, attr), value)
+            with self.assertRaises(SyntaxError):
                 loader.load_module(name)
             for attr in attributes:
                 self.assertEqual(getattr(orig_module, attr), value)
@@ -171,15 +175,27 @@ class SimpleTest(abc.LoaderTests):
                     raise
                 self.skipTest("cannot set modification time to large integer ({})".format(e))
             loader = self.machinery.SourceFileLoader('_temp', mapping['_temp'])
-            mod = loader.load_module('_temp')
+            # PEP 451
+            module = types.ModuleType('_temp')
+            module.__spec__ = self.util.spec_from_loader('_temp', loader)
+            loader.exec_module(module)
+            self.assertEqual(module.x, 5)
+            self.assertTrue(os.path.exists(compiled))
+            os.unlink(compiled)
+            # PEP 302
+            mod = loader.load_module('_temp') # XXX
             # Sanity checks.
             self.assertEqual(mod.__cached__, compiled)
             self.assertEqual(mod.x, 5)
             # The pyc file was created.
-            os.stat(compiled)
+            self.assertTrue(os.path.exists(compiled))
 
     def test_unloadable(self):
         loader = self.machinery.SourceFileLoader('good name', {})
+        module = types.ModuleType('bad name')
+        module.__spec__ = self.machinery.ModuleSpec('bad name', loader)
+        with self.assertRaises(ImportError):
+            loader.exec_module(module)
         with self.assertRaises(ImportError):
             loader.load_module('bad name')
 
@@ -291,8 +307,23 @@ class BadBytecodeTest:
                                     lambda bc: b'\x00\x00\x00\x00' + bc[4:])
             test('_temp', mapping, bc_path)
 
+class BadBytecodeTestPEP451(BadBytecodeTest):
 
-class SourceLoaderBadBytecodeTest(BadBytecodeTest):
+    def import_(self, file, module_name):
+        loader = self.loader(module_name, file)
+        module = types.ModuleType(module_name)
+        module.__spec__ = self.util.spec_from_loader(module_name, loader)
+        loader.exec_module(module)
+
+class BadBytecodeTestPEP302(BadBytecodeTest):
+
+    def import_(self, file, module_name):
+        loader = self.loader(module_name, file)
+        module = loader.load_module(module_name)
+        self.assertIn(module_name, sys.modules)
+
+
+class SourceLoaderBadBytecodeTest:
 
     @classmethod
     def setUpClass(cls):
@@ -418,12 +449,24 @@ class SourceLoaderBadBytecodeTest(BadBytecodeTest):
                 # Make writable for eventual clean-up.
                 os.chmod(bytecode_path, stat.S_IWUSR)
 
-Frozen_SourceBadBytecode, Source_SourceBadBytecode = util.test_both(
-        SourceLoaderBadBytecodeTest, importlib=importlib, machinery=machinery,
+class SourceLoaderBadBytecodeTestPEP451(
+        SourceLoaderBadBytecodeTest, BadBytecodeTestPEP451):
+    pass
+
+Frozen_SourceBadBytecodePEP451, Source_SourceBadBytecodePEP451 = util.test_both(
+        SourceLoaderBadBytecodeTestPEP451, importlib=importlib, machinery=machinery,
+        abc=importlib_abc, util=importlib_util)
+
+class SourceLoaderBadBytecodeTestPEP302(
+        SourceLoaderBadBytecodeTest, BadBytecodeTestPEP302):
+    pass
+
+Frozen_SourceBadBytecodePEP302, Source_SourceBadBytecodePEP302 = util.test_both(
+        SourceLoaderBadBytecodeTestPEP302, importlib=importlib, machinery=machinery,
         abc=importlib_abc, util=importlib_util)
 
 
-class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
+class SourcelessLoaderBadBytecodeTest:
 
     @classmethod
     def setUpClass(cls):
@@ -482,8 +525,20 @@ class SourcelessLoaderBadBytecodeTest(BadBytecodeTest):
     def test_non_code_marshal(self):
         self._test_non_code_marshal(del_source=True)
 
-Frozen_SourcelessBadBytecode, Source_SourcelessBadBytecode = util.test_both(
-        SourcelessLoaderBadBytecodeTest, importlib=importlib,
+class SourcelessLoaderBadBytecodeTestPEP451(SourcelessLoaderBadBytecodeTest,
+        BadBytecodeTestPEP451):
+    pass
+
+Frozen_SourcelessBadBytecodePEP451, Source_SourcelessBadBytecodePEP451 = util.test_both(
+        SourcelessLoaderBadBytecodeTestPEP451, importlib=importlib,
+        machinery=machinery, abc=importlib_abc, util=importlib_util)
+
+class SourcelessLoaderBadBytecodeTestPEP302(SourcelessLoaderBadBytecodeTest,
+        BadBytecodeTestPEP302):
+    pass
+
+Frozen_SourcelessBadBytecodePEP302, Source_SourcelessBadBytecodePEP302 = util.test_both(
+        SourcelessLoaderBadBytecodeTestPEP302, importlib=importlib,
         machinery=machinery, abc=importlib_abc, util=importlib_util)
 
 

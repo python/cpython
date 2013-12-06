@@ -21,13 +21,12 @@ class CaseSensitivityTest:
     name = 'MoDuLe'
     assert name != name.lower()
 
-    def find(self, path):
-        finder = self.machinery.FileFinder(path,
+    def finder(self, path):
+        return self.machinery.FileFinder(path,
                                       (self.machinery.SourceFileLoader,
                                             self.machinery.SOURCE_SUFFIXES),
                                         (self.machinery.SourcelessFileLoader,
                                             self.machinery.BYTECODE_SUFFIXES))
-        return finder.find_module(self.name)
 
     def sensitivity_test(self):
         """Look for a module with matching and non-matching sensitivity."""
@@ -37,7 +36,9 @@ class CaseSensitivityTest:
         with context as mapping:
             sensitive_path = os.path.join(mapping['.root'], 'sensitive')
             insensitive_path = os.path.join(mapping['.root'], 'insensitive')
-            return self.find(sensitive_path), self.find(insensitive_path)
+            sensitive_finder = self.finder(sensitive_path)
+            insensitive_finder = self.finder(insensitive_path)
+            return self.find(sensitive_finder), self.find(insensitive_finder)
 
     def test_sensitive(self):
         with test_support.EnvironmentVarGuard() as env:
@@ -46,7 +47,7 @@ class CaseSensitivityTest:
                 self.skipTest('os.environ changes not reflected in '
                               '_os.environ')
             sensitive, insensitive = self.sensitivity_test()
-            self.assertTrue(hasattr(sensitive, 'load_module'))
+            self.assertIsNotNone(sensitive)
             self.assertIn(self.name, sensitive.get_filename(self.name))
             self.assertIsNone(insensitive)
 
@@ -57,13 +58,25 @@ class CaseSensitivityTest:
                 self.skipTest('os.environ changes not reflected in '
                               '_os.environ')
             sensitive, insensitive = self.sensitivity_test()
-            self.assertTrue(hasattr(sensitive, 'load_module'))
+            self.assertIsNotNone(sensitive)
             self.assertIn(self.name, sensitive.get_filename(self.name))
-            self.assertTrue(hasattr(insensitive, 'load_module'))
+            self.assertIsNotNone(insensitive)
             self.assertIn(self.name, insensitive.get_filename(self.name))
 
-Frozen_CaseSensitivityTest, Source_CaseSensitivityTest = util.test_both(
-    CaseSensitivityTest, importlib=importlib, machinery=machinery)
+class CaseSensitivityTestPEP302(CaseSensitivityTest):
+    def find(self, finder):
+        return finder.find_module(self.name)
+
+Frozen_CaseSensitivityTestPEP302, Source_CaseSensitivityTestPEP302 = util.test_both(
+    CaseSensitivityTestPEP302, importlib=importlib, machinery=machinery)
+
+class CaseSensitivityTestPEP451(CaseSensitivityTest):
+    def find(self, finder):
+        found = finder.find_spec(self.name)
+        return found.loader if found is not None else found
+
+Frozen_CaseSensitivityTestPEP451, Source_CaseSensitivityTestPEP451 = util.test_both(
+    CaseSensitivityTestPEP451, importlib=importlib, machinery=machinery)
 
 
 if __name__ == '__main__':
