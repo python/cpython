@@ -1014,8 +1014,8 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(p / '//host/share/x/y', P('//host/share/x/y'))
         # Joining with the same drive => the first path is appended to if
         # the second path is relative.
-        self.assertEqual(p / 'C:x/y', P('C:/a/b/x/y'))
-        self.assertEqual(p / 'C:/x/y', P('C:/x/y'))
+        self.assertEqual(p / 'c:x/y', P('C:/a/b/x/y'))
+        self.assertEqual(p / 'c:/x/y', P('C:/x/y'))
 
     def test_is_reserved(self):
         P = self.cls
