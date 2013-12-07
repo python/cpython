@@ -522,6 +522,13 @@ then
   AC_DEFINE(_POSIX_C_SOURCE, 200809L, Define to activate features from IEEE Stds 1003.1-2008)
 fi
 
+# On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
+case $ac_sys_system in
+hp*|HP*)
+  AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
+  ;;
+esac
+
 #
 # SGI compilers allow the specification of the both the ABI and the
 # ISA on the command line.  Depending on the values of these switches,
