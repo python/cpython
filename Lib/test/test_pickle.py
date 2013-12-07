@@ -83,13 +83,17 @@ class PyPicklerUnpicklerObjectTests(AbstractPicklerUnpicklerObjectTests):
 
 
 class PyDispatchTableTests(AbstractDispatchTableTests):
+
     pickler_class = pickle._Pickler
+
     def get_dispatch_table(self):
         return pickle.dispatch_table.copy()
 
 
 class PyChainDispatchTableTests(AbstractDispatchTableTests):
+
     pickler_class = pickle._Pickler
+
     def get_dispatch_table(self):
         return collections.ChainMap({}, pickle.dispatch_table)
 

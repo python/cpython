@@ -23,6 +23,10 @@ Library
 
 - Issue #19296: Silence compiler warning in dbm_open
 
+- Issue #6784: Strings from Python 2 can now be unpickled as bytes
+  objects by setting the encoding argument of Unpickler to be 'bytes'.
+  Initial patch by Merlijn van Deen.
+
 - Issue #19839: Fix regression in bz2 module's handling of non-bzip2 data at
   EOF, and analogous bug in lzma module.
 

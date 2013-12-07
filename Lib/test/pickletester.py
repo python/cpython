@@ -1305,6 +1305,35 @@ class AbstractPickleTests(unittest.TestCase):
         dumped = self.dumps(set([3]), 2)
         self.assertEqual(dumped, DATA6)
 
+    def test_load_python2_str_as_bytes(self):
+        # From Python 2: pickle.dumps('a\x00\xa0', protocol=0)
+        self.assertEqual(self.loads(b"S'a\\x00\\xa0'\n.",
+                                    encoding="bytes"), b'a\x00\xa0')
+        # From Python 2: pickle.dumps('a\x00\xa0', protocol=1)
+        self.assertEqual(self.loads(b'U\x03a\x00\xa0.',
+                                    encoding="bytes"), b'a\x00\xa0')
+        # From Python 2: pickle.dumps('a\x00\xa0', protocol=2)
+        self.assertEqual(self.loads(b'\x80\x02U\x03a\x00\xa0.',
+                                    encoding="bytes"), b'a\x00\xa0')
+
+    def test_load_python2_unicode_as_str(self):
+        # From Python 2: pickle.dumps(u'π', protocol=0)
+        self.assertEqual(self.loads(b'V\\u03c0\n.',
+                                    encoding='bytes'), 'π')
+        # From Python 2: pickle.dumps(u'π', protocol=1)
+        self.assertEqual(self.loads(b'X\x02\x00\x00\x00\xcf\x80.',
+                                    encoding="bytes"), 'π')
+        # From Python 2: pickle.dumps(u'π', protocol=2)
+        self.assertEqual(self.loads(b'\x80\x02X\x02\x00\x00\x00\xcf\x80.',
+                                    encoding="bytes"), 'π')
+
+    def test_load_long_python2_str_as_bytes(self):
+        # From Python 2: pickle.dumps('x' * 300, protocol=1)
+        self.assertEqual(self.loads(pickle.BINSTRING +
+                                    struct.pack("<I", 300) +
+                                    b'x' * 300 + pickle.STOP,
+                                    encoding='bytes'), b'x' * 300)
+
     def test_large_pickles(self):
         # Test the correctness of internal buffering routines when handling
         # large data.
@@ -1565,7 +1594,6 @@ class AbstractPickleTests(unittest.TestCase):
                 with self.subTest(proto=proto, method=method):
                     unpickled = self.loads(self.dumps(method, proto))
                     self.assertEqual(method(obj), unpickled(obj))
-
 
     def test_c_methods(self):
         global Subclass
