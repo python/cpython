@@ -193,9 +193,9 @@ are always available.  They are listed here in alphabetical order.
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
    Compile the *source* into a code or AST object.  Code objects can be executed
-   by :func:`exec` or :func:`eval`.  *source* can either be a string or an AST
-   object.  Refer to the :mod:`ast` module documentation for information on how
-   to work with AST objects.
+   by :func:`exec` or :func:`eval`.  *source* can either be a normal string, a
+   byte string, or an AST object.  Refer to the :mod:`ast` module documentation
+   for information on how to work with AST objects.
 
    The *filename* argument should give the file from which the code was read;
    pass some recognizable value if it wasn't read from a file (``'<string>'`` is
