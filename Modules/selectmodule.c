@@ -1317,16 +1317,16 @@ pyepoll_internal_ctl(int epfd, int op, PyObject *pfd, unsigned int events)
         return NULL;
     }
 
-    switch(op) {
-        case EPOLL_CTL_ADD:
-        case EPOLL_CTL_MOD:
+    switch (op) {
+    case EPOLL_CTL_ADD:
+    case EPOLL_CTL_MOD:
         ev.events = events;
         ev.data.fd = fd;
         Py_BEGIN_ALLOW_THREADS
         result = epoll_ctl(epfd, op, fd, &ev);
         Py_END_ALLOW_THREADS
         break;
-        case EPOLL_CTL_DEL:
+    case EPOLL_CTL_DEL:
         /* In kernel versions before 2.6.9, the EPOLL_CTL_DEL
          * operation required a non-NULL pointer in event, even
          * though this argument is ignored. */
@@ -1339,7 +1339,7 @@ pyepoll_internal_ctl(int epfd, int op, PyObject *pfd, unsigned int events)
         }
         Py_END_ALLOW_THREADS
         break;
-        default:
+    default:
         result = -1;
         errno = EINVAL;
     }
@@ -1795,22 +1795,22 @@ kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
     }
 
     switch (op) {
-        case Py_EQ:
+    case Py_EQ:
         result = (result == 0);
         break;
-        case Py_NE:
+    case Py_NE:
         result = (result != 0);
         break;
-        case Py_LE:
+    case Py_LE:
         result = (result <= 0);
         break;
-        case Py_GE:
+    case Py_GE:
         result = (result >= 0);
         break;
-        case Py_LT:
+    case Py_LT:
         result = (result < 0);
         break;
-        case Py_GT:
+    case Py_GT:
         result = (result > 0);
         break;
     }
