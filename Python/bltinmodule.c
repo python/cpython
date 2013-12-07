@@ -676,7 +676,7 @@ finally:
 PyDoc_STRVAR(compile_doc,
 "compile(source, filename, mode[, flags[, dont_inherit]]) -> code object\n\
 \n\
-Compile the source string (a Python module, statement or expression)\n\
+Compile the source (a Python module, statement or expression)\n\
 into a code object that can be executed by exec() or eval().\n\
 The filename will be used for run-time error messages.\n\
 The mode must be 'exec' to compile a module, 'single' to compile a\n\
