@@ -25,6 +25,9 @@ def _fileobj_to_fd(fileobj):
 
     Returns:
     corresponding file descriptor
+
+    Raises:
+    ValueError if the object is invalid
     """
     if isinstance(fileobj, int):
         fd = fileobj
@@ -55,7 +58,8 @@ class _SelectorMapping(Mapping):
 
     def __getitem__(self, fileobj):
         try:
-            return self._selector._fd_to_key[_fileobj_to_fd(fileobj)]
+            fd = self._selector._fileobj_lookup(fileobj)
+            return self._selector._fd_to_key[fd]
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
 
@@ -89,6 +93,15 @@ class BaseSelector(metaclass=ABCMeta):
 
         Returns:
         SelectorKey instance
+
+        Raises:
+        ValueError if events is invalid
+        KeyError if fileobj is already registered
+        OSError if fileobj is closed or otherwise is unacceptable to
+                the underlying system call (if a system call is made)
+
+        Note:
+        OSError may or may not be raised
         """
         raise NotImplementedError
 
@@ -101,6 +114,13 @@ class BaseSelector(metaclass=ABCMeta):
 
         Returns:
         SelectorKey instance
+
+        Raises:
+        KeyError if fileobj is not registered
+
+        Note:
+        If fileobj is registered but has since been closed this does
+        *not* raise OSError (even if the wrapped syscall does)
         """
         raise NotImplementedError
 
@@ -114,6 +134,9 @@ class BaseSelector(metaclass=ABCMeta):
 
         Returns:
         SelectorKey instance
+
+        Raises:
+        Anything that unregister() or register() raises
         """
         self.unregister(fileobj)
         return self.register(fileobj, events, data)
@@ -177,22 +200,41 @@ class _BaseSelectorImpl(BaseSelector):
         # read-only mapping returned by get_map()
         self._map = _SelectorMapping(self)
 
+    def _fileobj_lookup(self, fileobj):
+        """Return a file descriptor from a file object.
+
+        This wraps _fileobj_to_fd() to do an exhaustive search in case
+        the object is invalid but we still have it in our map.  This
+        is used by unregister() so we can unregister an object that
+        was previously registered even if it is closed.  It is also
+        used by _SelectorMapping.
+        """
+        try:
+            return _fileobj_to_fd(fileobj)
+        except ValueError:
+            # Do an exhaustive search.
+            for key in self._fd_to_key.values():
+                if key.fileobj is fileobj:
+                    return key.fd
+            # Raise ValueError after all.
+            raise
+
     def register(self, fileobj, events, data=None):
         if (not events) or (events & ~(EVENT_READ | EVENT_WRITE)):
             raise ValueError("Invalid events: {!r}".format(events))
 
-        key = SelectorKey(fileobj, _fileobj_to_fd(fileobj), events, data)
+        key = SelectorKey(fileobj, self._fileobj_lookup(fileobj), events, data)
 
         if key.fd in self._fd_to_key:
-            raise KeyError("{!r} (FD {}) is already "
-                           "registered".format(fileobj, key.fd))
+            raise KeyError("{!r} (FD {}) is already registered"
+                           .format(fileobj, key.fd))
 
         self._fd_to_key[key.fd] = key
         return key
 
     def unregister(self, fileobj):
         try:
-            key = self._fd_to_key.pop(_fileobj_to_fd(fileobj))
+            key = self._fd_to_key.pop(self._fileobj_lookup(fileobj))
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
         return key
@@ -200,7 +242,7 @@ class _BaseSelectorImpl(BaseSelector):
     def modify(self, fileobj, events, data=None):
         # TODO: Subclasses can probably optimize this even further.
         try:
-            key = self._fd_to_key[_fileobj_to_fd(fileobj)]
+            key = self._fd_to_key[self._fileobj_lookup(fileobj)]
         except KeyError:
             raise KeyError("{!r} is not registered".format(fileobj)) from None
         if events != key.events:
@@ -352,7 +394,12 @@ if hasattr(select, 'epoll'):
 
         def unregister(self, fileobj):
             key = super().unregister(fileobj)
-            self._epoll.unregister(key.fd)
+            try:
+                self._epoll.unregister(key.fd)
+            except OSError:
+                # This can happen if the FD was closed since it
+                # was registered.
+                pass
             return key
 
         def select(self, timeout=None):
@@ -409,11 +456,20 @@ if hasattr(select, 'kqueue'):
             if key.events & EVENT_READ:
                 kev = select.kevent(key.fd, select.KQ_FILTER_READ,
                                     select.KQ_EV_DELETE)
-                self._kqueue.control([kev], 0, 0)
+                try:
+                    self._kqueue.control([kev], 0, 0)
+                except OSError:
+                    # This can happen if the FD was closed since it
+                    # was registered.
+                    pass
             if key.events & EVENT_WRITE:
                 kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                     select.KQ_EV_DELETE)
-                self._kqueue.control([kev], 0, 0)
+                try:
+                    self._kqueue.control([kev], 0, 0)
+                except OSError:
+                    # See comment above.
+                    pass
             return key
 
         def select(self, timeout=None):
