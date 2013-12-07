@@ -211,13 +211,12 @@ class BaseThreadedNetworkedTests(unittest.TestCase):
 
     @contextmanager
     def reaped_pair(self, hdlr):
-        server, thread = self.make_server((support.HOST, 0), hdlr)
-        client = self.imap_class(*server.server_address)
-        try:
-            yield server, client
-        finally:
-            client.logout()
-            self.reap_server(server, thread)
+        with self.reaped_server(hdlr) as server:
+            client = self.imap_class(*server.server_address)
+            try:
+                yield server, client
+            finally:
+                client.logout()
 
     @reap_threads
     def test_connect(self):
