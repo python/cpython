@@ -3,7 +3,6 @@
 import collections
 import contextlib
 import io
-import unittest.mock
 import os
 import sys
 import threading
