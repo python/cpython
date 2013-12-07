@@ -4016,48 +4016,44 @@ _pickle.Pickler.__init__
 
 This takes a binary file for writing a pickle data stream.
 
-The optional protocol argument tells the pickler to use the
-given protocol; supported protocols are 0, 1, 2, 3 and 4.  The
-default protocol is 3; a backward-incompatible protocol designed for
-Python 3.
+The optional *protocol* argument tells the pickler to use the given
+protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol is 3; a backward-incompatible protocol designed for Python 3.
 
-Specifying a negative protocol version selects the highest
-protocol version supported.  The higher the protocol used, the
-more recent the version of Python needed to read the pickle
-produced.
+Specifying a negative protocol version selects the highest protocol
+version supported.  The higher the protocol used, the more recent the
+version of Python needed to read the pickle produced.
 
-The file argument must have a write() method that accepts a single
+The *file* argument must have a write() method that accepts a single
 bytes argument. It can thus be a file object opened for binary
-writing, a io.BytesIO instance, or any other custom object that
-meets this interface.
+writing, a io.BytesIO instance, or any other custom object that meets
+this interface.
 
-If fix_imports is True and protocol is less than 3, pickle will try to
-map the new Python 3 names to the old module names used in Python 2,
-so that the pickle data stream is readable with Python 2.
+If *fix_imports* is True and protocol is less than 3, pickle will try
+to map the new Python 3 names to the old module names used in Python
+2, so that the pickle data stream is readable with Python 2.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "__init__(file, protocol=None, fix_imports=True)\n"
 "This takes a binary file for writing a pickle data stream.\n"
 "\n"
-"The optional protocol argument tells the pickler to use the\n"
-"given protocol; supported protocols are 0, 1, 2, 3 and 4.  The\n"
-"default protocol is 3; a backward-incompatible protocol designed for\n"
-"Python 3.\n"
+"The optional *protocol* argument tells the pickler to use the given\n"
+"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
+"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
 "\n"
-"Specifying a negative protocol version selects the highest\n"
-"protocol version supported.  The higher the protocol used, the\n"
-"more recent the version of Python needed to read the pickle\n"
-"produced.\n"
+"Specifying a negative protocol version selects the highest protocol\n"
+"version supported.  The higher the protocol used, the more recent the\n"
+"version of Python needed to read the pickle produced.\n"
 "\n"
-"The file argument must have a write() method that accepts a single\n"
+"The *file* argument must have a write() method that accepts a single\n"
 "bytes argument. It can thus be a file object opened for binary\n"
-"writing, a io.BytesIO instance, or any other custom object that\n"
-"meets this interface.\n"
+"writing, a io.BytesIO instance, or any other custom object that meets\n"
+"this interface.\n"
 "\n"
-"If fix_imports is True and protocol is less than 3, pickle will try to\n"
-"map the new Python 3 names to the old module names used in Python 2,\n"
-"so that the pickle data stream is readable with Python 2.");
+"If *fix_imports* is True and protocol is less than 3, pickle will try\n"
+"to map the new Python 3 names to the old module names used in Python\n"
+"2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_PICKLER___INIT___METHODDEF    \
     {"__init__", (PyCFunction)_pickle_Pickler___init__, METH_VARARGS|METH_KEYWORDS, _pickle_Pickler___init____doc__},
@@ -4086,7 +4082,7 @@ exit:
 
 static PyObject *
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic checksum: c99ff417bd703a74affc4b708167e56e135e8969]*/
+/*[clinic checksum: 2b5ce6452544600478cf9f4b701ab9d9b5efbab9]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -4831,7 +4827,7 @@ static int
 load_string(UnpicklerObject *self)
 {
     PyObject *bytes;
-    PyObject *str = NULL;
+    PyObject *obj;
     Py_ssize_t len;
     char *s, *p;
 
@@ -4857,12 +4853,59 @@ load_string(UnpicklerObject *self)
     bytes = PyBytes_DecodeEscape(p, len, NULL, 0, NULL);
     if (bytes == NULL)
         return -1;
-    str = PyUnicode_FromEncodedObject(bytes, self->encoding, self->errors);
-    Py_DECREF(bytes);
-    if (str == NULL)
+
+    /* Leave the Python 2.x strings as bytes if the *encoding* given to the
+       Unpickler was 'bytes'. Otherwise, convert them to unicode. */
+    if (strcmp(self->encoding, "bytes") == 0) {
+        obj = bytes;
+    }
+    else {
+        obj = PyUnicode_FromEncodedObject(bytes, self->encoding, self->errors);
+        Py_DECREF(bytes);
+        if (obj == NULL) {
+            return -1;
+        }
+    }
+
+    PDATA_PUSH(self->stack, obj, -1);
+    return 0;
+}
+
+static int
+load_counted_binstring(UnpicklerObject *self, int nbytes)
+{
+    PyObject *obj;
+    Py_ssize_t size;
+    char *s;
+
+    if (_Unpickler_Read(self, &s, nbytes) < 0)
         return -1;
 
-    PDATA_PUSH(self->stack, str, -1);
+    size = calc_binsize(s, nbytes);
+    if (size < 0) {
+        PickleState *st = _Pickle_GetGlobalState();
+        PyErr_Format(st->UnpicklingError,
+                     "BINSTRING exceeds system's maximum size of %zd bytes",
+                     PY_SSIZE_T_MAX);
+        return -1;
+    }
+
+    if (_Unpickler_Read(self, &s, size) < 0)
+        return -1;
+
+    /* Convert Python 2.x strings to bytes if the *encoding* given to the
+       Unpickler was 'bytes'. Otherwise, convert them to unicode. */
+    if (strcmp(self->encoding, "bytes") == 0) {
+        obj = PyBytes_FromStringAndSize(s, size);
+    }
+    else {
+        obj = PyUnicode_Decode(s, size, self->encoding, self->errors);
+    }
+    if (obj == NULL) {
+        return -1;
+    }
+
+    PDATA_PUSH(self->stack, obj, -1);
     return 0;
 }
 
@@ -4892,36 +4935,6 @@ load_counted_binbytes(UnpicklerObject *self, int nbytes)
         return -1;
 
     PDATA_PUSH(self->stack, bytes, -1);
-    return 0;
-}
-
-static int
-load_counted_binstring(UnpicklerObject *self, int nbytes)
-{
-    PyObject *str;
-    Py_ssize_t size;
-    char *s;
-
-    if (_Unpickler_Read(self, &s, nbytes) < 0)
-        return -1;
-
-    size = calc_binsize(s, nbytes);
-    if (size < 0) {
-        PickleState *st = _Pickle_GetGlobalState();
-        PyErr_Format(st->UnpicklingError,
-                     "BINSTRING exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX);
-        return -1;
-    }
-
-    if (_Unpickler_Read(self, &s, size) < 0)
-        return -1;
-    /* Convert Python 2.x strings to unicode. */
-    str = PyUnicode_Decode(s, size, self->encoding, self->errors);
-    if (str == NULL)
-        return -1;
-
-    PDATA_PUSH(self->stack, str, -1);
     return 0;
 }
 
@@ -6258,25 +6271,25 @@ _pickle.Unpickler.load
 
 Load a pickle.
 
-Read a pickled object representation from the open file object given in
-the constructor, and return the reconstituted object hierarchy specified
-therein.
+Read a pickled object representation from the open file object given
+in the constructor, and return the reconstituted object hierarchy
+specified therein.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_Unpickler_load__doc__,
 "load()\n"
 "Load a pickle.\n"
 "\n"
-"Read a pickled object representation from the open file object given in\n"
-"the constructor, and return the reconstituted object hierarchy specified\n"
-"therein.");
+"Read a pickled object representation from the open file object given\n"
+"in the constructor, and return the reconstituted object hierarchy\n"
+"specified therein.");
 
 #define _PICKLE_UNPICKLER_LOAD_METHODDEF    \
     {"load", (PyCFunction)_pickle_Unpickler_load, METH_NOARGS, _pickle_Unpickler_load__doc__},
 
 static PyObject *
 _pickle_Unpickler_load(PyObject *self)
-/*[clinic checksum: 9a30ba4e4d9221d4dcd705e1471ab11b2c9e3ac6]*/
+/*[clinic checksum: c2ae1263f0dd000f34ccf0fe59d7c544464babc4]*/
 {
     UnpicklerObject *unpickler = (UnpicklerObject*)self;
 
@@ -6310,8 +6323,9 @@ _pickle.Unpickler.find_class
 
 Return an object from a specified module.
 
-If necessary, the module will be imported. Subclasses may override this
-method (e.g. to restrict unpickling of arbitrary classes and functions).
+If necessary, the module will be imported. Subclasses may override
+this method (e.g. to restrict unpickling of arbitrary classes and
+functions).
 
 This method is called whenever a class or a function object is
 needed.  Both arguments passed are str objects.
@@ -6321,8 +6335,9 @@ PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
 "find_class(module_name, global_name)\n"
 "Return an object from a specified module.\n"
 "\n"
-"If necessary, the module will be imported. Subclasses may override this\n"
-"method (e.g. to restrict unpickling of arbitrary classes and functions).\n"
+"If necessary, the module will be imported. Subclasses may override\n"
+"this method (e.g. to restrict unpickling of arbitrary classes and\n"
+"functions).\n"
 "\n"
 "This method is called whenever a class or a function object is\n"
 "needed.  Both arguments passed are str objects.");
@@ -6352,7 +6367,7 @@ exit:
 
 static PyObject *
 _pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyObject *module_name, PyObject *global_name)
-/*[clinic checksum: b7d05d4dd8adc698e5780c1ac2be0f5062d33915]*/
+/*[clinic checksum: 1f353d13a32c9d94feb1466b3c2d0529a7e5650e]*/
 {
     PyObject *global;
     PyObject *modules_dict;
@@ -6515,23 +6530,23 @@ _pickle.Unpickler.__init__
 This takes a binary file for reading a pickle data stream.
 
 The protocol version of the pickle is detected automatically, so no
-proto argument is needed.
+protocol argument is needed.  Bytes past the pickled object's
+representation are ignored.
 
-The file-like object must have two methods, a read() method
-that takes an integer argument, and a readline() method that
-requires no arguments.  Both methods should return bytes.
-Thus file-like object can be a binary file object opened for
-reading, a BytesIO object, or any other custom object that
-meets this interface.
+The argument *file* must have two methods, a read() method that takes
+an integer argument, and a readline() method that requires no
+arguments.  Both methods should return bytes.  Thus *file* can be a
+binary file object opened for reading, a io.BytesIO object, or any
+other custom object that meets this interface.
 
 Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
 which are used to control compatiblity support for pickle stream
-generated by Python 2.x.  If *fix_imports* is True, pickle will try to
-map the old Python 2.x names to the new names used in Python 3.x.  The
+generated by Python 2.  If *fix_imports* is True, pickle will try to
+map the old Python 2 names to the new names used in Python 3.  The
 *encoding* and *errors* tell pickle how to decode 8-bit string
-instances pickled by Python 2.x; these default to 'ASCII' and
-'strict', respectively.
-
+instances pickled by Python 2; these default to 'ASCII' and 'strict',
+respectively.  The *encoding* can be 'bytes' to read these 8-bit
+string instances as bytes objects.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
@@ -6539,22 +6554,23 @@ PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "This takes a binary file for reading a pickle data stream.\n"
 "\n"
 "The protocol version of the pickle is detected automatically, so no\n"
-"proto argument is needed.\n"
+"protocol argument is needed.  Bytes past the pickled object\'s\n"
+"representation are ignored.\n"
 "\n"
-"The file-like object must have two methods, a read() method\n"
-"that takes an integer argument, and a readline() method that\n"
-"requires no arguments.  Both methods should return bytes.\n"
-"Thus file-like object can be a binary file object opened for\n"
-"reading, a BytesIO object, or any other custom object that\n"
-"meets this interface.\n"
+"The argument *file* must have two methods, a read() method that takes\n"
+"an integer argument, and a readline() method that requires no\n"
+"arguments.  Both methods should return bytes.  Thus *file* can be a\n"
+"binary file object opened for reading, a io.BytesIO object, or any\n"
+"other custom object that meets this interface.\n"
 "\n"
 "Optional keyword arguments are *fix_imports*, *encoding* and *errors*,\n"
 "which are used to control compatiblity support for pickle stream\n"
-"generated by Python 2.x.  If *fix_imports* is True, pickle will try to\n"
-"map the old Python 2.x names to the new names used in Python 3.x.  The\n"
+"generated by Python 2.  If *fix_imports* is True, pickle will try to\n"
+"map the old Python 2 names to the new names used in Python 3.  The\n"
 "*encoding* and *errors* tell pickle how to decode 8-bit string\n"
-"instances pickled by Python 2.x; these default to \'ASCII\' and\n"
-"\'strict\', respectively.");
+"instances pickled by Python 2; these default to \'ASCII\' and \'strict\',\n"
+"respectively.  The *encoding* can be \'bytes\' to read these 8-bit\n"
+"string instances as bytes objects.");
 
 #define _PICKLE_UNPICKLER___INIT___METHODDEF    \
     {"__init__", (PyCFunction)_pickle_Unpickler___init__, METH_VARARGS|METH_KEYWORDS, _pickle_Unpickler___init____doc__},
@@ -6584,7 +6600,7 @@ exit:
 
 static PyObject *
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic checksum: bed0d8bbe1c647960ccc6f997b33bf33935fa56f]*/
+/*[clinic checksum: 9ce6783224e220573d42a94fe1bb7199d6f1c5a6]*/
 {
     _Py_IDENTIFIER(persistent_load);
 
@@ -7033,48 +7049,50 @@ _pickle.dump
 
 Write a pickled representation of obj to the open file object file.
 
-This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may be more
-efficient.
+This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may
+be more efficient.
 
-The optional protocol argument tells the pickler to use the given protocol
-supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
-backward-incompatible protocol designed for Python 3.0.
+The optional *protocol* argument tells the pickler to use the given
+protocol supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol is 3; a backward-incompatible protocol designed for Python 3.
 
-Specifying a negative protocol version selects the highest protocol version
-supported.  The higher the protocol used, the more recent the version of
-Python needed to read the pickle produced.
+Specifying a negative protocol version selects the highest protocol
+version supported.  The higher the protocol used, the more recent the
+version of Python needed to read the pickle produced.
 
-The file argument must have a write() method that accepts a single bytes
-argument.  It can thus be a file object opened for binary writing, a
-io.BytesIO instance, or any other custom object that meets this interface.
+The *file* argument must have a write() method that accepts a single
+bytes argument.  It can thus be a file object opened for binary
+writing, a io.BytesIO instance, or any other custom object that meets
+this interface.
 
-If fix_imports is True and protocol is less than 3, pickle will try to
-map the new Python 3.x names to the old module names used in Python 2.x,
-so that the pickle data stream is readable with Python 2.x.
+If *fix_imports* is True and protocol is less than 3, pickle will try
+to map the new Python 3 names to the old module names used in Python
+2, so that the pickle data stream is readable with Python 2.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_dump__doc__,
 "dump(obj, file, protocol=None, *, fix_imports=True)\n"
 "Write a pickled representation of obj to the open file object file.\n"
 "\n"
-"This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may be more\n"
-"efficient.\n"
+"This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may\n"
+"be more efficient.\n"
 "\n"
-"The optional protocol argument tells the pickler to use the given protocol\n"
-"supported protocols are 0, 1, 2, 3.  The default protocol is 3; a\n"
-"backward-incompatible protocol designed for Python 3.0.\n"
+"The optional *protocol* argument tells the pickler to use the given\n"
+"protocol supported protocols are 0, 1, 2, 3 and 4.  The default\n"
+"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
 "\n"
-"Specifying a negative protocol version selects the highest protocol version\n"
-"supported.  The higher the protocol used, the more recent the version of\n"
-"Python needed to read the pickle produced.\n"
+"Specifying a negative protocol version selects the highest protocol\n"
+"version supported.  The higher the protocol used, the more recent the\n"
+"version of Python needed to read the pickle produced.\n"
 "\n"
-"The file argument must have a write() method that accepts a single bytes\n"
-"argument.  It can thus be a file object opened for binary writing, a\n"
-"io.BytesIO instance, or any other custom object that meets this interface.\n"
+"The *file* argument must have a write() method that accepts a single\n"
+"bytes argument.  It can thus be a file object opened for binary\n"
+"writing, a io.BytesIO instance, or any other custom object that meets\n"
+"this interface.\n"
 "\n"
-"If fix_imports is True and protocol is less than 3, pickle will try to\n"
-"map the new Python 3.x names to the old module names used in Python 2.x,\n"
-"so that the pickle data stream is readable with Python 2.x.");
+"If *fix_imports* is True and protocol is less than 3, pickle will try\n"
+"to map the new Python 3 names to the old module names used in Python\n"
+"2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMP_METHODDEF    \
     {"dump", (PyCFunction)_pickle_dump, METH_VARARGS|METH_KEYWORDS, _pickle_dump__doc__},
@@ -7104,7 +7122,7 @@ exit:
 
 static PyObject *
 _pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic checksum: e442721b16052d921b5e3fbd146d0a62e94a459e]*/
+/*[clinic checksum: eb5c23e64da34477178230b704d2cc9c6b6650ea]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7142,34 +7160,34 @@ _pickle.dumps
 
 Return the pickled representation of the object as a bytes object.
 
-The optional protocol argument tells the pickler to use the given protocol;
-supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
-backward-incompatible protocol designed for Python 3.0.
+The optional *protocol* argument tells the pickler to use the given
+protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol is 3; a backward-incompatible protocol designed for Python 3.
 
-Specifying a negative protocol version selects the highest protocol version
-supported.  The higher the protocol used, the more recent the version of
-Python needed to read the pickle produced.
+Specifying a negative protocol version selects the highest protocol
+version supported.  The higher the protocol used, the more recent the
+version of Python needed to read the pickle produced.
 
-If fix_imports is True and *protocol* is less than 3, pickle will try to
-map the new Python 3.x names to the old module names used in Python 2.x,
-so that the pickle data stream is readable with Python 2.x.
+If *fix_imports* is True and *protocol* is less than 3, pickle will
+try to map the new Python 3 names to the old module names used in
+Python 2, so that the pickle data stream is readable with Python 2.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_dumps__doc__,
 "dumps(obj, protocol=None, *, fix_imports=True)\n"
 "Return the pickled representation of the object as a bytes object.\n"
 "\n"
-"The optional protocol argument tells the pickler to use the given protocol;\n"
-"supported protocols are 0, 1, 2, 3.  The default protocol is 3; a\n"
-"backward-incompatible protocol designed for Python 3.0.\n"
+"The optional *protocol* argument tells the pickler to use the given\n"
+"protocol; supported protocols are 0, 1, 2, 3 and 4.  The default\n"
+"protocol is 3; a backward-incompatible protocol designed for Python 3.\n"
 "\n"
-"Specifying a negative protocol version selects the highest protocol version\n"
-"supported.  The higher the protocol used, the more recent the version of\n"
-"Python needed to read the pickle produced.\n"
+"Specifying a negative protocol version selects the highest protocol\n"
+"version supported.  The higher the protocol used, the more recent the\n"
+"version of Python needed to read the pickle produced.\n"
 "\n"
-"If fix_imports is True and *protocol* is less than 3, pickle will try to\n"
-"map the new Python 3.x names to the old module names used in Python 2.x,\n"
-"so that the pickle data stream is readable with Python 2.x.");
+"If *fix_imports* is True and *protocol* is less than 3, pickle will\n"
+"try to map the new Python 3 names to the old module names used in\n"
+"Python 2, so that the pickle data stream is readable with Python 2.");
 
 #define _PICKLE_DUMPS_METHODDEF    \
     {"dumps", (PyCFunction)_pickle_dumps, METH_VARARGS|METH_KEYWORDS, _pickle_dumps__doc__},
@@ -7198,7 +7216,7 @@ exit:
 
 static PyObject *
 _pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol, int fix_imports)
-/*[clinic checksum: df6262c4c487f537f47aec8a1709318204c1e174]*/
+/*[clinic checksum: e9b915d61202a9692cb6c6718db74fe54fc9c4d1]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();
@@ -7231,50 +7249,56 @@ _pickle.load
   encoding: str = 'ASCII'
   errors: str = 'strict'
 
-Return a reconstituted object from the pickle data stored in a file.
+Read and return an object from the pickle data stored in a file.
 
-This is equivalent to ``Unpickler(file).load()``, but may be more efficient.
+This is equivalent to ``Unpickler(file).load()``, but may be more
+efficient.
 
-The protocol version of the pickle is detected automatically, so no protocol
-argument is needed.  Bytes past the pickled object's representation are
-ignored.
+The protocol version of the pickle is detected automatically, so no
+protocol argument is needed.  Bytes past the pickled object's
+representation are ignored.
 
-The argument file must have two methods, a read() method that takes an
-integer argument, and a readline() method that requires no arguments.  Both
-methods should return bytes.  Thus *file* can be a binary file object opened
-for reading, a BytesIO object, or any other custom object that meets this
-interface.
+The argument *file* must have two methods, a read() method that takes
+an integer argument, and a readline() method that requires no
+arguments.  Both methods should return bytes.  Thus *file* can be a
+binary file object opened for reading, a io.BytesIO object, or any
+other custom object that meets this interface.
 
-Optional keyword arguments are fix_imports, encoding and errors,
-which are used to control compatiblity support for pickle stream generated
-by Python 2.x.  If fix_imports is True, pickle will try to map the old
-Python 2.x names to the new names used in Python 3.x.  The encoding and
-errors tell pickle how to decode 8-bit string instances pickled by Python
-2.x; these default to 'ASCII' and 'strict', respectively.
+Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
+which are used to control compatiblity support for pickle stream
+generated by Python 2.  If *fix_imports* is True, pickle will try to
+map the old Python 2 names to the new names used in Python 3.  The
+*encoding* and *errors* tell pickle how to decode 8-bit string
+instances pickled by Python 2; these default to 'ASCII' and 'strict',
+respectively.  The *encoding* can be 'bytes' to read these 8-bit
+string instances as bytes objects.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_load__doc__,
 "load(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
-"Return a reconstituted object from the pickle data stored in a file.\n"
+"Read and return an object from the pickle data stored in a file.\n"
 "\n"
-"This is equivalent to ``Unpickler(file).load()``, but may be more efficient.\n"
+"This is equivalent to ``Unpickler(file).load()``, but may be more\n"
+"efficient.\n"
 "\n"
-"The protocol version of the pickle is detected automatically, so no protocol\n"
-"argument is needed.  Bytes past the pickled object\'s representation are\n"
-"ignored.\n"
+"The protocol version of the pickle is detected automatically, so no\n"
+"protocol argument is needed.  Bytes past the pickled object\'s\n"
+"representation are ignored.\n"
 "\n"
-"The argument file must have two methods, a read() method that takes an\n"
-"integer argument, and a readline() method that requires no arguments.  Both\n"
-"methods should return bytes.  Thus *file* can be a binary file object opened\n"
-"for reading, a BytesIO object, or any other custom object that meets this\n"
-"interface.\n"
+"The argument *file* must have two methods, a read() method that takes\n"
+"an integer argument, and a readline() method that requires no\n"
+"arguments.  Both methods should return bytes.  Thus *file* can be a\n"
+"binary file object opened for reading, a io.BytesIO object, or any\n"
+"other custom object that meets this interface.\n"
 "\n"
-"Optional keyword arguments are fix_imports, encoding and errors,\n"
-"which are used to control compatiblity support for pickle stream generated\n"
-"by Python 2.x.  If fix_imports is True, pickle will try to map the old\n"
-"Python 2.x names to the new names used in Python 3.x.  The encoding and\n"
-"errors tell pickle how to decode 8-bit string instances pickled by Python\n"
-"2.x; these default to \'ASCII\' and \'strict\', respectively.");
+"Optional keyword arguments are *fix_imports*, *encoding* and *errors*,\n"
+"which are used to control compatiblity support for pickle stream\n"
+"generated by Python 2.  If *fix_imports* is True, pickle will try to\n"
+"map the old Python 2 names to the new names used in Python 3.  The\n"
+"*encoding* and *errors* tell pickle how to decode 8-bit string\n"
+"instances pickled by Python 2; these default to \'ASCII\' and \'strict\',\n"
+"respectively.  The *encoding* can be \'bytes\' to read these 8-bit\n"
+"string instances as bytes objects.");
 
 #define _PICKLE_LOAD_METHODDEF    \
     {"load", (PyCFunction)_pickle_load, METH_VARARGS|METH_KEYWORDS, _pickle_load__doc__},
@@ -7304,7 +7328,7 @@ exit:
 
 static PyObject *
 _pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic checksum: e10796f6765b22ce48dca6940f11b3933853ca35]*/
+/*[clinic checksum: b41f06970e57acf2fd602e4b7f88e3f3e1e53087]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();
@@ -7339,34 +7363,38 @@ _pickle.loads
   encoding: str = 'ASCII'
   errors: str = 'strict'
 
-Return a reconstituted object from the given pickle data.
+Read and return an object from the given pickle data.
 
-The protocol version of the pickle is detected automatically, so no protocol
-argument is needed.  Bytes past the pickled object's representation are
-ignored.
+The protocol version of the pickle is detected automatically, so no
+protocol argument is needed.  Bytes past the pickled object's
+representation are ignored.
 
-Optional keyword arguments are fix_imports, encoding and errors, which
-are used to control compatiblity support for pickle stream generated
-by Python 2.x.  If fix_imports is True, pickle will try to map the old
-Python 2.x names to the new names used in Python 3.x.  The encoding and
-errors tell pickle how to decode 8-bit string instances pickled by Python
-2.x; these default to 'ASCII' and 'strict', respectively.
+Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
+which are used to control compatiblity support for pickle stream
+generated by Python 2.  If *fix_imports* is True, pickle will try to
+map the old Python 2 names to the new names used in Python 3.  The
+*encoding* and *errors* tell pickle how to decode 8-bit string
+instances pickled by Python 2; these default to 'ASCII' and 'strict',
+respectively.  The *encoding* can be 'bytes' to read these 8-bit
+string instances as bytes objects.
 [clinic]*/
 
 PyDoc_STRVAR(_pickle_loads__doc__,
 "loads(data, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\')\n"
-"Return a reconstituted object from the given pickle data.\n"
+"Read and return an object from the given pickle data.\n"
 "\n"
-"The protocol version of the pickle is detected automatically, so no protocol\n"
-"argument is needed.  Bytes past the pickled object\'s representation are\n"
-"ignored.\n"
+"The protocol version of the pickle is detected automatically, so no\n"
+"protocol argument is needed.  Bytes past the pickled object\'s\n"
+"representation are ignored.\n"
 "\n"
-"Optional keyword arguments are fix_imports, encoding and errors, which\n"
-"are used to control compatiblity support for pickle stream generated\n"
-"by Python 2.x.  If fix_imports is True, pickle will try to map the old\n"
-"Python 2.x names to the new names used in Python 3.x.  The encoding and\n"
-"errors tell pickle how to decode 8-bit string instances pickled by Python\n"
-"2.x; these default to \'ASCII\' and \'strict\', respectively.");
+"Optional keyword arguments are *fix_imports*, *encoding* and *errors*,\n"
+"which are used to control compatiblity support for pickle stream\n"
+"generated by Python 2.  If *fix_imports* is True, pickle will try to\n"
+"map the old Python 2 names to the new names used in Python 3.  The\n"
+"*encoding* and *errors* tell pickle how to decode 8-bit string\n"
+"instances pickled by Python 2; these default to \'ASCII\' and \'strict\',\n"
+"respectively.  The *encoding* can be \'bytes\' to read these 8-bit\n"
+"string instances as bytes objects.");
 
 #define _PICKLE_LOADS_METHODDEF    \
     {"loads", (PyCFunction)_pickle_loads, METH_VARARGS|METH_KEYWORDS, _pickle_loads__doc__},
@@ -7396,7 +7424,7 @@ exit:
 
 static PyObject *
 _pickle_loads_impl(PyModuleDef *module, PyObject *data, int fix_imports, const char *encoding, const char *errors)
-/*[clinic checksum: 29ee725efcbf51a3533c19cb8261a8e267b7080a]*/
+/*[clinic checksum: 0663de43aca6c21508a777e29d98c9c3a6e7f72d]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();

@@ -173,7 +173,7 @@ The :mod:`pickle` module provides the following constants:
 
    An integer, the default :ref:`protocol version <pickle-protocols>` used
    for pickling.  May be less than :data:`HIGHEST_PROTOCOL`.  Currently the
-   default protocol is 3, a new protocol designed for Python 3.0.
+   default protocol is 3, a new protocol designed for Python 3.
 
 
 The :mod:`pickle` module provides the following functions to make the pickling
@@ -184,9 +184,9 @@ process more convenient:
    Write a pickled representation of *obj* to the open :term:`file object` *file*.
    This is equivalent to ``Pickler(file, protocol).dump(obj)``.
 
-   The optional *protocol* argument tells the pickler to use the given protocol;
-   supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
-   backward-incompatible protocol designed for Python 3.0.
+   The optional *protocol* argument tells the pickler to use the given
+   protocol; supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
+   backward-incompatible protocol designed for Python 3.
 
    Specifying a negative protocol version selects the highest protocol version
    supported.  The higher the protocol used, the more recent the version of
@@ -198,64 +198,66 @@ process more convenient:
    interface.
 
    If *fix_imports* is true and *protocol* is less than 3, pickle will try to
-   map the new Python 3.x names to the old module names used in Python 2.x,
-   so that the pickle data stream is readable with Python 2.x.
+   map the new Python 3 names to the old module names used in Python 2, so
+   that the pickle data stream is readable with Python 2.
 
 .. function:: dumps(obj, protocol=None, \*, fix_imports=True)
 
-   Return the pickled representation of the object as a :class:`bytes`
-   object, instead of writing it to a file.
+   Return the pickled representation of the object as a :class:`bytes` object,
+   instead of writing it to a file.
 
-   The optional *protocol* argument tells the pickler to use the given protocol;
-   supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
-   backward-incompatible protocol designed for Python 3.0.
+   The optional *protocol* argument tells the pickler to use the given
+   protocol; supported protocols are 0, 1, 2, 3 and 4.  The default protocol
+   is 3; a backward-incompatible protocol designed for Python 3.
 
    Specifying a negative protocol version selects the highest protocol version
    supported.  The higher the protocol used, the more recent the version of
    Python needed to read the pickle produced.
 
    If *fix_imports* is true and *protocol* is less than 3, pickle will try to
-   map the new Python 3.x names to the old module names used in Python 2.x,
-   so that the pickle data stream is readable with Python 2.x.
+   map the new Python 3 names to the old module names used in Python 2, so
+   that the pickle data stream is readable with Python 2.
 
 .. function:: load(file, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
-   Read a pickled object representation from the open :term:`file object` *file*
-   and return the reconstituted object hierarchy specified therein.  This is
-   equivalent to ``Unpickler(file).load()``.
+   Read a pickled object representation from the open :term:`file object`
+   *file* and return the reconstituted object hierarchy specified therein.
+   This is equivalent to ``Unpickler(file).load()``.
 
-   The protocol version of the pickle is detected automatically, so no protocol
-   argument is needed.  Bytes past the pickled object's representation are
-   ignored.
+   The protocol version of the pickle is detected automatically, so no
+   protocol argument is needed.  Bytes past the pickled object's
+   representation are ignored.
 
    The argument *file* must have two methods, a read() method that takes an
    integer argument, and a readline() method that requires no arguments.  Both
-   methods should return bytes.  Thus *file* can be an on-disk file opened
-   for binary reading, a :class:`io.BytesIO` object, or any other custom object
+   methods should return bytes.  Thus *file* can be an on-disk file opened for
+   binary reading, a :class:`io.BytesIO` object, or any other custom object
    that meets this interface.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatibility support for pickle stream generated
-   by Python 2.x.  If *fix_imports* is true, pickle will try to map the old
-   Python 2.x names to the new names used in Python 3.x.  The *encoding* and
+   by Python 2.  If *fix_imports* is true, pickle will try to map the old
+   Python 2 names to the new names used in Python 3.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
-   2.x; these default to 'ASCII' and 'strict', respectively.
+   2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
+   be 'bytes' to read these 8-bit string instances as bytes objects.
 
 .. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
    Read a pickled object hierarchy from a :class:`bytes` object and return the
    reconstituted object hierarchy specified therein
 
-   The protocol version of the pickle is detected automatically, so no protocol
-   argument is needed.  Bytes past the pickled object's representation are
-   ignored.
+   The protocol version of the pickle is detected automatically, so no
+   protocol argument is needed.  Bytes past the pickled object's
+   representation are ignored.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatibility support for pickle stream generated
-   by Python 2.x.  If *fix_imports* is true, pickle will try to map the old
-   Python 2.x names to the new names used in Python 3.x.  The *encoding* and
+   by Python 2.  If *fix_imports* is true, pickle will try to map the old
+   Python 2 names to the new names used in Python 3.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
-   2.x; these default to 'ASCII' and 'strict', respectively.
+   2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
+   be 'bytes' to read these 8-bit string instances as bytes objects.
 
 
 The :mod:`pickle` module defines three exceptions:
@@ -290,9 +292,9 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    This takes a binary file for writing a pickle data stream.
 
-   The optional *protocol* argument tells the pickler to use the given protocol;
-   supported protocols are 0, 1, 2, 3.  The default protocol is 3; a
-   backward-incompatible protocol designed for Python 3.0.
+   The optional *protocol* argument tells the pickler to use the given
+   protocol; supported protocols are 0, 1, 2, 3 and 4.  The default protocol
+   is 3; a backward-incompatible protocol designed for Python 3.
 
    Specifying a negative protocol version selects the highest protocol version
    supported.  The higher the protocol used, the more recent the version of
@@ -300,11 +302,12 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    The *file* argument must have a write() method that accepts a single bytes
    argument.  It can thus be an on-disk file opened for binary writing, a
-   :class:`io.BytesIO` instance, or any other custom object that meets this interface.
+   :class:`io.BytesIO` instance, or any other custom object that meets this
+   interface.
 
    If *fix_imports* is true and *protocol* is less than 3, pickle will try to
-   map the new Python 3.x names to the old module names used in Python 2.x,
-   so that the pickle data stream is readable with Python 2.x.
+   map the new Python 3 names to the old module names used in Python 2, so
+   that the pickle data stream is readable with Python 2.
 
    .. method:: dump(obj)
 
@@ -366,16 +369,17 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
 
    The argument *file* must have two methods, a read() method that takes an
    integer argument, and a readline() method that requires no arguments.  Both
-   methods should return bytes.  Thus *file* can be an on-disk file object opened
-   for binary reading, a :class:`io.BytesIO` object, or any other custom object
-   that meets this interface.
+   methods should return bytes.  Thus *file* can be an on-disk file object
+   opened for binary reading, a :class:`io.BytesIO` object, or any other
+   custom object that meets this interface.
 
    Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
    which are used to control compatibility support for pickle stream generated
-   by Python 2.x.  If *fix_imports* is true, pickle will try to map the old
-   Python 2.x names to the new names used in Python 3.x.  The *encoding* and
+   by Python 2.  If *fix_imports* is true, pickle will try to map the old
+   Python 2 names to the new names used in Python 3.  The *encoding* and
    *errors* tell pickle how to decode 8-bit string instances pickled by Python
-   2.x; these default to 'ASCII' and 'strict', respectively.
+   2; these default to 'ASCII' and 'strict', respectively.  The *encoding* can
+   be 'bytes' to read these ß8-bit string instances as bytes objects.
 
    .. method:: load()
 
