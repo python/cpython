@@ -108,6 +108,9 @@ Tests
 Build
 -----
 
+- Issue #19922: define _INCLUDE__STDC_A1_SOURCE in HP-UX to include mbstate_t
+  for mbrtowc().
+
 - Issue #19788: kill_python(_d).exe is now run as a PreBuildEvent on the
   pythoncore sub-project.  This should prevent build errors due a previous
   build's python(_d).exe still running.

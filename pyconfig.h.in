@@ -1382,6 +1382,9 @@
 /* Define on Linux to activate all library features */
 #undef _GNU_SOURCE
 
+/* Define to include mbstate_t for mbrtowc */
+#undef _INCLUDE__STDC_A1_SOURCE
+
 /* This must be defined on some systems to enable large file support. */
 #undef _LARGEFILE_SOURCE
 
