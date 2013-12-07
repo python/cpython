@@ -116,7 +116,8 @@ class TestFcntl(unittest.TestCase):
             os.close(fd)
 
     def test_flock(self):
-        self.f = open(TESTFN, 'wb')
+        # Solaris needs readable file for shared lock
+        self.f = open(TESTFN, 'wb+')
         fileno = self.f.fileno()
         fcntl.flock(fileno, fcntl.LOCK_SH)
         fcntl.flock(fileno, fcntl.LOCK_UN)
