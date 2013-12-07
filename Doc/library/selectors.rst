@@ -102,7 +102,8 @@ below:
 
       Register a file object for selection, monitoring it for I/O events.
 
-      *fileobj* is the file object to monitor.
+      *fileobj* is the file object to monitor.  It may either be an integer
+      file descriptor or an object with a ``fileno()`` method.
       *events* is a bitwise mask of events to monitor.
       *data* is an opaque object.
 
@@ -118,7 +119,9 @@ below:
       *fileobj* must be a file object previously registered.
 
       This returns the associated :class:`SelectorKey` instance, or raises a
-      :exc:`KeyError` if the file object is not registered.
+      :exc:`KeyError` if *fileobj* is not registered.  It will raise
+      :exc:`ValueError` if *fileobj* is invalid (e.g. it has no ``fileno()``
+      method or its ``fileno()`` method has an invalid return value).
 
    .. method:: modify(fileobj, events, data=None)
 
