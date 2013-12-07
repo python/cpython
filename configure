@@ -3445,6 +3445,15 @@ $as_echo "#define _POSIX_C_SOURCE 200809L" >>confdefs.h
 
 fi
 
+# On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
+case $ac_sys_system in
+hp*|HP*)
+
+$as_echo "#define _INCLUDE__STDC_A1_SOURCE 1" >>confdefs.h
+
+  ;;
+esac
+
 #
 # SGI compilers allow the specification of the both the ABI and the
 # ISA on the command line.  Depending on the values of these switches,
