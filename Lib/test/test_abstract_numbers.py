@@ -4,7 +4,6 @@ import math
 import operator
 import unittest
 from numbers import Complex, Real, Rational, Integral
-from test import support
 
 class TestNumbers(unittest.TestCase):
     def test_int(self):
@@ -39,9 +38,6 @@ class TestNumbers(unittest.TestCase):
         self.assertRaises(TypeError, operator.floordiv, c1, c2)
         self.assertRaises(TypeError, float, c1)
         self.assertRaises(TypeError, int, c1)
-
-def test_main():
-    support.run_unittest(TestNumbers)
 
 
 if __name__ == "__main__":
