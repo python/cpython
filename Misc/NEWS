@@ -97,6 +97,8 @@ Library
 Tests
 -----
 
+- Issue #19535: Fixed test_docxmlrpc when python is run with -OO.
+
 - Issue #19926: Removed unneeded test_main from test_abstract_numbers.
   Patch by Vajrasky Kok.
 
