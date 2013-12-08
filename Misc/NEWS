@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19878: Fix segfault in bz2 module after calling __init__ twice with
+  non-existent filename. Initial patch by Vajrasky Kok.
+
 - Issue #16373: Prevent infinite recursion for ABC Set class comparisons.
 
 - Issue #19138: doctest's IGNORE_EXCEPTION_DETAIL now allows a match when
