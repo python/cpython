@@ -707,8 +707,7 @@ boolean {0[0]} NO
 
     def test_read_returns_file_list(self):
         if self.delimiters[0] != '=':
-            # skip reading the file if we're using an incompatible format
-            return
+            self.skipTest('incompatible format')
         file1 = support.findfile("cfgparser.1")
         # check when we pass a mix of readable and non-readable files:
         cf = self.newconfig()

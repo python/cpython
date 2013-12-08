@@ -323,7 +323,7 @@ class StrptimeTests(unittest.TestCase):
         # when time.tzname[0] == time.tzname[1] and time.daylight
         tz_name = time.tzname[0]
         if tz_name.upper() in ("UTC", "GMT"):
-            return
+            self.skipTest('need non-UTC/GMT timezone')
         try:
             original_tzname = time.tzname
             original_daylight = time.daylight
@@ -536,7 +536,7 @@ class CacheTests(unittest.TestCase):
         try:
             locale.setlocale(locale.LC_TIME, ('en_US', 'UTF8'))
         except locale.Error:
-            return
+            self.skipTest('test needs en_US.UTF8 locale')
         try:
             _strptime._strptime_time('10', '%d')
             # Get id of current cache object.
@@ -553,7 +553,7 @@ class CacheTests(unittest.TestCase):
             # If this is the case just suppress the exception and fall-through
             # to the resetting to the original locale.
             except locale.Error:
-                pass
+                self.skipTest('test needs de_DE.UTF8 locale')
         # Make sure we don't trample on the locale setting once we leave the
         # test.
         finally:

@@ -421,14 +421,9 @@ class IOTest(unittest.TestCase):
         # a long time to build the >2GB file and takes >2GB of disk space
         # therefore the resource must be enabled to run this test.
         if sys.platform[:3] == 'win' or sys.platform == 'darwin':
-            if not support.is_resource_enabled("largefile"):
-                print("\nTesting large file ops skipped on %s." % sys.platform,
-                      file=sys.stderr)
-                print("It requires %d bytes and a long time." % self.LARGE,
-                      file=sys.stderr)
-                print("Use 'regrtest.py -u largefile test_io' to run it.",
-                      file=sys.stderr)
-                return
+            support.requires(
+                'largefile',
+                'test requires %s bytes and a long time to run' % self.LARGE)
         with self.open(support.TESTFN, "w+b", 0) as f:
             self.large_file_ops(f)
         with self.open(support.TESTFN, "w+b") as f:
@@ -698,6 +693,7 @@ class CommonBufferedTests:
 
         self.assertEqual(42, bufio.fileno())
 
+    @unittest.skip('test having existential crisis')
     def test_no_fileno(self):
         # XXX will we always have fileno() function? If so, kill
         # this test. Else, write it.

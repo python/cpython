@@ -136,7 +136,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         # so we'll simply skip it then. Bug #765456.
         #
         if "zlib" in sys.builtin_module_names:
-            return
+            self.skipTest('zlib is a builtin module')
         if "zlib" in sys.modules:
             del sys.modules["zlib"]
         files = {"zlib.py": (NOW, test_src)}

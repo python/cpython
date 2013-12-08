@@ -300,7 +300,6 @@ class IBMTestCases(unittest.TestCase):
                     #Exception raised where there shouldn't have been one.
                     self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
 
-        return
 
     def eval_line(self, s):
         if s.find(' -> ') >= 0 and s[:2] != '--' and not s.startswith('  --'):
@@ -460,7 +459,6 @@ class IBMTestCases(unittest.TestCase):
 
         self.assertEqual(myexceptions, theirexceptions,
               'Incorrect flags set in ' + s + ' -- got ' + str(myexceptions))
-        return
 
     def getexceptions(self):
         return [e for e in Signals[self.decimal] if self.context.flags[e]]
@@ -1072,7 +1070,7 @@ class FormatTest(unittest.TestCase):
         try:
             from locale import CHAR_MAX
         except ImportError:
-            return
+            self.skipTest('locale.CHAR_MAX not available')
 
         def make_grouping(lst):
             return ''.join([chr(x) for x in lst]) if self.decimal == C else lst
@@ -1163,8 +1161,12 @@ class FormatTest(unittest.TestCase):
 
         decimal_point = locale.localeconv()['decimal_point']
         thousands_sep = locale.localeconv()['thousands_sep']
-        if decimal_point != '\u066b' or thousands_sep != '\u066c':
-            return
+        if decimal_point != '\u066b':
+            self.skipTest('inappropriate decimal point separator'
+                          '({!r} not {!r})'.format(decimal_point, '\u066b'))
+        if thousands_sep != '\u066c':
+            self.skipTest('inappropriate thousands separator'
+                          '({!r} not {!r})'.format(thousands_sep, '\u066c'))
 
         self.assertEqual(format(Decimal('100000000.123'), 'n'),
                          '100\u066c000\u066c000\u066b123')
@@ -1514,7 +1516,6 @@ def thfunc1(cls):
     cls.assertTrue(c1.flags[Inexact])
     for sig in Overflow, Underflow, DivisionByZero, InvalidOperation:
         cls.assertFalse(c1.flags[sig])
-    return
 
 def thfunc2(cls):
     Decimal = cls.decimal.Decimal
@@ -1559,7 +1560,6 @@ def thfunc2(cls):
     cls.assertTrue(thiscontext.flags[Inexact])
     for sig in Overflow, Underflow, DivisionByZero, InvalidOperation:
         cls.assertFalse(thiscontext.flags[sig])
-    return
 
 class ThreadingTest(unittest.TestCase):
     '''Unit tests for thread local contexts in Decimal.'''
@@ -1601,7 +1601,6 @@ class ThreadingTest(unittest.TestCase):
         DefaultContext.prec = save_prec
         DefaultContext.Emax = save_emax
         DefaultContext.Emin = save_emin
-        return
 
 @unittest.skipUnless(threading, 'threading required')
 class CThreadingTest(ThreadingTest):
@@ -4524,7 +4523,6 @@ class PyWhitebox(unittest.TestCase):
                 self.assertEqual(d1._sign, b1._sign)
                 self.assertEqual(d1._int, b1._int)
                 self.assertEqual(d1._exp, b1._exp)
-            return
 
         Decimal(d1)
         self.assertEqual(d1._sign, b1._sign)
@@ -5270,7 +5268,7 @@ class CWhitebox(unittest.TestCase):
         try:
             from locale import CHAR_MAX
         except ImportError:
-            return
+            self.skipTest('locale.CHAR_MAX not available')
 
         def make_grouping(lst):
             return ''.join([chr(x) for x in lst])

@@ -676,10 +676,10 @@ class BaseTest:
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    @unittest.skipIf(sys.maxsize > (1 << 32) or struct.calcsize('P') != 4,
+                     'only applies to 32-bit platforms')
     def test_replace_overflow(self):
         # Check for overflow checking on 32 bit machines
-        if sys.maxsize != 2147483647 or struct.calcsize("P") > 4:
-            return
         A2_16 = "A" * (2**16)
         self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
