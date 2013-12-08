@@ -424,6 +424,20 @@ PyInit_resource(void)
     PyModule_AddIntMacro(m, RUSAGE_THREAD);
 #endif
 
+/* FreeBSD specific */
+
+#ifdef RLIMIT_SWAP
+    PyModule_AddIntMacro(m, RLIMIT_SWAP);
+#endif
+
+#ifdef RLIMIT_SBSIZE
+    PyModule_AddIntMacro(m, RLIMIT_SBSIZE);
+#endif
+
+#ifdef RLIMIT_NPTS
+    PyModule_AddIntMacro(m, RLIMIT_NPTS);
+#endif
+
 #if defined(HAVE_LONG_LONG)
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((PY_LONG_LONG) RLIM_INFINITY);
