@@ -129,6 +129,10 @@ except AttributeError:
         # Standard Unix uses /dev/null
         DEV_NULL = '/dev/null'
 
+# Directory to search for configuration information on Unix.
+# Constant used by test_platform to test linux_distribution().
+_UNIXCONFDIR = '/etc'
+
 ### Platform specific APIs
 
 _libc_search = re.compile(b'(__libc_init)'
@@ -315,7 +319,7 @@ def linux_distribution(distname='', version='', id='',
 
     """
     try:
-        etc = os.listdir('/etc')
+        etc = os.listdir(_UNIXCONFDIR)
     except os.error:
         # Probably not a Unix system
         return distname,version,id
@@ -331,7 +335,8 @@ def linux_distribution(distname='', version='', id='',
         return _dist_try_harder(distname,version,id)
 
     # Read the first line
-    with open('/etc/'+file, 'r') as f:
+    with open(os.path.join(_UNIXCONFDIR, file), 'r',
+              encoding='utf-8', errors='surrogateescape') as f:
         firstline = f.readline()
     _distname, _version, _id = _parse_release_file(firstline)
 
