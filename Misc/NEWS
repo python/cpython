@@ -109,7 +109,7 @@ Tests
   import, converting from test_main to unittest.main, and running the
   _testcapi module tests within a unittest TestCase.
 
-- Issue #18702: All skipped tests now reported as skipped.
+- Issue #18702, 19572: All skipped tests now reported as skipped.
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
