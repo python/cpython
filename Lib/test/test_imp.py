@@ -272,7 +272,7 @@ class ImportTests(unittest.TestCase):
         if found[0] is not None:
             found[0].close()
         if found[2][2] != imp.C_EXTENSION:
-            return
+            self.skipTest("found module doesn't appear to be a C extension")
         imp.load_module(name, None, *found[1:])
 
     @unittest.skipIf(sys.dont_write_bytecode,
