@@ -1371,13 +1371,28 @@ s_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     assert(PyStruct_Check(self));
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "S:Struct", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:Struct", kwlist,
                                      &o_format))
         return -1;
 
-    Py_INCREF(o_format);
-    Py_CLEAR(soself->s_format);
-    soself->s_format = o_format;
+    if (PyString_Check(o_format)) {
+        Py_INCREF(o_format);
+        Py_CLEAR(soself->s_format);
+        soself->s_format = o_format;
+    }
+    else if (PyUnicode_Check(o_format)) {
+        PyObject *str = PyUnicode_AsEncodedString(o_format, "ascii", NULL);
+        if (str == NULL)
+            return -1;
+        Py_CLEAR(soself->s_format);
+        soself->s_format = str;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "Struct() argument 1 must be string, not %s",
+                     Py_TYPE(o_format)->tp_name);
+        return -1;
+    }
 
     ret = prepare_s(soself);
     return ret;

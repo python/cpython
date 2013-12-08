@@ -574,6 +574,18 @@ class StructTest(unittest.TestCase):
         self.check_sizeof('0s', 1)
         self.check_sizeof('0c', 0)
 
+    def test_unicode_format(self):
+        try:
+            unicode
+        except NameError:
+            self.skipTest('no unicode support')
+        # Issue #19099
+        s = struct.Struct(unichr(ord('I')))
+        self.assertEqual(s.format, 'I')
+        self.assertIs(type(s.format), str)
+        self.assertRaises(ValueError, struct.Struct, unichr(0x80))
+
+
 def test_main():
     support.run_unittest(StructTest)
 
