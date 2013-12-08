@@ -10,6 +10,7 @@ import os.path
 from test.support import CleanImport
 import unittest
 import sys
+import warnings
 
 
 
@@ -55,10 +56,13 @@ class LegacyLoader(TestLoader):
 
     HAM = -1
 
-    @frozen_util.module_for_loader
-    def load_module(self, module):
-        module.ham = self.HAM
-        return module
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", PendingDeprecationWarning)
+
+        @frozen_util.module_for_loader
+        def load_module(self, module):
+            module.ham = self.HAM
+            return module
 
 
 class ModuleSpecTests:
