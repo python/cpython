@@ -169,7 +169,7 @@ squaretrans(mpd_uint_t *buf, mpd_size_t cols)
 /*
  * Transpose 2^n * 2^n matrix. For cache efficiency, the matrix is split into
  * square blocks with side length 'SIDE'. First, the blocks are transposed,
- * then a square tranposition is done on each individual block.
+ * then a square transposition is done on each individual block.
  */
 static void
 squaretrans_pow2(mpd_uint_t *matrix, mpd_size_t size)
