@@ -10,6 +10,9 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #19736: Add module-level statvfs constants defined for GNU/glibc
+  based systems.
+
 - Issue #19729: In str.format(), fix recursive expansion in format spec.
 
 - Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2

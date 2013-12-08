@@ -1980,10 +1980,25 @@ features:
    read-only, and if :const:`ST_NOSUID` is set, the semantics of
    setuid/setgid bits are disabled or not supported.
 
+   Additional module-level constants are defined for GNU/glibc based systems.
+   These are :const:`ST_NODEV` (disallow access to device special files),
+   :const:`ST_NOEXEC` (disallow program execution), :const:`ST_SYNCHRONOUS`
+   (writes are synced at once), :const:`ST_MANDLOCK` (allow mandatory locks on an FS),
+   :const:`ST_WRITE` (write on file/directory/symlink), :const:`ST_APPEND`
+   (append-only file), :const:`ST_IMMUTABLE` (immutable file), :const:`ST_NOATIME`
+   (do not update access times), :const:`ST_NODIRATIME` (do not update directory access
+   times), :const:`ST_RELATIME` (update atime relative to mtime/ctime).
+
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
    .. versionchanged:: 3.2
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
+
+   .. versionchanged:: 3.4
+      The :const:`ST_NODEV`, :const:`ST_NOEXEC`, :const:`ST_SYNCHRONOUS`,
+      :const:`ST_MANDLOCK`, :const:`ST_WRITE`, :const:`ST_APPEND`,
+      :const:`ST_IMMUTABLE`, :const:`ST_NOATIME`, :const:`ST_NODIRATIME`,
+      and :const:`ST_RELATIME` constants were added.
 
    Availability: Unix.
 
