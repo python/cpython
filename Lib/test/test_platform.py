@@ -1,5 +1,4 @@
 from unittest import mock
-import contextlib
 import os
 import platform
 import subprocess
