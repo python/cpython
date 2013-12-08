@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19506: Use a memoryview to avoid a data copy when piping data
+  to stdin within subprocess.Popen.communicate.  5-10% less cpu usage.
+
 - Issue #19876: selectors unregister() no longer raises ValueError or OSError
   if the FD is closed (as long as it was registered).
 
