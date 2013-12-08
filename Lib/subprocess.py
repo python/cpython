@@ -1654,7 +1654,7 @@ class Popen(object):
                             if self._input_offset >= len(self._input):
                                 close_unregister_and_remove(fd)
                     elif mode & select_POLLIN_POLLPRI:
-                        data = os.read(fd, 4096)
+                        data = os.read(fd, 32768)
                         if not data:
                             close_unregister_and_remove(fd)
                         self._fd2output[fd].append(data)
