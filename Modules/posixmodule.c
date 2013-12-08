@@ -11858,6 +11858,35 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, ST_NOSUID)) return -1;
 #endif /* ST_NOSUID */
 
+       /* GNU extensions */
+#ifdef ST_NODEV
+    if (PyModule_AddIntMacro(m, ST_NODEV)) return -1;
+#endif /* ST_NODEV */
+#ifdef ST_NOEXEC
+    if (PyModule_AddIntMacro(m, ST_NOEXEC)) return -1;
+#endif /* ST_NOEXEC */
+#ifdef ST_SYNCHRONOUS
+    if (PyModule_AddIntMacro(m, ST_SYNCHRONOUS)) return -1;
+#endif /* ST_SYNCHRONOUS */
+#ifdef ST_MANDLOCK
+    if (PyModule_AddIntMacro(m, ST_MANDLOCK)) return -1;
+#endif /* ST_MANDLOCK */
+#ifdef ST_WRITE
+    if (PyModule_AddIntMacro(m, ST_WRITE)) return -1;
+#endif /* ST_WRITE */
+#ifdef ST_APPEND
+    if (PyModule_AddIntMacro(m, ST_APPEND)) return -1;
+#endif /* ST_APPEND */
+#ifdef ST_NOATIME
+    if (PyModule_AddIntMacro(m, ST_NOATIME)) return -1;
+#endif /* ST_NOATIME */
+#ifdef ST_NODIRATIME
+    if (PyModule_AddIntMacro(m, ST_NODIRATIME)) return -1;
+#endif /* ST_NODIRATIME */
+#ifdef ST_RELATIME
+    if (PyModule_AddIntMacro(m, ST_RELATIME)) return -1;
+#endif /* ST_RELATIME */
+
     /* FreeBSD sendfile() constants */
 #ifdef SF_NODISKIO
     if (PyModule_AddIntMacro(m, SF_NODISKIO)) return -1;
