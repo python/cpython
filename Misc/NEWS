@@ -21,6 +21,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #17429: platform.linux_distribution() now decodes files from the UTF-8
+  encoding with the surrogateescape error handler, instead of decoding from the
+  locale encoding in strict mode. It fixes the function on Fedora 19 which is
+  probably the first major distribution release with a non-ASCII name. Patch
+  written by Toshio Kuratomi.
+
 - Issue #19343: Expose FreeBSD-specific APIs in resource module.  Original
   patch by Koobs.
 
