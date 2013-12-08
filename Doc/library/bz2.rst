@@ -95,6 +95,11 @@ All of the classes in this module may safely be accessed from multiple threads.
       byte of data will be returned (unless at EOF). The exact number of bytes
       returned is unspecified.
 
+      .. note:: While calling :meth:`peek` does not change the file position of
+         the :class:`BZ2File`, it may change the position of the underlying file
+         object (e.g. if the :class:`BZ2File` was constructed by passing a file
+         object for *filename*).
+
       .. versionadded:: 3.3
 
    .. versionchanged:: 3.1

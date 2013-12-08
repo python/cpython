@@ -102,6 +102,11 @@ Reading and writing compressed files
       byte of data will be returned, unless EOF has been reached. The exact
       number of bytes returned is unspecified (the *size* argument is ignored).
 
+      .. note:: While calling :meth:`peek` does not change the file position of
+         the :class:`LZMAFile`, it may change the position of the underlying
+         file object (e.g. if the :class:`LZMAFile` was constructed by passing a
+         file object for *filename*).
+
    .. versionchanged:: 3.4
       Added support for the ``"x"`` and ``"xb"`` modes.
 
