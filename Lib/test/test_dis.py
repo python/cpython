@@ -265,16 +265,18 @@ class DisTests(unittest.TestCase):
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
 
+    # Test has been disabled due to change in the way
+    # list comps are handled. The byte code now includes
+    # a memory address and a file location, so they change from
+    # run to run.
+    @unittest.skip('disabled due to a change in the way list comps are handled')
     def test_bug_1333982(self):
         # XXX: re-enable this test!
         # This one is checking bytecodes generated for an `assert` statement,
         # so fails if the tests are run with -O.  Skip this test then.
-        pass # Test has been disabled due to change in the way
-             # list comps are handled. The byte code now includes
-             # a memory address and a file location, so they change from
-             # run to run.
-        # if __debug__:
-        #    self.do_disassembly_test(bug1333982, dis_bug1333982)
+
+        if __debug__:
+            self.do_disassembly_test(bug1333982, dis_bug1333982)
 
     def test_big_linenos(self):
         def func(count):

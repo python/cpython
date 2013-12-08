@@ -42,20 +42,6 @@ class TestPartial:
         self.assertEqual(p.func, capture)
         self.assertEqual(p.args, (1, 2))
         self.assertEqual(p.keywords, dict(a=10, b=20))
-        # attributes should not be writable
-        if not isinstance(self.partial, type):
-            return
-        self.assertRaises(AttributeError, setattr, p, 'func', map)
-        self.assertRaises(AttributeError, setattr, p, 'args', (1, 2))
-        self.assertRaises(AttributeError, setattr, p, 'keywords', dict(a=1, b=2))
-
-        p = self.partial(hex)
-        try:
-            del p.__dict__
-        except TypeError:
-            pass
-        else:
-            self.fail('partial object allowed __dict__ to be deleted')
 
     def test_argument_checking(self):
         self.assertRaises(TypeError, self.partial)     # need at least a func arg
@@ -150,6 +136,21 @@ class TestPartial:
 class TestPartialC(TestPartial, unittest.TestCase):
     if c_functools:
         partial = c_functools.partial
+
+    def test_attributes_unwritable(self):
+        # attributes should not be writable
+        p = self.partial(capture, 1, 2, a=10, b=20)
+        self.assertRaises(AttributeError, setattr, p, 'func', map)
+        self.assertRaises(AttributeError, setattr, p, 'args', (1, 2))
+        self.assertRaises(AttributeError, setattr, p, 'keywords', dict(a=1, b=2))
+
+        p = self.partial(hex)
+        try:
+            del p.__dict__
+        except TypeError:
+            pass
+        else:
+            self.fail('partial object allowed __dict__ to be deleted')
 
     def test_repr(self):
         args = (object(), object())

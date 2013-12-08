@@ -71,7 +71,7 @@ class GeneralFloatCases(unittest.TestCase):
         # it still has to accept the normal python syntax
         import locale
         if not locale.localeconv()['decimal_point'] == ',':
-            return
+            self.skipTest('decimal_point is not ","')
 
         self.assertEqual(float("  3.14  "), 3.14)
         self.assertEqual(float("+3.14  "), 3.14)

@@ -370,6 +370,7 @@ class ImportSideEffectTests(unittest.TestCase):
             self.assertNotIn(path, seen_paths)
             seen_paths.add(path)
 
+    @unittest.skip('test not implemented')
     def test_add_build_dir(self):
         # Test that the build directory's Modules directory is used when it
         # should be.

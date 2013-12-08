@@ -2029,6 +2029,7 @@ class TestDateTime(TestDate):
 class TestSubclassDateTime(TestDateTime):
     theclass = SubclassDatetime
     # Override tests not designed for subclass
+    @unittest.skip('not appropriate for subclasses')
     def test_roundtrip(self):
         pass
 

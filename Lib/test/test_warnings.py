@@ -695,7 +695,7 @@ class CatchWarningTests(BaseTest):
         # Explicit tests for the test.support convenience wrapper
         wmod = self.module
         if wmod is not sys.modules['warnings']:
-            return
+            self.skipTest('module to test is not loaded warnings module')
         with support.check_warnings(quiet=False) as w:
             self.assertEqual(w.warnings, [])
             wmod.simplefilter("always")

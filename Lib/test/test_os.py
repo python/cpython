@@ -508,7 +508,7 @@ class StatAttributeTests(unittest.TestCase):
         try:
             os.stat(r"c:\pagefile.sys")
         except FileNotFoundError:
-            pass # file does not exist; cannot run test
+            self.skipTest(r'c:\pagefile.sys does not exist')
         except OSError as e:
             self.fail("Could not stat pagefile.sys")
 
