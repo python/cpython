@@ -1,7 +1,10 @@
+from unittest import mock
+import contextlib
 import os
 import platform
 import subprocess
 import sys
+import tempfile
 import unittest
 import warnings
 
@@ -295,6 +298,19 @@ class PlatformTest(unittest.TestCase):
                     returncode = ret >> 8
                 self.assertEqual(returncode, len(data))
 
+    def test_linux_distribution_encoding(self):
+        # Issue #17429
+        with tempfile.TemporaryDirectory() as tempdir:
+            filename = os.path.join(tempdir, 'fedora-release')
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write('Fedora release 19 (Schr\xf6dinger\u2019s Cat)\n')
+
+            with mock.patch('platform._UNIXCONFDIR', tempdir):
+                distname, version, distid = platform.linux_distribution()
+
+            self.assertEqual(distname, 'Fedora')
+            self.assertEqual(version, '19')
+            self.assertEqual(distid, 'Schr\xf6dinger\u2019s Cat')
 
 def test_main():
     support.run_unittest(
