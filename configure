@@ -3447,12 +3447,18 @@ fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
 case $ac_sys_system in
-hp*|HP*)
+  hp*|HP*)
+    define_stdc_a1=yes;;
+  *)
+    define_stdc_a1=no;;
+esac
+
+if test $define_stdc_a1 = yes
+then
 
 $as_echo "#define _INCLUDE__STDC_A1_SOURCE 1" >>confdefs.h
 
-  ;;
-esac
+fi
 
 #
 # SGI compilers allow the specification of the both the ABI and the
