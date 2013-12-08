@@ -106,6 +106,9 @@ Library
 Tests
 -----
 
+- Issue #19926: Removed unneeded test_main from test_abstract_numbers.
+  Patch by Vajrasky Kok.
+
 - Issue #19572: More skipped tests explicitly marked as skipped.
 
 - Issue #19595: Re-enabled a long-disabled test in test_winsound.
