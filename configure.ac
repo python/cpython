@@ -524,10 +524,16 @@ fi
 
 # On HP-UX mbstate_t requires _INCLUDE__STDC_A1_SOURCE
 case $ac_sys_system in
-hp*|HP*)
-  AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
-  ;;
+  hp*|HP*)
+    define_stdc_a1=yes;;
+  *)
+    define_stdc_a1=no;;
 esac
+
+if test $define_stdc_a1 = yes
+then
+  AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
+fi
 
 #
 # SGI compilers allow the specification of the both the ABI and the
