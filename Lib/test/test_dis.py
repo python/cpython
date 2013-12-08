@@ -228,7 +228,7 @@ class DisTests(unittest.TestCase):
         # so fails if the tests are run with -O.  Skip this test then.
 
         if __debug__:
-           self.do_disassembly_test(bug1333982, dis_bug1333982)
+            self.do_disassembly_test(bug1333982, dis_bug1333982)
 
     def test_big_linenos(self):
         def func(count):
