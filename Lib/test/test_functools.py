@@ -1126,7 +1126,8 @@ class TestSingleDispatch(unittest.TestCase):
             "Simple test"
             return "Test"
         self.assertEqual(g.__name__, "g")
-        self.assertEqual(g.__doc__, "Simple test")
+        if sys.flags.optimize < 2:
+            self.assertEqual(g.__doc__, "Simple test")
 
     @unittest.skipUnless(decimal, 'requires _decimal')
     @support.cpython_only
