@@ -2529,7 +2529,8 @@ class TestMain(unittest.TestCase):
         # Just a quick sanity check on the output
         self.assertIn(module.__name__, output)
         self.assertIn(module.__file__, output)
-        self.assertIn(module.__cached__, output)
+        if not sys.flags.optimize:
+            self.assertIn(module.__cached__, output)
         self.assertEqual(err, b'')
 
 
