@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19506: Use a memoryview to avoid a data copy when piping data
+  to stdin within subprocess.Popen.communicate.  5-10% less cpu usage.
+
 - Issue #19839: Fix regression in bz2 module's handling of non-bzip2 data at
   EOF, and analogous bug in lzma module.
 
