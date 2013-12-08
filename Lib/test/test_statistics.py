@@ -8,6 +8,7 @@ import decimal
 import doctest
 import math
 import random
+import sys
 import types
 import unittest
 
@@ -625,6 +626,8 @@ class GlobalsTest(unittest.TestCase):
 
 
 class DocTests(unittest.TestCase):
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -OO and above")
     def test_doc_tests(self):
         failed, tried = doctest.testmod(statistics)
         self.assertGreater(tried, 0)
