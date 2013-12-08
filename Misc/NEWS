@@ -24,6 +24,10 @@ Library
 - Issue #19343: Expose FreeBSD-specific APIs in resource module.  Original
   patch by Koobs.
 
+- Issue #19929: Call os.read with 32768 within subprocess.Popen.communicate
+  rather than 4096 for efficiency.  A microbenchmark shows Linux and OS X
+  both using ~50% less cpu time this way.
+
 - Issue #19506: Use a memoryview to avoid a data copy when piping data
   to stdin within subprocess.Popen.communicate.  5-10% less cpu usage.
 

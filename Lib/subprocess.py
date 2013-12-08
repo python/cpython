@@ -1601,7 +1601,7 @@ class Popen(object):
                                     selector.unregister(key.fileobj)
                                     key.fileobj.close()
                         elif key.fileobj in (self.stdout, self.stderr):
-                            data = os.read(key.fd, 4096)
+                            data = os.read(key.fd, 32768)
                             if not data:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
