@@ -217,6 +217,34 @@ platform.
 
    .. versionadded:: 3.4
 
+.. data:: RLIMIT_SBSIZE
+
+   The maximum size (in bytes) of socket buffer usage for this user.
+   This limits the amount of network memory, and hence the amount of mbufs,
+   that this user may hold at any time.
+
+   Availability: FreeBSD 9 or later.
+
+   .. versionadded:: 3.4
+
+.. data:: RLIMIT_SWAP
+
+   The maximum size (in bytes) of the swap space that may be reserved or
+   used by all of this user id's processes.
+   This limit is enforced only if bit 1 of the vm.overcommit sysctl is set.
+   Please see :manpage:`tuning(7)` for a complete description of this sysctl.
+
+   Availability: FreeBSD 9 or later.
+
+   .. versionadded:: 3.4
+
+.. data:: RLIMIT_NPTS
+
+   The maximum number of pseudo-terminals created by this user id.
+
+   Availability: FreeBSD 9 or later.
+
+   .. versionadded:: 3.4
 
 Resource Usage
 --------------
