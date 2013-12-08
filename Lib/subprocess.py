@@ -1562,6 +1562,9 @@ class Popen(object):
 
             self._save_input(input)
 
+            if self._input:
+                input_view = memoryview(self._input)
+
             with _PopenSelector() as selector:
                 if self.stdin and input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
@@ -1583,8 +1586,8 @@ class Popen(object):
 
                     for key, events in ready:
                         if key.fileobj is self.stdin:
-                            chunk = self._input[self._input_offset :
-                                                self._input_offset + _PIPE_BUF]
+                            chunk = input_view[self._input_offset :
+                                               self._input_offset + _PIPE_BUF]
                             try:
                                 self._input_offset += os.write(key.fd, chunk)
                             except OSError as e:
