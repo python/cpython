@@ -109,7 +109,7 @@ class BaseSelectorTestCase(unittest.TestCase):
         s.unregister(r)
         s.unregister(w)
 
-    @unittest.skipUnless(os.name == 'posix', "requires posix")
+    @unittest.skipUnless(hasattr(os, 'dup2'), "need os.dup2()")
     def test_unregister_after_fd_close_and_reuse(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
