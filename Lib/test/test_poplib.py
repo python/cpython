@@ -421,7 +421,7 @@ class TestPOP3_TLSClass(TestPOP3Class):
                 # happens in the test_too_long_lines case; the overlong
                 # response will be treated as response to QUIT and raise
                 # this exception
-                pass
+                self.client.close()
         self.server.stop()
 
     def test_stls(self):
