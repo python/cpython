@@ -59,7 +59,7 @@ The reduction step b) preserves congruence:
 Maximum numbers of step b):
 ---------------------------
 
-# To avoid unneccessary formalism, define:
+# To avoid unnecessary formalism, define:
 
 def R(hi, lo, z):
      return divmod(hi * z - hi + lo, 2**64)
