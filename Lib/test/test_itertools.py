@@ -10,6 +10,8 @@ import random
 import copy
 import pickle
 from functools import reduce
+import sys
+import struct
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
 
@@ -1807,6 +1809,44 @@ class SubclassWithKwargsTest(unittest.TestCase):
                 # we expect type errors because of wrong argument count
                 self.assertNotIn("does not take keyword arguments", err.args[0])
 
+@support.cpython_only
+class SizeofTest(unittest.TestCase):
+    def setUp(self):
+        self.ssize_t = struct.calcsize('n')
+
+    check_sizeof = support.check_sizeof
+
+    def test_product_sizeof(self):
+        basesize = support.calcobjsize('3Pi')
+        check = self.check_sizeof
+        check(product('ab', '12'), basesize + 2 * self.ssize_t)
+        check(product(*(('abc',) * 10)), basesize + 10 * self.ssize_t)
+
+    def test_combinations_sizeof(self):
+        basesize = support.calcobjsize('3Pni')
+        check = self.check_sizeof
+        check(combinations('abcd', 3), basesize + 3 * self.ssize_t)
+        check(combinations(range(10), 4), basesize + 4 * self.ssize_t)
+
+    def test_combinations_with_replacement_sizeof(self):
+        cwr = combinations_with_replacement
+        basesize = support.calcobjsize('3Pni')
+        check = self.check_sizeof
+        check(cwr('abcd', 3), basesize + 3 * self.ssize_t)
+        check(cwr(range(10), 4), basesize + 4 * self.ssize_t)
+
+    def test_permutations_sizeof(self):
+        basesize = support.calcobjsize('4Pni')
+        check = self.check_sizeof
+        check(permutations('abcd'),
+              basesize + 4 * self.ssize_t + 4 * self.ssize_t)
+        check(permutations('abcd', 3),
+              basesize + 4 * self.ssize_t + 3 * self.ssize_t)
+        check(permutations('abcde', 3),
+              basesize + 5 * self.ssize_t + 3 * self.ssize_t)
+        check(permutations(range(10), 4),
+              basesize + 10 * self.ssize_t + 4 * self.ssize_t)
+
 
 libreftest = """ Doctest for examples in the library reference: libitertools.tex
 
@@ -2042,7 +2082,8 @@ __test__ = {'libreftest' : libreftest}
 def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
                     RegressionTests, LengthTransparency,
-                    SubclassWithKwargsTest, TestExamples)
+                    SubclassWithKwargsTest, TestExamples,
+                    SizeofTest)
     support.run_unittest(*test_classes)
 
     # verify reference counting

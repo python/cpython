@@ -2057,6 +2057,18 @@ product_dealloc(productobject *lz)
     Py_TYPE(lz)->tp_free(lz);
 }
 
+static PyObject *
+product_sizeof(productobject *lz, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(productobject);
+    res += PyTuple_GET_SIZE(lz->pools) * sizeof(Py_ssize_t);
+    return PyLong_FromSsize_t(res);
+}
+
+PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
+
 static int
 product_traverse(productobject *lz, visitproc visit, void *arg)
 {
@@ -2226,6 +2238,8 @@ static PyMethodDef product_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)product_setstate,    METH_O,
      setstate_doc},
+    {"__sizeof__",      (PyCFunction)product_sizeof,      METH_NOARGS,
+     sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2364,6 +2378,16 @@ combinations_dealloc(combinationsobject *co)
     if (co->indices != NULL)
         PyMem_Free(co->indices);
     Py_TYPE(co)->tp_free(co);
+}
+
+static PyObject *
+combinations_sizeof(combinationsobject *co, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(combinationsobject);
+    res += co->r * sizeof(Py_ssize_t);
+    return PyLong_FromSsize_t(res);
 }
 
 static int
@@ -2537,6 +2561,8 @@ static PyMethodDef combinations_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)combinations_setstate,    METH_O,
      setstate_doc},
+    {"__sizeof__",      (PyCFunction)combinations_sizeof,      METH_NOARGS,
+     sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2693,6 +2719,16 @@ cwr_dealloc(cwrobject *co)
     if (co->indices != NULL)
         PyMem_Free(co->indices);
     Py_TYPE(co)->tp_free(co);
+}
+
+static PyObject *
+cwr_sizeof(cwrobject *co, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(cwrobject);
+    res += co->r * sizeof(Py_ssize_t);
+    return PyLong_FromSsize_t(res);
 }
 
 static int
@@ -2854,6 +2890,8 @@ static PyMethodDef cwr_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)cwr_setstate,    METH_O,
      setstate_doc},
+    {"__sizeof__",      (PyCFunction)cwr_sizeof,      METH_NOARGS,
+     sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -3028,6 +3066,17 @@ permutations_dealloc(permutationsobject *po)
     PyMem_Free(po->indices);
     PyMem_Free(po->cycles);
     Py_TYPE(po)->tp_free(po);
+}
+
+static PyObject *
+permutations_sizeof(permutationsobject *po, void *unused)
+{
+    Py_ssize_t res;
+
+    res = sizeof(permutationsobject);
+    res += PyTuple_GET_SIZE(po->pool) * sizeof(Py_ssize_t);
+    res += po->r * sizeof(Py_ssize_t);
+    return PyLong_FromSsize_t(res);
 }
 
 static int
@@ -3235,6 +3284,8 @@ static PyMethodDef permuations_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)permutations_setstate,    METH_O,
      setstate_doc},
+    {"__sizeof__",      (PyCFunction)permutations_sizeof,      METH_NOARGS,
+     sizeof_doc},
     {NULL,              NULL}   /* sentinel */
 };
 
