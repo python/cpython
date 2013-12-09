@@ -897,7 +897,7 @@ used for the build::
 cfuhash
 -------
 
-The implementtation of the hash table used by the :mod:`tracemalloc` is based
+The implementation of the hash table used by the :mod:`tracemalloc` is based
 on the cfuhash project::
 
    Copyright (c) 2005 Don Owens
