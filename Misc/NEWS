@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19880: Fix a reference leak in unittest.TestCase. Explicitly break
+  reference cycles between frames and the _Outcome instance.
+
 - Issue #17429: platform.linux_distribution() now decodes files from the UTF-8
   encoding with the surrogateescape error handler, instead of decoding from the
   locale encoding in strict mode. It fixes the function on Fedora 19 which is
