@@ -69,6 +69,9 @@ class _Outcome(object):
             else:
                 self.success = False
                 self.errors.append((test_case, exc_info))
+            # explicitly break a reference cycle:
+            # exc_info -> frame -> exc_info
+            exc_info = None
         else:
             if self.result_supports_subtests and self.success:
                 self.errors.append((test_case, None))
@@ -559,8 +562,8 @@ class TestCase(object):
             return
         expecting_failure = getattr(testMethod,
                                     "__unittest_expecting_failure__", False)
+        outcome = _Outcome(result)
         try:
-            outcome = _Outcome(result)
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
@@ -592,6 +595,15 @@ class TestCase(object):
                 stopTestRun = getattr(result, 'stopTestRun', None)
                 if stopTestRun is not None:
                     stopTestRun()
+
+            # explicitly break reference cycles:
+            # outcome.errors -> frame -> outcome -> outcome.errors
+            # outcome.expectedFailure -> frame -> outcome -> outcome.expectedFailure
+            outcome.errors.clear()
+            outcome.expectedFailure = None
+
+            # clear the outcome, no more needed
+            self._outcome = None
 
     def doCleanups(self):
         """Execute all cleanup functions. Normally called for you after
