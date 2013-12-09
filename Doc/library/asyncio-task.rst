@@ -408,3 +408,27 @@ Details:
 
 * ``wait_task()`` stops the event loop when ``print_sum()`` is done.
 
+
+Example: Future and get result
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def slow_operation(future):
+        yield from asyncio.sleep(1)
+        future.set_result('Future in done!')
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.Future()
+    asyncio.Task(slow_operation(future))
+    loop.run_until_complete(future)
+    print(future.result())
+    loop.close()
+
+The example waits for the completion of the future (which takes 1 second). The
+coroutine is responsible of the computation. The event loop is notified when
+the future is done (see the :meth:`Future.set_result` method).
+
