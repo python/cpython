@@ -582,45 +582,6 @@ Network functions
 Protocol example: TCP echo server and client
 ============================================
 
-Echo server
------------
-
-TCP echo server example, send back received data and close the connection::
-
-    import asyncio
-
-    class EchoServer(asyncio.Protocol):
-        def connection_made(self, transport):
-            peername = transport.get_extra_info('peername')
-            print('connection from {}'.format(peername))
-            self.transport = transport
-
-        def data_received(self, data):
-            print('data received: {}'.format(data.decode()))
-            self.transport.write(data)
-
-            # close the socket
-            self.transport.close()
-
-    loop = asyncio.get_event_loop()
-    task = loop.create_server(EchoServer, '127.0.0.1', 8888)
-    server = loop.run_until_complete(task)
-    print('serving on {}'.format(server.sockets[0].getsockname()))
-
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        print("exit")
-    finally:
-        server.close()
-        loop.close()
-
-:meth:`Transport.close` can be called immediatly after
-:meth:`WriteTransport.write` even if data are not sent yet on the socket: both
-methods are asynchronous. ``yield from`` is not needed because these transport
-methods don't return coroutines.
-
-
 Echo client
 -----------
 
@@ -643,8 +604,54 @@ TCP echo client example, send data and wait until the connection is closed::
             asyncio.get_event_loop().stop()
 
     loop = asyncio.get_event_loop()
-    task = loop.create_connection(EchoClient, '127.0.0.1', 8888)
-    loop.run_until_complete(task)
+    coro = loop.create_connection(EchoClient, '127.0.0.1', 8888)
+    loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()
+
+The event loop is running twice. The
+:meth:`~BaseEventLoop.run_until_complete` method is preferred in this short
+example to raise an exception if the server is not listening, instead of
+having to write a short coroutine to handle the exception and stop the
+running loop. At :meth:`~BaseEventLoop.run_until_complete` exit, the loop is
+no more running, so there is no need to stop the loop in case of an error.
+
+Echo server
+-----------
+
+TCP echo server example, send back received data and close the connection::
+
+    import asyncio
+
+    class EchoServer(asyncio.Protocol):
+        def connection_made(self, transport):
+            peername = transport.get_extra_info('peername')
+            print('connection from {}'.format(peername))
+            self.transport = transport
+
+        def data_received(self, data):
+            print('data received: {}'.format(data.decode()))
+            self.transport.write(data)
+
+            # close the socket
+            self.transport.close()
+
+    loop = asyncio.get_event_loop()
+    coro = loop.create_server(EchoServer, '127.0.0.1', 8888)
+    server = loop.run_until_complete(coro)
+    print('serving on {}'.format(server.sockets[0].getsockname()))
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        print("exit")
+    finally:
+        server.close()
+        loop.close()
+
+:meth:`Transport.close` can be called immediatly after
+:meth:`WriteTransport.write` even if data are not sent yet on the socket: both
+methods are asynchronous. ``yield from`` is not needed because these transport
+methods don't return coroutines.
+
 
