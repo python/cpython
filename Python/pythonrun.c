@@ -1888,9 +1888,11 @@ print_exception(PyObject *f, PyObject *value)
     _Py_IDENTIFIER(print_file_and_line);
 
     if (!PyExceptionInstance_Check(value)) {
-        PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f);
-        PyFile_WriteString(Py_TYPE(value)->tp_name, f);
-        PyFile_WriteString(" found\n", f);
+        err = PyFile_WriteString("TypeError: print_exception(): Exception expected for value, ", f);
+        err += PyFile_WriteString(Py_TYPE(value)->tp_name, f);
+        err += PyFile_WriteString(" found\n", f);
+        if (err)
+            PyErr_Clear();
         return;
     }
 
