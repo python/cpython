@@ -409,8 +409,8 @@ Details:
 * ``wait_task()`` stops the event loop when ``print_sum()`` is done.
 
 
-Example: Future and get result
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Example: Future with run_until_complete()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
 
@@ -431,4 +431,36 @@ Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
 The example waits for the completion of the future (which takes 1 second). The
 coroutine is responsible of the computation. The event loop is notified when
 the future is done (see the :meth:`Future.set_result` method).
+
+Example: Future with run_until_complete()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The previous example can be written differently using the
+:meth:`Future.add_done_callback` method::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def slow_operation(future):
+        yield from asyncio.sleep(1)
+        future.set_result('Future in done!')
+
+    def exit(future):
+        print(future.result())
+        loop.stop()
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.Future()
+    asyncio.Task(slow_operation(future))
+    future.add_done_callback(exit)
+    loop.run_forever()
+    loop.close()
+
+The future is now responsible to display the result and stop the loop using the
+``exit()`` callback.
+
+.. note::
+   The coroutine is only executed when the event loop starts running, so it is
+   possible to add a "done callback" to the future after creating the task
+   scheduling the coroutine.
 
