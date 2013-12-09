@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15475: Add __sizeof__ implementations for itertools objects.
+
 - Issue #19880: Fix a reference leak in unittest.TestCase. Explicitly break
   reference cycles between frames and the _Outcome instance.
 
