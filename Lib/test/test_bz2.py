@@ -325,6 +325,9 @@ class BZ2FileTest(BaseTest):
             self.assertRaises(ValueError, f.readline)
             self.assertRaises(ValueError, f.readlines)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test depends on being able to delete a still-open file,'
+                     ' which is not possible on Windows')
     def testInitNonExistentFile(self):
         # Issue #19878: Should not segfault when __init__ with non-existent
         # file for the second time.
