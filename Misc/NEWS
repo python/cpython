@@ -114,6 +114,8 @@ Library
 - Issue #6477: Added support for pickling the types of built-in singletons
   (i.e., Ellipsis, NotImplemented, None).
 
+- Issue #19851: Fixed a regression in reloading sub-modules.
+
 - ssl.create_default_context() sets OP_NO_COMPRESSION to prevent CRIME.
 
 - Issue #19802: Add socket.SO_PRIORITY.

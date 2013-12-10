@@ -4,11 +4,43 @@ frozen_init, source_init = util.import_importlib('importlib')
 frozen_util, source_util = util.import_importlib('importlib.util')
 frozen_machinery, source_machinery = util.import_importlib('importlib.machinery')
 
+from contextlib import contextmanager
 import os.path
 import sys
 from test import support
 import types
 import unittest
+
+
+@contextmanager
+def temp_module(name, content='', *, pkg=False):
+    conflicts = [n for n in sys.modules if n.partition('.')[0] == name]
+    with support.temp_cwd(None) as cwd:
+        with util.uncache(name, *conflicts):
+            with support.DirsOnSysPath(cwd):
+                frozen_init.invalidate_caches()
+
+                location = os.path.join(cwd, name)
+                if pkg:
+                    modpath = os.path.join(location, '__init__.py')
+                    os.mkdir(name)
+                else:
+                    modpath = location + '.py'
+                    if content is None:
+                        # Make sure the module file gets created.
+                        content = ''
+                if content is not None:
+                    # not a namespace package
+                    with open(modpath, 'w') as modfile:
+                        modfile.write(content)
+                yield location
+
+
+def submodule(parent, name, pkg_dir, content=''):
+    path = os.path.join(pkg_dir, name + '.py')
+    with open(path, 'w') as subfile:
+        subfile.write(content)
+    return '{}.{}'.format(parent, name), path
 
 
 class ImportModuleTests:
@@ -246,6 +278,32 @@ class FindSpecTests:
         # None is returned upon failure to find a loader.
         self.assertIsNone(self.init.find_spec('nevergoingtofindthismodule'))
 
+    def test_find_submodule(self):
+        name = 'spam'
+        subname = 'ham'
+        with temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = submodule(name, subname, pkg_dir)
+            spec = self.init.find_spec(fullname, [pkg_dir])
+            self.assertIsNot(spec, None)
+            self.assertNotIn(name, sorted(sys.modules))
+            # Ensure successive calls behave the same.
+            spec_again = self.init.find_spec(fullname, [pkg_dir])
+            # XXX Once #19927 is resolved, uncomment this line.
+            #self.assertEqual(spec_again, spec)
+
+    def test_find_submodule_missing_path(self):
+        name = 'spam'
+        subname = 'ham'
+        with temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = submodule(name, subname, pkg_dir)
+            spec = self.init.find_spec(fullname)
+            self.assertIs(spec, None)
+            self.assertNotIn(name, sorted(sys.modules))
+            # Ensure successive calls behave the same.
+            spec = self.init.find_spec(fullname)
+            self.assertIs(spec, None)
+
+
 class Frozen_FindSpecTests(FindSpecTests, unittest.TestCase):
     init = frozen_init
     machinery = frozen_machinery
@@ -409,6 +467,16 @@ class ReloadTests:
                     self.assertIs(reloaded, module)
                     self.assertEqual(loader.path, init_path)
                     self.assertEqual(ns, expected)
+
+    def test_reload_submodule(self):
+        # See #19851.
+        name = 'spam'
+        subname = 'ham'
+        with temp_module(name, pkg=True) as pkg_dir:
+            fullname, _ = submodule(name, subname, pkg_dir)
+            ham = self.init.import_module(fullname)
+            reloaded = self.init.reload(ham)
+            self.assertIs(reloaded, ham)
 
 
 class Frozen_ReloadTests(ReloadTests, unittest.TestCase):

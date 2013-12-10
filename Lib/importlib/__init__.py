@@ -153,10 +153,17 @@ def reload(module):
     _RELOADING[name] = module
     try:
         parent_name = name.rpartition('.')[0]
-        if parent_name and parent_name not in sys.modules:
-            msg = "parent {!r} not in sys.modules"
-            raise ImportError(msg.format(parent_name), name=parent_name)
-        spec = module.__spec__ = _bootstrap._find_spec(name, None, module)
+        if parent_name:
+            try:
+                parent = sys.modules[parent_name]
+            except KeyError:
+                msg = "parent {!r} not in sys.modules"
+                raise ImportError(msg.format(parent_name), name=parent_name)
+            else:
+                pkgpath = parent.__path__
+        else:
+            pkgpath = None
+        spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, module)
         methods = _bootstrap._SpecMethods(spec)
         methods.exec(module)
         # The module may have replaced itself in sys.modules!
