@@ -185,8 +185,8 @@ class ReprTests(unittest.TestCase):
                 return x
             return inner
         x = get_cell().__closure__[0]
-        self.assertRegexpMatches(repr(x), r'<cell at 0x[0-9a-f]+: '
-                                          r'int object at 0x[0-9a-f]+>')
+        self.assertRegexpMatches(repr(x), r'<cell at 0x[0-9A-Fa-f]+: '
+                                          r'int object at 0x[0-9A-Fa-f]+>')
         self.assertRegexpMatches(r(x), r'<cell at.*\.\.\..*>')
 
     def test_descriptors(self):
