@@ -9,6 +9,8 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
+
 - Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
   billion characters) input strings in _Py_dg_strtod.
 
