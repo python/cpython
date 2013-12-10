@@ -348,7 +348,7 @@ Print ``Hello World`` every two seconds, using a callback::
         loop.call_later(2, print_and_repeat, loop)
 
     loop = asyncio.get_event_loop()
-    print_and_repeat(loop)
+    loop.call_soon(print_and_repeat, loop)
     loop.run_forever()
 
 .. seealso::
