@@ -106,6 +106,11 @@ Library
 - Issue #19286: Directories in ``package_data`` are no longer added to
   the filelist, preventing failure outlined in the ticket.
 
+IDLE
+----
+
+- Issue #19481: print() of string subclass instance in IDLE no more hangs.
+
 Tests
 -----
 
