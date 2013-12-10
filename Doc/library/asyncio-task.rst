@@ -327,10 +327,10 @@ Example executing 3 tasks (A, B, C) in parallel::
             f *= i
         print("Task %s: factorial(%s) = %s" % (name, number, f))
 
-    task_a = asyncio.Task(factorial("A", 2))
-    task_b = asyncio.Task(factorial("B", 3))
-    task_c = asyncio.Task(factorial("C", 4))
-    tasks = [task_a, task_b, task_c]
+    tasks = [
+        asyncio.Task(factorial("A", 2)),
+        asyncio.Task(factorial("B", 3)),
+        asyncio.Task(factorial("C", 4))]
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(asyncio.wait(tasks))
