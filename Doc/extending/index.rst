@@ -21,6 +21,15 @@ Python) that give the language its wide application range.
 For a detailed description of the whole Python/C API, see the separate
 :ref:`c-api-index`.
 
+.. note::
+
+   This guide only covers the basic tools for creating extensions provided
+   as part of this version of CPython. Third party tools may offer simpler
+   alternatives. Refer to the `binary extensions section
+   <https://python-packaging-user-guide.readthedocs.org/en/latest/extensions.html>`__
+   in the Python Packaging User Guide for more information.
+
+
 .. toctree::
    :maxdepth: 2
    :numbered:
