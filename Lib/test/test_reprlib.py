@@ -166,10 +166,16 @@ class ReprTests(unittest.TestCase):
         eq(r([[[[[[{}]]]]]]), "[[[[[[{}]]]]]]")
         eq(r([[[[[[[{}]]]]]]]), "[[[[[[[...]]]]]]]")
 
-    @unittest.skip('hard to catch a cell object')
     def test_cell(self):
-        # XXX Hmm? How to get at a cell object?
-        pass
+        def get_cell():
+            x = 42
+            def inner():
+                return x
+            return inner
+        x = get_cell().__closure__[0]
+        self.assertRegex(repr(x),
+                         r'<cell at 0x[0-9a-f]+: int object at 0x[0-9a-f]+>')
+        self.assertRegex(r(x), r'<cell at 0x.*\.\.\..*>')
 
     def test_descriptors(self):
         eq = self.assertEqual
