@@ -134,6 +134,7 @@ class TemporaryFileTests(unittest.TestCase):
                         self.assertEqual(first.args, second.args)
                     else:
                         self.fail("expected os.tmpfile() to raise OSError")
+                    return
                 else:
                     # open() worked, therefore, tmpfile() should work.  Close our
                     # dummy file and proceed with the test as normal.
