@@ -77,6 +77,8 @@ IDLE
 Tests
 -----
 
+- Issue #19928: Implemented a test for repr() of cell objects.
+
 - Issue #19595: Re-enabled a long-disabled test in test_winsound.
 
 - Issue #19588: Fixed tests in test_random that were silently skipped most
