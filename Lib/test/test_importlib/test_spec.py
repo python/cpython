@@ -17,13 +17,6 @@ import warnings
 class TestLoader:
 
     def __init__(self, path=None, is_package=None):
-#        if path:
-#            if is_package:
-#                if not path.endswith('.py'):
-#                    path = os.path.join(path, '__init__.py')
-#            elif is_package is None:
-#                is_package = path.endswith('__init__.py')
-
         self.path = path
         self.package = is_package
 
@@ -553,9 +546,6 @@ class Source_ModuleSpecMethodsTests(ModuleSpecMethodsTests, unittest.TestCase):
 
 
 class ModuleReprTests:
-
-    # XXX Add more tests for repr(module) once ModuleSpec._module_repr()
-    # is in place?
 
     def setUp(self):
         self.module = type(os)('spam')
