@@ -391,14 +391,6 @@ Task functions
    outer Future is *not* cancelled in this case.  (This is to prevent the
    cancellation of one child to cause other children to be cancelled.)
 
-.. function:: tasks.iscoroutinefunction(func)
-
-   Return ``True`` if *func* is a decorated coroutine function.
-
-.. function:: tasks.iscoroutine(obj)
-
-   Return ``True`` if *obj* is a coroutine object.
-
 .. function:: sleep(delay, result=None, \*, loop=None)
 
    Create a :ref:`coroutine <coroutine>` that completes after a given time
