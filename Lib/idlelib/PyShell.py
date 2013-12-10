@@ -1338,8 +1338,16 @@ class PseudoOutputFile(PseudoFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if not isinstance(s, (basestring, bytearray)):
-            raise TypeError('must be string, not ' + type(s).__name__)
+        if type(s) not in (unicode, str, bytearray):
+            # See issue #19481
+            if isinstance(s, unicode):
+                s = unicode.__getslice__(s, None, None)
+            elif isinstance(s, str):
+                s = str.__str__(s)
+            elif isinstance(s, bytearray):
+                s = bytearray.__str__(s)
+            else:
+                raise TypeError('must be string, not ' + type(s).__name__)
         return self.shell.write(s, self.tags)
 
 
