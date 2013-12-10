@@ -315,13 +315,13 @@ Example executing 3 tasks (A, B, C) in parallel::
     import asyncio
 
     @asyncio.coroutine
-    def factorial(task, n):
+    def factorial(name, number):
         f = 1
-        for i in range(2, n+1):
-            print("[%s] Compute factorial(%s)..." % (task, i))
+        for i in range(2, number+1):
+            print("Task %s: Compute factorial(%s)..." % (name, i))
             yield from asyncio.sleep(1)
-            f *= n
-        print("[%s] factorial(%s) = %s" % (task, n, f))
+            f *= i
+        print("Task %s: factorial(%s) = %s" % (name, number, f))
 
     task_a = asyncio.Task(factorial("A", 2))
     task_b = asyncio.Task(factorial("B", 3))
@@ -333,17 +333,17 @@ Example executing 3 tasks (A, B, C) in parallel::
 
 Output::
 
-    [A] Compute factorial(2)...
-    [B] Compute factorial(2)...
-    [C] Compute factorial(2)...
-    [A] factorial(2) = 2
-    [B] Compute factorial(3)...
-    [C] Compute factorial(3)...
-    [B] factorial(3) = 9
-    [C] Compute factorial(4)...
-    [C] factorial(4) = 64
+    Task A: Compute factorial(2)...
+    Task B: Compute factorial(2)...
+    Task C: Compute factorial(2)...
+    Task A: factorial(2) = 2
+    Task B: Compute factorial(3)...
+    Task C: Compute factorial(3)...
+    Task B: factorial(3) = 6
+    Task C: Compute factorial(4)...
+    Task C: factorial(4) = 24
 
-When a task is created, it is automatically scheduled for execution. The event
+A task is automatically scheduled for execution when it is created. The event
 loop stops when all tasks are done.
 
 
