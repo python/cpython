@@ -273,6 +273,14 @@ Task
 
       By default all tasks for the current event loop are returned.
 
+   .. classmethod:: current_task(loop=None)
+
+      Return the currently running task in an event loop or ``None``.
+
+      By default the current task for the current event loop is returned.
+
+      ``None`` is returned when called not in the context of a :class:`Task`.
+
    .. method:: cancel()
 
       Cancel the task.
