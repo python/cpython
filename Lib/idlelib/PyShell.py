@@ -1334,8 +1334,11 @@ class PseudoOutputFile(PseudoFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if not isinstance(s, str):
-            raise TypeError('must be str, not ' + type(s).__name__)
+        if type(s) is not str:
+            if not isinstance(s, str):
+                raise TypeError('must be str, not ' + type(s).__name__)
+            # See issue #19481
+            s = str.__str__(s)
         return self.shell.write(s, self.tags)
 
 
