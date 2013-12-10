@@ -42,6 +42,13 @@ from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, INT_MAX, \
      INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
      SHRT_MIN, SHRT_MAX
 
+try:
+    from _testcapi import getargs_L, getargs_K
+except ImportError:
+    _PY_LONG_LONG_available = False
+else:
+    _PY_LONG_LONG_available = True
+
 # fake, they are not defined in Python's header files
 LLONG_MAX = 2**63-1
 LLONG_MIN = -2**63
@@ -208,6 +215,7 @@ class Signed_TestCase(unittest.TestCase):
         self.assertRaises(OverflowError, getargs_n, VERY_LARGE)
 
 
+@unittest.skipUnless(_PY_LONG_LONG_available, 'PY_LONG_LONG not available')
 class LongLong_TestCase(unittest.TestCase):
     def test_L(self):
         from _testcapi import getargs_L
@@ -322,13 +330,8 @@ class Keywords_TestCase(unittest.TestCase):
             self.fail('TypeError should have been raised')
 
 def test_main():
-    tests = [Signed_TestCase, Unsigned_TestCase, Tuple_TestCase, Keywords_TestCase]
-    try:
-        from _testcapi import getargs_L, getargs_K
-    except ImportError:
-        pass # PY_LONG_LONG not available
-    else:
-        tests.append(LongLong_TestCase)
+    tests = [Signed_TestCase, Unsigned_TestCase, LongLong_TestCase,
+             Tuple_TestCase, Keywords_TestCase]
     test_support.run_unittest(*tests)
 
 if __name__ == "__main__":

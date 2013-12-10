@@ -1059,11 +1059,12 @@ order (MRO) for bases """
         c.abc = 5
         self.assertEqual(c.abc, 5)
 
+    def test_unicode_slots(self):
         # Test unicode slot names
         try:
             unicode
         except NameError:
-            pass
+            self.skipTest('no unicode support')
         else:
             # Test a single unicode string is not expanded as a sequence.
             class C(object):

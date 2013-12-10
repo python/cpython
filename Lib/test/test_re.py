@@ -700,7 +700,7 @@ class ReTests(unittest.TestCase):
         try:
             unicode
         except NameError:
-            return  # no problem if we have no unicode
+            self.skipTest('no problem if we have no unicode')
         class my_unicode(unicode): pass
         pat = re.compile(my_unicode("abc"))
         self.assertEqual(pat.match("xyz"), None)
@@ -714,7 +714,7 @@ class ReTests(unittest.TestCase):
         try:
             unicode
         except NameError:
-            return # no problem if we have no unicode
+            self.skipTest('no problem if we have no unicode')
         self.assertTrue(re.compile('bug_926075') is not
                      re.compile(eval("u'bug_926075'")))
 
@@ -722,7 +722,7 @@ class ReTests(unittest.TestCase):
         try:
             unicode
         except NameError:
-            pass
+            self.skipTest('no problem if we have no unicode')
         pattern = eval('u"[\u002E\u3002\uFF0E\uFF61]"')
         self.assertEqual(re.compile(pattern).split("a.b.c"),
                          ['a','b','c'])

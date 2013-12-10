@@ -331,13 +331,13 @@ class GeneralModuleTests(unittest.TestCase):
             ip = socket.gethostbyname(hostname)
         except socket.error:
             # Probably name lookup wasn't set up right; skip this test
-            return
+            self.skipTest('name lookup failure')
         self.assertTrue(ip.find('.') >= 0, "Error resolving host to ip.")
         try:
             hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
         except socket.error:
             # Probably a similar problem as above; skip this test
-            return
+            self.skipTest('address lookup failure')
         all_host_names = [hostname, hname] + aliases
         fqhn = socket.getfqdn(ip)
         if not fqhn in all_host_names:
@@ -491,9 +491,9 @@ class GeneralModuleTests(unittest.TestCase):
         try:
             from socket import inet_pton, AF_INET6, has_ipv6
             if not has_ipv6:
-                return
+                self.skipTest('IPv6 not available')
         except ImportError:
-            return
+            self.skipTest('could not import needed symbols from socket')
         f = lambda a: inet_pton(AF_INET6, a)
 
         self.assertEqual('\x00' * 16, f('::'))
@@ -525,9 +525,9 @@ class GeneralModuleTests(unittest.TestCase):
         try:
             from socket import inet_ntop, AF_INET6, has_ipv6
             if not has_ipv6:
-                return
+                self.skipTest('IPv6 not available')
         except ImportError:
-            return
+            self.skipTest('could not import needed symbols from socket')
         f = lambda a: inet_ntop(AF_INET6, a)
 
         self.assertEqual('::', f('\x00' * 16))
@@ -567,7 +567,7 @@ class GeneralModuleTests(unittest.TestCase):
             my_ip_addr = socket.gethostbyname(socket.gethostname())
         except socket.error:
             # Probably name lookup wasn't set up right; skip this test
-            return
+            self.skipTest('name lookup failure')
         self.assertIn(name[0], ("0.0.0.0", my_ip_addr), '%s invalid' % name[0])
         self.assertEqual(name[1], port)
 
@@ -786,10 +786,10 @@ class BasicTCPTest(SocketConnectedTest):
         big_chunk = 'f' * 2048
         self.serv_conn.sendall(big_chunk)
 
+    @unittest.skipUnless(hasattr(socket, 'fromfd'),
+                         'socket.fromfd not availble')
     def testFromFd(self):
         # Testing fromfd()
-        if not hasattr(socket, "fromfd"):
-            return # On Windows, this doesn't exist
         fd = self.cli_conn.fileno()
         sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)

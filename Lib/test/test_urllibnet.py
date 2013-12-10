@@ -112,12 +112,9 @@ class urlopenNetworkTests(unittest.TestCase):
             open_url.close()
         self.assertEqual(code, 404)
 
+    @unittest.skipIf(sys.platform in ('win32',), 'not appropriate for Windows')
+    @unittest.skipUnless(hasattr(os, 'fdopen'), 'os.fdopen not available')
     def test_fileno(self):
-        if (sys.platform in ('win32',) or
-                not hasattr(os, 'fdopen')):
-            # On Windows, socket handles are not file descriptors; this
-            # test can't pass on Windows.
-            return
         # Make sure fd returned by fileno is valid.
         open_url = self.urlopen("http://www.python.org/")
         fd = open_url.fileno()

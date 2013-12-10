@@ -125,6 +125,8 @@ class DisTests(unittest.TestCase):
         # so fails if the tests are run with -O.  Skip this test then.
         if __debug__:
             self.do_disassembly_test(bug1333982, dis_bug1333982)
+        else:
+            self.skipTest('need asserts, run without -O')
 
     def test_big_linenos(self):
         def func(count):

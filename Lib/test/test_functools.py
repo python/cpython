@@ -43,8 +43,6 @@ class TestPartial(unittest.TestCase):
         self.assertEqual(p.args, (1, 2))
         self.assertEqual(p.keywords, dict(a=10, b=20))
         # attributes should not be writable
-        if not isinstance(self.thetype, type):
-            return
         self.assertRaises(TypeError, setattr, p, 'func', map)
         self.assertRaises(TypeError, setattr, p, 'args', (1, 2))
         self.assertRaises(TypeError, setattr, p, 'keywords', dict(a=1, b=2))
@@ -180,8 +178,10 @@ class TestPythonPartial(TestPartial):
     thetype = PythonPartial
 
     # the python version isn't picklable
-    def test_pickle(self): pass
-    def test_setstate_refcount(self): pass
+    test_pickle = test_setstate_refcount = None
+
+    # the python version isn't a type
+    test_attributes = None
 
 class TestUpdateWrapper(unittest.TestCase):
 

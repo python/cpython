@@ -283,27 +283,28 @@ class OtherFileTests(unittest.TestCase):
             self.assertEqual(f.seekable(), True)
             self.assertEqual(f.isatty(), False)
             f.close()
-
-            if sys.platform != "win32":
-                try:
-                    f = _FileIO("/dev/tty", "a")
-                except EnvironmentError:
-                    # When run in a cron job there just aren't any
-                    # ttys, so skip the test.  This also handles other
-                    # OS'es that don't support /dev/tty.
-                    pass
-                else:
-                    self.assertEqual(f.readable(), False)
-                    self.assertEqual(f.writable(), True)
-                    if sys.platform != "darwin" and \
-                       'bsd' not in sys.platform and \
-                       not sys.platform.startswith('sunos'):
-                        # Somehow /dev/tty appears seekable on some BSDs
-                        self.assertEqual(f.seekable(), False)
-                    self.assertEqual(f.isatty(), True)
-                    f.close()
         finally:
             os.unlink(TESTFN)
+
+    @unittest.skipIf(sys.platform == 'win32', 'no ttys on Windows')
+    def testAblesOnTTY(self):
+        try:
+            f = _FileIO("/dev/tty", "a")
+        except EnvironmentError:
+            # When run in a cron job there just aren't any
+            # ttys, so skip the test.  This also handles other
+            # OS'es that don't support /dev/tty.
+            self.skipTest('need /dev/tty')
+        else:
+            self.assertEqual(f.readable(), False)
+            self.assertEqual(f.writable(), True)
+            if sys.platform != "darwin" and \
+               'bsd' not in sys.platform and \
+               not sys.platform.startswith('sunos'):
+                # Somehow /dev/tty appears seekable on some BSDs
+                self.assertEqual(f.seekable(), False)
+            self.assertEqual(f.isatty(), True)
+            f.close()
 
     def testInvalidModeStrings(self):
         # check invalid mode strings
@@ -342,8 +343,7 @@ class OtherFileTests(unittest.TestCase):
         try:
             fn = TESTFN.encode("ascii")
         except UnicodeEncodeError:
-            # Skip test
-            return
+            self.skipTest('could not encode %r to ascii' % TESTFN)
         f = _FileIO(fn, "w")
         try:
             f.write(b"abc")

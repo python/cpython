@@ -754,7 +754,7 @@ class BaseTest(unittest.TestCase):
         try:
             import gc
         except ImportError:
-            return
+            self.skipTest('gc module not available')
         a = array.array(self.typecode)
         l = [iter(a)]
         l.append(l)

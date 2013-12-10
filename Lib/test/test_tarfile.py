@@ -260,7 +260,7 @@ class MiscReadTest(CommonReadTest):
     def test_fail_comp(self):
         # For Gzip and Bz2 Tests: fail with a ReadError on an uncompressed file.
         if self.mode == "r:":
-            return
+            self.skipTest('needs a gz or bz2 mode')
         self.assertRaises(tarfile.ReadError, tarfile.open, tarname, self.mode)
         fobj = open(tarname, "rb")
         self.assertRaises(tarfile.ReadError, tarfile.open, fileobj=fobj, mode=self.mode)
@@ -446,14 +446,12 @@ class DetectReadTest(unittest.TestCase):
     def test_detect_fileobj(self):
         self._test_modes(self._testfunc_fileobj)
 
+    @unittest.skipUnless(bz2, 'requires bz2')
     def test_detect_stream_bz2(self):
         # Originally, tarfile's stream detection looked for the string
         # "BZh91" at the start of the file. This is incorrect because
         # the '9' represents the blocksize (900kB). If the file was
         # compressed using another blocksize autodetection fails.
-        if not bz2:
-            return
-
         with open(tarname, "rb") as fobj:
             data = fobj.read()
 
@@ -982,12 +980,11 @@ class StreamWriteTest(WriteTestBase):
         self.assertTrue(data.count("\0") == tarfile.RECORDSIZE,
                          "incorrect zero padding")
 
+    @unittest.skipIf(sys.platform == 'win32', 'not appropriate for Windows')
+    @unittest.skipUnless(hasattr(os, 'umask'), 'requires os.umask')
     def test_file_mode(self):
         # Test for issue #8464: Create files with correct
         # permissions.
-        if sys.platform == "win32" or not hasattr(os, "umask"):
-            return
-
         if os.path.exists(tmpname):
             os.remove(tmpname)
 
@@ -1360,15 +1357,13 @@ class AppendTest(unittest.TestCase):
         self._add_testfile()
         self._test(names=["foo", "bar"])
 
+    @unittest.skipUnless(gzip, 'requires gzip')
     def test_append_gz(self):
-        if gzip is None:
-            return
         self._create_testtar("w:gz")
         self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, "a")
 
+    @unittest.skipUnless(bz2, 'requires bz2')
     def test_append_bz2(self):
-        if bz2 is None:
-            return
         self._create_testtar("w:bz2")
         self.assertRaises(tarfile.ReadError, tarfile.open, tmpname, "a")
 

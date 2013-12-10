@@ -284,13 +284,17 @@ class TestCaseBase(unittest.TestCase):
         cf.set("sect", "option1", mystr("splat"))
         cf.set("sect", "option2", "splat")
         cf.set("sect", "option2", mystr("splat"))
+
+    def test_set_unicode(self):
         try:
             unicode
         except NameError:
-            pass
-        else:
-            cf.set("sect", "option1", unicode("splat"))
-            cf.set("sect", "option2", unicode("splat"))
+            self.skipTest('no unicode support')
+
+        cf = self.fromstring("[sect]\n"
+                             "option1=foo\n")
+        cf.set("sect", "option1", unicode("splat"))
+        cf.set("sect", "option2", unicode("splat"))
 
     def test_read_returns_file_list(self):
         file1 = test_support.findfile("cfgparser.1")

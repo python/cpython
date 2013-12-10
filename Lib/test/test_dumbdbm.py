@@ -38,11 +38,9 @@ class DumbDBMTestCase(unittest.TestCase):
         self.read_helper(f)
         f.close()
 
+    @unittest.skipUnless(hasattr(os, 'chmod'), 'os.chmod not available')
+    @unittest.skipUnless(hasattr(os, 'umask'), 'os.umask not available')
     def test_dumbdbm_creation_mode(self):
-        # On platforms without chmod, don't do anything.
-        if not (hasattr(os, 'chmod') and hasattr(os, 'umask')):
-            return
-
         try:
             old_umask = os.umask(0002)
             f = dumbdbm.open(_fname, 'c', 0637)

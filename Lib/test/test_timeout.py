@@ -178,16 +178,19 @@ class TimeoutTestCase(unittest.TestCase):
                      "timeout (%g) is %g seconds more than expected (%g)"
                      %(_delta, self.fuzz, _timeout))
 
+    @unittest.skip('test not implemented')
     def testSend(self):
         # Test send() timeout
         # couldn't figure out how to test it
         pass
 
+    @unittest.skip('test not implemented')
     def testSendto(self):
         # Test sendto() timeout
         # couldn't figure out how to test it
         pass
 
+    @unittest.skip('test not implemented')
     def testSendall(self):
         # Test sendall() timeout
         # couldn't figure out how to test it

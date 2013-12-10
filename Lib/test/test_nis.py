@@ -9,11 +9,7 @@ class NisTests(unittest.TestCase):
             maps = nis.maps()
         except nis.error, msg:
             # NIS is probably not active, so this test isn't useful
-            if test_support.verbose:
-                print "Test Skipped:", msg
-            # Can't raise SkipTest as regrtest only recognizes the exception
-            #   import time.
-            return
+            self.skipTest(str(msg))
         try:
             # On some systems, this map is only accessible to the
             # super user

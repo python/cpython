@@ -223,7 +223,6 @@ class DecimalTest(unittest.TestCase):
         global skip_expected
         if skip_expected:
             raise unittest.SkipTest
-            return
         with open(file) as f:
             for line in f:
                 line = line.replace('\r\n', '').replace('\n', '')
@@ -234,7 +233,6 @@ class DecimalTest(unittest.TestCase):
                     #Exception raised where there shouldn't have been one.
                     self.fail('Exception "'+exception.__class__.__name__ + '" raised on line '+line)
 
-        return
 
     def eval_line(self, s):
         if s.find(' -> ') >= 0 and s[:2] != '--' and not s.startswith('  --'):
@@ -391,7 +389,6 @@ class DecimalTest(unittest.TestCase):
                          'Incorrect answer for ' + s + ' -- got ' + result)
         self.assertItemsEqual(myexceptions, theirexceptions,
               'Incorrect flags set in ' + s + ' -- got ' + str(myexceptions))
-        return
 
     def getexceptions(self):
         return [e for e in Signals if self.context.flags[e]]
@@ -834,7 +831,7 @@ class DecimalFormatTest(unittest.TestCase):
         try:
             from locale import CHAR_MAX
         except ImportError:
-            return
+            self.skipTest('locale.CHAR_MAX not available')
 
         # Set up some localeconv-like dictionaries
         en_US = {
@@ -1196,7 +1193,6 @@ def thfunc1(cls):
 
     cls.assertEqual(test1, Decimal('0.3333333333333333333333333333'))
     cls.assertEqual(test2, Decimal('0.3333333333333333333333333333'))
-    return
 
 def thfunc2(cls):
     d1 = Decimal(1)
@@ -1210,16 +1206,11 @@ def thfunc2(cls):
 
     cls.assertEqual(test1, Decimal('0.3333333333333333333333333333'))
     cls.assertEqual(test2, Decimal('0.333333333333333333'))
-    return
 
 
+@unittest.skipUnless(threading, 'threading required')
 class DecimalUseOfContextTest(unittest.TestCase):
     '''Unit tests for Use of Context cases in Decimal.'''
-
-    try:
-        import threading
-    except ImportError:
-        threading = None
 
     # Take care executing this test from IDLE, there's an issue in threading
     # that hangs IDLE and I couldn't find it
@@ -1239,10 +1230,6 @@ class DecimalUseOfContextTest(unittest.TestCase):
 
         self.finish1.wait()
         self.finish2.wait()
-        return
-
-    if threading is None:
-        del test_threading
 
 
 class DecimalUsabilityTest(unittest.TestCase):
@@ -1540,7 +1527,6 @@ class DecimalUsabilityTest(unittest.TestCase):
                 self.assertEqual(d1._sign, b1._sign)
                 self.assertEqual(d1._int, b1._int)
                 self.assertEqual(d1._exp, b1._exp)
-            return
 
         Decimal(d1)
         self.assertEqual(d1._sign, b1._sign)

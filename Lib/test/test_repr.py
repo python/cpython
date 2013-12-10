@@ -268,6 +268,7 @@ class foo(object):
         eq(repr(foo.foo),
                "<class '%s.foo'>" % foo.__name__)
 
+    @unittest.skip('need a suitable object')
     def test_object(self):
         # XXX Test the repr of a type with a really long tp_name but with no
         # tp_repr.  WIBNI we had ::Inline? :)
@@ -309,6 +310,7 @@ class aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             '<bound method aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.amethod of <%s.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa instance at 0x' \
             % (qux.__name__,) ))
 
+    @unittest.skip('needs a built-in function with a really long name')
     def test_builtin_function(self):
         # XXX test built-in functions and methods with really long names
         pass

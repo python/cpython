@@ -182,7 +182,7 @@ class _TestProcess(BaseTestCase):
 
     def test_current(self):
         if self.TYPE == 'threads':
-            return
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
         current = self.current_process()
         authkey = current.authkey
@@ -249,7 +249,7 @@ class _TestProcess(BaseTestCase):
 
     def test_terminate(self):
         if self.TYPE == 'threads':
-            return
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
         p = self.Process(target=self._test_terminate)
         p.daemon = True
@@ -334,7 +334,7 @@ class _TestProcess(BaseTestCase):
     def test_sys_exit(self):
         # See Issue 13854
         if self.TYPE == 'threads':
-            return
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
         testfn = test_support.TESTFN
         self.addCleanup(test_support.unlink, testfn)
@@ -582,7 +582,7 @@ class _TestQueue(BaseTestCase):
         try:
             self.assertEqual(q.qsize(), 0)
         except NotImplementedError:
-            return
+            self.skipTest('qsize method not implemented')
         q.put(1)
         self.assertEqual(q.qsize(), 1)
         q.put(5)
@@ -683,7 +683,7 @@ class _TestSemaphore(BaseTestCase):
 
     def test_timeout(self):
         if self.TYPE != 'processes':
-            return
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
         sem = self.Semaphore(0)
         acquire = TimingWrapper(sem.acquire)
@@ -1120,7 +1120,7 @@ class _TestPool(BaseTestCase):
     def test_map_unplicklable(self):
         # Issue #19425 -- failure to pickle should not cause a hang
         if self.TYPE == 'threads':
-            return
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
         class A(object):
             def __reduce__(self):
                 raise RuntimeError('cannot pickle')
@@ -1573,7 +1573,7 @@ class _TestConnection(BaseTestCase):
 
     def test_sendbytes(self):
         if self.TYPE != 'processes':
-            return
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
         msg = latin('abcdefghijklmnopqrstuvwxyz')
         a, b = self.Pipe()

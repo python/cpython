@@ -192,9 +192,8 @@ class BasicSocketTests(unittest.TestCase):
         self.assertTrue(s.startswith("OpenSSL {:d}.{:d}.{:d}".format(major, minor, fix)),
                         (s, t))
 
+    @test_support.requires_resource('network')
     def test_ciphers(self):
-        if not test_support.is_resource_enabled('network'):
-            return
         remote = ("svn.python.org", 443)
         with test_support.transient_internet(remote[0]):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),

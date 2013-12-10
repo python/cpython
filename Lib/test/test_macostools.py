@@ -12,6 +12,8 @@ import macostools
 
 TESTFN2 = test_support.TESTFN + '2'
 
+requires_32bit = unittest.skipUnless(sys.maxint < 2**32, '32-bit only test')
+
 class TestMacostools(unittest.TestCase):
 
     def setUp(self):
@@ -51,30 +53,32 @@ class TestMacostools(unittest.TestCase):
                                           DeprecationWarning), quiet=True):
             macostools.touched(test_support.TESTFN)
 
-    if sys.maxint < 2**32:
-        def test_copy(self):
-            test_support.unlink(TESTFN2)
-            macostools.copy(test_support.TESTFN, TESTFN2)
-            self.assertEqual(self.compareData(), '')
+    @requires_32bit
+    def test_copy(self):
+        test_support.unlink(TESTFN2)
+        macostools.copy(test_support.TESTFN, TESTFN2)
+        self.assertEqual(self.compareData(), '')
 
-    if sys.maxint < 2**32:
-        def test_mkalias(self):
-            test_support.unlink(TESTFN2)
-            macostools.mkalias(test_support.TESTFN, TESTFN2)
-            fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
-            self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
+    @requires_32bit
+    def test_mkalias(self):
+        test_support.unlink(TESTFN2)
+        macostools.mkalias(test_support.TESTFN, TESTFN2)
+        fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
+        self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
-        def test_mkalias_relative(self):
-            test_support.unlink(TESTFN2)
-            # If the directory doesn't exist, then chances are this is a new
-            # install of Python so don't create it since the user might end up
-            # running ``sudo make install`` and creating the directory here won't
-            # leave it with the proper permissions.
-            if not os.path.exists(sys.prefix):
-                return
-            macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
-            fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
-            self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
+    @requires_32bit
+    # If the directory doesn't exist, then chances are this is a new
+    # install of Python so don't create it since the user might end up
+    # running ``sudo make install`` and creating the directory here won't
+    # leave it with the proper permissions.
+    @unittest.skipUnless(os.path.exists(sys.prefix),
+                         "%r doesn't exist" % sys.prefix)
+    def test_mkalias_relative(self):
+        test_support.unlink(TESTFN2)
+
+        macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
+        fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
+        self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
 
 def test_main():

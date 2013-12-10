@@ -526,7 +526,7 @@ class TestCase(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(reduce(add, d), "".join(d.keys()))
 
-    # This test case will be removed if we don't have Unicode
+    @unittest.skipUnless(have_unicode, 'needs unicode support')
     def test_unicode_join_endcase(self):
 
         # This class inserts a Unicode object into its argument's natural
@@ -567,8 +567,6 @@ class TestCase(unittest.TestCase):
                 unlink(TESTFN)
             except OSError:
                 pass
-    if not have_unicode:
-        def test_unicode_join_endcase(self): pass
 
     # Test iterators with 'x in y' and 'x not in y'.
     def test_in_and_not_in(self):

@@ -125,9 +125,7 @@ class ThreadTests(BaseTestCase):
         try:
             threading.stack_size(262144)
         except thread.error:
-            if verbose:
-                print 'platform does not support changing thread stack size'
-            return
+            self.skipTest('platform does not support changing thread stack size')
         self.test_various_ops()
         threading.stack_size(0)
 
@@ -138,9 +136,7 @@ class ThreadTests(BaseTestCase):
         try:
             threading.stack_size(0x100000)
         except thread.error:
-            if verbose:
-                print 'platform does not support changing thread stack size'
-            return
+            self.skipTest('platform does not support changing thread stack size')
         self.test_various_ops()
         threading.stack_size(0)
 
@@ -167,9 +163,7 @@ class ThreadTests(BaseTestCase):
         try:
             import ctypes
         except ImportError:
-            if verbose:
-                print "test_PyThreadState_SetAsyncExc can't import ctypes"
-            return  # can't do anything
+            self.skipTest('requires ctypes')
 
         set_async_exc = ctypes.pythonapi.PyThreadState_SetAsyncExc
 
@@ -275,9 +269,7 @@ class ThreadTests(BaseTestCase):
         try:
             import ctypes
         except ImportError:
-            if verbose:
-                print("test_finalize_with_runnning_thread can't import ctypes")
-            return  # can't do anything
+            self.skipTest('requires ctypes')
 
         rc = subprocess.call([sys.executable, "-c", """if 1:
             import ctypes, sys, time, thread

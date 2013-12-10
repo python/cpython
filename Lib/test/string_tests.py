@@ -750,10 +750,10 @@ class CommonTest(unittest.TestCase):
         self.checkraises(TypeError, 'hello', 'replace', 42, 'h')
         self.checkraises(TypeError, 'hello', 'replace', 'h', 42)
 
+    @unittest.skipIf(sys.maxint > (1 << 32) or struct.calcsize('P') != 4,
+                     'only applies to 32-bit platforms')
     def test_replace_overflow(self):
         # Check for overflow checking on 32 bit machines
-        if sys.maxint != 2147483647 or struct.calcsize("P") > 4:
-            return
         A2_16 = "A" * (2**16)
         self.checkraises(OverflowError, A2_16, "replace", "", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
@@ -1286,27 +1286,27 @@ class MixinStrUserStringTest:
     # Additional tests that only work with
     # 8bit compatible object, i.e. str and UserString
 
-    if test_support.have_unicode:
-        def test_encoding_decoding(self):
-            codecs = [('rot13', 'uryyb jbeyq'),
-                      ('base64', 'aGVsbG8gd29ybGQ=\n'),
-                      ('hex', '68656c6c6f20776f726c64'),
-                      ('uu', 'begin 666 <data>\n+:&5L;&\\@=V]R;&0 \n \nend\n')]
-            for encoding, data in codecs:
-                self.checkequal(data, 'hello world', 'encode', encoding)
-                self.checkequal('hello world', data, 'decode', encoding)
-            # zlib is optional, so we make the test optional too...
-            try:
-                import zlib
-            except ImportError:
-                pass
-            else:
-                data = 'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
-                self.checkequal(data, 'hello world', 'encode', 'zlib')
-                self.checkequal('hello world', data, 'decode', 'zlib')
+    @unittest.skipUnless(test_support.have_unicode, 'no unicode support')
+    def test_encoding_decoding(self):
+        codecs = [('rot13', 'uryyb jbeyq'),
+                  ('base64', 'aGVsbG8gd29ybGQ=\n'),
+                  ('hex', '68656c6c6f20776f726c64'),
+                  ('uu', 'begin 666 <data>\n+:&5L;&\\@=V]R;&0 \n \nend\n')]
+        for encoding, data in codecs:
+            self.checkequal(data, 'hello world', 'encode', encoding)
+            self.checkequal('hello world', data, 'decode', encoding)
+        # zlib is optional, so we make the test optional too...
+        try:
+            import zlib
+        except ImportError:
+            pass
+        else:
+            data = 'x\x9c\xcbH\xcd\xc9\xc9W(\xcf/\xcaI\x01\x00\x1a\x0b\x04]'
+            self.checkequal(data, 'hello world', 'encode', 'zlib')
+            self.checkequal('hello world', data, 'decode', 'zlib')
 
-            self.checkraises(TypeError, 'xyz', 'decode', 42)
-            self.checkraises(TypeError, 'xyz', 'encode', 42)
+        self.checkraises(TypeError, 'xyz', 'decode', 42)
+        self.checkraises(TypeError, 'xyz', 'encode', 42)
 
 
 class MixinStrUnicodeTest:

@@ -1,4 +1,4 @@
-
+import unittest
 import struct
 import sys
 from test import test_support, string_tests
@@ -110,12 +110,12 @@ class StrTest(
         self.assertEqual(str(Foo9("foo")), "string")
         self.assertEqual(unicode(Foo9("foo")), u"not unicode")
 
+    # This test only affects 32-bit platforms because expandtabs can only take
+    # an int as the max value, not a 64-bit C long.  If expandtabs is changed
+    # to take a 64-bit long, this test should apply to all platforms.
+    @unittest.skipIf(sys.maxint > (1 << 32) or struct.calcsize('P') != 4,
+                     'only applies to 32-bit platforms')
     def test_expandtabs_overflows_gracefully(self):
-        # This test only affects 32-bit platforms because expandtabs can only take
-        # an int as the max value, not a 64-bit C long.  If expandtabs is changed
-        # to take a 64-bit long, this test should apply to all platforms.
-        if sys.maxint > (1 << 32) or struct.calcsize('P') != 4:
-            return
         self.assertRaises(OverflowError, 't\tt\t'.expandtabs, sys.maxint)
 
     def test__format__(self):

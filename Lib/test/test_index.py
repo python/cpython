@@ -91,7 +91,7 @@ class SeqTestCase(unittest.TestCase):
         self.assertEqual(self.seq[self.o:self.o2], self.seq[1:3])
         self.assertEqual(self.seq[self.n:self.n2], self.seq[2:4])
 
-    def test_slice_bug7532(self):
+    def test_slice_bug7532a(self):
         seqlen = len(self.seq)
         self.o.ind = int(seqlen * 1.5)
         self.n.ind = seqlen + 2
@@ -99,9 +99,12 @@ class SeqTestCase(unittest.TestCase):
         self.assertEqual(self.seq[:self.o], self.seq)
         self.assertEqual(self.seq[self.n:], self.seq[0:0])
         self.assertEqual(self.seq[:self.n], self.seq)
+
+    def test_slice_bug7532b(self):
         if isinstance(self.seq, ClassicSeq):
-            return
+            self.skipTest('test fails for ClassicSeq')
         # These tests fail for ClassicSeq (see bug #7532)
+        seqlen = len(self.seq)
         self.o2.ind = -seqlen - 2
         self.n2.ind = -int(seqlen * 1.5)
         self.assertEqual(self.seq[self.o2:], self.seq)

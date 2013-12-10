@@ -461,18 +461,15 @@ class PosixTester(unittest.TestCase):
             os.mkdir(base_path)
             os.chdir(base_path)
         except:
-#           Just returning nothing instead of the SkipTest exception,
-#           because the test results in Error in that case.
-#           Is that ok?
-#            raise unittest.SkipTest, "cannot create directory for testing"
-            return
+            self.skipTest("cannot create directory for testing")
 
         try:
             def _create_and_do_getcwd(dirname, current_path_length = 0):
                 try:
                     os.mkdir(dirname)
                 except:
-                    raise unittest.SkipTest, "mkdir cannot create directory sufficiently deep for getcwd test"
+                    self.skipTest("mkdir cannot create directory sufficiently "
+                                  "deep for getcwd test")
 
                 os.chdir(dirname)
                 try:
