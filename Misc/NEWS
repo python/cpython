@@ -128,6 +128,11 @@ Library
 - Issue #19545: Avoid chained exceptions while passing stray % to
   time.strptime().  Initial patch by Claudiu Popa.
 
+IDLE
+----
+
+- Issue #19481: print() of string subclass instance in IDLE no more hangs.
+
 Tests
 -----
 
