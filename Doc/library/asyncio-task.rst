@@ -56,6 +56,55 @@ it running: call ``yield from coroutine`` from another coroutine
 Coroutines (and tasks) can only run when the event loop is running.
 
 
+.. _asyncio-hello-world-coroutine:
+
+Example: "Hello World" coroutine
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Print ``"Hello World"`` every two seconds using a coroutine::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def greet_every_two_seconds():
+        while True:
+            print('Hello World')
+            yield from asyncio.sleep(2)
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(greet_every_two_seconds())
+
+
+.. seealso::
+
+   :ref:`Hello World example using a callback <asyncio-hello-world-callback>`.
+
+
+Example: Chain coroutines
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example chaining coroutines::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def compute(x, y):
+        print("Compute %s + %s ..." % (x, y))
+        yield from asyncio.sleep(1.0)
+        return x + y
+
+    @asyncio.coroutine
+    def print_sum(x, y):
+        result = yield from compute(x, y)
+        print("%s + %s = %s" % (x, y, result))
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(print_sum(1, 2))
+
+``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
+until ``compute()`` is completed before returing its result.
+
+
 InvalidStateError
 -----------------
 
@@ -148,6 +197,69 @@ Future
       :exc:`InvalidStateError`.
 
 
+Example: Future with run_until_complete()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def slow_operation(future):
+        yield from asyncio.sleep(1)
+        future.set_result('Future in done!')
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.Future()
+    asyncio.Task(slow_operation(future))
+    loop.run_until_complete(future)
+    print(future.result())
+
+The coroutine is responsible of the computation (which takes 1 second) and
+it stores the result into the future. The
+:meth:`~BaseEventLoop.run_until_complete` method waits for the completion of
+the future.
+
+.. note::
+   The :meth:`~BaseEventLoop.run_until_complete` method uses internally the
+   :meth:`~Future.add_done_callback` method to be notified when the future is
+   done.
+
+
+Example: Future with run_forever()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The previous example can be written differently using the
+:meth:`Future.add_done_callback` method to describe explicitly the control
+flow::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def slow_operation(future):
+        yield from asyncio.sleep(1)
+        future.set_result('Future in done!')
+
+    def got_result(future):
+        print(future.result())
+        loop.stop()
+
+    loop = asyncio.get_event_loop()
+    future = asyncio.Future()
+    asyncio.Task(slow_operation(future))
+    future.add_done_callback(got_result)
+    loop.run_forever()
+
+In this example, the future is responsible to display the result and to stop
+the loop.
+
+.. note::
+   The coroutine is only executed when the event loop starts running, so it is
+   possible to add a "done callback" to the future after creating the task
+   scheduling the coroutine.
+
+
+
 Task
 ----
 
@@ -193,6 +305,46 @@ Task
       frames retrieved by get_stack().  The limit argument is passed to
       get_stack().  The file argument is an I/O stream to which the output
       goes; by default it goes to sys.stderr.
+
+
+Example: Parallel execution of tasks
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Example executing 3 tasks (A, B, C) in parallel::
+
+    import asyncio
+
+    @asyncio.coroutine
+    def factorial(task, n):
+        f = 1
+        for i in range(2, n+1):
+            print("[%s] Compute factorial(%s)..." % (task, i))
+            yield from asyncio.sleep(1)
+            f *= n
+        print("[%s] factorial(%s) = %s" % (task, n, f))
+
+    task_a = asyncio.Task(factorial("A", 2))
+    task_b = asyncio.Task(factorial("B", 3))
+    task_c = asyncio.Task(factorial("C", 4))
+    tasks = [task_a, task_b, task_c]
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.wait(tasks))
+
+Output::
+
+    [A] Compute factorial(2)...
+    [B] Compute factorial(2)...
+    [C] Compute factorial(2)...
+    [A] factorial(2) = 2
+    [B] Compute factorial(3)...
+    [C] Compute factorial(3)...
+    [B] factorial(3) = 9
+    [C] Compute factorial(4)...
+    [C] factorial(4) = 64
+
+When a task is created, it is automatically scheduled for execution. The event
+loop stops when all tasks are done.
 
 
 Task functions
@@ -321,146 +473,4 @@ Task functions
       This does not raise :exc:`TimeoutError`! Futures that aren't done when
       the timeout occurs are returned in the second set.
 
-
-Examples
---------
-
-
-.. _asyncio-hello-world-coroutine:
-
-Example: Hello World (coroutine)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Print ``Hello World`` every two seconds, using a coroutine::
-
-    import asyncio
-
-    @asyncio.coroutine
-    def greet_every_two_seconds():
-        while True:
-            print('Hello World')
-            yield from asyncio.sleep(2)
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(greet_every_two_seconds())
-
-
-.. seealso::
-
-   :ref:`Hello World example using a callback <asyncio-hello-world-callback>`.
-
-Example: Chains coroutines and parallel execution
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Example chaining coroutines and executing multiple coroutines in parallel::
-
-    import asyncio
-
-    @asyncio.coroutine
-    def compute(x, y):
-        print("Start computing %s + %s" % (x, y))
-        yield from asyncio.sleep(3.0)
-        return x + y
-
-    @asyncio.coroutine
-    def print_sum(x, y):
-        result = yield from compute(x, y)
-        print("%s + %s = %s" % (x, y, result))
-
-    @asyncio.coroutine
-    def wait_task(task):
-        while 1:
-            done, pending = yield from asyncio.wait([task], timeout=1.0)
-            if done:
-                break
-            print("Compute in progress...")
-        asyncio.get_event_loop().stop()
-
-    print("Schedule tasks")
-    task = asyncio.async(print_sum(1, 2))
-    asyncio.async(wait_task(task))
-
-    print("Execute tasks")
-    loop = asyncio.get_event_loop()
-    loop.run_forever()
-    loop.close()
-
-
-
-Output::
-
-    Schedule tasks
-    Execute tasks
-    Start computing 1 + 2
-    Compute in progress...
-    Compute in progress...
-    1 + 2 = 3
-
-Details:
-
-* ``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
-  until ``compute()`` is complete. Coroutines are executed in parallel:
-  ``wait_task()`` is executed while ``compute()`` is blocked in
-  ``asyncio.sleep(3.0)``.
-
-* Coroutines are not executed before the loop is running: ``"Execute tasks"``
-  is written before ``"Start computing 1 + 2"``.
-
-* ``wait_task()`` stops the event loop when ``print_sum()`` is done.
-
-
-Example: Future with run_until_complete()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Example combining a :class:`Future` and a :ref:`coroutine <coroutine>`::
-
-    import asyncio
-
-    @asyncio.coroutine
-    def slow_operation(future):
-        yield from asyncio.sleep(1)
-        future.set_result('Future in done!')
-
-    loop = asyncio.get_event_loop()
-    future = asyncio.Future()
-    asyncio.Task(slow_operation(future))
-    loop.run_until_complete(future)
-    print(future.result())
-    loop.close()
-
-The example waits for the completion of the future (which takes 1 second). The
-coroutine is responsible of the computation. The event loop is notified when
-the future is done (see the :meth:`Future.set_result` method).
-
-Example: Future with run_until_complete()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The previous example can be written differently using the
-:meth:`Future.add_done_callback` method::
-
-    import asyncio
-
-    @asyncio.coroutine
-    def slow_operation(future):
-        yield from asyncio.sleep(1)
-        future.set_result('Future in done!')
-
-    def exit(future):
-        print(future.result())
-        loop.stop()
-
-    loop = asyncio.get_event_loop()
-    future = asyncio.Future()
-    asyncio.Task(slow_operation(future))
-    future.add_done_callback(exit)
-    loop.run_forever()
-    loop.close()
-
-The future is now responsible to display the result and stop the loop using the
-``exit()`` callback.
-
-.. note::
-   The coroutine is only executed when the event loop starts running, so it is
-   possible to add a "done callback" to the future after creating the task
-   scheduling the coroutine.
 
