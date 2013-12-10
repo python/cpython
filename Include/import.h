@@ -86,15 +86,15 @@ PyAPI_FUNC(int) _PyImport_ReleaseLock(void);
 
 PyAPI_FUNC(void) _PyImport_ReInitLock(void);
 
-PyAPI_FUNC(PyObject *)_PyImport_FindBuiltin(
+PyAPI_FUNC(PyObject *) _PyImport_FindBuiltin(
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(PyObject *)_PyImport_FindExtensionObject(PyObject *, PyObject *);
-PyAPI_FUNC(int)_PyImport_FixupBuiltin(
+PyAPI_FUNC(PyObject *) _PyImport_FindExtensionObject(PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyImport_FixupBuiltin(
     PyObject *mod,
     const char *name            /* UTF-8 encoded string */
     );
-PyAPI_FUNC(int)_PyImport_FixupExtensionObject(PyObject*, PyObject *, PyObject *);
+PyAPI_FUNC(int) _PyImport_FixupExtensionObject(PyObject*, PyObject *, PyObject *);
 
 struct _inittab {
     const char *name;           /* ASCII encoded string */
