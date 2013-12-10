@@ -281,10 +281,6 @@ Task
 
       ``None`` is returned when called not in the context of a :class:`Task`.
 
-   .. method:: cancel()
-
-      Cancel the task.
-
    .. method:: get_stack(self, \*, limit=None)
 
       Return the list of stack frames for this task's coroutine.
