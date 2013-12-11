@@ -122,6 +122,56 @@ long_normalize(PyLongObject *v)
     return v;
 }
 
+/* _PyLong_FromNbInt: Convert the given object to a PyLongObject
+   using the nb_int slot, if available.  Raise TypeError if either the
+   nb_int slot is not available or the result of the call to nb_int
+   returns something not of type int.
+*/
+PyLongObject *
+_PyLong_FromNbInt(PyObject *integral)
+{
+    PyNumberMethods *nb;
+    PyObject *result;
+
+    /* Fast path for the case that we already have an int. */
+    if (PyLong_CheckExact(integral)) {
+        Py_INCREF(integral);
+        return (PyLongObject *)integral;
+    }
+
+    nb = Py_TYPE(integral)->tp_as_number;
+    if (nb == NULL || nb->nb_int == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "an integer is required (got type %.200s)",
+                     Py_TYPE(integral)->tp_name);
+        return NULL;
+    }
+
+    /* Convert using the nb_int slot, which should return something
+       of exact type int. */
+    result = nb->nb_int(integral);
+    if (!result || PyLong_CheckExact(result))
+        return (PyLongObject *)result;
+    if (!PyLong_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__int__ returned non-int (type %.200s)",
+                     result->ob_type->tp_name);
+        Py_DECREF(result);
+        return NULL;
+    }
+    /* Issue #17576: warn if 'result' not of exact type int. */
+    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "__int__ returned non-int (type %.200s).  "
+            "The ability to return an instance of a strict subclass of int "
+            "is deprecated, and may be removed in a future version of Python.",
+            result->ob_type->tp_name)) {
+        Py_DECREF(result);
+        return NULL;
+    }
+    return (PyLongObject *)result;
+}
+
+
 /* Allocate a new int object with size digits.
    Return NULL and set exception if we run out of memory. */
 
@@ -353,28 +403,17 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
         return -1;
     }
 
-    if (!PyLong_Check(vv)) {
-        PyNumberMethods *nb;
-        nb = vv->ob_type->tp_as_number;
-        if (nb == NULL || nb->nb_int == NULL) {
-            PyErr_SetString(PyExc_TypeError,
-                            "an integer is required");
-            return -1;
-        }
-        vv = (*nb->nb_int) (vv);
-        if (vv == NULL)
+    if (PyLong_Check(vv)) {
+        v = (PyLongObject *)vv;
+    }
+    else {
+        v = _PyLong_FromNbInt(vv);
+        if (v == NULL)
             return -1;
         do_decref = 1;
-        if (!PyLong_Check(vv)) {
-            Py_DECREF(vv);
-            PyErr_SetString(PyExc_TypeError,
-                            "nb_int should return int object");
-            return -1;
-        }
     }
 
     res = -1;
-    v = (PyLongObject *)vv;
     i = Py_SIZE(v);
 
     switch (i) {
@@ -418,7 +457,7 @@ PyLong_AsLongAndOverflow(PyObject *vv, int *overflow)
     }
   exit:
     if (do_decref) {
-        Py_DECREF(vv);
+        Py_DECREF(v);
     }
     return res;
 }
@@ -636,36 +675,25 @@ _PyLong_AsUnsignedLongMask(PyObject *vv)
 unsigned long
 PyLong_AsUnsignedLongMask(PyObject *op)
 {
-    PyNumberMethods *nb;
     PyLongObject *lo;
     unsigned long val;
 
-    if (op && PyLong_Check(op))
-        return _PyLong_AsUnsignedLongMask(op);
-
-    if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
-        nb->nb_int == NULL) {
-        PyErr_SetString(PyExc_TypeError, "an integer is required");
+    if (op == NULL) {
+        PyErr_BadInternalCall();
         return (unsigned long)-1;
     }
 
-    lo = (PyLongObject*) (*nb->nb_int) (op);
+    if (PyLong_Check(op)) {
+        return _PyLong_AsUnsignedLongMask(op);
+    }
+
+    lo = _PyLong_FromNbInt(op);
     if (lo == NULL)
         return (unsigned long)-1;
-    if (PyLong_Check(lo)) {
-        val = _PyLong_AsUnsignedLongMask((PyObject *)lo);
-        Py_DECREF(lo);
-        if (PyErr_Occurred())
-            return (unsigned long)-1;
-        return val;
-    }
-    else
-    {
-        Py_DECREF(lo);
-        PyErr_SetString(PyExc_TypeError,
-                        "nb_int should return int object");
-        return (unsigned long)-1;
-    }
+
+    val = _PyLong_AsUnsignedLongMask((PyObject *)lo);
+    Py_DECREF(lo);
+    return val;
 }
 
 int
@@ -1167,40 +1195,41 @@ PyLong_AsLongLong(PyObject *vv)
     PyLongObject *v;
     PY_LONG_LONG bytes;
     int res;
+    int do_decref = 0; /* if nb_int was called */
 
     if (vv == NULL) {
         PyErr_BadInternalCall();
         return -1;
     }
-    if (!PyLong_Check(vv)) {
-        PyNumberMethods *nb;
-        PyObject *io;
-        if ((nb = vv->ob_type->tp_as_number) == NULL ||
-            nb->nb_int == NULL) {
-            PyErr_SetString(PyExc_TypeError, "an integer is required");
+
+    if (PyLong_Check(vv)) {
+        v = (PyLongObject *)vv;
+    }
+    else {
+        v = _PyLong_FromNbInt(vv);
+        if (v == NULL)
             return -1;
-        }
-        io = (*nb->nb_int) (vv);
-        if (io == NULL)
-            return -1;
-        if (PyLong_Check(io)) {
-            bytes = PyLong_AsLongLong(io);
-            Py_DECREF(io);
-            return bytes;
-        }
-        Py_DECREF(io);
-        PyErr_SetString(PyExc_TypeError, "integer conversion failed");
-        return -1;
+        do_decref = 1;
     }
 
-    v = (PyLongObject*)vv;
+    res = 0;
     switch(Py_SIZE(v)) {
-    case -1: return -(sdigit)v->ob_digit[0];
-    case 0: return 0;
-    case 1: return v->ob_digit[0];
+    case -1:
+        bytes = -(sdigit)v->ob_digit[0];
+        break;
+    case 0:
+        bytes = 0;
+        break;
+    case 1:
+        bytes = v->ob_digit[0];
+        break;
+    default:
+        res = _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)&bytes,
+                                  SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 1);
     }
-    res = _PyLong_AsByteArray((PyLongObject *)vv, (unsigned char *)&bytes,
-                              SIZEOF_LONG_LONG, PY_LITTLE_ENDIAN, 1);
+    if (do_decref) {
+        Py_DECREF(v);
+    }
 
     /* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
     if (res < 0)
@@ -1280,36 +1309,25 @@ _PyLong_AsUnsignedLongLongMask(PyObject *vv)
 unsigned PY_LONG_LONG
 PyLong_AsUnsignedLongLongMask(PyObject *op)
 {
-    PyNumberMethods *nb;
     PyLongObject *lo;
     unsigned PY_LONG_LONG val;
 
-    if (op && PyLong_Check(op))
-        return _PyLong_AsUnsignedLongLongMask(op);
-
-    if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
-        nb->nb_int == NULL) {
-        PyErr_SetString(PyExc_TypeError, "an integer is required");
-        return (unsigned PY_LONG_LONG)-1;
+    if (op == NULL) {
+        PyErr_BadInternalCall();
+        return (unsigned long)-1;
     }
 
-    lo = (PyLongObject*) (*nb->nb_int) (op);
+    if (PyLong_Check(op)) {
+        return _PyLong_AsUnsignedLongLongMask(op);
+    }
+
+    lo = _PyLong_FromNbInt(op);
     if (lo == NULL)
         return (unsigned PY_LONG_LONG)-1;
-    if (PyLong_Check(lo)) {
-        val = _PyLong_AsUnsignedLongLongMask((PyObject *)lo);
-        Py_DECREF(lo);
-        if (PyErr_Occurred())
-            return (unsigned PY_LONG_LONG)-1;
-        return val;
-    }
-    else
-    {
-        Py_DECREF(lo);
-        PyErr_SetString(PyExc_TypeError,
-                        "nb_int should return int object");
-        return (unsigned PY_LONG_LONG)-1;
-    }
+
+    val = _PyLong_AsUnsignedLongLongMask((PyObject *)lo);
+    Py_DECREF(lo);
+    return val;
 }
 
 /* Get a C long long int from an int object or any object that has an
@@ -1339,28 +1357,17 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         return -1;
     }
 
-    if (!PyLong_Check(vv)) {
-        PyNumberMethods *nb;
-        nb = vv->ob_type->tp_as_number;
-        if (nb == NULL || nb->nb_int == NULL) {
-            PyErr_SetString(PyExc_TypeError,
-                            "an integer is required");
-            return -1;
-        }
-        vv = (*nb->nb_int) (vv);
-        if (vv == NULL)
+    if (PyLong_Check(vv)) {
+        v = (PyLongObject *)vv;
+    }
+    else {
+        v = _PyLong_FromNbInt(vv);
+        if (v == NULL)
             return -1;
         do_decref = 1;
-        if (!PyLong_Check(vv)) {
-            Py_DECREF(vv);
-            PyErr_SetString(PyExc_TypeError,
-                            "nb_int should return int object");
-            return -1;
-        }
     }
 
     res = -1;
-    v = (PyLongObject *)vv;
     i = Py_SIZE(v);
 
     switch (i) {
@@ -1404,7 +1411,7 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
     }
   exit:
     if (do_decref) {
-        Py_DECREF(vv);
+        Py_DECREF(v);
     }
     return res;
 }
