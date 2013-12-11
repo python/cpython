@@ -151,6 +151,8 @@ IDLE
 Tests
 -----
 
+- Issue #19828: Fixed test_site when the whole suite is run with -S.
+
 - Issue #19928: Implemented a test for repr() of cell objects.
 
 - Issue #19535: Fixed test_docxmlrpc, test_functools, test_inspect, and
