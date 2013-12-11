@@ -263,32 +263,7 @@ class IntTestCases(unittest.TestCase):
             def __int__(self):
                 return 42
 
-        class Foo1(object):
-            def __int__(self):
-                return 42
-
-        class Foo2(int):
-            def __int__(self):
-                return 42
-
-        class Foo3(int):
-            def __int__(self):
-                return self
-
-        class Foo4(int):
-            def __int__(self):
-                return 42
-
-        class Foo5(int):
-            def __int__(self):
-                return 42.
-
         self.assertEqual(int(Foo0()), 42)
-        self.assertEqual(int(Foo1()), 42)
-        self.assertEqual(int(Foo2()), 42)
-        self.assertEqual(int(Foo3()), 0)
-        self.assertEqual(int(Foo4()), 42)
-        self.assertRaises(TypeError, int, Foo5())
 
         class Classic:
             pass
@@ -350,6 +325,57 @@ class IntTestCases(unittest.TestCase):
 
                 with self.assertRaises(TypeError):
                     int(TruncReturnsBadInt())
+
+    def test_int_subclass_with_int(self):
+        class MyInt(int):
+            def __int__(self):
+                return 42
+
+        class BadInt(int):
+            def __int__(self):
+                return 42.0
+
+        my_int = MyInt(7)
+        self.assertEqual(my_int, 7)
+        self.assertEqual(int(my_int), 42)
+
+        self.assertRaises(TypeError, int, BadInt())
+
+    def test_int_returns_int_subclass(self):
+        class BadInt:
+            def __int__(self):
+                return True
+
+        class BadInt2(int):
+            def __int__(self):
+                return True
+
+        class TruncReturnsBadInt:
+            def __trunc__(self):
+                return BadInt()
+
+        class TruncReturnsIntSubclass:
+            def __trunc__(self):
+                return True
+
+        bad_int = BadInt()
+        with self.assertWarns(DeprecationWarning):
+            n = int(bad_int)
+        self.assertEqual(n, 1)
+
+        bad_int = BadInt2()
+        with self.assertWarns(DeprecationWarning):
+            n = int(bad_int)
+        self.assertEqual(n, 1)
+
+        bad_int = TruncReturnsBadInt()
+        with self.assertWarns(DeprecationWarning):
+            n = int(bad_int)
+        self.assertEqual(n, 1)
+
+        good_int = TruncReturnsIntSubclass()
+        n = int(good_int)
+        self.assertEqual(n, 1)
 
     def test_error_message(self):
         def check(s, base=None):
