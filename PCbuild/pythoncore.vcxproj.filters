@@ -414,7 +414,6 @@
     <ClInclude Include="..\Python\thread_nt.h">
       <Filter>Python</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\namespaceobject.h" />
     <ClInclude Include="..\Python\condvar.h">
       <Filter>Python</Filter>
     </ClInclude>
@@ -423,6 +422,12 @@
     </ClInclude>
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\namespaceobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Modules\hashtable.h">
+      <Filter>Modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -930,12 +935,23 @@
     <ClCompile Include="..\Modules\_winapi.c">
       <Filter>PC</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\namespaceobject.c" />
     <ClCompile Include="..\Modules\_stat.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pyhash.c">
       <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\namespaceobject.c">
+      <Filter>Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_opcode.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_tracemalloc.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\hashtable.c">
+      <Filter>Modules</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
