@@ -74,6 +74,9 @@ IDLE
 - Issue #19481: print() of unicode, str or bytearray subclass instance in IDLE
   no more hangs.
 
+- Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
+  shell window is present.
+
 Tests
 -----
 
