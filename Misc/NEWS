@@ -23,6 +23,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #19063: if a Charset's body_encoding was set to None, the email
+  package would generate a message claiming the Content-Transfer-Encoding
+  was 7bit, and produce garbage output for the content.  This now works.
+  A couple of other set_payload mishandlings of non-ASCII are also fixed.
+
 - Issue #17200: telnetlib's read_until and expect timeout was broken by the
   fix to Issue #14635 in Python 3.3.0 to be interpreted as milliseconds
   instead of seconds when the platform supports select.poll (ie: everywhere).
