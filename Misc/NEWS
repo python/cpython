@@ -10,6 +10,9 @@ What's New in Python 3.3.4 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #17576: Deprecation warning emitted now when __int__() or __index__()
+  return not int instance.
+
 - Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
 
 - Issue #19729: In str.format(), fix recursive expansion in format spec.
