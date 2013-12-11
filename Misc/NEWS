@@ -131,7 +131,10 @@ Library
 IDLE
 ----
 
-- Issue #19481: print() of string subclass instance in IDLE no more hangs.
+- Issue #19481: print() of string subclass instance in IDLE no longer hangs.
+
+- Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
+  shell window is present.
 
 Tests
 -----
