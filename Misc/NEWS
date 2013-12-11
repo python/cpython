@@ -17,6 +17,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #17200: telnetlib's read_until and expect timeout was broken by the
+  fix to Issue #14635 in Python 2.7.4 to be interpreted as milliseconds
+  instead of seconds when the platform supports select.poll (ie: everywhere).
+  It is now treated as seconds once again.
+
 - Issue #19099: The struct module now supports Unicode format strings.
 
 - Issue #19878: Fix segfault in bz2 module after calling __init__ twice with
