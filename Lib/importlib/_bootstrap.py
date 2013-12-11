@@ -841,6 +841,10 @@ class ModuleSpec:
     def has_location(self):
         return self._set_fileattr
 
+    @has_location.setter
+    def has_location(self, value):
+        self._set_fileattr = bool(value)
+
 
 def spec_from_loader(name, loader, *, origin=None, is_package=None):
     """Return a module spec based on various loader methods."""

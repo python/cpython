@@ -901,7 +901,7 @@ find and load modules.
 
    .. attribute:: has_location
 
-   (Read-only) Boolean indicating whether or not the module's "origin"
+   Boolean indicating whether or not the module's "origin"
    attribute refers to a loadable location.
 
 :mod:`importlib.util` -- Utility code for importers
