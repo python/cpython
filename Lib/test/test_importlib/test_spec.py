@@ -116,6 +116,13 @@ class ModuleSpecTests:
         self.assertIs(spec.cached, None)
         self.assertFalse(spec.has_location)
 
+    def test_has_location_setter(self):
+        spec = self.machinery.ModuleSpec(self.name, self.loader,
+                                         origin='somewhere')
+        self.assertFalse(spec.has_location)
+        spec.has_location = True
+        self.assertTrue(spec.has_location)
+
     def test_equality(self):
         other = type(sys.implementation)(name=self.name,
                                          loader=self.loader,
