@@ -20,6 +20,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #17200: telnetlib's read_until and expect timeout was broken by the
+  fix to Issue #14635 in Python 3.3.0 to be interpreted as milliseconds
+  instead of seconds when the platform supports select.poll (ie: everywhere).
+  It is now treated as seconds once again.
+
 - Issue #17429: platform.linux_distribution() now decodes files from the UTF-8
   encoding with the surrogateescape error handler, instead of decoding from the
   locale encoding in strict mode. It fixes the function on Fedora 19 which is
