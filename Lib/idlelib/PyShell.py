@@ -1540,20 +1540,22 @@ def main():
                     args.remove(filename)
             if not args:
                 flist.new()
+
     if enable_shell:
         shell = flist.open_shell()
         if not shell:
             return # couldn't open shell
-
         if macosxSupport.runningAsOSXApp() and flist.dict:
             # On OSX: when the user has double-clicked on a file that causes
             # IDLE to be launched the shell window will open just in front of
             # the file she wants to see. Lower the interpreter window when
             # there are open files.
             shell.top.lower()
+    else:
+        shell = flist.pyshell
 
-    shell = flist.pyshell
-    # handle remaining options:
+    # Handle remaining options. If any of these are set, enable_shell
+    # was set also, so shell must be true to reach here.
     if debug:
         shell.open_debugger()
     if startup:
@@ -1561,7 +1563,7 @@ def main():
                    os.environ.get("PYTHONSTARTUP")
         if filename and os.path.isfile(filename):
             shell.interp.execfile(filename)
-    if shell and cmd or script:
+    if cmd or script:
         shell.interp.runcommand("""if 1:
             import sys as _sys
             _sys.argv = %r
@@ -1572,13 +1574,14 @@ def main():
         elif script:
             shell.interp.prepend_syspath(script)
             shell.interp.execfile(script)
-
-    # Check for problematic OS X Tk versions and print a warning message
-    # in the IDLE shell window; this is less intrusive than always opening
-    # a separate window.
-    tkversionwarning = macosxSupport.tkVersionWarning(root)
-    if tkversionwarning:
-        shell.interp.runcommand(''.join(("print('", tkversionwarning, "')")))
+    elif shell:
+        # If there is a shell window and no cmd or script in progress,
+        # check for problematic OS X Tk versions and print a warning
+        # message in the IDLE shell window; this is less intrusive
+        # than always opening a separate window.
+        tkversionwarning = macosxSupport.tkVersionWarning(root)
+        if tkversionwarning:
+            shell.interp.runcommand("print('%s')" % tkversionwarning)
 
     while flist.inversedict:  # keep IDLE running while files are open.
         root.mainloop()
