@@ -105,6 +105,8 @@ Library
 - Issue #19698: Removed exec_module() methods from
   importlib.machinery.BuiltinImporter and ExtensionFileLoader.
 
+- Issue #18864: Added a setter for ModuleSpec.has_location.
+
 - Fixed _pickle.Unpickler to not fail when loading empty strings as
   persistent IDs.
 
