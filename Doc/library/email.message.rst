@@ -196,7 +196,13 @@ Here are the methods of the :class:`Message` class:
 
       Set the entire message object's payload to *payload*.  It is the client's
       responsibility to ensure the payload invariants.  Optional *charset* sets
-      the message's default character set; see :meth:`set_charset` for details.
+      the message's character set; see :meth:`set_charset` for details.  If
+      *payload* is a string containing non-ASCII characters, *charset* is
+      required.
+
+      .. versionchanged:: 3.4
+         Previous to 3.4 *charset* was not required when *payload* was a
+         non-ASCII string, but omitting it produced nonsense results.
 
    .. method:: set_charset(charset)
 
