@@ -3202,9 +3202,9 @@ mpd_qabs(mpd_t *result, const mpd_t *a, const mpd_context_t *ctx,
 }
 
 static inline void
-_mpd_ptrswap(mpd_t **a, mpd_t **b)
+_mpd_ptrswap(const mpd_t **a, const mpd_t **b)
 {
-    mpd_t *t = *a;
+    const mpd_t *t = *a;
     *a = *b;
     *b = t;
 }
@@ -3232,7 +3232,7 @@ static void
 _mpd_qaddsub(mpd_t *result, const mpd_t *a, const mpd_t *b, uint8_t sign_b,
              const mpd_context_t *ctx, uint32_t *status)
 {
-    mpd_t *big, *small;
+    const mpd_t *big, *small;
     MPD_NEW_STATIC(big_aligned,0,0,0,0);
     MPD_NEW_CONST(tiny,0,0,1,1,1,1);
     mpd_uint_t carry;
@@ -3242,7 +3242,7 @@ _mpd_qaddsub(mpd_t *result, const mpd_t *a, const mpd_t *b, uint8_t sign_b,
 
 
     /* compare exponents */
-    big = (mpd_t *)a; small = (mpd_t *)b;
+    big = a; small = b;
     if (big->exp != small->exp) {
         if (small->exp > big->exp) {
             _mpd_ptrswap(&big, &small);
@@ -4421,7 +4421,7 @@ mpd_qfma(mpd_t *result, const mpd_t *a, const mpd_t *b, const mpd_t *c,
          const mpd_context_t *ctx, uint32_t *status)
 {
     uint32_t workstatus = 0;
-    mpd_t *cc = (mpd_t *)c;
+    const mpd_t *cc = c;
 
     if (result == c) {
         if ((cc = mpd_qncopy(c)) == NULL) {
@@ -4435,7 +4435,7 @@ mpd_qfma(mpd_t *result, const mpd_t *a, const mpd_t *b, const mpd_t *c,
         mpd_qadd(result, result, cc, ctx, &workstatus);
     }
 
-    if (cc != c) mpd_del(cc);
+    if (cc != c) mpd_del((mpd_t *)cc);
     *status |= workstatus;
 }
 
@@ -5727,7 +5727,7 @@ static inline void
 _mpd_qmul(mpd_t *result, const mpd_t *a, const mpd_t *b,
           const mpd_context_t *ctx, uint32_t *status)
 {
-    mpd_t *big = (mpd_t *)a, *small = (mpd_t *)b;
+    const mpd_t *big = a, *small = b;
     mpd_uint_t *rdata = NULL;
     mpd_uint_t rbuf[MPD_MINALLOC_MAX];
     mpd_size_t rsize, i;
