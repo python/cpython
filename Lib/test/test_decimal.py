@@ -1163,10 +1163,10 @@ class FormatTest(unittest.TestCase):
         thousands_sep = locale.localeconv()['thousands_sep']
         if decimal_point != '\u066b':
             self.skipTest('inappropriate decimal point separator'
-                          '({!r} not {!r})'.format(decimal_point, '\u066b'))
+                          '({!a} not {!a})'.format(decimal_point, '\u066b'))
         if thousands_sep != '\u066c':
             self.skipTest('inappropriate thousands separator'
-                          '({!r} not {!r})'.format(thousands_sep, '\u066c'))
+                          '({!a} not {!a})'.format(thousands_sep, '\u066c'))
 
         self.assertEqual(format(Decimal('100000000.123'), 'n'),
                          '100\u066c000\u066c000\u066b123')
