@@ -457,11 +457,7 @@ class SysModuleTest(unittest.TestCase):
             elif algo == 2:
                 self.assertEqual(sys.hash_info.algorithm, "fnv")
             else:
-                processor = platform.processor().lower()
-                if processor in {"sparc", "mips"}:
-                    self.assertEqual(sys.hash_info.algorithm, "fnv")
-                else:
-                    self.assertEqual(sys.hash_info.algorithm, "siphash24")
+                self.assertIn(sys.hash_info.algorithm, {"fnv", "siphash24"})
         else:
             # PY_HASH_EXTERNAL
             self.assertEqual(algo, 0)
