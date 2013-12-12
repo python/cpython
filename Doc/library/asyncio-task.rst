@@ -74,7 +74,6 @@ Print ``"Hello World"`` every two seconds using a coroutine::
     loop = asyncio.get_event_loop()
     loop.run_until_complete(greet_every_two_seconds())
 
-
 .. seealso::
 
    :ref:`Hello World example using a callback <asyncio-hello-world-callback>`.
@@ -103,6 +102,16 @@ Example chaining coroutines::
 
 ``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
 until ``compute()`` is completed before returing its result.
+
+Sequence diagram of the example:
+
+.. image:: tulip_coro.png
+   :align: center
+
+The diagram shows the logical links between the task and the two coroutines, it
+does not describe exactly how things work internally. For example, the sleep
+coroutine creates an internal future which uses
+:meth:`BaseEventLoop.call_later` to wake up the task in 1 second.
 
 
 InvalidStateError
