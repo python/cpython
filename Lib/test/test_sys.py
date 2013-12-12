@@ -447,7 +447,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.hash_info.inf, int)
         self.assertIsInstance(sys.hash_info.nan, int)
         self.assertIsInstance(sys.hash_info.imag, int)
-        algo = sysconfig.get_config_var("PY_HASH_ALGORITHM")
+        algo = sysconfig.get_config_var("Py_HASH_ALGORITHM")
         if sys.hash_info.algorithm in {"fnv", "siphash24"}:
             self.assertIn(sys.hash_info.hash_bits, {32, 64})
             self.assertIn(sys.hash_info.seed_bits, {32, 64, 128})
