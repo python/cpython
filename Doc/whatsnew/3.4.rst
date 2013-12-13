@@ -1001,6 +1001,9 @@ Deprecated features
 Porting to Python 3.4
 =====================
 
+Changes in the Python API
+-------------------------
+
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
@@ -1027,10 +1030,6 @@ that may require changes to your code.
   name but an empty list instead. Determing if a module is a package should be
   done using ``hasattr(module, '__path__')``.
 
-* :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
-  argument is not set. Previously only ``NULL`` was returned with no exception
-  set.
-
 * :func:`py_compile.compile` now raises :exc:`FileExistsError` if the file path
   it would write to is a symlink or a non-regular file. This is to act as a
   warning that import will overwrite those files with a regular file regardless
@@ -1055,11 +1054,6 @@ that may require changes to your code.
   :func:`inspect.unwrap` to access the first function in the chain that has
   no ``__wrapped__`` attribute.
 
-* (C API) The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
-  now be a string allocated by :c:func:`PyMem_RawMalloc` or
-  :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
-  string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
-
 * :class:`importlib.machinery.PathFinder` now passes on the current working
   directory to objects in :data:`sys.path_hooks` for the empty string. This
   results in :data:`sys.path_importer_cache` never containing ``''``, thus
@@ -1069,7 +1063,23 @@ that may require changes to your code.
   ``-m`` with the interpreter (this does not influence when the path to a file
   is specified on the command-line).
 
-* (C API) :c:func:`PyThread_set_key_value` now always set the value. In Python
+Changes in the C API
+--------------------
+
+* :c:func:`PyErr_SetImportError` now sets :exc:`TypeError` when its **msg**
+  argument is not set. Previously only ``NULL`` was returned with no exception
+  set.
+
+* The result of the :c:data:`PyOS_ReadlineFunctionPointer` callback must
+  now be a string allocated by :c:func:`PyMem_RawMalloc` or
+  :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred, instead of a
+  string allocated by :c:func:`PyMem_Malloc` or :c:func:`PyMem_Realloc`.
+
+* :c:func:`PyThread_set_key_value` now always set the value. In Python
   3.3, the function did nothing if the key already exists (if the current
   value is a non-NULL pointer).
+
+* The ``f_tstate`` (thread state) field of the :c:type:`PyFrameObject`
+  structure has been removed to fix a bug: see :issue:`14432` for the
+  rationale.
 
