@@ -2,14 +2,11 @@
 """Interfaces for launching and remotely controlling Web browsers."""
 # Maintained by Georg Brandl.
 
-import io
 import os
 import shlex
 import shutil
 import sys
-import stat
 import subprocess
-import time
 
 __all__ = ["Error", "open", "open_new", "open_new_tab", "get", "register"]
 
