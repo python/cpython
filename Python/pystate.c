@@ -771,6 +771,11 @@ PyGILState_Ensure(void)
     assert(autoInterpreterState); /* Py_Initialize() hasn't been called! */
     tcur = (PyThreadState *)PyThread_get_key_value(autoTLSkey);
     if (tcur == NULL) {
+        /* At startup, Python has no concrete GIL. If PyGILState_Ensure() is
+           called from a new thread for the first time, we need the create the
+           GIL. */
+        PyEval_InitThreads();
+
         /* Create a new thread state for this thread */
         tcur = PyThreadState_New(autoInterpreterState);
         if (tcur == NULL)

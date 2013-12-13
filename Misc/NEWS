@@ -10,6 +10,11 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #19576: PyGILState_Ensure() now initializes threads. At startup, Python
+  has no concrete GIL. If PyGILState_Ensure() is called from a new thread for
+  the first time and PyEval_InitThreads() was not called yet, a GIL needs to be
+  created.
+
 - Issue #17576: Deprecation warning emitted now when __int__() or __index__()
   return not int instance.
 
