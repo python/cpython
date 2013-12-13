@@ -10,6 +10,9 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
+  argument is not in range [0; 255].
+
 - Issue #19787: PyThread_set_key_value() now always set the value. In Python
   3.3, the function did nothing if the key already exists (if the current value
   is a non-NULL pointer).
