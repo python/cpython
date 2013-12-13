@@ -765,8 +765,15 @@ class TestEncoders(unittest.TestCase):
         # whose output character set is 7bit gets a transfer-encoding
         # of 7bit.
         eq = self.assertEqual
-        msg = MIMEText('文', _charset='euc-jp')
+        msg = MIMEText('文\n', _charset='euc-jp')
         eq(msg['content-transfer-encoding'], '7bit')
+        eq(msg.as_string(), textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-Type: text/plain; charset="iso-2022-jp"
+            Content-Transfer-Encoding: 7bit
+
+            \x1b$BJ8\x1b(B
+            """))
 
     def test_qp_encode_latin1(self):
         msg = MIMEText('\xe1\xf6\n', 'text', 'ISO-8859-1')
