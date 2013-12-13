@@ -1607,26 +1607,34 @@ Modules
 How do I create a .pyc file?
 ----------------------------
 
-When a module is imported for the first time (or when the source is more recent
-than the current compiled file) a ``.pyc`` file containing the compiled code
-should be created in the same directory as the ``.py`` file.
+When a module is imported for the first time (or when the source file has
+changed since the current compiled file was created) a ``.pyc`` file containing
+the compiled code should be created in a ``__pycache__`` subdirectory of the
+directory containing the ``.py`` file.  The ``.pyc`` file will have a
+filename that starts with the same name as the ``.py`` file, and ends with
+``.pyc``, with a middle component that depends on the particular ``python``
+binary that created it.  (See :pep:`3147` for details.)
 
-One reason that a ``.pyc`` file may not be created is permissions problems with
-the directory. This can happen, for example, if you develop as one user but run
-as another, such as if you are testing with a web server.  Creation of a .pyc
-file is automatic if you're importing a module and Python has the ability
-(permissions, free space, etc...) to write the compiled module back to the
-directory.
+One reason that a ``.pyc`` file may not be created is a permissions problem
+with the directory containing the source file, meaning that the ``__pycache__``
+subdirectory cannot be created. This can happen, for example, if you develop as
+one user but run as another, such as if you are testing with a web server.
+
+Unless the :envvar:`PYTHONDONTWRITEBYTECODE` environment variable is set,
+creation of a .pyc file is automatic if you're importing a module and Python
+has the ability (permissions, free space, etc...) to create a ``__pycache__``
+subdirectory and write the compiled module to that subdirectory.
 
 Running Python on a top level script is not considered an import and no
 ``.pyc`` will be created.  For example, if you have a top-level module
-``foo.py`` that imports another module ``xyz.py``, when you run ``foo``,
-``xyz.pyc`` will be created since ``xyz`` is imported, but no ``foo.pyc`` file
-will be created since ``foo.py`` isn't being imported.
+``foo.py`` that imports another module ``xyz.py``, when you run ``foo`` (by
+typing ``python foo.py`` as a shell command), a ``.pyc`` will be created for
+``xyz`` because ``xyz`` is imported, but no ``.pyc`` file will be created for
+``foo`` since ``foo.py`` isn't being imported.
 
-If you need to create ``foo.pyc`` -- that is, to create a ``.pyc`` file for a module
-that is not imported -- you can, using the :mod:`py_compile` and
-:mod:`compileall` modules.
+If you need to create a ``.pyc`` file for ``foo`` -- that is, to create a
+``.pyc`` file for a module that is not imported -- you can, using the
+:mod:`py_compile` and :mod:`compileall` modules.
 
 The :mod:`py_compile` module can manually compile any module.  One way is to use
 the ``compile()`` function in that module interactively::
@@ -1634,8 +1642,9 @@ the ``compile()`` function in that module interactively::
    >>> import py_compile
    >>> py_compile.compile('foo.py')                 # doctest: +SKIP
 
-This will write the ``.pyc`` to the same location as ``foo.py`` (or you can
-override that with the optional parameter ``cfile``).
+This will write the ``.pyc`` to a ``__pycache__`` subdirectory in the same
+location as ``foo.py`` (or you can override that with the optional parameter
+``cfile``).
 
 You can also automatically compile all files in a directory or directories using
 the :mod:`compileall` module.  You can do it from the shell prompt by running
