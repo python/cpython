@@ -2477,6 +2477,93 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
     return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
 }
 
+typedef struct {
+    PyThread_type_lock start_event;
+    PyThread_type_lock exit_event;
+    PyObject *callback;
+} test_c_thread_t;
+
+static void
+temporary_c_thread(void *data)
+{
+    test_c_thread_t *test_c_thread = data;
+    PyGILState_STATE state;
+    PyObject *res;
+
+    PyThread_release_lock(test_c_thread->start_event);
+
+    /* Allocate a Python thread state for this thread */
+    state = PyGILState_Ensure();
+
+    res = PyObject_CallFunction(test_c_thread->callback, "", NULL);
+    Py_CLEAR(test_c_thread->callback);
+
+    if (res == NULL) {
+        PyErr_Print();
+    }
+    else {
+        Py_DECREF(res);
+    }
+
+    /* Destroy the Python thread state for this thread */
+    PyGILState_Release(state);
+
+    PyThread_release_lock(test_c_thread->exit_event);
+
+    PyThread_exit_thread();
+}
+
+static PyObject *
+call_in_temporary_c_thread(PyObject *self, PyObject *callback)
+{
+    PyObject *res = NULL;
+    test_c_thread_t test_c_thread;
+    long thread;
+
+    PyEval_InitThreads();
+
+    test_c_thread.start_event = PyThread_allocate_lock();
+    test_c_thread.exit_event = PyThread_allocate_lock();
+    test_c_thread.callback = NULL;
+    if (!test_c_thread.start_event || !test_c_thread.exit_event) {
+        PyErr_SetString(PyExc_RuntimeError, "could not allocate lock");
+        goto exit;
+    }
+
+    Py_INCREF(callback);
+    test_c_thread.callback = callback;
+
+    PyThread_acquire_lock(test_c_thread.start_event, 1);
+    PyThread_acquire_lock(test_c_thread.exit_event, 1);
+
+    thread = PyThread_start_new_thread(temporary_c_thread, &test_c_thread);
+    if (thread == -1) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
+        PyThread_release_lock(test_c_thread.start_event);
+        PyThread_release_lock(test_c_thread.exit_event);
+        goto exit;
+    }
+
+    PyThread_acquire_lock(test_c_thread.start_event, 1);
+    PyThread_release_lock(test_c_thread.start_event);
+
+    Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(test_c_thread.exit_event, 1);
+        PyThread_release_lock(test_c_thread.exit_event);
+    Py_END_ALLOW_THREADS
+
+    Py_INCREF(Py_None);
+    res = Py_None;
+
+exit:
+    Py_CLEAR(test_c_thread.callback);
+    if (test_c_thread.start_event)
+        PyThread_free_lock(test_c_thread.start_event);
+    if (test_c_thread.exit_event)
+        PyThread_free_lock(test_c_thread.exit_event);
+    return res;
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -2574,6 +2661,8 @@ static PyMethodDef TestMethods[] = {
     {"pytime_object_to_time_t", test_pytime_object_to_time_t,  METH_VARARGS},
     {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
+    {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
+     PyDoc_STR("set_error_class(error_class) -> None")},
     {NULL, NULL} /* sentinel */
 };
 
