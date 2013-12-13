@@ -82,9 +82,12 @@ Functions
     derived from :func:`importlib.__import__`, including requiring the package
     from which an import is occurring to have been previously imported
     (i.e., *package* must already be imported). The most important difference
-    is that :func:`import_module` returns the most nested package or module
-    that was imported (e.g. ``pkg.mod``), while :func:`__import__` returns the
+    is that :func:`import_module` returns the specified package or module
+    (e.g. ``pkg.mod``), while :func:`__import__` returns the
     top-level package or module (e.g. ``pkg``).
+
+    .. versionchanged:: 3.3
+       Parent packages are automatically imported.
 
 .. function:: find_loader(name, path=None)
 
