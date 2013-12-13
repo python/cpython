@@ -57,7 +57,7 @@ circular_imports_modules = {
 }
 
 class Finder:
-    """A dummy finder to detect concurrent access to its find_module()
+    """A dummy finder to detect concurrent access to its find_spec()
     method."""
 
     def __init__(self):
@@ -65,8 +65,8 @@ class Finder:
         self.x = 0
         self.lock = threading.Lock()
 
-    def find_module(self, name, path=None):
-        # Simulate some thread-unsafe behaviour. If calls to find_module()
+    def find_spec(self, name, path=None, target=None):
+        # Simulate some thread-unsafe behaviour. If calls to find_spec()
         # are properly serialized, `x` will end up the same as `numcalls`.
         # Otherwise not.
         assert imp.lock_held()
@@ -80,7 +80,7 @@ class FlushingFinder:
     """A dummy finder which flushes sys.path_importer_cache when it gets
     called."""
 
-    def find_module(self, name, path=None):
+    def find_spec(self, name, path=None, target=None):
         sys.path_importer_cache.clear()
 
 
@@ -145,13 +145,13 @@ class ThreadedImportTests(unittest.TestCase):
         # dedicated meta_path entry.
         flushing_finder = FlushingFinder()
         def path_hook(path):
-            finder.find_module('')
+            finder.find_spec('')
             raise ImportError
         sys.path_hooks.insert(0, path_hook)
         sys.meta_path.append(flushing_finder)
         try:
             # Flush the cache a first time
-            flushing_finder.find_module('')
+            flushing_finder.find_spec('')
             numtests = self.check_parallel_module_init()
             self.assertGreater(finder.numcalls, 0)
             self.assertEqual(finder.x, finder.numcalls)
