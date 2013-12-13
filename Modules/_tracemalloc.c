@@ -168,14 +168,11 @@ set_reentrant(int reentrant)
     assert(reentrant == 0 || reentrant == 1);
     if (reentrant) {
         assert(PyThread_get_key_value(tracemalloc_reentrant_key) == NULL);
-        PyThread_set_key_value(tracemalloc_reentrant_key,
-                               REENTRANT);
+        PyThread_set_key_value(tracemalloc_reentrant_key, REENTRANT);
     }
     else {
-        /* FIXME: PyThread_set_key_value() cannot be used to set the flag
-           to zero, because it does nothing if the variable has already
-           a value set. */
-        PyThread_delete_key_value(tracemalloc_reentrant_key);
+        assert(PyThread_get_key_value(tracemalloc_reentrant_key) == REENTRANT);
+        PyThread_set_key_value(tracemalloc_reentrant_key, NULL);
     }
 }
 

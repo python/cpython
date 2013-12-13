@@ -627,9 +627,6 @@ int
 PyThread_set_key_value(int key, void *value)
 {
     int fail;
-    void *oldValue = pthread_getspecific(key);
-    if (oldValue != NULL)
-        return 0;
     fail = pthread_setspecific(key, value);
     return fail ? -1 : 0;
 }

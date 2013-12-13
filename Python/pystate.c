@@ -723,18 +723,18 @@ _PyGILState_NoteThreadState(PyThreadState* tstate)
 
        The only situation where you can legitimately have more than one
        thread state for an OS level thread is when there are multiple
-       interpreters, when:
+       interpreters.
 
-           a) You shouldn't really be using the PyGILState_ APIs anyway,
-          and:
+       You shouldn't really be using the PyGILState_ APIs anyway (see issues
+       #10915 and #15751).
 
-           b) The slightly odd way PyThread_set_key_value works (see
-          comments by its implementation) means that the first thread
-          state created for that given OS level thread will "win",
-          which seems reasonable behaviour.
+       The first thread state created for that given OS level thread will
+       "win", which seems reasonable behaviour.
     */
-    if (PyThread_set_key_value(autoTLSkey, (void *)tstate) < 0)
-        Py_FatalError("Couldn't create autoTLSkey mapping");
+    if (PyThread_get_key_value(autoTLSkey) == NULL) {
+        if (PyThread_set_key_value(autoTLSkey, (void *)tstate) < 0)
+            Py_FatalError("Couldn't create autoTLSkey mapping");
+    }
 
     /* PyGILState_Release must not try to delete this thread state. */
     tstate->gilstate_counter = 1;
