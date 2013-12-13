@@ -9,6 +9,12 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Issue #14432: Generator now clears the borrowed reference to the thread
+  state. Fix a crash when a generator is created in a C thread that is
+  destroyed while the generator is still used. The issue was that a generator
+  contains a frame, and the frame kept a reference to the Python state of the
+  destroyed C thread. The crash occurs when a trace function is setup.
+
 - Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
 
 - Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
