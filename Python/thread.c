@@ -205,7 +205,7 @@ static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
  * segfaults.  Now we lock the whole routine.
  */
 static struct key *
-find_key(int key, void *value)
+find_key(int set_value, int key, void *value)
 {
     struct key *p, *prev_p;
     long id = PyThread_get_thread_ident();
@@ -215,8 +215,11 @@ find_key(int key, void *value)
     PyThread_acquire_lock(keymutex, 1);
     prev_p = NULL;
     for (p = keyhead; p != NULL; p = p->next) {
-        if (p->id == id && p->key == key)
+        if (p->id == id && p->key == key) {
+            if (set_value)
+                p->value = value;
             goto Done;
+        }
         /* Sanity check.  These states should never happen but if
          * they do we must abort.  Otherwise we'll end up spinning in
          * in a tight loop with the lock held.  A similar check is done
@@ -227,7 +230,7 @@ find_key(int key, void *value)
         if (p->next == keyhead)
             Py_FatalError("tls find_key: circular list(!)");
     }
-    if (value == NULL) {
+    if (!set_value && value == NULL) {
         assert(p == NULL);
         goto Done;
     }
@@ -279,19 +282,12 @@ PyThread_delete_key(int key)
     PyThread_release_lock(keymutex);
 }
 
-/* Confusing:  If the current thread has an association for key,
- * value is ignored, and 0 is returned.  Else an attempt is made to create
- * an association of key to value for the current thread.  0 is returned
- * if that succeeds, but -1 is returned if there's not enough memory
- * to create the association.  value must not be NULL.
- */
 int
 PyThread_set_key_value(int key, void *value)
 {
     struct key *p;
 
-    assert(value != NULL);
-    p = find_key(key, value);
+    p = find_key(1, key, value);
     if (p == NULL)
         return -1;
     else
@@ -304,7 +300,7 @@ PyThread_set_key_value(int key, void *value)
 void *
 PyThread_get_key_value(int key)
 {
-    struct key *p = find_key(key, NULL);
+    struct key *p = find_key(0, key, NULL);
 
     if (p == NULL)
         return NULL;
