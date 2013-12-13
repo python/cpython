@@ -10,10 +10,6 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
-- Issue #19787: PyThread_set_key_value() now always set the value. In Python
-  3.3, the function did nothing if the key already exists (if the current value
-  is a non-NULL pointer).
-
 - Issue #14432: Remove the thread state field from the frame structure. Fix a
   crash when a generator is created in a C thread that is destroyed while the
   generator is still used. The issue was that a generator contains a frame, and

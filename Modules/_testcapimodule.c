@@ -2511,10 +2511,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
     r = PyRun_SimpleString(code);
     Py_EndInterpreter(substate);
 
-    /* restore previous thread safe. It was replaced by Py_NewInterpreter()
-       which creates a new thread state. */
-    _PyThreadState_Init(mainstate);
-
     PyThreadState_Swap(mainstate);
 
     return PyLong_FromLong(r);
