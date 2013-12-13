@@ -2477,6 +2477,7 @@ test_pytime_object_to_timespec(PyObject *self, PyObject *args)
     return Py_BuildValue("Nl", _PyLong_FromTime_t(sec), nsec);
 }
 
+#ifdef WITH_THREAD
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -2563,6 +2564,7 @@ exit:
         PyThread_free_lock(test_c_thread.exit_event);
     return res;
 }
+#endif   /* WITH_THREAD */
 
 
 static PyMethodDef TestMethods[] = {
@@ -2661,8 +2663,10 @@ static PyMethodDef TestMethods[] = {
     {"pytime_object_to_time_t", test_pytime_object_to_time_t,  METH_VARARGS},
     {"pytime_object_to_timeval", test_pytime_object_to_timeval,  METH_VARARGS},
     {"pytime_object_to_timespec", test_pytime_object_to_timespec,  METH_VARARGS},
+#ifdef WITH_THREAD
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
