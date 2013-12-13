@@ -367,7 +367,7 @@ trace_init(void)
 
 
 static PyObject *
-call_trampoline(PyThreadState *tstate, PyObject* callback,
+call_trampoline(PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
     PyObject *args;
@@ -405,12 +405,11 @@ static int
 profile_trampoline(PyObject *self, PyFrameObject *frame,
                    int what, PyObject *arg)
 {
-    PyThreadState *tstate = frame->f_tstate;
     PyObject *result;
 
     if (arg == NULL)
         arg = Py_None;
-    result = call_trampoline(tstate, self, frame, what, arg);
+    result = call_trampoline(self, frame, what, arg);
     if (result == NULL) {
         PyEval_SetProfile(NULL, NULL);
         return -1;
@@ -423,7 +422,6 @@ static int
 trace_trampoline(PyObject *self, PyFrameObject *frame,
                  int what, PyObject *arg)
 {
-    PyThreadState *tstate = frame->f_tstate;
     PyObject *callback;
     PyObject *result;
 
@@ -433,7 +431,7 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
         callback = frame->f_trace;
     if (callback == NULL)
         return 0;
-    result = call_trampoline(tstate, callback, frame, what, arg);
+    result = call_trampoline(callback, frame, what, arg);
     if (result == NULL) {
         PyEval_SetTrace(NULL, NULL);
         Py_XDECREF(frame->f_trace);

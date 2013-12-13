@@ -10,6 +10,12 @@ Release date: 2014-01-05
 Core and Builtins
 -----------------
 
+- Issue #14432: Remove the thread state field from the frame structure. Fix a
+  crash when a generator is created in a C thread that is destroyed while the
+  generator is still used. The issue was that a generator contains a frame, and
+  the frame kept a reference to the Python state of the destroyed C thread. The
+  crash occurs when a trace function is setup.
+
 - Issue #19576: PyGILState_Ensure() now initializes threads. At startup, Python
   has no concrete GIL. If PyGILState_Ensure() is called from a new thread for
   the first time and PyEval_InitThreads() was not called yet, a GIL needs to be
