@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17919: select.poll.poll() again works with poll.POLLNVAL on AIX.
+
 - Issue #19063: if a Charset's body_encoding was set to None, the email
   package would generate a message claiming the Content-Transfer-Encoding
   was 7bit, and produce garbage output for the content.  This now works.
