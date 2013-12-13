@@ -120,7 +120,7 @@ class ProactorTests(unittest.TestCase):
         self.loop.run_until_complete(f)
         elapsed = self.loop.time() - start
         self.assertTrue(f.result())
-        self.assertTrue(0 <= elapsed < 0.02, elapsed)
+        self.assertTrue(0 <= elapsed < 0.1, elapsed)
 
         _overlapped.ResetEvent(event)
 
@@ -132,7 +132,7 @@ class ProactorTests(unittest.TestCase):
         with self.assertRaises(futures.CancelledError):
             self.loop.run_until_complete(f)
         elapsed = self.loop.time() - start
-        self.assertTrue(0 <= elapsed < 0.02, elapsed)
+        self.assertTrue(0 <= elapsed < 0.1, elapsed)
 
 
 if __name__ == '__main__':
