@@ -39,7 +39,6 @@ typedef struct _frame {
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
 
-    PyThreadState *f_tstate;
     int f_lasti;                /* Last instruction if called */
     /* Call PyFrame_GetLineNumber() instead of reading this field
        directly.  As of 2.3 f_lineno is only valid when tracing is
