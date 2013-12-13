@@ -169,6 +169,9 @@ Tests
 Documentation
 -------------
 
+- Issue #19963: Document that importlib.import_module() no longer requires
+  importing parent packages separately.
+
 - Issue #18840: Introduce the json module in the tutorial, and deemphasize
   the pickle module.
 
