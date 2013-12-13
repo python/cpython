@@ -389,20 +389,11 @@ PyThread_delete_key(int key)
     TlsFree(key);
 }
 
-/* We must be careful to emulate the strange semantics implemented in thread.c,
- * where the value is only set if it hasn't been set before.
- */
 int
 PyThread_set_key_value(int key, void *value)
 {
     BOOL ok;
-    void *oldvalue;
 
-    assert(value != NULL);
-    oldvalue = TlsGetValue(key);
-    if (oldvalue != NULL)
-        /* ignore value if already set */
-        return 0;
     ok = TlsSetValue(key, value);
     if (!ok)
         return -1;
