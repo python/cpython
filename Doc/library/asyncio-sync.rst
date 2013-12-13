@@ -237,7 +237,7 @@ Queues
    when the queue reaches *maxsize*, until an item is removed by :meth:`get`.
 
    Unlike the standard library :mod:`queue`, you can reliably know this Queue's
-   size with :meth:`qsize`, since your single-threaded Tulip application won't
+   size with :meth:`qsize`, since your single-threaded asyncio application won't
    be interrupted between calling :meth:`qsize` and doing an operation on the
    Queue.
 
