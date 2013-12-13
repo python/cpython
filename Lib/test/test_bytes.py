@@ -743,6 +743,12 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(PyBytes_FromFormat(b's:%s', c_char_p(b'cstr')),
                          b's:cstr')
 
+        # Issue #19969
+        self.assertRaises(OverflowError,
+                          PyBytes_FromFormat, b'%c', c_int(-1))
+        self.assertRaises(OverflowError,
+                          PyBytes_FromFormat, b'%c', c_int(256))
+
 
 class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     type2test = bytearray
