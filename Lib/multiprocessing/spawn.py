@@ -248,6 +248,8 @@ def import_main_path(main_path):
         main_module = types.ModuleType(main_name)
         # XXX Use a target of main_module?
         spec = importlib.find_spec(main_name, path=dirs)
+        if spec is None:
+            raise ImportError(name=main_name)
         methods = importlib._bootstrap._SpecMethods(spec)
         methods.init_module_attrs(main_module)
         main_module.__name__ = '__mp_main__'
