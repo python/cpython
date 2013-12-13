@@ -2869,6 +2869,7 @@ PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
 "This docstring has a valid signature and some extra newlines."
 );
 
+#ifdef WITH_THREAD
 typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
@@ -2955,6 +2956,8 @@ exit:
         PyThread_free_lock(test_c_thread.exit_event);
     return res;
 }
+#endif   /* WITH_THREAD */
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3084,8 +3087,10 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_signature_and_extra_newlines",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature_and_extra_newlines},
+#ifdef WITH_THREAD
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_O,
      PyDoc_STR("set_error_class(error_class) -> None")},
+#endif
     {NULL, NULL} /* sentinel */
 };
 
