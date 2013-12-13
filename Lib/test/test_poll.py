@@ -161,10 +161,6 @@ class PollTests(unittest.TestCase):
 
         pollster = select.poll()
         # Issue 15989
-        self.assertRaises(OverflowError, pollster.register, 0,
-                          _testcapi.SHRT_MAX + 1)
-        self.assertRaises(OverflowError, pollster.register, 0,
-                          _testcapi.USHRT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, _testcapi.INT_MAX + 1)
         self.assertRaises(OverflowError, pollster.poll, _testcapi.UINT_MAX + 1)
 
