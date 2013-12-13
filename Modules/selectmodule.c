@@ -375,11 +375,10 @@ static PyObject *
 poll_register(pollObject *self, PyObject *args)
 {
     PyObject *o, *key, *value;
-    int fd;
-    short events = POLLIN | POLLPRI | POLLOUT;
+    int fd, events = POLLIN | POLLPRI | POLLOUT;
     int err;
 
-    if (!PyArg_ParseTuple(args, "O|h:register", &o, &events)) {
+    if (!PyArg_ParseTuple(args, "O|i:register", &o, &events)) {
         return NULL;
     }
 
