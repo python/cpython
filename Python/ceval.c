@@ -123,13 +123,16 @@ static PyObject * load_args(PyObject ***, int);
 static int lltrace;
 static int prtrace(PyObject *, char *);
 #endif
-static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
+static int call_trace(Py_tracefunc, PyObject *,
+                      PyThreadState *, PyFrameObject *,
                       int, PyObject *);
 static int call_trace_protected(Py_tracefunc, PyObject *,
-                                PyFrameObject *, int, PyObject *);
-static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
+                                PyThreadState *, PyFrameObject *,
+                                int, PyObject *);
+static void call_exc_trace(Py_tracefunc, PyObject *,
+                           PyThreadState *, PyFrameObject *);
 static int maybe_call_line_trace(Py_tracefunc, PyObject *,
-                                 PyFrameObject *, int *, int *, int *);
+                                 PyThreadState *, PyFrameObject *, int *, int *, int *);
 
 static PyObject * cmp_outcome(int, PyObject *, PyObject *);
 static PyObject * import_from(PyObject *, PyObject *);
@@ -1136,7 +1139,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                whenever an exception is detected. */
             if (call_trace_protected(tstate->c_tracefunc,
                                      tstate->c_traceobj,
-                                     f, PyTrace_CALL, Py_None)) {
+                                     tstate, f, PyTrace_CALL, Py_None)) {
                 /* Trace function raised an error */
                 goto exit_eval_frame;
             }
@@ -1146,7 +1149,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                return itself and isn't called for "line" events */
             if (call_trace_protected(tstate->c_profilefunc,
                                      tstate->c_profileobj,
-                                     f, PyTrace_CALL, Py_None)) {
+                                     tstate, f, PyTrace_CALL, Py_None)) {
                 /* Profile function raised an error */
                 goto exit_eval_frame;
             }
@@ -1293,8 +1296,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
             err = maybe_call_line_trace(tstate->c_tracefunc,
                                         tstate->c_traceobj,
-                                        f, &instr_lb, &instr_ub,
-                                        &instr_prev);
+                                        tstate, f,
+                                        &instr_lb, &instr_ub, &instr_prev);
             /* Reload possibly changed frame fields */
             JUMPTO(f->f_lasti);
             if (f->f_stacktop != NULL) {
@@ -1906,7 +1909,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 PyObject *val;
                 if (tstate->c_tracefunc != NULL
                         && PyErr_ExceptionMatches(PyExc_StopIteration))
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, f);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
                 err = _PyGen_FetchStopIterationValue(&val);
                 if (err < 0)
                     goto error;
@@ -2658,7 +2661,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 if (!PyErr_ExceptionMatches(PyExc_StopIteration))
                     goto error;
                 else if (tstate->c_tracefunc != NULL)
-                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, f);
+                    call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, tstate, f);
                 PyErr_Clear();
             }
             /* iterator ended normally */
@@ -3054,7 +3057,8 @@ error:
         PyTraceBack_Here(f);
 
         if (tstate->c_tracefunc != NULL)
-            call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj, f);
+            call_exc_trace(tstate->c_tracefunc, tstate->c_traceobj,
+                           tstate, f);
 
 fast_block_end:
         assert(why != WHY_NOT);
@@ -3182,8 +3186,8 @@ fast_yield:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (why == WHY_RETURN || why == WHY_YIELD) {
-                if (call_trace(tstate->c_tracefunc,
-                               tstate->c_traceobj, f,
+                if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
+                               tstate, f,
                                PyTrace_RETURN, retval)) {
                     Py_XDECREF(retval);
                     retval = NULL;
@@ -3191,18 +3195,19 @@ fast_yield:
                 }
             }
             else if (why == WHY_EXCEPTION) {
-                call_trace_protected(tstate->c_tracefunc,
-                                     tstate->c_traceobj, f,
+                call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
+                                     tstate, f,
                                      PyTrace_RETURN, NULL);
             }
         }
         if (tstate->c_profilefunc) {
             if (why == WHY_EXCEPTION)
                 call_trace_protected(tstate->c_profilefunc,
-                                     tstate->c_profileobj, f,
+                                     tstate->c_profileobj,
+                                     tstate, f,
                                      PyTrace_RETURN, NULL);
-            else if (call_trace(tstate->c_profilefunc,
-                                tstate->c_profileobj, f,
+            else if (call_trace(tstate->c_profilefunc, tstate->c_profileobj,
+                                tstate, f,
                                 PyTrace_RETURN, retval)) {
                 Py_XDECREF(retval);
                 retval = NULL;
@@ -3846,7 +3851,8 @@ prtrace(PyObject *v, char *str)
 #endif
 
 static void
-call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
+call_exc_trace(Py_tracefunc func, PyObject *self,
+               PyThreadState *tstate, PyFrameObject *f)
 {
     PyObject *type, *value, *traceback, *orig_traceback, *arg;
     int err;
@@ -3862,7 +3868,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
         PyErr_Restore(type, value, orig_traceback);
         return;
     }
-    err = call_trace(func, self, f, PyTrace_EXCEPTION, arg);
+    err = call_trace(func, self, tstate, f, PyTrace_EXCEPTION, arg);
     Py_DECREF(arg);
     if (err == 0)
         PyErr_Restore(type, value, orig_traceback);
@@ -3874,13 +3880,14 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 }
 
 static int
-call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
+call_trace_protected(Py_tracefunc func, PyObject *obj,
+                     PyThreadState *tstate, PyFrameObject *frame,
                      int what, PyObject *arg)
 {
     PyObject *type, *value, *traceback;
     int err;
     PyErr_Fetch(&type, &value, &traceback);
-    err = call_trace(func, obj, frame, what, arg);
+    err = call_trace(func, obj, tstate, frame, what, arg);
     if (err == 0)
     {
         PyErr_Restore(type, value, traceback);
@@ -3895,10 +3902,10 @@ call_trace_protected(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 }
 
 static int
-call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
+call_trace(Py_tracefunc func, PyObject *obj,
+           PyThreadState *tstate, PyFrameObject *frame,
            int what, PyObject *arg)
 {
-    PyThreadState *tstate = frame->f_tstate;
     int result;
     if (tstate->tracing)
         return 0;
@@ -3914,8 +3921,7 @@ call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 PyObject *
 _PyEval_CallTracing(PyObject *func, PyObject *args)
 {
-    PyFrameObject *frame = PyEval_GetFrame();
-    PyThreadState *tstate = frame->f_tstate;
+    PyThreadState *tstate = PyThreadState_GET();
     int save_tracing = tstate->tracing;
     int save_use_tracing = tstate->use_tracing;
     PyObject *result;
@@ -3932,8 +3938,8 @@ _PyEval_CallTracing(PyObject *func, PyObject *args)
 /* See Objects/lnotab_notes.txt for a description of how tracing works. */
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
-                      PyFrameObject *frame, int *instr_lb, int *instr_ub,
-                      int *instr_prev)
+                      PyThreadState *tstate, PyFrameObject *frame,
+                      int *instr_lb, int *instr_ub, int *instr_prev)
 {
     int result = 0;
     int line = frame->f_lineno;
@@ -3953,7 +3959,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
        number and call the trace function. */
     if (frame->f_lasti == *instr_lb || frame->f_lasti < *instr_prev) {
         frame->f_lineno = line;
-        result = call_trace(func, obj, frame, PyTrace_LINE, Py_None);
+        result = call_trace(func, obj, tstate, frame, PyTrace_LINE, Py_None);
     }
     *instr_prev = frame->f_lasti;
     return result;
@@ -4149,10 +4155,9 @@ err_args(PyObject *func, int flags, int nargs)
 
 #define C_TRACE(x, call) \
 if (tstate->use_tracing && tstate->c_profilefunc) { \
-    if (call_trace(tstate->c_profilefunc, \
-        tstate->c_profileobj, \
-        tstate->frame, PyTrace_C_CALL, \
-        func)) { \
+    if (call_trace(tstate->c_profilefunc, tstate->c_profileobj, \
+        tstate, tstate->frame, \
+        PyTrace_C_CALL, func)) { \
         x = NULL; \
     } \
     else { \
@@ -4161,14 +4166,14 @@ if (tstate->use_tracing && tstate->c_profilefunc) { \
             if (x == NULL) { \
                 call_trace_protected(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate->frame, PyTrace_C_EXCEPTION, \
-                    func); \
+                    tstate, tstate->frame, \
+                    PyTrace_C_EXCEPTION, func); \
                 /* XXX should pass (type, value, tb) */ \
             } else { \
                 if (call_trace(tstate->c_profilefunc, \
                     tstate->c_profileobj, \
-                    tstate->frame, PyTrace_C_RETURN, \
-                    func)) { \
+                    tstate, tstate->frame, \
+                    PyTrace_C_RETURN, func)) { \
                     Py_DECREF(x); \
                     x = NULL; \
                 } \
