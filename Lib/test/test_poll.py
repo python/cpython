@@ -3,7 +3,7 @@
 import os
 import random
 import select
-import _testcapi
+from _testcapi import USHRT_MAX, INT_MAX, UINT_MAX
 try:
     import threading
 except ImportError:
@@ -159,10 +159,13 @@ class PollTests(unittest.TestCase):
         if x != 5:
             self.fail('Overflow must have occurred')
 
-        pollster = select.poll()
-        # Issue 15989
-        self.assertRaises(OverflowError, pollster.poll, _testcapi.INT_MAX + 1)
-        self.assertRaises(OverflowError, pollster.poll, _testcapi.UINT_MAX + 1)
+        # Issues #15989, #17919
+        self.assertRaises(OverflowError, pollster.register, 0, -1)
+        self.assertRaises(OverflowError, pollster.register, 0, USHRT_MAX + 1)
+        self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(OverflowError, pollster.modify, 1, USHRT_MAX + 1)
+        self.assertRaises(OverflowError, pollster.poll, INT_MAX + 1)
+        self.assertRaises(OverflowError, pollster.poll, UINT_MAX + 1)
 
     @unittest.skipUnless(threading, 'Threading required for this test.')
     @reap_threads
