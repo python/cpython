@@ -5,6 +5,13 @@ import io
 import pickle
 import sys
 
+class UnseekableIO(io.FileIO):
+    def tell(self):
+        raise io.UnsupportedOperation
+
+    def seek(self, *args, **kwargs):
+        raise io.UnsupportedOperation
+
 def byteswap2(data):
     a = array.array('h')
     a.frombytes(data)
@@ -128,6 +135,61 @@ class AudioWriteTests(AudioTests):
         with open(TESTFN, 'rb') as testfile:
             self.assertEqual(testfile.read(13), b'ababagalamaga')
             self.check_file(testfile, self.nframes, self.frames)
+
+    def test_unseekable_read(self):
+        f = self.create_file(TESTFN)
+        f.setnframes(self.nframes)
+        f.writeframes(self.frames)
+        f.close()
+
+        with UnseekableIO(TESTFN, 'rb') as testfile:
+            self.check_file(testfile, self.nframes, self.frames)
+
+    def test_unseekable_write(self):
+        with UnseekableIO(TESTFN, 'wb') as testfile:
+            f = self.create_file(testfile)
+            f.setnframes(self.nframes)
+            f.writeframes(self.frames)
+            f.close()
+
+        self.check_file(TESTFN, self.nframes, self.frames)
+
+    def test_unseekable_incompleted_write(self):
+        with UnseekableIO(TESTFN, 'wb') as testfile:
+            testfile.write(b'ababagalamaga')
+            f = self.create_file(testfile)
+            f.setnframes(self.nframes + 1)
+            try:
+                f.writeframes(self.frames)
+            except OSError:
+                pass
+            try:
+                f.close()
+            except OSError:
+                pass
+
+        with open(TESTFN, 'rb') as testfile:
+            self.assertEqual(testfile.read(13), b'ababagalamaga')
+            self.check_file(testfile, self.nframes + 1, self.frames)
+
+    def test_unseekable_overflowed_write(self):
+        with UnseekableIO(TESTFN, 'wb') as testfile:
+            testfile.write(b'ababagalamaga')
+            f = self.create_file(testfile)
+            f.setnframes(self.nframes - 1)
+            try:
+                f.writeframes(self.frames)
+            except OSError:
+                pass
+            try:
+                f.close()
+            except OSError:
+                pass
+
+        with open(TESTFN, 'rb') as testfile:
+            self.assertEqual(testfile.read(13), b'ababagalamaga')
+            framesize = self.nchannels * self.sampwidth
+            self.check_file(testfile, self.nframes - 1, self.frames[:-framesize])
 
 
 class AudioTestsWithSourceFile(AudioTests):
