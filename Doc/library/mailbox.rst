@@ -1550,7 +1550,7 @@ programs, mail loss due to interruption of the program, or premature termination
 due to malformed messages in the mailbox::
 
    import mailbox
-   import email.Errors
+   import email.errors
 
    list_names = ('python-list', 'python-dev', 'python-bugs')
 
@@ -1560,7 +1560,7 @@ due to malformed messages in the mailbox::
    for key in inbox.iterkeys():
        try:
            message = inbox[key]
-       except email.Errors.MessageParseError:
+       except email.errors.MessageParseError:
            continue                # The message is malformed. Just leave it.
 
        for name in list_names:
