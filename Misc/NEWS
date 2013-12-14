@@ -32,6 +32,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19623: Fixed writing to unseekable files in the aifc module.
+
 - Issue #17919: select.poll.register() again works with poll.POLLNVAL on AIX.
   Fixed integer overflow in the eventmask parameter.
 
