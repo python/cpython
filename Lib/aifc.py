@@ -790,7 +790,10 @@ class Aifc_write:
                 self._datalength = (self._datalength + 3) // 4
                 if self._datalength & 1:
                     self._datalength = self._datalength + 1
-        self._form_length_pos = self._file.tell()
+        try:
+            self._form_length_pos = self._file.tell()
+        except (AttributeError, OSError):
+            self._form_length_pos = None
         commlength = self._write_form_length(self._datalength)
         if self._aifc:
             self._file.write(b'AIFC')
@@ -802,7 +805,8 @@ class Aifc_write:
         self._file.write(b'COMM')
         _write_ulong(self._file, commlength)
         _write_short(self._file, self._nchannels)
-        self._nframes_pos = self._file.tell()
+        if self._form_length_pos is not None:
+            self._nframes_pos = self._file.tell()
         _write_ulong(self._file, self._nframes)
         if self._comptype in (b'ULAW', b'ulaw', b'ALAW', b'alaw', b'G722'):
             _write_short(self._file, 8)
@@ -813,7 +817,8 @@ class Aifc_write:
             self._file.write(self._comptype)
             _write_string(self._file, self._compname)
         self._file.write(b'SSND')
-        self._ssnd_length_pos = self._file.tell()
+        if self._form_length_pos is not None:
+            self._ssnd_length_pos = self._file.tell()
         _write_ulong(self._file, self._datalength + 8)
         _write_ulong(self._file, 0)
         _write_ulong(self._file, 0)

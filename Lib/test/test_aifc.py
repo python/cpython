@@ -14,9 +14,6 @@ class AifcTest(audiotests.AudioWriteTests,
     module = aifc
     close_fd = True
     test_unseekable_read = None
-    test_unseekable_write = None
-    test_unseekable_incompleted_write = None
-    test_unseekable_overflowed_write = None
 
 
 class AifcPCM8Test(AifcTest, unittest.TestCase):

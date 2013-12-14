@@ -6,10 +6,12 @@ import sys
 import wave
 
 
-class WavePCM8Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
+class WaveTest(audiotests.AudioWriteTests,
+               audiotests.AudioTestsWithSourceFile):
     module = wave
+
+
+class WavePCM8Test(WaveTest, unittest.TestCase):
     sndfilename = 'pluck-pcm8.wav'
     sndfilenframes = 3307
     nchannels = 2
@@ -26,10 +28,7 @@ class WavePCM8Test(audiotests.AudioWriteTests,
       """)
 
 
-class WavePCM16Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
-    module = wave
+class WavePCM16Test(WaveTest, unittest.TestCase):
     sndfilename = 'pluck-pcm16.wav'
     sndfilenframes = 3307
     nchannels = 2
@@ -50,10 +49,7 @@ class WavePCM16Test(audiotests.AudioWriteTests,
         frames = byteswap(frames, 2)
 
 
-class WavePCM24Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
-    module = wave
+class WavePCM24Test(WaveTest, unittest.TestCase):
     sndfilename = 'pluck-pcm24.wav'
     sndfilenframes = 3307
     nchannels = 2
@@ -80,10 +76,7 @@ class WavePCM24Test(audiotests.AudioWriteTests,
         frames = byteswap(frames, 3)
 
 
-class WavePCM32Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
-    module = wave
+class WavePCM32Test(WaveTest, unittest.TestCase):
     sndfilename = 'pluck-pcm32.wav'
     sndfilenframes = 3307
     nchannels = 2
