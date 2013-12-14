@@ -23,7 +23,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #17919: select.poll.poll() again works with poll.POLLNVAL on AIX.
+- Issue #17919: select.poll.register() again works with poll.POLLNVAL on AIX.
+  Fixed integer overflow in the eventmask parameter.
 
 - Issue #17200: telnetlib's read_until and expect timeout was broken by the
   fix to Issue #14635 in Python 2.7.4 to be interpreted as milliseconds
