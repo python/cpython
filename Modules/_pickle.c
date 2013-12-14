@@ -7464,6 +7464,12 @@ pickle_clear(PyObject *m)
     return 0;
 }
 
+static void
+pickle_free(PyObject *m)
+{
+    _Pickle_ClearState(_Pickle_GetState(m));
+}
+
 static int
 pickle_traverse(PyObject *m, visitproc visit, void *arg)
 {
@@ -7485,14 +7491,14 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
 
 static struct PyModuleDef _picklemodule = {
     PyModuleDef_HEAD_INIT,
-    "_pickle",           /* m_name */
-    pickle_module_doc,   /* m_doc */
-    sizeof(PickleState), /* m_size */
-    pickle_methods,      /* m_methods */
-    NULL,                /* m_reload */
-    pickle_traverse,     /* m_traverse */
-    pickle_clear,        /* m_clear */
-    NULL                 /* m_free */
+    "_pickle",            /* m_name */
+    pickle_module_doc,    /* m_doc */
+    sizeof(PickleState),  /* m_size */
+    pickle_methods,       /* m_methods */
+    NULL,                 /* m_reload */
+    pickle_traverse,      /* m_traverse */
+    pickle_clear,         /* m_clear */
+    (freefunc)pickle_free /* m_free */
 };
 
 PyMODINIT_FUNC
