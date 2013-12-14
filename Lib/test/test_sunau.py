@@ -5,10 +5,12 @@ import sys
 import sunau
 
 
-class SunauPCM8Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
+class SunauTest(audiotests.AudioWriteTests,
+                audiotests.AudioTestsWithSourceFile):
     module = sunau
+
+
+class SunauPCM8Test(SunauTest, unittest.TestCase):
     sndfilename = 'pluck-pcm8.au'
     sndfilenframes = 3307
     nchannels = 2
@@ -25,10 +27,7 @@ class SunauPCM8Test(audiotests.AudioWriteTests,
       """)
 
 
-class SunauPCM16Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
-    module = sunau
+class SunauPCM16Test(SunauTest, unittest.TestCase):
     sndfilename = 'pluck-pcm16.au'
     sndfilenframes = 3307
     nchannels = 2
@@ -47,10 +46,7 @@ class SunauPCM16Test(audiotests.AudioWriteTests,
       """)
 
 
-class SunauPCM32Test(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
-    module = sunau
+class SunauPCM32Test(SunauTest, unittest.TestCase):
     sndfilename = 'pluck-pcm32.au'
     sndfilenframes = 3307
     nchannels = 2
@@ -75,10 +71,7 @@ class SunauPCM32Test(audiotests.AudioWriteTests,
       """)
 
 
-class SunauULAWTest(audiotests.AudioWriteTests,
-        audiotests.AudioTestsWithSourceFile,
-        unittest.TestCase):
-    module = sunau
+class SunauULAWTest(SunauTest, unittest.TestCase):
     sndfilename = 'pluck-ulaw.au'
     sndfilenframes = 3307
     nchannels = 2
