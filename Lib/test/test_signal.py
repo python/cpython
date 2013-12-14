@@ -873,7 +873,7 @@ class PendingSignalsTests(unittest.TestCase):
 
         # Unblock SIGUSR1
         try:
-            # unblock the pending signal calls immediatly the signal handler
+            # unblock the pending signal calls immediately the signal handler
             signal.pthread_sigmask(signal.SIG_UNBLOCK, [signum])
         except ZeroDivisionError:
             pass
