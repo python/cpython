@@ -19,9 +19,6 @@ Core and Builtins
   contains a frame, and the frame kept a reference to the Python state of the
   destroyed C thread. The crash occurs when a trace function is setup.
 
-- Issue #17576: Deprecation warning emitted now when __int__() or __index__()
-  return not int instance.
-
 - Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
 
 - Issue #19729: In str.format(), fix recursive expansion in format spec.
