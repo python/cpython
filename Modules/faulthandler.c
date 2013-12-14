@@ -303,7 +303,7 @@ faulthandler_fatal_error(int signum)
         return;
     }
 #endif
-    /* call the previous signal handler: it is called immediatly if we use
+    /* call the previous signal handler: it is called immediately if we use
        sigaction() thanks to SA_NODEFER flag, otherwise it is deferred */
     raise(signum);
 }
