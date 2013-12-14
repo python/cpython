@@ -1162,15 +1162,6 @@ PyNumber_Index(PyObject *item)
         Py_DECREF(result);
         return NULL;
     }
-    /* Issue #17576: warn if 'result' not of exact type int. */
-    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "__index__ returned non-int (type %.200s).  "
-            "The ability to return an instance of a strict subclass of int "
-            "is deprecated, and may be removed in a future version of Python.",
-            result->ob_type->tp_name)) {
-        Py_DECREF(result);
-        return NULL;
-    }
     return result;
 }
 

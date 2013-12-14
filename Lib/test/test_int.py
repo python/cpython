@@ -359,18 +359,15 @@ class IntTestCases(unittest.TestCase):
                 return True
 
         bad_int = BadInt()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
+        n = int(bad_int)
         self.assertEqual(n, 1)
 
         bad_int = BadInt2()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
+        n = int(bad_int)
         self.assertEqual(n, 1)
 
         bad_int = TruncReturnsBadInt()
-        with self.assertWarns(DeprecationWarning):
-            n = int(bad_int)
+        n = int(bad_int)
         self.assertEqual(n, 1)
 
         good_int = TruncReturnsIntSubclass()
