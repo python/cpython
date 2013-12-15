@@ -36,9 +36,6 @@ static PyObject _dummy_struct;
 
 #define dummy (&_dummy_struct)
 
-/* Exported for the gdb plugin's benefit. */
-PyObject *_PySet_Dummy = dummy;
-
 
 /* ======================================================================== */
 /* ======= Begin logic for probing the hash table ========================= */
@@ -2344,6 +2341,9 @@ _PySet_Update(PyObject *set, PyObject *iterable)
     }
     return set_update_internal((PySetObject *)set, iterable);
 }
+
+/* Exported for the gdb plugin's benefit. */
+PyObject *_PySet_Dummy = dummy;
 
 #ifdef Py_DEBUG
 
