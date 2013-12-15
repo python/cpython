@@ -101,8 +101,10 @@ def kill_python(p):
     subprocess._cleanup()
     return data
 
-def make_script(script_dir, script_basename, source):
-    script_filename = script_basename+os.extsep+'py'
+def make_script(script_dir, script_basename, source, omit_suffix=False):
+    script_filename = script_basename
+    if not omit_suffix:
+        script_filename += os.extsep + 'py'
     script_name = os.path.join(script_dir, script_filename)
     # The script should be encoded to UTF-8, the default string encoding
     script_file = open(script_name, 'w', encoding='utf-8')
