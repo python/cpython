@@ -6,8 +6,7 @@ executing have not been removed.
 """
 import unittest
 import test.support
-from test.support import run_unittest, TESTFN, EnvironmentVarGuard
-from test.support import captured_stderr
+from test.support import captured_stderr, TESTFN, EnvironmentVarGuard
 import builtins
 import os
 import sys
@@ -19,13 +18,13 @@ import subprocess
 import sysconfig
 from copy import copy
 
-# Need to make sure to not import 'site' if someone specified ``-S`` at the
-# command-line.  Detect this by just making sure 'site' has not been imported
-# already.
-if "site" in sys.modules:
-    import site
-else:
-    raise unittest.SkipTest("importation of site.py suppressed")
+# These tests are not particularly useful if Python was invoked with -S.
+# If you add tests that are useful under -S, this skip should be moved
+# to the class level.
+if sys.flags.no_site:
+    raise unittest.SkipTest("Python was invoked with -S")
+
+import site
 
 if site.ENABLE_USER_SITE and not os.path.isdir(site.USER_SITE):
     # need to add user site directory for tests
@@ -374,6 +373,7 @@ class ImportSideEffectTests(unittest.TestCase):
             self.assertNotIn(path, seen_paths)
             seen_paths.add(path)
 
+    @unittest.skip('test not implemented')
     def test_add_build_dir(self):
         # Test that the build directory's Modules directory is used when it
         # should be.

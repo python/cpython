@@ -1742,7 +1742,7 @@ win32_xstat_impl(const char *path, struct win32_stat *result,
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
            Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path agin and not the actual final path. */
+           the symlink path again and not the actual final path. */
         FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
             FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);
@@ -1838,7 +1838,7 @@ win32_xstat_impl_w(const wchar_t *path, struct win32_stat *result,
         /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
         /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
            Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path agin and not the actual final path. */
+           the symlink path again and not the actual final path. */
         FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
             FILE_FLAG_OPEN_REPARSE_POINT,
         NULL);

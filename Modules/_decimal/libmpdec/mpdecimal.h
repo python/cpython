@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,6 +32,10 @@
 
 #ifdef __cplusplus
 extern "C" {
+  #ifndef __STDC_LIMIT_MACROS
+    #define __STDC_LIMIT_MACROS
+    #define MPD_CLEAR_STDC_LIMIT_MACROS
+  #endif
 #endif
 
 
@@ -55,17 +59,11 @@ extern "C" {
   #define MPD_HIDE_SYMBOLS_END
   #define EXTINLINE extern inline
 #else
+  #ifdef HAVE_STDINT_H
+    #include <stdint.h>
+  #endif
   #ifdef HAVE_INTTYPES_H
     #include <inttypes.h>
-  #endif
-  #ifdef HAVE_STDINT_H
-    #if defined(__cplusplus) && !defined(__STDC_LIMIT_MACROS)
-      #define __STDC_LIMIT_MACROS
-      #include <stdint.h>
-      #undef __STDC_LIMIT_MACROS
-    #else
-      #include <stdint.h>
-    #endif
   #endif
   #ifndef __GNUC_STDC_INLINE__
     #define __GNUC_STDC_INLINE__ 1
@@ -835,6 +833,10 @@ MPD_PRAGMA(MPD_HIDE_SYMBOLS_END) /* restore previous scope rules */
 
 
 #ifdef __cplusplus
+  #ifdef MPD_CLEAR_STDC_LIMIT_MACROS
+    #undef MPD_CLEAR_STDC_LIMIT_MACROS
+    #undef __STDC_LIMIT_MACROS
+  #endif
 } /* END extern "C" */
 #endif
 

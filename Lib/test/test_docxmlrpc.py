@@ -202,10 +202,12 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
         """ Test that annotations works as expected """
         self.client.request("GET", "/")
         response = self.client.getresponse()
+        docstring = (b'' if sys.flags.optimize >= 2 else
+                     b'<dd><tt>Use&nbsp;function&nbsp;annotations.</tt></dd>')
         self.assertIn(
             (b'<dl><dt><a name="-annotation"><strong>annotation</strong></a>'
-             b'(x: int)</dt><dd><tt>Use&nbsp;function&nbsp;annotations.</tt>'
-             b'</dd></dl>\n<dl><dt><a name="-method_annotation"><strong>'
+             b'(x: int)</dt>' + docstring + b'</dl>\n'
+             b'<dl><dt><a name="-method_annotation"><strong>'
              b'method_annotation</strong></a>(x: bytes)</dt></dl>'),
             response.read())
 

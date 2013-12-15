@@ -361,11 +361,29 @@ update_ufd_array(pollObject *self)
         assert(i < self->ufd_len);
         /* Never overflow */
         self->ufds[i].fd = (int)PyLong_AsLong(key);
-        self->ufds[i].events = (short)PyLong_AsLong(value);
+        self->ufds[i].events = (short)(unsigned short)PyLong_AsLong(value);
         i++;
     }
     assert(i == self->ufd_len);
     self->ufd_uptodate = 1;
+    return 1;
+}
+
+static int
+ushort_converter(PyObject *obj, void *ptr)
+{
+    unsigned long uval;
+
+    uval = PyLong_AsUnsignedLong(obj);
+    if (uval == (unsigned long)-1 && PyErr_Occurred())
+        return 0;
+    if (uval > USHRT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large for C unsigned short");
+        return 0;
+    }
+
+    *(unsigned short *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned short);
     return 1;
 }
 
@@ -381,12 +399,11 @@ poll_register(pollObject *self, PyObject *args)
 {
     PyObject *o, *key, *value;
     int fd;
-    short events = POLLIN | POLLPRI | POLLOUT;
+    unsigned short events = POLLIN | POLLPRI | POLLOUT;
     int err;
 
-    if (!PyArg_ParseTuple(args, "O|h:register", &o, &events)) {
+    if (!PyArg_ParseTuple(args, "O|O&:register", &o, ushort_converter, &events))
         return NULL;
-    }
 
     fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) return NULL;
@@ -424,12 +441,12 @@ static PyObject *
 poll_modify(pollObject *self, PyObject *args)
 {
     PyObject *o, *key, *value;
-    int fd, events;
+    int fd;
+    unsigned short events;
     int err;
 
-    if (!PyArg_ParseTuple(args, "Oi:modify", &o, &events)) {
+    if (!PyArg_ParseTuple(args, "OO&:modify", &o, ushort_converter, &events))
         return NULL;
-    }
 
     fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) return NULL;
@@ -727,11 +744,11 @@ static PyObject *
 internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
 {
     PyObject *o;
-    int fd, events = POLLIN | POLLPRI | POLLOUT;
+    int fd;
+    unsigned short events = POLLIN | POLLPRI | POLLOUT;
 
-    if (!PyArg_ParseTuple(args, "O|i:register", &o, &events)) {
+    if (!PyArg_ParseTuple(args, "O|O&:register", &o, ushort_converter, &events))
         return NULL;
-    }
 
     fd = PyObject_AsFileDescriptor(o);
     if (fd == -1) return NULL;
@@ -747,7 +764,7 @@ internal_devpoll_register(devpollObject *self, PyObject *args, int remove)
     }
 
     self->fds[self->n_fds].fd = fd;
-    self->fds[self->n_fds].events = events;
+    self->fds[self->n_fds].events = (signed short)events;
 
     if (++self->n_fds == self->max_n_fds) {
         if (devpoll_flush(self))
