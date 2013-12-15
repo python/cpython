@@ -44,28 +44,22 @@ The :mod:`runpy` module provides two functions:
    below are defined in the supplied dictionary, those definitions are
    overridden by :func:`run_module`.
 
-   The special global variables ``__name__``, ``__file__``, ``__cached__``,
-   ``__loader__``
-   and ``__package__`` are set in the globals dictionary before the module
-   code is executed (Note that this is a minimal set of variables - other
-   variables may be set implicitly as an interpreter implementation detail).
+   The special global variables ``__name__``, ``__spec__``, ``__file__``,
+   ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
+   dictionary before the module code is executed (Note that this is a
+   minimal set of variables - other variables may be set implicitly as an
+   interpreter implementation detail).
 
    ``__name__`` is set to *run_name* if this optional argument is not
    :const:`None`, to ``mod_name + '.__main__'`` if the named module is a
    package and to the *mod_name* argument otherwise.
 
-   ``__file__`` is set to the name provided by the module loader. If the
-   loader does not make filename information available, this variable is set
-   to :const:`None`.
+   ``__spec__`` will be set appropriately for the *actually* imported
+   module (that is, ``__spec__.name`` will always be *mod_name* or
+   ``mod_name + '.__main__``, never *run_name*).
 
-   ``__cached__`` will be set to ``None``.
-
-   ``__loader__`` is set to the :pep:`302` module loader used to retrieve the
-   code for the module (This loader may be a wrapper around the standard
-   import mechanism).
-
-   ``__package__`` is set to *mod_name* if the named module is a package and
-   to ``mod_name.rpartition('.')[0]`` otherwise.
+   ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` are
+   :ref:`set as normal <import-mod-attrs>` based on the module spec.
 
    If the argument *alter_sys* is supplied and evaluates to :const:`True`,
    then ``sys.argv[0]`` is updated with the value of ``__file__`` and
@@ -83,8 +77,13 @@ The :mod:`runpy` module provides two functions:
       Added ability to execute packages by looking for a ``__main__`` submodule.
 
    .. versionchanged:: 3.2
-      Added ``__cached__`` global variable (see :PEP:`3147`).
+      Added ``__cached__`` global variable (see :pep:`3147`).
 
+   .. versionchanged:: 3.4
+      Updated to take advantage of the module spec feature added by
+      :pep:`451`. This allows ``__cached__`` to be set correctly for modules
+      run this way, as well as ensuring the real module name is always
+      accessible as ``__spec__.name``.
 
 .. function:: run_path(file_path, init_globals=None, run_name=None)
 
@@ -108,23 +107,28 @@ The :mod:`runpy` module provides two functions:
    below are defined in the supplied dictionary, those definitions are
    overridden by :func:`run_path`.
 
-   The special global variables ``__name__``, ``__file__``, ``__loader__``
-   and ``__package__`` are set in the globals dictionary before the module
-   code is executed (Note that this is a minimal set of variables - other
-   variables may be set implicitly as an interpreter implementation detail).
+   The special global variables ``__name__``, ``__spec__``, ``__file__``,
+   ``__cached__``, ``__loader__`` and ``__package__`` are set in the globals
+   dictionary before the module code is executed (Note that this is a
+   minimal set of variables - other variables may be set implicitly as an
+   interpreter implementation detail).
 
    ``__name__`` is set to *run_name* if this optional argument is not
    :const:`None` and to ``'<run_path>'`` otherwise.
 
-   ``__file__`` is set to the name provided by the module loader. If the
-   loader does not make filename information available, this variable is set
-   to :const:`None`. For a simple script, this will be set to ``file_path``.
+   If the supplied path directly references a script file (whether as source
+   or as precompiled byte code), then ``__file__`` will be set to the
+   supplied path, and ``__spec__``, ``__cached__``, ``__loader__`` and
+   ``__package__`` will all be set to :const:`None`.
 
-   ``__loader__`` is set to the :pep:`302` module loader used to retrieve the
-   code for the module (This loader may be a wrapper around the standard
-   import mechanism). For a simple script, this will be set to :const:`None`.
+   ``__spec__`` will be set to :const:`None` if the supplied path is a
+   direct path to a script (as source or as precompiled bytecode).
 
-   ``__package__`` is set to ``__name__.rpartition('.')[0]``.
+   If the supplied path is a reference to a valid sys.path entry, then
+   ``__spec__`` will be set appropriately for the imported ``__main__``
+   module (that is, ``__spec__.name`` will always be ``__main__``).
+   ``__file__``, ``__cached__``, ``__loader__`` and ``__package__`` will be
+   :ref:`set as normal <import-mod-attrs>` based on the module spec.
 
    A number of alterations are also made to the :mod:`sys` module. Firstly,
    ``sys.path`` may be altered as described above. ``sys.argv[0]`` is updated
@@ -141,6 +145,12 @@ The :mod:`runpy` module provides two functions:
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.4
+      Updated to take advantage of the module spec feature added by
+      :pep:`451`. This allows ``__cached__`` to be set correctly in the
+      case where ``__main__`` is imported from a valid sys.path entry rather
+      than being executed directly.
+
 .. seealso::
 
    :pep:`338` - Executing modules as scripts
@@ -148,6 +158,9 @@ The :mod:`runpy` module provides two functions:
 
    :pep:`366` - Main module explicit relative imports
       PEP written and implemented by Nick Coghlan.
+
+   :pep:`451` - A ModuleSpec Type for the Import System
+      PEP written and implemented by Eric Snow
 
    :ref:`using-on-general` - CPython command line details
 
