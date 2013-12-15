@@ -1419,6 +1419,7 @@ class NetworkedTests(unittest.TestCase):
                 s.close()
             self.assertEqual(len(ctx.get_ca_certs()), 1)
 
+    @needs_sni
     def test_context_setget(self):
         # Check that the context of a connected socket can be replaced.
         with support.transient_internet("svn.python.org"):
@@ -1970,6 +1971,7 @@ else:
                     cert = s.getpeercert()
                     self.assertTrue(cert, "Can't get peer certificate.")
 
+        @needs_sni
         def test_check_hostname(self):
             if support.verbose:
                 sys.stdout.write("\n")
