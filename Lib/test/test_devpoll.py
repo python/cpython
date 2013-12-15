@@ -87,6 +87,17 @@ class DevPollTests(unittest.TestCase):
         self.assertRaises(OverflowError, pollster.poll, 1 << 63)
         self.assertRaises(OverflowError, pollster.poll, 1 << 64)
 
+    def test_events_mask_overflow(self):
+        pollster = select.devpoll()
+        w, r = os.pipe()
+        pollster.register(w)
+        # Issue #17919
+        self.assertRaises(OverflowError, pollster.register, 0, -1)
+        self.assertRaises(OverflowError, pollster.register, 0, USHRT_MAX + 1)
+        self.assertRaises(OverflowError, pollster.modify, 1, -1)
+        self.assertRaises(OverflowError, pollster.modify, 1, USHRT_MAX + 1)
+
+
 def test_main():
     run_unittest(DevPollTests)
 

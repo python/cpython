@@ -463,8 +463,7 @@ class TestLocale(unittest.TestCase):
         try:
             tmp = locale.setlocale(locale.LC_ALL, "fr_FR")
         except locale.Error:
-            # skip this test
-            return
+            self.skipTest('could not set locale.LC_ALL to fr_FR')
         # This should not cause an exception
         time.strftime("%B", (2009,2,1,0,0,0,0,0,0))
 

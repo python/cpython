@@ -1132,7 +1132,7 @@ PyNumber_Absolute(PyObject *o)
     return type_error("bad operand type for abs(): '%.200s'", o);
 }
 
-/* Return a Python int from the object item
+/* Return a Python int from the object item.
    Raise TypeError if the result is not an int
    or if the object cannot be interpreted as an index.
 */
@@ -1146,21 +1146,21 @@ PyNumber_Index(PyObject *item)
         Py_INCREF(item);
         return item;
     }
-    if (PyIndex_Check(item)) {
-        result = item->ob_type->tp_as_number->nb_index(item);
-        if (result && !PyLong_Check(result)) {
-            PyErr_Format(PyExc_TypeError,
-                         "__index__ returned non-int "
-                         "(type %.200s)",
-                         result->ob_type->tp_name);
-            Py_DECREF(result);
-            return NULL;
-        }
-    }
-    else {
+    if (!PyIndex_Check(item)) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object cannot be interpreted "
                      "as an integer", item->ob_type->tp_name);
+        return NULL;
+    }
+    result = item->ob_type->tp_as_number->nb_index(item);
+    if (!result || PyLong_CheckExact(result))
+        return result;
+    if (!PyLong_Check(result)) {
+        PyErr_Format(PyExc_TypeError,
+                     "__index__ returned non-int (type %.200s)",
+                     result->ob_type->tp_name);
+        Py_DECREF(result);
+        return NULL;
     }
     return result;
 }
@@ -1212,34 +1212,6 @@ PyNumber_AsSsize_t(PyObject *item, PyObject *err)
 }
 
 
-/*
-  Returns the Integral instance converted to an int. The instance is expected
-  to be an int or have an __int__ method. Steals integral's
-  reference. error_format will be used to create the TypeError if integral
-  isn't actually an Integral instance. error_format should be a format string
-  that can accept a char* naming integral's type. 
-*/
-static PyObject *
-convert_integral_to_int(PyObject *integral, const char *error_format)
-{
-    PyNumberMethods *nb;
-    if (PyLong_Check(integral))
-        return integral;
-    nb = Py_TYPE(integral)->tp_as_number;
-    if (nb->nb_int) {
-        PyObject *as_int = nb->nb_int(integral);
-        if (!as_int || PyLong_Check(as_int)) {
-            Py_DECREF(integral);
-            return as_int;
-        }
-        Py_DECREF(as_int);
-    }
-    PyErr_Format(PyExc_TypeError, error_format, Py_TYPE(integral)->tp_name);
-    Py_DECREF(integral);
-    return NULL;    
-}
-
-
 PyObject *
 PyNumber_Long(PyObject *o)
 {
@@ -1257,29 +1229,28 @@ PyNumber_Long(PyObject *o)
     }
     m = o->ob_type->tp_as_number;
     if (m && m->nb_int) { /* This should include subclasses of int */
-        PyObject *res = m->nb_int(o);
-        if (res && !PyLong_Check(res)) {
-            PyErr_Format(PyExc_TypeError,
-                         "__int__ returned non-int (type %.200s)",
-                         res->ob_type->tp_name);
-            Py_DECREF(res);
-            return NULL;
-        }
-        return res;
+        return (PyObject *)_PyLong_FromNbInt(o);
     }
-    if (PyLong_Check(o)) /* An int subclass without nb_int */
-        return _PyLong_Copy((PyLongObject *)o);
     trunc_func = _PyObject_LookupSpecial(o, &PyId___trunc__);
     if (trunc_func) {
         PyObject *truncated = PyEval_CallObject(trunc_func, NULL);
         PyObject *int_instance;
         Py_DECREF(trunc_func);
-        if (truncated == NULL)
-            return NULL;
+        if (truncated == NULL || PyLong_Check(truncated))
+            return truncated;
         /* __trunc__ is specified to return an Integral type,
            but int() needs to return a int. */
-        int_instance = convert_integral_to_int(truncated,
-            "__trunc__ returned non-Integral (type %.200s)");
+        m = truncated->ob_type->tp_as_number;
+        if (m == NULL || m->nb_int == NULL) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "__trunc__ returned non-Integral (type %.200s)",
+                truncated->ob_type->tp_name);
+            Py_DECREF(truncated);
+            return NULL;
+        }
+        int_instance = (PyObject *)_PyLong_FromNbInt(truncated);
+        Py_DECREF(truncated);
         return int_instance;
     }
     if (PyErr_Occurred())

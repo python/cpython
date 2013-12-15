@@ -218,7 +218,7 @@ class TestNtpath(unittest.TestCase):
             import nt
             tester('ntpath.abspath("C:\\")', "C:\\")
         except ImportError:
-            pass
+            self.skipTest('nt module not available')
 
     def test_relpath(self):
         currentdir = os.path.split(os.getcwd())[-1]
