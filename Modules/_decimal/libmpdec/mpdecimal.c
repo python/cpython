@@ -4421,21 +4421,22 @@ mpd_qfma(mpd_t *result, const mpd_t *a, const mpd_t *b, const mpd_t *c,
          const mpd_context_t *ctx, uint32_t *status)
 {
     uint32_t workstatus = 0;
-    const mpd_t *cc = c;
+    mpd_t *cc = NULL;
 
     if (result == c) {
         if ((cc = mpd_qncopy(c)) == NULL) {
             mpd_seterror(result, MPD_Malloc_error, status);
             return;
         }
+        c = cc;
     }
 
     _mpd_qmul(result, a, b, ctx, &workstatus);
     if (!(workstatus&MPD_Invalid_operation)) {
-        mpd_qadd(result, result, cc, ctx, &workstatus);
+        mpd_qadd(result, result, c, ctx, &workstatus);
     }
 
-    if (cc != c) mpd_del((mpd_t *)cc);
+    if (cc) mpd_del(cc);
     *status |= workstatus;
 }
 
