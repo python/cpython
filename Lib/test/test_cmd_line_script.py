@@ -41,11 +41,28 @@ from importlib.machinery import BuiltinImporter
 _loader = __loader__ if __loader__ is BuiltinImporter else type(__loader__)
 print('__loader__==%a' % _loader)
 print('__file__==%a' % __file__)
-assertEqual(__cached__, None)
+print('__cached__==%a' % __cached__)
 print('__package__==%r' % __package__)
+# Check PEP 451 details
+import os.path
+if __package__ is not None:
+    print('__main__ was located through the import system')
+    assertIdentical(__spec__.loader, __loader__)
+    expected_spec_name = os.path.splitext(os.path.basename(__file__))[0]
+    if __package__:
+        expected_spec_name = __package__ + "." + expected_spec_name
+    assertEqual(__spec__.name, expected_spec_name)
+    assertEqual(__spec__.parent, __package__)
+    assertIdentical(__spec__.submodule_search_locations, None)
+    assertEqual(__spec__.origin, __file__)
+    if __spec__.cached is not None:
+        assertEqual(__spec__.cached, __cached__)
 # Check the sys module
 import sys
 assertIdentical(globals(), sys.modules[__name__].__dict__)
+if __spec__ is not None:
+    # XXX: We're not currently making __main__ available under its real name
+    pass # assertIdentical(globals(), sys.modules[__spec__.name].__dict__)
 from test import test_cmd_line_script
 example_args_list = test_cmd_line_script.example_args
 assertEqual(sys.argv[1:], example_args_list)
