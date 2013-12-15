@@ -186,8 +186,17 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
 
             switch (*f) {
             case 'c':
-                (void)va_arg(count, int);
-                /* fall through... */
+            {
+                int c = va_arg(count, int);
+                if (c < 0 || c > 255) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "PyBytes_FromFormatV(): %c format "
+                                    "expects an integer in range [0; 255]");
+                    return NULL;
+                }
+                n++;
+                break;
+            }
             case '%':
                 n++;
                 break;
@@ -267,8 +276,12 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
 
             switch (*f) {
             case 'c':
-                *s++ = va_arg(vargs, int);
+            {
+                int c = va_arg(vargs, int);
+                /* c has been checked for overflow in the first step */
+                *s++ = (unsigned char)c;
                 break;
+            }
             case 'd':
                 if (longflag)
                     sprintf(s, "%ld", va_arg(vargs, long));

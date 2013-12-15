@@ -315,7 +315,8 @@ class Telnet:
             poller.register(self, poll_in_or_priority_flags)
             while i < 0 and not self.eof:
                 try:
-                    ready = poller.poll(call_timeout)
+                    ready = poller.poll(None if timeout is None
+                                        else 1000 * call_timeout)
                 except select.error as e:
                     if e.errno == errno.EINTR:
                         if timeout is not None:
@@ -683,7 +684,8 @@ class Telnet:
             poller.register(self, poll_in_or_priority_flags)
             while not m and not self.eof:
                 try:
-                    ready = poller.poll(call_timeout)
+                    ready = poller.poll(None if timeout is None
+                                        else 1000 * call_timeout)
                 except select.error as e:
                     if e.errno == errno.EINTR:
                         if timeout is not None:

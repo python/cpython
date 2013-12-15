@@ -10,6 +10,17 @@ What's New in Python 3.3.4 release candidate 1?
 Core and Builtins
 -----------------
 
+- Issue #19969: PyBytes_FromFormatV() now raises an OverflowError if "%c"
+  argument is not in range [0; 255].
+
+- Issue #14432: Generator now clears the borrowed reference to the thread
+  state. Fix a crash when a generator is created in a C thread that is
+  destroyed while the generator is still used. The issue was that a generator
+  contains a frame, and the frame kept a reference to the Python state of the
+  destroyed C thread. The crash occurs when a trace function is setup.
+
+- Issue #19932: Fix typo in import.h, missing whitespaces in function prototypes.
+
 - Issue #19729: In str.format(), fix recursive expansion in format spec.
 
 - Issue #19638: Fix possible crash / undefined behaviour from huge (more than 2
@@ -17,6 +28,34 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #19623: Fixed writing to unseekable files in the aifc module.
+
+- Issue #17919: select.poll.register() again works with poll.POLLNVAL on AIX.
+  Fixed integer overflow in the eventmask parameter.
+
+- Issue #19063: if a Charset's body_encoding was set to None, the email
+  package would generate a message claiming the Content-Transfer-Encoding
+  was 7bit, and produce garbage output for the content.  This now works.
+  A couple of other set_payload mishandlings of non-ASCII are also fixed.
+
+- Issue #17200: telnetlib's read_until and expect timeout was broken by the
+  fix to Issue #14635 in Python 3.3.0 to be interpreted as milliseconds
+  instead of seconds when the platform supports select.poll (ie: everywhere).
+  It is now treated as seconds once again.
+
+- Issue #17429: platform.linux_distribution() now decodes files from the UTF-8
+  encoding with the surrogateescape error handler, instead of decoding from the
+  locale encoding in strict mode. It fixes the function on Fedora 19 which is
+  probably the first major distribution release with a non-ASCII name. Patch
+  written by Toshio Kuratomi.
+
+- Issue #19929: Call os.read with 32768 within subprocess.Popen.communicate
+  rather than 4096 for efficiency.  A microbenchmark shows Linux and OS X
+  both using ~50% less cpu time this way.
+
+- Issue #19506: Use a memoryview to avoid a data copy when piping data
+  to stdin within subprocess.Popen.communicate.  5-10% less cpu usage.
 
 - Issue #19839: Fix regression in bz2 module's handling of non-bzip2 data at
   EOF, and analogous bug in lzma module.
@@ -91,8 +130,25 @@ Library
 - Issue #19286: Directories in ``package_data`` are no longer added to
   the filelist, preventing failure outlined in the ticket.
 
+IDLE
+----
+
+- Issue #19481: print() of string subclass instance in IDLE no longer hangs.
+
+- Issue #18270: Prevent possible IDLE AttributeError on OS X when no initial
+  shell window is present.
+
 Tests
 -----
+
+- Issue #19828: Fixed test_site when the whole suite is run with -S.
+
+- Issue #19928: Implemented a test for repr() of cell objects.
+
+- Issue #19535: Fixed test_docxmlrpc when python is run with -OO.
+
+- Issue #19926: Removed unneeded test_main from test_abstract_numbers.
+  Patch by Vajrasky Kok.
 
 - Issue #19595: Re-enabled a long-disabled test in test_winsound.
 
@@ -106,12 +162,15 @@ Tests
   import, converting from test_main to unittest.main, and running the
   _testcapi module tests within a unittest TestCase.
 
-- Issue #18702: All skipped tests now reported as skipped.
+- Issue #18702, 19572: All skipped tests now reported as skipped.
 
 - Issue #19085: Added basic tests for all tkinter widget options.
 
 Documentation
 -------------
+
+- Issue #19963: Document that importlib.import_module() no longer requires
+  importing parent packages separately.
 
 - Issue #18840: Introduce the json module in the tutorial, and deemphasize
   the pickle module.

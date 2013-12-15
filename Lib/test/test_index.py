@@ -9,7 +9,7 @@ class newstyle:
 
 class TrapInt(int):
     def __index__(self):
-        return self
+        return int(self)
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
@@ -54,6 +54,39 @@ class BaseTestCase(unittest.TestCase):
         self.assertRaises(TypeError, operator.index, self.n)
         self.assertRaises(TypeError, slice(self.o).indices, 0)
         self.assertRaises(TypeError, slice(self.n).indices, 0)
+
+    def test_int_subclass_with_index(self):
+        # __index__ should be used when computing indices, even for int
+        # subclasses.  See issue #17576.
+        class MyInt(int):
+            def __index__(self):
+                return int(self) + 1
+
+        my_int = MyInt(7)
+        direct_index = my_int.__index__()
+        operator_index = operator.index(my_int)
+        self.assertEqual(direct_index, 8)
+        self.assertEqual(operator_index, 7)
+        # Both results should be of exact type int.
+        self.assertIs(type(direct_index), int)
+        #self.assertIs(type(operator_index), int)
+
+    def test_index_returns_int_subclass(self):
+        class BadInt:
+            def __index__(self):
+                return True
+
+        class BadInt2(int):
+            def __index__(self):
+                return True
+
+        bad_int = BadInt()
+        n = operator.index(bad_int)
+        self.assertEqual(n, 1)
+
+        bad_int = BadInt2()
+        n = operator.index(bad_int)
+        self.assertEqual(n, 0)
 
 
 class SeqTestCase:

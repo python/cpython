@@ -113,6 +113,11 @@ The module defines the following items:
       the call.  The number of bytes returned may be more or less than
       requested.
 
+      .. note:: While calling :meth:`peek` does not change the file position of
+         the :class:`GzipFile`, it may change the position of the underlying
+         file object (e.g. if the :class:`GzipFile` was constructed with the
+         *fileobj* parameter).
+
       .. versionadded:: 3.2
 
    .. versionchanged:: 3.1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012 Stefan Krah. All rights reserved.
+ * Copyright (c) 2008-2016 Stefan Krah. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -169,7 +169,7 @@ squaretrans(mpd_uint_t *buf, mpd_size_t cols)
 /*
  * Transpose 2^n * 2^n matrix. For cache efficiency, the matrix is split into
  * square blocks with side length 'SIDE'. First, the blocks are transposed,
- * then a square tranposition is done on each individual block.
+ * then a square transposition is done on each individual block.
  */
 static void
 squaretrans_pow2(mpd_uint_t *matrix, mpd_size_t size)

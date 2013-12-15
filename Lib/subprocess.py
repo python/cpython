@@ -1621,6 +1621,9 @@ class Popen(object):
 
             self._save_input(input)
 
+            if self._input:
+                input_view = memoryview(self._input)
+
             while self._fd2file:
                 timeout = self._remaining_time(endtime)
                 if timeout is not None and timeout < 0:
@@ -1638,8 +1641,8 @@ class Popen(object):
 
                 for fd, mode in ready:
                     if mode & select.POLLOUT:
-                        chunk = self._input[self._input_offset :
-                                            self._input_offset + _PIPE_BUF]
+                        chunk = input_view[self._input_offset :
+                                           self._input_offset + _PIPE_BUF]
                         try:
                             self._input_offset += os.write(fd, chunk)
                         except OSError as e:
@@ -1651,7 +1654,7 @@ class Popen(object):
                             if self._input_offset >= len(self._input):
                                 close_unregister_and_remove(fd)
                     elif mode & select_POLLIN_POLLPRI:
-                        data = os.read(fd, 4096)
+                        data = os.read(fd, 32768)
                         if not data:
                             close_unregister_and_remove(fd)
                         self._fd2output[fd].append(data)

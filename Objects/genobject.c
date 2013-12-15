@@ -76,6 +76,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 
     /* Generators always return to their most recent caller, not
      * necessarily their creator. */
+    f->f_tstate = tstate;
     Py_XINCREF(tstate->frame);
     assert(f->f_back == NULL);
     f->f_back = tstate->frame;
@@ -89,6 +90,8 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
      * cycle. */
     assert(f->f_back == tstate->frame);
     Py_CLEAR(f->f_back);
+    /* Clear the borrowed reference to the thread state */
+    f->f_tstate = NULL;
 
     /* If the generator just returned (as opposed to yielding), signal
      * that the generator is exhausted. */
