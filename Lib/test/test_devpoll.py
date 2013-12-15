@@ -8,6 +8,7 @@ import select
 import sys
 import unittest
 from test.support import TESTFN, run_unittest
+from _testcapi import USHRT_MAX
 
 try:
     select.devpoll
