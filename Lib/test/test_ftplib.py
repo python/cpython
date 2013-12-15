@@ -927,7 +927,7 @@ class TestTLS_FTPClass(TestCase):
         self.client.ccc()
         self.assertRaises(ValueError, self.client.sock.unwrap)
 
-    @unittest.skipUnless(HAS_SNI, 'No SNI support in ssl module')
+    @skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_check_hostname(self):
         self.client.quit()
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
