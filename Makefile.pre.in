@@ -910,7 +910,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/warnings.h \
 		$(srcdir)/Include/weakrefobject.h \
 		pyconfig.h \
-		$(PARSER_HEADERS)
+		$(PARSER_HEADERS) \
+		$(AST_H)
 
 $(LIBRARY_OBJS) $(MODOBJS) Modules/python.o: $(PYTHON_HEADERS)
 
