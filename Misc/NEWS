@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19912: Fixed numerous bugs in ntpath.splitunc().
+
 - Issue #19911: ntpath.splitdrive() now correctly processes the 'İ' character
   (U+0130, LATIN CAPITAL LETTER I WITH DOT ABOVE).
 
@@ -146,6 +148,8 @@ IDLE
 
 Tests
 -----
+
+- Issue #19912: Added tests for ntpath.splitunc().
 
 - Issue #19828: Fixed test_site when the whole suite is run with -S.
 
