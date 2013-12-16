@@ -44,6 +44,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #19921: When Path.mkdir() is called with parents=True, any missing
+  parent is created with the default permissions, ignoring the mode argument
+  (mimicking the POSIX "mkdir -p" command).
+
 - Issue #19887: Improve the Path.resolve() algorithm to support certain
   symlink chains.
 

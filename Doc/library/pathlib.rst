@@ -768,7 +768,10 @@ call fails (for example because the path doesn't exist):
    and access flags.  If the path already exists, :exc:`OSError` is raised.
 
    If *parents* is true, any missing parents of this path are created
-   as needed.  If *parents* is false (the default), a missing parent raises
+   as needed; they are created with the default permissions without taking
+   *mode* into account (mimicking the POSIX ``mkdir -p`` command).
+
+   If *parents* is false (the default), a missing parent raises
    :exc:`OSError`.
 
 
