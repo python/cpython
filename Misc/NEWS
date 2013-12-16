@@ -192,6 +192,9 @@ IDLE
 Tests
 -----
 
+- Issue #19919: Fix flacky SSL test. connect_ex() sometimes returns
+  EWOULDBLOCK on Windows or VMs hosted on Windows.
+
 - Issue #19912: Added tests for ntpath.splitunc().
 
 - Issue #19828: Fixed test_site when the whole suite is run with -S.
