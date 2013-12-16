@@ -352,6 +352,10 @@ Directory and files operations
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.4
+      The :class:`bytes` type is now accepted. If *cmd* type is :class:`bytes`,
+      the result type is also :class:`bytes`.
+
 
 .. exception:: Error
 
