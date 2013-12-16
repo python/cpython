@@ -384,7 +384,7 @@ class TimeTestCase(unittest.TestCase):
         t2 = time.monotonic()
         dt = t2 - t1
         self.assertGreater(t2, t1)
-        self.assertAlmostEqual(dt, 0.5, delta=0.2)
+        self.assertTrue(0.5 <= dt <= 1.0, dt)
 
         # monotonic() is a monotonic but non adjustable clock
         info = time.get_clock_info('monotonic')
