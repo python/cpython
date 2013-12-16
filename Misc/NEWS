@@ -160,7 +160,7 @@ Tests
 - Issue #19926: Removed unneeded test_main from test_abstract_numbers.
   Patch by Vajrasky Kok.
 
-- Issue #19595: Re-enabled a long-disabled test in test_winsound.
+- Issue #19595, #19987: Re-enabled a long-disabled test in test_winsound.
 
 - Issue #19588: Fixed tests in test_random that were silently skipped most
   of the time.  Patch by Julian Gindi.
