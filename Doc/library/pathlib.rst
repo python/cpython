@@ -765,14 +765,15 @@ call fails (for example because the path doesn't exist):
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process' ``umask`` value to determine the file mode
-   and access flags.  If the path already exists, :exc:`OSError` is raised.
+   and access flags.  If the path already exists, :exc:`FileExistsError`
+   is raised.
 
    If *parents* is true, any missing parents of this path are created
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
 
    If *parents* is false (the default), a missing parent raises
-   :exc:`OSError`.
+   :exc:`FileNotFoundError`.
 
 
 .. method:: Path.open(mode='r', buffering=-1, encoding=None, errors=None, newline=None)
@@ -879,7 +880,7 @@ call fails (for example because the path doesn't exist):
    with the process' ``umask`` value to determine the file mode and access
    flags.  If the file already exists, the function succeeds if *exist_ok*
    is true (and its modification time is updated to the current time),
-   otherwise :exc:`OSError` is raised.
+   otherwise :exc:`FileExistsError` is raised.
 
 
 .. method:: Path.unlink()
