@@ -33,10 +33,24 @@ class TestNtpath(unittest.TestCase):
                ('c:', '/foo/bar'))
 
     def test_splitunc(self):
+        tester('ntpath.splitunc("c:\\foo\\bar")',
+               ('', 'c:\\foo\\bar'))
+        tester('ntpath.splitunc("c:/foo/bar")',
+               ('', 'c:/foo/bar'))
         tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")',
                ('\\\\conky\\mountpoint', '\\foo\\bar'))
         tester('ntpath.splitunc("//conky/mountpoint/foo/bar")',
                ('//conky/mountpoint', '/foo/bar'))
+        tester('ntpath.splitunc("\\\\\\conky\\mountpoint\\foo\\bar")',
+               ('', '\\\\\\conky\\mountpoint\\foo\\bar'))
+        tester('ntpath.splitunc("///conky/mountpoint/foo/bar")',
+               ('', '///conky/mountpoint/foo/bar'))
+        tester('ntpath.splitunc("\\\\conky\\\\mountpoint\\foo\\bar")',
+               ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
+        tester('ntpath.splitunc("//conky//mountpoint/foo/bar")',
+               ('', '//conky//mountpoint/foo/bar'))
+        self.assertEqual(ntpath.splitunc(u'//conky/MOUNTPO\u0130NT/foo/bar'),
+                         (u'//conky/MOUNTPO\u0130NT', u'/foo/bar'))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))

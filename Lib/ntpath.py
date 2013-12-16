@@ -136,6 +136,25 @@ def splitunc(p):
     using backslashes).  unc+rest is always the input path.
     Paths containing drive letters never have an UNC part.
     """
+    #if p[1:2] == ':':
+        #return '', p # Drive letter present
+    #firstTwo = p[0:2]
+    #if firstTwo == '//' or firstTwo == '\\\\':
+        ## is a UNC path:
+        ## vvvvvvvvvvvvvvvvvvvv equivalent to drive letter
+        ## \\machine\mountpoint\directories...
+        ##           directory ^^^^^^^^^^^^^^^
+        #normp = normcase(p)
+        #index = normp.find('\\', 2)
+        #if index == -1:
+            ###raise RuntimeError, 'illegal UNC path: "' + p + '"'
+            #return ("", p)
+        #index = normp.find('\\', index + 1)
+        #if index == -1:
+            #index = len(p)
+        #return p[:index], p[index:]
+    #return '', p
+
     if p[1:2] == ':':
         return '', p # Drive letter present
     firstTwo = p[0:2]
@@ -144,15 +163,18 @@ def splitunc(p):
         # vvvvvvvvvvvvvvvvvvvv equivalent to drive letter
         # \\machine\mountpoint\directories...
         #           directory ^^^^^^^^^^^^^^^
-        normp = normcase(p)
-        index = normp.find('\\', 2)
-        if index == -1:
-            ##raise RuntimeError, 'illegal UNC path: "' + p + '"'
-            return ("", p)
-        index = normp.find('\\', index + 1)
-        if index == -1:
-            index = len(p)
-        return p[:index], p[index:]
+        normp = p.replace('\\', '/')
+        index = normp.find('/', 2)
+        if index <= 2:
+            return '', p
+        index2 = normp.find('/', index + 1)
+        # a UNC path can't have two slashes in a row
+        # (after the initial two)
+        if index2 == index + 1:
+            return '', p
+        if index2 == -1:
+            index2 = len(p)
+        return p[:index2], p[index2:]
     return '', p
 
 

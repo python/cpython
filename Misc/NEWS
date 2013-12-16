@@ -23,6 +23,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19912: Fixed numerous bugs in ntpath.splitunc().
+
 - Issue #19623: Fixed writing to unseekable files in the aifc module.
   Fixed writing 'ulaw' (lower case) compressed AIFC files.
 
