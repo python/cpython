@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19887: Improve the Path.resolve() algorithm to support certain
+  symlink chains.
+
 - Issue #19912: Fixed numerous bugs in ntpath.splitunc().
 
 - Issue #19911: ntpath.splitdrive() now correctly processes the 'İ' character
