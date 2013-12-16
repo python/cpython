@@ -204,7 +204,7 @@ def splitdrive(p):
     empty = _get_empty(p)
     if len(p) > 1:
         sep = _get_sep(p)
-        normp = normcase(p)
+        normp = p.replace(_get_altsep(p), sep)
         if (normp[0:2] == sep*2) and (normp[2:3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
@@ -240,26 +240,12 @@ def splitunc(p):
     """
     import warnings
     warnings.warn("ntpath.splitunc is deprecated, use ntpath.splitdrive instead",
-                  DeprecationWarning)
-    sep = _get_sep(p)
-    if not p[1:2]:
-        return p[:0], p # Drive letter present
-    firstTwo = p[0:2]
-    if normcase(firstTwo) == sep + sep:
-        # is a UNC path:
-        # vvvvvvvvvvvvvvvvvvvv equivalent to drive letter
-        # \\machine\mountpoint\directories...
-        #           directory ^^^^^^^^^^^^^^^
-        normp = normcase(p)
-        index = normp.find(sep, 2)
-        if index == -1:
-            ##raise RuntimeError, 'illegal UNC path: "' + p + '"'
-            return (p[:0], p)
-        index = normp.find(sep, index + 1)
-        if index == -1:
-            index = len(p)
-        return p[:index], p[index:]
-    return p[:0], p
+                  DeprecationWarning, 2)
+    drive, path = splitdrive(p)
+    if len(drive) == 2:
+         # Drive letter present
+        return p[:0], p
+    return drive, path
 
 
 # Split a path in head (everything up to the last '/') and tail (the
