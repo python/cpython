@@ -200,6 +200,9 @@ Tests
 Build
 -----
 
+- Issue #18215: Add script Tools/ssl/test_multiple_versions.py to compile and
+  run Python's unit tests with multiple versions of OpenSSL.
+
 - Issue #19922: define _INCLUDE__STDC_A1_SOURCE in HP-UX to include mbstate_t
   for mbrtowc().
 
