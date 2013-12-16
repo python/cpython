@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19911: ntpath.splitdrive() now correctly processes the 'İ' character
+  (U+0130, LATIN CAPITAL LETTER I WITH DOT ABOVE).
+
 - Issue #19532: python -m compileall with no filename/directory arguments now
   respects the -f and -q flags instead of ignoring them.
 
