@@ -44,8 +44,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #18283: shutil.which() now supports bytes argument, not only text argument.
-
 - Issue #19921: When Path.mkdir() is called with parents=True, any missing
   parent is created with the default permissions, ignoring the mode argument
   (mimicking the POSIX "mkdir -p" command).
