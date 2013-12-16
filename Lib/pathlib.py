@@ -254,42 +254,47 @@ class _PosixFlavour(_Flavour):
 
     def resolve(self, path):
         sep = self.sep
-        def split(p):
-            return [x for x in p.split(sep) if x]
-        def absparts(p):
-            # Our own abspath(), since the posixpath one makes
-            # the mistake of "normalizing" the path without resolving the
-            # symlinks first.
-            if not p.startswith(sep):
-                return split(os.getcwd()) + split(p)
-            else:
-                return split(p)
-        parts = absparts(str(path))[::-1]
         accessor = path._accessor
-        resolved = cur = ""
-        symlinks = {}
-        while parts:
-            part = parts.pop()
-            cur = resolved + sep + part
-            if cur in symlinks and symlinks[cur] <= len(parts):
-                # We've already seen the symlink and there's not less
-                # work to do than the last time.
-                raise RuntimeError("Symlink loop from %r" % cur)
-            try:
-                target = accessor.readlink(cur)
-            except OSError as e:
-                if e.errno != EINVAL:
-                    raise
-                # Not a symlink
-                resolved = cur
-            else:
-                # Take note of remaining work from this symlink
-                symlinks[cur] = len(parts)
-                if target.startswith(sep):
-                    # Symlink points to absolute path
-                    resolved = ""
-                parts.extend(split(target)[::-1])
-        return resolved or sep
+        seen = {}
+        def _resolve(path, rest):
+            if rest.startswith(sep):
+                path = ''
+
+            for name in rest.split(sep):
+                if not name or name == '.':
+                    # current dir
+                    continue
+                if name == '..':
+                    # parent dir
+                    path, _, _ = path.rpartition(sep)
+                    continue
+                newpath = path + sep + name
+                if newpath in seen:
+                    # Already seen this path
+                    path = seen[newpath]
+                    if path is not None:
+                        # use cached value
+                        continue
+                    # The symlink is not resolved, so we must have a symlink loop.
+                    raise RuntimeError("Symlink loop from %r" % newpath)
+                # Resolve the symbolic link
+                try:
+                    target = accessor.readlink(newpath)
+                except OSError as e:
+                    if e.errno != EINVAL:
+                        raise
+                    # Not a symlink
+                    path = newpath
+                else:
+                    seen[newpath] = None # not resolved symlink
+                    path = _resolve(path, target)
+                    seen[newpath] = path # resolved symlink
+
+            return path
+        # NOTE: according to POSIX, getcwd() cannot contain path components
+        # which are symlinks.
+        base = '' if path.is_absolute() else os.getcwd()
+        return _resolve(base, str(path)) or sep
 
     def is_reserved(self, parts):
         return False

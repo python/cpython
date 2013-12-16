@@ -1620,6 +1620,59 @@ class _BasePathTest(object):
         # 'bin'
         self.assertIs(p.parts[2], q.parts[3])
 
+    def _check_complex_symlinks(self, link0_target):
+        # Test solving a non-looping chain of symlinks (issue #19887)
+        P = self.cls(BASE)
+        self.dirlink(os.path.join('link0', 'link0'), join('link1'))
+        self.dirlink(os.path.join('link1', 'link1'), join('link2'))
+        self.dirlink(os.path.join('link2', 'link2'), join('link3'))
+        self.dirlink(link0_target, join('link0'))
+
+        # Resolve absolute paths
+        p = (P / 'link0').resolve()
+        self.assertEqual(p, P)
+        self.assertEqual(str(p), BASE)
+        p = (P / 'link1').resolve()
+        self.assertEqual(p, P)
+        self.assertEqual(str(p), BASE)
+        p = (P / 'link2').resolve()
+        self.assertEqual(p, P)
+        self.assertEqual(str(p), BASE)
+        p = (P / 'link3').resolve()
+        self.assertEqual(p, P)
+        self.assertEqual(str(p), BASE)
+
+        # Resolve relative paths
+        old_path = os.getcwd()
+        os.chdir(BASE)
+        try:
+            p = self.cls('link0').resolve()
+            self.assertEqual(p, P)
+            self.assertEqual(str(p), BASE)
+            p = self.cls('link1').resolve()
+            self.assertEqual(p, P)
+            self.assertEqual(str(p), BASE)
+            p = self.cls('link2').resolve()
+            self.assertEqual(p, P)
+            self.assertEqual(str(p), BASE)
+            p = self.cls('link3').resolve()
+            self.assertEqual(p, P)
+            self.assertEqual(str(p), BASE)
+        finally:
+            os.chdir(old_path)
+
+    @with_symlinks
+    def test_complex_symlinks_absolute(self):
+        self._check_complex_symlinks(BASE)
+
+    @with_symlinks
+    def test_complex_symlinks_relative(self):
+        self._check_complex_symlinks('.')
+
+    @with_symlinks
+    def test_complex_symlinks_relative_dot_dot(self):
+        self._check_complex_symlinks(os.path.join('dirA', '..'))
+
 
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path
