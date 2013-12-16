@@ -1478,7 +1478,6 @@ class _BasePathTest(object):
         with self.assertRaises(OSError) as cm:
             p.mkdir()
         self.assertEqual(cm.exception.errno, errno.EEXIST)
-        # XXX test `mode` arg
 
     def test_mkdir_parents(self):
         # Creating a chain of directories
@@ -1493,7 +1492,17 @@ class _BasePathTest(object):
         with self.assertRaises(OSError) as cm:
             p.mkdir(parents=True)
         self.assertEqual(cm.exception.errno, errno.EEXIST)
-        # XXX test `mode` arg
+        # test `mode` arg
+        mode = stat.S_IMODE(p.stat().st_mode) # default mode
+        p = self.cls(BASE, 'newdirD', 'newdirE')
+        p.mkdir(0o555, parents=True)
+        self.assertTrue(p.exists())
+        self.assertTrue(p.is_dir())
+        if os.name != 'nt':
+            # the directory's permissions follow the mode argument
+            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o555 & mode)
+        # the parent's permissions follow the default process settings
+        self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), mode)
 
     @with_symlinks
     def test_symlink_to(self):
