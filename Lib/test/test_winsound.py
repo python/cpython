@@ -160,12 +160,13 @@ class PlaySoundTest(unittest.TestCase):
     def test_alias_fallback(self):
         if _have_soundcard():
             winsound.PlaySound('!"$%&/(#+*', winsound.SND_ALIAS)
-        else:
-            self.assertRaises(
-                RuntimeError,
-                winsound.PlaySound,
-                '!"$%&/(#+*', winsound.SND_ALIAS
-            )
+        # see http://bugs.python.org/issue19987
+        #else:
+        #    self.assertRaises(
+        #        RuntimeError,
+        #        winsound.PlaySound,
+        #        '!"$%&/(#+*', winsound.SND_ALIAS
+        #    )
 
     def test_alias_nofallback(self):
         if _have_soundcard():
