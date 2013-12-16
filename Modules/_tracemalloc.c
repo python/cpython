@@ -1373,11 +1373,12 @@ _PyTraceMalloc_Init(void)
         char *endptr = p;
         long value;
 
+        errno = 0;
         value = strtol(p, &endptr, 10);
         if (*endptr != '\0'
             || value < 1
             || value > MAX_NFRAME
-            || (errno == ERANGE && value == ULONG_MAX))
+            || errno == ERANGE)
         {
             Py_FatalError("PYTHONTRACEMALLOC: invalid number of frames");
             return -1;
