@@ -66,6 +66,32 @@ class TestNtpath(unittest.TestCase):
                ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
         tester('ntpath.splitdrive("//conky//mountpoint/foo/bar")',
                ('', '//conky//mountpoint/foo/bar'))
+        # Issue #19911: UNC part containing U+0130
+        self.assertEqual(ntpath.splitdrive('//conky/MOUNTPOİNT/foo/bar'),
+                         ('//conky/MOUNTPOİNT', '/foo/bar'))
+
+    def test_splitunc(self):
+        with self.assertWarns(DeprecationWarning):
+            ntpath.splitunc('')
+        with support.check_warnings(('', DeprecationWarning)):
+            tester('ntpath.splitunc("c:\\foo\\bar")',
+                   ('', 'c:\\foo\\bar'))
+            tester('ntpath.splitunc("c:/foo/bar")',
+                   ('', 'c:/foo/bar'))
+            tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")',
+                   ('\\\\conky\\mountpoint', '\\foo\\bar'))
+            tester('ntpath.splitunc("//conky/mountpoint/foo/bar")',
+                   ('//conky/mountpoint', '/foo/bar'))
+            tester('ntpath.splitunc("\\\\\\conky\\mountpoint\\foo\\bar")',
+                   ('', '\\\\\\conky\\mountpoint\\foo\\bar'))
+            tester('ntpath.splitunc("///conky/mountpoint/foo/bar")',
+                   ('', '///conky/mountpoint/foo/bar'))
+            tester('ntpath.splitunc("\\\\conky\\\\mountpoint\\foo\\bar")',
+                   ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
+            tester('ntpath.splitunc("//conky//mountpoint/foo/bar")',
+                   ('', '//conky//mountpoint/foo/bar'))
+            self.assertEqual(ntpath.splitunc('//conky/MOUNTPOİNT/foo/bar'),
+                             ('//conky/MOUNTPOİNT', '/foo/bar'))
 
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
