@@ -1101,7 +1101,7 @@ class Path(PurePath):
             except OSError as e:
                 if e.errno != ENOENT:
                     raise
-                self.parent.mkdir(mode, True)
+                self.parent.mkdir(parents=True)
                 self._accessor.mkdir(self, mode)
 
     def chmod(self, mode):
