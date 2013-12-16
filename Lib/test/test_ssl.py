@@ -835,8 +835,10 @@ class NetworkedTests(unittest.TestCase):
                                 cert_reqs=ssl.CERT_REQUIRED,
                                 ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
             try:
-                self.assertEqual(errno.ECONNREFUSED,
-                                 s.connect_ex(("svn.python.org", 444)))
+                rc = s.connect_ex(("svn.python.org", 444))
+                # Issue #19919: Windows machines or VMs hosted on Windows
+                # machines sometimes return EWOULDBLOCK.
+                self.assertIn(rc, (errno.ECONNREFUSED, errno.EWOULDBLOCK))
             finally:
                 s.close()
 
