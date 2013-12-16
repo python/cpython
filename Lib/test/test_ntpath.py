@@ -70,6 +70,29 @@ class TestNtpath(unittest.TestCase):
         self.assertEqual(ntpath.splitdrive('//conky/MOUNTPOİNT/foo/bar'),
                          ('//conky/MOUNTPOİNT', '/foo/bar'))
 
+    def test_splitunc(self):
+        with self.assertWarns(DeprecationWarning):
+            ntpath.splitunc('')
+        with support.check_warnings(('', DeprecationWarning)):
+            tester('ntpath.splitunc("c:\\foo\\bar")',
+                   ('', 'c:\\foo\\bar'))
+            tester('ntpath.splitunc("c:/foo/bar")',
+                   ('', 'c:/foo/bar'))
+            tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")',
+                   ('\\\\conky\\mountpoint', '\\foo\\bar'))
+            tester('ntpath.splitunc("//conky/mountpoint/foo/bar")',
+                   ('//conky/mountpoint', '/foo/bar'))
+            tester('ntpath.splitunc("\\\\\\conky\\mountpoint\\foo\\bar")',
+                   ('', '\\\\\\conky\\mountpoint\\foo\\bar'))
+            tester('ntpath.splitunc("///conky/mountpoint/foo/bar")',
+                   ('', '///conky/mountpoint/foo/bar'))
+            tester('ntpath.splitunc("\\\\conky\\\\mountpoint\\foo\\bar")',
+                   ('', '\\\\conky\\\\mountpoint\\foo\\bar'))
+            tester('ntpath.splitunc("//conky//mountpoint/foo/bar")',
+                   ('', '//conky//mountpoint/foo/bar'))
+            self.assertEqual(ntpath.splitunc('//conky/MOUNTPOİNT/foo/bar'),
+                             ('//conky/MOUNTPOİNT', '/foo/bar'))
+
     def test_split(self):
         tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
         tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")',
