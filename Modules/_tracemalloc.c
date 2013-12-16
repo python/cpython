@@ -336,8 +336,7 @@ static Py_uhash_t
 traceback_hash(traceback_t *traceback)
 {
     /* code based on tuplehash() of Objects/tupleobject.c */
-    Py_uhash_t x;  /* Unsigned for defined overflow behavior. */
-    Py_hash_t y;
+    Py_uhash_t x, y;  /* Unsigned for defined overflow behavior. */
     int len = traceback->nframe;
     Py_uhash_t mult = _PyHASH_MULTIPLIER;
     frame_t *frame;
@@ -345,13 +344,13 @@ traceback_hash(traceback_t *traceback)
     x = 0x345678UL;
     frame = traceback->frames;
     while (--len >= 0) {
-        y = PyObject_Hash(frame->filename);
-        y ^= frame->lineno;
+        y = (Py_uhash_t)PyObject_Hash(frame->filename);
+        y ^= (Py_uhash_t)frame->lineno;
         frame++;
 
         x = (x ^ y) * mult;
         /* the cast might truncate len; that doesn't change hash stability */
-        mult += (Py_hash_t)(82520UL + len + len);
+        mult += (Py_uhash_t)(82520UL + len + len);
     }
     x += 97531UL;
     return x;
