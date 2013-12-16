@@ -207,7 +207,7 @@ def splitdrive(p):
     empty = _get_empty(p)
     if len(p) > 1:
         sep = _get_sep(p)
-        normp = normcase(p)
+        normp = p.replace(_get_altsep(p), sep)
         if (normp[0:2] == sep*2) and (normp[2:3] != sep):
             # is a UNC path:
             # vvvvvvvvvvvvvvvvvvvv drive letter or UNC path
