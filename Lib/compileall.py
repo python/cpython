@@ -229,7 +229,8 @@ def main():
                         success = False
             return success
         else:
-            return compile_path(legacy=args.legacy)
+            return compile_path(legacy=args.legacy, force=args.force,
+                                quiet=args.quiet)
     except KeyboardInterrupt:
         print("\n[interrupted]")
         return False
