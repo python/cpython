@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19532: python -m compileall with no filename/directory arguments now
+  respects the -f and -q flags instead of ignoring them.
+
 - Issue #19623: Fixed writing to unseekable files in the aifc module.
 
 - Issue #19946: multiprocessing.spawn now raises ImportError when the module to

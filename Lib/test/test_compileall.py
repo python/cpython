@@ -5,8 +5,6 @@ import os
 import py_compile
 import shutil
 import struct
-import subprocess
-import sys
 import tempfile
 import time
 import unittest
@@ -180,6 +178,29 @@ class CommandLineTests(unittest.TestCase):
         self.assertCompiled(bazfn)
         self.assertNotCompiled(self.initfn)
         self.assertNotCompiled(self.barfn)
+
+    def test_no_args_respects_force_flag(self):
+        bazfn = script_helper.make_script(self.directory, 'baz', '')
+        self.assertRunOK(PYTHONPATH=self.directory)
+        pycpath = importlib.util.cache_from_source(bazfn)
+        # Set atime/mtime backward to avoid file timestamp resolution issues
+        os.utime(pycpath, (time.time()-60,)*2)
+        mtime = os.stat(pycpath).st_mtime
+        # Without force, no recompilation
+        self.assertRunOK(PYTHONPATH=self.directory)
+        mtime2 = os.stat(pycpath).st_mtime
+        self.assertEqual(mtime, mtime2)
+        # Now force it.
+        self.assertRunOK('-f', PYTHONPATH=self.directory)
+        mtime2 = os.stat(pycpath).st_mtime
+        self.assertNotEqual(mtime, mtime2)
+
+    def test_no_args_respects_quiet_flag(self):
+        script_helper.make_script(self.directory, 'baz', '')
+        noisy = self.assertRunOK(PYTHONPATH=self.directory)
+        self.assertIn(b'Listing ', noisy)
+        quiet = self.assertRunOK('-q', PYTHONPATH=self.directory)
+        self.assertNotIn(b'Listing ', quiet)
 
     # Ensure that the default behavior of compileall's CLI is to create
     # PEP 3147 pyc/pyo files.
