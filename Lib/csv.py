@@ -93,6 +93,10 @@ class DictReader:
         self.line_num = self.reader.line_num
         return self._fieldnames
 
+    # Issue 20004: Because DictReader is a classic class, this setter is
+    # ignored.  At this point in 2.7's lifecycle, it is too late to change the
+    # base class for fear of breaking working code.  If you want to change
+    # fieldnames without overwriting the getter, set _fieldnames directly.
     @fieldnames.setter
     def fieldnames(self, value):
         self._fieldnames = value
