@@ -747,6 +747,10 @@ sys_getwindowsversion(PyObject *self)
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wSuiteMask));
     PyStructSequence_SET_ITEM(version, pos++, PyLong_FromLong(ver.wProductType));
 
+    if (PyErr_Occurred()) {
+        Py_DECREF(version);
+        return NULL;
+    }
     return version;
 }
 
