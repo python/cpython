@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20007: HTTPResponse.read(0) no more prematurely closes connection.
+  Original patch by Simon Sapin.
+
 - Issue #19946: multiprocessing now uses runpy to initialize __main__ in
   child processes when necessary, allowing it to correctly handle scripts
   without suffixes and submodules that use explicit relative imports or
