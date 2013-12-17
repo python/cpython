@@ -539,6 +539,10 @@ Glossary
 
       See also :term:`package`.
 
+   module spec
+      A namespace containing the import-related information used to load a
+      module.
+
    MRO
       See :term:`method resolution order`.
 
