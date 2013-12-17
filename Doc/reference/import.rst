@@ -281,9 +281,10 @@ When the named module is not found in :data:`sys.modules`, Python next
 searches :data:`sys.meta_path`, which contains a list of meta path finder
 objects.  These finders are queried in order to see if they know how to handle
 the named module.  Meta path finders must implement a method called
-:meth:`find_spec()` which takes two arguments, a name and an import path.
-The meta path finder can use any strategy it wants to determine whether it can
-handle the named module or not.
+:meth:`~importlib.abc.MetaPathFinder.find_spec()` which takes three arguments:
+a name, an import path, and (optionally) a target module.  The meta path
+finder can use any strategy it wants to determine whether it can handle
+the named module or not.
 
 If the meta path finder knows how to handle the named module, it returns a
 spec object.  If it cannot handle the named module, it returns ``None``.  If
@@ -291,24 +292,26 @@ spec object.  If it cannot handle the named module, it returns ``None``.  If
 a spec, then an :exc:`ImportError` is raised.  Any other exceptions raised
 are simply propagated up, aborting the import process.
 
-The :meth:`find_spec()` method of meta path finders is called with two
-arguments.  The first is the fully qualified name of the module being
-imported, for example ``foo.bar.baz``.  The second argument is the path
-entries to use for the module search.  For top-level modules, the second
-argument is ``None``, but for submodules or subpackages, the second
-argument is the value of the parent package's ``__path__`` attribute. If
-the appropriate ``__path__`` attribute cannot be accessed, an
-:exc:`ImportError` is raised.
+The :meth:`~importlib.abc.MetaPathFinder.find_spec()` method of meta path
+finders is called with two or three arguments.  The first is the fully
+qualified name of the module being imported, for example ``foo.bar.baz``.
+The second argument is the path entries to use for the module search.  For
+top-level modules, the second argument is ``None``, but for submodules or
+subpackages, the second argument is the value of the parent package's
+``__path__`` attribute. If the appropriate ``__path__`` attribute cannot
+be accessed, an :exc:`ImportError` is raised.  The third argument is an
+existing module object that will be the target of loading later.  The
+import system passes in a target module only during reload.
 
 The meta path may be traversed multiple times for a single import request.
 For example, assuming none of the modules involved has already been cached,
 importing ``foo.bar.baz`` will first perform a top level import, calling
-``mpf.find_spec("foo", None)`` on each meta path finder (``mpf``). After
+``mpf.find_spec("foo", None, None)`` on each meta path finder (``mpf``). After
 ``foo`` has been imported, ``foo.bar`` will be imported by traversing the
 meta path a second time, calling
-``mpf.find_spec("foo.bar", foo.__path__)``. Once ``foo.bar`` has been
+``mpf.find_spec("foo.bar", foo.__path__, None)``. Once ``foo.bar`` has been
 imported, the final traversal will call
-``mpf.find_spec("foo.bar.baz", foo.bar.__path__)``.
+``mpf.find_spec("foo.bar.baz", foo.bar.__path__, None)``.
 
 Some meta path finders only support top level imports. These importers will
 always return ``None`` when anything other than ``None`` is passed as the
@@ -320,10 +323,11 @@ modules, and one that knows how to import modules from an :term:`import path`
 (i.e. the :term:`path based finder`).
 
 .. versionchanged:: 3.4
-   The find_spec() method of meta path finders replaced :meth:`find_module()`.
-   which is now deprecated.  While it will continue to work without change,
-   the import machinery will try it only if the finder does not implement
-   find_spec().
+   The :meth:`~importlib.abc.MetaPathFinder.find_spec` method of meta path
+   finders replaced :meth:`~importlib.abc.MetaPathFinder.find_module`, which
+   is now deprecated.  While it will continue to work without change, the
+   import machinery will try it only if the finder does not implement
+   ``find_spec()``.
 
 
 Loading
@@ -350,6 +354,7 @@ of what happens during the loading portion of import::
             raise ImportError
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
+        # Set __loader__ and __package__ if missing.
     else:
         sys.modules[spec.name] = module
         try:
@@ -360,7 +365,7 @@ of what happens during the loading portion of import::
             except KeyError:
                 pass
             raise
-    module_to_return = sys.modules[spec.name]
+    return sys.modules[spec.name]
 
 Note the following details:
 
@@ -380,8 +385,9 @@ Note the following details:
    reloading where even the failing module is left in :data:`sys.modules`.
 
  * After the module is created but before execution, the import machinery
-   sets the import-related module attributes ("init_module_attrs"), as
-   summarized in a :ref:`later section <import-mod-attrs>`.
+   sets the import-related module attributes ("_init_module_attrs" in
+   the pseudo-code example above), as summarized in a
+   :ref:`later section <import-mod-attrs>`.
 
  * Module execution is the key moment of loading in which the module's
    namespace gets populated.  Execution is entirely delegated to the
@@ -392,16 +398,16 @@ Note the following details:
 
 .. versionchanged:: 3.4
    The import system has taken over the boilerplate responsibilities of
-   loaders.  These were previously performed by the :meth:`load_module()`
-   method.
+   loaders.  These were previously performed by the
+   :meth:`importlib.abc.Loader.load_module` method.
 
 Loaders
 -------
 
 Module loaders provide the critical function of loading: module execution.
-The import machinery calls the :meth:`~importlib.abc.Loader.exec_module()`
+The import machinery calls the :meth:`importlib.abc.Loader.exec_module`
 method with a single argument, the module object to execute.  Any value
-returned from exec_module() is ignored.
+returned from :meth:`~importlib.abc.Loader.exec_module` is ignored.
 
 Loaders must satisfy the following requirements:
 
@@ -409,41 +415,41 @@ Loaders must satisfy the following requirements:
    dynamically loaded extension), the loader should execute the module's code
    in the module's global name space (``module.__dict__``).
 
- * If loader cannot execute the module, it should raise an
+ * If the loader cannot execute the module, it should raise an
    :exc:`ImportError`, although any other exception raised during
-   :meth:`exec_module()` will be propagated.
+   :meth:`~importlib.abc.Loader.exec_module` will be propagated.
 
 In many cases, the finder and loader can be the same object; in such cases the
-:meth:`finder.find_spec()` would just return a spec with the loader set
-to ``self``.
+:meth:`~importlib.abc.MetaPathFinder.find_spec` method would just return a
+spec with the loader set to ``self``.
 
 Module loaders may opt in to creating the module object during loading
-by implementing a :meth:`create_module()` method.  It takes one argument,
-the module spec, and returns the new module object to use during loading.
-create_module() does not need to set any attributes on the module object.
-If the loader does not define create_module(), the import machinery will
-create the new module itself.
+by implementing a :meth:`~importlib.abc.Loader.create_module` method.
+It takes one argument, the module spec, and returns the new module object
+to use during loading.  ``create_module()`` does not need to set any attributes
+on the module object.  If the loader does not define ``create_module()``, the
+import machinery will create the new module itself.
 
 .. versionadded:: 3.4
    The create_module() method of loaders.
 
 .. versionchanged:: 3.4
-   The load_module() method was replaced by exec_module() and the import
+   The :meth:`~importlib.abc.Loader.load_module` method was replaced by
+   :meth:`~importlib.abc.Loader.exec_module` and the import
    machinery assumed all the boilerplate responsibilities of loading.
 
    For compatibility with existing loaders, the import machinery will use
-   the :meth:`~importlib.abc.Loader.load_module()` method of loaders if it
-   exists and the loader does not also implement exec_module().  However,
-   load_module() has been deprecated and loaders should implement
-   exec_module() instead.
+   the ``load_module()`` method of loaders if it exists and the loader does
+   not also implement ``exec_module().  However, ``load_module()`` has been
+   deprecated and loaders should implement ``exec_module()`` instead.
 
-   The load_module() method must implement all the boilerplate loading
+   The ``load_module()`` method must implement all the boilerplate loading
    functionality described above in addition to executing the module.  All
    the same constraints apply, with some additional clarification:
 
     * If there is an existing module object with the given name in
       :data:`sys.modules`, the loader must use that existing module.
-      (Otherwise, :func:`imp.reload` will not work correctly.)  If the
+      (Otherwise, :func:`importlib.reload` will not work correctly.)  If the
       named module does not exist in :data:`sys.modules`, the loader
       must create a new module object and add it to :data:`sys.modules`.
 
@@ -514,6 +520,8 @@ the module.
    The ``__spec__`` attribute must be set to the module spec that was
    used when importing the module.  This is used primarily for
    introspection and during reloading.
+
+   .. versionadded:: 3.4
 
 .. attribute:: __path__
 
@@ -600,13 +608,14 @@ Here are the exact rules used:
  * Otherwise, just use the module's ``__name__`` in the repr.
 
 .. versionchanged:: 3.4
-   Use of loader.module_repr() has been deprecated and the module spec
-   is now used by the import machinery to generate a module repr.
+   Use of :meth:`loader.module_repr() <importlib.abc.Loader.module_repr>`
+   has been deprecated and the module spec is now used by the import
+   machinery to generate a module repr.
 
    For backward compatibility with Python 3.3, the module repr will be
-   generated by calling the loader's :meth:`module_repr()` method, if
-   defined, before trying either approach described above.  However, the
-   method is deprecated.
+   generated by calling the loader's
+   :meth:`~importlib.abc.Loader.module_repr` method, if defined, before
+   trying either approach described above.  However, the method is deprecated.
 
 
 The Path Based Finder
@@ -616,8 +625,9 @@ The Path Based Finder
     single: path based finder
 
 As mentioned previously, Python comes with several default meta path finders.
-One of these, called the :term:`path based finder`, searches an :term:`import
-path`, which contains a list of :term:`path entries <path entry>`.  Each path
+One of these, called the :term:`path based finder`
+(:class:`~importlib.machinery.PathFinder`) , searches an :term:`import path`,
+which contains a list of :term:`path entries <path entry>`.  Each path
 entry names a location to search for modules.
 
 The path based finder itself doesn't know how to import anything. Instead, it
@@ -666,15 +676,15 @@ Path entry finders
     single: sys.path_importer_cache
     single: PYTHONPATH
 
-The :term:`path based finder` is responsible for finding and loading Python
-modules and packages whose location is specified with a string :term:`path
-entry`.  Most path entries name locations in the file system, but they need
-not be limited to this.
+The :term:`path based finder` is responsible for finding and loading
+Python modules and packages whose location is specified with a string
+:term:`path entry`.  Most path entries name locations in the file system,
+but they need not be limited to this.
 
 As a meta path finder, the :term:`path based finder` implements the
-:meth:`find_spec()` protocol previously described, however it exposes
-additional hooks that can be used to customize how modules are found and
-loaded from the :term:`import path`.
+:meth:`~importlib.abc.MetaPathFinder.find_spec` protocol previously
+described, however it exposes additional hooks that can be used to
+customize how modules are found and loaded from the :term:`import path`.
 
 Three variables are used by the :term:`path based finder`, :data:`sys.path`,
 :data:`sys.path_hooks` and :data:`sys.path_importer_cache`.  The ``__path__``
@@ -694,14 +704,16 @@ finder>`.
 
 The :term:`path based finder` is a :term:`meta path finder`, so the import
 machinery begins the :term:`import path` search by calling the path
-based finder's :meth:`find_spec()` method as described previously.  When
-the ``path`` argument to :meth:`find_spec()` is given, it will be a
+based finder's :meth:`~importlib.machinery.PathFinder.find_spec` method as
+described previously.  When the ``path`` argument to
+:meth:`~importlib.machinery.PathFinder.find_spec` is given, it will be a
 list of string paths to traverse - typically a package's ``__path__``
-attribute for an import within that package.  If the ``path`` argument
-is ``None``, this indicates a top level import and :data:`sys.path` is used.
+attribute for an import within that package.  If the ``path`` argument is
+``None``, this indicates a top level import and :data:`sys.path` is used.
 
 The path based finder iterates over every entry in the search path, and
-for each of these, looks for an appropriate :term:`path entry finder` for the
+for each of these, looks for an appropriate :term:`path entry finder`
+(:class:`~importlib.abc.PathEntryFinder`) for the
 path entry.  Because this can be an expensive operation (e.g. there may be
 `stat()` call overheads for this search), the path based finder maintains
 a cache mapping path entries to path entry finders.  This cache is maintained
@@ -718,18 +730,20 @@ hooks <path entry hook>` in this list is called with a single argument, the
 path entry to be searched.  This callable may either return a :term:`path
 entry finder` that can handle the path entry, or it may raise
 :exc:`ImportError`.  An :exc:`ImportError` is used by the path based finder to
-signal that the hook cannot find a :term:`path entry finder` for that
-:term:`path entry`.  The exception is ignored and :term:`import path`
-iteration continues.  The hook should expect either a string or bytes object;
-the encoding of bytes objects is up to the hook (e.g. it may be a file system
-encoding, UTF-8, or something else), and if the hook cannot decode the
-argument, it should raise :exc:`ImportError`.
+signal that the hook cannot find a :term:`path entry finder`.
+for that :term:`path entry`.  The
+exception is ignored and :term:`import path` iteration continues.  The hook
+should expect either a string or bytes object; the encoding of bytes objects
+is up to the hook (e.g. it may be a file system encoding, UTF-8, or something
+else), and if the hook cannot decode the argument, it should raise
+:exc:`ImportError`.
 
 If :data:`sys.path_hooks` iteration ends with no :term:`path entry finder`
-being returned, then the path based finder's :meth:`find_spec()` method
-will store ``None`` in :data:`sys.path_importer_cache` (to indicate that
-there is no finder for this path entry) and return ``None``, indicating that
-this :term:`meta path finder` could not find the module.
+being returned, then the path based finder's
+:meth:`~importlib.machinery.PathFinder.find_spec` method will store ``None``
+in :data:`sys.path_importer_cache` (to indicate that there is no finder for
+this path entry) and return ``None``, indicating that this
+:term:`meta path finder` could not find the module.
 
 If a :term:`path entry finder` *is* returned by one of the :term:`path entry
 hook` callables on :data:`sys.path_hooks`, then the following protocol is used
@@ -741,12 +755,12 @@ Path entry finder protocol
 
 In order to support imports of modules and initialized packages and also to
 contribute portions to namespace packages, path entry finders must implement
-the :meth:`find_spec()` method.
+the :meth:`~importlib.abc.PathEntryFinder.find_spec` method.
 
-:meth:`find_spec()` takes one argument, the fully qualified name of the
-module being imported.  :meth:`find_spec()` returns a fully populated
-spec for the module.  This spec will always have "loader" set (with one
-exception).
+:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two argument, the
+fully qualified name of the module being imported, and the (optional) target
+module.  ``find_spec()`` returns a fully populated spec for the module.
+This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
 :term:`portion`. the path entry finder sets "loader" on the spec to
@@ -754,42 +768,44 @@ To indicate to the import machinery that the spec represents a namespace
 portion.
 
 .. versionchanged:: 3.4
-   find_spec() replaced find_loader() and find_module(), but of which
-   are now deprecated, but will be used if find_spec() is not defined.
+   :meth:`~importlib.abc.PathEntryFinder.find_spec` replaced
+   :meth:`~importlib.abc.PathEntryFinder.find_loader` and
+   :meth:`~importlib.abc.PathEntryFinder.find_module`, both of which
+   are now deprecated, but will be used if ``find_spec()`` is not defined.
 
    Older path entry finders may implement one of these two deprecated methods
-   instead of :meth:`find_spec()`.  The methods are still respected for the
-   sake of backward compatibility.  Howevever, if find_spec() is implemented
-   on the path entry finder, the legacy methods are ignored.
+   instead of ``find_spec()``.  The methods are still respected for the
+   sake of backward compatibility.  Howevever, if ``find_spec()`` is
+   implemented on the path entry finder, the legacy methods are ignored.
 
-   :meth:`find_loader()` takes one argument, the fully qualified name of the
-   module being imported.  :meth:`find_loader()` returns a 2-tuple where the
-   first item is the loader and the second item is a namespace :term:`portion`.
-   When the first item (i.e. the loader) is ``None``, this means that while the
-   path entry finder does not have a loader for the named module, it knows that
-   the path entry contributes to a namespace portion for the named module.
-   This will almost always be the case where Python is asked to import a
-   namespace package that has no physical presence on the file system.
-   When a path entry finder returns ``None`` for the loader, the second
-   item of the 2-tuple return value must be a sequence, although it can be
-   empty.
+   :meth:`~importlib.abc.PathEntryFinder.find_loader` takes one argument, the
+   fully qualified name of the module being imported.  ``find_loader()``
+   returns a 2-tuple where the first item is the loader and the second item
+   is a namespace :term:`portion`.  When the first item (i.e. the loader) is
+   ``None``, this means that while the path entry finder does not have a
+   loader for the named module, it knows that the path entry contributes to
+   a namespace portion for the named module.  This will almost always be the
+   case where Python is asked to import a namespace package that has no
+   physical presence on the file system.  When a path entry finder returns
+   ``None`` for the loader, the second item of the 2-tuple return value must
+   be a sequence, although it can be empty.
 
-   If :meth:`find_loader()` returns a non-``None`` loader value, the portion is
+   If ``find_loader()`` returns a non-``None`` loader value, the portion is
    ignored and the loader is returned from the path based finder, terminating
    the search through the path entries.
 
    For backwards compatibility with other implementations of the import
    protocol, many path entry finders also support the same,
-   traditional :meth:`find_module()` method that meta path finders support.
-   However path entry finder :meth:`find_module()` methods are never called
+   traditional ``find_module()`` method that meta path finders support.
+   However path entry finder ``find_module()`` methods are never called
    with a ``path`` argument (they are expected to record the appropriate
    path information from the initial call to the path hook).
 
-   The :meth:`find_module()` method on path entry finders is deprecated,
+   The ``find_module()`` method on path entry finders is deprecated,
    as it does not allow the path entry finder to contribute portions to
-   namespace packages.  If both :meth:`find_loader()` and :meth:`find_module()`
+   namespace packages.  If both ``find_loader()`` and ``find_module()``
    exist on a path entry finder, the import system will always call
-   :meth:`find_loader()` in preference to :meth:`find_module()`.
+   ``find_loader()`` in preference to ``find_module()``.
 
 
 Replacing the standard import system
@@ -808,9 +824,9 @@ import statements within that module.
 To selectively prevent import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
 it is sufficient to raise :exc:`ImportError` directly from
-:meth:`find_spec` instead of returning ``None``. The latter indicates
-that the meta path search should continue. while raising an exception
-terminates it immediately.
+:meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
+``None``. The latter indicates that the meta path search should continue,
+while raising an exception terminates it immediately.
 
 
 Open issues
