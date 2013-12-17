@@ -1804,7 +1804,7 @@ file_write(PyFileObject *f, PyObject *args)
     const char *s;
     Py_ssize_t n, n2;
     PyObject *encoded = NULL;
-    int err = 0;
+    int err_flag = 0, err;
 
     if (f->f_fp == NULL)
         return err_closed();
@@ -1850,13 +1850,15 @@ file_write(PyFileObject *f, PyObject *args)
     FILE_BEGIN_ALLOW_THREADS(f)
     errno = 0;
     n2 = fwrite(s, 1, n, f->f_fp);
-    if (n2 != n || ferror(f->f_fp))
+    if (n2 != n || ferror(f->f_fp)) {
+        err_flag = 1;
         err = errno;
+    }
     FILE_END_ALLOW_THREADS(f)
     Py_XDECREF(encoded);
     if (f->f_binary)
         PyBuffer_Release(&pbuf);
-    if (err) {
+    if (err_flag) {
         errno = err;
         PyErr_SetFromErrno(PyExc_IOError);
         clearerr(f->f_fp);
