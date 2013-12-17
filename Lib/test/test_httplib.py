@@ -153,6 +153,8 @@ class BasicTest(TestCase):
         sock = FakeSocket(body)
         resp = httplib.HTTPResponse(sock)
         resp.begin()
+        self.assertEqual(resp.read(0), '')  # Issue #20007
+        self.assertFalse(resp.isclosed())
         self.assertEqual(resp.read(), 'Text')
         self.assertTrue(resp.isclosed())
 

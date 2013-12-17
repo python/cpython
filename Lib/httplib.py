@@ -565,7 +565,7 @@ class HTTPResponse:
         # connection, and the user is reading more bytes than will be provided
         # (for example, reading in 1k chunks)
         s = self.fp.read(amt)
-        if not s:
+        if not s and amt:
             # Ideally, we would raise IncompleteRead if the content-length
             # wasn't satisfied, but it might break compatibility.
             self.close()
