@@ -1465,6 +1465,7 @@ make_flags(void)
 #undef SetFlag
 
     if (PyErr_Occurred()) {
+        Py_DECREF(seq);
         return NULL;
     }
     return seq;
