@@ -561,7 +561,6 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
 {
     int wanted_fmt, wanted_channels, wanted_rate, strict=0;
     int fmt, channels, rate;
-    PyObject * rv;                    /* return tuple (fmt, channels, rate) */
 
     if (!_is_fd_valid(self->fd))
         return NULL;
@@ -606,13 +605,7 @@ oss_setparameters(oss_audio_t *self, PyObject *args)
 
     /* Construct the return value: a (fmt, channels, rate) tuple that
        tells what the audio hardware was actually set to. */
-    rv = PyTuple_New(3);
-    if (rv == NULL)
-        return NULL;
-    PyTuple_SET_ITEM(rv, 0, PyLong_FromLong(fmt));
-    PyTuple_SET_ITEM(rv, 1, PyLong_FromLong(channels));
-    PyTuple_SET_ITEM(rv, 2, PyLong_FromLong(rate));
-    return rv;
+    return Py_BuildValue("(iii)", fmt, channels, rate);
 }
 
 static int
