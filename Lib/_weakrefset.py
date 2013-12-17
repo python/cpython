@@ -60,6 +60,8 @@ class WeakSet:
             for itemref in self.data:
                 item = itemref()
                 if item is not None:
+                    # Caveat: the iterator will keep a strong reference to
+                    # `item` until it is resumed or closed.
                     yield item
 
     def __len__(self):
