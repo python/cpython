@@ -624,12 +624,21 @@ mmap objects can now be weakref'ed.
 multiprocessing
 ---------------
 
-On Unix two new *start methods* have been added for starting processes
-using :mod:`multiprocessing`.  These make the mixing of processes with
-threads more robust.  See :issue:`8713`.
+On Unix, two new *start methods* (``spawn`` and ``forkserver``) have been
+added for starting processes using :mod:`multiprocessing`.  These make
+the mixing of processes with threads more robust, and the ``spawn``
+method matches the semantics that multiprocessing has always used on
+Windows. (Contributed by Richard Oudkerk in :issue:`8713`).
 
 Also, except when using the old *fork* start method, child processes
 will no longer inherit unneeded handles/file descriptors from their parents.
+
+:mod:`multiprocessing` now relies on :mod:`runpy` (which implements the
+``-m`` switch) to initialise ``__main__`` appropriately in child processes
+when using the ``spawn`` or ``forkserver`` start methods. This resolves some
+edge cases where combining multiprocessing, the ``-m`` command line switch
+and explicit relative imports could cause obscure failures in child
+processes. (Contributed by Nick Coghlan in :issue:`19946`)
 
 
 os

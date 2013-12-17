@@ -11,6 +11,8 @@
 import os
 import pickle
 import sys
+import runpy
+import types
 
 from . import get_start_method, set_start_method
 from . import process
@@ -157,15 +159,19 @@ def get_preparation_data(name):
         start_method=get_start_method(),
         )
 
-    if sys.platform != 'win32' or (not WINEXE and not WINSERVICE):
-        main_path = getattr(sys.modules['__main__'], '__file__', None)
-        if not main_path and sys.argv[0] not in ('', '-c'):
-            main_path = sys.argv[0]
+    # Figure out whether to initialise main in the subprocess as a module
+    # or through direct execution (or to leave it alone entirely)
+    main_module = sys.modules['__main__']
+    main_mod_name = getattr(main_module.__spec__, "name", None)
+    if main_mod_name is not None:
+        d['init_main_from_name'] = main_mod_name
+    elif sys.platform != 'win32' or (not WINEXE and not WINSERVICE):
+        main_path = getattr(main_module, '__file__', None)
         if main_path is not None:
             if (not os.path.isabs(main_path) and
                         process.ORIGINAL_DIR is not None):
                 main_path = os.path.join(process.ORIGINAL_DIR, main_path)
-            d['main_path'] = os.path.normpath(main_path)
+            d['init_main_from_path'] = os.path.normpath(main_path)
 
     return d
 
@@ -206,55 +212,68 @@ def prepare(data):
     if 'start_method' in data:
         set_start_method(data['start_method'])
 
-    if 'main_path' in data:
-        import_main_path(data['main_path'])
+    if 'init_main_from_name' in data:
+        _fixup_main_from_name(data['init_main_from_name'])
+    elif 'init_main_from_path' in data:
+        _fixup_main_from_path(data['init_main_from_path'])
+
+# Multiprocessing module helpers to fix up the main module in
+# spawned subprocesses
+def _fixup_main_from_name(mod_name):
+    # __main__.py files for packages, directories, zip archives, etc, run
+    # their "main only" code unconditionally, so we don't even try to
+    # populate anything in __main__, nor do we make any changes to
+    # __main__ attributes
+    current_main = sys.modules['__main__']
+    if mod_name == "__main__" or mod_name.endswith(".__main__"):
+        return
+
+    # If this process was forked, __main__ may already be populated
+    if getattr(current_main.__spec__, "name", None) == mod_name:
+        return
+
+    # Otherwise, __main__ may contain some non-main code where we need to
+    # support unpickling it properly. We rerun it as __mp_main__ and make
+    # the normal __main__ an alias to that
+    old_main_modules.append(current_main)
+    main_module = types.ModuleType("__mp_main__")
+    main_content = runpy.run_module(mod_name,
+                                    run_name="__mp_main__",
+                                    alter_sys=True)
+    main_module.__dict__.update(main_content)
+    sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+
+
+def _fixup_main_from_path(main_path):
+    # If this process was forked, __main__ may already be populated
+    current_main = sys.modules['__main__']
+
+    # Unfortunately, the main ipython launch script historically had no
+    # "if __name__ == '__main__'" guard, so we work around that
+    # by treating it like a __main__.py file
+    # See https://github.com/ipython/ipython/issues/4698
+    main_name = os.path.splitext(os.path.basename(main_path))[0]
+    if main_name == 'ipython':
+        return
+
+    # Otherwise, if __file__ already has the setting we expect,
+    # there's nothing more to do
+    if getattr(current_main, '__file__', None) == main_path:
+        return
+
+    # If the parent process has sent a path through rather than a module
+    # name we assume it is an executable script that may contain
+    # non-main code that needs to be executed
+    old_main_modules.append(current_main)
+    main_module = types.ModuleType("__mp_main__")
+    main_content = runpy.run_path(main_path,
+                                  run_name="__mp_main__")
+    main_module.__dict__.update(main_content)
+    sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
 
 
 def import_main_path(main_path):
     '''
     Set sys.modules['__main__'] to module at main_path
     '''
-    # XXX (ncoghlan): The following code makes several bogus
-    # assumptions regarding the relationship between __file__
-    # and a module's real name. See PEP 302 and issue #10845
-    if getattr(sys.modules['__main__'], '__file__', None) == main_path:
-        return
-
-    main_name = os.path.splitext(os.path.basename(main_path))[0]
-    if main_name == '__init__':
-        main_name = os.path.basename(os.path.dirname(main_path))
-
-    if main_name == '__main__':
-        main_module = sys.modules['__main__']
-        main_module.__file__ = main_path
-    elif main_name != 'ipython':
-        # Main modules not actually called __main__.py may
-        # contain additional code that should still be executed
-        import importlib
-        import types
-
-        if main_path is None:
-            dirs = None
-        elif os.path.basename(main_path).startswith('__init__.py'):
-            dirs = [os.path.dirname(os.path.dirname(main_path))]
-        else:
-            dirs = [os.path.dirname(main_path)]
-
-        assert main_name not in sys.modules, main_name
-        sys.modules.pop('__mp_main__', None)
-        # We should not try to load __main__
-        # since that would execute 'if __name__ == "__main__"'
-        # clauses, potentially causing a psuedo fork bomb.
-        main_module = types.ModuleType(main_name)
-        # XXX Use a target of main_module?
-        spec = importlib.find_spec(main_name, path=dirs)
-        if spec is None:
-            raise ImportError(name=main_name)
-        methods = importlib._bootstrap._SpecMethods(spec)
-        methods.init_module_attrs(main_module)
-        main_module.__name__ = '__mp_main__'
-        code = spec.loader.get_code(main_name)
-        exec(code, main_module.__dict__)
-
-        old_main_modules.append(sys.modules['__main__'])
-        sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+    _fixup_main_from_path(main_path)
