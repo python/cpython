@@ -9,6 +9,10 @@ What's New in Python 2.7.7?
 Core and Builtins
 -----------------
 
+- Issue #17976: Fixed potential problem with file.write() not detecting IO error
+  by inspecting the return value of fwrite().  Based on patches by Jaakko Moisio
+  and Victor Stinner.
+
 - Issue #14432: Generator now clears the borrowed reference to the thread
   state. Fix a crash when a generator is created in a C thread that is
   destroyed while the generator is still used. The issue was that a generator
