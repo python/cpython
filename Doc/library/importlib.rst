@@ -89,6 +89,22 @@ Functions
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
+.. function:: find_spec(name, path=None)
+
+   Find the :term:`spec <module spec>` for a module, optionally within the
+   specified *path*. If the module is in :attr:`sys.modules`, then
+   ``sys.modules[name].__spec__`` is returned (unless the spec would be
+   ``None`` or is not set, in which case :exc:`ValueError` is raised).
+   Otherwise a search using :attr:`sys.meta_path` is done. ``None`` is
+   returned if no spec is found.
+
+   A dotted name does not have its parent implicitly imported as that requires
+   loading them and that may not be desired. To properly import a submodule you
+   will need to import all parent packages of the submodule and use the correct
+   argument to *path*.
+
+   .. versionadded:: 3.4
+
 .. function:: find_loader(name, path=None)
 
    Find the loader for a module, optionally within the specified *path*. If the
@@ -107,6 +123,9 @@ Functions
    .. versionchanged:: 3.4
       If ``__loader__`` is not set, raise :exc:`ValueError`, just like when the
       attribute is set to ``None``.
+
+   .. deprecated:: 3.4
+      Use :func:`find_spec` instead.
 
 .. function:: invalidate_caches()
 
@@ -236,9 +255,21 @@ ABC hierarchy::
 
    .. versionadded:: 3.3
 
+   .. method:: find_spec(fullname, path, target=None)
+
+      An abstract method for finding a :term:`spec <module spec>` for
+      the specified module.  If this is a top-level import, *path* will
+      be ``None``.  Otherwise, this is a search for a subpackage or
+      module and *path* will be the value of :attr:`__path__` from the
+      parent package. If a spec cannot be found, ``None`` is returned.
+      When passed in, ``target`` is a module object that the finder may
+      use to make a more educated about what spec to return.
+
+      .. versionadded:: 3.4
+
    .. method:: find_module(fullname, path)
 
-      An abstract method for finding a :term:`loader` for the specified
+      A legacy method for finding a :term:`loader` for the specified
       module.  If this is a top-level import, *path* will be ``None``.
       Otherwise, this is a search for a subpackage or module and *path*
       will be the value of :attr:`__path__` from the parent
@@ -247,6 +278,9 @@ ABC hierarchy::
       .. versionchanged:: 3.4
          Returns ``None`` when called instead of raising
          :exc:`NotImplementedError`.
+
+      .. deprecated:: 3.4
+         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -268,9 +302,20 @@ ABC hierarchy::
 
    .. versionadded:: 3.3
 
+   .. method:: find_spec(fullname, target=None)
+
+      An abstract method for finding a :term:`spec <module spec>` for
+      the specified module.  The finder will search for the module only
+      within the :term:`path entry` to which it is assigned.  If a spec
+      cannot be found, ``None`` is returned.  When passed in, ``target``
+      is a module object that the finder may use to make a more educated
+      about what spec to return.
+
+      .. versionadded:: 3.4
+
    .. method:: find_loader(fullname)
 
-      An abstract method for finding a :term:`loader` for the specified
+      A legacy method for finding a :term:`loader` for the specified
       module.  Returns a 2-tuple of ``(loader, portion)`` where ``portion``
       is a sequence of file system locations contributing to part of a namespace
       package. The loader may be ``None`` while specifying ``portion`` to
@@ -283,10 +328,16 @@ ABC hierarchy::
       .. versionchanged:: 3.4
          Returns ``(None, [])`` instead of raising :exc:`NotImplementedError`.
 
+      .. deprecated:: 3.4
+         Use :meth:`find_spec` instead.
+
    .. method:: find_module(fullname)
 
       A concrete implementation of :meth:`Finder.find_module` which is
       equivalent to ``self.find_loader(fullname)[0]``.
+
+      .. deprecated:: 3.4
+         Use :meth:`find_spec` instead.
 
    .. method:: invalidate_caches()
 
@@ -300,9 +351,26 @@ ABC hierarchy::
     An abstract base class for a :term:`loader`.
     See :pep:`302` for the exact definition for a loader.
 
+    .. method:: create_module(spec)
+
+       An optional method that returns the module object to use when
+       importing a module.  create_module() may also return ``None``,
+       indicating that the default module creation should take place
+       instead.
+
+       .. versionadded:: 3.4
+
+    .. method:: exec_module(module)
+
+       An abstract method that executes the module in its own namespace
+       when a module is imported or reloaded.  The module should already
+       be initialized when exec_module() is called.
+
+       .. versionadded:: 3.4
+
     .. method:: load_module(fullname)
 
-        An abstract method for loading a module. If the module cannot be
+        A legacy method for loading a module. If the module cannot be
         loaded, :exc:`ImportError` is raised, otherwise the loaded module is
         returned.
 
@@ -349,9 +417,16 @@ ABC hierarchy::
            Raise :exc:`ImportError` when called instead of
            :exc:`NotImplementedError`.
 
+        .. deprecated:: 3.4
+           The recommended API for loading a module is :meth:`exec_module`
+           (and optionally :meth:`create_module`).  Loaders should implement
+           it instead of load_module().  The import machinery takes care of
+           all the other responsibilities of load_module() when exec_module()
+           is implemented.
+
     .. method:: module_repr(module)
 
-        An optional method which when implemented calculates and returns the
+        A legacy method which when implemented calculates and returns the
         given module's repr, as a string. The module type's default repr() will
         use the result of this method as appropriate.
 
@@ -359,6 +434,9 @@ ABC hierarchy::
 
         .. versionchanged:: 3.4
            Made optional instead of an abstractmethod.
+
+        .. deprecated:: 3.4
+           The import machinery now takes care of this automatically.
 
 
 .. class:: ResourceLoader
@@ -434,9 +512,18 @@ ABC hierarchy::
 
         .. versionadded:: 3.4
 
+    .. method:: exec_module(module)
+
+       Implementation of :meth:`Loader.exec_module`.
+
+       .. versionadded:: 3.4
+
     .. method:: load_module(fullname)
 
-        Implementation of :meth:`Loader.load_module`.
+       Implementation of :meth:`Loader.load_module`.
+
+       .. deprecated:: 3.4
+          use :meth:`exec_module` instead.
 
 
 .. class:: ExecutionLoader
@@ -481,6 +568,9 @@ ABC hierarchy::
    .. method:: load_module(fullname)
 
       Calls super's ``load_module()``.
+
+      .. deprecated:: 3.4
+         Use :meth:`Loader.exec_module` instead.
 
    .. method:: get_filename(fullname)
 
@@ -558,9 +648,18 @@ ABC hierarchy::
 
         Concrete implementation of :meth:`InspectLoader.get_code`.
 
+    .. method:: exec_module(module)
+
+       Concrete implementation of :meth:`Loader.exec_module`.
+
+      .. versionadded:: 3.4
+
     .. method:: load_module(fullname)
 
-        Concrete implementation of :meth:`Loader.load_module`.
+       Concrete implementation of :meth:`Loader.load_module`.
+
+       .. deprecated:: 3.4
+          Use :meth:`exec_module` instead.
 
     .. method:: get_source(fullname)
 
@@ -641,6 +740,10 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
+    .. note::
+       Due to limitations in the extension module C-API, for now
+       BuiltinImporter does not implement :meth:`Loader.exec_module`.
+
 
 .. class:: FrozenImporter
 
@@ -671,28 +774,37 @@ find and load modules.
    Only class methods are defined by this class to alleviate the need for
    instantiation.
 
+   .. classmethod:: find_spec(fullname, path=None, target=None)
+
+      Class method that attempts to find a :term:`spec <module spec>`
+      for the module specified by *fullname* on :data:`sys.path` or, if
+      defined, on *path*. For each path entry that is searched,
+      :data:`sys.path_importer_cache` is checked. If a non-false object
+      is found then it is used as the :term:`path entry finder` to look
+      for the module being searched for. If no entry is found in
+      :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
+      searched for a finder for the path entry and, if found, is stored
+      in :data:`sys.path_importer_cache` along with being queried about
+      the module. If no finder is ever found then ``None`` is both
+      stored in the cache and returned.
+
+      .. versionadded:: 3.4
+
    .. classmethod:: find_module(fullname, path=None)
 
-     Class method that attempts to find a :term:`loader` for the module
-     specified by *fullname* on :data:`sys.path` or, if defined, on
-     *path*. For each path entry that is searched,
-     :data:`sys.path_importer_cache` is checked. If a non-false object is
-     found then it is used as the :term:`path entry finder` to look for the
-     module being searched for. If no entry is found in
-     :data:`sys.path_importer_cache`, then :data:`sys.path_hooks` is
-     searched for a finder for the path entry and, if found, is stored in
-     :data:`sys.path_importer_cache` along with being queried about the
-     module. If no finder is ever found then ``None`` is both stored in
-     the cache and returned.
+      A legacy wrapper around :meth:`find_spec`.
+
+      .. deprecated:: 3.4
+         Use :meth:`find_spec` instead.
 
    .. classmethod:: invalidate_caches()
 
-     Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
-     finders stored in :attr:`sys.path_importer_cache`.
+      Calls :meth:`importlib.abc.PathEntryFinder.invalidate_caches` on all
+      finders stored in :attr:`sys.path_importer_cache`.
 
-  .. versionchanged:: 3.4
-     Calls objects in :data:`sys.path_hooks` with the current working directory
-     for ``''`` (i.e. the empty string).
+   .. versionchanged:: 3.4
+      Calls objects in :data:`sys.path_hooks` with the current working
+      directory for ``''`` (i.e. the empty string).
 
 
 .. class:: FileFinder(path, \*loader_details)
@@ -723,6 +835,12 @@ find and load modules.
    .. attribute:: path
 
       The path the finder will search in.
+
+   .. method:: find_spec(fullname, target=None)
+
+      Attempt to find the spec to handle *fullname* within :attr:`path`.
+
+      .. versionadded:: 3.4
 
    .. method:: find_loader(fullname)
 
@@ -828,6 +946,10 @@ find and load modules.
 
       Loads the extension module if and only if *fullname* is the same as
       :attr:`name` or is ``None``.
+
+      .. note::
+         Due to limitations in the extension module C-API, for now
+         ExtensionFileLoader does not implement :meth:`Loader.exec_module`.
 
    .. method:: is_package(fullname)
 
@@ -1026,10 +1148,16 @@ an :term:`importer`.
       Set ``__loader__`` if set to ``None``, as if the attribute does not
       exist.
 
+   .. deprecated:: 3.4
+      The import machinery takes care of this automatically.
+
 .. decorator:: set_package
 
    A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the :attr:`__package__` attribute on the returned module. If :attr:`__package__`
    is set and has a value other than ``None`` it will not be changed.
+
+   .. deprecated:: 3.4
+      The import machinery takes care of this automatically.
 
 .. function:: spec_from_loader(name, loader, *, origin=None, is_package=None)
 
