@@ -162,6 +162,9 @@ class BasicTest(TestCase):
         sock = FakeSocket(body)
         resp = client.HTTPResponse(sock)
         resp.begin()
+        self.assertEqual(resp.read(0), b'')  # Issue #20007
+        self.assertFalse(resp.isclosed())
+        self.assertFalse(resp.closed)
         self.assertEqual(resp.read(), b"Text")
         self.assertTrue(resp.isclosed())
         self.assertFalse(resp.closed)
