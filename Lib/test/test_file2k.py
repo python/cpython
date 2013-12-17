@@ -418,10 +418,16 @@ class OtherFileTests(unittest.TestCase):
     @unittest.skipUnless(os.name == 'posix', 'test requires a posix system.')
     def test_write_full(self):
         # Issue #17976
-        with open('/dev/full', 'w', 1) as f:
+        try:
+            f = open('/dev/full', 'w', 1)
+        except IOError:
+            self.skipTest("requires '/dev/full'")
+        try:
             with self.assertRaises(IOError):
                 f.write('hello')
                 f.write('\n')
+        finally:
+            f.close()
 
 class FileSubclassTests(unittest.TestCase):
 
