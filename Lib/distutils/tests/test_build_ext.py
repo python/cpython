@@ -61,9 +61,9 @@ class BuildExtTestCase(TempdirManager,
             sys.stdout = old_stdout
 
         if ALREADY_TESTED:
-            return
+            self.skipTest('Already tested in %s' % ALREADY_TESTED)
         else:
-            ALREADY_TESTED = True
+            ALREADY_TESTED = type(self).__name__
 
         import xx
 
@@ -113,10 +113,6 @@ class BuildExtTestCase(TempdirManager,
         self.assertGreater(len(cmd.library_dirs), 0)
 
     def test_user_site(self):
-        # site.USER_SITE was introduced in 2.6
-        if sys.version < '2.6':
-            return
-
         import site
         dist = Distribution({'name': 'xx'})
         cmd = build_ext(dist)
