@@ -293,33 +293,38 @@ class UUID(object):
 
 def _find_mac(command, args, hw_identifiers, get_index):
     import os
-    for dir in ['', '/sbin/', '/usr/sbin']:
+    path = os.environ.get("PATH", os.defpath).split(os.pathsep)
+    path.extend(('/sbin', '/usr/sbin'))
+    for dir in path:
         executable = os.path.join(dir, command)
-        if not os.path.exists(executable):
-            continue
+        if (os.path.exists(executable) and
+            os.access(executable, os.F_OK | os.X_OK) and
+            not os.path.isdir(executable)):
+            break
+    else:
+        return None
 
-        try:
-            # LC_ALL to get English output, 2>/dev/null to
-            # prevent output on stderr
-            cmd = 'LC_ALL=C %s %s 2>/dev/null' % (executable, args)
-            with os.popen(cmd) as pipe:
-                for line in pipe:
-                    words = line.lower().split()
-                    for i in range(len(words)):
-                        if words[i] in hw_identifiers:
-                            try:
-                                return int(
-                                    words[get_index(i)].replace(':', ''), 16)
-                            except (ValueError, IndexError):
-                                # Virtual interfaces, such as those provided by
-                                # VPNs, do not have a colon-delimited MAC address
-                                # as expected, but a 16-byte HWAddr separated by
-                                # dashes. These should be ignored in favor of a
-                                # real MAC address
-                                pass
-        except IOError:
-            continue
-    return None
+    try:
+        # LC_MESSAGES to get English output, 2>/dev/null to
+        # prevent output on stderr
+        cmd = 'LC_MESSAGES=C %s %s 2>/dev/null' % (executable, args)
+        with os.popen(cmd) as pipe:
+            for line in pipe:
+                words = line.lower().split()
+                for i in range(len(words)):
+                    if words[i] in hw_identifiers:
+                        try:
+                            return int(
+                                words[get_index(i)].replace(':', ''), 16)
+                        except (ValueError, IndexError):
+                            # Virtual interfaces, such as those provided by
+                            # VPNs, do not have a colon-delimited MAC address
+                            # as expected, but a 16-byte HWAddr separated by
+                            # dashes. These should be ignored in favor of a
+                            # real MAC address
+                            pass
+    except IOError:
+        pass
 
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
