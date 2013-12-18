@@ -55,12 +55,9 @@ class CCompilerTestCase(support.EnvironGuard, unittest.TestCase):
         finally:
             debug.DEBUG = False
 
+    @unittest.skipUnless(get_default_compiler() == 'unix',
+                         'not testing if default compiler is not unix')
     def test_customize_compiler(self):
-
-        # not testing if default compiler is not unix
-        if get_default_compiler() != 'unix':
-            return
-
         os.environ['AR'] = 'my_ar'
         os.environ['ARFLAGS'] = '-arflags'
 

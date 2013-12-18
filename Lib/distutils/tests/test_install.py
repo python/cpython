@@ -65,11 +65,9 @@ class InstallTestCase(support.TempdirManager,
         check_path(cmd.install_scripts, os.path.join(destination, "bin"))
         check_path(cmd.install_data, destination)
 
+    @unittest.skipIf(sys.version < '2.6',
+                     'site.USER_SITE was introduced in 2.6')
     def test_user_site(self):
-        # site.USER_SITE was introduced in 2.6
-        if sys.version < '2.6':
-            return
-
         # preparing the environment for the test
         self.old_user_base = site.USER_BASE
         self.old_user_site = site.USER_SITE

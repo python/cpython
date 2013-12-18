@@ -134,12 +134,6 @@ class SDistTestCase(PyPIRCCommandTestCase):
 
     @unittest.skipUnless(zlib, "requires zlib")
     def test_make_distribution(self):
-
-        # check if tar and gzip are installed
-        if (find_executable('tar') is None or
-            find_executable('gzip') is None):
-            return
-
         # now building a sdist
         dist, cmd = self.get_cmd()
 
@@ -325,13 +319,11 @@ class SDistTestCase(PyPIRCCommandTestCase):
 
     @unittest.skipUnless(zlib, "requires zlib")
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
+    @unittest.skipIf(find_executable('tar') is None,
+                     "The tar command is not found")
+    @unittest.skipIf(find_executable('gzip') is None,
+                     "The gzip command is not found")
     def test_make_distribution_owner_group(self):
-
-        # check if tar and gzip are installed
-        if (find_executable('tar') is None or
-            find_executable('gzip') is None):
-            return
-
         # now building a sdist
         dist, cmd = self.get_cmd()
 
