@@ -125,13 +125,11 @@ class SDistTestCase(PyPIRCCommandTestCase):
         self.assertEqual(len(content), 4)
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
+    @unittest.skipIf(find_executable('tar') is None,
+                     "The tar command is not found")
+    @unittest.skipIf(find_executable('gzip') is None,
+                     "The gzip command is not found")
     def test_make_distribution(self):
-
-        # check if tar and gzip are installed
-        if (find_executable('tar') is None or
-            find_executable('gzip') is None):
-            return
-
         # now building a sdist
         dist, cmd = self.get_cmd()
 
