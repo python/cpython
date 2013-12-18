@@ -21,12 +21,8 @@ class UnixCCompilerTestCase(unittest.TestCase):
         sys.platform = self._backup_platform
         sysconfig.get_config_var = self._backup_get_config_var
 
+    @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
     def test_runtime_libdir_option(self):
-
-        # not tested under windows
-        if sys.platform == 'win32':
-            return
-
         # Issue#5900
         #
         # Ensure RUNPATH is added to extension modules with RPATH if
