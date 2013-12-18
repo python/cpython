@@ -118,7 +118,7 @@ static Py_ssize_t long_lived_pending = 0;
 
 /*
    NOTE: about untracking of mutable objects.
-   
+
    Certain types of container cannot participate in a reference cycle, and
    so do not need to be tracked by the garbage collector. Untracking these
    objects reduces the cost of garbage collections. However, determining
@@ -136,10 +136,10 @@ static Py_ssize_t long_lived_pending = 0;
    not survive until garbage collection. It is therefore not worthwhile
    to untrack eligible tuples at creation time.
 
-   Instead, all tuples except the empty tuple are tracked when created. 
-   During garbage collection it is determined whether any surviving tuples 
-   can be untracked. A tuple can be untracked if all of its contents are 
-   already not tracked. Tuples are examined for untracking in all garbage 
+   Instead, all tuples except the empty tuple are tracked when created.
+   During garbage collection it is determined whether any surviving tuples
+   can be untracked. A tuple can be untracked if all of its contents are
+   already not tracked. Tuples are examined for untracking in all garbage
    collection cycles. It may take more than one cycle to untrack a tuple.
 
    Dictionaries containing only immutable objects also do not need to be
@@ -152,8 +152,8 @@ static Py_ssize_t long_lived_pending = 0;
    The module provides the python function is_tracked(obj), which returns
    the CURRENT tracking status of the object. Subsequent garbage
    collections may change the tracking status of the object.
-   
-   Untracking of certain containers was introduced in issue #4688, and 
+
+   Untracking of certain containers was introduced in issue #4688, and
    the algorithm was refined in response to issue #14775.
 */
 
