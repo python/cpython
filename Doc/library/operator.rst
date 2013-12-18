@@ -265,7 +265,7 @@ expect a function argument.
      ``(b.name, b.date)``.
 
    * After ``f = attrgetter('name.first', 'name.last')``, the call ``f(b)``
-     returns ``(r.name.first, r.name.last)``.
+     returns ``(b.name.first, b.name.last)``.
 
    Equivalent to::
 
