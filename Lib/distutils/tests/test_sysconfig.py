@@ -82,12 +82,9 @@ class SysconfigTestCase(support.EnvironGuard,
             os.chdir(cwd)
         self.assertEqual(srcdir, srcdir2)
 
+    @unittest.skipUnless(get_default_compiler() == 'unix',
+                         'not testing if default compiler is not unix')
     def test_customize_compiler(self):
-
-        # not testing if default compiler is not unix
-        if get_default_compiler() != 'unix':
-            return
-
         os.environ['AR'] = 'my_ar'
         os.environ['ARFLAGS'] = '-arflags'
 
@@ -150,7 +147,7 @@ class SysconfigTestCase(support.EnvironGuard,
 
         import sysconfig as global_sysconfig
         if sysconfig.get_config_var('CUSTOMIZED_OSX_COMPILER'):
-            return
+            self.skipTest('compiler flags customized')
         self.assertEqual(global_sysconfig.get_config_var('LDSHARED'), sysconfig.get_config_var('LDSHARED'))
         self.assertEqual(global_sysconfig.get_config_var('CC'), sysconfig.get_config_var('CC'))
 
