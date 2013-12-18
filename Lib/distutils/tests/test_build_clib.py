@@ -102,11 +102,8 @@ class BuildCLibTestCase(support.TempdirManager,
         cmd.distribution.libraries = 'WONTWORK'
         self.assertRaises(DistutilsSetupError, cmd.finalize_options)
 
+    @unittest.skipIf(sys.platform == 'win32', "can't test on Windows")
     def test_run(self):
-        # can't test on windows
-        if sys.platform == 'win32':
-            return
-
         pkg_dir, dist = self.create_dist()
         cmd = build_clib(dist)
 
@@ -131,7 +128,7 @@ class BuildCLibTestCase(support.TempdirManager,
             if ccmd is None:
                 continue
             if find_executable(ccmd[0]) is None:
-                return # can't test
+                self.skipTest('The %r command is not found' % ccmd[0])
 
         # this should work
         cmd.run()
