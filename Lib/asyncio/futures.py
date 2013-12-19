@@ -7,6 +7,7 @@ __all__ = ['CancelledError', 'TimeoutError',
 
 import concurrent.futures._base
 import logging
+import sys
 import traceback
 
 from . import events
@@ -16,6 +17,8 @@ from .log import logger
 _PENDING = 'PENDING'
 _CANCELLED = 'CANCELLED'
 _FINISHED = 'FINISHED'
+
+_PY34 = sys.version_info >= (3, 4)
 
 # TODO: Do we really want to depend on concurrent.futures internals?
 Error = concurrent.futures._base.Error
@@ -128,7 +131,8 @@ class Future:
 
     _blocking = False  # proper use of future (yield vs yield from)
 
-    _tb_logger = None
+    _traceback = None   # Used for Python 3.4 and later
+    _tb_logger = None   # Used for Python 3.3 only
 
     def __init__(self, *, loop=None):
         """Initialize the future.
@@ -161,6 +165,12 @@ class Future:
         else:
             res += '<{}>'.format(self._state)
         return res
+
+    if _PY34:
+        def __del__(self):
+            if self._traceback is not None:
+                logger.error('Future/Task exception was never retrieved:\n%s',
+                             ''.join(self._traceback))
 
     def cancel(self):
         """Cancel the future and schedule callbacks.
@@ -214,9 +224,10 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Result is not ready.')
+        self._traceback = None
         if self._tb_logger is not None:
             self._tb_logger.clear()
-            self._tb_logger = None
+        self._tb_logger = None
         if self._exception is not None:
             raise self._exception
         return self._result
@@ -233,9 +244,10 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Exception is not set.')
+        self._traceback = None
         if self._tb_logger is not None:
             self._tb_logger.clear()
-            self._tb_logger = None
+        self._tb_logger = None
         return self._exception
 
     def add_done_callback(self, fn):
@@ -286,12 +298,18 @@ class Future:
         if self._state != _PENDING:
             raise InvalidStateError('{}: {!r}'.format(self._state, self))
         self._exception = exception
-        self._tb_logger = _TracebackLogger(exception)
         self._state = _FINISHED
         self._schedule_callbacks()
-        # Arrange for the logger to be activated after all callbacks
-        # have had a chance to call result() or exception().
-        self._loop.call_soon(self._tb_logger.activate)
+        if _PY34:
+            self._traceback = traceback.format_exception(
+                                              exception.__class__,
+                                              exception,
+                                              exception.__traceback__)
+        else:
+            self._tb_logger = _TracebackLogger(exception)
+            # Arrange for the logger to be activated after all callbacks
+            # have had a chance to call result() or exception().
+            self._loop.call_soon(self._tb_logger.activate)
 
     # Truly internal methods.
 
