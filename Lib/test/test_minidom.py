@@ -360,15 +360,6 @@ class MinidomTest(unittest.TestCase):
                 and el.getAttribute("spam2") == "bam2")
         dom.unlink()
 
-    def testGetAttrList(self):
-        pass
-
-    def testGetAttrValues(self):
-        pass
-
-    def testGetAttrLength(self):
-        pass
-
     def testGetAttribute(self):
         dom = Document()
         child = dom.appendChild(
@@ -388,8 +379,6 @@ class MinidomTest(unittest.TestCase):
         child2 = child.appendChild(dom.createElement('abc'))
         self.assertEqual(child2.getAttributeNS("http://www.python.org", "missing"),
                          '')
-
-    def testGetAttributeNode(self): pass
 
     def testGetElementsByTagNameNS(self):
         d="""<foo xmlns:minidom='http://pyxml.sf.net/minidom'>
@@ -461,8 +450,6 @@ class MinidomTest(unittest.TestCase):
         self.confirm(str(node) == repr(node))
         dom.unlink()
 
-    def testTextNodeRepr(self): pass
-
     def testWriteXML(self):
         str = '<?xml version="1.0" ?><a b="c"/>'
         dom = parseString(str)
@@ -526,14 +513,6 @@ class MinidomTest(unittest.TestCase):
                 and pi.localName is None
                 and pi.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
-    def testProcessingInstructionRepr(self): pass
-
-    def testTextRepr(self): pass
-
-    def testWriteText(self): pass
-
-    def testDocumentElement(self): pass
-
     def testTooManyDocumentElements(self):
         doc = parseString("<doc/>")
         elem = doc.createElement("extra")
@@ -541,26 +520,6 @@ class MinidomTest(unittest.TestCase):
         self.assertRaises(xml.dom.HierarchyRequestErr, doc.appendChild, elem)
         elem.unlink()
         doc.unlink()
-
-    def testCreateElementNS(self): pass
-
-    def testCreateAttributeNS(self): pass
-
-    def testParse(self): pass
-
-    def testParseString(self): pass
-
-    def testComment(self): pass
-
-    def testAttrListItem(self): pass
-
-    def testAttrListItems(self): pass
-
-    def testAttrListItemNS(self): pass
-
-    def testAttrListKeys(self): pass
-
-    def testAttrListKeysNS(self): pass
 
     def testRemoveNamedItem(self):
         doc = parseString("<doc a=''/>")
@@ -580,30 +539,6 @@ class MinidomTest(unittest.TestCase):
         self.confirm(a1.isSameNode(a2))
         self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItemNS,
                           "http://xml.python.org/", "b")
-
-    def testAttrListValues(self): pass
-
-    def testAttrListLength(self): pass
-
-    def testAttrList__getitem__(self): pass
-
-    def testAttrList__setitem__(self): pass
-
-    def testSetAttrValueandNodeValue(self): pass
-
-    def testParseElement(self): pass
-
-    def testParseAttributes(self): pass
-
-    def testParseElementNamespaces(self): pass
-
-    def testParseAttributeNamespaces(self): pass
-
-    def testParseProcessingInstructions(self): pass
-
-    def testChildNodes(self): pass
-
-    def testFirstChild(self): pass
 
     def testHasChildNodes(self):
         dom = parseString("<doc><foo/></doc>")
