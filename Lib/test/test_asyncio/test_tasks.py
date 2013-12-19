@@ -1352,6 +1352,7 @@ class GatherTestsBase:
         c.set_result(3)
         d.cancel()
         e.set_exception(RuntimeError())
+        e.exception()
 
     def test_return_exceptions(self):
         a, b, c, d = [futures.Future(loop=self.one_loop) for i in range(4)]
@@ -1431,6 +1432,7 @@ class FutureGatherTests(GatherTestsBase, unittest.TestCase):
         c.set_result(3)
         d.cancel()
         e.set_exception(RuntimeError())
+        e.exception()
 
     def test_result_exception_one_cancellation(self):
         a, b, c, d, e, f = [futures.Future(loop=self.one_loop)
