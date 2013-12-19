@@ -264,6 +264,8 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
         return 0;
     }
     found_encoding = PyTokenizer_FindEncodingFilename(fd, filename);
+    if (found_encoding == NULL)
+        PyErr_Clear();
     encoding = (found_encoding != NULL) ? found_encoding : "utf-8";
     /* Reset position */
     if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
