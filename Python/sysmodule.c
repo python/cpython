@@ -1186,7 +1186,7 @@ static PyMethodDef sys_methods[] = {
     {"settrace",        sys_settrace, METH_O, settrace_doc},
     {"gettrace",        sys_gettrace, METH_NOARGS, gettrace_doc},
     {"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
-    {"_debugmallocstats", sys_debugmallocstats, METH_VARARGS,
+    {"_debugmallocstats", sys_debugmallocstats, METH_NOARGS,
      debugmallocstats_doc},
     {NULL,              NULL}           /* sentinel */
 };
