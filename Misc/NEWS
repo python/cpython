@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18829: csv.Dialect() now checks type for delimiter, escapechar and
+  quotechar fields.  Original patch by Vajrasky Kok.
+
 - Issue #19855: uuid.getnode() on Unix now looks on the PATH for the
   executables used to find the mac address, with /sbin and /usr/sbin as
   fallbacks.
