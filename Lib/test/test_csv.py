@@ -870,6 +870,7 @@ class TestDialectValidity(unittest.TestCase):
             lineterminator = '\r\n'
             quoting = csv.QUOTE_NONE
         d = mydialect()
+        self.assertEqual(d.quoting, csv.QUOTE_NONE)
 
         mydialect.quoting = None
         self.assertRaises(csv.Error, mydialect)
@@ -878,12 +879,21 @@ class TestDialectValidity(unittest.TestCase):
         mydialect.quoting = csv.QUOTE_ALL
         mydialect.quotechar = '"'
         d = mydialect()
+        self.assertEqual(d.quoting, csv.QUOTE_ALL)
+        self.assertEqual(d.quotechar, '"')
+        self.assertTrue(d.doublequote)
 
         mydialect.quotechar = "''"
-        self.assertRaises(csv.Error, mydialect)
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"quotechar" must be an 1-character string')
 
         mydialect.quotechar = 4
-        self.assertRaises(csv.Error, mydialect)
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"quotechar" must be string, not int')
 
     def test_delimiter(self):
         class mydialect(csv.Dialect):
@@ -894,12 +904,31 @@ class TestDialectValidity(unittest.TestCase):
             lineterminator = '\r\n'
             quoting = csv.QUOTE_NONE
         d = mydialect()
+        self.assertEqual(d.delimiter, ";")
 
         mydialect.delimiter = ":::"
-        self.assertRaises(csv.Error, mydialect)
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"delimiter" must be an 1-character string')
+
+        mydialect.delimiter = ""
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"delimiter" must be an 1-character string')
+
+        mydialect.delimiter = u","
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"delimiter" must be string, not unicode')
 
         mydialect.delimiter = 4
-        self.assertRaises(csv.Error, mydialect)
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"delimiter" must be string, not int')
 
     def test_lineterminator(self):
         class mydialect(csv.Dialect):
@@ -910,12 +939,17 @@ class TestDialectValidity(unittest.TestCase):
             lineterminator = '\r\n'
             quoting = csv.QUOTE_NONE
         d = mydialect()
+        self.assertEqual(d.lineterminator, '\r\n')
 
         mydialect.lineterminator = ":::"
         d = mydialect()
+        self.assertEqual(d.lineterminator, ":::")
 
         mydialect.lineterminator = 4
-        self.assertRaises(csv.Error, mydialect)
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         '"lineterminator" must be a string')
 
 
 class TestSniffer(unittest.TestCase):
