@@ -130,10 +130,9 @@ def _make_launch_script(script_dir, script_basename, module_name, path=None):
 class MultiProcessingCmdLineMixin():
     maxDiff = None # Show full tracebacks on subprocess failure
 
-    def setupClass(cls):
-        if cls.start_method not in _concrete_contexts:
-            raise unittest.SkipTest("%r start method not available" %
-                                                          cls.start_method)
+    def setUp(self):
+        if self.start_method not in _concrete_contexts:
+            self.skipTest("%r start method not available" % self.start_method)
 
     def _check_output(self, script_name, exit_code, out, err):
         if verbose > 1:
@@ -277,11 +276,8 @@ class ForkServerCmdLineTest(MultiProcessingCmdLineMixin, unittest.TestCase):
     start_method = 'forkserver'
     main_in_children_source = test_source_main_skipped_in_children
 
-def test_main():
-    support.run_unittest(SpawnCmdLineTest,
-                         ForkCmdLineTest,
-                         ForkServerCmdLineTest)
+def tearDownModule():
     support.reap_children()
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
