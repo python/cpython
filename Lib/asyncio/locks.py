@@ -138,7 +138,7 @@ class Lock:
 
 
 class Event:
-    """An Event implementation, asynchronous equivalent to threading.Event.
+    """Asynchronous equivalent to threading.Event.
 
     Class implementing event objects. An event manages a flag that can be set
     to true with the set() method and reset to false with the clear() method.
@@ -204,7 +204,7 @@ class Event:
 
 
 class Condition:
-    """A Condition implementation, asynchronous equivalent to threading.Condition.
+    """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
     allows one or more coroutines to wait until they are notified by another
