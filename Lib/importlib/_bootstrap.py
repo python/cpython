@@ -1934,15 +1934,10 @@ class FileFinder:
             return None, []
         return spec.loader, spec.submodule_search_locations or []
 
-    def _get_spec(self, loader_class, fullname, path, submodule_search_locations, target):
+    def _get_spec(self, loader_class, fullname, path, smsl, target):
         loader = loader_class(fullname, path)
-        try:
-            get_spec = loader._get_spec
-        except AttributeError:
-            return spec_from_file_location(fullname, path, loader=loader,
-                                           submodule_search_locations=submodule_search_locations)
-        else:
-            return get_spec(fullname, path, submodule_search_locations, target)
+        return spec_from_file_location(fullname, path, loader=loader,
+                                       submodule_search_locations=smsl)
 
     def find_spec(self, fullname, target=None):
         """Try to find a loader for the specified module, or the namespace
