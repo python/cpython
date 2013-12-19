@@ -1115,6 +1115,7 @@ class TaskTests(unittest.TestCase):
 
     def test_current_task(self):
         self.assertIsNone(tasks.Task.current_task(loop=self.loop))
+
         @tasks.coroutine
         def coro(loop):
             self.assertTrue(tasks.Task.current_task(loop=loop) is task)
@@ -1146,7 +1147,8 @@ class TaskTests(unittest.TestCase):
         task1 = tasks.Task(coro1(self.loop), loop=self.loop)
         task2 = tasks.Task(coro2(self.loop), loop=self.loop)
 
-        self.loop.run_until_complete(tasks.wait((task1, task2), loop=self.loop))
+        self.loop.run_until_complete(tasks.wait((task1, task2),
+                                                loop=self.loop))
         self.assertIsNone(tasks.Task.current_task(loop=self.loop))
 
     # Some thorough tests for cancellation propagation through
