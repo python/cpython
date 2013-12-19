@@ -330,6 +330,11 @@ class RegressionTests(unittest.TestCase):
             datetime.datetime(2012, 4, 4, 15, 6, 0, 123456),
         ])
 
+    def CheckInvalidIsolationLevelType(self):
+        # isolation level is a string, not an integer
+        self.assertRaises(TypeError,
+                          sqlite.connect, ":memory:", isolation_level=123)
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
