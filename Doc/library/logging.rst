@@ -113,6 +113,8 @@ is the module's name in the Python package namespace.
    If the root is reached, and it has a level of NOTSET, then all messages will be
    processed. Otherwise, the root's level will be used as the effective level.
 
+   See :ref:`levels` for a list of levels.
+
    .. versionchanged:: 3.2
       The *lvl* parameter now accepts a string representation of the
       level such as 'INFO' as an alternative to the integer constants
@@ -316,6 +318,34 @@ is the module's name in the Python package namespace.
    .. versionadded:: 3.2
 
 
+.. _levels:
+
+Logging Levels
+--------------
+
+The numeric values of logging levels are given in the following table. These are
+primarily of interest if you want to define your own levels, and need them to
+have specific values relative to the predefined levels. If you define a level
+with the same numeric value, it overwrites the predefined value; the predefined
+name is lost.
+
++--------------+---------------+
+| Level        | Numeric value |
++==============+===============+
+| ``CRITICAL`` | 50            |
++--------------+---------------+
+| ``ERROR``    | 40            |
++--------------+---------------+
+| ``WARNING``  | 30            |
++--------------+---------------+
+| ``INFO``     | 20            |
++--------------+---------------+
+| ``DEBUG``    | 10            |
++--------------+---------------+
+| ``NOTSET``   | 0             |
++--------------+---------------+
+
+
 .. _handler:
 
 Handler Objects
@@ -355,6 +385,8 @@ subclasses. However, the :meth:`__init__` method in subclasses needs to call
    Sets the threshold for this handler to *lvl*. Logging messages which are less
    severe than *lvl* will be ignored. When a handler is created, the level is set
    to :const:`NOTSET` (which causes all messages to be processed).
+
+   See :ref:`levels` for a list of levels.
 
    .. versionchanged:: 3.2
       The *lvl* parameter now accepts a string representation of the
