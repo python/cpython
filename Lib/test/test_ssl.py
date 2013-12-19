@@ -126,6 +126,10 @@ class BasicSocketTests(unittest.TestCase):
         else:
             self.assertRaises(ssl.SSLError, ssl.RAND_bytes, 16)
 
+        # negative num is invalid
+        self.assertRaises(ValueError, ssl.RAND_bytes, -5)
+        self.assertRaises(ValueError, ssl.RAND_pseudo_bytes, -5)
+
         self.assertRaises(TypeError, ssl.RAND_egd, 1)
         self.assertRaises(TypeError, ssl.RAND_egd, 'foo', 1)
         ssl.RAND_add("this is a random string", 75.0)

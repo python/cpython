@@ -2486,6 +2486,11 @@ PySSL_RAND(int len, int pseudo)
     const char *errstr;
     PyObject *v;
 
+    if (len < 0) {
+        PyErr_SetString(PyExc_ValueError, "num must be positive");
+        return NULL;
+    }
+
     bytes = PyBytes_FromStringAndSize(NULL, len);
     if (bytes == NULL)
         return NULL;
