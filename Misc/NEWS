@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #5815: Fixed support for locales with modifiers.  Fixed support for
+  locale encodings with hyphens.
+
 - Issue #20026: Fix the sqlite module to handle correctly invalid isolation
   level (wrong type).
 
