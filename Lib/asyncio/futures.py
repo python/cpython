@@ -302,9 +302,7 @@ class Future:
         self._schedule_callbacks()
         if _PY34:
             self._traceback = traceback.format_exception(
-                                              exception.__class__,
-                                              exception,
-                                              exception.__traceback__)
+                exception.__class__, exception, exception.__traceback__)
         else:
             self._tb_logger = _TracebackLogger(exception)
             # Arrange for the logger to be activated after all callbacks
