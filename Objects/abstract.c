@@ -2073,7 +2073,8 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
                 "NULL result without error in PyObject_Call");
         }
 #else
-        assert(result != NULL || PyErr_Occurred());
+        assert((result != NULL && !PyErr_Occurred())
+                || (result == NULL && PyErr_Occurred()));
 #endif
         return result;
     }
