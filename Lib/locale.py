@@ -336,6 +336,22 @@ def _test():
 # overridden below)
 _setlocale = setlocale
 
+def _replace_encoding(code, encoding):
+    if '.' in code:
+        langname = code[:code.index('.')]
+    else:
+        langname = code
+    # Convert the encoding to a C lib compatible encoding string
+    norm_encoding = encodings.normalize_encoding(encoding)
+    #print('norm encoding: %r' % norm_encoding)
+    norm_encoding = encodings.aliases.aliases.get(norm_encoding,
+                                                  norm_encoding)
+    #print('aliased encoding: %r' % norm_encoding)
+    encoding = locale_encoding_alias.get(norm_encoding,
+                                         norm_encoding)
+    #print('found encoding %r' % encoding)
+    return langname + '.' + encoding
+
 def normalize(localename):
 
     """ Returns a normalized locale code for the given locale
@@ -352,55 +368,71 @@ def normalize(localename):
         does.
 
     """
-    # Normalize the locale name and extract the encoding
-    fullname = localename.lower()
-    if ':' in fullname:
+    # Normalize the locale name and extract the encoding and modifier
+    code = localename.lower()
+    if ':' in code:
         # ':' is sometimes used as encoding delimiter.
-        fullname = fullname.replace(':', '.')
-    if '.' in fullname:
-        langname, encoding = fullname.split('.')[:2]
-        fullname = langname + '.' + encoding
+        code = code.replace(':', '.')
+    if '@' in code:
+        code, modifier = code.split('@', 1)
     else:
-        langname = fullname
+        modifier = ''
+    if '.' in code:
+        langname, encoding = code.split('.')[:2]
+    else:
+        langname = code
         encoding = ''
 
-    # First lookup: fullname (possibly with encoding)
-    norm_encoding = encoding.replace('-', '')
-    norm_encoding = norm_encoding.replace('_', '')
-    lookup_name = langname + '.' + encoding
+    # First lookup: fullname (possibly with encoding and modifier)
+    lang_enc = langname
+    if encoding:
+        norm_encoding = encoding.replace('-', '')
+        norm_encoding = norm_encoding.replace('_', '')
+        lang_enc += '.' + norm_encoding
+    lookup_name = lang_enc
+    if modifier:
+        lookup_name += '@' + modifier
     code = locale_alias.get(lookup_name, None)
     if code is not None:
         return code
-    #print 'first lookup failed'
+    #print('first lookup failed')
 
-    # Second try: langname (without encoding)
-    code = locale_alias.get(langname, None)
-    if code is not None:
-        #print 'langname lookup succeeded'
-        if '.' in code:
-            langname, defenc = code.split('.')
-        else:
-            langname = code
-            defenc = ''
-        if encoding:
-            # Convert the encoding to a C lib compatible encoding string
-            norm_encoding = encodings.normalize_encoding(encoding)
-            #print 'norm encoding: %r' % norm_encoding
-            norm_encoding = encodings.aliases.aliases.get(norm_encoding,
-                                                          norm_encoding)
-            #print 'aliased encoding: %r' % norm_encoding
-            encoding = locale_encoding_alias.get(norm_encoding,
-                                                 norm_encoding)
-        else:
-            encoding = defenc
-        #print 'found encoding %r' % encoding
-        if encoding:
-            return langname + '.' + encoding
-        else:
-            return langname
+    if modifier:
+        # Second try: fullname without modifier (possibly with encoding)
+        code = locale_alias.get(lang_enc, None)
+        if code is not None:
+            #print('lookup without modifier succeeded')
+            if '@' not in code:
+                return code + '@' + modifier
+            if code.split('@', 1)[1].lower() == modifier:
+                return code
+        #print('second lookup failed')
 
-    else:
-        return localename
+    if encoding:
+        # Third try: langname (without encoding, possibly with modifier)
+        lookup_name = langname
+        if modifier:
+            lookup_name += '@' + modifier
+        code = locale_alias.get(lookup_name, None)
+        if code is not None:
+            #print('lookup without encoding succeeded')
+            if '@' not in code:
+                return _replace_encoding(code, encoding)
+            code, modifier = code.split('@', 1)
+            return _replace_encoding(code, encoding) + '@' + modifier
+
+        if modifier:
+            # Fourth try: langname (without encoding and modifier)
+            code = locale_alias.get(langname, None)
+            if code is not None:
+                #print('lookup without modifier and encoding succeeded')
+                if '@' not in code:
+                    return _replace_encoding(code, encoding) + '@' + modifier
+                code, defmod = code.split('@', 1)
+                if defmod.lower() == modifier:
+                    return _replace_encoding(code, encoding) + '@' + defmod
+
+    return localename
 
 def _parse_localename(localename):
 
@@ -419,7 +451,7 @@ def _parse_localename(localename):
     code = normalize(localename)
     if '@' in code:
         # Deal with locale modifiers
-        code, modifier = code.split('@')
+        code, modifier = code.split('@', 1)
         if modifier == 'euro' and '.' not in code:
             # Assume Latin-9 for @euro locales. This is bogus,
             # since some systems may use other encodings for these
