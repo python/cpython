@@ -3746,10 +3746,8 @@ _posix_listdir(path_t *path, PyObject *list)
     if (path->fd != -1) {
         /* closedir() closes the FD, so we duplicate it */
         fd = _Py_dup(path->fd);
-        if (fd == -1) {
-            list = posix_error();
-            goto exit;
-        }
+        if (fd == -1)
+            return NULL;
 
         return_str = 1;
 
