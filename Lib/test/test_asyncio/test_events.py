@@ -720,7 +720,8 @@ class EventLoopTestsMixin:
         # incorrect server_hostname
         f_c = self.loop.create_connection(MyProto, host, port,
                                           ssl=sslcontext_client)
-        with self.assertRaisesRegex(ssl.CertificateError,
+        with self.assertRaisesRegex(
+                ssl.CertificateError,
                 "hostname '127.0.0.1' doesn't match 'localhost'"):
             self.loop.run_until_complete(f_c)
 
