@@ -165,6 +165,8 @@ IDLE
 Tests
 -----
 
+- Issue #19683: Removed empty tests from test_minidom.  Patch by Ajitesh Gupta.
+
 - Issue #19919: Fix flacky SSL test. connect_ex() sometimes returns
   EWOULDBLOCK on Windows or VMs hosted on Windows.
 
