@@ -665,6 +665,9 @@ class SysModuleTest(unittest.TestCase):
         ret, out, err = assert_python_ok(*args)
         self.assertIn(b"free PyDictObjects", err)
 
+        # The function has no parameter
+        self.assertRaises(TypeError, sys._debugmallocstats, True)
+
     @unittest.skipUnless(hasattr(sys, "getallocatedblocks"),
                          "sys.getallocatedblocks unavailable on this build")
     def test_getallocatedblocks(self):
