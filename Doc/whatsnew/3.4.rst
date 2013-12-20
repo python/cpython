@@ -101,7 +101,7 @@ New library modules:
 
 New expected features for Python implementations:
 
-* :ref:`PEP 446: Make newly created file descriptors non-inheritable <pep-446>`.
+* :pep:`446`: :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`.
 * command line option for :ref:`isolated mode <using-on-misc-options>`,
   (:issue:`16499`).
 * :ref:`improvements <codec-handling-improvements>` in the handling of
@@ -170,7 +170,7 @@ install ``pip`` along with CPython itself.
       Donald Stufft, Nick Coghlan, Martin von Löwis and Ned Deily.
 
 
-.. _pep-446:
+.. _whatsnew-pep-446:
 
 PEP 446: Make newly created file descriptors non-inheritable
 ============================================================
