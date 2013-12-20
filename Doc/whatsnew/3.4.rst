@@ -573,7 +573,6 @@ hashlib
 -------
 
 New :func:`hashlib.pbkdf2_hmac` function.
-
 (Contributed by Christian Heimes in :issue:`18582`)
 
 
@@ -582,7 +581,6 @@ html
 
 Added a new :func:`html.unescape` function that converts HTML5 character
 references to the corresponding Unicode characters.
-
 (Contributed by Ezio Melotti in :issue:`2927`)
 
 Added a new *convert_charrefs* keyword argument to
@@ -590,11 +588,9 @@ Added a new *convert_charrefs* keyword argument to
 all character references.  For backward-compatibility, its value defaults
 to ``False``, but it will change to ``True`` in future versions, so you
 are invited to set it explicitly and update your code to use this new feature.
-
 (Contributed by Ezio Melotti in :issue:`13633`)
 
 The *strict* argument of :class:`~html.parser.HTMLParser` is now deprecated.
-
 (Contributed by Ezio Melotti in :issue:`15114`)
 
 
@@ -623,7 +619,6 @@ mmap
 ----
 
 mmap objects can now be weakref'ed.
-
 (Contributed by Valerie Lambert in :issue:`4885`.)
 
 
@@ -711,7 +706,6 @@ which anchor the pattern at both ends of the string to match.
 The repr of :ref:`regex objects <re-objects>` now includes the pattern
 and the flags; the repr of :ref:`match objects <match-objects>` now
 includes the start, end, and the part of the string that matched.
-
 (Contributed by Serhiy Storchaka in :issue:`13592` and :issue:`17087`.)
 
 
@@ -746,7 +740,6 @@ ssl
 ---
 
 TLSv1.1 and TLSv1.2 support.
-
 (Contributed by Michele Orrù and Antoine Pitrou in :issue:`16692`)
 
 * New diagnostic functions :func:`~ssl.get_default_verify_paths`,
@@ -761,7 +754,6 @@ TLSv1.1 and TLSv1.2 support.
 
 Support for server-side SNI using the new
 :meth:`ssl.SSLContext.set_servername_callback` method.
-
 (Contributed by Daniel Black in :issue:`8109`.)
 
 
@@ -779,7 +771,6 @@ struct
 ------
 
 Streaming struct unpacking using :func:`struct.iter_unpack`.
-
 (Contributed by Antoine Pitrou in :issue:`17804`.)
 
 
@@ -804,7 +795,6 @@ urllib
 ------
 
 Add support.for ``data:`` URLs in :mod:`urllib.request`.
-
 (Contributed by Mathias Panzenböck in :issue:`16423`.)
 
 
@@ -813,7 +803,6 @@ unittest
 
 Support for easy dynamically-generated subtests using the
 :meth:`~unittest.TestCase.subTest` context manager.
-
 (Contributed by Antoine Pitrou in :issue:`16997`.)
 
 
@@ -844,7 +833,6 @@ xml.etree
 
 Add an event-driven parser for non-blocking applications,
 :class:`~xml.etree.ElementTree.XMLPullParser`.
-
 (Contributed by Antoine Pitrou in :issue:`17741`.)
 
 
@@ -853,7 +841,6 @@ zipfile.PyZipfile
 
 Add a filter function to ignore some packages (tests for instance),
 :meth:`~zipfile.PyZipFile.writepy`.
-
 (Contributed by Christian Tismer in :issue:`19274`.)
 
 
@@ -861,7 +848,6 @@ Other improvements
 ==================
 
 Tab-completion is now enabled by default in the interactive interpreter.
-
 (Contributed by Antoine Pitrou and Éric Araujo in :issue:`5845`.)
 
 Python invocation changes
