@@ -115,6 +115,9 @@ Significantly Improved Library Modules:
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 * :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
   on Unix (:issue:`8713`).
+* :mod:`email` has a new submodule, :mod:`~email.contentmanager`, and
+  a new :mod:`~email.message.Message` subclass
+  (:class:`~email.contentmanager.EmailMessage`) that simplify MIME handling.
 
 CPython implementation improvements:
 
