@@ -118,7 +118,8 @@ Significantly Improved Library Modules:
   on Unix <whatsnew-multiprocessing-no-fork>` (:issue:`8713`).
 * :mod:`email` has a new submodule, :mod:`~email.contentmanager`, and
   a new :mod:`~email.message.Message` subclass
-  (:class:`~email.contentmanager.EmailMessage`) that simplify MIME handling.
+  (:class:`~email.contentmanager.EmailMessage`) that :ref:`simplify MIME
+  handling <whatsnew_email_contentmanager>`.
 
 CPython implementation improvements:
 
@@ -528,6 +529,8 @@ calls it, meaning that ``bytes(mymsg)`` will now produce the intuitive
 result:  a bytes object containing the fully formatted message.
 
 (Contributed by R. David Murray in :issue:`18600`.)
+
+.. _whatsnew_email_contentmanager:
 
 A pair of new subclasses of :class:`~email.message.Message` have been added,
 along with a new sub-module, :mod:`~email.contentmanager`.  All documentation
