@@ -1,6 +1,7 @@
 """Abstract Protocol class."""
 
-__all__ = ['Protocol', 'DatagramProtocol']
+__all__ = ['BaseProtocol', 'Protocol', 'DatagramProtocol',
+           'SubprocessProtocol']
 
 
 class BaseProtocol:

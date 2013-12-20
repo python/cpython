@@ -4,7 +4,9 @@ import sys
 
 PY34 = sys.version_info >= (3, 4)
 
-__all__ = ['ReadTransport', 'WriteTransport', 'Transport']
+__all__ = ['BaseTransport', 'ReadTransport', 'WriteTransport',
+           'Transport', 'DatagramTransport', 'SubprocessTransport',
+           ]
 
 
 class BaseTransport:
