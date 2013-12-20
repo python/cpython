@@ -86,7 +86,7 @@ Summary -- Release highlights
 
 New syntax features:
 
-* No new syntax features are planned for Python 3.4.
+* No new syntax features were added in Python 3.4.
 
 New library modules:
 
