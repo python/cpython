@@ -1,4 +1,4 @@
-.. module:: asyncio
+.. currentmodule:: asyncio
 
 ++++++++++++++++++++++++
 Transports and protocols
