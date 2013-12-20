@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20034: Updated alias mapping to most recent locale.alias file
+  from X.org distribution using makelocalealias.py.
+
 - Issue #5815: Fixed support for locales with modifiers.  Fixed support for
   locale encodings with hyphens.
 
