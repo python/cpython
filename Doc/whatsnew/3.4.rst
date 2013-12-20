@@ -109,7 +109,8 @@ New expected features for Python implementations:
 
 Significantly Improved Library Modules:
 
-* Single-dispatch generic functions in :mod:`functoools` (:pep:`443`)
+* :ref:`Single-dispatch generic functions <whatsnew-singledispatch>` in
+  :mod:`functools` (:pep:`443`)
 * New :mod:`pickle` protocol 4 (:pep:`3154`)
 * SHA-3 (Keccak) support for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
@@ -552,6 +553,8 @@ arbitrary callables (including :func:`~functools.partial` instances)
 to behave like normal instance methods when included in a class definition.
 
 (Contributed by Alon Horev and Nick Coghlan in :issue:`4331`)
+
+.. _whatsnew-singledispatch:
 
 The new :func:`~functools.singledispatch` decorator brings support for
 single-dispatch generic functions to the Python standard library. Where
