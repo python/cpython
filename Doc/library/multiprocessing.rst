@@ -101,6 +101,8 @@ necessary, see :ref:`multiprocessing-programming`.
 Contexts and start methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. _multiprocessing-start-methods:
+
 Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
@@ -147,7 +149,7 @@ there may some "leaked" semaphores.  (Unlinking the named semaphores
 is a serious matter since the system allows only a limited number, and
 they will not be automatically unlinked until the next reboot.)
 
-To select the a start method you use the :func:`set_start_method` in
+To select a start method you use the :func:`set_start_method` in
 the ``if __name__ == '__main__'`` clause of the main module.  For
 example::
 

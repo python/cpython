@@ -114,8 +114,8 @@ Significantly Improved Library Modules:
 * New :mod:`pickle` :ref:`protocol 4 <whatsnew-protocol-4>` (:pep:`3154`)
 * :ref:`SHA-3 (Keccak) support <whatsnew-sha3>` for :mod:`hashlib`.
 * :ref:`TLSv1.1 and TLSv1.2 support <whatsnew-tls-11-12>` for :mod:`ssl`.
-* :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
-  on Unix (:issue:`8713`).
+* :mod:`multiprocessing` now has :ref:`an option to avoid using os.fork
+  on Unix <whatsnew-multiprocessing-no-fork>` (:issue:`8713`).
 * :mod:`email` has a new submodule, :mod:`~email.contentmanager`, and
   a new :mod:`~email.message.Message` subclass
   (:class:`~email.contentmanager.EmailMessage`) that simplify MIME handling.
@@ -633,14 +633,17 @@ mmap objects can now be weakref'ed.
 multiprocessing
 ---------------
 
-On Unix, two new *start methods* (``spawn`` and ``forkserver``) have been
-added for starting processes using :mod:`multiprocessing`.  These make
-the mixing of processes with threads more robust, and the ``spawn``
-method matches the semantics that multiprocessing has always used on
-Windows. (Contributed by Richard Oudkerk in :issue:`8713`).
+.. _whatsnew-multiprocessing-no-fork:
+
+On Unix, two new :ref:`start methods <multiprocessing-start-methods>`
+(``spawn`` and ``forkserver``) have been added for starting processes using
+:mod:`multiprocessing`.  These make the mixing of processes with threads more
+robust, and the ``spawn`` method matches the semantics that multiprocessing has
+always used on Windows. (Contributed by Richard Oudkerk in :issue:`8713`).
 
 Also, except when using the old *fork* start method, child processes
-will no longer inherit unneeded handles/file descriptors from their parents.
+will no longer inherit unneeded handles/file descriptors from their parents
+(part of :issue:`8713`).
 
 :mod:`multiprocessing` now relies on :mod:`runpy` (which implements the
 ``-m`` switch) to initialise ``__main__`` appropriately in child processes
