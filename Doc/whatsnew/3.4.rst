@@ -111,7 +111,7 @@ Significantly Improved Library Modules:
 
 * :ref:`Single-dispatch generic functions <whatsnew-singledispatch>` in
   :mod:`functools` (:pep:`443`)
-* New :mod:`pickle` protocol 4 (:pep:`3154`)
+* New :mod:`pickle` :ref:`protocol 4 <whatsnew-protocol-4>` (:pep:`3154`)
 * :ref:`SHA-3 (Keccak) support <whatsnew-sha3>` for :mod:`hashlib`.
 * TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
 * :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
@@ -290,6 +290,8 @@ will continue working.  New importers should use the new methods
 described in the PEP.  Existing importers should be updated to implement
 the new methods.
 
+
+.. _whatsnew-protocol-4:
 
 Pickle protocol 4
 =================
