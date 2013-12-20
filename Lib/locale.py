@@ -764,11 +764,30 @@ locale_encoding_alias = {
 #    updated 'sr_yu.utf8@cyrillic' -> 'sr_CS.UTF-8' to 'sr_RS.UTF-8'
 #    updated 'sr_yu@cyrillic' -> 'sr_CS.ISO8859-5' to 'sr_RS.UTF-8'
 #
+# SS 2013-12-20:
+# Updated alias mapping to most recent locale.alias file
+# from X.org distribution using makelocalealias.py.
+#
+# These are the differences compared to the old mapping (Python 3.3.3
+# and older):
+#
+#    updated 'a3' -> 'a3_AZ.KOI8-C' to 'az_AZ.KOI8-C'
+#    updated 'a3_az' -> 'a3_AZ.KOI8-C' to 'az_AZ.KOI8-C'
+#    updated 'a3_az.koi8c' -> 'a3_AZ.KOI8-C' to 'az_AZ.KOI8-C'
+#    updated 'cs_cs.iso88592' -> 'cs_CS.ISO8859-2' to 'cs_CZ.ISO8859-2'
+#    updated 'hebrew' -> 'iw_IL.ISO8859-8' to 'he_IL.ISO8859-8'
+#    updated 'hebrew.iso88598' -> 'iw_IL.ISO8859-8' to 'he_IL.ISO8859-8'
+#    updated 'sd' -> 'sd_IN@devanagari.UTF-8' to 'sd_IN.UTF-8'
+#    updated 'sr@latn' -> 'sr_RS.UTF-8@latin' to 'sr_CS.UTF-8@latin'
+#    updated 'sr_cs' -> 'sr_RS.UTF-8' to 'sr_CS.UTF-8'
+#    updated 'sr_cs.utf8@latn' -> 'sr_RS.UTF-8@latin' to 'sr_CS.UTF-8@latin'
+#    updated 'sr_cs@latn' -> 'sr_RS.UTF-8@latin' to 'sr_CS.UTF-8@latin'
 
 locale_alias = {
-    'a3':                                   'a3_AZ.KOI8-C',
-    'a3_az':                                'a3_AZ.KOI8-C',
-    'a3_az.koi8c':                          'a3_AZ.KOI8-C',
+    'a3':                                   'az_AZ.KOI8-C',
+    'a3_az':                                'az_AZ.KOI8-C',
+    'a3_az.koi8c':                          'az_AZ.KOI8-C',
+    'a3_az.koic':                           'az_AZ.KOI8-C',
     'af':                                   'af_ZA.ISO8859-1',
     'af_za':                                'af_ZA.ISO8859-1',
     'af_za.iso88591':                       'af_ZA.ISO8859-1',
@@ -787,6 +806,7 @@ locale_alias = {
     'ar_dz.iso88596':                       'ar_DZ.ISO8859-6',
     'ar_eg':                                'ar_EG.ISO8859-6',
     'ar_eg.iso88596':                       'ar_EG.ISO8859-6',
+    'ar_in':                                'ar_IN.UTF-8',
     'ar_iq':                                'ar_IQ.ISO8859-6',
     'ar_iq.iso88596':                       'ar_IQ.ISO8859-6',
     'ar_jo':                                'ar_JO.ISO8859-6',
@@ -816,6 +836,7 @@ locale_alias = {
     'arabic':                               'ar_AA.ISO8859-6',
     'arabic.iso88596':                      'ar_AA.ISO8859-6',
     'as':                                   'as_IN.UTF-8',
+    'as_in':                                'as_IN.UTF-8',
     'az':                                   'az_AZ.ISO8859-9E',
     'az_az':                                'az_AZ.ISO8859-9E',
     'az_az.iso88599e':                      'az_AZ.ISO8859-9E',
@@ -833,6 +854,7 @@ locale_alias = {
     'bg_bg.koi8r':                          'bg_BG.KOI8-R',
     'bg_bg.microsoftcp1251':                'bg_BG.CP1251',
     'bn_in':                                'bn_IN.UTF-8',
+    'bo_in':                                'bo_IN.UTF-8',
     'bokmal':                               'nb_NO.ISO8859-1',
     'bokm\xe5l':                            'nb_NO.ISO8859-1',
     'br':                                   'br_FR.ISO8859-1',
@@ -850,6 +872,7 @@ locale_alias = {
     'c':                                    'C',
     'c-french':                             'fr_CA.ISO8859-1',
     'c-french.iso88591':                    'fr_CA.ISO8859-1',
+    'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
     'c_c':                                  'C',
@@ -887,7 +910,7 @@ locale_alias = {
     'croatian':                             'hr_HR.ISO8859-2',
     'cs':                                   'cs_CZ.ISO8859-2',
     'cs_cs':                                'cs_CZ.ISO8859-2',
-    'cs_cs.iso88592':                       'cs_CS.ISO8859-2',
+    'cs_cs.iso88592':                       'cs_CZ.ISO8859-2',
     'cs_cz':                                'cs_CZ.ISO8859-2',
     'cs_cz.iso88592':                       'cs_CZ.ISO8859-2',
     'cy':                                   'cy_GB.ISO8859-1',
@@ -1191,12 +1214,13 @@ locale_alias = {
     'he_il.cp1255':                         'he_IL.CP1255',
     'he_il.iso88598':                       'he_IL.ISO8859-8',
     'he_il.microsoftcp1255':                'he_IL.CP1255',
-    'hebrew':                               'iw_IL.ISO8859-8',
-    'hebrew.iso88598':                      'iw_IL.ISO8859-8',
+    'hebrew':                               'he_IL.ISO8859-8',
+    'hebrew.iso88598':                      'he_IL.ISO8859-8',
     'hi':                                   'hi_IN.ISCII-DEV',
     'hi_in':                                'hi_IN.ISCII-DEV',
     'hi_in.isciidev':                       'hi_IN.ISCII-DEV',
     'hne':                                  'hne_IN.UTF-8',
+    'hne_in':                               'hne_IN.UTF-8',
     'hr':                                   'hr_HR.ISO8859-2',
     'hr_hr':                                'hr_HR.ISO8859-2',
     'hr_hr.iso88592':                       'hr_HR.ISO8859-2',
@@ -1284,6 +1308,7 @@ locale_alias = {
     'korean':                               'ko_KR.eucKR',
     'korean.euc':                           'ko_KR.eucKR',
     'ks':                                   'ks_IN.UTF-8',
+    'ks_in':                                'ks_IN.UTF-8',
     'ks_in@devanagari':                     'ks_IN@devanagari.UTF-8',
     'kw':                                   'kw_GB.ISO8859-1',
     'kw_gb':                                'kw_GB.ISO8859-1',
@@ -1308,6 +1333,7 @@ locale_alias = {
     'lv_lv.iso885913':                      'lv_LV.ISO8859-13',
     'lv_lv.iso88594':                       'lv_LV.ISO8859-4',
     'mai':                                  'mai_IN.UTF-8',
+    'mai_in':                               'mai_IN.UTF-8',
     'mi':                                   'mi_NZ.ISO8859-1',
     'mi_nz':                                'mi_NZ.ISO8859-1',
     'mi_nz.iso88591':                       'mi_NZ.ISO8859-1',
@@ -1317,6 +1343,7 @@ locale_alias = {
     'mk_mk.iso88595':                       'mk_MK.ISO8859-5',
     'mk_mk.microsoftcp1251':                'mk_MK.CP1251',
     'ml':                                   'ml_IN.UTF-8',
+    'ml_in':                                'ml_IN.UTF-8',
     'mr':                                   'mr_IN.UTF-8',
     'mr_in':                                'mr_IN.UTF-8',
     'ms':                                   'ms_MY.ISO8859-1',
@@ -1331,6 +1358,7 @@ locale_alias = {
     'nb_no.iso88591':                       'nb_NO.ISO8859-1',
     'nb_no.iso885915':                      'nb_NO.ISO8859-15',
     'nb_no@euro':                           'nb_NO.ISO8859-15',
+    'ne_np':                                'ne_NP.UTF-8',
     'nl':                                   'nl_NL.ISO8859-1',
     'nl.iso885915':                         'nl_NL.ISO8859-15',
     'nl_be':                                'nl_BE.ISO8859-1',
@@ -1383,6 +1411,7 @@ locale_alias = {
     'oc_fr.iso885915':                      'oc_FR.ISO8859-15',
     'oc_fr@euro':                           'oc_FR.ISO8859-15',
     'or':                                   'or_IN.UTF-8',
+    'or_in':                                'or_IN.UTF-8',
     'pa':                                   'pa_IN.UTF-8',
     'pa_in':                                'pa_IN.UTF-8',
     'pd':                                   'pd_US.ISO8859-1',
@@ -1444,7 +1473,9 @@ locale_alias = {
     'rw':                                   'rw_RW.ISO8859-1',
     'rw_rw':                                'rw_RW.ISO8859-1',
     'rw_rw.iso88591':                       'rw_RW.ISO8859-1',
-    'sd':                                   'sd_IN@devanagari.UTF-8',
+    'sd':                                   'sd_IN.UTF-8',
+    'sd@devanagari':                        'sd_IN@devanagari.UTF-8',
+    'sd_in@devanagari':                     'sd_IN@devanagari.UTF-8',
     'se_no':                                'se_NO.UTF-8',
     'serbocroatian':                        'sr_RS.UTF-8@latin',
     'sh':                                   'sr_RS.UTF-8@latin',
@@ -1478,13 +1509,13 @@ locale_alias = {
     'sr':                                   'sr_RS.UTF-8',
     'sr@cyrillic':                          'sr_RS.UTF-8',
     'sr@latin':                             'sr_RS.UTF-8@latin',
-    'sr@latn':                              'sr_RS.UTF-8@latin',
-    'sr_cs':                                'sr_RS.UTF-8',
+    'sr@latn':                              'sr_CS.UTF-8@latin',
+    'sr_cs':                                'sr_CS.UTF-8',
     'sr_cs.iso88592':                       'sr_CS.ISO8859-2',
     'sr_cs.iso88592@latn':                  'sr_CS.ISO8859-2',
     'sr_cs.iso88595':                       'sr_CS.ISO8859-5',
-    'sr_cs.utf8@latn':                      'sr_RS.UTF-8@latin',
-    'sr_cs@latn':                           'sr_RS.UTF-8@latin',
+    'sr_cs.utf8@latn':                      'sr_CS.UTF-8@latin',
+    'sr_cs@latn':                           'sr_CS.UTF-8@latin',
     'sr_me':                                'sr_ME.UTF-8',
     'sr_rs':                                'sr_RS.UTF-8',
     'sr_rs.utf8@latn':                      'sr_RS.UTF-8@latin',
@@ -1562,6 +1593,7 @@ locale_alias = {
     'universal':                            'en_US.utf',
     'universal.utf8@ucs4':                  'en_US.UTF-8',
     'ur':                                   'ur_PK.CP1256',
+    'ur_in':                                'ur_IN.UTF-8',
     'ur_pk':                                'ur_PK.CP1256',
     'ur_pk.cp1256':                         'ur_PK.CP1256',
     'ur_pk.microsoftcp1256':                'ur_PK.CP1256',
