@@ -547,7 +547,6 @@ Constants
 
 .. data:: PROTOCOL_TLSv1_1
 
-
    Selects TLS version 1.1 as the channel encryption protocol.
    Available only with openssl version 1.0.1+.
 
@@ -555,11 +554,9 @@ Constants
 
 .. data:: PROTOCOL_TLSv1_2
 
-
    Selects TLS version 1.2 as the channel encryption protocol. This is the most
    modern version, and probably the best choice for maximum protection, if both
-   sides can speak it.
-   Available only with openssl version 1.0.1+.
+   sides can speak it.  Available only with openssl version 1.0.1+.
 
    .. versionadded:: 3.4
 
