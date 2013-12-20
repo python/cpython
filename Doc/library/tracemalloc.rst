@@ -4,6 +4,8 @@
 .. module:: tracemalloc
    :synopsis: Trace memory allocations.
 
+.. versionadded:: 3.4
+
 The tracemalloc module is a debug tool to trace memory blocks allocated by
 Python. It provides the following information:
 
@@ -22,8 +24,6 @@ By default, a trace of an allocated memory block only stores the most recent
 frame (1 frame). To store 25 frames at startup: set the
 :envvar:`PYTHONTRACEMALLOC` environment variable to ``25``, or use the
 :option:`-X` ``tracemalloc=25`` command line option.
-
-.. versionadded:: 3.4
 
 
 Examples
