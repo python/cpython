@@ -131,8 +131,8 @@ class Future:
 
     _blocking = False  # proper use of future (yield vs yield from)
 
-    _traceback = None   # Used for Python 3.4 and later
-    _tb_logger = None   # Used for Python 3.3 only
+    _log_traceback = False   # Used for Python 3.4 and later
+    _tb_logger = None        # Used for Python 3.3 only
 
     def __init__(self, *, loop=None):
         """Initialize the future.
@@ -168,9 +168,13 @@ class Future:
 
     if _PY34:
         def __del__(self):
-            if self._traceback is not None:
-                logger.error('Future/Task exception was never retrieved:\n%s',
-                             ''.join(self._traceback))
+            if not self._log_traceback:
+                # set_exception() was not called, or result() or exception()
+                # has consumed the exception
+                return
+            exc = self._exception
+            logger.error('Future/Task exception was never retrieved:',
+                         exc_info=(exc.__class__, exc, exc.__traceback__))
 
     def cancel(self):
         """Cancel the future and schedule callbacks.
@@ -224,10 +228,10 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Result is not ready.')
-        self._traceback = None
+        self._log_traceback = False
         if self._tb_logger is not None:
             self._tb_logger.clear()
-        self._tb_logger = None
+            self._tb_logger = None
         if self._exception is not None:
             raise self._exception
         return self._result
@@ -244,10 +248,10 @@ class Future:
             raise CancelledError
         if self._state != _FINISHED:
             raise InvalidStateError('Exception is not set.')
-        self._traceback = None
+        self._log_traceback = False
         if self._tb_logger is not None:
             self._tb_logger.clear()
-        self._tb_logger = None
+            self._tb_logger = None
         return self._exception
 
     def add_done_callback(self, fn):
@@ -301,8 +305,7 @@ class Future:
         self._state = _FINISHED
         self._schedule_callbacks()
         if _PY34:
-            self._traceback = traceback.format_exception(
-                exception.__class__, exception, exception.__traceback__)
+            self._log_traceback = True
         else:
             self._tb_logger = _TracebackLogger(exception)
             # Arrange for the logger to be activated after all callbacks
