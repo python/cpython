@@ -113,7 +113,7 @@ Significantly Improved Library Modules:
   :mod:`functools` (:pep:`443`)
 * New :mod:`pickle` :ref:`protocol 4 <whatsnew-protocol-4>` (:pep:`3154`)
 * :ref:`SHA-3 (Keccak) support <whatsnew-sha3>` for :mod:`hashlib`.
-* TLSv1.1 and TLSv1.2 support for :mod:`ssl`.
+* :ref:`TLSv1.1 and TLSv1.2 support <whatsnew-tls-11-12>` for :mod:`ssl`.
 * :mod:`multiprocessing` now has option to avoid using :func:`os.fork`
   on Unix (:issue:`8713`).
 * :mod:`email` has a new submodule, :mod:`~email.contentmanager`, and
@@ -747,18 +747,20 @@ debugging, instead of seeing integer "magic numbers".
 ssl
 ---
 
-TLSv1.1 and TLSv1.2 support.
-(Contributed by Michele Orrù and Antoine Pitrou in :issue:`16692`)
+.. _whatsnew-tls-11-12:
 
-* New diagnostic functions :func:`~ssl.get_default_verify_paths`,
-  :meth:`~ssl.SSLContext.cert_store_stats` and
-  :meth:`~ssl.SSLContext.get_ca_certs`
+:data:`~ssl.PROTOCOL_TLSv1_1` and :data:`~ssl.PROTOCOL_TLSv1_2` (TLSv1.1 and
+TLSv1.2 support) have been added; support for these protocols is only available if
+Python is linked with OpenSSL 1.0.1 or later.  (Contributed by Michele Orrù and
+Antoine Pitrou in :issue:`16692`)
 
-* Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
-  cert store.
+New diagnostic functions :func:`~ssl.get_default_verify_paths`,
+:meth:`~ssl.SSLContext.cert_store_stats` and
+:meth:`~ssl.SSLContext.get_ca_certs` (Contributed by Christian Heimes
+in :issue:`18143` and :issue:`18147`)
 
-(Contributed by Christian Heimes in :issue:`18143`, :issue:`18147` and
-:issue:`17134`.)
+Add :func:`ssl.enum_cert_store` to retrieve certificates and CRL from Windows'
+cert store.  (Contributed by Christian Heimes in :issue:`17134`.)
 
 Support for server-side SNI using the new
 :meth:`ssl.SSLContext.set_servername_callback` method.
