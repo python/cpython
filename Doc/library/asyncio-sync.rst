@@ -1,3 +1,4 @@
+.. currentmodule:: asyncio
 .. _sync:
 
 Synchronization primitives

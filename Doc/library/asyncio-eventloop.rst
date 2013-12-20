@@ -1,4 +1,4 @@
-.. module:: asyncio
+.. currentmodule:: asyncio
 
 .. _event-loop:
 
