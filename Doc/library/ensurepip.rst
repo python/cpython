@@ -5,6 +5,8 @@
    :synopsis: Bootstrapping the ``pip`` installer into an existing Python
               installation or virtual environment.
 
+.. versionadded:: 3.4
+
 The :mod:`ensurepip` package provides support for bootstrapping the ``pip``
 installer into an existing Python installation or virtual environment. This
 bootstrapping approach reflects the fact that ``pip`` is an independent
@@ -17,8 +19,6 @@ directly (as ``pip`` should be bootstrapped by default), but it may be
 needed if installing ``pip`` was skipped when installing Python (or
 when creating a virtual environment) or after explicitly uninstalling
 ``pip``.
-
-.. versionadded:: 3.4
 
 .. note::
 
