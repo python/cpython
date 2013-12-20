@@ -33,6 +33,8 @@ digests.  The modern term is secure hash.
    also" section at the end.
 
 
+.. _hash-algorithms:
+
 Hash algorithms
 ---------------
 
@@ -63,7 +65,7 @@ Constructors for hash algorithms that are always present in this module are
 the OpenSSL library that Python uses on your platform.
 
    .. versionchanged:: 3.4
-      Add sha3 family of hash algorithms.
+      Added sha3 family of hash algorithms.
 
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
