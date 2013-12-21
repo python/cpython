@@ -29,11 +29,6 @@
 #include "posixmodule.h"
 #endif
 
-#if defined(__VMS)
-#    error "PEP 11: VMS is now unsupported, code will be removed in Python 3.4"
-#    include <unixio.h>
-#endif /* defined(__VMS) */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -164,9 +159,6 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_FSYNC      1
 #define fsync _commit
 #else
-#if defined(__VMS)
-/* Everything needed is defined in vms/pyconfig.h */
-#else                   /* all other compilers */
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
@@ -184,7 +176,6 @@ corresponding Unix manual entries for more information on calls.");
 #define HAVE_SYSTEM     1
 #define HAVE_WAIT       1
 #define HAVE_TTYNAME    1
-#endif  /* __VMS */
 #endif  /* _MSC_VER */
 #endif  /* __BORLANDC__ */
 #endif  /* ! __WATCOMC__ || __QNX__ */
@@ -2765,17 +2756,7 @@ os_ttyname_impl(PyModuleDef *module, int fd)
 {
     char *ret;
 
-#if defined(__VMS)
-    /* file descriptor 0 only, the default input device (stdin) */
-    if (fd == 0) {
-        ret = ttyname();
-    }
-    else {
-        ret = NULL;
-    }
-#else
     ret = ttyname(fd);
-#endif
     if (ret == NULL)
         posix_error();
     return ret;
@@ -8340,10 +8321,6 @@ posix_fstat(PyObject *self, PyObject *args)
     int res;
     if (!PyArg_ParseTuple(args, "i:fstat", &fd))
         return NULL;
-#ifdef __VMS
-    /* on OpenVMS we must ensure that all bytes are written to the file */
-    fsync(fd);
-#endif
     Py_BEGIN_ALLOW_THREADS
     res = FSTAT(fd, &st);
     Py_END_ALLOW_THREADS

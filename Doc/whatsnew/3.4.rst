@@ -977,6 +977,7 @@ Unsupported Operating Systems
 
 * OS/2
 * Windows 2000
+* VMS
 
 
 Deprecated Python modules, functions and methods

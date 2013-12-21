@@ -1158,12 +1158,6 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
         (void)fcntl(fd, F_FULLFSYNC);
 #endif
 #ifdef HAVE_FSTAT
-#  ifdef __VMS
-    /* on OpenVMS we must ensure that all bytes are written to the file */
-    if (fd != -1) {
-        fsync(fd);
-    }
-#  endif
     if (fd != -1 && fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
         if (map_size == 0) {
             if (st.st_size == 0) {

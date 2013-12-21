@@ -5,11 +5,6 @@
 
 #include <locale.h>
 
-#ifdef __VMS
-#error "PEP 11: VMS is now unsupported, code will be removed in Python 3.4"
-#include <unixlib.h>
-#endif
-
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <windows.h>
 #ifdef HAVE_FCNTL_H
@@ -124,19 +119,7 @@ usage(int exitcode, wchar_t* program)
         fprintf(f, usage_5, DELIM, PYTHONHOMEHELP);
         fputs(usage_6, f);
     }
-#if defined(__VMS)
-    if (exitcode == 0) {
-        /* suppress 'error' message */
-        return 1;
-    }
-    else {
-        /* STS$M_INHIB_MSG + SS$_ABORT */
-        return 0x1000002c;
-    }
-#else
     return exitcode;
-#endif
-    /*NOTREACHED*/
 }
 
 static void RunStartupFile(PyCompilerFlags *cf)
@@ -580,14 +563,7 @@ Py_Main(int argc, wchar_t **argv)
     if (command == NULL && module == NULL && _PyOS_optind < argc &&
         wcscmp(argv[_PyOS_optind], L"-") != 0)
     {
-#ifdef __VMS
-        filename = decc$translate_vms(argv[_PyOS_optind]);
-        if (filename == (char *)0 || filename == (char *)-1)
-            filename = argv[_PyOS_optind];
-
-#else
         filename = argv[_PyOS_optind];
-#endif
     }
 
     stdin_is_interactive = Py_FdIsInteractive(stdin, (char *)0);
@@ -623,11 +599,6 @@ Py_Main(int argc, wchar_t **argv)
 #endif /* !MS_WINDOWS */
         /* Leave stderr alone - it should be unbuffered anyway. */
     }
-#ifdef __VMS
-    else {
-        setvbuf (stdout, (char *)NULL, _IOLBF, BUFSIZ);
-    }
-#endif /* __VMS */
 
 #ifdef __APPLE__
     /* On MacOS X, when the Python interpreter is embedded in an

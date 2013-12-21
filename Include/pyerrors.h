@@ -199,9 +199,6 @@ PyAPI_DATA(PyObject *) PyExc_IOError;
 #ifdef MS_WINDOWS
 PyAPI_DATA(PyObject *) PyExc_WindowsError;
 #endif
-#ifdef __VMS
-PyAPI_DATA(PyObject *) PyExc_VMSError;
-#endif
 
 PyAPI_DATA(PyObject *) PyExc_RecursionErrorInst;
 
