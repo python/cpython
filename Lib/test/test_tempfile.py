@@ -8,6 +8,7 @@ import sys
 import re
 import warnings
 import contextlib
+import weakref
 
 import unittest
 from test import support
@@ -673,6 +674,22 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.do_create(suf="b")
         self.do_create(pre="a", suf="b")
         self.do_create(pre="aa", suf=".txt")
+
+    def test_method_lookup(self):
+        # Issue #18879: Looking up a temporary file method should keep it
+        # alive long enough.
+        f = self.do_create()
+        wr = weakref.ref(f)
+        write = f.write
+        write2 = f.write
+        del f
+        write(b'foo')
+        del write
+        write2(b'bar')
+        del write2
+        if support.check_impl_detail(cpython=True):
+            # No reference cycle was created.
+            self.assertIsNone(wr())
 
     def test_creates_named(self):
         # NamedTemporaryFile creates files with names
