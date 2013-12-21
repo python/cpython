@@ -44,6 +44,20 @@ Core and Builtins
 Library
 -------
 
+- Issue #19967: Thanks to the PEP 442, asyncio.Future now uses a
+  destructor to log uncaught exceptions, instead of the dedicated
+  _TracebackLogger class.
+
+- Added a Task.current_task() class method to asyncio.
+
+- Issue #19850: Set SA_RESTART in asyncio when registering a signal
+  handler to limit EINTR occurrences.
+
+- Implemented write flow control in asyncio for proactor event loop (Windows).
+
+- Change write buffer in asyncio use to avoid O(N**2) behavior.  Make
+  write()/sendto() accept bytearray/memoryview.
+
 - Issue #20034: Updated alias mapping to most recent locale.alias file
   from X.org distribution using makelocalealias.py.
 
