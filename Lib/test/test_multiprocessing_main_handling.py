@@ -15,6 +15,8 @@ from test.script_helper import (
     assert_python_ok, assert_python_failure, temp_dir,
     spawn_python, kill_python)
 
+# Skip tests if _multiprocessing wasn't built.
+_multiprocessing = support.import_module('_multiprocessing')
 # Look up which start methods are available to test
 import multiprocessing
 AVAILABLE_START_METHODS = set(multiprocessing.get_all_start_methods())
