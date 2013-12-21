@@ -91,7 +91,9 @@ bufferediobase_readinto(PyObject *self, PyObject *args)
 static PyObject *
 bufferediobase_unsupported(const char *message)
 {
-    PyErr_SetString(IO_STATE->unsupported_operation, message);
+    _PyIO_State *state = IO_STATE();
+    if (state != NULL)
+        PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
