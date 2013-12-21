@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20048: Fixed ZipExtFile.peek() when it is called on the boundary of
+  the uncompress buffer and read() goes through more than one readbuffer.
+
 - Issue #20034: Updated alias mapping to most recent locale.alias file
   from X.org distribution using makelocalealias.py.
 
