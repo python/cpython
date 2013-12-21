@@ -539,6 +539,20 @@ _PyIO_ConvertSsize_t(PyObject *obj, void *result) {
 }
 
 
+_PyIO_State *
+_PyIO_get_module_state(void)
+{
+    PyObject *mod = PyState_FindModule(&_PyIO_Module);
+    _PyIO_State *state;
+    if (mod == NULL || (state = IO_MOD_STATE(mod)) == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "could not find io module state "
+                        "(interpreter shutdown?)");
+        return NULL;
+    }
+    return state;
+}
+
 PyObject *
 _PyIO_get_locale_module(_PyIO_State *state)
 {

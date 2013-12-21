@@ -45,7 +45,9 @@ PyDoc_STRVAR(textiobase_doc,
 static PyObject *
 _unsupported(const char *message)
 {
-    PyErr_SetString(IO_STATE->unsupported_operation, message);
+    _PyIO_State *state = IO_STATE();
+    if (state != NULL)
+        PyErr_SetString(state->unsupported_operation, message);
     return NULL;
 }
 
@@ -852,7 +854,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     char *errors = NULL;
     char *newline = NULL;
     int line_buffering = 0, write_through = 0;
-    _PyIO_State *state = IO_STATE;
+    _PyIO_State *state = NULL;
 
     PyObject *res;
     int r;
@@ -891,6 +893,9 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
     if (encoding == NULL) {
         /* Try os.device_encoding(fileno) */
         PyObject *fileno;
+        state = IO_STATE();
+        if (state == NULL)
+            goto error;
         fileno = _PyObject_CallMethodId(buffer, &PyId_fileno, NULL);
         /* Ignore only AttributeError and UnsupportedOperation */
         if (fileno == NULL) {
