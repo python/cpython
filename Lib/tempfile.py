@@ -27,6 +27,7 @@ __all__ = [
 
 # Imports.
 
+import functools as _functools
 import warnings as _warnings
 import sys as _sys
 import io as _io
@@ -349,39 +350,16 @@ def mktemp(suffix="", prefix=template, dir=None):
                           "No usable temporary filename found")
 
 
-class _TemporaryFileWrapper:
-    """Temporary file wrapper
-
-    This class provides a wrapper around files opened for
-    temporary use.  In particular, it seeks to automatically
-    remove the file when it is no longer needed.
-    """
+class _TemporaryFileCloser:
+    """A separate object allowing proper closing of a temporary file's
+    underlying file object, without adding a __del__ method to the
+    temporary file."""
 
     def __init__(self, file, name, delete=True):
         self.file = file
         self.name = name
         self.close_called = False
         self.delete = delete
-
-    def __getattr__(self, name):
-        # Attribute lookups are delegated to the underlying file
-        # and cached for non-numeric results
-        # (i.e. methods are cached, closed and friends are not)
-        file = self.__dict__['file']
-        a = getattr(file, name)
-        if not isinstance(a, int):
-            setattr(self, name, a)
-        return a
-
-    # The underlying __enter__ method returns the wrong object
-    # (self.file) so override it to return the wrapper
-    def __enter__(self):
-        self.file.__enter__()
-        return self
-
-    # iter() doesn't use __getattr__ to find the __iter__ method
-    def __iter__(self):
-        return iter(self.file)
 
     # NT provides delete-on-close as a primitive, so we don't need
     # the wrapper to do anything special.  We still use it so that
@@ -401,18 +379,72 @@ class _TemporaryFileWrapper:
                 if self.delete:
                     self.unlink(self.name)
 
+        # Need to ensure the file is deleted on __del__
         def __del__(self):
             self.close()
 
-        # Need to trap __exit__ as well to ensure the file gets
-        # deleted when used in a with statement
-        def __exit__(self, exc, value, tb):
-            result = self.file.__exit__(exc, value, tb)
-            self.close()
-            return result
     else:
-        def __exit__(self, exc, value, tb):
-            self.file.__exit__(exc, value, tb)
+        def close(self):
+            if not self.close_called:
+                self.close_called = True
+                self.file.close()
+
+
+class _TemporaryFileWrapper:
+    """Temporary file wrapper
+
+    This class provides a wrapper around files opened for
+    temporary use.  In particular, it seeks to automatically
+    remove the file when it is no longer needed.
+    """
+
+    def __init__(self, file, name, delete=True):
+        self.file = file
+        self.name = name
+        self.delete = delete
+        self._closer = _TemporaryFileCloser(file, name, delete)
+
+    def __getattr__(self, name):
+        # Attribute lookups are delegated to the underlying file
+        # and cached for non-numeric results
+        # (i.e. methods are cached, closed and friends are not)
+        file = self.__dict__['file']
+        a = getattr(file, name)
+        if hasattr(a, '__call__'):
+            func = a
+            @_functools.wraps(func)
+            def func_wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            # Avoid closing the file as long as the wrapper is alive,
+            # see issue #18879.
+            func_wrapper._closer = self._closer
+            a = func_wrapper
+        if not isinstance(a, int):
+            setattr(self, name, a)
+        return a
+
+    # The underlying __enter__ method returns the wrong object
+    # (self.file) so override it to return the wrapper
+    def __enter__(self):
+        self.file.__enter__()
+        return self
+
+    # Need to trap __exit__ as well to ensure the file gets
+    # deleted when used in a with statement
+    def __exit__(self, exc, value, tb):
+        result = self.file.__exit__(exc, value, tb)
+        self.close()
+        return result
+
+    def close(self):
+        """
+        Close the temporary file, possibly deleting it.
+        """
+        self._closer.close()
+
+    # iter() doesn't use __getattr__ to find the __iter__ method
+    def __iter__(self):
+        return iter(self.file)
 
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
