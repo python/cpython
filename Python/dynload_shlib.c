@@ -36,25 +36,16 @@ const char *_PyImport_DynLoadFiletab[] = {
 #ifdef __CYGWIN__
     ".dll",
 #else  /* !__CYGWIN__ */
-#ifdef __VMS
-    ".exe",
-    ".EXE",
-#else  /* !__VMS */
     "." SOABI ".so",
     ".abi" PYTHON_ABI_STRING ".so",
     ".so",
-#endif  /* __VMS */
 #endif  /* __CYGWIN__ */
     NULL,
 };
 
 static struct {
     dev_t dev;
-#ifdef __VMS
-    ino_t ino[3];
-#else
     ino_t ino;
-#endif
     void *handle;
 } handles[128];
 static int nhandles = 0;
@@ -95,28 +86,11 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
         }
         if (nhandles < 128) {
             handles[nhandles].dev = statb.st_dev;
-#ifdef __VMS
-            handles[nhandles].ino[0] = statb.st_ino[0];
-            handles[nhandles].ino[1] = statb.st_ino[1];
-            handles[nhandles].ino[2] = statb.st_ino[2];
-#else
             handles[nhandles].ino = statb.st_ino;
-#endif
         }
     }
 
     dlopenflags = PyThreadState_GET()->interp->dlopenflags;
-
-#ifdef __VMS
-    /* VMS currently don't allow a pathname, use a logical name instead */
-    /* Concatenate 'python_module_' and shortname */
-    /* so "import vms.bar" will use the logical python_module_bar */
-    /* As C module use only one name space this is probably not a */
-    /* important limitation */
-    PyOS_snprintf(pathbuf, sizeof(pathbuf), "python_module_%-.200s",
-                  shortname);
-    pathname = pathbuf;
-#endif
 
     handle = dlopen(pathname, dlopenflags);
 

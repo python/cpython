@@ -32,10 +32,6 @@ extern void *PyWin_DLLhModule;
 extern const char *PyWin_DLLVersionString;
 #endif
 
-#ifdef __VMS
-#include <unixlib.h>
-#endif
-
 #ifdef HAVE_LANGINFO_H
 #include <locale.h>
 #include <langinfo.h>
@@ -1867,22 +1863,7 @@ makeargvobject(int argc, wchar_t **argv)
     if (av != NULL) {
         int i;
         for (i = 0; i < argc; i++) {
-#ifdef __VMS
-            PyObject *v;
-
-            /* argv[0] is the script pathname if known */
-            if (i == 0) {
-                char* fn = decc$translate_vms(argv[0]);
-                if ((fn == (char *)0) || fn == (char *)-1)
-                    v = PyUnicode_FromString(argv[0]);
-                else
-                    v = PyUnicode_FromString(
-                        decc$translate_vms(argv[0]));
-            } else
-                v = PyUnicode_FromString(argv[i]);
-#else
             PyObject *v = PyUnicode_FromWideChar(argv[i], -1);
-#endif
             if (v == NULL) {
                 Py_DECREF(av);
                 av = NULL;

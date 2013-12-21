@@ -208,11 +208,7 @@ fcntl_ioctl(PyObject *self, PyObject *args)
       return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-#ifdef __VMS
-    ret = ioctl(fd, code, (void *)arg);
-#else
     ret = ioctl(fd, code, arg);
-#endif
     Py_END_ALLOW_THREADS
     if (ret < 0) {
         PyErr_SetFromErrno(PyExc_IOError);

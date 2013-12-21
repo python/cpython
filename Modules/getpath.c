@@ -110,11 +110,7 @@
 #endif
 
 #ifndef PREFIX
-#  ifdef __VMS
-#    define PREFIX ""
-#  else
-#    define PREFIX "/usr/local"
-#  endif
+#  define PREFIX "/usr/local"
 #endif
 
 #ifndef EXEC_PREFIX

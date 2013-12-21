@@ -15,10 +15,6 @@
 #include "windows.h"
 #endif /* MS_WINDOWS */
 
-#ifdef __VMS
-extern char* vms__StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt);
-#endif
-
 
 PyThreadState* _PyOS_ReadlineTState;
 
@@ -189,11 +185,7 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
 
     if (PyOS_ReadlineFunctionPointer == NULL) {
-#ifdef __VMS
-        PyOS_ReadlineFunctionPointer = vms__StdioReadline;
-#else
         PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
-#endif
     }
 
 #ifdef WITH_THREAD
