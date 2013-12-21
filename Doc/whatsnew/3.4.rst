@@ -123,9 +123,9 @@ Significantly Improved Library Modules:
 
 CPython implementation improvements:
 
-* :ref:`PEP 442: Safe object finalization <pep-442>`
-* :ref:`PEP 445: Configurable memory allocators <pep-445>`
-* :pep:`456` Secure and interchangeable hash algorithm
+* :pep:`442`: :ref:`Safe object finalization <whatsnew-pep-442>`
+* :pep:`445`: :ref:`Configurable memory allocators <whatsnew-pep-445>`
+* :pep:`456`: :ref:`Secure and interchangeable hash algorithm <whatsnew-pep-456>`
 * Improve finalization of Python modules to avoid setting their globals
   to None, in most cases (:issue:`18214`).
 * A more efficient :mod:`marshal` format (:issue:`16475`).
@@ -909,7 +909,7 @@ CPython Implementation Changes
 ==============================
 
 
-.. _pep-445:
+.. _whatsnew-pep-445:
 
 PEP 445: Customization of CPython memory allocators
 ---------------------------------------------------
@@ -923,7 +923,7 @@ the CPython interpreter.
       PEP written and implemented by Victor Stinner.
 
 
-.. _pep-442:
+.. _whatsnew-pep-442:
 
 PEP 442: Safe object finalization
 ---------------------------------
@@ -941,6 +941,25 @@ on the normal operation of the cyclic garbage collector.
 
    :pep:`442` - Safe object finalization
       PEP written and implemented by Antoine Pitrou.
+
+
+.. _whatsnew-pep-456:
+
+PEP 456: Secure and Interchangeable Hash Algorithm
+--------------------------------------------------
+
+:pep:`456` follows up on earlier security fix work done on Python's hash
+algorithm to address certain DOS attacks to which public facing APIs backed by
+dictionary lookups may be subject.  (See :issue:`14621` for the start of the
+current round of improvements.)  The PEP unifies CPython's hash code to make it
+easier for a packager to substitute a different hash algorithm, and switches
+Python's default implementation to a SipHash implementation on platforms that
+have a 64 bit data type.  Any performance differences in comparison with the
+older FNV algorithm are trivial.
+
+The PEP adds additional fields to the :func:`sys.hash_info` struct sequence to
+describe the hash algorithm in use by the currently executing binary.  Otherwise,
+the PEP does not alter any existing CPython APIs.
 
 
 Other build and C API changes
