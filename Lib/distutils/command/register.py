@@ -5,6 +5,7 @@ Implements the Distutils 'register' command (register with the repository).
 
 # created 2002/10/21, Richard Jones
 
+import cgi
 import os, string, getpass
 import io
 import urllib.parse, urllib.request
@@ -87,7 +88,9 @@ class register(PyPIRCCommand):
         '''
         url = self.repository+'?:action=list_classifiers'
         response = urllib.request.urlopen(url)
-        log.info(response.read())
+        content_type = response.getheader('content-type', 'text/plain')
+        encoding = cgi.parse_header(content_type)[1].get('charset', 'ascii')
+        log.info(response.read().decode(encoding))
 
     def verify_metadata(self):
         ''' Send the metadata to the package index server to be checked.
