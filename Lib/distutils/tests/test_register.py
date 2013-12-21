@@ -81,11 +81,13 @@ class RegisterTestCase(PyPIRCCommandTestCase):
         def _getpass(prompt):
             return 'password'
         getpass.getpass = _getpass
+        urllib.request._opener = None
         self.old_opener = urllib.request.build_opener
         self.conn = urllib.request.build_opener = FakeOpener()
 
     def tearDown(self):
         getpass.getpass = self._old_getpass
+        urllib.request._opener = None
         urllib.request.build_opener = self.old_opener
         super(RegisterTestCase, self).tearDown()
 
