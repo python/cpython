@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18879: When a method is looked up on a temporary file, avoid closing
+  the file before the method is possibly called.
+
 - Issue #20037: Avoid crashes when opening a text file late at interpreter
   shutdown.
 
