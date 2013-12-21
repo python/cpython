@@ -41,6 +41,7 @@ import socket
 import struct
 import sys
 import tempfile
+from test.script_helper import assert_python_ok
 from test.support import (captured_stdout, run_with_locale, run_unittest,
                           patch, requires_zlib, TestHandler, Matcher)
 import textwrap
@@ -3396,6 +3397,25 @@ class ModuleLevelMiscTest(BaseTest):
 
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
+
+    def test_logging_at_shutdown(self):
+        # Issue #20037
+        code = """if 1:
+            import logging
+
+            class A:
+                def __del__(self):
+                    try:
+                        raise ValueError("some error")
+                    except Exception:
+                        logging.exception("exception in __del__")
+
+            a = A()"""
+        rc, out, err = assert_python_ok("-c", code)
+        err = err.decode()
+        self.assertIn("exception in __del__", err)
+        self.assertIn("ValueError: some error", err)
+
 
 class LogRecordTest(BaseTest):
     def test_str_rep(self):
