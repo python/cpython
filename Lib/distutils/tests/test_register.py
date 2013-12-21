@@ -10,6 +10,7 @@ from test.support import check_warnings, run_unittest
 from distutils.command import register as register_module
 from distutils.command.register import register
 from distutils.errors import DistutilsSetupError
+from distutils.log import INFO
 
 from distutils.tests.test_config import PyPIRCCommandTestCase
 
@@ -58,12 +59,18 @@ class FakeOpener(object):
     def __call__(self, *args):
         return self
 
-    def open(self, req):
+    def open(self, req, data=None, timeout=None):
         self.reqs.append(req)
         return self
 
     def read(self):
-        return 'xxx'
+        return b'xxx'
+
+    def getheader(self, name, default=None):
+        return {
+            'content-type': 'text/plain; charset=utf-8',
+            }.get(name.lower(), default)
+
 
 class RegisterTestCase(PyPIRCCommandTestCase):
 
@@ -284,6 +291,14 @@ class RegisterTestCase(PyPIRCCommandTestCase):
             warnings.simplefilter("always")
             cmd.check_metadata()
             self.assertEqual(len(w.warnings), 1)
+
+    def test_list_classifiers(self):
+        cmd = self._get_cmd()
+        cmd.list_classifiers = 1
+        cmd.run()
+        results = self.get_logs(INFO)
+        self.assertEqual(results, ['running check', 'xxx'])
+
 
 def test_suite():
     return unittest.makeSuite(RegisterTestCase)
