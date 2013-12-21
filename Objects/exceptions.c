@@ -16,9 +16,6 @@ PyObject *PyExc_IOError = NULL;
 #ifdef MS_WINDOWS
 PyObject *PyExc_WindowsError = NULL;
 #endif
-#ifdef __VMS
-PyObject *PyExc_VMSError = NULL;
-#endif
 
 /* The dict map from errno codes to OSError subclasses */
 static PyObject *errnomap = NULL;
@@ -2472,9 +2469,6 @@ _PyExc_Init(PyObject *bltinmod)
     INIT_ALIAS(IOError, OSError)
 #ifdef MS_WINDOWS
     INIT_ALIAS(WindowsError, OSError)
-#endif
-#ifdef __VMS
-    INIT_ALIAS(VMSError, OSError)
 #endif
     POST_INIT(EOFError)
     POST_INIT(RuntimeError)

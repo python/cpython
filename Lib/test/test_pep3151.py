@@ -157,8 +157,6 @@ class AttributesTest(unittest.TestCase):
         e.characters_written = 5
         self.assertEqual(e.characters_written, 5)
 
-    # XXX VMSError not tested
-
 
 class ExplicitSubclassingTest(unittest.TestCase):
 

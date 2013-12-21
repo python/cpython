@@ -256,6 +256,8 @@ Tests
 Build
 -----
 
+- Issue #16136: Remove VMS support
+
 - Issue #18215: Add script Tools/ssl/test_multiple_versions.py to compile and
   run Python's unit tests with multiple versions of OpenSSL.
 

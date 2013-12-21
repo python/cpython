@@ -188,7 +188,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 #if defined(WITH_THREAD) && (defined(__APPLE__) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
-    defined(__VMS) || !defined(HAVE_GETADDRINFO))
+    !defined(HAVE_GETADDRINFO))
 #define USE_GETADDRINFO_LOCK
 #endif
 
@@ -210,10 +210,6 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # include <sys/ioctl.h>
 # include <utils.h>
 # include <ctype.h>
-#endif
-
-#if defined(__VMS)
-#  include <ioctl.h>
 #endif
 
 #ifdef __APPLE__
@@ -403,11 +399,6 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 #endif
 
-#ifdef __VMS
-/* TCP/IP Services for VMS uses a maximum send/recv buffer length */
-#define SEGMENT_SIZE (32 * 1024 -1)
-#endif
-
 /* Convert "sock_addr_t *" to "struct sockaddr *". */
 #define SAS2SA(x)       (&((x)->sa))
 
@@ -556,37 +547,13 @@ set_gaierror(int error)
     return NULL;
 }
 
-#ifdef __VMS
-/* Function to send in segments */
-static int
-sendsegmented(int sock_fd, char *buf, int len, int flags)
-{
-    int n = 0;
-    int remaining = len;
-
-    while (remaining > 0) {
-        unsigned int segment;
-
-        segment = (remaining >= SEGMENT_SIZE ? SEGMENT_SIZE : remaining);
-        n = send(sock_fd, buf, segment, flags);
-        if (n < 0) {
-            return n;
-        }
-        remaining -= segment;
-        buf += segment;
-    } /* end while */
-
-    return len;
-}
-#endif
-
 /* Function to perform the setting of socket blocking mode
    internally. block = (1 | 0). */
 static int
 internal_setblocking(PySocketSockObject *s, int block)
 {
 #if !defined(MS_WINDOWS) \
-    && !((defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)) || defined(__VMS))
+    && !((defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)))
     int delay_flag, new_delay_flag;
 #endif
 #ifdef SOCK_NONBLOCK
@@ -598,7 +565,7 @@ internal_setblocking(PySocketSockObject *s, int block)
 
     Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
-#if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)) || defined(__VMS)
+#if (defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO))
     block = !block;
     ioctl(s->sock_fd, FIONBIO, (unsigned int *)&block);
 #else
@@ -2227,13 +2194,7 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
             return s->errorhandler();
         return PyLong_FromLong(flag);
     }
-#ifdef __VMS
-    /* socklen_t is unsigned so no negative test is needed,
-       test buflen == 0 is previously done */
-    if (buflen > 1024) {
-#else
     if (buflen <= 0 || buflen > 1024) {
-#endif
         PyErr_SetString(PyExc_OSError,
                         "getsockopt buflen out of range");
         return NULL;
@@ -2603,10 +2564,6 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags)
 {
     Py_ssize_t outlen = -1;
     int timeout;
-#ifdef __VMS
-    int remaining;
-    char *read_buf;
-#endif
 
     if (!IS_SELECTABLE(s)) {
         select_error();
@@ -2617,7 +2574,6 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags)
         return 0;
     }
 
-#ifndef __VMS
     BEGIN_SELECT_LOOP(s)
     Py_BEGIN_ALLOW_THREADS
     timeout = internal_select_ex(s, 0, interval);
@@ -2643,48 +2599,6 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags)
         s->errorhandler();
         return -1;
     }
-#else
-    read_buf = cbuf;
-    remaining = len;
-    while (remaining != 0) {
-        unsigned int segment;
-        int nread = -1;
-
-        segment = remaining /SEGMENT_SIZE;
-        if (segment != 0) {
-            segment = SEGMENT_SIZE;
-        }
-        else {
-            segment = remaining;
-        }
-
-        BEGIN_SELECT_LOOP(s)
-        Py_BEGIN_ALLOW_THREADS
-        timeout = internal_select_ex(s, 0, interval);
-        if (!timeout)
-            nread = recv(s->sock_fd, read_buf, segment, flags);
-        Py_END_ALLOW_THREADS
-        if (timeout == 1) {
-            PyErr_SetString(socket_timeout, "timed out");
-            return -1;
-        }
-        END_SELECT_LOOP(s)
-
-        if (nread < 0) {
-            s->errorhandler();
-            return -1;
-        }
-        if (nread != remaining) {
-            read_buf += nread;
-            break;
-        }
-
-        remaining -= segment;
-        read_buf += segment;
-    }
-    outlen = read_buf - cbuf;
-#endif /* !__VMS */
-
     return outlen;
 }
 
@@ -3318,9 +3232,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
     Py_BEGIN_ALLOW_THREADS
     timeout = internal_select_ex(s, 1, interval);
     if (!timeout) {
-#ifdef __VMS
-        n = sendsegmented(s->sock_fd, buf, len, flags);
-#elif defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
         if (len > INT_MAX)
             len = INT_MAX;
         n = send(s->sock_fd, buf, (int)len, flags);
@@ -3375,9 +3287,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         timeout = internal_select(s, 1);
         n = -1;
         if (!timeout) {
-#ifdef __VMS
-            n = sendsegmented(s->sock_fd, buf, len, flags);
-#elif defined(MS_WINDOWS)
+#ifdef MS_WINDOWS
             if (len > INT_MAX)
                 len = INT_MAX;
             n = send(s->sock_fd, buf, (int)len, flags);
@@ -5310,9 +5220,9 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
 #if defined(__APPLE__) && defined(AI_NUMERICSERV)
     if ((flags & AI_NUMERICSERV) && (pptr == NULL || (pptr[0] == '0' && pptr[1] == 0))) {
         /* On OSX upto at least OSX 10.8 getaddrinfo crashes
-	 * if AI_NUMERICSERV is set and the servname is NULL or "0".
-	 * This workaround avoids a segfault in libsystem.
-	 */
+         * if AI_NUMERICSERV is set and the servname is NULL or "0".
+         * This workaround avoids a segfault in libsystem.
+         */
         pptr = "00";
     }
 #endif

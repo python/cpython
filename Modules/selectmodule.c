@@ -52,9 +52,6 @@ extern void bzero(void *, int);
 #  include <winsock.h>
 #else
 #  define SOCKET int
-#  if defined(__VMS)
-#    include <socket.h>
-#  endif
 #endif
 
 /* list of Python objects and their file descriptor */
@@ -1708,17 +1705,17 @@ static PyTypeObject kqueue_queue_Type;
  * kevent is not standard and its members vary across BSDs.
  */
 #if !defined(__OpenBSD__)
-#   define IDENT_TYPE	T_UINTPTRT
-#   define IDENT_CAST	Py_intptr_t
-#   define DATA_TYPE	T_INTPTRT
+#   define IDENT_TYPE  T_UINTPTRT
+#   define IDENT_CAST  Py_intptr_t
+#   define DATA_TYPE   T_INTPTRT
 #   define DATA_FMT_UNIT INTPTRT_FMT_UNIT
-#   define IDENT_AsType	PyLong_AsUintptr_t
+#   define IDENT_AsType PyLong_AsUintptr_t
 #else
-#   define IDENT_TYPE	T_UINT
-#   define IDENT_CAST	int
-#   define DATA_TYPE	T_INT
+#   define IDENT_TYPE  T_UINT
+#   define IDENT_CAST  int
+#   define DATA_TYPE   T_INT
 #   define DATA_FMT_UNIT "i"
-#   define IDENT_AsType	PyLong_AsUnsignedLong
+#   define IDENT_AsType PyLong_AsUnsignedLong
 #endif
 
 /* Unfortunately, we can't store python objects in udata, because
@@ -1770,7 +1767,7 @@ kqueue_event_init(kqueue_event_Object *self, PyObject *args, PyObject *kwds)
 
     if (PyLong_Check(pfd)
 #if IDENT_TYPE == T_UINT
-	&& PyLong_AsUnsignedLong(pfd) <= UINT_MAX
+        && PyLong_AsUnsignedLong(pfd) <= UINT_MAX
 #endif
     ) {
         self->e.ident = IDENT_AsType(pfd);
@@ -2253,7 +2250,7 @@ arguments; each contains the subset of the corresponding file descriptors\n\
 that are ready.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows and OpenVMS, only sockets are supported; on Unix, all file\n\
+On Windows only sockets are supported; on Unix, all file\n\
 descriptors can be used.");
 
 static PyMethodDef select_methods[] = {
@@ -2271,7 +2268,7 @@ PyDoc_STRVAR(module_doc,
 "This module supports asynchronous I/O on multiple file descriptors.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows and OpenVMS, only sockets are supported; on Unix, all file descriptors.");
+On Windows only sockets are supported; on Unix, all file descriptors.");
 
 
 static struct PyModuleDef selectmodule = {
