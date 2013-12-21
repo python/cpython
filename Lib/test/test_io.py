@@ -36,6 +36,7 @@ import _testcapi
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
+from test.script_helper import assert_python_ok
 
 import codecs
 import io  # C implementation of io
@@ -2589,8 +2590,46 @@ class TextIOWrapperTest(unittest.TestCase):
                                encoding='quopri_codec')
         self.assertRaises(TypeError, t.read)
 
+    def _check_create_at_shutdown(self, **kwargs):
+        # Issue #20037: creating a TextIOWrapper at shutdown
+        # shouldn't crash the interpreter.
+        iomod = self.io.__name__
+        code = """if 1:
+            import codecs
+            import {iomod} as io
+
+            # Avoid looking up codecs at shutdown
+            codecs.lookup('utf-8')
+
+            class C:
+                def __init__(self):
+                    self.buf = io.BytesIO()
+                def __del__(self):
+                    io.TextIOWrapper(self.buf, **{kwargs})
+                    print("ok")
+            c = C()
+            """.format(iomod=iomod, kwargs=kwargs)
+        return assert_python_ok("-c", code)
+
+    def test_create_at_shutdown_without_encoding(self):
+        rc, out, err = self._check_create_at_shutdown()
+        if err:
+            # Can error out with a RuntimeError if the module state
+            # isn't found.
+            self.assertIn("RuntimeError: could not find io module state",
+                          err.decode())
+        else:
+            self.assertEqual("ok", out.decode().strip())
+
+    def test_create_at_shutdown_with_encoding(self):
+        rc, out, err = self._check_create_at_shutdown(encoding='utf-8',
+                                                      errors='strict')
+        self.assertFalse(err)
+        self.assertEqual("ok", out.decode().strip())
+
 
 class CTextIOWrapperTest(TextIOWrapperTest):
+    io = io
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
@@ -2634,7 +2673,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
-    pass
+    io = pyio
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):

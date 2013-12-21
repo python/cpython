@@ -44,6 +44,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20037: Avoid crashes when opening a text file late at interpreter
+  shutdown.
+
 - Issue #19967: Thanks to the PEP 442, asyncio.Future now uses a
   destructor to log uncaught exceptions, instead of the dedicated
   _TracebackLogger class.
