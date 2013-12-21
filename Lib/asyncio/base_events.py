@@ -613,7 +613,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         t0 = self.time()
         event_list = self._selector.select(timeout)
         t1 = self.time()
-        argstr = '' if timeout is None else '{:.3f}'.format(timeout)
+        argstr = '' if timeout is None else ' {:.3f}'.format(timeout)
         if t1-t0 >= 1:
             level = logging.INFO
         else:
