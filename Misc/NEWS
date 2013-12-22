@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Fix TypeError on "setup.py upload --show-response".
+
 - Issue #12226: HTTPS is now used by default when connecting to PyPI.
 
 - Issue #20045: Fix "setup.py register --list-classifiers".
