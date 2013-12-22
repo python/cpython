@@ -101,7 +101,8 @@ New library modules:
 
 New expected features for Python implementations:
 
-* :pep:`446`: :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`.
+* :ref:`Make newly created file descriptors non-inheritable <whatsnew-pep-446>`
+  (:pep:`446`).
 * command line option for :ref:`isolated mode <using-on-misc-options>`,
   (:issue:`16499`).
 * :ref:`improvements <codec-handling-improvements>` in the handling of
@@ -123,12 +124,13 @@ Significantly Improved Library Modules:
 
 CPython implementation improvements:
 
-* :pep:`442`: :ref:`Safe object finalization <whatsnew-pep-442>`
+* :ref:`Safe object finalization <whatsnew-pep-442>` (:pep:`442`).
 * Leveraging :pep:`442`, :ref:`module globals are no longer set to None
   during finalization <whatsnew-pep-442>`, in most cases (:issue:`18214`).
-* :pep:`445`: :ref:`Configurable memory allocators <whatsnew-pep-445>`
-* :pep:`456`: :ref:`Secure and interchangeable hash algorithm <whatsnew-pep-456>`
-* :pep:`436`: :ref:`Argument Clinic <whatsnew-pep-436>`.
+* :ref:`Configurable memory allocators <whatsnew-pep-445>` (:pep:`445`).
+* :ref:`Secure and interchangeable hash algorithm <whatsnew-pep-456>`
+  (:pep:`456`).
+* :ref:`Argument Clinic <whatsnew-pep-436>` (:pep:`436`).
 * A more efficient :mod:`marshal` format (:issue:`16475`).
 
 Please read on for a comprehensive list of user-facing changes.
