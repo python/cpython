@@ -3,7 +3,6 @@
 Provides the PyPIRCCommand class, the base class for the command classes
 that uses .pypirc in the distutils.command package.
 """
-import cgi
 import os
 from configparser import ConfigParser
 
@@ -113,6 +112,7 @@ class PyPIRCCommand(Command):
 
     def _read_pypi_response(self, response):
         """Read and decode a PyPI HTTP response."""
+        import cgi
         content_type = response.getheader('content-type', 'text/plain')
         encoding = cgi.parse_header(content_type)[1].get('charset', 'ascii')
         return response.read().decode(encoding)
