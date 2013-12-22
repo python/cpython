@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12226: HTTPS is now used by default when connecting to PyPI.
+
 - Issue #20048: Fixed ZipExtFile.peek() when it is called on the boundary of
   the uncompress buffer and read() goes through more than one readbuffer.
 
