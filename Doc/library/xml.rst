@@ -33,7 +33,7 @@ The XML handling submodules are:
 ..
 
 * :mod:`xml.dom`: the DOM API definition
-* :mod:`xml.dom.minidom`: a lightweight DOM implementation
+* :mod:`xml.dom.minidom`: a minimal DOM implementation
 * :mod:`xml.dom.pulldom`: support for building partial DOM trees
 
 ..
