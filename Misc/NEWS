@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #12226: HTTPS is now used by default when connecting to PyPI.
+
 - Issue #20045: Fix "setup.py register --list-classifiers".
 
 - Issue #18879: When a method is looked up on a temporary file, avoid closing
