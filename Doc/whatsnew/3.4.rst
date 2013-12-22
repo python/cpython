@@ -126,12 +126,10 @@ CPython implementation improvements:
 * :pep:`442`: :ref:`Safe object finalization <whatsnew-pep-442>`
 * :pep:`445`: :ref:`Configurable memory allocators <whatsnew-pep-445>`
 * :pep:`456`: :ref:`Secure and interchangeable hash algorithm <whatsnew-pep-456>`
+* :pep:`436`: :ref:`Argument Clinic <whatsnew-pep-436>`.
 * Improve finalization of Python modules to avoid setting their globals
   to None, in most cases (:issue:`18214`).
 * A more efficient :mod:`marshal` format (:issue:`16475`).
-* "Argument Clinic", an initial step towards providing improved introspection
-  support for builtin and standard library extension types implemented in C
-  (:pep:`436`)
 
 Please read on for a comprehensive list of user-facing changes.
 
@@ -975,6 +973,8 @@ Changes to Python's build process and to the C API include:
 * Most Python C APIs that don't mutate string arguments are now correctly
   marked as accepting ``const char *`` rather than ``char *`` (Contributed
   by Serhiy Storchaka in :issue:`1772673`).
+
+.. _whatsnew-pep-436:
 
 * "Argument Clinic" (:pep:`436`) is now part of the CPython build process
   and can be used to simplify the process of defining and maintaining
