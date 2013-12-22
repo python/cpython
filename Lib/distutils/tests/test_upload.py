@@ -72,11 +72,11 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
     def setUp(self):
         super(uploadTestCase, self).setUp()
-        self.old_class = httpclient.HTTPConnection
-        self.conn = httpclient.HTTPConnection = FakeConnection()
+        self.old_class = httpclient.HTTPSConnection
+        self.conn = httpclient.HTTPSConnection = FakeConnection()
 
     def tearDown(self):
-        httpclient.HTTPConnection = self.old_class
+        httpclient.HTTPSConnection = self.old_class
         super(uploadTestCase, self).tearDown()
 
     def test_finalize_options(self):
@@ -88,7 +88,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         cmd.finalize_options()
         for attr, waited in (('username', 'me'), ('password', 'secret'),
                              ('realm', 'pypi'),
-                             ('repository', 'http://pypi.python.org/pypi')):
+                             ('repository', 'https://pypi.python.org/pypi')):
             self.assertEqual(getattr(cmd, attr), waited)
 
     def test_saved_password(self):

@@ -10,6 +10,8 @@ What's New in Python 3.2.6?
 Library
 -------
 
+- Issue #12226: HTTPS is now used by default when connecting to PyPI.
+
 - Issue #19435: Fix directory traversal attack on CGIHttpRequestHandler.
 
 - Issue #14984: On POSIX systems, when netrc is called without a filename
