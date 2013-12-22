@@ -196,5 +196,6 @@ class upload(PyPIRCCommand):
             self.announce('Upload failed (%s): %s' % (status, reason),
                           log.ERROR)
         if self.show_response:
-            msg = '\n'.join(('-' * 75, result.read(), '-' * 75))
+            text = self._read_pypi_response(result)
+            msg = '\n'.join(('-' * 75, text, '-' * 75))
             self.announce(msg, log.INFO)
